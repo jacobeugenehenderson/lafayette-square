@@ -429,7 +429,7 @@ function ParkTrees() {
     const loader = new THREE.TextureLoader()
     const map = {}
     leafTypesData.types.forEach(lt => {
-      const tex = loader.load(`/textures/leaves/${lt.texture}`)
+      const tex = loader.load(`${import.meta.env.BASE_URL}textures/leaves/${lt.texture}`)
       tex.colorSpace = THREE.SRGBColorSpace
       map[lt.id] = tex
     })
