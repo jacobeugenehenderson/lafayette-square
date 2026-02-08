@@ -9,6 +9,7 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { mergeBufferGeometries } from '../lib/mergeGeometries'
 
+import useBusinessState from '../hooks/useBusinessState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import { CATEGORY_HEX } from '../tokens/categories'
 import buildingOverridesData from '../data/buildingOverrides.json'
@@ -332,11 +333,23 @@ function Foundations() {
 }
 
 // ============ NEON BAND ============
-// Only rendered for buildings with an associated landmark category.
-// Color comes from the Victorian category palette, not the building body color.
+// Glows when the business is currently open AND it's dark enough to see.
+// Real listings check their hours; simulated listings are always "open."
+const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+function _isWithinHours(hours, time) {
+  if (!hours) return true // no hours set → assume open
+  const day = _DAYS[time.getDay()]
+  const slot = hours[day]
+  if (!slot || !slot.open || !slot.close) return false // closed that day
+  const mins = time.getHours() * 60 + time.getMinutes()
+  const [oh, om] = slot.open.split(':').map(Number)
+  const [ch, cm] = slot.close.split(':').map(Number)
+  return mins >= oh * 60 + om && mins < ch * 60 + cm
+}
+
 function NeonBand({ building, categoryHex }) {
   const bandRef = useRef()
-  const prevStateRef = useRef({ shouldGlow: null })
+  const prevStateRef = useRef({ glowFactor: -1, isOpen: null })
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
   const baseColor = useMemo(() => new THREE.Color(categoryHex), [categoryHex])
   const foundationY = getFoundationHeight(building)
@@ -381,15 +394,23 @@ function NeonBand({ building, categoryHex }) {
   useFrame(() => {
     if (!bandRef.current) return
     const mat = bandRef.current.material
-    const { shouldGlow } = getLightingPhase()
+    const { sunAltitude } = getLightingPhase()
+    const currentTime = useTimeOfDay.getState().currentTime
+    const isOpen = _isWithinHours(building.hours, currentTime)
+
+    // Glow ramps from subtle daytime accent to full neon at dusk
+    // sunAltitude ~0.2 = bright day, ~0.05 = dusk, < -0.12 = night
+    const rawGlow = Math.min(1, Math.max(0, (0.2 - sunAltitude) / 0.35))
+    const glowFactor = Math.round(rawGlow * 20) / 20 // quantize to avoid per-frame thrash
 
     const prev = prevStateRef.current
-    if (prev.shouldGlow !== shouldGlow) {
-      prev.shouldGlow = shouldGlow
+    if (prev.isOpen !== isOpen || prev.glowFactor !== glowFactor) {
+      prev.isOpen = isOpen
+      prev.glowFactor = glowFactor
 
-      if (shouldGlow) {
-        mat.opacity = 1
-        mat.emissiveIntensity = 2.5
+      if (isOpen) {
+        mat.opacity = 0.4 + 0.6 * glowFactor
+        mat.emissiveIntensity = 0.3 + 2.2 * glowFactor
         mat.color.copy(baseColor)
         mat.emissive.copy(baseColor)
       } else {
@@ -409,6 +430,16 @@ function NeonBand({ building, categoryHex }) {
   )
 }
 
+// ============ SIM COLOR ============
+// Deterministic Victorian palette color for buildings without a real listing.
+// Uses a simple hash of the building ID so the color is stable across randomize calls.
+const _SIM_HEXES = Object.values(CATEGORY_HEX)
+function simColor(id) {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0
+  return _SIM_HEXES[Math.abs(h) % _SIM_HEXES.length]
+}
+
 // ============ BUILDINGS ============
 // Shared temp color to avoid per-frame allocations
 const _tmpColor = new THREE.Color()
@@ -419,6 +450,12 @@ function Building({ building, categoryHex }) {
   const { selectedId, hoveredId, select, setHovered, clearHovered } = useSelectedBuilding()
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
   const foundationY = getFoundationHeight(building)
+
+  // Neon band: real listings always mount (hours checked inside NeonBand),
+  // simulated listings mount only when the business sim slider marks them open
+  const isSimOpen = useBusinessState((s) => s.openBuildings.has(building.id))
+  const showNeon = !!categoryHex || isSimOpen
+  const effectiveHex = categoryHex || simColor(building.id)
 
   const isSelected = selectedId === building.id
   const isHovered = hoveredId === building.id
@@ -525,7 +562,7 @@ function Building({ building, categoryHex }) {
         onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
         onClick={(e) => { e.stopPropagation(); select(building.id) }}
       />
-      {categoryHex && <NeonBand building={building} categoryHex={categoryHex} />}
+      {showNeon && <NeonBand building={building} categoryHex={effectiveHex} />}
     </group>
   )
 }

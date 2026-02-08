@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 const useBusinessState = create((set, get) => ({
   openBuildings: new Set(),
-  openPercentage: 65,
+  openPercentage: 0,
 
   toggleBuilding: (id) => set((state) => {
     const newSet = new Set(state.openBuildings)
