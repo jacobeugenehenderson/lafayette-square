@@ -695,7 +695,7 @@ function MapPin({ landmark, building, xOffset = 0, zOffset = 0 }) {
         >
           {thumbnail && !logoFailed ? (
             <img
-              src={thumbnail}
+              src={`${import.meta.env.BASE_URL}${thumbnail.replace(/^\//, '')}`}
               alt={landmark.name}
               style={{
                 maxWidth: '100%', maxHeight: '100%', objectFit: 'contain',
