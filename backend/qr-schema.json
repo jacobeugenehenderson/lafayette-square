@@ -1,0 +1,75 @@
+{
+  "_description": "QR code URL schema for Lafayette Square check-in and guardian claim systems",
+
+  "base_url": "https://lafayettesquare.app",
+
+  "checkin": {
+    "_description": "Scanned by visitors at participating businesses. Triggers anonymous check-in.",
+    "pattern": "/checkin/{locationId}",
+    "example": "https://lafayettesquare.app/checkin/biz-001",
+    "parameters": {
+      "locationId": "Businesses.id from Sheets — identifies which business the QR is posted at"
+    },
+    "behavior": [
+      "1. User scans QR code with phone camera",
+      "2. Opens web app at the checkin URL",
+      "3. Front-end generates/retrieves anonymous device fingerprint",
+      "4. POST /checkin { device_hash, location_id } to Apps Script API",
+      "5. API logs check-in, returns { logged, distinct_days, is_local }",
+      "6. If is_local=true, store local token on device, show Society Pages unlock"
+    ],
+    "qr_visual": {
+      "style": "Category color of the business (from tokens/categories.js hex)",
+      "emoji_marker": "Subcategory emoji centered in QR",
+      "distinguisher": "Warm/inviting palette — this is for customers"
+    }
+  },
+
+  "claim": {
+    "_description": "Scanned by business owner/guardian. Associates their device with the business permanently.",
+    "pattern": "/claim/{businessId}/{secret}",
+    "example": "https://lafayettesquare.app/claim/biz-001/k7x9m2p4",
+    "parameters": {
+      "businessId": "Businesses.id from Sheets",
+      "secret": "8-character alphanumeric token, unique per business, pre-generated. Prevents unauthorized claims."
+    },
+    "behavior": [
+      "1. Business owner scans the guardian QR (physically provided to them)",
+      "2. Opens web app at the claim URL",
+      "3. Front-end generates/retrieves device fingerprint",
+      "4. POST /claim { device_hash, business_id, secret } to Apps Script API",
+      "5. API validates secret, issues non-expiring guardian token",
+      "6. Token stored on device — guardian can now post events/specials"
+    ],
+    "qr_visual": {
+      "style": "Category color but with darker/muted treatment",
+      "emoji_marker": "Key or shield emoji to signal ownership/authority",
+      "distinguisher": "Professional/authoritative palette — this is for business operators"
+    }
+  },
+
+  "routing": {
+    "_description": "Front-end route handling for QR scan URLs",
+    "routes": [
+      { "path": "/checkin/:locationId", "component": "CheckinPage", "auth": "none" },
+      { "path": "/claim/:businessId/:secret", "component": "ClaimPage", "auth": "none" }
+    ],
+    "notes": [
+      "Both routes are public (no auth required to land on them)",
+      "Device fingerprint is generated client-side on first visit",
+      "Fingerprint stored in localStorage, consistent across sessions",
+      "No account creation, no email, no personal data collected"
+    ]
+  },
+
+  "device_fingerprint": {
+    "_description": "Anonymous, consistent device identifier",
+    "method": "SHA-256 hash of: screen resolution + timezone + language + platform + installed fonts subset",
+    "storage": "localStorage key: 'lsq_device_hash'",
+    "privacy": [
+      "Not personally identifiable — many devices share the same fingerprint",
+      "No cookies, no tracking pixels, no third-party scripts",
+      "Hash is one-way — cannot be reversed to identify the device"
+    ]
+  }
+}

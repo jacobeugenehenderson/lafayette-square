@@ -1,0 +1,132 @@
+{
+  "_description": "Google Sheets schema for Lafayette Square backend. Each top-level key = a Sheet tab.",
+  "_notes": [
+    "Geometry data (positions, footprints, terrain, street polylines, tree/lamp coordinates) stays as static JSON in src/data/",
+    "This schema covers the dynamic/social/business layer only",
+    "Fields suffixed _json contain JSON strings for nested data",
+    "device_hash is a consistent anonymous fingerprint (no PII)"
+  ],
+
+  "Buildings": {
+    "_description": "Building metadata — enriches the static geometry in buildings.json",
+    "_row_count": "~1729 (1:1 with buildings.json entries)",
+    "columns": {
+      "id":              { "type": "string",  "example": "bldg-0721",            "required": true,  "notes": "Matches buildings.json id" },
+      "name":            { "type": "string",  "example": "The Bordeaux",         "required": false },
+      "address":         { "type": "string",  "example": "1322 Dolman St",       "required": false },
+      "color":           { "type": "string",  "example": "#A0522D",              "required": true,  "notes": "Victorian facade color hex" },
+      "stories":         { "type": "number",  "example": 4,                      "required": false },
+      "year_built":      { "type": "number",  "example": 1910,                   "required": false },
+      "year_renovated":  { "type": "number",  "example": 2019,                   "required": false },
+      "zoning":          { "type": "string",  "example": "E",                    "required": false },
+      "assessed_value":  { "type": "number",  "example": 412547,                 "required": false },
+      "building_sqft":   { "type": "number",  "example": 39846,                  "required": false },
+      "lot_acres":       { "type": "number",  "example": 0.915,                  "required": false },
+      "description":     { "type": "string",  "example": "Historic loft building...", "required": false },
+      "architect":       { "type": "string",  "example": "LuxLiving",            "required": false },
+      "style":           { "type": "string",  "example": "Industrial loft",      "required": false },
+      "units":           { "type": "number",  "example": 51,                     "required": false },
+      "historic_status": { "type": "string",  "example": "contributing",         "required": false },
+      "facade_image":    { "type": "string",  "example": "https://...",          "required": false }
+    }
+  },
+
+  "Businesses": {
+    "_description": "Business/landmark listings occupying buildings",
+    "_row_count": "~41 initially, grows as businesses onboard",
+    "columns": {
+      "id":           { "type": "string",  "example": "biz-001",                 "required": true },
+      "building_id":  { "type": "string",  "example": "bldg-0652",              "required": true,  "notes": "FK to Buildings.id" },
+      "name":         { "type": "string",  "example": "Square One Brewery",     "required": true },
+      "address":      { "type": "string",  "example": "1727 Park Ave",          "required": false },
+      "category":     { "type": "string",  "example": "dining",                 "required": true,  "notes": "FK to Categories.id" },
+      "subcategory":  { "type": "string",  "example": "restaurants",            "required": false, "notes": "FK to Categories.id (child)" },
+      "phone":        { "type": "string",  "example": "+13142312537",           "required": false },
+      "website":      { "type": "string",  "example": "https://squareonebrewery.com", "required": false },
+      "description":  { "type": "string",  "example": "Craft brewery...",       "required": false },
+      "rating":       { "type": "number",  "example": 4.5,                      "required": false },
+      "hours_json":   { "type": "string",  "example": "{\"monday\":{\"open\":\"11:00\",\"close\":\"22:00\"}}", "required": false },
+      "amenities_json": { "type": "string", "example": "[\"Outdoor seating\",\"Live music\"]", "required": false },
+      "photos_json":  { "type": "string",  "example": "[\"https://...\"]",      "required": false },
+      "rent_range":   { "type": "string",  "example": "$1,226-$1,699/mo",       "required": false },
+      "architecture_json": { "type": "string", "example": "{\"style\":\"Victorian\",\"materials\":[\"Brick\"]}", "required": false },
+      "history_json": { "type": "string",  "example": "[{\"year\":1910,\"event\":\"Built\"}]", "required": false },
+      "active":       { "type": "boolean", "example": true,                     "required": true,  "notes": "Soft delete" }
+    }
+  },
+
+  "Categories": {
+    "_description": "Business category taxonomy with colors — drives neon bands, QR styling, Society Pages",
+    "_row_count": "~28 (6 categories + 22 subcategories)",
+    "columns": {
+      "id":         { "type": "string",  "example": "dining",                   "required": true },
+      "name":       { "type": "string",  "example": "Dining & Drinks",          "required": true },
+      "type":       { "type": "string",  "example": "category",                 "required": true,  "notes": "category | subcategory" },
+      "parent_id":  { "type": "string",  "example": null,                       "required": false, "notes": "null for top-level categories, category id for subcategories" },
+      "color_hex":  { "type": "string",  "example": "#E85D3A",                  "required": true,  "notes": "Neon band + QR + Society Pages color" },
+      "emoji":      { "type": "string",  "example": "\ud83c\udf7d\ufe0f",       "required": true }
+    }
+  },
+
+  "Checkins": {
+    "_description": "Anonymous check-in log for local determiner. 3 distinct-day check-ins within 14 days = local.",
+    "_row_count": "Grows with usage",
+    "columns": {
+      "device_hash":  { "type": "string",  "example": "a1b2c3d4e5f6",          "required": true,  "notes": "Consistent anonymous device fingerprint" },
+      "location_id":  { "type": "string",  "example": "biz-001",               "required": true,  "notes": "FK to Businesses.id" },
+      "timestamp":    { "type": "string",  "example": "2026-02-07T14:30:00Z",  "required": true },
+      "date":         { "type": "string",  "example": "2026-02-07",            "required": true,  "notes": "Central Time calendar date, for distinct-day counting" }
+    }
+  },
+
+  "Reviews": {
+    "_description": "Local-only reviews on businesses",
+    "_row_count": "Grows with usage",
+    "columns": {
+      "id":           { "type": "string",  "example": "rev-001",               "required": true },
+      "business_id":  { "type": "string",  "example": "biz-001",               "required": true,  "notes": "FK to Businesses.id" },
+      "device_hash":  { "type": "string",  "example": "a1b2c3d4e5f6",          "required": true,  "notes": "Must be a verified local" },
+      "text":         { "type": "string",  "example": "Great atmosphere!",      "required": true },
+      "rating":       { "type": "number",  "example": 4,                        "required": false, "notes": "1-5 stars, optional" },
+      "timestamp":    { "type": "string",  "example": "2026-02-07T14:30:00Z",  "required": true }
+    }
+  },
+
+  "Events": {
+    "_description": "Business-posted events and specials (guardian-only)",
+    "_row_count": "Grows with usage",
+    "columns": {
+      "id":           { "type": "string",  "example": "evt-001",               "required": true },
+      "business_id":  { "type": "string",  "example": "biz-001",               "required": true,  "notes": "FK to Businesses.id" },
+      "device_hash":  { "type": "string",  "example": "x9y8z7w6v5u4",          "required": true,  "notes": "Must be a verified guardian for this business" },
+      "title":        { "type": "string",  "example": "Jazz Night",            "required": true },
+      "description":  { "type": "string",  "example": "Live jazz every Friday", "required": false },
+      "start_date":   { "type": "string",  "example": "2026-02-14",            "required": true },
+      "end_date":     { "type": "string",  "example": "2026-02-14",            "required": false, "notes": "Null = single-day event" },
+      "category_tag": { "type": "string",  "example": "music",                 "required": false },
+      "created_at":   { "type": "string",  "example": "2026-02-07T14:30:00Z",  "required": true }
+    }
+  },
+
+  "Guardians": {
+    "_description": "Device-to-business ownership tokens (non-expiring)",
+    "_row_count": "Grows as businesses onboard",
+    "columns": {
+      "device_hash":  { "type": "string",  "example": "x9y8z7w6v5u4",          "required": true },
+      "business_id":  { "type": "string",  "example": "biz-001",               "required": true,  "notes": "FK to Businesses.id" },
+      "token":        { "type": "string",  "example": "grd-a1b2c3d4",          "required": true,  "notes": "Non-expiring guardian token" },
+      "claimed_at":   { "type": "string",  "example": "2026-02-07T14:30:00Z",  "required": true }
+    }
+  },
+
+  "CommunityPosts": {
+    "_description": "Free-form Society Pages community posts (local-only)",
+    "_row_count": "Grows with usage",
+    "columns": {
+      "id":           { "type": "string",  "example": "post-001",              "required": true },
+      "device_hash":  { "type": "string",  "example": "a1b2c3d4e5f6",          "required": true,  "notes": "Must be a verified local" },
+      "text":         { "type": "string",  "example": "Anyone know a good plumber nearby?", "required": true },
+      "timestamp":    { "type": "string",  "example": "2026-02-07T14:30:00Z",  "required": true }
+    }
+  }
+}

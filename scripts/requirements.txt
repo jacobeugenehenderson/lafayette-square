@@ -1,0 +1,7 @@
+duckdb
+geopandas
+shapely
+pyproj
+rasterio
+laspy
+requests

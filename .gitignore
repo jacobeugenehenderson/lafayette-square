@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files (contain API keys)
+.env
+.env.local
+.env.*.local
+scripts/.env
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+._*
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp files
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Large reference assets (not needed for build)
+assets/botanical-reference-hires/
+
+# Raw data cache (regenerable via scripts/)
+scripts/raw/
+
+# Claude Code local settings
+.claude/

@@ -1,0 +1,137 @@
+{
+  "types": [
+    {
+      "id": "palmate",
+      "name": "Large Palmate",
+      "texture": "palmate.png",
+      "colors": ["#2d6828", "#1e5a1e", "#3a7530", "#2a5525", "#336628"],
+      "species": [
+        "Maple, Sugar", "Maple, Silver", "Maple, Red", "Maple, Red 'October Glory'",
+        "Maple, Norway", "Maple, Amur", "Maple, Hedge", "maple, Japanese",
+        "sycamore, American", "Sycamore American (restricted use)",
+        "Sweetgum (undesirable)"
+      ]
+    },
+    {
+      "id": "lobed",
+      "name": "Lobed (Oak)",
+      "texture": "lobed.png",
+      "colors": ["#2a5a22", "#1e4a1a", "#365e2a", "#2d5420", "#3a6828"],
+      "species": [
+        "Oak, Pin", "Oak, Pin (restricted use)", "Oak, Willow", "Oak, White",
+        "Oak, English", "Oak, Sawtooth", "Oak, Shingle", "Oak, Swamp White",
+        "Oak, Northern Red", "oak, northern red", "oak, bur", "oak, water",
+        "oak, shingle"
+      ]
+    },
+    {
+      "id": "compound",
+      "name": "Compound Pinnate",
+      "texture": "compound.png",
+      "colors": ["#2e5e28", "#24521e", "#3a6a2e", "#2a5622", "#30602a"],
+      "species": [
+        "Ash, Green", "Ash, Blue", "Walnut, Black",
+        "Tree of Heaven", "locust, black", "pecan"
+      ]
+    },
+    {
+      "id": "ovate_large",
+      "name": "Large Simple Ovate",
+      "texture": "ovate_large.png",
+      "colors": ["#2a5828", "#1e4e1e", "#346230", "#285225", "#2e5a2a"],
+      "species": [
+        "Linden, American", "Linden, Littleleaf", "Elm, American", "Elm, Siberian",
+        "Hackberry", "Zelkova, Japanese", "mulberry, red", "Blackgum",
+        "persimmon, common", "Chestnut, Chinese", "Amur corktree",
+        "magnolia, star", "magnolia, saucer", "filbert, American",
+        "smoketree, American"
+      ]
+    },
+    {
+      "id": "ovate_small",
+      "name": "Small Simple Ovate",
+      "texture": "ovate_small.png",
+      "colors": ["#3a7035", "#2e6430", "#48803a", "#357030", "#3e7535"],
+      "species": [
+        "Birch", "Dogwood, Flowering", "Dogwood, Kousa", "Pagoda Dogwood",
+        "serviceberry, downy", "downy serviceberry", "Serviceberry, Apple 'Autumn Brilliance'",
+        "Cherry, Yoshino", "Cherry, Japanese Flowering", "Pear, Callery",
+        "Crabapple, Flowering", "hawthorn, Washington", "Witch-hazel",
+        "possumhaw", "plum, cherry"
+      ]
+    },
+    {
+      "id": "heart",
+      "name": "Heart-Shaped",
+      "texture": "heart.png",
+      "colors": ["#358030", "#2a7028", "#40883a", "#307830", "#3a8235"],
+      "species": [
+        "Redbud", "Redbud, Eastern", "redbud, Oklahoma",
+        "Catalpa, Southern", "royal paulownia", "lilac, Japanese tree"
+      ]
+    },
+    {
+      "id": "tulip",
+      "name": "Tulip-Shaped",
+      "texture": "tulip.png",
+      "colors": ["#2e6028", "#246a22", "#3a7530", "#2e5e25", "#356a2e"],
+      "species": ["Tuliptree"]
+    },
+    {
+      "id": "fan",
+      "name": "Fan (Ginkgo)",
+      "texture": "fan.png",
+      "colors": ["#4a8a30", "#3e7e28", "#55953a", "#488835", "#509030"],
+      "species": ["Ginkgo"]
+    },
+    {
+      "id": "palmate_compound",
+      "name": "Palmate Compound",
+      "texture": "palmate_compound.png",
+      "colors": ["#2a5825", "#1e4e1a", "#34622c", "#285420", "#306028"],
+      "species": ["Buckeye, Ohio"]
+    },
+    {
+      "id": "long_needle",
+      "name": "Long Needles (Pine)",
+      "texture": "long_needle.png",
+      "colors": ["#1e4420", "#1a3a1a", "#244e28", "#1c4020", "#224a24"],
+      "species": [
+        "Pine, White", "Pine, Austrian", "Pine, Scotch", "pine, loblolly"
+      ]
+    },
+    {
+      "id": "short_needle",
+      "name": "Short Needles (Spruce)",
+      "texture": "short_needle.png",
+      "colors": ["#1a3e22", "#16361a", "#204826", "#1a3c1e", "#1e4222"],
+      "species": ["Spruce, Norway", "Holly, American"]
+    },
+    {
+      "id": "scale",
+      "name": "Scale-Like",
+      "texture": "scale.png",
+      "colors": ["#2a5a32", "#225030", "#326438", "#285a30", "#2e5e34"],
+      "species": [
+        "juniper, Chinese", "Cypress, Bald", "Baldcypress", "redcedar, eastern"
+      ]
+    },
+    {
+      "id": "narrow",
+      "name": "Narrow Elongated",
+      "texture": "narrow.png",
+      "colors": ["#3a7a30", "#4a8a38", "#348828", "#3e8035", "#468a30"],
+      "species": ["Willow, Weeping", "willow, corkscrew", "Cottonwood, Eastern"]
+    },
+    {
+      "id": "fine_compound",
+      "name": "Fine Compound",
+      "texture": "fine_compound.png",
+      "colors": ["#3a7a2a", "#308028", "#448832", "#387830", "#408230"],
+      "species": [
+        "Honeylocust", "honeylocust, thornless",
+        "goldenraintree", "Coffeetree, Kentucky"
+      ]
+    }
+  ]
+}

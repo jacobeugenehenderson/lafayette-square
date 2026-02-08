@@ -1,0 +1,27 @@
+{
+  "types": {
+    "Check-in": [
+      "bizSelect"
+    ],
+    "Claim": [
+      "bizSelect",
+      "claimSecret"
+    ]
+  },
+  "fields": {
+    "bizSelect": {
+      "label": "",
+      "type": "listbox",
+      "options": []
+    },
+    "claimSecret": {
+      "label": "Guardian Secret",
+      "type": "text",
+      "placeholder": "Enter the secret phrase from the physical QR"
+    }
+  },
+  "presets": {
+    "Check-in": [],
+    "Claim": []
+  }
+}

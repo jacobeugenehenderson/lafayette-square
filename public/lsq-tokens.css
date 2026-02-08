@@ -1,0 +1,50 @@
+/* ===================================================================
+   Lafayette Square — Design Tokens
+   Canonical source of truth for all LSQ UI custom properties.
+   Consumed by both the Vite app and standalone tools (e.g. CodeDesk).
+   =================================================================== */
+
+:root {
+  /* ── Accent ── */
+  --lsq-accent:        #4fd1c5;
+  --lsq-accent-hover:  #38b2ac;
+  --lsq-accent-soft:   rgba(79, 209, 197, 0.12);
+
+  /* ── Surfaces ── */
+  --lsq-bg:             #e7ecf5;
+  --lsq-surface:        #ffffff;
+  --lsq-surface-hover:  #f8fafc;
+  --lsq-surface-active: #eef2f7;
+
+  /* ── Text ── */
+  --lsq-text:       #020617;
+  --lsq-text-muted: #64748b;
+  --lsq-label:      #475569;
+
+  /* ── Borders ── */
+  --lsq-border:         rgba(15, 23, 42, 0.22);
+  --lsq-border-control: rgba(148, 163, 184, 0.85);
+
+  /* ── Shapes ── */
+  --lsq-radius:    10px;
+  --lsq-radius-lg: 22px;
+
+  /* ── Scene (3D environment) ── */
+  --lsq-scene-bg: #1a1a2e;
+
+  /* ── Grid cosmetics (page background) ── */
+  --lsq-grid-line:  rgba(0, 81, 255, 0.15);
+  --lsq-grid-glow:  rgba(79, 209, 197, 0.12);
+  --lsq-grid-wash:  rgba(79, 209, 197, 0.10);
+  --lsq-grid-major: 48px;
+  --lsq-grid-minor: 12px;
+
+  /* ── Category palette (mirrors src/tokens/categories.js) ── */
+  --lsq-cat-dining:    #f97316;
+  --lsq-cat-historic:  #f59e0b;
+  --lsq-cat-arts:      #8b5cf6;
+  --lsq-cat-parks:     #10b981;
+  --lsq-cat-shopping:  #f43f5e;
+  --lsq-cat-services:  #0ea5e9;
+  --lsq-cat-community: #64748b;
+}
