@@ -187,26 +187,6 @@
       "building_id": "bldg-0752"
     },
     {
-      "id": "lmk-019",
-      "name": "Kritique Designs",
-      "address": "Chouteau Avenue",
-      "phone": "+13142293002",
-      "website": "",
-      "category": "services",
-      "subcategory": "beauty",
-      "building_id": "bldg-0682"
-    },
-    {
-      "id": "lmk-020",
-      "name": "Salama Supermarket",
-      "address": "Chouteau Avenue",
-      "phone": "+13144367704",
-      "website": "",
-      "category": "shopping",
-      "subcategory": "boutiques",
-      "building_id": "bldg-0682"
-    },
-    {
       "id": "lmk-021",
       "name": "Winnie's Wine Bar",
       "address": "Chouteau Avenue",
@@ -217,36 +197,6 @@
       "building_id": "bldg-0082"
     },
     {
-      "id": "lmk-022",
-      "name": "Rhone Rum Bar",
-      "address": "Chouteau Avenue",
-      "phone": "",
-      "website": "",
-      "category": "dining",
-      "subcategory": "bars",
-      "building_id": "bldg-0083"
-    },
-    {
-      "id": "lmk-023",
-      "name": "Sigel Elementary School",
-      "address": "",
-      "phone": "",
-      "website": "",
-      "category": "community",
-      "subcategory": "schools",
-      "building_id": "bldg-1262"
-    },
-    {
-      "id": "lmk-024",
-      "name": "McKinley Classical Leadership Academy",
-      "address": "Russell Boulevard",
-      "phone": "",
-      "website": "",
-      "category": "community",
-      "subcategory": "schools",
-      "building_id": "bldg-1366"
-    },
-    {
       "id": "lmk-025",
       "name": "Malt House Lofts",
       "address": "Chouteau Avenue",
@@ -255,16 +205,6 @@
       "category": "historic",
       "subcategory": "landmarks",
       "building_id": "bldg-0086"
-    },
-    {
-      "id": "lmk-026",
-      "name": "Quoba Masjid",
-      "address": "Allen Avenue",
-      "phone": "",
-      "website": "",
-      "category": "community",
-      "subcategory": "churches",
-      "building_id": "bldg-1244"
     },
     {
       "id": "lmk-027",
@@ -340,16 +280,6 @@
       "building_id": "bldg-0050"
     },
     {
-      "id": "lmk-034",
-      "name": "Saint Marcus United Church of Christ",
-      "address": "Russell Boulevard",
-      "phone": "",
-      "website": "",
-      "category": "community",
-      "subcategory": "churches",
-      "building_id": "bldg-1361"
-    },
-    {
       "id": "lmk-035",
       "name": "Saint Mary's Assumption Catholic Church",
       "address": "Dolman Street",
@@ -370,16 +300,6 @@
       "building_id": "bldg-1115"
     },
     {
-      "id": "lmk-037",
-      "name": "Berea Presbyterian Church",
-      "address": "Russell Boulevard",
-      "phone": "",
-      "website": "",
-      "category": "community",
-      "subcategory": "churches",
-      "building_id": "bldg-1546"
-    },
-    {
       "id": "lmk-038",
       "name": "Seib House",
       "address": "Lafayette Avenue",
@@ -391,7 +311,7 @@
     },
     {
       "id": "lmk-039",
-      "name": "Rosé By Peno",
+      "name": "Ros\u00e9 By Peno",
       "address": "South 18th Street",
       "phone": "+13144058500",
       "website": "https://www.rosestl.com/",
@@ -410,14 +330,14 @@
       "building_id": "bldg-0720"
     },
     {
-      "id": "lmk-041",
-      "name": "Holy Trinity Serbian Eastern Orthodox Church",
-      "address": "",
+      "id": "lmk-022",
+      "name": "Rhone Rum Bar",
+      "address": "Chouteau Avenue",
       "phone": "",
       "website": "",
-      "category": "community",
-      "subcategory": "churches",
-      "building_id": "bldg-1295"
+      "category": "dining",
+      "subcategory": "bars",
+      "building_id": "bldg-0083"
     }
   ]
 }
