@@ -11,7 +11,7 @@ CENTER_LON = -90.2161
 BBOX = {
     'min_lat': 38.6090,
     'max_lat': 38.6250,
-    'min_lon': -90.2225,
+    'min_lon': -90.2210,  # W: Jefferson Ave
     'max_lon': -90.2070,
 }
 
