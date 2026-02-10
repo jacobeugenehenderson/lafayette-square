@@ -337,7 +337,7 @@ function Foundations() {
 // Real listings check their hours; simulated listings are always "open."
 const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 function _isWithinHours(hours, time) {
-  if (!hours) return true // no hours set → assume open
+  if (!hours) return false // no hours set → neon off
   const day = _DAYS[time.getDay()]
   const slot = hours[day]
   if (!slot || !slot.open || !slot.close) return false // closed that day
@@ -347,7 +347,7 @@ function _isWithinHours(hours, time) {
   return mins >= oh * 60 + om && mins < ch * 60 + cm
 }
 
-function NeonBand({ building, categoryHex }) {
+function NeonBand({ building, categoryHex, forceOn = false }) {
   const bandRef = useRef()
   const prevStateRef = useRef({ glowFactor: -1, isOpen: null })
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
@@ -396,7 +396,7 @@ function NeonBand({ building, categoryHex }) {
     const mat = bandRef.current.material
     const { sunAltitude } = getLightingPhase()
     const currentTime = useTimeOfDay.getState().currentTime
-    const isOpen = _isWithinHours(building.hours, currentTime)
+    const isOpen = forceOn || _isWithinHours(building.hours, currentTime)
 
     // Glow ramps from subtle daytime accent to full neon at dusk
     // sunAltitude ~0.2 = bright day, ~0.05 = dusk, < -0.12 = night
@@ -562,7 +562,7 @@ function Building({ building, categoryHex }) {
         onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
         onClick={(e) => { e.stopPropagation(); select(building.id) }}
       />
-      {showNeon && <NeonBand building={building} categoryHex={effectiveHex} />}
+      {showNeon && <NeonBand building={building} categoryHex={effectiveHex} forceOn={isSimOpen} />}
     </group>
   )
 }
