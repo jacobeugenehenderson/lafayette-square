@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Lafayette Square – Geometry Debug Overlay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #111; }
+  #map { width: 100vw; height: 100vh; }
+  .layer-controls {
+    position: fixed; top: 12px; right: 12px; z-index: 1000;
+    background: rgba(0,0,0,0.85); border-radius: 8px; padding: 12px 16px;
+    color: #eee; font-size: 13px; min-width: 220px;
+    backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .layer-controls h3 { margin: 0 0 8px; font-size: 14px; color: #aaa; font-weight: 500; }
+  .layer-controls label {
+    display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer;
+  }
+  .layer-controls label:hover { color: #fff; }
+  .layer-controls input[type=checkbox] { accent-color: #5af; }
+  .swatch { display: inline-block; width: 14px; height: 3px; border-radius: 1px; vertical-align: middle; }
+  .swatch-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; }
+  hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0; }
+  .stats { font-size: 11px; color: #888; padding: 4px 0; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="layer-controls">
+  <h3>Layers</h3>
+  <label><input type="checkbox" id="tog-blocks" checked><span class="swatch" style="background:#0af"></span> Block lots</label>
+  <label><input type="checkbox" id="tog-sidewalks" checked><span class="swatch" style="background:#f80"></span> Sidewalks</label>
+  <label><input type="checkbox" id="tog-streets" checked><span class="swatch" style="background:#ff0"></span> Street centerlines</label>
+  <label><input type="checkbox" id="tog-buildings" checked><span class="swatch" style="background:#f44"></span> Building footprints</label>
+  <label><input type="checkbox" id="tog-orphans"><span class="swatch" style="background:#f0f"></span> Orphan buildings</label>
+  <label><input type="checkbox" id="tog-lamps" checked><span class="swatch-dot" style="background:#ff0"></span> Street lamps</label>
+  <label><input type="checkbox" id="tog-border" checked><span class="swatch" style="background:#0f0"></span> Neighborhood border</label>
+  <label><input type="checkbox" id="tog-park" checked><span class="swatch" style="background:#8f8"></span> Park rectangle</label>
+  <label><input type="checkbox" id="tog-parkpaths" checked><span class="swatch" style="background:#6d6"></span> Park paths</label>
+  <label><input type="checkbox" id="tog-alleys" checked><span class="swatch" style="background:#c8f"></span> Alleys</label>
+  <label><input type="checkbox" id="tog-alleyfills" checked><span class="swatch" style="background:#0ff"></span> Alley fills</label>
+  <hr>
+  <label><input type="checkbox" id="tog-sat"> Satellite tiles</label>
+  <div class="stats" id="stats"></div>
+</div>
+
+<script>
+// ── Coordinate conversion (local XZ → lat/lon) ──────────────────────────────
+const CENTER_LAT = 38.6160;
+const CENTER_LON = -90.2161;
+const LON_TO_METERS = 86774;
+const LAT_TO_METERS = 111000;
+
+function localToLatLng(x, z) {
+  const lat = CENTER_LAT - z / LAT_TO_METERS;
+  const lon = CENTER_LON + x / LON_TO_METERS;
+  return [lat, lon];
+}
+
+function polyToLatLngs(pts) {
+  return pts.map(([x, z]) => localToLatLng(x, z));
+}
+
+// Point-in-polygon
+function pip(px, pz, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], zi = poly[i][1];
+    const xj = poly[j][0], zj = poly[j][1];
+    if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function isInsidePark(x, z) {
+  const angle = 9.2 * Math.PI / 180;
+  const c = Math.cos(angle), s = Math.sin(angle);
+  const rx = x * c + z * s;
+  const rz = -x * s + z * c;
+  return Math.abs(rx) < 185 && Math.abs(rz) < 185;
+}
+
+// ── Map setup ────────────────────────────────────────────────────────────────
+const map = L.map('map', {
+  center: [CENTER_LAT, CENTER_LON],
+  zoom: 16,
+  zoomControl: true,
+});
+
+const osmTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+const satTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 20,
+  attribution: '&copy; Esri'
+});
+
+// ── Layer groups ─────────────────────────────────────────────────────────────
+const layers = {
+  blocks: L.layerGroup().addTo(map),
+  sidewalks: L.layerGroup().addTo(map),
+  streets: L.layerGroup().addTo(map),
+  buildings: L.layerGroup().addTo(map),
+  orphans: L.layerGroup(),
+  lamps: L.layerGroup().addTo(map),
+  border: L.layerGroup().addTo(map),
+  park: L.layerGroup().addTo(map),
+  parkpaths: L.layerGroup().addTo(map),
+  alleys: L.layerGroup().addTo(map),
+  alleyfills: L.layerGroup().addTo(map),
+};
+
+const ALLEY_NAMES = new Set(['Mississippi Alley', 'Hickory Lane', 'Rutger Lane']);
+
+// ── Load data and render ─────────────────────────────────────────────────────
+async function loadJSON(path) {
+  const res = await fetch(path);
+  return res.json();
+}
+
+async function init() {
+  const [blockData, buildingData, streetData, lampData] = await Promise.all([
+    loadJSON('src/data/block_shapes.json'),
+    loadJSON('src/data/buildings.json'),
+    loadJSON('src/data/streets.json'),
+    loadJSON('src/data/street_lamps.json'),
+  ]);
+
+  let statText = '';
+
+  // Block lots (skip park block)
+  for (const block of blockData.blocks) {
+    if (block.isPark) continue;
+    const latlngs = polyToLatLngs(block.lot);
+    const isTiny = block.area < 2000;
+    L.polygon(latlngs, {
+      color: isTiny ? '#f00' : '#0af', weight: isTiny ? 2.5 : 1.5,
+      fillColor: isTiny ? '#f00' : '#0af', fillOpacity: isTiny ? 0.2 : 0.08,
+    }).bindTooltip(block.id + ' (' + block.area + 'm²)' + (isTiny ? ' TINY' : '')).addTo(layers.blocks);
+  }
+
+  // Sidewalk rings (skip park block)
+  for (const block of blockData.blocks) {
+    if (block.isPark || !block.sidewalk) continue;
+    const outer = polyToLatLngs(block.sidewalk);
+    const inner = polyToLatLngs([...block.lot].reverse());
+    L.polygon([outer, inner], {
+      color: '#f80', weight: 1, fillColor: '#f80', fillOpacity: 0.12, dashArray: '4 3',
+    }).addTo(layers.sidewalks);
+  }
+
+  // Street centerlines
+  for (const street of blockData.streets) {
+    const latlngs = polyToLatLngs(street.points);
+    const isAlley = ALLEY_NAMES.has(street.name);
+    const isMajor = street.type === 'primary' || street.type === 'secondary';
+    if (isAlley) {
+      L.polyline(latlngs, {
+        color: '#c8f', weight: 3, opacity: 0.9,
+      }).bindTooltip(street.name + ' (ALLEY, ' + street.width + 'm)').addTo(layers.alleys);
+    } else {
+      L.polyline(latlngs, {
+        color: isMajor ? '#ff0' : '#cc0', weight: isMajor ? 2.5 : 1.5, opacity: 0.8,
+      }).bindTooltip(street.name + ' (' + street.type + ', ' + street.width + 'm)').addTo(layers.streets);
+    }
+  }
+
+  // Alley fill polygons
+  if (blockData.alleyFills) {
+    for (const af of blockData.alleyFills) {
+      const latlngs = polyToLatLngs(af.polygon);
+      L.polygon(latlngs, {
+        color: '#0ff', weight: 2, fillColor: '#0ff', fillOpacity: 0.2,
+      }).bindTooltip(af.name + ' (alley fill)').addTo(layers.alleyfills);
+    }
+  }
+
+  // Identify orphan buildings (centroid outside all blocks and not in park)
+  function bldgCenter(b) {
+    let sx = 0, sz = 0;
+    for (const [x, z] of b.footprint) { sx += x; sz += z; }
+    return [sx / b.footprint.length, sz / b.footprint.length];
+  }
+
+  let orphanCount = 0, inBlockCount = 0, spillCount = 0;
+  const orphanSet = new Set();
+
+  for (const bldg of buildingData.buildings) {
+    if (!bldg.footprint || bldg.footprint.length < 3) continue;
+    const [cx, cz] = bldgCenter(bldg);
+    let inBlock = false;
+    for (const blk of blockData.blocks) {
+      if (blk.isPark) continue;
+      if (pip(cx, cz, blk.lot)) { inBlock = true; break; }
+    }
+    if (!inBlock && !isInsidePark(cx, cz)) {
+      orphanSet.add(bldg.id);
+      orphanCount++;
+    } else if (inBlock) {
+      inBlockCount++;
+    }
+  }
+
+  // Building footprints (color orphans differently)
+  for (const bldg of buildingData.buildings) {
+    if (!bldg.footprint || bldg.footprint.length < 3) continue;
+    const isOrphan = orphanSet.has(bldg.id);
+    const latlngs = polyToLatLngs(bldg.footprint);
+    if (isOrphan) {
+      L.polygon(latlngs, {
+        color: '#f0f', weight: 2, fillColor: '#f0f', fillOpacity: 0.25,
+      }).bindTooltip(bldg.id + (bldg.address ? ' – ' + bldg.address : '') + ' [ORPHAN]').addTo(layers.orphans);
+    }
+    L.polygon(latlngs, {
+      color: '#f44', weight: 1, fillColor: '#f44', fillOpacity: 0.1,
+    }).bindTooltip(bldg.id + (bldg.address ? ' – ' + bldg.address : '')).addTo(layers.buildings);
+  }
+
+  // Street lamps
+  let lampsInPark = 0, lampsInBlocks = 0, lampsOnStreets = 0;
+  for (const lamp of lampData.lamps) {
+    const ll = localToLatLng(lamp.x, lamp.z);
+    const inP = isInsidePark(lamp.x, lamp.z);
+    let inBlock = false;
+    for (const blk of blockData.blocks) {
+      if (blk.isPark) continue;
+      if (pip(lamp.x, lamp.z, blk.lot)) { inBlock = true; break; }
+    }
+
+    let color = '#ff0'; // on street (default)
+    if (inP) { color = '#0f0'; lampsInPark++; }
+    else if (inBlock) { color = '#f80'; lampsInBlocks++; }
+    else { lampsOnStreets++; }
+
+    L.circleMarker(ll, {
+      radius: 3, color: color, fillColor: color, fillOpacity: 0.8, weight: 1,
+    }).bindTooltip('Lamp (' + lamp.x.toFixed(1) + ', ' + lamp.z.toFixed(1) + ')' +
+      (inP ? ' [PARK]' : inBlock ? ' [IN BLOCK]' : ' [STREET]')
+    ).addTo(layers.lamps);
+  }
+
+  // Park paths (unnamed streets inside park)
+  for (const street of streetData.streets) {
+    if (street.name) continue;
+    if (!street.points || street.points.length < 2) continue;
+    const mid = street.points[Math.floor(street.points.length / 2)];
+    if (!isInsidePark(mid[0], mid[1])) continue;
+    const latlngs = polyToLatLngs(street.points);
+    L.polyline(latlngs, {
+      color: '#6d6', weight: 2, opacity: 0.7, dashArray: '6 4',
+    }).bindTooltip('Park path (' + street.type + ')').addTo(layers.parkpaths);
+  }
+
+  // Neighborhood border
+  if (blockData.border) {
+    const latlngs = polyToLatLngs(blockData.border);
+    L.polygon(latlngs, {
+      color: '#0f0', weight: 2, fillOpacity: 0, dashArray: '8 4',
+    }).addTo(layers.border);
+  }
+
+  // Park block from data (if present)
+  const parkBlock = blockData.blocks.find(b => b.isPark);
+  if (parkBlock) {
+    const latlngs = polyToLatLngs(parkBlock.lot);
+    L.polygon(latlngs, {
+      color: '#8f8', weight: 2, fillColor: '#8f8', fillOpacity: 0.08, dashArray: '6 4',
+    }).addTo(layers.park);
+  } else {
+    // Fallback: computed park rectangle
+    const PARK_HALF = 185;
+    const angle = -9.2 * Math.PI / 180;
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    const parkCorners = [
+      [-PARK_HALF, -PARK_HALF], [PARK_HALF, -PARK_HALF],
+      [PARK_HALF, PARK_HALF], [-PARK_HALF, PARK_HALF],
+    ].map(([x, z]) => {
+      const rx = x * cos - z * sin;
+      const rz = x * sin + z * cos;
+      return localToLatLng(rx, rz);
+    });
+    L.polygon(parkCorners, {
+      color: '#8f8', weight: 2, fillColor: '#8f8', fillOpacity: 0.08, dashArray: '6 4',
+    }).addTo(layers.park);
+  }
+
+  // Stats
+  const cityBlocks = blockData.blocks.filter(b => !b.isPark);
+  statText += cityBlocks.length + ' blocks, ' + lampData.lamps.length + ' lamps\n';
+  statText += orphanCount + ' orphan bldgs, ' + inBlockCount + ' in-block\n';
+  statText += 'Lamps: ' + lampsOnStreets + ' street, ' + lampsInBlocks + ' in-block, ' + lampsInPark + ' park';
+  if (blockData.alleyFills) statText += '\n' + blockData.alleyFills.length + ' alley fills';
+  document.getElementById('stats').innerText = statText;
+}
+
+init();
+
+// ── Toggle controls ──────────────────────────────────────────────────────────
+const toggleMap = {
+  'tog-blocks': 'blocks',
+  'tog-sidewalks': 'sidewalks',
+  'tog-streets': 'streets',
+  'tog-buildings': 'buildings',
+  'tog-orphans': 'orphans',
+  'tog-lamps': 'lamps',
+  'tog-border': 'border',
+  'tog-park': 'park',
+  'tog-parkpaths': 'parkpaths',
+  'tog-alleys': 'alleys',
+  'tog-alleyfills': 'alleyfills',
+};
+
+for (const [id, key] of Object.entries(toggleMap)) {
+  document.getElementById(id).addEventListener('change', function() {
+    if (this.checked) map.addLayer(layers[key]);
+    else map.removeLayer(layers[key]);
+  });
+}
+
+document.getElementById('tog-sat').addEventListener('change', function() {
+  if (this.checked) { map.removeLayer(osmTiles); satTiles.addTo(map); }
+  else { map.removeLayer(satTiles); osmTiles.addTo(map); }
+});
+</script>
+</body>
+</html>
