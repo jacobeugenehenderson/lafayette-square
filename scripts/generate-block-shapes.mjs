@@ -37,6 +37,16 @@ const PARK_SIDEWALK_WIDTH = 4.0   // wide sidewalk around park perimeter
 
 const ALLEY_NAMES = new Set(['Mississippi Alley', 'Hickory Lane', 'Rutger Lane'])
 
+// Haynes Memorial Highway ramp — southern boundary of the neighborhood
+const HAYNES_SLOPE = 0.3465
+const HAYNES_INTERCEPT = 349.1   // 354.1 - 5m buffer north of centerline
+const HAYNES_WEST_X = -142.3
+const HAYNES_FLAT_Z = 300.0
+function haynesBoundaryZ(x) {
+  if (x < HAYNES_WEST_X) return HAYNES_FLAT_Z
+  return HAYNES_SLOPE * x + HAYNES_INTERCEPT
+}
+
 // Southern border clip rect
 const CLIP_RECT = { xMin: -600, xMax: 900, zMin: -900, zMax: 360 }
 
@@ -74,45 +84,308 @@ function getROW(name, type) {
 // ── Load streets ────────────────────────────────────────────────────────────
 const streetsRaw = JSON.parse(readFileSync('src/data/streets.json', 'utf-8'))
 
-// ── Join same-name street segments into continuous polylines ─────────────────
-function joinStreetSegments(streets) {
+// ── Graph-based street segment joiner ─────────────────────────────────────────
+// Replaces deduplicateReverseSegments() + joinStreetSegments() with a robust
+// 7-phase algorithm: graph build → dedup multi-edges → connected components →
+// chain walk → bridge gaps → absorb stubs → orient consistently.
+function joinStreetSegmentsGraph(streets) {
+  const SNAP = 15          // endpoint snap radius (meters)
+  const BRIDGE_DIST = 50   // max gap to bridge between components
+  const BRIDGE_ANGLE = 45  // max bearing difference (degrees) to bridge
+  const STUB_MIN = 15      // discard components shorter than this
+
+  // Group segments by street name
   const byName = new Map()
   for (const s of streets) {
     if (!s.name || !s.points || s.points.length < 2) continue
     if (!byName.has(s.name)) byName.set(s.name, [])
-    byName.get(s.name).push({ points: s.points.map(p => [...p]), type: s.type, name: s.name })
+    byName.get(s.name).push({ points: s.points.map(p => [...p]), type: s.type })
   }
 
-  const SNAP = 8
   const results = []
+  let totalRaw = 0, totalDeduped = 0, totalBridged = 0, totalStubs = 0
 
   for (const [name, segs] of byName) {
-    const used = new Set()
+    totalRaw += segs.length
+
+    // ── Phase 1: Build node-edge graph with union-find snapping ──────────
+    // Collect all endpoints
+    const allEndpoints = [] // [{x, z, segIdx, end: 'start'|'end'}]
     for (let i = 0; i < segs.length; i++) {
-      if (used.has(i)) continue
-      used.add(i)
-      let chain = [...segs[i].points]
-      let changed = true
-      while (changed) {
-        changed = false
-        for (let j = 0; j < segs.length; j++) {
-          if (used.has(j)) continue
-          const seg = segs[j].points
-          const headC = chain[0], tailC = chain[chain.length - 1]
-          const headS = seg[0], tailS = seg[seg.length - 1]
-          const dTH = Math.hypot(tailC[0] - headS[0], tailC[1] - headS[1])
-          const dTT = Math.hypot(tailC[0] - tailS[0], tailC[1] - tailS[1])
-          const dHT = Math.hypot(headC[0] - tailS[0], headC[1] - tailS[1])
-          const dHH = Math.hypot(headC[0] - headS[0], headC[1] - headS[1])
-          if      (dTH < SNAP) { chain = [...chain, ...seg.slice(1)];                used.add(j); changed = true }
-          else if (dTT < SNAP) { chain = [...chain, ...[...seg].reverse().slice(1)]; used.add(j); changed = true }
-          else if (dHT < SNAP) { chain = [...seg, ...chain.slice(1)];                used.add(j); changed = true }
-          else if (dHH < SNAP) { chain = [...[...seg].reverse(), ...chain.slice(1)]; used.add(j); changed = true }
+      const pts = segs[i].points
+      allEndpoints.push({ x: pts[0][0], z: pts[0][1], segIdx: i, end: 'start' })
+      allEndpoints.push({ x: pts[pts.length - 1][0], z: pts[pts.length - 1][1], segIdx: i, end: 'end' })
+    }
+
+    // Union-find for snapping
+    const parent = allEndpoints.map((_, i) => i)
+    function find(a) {
+      while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a] }
+      return a
+    }
+    function unite(a, b) { parent[find(a)] = find(b) }
+
+    for (let i = 0; i < allEndpoints.length; i++) {
+      for (let j = i + 1; j < allEndpoints.length; j++) {
+        const d = Math.hypot(allEndpoints[i].x - allEndpoints[j].x,
+                             allEndpoints[i].z - allEndpoints[j].z)
+        if (d < SNAP) unite(i, j)
+      }
+    }
+
+    // Compute node IDs (canonical representative of each cluster)
+    // and average position per node
+    const nodePositions = new Map() // nodeId → {sx, sz, count}
+    const endpointNode = [] // index parallel to allEndpoints → nodeId
+    for (let i = 0; i < allEndpoints.length; i++) {
+      const nodeId = find(i)
+      endpointNode.push(nodeId)
+      if (!nodePositions.has(nodeId)) nodePositions.set(nodeId, { sx: 0, sz: 0, count: 0 })
+      const np = nodePositions.get(nodeId)
+      np.sx += allEndpoints[i].x; np.sz += allEndpoints[i].z; np.count++
+    }
+
+    // Build edges: each segment → edge from startNode to endNode
+    const edges = [] // {startNode, endNode, points, segIdx}
+    for (let i = 0; i < segs.length; i++) {
+      const startEpIdx = i * 2
+      const endEpIdx = i * 2 + 1
+      const startNode = endpointNode[startEpIdx]
+      const endNode = endpointNode[endEpIdx]
+      edges.push({ startNode, endNode, points: segs[i].points, segIdx: i })
+    }
+
+    // ── Phase 2: Deduplicate multi-edges ─────────────────────────────────
+    // For node pairs with multiple edges, keep the one closest to origin
+    const edgePairKey = (a, b) => `${Math.min(a, b)}-${Math.max(a, b)}`
+    const edgesByPair = new Map()
+    for (let i = 0; i < edges.length; i++) {
+      const key = edgePairKey(edges[i].startNode, edges[i].endNode)
+      if (!edgesByPair.has(key)) edgesByPair.set(key, [])
+      edgesByPair.get(key).push(i)
+    }
+
+    const removeEdges = new Set()
+    for (const [, indices] of edgesByPair) {
+      if (indices.length <= 1) continue
+      // Keep edge whose midpoint is closest to origin (inner lane)
+      let bestIdx = indices[0], bestDist = Infinity
+      for (const idx of indices) {
+        const pts = edges[idx].points
+        const mid = Math.floor(pts.length / 2)
+        const d = Math.hypot(pts[mid][0], pts[mid][1])
+        if (d < bestDist) { bestDist = d; bestIdx = idx }
+      }
+      for (const idx of indices) {
+        if (idx !== bestIdx) removeEdges.add(idx)
+      }
+    }
+
+    const liveEdges = edges.filter((_, i) => !removeEdges.has(i))
+    totalDeduped += removeEdges.size
+
+    // ── Phase 3: Connected components (BFS) ──────────────────────────────
+    // Build adjacency list from live edges
+    const adj = new Map() // nodeId → [{edgeIdx, neighbor}]
+    for (let i = 0; i < liveEdges.length; i++) {
+      const e = liveEdges[i]
+      if (!adj.has(e.startNode)) adj.set(e.startNode, [])
+      if (!adj.has(e.endNode)) adj.set(e.endNode, [])
+      adj.get(e.startNode).push({ edgeIdx: i, neighbor: e.endNode })
+      adj.get(e.endNode).push({ edgeIdx: i, neighbor: e.startNode })
+    }
+
+    const visited = new Set()
+    const components = [] // each: [{edgeIdx}]
+
+    for (const startNode of adj.keys()) {
+      if (visited.has(startNode)) continue
+      visited.add(startNode)
+      const compNodes = [startNode]
+      const compEdgeIndices = new Set()
+      const queue = [startNode]
+      while (queue.length > 0) {
+        const cur = queue.shift()
+        for (const { edgeIdx, neighbor } of (adj.get(cur) || [])) {
+          compEdgeIndices.add(edgeIdx)
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor)
+            compNodes.push(neighbor)
+            queue.push(neighbor)
+          }
         }
       }
-      results.push({ points: chain, type: segs[i].type, name })
+      components.push({ nodes: compNodes, edgeIndices: [...compEdgeIndices] })
+    }
+
+    // ── Phase 4: Longest path per component (chain walk) ─────────────────
+    function chainWalk(comp) {
+      if (comp.edgeIndices.length === 0) return null
+
+      // Build local adjacency
+      const localAdj = new Map()
+      for (const ei of comp.edgeIndices) {
+        const e = liveEdges[ei]
+        if (!localAdj.has(e.startNode)) localAdj.set(e.startNode, [])
+        if (!localAdj.has(e.endNode)) localAdj.set(e.endNode, [])
+        localAdj.get(e.startNode).push({ edgeIdx: ei, neighbor: e.endNode })
+        localAdj.get(e.endNode).push({ edgeIdx: ei, neighbor: e.startNode })
+      }
+
+      // Find degree-1 nodes (chain endpoints)
+      let startNode = null
+      for (const [node, neighbors] of localAdj) {
+        if (neighbors.length === 1) { startNode = node; break }
+      }
+      // Cycle: pick arbitrary start
+      if (startNode === null) startNode = comp.nodes[0]
+
+      // Walk the chain, concatenating point arrays
+      const usedEdges = new Set()
+      let currentNode = startNode
+      let polyline = []
+
+      while (true) {
+        const neighbors = localAdj.get(currentNode) || []
+        let nextEdge = null
+        for (const { edgeIdx, neighbor } of neighbors) {
+          if (!usedEdges.has(edgeIdx)) {
+            nextEdge = { edgeIdx, neighbor }
+            break
+          }
+        }
+        if (!nextEdge) break
+
+        usedEdges.add(nextEdge.edgeIdx)
+        const e = liveEdges[nextEdge.edgeIdx]
+
+        // Determine if we walk this edge forward or backward
+        let edgePts
+        if (e.startNode === currentNode) {
+          edgePts = e.points
+        } else {
+          edgePts = [...e.points].reverse()
+        }
+
+        if (polyline.length === 0) {
+          polyline = [...edgePts]
+        } else {
+          polyline = [...polyline, ...edgePts.slice(1)]
+        }
+
+        currentNode = nextEdge.neighbor
+      }
+
+      return polyline
+    }
+
+    const polylines = []
+    for (const comp of components) {
+      const pl = chainWalk(comp)
+      if (pl && pl.length >= 2) polylines.push(pl)
+    }
+
+    // ── Phase 5: Bridge nearby components ────────────────────────────────
+    function polylineLength(pts) {
+      let len = 0
+      for (let i = 1; i < pts.length; i++) {
+        len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
+      }
+      return len
+    }
+
+    function bearing(p1, p2) {
+      return Math.atan2(p2[0] - p1[0], p2[1] - p1[1])
+    }
+
+    function bearingDiffDeg(a, b) {
+      let diff = Math.abs(a - b) * 180 / Math.PI
+      if (diff > 180) diff = 360 - diff
+      return diff
+    }
+
+    // Iteratively try to bridge components
+    let merged = true
+    while (merged && polylines.length > 1) {
+      merged = false
+      let bestI = -1, bestJ = -1, bestDist = Infinity, bestFlipI = false, bestFlipJ = false
+
+      for (let i = 0; i < polylines.length; i++) {
+        for (let j = i + 1; j < polylines.length; j++) {
+          const pi = polylines[i], pj = polylines[j]
+          // Try all 4 endpoint pairings
+          const pairs = [
+            { pi_end: pi.length - 1, pj_end: 0, flipI: false, flipJ: false,
+              bearI: bearing(pi[pi.length - 2], pi[pi.length - 1]),
+              bearJ: bearing(pj[0], pj[1]) },
+            { pi_end: pi.length - 1, pj_end: pj.length - 1, flipI: false, flipJ: true,
+              bearI: bearing(pi[pi.length - 2], pi[pi.length - 1]),
+              bearJ: bearing(pj[pj.length - 1], pj[pj.length - 2]) },
+            { pi_end: 0, pj_end: 0, flipI: true, flipJ: false,
+              bearI: bearing(pi[1], pi[0]),
+              bearJ: bearing(pj[0], pj[1]) },
+            { pi_end: 0, pj_end: pj.length - 1, flipI: true, flipJ: true,
+              bearI: bearing(pi[1], pi[0]),
+              bearJ: bearing(pj[pj.length - 1], pj[pj.length - 2]) },
+          ]
+          for (const p of pairs) {
+            const d = Math.hypot(pi[p.pi_end][0] - pj[p.pj_end][0],
+                                 pi[p.pi_end][1] - pj[p.pj_end][1])
+            if (d < BRIDGE_DIST && bearingDiffDeg(p.bearI, p.bearJ) < BRIDGE_ANGLE && d < bestDist) {
+              bestDist = d; bestI = i; bestJ = j; bestFlipI = p.flipI; bestFlipJ = p.flipJ
+            }
+          }
+        }
+      }
+
+      if (bestI >= 0) {
+        let pi = polylines[bestI], pj = polylines[bestJ]
+        if (bestFlipI) pi = [...pi].reverse()
+        if (bestFlipJ) pj = [...pj].reverse()
+        // Concatenate: pi tail → pj head
+        const bridged = [...pi, ...pj]
+        polylines.splice(bestJ, 1)
+        polylines.splice(bestI, 1)
+        polylines.push(bridged)
+        merged = true
+        totalBridged++
+      }
+    }
+
+    // ── Phase 6: Absorb tiny stubs ───────────────────────────────────────
+    const filtered = polylines.filter(pl => {
+      if (polylineLength(pl) < STUB_MIN) { totalStubs++; return false }
+      return true
+    })
+
+    // ── Phase 7: Orient consistently ─────────────────────────────────────
+    for (const pl of filtered) {
+      const dx = pl[pl.length - 1][0] - pl[0][0]
+      const dz = pl[pl.length - 1][1] - pl[0][1]
+      if (Math.abs(dx) >= Math.abs(dz)) {
+        // E-W street: ensure W→E (increasing X)
+        if (dx < 0) pl.reverse()
+      } else {
+        // N-S street: ensure N→S (increasing Z)
+        if (dz < 0) pl.reverse()
+      }
+      results.push({ points: pl, type: segs[0].type, name })
     }
   }
+
+  console.log(`  Graph join: ${totalRaw} raw segments → ${results.length} polylines`)
+  console.log(`    Deduped ${totalDeduped} multi-edges, bridged ${totalBridged} gaps, dropped ${totalStubs} stubs`)
+
+  // Per-street summary
+  const countByName = new Map()
+  for (const r of results) {
+    countByName.set(r.name, (countByName.get(r.name) || 0) + 1)
+  }
+  const multiSegs = [...countByName.entries()].filter(([, c]) => c > 1)
+  if (multiSegs.length > 0) {
+    console.log(`    Multi-segment streets: ${multiSegs.map(([n, c]) => `${n}=${c}`).join(', ')}`)
+  }
+
   return results
 }
 
@@ -319,9 +592,8 @@ function extractOuters(node) {
 }
 
 // ── Main pipeline ───────────────────────────────────────────────────────────
-console.log('Joining street segments...')
-const joined = joinStreetSegments(streetsRaw.streets)
-console.log(`  ${joined.length} joined polylines from ${streetsRaw.streets.filter(s => s.name).length} named segments`)
+console.log('Joining street segments (graph pathfinder)...')
+const joined = joinStreetSegmentsGraph(streetsRaw.streets)
 
 const namedStreets = joined.filter(s => {
   if (!s.name) return false
@@ -427,11 +699,13 @@ const rawHoles = extractHoles(tree)
 console.log(`  ${rawHoles.length} raw holes (potential blocks)`)
 
 // Filter: remove park overlaps and tiny blocks
+const TRUMAN_X = 620  // eastern boundary — core stops at Truman Parkway
 const filtered = rawHoles.filter(hole => {
   const area = polygonArea(hole)
   if (area < MIN_BLOCK_AREA) return false
   const [cx, cz] = centroid(hole)
   if (isInsidePark(cx, cz)) return false
+  if (cx > TRUMAN_X) return false  // east of Truman — outside core
   return true
 })
 console.log(`  ${filtered.length} blocks after filtering (min area ${MIN_BLOCK_AREA}m², park exclusion)`)
@@ -455,6 +729,9 @@ console.log(`  ${roundedBlocks.length} blocks after rounding`)
 
 // ── Edge blocks for orphan buildings ──────────────────────────────────────
 // Buildings not covered by interior blocks get blocks defined by named streets.
+// Edge blocks get lot fills but NO sidewalk rings (diagonal artifacts from
+// non-axis-aligned street buffers). Street flanking sidewalks provide the surface.
+const edgeBlockIndices = new Set()
 console.log('Generating edge blocks for orphan buildings...')
 const buildingsRaw = JSON.parse(readFileSync('src/data/buildings.json', 'utf-8'))
 
@@ -484,26 +761,32 @@ for (const bldg of buildingsRaw.buildings) {
   }
   if (!inBlock) orphans.push({ id: bldg.id, x: cx, z: cz })
 }
-console.log(`  ${orphans.length} orphan buildings`)
+console.log(`  ${orphans.length} orphan buildings total`)
 
-if (orphans.length > 0) {
+// Only keep south-side orphans (between core and Haynes highway)
+const southOrphans = orphans.filter(o =>
+  o.z > 150 && o.z < haynesBoundaryZ(o.x) && o.x > -200 && o.x < 530
+)
+console.log(`  ${southOrphans.length} south-side orphans (dropped ${orphans.length - southOrphans.length} W/N/E)`)
+
+if (southOrphans.length > 0) {
   // Spatial clustering: group nearby orphans (generous 120m radius)
   const CLUSTER_RADIUS = 120
   const clusters = []
   const visited = new Set()
 
-  for (let i = 0; i < orphans.length; i++) {
+  for (let i = 0; i < southOrphans.length; i++) {
     if (visited.has(i)) continue
-    const cluster = [orphans[i]]
+    const cluster = [southOrphans[i]]
     visited.add(i)
     let changed = true
     while (changed) {
       changed = false
-      for (let j = 0; j < orphans.length; j++) {
+      for (let j = 0; j < southOrphans.length; j++) {
         if (visited.has(j)) continue
         for (const c of cluster) {
-          if (Math.hypot(orphans[j].x - c.x, orphans[j].z - c.z) < CLUSTER_RADIUS) {
-            cluster.push(orphans[j])
+          if (Math.hypot(southOrphans[j].x - c.x, southOrphans[j].z - c.z) < CLUSTER_RADIUS) {
+            cluster.push(southOrphans[j])
             visited.add(j)
             changed = true
             break
@@ -543,7 +826,20 @@ if (orphans.length > 0) {
   let edgeBlockCount = 0
   const OPEN_PAD = 30 // generous padding on open sides
 
-  // Helper: create edge block from a rectangle, subtract streets, dedup, add
+  // Highway boundary clip polygon (everything north of the ramp).
+  // Polyline follows the Haynes boundary, closed with far-north corners.
+  const hwClipPoints = []
+  for (let x = -500; x <= 800; x += 20) {
+    hwClipPoints.push([x, haynesBoundaryZ(x)])
+  }
+  hwClipPoints.push([800, haynesBoundaryZ(800)])
+  const hwClipPoly = [
+    [-500, -900], [800, -900],  // far north corners
+    ...hwClipPoints.reverse(),  // along highway from east to west
+  ].map(([x, z]) => toInt(x, z))
+  if (Clipper.Area(hwClipPoly) < 0) hwClipPoly.reverse()
+
+  // Helper: create edge block from a rectangle, subtract streets, clip to highway, dedup, add
   function tryAddEdgeBlock(xMin, zMin, xMax, zMax) {
     if (xMax - xMin < 10 || zMax - zMin < 10) return 0
     const blockPoly = [[xMin, zMin], [xMax, zMin], [xMax, zMax], [xMin, zMax]]
@@ -551,7 +847,14 @@ if (orphans.length > 0) {
 
     const blockClipper = blockPoly.map(([x, z]) => toInt(x, z))
     if (Clipper.Area(blockClipper) < 0) blockClipper.reverse()
-    const clipped = clipperDifference([blockClipper], streetUnionFlat)
+
+    // Subtract streets, then clip to highway boundary
+    const afterStreets = clipperDifference([blockClipper], streetUnionFlat)
+    const clipped = []
+    for (const poly of afterStreets) {
+      const trimmed = clipperIntersection([poly], [hwClipPoly])
+      clipped.push(...trimmed)
+    }
 
     let added = 0
     for (const poly of clipped) {
@@ -571,6 +874,7 @@ if (orphans.length > 0) {
       }
       if (isDup) continue
       roundedBlocks.push(newLot)
+      edgeBlockIndices.add(roundedBlocks.length - 1)
       added++
     }
     return added
@@ -599,8 +903,9 @@ if (orphans.length > 0) {
     }
 
     let zMin = northSt ? northSt.avgZ + northSt.halfROW : cMinZ - OPEN_PAD
-    let zMax = southSt ? southSt.avgZ - southSt.halfROW : cMaxZ + OPEN_PAD
-    zMax = Math.min(zMax, CLIP_RECT.zMax - 5)
+    const cMidX = (cMinX + cMaxX) / 2
+    let zMax = southSt ? southSt.avgZ - southSt.halfROW : haynesBoundaryZ(cMidX)
+    zMax = Math.min(zMax, haynesBoundaryZ(cMidX))
 
     if (zMax - zMin < 10) continue
 
@@ -647,14 +952,20 @@ if (orphans.length > 0) {
 console.log('Computing sidewalk rings...')
 const blocks = []
 let blockId = 0
-for (const lot of roundedBlocks) {
+for (let i = 0; i < roundedBlocks.length; i++) {
+  const lot = roundedBlocks[i]
+  const isEdge = edgeBlockIndices.has(i)
   const clipperLot = lot.map(([x, z]) => toInt(x, z))
   if (Clipper.Area(clipperLot) < 0) clipperLot.reverse()
 
-  const sidewalkPoly = offsetPolygon(clipperLot, SIDEWALK_WIDTH)
-  if (!sidewalkPoly || sidewalkPoly.length < 3) continue
+  // Skip sidewalk rings for edge blocks (diagonal artifacts from street buffers)
+  let sidewalk = null
+  if (!isEdge) {
+    const sidewalkPoly = offsetPolygon(clipperLot, SIDEWALK_WIDTH)
+    if (!sidewalkPoly || sidewalkPoly.length < 3) continue
+    sidewalk = sidewalkPoly.map(fromInt)
+  }
 
-  const sidewalk = sidewalkPoly.map(fromInt)
   const [cx, cz] = centroid(lot)
   const area = polygonArea(lot)
 
@@ -662,7 +973,7 @@ for (const lot of roundedBlocks) {
   blocks.push({
     id: `blk-${String(blockId++).padStart(4, '0')}`,
     lot: lot.map(([x, z]) => [round2(x), round2(z)]),
-    sidewalk: sidewalk.map(([x, z]) => [round2(x), round2(z)]),
+    sidewalk: sidewalk ? sidewalk.map(([x, z]) => [round2(x), round2(z)]) : null,
     centroid: [round2(cx), round2(cz)],
     area: Math.round(area),
   })
@@ -719,7 +1030,7 @@ const output = {
 
 console.log(`\nGenerated ${blocks.length} block shapes (${blocks.filter(b => !b.isPark).length} city + 1 park)`)
 blocks.filter(b => !b.isPark).forEach(b => {
-  console.log(`  ${b.id}: area=${b.area}m²  centroid=(${b.centroid[0].toFixed(0)}, ${b.centroid[1].toFixed(0)})  lot=${b.lot.length}pts  sw=${b.sidewalk.length}pts`)
+  console.log(`  ${b.id}: area=${b.area}m²  centroid=(${b.centroid[0].toFixed(0)}, ${b.centroid[1].toFixed(0)})  lot=${b.lot.length}pts  sw=${b.sidewalk ? b.sidewalk.length + 'pts' : 'none'}`)
 })
 console.log(`\n${alleyFillsOut.length} alley fill polygons`)
 alleyFillsOut.forEach(af => {

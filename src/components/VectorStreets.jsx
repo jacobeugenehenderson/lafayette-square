@@ -1,18 +1,12 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import streetsData from '../data/streets.json'
 import blockShapes from '../data/block_shapes.json'
+import groundLayers from '../data/ground_layers.json'
 import useCamera from '../hooks/useCamera'
 import { mergeBufferGeometries } from '../lib/mergeGeometries'
 
 // ── Colors & constants ──────────────────────────────────────────────────────
-const ROAD_COLOR   = '#404045'
-const LOT_COLOR    = '#2a2a32'
-const SIDEWALK_CLR = '#8a8a82'
-
-const PATH_WIDTHS = {
-  primary: 6, secondary: 5, tertiary: 4, residential: 3.6, service: 4,
-}
+const ROAD_COLOR   = '#0e0e12'
 
 // ── Geometry helpers ────────────────────────────────────────────────────────
 
@@ -171,85 +165,20 @@ function buildRoadGeometry(points, width, yOffset = 0.1) {
   return geo
 }
 
-// ── City blocks: lot fills + sidewalk rings from pre-computed shapes ────────
+// ── Center lines on principal streets ────────────────────────────────────────
 
-function CityBlocks() {
-  const { lotGeometry, sidewalkGeometry } = useMemo(() => {
-    const lotGeos = []
-    const swGeos = []
-
-    for (const block of blockShapes.blocks) {
-      // Park lot fill is rendered by LafayettePark.jsx — skip it here
-      if (!block.isPark) {
-        const lotShape = new THREE.Shape()
-        lotShape.moveTo(block.lot[0][0], -block.lot[0][1])
-        for (let i = 1; i < block.lot.length; i++) {
-          lotShape.lineTo(block.lot[i][0], -block.lot[i][1])
-        }
-        lotShape.closePath()
-
-        const lotGeo = new THREE.ShapeGeometry(lotShape)
-        lotGeo.rotateX(-Math.PI / 2)
-        lotGeos.push(lotGeo)
-      }
-
-      // Sidewalk ring: curb boundary with lot as hole (park gets one too)
-      if (!block.sidewalk) continue
-      const swShape = new THREE.Shape()
-      swShape.moveTo(block.sidewalk[0][0], -block.sidewalk[0][1])
-      for (let i = 1; i < block.sidewalk.length; i++) {
-        swShape.lineTo(block.sidewalk[i][0], -block.sidewalk[i][1])
-      }
-      swShape.closePath()
-
-      const holePts = [...block.lot].reverse()
-      const hole = new THREE.Path()
-      hole.moveTo(holePts[0][0], -holePts[0][1])
-      for (let i = 1; i < holePts.length; i++) {
-        hole.lineTo(holePts[i][0], -holePts[i][1])
-      }
-      hole.closePath()
-      swShape.holes.push(hole)
-
-      const swGeo = new THREE.ShapeGeometry(swShape)
-      swGeo.rotateX(-Math.PI / 2)
-      swGeos.push(swGeo)
-    }
-
-    const mergedLot = lotGeos.length > 0 ? mergeBufferGeometries(lotGeos) : null
-    const mergedSw = swGeos.length > 0 ? mergeBufferGeometries(swGeos) : null
-    lotGeos.forEach(g => g.dispose())
-    swGeos.forEach(g => g.dispose())
-
-    return { lotGeometry: mergedLot, sidewalkGeometry: mergedSw }
-  }, [])
-
-  return (
-    <group>
-      {lotGeometry && (
-        <mesh geometry={lotGeometry} position={[0, 0.05, 0]} receiveShadow>
-          <meshStandardMaterial color={LOT_COLOR} roughness={0.92} />
-        </mesh>
-      )}
-      {sidewalkGeometry && (
-        <mesh geometry={sidewalkGeometry} position={[0, 0.08, 0]} receiveShadow>
-          <meshStandardMaterial color={SIDEWALK_CLR} roughness={0.92} />
-        </mesh>
-      )}
-    </group>
-  )
-}
-
-// ── Center lines on major roads ─────────────────────────────────────────────
+const PRINCIPAL_STREETS = new Set([
+  'Park Avenue', 'Lafayette Avenue', 'Chouteau Avenue',
+  'South Jefferson Avenue', 'Truman Parkway',
+])
 
 function CenterLines({ streets }) {
   const geometry = useMemo(() => {
     const geometries = []
 
-    streets.forEach(street => {
+    ;(streets || []).forEach(street => {
       if (street.points && street.points.length >= 2) {
-        const isMajor = street.type === 'primary' || street.type === 'secondary'
-        if (isMajor) {
+        if (PRINCIPAL_STREETS.has(street.name)) {
           const geo = buildRoadGeometry(street.points, 0.6, 0.18)
           if (geo) geometries.push(geo)
         }
@@ -266,7 +195,7 @@ function CenterLines({ streets }) {
   if (!geometry) return null
 
   return (
-    <mesh geometry={geometry} position={[0, 0.02, 0]}>
+    <mesh geometry={geometry} position={[0, 0.15, 0]}>
       <meshStandardMaterial
         color="#d4c46a"
         emissive="#d4c46a"
@@ -277,166 +206,128 @@ function CenterLines({ streets }) {
   )
 }
 
-// ── Alley fill polygons (from pre-computed Clipper difference) ───────────────
+// ── Lightweight strip builder (no Catmull-Rom — SVG points are pre-smoothed) ─
 
-function AlleyFillPolygons() {
-  const geometry = useMemo(() => {
-    if (!blockShapes.alleyFills || blockShapes.alleyFills.length === 0) return null
+function buildStripGeometry(points, width, yOffset = 0) {
+  if (points.length < 2) return null
+  const halfWidth = width / 2
+  const vertices = []
+  const indices = []
 
-    const geos = []
-    for (const af of blockShapes.alleyFills) {
-      if (af.polygon.length < 3) continue
+  for (let i = 0; i < points.length; i++) {
+    const [x, z] = points[i]
+    let tx, tz
+    if (i === 0) { tx = points[1][0] - x; tz = points[1][1] - z }
+    else if (i === points.length - 1) { tx = x - points[i-1][0]; tz = z - points[i-1][1] }
+    else { tx = points[i+1][0] - points[i-1][0]; tz = points[i+1][1] - points[i-1][1] }
+    const len = Math.sqrt(tx * tx + tz * tz) || 1
+    const px = -tz / len, pz = tx / len
+
+    vertices.push(
+      x + px * halfWidth, yOffset, z + pz * halfWidth,
+      x - px * halfWidth, yOffset, z - pz * halfWidth
+    )
+    if (i > 0) {
+      const base = (i - 1) * 2
+      indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3)
+    }
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
+  geo.setIndex(indices)
+  geo.computeVertexNormals()
+  return geo
+}
+
+// ── SVG-sourced streets (from Illustrator artwork) ──────────────────────
+
+function SvgStreets({ heroMode }) {
+  const { streetGroups, blockGeometry } = useMemo(() => {
+    // Group streets by color
+    const streetsByColor = {}
+    for (const seg of groundLayers.streets) {
+      if (seg.points.length < 2) continue
+      const color = seg.color || '#000'
+      if (!streetsByColor[color]) streetsByColor[color] = []
+      streetsByColor[color].push(seg)
+    }
+
+    const streetGroups = []
+    for (const [color, segs] of Object.entries(streetsByColor)) {
+      const geos = []
+      for (const seg of segs) {
+        const geo = buildStripGeometry(seg.points, seg.width, 0)
+        if (geo) geos.push(geo)
+      }
+      if (geos.length > 0) {
+        streetGroups.push({ color, geometry: mergeBufferGeometries(geos) })
+        geos.forEach(g => g.dispose())
+      }
+    }
+
+    // Merge ALL blocks into one mesh with vertex colors (avoids Z-fighting)
+    const tmpColor = new THREE.Color()
+    const blockGeos = []
+    const blockColors = [] // { count, r, g, b } per block
+    for (const blk of groundLayers.blocks) {
+      if (blk.polygon.length < 3) continue
+      const color = blk.color || '#000'
+      if (color === '#000') continue
       const shape = new THREE.Shape()
-      shape.moveTo(af.polygon[0][0], -af.polygon[0][1])
-      for (let i = 1; i < af.polygon.length; i++) {
-        shape.lineTo(af.polygon[i][0], -af.polygon[i][1])
+      shape.moveTo(blk.polygon[0][0], -blk.polygon[0][1])
+      for (let i = 1; i < blk.polygon.length; i++) {
+        shape.lineTo(blk.polygon[i][0], -blk.polygon[i][1])
       }
       shape.closePath()
       const geo = new THREE.ShapeGeometry(shape)
       geo.rotateX(-Math.PI / 2)
-      geos.push(geo)
+      tmpColor.set(color)
+      blockColors.push({ count: geo.attributes.position.count, r: tmpColor.r, g: tmpColor.g, b: tmpColor.b })
+      blockGeos.push(geo)
     }
+    let blockGeometry = null
+    if (blockGeos.length > 0) {
+      blockGeometry = mergeBufferGeometries(blockGeos)
+      // Apply vertex colors after merge (mergeBufferGeometries only copies position)
+      const totalVerts = blockGeometry.attributes.position.count
+      const colorArr = new Float32Array(totalVerts * 3)
+      let offset = 0
+      for (const { count, r, g, b } of blockColors) {
+        for (let i = 0; i < count; i++) {
+          colorArr[offset++] = r
+          colorArr[offset++] = g
+          colorArr[offset++] = b
+        }
+      }
+      blockGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colorArr, 3))
+    }
+    blockGeos.forEach(g => g.dispose())
 
-    if (geos.length === 0) return null
-    const merged = mergeBufferGeometries(geos)
-    geos.forEach(g => g.dispose())
-    return merged
+    return { streetGroups, blockGeometry }
   }, [])
 
-  if (!geometry) return null
   return (
-    <mesh geometry={geometry} position={[0, 0.08, 0]} receiveShadow>
-      <meshStandardMaterial color={SIDEWALK_CLR} roughness={0.92} />
-    </mesh>
+    <group>
+      {blockGeometry && (
+        <mesh geometry={blockGeometry} position={[0, 0.3, 0]}>
+          <meshStandardMaterial vertexColors roughness={0.92} depthWrite={false} />
+        </mesh>
+      )}
+      {!heroMode && streetGroups.map(({ color, geometry }) => (
+        <mesh key={`st-${color}`} geometry={geometry} position={[0, 0.45, 0]} receiveShadow>
+          <meshStandardMaterial color={color} roughness={0.92} />
+        </mesh>
+      ))}
+    </group>
   )
-}
-
-// ── Park interior paths (from OSM unnamed segments) ─────────────────────────
-
-function UnnamedPaths({ segments }) {
-  const geometry = useMemo(() => {
-    const geometries = []
-    segments.forEach(street => {
-      if (street.points && street.points.length >= 2) {
-        const geo = buildRoadGeometry(street.points, PATH_WIDTHS[street.type] || 3.6, 0.07)
-        if (geo) geometries.push(geo)
-      }
-    })
-    if (geometries.length === 0) return null
-    const merged = mergeBufferGeometries(geometries)
-    geometries.forEach(g => g.dispose())
-    return merged
-  }, [segments])
-
-  if (!geometry) return null
-  return (
-    <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color={SIDEWALK_CLR} roughness={0.92} />
-    </mesh>
-  )
-}
-
-// ── Park boundary check ─────────────────────────────────────────────────────
-
-const PARK_COS = Math.cos(9.2 * Math.PI / 180)
-const PARK_SIN = Math.sin(9.2 * Math.PI / 180)
-
-const PARK_CLIP = 175  // clip at park lot edge
-
-function toRotated(x, z) {
-  return [x * PARK_COS + z * PARK_SIN, -x * PARK_SIN + z * PARK_COS]
-}
-
-function toWorld(rx, rz) {
-  return [rx * PARK_COS - rz * PARK_SIN, rx * PARK_SIN + rz * PARK_COS]
-}
-
-function isInsidePark(x, z) {
-  const [rx, rz] = toRotated(x, z)
-  return Math.abs(rx) < PARK_CLIP && Math.abs(rz) < PARK_CLIP
-}
-
-// Find parameter t where segment (rx0,rz0)→(rx1,rz1) crosses the ±PARK_CLIP box
-function clipSegmentT(rx0, rz0, rx1, rz1) {
-  let tMin = 0, tMax = 1
-  const dx = rx1 - rx0, dz = rz1 - rz0
-  // Clip against each edge of the box
-  for (const [p, d, lo, hi] of [
-    [rx0, dx, -PARK_CLIP, PARK_CLIP],
-    [rz0, dz, -PARK_CLIP, PARK_CLIP],
-  ]) {
-    if (Math.abs(d) < 1e-9) {
-      if (p < lo || p > hi) return null  // parallel & outside
-    } else {
-      let t1 = (lo - p) / d, t2 = (hi - p) / d
-      if (t1 > t2) [t1, t2] = [t2, t1]
-      tMin = Math.max(tMin, t1)
-      tMax = Math.min(tMax, t2)
-      if (tMin > tMax) return null
-    }
-  }
-  return [tMin, tMax]
-}
-
-// Clip paths to park boundary with proper segment interpolation
-function clipParkPaths(streets) {
-  const result = []
-  for (const street of streets) {
-    if (street.name || !street.points || street.points.length < 2) continue
-
-    const mid = street.points[Math.floor(street.points.length / 2)]
-    if (!isInsidePark(mid[0], mid[1])) continue
-
-    // Walk points, building clipped runs
-    const clipped = []
-    for (let i = 0; i < street.points.length; i++) {
-      const [x, z] = street.points[i]
-      const inside = isInsidePark(x, z)
-
-      if (inside) {
-        // If previous point was outside, interpolate entry point
-        if (clipped.length === 0 && i > 0) {
-          const [px, pz] = street.points[i - 1]
-          const [rx0, rz0] = toRotated(px, pz)
-          const [rx1, rz1] = toRotated(x, z)
-          const clip = clipSegmentT(rx0, rz0, rx1, rz1)
-          if (clip) {
-            const t = clip[0]
-            const ex = px + t * (x - px), ez = pz + t * (z - pz)
-            clipped.push([ex, ez])
-          }
-        }
-        clipped.push([x, z])
-      } else if (clipped.length > 0) {
-        // Just left the boundary — interpolate exit point
-        const [px, pz] = street.points[i - 1]
-        const [rx0, rz0] = toRotated(px, pz)
-        const [rx1, rz1] = toRotated(x, z)
-        const clip = clipSegmentT(rx0, rz0, rx1, rz1)
-        if (clip) {
-          const t = clip[1]
-          const ex = px + t * (x - px), ez = pz + t * (z - pz)
-          clipped.push([ex, ez])
-        }
-        // Flush this run
-        if (clipped.length >= 2) {
-          result.push({ points: [...clipped], type: street.type })
-        }
-        clipped.length = 0
-      }
-    }
-    // Flush remaining
-    if (clipped.length >= 2) {
-      result.push({ points: clipped, type: street.type })
-    }
-  }
-  return result
 }
 
 // ── Main component ──────────────────────────────────────────────────────────
 
 function VectorStreets() {
-  const parkPaths = useMemo(() => clipParkPaths(streetsData.streets), [])
+  const viewMode = useCamera((s) => s.viewMode)
+  const isHero = viewMode === 'hero'
 
   const handleDoubleClick = (event) => {
     event.stopPropagation()
@@ -446,23 +337,45 @@ function VectorStreets() {
 
   return (
     <group>
-      {/* Ground plane — flat road color */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow onDoubleClick={handleDoubleClick}>
-        <planeGeometry args={[2400, 2400]} />
-        <meshStandardMaterial color={ROAD_COLOR} roughness={0.95} />
+      {/* Ground plane — black, soft circular fade at edges */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow onDoubleClick={handleDoubleClick}>
+        <circleGeometry args={[5000, 64]} />
+        <meshStandardMaterial
+          color="#0a0a0c"
+          roughness={0.95}
+          transparent
+          onBeforeCompile={(shader) => {
+            shader.vertexShader = shader.vertexShader.replace(
+              '#include <common>',
+              `#include <common>
+               varying vec2 vWorldXZ;`
+            )
+            shader.vertexShader = shader.vertexShader.replace(
+              '#include <worldpos_vertex>',
+              `#include <worldpos_vertex>
+               vWorldXZ = worldPosition.xz;`
+            )
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <common>',
+              `#include <common>
+               varying vec2 vWorldXZ;`
+            )
+            shader.fragmentShader = shader.fragmentShader.replace(
+              '#include <dithering_fragment>',
+              `#include <dithering_fragment>
+               float dist = length(vWorldXZ);
+               float fade = 1.0 - smoothstep(3500.0, 4800.0, dist);
+               gl_FragColor.a *= fade;`
+            )
+          }}
+        />
       </mesh>
 
-      {/* City blocks: lot fills + sidewalk rings */}
-      <CityBlocks />
+      {/* SVG-sourced ground layers */}
+      <SvgStreets heroMode={isHero} />
 
-      {/* Alley fill polygons — sidewalk-colored between blocks */}
-      <AlleyFillPolygons />
-
-      {/* Park interior paths */}
-      <UnnamedPaths segments={parkPaths} />
-
-      {/* Center lines on major roads (from cleaned, joined polylines) */}
-      <CenterLines streets={blockShapes.streets} />
+      {/* Center lines — hero doesn't need this detail */}
+      {!isHero && <CenterLines streets={blockShapes.streets} />}
     </group>
   )
 }

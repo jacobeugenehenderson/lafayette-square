@@ -17,7 +17,7 @@ const LAMP_COLOR_OFF = new THREE.Color('#444444')
 
 // Ground light pool
 const POOL_RADIUS = 12
-const POOL_Y = 0.05  // just above ground
+const POOL_Y = 0.5  // above SVG block shapes (y=0.3) and streets (y=0.45)
 
 // Dynamic PointLights — nearest N lamps get real lights that illuminate surfaces
 const DYNAMIC_LIGHT_COUNT = 24

@@ -13,6 +13,9 @@ import leafTypesData from '../data/leafTypes.json'
 // Mississippi Ave (W), Kennett Place (E)
 // Grid rotation: Park Ave runs ~9.2° off E-W axis (clockwise from above)
 const GRID_ROTATION = -9.2 * (Math.PI / 180)
+// Pre-computed for world → park-local coordinate transform
+const COS_GR = Math.cos(GRID_ROTATION)
+const SIN_GR = Math.sin(GRID_ROTATION)
 
 const PARK = {
   minX: -175, maxX: 175,
@@ -236,7 +239,7 @@ function ParkGround() {
   })
 
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]} receiveShadow material={grassMat}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]} receiveShadow material={grassMat}>
       <planeGeometry args={[PARK.width, PARK.depth, 1, 1]} />
     </mesh>
   )
@@ -506,7 +509,7 @@ function ParkTrees() {
       const arr = canopyByMorph[morph] || canopyByMorph.ovate_large
       arr.push({
         x: cx, y: cy, z: cz,
-        sx: radius * 3.5, sy: radius * 2.8, sz: radius * 3.5,
+        sx: radius * 4.5, sy: radius * 3.5, sz: radius * 4.5,
         ry: rng * TAU,
       })
     }
@@ -841,6 +844,7 @@ function ParkTrees() {
             key={lt.id}
             ref={el => { canopyRefs.current[lt.id] = el }}
             args={[crossedPlaneGeo, foliageMats[lt.id], blobs.length]}
+            frustumCulled={false}
           />
         )
       })}
@@ -1096,15 +1100,15 @@ function ParkWater() {
   return (
     <group>
       {/* Shoreline banks (below water) */}
-      <mesh geometry={lakeBankGeo} position={[0, 0.04, 0]} receiveShadow material={bankMat} />
-      <mesh geometry={grottoBankGeo} position={[0, 0.04, 0]} receiveShadow material={bankMat} />
+      <mesh geometry={lakeBankGeo} position={[0, 0.2, 0]} receiveShadow material={bankMat} />
+      <mesh geometry={grottoBankGeo} position={[0, 0.2, 0]} receiveShadow material={bankMat} />
 
       {/* Water surfaces */}
-      <mesh geometry={lakeWaterGeo} position={[0, 0.06, 0]} receiveShadow material={waterMat} />
-      <mesh geometry={grottoWaterGeo} position={[0, 0.06, 0]} receiveShadow material={waterMat} />
+      <mesh geometry={lakeWaterGeo} position={[0, 0.35, 0]} receiveShadow material={waterMat} />
+      <mesh geometry={grottoWaterGeo} position={[0, 0.35, 0]} receiveShadow material={waterMat} />
 
       {/* Lake island (grass) */}
-      <mesh geometry={islandGeo} position={[0, 0.07, 0]} receiveShadow material={islandMat} />
+      <mesh geometry={islandGeo} position={[0, 0.4, 0]} receiveShadow material={islandMat} />
     </group>
   )
 }
@@ -1172,8 +1176,8 @@ function LafayettePark() {
   return (
     <group rotation={[0, GRID_ROTATION, 0]}>
       <ParkGround />
-      <ParkPaths />
       <ParkWater />
+      <ParkPaths />
       <ParkTrees />
       <PerimeterFence />
 

@@ -68,12 +68,12 @@ function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, 
         shadow-mapSize-width={4096}
         shadow-mapSize-height={4096}
         shadow-camera-far={2400}
-        shadow-camera-left={-1100}
-        shadow-camera-right={1100}
-        shadow-camera-top={1100}
-        shadow-camera-bottom={-1100}
+        shadow-camera-left={-600}
+        shadow-camera-right={600}
+        shadow-camera-top={600}
+        shadow-camera-bottom={-600}
         shadow-bias={-0.0001}
-        shadow-normalBias={0.02}
+        shadow-normalBias={0.15}
       />
     </group>
   )
@@ -206,8 +206,8 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
   const materialRef = useRef()
 
   const colors = useMemo(() => {
-    const nightZenith = new THREE.Color('#0a0a15')
-    const nightHorizon = new THREE.Color('#1a1a2a')
+    const nightZenith = new THREE.Color('#050508')
+    const nightHorizon = new THREE.Color('#1a1525')
     const twilightZenith = new THREE.Color('#1a2040')
     const twilightHorizon = new THREE.Color('#4a3050')
     const dayZenith = new THREE.Color('#4a90e0')
@@ -374,6 +374,11 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
         finalColor += moonHaloColor * moonHalo * 0.08 * moonVisible * nightFade;
         finalColor += moonCoronaColor * moonCorona * 0.04 * moonVisible * nightFade;
 
+        // Subtle horizon glow — hint of atmospheric scatter, must not block stars
+        float hBand = exp(-h * h * 40.0);
+        float nightWeight = 1.0 - smoothstep(-0.05, 0.3, sunAlt);
+        finalColor += vec3(0.03, 0.018, 0.04) * hBand * nightWeight;
+
         // Fade to transparent below horizon so sky wraps closer to neighborhood
         float groundAlpha = smoothstep(-0.18, -0.02, h);
         gl_FragColor = vec4(finalColor, groundAlpha);
@@ -420,7 +425,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
 
       // Size from magnitude: brighter = bigger point
       const magNorm = (6.0 - star.mag) / 7.5 // 0..1
-      starSizes[i] = (0.8 + magNorm * magNorm * 5.0) * 14.0
+      starSizes[i] = (0.8 + magNorm * magNorm * 5.0) * 20.0
     }
 
     const mat = new THREE.ShaderMaterial({
@@ -454,7 +459,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
           float aR = 1.0 - smoothstep(0.0, 0.5, dR); aR *= aR;
           float aB = 1.0 - smoothstep(0.0, 0.5, dB); aB *= aB;
           vec3 col = vec3(aR * vCol.r, a * vCol.g, aB * vCol.b);
-          col *= 2.0; // brightness boost
+          col *= 3.5; // brightness boost
           gl_FragColor = vec4(col * uOpacity, max(col.r, max(col.g, col.b)) * uOpacity);
         }
       `,
@@ -601,7 +606,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
 
     // ── Rotate filler stars as rigid group via equatorial→local matrix ──
     if (noiseRef.current) {
-      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.8 : baseStarOpacity * 0.5
+      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.8 : baseStarOpacity * 0.85
       const cosLST = Math.cos(lstRad), sinLST = Math.sin(lstRad)
       const cosL = cosLat, sinL = sinLat
       noiseRef.current.matrixAutoUpdate = false
@@ -766,7 +771,7 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={lighting.isNight ? 0.15 : 0.4} />
+      <ambientLight color="#ffffff" intensity={lighting.isNight ? 0.08 : 0.6} />
       <ambientLight
         color={lighting.ambient.color}
         intensity={lighting.ambient.intensity}
@@ -774,7 +779,7 @@ function CelestialBodies() {
       <hemisphereLight
         color={lighting.isNight ? '#4466aa' : '#ffeedd'}
         groundColor={lighting.isNight ? '#222233' : '#443333'}
-        intensity={0.25}
+        intensity={lighting.isNight ? 0.1 : 0.4}
       />
       <PrimaryOrb {...lighting.primary} />
       <SecondaryOrb {...lighting.secondary} />

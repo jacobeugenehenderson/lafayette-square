@@ -11,6 +11,7 @@ import { mergeBufferGeometries } from '../lib/mergeGeometries'
 
 import useBusinessState from '../hooks/useBusinessState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
+import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
 import buildingOverridesData from '../data/buildingOverrides.json'
 
@@ -842,6 +843,7 @@ function LandmarkMarkers() {
 function LafayetteScene() {
   const deselect = useSelectedBuilding((state) => state.deselect)
   const landmarks = useBusinessData((s) => s.landmarks)
+  const viewMode = useCamera((s) => s.viewMode)
 
   // Build a buildingId → category hex lookup from landmarks
   const neonLookup = useMemo(() => {
@@ -896,7 +898,6 @@ function LafayetteScene() {
     <group>
       <ClickCatcher />
 
-      {/* Foundations */}
       <Foundations />
 
       {/* Buildings */}
@@ -904,13 +905,13 @@ function LafayetteScene() {
         <Building key={b.id} building={b} categoryHex={neonLookup[b.id]} />
       ))}
 
-      {/* Street labels */}
-      {streetLabels.map((label, i) => (
+      {/* Street labels — hero doesn't need */}
+      {viewMode !== 'hero' && streetLabels.map((label, i) => (
         <StreetLabel key={`label-${i}`} label={label} />
       ))}
 
-      {/* Landmark markers */}
-      <LandmarkMarkers />
+      {/* Landmark markers — hero doesn't need */}
+      {viewMode !== 'hero' && <LandmarkMarkers />}
     </group>
   )
 }

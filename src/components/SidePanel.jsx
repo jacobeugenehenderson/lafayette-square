@@ -533,7 +533,11 @@ function SidePanel({ showAdmin = true }) {
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => { if (collapsed) setCollapsed(false); else setActiveTab(tab.id) }}
+            onClick={() => {
+              if (collapsed) { setCollapsed(false) } else { setActiveTab(tab.id) }
+              const mode = tab.id === 'almanac' ? 'map' : 'society'
+              useCamera.getState().setMode(mode)
+            }}
             onDoubleClick={() => { if (!collapsed) setCollapsed(true) }}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-xs transition-colors duration-150 ${
               activeTab === tab.id

@@ -33,19 +33,20 @@
 <div id="map"></div>
 <div class="layer-controls">
   <h3>Layers</h3>
-  <label><input type="checkbox" id="tog-blocks" checked><span class="swatch" style="background:#0af"></span> Block lots</label>
-  <label><input type="checkbox" id="tog-sidewalks" checked><span class="swatch" style="background:#f80"></span> Sidewalks</label>
+  <label><input type="checkbox" id="tog-blocks"><span class="swatch" style="background:#0af"></span> Block lots</label>
+  <label><input type="checkbox" id="tog-sidewalks"><span class="swatch" style="background:#f80"></span> Sidewalks</label>
   <label><input type="checkbox" id="tog-streets" checked><span class="swatch" style="background:#ff0"></span> Street centerlines</label>
-  <label><input type="checkbox" id="tog-buildings" checked><span class="swatch" style="background:#f44"></span> Building footprints</label>
+  <label><input type="checkbox" id="tog-buildings"><span class="swatch" style="background:#f44"></span> Building footprints</label>
   <label><input type="checkbox" id="tog-orphans"><span class="swatch" style="background:#f0f"></span> Orphan buildings</label>
-  <label><input type="checkbox" id="tog-lamps" checked><span class="swatch-dot" style="background:#ff0"></span> Street lamps</label>
-  <label><input type="checkbox" id="tog-border" checked><span class="swatch" style="background:#0f0"></span> Neighborhood border</label>
-  <label><input type="checkbox" id="tog-park" checked><span class="swatch" style="background:#8f8"></span> Park rectangle</label>
+  <label><input type="checkbox" id="tog-lamps"><span class="swatch-dot" style="background:#ff0"></span> Street lamps</label>
+  <label><input type="checkbox" id="tog-border"><span class="swatch" style="background:#0f0"></span> Neighborhood border</label>
+  <label><input type="checkbox" id="tog-park"><span class="swatch" style="background:#8f8"></span> Park rectangle</label>
   <label><input type="checkbox" id="tog-parkpaths" checked><span class="swatch" style="background:#6d6"></span> Park paths</label>
   <label><input type="checkbox" id="tog-alleys" checked><span class="swatch" style="background:#c8f"></span> Alleys</label>
-  <label><input type="checkbox" id="tog-alleyfills" checked><span class="swatch" style="background:#0ff"></span> Alley fills</label>
+  <label><input type="checkbox" id="tog-alleyfills"><span class="swatch" style="background:#0ff"></span> Alley fills</label>
   <hr>
   <label><input type="checkbox" id="tog-sat"> Satellite tiles</label>
+  <button id="btn-export-svg" style="margin-top:8px;width:100%;padding:6px 0;background:#5af;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:600;font-size:13px;">Export SVG</button>
   <div class="stats" id="stats"></div>
 </div>
 
@@ -106,17 +107,17 @@ const satTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/servic
 
 // ── Layer groups ─────────────────────────────────────────────────────────────
 const layers = {
-  blocks: L.layerGroup().addTo(map),
-  sidewalks: L.layerGroup().addTo(map),
+  blocks: L.layerGroup(),
+  sidewalks: L.layerGroup(),
   streets: L.layerGroup().addTo(map),
-  buildings: L.layerGroup().addTo(map),
+  buildings: L.layerGroup(),
   orphans: L.layerGroup(),
-  lamps: L.layerGroup().addTo(map),
-  border: L.layerGroup().addTo(map),
-  park: L.layerGroup().addTo(map),
+  lamps: L.layerGroup(),
+  border: L.layerGroup(),
+  park: L.layerGroup(),
   parkpaths: L.layerGroup().addTo(map),
   alleys: L.layerGroup().addTo(map),
-  alleyfills: L.layerGroup().addTo(map),
+  alleyfills: L.layerGroup(),
 };
 
 const ALLEY_NAMES = new Set(['Mississippi Alley', 'Hickory Lane', 'Rutger Lane']);
@@ -329,6 +330,184 @@ for (const [id, key] of Object.entries(toggleMap)) {
 document.getElementById('tog-sat').addEventListener('change', function() {
   if (this.checked) { map.removeLayer(osmTiles); satTiles.addTo(map); }
   else { map.removeLayer(satTiles); osmTiles.addTo(map); }
+});
+
+// ── SVG Export ────────────────────────────────────────────────────────────────
+// Stores raw geometry data for SVG generation (local XZ coords)
+const svgData = {
+  streets: [],    // { points: [[x,z],...], name, type, width }
+  parkpaths: [],  // { points: [[x,z],...], type }
+  alleys: [],     // { points: [[x,z],...], name, width }
+  blocks: [],     // { lot: [[x,z],...], id }
+  sidewalks: [],  // { outer: [[x,z],...], inner: [[x,z],...] }
+  buildings: [],  // { footprint: [[x,z],...], id }
+  lamps: [],      // { x, z }
+  border: null,   // [[x,z],...]
+  park: null,     // [[x,z],...]
+  alleyfills: [], // { polygon: [[x,z],...], name }
+};
+
+// Patch init to stash raw data for SVG export
+const _origInit = init;
+// We'll populate svgData inside init by adding a post-load hook
+// Instead, let's just re-read the data on export. Simpler.
+
+document.getElementById('btn-export-svg').addEventListener('click', async function() {
+  const [blockData, buildingData, streetData, lampData] = await Promise.all([
+    loadJSON('src/data/block_shapes.json'),
+    loadJSON('src/data/buildings.json'),
+    loadJSON('src/data/streets.json'),
+    loadJSON('src/data/street_lamps.json'),
+  ]);
+
+  // Determine which layers are visible
+  const vis = {};
+  for (const [id, key] of Object.entries(toggleMap)) {
+    vis[key] = document.getElementById(id).checked;
+  }
+
+  // Collect all XZ points for bounding box
+  const allPts = [];
+  const paths = [];
+
+  // Helper: XZ polygon → SVG path string (X→right, Z→down)
+  function polyPath(pts) {
+    return 'M ' + pts.map(([x, z]) => x.toFixed(2) + ',' + z.toFixed(2)).join(' L ') + ' Z';
+  }
+  function linePath(pts) {
+    return 'M ' + pts.map(([x, z]) => x.toFixed(2) + ',' + z.toFixed(2)).join(' L ');
+  }
+
+  // Streets
+  if (vis.streets) {
+    for (const street of blockData.streets) {
+      if (ALLEY_NAMES.has(street.name)) continue;
+      for (const p of street.points) allPts.push(p);
+      const isMajor = street.type === 'primary' || street.type === 'secondary';
+      paths.push('<path d="' + linePath(street.points) + '" stroke="#888" stroke-width="' +
+        (isMajor ? street.width : street.width) + '" fill="none" stroke-linecap="round" stroke-linejoin="round" data-name="' + (street.name || '') + '" data-type="' + street.type + '"/>');
+    }
+  }
+
+  // Alleys
+  if (vis.alleys) {
+    for (const street of blockData.streets) {
+      if (!ALLEY_NAMES.has(street.name)) continue;
+      for (const p of street.points) allPts.push(p);
+      paths.push('<path d="' + linePath(street.points) + '" stroke="#aaa" stroke-width="' + street.width +
+        '" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 2" data-name="' + street.name + '" data-type="alley"/>');
+    }
+  }
+
+  // Alley fills
+  if (vis.alleyfills && blockData.alleyFills) {
+    for (const af of blockData.alleyFills) {
+      for (const p of af.polygon) allPts.push(p);
+      paths.push('<path d="' + polyPath(af.polygon) + '" stroke="#aaa" stroke-width="0.5" fill="#ddd" fill-opacity="0.3" data-name="' + af.name + '" data-type="alleyfill"/>');
+    }
+  }
+
+  // Park paths
+  if (vis.parkpaths) {
+    for (const street of streetData.streets) {
+      if (street.name) continue;
+      if (!street.points || street.points.length < 2) continue;
+      const mid = street.points[Math.floor(street.points.length / 2)];
+      if (!isInsidePark(mid[0], mid[1])) continue;
+      for (const p of street.points) allPts.push(p);
+      paths.push('<path d="' + linePath(street.points) + '" stroke="#6a6" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="6 3" data-type="parkpath"/>');
+    }
+  }
+
+  // Block lots
+  if (vis.blocks) {
+    for (const block of blockData.blocks) {
+      if (block.isPark) continue;
+      for (const p of block.lot) allPts.push(p);
+      paths.push('<path d="' + polyPath(block.lot) + '" stroke="#0af" stroke-width="0.5" fill="#0af" fill-opacity="0.05" data-id="' + block.id + '" data-type="block"/>');
+    }
+  }
+
+  // Sidewalks
+  if (vis.sidewalks) {
+    for (const block of blockData.blocks) {
+      if (block.isPark || !block.sidewalk) continue;
+      for (const p of block.sidewalk) allPts.push(p);
+      paths.push('<path d="' + polyPath(block.sidewalk) + '" stroke="#f80" stroke-width="0.3" fill="#f80" fill-opacity="0.08" data-type="sidewalk"/>');
+    }
+  }
+
+  // Buildings
+  if (vis.buildings) {
+    for (const bldg of buildingData.buildings) {
+      if (!bldg.footprint || bldg.footprint.length < 3) continue;
+      for (const p of bldg.footprint) allPts.push(p);
+      paths.push('<path d="' + polyPath(bldg.footprint) + '" stroke="#c44" stroke-width="0.3" fill="#f44" fill-opacity="0.1" data-id="' + bldg.id + '" data-type="building"/>');
+    }
+  }
+
+  // Border
+  if (vis.border && blockData.border) {
+    for (const p of blockData.border) allPts.push(p);
+    paths.push('<path d="' + polyPath(blockData.border) + '" stroke="#0f0" stroke-width="1" fill="none" stroke-dasharray="8 4" data-type="border"/>');
+  }
+
+  // Park
+  if (vis.park) {
+    const parkBlock = blockData.blocks.find(b => b.isPark);
+    if (parkBlock) {
+      for (const p of parkBlock.lot) allPts.push(p);
+      paths.push('<path d="' + polyPath(parkBlock.lot) + '" stroke="#8f8" stroke-width="1" fill="#8f8" fill-opacity="0.05" stroke-dasharray="6 4" data-type="park"/>');
+    }
+  }
+
+  // Lamps
+  if (vis.lamps) {
+    for (const lamp of lampData.lamps) {
+      allPts.push([lamp.x, lamp.z]);
+      paths.push('<circle cx="' + lamp.x.toFixed(2) + '" cy="' + lamp.z.toFixed(2) + '" r="2" fill="#cc0" data-type="lamp"/>');
+    }
+  }
+
+  if (paths.length === 0) { alert('No visible layers to export.'); return; }
+
+  // Fixed viewport from neighborhood border (consistent across exports)
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  if (blockData.border) {
+    for (const [x, z] of blockData.border) {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+    }
+  } else {
+    // Fallback to visible geometry
+    for (const [x, z] of allPts) {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+    }
+  }
+  const pad = 20;
+  minX -= pad; minZ -= pad; maxX += pad; maxZ += pad;
+  const w = maxX - minX, h = maxZ - minZ;
+
+  const svg = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + minX.toFixed(1) + ' ' + minZ.toFixed(1) + ' ' + w.toFixed(1) + ' ' + h.toFixed(1) + '" width="' + w.toFixed(0) + '" height="' + h.toFixed(0) + '">',
+    '<rect x="' + minX.toFixed(1) + '" y="' + minZ.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" fill="#111"/>',
+    ...paths,
+    '</svg>',
+  ].join('\n');
+
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'lafayette-square-debug.svg';
+  a.click();
+  URL.revokeObjectURL(url);
 });
 </script>
 </body>

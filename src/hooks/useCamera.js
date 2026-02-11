@@ -1,19 +1,43 @@
 import { create } from 'zustand'
 
 const useCamera = create((set, get) => ({
-  viewMode: 'plan',
+  viewMode: 'hero',       // 'hero' | 'map' | 'society' | 'street'
+  previousMode: 'hero',
   streetTarget: null,
   azimuth: 0,
   flyTarget: null,
+  lastInteraction: Date.now(),
+
+  setMode: (mode) => {
+    const current = get().viewMode
+    if (current === mode) return
+    set({
+      previousMode: current,
+      viewMode: mode,
+      flyTarget: null,
+      streetTarget: mode === 'street' ? get().streetTarget : null,
+    })
+  },
 
   enterStreetView: (position) => set({
+    previousMode: get().viewMode,
     viewMode: 'street',
     streetTarget: position,
     flyTarget: null,
   }),
 
-  exitToPlan: () => set({
-    viewMode: 'plan',
+  exitStreetView: () => {
+    const prev = get().previousMode
+    set({
+      viewMode: (prev === 'street' || prev === 'hero') ? 'map' : prev,
+      streetTarget: null,
+      flyTarget: null,
+    })
+  },
+
+  goHero: () => set({
+    previousMode: get().viewMode,
+    viewMode: 'hero',
     streetTarget: null,
     flyTarget: null,
   }),
@@ -23,8 +47,8 @@ const useCamera = create((set, get) => ({
   }),
 
   clearFly: () => set({ flyTarget: null }),
-
   setAzimuth: (angle) => set({ azimuth: angle }),
+  resetIdle: () => set({ lastInteraction: Date.now() }),
 }))
 
 export default useCamera

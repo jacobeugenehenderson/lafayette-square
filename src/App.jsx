@@ -12,7 +12,7 @@ function ExitStreetViewButton() {
 
   return (
     <button
-      onClick={() => useCamera.getState().exitToPlan()}
+      onClick={() => useCamera.getState().exitStreetView()}
       className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
       title="Return to map view"
     >
@@ -36,13 +36,15 @@ function App() {
     return <ClaimPage businessId={route.businessId} secret={route.secret} />
   }
 
+  const isGround = window.location.search.includes('ground')
+
   return (
     <div className="w-full h-full relative">
       <Scene />
-      <Controls />
-      <CompassRose />
-      <SidePanel showAdmin={true} />
-      <ExitStreetViewButton />
+      {!isGround && <Controls />}
+      {!isGround && <CompassRose />}
+      {!isGround && <SidePanel showAdmin={true} />}
+      {!isGround && <ExitStreetViewButton />}
     </div>
   )
 }

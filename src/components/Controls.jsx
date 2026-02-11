@@ -5,6 +5,13 @@ import useBusinessData from '../hooks/useBusinessData'
 import buildingsData from '../data/buildings.json'
 import BusinessCard from './BusinessCard'
 
+const INSTRUCTIONS = {
+  hero: '',
+  map: 'Scroll to zoom \u00B7 Drag to pan \u00B7 Double-click street for street view',
+  society: 'Scroll to zoom \u00B7 Drag to pan or rotate \u00B7 Double-click street for street view',
+  street: 'Drag to look around \u00B7 ESC to exit',
+}
+
 function Controls() {
   const selectedId = useSelectedBuilding((state) => state.selectedId)
   const selectedLandmarkId = useSelectedBuilding((state) => state.selectedLandmarkId)
@@ -26,21 +33,19 @@ function Controls() {
     }
   }, [selectedId])
 
-  // Use specific landmark if selected via marker, otherwise find by building ID
   const landmark = selectedId
     ? (selectedLandmarkId ? getById(selectedLandmarkId) : getByBuildingId(selectedId))
     : null
 
-  const instructions = {
-    plan: 'Drag to orbit \u00B7 Scroll to zoom \u00B7 Double-click street for street view',
-    street: 'Drag to look around \u00B7 ESC to exit',
-  }
+  const text = INSTRUCTIONS[viewMode] || ''
 
   return (
     <>
-      <div className="absolute bottom-4 right-4 text-gray-500 text-sm text-right z-50">
-        <p>{instructions[viewMode]}</p>
-      </div>
+      {text && (
+        <div className="absolute bottom-4 right-4 text-gray-500 text-sm text-right z-50">
+          <p>{text}</p>
+        </div>
+      )}
 
       {showCard && selectedId && buildingInfo && (
         <BusinessCard

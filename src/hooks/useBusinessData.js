@@ -51,10 +51,11 @@ const useBusinessData = create((set, get) => ({
   /** Lookup by landmark/business id */
   getById: (id) => get().landmarks.find(l => l.id === id),
 
-  /** Lookup by building_id (falls back to id for compat) */
+  /** Lookup by building_id (falls back to id for compat) — returns first match */
   getByBuildingId: (buildingId) =>
     get().landmarks.find(l => l.building_id === buildingId) ||
     get().landmarks.find(l => l.id === buildingId),
+
 
   /** Apply guardian-set tags — updates category, subcategory, and tags for a landmark */
   applyTags: (businessId, primaryTag, allTags) => {
