@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
+import useSkyState from '../hooks/useSkyState'
 import brightStars from '../data/bright_stars.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
 
@@ -245,6 +246,29 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
       sunGlowColor = new THREE.Color('#ffeedd')
     }
 
+    // Weather-driven color enhancement
+    const { sunsetPotential: sp, beautyBias: bb, storminess: storm } = useSkyState.getState()
+
+    // Sunset enhancement: warm dramatic tones during high sunset potential
+    if (sp > 0.3 && sunAltitude > -0.1 && sunAltitude < 0.3) {
+      const sunsetFactor = ((sp - 0.3) / 0.7) * bb
+      if (!zenith.isColor) zenith = zenith.clone()
+      if (!horizon.isColor) horizon = horizon.clone()
+      horizon.lerp(new THREE.Color('#ff6633'), sunsetFactor * 0.3)
+      zenith.lerp(new THREE.Color('#2a1855'), sunsetFactor * 0.2)
+      sunGlowColor.lerp(new THREE.Color('#ff4400'), sunsetFactor * 0.4)
+    }
+
+    // Storm drama: suppress warm tones, go dark and desaturated
+    if (storm > 0.5) {
+      const stormFactor = (storm - 0.5) / 0.5
+      if (!zenith.isColor) zenith = zenith.clone()
+      if (!horizon.isColor) horizon = horizon.clone()
+      zenith.lerp(new THREE.Color('#1a1a20'), stormFactor * 0.4)
+      horizon.lerp(new THREE.Color('#2a2530'), stormFactor * 0.3)
+      sunGlowColor.multiplyScalar(1 - stormFactor * 0.6)
+    }
+
     return { zenith, horizon, sunGlowColor }
   }, [sunAltitude])
 
@@ -267,6 +291,13 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
         materialRef.current.uniforms.moonIllum.value = moonGlow.illumination
         materialRef.current.uniforms.moonVisible.value = moonGlow.altitude > 0 ? 1.0 : 0.0
       }
+      // Weather uniforms from useSkyState
+      const sky = useSkyState.getState()
+      materialRef.current.uniforms.uCloudCover.value = sky.cloudCover
+      materialRef.current.uniforms.uStorminess.value = sky.storminess
+      materialRef.current.uniforms.uTurbidity.value = sky.turbidity
+      materialRef.current.uniforms.uSunsetPotential.value = sky.sunsetPotential
+      materialRef.current.uniforms.uBeautyBias.value = sky.beautyBias
     }
   })
 
@@ -280,6 +311,11 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
       moonDir: { value: new THREE.Vector3(0, 0.3, -1) },
       moonIllum: { value: 0.5 },
       moonVisible: { value: 0.0 },
+      uCloudCover: { value: 0.0 },
+      uStorminess: { value: 0.0 },
+      uTurbidity: { value: 0.0 },
+      uSunsetPotential: { value: 0.0 },
+      uBeautyBias: { value: 0.6 },
     },
     vertexShader: `
       varying vec3 vWorldPosition;
@@ -298,12 +334,18 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
       uniform vec3 moonDir;
       uniform float moonIllum;
       uniform float moonVisible;
+      uniform float uCloudCover;
+      uniform float uStorminess;
+      uniform float uTurbidity;
+      uniform float uSunsetPotential;
+      uniform float uBeautyBias;
       varying vec3 vWorldPosition;
 
       void main() {
         vec3 dir = normalize(vWorldPosition);
         float h = dir.y;
-        float t = pow(max(0.0, h), 0.6);
+        // Horizon compression: tighter gradient under hazy conditions
+        float t = pow(max(0.0, h), 0.6 * (1.0 + uTurbidity * 0.4));
 
         // Base sky gradient
         float belowHorizon = smoothstep(0.0, -0.15, h);
@@ -378,6 +420,29 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
         float hBand = exp(-h * h * 40.0);
         float nightWeight = 1.0 - smoothstep(-0.05, 0.3, sunAlt);
         finalColor += vec3(0.03, 0.018, 0.04) * hBand * nightWeight;
+
+        // ── Weather atmospheric effects ──
+
+        // Haze band: warm Gaussian near horizon, stronger with turbidity
+        float hazeGauss = exp(-h * h * (20.0 + 30.0 * (1.0 - uTurbidity)));
+        float hazeSunWarm = max(0.0, dot(dir, sunDir)) * 0.5 + 0.5;
+        vec3 hazeColor = mix(vec3(0.6, 0.55, 0.5), vec3(0.8, 0.6, 0.4), hazeSunWarm);
+        finalColor += hazeColor * hazeGauss * uTurbidity * 0.3;
+
+        // Overcast flattening: blend toward flat mid-tone proportional to cloudCover^2
+        vec3 overcastTone = mix(zenithColor, horizonColor, 0.6);
+        finalColor = mix(finalColor, overcastTone, uCloudCover * uCloudCover * 0.5);
+
+        // Storm darkening + desaturation
+        finalColor *= (1.0 - uStorminess * 0.4);
+        float lum = dot(finalColor, vec3(0.2126, 0.7152, 0.0722));
+        finalColor = mix(finalColor, vec3(lum), uStorminess * 0.3);
+
+        // Sunset glow enhancement: amplify halo and scatter during sunset potential
+        float sunsetBoost = uSunsetPotential * uBeautyBias * 0.8;
+        finalColor += sunGlowColor * (haloGlow * 0.15 + wideScatter * 0.1) * sunsetBoost;
+        // Warm offset during sunset
+        finalColor += vec3(0.08, 0.03, 0.0) * uSunsetPotential * uBeautyBias * smoothstep(0.0, 0.2, max(0.0, sunDot));
 
         // Fade to transparent below horizon so sky wraps closer to neighborhood
         float groundAlpha = smoothstep(-0.18, -0.02, h);
@@ -547,7 +612,8 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
   useFrame(() => {
     if (!starRef.current || !starMat) return
     const planetariumActive = useCamera.getState().viewMode === 'street'
-    starMat.uniforms.uOpacity.value = planetariumActive ? 1.0 : baseStarOpacity
+    const { astronomyAlpha } = useSkyState.getState()
+    starMat.uniforms.uOpacity.value = planetariumActive ? 1.0 : astronomyAlpha
 
     // Scale star sizes in planetarium mode (40x for visibility at sky-dome distance)
     const sizeAttr = starRef.current.geometry.getAttribute('aSize')
@@ -606,7 +672,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
 
     // ── Rotate filler stars as rigid group via equatorial→local matrix ──
     if (noiseRef.current) {
-      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.8 : baseStarOpacity * 0.85
+      noiseMat.uniforms.uOpacity.value = planetariumActive ? 0.8 : astronomyAlpha * 0.85
       const cosLST = Math.cos(lstRad), sinLST = Math.sin(lstRad)
       const cosL = cosLat, sinL = sinLat
       noiseRef.current.matrixAutoUpdate = false
@@ -762,8 +828,25 @@ function CelestialBodies() {
       phase: moonIllum.phase,
     }
 
+    // Push celestial data to unified sky state store
+    useSkyState.getState().setCelestial({
+      sunDirection: _sunD,
+      sunElevation: sunAlt,
+      moonDirection: _moonD,
+      moonPhase: moonIllum.phase,
+      moonIllumination: moonIllum.fraction,
+      moonAltitude: moonAlt,
+    })
+
     return { primary, secondary, sky, ambient, isNight, moon, sunAlt, sunDir: _sunD, moonGlow }
   }, [currentTime])
+
+  // Weather-coupled lighting multipliers
+  const { cloudCover: cc, storminess: st } = useSkyState()
+  const primaryWeathered = useMemo(() => ({
+    ...lighting.primary,
+    intensity: lighting.primary.intensity * (1 - cc * 0.6),
+  }), [lighting.primary, cc])
 
   return (
     <>
@@ -771,17 +854,17 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={lighting.isNight ? 0.08 : 0.6} />
+      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.08 : 0.6) * (1 + cc * 0.4)} />
       <ambientLight
         color={lighting.ambient.color}
-        intensity={lighting.ambient.intensity}
+        intensity={lighting.ambient.intensity * (1 + cc * 0.4)}
       />
       <hemisphereLight
         color={lighting.isNight ? '#4466aa' : '#ffeedd'}
         groundColor={lighting.isNight ? '#222233' : '#443333'}
-        intensity={lighting.isNight ? 0.1 : 0.4}
+        intensity={(lighting.isNight ? 0.1 : 0.4) * (1 + cc * 0.5)}
       />
-      <PrimaryOrb {...lighting.primary} />
+      <PrimaryOrb {...primaryWeathered} />
       <SecondaryOrb {...lighting.secondary} />
       <directionalLight
         position={[0, 100, -400]}

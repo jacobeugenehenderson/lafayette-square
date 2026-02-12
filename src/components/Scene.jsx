@@ -10,8 +10,11 @@ import VectorStreets from './VectorStreets'
 import LafayettePark from './LafayettePark'
 import StreetLights from './StreetLights'
 import GatewayArch from './GatewayArch'
+import CloudDome from './CloudDome'
+import WeatherPoller from './WeatherPoller'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import useSkyState from '../hooks/useSkyState'
 import buildingsData from '../data/buildings.json'
 
 // ── Film grade (lift blacks, darken midtones) ────────────────────────────────
@@ -167,6 +170,13 @@ function TimeTicker() {
     tick(delta)
   })
 
+  return null
+}
+
+// ── Sky state ticker (smooth weather interpolation) ─────────────────────────
+
+function SkyStateTicker() {
+  useFrame((_, delta) => useSkyState.getState().tick(Math.min(delta, 0.1)))
   return null
 }
 
@@ -420,16 +430,15 @@ function Scene() {
     >
       {!IS_GROUND && <SoftShadows size={52} samples={32} focus={0.35} />}
       <TimeTicker />
+      <SkyStateTicker />
+      <WeatherPoller />
       <CelestialBodies />
+      <CloudDome />
       <VectorStreets />
       <LafayettePark />
       {!IS_GROUND && <LafayetteScene />}
       {!IS_GROUND && <StreetLights />}
-      {!IS_GROUND && (
-        <Suspense fallback={null}>
-          <GatewayArch />
-        </Suspense>
-      )}
+      {!IS_GROUND && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && (
         <EffectComposer>
