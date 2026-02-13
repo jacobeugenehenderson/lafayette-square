@@ -106,7 +106,7 @@ const MODE_CONSTRAINTS = {
     panSpeed: 1.5, rotateSpeed: 0.5, zoomSpeed: 1.2,
     minDistance: 50, maxDistance: 1200,
     minPolarAngle: 0.1,              // can't flip to underground
-    maxPolarAngle: Math.PI / 2.2,    // ~82° — low angle but never below ground plane
+    maxPolarAngle: Math.PI / 2,       // horizontal — can't go below ground plane
     mouseButtons: { LEFT: 0, MIDDLE: 2, RIGHT: 2 }, // left=orbit, middle/right=pan
   },
   street: {
@@ -307,6 +307,10 @@ function CameraRig() {
           1500
         )
         savedCamera.current = null
+      } else if (leaving === 'hero' && entering === 'browse') {
+        // User interaction exits hero — unlock controls, no animation
+        // Don't call ctl.update() — let damping handle any micro-adjustments
+        applyConstraints(ctl, 'browse')
       } else if (PRESETS[entering]) {
         // Transition to mode preset
         const p = PRESETS[entering]

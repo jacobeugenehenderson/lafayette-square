@@ -168,69 +168,100 @@ const TOTAL_BUILDINGS = buildingsData.buildings.length
 
 const BULLETIN_SECTIONS = [
   {
-    id: 'mutual-aid',
-    title: 'Mutual Aid',
-    icon: '\u2764',
-    posts: [
-      { text: 'Free hot meals every Sunday 11am at Lafayette Park gazebo', age: '2h' },
-      { text: 'Need help shoveling? Text the snow hotline \u2014 volunteers on standby', age: '5h' },
-      { text: 'Clothing swap this Saturday, Park Ave Community Room, 10am\u20131pm', age: '1d' },
-      { text: 'Emergency pet food available \u2014 DM for pickup, no questions asked', age: '2d' },
-    ],
-  },
-  {
-    id: 'services',
-    title: 'Neighbor Services',
-    icon: '\u2692',
-    posts: [
-      { text: 'Licensed electrician, 20yr resident \u2014 fair rates for neighbors', age: '3h', tag: 'Verified' },
-      { text: 'Experienced babysitter available weekday evenings, CPR certified', age: '8h' },
-      { text: 'Will haul anything to the dump \u2014 truck + muscle, just ask', age: '1d' },
-      { text: 'Tax prep help for seniors, free \u2014 Saturdays at the library', age: '3d', tag: 'Recurring' },
-      { text: 'Dog walking, $10/walk, I know every block in the square', age: '4d' },
-    ],
-  },
-  {
-    id: 'marketplace',
-    title: 'Buy / Sell / Free',
-    icon: '\u267B',
+    id: 'buy-nothing',
+    title: 'Buy Nothing',
     posts: [
       { text: 'Free: working window AC unit, you haul \u2014 Mackay Place', age: '1h' },
-      { text: 'Selling vintage iron fence panels, salvaged from a Benton Place rehab', age: '6h' },
-      { text: 'ISO: someone to split a bulk mulch delivery, 10 yards', age: '1d' },
-      { text: 'Free firewood, already split, drying in my alley \u2014 come grab it', age: '2d' },
+      { text: 'Clothing swap this Saturday, Park Ave Community Room, 10am\u20131pm', age: '5h' },
+      { text: 'Free firewood, already split, drying in my alley \u2014 come grab it', age: '1d' },
+      { text: 'Lending library box restocked on Benton Place \u2014 kids books, cookbooks', age: '2d' },
+      { text: 'ISO: anyone have a pressure washer I can borrow this weekend?', age: '3d' },
     ],
   },
   {
-    id: 'events',
-    title: 'Events & Gatherings',
-    icon: '\u2605',
+    id: 'for-sale',
+    title: 'For Sale',
     posts: [
-      { text: 'Block party planning meeting, Wed 7pm \u2014 all blocks welcome', age: '4h' },
-      { text: 'Full moon walk through the park, Friday 9pm, bring a lantern', age: '1d' },
-      { text: 'Community garden plot lottery opens March 1 \u2014 sign up at the gate', age: '2d', tag: 'Pinned' },
-      { text: 'Historic house tour volunteers needed for April weekend', age: '5d' },
+      { text: 'Vintage iron fence panels, salvaged from a Benton Place rehab \u2014 $200', age: '3h' },
+      { text: 'Two matching Restoration Hardware barstools, $75 each OBO', age: '8h' },
+      { text: 'Bulk mulch split \u2014 10 yards arriving Friday, $30/yard if 3+ neighbors go in', age: '1d' },
+      { text: 'Original 1890s transom window, needs reglaze, $150', age: '4d' },
     ],
   },
   {
-    id: 'safety',
-    title: 'Safety & Watch',
-    icon: '\u26A0',
+    id: 'missed-connections',
+    title: 'Missed Connections',
     posts: [
-      { text: 'Heads up: car break-ins on Dolman overnight, check your locks', age: '3h' },
-      { text: 'Found a lost dog near Missouri Ave, brown lab mix, no collar', age: '8h' },
-      { text: 'Street light out on Lafayette between 18th and 19th \u2014 reported to city', age: '1d' },
-      { text: 'Pothole swallowing bikes on Park Ave \u2014 311 ticket filed, need more reports', age: '3d' },
+      { text: 'To the guy who helped me carry groceries up Mackay in the rain \u2014 thank you, I owe you a beer', age: '2h' },
+      { text: 'Woman with the three-legged dog at the park Saturday morning \u2014 your dog made my kid\'s whole week', age: '1d' },
+      { text: 'Whoever left flowers on the bench at Missouri and Park \u2014 that was really beautiful', age: '3d' },
+      { text: 'Lost a glove on Lafayette Ave near 18th \u2014 black leather, left hand. Sentimental value', age: '5d' },
     ],
   },
   {
-    id: 'decisions',
-    title: 'Community Polls',
-    icon: '\u2610',
+    id: 'delivery-errands',
+    title: 'Delivery & Errands',
     posts: [
-      { text: 'Should we petition for speed bumps on Mackay Place? Vote open til Friday', age: '6h', tag: 'Active' },
-      { text: 'Park bench placement \u2014 3 proposed locations, weigh in', age: '2d', tag: 'Active' },
-      { text: 'Alley lighting fund \u2014 $2,400 raised of $3,000 goal', age: '4d' },
+      { text: 'Heading to Costco tomorrow 10am \u2014 happy to grab stuff, just Venmo me', age: '1h' },
+      { text: 'Can someone pick up a prescription at Walgreens on Jefferson? I\'m home with a sick kid', age: '4h' },
+      { text: 'Driving to IKEA Saturday, have a full SUV of room \u2014 DM if you need something', age: '1d' },
+      { text: 'Weekly farmers market run \u2014 I go every Saturday at 8am, happy to add to my list', age: '2d', tag: 'Recurring' },
+    ],
+  },
+  {
+    id: 'concierge',
+    title: 'Concierge',
+    posts: [
+      { text: 'Best plumber in the neighborhood? Leaky faucet, not urgent', age: '2h' },
+      { text: 'Where do people get keys cut around here?', age: '6h' },
+      { text: 'Looking for a good vet that\'s walkable from the square', age: '1d' },
+      { text: 'Anyone know a notary who does house calls?', age: '2d' },
+      { text: 'Rec for a tailor? Need a suit altered before a wedding', age: '4d' },
+    ],
+  },
+  {
+    id: 'business-services',
+    title: 'Business Services',
+    posts: [
+      { text: 'CPA, 15yr resident \u2014 tax prep for neighbors, fair rates', age: '3h', tag: 'Verified' },
+      { text: 'Freelance graphic designer, happy to help with flyers, logos, signage', age: '8h' },
+      { text: 'Tutoring: math & science, middle/high school, $30/hr at the library', age: '1d' },
+      { text: 'Notary public on Dolman \u2014 evenings and weekends, $5/stamp', age: '3d', tag: 'Verified' },
+      { text: 'Estate planning attorney, free 15min consults for neighbors', age: '5d' },
+    ],
+  },
+  {
+    id: 'domestic-services',
+    title: 'Domestic Services',
+    posts: [
+      { text: 'Licensed electrician, 20yr resident \u2014 fair rates for neighbors', age: '2h', tag: 'Verified' },
+      { text: 'Experienced babysitter available weekday evenings, CPR certified', age: '6h' },
+      { text: 'Dog walking, $10/walk, I know every block in the square', age: '1d' },
+      { text: 'House cleaning, biweekly or monthly, references from 6 households on the square', age: '2d', tag: 'Verified' },
+      { text: 'Will haul anything to the dump \u2014 truck + muscle, just ask', age: '4d' },
+    ],
+  },
+  {
+    id: 'emergency-supplies',
+    title: 'Emergency Supplies',
+    posts: [
+      { text: 'Free hot meals every Sunday 11am at Lafayette Park gazebo', age: '2h', tag: 'Recurring' },
+      { text: 'Emergency pet food available \u2014 DM for pickup, no questions asked', age: '5h' },
+      { text: 'Baby formula and diapers (size 3 & 4) \u2014 free, porch pickup on Mackay', age: '1d' },
+      { text: 'Need help shoveling? Text the snow hotline \u2014 volunteers on standby', age: '2d', tag: 'Active' },
+      { text: 'Space heater available to loan \u2014 if your heat goes out, just call', age: '4d' },
+    ],
+  },
+  {
+    id: 'square-notes',
+    title: 'Square Notes',
+    posts: [
+      { text: 'The hawk is back on the church steeple. Third year in a row. Magnificent.', age: '1h' },
+      { text: 'Whoever is practicing trumpet on Dolman around 7pm \u2014 you\'re getting better. Keep going.', age: '3h' },
+      { text: 'The magnolia on Benton Place is about to pop. Just a heads up for anyone who needs a good day.', age: '8h' },
+      { text: 'Someone\'s Christmas lights are still up on Mackay. It\'s February. I\'m not mad, just impressed.', age: '1d' },
+      { text: 'To the person who chalked "you are loved" on the park sidewalk \u2014 I needed that today', age: '2d' },
+      { text: 'The alley cats behind Missouri Ave have formed some kind of council. There were seven of them in a circle.', age: '3d' },
     ],
   },
 ]
@@ -249,7 +280,6 @@ function BulletinBoard() {
                 onClick={() => setExpandedId(isOpen ? null : section.id)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-colors"
               >
-                <span className="text-xs opacity-50">{section.icon}</span>
                 <span className="text-[11px] text-white/80 flex-1">{section.title}</span>
                 <span className="text-[9px] text-white/30">{section.posts.length}</span>
                 <svg
@@ -277,6 +307,32 @@ function BulletinBoard() {
             </div>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+// ============ COLLAPSIBLE SECTION ============
+
+function CollapsibleSection({ title, defaultOpen = false, bg = '', highlight = false, children }) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <div className={`border-t border-white/5 ${bg}`}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/5 transition-colors"
+      >
+        <span className={`text-[10px] uppercase tracking-widest ${highlight ? 'text-white/60 font-semibold' : 'text-white/30'}`}>{title}</span>
+        <svg
+          className={`w-3 h-3 text-white/20 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`overflow-hidden transition-all duration-200 ease-out ${open ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        {children}
       </div>
     </div>
   )
@@ -452,79 +508,76 @@ function AlmanacTab({ showAdmin = false }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto border-t border-white/5">
-        <div className="px-4 pt-2 pb-1">
-          <span className="text-[10px] text-white/30 uppercase tracking-widest">Bulletin Board</span>
-        </div>
+      <div className="flex-1 overflow-y-auto">
+      <CollapsibleSection title="Bulletin Board" defaultOpen={false} highlight>
         <BulletinBoard />
-      </div>
+      </CollapsibleSection>
 
       {showAdmin && (
-        <div className="px-4 py-3 border-t border-white/10 bg-black/50">
-          <div>
-            <span className="text-[10px] text-white/30 uppercase tracking-widest">Business Simulation</span>
-            <div className="mt-2">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-white/50">
-                  Open: {sliderValue.toLocaleString()} of {TOTAL_BUILDINGS.toLocaleString()}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={realOpenCount}
-                max={TOTAL_BUILDINGS}
-                step="1"
-                value={sliderValue}
-                onChange={(e) => setSliderValue(parseInt(e.target.value))}
-                onMouseUp={() => {
+        <CollapsibleSection title="Business Simulation" defaultOpen={false} bg="bg-black/50">
+          <div className="px-4 pb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-white/50">
+                Open: {sliderValue.toLocaleString()} of {TOTAL_BUILDINGS.toLocaleString()}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={realOpenCount}
+              max={TOTAL_BUILDINGS}
+              step="1"
+              value={sliderValue}
+              onChange={(e) => setSliderValue(parseInt(e.target.value))}
+              onMouseUp={() => {
+                const simExtra = sliderValue - realOpenCount
+                const simPct = TOTAL_BUILDINGS > realOpenCount
+                  ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
+                  : 0
+                randomize(buildingIds.current, simPct)
+              }}
+              onTouchEnd={() => {
+                const simExtra = sliderValue - realOpenCount
+                const simPct = TOTAL_BUILDINGS > realOpenCount
+                  ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
+                  : 0
+                randomize(buildingIds.current, simPct)
+              }}
+              className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => {
                   const simExtra = sliderValue - realOpenCount
                   const simPct = TOTAL_BUILDINGS > realOpenCount
                     ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
                     : 0
                   randomize(buildingIds.current, simPct)
                 }}
-                onTouchEnd={() => {
-                  const simExtra = sliderValue - realOpenCount
-                  const simPct = TOTAL_BUILDINGS > realOpenCount
-                    ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
-                    : 0
-                  randomize(buildingIds.current, simPct)
-                }}
-                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => {
-                    const simExtra = sliderValue - realOpenCount
-                    const simPct = TOTAL_BUILDINGS > realOpenCount
-                      ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
-                      : 0
-                    randomize(buildingIds.current, simPct)
-                  }}
-                  className="flex-1 text-[10px] px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
-                >
-                  Randomize
-                </button>
-                <button
-                  onClick={() => { openAll(buildingIds.current); setSliderValue(TOTAL_BUILDINGS) }}
-                  className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => { closeAll(); setSliderValue(realOpenCount) }}
-                  className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
-                >
-                  Actual
-                </button>
-              </div>
+                className="flex-1 text-[10px] px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
+              >
+                Randomize
+              </button>
+              <button
+                onClick={() => { openAll(buildingIds.current); setSliderValue(TOTAL_BUILDINGS) }}
+                className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+              >
+                All
+              </button>
+              <button
+                onClick={() => { closeAll(); setSliderValue(realOpenCount) }}
+                className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+              >
+                Actual
+              </button>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
+      </div>
 
-      <div className="mt-auto px-4 py-2 border-t border-white/5 text-[10px] text-white/30 tracking-wide">
-        <div>{buildingsData.buildings.length.toLocaleString()} buildings &middot; {streetsData.streets.length} streets</div>
+      <div className="flex-shrink-0 px-4 py-2 border-t border-white/5 text-[10px] text-white/30 tracking-wide">
+        <div>2,164 residents</div>
+        <div className="mt-0.5">{buildingsData.buildings.length.toLocaleString()} buildings &middot; {streetsData.streets.length} streets</div>
         <div className="mt-0.5">38.62&deg;N 90.22&deg;W &middot; St. Louis, MO</div>
       </div>
     </div>
