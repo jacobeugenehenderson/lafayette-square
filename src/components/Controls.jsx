@@ -7,8 +7,7 @@ import BusinessCard from './BusinessCard'
 
 const INSTRUCTIONS = {
   hero: '',
-  map: 'Scroll to zoom \u00B7 Drag to pan \u00B7 Double-click street for street view',
-  society: 'Scroll to zoom \u00B7 Drag to pan or rotate \u00B7 Double-click street for street view',
+  browse: 'Drag to orbit \u00B7 Ctrl-drag to pan \u00B7 Scroll to zoom \u00B7 Double-click street for street view',
   street: 'Drag to look around \u00B7 ESC to exit',
 }
 

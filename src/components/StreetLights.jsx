@@ -86,9 +86,9 @@ function StreetLights() {
   }), [])
 
   const headMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: LAMP_COLOR_OFF,
-    emissive: LAMP_COLOR_OFF,
-    emissiveIntensity: 0,
+    color: '#999999',
+    emissive: '#ffcc66',
+    emissiveIntensity: 0.4,
     roughness: 0.3,
     metalness: 0.1,
   }), [])
@@ -149,9 +149,9 @@ function StreetLights() {
     if (!shouldGlow) {
       if (prevIntensityRef.current !== 0) {
         prevIntensityRef.current = 0
-        headMat.emissive.copy(LAMP_COLOR_OFF)
-        headMat.emissiveIntensity = 0
-        headMat.color.copy(LAMP_COLOR_OFF)
+        headMat.emissive.set('#ffcc66')
+        headMat.emissiveIntensity = 0.4
+        headMat.color.set('#999999')
         headMat.needsUpdate = true
         poolMat.uniforms.uIntensity.value = 0
         // Turn off all dynamic lights
@@ -198,6 +198,7 @@ function StreetLights() {
     // PointLight intensity: ramp with darkness, scale with distance-based decay
     const lightIntensity = t * 40
     const lights = lightsRef.current
+    if (!lights.length) return
     for (let j = 0; j < DYNAMIC_LIGHT_COUNT; j++) {
       const lamp = sortScratch[j]
       lights[j].position.set(lamp.x, POST_HEIGHT - 0.5, lamp.z)
@@ -207,9 +208,9 @@ function StreetLights() {
 
   return (
     <group>
-      <instancedMesh ref={postRef} args={[postGeo, postMat, count]} castShadow />
-      <instancedMesh ref={headRef} args={[headGeo, headMat, count]} />
-      <instancedMesh ref={poolRef} args={[poolGeo, poolMat, count]} />
+      <instancedMesh ref={postRef} args={[postGeo, postMat, count]} castShadow frustumCulled={false} />
+      <instancedMesh ref={headRef} args={[headGeo, headMat, count]} frustumCulled={false} />
+      <instancedMesh ref={poolRef} args={[poolGeo, poolMat, count]} frustumCulled={false} />
     </group>
   )
 }

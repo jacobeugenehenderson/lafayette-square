@@ -13,6 +13,15 @@ import useBusinessState from '../hooks/useBusinessState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
+
+// ── Drag guard: suppress clicks after pointer moves >6px (prevents accidental selection during pan) ──
+let _pdx = 0, _pdy = 0
+document.addEventListener('pointerdown', (e) => { _pdx = e.clientX; _pdy = e.clientY })
+function isDrag(e) {
+  const ce = e.nativeEvent || e
+  const dx = ce.clientX - _pdx, dy = ce.clientY - _pdy
+  return dx * dx + dy * dy > 36
+}
 import buildingOverridesData from '../data/buildingOverrides.json'
 
 // ============ PER-BUILDING OVERRIDES ============
@@ -410,8 +419,8 @@ function NeonBand({ building, categoryHex, forceOn = false }) {
       prev.glowFactor = glowFactor
 
       if (isOpen) {
-        mat.opacity = 0.4 + 0.6 * glowFactor
-        mat.emissiveIntensity = 0.3 + 2.2 * glowFactor
+        mat.opacity = 1
+        mat.emissiveIntensity = 2.5
         mat.color.copy(baseColor)
         mat.emissive.copy(baseColor)
       } else {
@@ -561,7 +570,7 @@ function Building({ building, categoryHex }) {
         receiveShadow
         onPointerOver={(e) => { e.stopPropagation(); setHovered(building.id); document.body.style.cursor = 'pointer' }}
         onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
-        onClick={(e) => { e.stopPropagation(); select(building.id) }}
+        onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(building.id) }}
       />
       {showNeon && <NeonBand building={building} categoryHex={effectiveHex} forceOn={isSimOpen} />}
     </group>
@@ -571,7 +580,7 @@ function Building({ building, categoryHex }) {
 function ClickCatcher() {
   const deselect = useSelectedBuilding((state) => state.deselect)
   return (
-    <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]} onClick={() => deselect()}>
+    <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]} onClick={(e) => { if (!isDrag(e)) deselect() }}>
       <planeGeometry args={[2000, 2000]} />
       <meshBasicMaterial visible={false} />
     </mesh>
@@ -713,7 +722,7 @@ function MapPin({ landmark, building, xOffset = 0, zOffset = 0 }) {
         zIndexRange={[1, 10]}
       >
         <div
-          onClick={(e) => { e.stopPropagation(); select(landmark.id, landmark.building_id) }}
+          onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(landmark.id, landmark.building_id) }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
           onPointerOut={() => { document.body.style.cursor = 'auto' }}
           style={{
@@ -880,7 +889,12 @@ function LafayetteScene() {
 
     // Greedily place labels, skipping those too close to already-placed ones
     const placed = []
+    // Streets allowed east of Truman (x > 640)
+    const EAST_OF_TRUMAN_ALLOWED = /^(Dillon|Park|Rutger|Hickory|Chouteau|Truman)/i
     for (const c of candidates) {
+      // Filter: drop labels east of Truman unless whitelisted
+      if (c.x > 640 && !EAST_OF_TRUMAN_ALLOWED.test(c.name)) continue
+
       let tooClose = false
       for (const p of placed) {
         const dx = c.x - p.x, dz = c.z - p.z
@@ -905,12 +919,12 @@ function LafayetteScene() {
         <Building key={b.id} building={b} categoryHex={neonLookup[b.id]} />
       ))}
 
-      {/* Street labels — hero doesn't need */}
+      {/* Street labels — hidden only in hero mode */}
       {viewMode !== 'hero' && streetLabels.map((label, i) => (
         <StreetLabel key={`label-${i}`} label={label} />
       ))}
 
-      {/* Landmark markers — hero doesn't need */}
+      {/* Landmark markers — hidden only in hero mode */}
       {viewMode !== 'hero' && <LandmarkMarkers />}
     </group>
   )

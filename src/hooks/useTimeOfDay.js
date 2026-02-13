@@ -12,6 +12,7 @@ const useTimeOfDay = create((set, get) => ({
 
   setTime: (date) => set({ currentTime: date }),
   setTimeSpeed: (speed) => set({ timeSpeed: speed }),
+  setPaused: (v) => set({ isPaused: v }),
   togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
 
   setHour: (hour) => {

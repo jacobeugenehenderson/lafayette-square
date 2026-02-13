@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import useSkyState from '../hooks/useSkyState'
 import parkTreeData from '../data/park_trees.json'
 import parkWaterData from '../data/park_water.json'
 import parkPathData from '../data/park_paths.json'
@@ -66,13 +67,6 @@ function makeCrossedPlaneGeo() {
     }
     indices.push(vOff, vOff + 1, vOff + 2, vOff, vOff + 2, vOff + 3)
   }
-  const hOff = 3 * 4
-  const hy = 0.15
-  positions.push(-0.5, hy, -0.5, 0.5, hy, -0.5, 0.5, hy, 0.5, -0.5, hy, 0.5)
-  normals.push(0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0)
-  uvs.push(0, 0, 1, 0, 1, 1, 0, 1)
-  indices.push(hOff, hOff + 1, hOff + 2, hOff, hOff + 2, hOff + 3)
-
   const geo = new THREE.BufferGeometry()
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
@@ -416,7 +410,7 @@ function ParkPaths() {
   })
 
   return (
-    <mesh geometry={pathGeo} position={[0, 0.12, 0]} receiveShadow material={pathMat} />
+    <mesh geometry={pathGeo} position={[0, 0.15, 0]} receiveShadow material={pathMat} />
   )
 }
 
@@ -439,7 +433,7 @@ function ParkTrees() {
     return map
   }, [])
 
-  const { woodGeo, canopyByMorph, crossedPlaneGeo } = useMemo(() => {
+  const { woodGeo, canopyByMorph, crossedPlaneGeo, treeRoots } = useMemo(() => {
     const grottoPoly = parkWaterData.grotto
     const lakeOuterPoly = parkWaterData.lake.outer
     const islandPoly = parkWaterData.lake.island
@@ -569,6 +563,7 @@ function ParkTrees() {
       }
     }
 
+    const treeRoots = []
     trees.forEach((tree, idx) => {
       const { x, z, shape, dbh, species } = tree
       const r = (n) => seed(idx * 137 + n)
@@ -594,6 +589,7 @@ function ParkTrees() {
         canopyR *= sc; canopyH *= sc
       }
 
+      treeRoots.push({ x, z, r: canopyR * 0.8 })
       const bark = BARK[idx % BARK.length]
 
       // ── Trunk — tapers to a point so no flat chop ──
@@ -708,7 +704,7 @@ function ParkTrees() {
 
     const woodGeo = mergeGeos(woodGeos)
     const crossedPlaneGeo = makeCrossedPlaneGeo()
-    return { woodGeo, canopyByMorph, crossedPlaneGeo }
+    return { woodGeo, canopyByMorph, crossedPlaneGeo, treeRoots }
   }, [])
 
   // Set billboard instance transforms
@@ -727,6 +723,42 @@ function ParkTrees() {
       mesh.instanceMatrix.needsUpdate = true
     })
   }, [canopyByMorph])
+
+  // Tree base AO discs — dark contact shadow at trunk-ground junction
+  const aoGeo = useMemo(() => new THREE.CircleGeometry(1, 16), [])
+  const aoMat = useMemo(() => new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      void main() {
+        float dist = length(vUv - 0.5) * 2.0;
+        float alpha = 1.0 - smoothstep(0.0, 1.0, dist);
+        alpha = alpha * alpha * 0.4;
+        gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+      }
+    `,
+  }), [])
+  const aoRef = useRef()
+  useEffect(() => {
+    if (!aoRef.current || treeRoots.length === 0) return
+    const dummy = new THREE.Object3D()
+    treeRoots.forEach((root, i) => {
+      dummy.position.set(root.x, 0.11, root.z)
+      dummy.rotation.set(-Math.PI / 2, 0, 0)
+      dummy.scale.set(root.r, root.r, 1)
+      dummy.updateMatrix()
+      aoRef.current.setMatrixAt(i, dummy.matrix)
+    })
+    aoRef.current.instanceMatrix.needsUpdate = true
+  }, [treeRoots])
 
   // Bark material: vertex colors + world-space noise
   const barkMat = useMemo(() => {
@@ -782,8 +814,9 @@ function ParkTrees() {
       const mat = new THREE.MeshStandardMaterial({
         map: tex || null,
         alphaTest: 0.08,
-        roughness: 0.72,
+        roughness: 0.55,
         side: THREE.DoubleSide,
+        shadowSide: THREE.DoubleSide,
         transparent: false,
         color: '#c0e8b0',
         emissive: '#1a3a12',
@@ -791,31 +824,78 @@ function ParkTrees() {
       })
       mat.onBeforeCompile = (shader) => {
         shader.uniforms.uSunAltitude = { value: 0.5 }
+        shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
+        shader.uniforms.uWindTime = { value: 0.0 }
         foliageShaderRefs.current[lt.id] = shader
         shader.vertexShader = shader.vertexShader.replace(
           '#include <common>',
           `#include <common>
-           varying vec3 vFoliageWorld;`
+           uniform float uWindTime;
+           varying vec3 vFoliageWorld;
+           varying vec3 vFoliageNormal;`
         )
         shader.vertexShader = shader.vertexShader.replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>
            vec4 wp = modelMatrix * instanceMatrix * vec4(position, 1.0);
-           vFoliageWorld = wp.xyz;`
+           vFoliageWorld = wp.xyz;
+           vFoliageNormal = normalize((modelMatrix * instanceMatrix * vec4(normal, 0.0)).xyz);
+
+           // ── Wind: traveling wave + per-tree flutter ──
+           // Per-tree identity hash from instance world position
+           float treeHash = fract(sin(dot(floor(wp.xz * 0.1), vec2(127.1, 311.7))) * 43758.5453);
+           float treeHash2 = fract(sin(treeHash * 531.3) * 43758.5453);
+
+           // Traveling wave ripple across the park (moves NE to SW)
+           float wavePhase = uWindTime * 0.8 - wp.x * 0.018 + wp.z * 0.012;
+           float wave = sin(wavePhase) * 0.15 + sin(wavePhase * 0.7 + 1.3) * 0.08;
+
+           // Broad sway: slow, tree-scale rocking
+           float swayPhase = uWindTime * (0.4 + treeHash * 0.2) + treeHash * 6.28;
+           float sway = sin(swayPhase) * 0.12 + sin(swayPhase * 1.7) * 0.05;
+
+           // Flutter: gentle per-branch variation
+           float branchSeed = position.x * 1.3 + position.z * 0.9 + treeHash2 * 6.28;
+           float flutter = sin(uWindTime * (2.0 + treeHash2 * 1.5) + branchSeed) * 0.02;
+
+           // Combine: wave carries sway, flutter rides on top
+           float totalWind = wave + sway + flutter;
+
+           // Height factor: top of canopy moves more
+           float heightFactor = max(0.0, position.y * 0.3 + 0.5);
+           transformed.x += totalWind * heightFactor;
+           transformed.z += totalWind * heightFactor * 0.5;
+           // Slight vertical bob from flutter
+           transformed.y += flutter * heightFactor * 0.2;`
         )
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <common>',
           `#include <common>
            uniform float uSunAltitude;
-           varying vec3 vFoliageWorld;`
+           uniform vec3 uSunDir;
+           varying vec3 vFoliageWorld;
+           varying vec3 vFoliageNormal;`
         )
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <color_fragment>',
           `#include <color_fragment>
-           // Brighten foliage — lift shadows, add translucency feel
-           diffuseColor.rgb = pow(diffuseColor.rgb, vec3(0.85));
+           // Gamma lift for richness
+           diffuseColor.rgb = pow(diffuseColor.rgb, vec3(0.82));
+
            float dayBF = smoothstep(-0.12, 0.3, uSunAltitude);
-           float brightF = mix(0.55, 1.05, dayBF);
+
+           // Backlit translucency: leaves facing away from sun glow warm green
+           float backlit = max(0.0, dot(-vFoliageNormal, uSunDir));
+           backlit = pow(backlit, 1.5) * dayBF;
+           vec3 translucentColor = pow(vec3(0.45, 0.75, 0.2), vec3(2.2)); // linearized warm green
+           diffuseColor.rgb += translucentColor * backlit * 0.6;
+
+           // Daytime emissive boost: foliage self-glows in sunlight
+           vec3 emGlow = pow(vec3(0.25, 0.45, 0.15), vec3(2.2)); // linearized leaf green
+           diffuseColor.rgb += emGlow * dayBF * 0.25;
+
+           // Day/night brightness
+           float brightF = mix(0.55, 1.15, dayBF);
            vec3 nightTF = vec3(0.6, 0.7, 1.0);
            diffuseColor.rgb = mix(diffuseColor.rgb * nightTF, diffuseColor.rgb, dayBF) * brightF;`
         )
@@ -825,17 +905,26 @@ function ParkTrees() {
     return mats
   }, [leafTextures])
 
-  useFrame(() => {
+  const windTimeRef = useRef(0)
+  useFrame((_, delta) => {
+    windTimeRef.current += delta
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
+    const sunDir = useSkyState.getState().sunDirection
     if (shaderRef.current) shaderRef.current.uniforms.uSunAltitude.value = sunAltitude
     Object.values(foliageShaderRefs.current).forEach(s => {
-      if (s) s.uniforms.uSunAltitude.value = sunAltitude
+      if (!s) return
+      s.uniforms.uSunAltitude.value = sunAltitude
+      s.uniforms.uSunDir.value.copy(sunDir)
+      s.uniforms.uWindTime.value = windTimeRef.current
     })
   })
 
   return (
     <group>
       <mesh geometry={woodGeo} material={barkMat} castShadow />
+      {treeRoots.length > 0 && (
+        <instancedMesh ref={aoRef} args={[aoGeo, aoMat, treeRoots.length]} frustumCulled={false} />
+      )}
       {leafTypesData.types.map(lt => {
         const blobs = canopyByMorph[lt.id]
         if (!blobs || blobs.length === 0) return null
@@ -845,6 +934,7 @@ function ParkTrees() {
             ref={el => { canopyRefs.current[lt.id] = el }}
             args={[crossedPlaneGeo, foliageMats[lt.id], blobs.length]}
             frustumCulled={false}
+            castShadow
           />
         )
       })}

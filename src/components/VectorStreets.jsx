@@ -1,14 +1,19 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import * as THREE from 'three'
+import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
 import blockShapes from '../data/block_shapes.json'
-import groundLayers from '../data/ground_layers.json'
 import useCamera from '../hooks/useCamera'
 import { mergeBufferGeometries } from '../lib/mergeGeometries'
+// SVG served from public/ — user edits assets/, copies to public/ for use
+const svgUrl = '/lafayette-square.svg'
 
-// ── Colors & constants ──────────────────────────────────────────────────────
-const ROAD_COLOR   = '#0e0e12'
+// ── SVG coordinate mapping ──────────────────────────────────────────────────
+// SVG viewBox: 0 0 1309 1152.7
+// SVG origin (0,0) = world (-497.7, -732.5), 1 SVG unit ≈ 1 meter
+const SVG_WORLD_X = -497.7
+const SVG_WORLD_Z = -732.5
 
-// ── Geometry helpers ────────────────────────────────────────────────────────
+// ── Geometry helpers (used by CenterLines) ──────────────────────────────────
 
 function getPathLength(points) {
   let length = 0
@@ -206,118 +211,300 @@ function CenterLines({ streets }) {
   )
 }
 
-// ── Lightweight strip builder (no Catmull-Rom — SVG points are pre-smoothed) ─
+// ── Shape cleanup (fixes earcut triangulation spikes) ────────────────────────
+// SVG bezier curves create near-duplicate and collinear points that cause
+// earcut to produce degenerate triangles. Clean shapes before ShapeGeometry.
+const DEDUP_TOL = 0.15  // merge points closer than this
+const COLLINEAR_TOL = 0.02  // remove points whose cross product < this
 
-function buildStripGeometry(points, width, yOffset = 0) {
-  if (points.length < 2) return null
-  const halfWidth = width / 2
-  const vertices = []
-  const indices = []
-
-  for (let i = 0; i < points.length; i++) {
-    const [x, z] = points[i]
-    let tx, tz
-    if (i === 0) { tx = points[1][0] - x; tz = points[1][1] - z }
-    else if (i === points.length - 1) { tx = x - points[i-1][0]; tz = z - points[i-1][1] }
-    else { tx = points[i+1][0] - points[i-1][0]; tz = points[i+1][1] - points[i-1][1] }
-    const len = Math.sqrt(tx * tx + tz * tz) || 1
-    const px = -tz / len, pz = tx / len
-
-    vertices.push(
-      x + px * halfWidth, yOffset, z + pz * halfWidth,
-      x - px * halfWidth, yOffset, z - pz * halfWidth
-    )
-    if (i > 0) {
-      const base = (i - 1) * 2
-      indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3)
-    }
+function cleanPoints(pts) {
+  if (pts.length < 3) return pts
+  // 1. Remove consecutive near-duplicates
+  const deduped = [pts[0]]
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i].x - deduped[deduped.length - 1].x
+    const dy = pts[i].y - deduped[deduped.length - 1].y
+    if (dx * dx + dy * dy > DEDUP_TOL * DEDUP_TOL) deduped.push(pts[i])
   }
-
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
-  geo.setIndex(indices)
-  geo.computeVertexNormals()
-  return geo
+  // Close-loop dedup: check last vs first
+  if (deduped.length > 2) {
+    const f = deduped[0], l = deduped[deduped.length - 1]
+    const dx = f.x - l.x, dy = f.y - l.y
+    if (dx * dx + dy * dy < DEDUP_TOL * DEDUP_TOL) deduped.pop()
+  }
+  if (deduped.length < 3) return deduped
+  // 2. Remove nearly-collinear points
+  const clean = [deduped[0]]
+  for (let i = 1; i < deduped.length - 1; i++) {
+    const prev = clean[clean.length - 1]
+    const curr = deduped[i]
+    const next = deduped[i + 1]
+    const ax = curr.x - prev.x, ay = curr.y - prev.y
+    const bx = next.x - curr.x, by = next.y - curr.y
+    const cross = Math.abs(ax * by - ay * bx)
+    const lenA = Math.sqrt(ax * ax + ay * ay) || 1
+    const lenB = Math.sqrt(bx * bx + by * by) || 1
+    if (cross / (lenA * lenB) > COLLINEAR_TOL) clean.push(curr)
+  }
+  clean.push(deduped[deduped.length - 1])
+  return clean
 }
 
-// ── SVG-sourced streets (from Illustrator artwork) ──────────────────────
-
-function SvgStreets({ heroMode }) {
-  const { streetGroups, blockGeometry } = useMemo(() => {
-    // Group streets by color
-    const streetsByColor = {}
-    for (const seg of groundLayers.streets) {
-      if (seg.points.length < 2) continue
-      const color = seg.color || '#000'
-      if (!streetsByColor[color]) streetsByColor[color] = []
-      streetsByColor[color].push(seg)
+function cleanShape(shape) {
+  const data = shape.extractPoints(12)
+  const outerPts = cleanPoints(data.shape)
+  if (outerPts.length < 3) return null
+  const s = new THREE.Shape(outerPts)
+  for (const hole of data.holes) {
+    const hPts = cleanPoints(hole)
+    if (hPts.length >= 3) {
+      const hp = new THREE.Path(hPts)
+      s.holes.push(hp)
     }
+  }
+  return s
+}
 
-    const streetGroups = []
-    for (const [color, segs] of Object.entries(streetsByColor)) {
-      const geos = []
-      for (const seg of segs) {
-        const geo = buildStripGeometry(seg.points, seg.width, 0)
-        if (geo) geos.push(geo)
-      }
-      if (geos.length > 0) {
-        streetGroups.push({ color, geometry: mergeBufferGeometries(geos) })
-        geos.forEach(g => g.dispose())
-      }
-    }
+// ── SVG Map Layers (parsed as geometry from Illustrator SVG) ─────────────────
 
-    // Merge ALL blocks into one mesh with vertex colors (avoids Z-fighting)
-    const tmpColor = new THREE.Color()
-    const blockGeos = []
-    const blockColors = [] // { count, r, g, b } per block
-    for (const blk of groundLayers.blocks) {
-      if (blk.polygon.length < 3) continue
-      const color = blk.color || '#000'
-      if (color === '#000') continue
-      const shape = new THREE.Shape()
-      shape.moveTo(blk.polygon[0][0], -blk.polygon[0][1])
-      for (let i = 1; i < blk.polygon.length; i++) {
-        shape.lineTo(blk.polygon[i][0], -blk.polygon[i][1])
-      }
-      shape.closePath()
-      const geo = new THREE.ShapeGeometry(shape)
-      geo.rotateX(-Math.PI / 2)
-      tmpColor.set(color)
-      blockColors.push({ count: geo.attributes.position.count, r: tmpColor.r, g: tmpColor.g, b: tmpColor.b })
-      blockGeos.push(geo)
-    }
-    let blockGeometry = null
-    if (blockGeos.length > 0) {
-      blockGeometry = mergeBufferGeometries(blockGeos)
-      // Apply vertex colors after merge (mergeBufferGeometries only copies position)
-      const totalVerts = blockGeometry.attributes.position.count
-      const colorArr = new Float32Array(totalVerts * 3)
-      let offset = 0
-      for (const { count, r, g, b } of blockColors) {
-        for (let i = 0; i < count; i++) {
-          colorArr[offset++] = r
-          colorArr[offset++] = g
-          colorArr[offset++] = b
+// Layer config — keyed by SVG group ID, ready for CSS token mapping
+const SVG_LAYERS = {
+  blocks:    { y: 0.08, color: '#333333' },
+  service:   { y: 0.09, color: '#4c4c4c' },
+  paths:     { y: 0.10, color: '#cccccc', clipId: 'clippath' },
+  streets:   { y: 0.05, color: '#000000' },
+  sidewalks: { y: 0.12, color: '#7f7c73' },
+}
+
+// Transform geometry vertices from SVG 2D to world XZ
+// SVGLoader preserves raw SVG coords: X right, Y down (no flip)
+// World: X east, Z south — both align with SVG axes
+function transformSvgToWorld(geo) {
+  const pos = geo.attributes.position.array
+  for (let i = 0; i < pos.length; i += 3) {
+    const svgX = pos[i]
+    const svgY = pos[i + 1]
+    pos[i] = SVG_WORLD_X + svgX      // world X
+    pos[i + 1] = 0                    // world Y (flat on ground)
+    pos[i + 2] = SVG_WORLD_Z + svgY  // world Z (SVG Y-down = world Z-south)
+  }
+  geo.attributes.position.needsUpdate = true
+}
+
+// Clip shader via onBeforeCompile — discards fragments outside a mask texture
+// Maps world XZ position to UV in the SVG viewport, samples mask texture
+const CLIP_MIN = new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z)
+const CLIP_SIZE = new THREE.Vector2(1309, 1152.7)
+
+function makeClipShader(clipTexture) {
+  return (shader) => {
+    shader.uniforms.uClipMap = { value: clipTexture }
+    shader.uniforms.uClipMin = { value: CLIP_MIN }
+    shader.uniforms.uClipSize = { value: CLIP_SIZE }
+
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>',
+      `#include <common>
+       varying vec2 vWorldXZ;`
+    )
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <project_vertex>',
+      `#include <project_vertex>
+       vWorldXZ = (modelMatrix * vec4(position, 1.0)).xz;`
+    )
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <common>',
+      `#include <common>
+       uniform sampler2D uClipMap;
+       uniform vec2 uClipMin;
+       uniform vec2 uClipSize;
+       varying vec2 vWorldXZ;`
+    )
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <dithering_fragment>',
+      `#include <dithering_fragment>
+       vec2 clipUV = (vWorldXZ - uClipMin) / uClipSize;
+       float mask = texture2D(uClipMap, clipUV).r;
+       if (mask < 0.5) discard;`
+    )
+  }
+}
+
+function SvgMapLayers() {
+  const [layers, setLayers] = useState(null)
+
+  useEffect(() => {
+    fetch(svgUrl)
+      .then(r => r.text())
+      .then(svgText => {
+        const loader = new SVGLoader()
+        const data = loader.parse(svgText)
+
+        // Bucket parsed paths by parent SVG group ID
+        const buckets = {}
+        for (const id of Object.keys(SVG_LAYERS)) buckets[id] = []
+
+        for (const path of data.paths) {
+          const node = path.userData?.node
+          if (!node) continue
+          if (path.userData.style?.display === 'none') continue
+
+          // Walk up DOM to find which layer this path belongs to
+          let el = node
+          let groupId = null
+          while (el) {
+            if (el.id && SVG_LAYERS[el.id]) { groupId = el.id; break }
+            // Stop at display:none ancestors (e.g. "streets" group)
+            if (el.getAttribute?.('display') === 'none' && !SVG_LAYERS[el.id]) break
+            el = el.parentElement
+          }
+          if (!groupId) continue
+          buckets[groupId].push(path)
         }
-      }
-      blockGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colorArr, 3))
-    }
-    blockGeos.forEach(g => g.dispose())
 
-    return { streetGroups, blockGeometry }
+        // Build clip mask textures from SVG <defs> clipPaths
+        const clipTextures = {}
+        const domParser = new DOMParser()
+        const svgDoc = domParser.parseFromString(svgText, 'image/svg+xml')
+        for (const clipPathEl of svgDoc.querySelectorAll('clipPath')) {
+          const clipId = clipPathEl.id
+          const pathEls = clipPathEl.querySelectorAll('path')
+          const dAttrs = [...pathEls].map(p => p.getAttribute('d')).filter(Boolean)
+          if (!dAttrs.length) continue
+
+          // Rasterize clip path to a mask texture via Canvas2D
+          const RES = 1024
+          const aspect = 1152.7 / 1309
+          const canvas = document.createElement('canvas')
+          canvas.width = RES
+          canvas.height = Math.round(RES * aspect)
+          const ctx = canvas.getContext('2d')
+
+          // Black = clipped, white = visible
+          ctx.fillStyle = '#000'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          ctx.fillStyle = '#fff'
+          const sx = canvas.width / 1309
+          const sy = canvas.height / 1152.7
+          ctx.scale(sx, sy)
+          for (const d of dAttrs) {
+            const p2d = new Path2D(d)
+            ctx.fill(p2d)
+          }
+
+          const tex = new THREE.CanvasTexture(canvas)
+          tex.flipY = false // Canvas Y-down matches SVG Y-down matches world Z-south
+          tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
+          tex.minFilter = THREE.LinearFilter
+          clipTextures[clipId] = tex
+        }
+        console.log('[SvgMapLayers] ClipMasks:', Object.keys(clipTextures).join(', '))
+
+        // Build merged geometry per layer
+        const result = {}
+
+        for (const [groupId, config] of Object.entries(SVG_LAYERS)) {
+          const paths = buckets[groupId]
+          if (!paths.length) continue
+
+          const fillGeos = []
+          const strokeGeos = []
+
+          for (const path of paths) {
+            const style = path.userData.style
+
+            // Streets layer: fill the road surface shapes, skip stroke
+            if (groupId === 'streets') {
+              style.fill = '#000000'
+              style.stroke = 'none'
+            }
+
+            // ── Fills (blocks, sidewalks) ──
+            // Only fill when explicit fill attribute is present and not 'none'
+            // Illustrator "Presentation Attributes" export includes fill= on every filled path
+            const fc = style.fill
+            if (fc && fc !== 'none' && fc !== 'transparent') {
+              const shapes = SVGLoader.createShapes(path)
+              for (const shape of shapes) {
+                const cleaned = cleanShape(shape)
+                if (!cleaned) continue
+                // curveSegments=1 — curves already flattened in cleanShape
+                const geo = new THREE.ShapeGeometry(cleaned, 1)
+                if (geo.attributes.position.count > 0) {
+                  transformSvgToWorld(geo)
+                  fillGeos.push(geo)
+                } else {
+                  geo.dispose()
+                }
+              }
+            }
+
+            // ── Strokes (service roads, park paths, sidewalk edges) ──
+            const sc = style.stroke
+            if (sc && sc !== 'none' && sc !== 'transparent') {
+              for (const subPath of path.subPaths) {
+                const pts = subPath.getPoints(12)
+                if (pts.length < 2) continue
+                const geo = SVGLoader.pointsToStroke(pts, style)
+                if (geo && geo.attributes.position.count > 0) {
+                  transformSvgToWorld(geo)
+                  strokeGeos.push(geo)
+                }
+              }
+            }
+          }
+
+          // Merge all fills and strokes for this layer
+          const layer = { ...config, fillGeometry: null, strokeGeometry: null, clipGeometry: null }
+          if (fillGeos.length) {
+            layer.fillGeometry = mergeBufferGeometries(fillGeos)
+            fillGeos.forEach(g => g.dispose())
+          }
+          if (strokeGeos.length) {
+            layer.strokeGeometry = mergeBufferGeometries(strokeGeos)
+            strokeGeos.forEach(g => g.dispose())
+          }
+          // Attach clip mask texture if this layer has a clipId
+          if (config.clipId && clipTextures[config.clipId]) {
+            layer.clipTexture = clipTextures[config.clipId]
+          }
+          if (layer.fillGeometry || layer.strokeGeometry) result[groupId] = layer
+        }
+
+        console.log('[SvgMapLayers]', Object.entries(result).map(([id, l]) =>
+            `${id}: ${l.fillGeometry ? 'fills' : ''}${l.strokeGeometry ? '+strokes' : ''}`
+          ).join(', '))
+        setLayers(result)
+      })
   }, [])
+
+  if (!layers) return null
 
   return (
     <group>
-      {blockGeometry && (
-        <mesh geometry={blockGeometry} position={[0, 0.3, 0]}>
-          <meshStandardMaterial vertexColors roughness={0.92} depthWrite={false} />
-        </mesh>
-      )}
-      {!heroMode && streetGroups.map(({ color, geometry }) => (
-        <mesh key={`st-${color}`} geometry={geometry} position={[0, 0.45, 0]} receiveShadow>
-          <meshStandardMaterial color={color} roughness={0.92} />
-        </mesh>
+      {Object.entries(layers).map(([id, layer]) => (
+        <group key={id}>
+          {layer.fillGeometry && (
+            <mesh geometry={layer.fillGeometry} position={[0, layer.y, 0]} frustumCulled={false} receiveShadow>
+              <meshStandardMaterial
+                color={layer.color}
+                roughness={0.85}
+                side={THREE.DoubleSide}
+                onBeforeCompile={layer.clipTexture ? makeClipShader(layer.clipTexture) : undefined}
+              />
+            </mesh>
+          )}
+          {layer.strokeGeometry && (
+            <mesh geometry={layer.strokeGeometry} position={[0, layer.y + 0.01, 0]} frustumCulled={false} receiveShadow>
+              <meshStandardMaterial
+                color={layer.color}
+                roughness={0.85}
+                side={THREE.DoubleSide}
+                onBeforeCompile={layer.clipTexture ? makeClipShader(layer.clipTexture) : undefined}
+              />
+            </mesh>
+          )}
+        </group>
       ))}
     </group>
   )
@@ -327,7 +514,7 @@ function SvgStreets({ heroMode }) {
 
 function VectorStreets() {
   const viewMode = useCamera((s) => s.viewMode)
-  const isHero = viewMode === 'hero'
+  const hideGroundMarkings = viewMode === 'hero'
 
   const handleDoubleClick = (event) => {
     event.stopPropagation()
@@ -371,11 +558,9 @@ function VectorStreets() {
         />
       </mesh>
 
-      {/* SVG-sourced ground layers */}
-      <SvgStreets heroMode={isHero} />
+      {/* SVG map layers — parsed as geometry from Illustrator SVG */}
+      <SvgMapLayers />
 
-      {/* Center lines — hero doesn't need this detail */}
-      {!isHero && <CenterLines streets={blockShapes.streets} />}
     </group>
   )
 }

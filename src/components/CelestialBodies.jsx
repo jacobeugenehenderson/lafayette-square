@@ -203,108 +203,177 @@ function Moon({ position, phase, illumination, visible }) {
   )
 }
 
-function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
+function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
   const materialRef = useRef()
 
+  // 4-band sky color system: horizon → low → mid → high (zenith)
+  // Separate dawn and dusk palettes — dawn is cooler/pink, dusk is warmer/amber.
   const colors = useMemo(() => {
-    const nightZenith = new THREE.Color('#050508')
-    const nightHorizon = new THREE.Color('#1a1525')
-    const twilightZenith = new THREE.Color('#1a2040')
-    const twilightHorizon = new THREE.Color('#4a3050')
-    const dayZenith = new THREE.Color('#4a90e0')
-    const dayHorizon = new THREE.Color('#87ceeb').lerp(new THREE.Color('#c0ddf0'), 0.3)
+    const C = (hex) => new THREE.Color(hex)
+    const lerpBands = (a, b, t) => ({
+      horizon: a.horizon.clone().lerp(b.horizon, t),
+      low:     a.low.clone().lerp(b.low, t),
+      mid:     a.mid.clone().lerp(b.mid, t),
+      high:    a.high.clone().lerp(b.high, t),
+    })
 
-    let zenith, horizon
+    const alt = sunAltitude
 
-    if (sunAltitude < -0.1) {
-      zenith = nightZenith
-      horizon = nightHorizon
-    } else if (sunAltitude < 0.05) {
-      const t = (sunAltitude + 0.1) / 0.15
-      zenith = nightZenith.clone().lerp(twilightZenith, t)
-      horizon = nightHorizon.clone().lerp(twilightHorizon, t)
-    } else if (sunAltitude < 0.3) {
-      const t = (sunAltitude - 0.05) / 0.25
-      zenith = twilightZenith.clone().lerp(dayZenith, t)
-      horizon = twilightHorizon.clone().lerp(dayHorizon, t)
-    } else {
-      zenith = dayZenith
-      horizon = dayHorizon
+    // ── Night (shared) ──
+    const night = {
+      horizon: C('#1a1525'), low: C('#0f0f18'), mid: C('#080810'), high: C('#050508'),
     }
 
-    // Sun glow color: warm at low altitudes, whiter when high
+    // ── Day (shared) ──
+    const day = {
+      horizon: C('#9dc5e0'), low: C('#80b5e0'), mid: C('#5a9ce0'), high: C('#4a90e0'),
+    }
+
+    // ── Dusk keyframes — warm amber/coral/purple ──
+    const duskDeep = { // sun ~ -0.04
+      horizon: C('#7a3828'), low: C('#40253a'), mid: C('#181535'), high: C('#0a0c1a'),
+    }
+    const duskPeak = { // sun ~ 0.0  — the electric moment
+      horizon: C('#cc6030'), low: C('#a05058'), mid: C('#4a3570'), high: C('#141835'),
+    }
+    const duskEarlyGolden = { // sun ~ 0.06
+      horizon: C('#dd8840'), low: C('#bb7065'), mid: C('#6858a0'), high: C('#1a2555'),
+    }
+    const duskGolden = { // sun ~ 0.18
+      horizon: C('#ccaa70'), low: C('#aa9088'), mid: C('#7090bb'), high: C('#3a68a8'),
+    }
+
+    // ── Dawn keyframes — cooler rose/steel/lavender ──
+    const dawnDeep = { // sun ~ -0.04
+      horizon: C('#3a2838'), low: C('#30254a'), mid: C('#151838'), high: C('#0a0c1a'),
+    }
+    const dawnPeak = { // sun ~ 0.0  — first light
+      horizon: C('#c07050'), low: C('#885578'), mid: C('#4a3878'), high: C('#141838'),
+    }
+    const dawnEarlyGolden = { // sun ~ 0.06
+      horizon: C('#dda065'), low: C('#b08088'), mid: C('#7068b0'), high: C('#223060'),
+    }
+    const dawnGolden = { // sun ~ 0.18
+      horizon: C('#d0b888'), low: C('#a8a0a8'), mid: C('#7895c0'), high: C('#3a6aaa'),
+    }
+
+    // Select dawn vs dusk palette
+    const deep         = isDawn ? dawnDeep         : duskDeep
+    const peak         = isDawn ? dawnPeak          : duskPeak
+    const earlyGolden  = isDawn ? dawnEarlyGolden   : duskEarlyGolden
+    const golden       = isDawn ? dawnGolden        : duskGolden
+
+    // ── Interpolate between adjacent keyframes ──
+    let bands
+    if (alt < -0.12) {
+      bands = night
+    } else if (alt < -0.02) {
+      bands = lerpBands(night, deep, (alt + 0.12) / 0.10)
+    } else if (alt < 0.03) {
+      bands = lerpBands(deep, peak, (alt + 0.02) / 0.05)
+    } else if (alt < 0.08) {
+      bands = lerpBands(peak, earlyGolden, (alt - 0.03) / 0.05)
+    } else if (alt < 0.22) {
+      bands = lerpBands(earlyGolden, golden, (alt - 0.08) / 0.14)
+    } else if (alt < 0.35) {
+      bands = lerpBands(golden, day, (alt - 0.22) / 0.13)
+    } else {
+      bands = day
+    }
+
+    // Sun glow color: dawn is rosier, dusk is more amber
     let sunGlowColor
-    if (sunAltitude < -0.1) {
-      sunGlowColor = new THREE.Color('#000000')
-    } else if (sunAltitude < 0.05) {
-      const t = (sunAltitude + 0.1) / 0.15
-      sunGlowColor = new THREE.Color('#ff4422').lerp(new THREE.Color('#ff8844'), t).multiplyScalar(t)
-    } else if (sunAltitude < 0.3) {
-      const t = (sunAltitude - 0.05) / 0.25
-      sunGlowColor = new THREE.Color('#ff8844').lerp(new THREE.Color('#ffeedd'), t)
+    if (alt < -0.1) {
+      sunGlowColor = C('#000000')
+    } else if (alt < 0.0) {
+      const t = (alt + 0.1) / 0.1
+      const warm = isDawn ? '#dd4433' : '#ff3318'
+      const mid  = isDawn ? '#ee7755' : '#ff7733'
+      sunGlowColor = C(warm).lerp(C(mid), t).multiplyScalar(t)
+    } else if (alt < 0.08) {
+      const t = alt / 0.08
+      const from = isDawn ? '#ee7755' : '#ff7733'
+      const to   = isDawn ? '#ffbb77' : '#ffaa55'
+      sunGlowColor = C(from).lerp(C(to), t)
+    } else if (alt < 0.3) {
+      const t = (alt - 0.08) / 0.22
+      sunGlowColor = C(isDawn ? '#ffbb77' : '#ffaa55').lerp(C('#ffeedd'), t)
     } else {
-      sunGlowColor = new THREE.Color('#ffeedd')
+      sunGlowColor = C('#ffeedd')
     }
 
-    // Weather-driven color enhancement
+    // ── Weather-driven color enhancement ──
     const { sunsetPotential: sp, beautyBias: bb, storminess: storm } = useSkyState.getState()
 
-    // Sunset enhancement: warm dramatic tones during high sunset potential
-    if (sp > 0.3 && sunAltitude > -0.1 && sunAltitude < 0.3) {
-      const sunsetFactor = ((sp - 0.3) / 0.7) * bb
-      if (!zenith.isColor) zenith = zenith.clone()
-      if (!horizon.isColor) horizon = horizon.clone()
-      horizon.lerp(new THREE.Color('#ff6633'), sunsetFactor * 0.3)
-      zenith.lerp(new THREE.Color('#2a1855'), sunsetFactor * 0.2)
-      sunGlowColor.lerp(new THREE.Color('#ff4400'), sunsetFactor * 0.4)
+    // Sunset/sunrise enhancement: push warm tones deeper
+    if (sp > 0.3 && alt > -0.1 && alt < 0.3) {
+      const f = ((sp - 0.3) / 0.7) * bb
+      if (isDawn) {
+        bands.horizon.lerp(C('#dd6644'), f * 0.2)
+        bands.low.lerp(C('#bb5566'), f * 0.2)
+        bands.mid.lerp(C('#553080'), f * 0.12)
+        bands.high.lerp(C('#1a1250'), f * 0.08)
+      } else {
+        bands.horizon.lerp(C('#ee5522'), f * 0.25)
+        bands.low.lerp(C('#cc4455'), f * 0.2)
+        bands.mid.lerp(C('#4a2870'), f * 0.15)
+        bands.high.lerp(C('#1a1045'), f * 0.1)
+      }
+      sunGlowColor.lerp(C('#ff4400'), f * 0.4)
     }
 
-    // Storm drama: suppress warm tones, go dark and desaturated
+    // Storm: suppress warm tones, darken, desaturate
     if (storm > 0.5) {
-      const stormFactor = (storm - 0.5) / 0.5
-      if (!zenith.isColor) zenith = zenith.clone()
-      if (!horizon.isColor) horizon = horizon.clone()
-      zenith.lerp(new THREE.Color('#1a1a20'), stormFactor * 0.4)
-      horizon.lerp(new THREE.Color('#2a2530'), stormFactor * 0.3)
-      sunGlowColor.multiplyScalar(1 - stormFactor * 0.6)
+      const f = (storm - 0.5) / 0.5
+      bands.horizon.lerp(C('#2a2530'), f * 0.35)
+      bands.low.lerp(C('#222028'), f * 0.35)
+      bands.mid.lerp(C('#1c1a22'), f * 0.3)
+      bands.high.lerp(C('#141418'), f * 0.3)
+      sunGlowColor.multiplyScalar(1 - f * 0.6)
     }
 
-    return { zenith, horizon, sunGlowColor }
-  }, [sunAltitude])
+    return { bands, sunGlowColor }
+  }, [sunAltitude, isDawn])
 
   const baseStarOpacity = Math.max(0, Math.min(1, (-sunAltitude - 0.02) / 0.12))
 
   useFrame(() => {
     if (materialRef.current) {
+      const u = materialRef.current.uniforms
       const planetariumActive = useCamera.getState().viewMode === 'street'
       const dimFactor = planetariumActive ? 0.4 : 1.0
-      materialRef.current.uniforms.zenithColor.value.copy(colors.zenith).multiplyScalar(dimFactor)
-      materialRef.current.uniforms.horizonColor.value.copy(colors.horizon).multiplyScalar(dimFactor)
-      materialRef.current.uniforms.sunGlowColor.value.copy(colors.sunGlowColor).multiplyScalar(dimFactor)
+      // 4-band colors
+      u.bandHorizon.value.copy(colors.bands.horizon).multiplyScalar(dimFactor)
+      u.bandLow.value.copy(colors.bands.low).multiplyScalar(dimFactor)
+      u.bandMid.value.copy(colors.bands.mid).multiplyScalar(dimFactor)
+      u.bandHigh.value.copy(colors.bands.high).multiplyScalar(dimFactor)
+      u.sunGlowColor.value.copy(colors.sunGlowColor).multiplyScalar(dimFactor)
       if (sunDirection) {
-        materialRef.current.uniforms.sunDir.value.copy(sunDirection).normalize()
+        u.sunDir.value.copy(sunDirection).normalize()
       }
-      materialRef.current.uniforms.sunAlt.value = sunAltitude
+      u.sunAlt.value = sunAltitude
       // Moon uniforms
       if (moonGlow) {
-        materialRef.current.uniforms.moonDir.value.copy(moonGlow.dir).normalize()
-        materialRef.current.uniforms.moonIllum.value = moonGlow.illumination
-        materialRef.current.uniforms.moonVisible.value = moonGlow.altitude > 0 ? 1.0 : 0.0
+        u.moonDir.value.copy(moonGlow.dir).normalize()
+        u.moonIllum.value = moonGlow.illumination
+        u.moonVisible.value = moonGlow.altitude > 0 ? 1.0 : 0.0
       }
       // Weather uniforms from useSkyState
       const sky = useSkyState.getState()
-      materialRef.current.uniforms.uCloudCover.value = sky.cloudCover
-      materialRef.current.uniforms.uStorminess.value = sky.storminess
-      materialRef.current.uniforms.uTurbidity.value = sky.turbidity
-      materialRef.current.uniforms.uSunsetPotential.value = sky.sunsetPotential
-      materialRef.current.uniforms.uBeautyBias.value = sky.beautyBias
+      u.uCloudCover.value = sky.cloudCover
+      u.uStorminess.value = sky.storminess
+      u.uTurbidity.value = sky.turbidity
+      u.uSunsetPotential.value = sky.sunsetPotential
+      u.uBeautyBias.value = sky.beautyBias
     }
   })
 
   const skyMaterial = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
-      zenithColor: { value: new THREE.Color('#4a90e0') },
-      horizonColor: { value: new THREE.Color('#87ceeb') },
+      bandHorizon: { value: new THREE.Color('#9dc5e0') },
+      bandLow: { value: new THREE.Color('#80b5e0') },
+      bandMid: { value: new THREE.Color('#5a9ce0') },
+      bandHigh: { value: new THREE.Color('#4a90e0') },
       sunGlowColor: { value: new THREE.Color('#ffeedd') },
       sunDir: { value: new THREE.Vector3(0, 0.3, 1) },
       sunAlt: { value: 0.5 },
@@ -326,8 +395,10 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
       }
     `,
     fragmentShader: `
-      uniform vec3 zenithColor;
-      uniform vec3 horizonColor;
+      uniform vec3 bandHorizon;
+      uniform vec3 bandLow;
+      uniform vec3 bandMid;
+      uniform vec3 bandHigh;
       uniform vec3 sunGlowColor;
       uniform vec3 sunDir;
       uniform float sunAlt;
@@ -344,13 +415,19 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
       void main() {
         vec3 dir = normalize(vWorldPosition);
         float h = dir.y;
-        // Horizon compression: tighter gradient under hazy conditions
-        float t = pow(max(0.0, h), 0.6 * (1.0 + uTurbidity * 0.4));
 
-        // Base sky gradient
+        // 4-band sky gradient with visible banding at transitions
+        float hn = pow(max(0.0, h), 0.65 * (1.0 + uTurbidity * 0.4));
+        float t1 = smoothstep(0.0,  0.12, hn);  // horizon → low
+        float t2 = smoothstep(0.10, 0.32, hn);  // low → mid
+        float t3 = smoothstep(0.30, 0.65, hn);  // mid → high (zenith)
+        vec3 skyColor = mix(bandHorizon, bandLow, t1);
+        skyColor = mix(skyColor, bandMid, t2);
+        skyColor = mix(skyColor, bandHigh, t3);
+
+        // Below horizon: fade to dark ground
         float belowHorizon = smoothstep(0.0, -0.15, h);
-        vec3 groundColor = horizonColor * 0.3;
-        vec3 skyColor = mix(horizonColor, zenithColor, t);
+        vec3 groundColor = bandHorizon * 0.3;
         vec3 finalColor = mix(skyColor, groundColor, belowHorizon);
 
         // ── Directional sun glow ──
@@ -430,7 +507,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow }) {
         finalColor += hazeColor * hazeGauss * uTurbidity * 0.3;
 
         // Overcast flattening: blend toward flat mid-tone proportional to cloudCover^2
-        vec3 overcastTone = mix(zenithColor, horizonColor, 0.6);
+        vec3 overcastTone = mix(bandHigh, bandHorizon, 0.6);
         finalColor = mix(finalColor, overcastTone, uCloudCover * uCloudCover * 0.5);
 
         // Storm darkening + desaturation
@@ -838,11 +915,16 @@ function CelestialBodies() {
       moonAltitude: moonAlt,
     })
 
-    return { primary, secondary, sky, ambient, isNight, moon, sunAlt, sunDir: _sunD, moonGlow }
+    // Dawn vs dusk: compare current time to solar noon
+    const solarNoon = SunCalc.getTimes(currentTime, LATITUDE, LONGITUDE).solarNoon
+    const isDawn = currentTime < solarNoon
+
+    return { primary, secondary, sky, ambient, isNight, moon, sunAlt, sunDir: _sunD, moonGlow, isDawn }
   }, [currentTime])
 
-  // Weather-coupled lighting multipliers
-  const { cloudCover: cc, storminess: st } = useSkyState()
+  // Weather-coupled lighting multipliers (use selectors to avoid per-frame re-renders)
+  const cc = useSkyState((s) => Math.round(s.cloudCover * 20) / 20)
+  const st = useSkyState((s) => Math.round(s.storminess * 20) / 20)
   const primaryWeathered = useMemo(() => ({
     ...lighting.primary,
     intensity: lighting.primary.intensity * (1 - cc * 0.6),
@@ -850,7 +932,7 @@ function CelestialBodies() {
 
   return (
     <>
-      <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} />
+      <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} isDawn={lighting.isDawn} />
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>

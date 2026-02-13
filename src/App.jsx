@@ -6,24 +6,42 @@ import CheckinPage from './pages/CheckinPage'
 import ClaimPage from './pages/ClaimPage'
 import useCamera from './hooks/useCamera'
 
-function ExitStreetViewButton() {
+function CameraModeButton() {
   const viewMode = useCamera((s) => s.viewMode)
-  if (viewMode !== 'street') return null
 
-  return (
-    <button
-      onClick={() => useCamera.getState().exitStreetView()}
-      className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
-      title="Return to map view"
-    >
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-    </button>
-  )
+  if (viewMode === 'street') {
+    return (
+      <button
+        onClick={() => useCamera.getState().exitStreetView()}
+        className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
+        title="Exit street view"
+      >
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+      </button>
+    )
+  }
+
+  if (viewMode === 'browse') {
+    return (
+      <button
+        onClick={() => useCamera.getState().goHero()}
+        className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 transition-all duration-200 flex items-center justify-center hover:bg-white/20 hover:text-white/80"
+        title="Return to cinematic view"
+      >
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <path d="M15 10l-4 4m0-4l4 4" strokeLinecap="round" />
+          <rect x="2" y="5" width="20" height="14" rx="2" />
+        </svg>
+      </button>
+    )
+  }
+
+  return null
 }
 
 function App() {
@@ -44,7 +62,7 @@ function App() {
       {!isGround && <Controls />}
       {!isGround && <CompassRose />}
       {!isGround && <SidePanel showAdmin={true} />}
-      {!isGround && <ExitStreetViewButton />}
+      {!isGround && <CameraModeButton />}
     </div>
   )
 }

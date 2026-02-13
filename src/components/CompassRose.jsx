@@ -2,14 +2,17 @@ import useCamera from '../hooks/useCamera'
 
 function CompassRose() {
   const azimuth = useCamera((state) => state.azimuth)
+  const viewMode = useCamera((state) => state.viewMode)
   const rotationDeg = (azimuth * 180) / Math.PI
+
+  if (viewMode === 'hero') return null
 
   return (
     <div className="absolute top-4 left-4 select-none z-50">
       <div className="relative w-16 h-16">
         <svg
           viewBox="0 0 100 100"
-          className="w-full h-full transition-transform duration-100"
+          className="w-full h-full"
           style={{ transform: `rotate(${rotationDeg}deg)` }}
         >
           <circle

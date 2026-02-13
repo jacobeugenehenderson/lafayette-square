@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useBusinessState from '../hooks/useBusinessState'
@@ -93,6 +93,195 @@ function formatTimeShort(date) {
 }
 
 
+// ── Responsive time slider (local state, RAF-throttled store updates) ──
+
+function TimeSlider({ minutes: externalMinutes }) {
+  const [localMin, setLocalMin] = useState(externalMinutes)
+  const dragging = useRef(false)
+  const rafId = useRef(null)
+
+  // Sync from store when not dragging
+  useEffect(() => {
+    if (!dragging.current) setLocalMin(externalMinutes)
+  }, [externalMinutes])
+
+  const pushToStore = useCallback((val) => {
+    if (rafId.current) cancelAnimationFrame(rafId.current)
+    rafId.current = requestAnimationFrame(() => {
+      useTimeOfDay.getState().setMinuteOfDay(val)
+    })
+  }, [])
+
+  const formatSliderTime = (m) => {
+    const h = Math.floor(m / 60) % 24
+    const mm = m % 60
+    return `${h.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <>
+      <div className="text-center text-xs text-white/60 mb-1 font-mono">{formatSliderTime(localMin)}</div>
+      <input
+        type="range"
+        min="0"
+        max="1440"
+        step="1"
+        value={localMin}
+        onChange={(e) => {
+          const v = parseInt(e.target.value)
+          setLocalMin(v)
+          pushToStore(v)
+        }}
+        onPointerDown={() => { dragging.current = true }}
+        onPointerUp={() => { dragging.current = false }}
+        className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+      />
+      <div className="flex justify-between text-[9px] text-white/30 mt-1">
+        <span>00:00</span>
+        <span>06:00</span>
+        <span>12:00</span>
+        <span>18:00</span>
+        <span>24:00</span>
+      </div>
+    </>
+  )
+}
+
+// ── Hours check (mirrors LafayetteScene._isWithinHours) ─────────────
+const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+function _isWithinHours(hours, time) {
+  if (!hours) return false
+  const day = _DAYS[time.getDay()]
+  const slot = hours[day]
+  if (!slot || !slot.open || !slot.close) return false
+  const mins = time.getHours() * 60 + time.getMinutes()
+  const [oh, om] = slot.open.split(':').map(Number)
+  const [ch, cm] = slot.close.split(':').map(Number)
+  return mins >= oh * 60 + om && mins < ch * 60 + cm
+}
+
+// Pre-compute which buildings have real hours data
+const _buildingsWithHours = buildingsData.buildings.filter(b => b.hours)
+const TOTAL_BUILDINGS = buildingsData.buildings.length
+
+// ============ BULLETIN BOARD DATA ============
+
+const BULLETIN_SECTIONS = [
+  {
+    id: 'mutual-aid',
+    title: 'Mutual Aid',
+    icon: '\u2764',
+    posts: [
+      { text: 'Free hot meals every Sunday 11am at Lafayette Park gazebo', age: '2h' },
+      { text: 'Need help shoveling? Text the snow hotline \u2014 volunteers on standby', age: '5h' },
+      { text: 'Clothing swap this Saturday, Park Ave Community Room, 10am\u20131pm', age: '1d' },
+      { text: 'Emergency pet food available \u2014 DM for pickup, no questions asked', age: '2d' },
+    ],
+  },
+  {
+    id: 'services',
+    title: 'Neighbor Services',
+    icon: '\u2692',
+    posts: [
+      { text: 'Licensed electrician, 20yr resident \u2014 fair rates for neighbors', age: '3h', tag: 'Verified' },
+      { text: 'Experienced babysitter available weekday evenings, CPR certified', age: '8h' },
+      { text: 'Will haul anything to the dump \u2014 truck + muscle, just ask', age: '1d' },
+      { text: 'Tax prep help for seniors, free \u2014 Saturdays at the library', age: '3d', tag: 'Recurring' },
+      { text: 'Dog walking, $10/walk, I know every block in the square', age: '4d' },
+    ],
+  },
+  {
+    id: 'marketplace',
+    title: 'Buy / Sell / Free',
+    icon: '\u267B',
+    posts: [
+      { text: 'Free: working window AC unit, you haul \u2014 Mackay Place', age: '1h' },
+      { text: 'Selling vintage iron fence panels, salvaged from a Benton Place rehab', age: '6h' },
+      { text: 'ISO: someone to split a bulk mulch delivery, 10 yards', age: '1d' },
+      { text: 'Free firewood, already split, drying in my alley \u2014 come grab it', age: '2d' },
+    ],
+  },
+  {
+    id: 'events',
+    title: 'Events & Gatherings',
+    icon: '\u2605',
+    posts: [
+      { text: 'Block party planning meeting, Wed 7pm \u2014 all blocks welcome', age: '4h' },
+      { text: 'Full moon walk through the park, Friday 9pm, bring a lantern', age: '1d' },
+      { text: 'Community garden plot lottery opens March 1 \u2014 sign up at the gate', age: '2d', tag: 'Pinned' },
+      { text: 'Historic house tour volunteers needed for April weekend', age: '5d' },
+    ],
+  },
+  {
+    id: 'safety',
+    title: 'Safety & Watch',
+    icon: '\u26A0',
+    posts: [
+      { text: 'Heads up: car break-ins on Dolman overnight, check your locks', age: '3h' },
+      { text: 'Found a lost dog near Missouri Ave, brown lab mix, no collar', age: '8h' },
+      { text: 'Street light out on Lafayette between 18th and 19th \u2014 reported to city', age: '1d' },
+      { text: 'Pothole swallowing bikes on Park Ave \u2014 311 ticket filed, need more reports', age: '3d' },
+    ],
+  },
+  {
+    id: 'decisions',
+    title: 'Community Polls',
+    icon: '\u2610',
+    posts: [
+      { text: 'Should we petition for speed bumps on Mackay Place? Vote open til Friday', age: '6h', tag: 'Active' },
+      { text: 'Park bench placement \u2014 3 proposed locations, weigh in', age: '2d', tag: 'Active' },
+      { text: 'Alley lighting fund \u2014 $2,400 raised of $3,000 goal', age: '4d' },
+    ],
+  },
+]
+
+function BulletinBoard() {
+  const [expandedId, setExpandedId] = useState(null)
+
+  return (
+    <div className="px-3 py-2">
+      <div className="space-y-1">
+        {BULLETIN_SECTIONS.map((section) => {
+          const isOpen = expandedId === section.id
+          return (
+            <div key={section.id} className="rounded-md overflow-hidden bg-white/5 border border-white/5">
+              <button
+                onClick={() => setExpandedId(isOpen ? null : section.id)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-colors"
+              >
+                <span className="text-xs opacity-50">{section.icon}</span>
+                <span className="text-[11px] text-white/80 flex-1">{section.title}</span>
+                <span className="text-[9px] text-white/30">{section.posts.length}</span>
+                <svg
+                  className={`w-3 h-3 text-white/30 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div className={`overflow-hidden transition-all duration-200 ease-out ${isOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="px-3 pb-2 space-y-1.5">
+                  {section.posts.map((post, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <div className="flex-1 text-[10px] text-white/60 leading-relaxed">{post.text}</div>
+                      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[9px] text-white/20">{post.age}</span>
+                        {post.tag && (
+                          <span className="text-[8px] px-1 py-0.5 rounded bg-white/10 text-white/40">{post.tag}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ============ ALMANAC TAB ============
 
 function AlmanacTab({ showAdmin = false }) {
@@ -100,9 +289,20 @@ function AlmanacTab({ showAdmin = false }) {
   const [useRealTime, setUseRealTime] = useState(true)
   const [use24Hour, setUse24Hour] = useState(false)
   const [useCelsius, setUseCelsius] = useState(false)
-  const { openPercentage, setOpenPercentage, randomize, openAll, closeAll } = useBusinessState()
-  const [sliderValue, setSliderValue] = useState(openPercentage)
+  const { randomize, openAll, closeAll } = useBusinessState()
   const buildingIds = useRef(buildingsData.buildings.map(b => b.id))
+
+  // Count real businesses currently open based on their hours
+  const realOpenCount = useMemo(() => {
+    return _buildingsWithHours.filter(b => _isWithinHours(b.hours, currentTime)).length
+  }, [currentTime])
+
+  const [sliderValue, setSliderValue] = useState(realOpenCount)
+
+  // Keep slider >= realOpenCount when real businesses open/close
+  useEffect(() => {
+    setSliderValue(v => Math.max(v, realOpenCount))
+  }, [realOpenCount])
 
   useEffect(() => {
     if (!useRealTime) return
@@ -117,12 +317,16 @@ function AlmanacTab({ showAdmin = false }) {
   const hours = currentTime.getHours()
   const minutes = currentTime.getMinutes()
 
-  const timeString = currentTime.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: !use24Hour,
-  })
+  const timeString = (() => {
+    const raw = currentTime.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: !use24Hour,
+    })
+    // Strip AM/PM suffix
+    return raw.replace(/\s?(AM|PM)$/i, '')
+  })()
 
   const dateString = currentTime.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -138,12 +342,41 @@ function AlmanacTab({ showAdmin = false }) {
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-        <div
-          className="text-3xl font-light text-white tracking-wider cursor-pointer hover:text-white/80 transition-colors"
-          onClick={() => setUse24Hour(!use24Hour)}
-          title="Click to toggle 12/24 hour format"
-        >
-          {timeString}
+        <div className="flex items-baseline justify-between">
+          <div
+            className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+            onClick={() => setUse24Hour(!use24Hour)}
+            title="Click to toggle 12/24 hour format"
+          >
+            <svg className="w-4 h-4 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" strokeLinecap="round" />
+            </svg>
+            <span className="text-2xl font-light text-white tracking-wider">
+              {timeString}
+            </span>
+          </div>
+          {(() => {
+            const tempF = getTemperatureF(currentTime)
+            const tempC = Math.round((tempF - 32) * 5 / 9)
+            const temp = useCelsius ? tempC : tempF
+            const unit = useCelsius ? 'C' : 'F'
+            const color = tempF <= 32 ? 'text-blue-400' : tempF <= 55 ? 'text-sky-300' : tempF <= 75 ? 'text-white/90' : tempF <= 90 ? 'text-amber-400' : 'text-red-400'
+            return (
+              <div
+                className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+                onClick={() => setUseCelsius(!useCelsius)}
+                title="Click to toggle °F / °C"
+              >
+                <svg className="w-4 h-4 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                  <path d="M12 2v14m0 0a4 4 0 110 0m-3-11h6M9 8h6" strokeLinecap="round" />
+                </svg>
+                <span className={`text-2xl font-light tracking-wide ${color}`}>
+                  {temp}&deg;{unit}
+                </span>
+              </div>
+            )
+          })()}
         </div>
         <div className="text-xs text-white/40 mt-1 tracking-wide">
           {dateString} &middot; Day {dayOfYear}
@@ -176,125 +409,113 @@ function AlmanacTab({ showAdmin = false }) {
       </div>
 
 
-      <div
-        className="px-4 py-2 border-t border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"
-        onClick={() => setUseCelsius(!useCelsius)}
-        title="Click to toggle °F / °C"
-      >
-        {(() => {
-          const tempF = getTemperatureF(currentTime)
-          const tempC = Math.round((tempF - 32) * 5 / 9)
-          const temp = useCelsius ? tempC : tempF
-          const unit = useCelsius ? 'C' : 'F'
-          // Color: blue below freezing, neutral mid-range, warm/hot above 80F
-          const color = tempF <= 32 ? 'text-blue-400' : tempF <= 55 ? 'text-sky-300' : tempF <= 75 ? 'text-white/90' : tempF <= 90 ? 'text-amber-400' : 'text-red-400'
-          return (
-            <>
-              <div className="flex items-center gap-2.5">
-                <svg className="w-4 h-4 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                  <path d="M12 2v14m0 0a4 4 0 110 0m-3-11h6M9 8h6" strokeLinecap="round" />
-                </svg>
-                <span className={`text-lg font-light tracking-wide ${color}`}>
-                  {temp}&deg;{unit}
-                </span>
-              </div>
-              <span className="text-[10px] text-white/30">
-                {useCelsius ? 'Celsius' : 'Fahrenheit'}
-              </span>
-            </>
-          )
-        })()}
+      <div className="px-4 py-2 border-t border-white/5 bg-white/5">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] text-white/30 uppercase tracking-widest">Lighting</span>
+          {!useRealTime && (
+            <button
+              onClick={() => {
+                setUseRealTime(true)
+                useTimeOfDay.getState().setPaused(false)
+                setTime(new Date())
+              }}
+              className="text-[10px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
+            >
+              Return to Live
+            </button>
+          )}
+        </div>
+        <div className="flex justify-between text-[10px]">
+          {[
+            { label: 'Dawn', color: 'text-rose-400/60', time: sunTimes.dawn },
+            { label: 'Noon', color: 'text-orange-400/60', time: sunTimes.solarNoon },
+            { label: 'Golden', color: 'text-amber-400/60', time: sunTimes.goldenHour },
+            { label: 'Dusk', color: 'text-purple-400/60', time: sunTimes.dusk },
+          ].map(({ label, color, time }) => (
+            <button
+              key={label}
+              className="hover:bg-white/10 rounded px-1.5 py-0.5 transition-colors"
+              onClick={() => {
+                setUseRealTime(false)
+                setTime(time)
+              }}
+            >
+              <span className={color}>{label} </span>
+              <span className="text-white/40">{formatTimeShort(time)}</span>
+            </button>
+          ))}
+        </div>
+        {!useRealTime && (
+          <div className="mt-2">
+            <TimeSlider minutes={hours * 60 + minutes} />
+          </div>
+        )}
       </div>
 
-      <div className="px-4 py-2 border-t border-white/5 bg-white/5">
-        <div className="flex justify-between text-[10px]">
-          <div>
-            <span className="text-amber-400/60">Golden </span>
-            <span className="text-white/40">{formatTimeShort(sunTimes.goldenHour)}</span>
-          </div>
-          <div>
-            <span className="text-orange-400/60">Noon </span>
-            <span className="text-white/40">{formatTimeShort(sunTimes.solarNoon)}</span>
-          </div>
-          <div>
-            <span className="text-purple-400/60">Dusk </span>
-            <span className="text-white/40">{formatTimeShort(sunTimes.dusk)}</span>
-          </div>
+      <div className="flex-1 overflow-y-auto border-t border-white/5">
+        <div className="px-4 pt-2 pb-1">
+          <span className="text-[10px] text-white/30 uppercase tracking-widest">Bulletin Board</span>
         </div>
+        <BulletinBoard />
       </div>
 
       {showAdmin && (
         <div className="px-4 py-3 border-t border-white/10 bg-black/50">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] text-white/30 uppercase tracking-widest">Time Control</span>
-            <button
-              onClick={() => setUseRealTime(!useRealTime)}
-              className={`text-[10px] px-2 py-0.5 rounded ${
-                useRealTime
-                  ? 'bg-green-500/20 text-green-400'
-                  : 'bg-yellow-500/20 text-yellow-400'
-              }`}
-            >
-              {useRealTime ? 'LIVE' : 'MANUAL'}
-            </button>
-          </div>
-
-          {!useRealTime && (
-            <>
-              <input
-                type="range"
-                min="0"
-                max="24"
-                step="0.1"
-                value={hours + minutes / 60}
-                onChange={(e) => setHour(parseFloat(e.target.value))}
-                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
-              />
-              <div className="flex justify-between text-[9px] text-white/30 mt-1">
-                <span>00:00</span>
-                <span>06:00</span>
-                <span>12:00</span>
-                <span>18:00</span>
-                <span>24:00</span>
-              </div>
-            </>
-          )}
-
-          <div className="mt-3 pt-3 border-t border-white/10">
+          <div>
             <span className="text-[10px] text-white/30 uppercase tracking-widest">Business Simulation</span>
             <div className="mt-2">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-white/50">Open: {sliderValue}%</span>
+                <span className="text-[10px] text-white/50">
+                  Open: {sliderValue.toLocaleString()} of {TOTAL_BUILDINGS.toLocaleString()}
+                </span>
               </div>
               <input
                 type="range"
-                min="0"
-                max="100"
-                step="5"
+                min={realOpenCount}
+                max={TOTAL_BUILDINGS}
+                step="1"
                 value={sliderValue}
                 onChange={(e) => setSliderValue(parseInt(e.target.value))}
-                onMouseUp={() => randomize(buildingIds.current, sliderValue)}
-                onTouchEnd={() => randomize(buildingIds.current, sliderValue)}
+                onMouseUp={() => {
+                  const simExtra = sliderValue - realOpenCount
+                  const simPct = TOTAL_BUILDINGS > realOpenCount
+                    ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
+                    : 0
+                  randomize(buildingIds.current, simPct)
+                }}
+                onTouchEnd={() => {
+                  const simExtra = sliderValue - realOpenCount
+                  const simPct = TOTAL_BUILDINGS > realOpenCount
+                    ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
+                    : 0
+                  randomize(buildingIds.current, simPct)
+                }}
                 className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
               />
               <div className="flex gap-2 mt-2">
                 <button
-                  onClick={() => randomize(buildingIds.current, sliderValue)}
+                  onClick={() => {
+                    const simExtra = sliderValue - realOpenCount
+                    const simPct = TOTAL_BUILDINGS > realOpenCount
+                      ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
+                      : 0
+                    randomize(buildingIds.current, simPct)
+                  }}
                   className="flex-1 text-[10px] px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
                 >
                   Randomize
                 </button>
                 <button
-                  onClick={() => { openAll(buildingIds.current); setSliderValue(100) }}
+                  onClick={() => { openAll(buildingIds.current); setSliderValue(TOTAL_BUILDINGS) }}
                   className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
                 >
                   All
                 </button>
                 <button
-                  onClick={() => { closeAll(); setSliderValue(0) }}
+                  onClick={() => { closeAll(); setSliderValue(realOpenCount) }}
                   className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
                 >
-                  None
+                  Actual
                 </button>
               </div>
             </div>
@@ -349,6 +570,10 @@ function LafayetteSubsection({ section, color }) {
 
     // If activating (not deactivating), zoom to fit all pins
     if (!isActive && businesses.length > 0) {
+      // Switch to browse if in hero so flyTo is honored
+      const cam = useCamera.getState()
+      if (cam.viewMode === 'hero') cam.setMode('browse')
+
       const buildings = businesses
         .map(biz => _buildingMap[biz.building_id])
         .filter(Boolean)
@@ -364,6 +589,9 @@ function LafayetteSubsection({ section, color }) {
     useLandmarkFilter.getState().clearTags()
     // Highlight the business (shows pin, no card)
     highlight(biz.id, biz.building_id)
+    // Switch to browse if in hero so flyTo is honored
+    const cam = useCamera.getState()
+    if (cam.viewMode === 'hero') cam.setMode('browse')
     // Center camera on this building
     const building = _buildingMap[biz.building_id]
     if (building) {
@@ -535,8 +763,6 @@ function SidePanel({ showAdmin = true }) {
             key={tab.id}
             onClick={() => {
               if (collapsed) { setCollapsed(false) } else { setActiveTab(tab.id) }
-              const mode = tab.id === 'almanac' ? 'map' : 'society'
-              useCamera.getState().setMode(mode)
             }}
             onDoubleClick={() => { if (!collapsed) setCollapsed(true) }}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-xs transition-colors duration-150 ${

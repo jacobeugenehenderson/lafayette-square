@@ -79,7 +79,7 @@ const HERO_TARGET = [400, 40, -100]
 // Direction to arch in XZ: [3116, -1196], perpendicular: [0.358, 0.934]
 const PAN_HALF_LENGTH = 140 // ±140m from center
 const PAN_PERP = [0.358, 0.934]
-const PAN_PERIOD = 120 // seconds for one full back-and-forth
+const PAN_PERIOD = 480 // seconds for one full back-and-forth
 const HERO_PHASE = Math.random() // randomized start position each visit
 
 // ── Camera presets ───────────────────────────────────────────────────────────
@@ -90,12 +90,7 @@ const PRESETS = {
     target: HERO_TARGET,
     fov: 22,                      // moderate telephoto — neighborhood fills frame
   },
-  map: {
-    position: [0, 600, 1],
-    target: [0, 0, 0],
-    fov: 45,
-  },
-  society: {
+  browse: {
     position: [150, 250, 380],
     target: [0, 0, 0],
     fov: 45,
@@ -106,18 +101,13 @@ const MODE_CONSTRAINTS = {
   hero: {
     enableRotate: false, enablePan: false, enableZoom: false,
   },
-  map: {
-    enableRotate: false, enablePan: true, enableZoom: true,
-    panSpeed: 2.0, zoomSpeed: 1.5,
-    minDistance: 100, maxDistance: 1200,
-    minPolarAngle: 0.05, maxPolarAngle: 0.05,
-    mouseButtons: { LEFT: 2, MIDDLE: 1, RIGHT: 2 }, // left-click pans (THREE.MOUSE.PAN = 2)
-  },
-  society: {
+  browse: {
     enableRotate: true, enablePan: true, enableZoom: true,
-    panSpeed: 1.5, rotateSpeed: 0.3, zoomSpeed: 1.0,
-    minDistance: 80, maxDistance: 800,
-    minPolarAngle: Math.PI / 3, maxPolarAngle: Math.PI / 3,
+    panSpeed: 1.5, rotateSpeed: 0.5, zoomSpeed: 1.2,
+    minDistance: 50, maxDistance: 1200,
+    minPolarAngle: 0.1,              // can't flip to underground
+    maxPolarAngle: Math.PI / 2.2,    // ~82° — low angle but never below ground plane
+    mouseButtons: { LEFT: 0, MIDDLE: 2, RIGHT: 2 }, // left=orbit, middle/right=pan
   },
   street: {
     enableRotate: true, enablePan: false, enableZoom: false,
@@ -183,8 +173,8 @@ function SkyStateTicker() {
 // ── Camera rig ───────────────────────────────────────────────────────────────
 
 const EYE_HEIGHT = 1.73
-const IDLE_TIMEOUT = 45000
-const IDLE_TIMEOUT_STREET = 90000
+const IDLE_TIMEOUT = 300000        // 5 minutes for browse
+const IDLE_TIMEOUT_STREET = 120000 // 2 minutes for street view
 
 // Pre-allocated vectors (no per-frame allocation)
 const _fromPos = new THREE.Vector3()
@@ -226,7 +216,7 @@ function CameraRig() {
     transitioning.current = true
   }
 
-  // ESC key: street → previous mode, map/society → hero
+  // ESC key: street → previous mode, browse → hero
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key !== 'Escape') return
@@ -241,20 +231,34 @@ function CameraRig() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Idle detection: reset timer on user interaction
+  // Idle detection: any movement resets timer (doesn't exit hero)
   useEffect(() => {
-    const reset = () => useCamera.getState().resetIdle()
-    document.addEventListener('pointerdown', reset)
-    document.addEventListener('wheel', reset)
-    document.addEventListener('keydown', reset)
+    const resetIdle = () => useCamera.getState().resetIdle()
+    document.addEventListener('pointermove', resetIdle)
+    document.addEventListener('keydown', resetIdle)
     return () => {
-      document.removeEventListener('pointerdown', reset)
-      document.removeEventListener('wheel', reset)
-      document.removeEventListener('keydown', reset)
+      document.removeEventListener('pointermove', resetIdle)
+      document.removeEventListener('keydown', resetIdle)
     }
   }, [])
 
-  useFrame(() => {
+  // Deliberate canvas interaction: exit hero on click or scroll on the 3D canvas
+  useEffect(() => {
+    const canvas = gl.domElement
+    const engage = () => {
+      const cam = useCamera.getState()
+      cam.resetIdle()
+      if (cam.viewMode === 'hero') cam.setMode('browse')
+    }
+    canvas.addEventListener('pointerdown', engage)
+    canvas.addEventListener('wheel', engage)
+    return () => {
+      canvas.removeEventListener('pointerdown', engage)
+      canvas.removeEventListener('wheel', engage)
+    }
+  }, [gl])
+
+  useFrame(({ clock }) => {
     const ctl = controlsRef.current
     if (!ctl) return
 
@@ -311,16 +315,13 @@ function CameraRig() {
       }
     }
 
-    // ── Detect flyTo changes (within map/society modes) ──
+    // ── Detect flyTo changes (within browse mode) ──
     if (ft !== prevFlyTarget.current) {
       prevFlyTarget.current = ft
       if (ft && vm !== 'hero' && vm !== 'street') {
-        // Maintain current viewing angle, move to new target
-        _offset.subVectors(camera.position, ctl.target)
-        const newTarget = ft.lookAt
         beginTransition(
-          [newTarget[0] + _offset.x, newTarget[1] + _offset.y, newTarget[2] + _offset.z],
-          newTarget,
+          ft.position,
+          ft.lookAt,
           camera.fov,
           1200
         )
@@ -365,7 +366,9 @@ function CameraRig() {
 
     // ── Hero lateral pan — slow tracking shot across neighborhood ──
     if (vm === 'hero') {
-      const t = Date.now() * 0.001 / PAN_PERIOD + HERO_PHASE
+      // Hold still for first 3 seconds to let GPU warm up (shader compile, texture upload)
+      const elapsed = Math.max(0, clock.elapsedTime - 3)
+      const t = elapsed / PAN_PERIOD + HERO_PHASE
       const swing = Math.sin(t * Math.PI * 2) // -1 to 1
       const offset = swing * PAN_HALF_LENGTH
       camera.position.set(
@@ -378,7 +381,10 @@ function CameraRig() {
         HERO_TARGET[1],
         HERO_TARGET[2] + PAN_PERP[1] * offset * 0.3
       )
+      // Bypass damping — direct position control, no interpolation fighting
+      ctl.enableDamping = false
       ctl.update()
+      ctl.enableDamping = true
     }
 
     // ── Idle → hero ──
@@ -421,14 +427,15 @@ function Scene() {
       }}
       gl={{
         antialias: true,
+        stencil: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 0.95,
       }}
-      dpr={[1, 2]}
+      dpr={[1, 1.5]}
       shadows={IS_GROUND ? false : 'soft'}
     >
-      {!IS_GROUND && <SoftShadows size={52} samples={32} focus={0.35} />}
+      {!IS_GROUND && <SoftShadows size={52} samples={16} focus={0.35} />}
       <TimeTicker />
       <SkyStateTicker />
       <WeatherPoller />
@@ -453,9 +460,9 @@ function Scene() {
           )}
           {viewMode === 'hero' && <FilmGrade />}
           <Bloom
-            intensity={isStreet ? 1.8 : 1.2}
-            luminanceThreshold={isStreet ? 0.15 : 0.3}
-            luminanceSmoothing={0.9}
+            intensity={isStreet ? 1.8 : viewMode === 'hero' ? 1.5 : 1.2}
+            luminanceThreshold={isStreet ? 0.15 : viewMode === 'hero' ? 0.2 : 0.3}
+            luminanceSmoothing={isStreet ? 0.9 : viewMode === 'hero' ? 0.8 : 0.9}
             mipmapBlur
           />
         </EffectComposer>

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 const useCamera = create((set, get) => ({
-  viewMode: 'hero',       // 'hero' | 'map' | 'society' | 'street'
+  viewMode: 'hero',       // 'hero' | 'browse' | 'street'
   previousMode: 'hero',
   streetTarget: null,
   azimuth: 0,
@@ -29,7 +29,7 @@ const useCamera = create((set, get) => ({
   exitStreetView: () => {
     const prev = get().previousMode
     set({
-      viewMode: (prev === 'street' || prev === 'hero') ? 'map' : prev,
+      viewMode: (prev === 'street' || prev === 'hero') ? 'browse' : prev,
       streetTarget: null,
       flyTarget: null,
     })
