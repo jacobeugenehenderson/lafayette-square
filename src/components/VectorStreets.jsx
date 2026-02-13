@@ -5,7 +5,7 @@ import blockShapes from '../data/block_shapes.json'
 import useCamera from '../hooks/useCamera'
 import { mergeBufferGeometries } from '../lib/mergeGeometries'
 // SVG served from public/ — user edits assets/, copies to public/ for use
-const svgUrl = '/lafayette-square.svg'
+const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg`
 
 // ── SVG coordinate mapping ──────────────────────────────────────────────────
 // SVG viewBox: 0 0 1309 1152.7
@@ -405,7 +405,8 @@ function SvgMapLayers() {
 
         for (const [groupId, config] of Object.entries(SVG_LAYERS)) {
           const paths = buckets[groupId]
-          if (!paths.length) continue
+          if (!paths.length) { console.log(`[SvgMapLayers] ${groupId}: 0 paths`); continue }
+          console.log(`[SvgMapLayers] ${groupId}: ${paths.length} paths`)
 
           const fillGeos = []
           const strokeGeos = []
@@ -424,32 +425,40 @@ function SvgMapLayers() {
             // Illustrator "Presentation Attributes" export includes fill= on every filled path
             const fc = style.fill
             if (fc && fc !== 'none' && fc !== 'transparent') {
-              const shapes = SVGLoader.createShapes(path)
-              for (const shape of shapes) {
-                const cleaned = cleanShape(shape)
-                if (!cleaned) continue
-                // curveSegments=1 — curves already flattened in cleanShape
-                const geo = new THREE.ShapeGeometry(cleaned, 1)
-                if (geo.attributes.position.count > 0) {
-                  transformSvgToWorld(geo)
-                  fillGeos.push(geo)
-                } else {
-                  geo.dispose()
+              try {
+                const shapes = SVGLoader.createShapes(path)
+                for (const shape of shapes) {
+                  const cleaned = cleanShape(shape)
+                  if (!cleaned) continue
+                  // curveSegments=1 — curves already flattened in cleanShape
+                  const geo = new THREE.ShapeGeometry(cleaned, 1)
+                  if (geo.attributes.position.count > 0) {
+                    transformSvgToWorld(geo)
+                    fillGeos.push(geo)
+                  } else {
+                    geo.dispose()
+                  }
                 }
+              } catch (e) {
+                console.warn(`[SvgMapLayers] fill error in ${groupId}:`, e)
               }
             }
 
             // ── Strokes (service roads, park paths, sidewalk edges) ──
             const sc = style.stroke
             if (sc && sc !== 'none' && sc !== 'transparent') {
-              for (const subPath of path.subPaths) {
-                const pts = subPath.getPoints(12)
-                if (pts.length < 2) continue
-                const geo = SVGLoader.pointsToStroke(pts, style)
-                if (geo && geo.attributes.position.count > 0) {
-                  transformSvgToWorld(geo)
-                  strokeGeos.push(geo)
+              try {
+                for (const subPath of path.subPaths) {
+                  const pts = subPath.getPoints(12)
+                  if (pts.length < 2) continue
+                  const geo = SVGLoader.pointsToStroke(pts, style)
+                  if (geo && geo.attributes.position.count > 0) {
+                    transformSvgToWorld(geo)
+                    strokeGeos.push(geo)
+                  }
                 }
+              } catch (e) {
+                console.warn(`[SvgMapLayers] stroke error in ${groupId}:`, e)
               }
             }
           }
@@ -476,6 +485,7 @@ function SvgMapLayers() {
           ).join(', '))
         setLayers(result)
       })
+      .catch(e => console.error('[SvgMapLayers] failed:', e))
   }, [])
 
   if (!layers) return null
