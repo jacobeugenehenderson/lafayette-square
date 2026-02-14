@@ -1,12 +1,17 @@
 import { create } from 'zustand'
+import useLandmarkFilter from './useLandmarkFilter'
+import useSelectedBuilding from './useSelectedBuilding'
 
 const useCamera = create((set, get) => ({
-  viewMode: 'hero',       // 'hero' | 'browse' | 'street'
+  viewMode: 'hero',       // 'hero' | 'browse' | 'planetarium'
   previousMode: 'hero',
-  streetTarget: null,
+  panelOpen: false,
   azimuth: 0,
   flyTarget: null,
+  planetariumOrigin: null,  // [x, z] ground position for street-level sky view
   lastInteraction: Date.now(),
+
+  setPanelOpen: (open) => set({ panelOpen: open }),
 
   setMode: (mode) => {
     const current = get().viewMode
@@ -15,32 +20,38 @@ const useCamera = create((set, get) => ({
       previousMode: current,
       viewMode: mode,
       flyTarget: null,
-      streetTarget: mode === 'street' ? get().streetTarget : null,
     })
   },
 
-  enterStreetView: (position) => set({
-    previousMode: get().viewMode,
-    viewMode: 'street',
-    streetTarget: position,
-    flyTarget: null,
-  }),
+  enterPlanetarium: (x, z) => {
+    const current = get().viewMode
+    if (current === 'planetarium') return
+    set({
+      previousMode: current,
+      viewMode: 'planetarium',
+      flyTarget: null,
+      planetariumOrigin: [x, z],
+    })
+  },
 
-  exitStreetView: () => {
+  exitPlanetarium: () => {
     const prev = get().previousMode
     set({
-      viewMode: (prev === 'street' || prev === 'hero') ? 'browse' : prev,
-      streetTarget: null,
+      viewMode: prev === 'planetarium' ? 'browse' : prev,
       flyTarget: null,
     })
   },
 
-  goHero: () => set({
-    previousMode: get().viewMode,
-    viewMode: 'hero',
-    streetTarget: null,
-    flyTarget: null,
-  }),
+  goHero: () => {
+    useLandmarkFilter.getState().clearTags()
+    useSelectedBuilding.getState().deselect()
+    set({
+      previousMode: get().viewMode,
+      viewMode: 'hero',
+      flyTarget: null,
+      panelOpen: false,
+    })
+  },
 
   flyTo: (position, lookAt) => set({
     flyTarget: { position, lookAt },

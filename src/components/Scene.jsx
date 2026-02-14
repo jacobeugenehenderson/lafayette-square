@@ -12,10 +12,11 @@ import StreetLights from './StreetLights'
 import GatewayArch from './GatewayArch'
 import CloudDome from './CloudDome'
 import WeatherPoller from './WeatherPoller'
+import UserDot from './UserDot'
 import useCamera from '../hooks/useCamera'
+import useUserLocation from '../hooks/useUserLocation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
-import buildingsData from '../data/buildings.json'
 
 // ── Film grade (lift blacks, darken midtones) ────────────────────────────────
 
@@ -96,21 +97,6 @@ const FilmGrain = forwardRef((props, ref) => {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function findNearestBuilding(x, z) {
-  let bestDist = Infinity
-  let bestPos = null
-  for (const b of buildingsData.buildings) {
-    const dx = b.position[0] - x
-    const dz = b.position[2] - z
-    const dist = dx * dx + dz * dz
-    if (dist < bestDist) {
-      bestDist = dist
-      bestPos = b.position
-    }
-  }
-  return bestPos
-}
-
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
@@ -121,6 +107,11 @@ function easeInOutCubic(t) {
 
 const HERO_CENTER = [-400, 40, 230]
 const HERO_TARGET = [400, 40, -100]
+// Projection vertical offset when panel is open.
+// Shifts the frustum center so the arch stays centered in the visible area above the panel.
+// panelFraction = portion of screen covered by panel (0.5 = bottom half).
+// To center content in the top (1-p) of screen, shift up by p/2 in viewport coords = p in NDC.
+const PANEL_FRACTION = 0.02
 // Direction to arch in XZ: [3116, -1196], perpendicular: [0.358, 0.934]
 const PAN_HALF_LENGTH = 140 // ±140m from center
 const PAN_PERP = [0.358, 0.934]
@@ -136,9 +127,12 @@ const PRESETS = {
     fov: 22,                      // moderate telephoto — neighborhood fills frame
   },
   browse: {
-    position: [150, 250, 380],
+    position: [0, 600, 1],        // top-down (Z=1 avoids gimbal lock)
     target: [0, 0, 0],
     fov: 45,
+  },
+  planetarium: {
+    fov: 75,                       // wide for sky dome feel
   },
 }
 
@@ -147,18 +141,21 @@ const MODE_CONSTRAINTS = {
     enableRotate: false, enablePan: false, enableZoom: false,
   },
   browse: {
-    enableRotate: true, enablePan: true, enableZoom: true,
-    panSpeed: 1.5, rotateSpeed: 0.5, zoomSpeed: 1.2,
-    minDistance: 50, maxDistance: 1200,
-    minPolarAngle: 0.1,              // can't flip to underground
-    maxPolarAngle: Math.PI / 2,       // horizontal — can't go below ground plane
-    mouseButtons: { LEFT: 0, MIDDLE: 2, RIGHT: 2 }, // left=orbit, middle/right=pan
+    enableRotate: false, enablePan: true, enableZoom: true,
+    panSpeed: 1.5, zoomSpeed: 1.2,
+    minDistance: 50, maxDistance: 4000,
+    minPolarAngle: 0.001, maxPolarAngle: 0.001,
+    screenSpacePanning: true,
+    mouseButtons: { LEFT: 2, MIDDLE: 2, RIGHT: 2 }, // all pan
+    touches: { ONE: 1, TWO: 2 },  // one-finger pan, pinch zoom
   },
-  street: {
+  planetarium: {
     enableRotate: true, enablePan: false, enableZoom: false,
     rotateSpeed: 0.35,
-    minPolarAngle: Math.PI / 2, maxPolarAngle: Math.PI * 0.99,
-    minDistance: 0.5, maxDistance: 0.5,
+    minDistance: 0.5, maxDistance: 0.5,  // locked — orbit in place
+    minPolarAngle: Math.PI / 2,         // horizontal (horizon)
+    maxPolarAngle: Math.PI * 0.99,      // nearly straight up (zenith)
+    touches: { ONE: 0, TWO: 2 },       // one-finger orbit, pinch zoom
   },
 }
 
@@ -180,6 +177,9 @@ function applyConstraints(ctl, mode) {
   } else {
     ctl.mouseButtons = { LEFT: 0, MIDDLE: 1, RIGHT: 2 } // default: left=rotate
   }
+  if (c.screenSpacePanning != null) ctl.screenSpacePanning = c.screenSpacePanning
+  else ctl.screenSpacePanning = true
+  if (c.touches) ctl.touches = c.touches
 }
 
 function relaxConstraints(ctl) {
@@ -237,9 +237,8 @@ function SkyStateTicker() {
 
 // ── Camera rig ───────────────────────────────────────────────────────────────
 
-const EYE_HEIGHT = 1.73
 const IDLE_TIMEOUT = 300000        // 5 minutes for browse
-const IDLE_TIMEOUT_STREET = 120000 // 2 minutes for street view
+const IDLE_TIMEOUT_PLANET = 120000 // 2 minutes for planetarium
 
 // Pre-allocated vectors (no per-frame allocation)
 const _fromPos = new THREE.Vector3()
@@ -256,6 +255,12 @@ function CameraRig() {
   const controlsRef = useRef()
   const initialized = useRef(false)
 
+  // Projection vertical offset (lens shift) for panel-aware reframe
+  const projOffsetY = useRef(0)
+
+  // Cinematic multi-segment queue
+  const cinematicQueue = useRef([])
+
   // Transition state
   const transitioning = useRef(false)
   const transStart = useRef(0)
@@ -266,7 +271,6 @@ function CameraRig() {
   // Mode / flyTo tracking
   const prevMode = useRef('hero')
   const prevFlyTarget = useRef(null)
-  const savedCamera = useRef(null) // for street view return
 
   // Start a transition
   function beginTransition(pos, target, fov, duration) {
@@ -281,13 +285,20 @@ function CameraRig() {
     transitioning.current = true
   }
 
-  // ESC key: street → previous mode, browse → hero
+  // Start a multi-segment cinematic transition
+  function beginCinematic(segments) {
+    cinematicQueue.current = segments.slice(1)
+    const first = segments[0]
+    beginTransition(first.position, first.target, first.fov, first.duration)
+  }
+
+  // ESC key: planetarium → browse, browse → hero
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key !== 'Escape') return
       const { viewMode } = useCamera.getState()
-      if (viewMode === 'street') {
-        useCamera.getState().exitStreetView()
+      if (viewMode === 'planetarium') {
+        useCamera.getState().exitPlanetarium()
       } else if (viewMode !== 'hero') {
         useCamera.getState().goHero()
       }
@@ -313,7 +324,10 @@ function CameraRig() {
     const engage = () => {
       const cam = useCamera.getState()
       cam.resetIdle()
-      if (cam.viewMode === 'hero') cam.setMode('browse')
+      if (cam.viewMode === 'hero') {
+        cam.setMode('browse')
+        useUserLocation.getState().start()
+      }
     }
     canvas.addEventListener('pointerdown', engage)
     canvas.addEventListener('wheel', engage)
@@ -337,7 +351,6 @@ function CameraRig() {
 
     const state = useCamera.getState()
     const vm = state.viewMode
-    const st = state.streetTarget
     const ft = state.flyTarget
 
     // ── Detect mode changes ──
@@ -346,36 +359,25 @@ function CameraRig() {
       const leaving = prevMode.current
       prevMode.current = vm
 
-      if (entering === 'street' && st) {
-        // Save camera state for return
-        savedCamera.current = {
-          position: [camera.position.x, camera.position.y, camera.position.z],
-          target: [ctl.target.x, ctl.target.y, ctl.target.z],
-          fov: camera.fov,
-        }
-        const [x, , z] = st
-        const nearest = findNearestBuilding(x, z)
-        const dx = nearest ? nearest[0] - x : -x
-        const dz = nearest ? nearest[2] - z : -z
-        const len = Math.sqrt(dx * dx + dz * dz) || 1
+      // Clear any interrupted cinematic
+      cinematicQueue.current = []
+
+      if (leaving === 'hero' && entering === 'browse') {
+        // Cinematic crane-up: 2-segment transition
+        beginCinematic([
+          { position: [0, 350, 50], target: [0, 0, 0], fov: 38, duration: 1800 },
+          { position: PRESETS.browse.position, target: PRESETS.browse.target,
+            fov: PRESETS.browse.fov, duration: 1200 },
+        ])
+      } else if (entering === 'planetarium') {
+        // Street-level sky view at the clicked position
+        const origin = state.planetariumOrigin || [0, 0]
+        const EYE = 1.73
         beginTransition(
-          [x, EYE_HEIGHT, z],
-          [x + dx / len * 0.5, EYE_HEIGHT, z + dz / len * 0.5],
-          75, 1500
+          [origin[0], EYE, origin[1]],
+          [origin[0], EYE, origin[1] - 0.5],  // look north, orbit takes over
+          PRESETS.planetarium.fov, 1500
         )
-      } else if (leaving === 'street' && savedCamera.current) {
-        // Return from street to saved camera state
-        beginTransition(
-          savedCamera.current.position,
-          savedCamera.current.target,
-          savedCamera.current.fov,
-          1500
-        )
-        savedCamera.current = null
-      } else if (leaving === 'hero' && entering === 'browse') {
-        // User interaction exits hero — unlock controls, no animation
-        // Don't call ctl.update() — let damping handle any micro-adjustments
-        applyConstraints(ctl, 'browse')
       } else if (PRESETS[entering]) {
         // Transition to mode preset
         const p = PRESETS[entering]
@@ -387,11 +389,13 @@ function CameraRig() {
     // ── Detect flyTo changes (within browse mode) ──
     if (ft !== prevFlyTarget.current) {
       prevFlyTarget.current = ft
-      if (ft && vm !== 'hero' && vm !== 'street') {
+      if (ft && vm !== 'hero' && vm !== 'planetarium') {
+        // flyTo overrides any in-progress cinematic
+        cinematicQueue.current = []
         beginTransition(
           ft.position,
           ft.lookAt,
-          camera.fov,
+          PRESETS.browse.fov,
           1200
         )
       }
@@ -419,9 +423,20 @@ function CameraRig() {
       ctl.update()
 
       if (t >= 1) {
-        transitioning.current = false
-        applyConstraints(ctl, vm)
-        ctl.update()
+        if (cinematicQueue.current.length > 0) {
+          const next = cinematicQueue.current.shift()
+          beginTransition(next.position, next.target, next.fov, next.duration)
+        } else {
+          transitioning.current = false
+          // Post-transition snap: force pure top-down for browse
+          if (vm === 'browse') {
+            const tx = ctl.target.x, tz = ctl.target.z
+            const dist = camera.position.distanceTo(ctl.target)
+            camera.position.set(tx, dist, tz + 0.01)
+          }
+          applyConstraints(ctl, vm)
+          ctl.update()
+        }
       }
       return
     }
@@ -454,10 +469,30 @@ function CameraRig() {
       ctl.enableDamping = false
       ctl.update()
       ctl.enableDamping = true
+
+      // Panel-aware projection offset (lens shift)
+      // Slides the rendered image up so the arch is centered in the visible area above the panel.
+      const panelOpen = useCamera.getState().panelOpen
+      const goalOffset = panelOpen ? -PANEL_FRACTION : 0
+      projOffsetY.current += (goalOffset - projOffsetY.current) * 0.04
+      if (Math.abs(projOffsetY.current) > 0.001) {
+        // Rebuild projection matrix then apply vertical lens shift
+        camera.updateProjectionMatrix()
+        camera.projectionMatrix.elements[9] += projOffsetY.current
+      }
+    } else {
+      // Reset projection offset when leaving hero
+      if (Math.abs(projOffsetY.current) > 0.001) {
+        projOffsetY.current *= 0.9
+        camera.updateProjectionMatrix()
+        camera.projectionMatrix.elements[9] += projOffsetY.current
+      } else {
+        projOffsetY.current = 0
+      }
     }
 
     // ── Idle → hero ──
-    const idleLimit = vm === 'street' ? IDLE_TIMEOUT_STREET : IDLE_TIMEOUT
+    const idleLimit = vm === 'planetarium' ? IDLE_TIMEOUT_PLANET : IDLE_TIMEOUT
     if (Date.now() - state.lastInteraction > idleLimit && vm !== 'hero') {
       useCamera.getState().goHero()
     }
@@ -484,7 +519,7 @@ const IS_GROUND = window.location.search.includes('ground')
 
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
-  const isStreet = viewMode === 'street'
+  const isPlanetarium = viewMode === 'planetarium'
 
   return (
     <Canvas
@@ -514,9 +549,10 @@ function Scene() {
       <CloudDome />
       <VectorStreets />
       <LafayettePark />
+      {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <LafayetteScene />}
       {!IS_GROUND && <StreetLights />}
-      {!IS_GROUND && viewMode === 'hero' && <GatewayArch />}
+      {!IS_GROUND && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && (
         <EffectComposer>
@@ -531,9 +567,9 @@ function Scene() {
           )}
           <FilmGrade />
           <Bloom
-            intensity={isStreet ? 1.8 : viewMode === 'hero' ? 1.5 : 1.2}
-            luminanceThreshold={isStreet ? 0.15 : viewMode === 'hero' ? 0.2 : 0.3}
-            luminanceSmoothing={isStreet ? 0.9 : viewMode === 'hero' ? 0.8 : 0.9}
+            intensity={isPlanetarium ? 1.8 : viewMode === 'hero' ? 1.5 : 1.2}
+            luminanceThreshold={isPlanetarium ? 0.15 : viewMode === 'hero' ? 0.2 : 0.3}
+            luminanceSmoothing={isPlanetarium ? 0.9 : viewMode === 'hero' ? 0.8 : 0.9}
             mipmapBlur
           />
           <FilmGrain />

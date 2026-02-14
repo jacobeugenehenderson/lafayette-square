@@ -5,6 +5,7 @@ import useBusinessState from '../hooks/useBusinessState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
+import useUserLocation from '../hooks/useUserLocation'
 import { CATEGORY_LIST, COLOR_CLASSES } from '../tokens/categories'
 import buildingsData from '../data/buildings.json'
 import streetsData from '../data/streets.json'
@@ -14,7 +15,23 @@ import useBusinessData from '../hooks/useBusinessData'
 const _buildingMap = {}
 buildingsData.buildings.forEach(b => { _buildingMap[b.id] = b })
 
-// Compute camera position to contain a set of building positions
+// Browse: top-down, vertical FOV 45°.
+// Portrait mobile aspect ~0.46 → horizontal is the tight dimension.
+const V_TAN = Math.tan((45 / 2) * Math.PI / 180) // 0.414
+const PORTRAIT_ASPECT = 0.46
+const H_TAN = V_TAN * PORTRAIT_ASPECT // 0.191
+
+// Panel covers bottom 35%. Visible vertical fraction = 65%.
+const PANEL_FRAC = 0.35
+const VIS_V = 1 - PANEL_FRAC
+
+// Shift lookAt south so content centers in visible area above panel.
+function panelOffset(height) {
+  return (PANEL_FRAC / 2) * 2 * height * V_TAN
+}
+
+// Compute camera to contain all buildings. Fits both X (horizontal)
+// and Z (visible vertical) independently, takes the larger height.
 function computeZoomToFit(buildings) {
   if (buildings.length === 0) return null
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
@@ -26,20 +43,29 @@ function computeZoomToFit(buildings) {
   }
   const cx = (minX + maxX) / 2
   const cz = (minZ + maxZ) / 2
-  const span = Math.max(maxX - minX, maxZ - minZ, 60) // minimum 60m span
-  const height = span * 1.4 + 80 // FOV-based: enough to contain all pins
+  const spanX = Math.max(maxX - minX, 200)
+  const spanZ = Math.max(maxZ - minZ, 200)
+  // Height to fit X span in narrow horizontal (20% padding)
+  const hForX = (spanX * 1.2) / (2 * H_TAN)
+  // Height to fit Z span in visible vertical above panel (20% padding)
+  const hForZ = (spanZ * 1.2) / (2 * V_TAN * VIS_V)
+  const height = Math.max(hForX, hForZ)
+  const zOff = panelOffset(height)
   return {
-    position: [cx, height, cz + height * 0.2],
-    lookAt: [cx, 0, cz],
+    position: [cx, height, cz + zOff + 1],
+    lookAt: [cx, 0, cz + zOff],
   }
 }
 
+// Center on a single building at a comfortable contextual distance
 function computeCenterOn(building) {
   const x = building.position[0]
   const z = building.position[2]
+  const height = 450
+  const zOff = panelOffset(height)
   return {
-    position: [x, 150, z + 30],
-    lookAt: [x, 0, z],
+    position: [x, height, z + zOff + 1],
+    lookAt: [x, 0, z + zOff],
   }
 }
 
@@ -396,7 +422,8 @@ function AlmanacTab({ showAdmin = false }) {
   )
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0">
       <div className="px-4 py-3 border-b border-white/10 bg-white/5">
         <div className="flex items-baseline justify-between">
           <div
@@ -508,7 +535,6 @@ function AlmanacTab({ showAdmin = false }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
       <CollapsibleSection title="Bulletin Board" defaultOpen={false} highlight>
         <BulletinBoard />
       </CollapsibleSection>
@@ -625,7 +651,7 @@ function LafayetteSubsection({ section, color }) {
     if (!isActive && businesses.length > 0) {
       // Switch to browse if in hero so flyTo is honored
       const cam = useCamera.getState()
-      if (cam.viewMode === 'hero') cam.setMode('browse')
+      if (cam.viewMode !== 'browse') cam.setMode('browse')
 
       const buildings = businesses
         .map(biz => _buildingMap[biz.building_id])
@@ -640,11 +666,11 @@ function LafayetteSubsection({ section, color }) {
   const handleSelectBusiness = (biz) => {
     // Clear category tags — single business mode
     useLandmarkFilter.getState().clearTags()
-    // Highlight the business (shows pin, no card)
+    // Highlight the business (shows pin, card opens on building click)
     highlight(biz.id, biz.building_id)
     // Switch to browse if in hero so flyTo is honored
     const cam = useCamera.getState()
-    if (cam.viewMode === 'hero') cam.setMode('browse')
+    if (cam.viewMode !== 'browse') cam.setMode('browse')
     // Center camera on this building
     const building = _buildingMap[biz.building_id]
     if (building) {
@@ -773,7 +799,13 @@ const TABS = [
 
 function SidePanel({ showAdmin = true }) {
   const [activeTab, setActiveTab] = useState('almanac')
-  const [collapsed, setCollapsed] = useState(false)
+  const panelOpen = useCamera((s) => s.panelOpen)
+  const setPanelOpen = useCamera((s) => s.setPanelOpen)
+  const collapsed = !panelOpen
+  const setCollapsed = (val) => {
+    if (!val) useUserLocation.getState().start()
+    setPanelOpen(!val)
+  }
   const dragRef = useRef(null)
 
   // Touch drag to collapse/expand
@@ -799,10 +831,10 @@ function SidePanel({ showAdmin = true }) {
 
   return (
     <div
-      className="absolute bottom-4 left-4 w-80 flex flex-col select-none bg-black/80 backdrop-blur-md rounded-lg border border-white/10 overflow-hidden z-50 transition-all duration-300 ease-out"
+      className="absolute bottom-3 left-3 right-3 flex flex-col select-none bg-black/80 backdrop-blur-md rounded-lg border border-white/10 overflow-hidden z-50 transition-all duration-300 ease-out"
       style={{
         fontFamily: 'ui-monospace, monospace',
-        maxHeight: collapsed ? '44px' : 'calc(100vh - 2rem)',
+        height: collapsed ? '44px' : 'calc(35dvh - 1.5rem)',
       }}
     >
       <div
@@ -830,7 +862,7 @@ function SidePanel({ showAdmin = true }) {
         ))}
       </div>
 
-      <div className={`flex-1 overflow-hidden transition-opacity duration-200 ${collapsed ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`flex-1 min-h-0 overflow-hidden transition-opacity duration-200 ${collapsed ? 'opacity-0' : 'opacity-100'}`}>
         {activeTab === 'almanac' && <AlmanacTab showAdmin={showAdmin} />}
         {activeTab === 'lafayettepages' && <LafayettePagesTab />}
       </div>

@@ -1,11 +1,13 @@
 import useCamera from '../hooks/useCamera'
+import useSelectedBuilding from '../hooks/useSelectedBuilding'
 
 function CompassRose() {
   const azimuth = useCamera((state) => state.azimuth)
   const viewMode = useCamera((state) => state.viewMode)
+  const showCard = useSelectedBuilding((state) => state.showCard)
   const rotationDeg = (azimuth * 180) / Math.PI
 
-  if (viewMode === 'hero') return null
+  if (viewMode === 'hero' || showCard) return null
 
   return (
     <div className="absolute top-4 left-4 select-none z-50">

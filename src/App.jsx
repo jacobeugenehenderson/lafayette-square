@@ -2,17 +2,20 @@ import Scene from './components/Scene'
 import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
 import SidePanel from './components/SidePanel'
+import useCamera from './hooks/useCamera'
+import useSelectedBuilding from './hooks/useSelectedBuilding'
 import CheckinPage from './pages/CheckinPage'
 import ClaimPage from './pages/ClaimPage'
-import useCamera from './hooks/useCamera'
 
-function CameraModeButton() {
+function ModeOverlay() {
   const viewMode = useCamera((s) => s.viewMode)
+  const showCard = useSelectedBuilding((s) => s.showCard)
+  if (viewMode === 'hero' || showCard) return null
 
-  if (viewMode === 'street') {
+  if (viewMode === 'planetarium') {
     return (
       <button
-        onClick={() => useCamera.getState().exitStreetView()}
+        onClick={() => useCamera.getState().exitPlanetarium()}
         className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
         title="Exit street view"
       >
@@ -26,22 +29,17 @@ function CameraModeButton() {
     )
   }
 
-  if (viewMode === 'browse') {
-    return (
-      <button
-        onClick={() => useCamera.getState().goHero()}
-        className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 transition-all duration-200 flex items-center justify-center hover:bg-white/20 hover:text-white/80"
-        title="Return to cinematic view"
-      >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-          <path d="M15 10l-4 4m0-4l4 4" strokeLinecap="round" />
-          <rect x="2" y="5" width="20" height="14" rx="2" />
-        </svg>
-      </button>
-    )
-  }
-
-  return null
+  return (
+    <button
+      onClick={() => useCamera.getState().goHero()}
+      className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 transition-all duration-200 flex items-center justify-center hover:bg-white/20 hover:text-white/80"
+      title="Return to hero view"
+    >
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+      </svg>
+    </button>
+  )
 }
 
 function App() {
@@ -62,7 +60,7 @@ function App() {
       {!isGround && <Controls />}
       {!isGround && <CompassRose />}
       {!isGround && <SidePanel showAdmin={true} />}
-      {!isGround && <CameraModeButton />}
+      {!isGround && <ModeOverlay />}
     </div>
   )
 }

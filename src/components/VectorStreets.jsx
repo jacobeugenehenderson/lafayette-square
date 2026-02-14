@@ -526,16 +526,21 @@ function VectorStreets() {
   const viewMode = useCamera((s) => s.viewMode)
   const hideGroundMarkings = viewMode === 'hero'
 
-  const handleDoubleClick = (event) => {
-    event.stopPropagation()
-    const { x, z } = event.point
-    useCamera.getState().enterStreetView([x, 0, z])
-  }
-
   return (
     <group>
       {/* Ground plane — black, soft circular fade at edges */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow onDoubleClick={handleDoubleClick}>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.2, 0]}
+        receiveShadow
+        onDoubleClick={(e) => {
+          e.stopPropagation()
+          if (useCamera.getState().viewMode === 'browse') {
+            const p = e.point
+            useCamera.getState().enterPlanetarium(p.x, p.z)
+          }
+        }}
+      >
         <circleGeometry args={[5000, 64]} />
         <meshStandardMaterial
           color="#0a0a0c"

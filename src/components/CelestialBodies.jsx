@@ -368,7 +368,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
   useFrame(() => {
     if (materialRef.current) {
       const u = materialRef.current.uniforms
-      const planetariumActive = useCamera.getState().viewMode === 'street'
+      const planetariumActive = useCamera.getState().viewMode === 'planetarium'
       const dimFactor = planetariumActive ? 0.4 : 1.0
       // 4-band colors
       u.bandHorizon.value.copy(colors.bands.horizon).multiplyScalar(dimFactor)
@@ -716,7 +716,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
   // and fade opacity with sun altitude
   useFrame(() => {
     if (!starRef.current || !starMat) return
-    const planetariumActive = useCamera.getState().viewMode === 'street'
+    const planetariumActive = useCamera.getState().viewMode === 'planetarium'
     const { astronomyAlpha } = useSkyState.getState()
     starMat.uniforms.uOpacity.value = planetariumActive ? 1.0 : astronomyAlpha
 
@@ -794,7 +794,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
     }
   })
 
-  const planetariumActive = useCamera((s) => s.viewMode === 'street')
+  const planetariumActive = useCamera((s) => s.viewMode === 'planetarium')
 
   return (
     <>

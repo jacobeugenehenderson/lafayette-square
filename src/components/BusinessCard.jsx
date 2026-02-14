@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import useLocalStatus from '../hooks/useLocalStatus'
 import useGuardianStatus from '../hooks/useGuardianStatus'
+import useCamera from '../hooks/useCamera'
 import { getReviews, postReview, getEvents, postEvent, getBusinessTags } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 import ManageTab from './ManageTab'
@@ -664,6 +665,7 @@ function BusinessCard({ landmark, building, onClose }) {
   const [activeTab, setActiveTab] = useState('overview')
   const { isLocal } = useLocalStatus()
   const { isGuardianOf } = useGuardianStatus()
+  const panelOpen = useCamera((s) => s.panelOpen)
 
   // Merge data from landmark and building — landmark wins for shared fields
   const name = landmark?.name || building?.name || 'Unknown Building'
@@ -717,9 +719,9 @@ function BusinessCard({ landmark, building, onClose }) {
   }, [hasLandmarkInfo, hasHistory, hasArchitecture, isGuardian])
 
   return (
-    <div className="absolute top-4 right-4 bg-black/95 backdrop-blur-md rounded-xl w-96 text-white shadow-2xl border border-white/10 overflow-hidden max-h-[calc(100vh-2rem)] flex flex-col z-50">
+    <div className="absolute top-3 left-3 right-3 bg-black/95 backdrop-blur-md rounded-xl text-white shadow-2xl border border-white/10 overflow-hidden flex flex-col z-50" style={{ bottom: 'calc(35dvh - 1.5rem + 18px)' }}>
       {/* Hero Photo Area */}
-      <div className="relative h-40 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
+      <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (
           <img src={heroPhoto} alt={name} className="w-full h-full object-cover" />
         ) : hasLandmarkInfo ? (
