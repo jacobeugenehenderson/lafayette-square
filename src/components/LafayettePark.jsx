@@ -110,6 +110,7 @@ function distToPolyline(px, pz, points) {
 function mergeGeos(geos) {
   let totalV = 0, totalI = 0
   const hasColor = geos.length > 0 && !!geos[0].attributes.color
+  const hasUv = geos.length > 0 && !!geos[0].attributes.uv
   geos.forEach(g => {
     totalV += g.attributes.position.count
     totalI += g.index ? g.index.count : g.attributes.position.count
@@ -117,12 +118,14 @@ function mergeGeos(geos) {
   const pos = new Float32Array(totalV * 3)
   const norm = new Float32Array(totalV * 3)
   const col = hasColor ? new Float32Array(totalV * 3) : null
+  const uv = hasUv ? new Float32Array(totalV * 2) : null
   const idx = new Uint32Array(totalI)
   let vOff = 0, iOff = 0
   geos.forEach(g => {
     pos.set(g.attributes.position.array, vOff * 3)
     norm.set(g.attributes.normal.array, vOff * 3)
     if (col && g.attributes.color) col.set(g.attributes.color.array, vOff * 3)
+    if (uv && g.attributes.uv) uv.set(g.attributes.uv.array, vOff * 2)
     if (g.index) {
       const gi = g.index.array
       for (let i = 0; i < gi.length; i++) idx[iOff + i] = gi[i] + vOff
@@ -138,6 +141,7 @@ function mergeGeos(geos) {
   m.setAttribute('position', new THREE.BufferAttribute(pos, 3))
   m.setAttribute('normal', new THREE.BufferAttribute(norm, 3))
   if (col) m.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  if (uv) m.setAttribute('uv', new THREE.BufferAttribute(uv, 2))
   m.setIndex(new THREE.BufferAttribute(idx, 1))
   return m
 }
@@ -256,6 +260,7 @@ function ParkPaths() {
       // Build triangle strip: for each segment, extrude perpendicular
       const positions = []
       const normals = []
+      const uvs = []
       const indices = []
 
       for (let i = 0; i < pts.length; i++) {
@@ -276,12 +281,14 @@ function ParkPaths() {
         const nx = -tz, nz = tx
 
         const x = pts[i][0], z = pts[i][1]
-        // Left vertex
+        // Left vertex (v=0 = edge)
         positions.push(x + nx * halfW, 0, z + nz * halfW)
         normals.push(0, 1, 0)
-        // Right vertex
+        uvs.push(0, 0)
+        // Right vertex (v=1 = edge)
         positions.push(x - nx * halfW, 0, z - nz * halfW)
         normals.push(0, 1, 0)
+        uvs.push(0, 1)
       }
 
       // Indices: triangle strip pairs
@@ -296,6 +303,7 @@ function ParkPaths() {
       const geo = new THREE.BufferGeometry()
       geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
       geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
       geo.setIndex(indices)
       geos.push(geo)
     })
@@ -305,7 +313,10 @@ function ParkPaths() {
   }, [])
 
   const pathMat = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({ roughness: 0.92, color: '#7a7468' })
+    const mat = new THREE.MeshStandardMaterial({
+      roughness: 0.95,
+      color: '#7a7468',
+    })
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunAltitude = { value: 0.5 }
       pathShaderRef.current = shader
@@ -313,12 +324,14 @@ function ParkPaths() {
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
         `#include <common>
-         varying vec3 vPathPos;`
+         varying vec3 vPathPos;
+         varying float vEdge;`
       )
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
-         vPathPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+         vPathPos = (modelMatrix * vec4(position, 1.0)).xyz;
+         vEdge = abs(uv.y - 0.5) * 2.0;`  // 0 at center, 1 at edges
       )
 
       shader.fragmentShader = shader.fragmentShader.replace(
@@ -326,6 +339,7 @@ function ParkPaths() {
         `#include <common>
          uniform float uSunAltitude;
          varying vec3 vPathPos;
+         varying float vEdge;
 
          float pHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
          vec2 pHash2(vec2 p) { return vec2(pHash(p), pHash(p + vec2(37.0, 91.0))); }
@@ -370,14 +384,14 @@ function ParkPaths() {
          float vDist = vr.x;
          float stoneId = pHash(vr.yz);
 
-         // Per-stone color variation
-         vec3 stoneCol = mix(vec3(0.35, 0.34, 0.33), vec3(0.42, 0.38, 0.32), step(0.3, stoneId));
-         stoneCol = mix(stoneCol, vec3(0.48, 0.44, 0.39), step(0.6, stoneId));
-         stoneCol = mix(stoneCol, vec3(0.24, 0.22, 0.20), step(0.85, stoneId));
+         // Per-stone color: warm earth tones, crushed limestone
+         vec3 stoneCol = mix(vec3(0.28, 0.26, 0.23), vec3(0.32, 0.28, 0.22), step(0.3, stoneId));
+         stoneCol = mix(stoneCol, vec3(0.35, 0.30, 0.24), step(0.6, stoneId));
+         stoneCol = mix(stoneCol, vec3(0.18, 0.16, 0.13), step(0.85, stoneId));
 
          // Dark gaps between pebbles
          float gap = smoothstep(0.30, 0.38, vDist);
-         vec3 gravelCol = mix(stoneCol, vec3(0.18, 0.16, 0.14), gap * 0.7);
+         vec3 gravelCol = mix(stoneCol, vec3(0.12, 0.10, 0.08), gap * 0.7);
 
          // Surface grain within each stone
          gravelCol *= 0.9 + pNoise(pp * 12.0 + vr.yz * 7.0) * 0.2;
@@ -385,16 +399,17 @@ function ParkPaths() {
          // Large-scale worn patches
          gravelCol = mix(gravelCol, gravelCol * 0.85, smoothstep(0.4, 0.65, pFBM(pp * 0.3)));
 
-         // ── Subtle edge scatter ──
-         // Use screen-space derivatives to fade edges with noise
-         float scatter = pNoise(pp * 2.5 + 30.0) * 0.08;
-         gravelCol = mix(gravelCol, gravelCol * 0.92, scatter);
-
          // Time-of-day
          float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
          float brightness = mix(0.45, 1.0, dayBright);
          vec3 nightTint = vec3(0.6, 0.7, 1.0);
          gravelCol = mix(gravelCol * nightTint, gravelCol, dayBright) * brightness;
+
+         // ── Soft edges: blend gravel → grass at path borders ──
+         float edgeNoise = pNoise(pp * 4.0 + 17.0) * 0.15;
+         float edgeMix = smoothstep(0.55, 0.95 + edgeNoise, vEdge);
+         vec3 grassCol = mix(vec3(0.22, 0.28, 0.12), vec3(0.18, 0.24, 0.10), dayBright);
+         gravelCol = mix(gravelCol, grassCol * brightness, edgeMix);
 
          diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
       )

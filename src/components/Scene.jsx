@@ -49,6 +49,45 @@ const FilmGrade = forwardRef((props, ref) => {
   return <primitive ref={ref} object={effect} dispose={null} />
 })
 
+// ── Film grain (organic noise wash) ──────────────────────────────────────────
+// Breaks up mathematically perfect CG gradients on walls, sky, and flat surfaces.
+// Stronger in shadows (like real film stock), subtle in highlights.
+
+class FilmGrainEffect extends Effect {
+  constructor() {
+    super('FilmGrain', /* glsl */`
+      uniform float uSeed;
+
+      float grainHash(vec2 p) {
+        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
+      }
+
+      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+        float lum = dot(inputColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+        // Grain stronger in shadows, subtle in highlights
+        float strength = mix(0.007, 0.002, smoothstep(0.0, 0.5, lum));
+        float grain = (grainHash(uv * 1000.0 + uSeed) - 0.5) * strength;
+        outputColor = vec4(inputColor.rgb + grain, inputColor.a);
+      }
+    `, {
+      uniforms: new Map([
+        ['uSeed', new THREE.Uniform(0)]
+      ])
+    })
+  }
+
+  update() {
+    this.uniforms.get('uSeed').value = Math.random() * 1000
+  }
+}
+
+const FilmGrain = forwardRef((props, ref) => {
+  const effect = useMemo(() => new FilmGrainEffect(), [])
+  return <primitive ref={ref} object={effect} dispose={null} />
+})
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function findNearestBuilding(x, z) {
@@ -145,6 +184,26 @@ function relaxConstraints(ctl) {
   ctl.maxDistance = Infinity
   ctl.minPolarAngle = 0
   ctl.maxPolarAngle = Math.PI
+}
+
+// ── Frame limiter (30fps) ────────────────────────────────────────────────────
+// Canvas uses frameloop="demand" so no frames render unless invalidated.
+// Uses rAF and skips every other frame to stay vSync-aligned (smooth 30fps).
+
+function FrameLimiter() {
+  const invalidate = useThree((s) => s.invalidate)
+  useEffect(() => {
+    let skip = false
+    let id
+    const loop = () => {
+      if (!skip) invalidate()
+      skip = !skip
+      id = requestAnimationFrame(loop)
+    }
+    id = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(id)
+  }, [invalidate])
+  return null
 }
 
 // ── Time ticker ──────────────────────────────────────────────────────────────
@@ -423,6 +482,7 @@ function Scene() {
 
   return (
     <Canvas
+      frameloop="demand"
       camera={{
         position: PRESETS.hero.position,
         fov: PRESETS.hero.fov,
@@ -440,6 +500,7 @@ function Scene() {
       shadows={IS_GROUND ? false : 'soft'}
     >
       {!IS_GROUND && <SoftShadows size={52} samples={16} focus={0.35} />}
+      <FrameLimiter />
       <TimeTicker />
       <SkyStateTicker />
       <WeatherPoller />
@@ -449,7 +510,7 @@ function Scene() {
       <LafayettePark />
       {!IS_GROUND && <LafayetteScene />}
       {!IS_GROUND && <StreetLights />}
-      {!IS_GROUND && <GatewayArch />}
+      {!IS_GROUND && viewMode === 'hero' && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && (
         <EffectComposer>
@@ -469,6 +530,7 @@ function Scene() {
             luminanceSmoothing={isStreet ? 0.9 : viewMode === 'hero' ? 0.8 : 0.9}
             mipmapBlur
           />
+          <FilmGrain />
         </EffectComposer>
       )}
     </Canvas>

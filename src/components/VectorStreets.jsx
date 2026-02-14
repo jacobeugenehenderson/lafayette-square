@@ -271,7 +271,7 @@ function cleanShape(shape) {
 const SVG_LAYERS = {
   blocks:    { y: 0.08, color: '#333333' },
   service:   { y: 0.09, color: '#4c4c4c' },
-  paths:     { y: 0.10, color: '#cccccc', clipId: 'clippath' },
+  paths:     { y: 0.10, color: '#8a8578', clipId: 'clippath' },
   streets:   { y: 0.05, color: '#000000' },
   sidewalks: { y: 0.12, color: '#7f7c73' },
 }

@@ -1,4 +1,4 @@
-import { useRef, useMemo, Suspense } from 'react'
+import { useRef, useMemo, useEffect, Suspense } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
@@ -44,8 +44,36 @@ function lerpColor(color1, color2, t) {
   return '#' + _lc1.getHexString()
 }
 
+// Shadow map baking: only re-render when sun moves meaningfully.
+// Avoids drawing 1,729 buildings into a 4K shadow map 60x/sec.
+const _prevShadowPos = new THREE.Vector3()
+
 function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, orbColor, orbSize }) {
   const lightRef = useRef()
+
+  // Disable automatic shadow updates — we'll trigger manually
+  useEffect(() => {
+    if (lightRef.current) {
+      lightRef.current.shadow.autoUpdate = false
+      lightRef.current.shadow.needsUpdate = true
+      _prevShadowPos.copy(lightPosition)
+    }
+  }, [])
+
+  // Re-render shadow map only when light position shifts enough (~2° of sky movement)
+  useFrame(() => {
+    if (!lightRef.current) return
+    const dx = lightPosition.x - _prevShadowPos.x
+    const dy = lightPosition.y - _prevShadowPos.y
+    const dz = lightPosition.z - _prevShadowPos.z
+    const dist2 = dx * dx + dy * dy + dz * dz
+    // ~20m movement on a 600m radius ≈ 2° arc
+    if (dist2 > 400) {
+      lightRef.current.shadow.needsUpdate = true
+      _prevShadowPos.copy(lightPosition)
+    }
+  })
+
   return (
     <group>
       {showOrb && (
@@ -692,6 +720,9 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
     const { astronomyAlpha } = useSkyState.getState()
     starMat.uniforms.uOpacity.value = planetariumActive ? 1.0 : astronomyAlpha
 
+    // Skip expensive sidereal position computation when stars are invisible
+    if (!planetariumActive && astronomyAlpha < 0.01) return
+
     // Scale star sizes in planetarium mode (40x for visibility at sky-dome distance)
     const sizeAttr = starRef.current.geometry.getAttribute('aSize')
     const wasScaled = sizeAttr._planetariumScaled === true
@@ -859,7 +890,7 @@ function CelestialBodies() {
         lightPosition: _sunLP,
         visualPosition: _sunVP,
         color: lerpColor('#ffaa55', '#fff8e8', t),
-        intensity: 0.7 + t * 0.25,
+        intensity: 0.7 + t * 1.5,
         showOrb: true,
         orbColor: lerpColor('#ffcc66', '#ffffaa', t),
         orbSize: (20 - t * 2) * (SUN_VISUAL_RADIUS / LIGHT_RADIUS),
@@ -867,19 +898,19 @@ function CelestialBodies() {
       secondary = {
         position: _secP.set(-_sunLP.x * 0.5, 60, -_sunLP.z * 0.5),
         color: '#aabbdd',
-        intensity: 0.2 + t * 0.1,
+        intensity: 0.3 - t * 0.05,
       }
       sky = {
         top: lerpColor('#4a6090', '#5080c0', t),
         bottom: lerpColor('#aa7755', '#88aacc', t),
       }
-      ambient = { color: lerpColor('#998877', '#ccddee', t), intensity: 0.4 + t * 0.1 }
+      ambient = { color: lerpColor('#998877', '#ccddee', t), intensity: 0.45 - t * 0.1 }
     } else {
       primary = {
         lightPosition: _sunLP,
         visualPosition: _sunVP,
         color: '#fffefa',
-        intensity: 1.5,
+        intensity: 2.2,
         showOrb: true,
         orbColor: '#ffffee',
         orbSize: 18 * (SUN_VISUAL_RADIUS / LIGHT_RADIUS),
@@ -887,10 +918,10 @@ function CelestialBodies() {
       secondary = {
         position: _secP.set(-_sunLP.x * 0.4, 50, -_sunLP.z * 0.4),
         color: '#aaccff',
-        intensity: 0.5,
+        intensity: 0.25,
       }
       sky = { top: '#5090dd', bottom: '#99ccee' }
-      ambient = { color: '#eef4ff', intensity: 0.7 }
+      ambient = { color: '#eef4ff', intensity: 0.35 }
     }
 
     // Normalized sun direction for sky glow (unit vector pointing toward sun)
@@ -936,7 +967,7 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.08 : 0.6) * (1 + cc * 0.4)} />
+      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.08 : 0.2) * (1 + cc * 0.4)} />
       <ambientLight
         color={lighting.ambient.color}
         intensity={lighting.ambient.intensity * (1 + cc * 0.4)}
@@ -944,13 +975,13 @@ function CelestialBodies() {
       <hemisphereLight
         color={lighting.isNight ? '#4466aa' : '#ffeedd'}
         groundColor={lighting.isNight ? '#222233' : '#443333'}
-        intensity={(lighting.isNight ? 0.1 : 0.4) * (1 + cc * 0.5)}
+        intensity={(lighting.isNight ? 0.1 : 0.15) * (1 + cc * 0.5)}
       />
       <PrimaryOrb {...primaryWeathered} />
       <SecondaryOrb {...lighting.secondary} />
       <directionalLight
         position={[0, 100, -400]}
-        intensity={lighting.isNight ? 0.15 : 0.1}
+        intensity={lighting.isNight ? 0.15 : 0.05}
         color={lighting.isNight ? '#5577aa' : '#ffeedd'}
       />
     </>

@@ -20,7 +20,7 @@ const POOL_RADIUS = 12
 const POOL_Y = 0.5  // above SVG block shapes (y=0.3) and streets (y=0.45)
 
 // Dynamic PointLights — nearest N lamps get real lights that illuminate surfaces
-const DYNAMIC_LIGHT_COUNT = 24
+const DYNAMIC_LIGHT_COUNT = 8
 
 function StreetLights() {
   const postRef = useRef()
@@ -154,10 +154,18 @@ function StreetLights() {
         headMat.color.set('#999999')
         headMat.needsUpdate = true
         poolMat.uniforms.uIntensity.value = 0
-        // Turn off all dynamic lights
-        lightsRef.current.forEach(l => { l.intensity = 0 })
+        // Hide ground pools entirely during day — no GPU work
+        if (poolRef.current) poolRef.current.visible = false
+        // Hide dynamic lights entirely — Three.js skips them in lighting pass
+        lightsRef.current.forEach(l => { l.visible = false })
       }
       return
+    }
+
+    // Re-show pools and lights when glow kicks in (only on transition)
+    if (prevIntensityRef.current === 0) {
+      if (poolRef.current) poolRef.current.visible = true
+      lightsRef.current.forEach(l => { l.visible = true })
     }
 
     const t = Math.min(1, Math.max(0, (0.05 - sunAltitude) / 0.35))
