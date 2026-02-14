@@ -4,7 +4,7 @@ const CENTER_LAT = 38.6160
 const CENTER_LON = -90.2161
 const LON_TO_METERS = 86774
 const LAT_TO_METERS = 111000
-const BOUNDS_RADIUS = 600 // meters from center — beyond this, user is "not in the hood"
+const BOUNDS_RADIUS = 800 // meters from center — covers Truman/Chouteau/Jefferson/44 box
 
 const useUserLocation = create((set, get) => ({
   x: null,
@@ -29,6 +29,7 @@ const useUserLocation = create((set, get) => ({
         const x = (lon - CENTER_LON) * LON_TO_METERS
         const z = (CENTER_LAT - lat) * LAT_TO_METERS
         const dist = Math.sqrt(x * x + z * z)
+        console.log(`[UserLocation] lat=${lat.toFixed(5)} lon=${lon.toFixed(5)} → x=${x.toFixed(1)} z=${z.toFixed(1)} dist=${dist.toFixed(1)}m acc=${pos.coords.accuracy.toFixed(1)}m inBounds=${dist <= BOUNDS_RADIUS}`)
         set({
           x,
           z,
