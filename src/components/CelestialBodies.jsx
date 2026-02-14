@@ -921,7 +921,7 @@ function CelestialBodies() {
         intensity: 0.25,
       }
       sky = { top: '#5090dd', bottom: '#99ccee' }
-      ambient = { color: '#eef4ff', intensity: 0.35 }
+      ambient = { color: '#eef4ff', intensity: 0.55 }
     }
 
     // Normalized sun direction for sky glow (unit vector pointing toward sun)
@@ -967,7 +967,7 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.08 : 0.2) * (1 + cc * 0.4)} />
+      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.08 : 0.45) * (1 + cc * 0.4)} />
       <ambientLight
         color={lighting.ambient.color}
         intensity={lighting.ambient.intensity * (1 + cc * 0.4)}
@@ -975,13 +975,13 @@ function CelestialBodies() {
       <hemisphereLight
         color={lighting.isNight ? '#4466aa' : '#ffeedd'}
         groundColor={lighting.isNight ? '#222233' : '#443333'}
-        intensity={(lighting.isNight ? 0.1 : 0.15) * (1 + cc * 0.5)}
+        intensity={(lighting.isNight ? 0.1 : 0.35) * (1 + cc * 0.5)}
       />
       <PrimaryOrb {...primaryWeathered} />
       <SecondaryOrb {...lighting.secondary} />
       <directionalLight
         position={[0, 100, -400]}
-        intensity={lighting.isNight ? 0.15 : 0.05}
+        intensity={lighting.isNight ? 0.15 : 0.12}
         color={lighting.isNight ? '#5577aa' : '#ffeedd'}
       />
     </>

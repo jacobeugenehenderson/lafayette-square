@@ -342,6 +342,126 @@ function Foundations() {
   )
 }
 
+// ============ CONTACT SHADOWS (building-ground AO) ============
+// Dark ring around each building footprint at ground level.
+// Single merged mesh — 1 draw call for all ~1,729 buildings.
+
+function ContactShadows() {
+  const geometry = useMemo(() => {
+    const SPREAD = 1.2 // meters outward
+    const Y = 0.04     // just above street surface
+    let totalV = 0, totalI = 0
+    const perBuilding = []
+
+    buildingsData.buildings.forEach(building => {
+      let pts
+      if (!building.footprint || building.footprint.length < 3) {
+        const [w, , d] = building.size
+        const px = building.position[0], pz = building.position[2]
+        pts = [
+          [px - w / 2, pz - d / 2],
+          [px + w / 2, pz - d / 2],
+          [px + w / 2, pz + d / 2],
+          [px - w / 2, pz + d / 2],
+        ]
+      } else {
+        pts = building.footprint
+      }
+
+      const n = pts.length
+      if (n < 3) return
+
+      // Centroid for radial expansion
+      let cx = 0, cz = 0
+      for (const [x, z] of pts) { cx += x; cz += z }
+      cx /= n; cz /= n
+
+      // Outer ring: push each vertex radially outward from centroid
+      const outerPts = pts.map(([x, z]) => {
+        const dx = x - cx, dz = z - cz
+        const len = Math.sqrt(dx * dx + dz * dz) || 1
+        return [x + (dx / len) * SPREAD, z + (dz / len) * SPREAD]
+      })
+
+      const positions = new Float32Array(n * 2 * 3)
+      const alphas = new Float32Array(n * 2)
+      const indices = new Uint32Array(n * 6)
+
+      for (let i = 0; i < n; i++) {
+        // Inner vertex (at building edge) — dark
+        positions[i * 6] = pts[i][0]
+        positions[i * 6 + 1] = Y
+        positions[i * 6 + 2] = pts[i][1]
+        alphas[i * 2] = 0.5
+        // Outer vertex — transparent
+        positions[i * 6 + 3] = outerPts[i][0]
+        positions[i * 6 + 4] = Y
+        positions[i * 6 + 5] = outerPts[i][1]
+        alphas[i * 2 + 1] = 0.0
+      }
+
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n
+        const base = i * 6
+        indices[base] = i * 2
+        indices[base + 1] = j * 2
+        indices[base + 2] = i * 2 + 1
+        indices[base + 3] = i * 2 + 1
+        indices[base + 4] = j * 2
+        indices[base + 5] = j * 2 + 1
+      }
+
+      perBuilding.push({ positions, alphas, indices, vCount: n * 2, iCount: n * 6 })
+      totalV += n * 2
+      totalI += n * 6
+    })
+
+    if (perBuilding.length === 0) return null
+
+    // Merge into single buffer geometry
+    const pos = new Float32Array(totalV * 3)
+    const alpha = new Float32Array(totalV)
+    const idx = new Uint32Array(totalI)
+    let vOff = 0, iOff = 0
+
+    perBuilding.forEach(b => {
+      pos.set(b.positions, vOff * 3)
+      alpha.set(b.alphas, vOff)
+      for (let i = 0; i < b.iCount; i++) idx[iOff + i] = b.indices[i] + vOff
+      iOff += b.iCount
+      vOff += b.vCount
+    })
+
+    const merged = new THREE.BufferGeometry()
+    merged.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+    merged.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1))
+    merged.setIndex(new THREE.BufferAttribute(idx, 1))
+    return merged
+  }, [])
+
+  const material = useMemo(() => new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    vertexShader: `
+      attribute float aAlpha;
+      varying float vAlpha;
+      void main() {
+        vAlpha = aAlpha;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying float vAlpha;
+      void main() {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, vAlpha);
+      }
+    `,
+  }), [])
+
+  if (!geometry) return null
+  return <mesh geometry={geometry} material={material} />
+}
+
 // ============ NEON BAND ============
 // Glows when the business is currently open AND it's dark enough to see.
 // Real listings check their hours; simulated listings are always "open."
@@ -913,6 +1033,7 @@ function LafayetteScene() {
       <ClickCatcher />
 
       <Foundations />
+      <ContactShadows />
 
       {/* Buildings */}
       {buildingsData.buildings.map(b => (

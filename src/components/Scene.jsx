@@ -25,10 +25,16 @@ class FilmGradeEffect extends Effect {
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec3 c = inputColor.rgb;
         float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
-        // Half-strength S-curve contrast
+        // S-curve contrast
         vec3 curved = c * c * (3.0 - 2.0 * c);
         c = mix(c, curved, 0.5);
-        // Half-strength saturation boost (1.15x vs 1.3x)
+        // Toe crush — pull shadows toward true black
+        float toe = smoothstep(0.0, 0.2, lum);
+        c *= mix(0.1, 1.0, toe);
+        // Midtone lift — recover brightness in the center of the range
+        float midBell = 4.0 * lum * (1.0 - lum);  // peaks at lum=0.5, zero at extremes
+        c *= 1.0 + midBell * 0.2;
+        // Saturation boost
         vec3 gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
         c = mix(gray, c, 1.15);
         // Protect bright areas
@@ -523,7 +529,7 @@ function Scene() {
               quality="medium"
             />
           )}
-          {viewMode === 'hero' && <FilmGrade />}
+          <FilmGrade />
           <Bloom
             intensity={isStreet ? 1.8 : viewMode === 'hero' ? 1.5 : 1.2}
             luminanceThreshold={isStreet ? 0.15 : viewMode === 'hero' ? 0.2 : 0.3}
