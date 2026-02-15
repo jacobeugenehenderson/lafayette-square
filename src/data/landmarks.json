@@ -2795,6 +2795,275 @@
         }
       ],
       "description": "Independent full-service advertising agency founded by Budweiser Frogs co-creator Dave Swaine. Known for bold, category-disrupting campaigns for clients including Bass Pro Shops, Stifel Financial, St. Louis Blues, and Klipsch."
+    },
+    {
+      "id": "lmk-049",
+      "name": "Have A Cow",
+      "address": "2742 Lafayette Avenue",
+      "phone": "(314) 261-0305",
+      "website": "https://www.haveacow.farm",
+      "category": "dining",
+      "subcategory": "cafes",
+      "building_id": null,
+      "rating": 4.9,
+      "review_count": 282,
+      "hours": {
+        "monday": { "open": "07:00", "close": "15:00" },
+        "tuesday": { "open": "07:00", "close": "15:00" },
+        "wednesday": { "open": "07:00", "close": "15:00" },
+        "thursday": { "open": "07:00", "close": "15:00" },
+        "friday": { "open": "07:00", "close": "15:00" },
+        "saturday": { "open": "07:00", "close": "15:00" }
+      },
+      "reviews": [
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "Phenomenal! Great food, great drinks, lovely indoor and outdoor seating — all in a cute little country store. Can't wait to come back!",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "It's cozy, welcoming, and perfect for a casual lunch. The outdoor patio is a great spot to relax. Down-to-earth, friendly, and just plain good.",
+          "time": "2024"
+        },
+        {
+          "author": "TripAdvisor Reviewer",
+          "rating": 5,
+          "text": "Fun place to have breakfast. Went in with family before the Cardinals game. Very friendly service and the food was amazing.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Farm-to-table from own Hereford cattle ranch",
+        "Urban farm store with beef, honey, eggs",
+        "Wood-burning fireplace",
+        "Covered patio with firepits"
+      ],
+      "history": [
+        {
+          "year": 2017,
+          "event": "Steve St. Pierre purchases a 180-acre farm in Owensville, MO and buys 12 cows — with zero farming experience — inspired by a conversation about creating employment opportunities."
+        },
+        {
+          "year": 2021,
+          "event": "Have A Cow opens January 20 at 2742 Lafayette Ave, bridging rural and urban communities while providing jobs for underemployed residents."
+        }
+      ],
+      "description": "Ranch-themed cafe and urban farm store serving farm-to-table breakfast, brunch, and lunch with flame-broiled burgers from owner Steve St. Pierre's own Hereford cattle ranch near Cuba, Missouri."
+    },
+    {
+      "id": "lmk-050",
+      "name": "Prohibition",
+      "address": "2017 Chouteau Avenue",
+      "phone": "(314) 948-4494",
+      "website": "https://www.stlprohibition.com",
+      "category": "dining",
+      "subcategory": "bars",
+      "building_id": "bldg-0086",
+      "hours": {
+        "friday": { "open": "17:00", "close": "01:00" },
+        "saturday": { "open": "17:00", "close": "01:00" },
+        "sunday": { "open": "17:00", "close": "01:00" },
+        "monday": { "open": "17:00", "close": "01:00" }
+      },
+      "photos": [],
+      "amenities": [
+        "Craft cocktails by NYC-trained beverage director",
+        "Stone-walled 1876 basement setting",
+        "Seats 60 guests",
+        "Reservations via Resy"
+      ],
+      "history": [
+        {
+          "year": 1876,
+          "event": "Centennial Malt House built as part of a brewery complex. During actual Prohibition, the building pivoted to producing ice."
+        },
+        {
+          "year": 2025,
+          "event": "Cally and Rich Conyers open Prohibition on October 24 in the restored basement, with beverage director Benjamin Bauer (ex-NYC) and consulting from Tim Wiggins (Extra Wavy, upstairs)."
+        }
+      ],
+      "description": "1920s speakeasy-inspired cocktail bar in the stone-walled basement of the 1876 Centennial Malt House. No sign marks the entrance — guests discover it themselves. Dedicated to the remarkable women of the Prohibition era."
+    },
+    {
+      "id": "lmk-051",
+      "name": "J. Arthurs Salon",
+      "address": "1920 Park Avenue",
+      "phone": "(314) 771-0771",
+      "category": "services",
+      "subcategory": "beauty",
+      "building_id": "bldg-0379",
+      "rating": 5.0,
+      "review_count": 25,
+      "hours": {
+        "wednesday": { "open": "09:00", "close": "18:00" },
+        "thursday": { "open": "09:00", "close": "18:00" },
+        "friday": { "open": "09:00", "close": "18:00" },
+        "saturday": { "open": "09:00", "close": "19:00" },
+        "sunday": { "open": "09:00", "close": "19:00" }
+      },
+      "reviews": [
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "Terra does a beautiful and meticulous job every time. Services are affordable and everyone here is warm and welcoming.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Jean did a fantastic job on my hair — she listened and really worked to getting the color I wanted while focusing on maintaining healthy hair.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Hair care for all ethnicities",
+        "Nail services (gel, acrylics, dipping powder)",
+        "Waxing and skin care",
+        "Appointment only"
+      ],
+      "description": "Full-service diverse hair and beauty salon offering hair care, nail services, waxing, skin care, makeup, and massages in historic Lafayette Square."
+    },
+    {
+      "id": "lmk-052",
+      "name": "Salon One Six One",
+      "address": "2758 Lafayette Avenue",
+      "phone": "(314) 952-7530",
+      "website": "https://www.onesixonestl.com",
+      "category": "services",
+      "subcategory": "beauty",
+      "building_id": null,
+      "rating": 4.9,
+      "review_count": 114,
+      "hours": {
+        "monday": { "open": "08:00", "close": "20:00" },
+        "tuesday": { "open": "08:00", "close": "20:00" },
+        "wednesday": { "open": "08:00", "close": "20:00" },
+        "thursday": { "open": "08:00", "close": "20:00" },
+        "friday": { "open": "08:00", "close": "20:00" },
+        "saturday": { "open": "08:00", "close": "14:00" }
+      },
+      "reviews": [
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "I absolutely LOVE my new hair. Christina is amazing — highly recommended for her fantastic all-over coloring skills.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Sally is the best — I have never gotten a bad haircut from her.",
+          "time": "2024"
+        },
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "Super chic and extremely nice staff. This salon is amazing.",
+          "time": "2024"
+        }
+      ],
+      "photos": [
+        "/photos/salon-161/01.png",
+        "/photos/salon-161/02.jpg",
+        "/photos/salon-161/03.jpg",
+        "/photos/salon-161/04.jpg",
+        "/photos/salon-161/05.jpg",
+        "/photos/salon-161/06.jpg"
+      ],
+      "amenities": [
+        "Aveda eco-friendly products",
+        "Hair extensions",
+        "9-stylist team",
+        "Appointment only"
+      ],
+      "history": [
+        {
+          "year": 2010,
+          "event": "Charlie Kirk-Martin founds Salon One Six One with just 2 stylists, naming it after the golden ratio (1.61) — timeless balance found in nature, architecture, and art."
+        }
+      ],
+      "description": "Aveda concept salon named after the golden ratio (1.61), dedicated to balanced, timeless beauty with eco-friendly products. Founded by Charlie Kirk-Martin with a philosophy of stylist autonomy and continued education."
+    },
+    {
+      "id": "lmk-053",
+      "name": "Lafayette Square Chiropractic Centre",
+      "address": "1013 S 18th Street",
+      "phone": "(314) 436-3050",
+      "website": "https://www.lafayettesquarechiropractic.com",
+      "category": "services",
+      "subcategory": "health",
+      "building_id": "bldg-0022",
+      "rating": 4.9,
+      "review_count": 273,
+      "logo": "/logos/chiropractic.png",
+      "hours": {
+        "monday": { "open": "10:00", "close": "18:00" },
+        "tuesday": { "open": "10:00", "close": "18:00" },
+        "wednesday": { "open": "14:00", "close": "18:00" },
+        "thursday": { "open": "09:30", "close": "17:30" }
+      },
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "The most amazing office visit. Friendly home environment. The Doctor treated me like family. I would recommend Lafayette Square to everyone.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Since seeing the doctor, not only has my neck pain improved but I have more energy, improved posture, and a greater ability to handle stress.",
+          "time": "2024"
+        },
+        {
+          "author": "Birdeye Reviewer",
+          "rating": 5,
+          "text": "Personal, caring and effective. If you're living in pain, like I was for 20 years, LSC can help you.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "3 Doctors of Chiropractic on staff",
+        "BBB A+ rated",
+        "Prenatal and pediatric care",
+        "Sports injury treatment"
+      ],
+      "history": [
+        {
+          "year": 2006,
+          "event": "Dr. Crystal Peairs founds Lafayette Square Chiropractic Centre after her own recovery from a debilitating car accident at age 21 inspired her chiropractic career."
+        }
+      ],
+      "description": "Family-focused chiropractic wellness practice led by Dr. Crystal Peairs with 3 chiropractors on staff. Ranked Top 20 chiropractors in St. Louis. Specializes in spinal adjustments, sports injury, and prenatal care."
+    },
+    {
+      "id": "lmk-054",
+      "name": "Associated Counseling & Assessment",
+      "address": "1709 Park Avenue",
+      "phone": "(636) 536-0022",
+      "category": "services",
+      "subcategory": "health",
+      "building_id": "bldg-0723",
+      "photos": [],
+      "amenities": [
+        "Individual counseling",
+        "Substance abuse treatment",
+        "SATOP program (court-approved)",
+        "Anger management"
+      ],
+      "history": [
+        {
+          "year": 2003,
+          "event": "Practice established, providing certified assessments and professional treatment services. All programs certified by the Missouri Division of Behavioral Health."
+        }
+      ],
+      "description": "Mental health counseling and assessment practice providing individual counseling, substance abuse treatment, SATOP, anger management, and court-approved behavioral programs from its Lafayette Square satellite office."
     }
   ]
 }

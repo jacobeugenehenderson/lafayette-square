@@ -1,8 +1,8 @@
 # Lafayette Square Business Listings — Master Tracker
 
 ## Summary
-- **Listed:** 40
-- **To add:** 19
+- **Listed:** 46
+- **To add:** 13
 - **Total:** 59
 
 ---
@@ -51,14 +51,14 @@
 
 | # | Name | Address | Category | Notes | Status |
 |---|------|---------|----------|-------|--------|
-| 34 | Have A Cow Urban Farm Store & Cafe | 2742 Lafayette Ave | dining/restaurants | Farm-to-table breakfast, burgers from own herd | ☐ |
-| 35 | Prohibition | 2017 Chouteau Ave (basement) | dining/bars | Speakeasy in Malt House basement, opened Oct 2025 | ☐ |
+| 34 | Have A Cow | 2742 Lafayette Ave | dining/cafes | lmk-049, no building | ✅ |
+| 35 | Prohibition | 2017 Chouteau Ave (basement) | dining/bars | lmk-050, bldg-0086 | ✅ |
 | 36 | Four Muddy Paws | 1711 Park Ave | shopping/pets | Pet food market, self-service dog wash, grooming | ☐ |
 | 37 | CBD Kratom Lafayette Square | 1917 Park Ave | shopping/wellness | CBD, kratom, Delta 9 supplements | ☐ |
-| 38 | J. Arthurs Salon | 1920 Park Ave | services/beauty | Co-tenant with Grow Hair Co | ☐ |
-| 39 | Salon One Six One | 2758 Lafayette Ave | services/beauty | Aveda salon | ☐ |
-| 40 | Lafayette Square Chiropractic Centre | 1013 S. 18th St | services/health | Dr. Crystal Peairs | ☐ |
-| 41 | Associated Counseling & Assessment | 1709 Park Ave | services/health | Mental health counseling | ☐ |
+| 38 | J. Arthurs Salon | 1920 Park Ave | services/beauty | lmk-051, bldg-0379 | ✅ |
+| 39 | Salon One Six One | 2758 Lafayette Ave | services/beauty | lmk-052, no building | ✅ |
+| 40 | Lafayette Square Chiropractic Centre | 1013 S. 18th St | services/health | lmk-053, bldg-0022 | ✅ |
+| 41 | Associated Counseling & Assessment | 1709 Park Ave | services/health | lmk-054, bldg-0723 | ✅ |
 | 42 | Gausnell, O'Keefe & Thomas | 1717 Park Ave | professional/legal | lmk-042, bldg-0653 | ✅ |
 | 43 | Edward Jones (Ryan Ederle) | 1908 Park Ave | professional/financial | lmk-043, bldg-0379 | ✅ |
 | 44 | Modern Dollar Planning | 1807 Park Ave | professional/financial | lmk-044, bldg-0381 | ✅ |
