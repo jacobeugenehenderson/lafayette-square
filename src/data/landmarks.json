@@ -3064,6 +3064,193 @@
         }
       ],
       "description": "Mental health counseling and assessment practice providing individual counseling, substance abuse treatment, SATOP, anger management, and court-approved behavioral programs from its Lafayette Square satellite office."
+    },
+    {
+      "id": "lmk-055",
+      "name": "Four Muddy Paws",
+      "address": "1711 Park Avenue",
+      "phone": "(314) 773-7297",
+      "website": "https://www.fourmuddypaws.com",
+      "category": "shopping",
+      "subcategory": "pets",
+      "building_id": "bldg-0723",
+      "rating": 4.7,
+      "review_count": 182,
+      "hours": {
+        "monday": { "open": "09:00", "close": "19:00" },
+        "tuesday": { "open": "09:00", "close": "19:00" },
+        "wednesday": { "open": "09:00", "close": "19:00" },
+        "thursday": { "open": "09:00", "close": "19:00" },
+        "friday": { "open": "09:00", "close": "19:00" },
+        "saturday": { "open": "09:00", "close": "17:00" },
+        "sunday": { "open": "10:00", "close": "17:00" }
+      },
+      "reviews": [
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "Love this place! Great selection of natural pet food and the self-service dog wash is so convenient. Staff is always helpful and friendly.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Best pet store in the city. They really know their products and care about your pet's health. The grooming is top-notch too.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Self-service dog wash",
+        "Professional grooming",
+        "All-natural food and supplements",
+        "Freshly baked treats",
+        "Retailer of the Year 2023/2024 (Pet Product News)"
+      ],
+      "history": [
+        {
+          "year": 2004,
+          "event": "Founded by Matt Brazelton and Jeff Jensen as a natural pet food market."
+        },
+        {
+          "year": 2007,
+          "event": "Moves to Lafayette Square location at 1711 Park Ave."
+        },
+        {
+          "year": 2025,
+          "event": "Transitions to new ownership under Stephanie and Jesse Windsor. Stephanie started as a sales associate 8+ years earlier."
+        }
+      ],
+      "description": "Natural pet food market and neighborhood hub for dogs and cats, offering self-service dog wash, professional grooming, all-natural food, freshly baked treats, and curated supplies. LGBTQIA+-owned, Retailer of the Year 2023/2024."
+    },
+    {
+      "id": "lmk-056",
+      "name": "CBD Kratom",
+      "address": "1917 Park Avenue",
+      "phone": "(314) 553-9256",
+      "website": "https://shopcbdkratom.com/pages/lafayette-square",
+      "category": "shopping",
+      "subcategory": "wellness",
+      "building_id": null,
+      "hours": {
+        "monday": { "open": "08:00", "close": "22:00" },
+        "tuesday": { "open": "08:00", "close": "22:00" },
+        "wednesday": { "open": "08:00", "close": "22:00" },
+        "thursday": { "open": "08:00", "close": "22:00" },
+        "friday": { "open": "08:00", "close": "22:00" },
+        "saturday": { "open": "08:00", "close": "22:00" },
+        "sunday": { "open": "08:00", "close": "22:00" }
+      },
+      "photos": [],
+      "amenities": [
+        "300+ products",
+        "20+ kratom strains",
+        "Same-day local delivery",
+        "Buy online, pickup in store"
+      ],
+      "history": [
+        {
+          "year": 2016,
+          "event": "David Palatnik and Dafna Revah open the first dedicated CBD Kratom store in Chicago's Bucktown — the first shop of its kind in the country."
+        }
+      ],
+      "description": "CBD, kratom, and cannabis dispensary with over 300 products including edibles, beverages, topicals, and smokables. Part of the largest privately owned cannabis and kratom retailer in the US with 55+ locations."
+    },
+    {
+      "id": "lmk-057",
+      "name": "Lafayette Square Restoration Committee",
+      "address": "2023 Lafayette Avenue",
+      "website": "https://lafayettesquare.org",
+      "category": "community",
+      "subcategory": "nonprofit",
+      "building_id": "bldg-0987",
+      "photos": [],
+      "amenities": [
+        "Park House community center",
+        "Community gardens and plaza",
+        "Police substation and security cameras",
+        "Neighborhood events and tours"
+      ],
+      "history": [
+        {
+          "year": 1969,
+          "event": "Founded by homeowners determined to restore the once-grand Victorian homes that had fallen into 70 years of decline after the devastating 1896 tornado."
+        },
+        {
+          "year": 1972,
+          "event": "Their efforts lead to Lafayette Square being designated St. Louis's first historic district by city ordinance and listed on the National Register of Historic Places."
+        }
+      ],
+      "description": "501(c)(3) neighborhood preservation nonprofit founded in 1969, headquartered in the 1867 Park House (a former police station). Facilitates preservation and redevelopment of the Lafayette Square historic district."
+    },
+    {
+      "id": "lmk-058",
+      "name": "Barr Branch Library",
+      "address": "1701 S Jefferson Avenue",
+      "phone": "(314) 771-7040",
+      "website": "https://www.slpl.org/locations/4/",
+      "category": "community",
+      "subcategory": "library",
+      "building_id": null,
+      "hours": {
+        "monday": { "open": "12:00", "close": "20:00" },
+        "tuesday": { "open": "10:00", "close": "18:00" },
+        "wednesday": { "open": "10:00", "close": "18:00" },
+        "thursday": { "open": "10:00", "close": "18:00" },
+        "friday": { "open": "10:00", "close": "17:00" },
+        "saturday": { "open": "10:00", "close": "17:00" }
+      },
+      "photos": [],
+      "amenities": [
+        "Creative Experience makerspace",
+        "3D printing and laser cutting",
+        "Audio/video production studios",
+        "VR headsets and animation software",
+        "Free WiFi and computer access",
+        "Meeting rooms"
+      ],
+      "history": [
+        {
+          "year": 1901,
+          "event": "Andrew Carnegie gifts funds for a Central Library and six branches. Land donated by William Barr, Scottish-born merchant."
+        },
+        {
+          "year": 1906,
+          "event": "Barr Branch completed in Classical Revival style, designed by Theodore C. Link (architect of Union Station). First of six Carnegie-funded branches in St. Louis."
+        },
+        {
+          "year": 2020,
+          "event": "Creative Experience makerspace launches, offering 3D printing, laser cutting, audio/video production, and VR — all free to the public."
+        }
+      ],
+      "description": "Historic 1906 Carnegie library designed by Theodore C. Link (architect of Union Station). Houses the Creative Experience makerspace with 3D printing, laser cutting, audio/video studios, and VR — all free to the public."
+    },
+    {
+      "id": "lmk-059",
+      "name": "Lafayette Park Conservancy",
+      "address": "Lafayette Park",
+      "website": "https://www.lafayettepark.org",
+      "category": "community",
+      "subcategory": "nonprofit",
+      "building_id": "bldg-0987",
+      "photos": [],
+      "amenities": [
+        "Ornamental iron fence restoration",
+        "1876 Music Stand restoration",
+        "Volunteer work days",
+        "Park event programming"
+      ],
+      "history": [
+        {
+          "year": 1851,
+          "event": "Lafayette Park established by city ordinance — 30 acres reserved when the St. Louis Common was divided in 1836."
+        },
+        {
+          "year": 2001,
+          "event": "Lafayette Park Conservancy founded on the 150th anniversary of the park's creation, dedicated to restoring its historic legacy."
+        }
+      ],
+      "description": "501(c)(3) nonprofit preserving Lafayette Park — the oldest developed urban park west of the Mississippi, established 1851. Major projects include restoring the ornamental iron fence and returning the 1876 Music Stand to its Victorian appearance."
     }
   ]
 }

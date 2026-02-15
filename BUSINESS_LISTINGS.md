@@ -1,8 +1,8 @@
 # Lafayette Square Business Listings — Master Tracker
 
 ## Summary
-- **Listed:** 46
-- **To add:** 13
+- **Listed:** 51
+- **To add:** 8
 - **Total:** 59
 
 ---
@@ -53,8 +53,8 @@
 |---|------|---------|----------|-------|--------|
 | 34 | Have A Cow | 2742 Lafayette Ave | dining/cafes | lmk-049, no building | ✅ |
 | 35 | Prohibition | 2017 Chouteau Ave (basement) | dining/bars | lmk-050, bldg-0086 | ✅ |
-| 36 | Four Muddy Paws | 1711 Park Ave | shopping/pets | Pet food market, self-service dog wash, grooming | ☐ |
-| 37 | CBD Kratom Lafayette Square | 1917 Park Ave | shopping/wellness | CBD, kratom, Delta 9 supplements | ☐ |
+| 36 | Four Muddy Paws | 1711 Park Ave | shopping/pets | lmk-055, bldg-0723 | ✅ |
+| 37 | CBD Kratom | 1917 Park Ave | shopping/wellness | lmk-056, no building | ✅ |
 | 38 | J. Arthurs Salon | 1920 Park Ave | services/beauty | lmk-051, bldg-0379 | ✅ |
 | 39 | Salon One Six One | 2758 Lafayette Ave | services/beauty | lmk-052, no building | ✅ |
 | 40 | Lafayette Square Chiropractic Centre | 1013 S. 18th St | services/health | lmk-053, bldg-0022 | ✅ |
@@ -69,11 +69,11 @@
 | 49 | Climb So iLL | 1419 Carroll St | recreation/fitness | Indoor climbing gym in Power Plant building | ☐ |
 | 50 | Moulin Events & Meetings | 2017 Chouteau Ave | services/events | Event space in Malt House | ☐ |
 | 51 | Comfort Inn & Suites Lafayette Square | 2625 Lafayette Ave | hospitality/hotels | Hotel, complimentary breakfast | ☐ |
-| 52 | Lafayette Square Restoration Committee | 2023 Lafayette Ave | community/nonprofit | Park House, neighborhood preservation | ☐ |
-| 53 | Barr Branch Library | 1701 S. Jefferson Ave | community/library | 1906 Carnegie library, makerspace | ☐ |
+| 52 | Lafayette Square Restoration Committee | 2023 Lafayette Ave | community/nonprofit | lmk-057, bldg-0987 | ✅ |
+| 53 | Barr Branch Library | 1701 S. Jefferson Ave | community/library | lmk-058, no building | ✅ |
 | 54 | The Dreamer's Loft | 2710 Lafayette Ave | services/coworking | Creative coworking and content space | ☐ |
 | 55 | Lofts at Lafayette Square | 1119 Mississippi Ave | residential/apartments | Loft apartments | ☐ |
 | 56 | Wireworks Lofts | 1435 S. 18th St | residential/apartments | 79-unit loft community | ☐ |
 | 57 | 2200 LaSalle at Lafayette Square | 2200 LaSalle St | residential/apartments | 128-unit luxury, opened ~2023 | ☐ |
-| 58 | Lafayette Park Conservancy | Lafayette Park | community/nonprofit | Park preservation nonprofit | ☐ |
+| 58 | Lafayette Park Conservancy | Lafayette Park | community/nonprofit | lmk-059, bldg-0987 | ✅ |
 | 59 | Walgreens | S. Jefferson Ave | shopping/pharmacy | Pharmacy and convenience | ☐ |
