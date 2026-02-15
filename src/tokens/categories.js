@@ -102,7 +102,7 @@ const CATEGORIES = {
   },
   shopping: {
     label: 'Shopping',
-    subtitle: 'Boutiques, antiques, local makers',
+    subtitle: 'Boutiques, antiques, grocery, local makers',
     emoji: '\ud83d\udecd\ufe0f',
     tw: 'mauve',
     hex: '#C27F94',
@@ -118,6 +118,7 @@ const CATEGORIES = {
       boutiques:     { label: 'Boutiques', emoji: '\ud83d\udc57' },
       antiques:      { label: 'Antiques', emoji: '\ud83c\udffa' },
       'local-makers': { label: 'Local Makers', emoji: '\ud83d\udecd\ufe0f' },
+      grocery:       { label: 'Grocery', emoji: '\ud83d\uded2' },
     },
   },
   services: {
