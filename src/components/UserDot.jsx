@@ -33,7 +33,7 @@ export default function UserDot() {
   if (x == null || z == null || !inBounds) return null
 
   return (
-    <group position={[x, 0.5, z]} rotation={[-Math.PI / 2, 0, 0]}>
+    <group position={[x, 35, z]} rotation={[-Math.PI / 2, 0, 0]}>
       {/* Solid blue dot */}
       <mesh ref={dotRef}>
         <circleGeometry args={[DOT_RADIUS, 24]} />
