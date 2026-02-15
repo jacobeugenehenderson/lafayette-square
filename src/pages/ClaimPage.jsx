@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react'
 import useGuardianStatus from '../hooks/useGuardianStatus'
-import useBusinessData from '../hooks/useBusinessData'
+import useListings from '../hooks/useListings'
 import CATEGORIES from '../tokens/categories'
 
-export default function ClaimPage({ businessId, secret }) {
+export default function ClaimPage({ listingId, secret }) {
   const { loading, claim, isGuardianOf } = useGuardianStatus()
-  const getById = useBusinessData((s) => s.getById)
+  const getById = useListings((s) => s.getById)
   const [result, setResult] = useState(null)
   const [fired, setFired] = useState(false)
-  const landmark = getById(businessId)
+  const landmark = getById(listingId)
   const cat = landmark ? CATEGORIES[landmark.category] : null
-  const alreadyClaimed = isGuardianOf(businessId)
+  const alreadyClaimed = isGuardianOf(listingId)
 
   useEffect(() => {
     if (fired || alreadyClaimed) return
     setFired(true)
-    claim(businessId, secret).then(setResult)
-  }, [businessId, secret, fired, alreadyClaimed, claim])
+    claim(listingId, secret).then(setResult)
+  }, [listingId, secret, fired, alreadyClaimed, claim])
 
   const accentHex = cat?.hex || '#0ea5e9'
 

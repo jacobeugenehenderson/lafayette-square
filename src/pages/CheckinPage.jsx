@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import useLocalStatus from '../hooks/useLocalStatus'
-import useBusinessData from '../hooks/useBusinessData'
+import useListings from '../hooks/useListings'
 import CATEGORIES from '../tokens/categories'
 
 export default function CheckinPage({ locationId }) {
   const { isLocal, distinctDays, threshold, loading, checkin } = useLocalStatus()
-  const getById = useBusinessData((s) => s.getById)
+  const getById = useListings((s) => s.getById)
   const [result, setResult] = useState(null)
   const [fired, setFired] = useState(false)
   const landmark = getById(locationId)

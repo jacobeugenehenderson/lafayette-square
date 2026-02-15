@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import useBusinessData from './useBusinessData'
+import useListings from './useListings'
 
 const useLandmarkFilter = create((set, get) => ({
   activeTags: new Set(),
@@ -15,11 +15,11 @@ const useLandmarkFilter = create((set, get) => ({
   clearTags: () => set({ activeTags: new Set() }),
   isTagActive: (tag) => get().activeTags.has(tag),
 
-  getFilteredLandmarks: () => {
+  getFilteredListings: () => {
     const { activeTags } = get()
     if (activeTags.size === 0) return []
-    const { landmarks } = useBusinessData.getState()
-    return landmarks.filter(l =>
+    const { listings } = useListings.getState()
+    return listings.filter(l =>
       activeTags.has(l.subcategory) || activeTags.has(l.category)
     )
   },

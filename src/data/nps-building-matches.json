@@ -1,0 +1,473 @@
+[
+  {
+    "nps_address": "2229 Park",
+    "street_raw": "Park",
+    "number_raw": "2229",
+    "is_range": false,
+    "source_page": 42,
+    "matched_buildings": [
+      {
+        "id": "bldg-0316",
+        "address": "2229   PARK AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1923-37 Park",
+    "street_raw": "Park",
+    "number_raw": "1923-37",
+    "is_range": true,
+    "source_page": 44,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "1911-13 Park",
+    "street_raw": "Park",
+    "number_raw": "1911-13",
+    "is_range": true,
+    "source_page": 44,
+    "matched_buildings": [
+      {
+        "id": "bldg-0385",
+        "address": "1909   PARK AV",
+        "offset": -2
+      },
+      {
+        "id": "bldg-0386",
+        "address": "1915   PARK AV",
+        "offset": 4
+      },
+      {
+        "id": "bldg-0387",
+        "address": "1915   PARK AV",
+        "offset": 4
+      }
+    ],
+    "match_type": "fuzzy"
+  },
+  {
+    "nps_address": "2343-45 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "2343-45",
+    "is_range": true,
+    "source_page": 46,
+    "matched_buildings": [
+      {
+        "id": "bldg-1575",
+        "address": "2343   LAFAYETTE AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1611-15 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "1611-15",
+    "is_range": true,
+    "source_page": 46,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "1808-12 Chouteau",
+    "street_raw": "Chouteau",
+    "number_raw": "1808-12",
+    "is_range": true,
+    "source_page": 46,
+    "matched_buildings": [
+      {
+        "id": "bldg-0024",
+        "address": "1808   CHOUTEAU AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1410 Jefferson",
+    "street_raw": "Jefferson",
+    "number_raw": "1410",
+    "is_range": false,
+    "source_page": 46,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "2131 Hickory",
+    "street_raw": "Hickory",
+    "number_raw": "2131",
+    "is_range": false,
+    "source_page": 48,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "1623-25 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "1623-25",
+    "is_range": true,
+    "source_page": 48,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "1231 MacKay",
+    "street_raw": "MacKay",
+    "number_raw": "1231",
+    "is_range": false,
+    "source_page": 53,
+    "matched_buildings": [
+      {
+        "id": "bldg-0211",
+        "address": "1231   MACKAY PL"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1225 MacKay",
+    "street_raw": "MacKay",
+    "number_raw": "1225",
+    "is_range": false,
+    "source_page": 53,
+    "matched_buildings": [
+      {
+        "id": "bldg-0212",
+        "address": "1225   MACKAY PL"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "2229 Park",
+    "street_raw": "Park",
+    "number_raw": "2229",
+    "is_range": false,
+    "source_page": 53,
+    "matched_buildings": [
+      {
+        "id": "bldg-0316",
+        "address": "2229   PARK AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1705 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "1705",
+    "is_range": false,
+    "source_page": 54,
+    "matched_buildings": [
+      {
+        "id": "bldg-1158",
+        "address": "1705   LAFAYETTE AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1713 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "1713",
+    "is_range": false,
+    "source_page": 54,
+    "matched_buildings": [
+      {
+        "id": "bldg-1152",
+        "address": "1713   LAFAYETTE AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1512 Mississippi",
+    "street_raw": "Mississippi",
+    "number_raw": "1512",
+    "is_range": false,
+    "source_page": 54,
+    "matched_buildings": [
+      {
+        "id": "bldg-0874",
+        "address": "1512   MISSISSIPPI AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1554 Mississippi",
+    "street_raw": "Mississippi",
+    "number_raw": "1554",
+    "is_range": false,
+    "source_page": 54,
+    "matched_buildings": [
+      {
+        "id": "bldg-0852",
+        "address": "1554   MISSISSIPPI AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "2115 Park",
+    "street_raw": "Park",
+    "number_raw": "2115",
+    "is_range": false,
+    "source_page": 56,
+    "matched_buildings": [
+      {
+        "id": "bldg-0365",
+        "address": "2115   PARK AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "2051 Park",
+    "street_raw": "Park",
+    "number_raw": "2051",
+    "is_range": false,
+    "source_page": 56,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "1817-19 Park",
+    "street_raw": "Park",
+    "number_raw": "1817-19",
+    "is_range": true,
+    "source_page": 57,
+    "matched_buildings": [
+      {
+        "id": "bldg-0380",
+        "address": "1819   PARK AV"
+      },
+      {
+        "id": "bldg-0382",
+        "address": "1819   PARK AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "2012 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "2012",
+    "is_range": false,
+    "source_page": 57,
+    "matched_buildings": [
+      {
+        "id": "bldg-0992",
+        "address": "2012   LAFAYETTE AV"
+      },
+      {
+        "id": "bldg-0993",
+        "address": "2012   LAFAYETTE AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1550 Mississippi",
+    "street_raw": "Mississippi",
+    "number_raw": "1550",
+    "is_range": false,
+    "source_page": 57,
+    "matched_buildings": [
+      {
+        "id": "bldg-0855",
+        "address": "1550   MISSISSIPPI AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "2004 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "2004",
+    "is_range": false,
+    "source_page": 57,
+    "matched_buildings": [
+      {
+        "id": "bldg-0924",
+        "address": "2001   LAFAYETTE AV",
+        "offset": -3
+      }
+    ],
+    "match_type": "fuzzy"
+  },
+  {
+    "nps_address": "2018 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "2018",
+    "is_range": false,
+    "source_page": 57,
+    "matched_buildings": [
+      {
+        "id": "bldg-0991",
+        "address": "2018   LAFAYETTE AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1322 MacKay",
+    "street_raw": "MacKay",
+    "number_raw": "1322",
+    "is_range": false,
+    "source_page": 59,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "1826-34 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "1826-34",
+    "is_range": true,
+    "source_page": 60,
+    "matched_buildings": [
+      {
+        "id": "bldg-1119",
+        "address": "1829   LAFAYETTE AV"
+      },
+      {
+        "id": "bldg-1120",
+        "address": "1830   LAFAYETTE AV"
+      },
+      {
+        "id": "bldg-1121",
+        "address": "1832   LAFAYETTE AV"
+      },
+      {
+        "id": "bldg-1122",
+        "address": "1834   LAFAYETTE AV"
+      },
+      {
+        "id": "bldg-1123",
+        "address": "1828   LAFAYETTE AV"
+      },
+      {
+        "id": "bldg-1124",
+        "address": "1826   LAFAYETTE AV"
+      },
+      {
+        "id": "bldg-1126",
+        "address": "1827   LAFAYETTE AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "2343-45 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "2343-45",
+    "is_range": true,
+    "source_page": 62,
+    "matched_buildings": [
+      {
+        "id": "bldg-1575",
+        "address": "2343   LAFAYETTE AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1916-26 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "1916-26",
+    "is_range": true,
+    "source_page": 62,
+    "matched_buildings": [
+      {
+        "id": "bldg-1114",
+        "address": "1916   LAFAYETTE AV"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1712-24 Chouteau",
+    "street_raw": "Chouteau",
+    "number_raw": "1712-24",
+    "is_range": true,
+    "source_page": 62,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "1303 Mackay",
+    "street_raw": "Mackay",
+    "number_raw": "1303",
+    "is_range": false,
+    "source_page": 68,
+    "matched_buildings": [
+      {
+        "id": "bldg-0204",
+        "address": "1303   MACKAY PL"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1301-1201 Mackay",
+    "street_raw": "Mackay",
+    "number_raw": "1301-1201",
+    "is_range": true,
+    "source_page": 68,
+    "matched_buildings": [
+      {
+        "id": "bldg-0205",
+        "address": "1301   MACKAY PL"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1102-04 Mackay",
+    "street_raw": "Mackay",
+    "number_raw": "1102-04",
+    "is_range": true,
+    "source_page": 68,
+    "matched_buildings": [
+      {
+        "id": "bldg-0167",
+        "address": "1106   MACKAY PL",
+        "offset": 4
+      }
+    ],
+    "match_type": "fuzzy"
+  },
+  {
+    "nps_address": "2101-31 Hickory",
+    "street_raw": "Hickory",
+    "number_raw": "2101-31",
+    "is_range": true,
+    "source_page": 68,
+    "matched_buildings": [
+      {
+        "id": "bldg-0171",
+        "address": "2115   HICKORY ST"
+      }
+    ],
+    "match_type": "exact"
+  },
+  {
+    "nps_address": "1712-24 Chouteau",
+    "street_raw": "Chouteau",
+    "number_raw": "1712-24",
+    "is_range": true,
+    "source_page": 68,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  },
+  {
+    "nps_address": "1609 Lafayette",
+    "street_raw": "Lafayette",
+    "number_raw": "1609",
+    "is_range": false,
+    "source_page": 68,
+    "matched_buildings": [],
+    "match_type": "no_match"
+  }
+]

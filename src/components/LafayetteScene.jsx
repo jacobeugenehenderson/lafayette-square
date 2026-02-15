@@ -4,7 +4,7 @@ import { Text, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import buildingsData from '../data/buildings.json'
 import streetsData from '../data/streets.json'
-import useBusinessData from '../hooks/useBusinessData'
+import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { mergeBufferGeometries } from '../lib/mergeGeometries'
@@ -357,7 +357,7 @@ function _isWithinHours(hours, time) {
   return mins >= oh * 60 + om && mins < ch * 60 + cm
 }
 
-function NeonBand({ building, categoryHex, forceOn = false }) {
+function NeonBand({ building, categoryHex, hours, forceOn = false }) {
   const bandRef = useRef()
   const prevStateRef = useRef({ glowFactor: -1, isOpen: null })
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
@@ -406,7 +406,7 @@ function NeonBand({ building, categoryHex, forceOn = false }) {
     const mat = bandRef.current.material
     const { sunAltitude } = getLightingPhase()
     const currentTime = useTimeOfDay.getState().currentTime
-    const isOpen = forceOn || _isWithinHours(building.hours, currentTime)
+    const isOpen = forceOn || _isWithinHours(hours, currentTime)
 
     // Glow ramps from subtle daytime accent to full neon at dusk
     // sunAltitude ~0.2 = bright day, ~0.05 = dusk, < -0.12 = night
@@ -454,7 +454,7 @@ function simColor(id) {
 // Shared temp color to avoid per-frame allocations
 const _tmpColor = new THREE.Color()
 
-function Building({ building, categoryHex }) {
+function Building({ building, neonInfo }) {
   const meshRef = useRef()
   const prevStateRef = useRef({ darkStep: -1, emissiveHex: 0 })
   const { selectedId, hoveredId, select, setHovered, clearHovered } = useSelectedBuilding()
@@ -464,6 +464,8 @@ function Building({ building, categoryHex }) {
   // Neon band: real listings always mount (hours checked inside NeonBand),
   // simulated listings mount only when the business sim slider marks them open
   const isSimOpen = useBusinessState((s) => s.openBuildings.has(building.id))
+  const categoryHex = neonInfo?.hex
+  const listingHours = neonInfo?.hours
   const showNeon = !!categoryHex || isSimOpen
   const effectiveHex = categoryHex || simColor(building.id)
 
@@ -572,7 +574,7 @@ function Building({ building, categoryHex }) {
         onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
         onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(building.id) }}
       />
-      {showNeon && <NeonBand building={building} categoryHex={effectiveHex} forceOn={isSimOpen} />}
+      {showNeon && <NeonBand building={building} categoryHex={effectiveHex} hours={listingHours} forceOn={isSimOpen} />}
     </group>
   )
 }
@@ -669,13 +671,13 @@ function getInitials(name) {
 
 const PIN_STEM_GEO = new THREE.CylinderGeometry(0.12, 0.12, 1, 4)
 
-function MapPin({ landmark, building, xOffset = 0, zOffset = 0 }) {
+function MapPin({ listing, building, xOffset = 0, zOffset = 0 }) {
   const select = useSelectedBuilding((state) => state.select)
-  const categoryHex = CATEGORY_HEX[landmark.category] || '#888888'
+  const categoryHex = CATEGORY_HEX[listing.category] || '#888888'
   const roofY = getFoundationHeight(building) + building.size[1] + getRoofPeakHeight(building)
   const stemHeight = 18
-  const initials = getInitials(landmark.name)
-  const thumbnail = landmark.logo || null
+  const initials = getInitials(listing.name)
+  const thumbnail = listing.logo || null
   const [logoSize, setLogoSize] = useState(null) // { w, h } after image loads
   const [logoFailed, setLogoFailed] = useState(false)
 
@@ -722,7 +724,7 @@ function MapPin({ landmark, building, xOffset = 0, zOffset = 0 }) {
         zIndexRange={[1, 10]}
       >
         <div
-          onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(landmark.id, landmark.building_id) }}
+          onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(listing.id, listing.building_id) }}
           onPointerOver={() => { document.body.style.cursor = 'pointer' }}
           onPointerOut={() => { document.body.style.cursor = 'auto' }}
           style={{
@@ -743,7 +745,7 @@ function MapPin({ landmark, building, xOffset = 0, zOffset = 0 }) {
           {thumbnail && !logoFailed ? (
             <img
               src={`${import.meta.env.BASE_URL}${thumbnail.replace(/^\//, '')}`}
-              alt={landmark.name}
+              alt={listing.name}
               style={{
                 maxWidth: '100%', maxHeight: '100%', objectFit: 'contain',
                 display: logoSize ? 'block' : 'none',
@@ -775,14 +777,14 @@ function MapPin({ landmark, building, xOffset = 0, zOffset = 0 }) {
 
 function LandmarkMarkers() {
   const activeTags = useLandmarkFilter((state) => state.activeTags)
-  const selectedLandmarkId = useSelectedBuilding((state) => state.selectedLandmarkId)
-  const landmarks = useBusinessData((s) => s.landmarks)
+  const selectedListingId = useSelectedBuilding((state) => state.selectedListingId)
+  const listings = useListings((s) => s.listings)
 
   const filteredLandmarks = useMemo(() => {
-    return landmarks.filter(l =>
-      activeTags.has(l.subcategory) || activeTags.has(l.category) || l.id === selectedLandmarkId
+    return listings.filter(l =>
+      activeTags.has(l.subcategory) || activeTags.has(l.category) || l.id === selectedListingId
     )
-  }, [activeTags, landmarks, selectedLandmarkId])
+  }, [activeTags, listings, selectedListingId])
 
   const buildingMap = useMemo(() => {
     const map = {}
@@ -831,16 +833,16 @@ function LandmarkMarkers() {
 
   return (
     <group>
-      {filteredLandmarks.map(landmark => {
-        const building = buildingMap[landmark.building_id]
+      {filteredLandmarks.map(listing => {
+        const building = buildingMap[listing.building_id]
         if (!building) return null
         return (
           <MapPin
-            key={landmark.id}
-            landmark={landmark}
+            key={listing.id}
+            listing={listing}
             building={building}
-            xOffset={pinOffsets.dx[landmark.id] || 0}
-            zOffset={pinOffsets.dz[landmark.id] || 0}
+            xOffset={pinOffsets.dx[listing.id] || 0}
+            zOffset={pinOffsets.dz[listing.id] || 0}
           />
         )
       })}
@@ -851,19 +853,19 @@ function LandmarkMarkers() {
 // ============ MAIN ============
 function LafayetteScene() {
   const deselect = useSelectedBuilding((state) => state.deselect)
-  const landmarks = useBusinessData((s) => s.landmarks)
+  const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
 
-  // Build a buildingId → category hex lookup from landmarks
+  // Build a buildingId → { hex, hours } lookup from listings
   const neonLookup = useMemo(() => {
     const map = {}
-    landmarks.forEach(l => {
+    listings.forEach(l => {
       const bid = l.building_id || l.id
       const hex = CATEGORY_HEX[l.category]
-      if (bid && hex) map[bid] = hex
+      if (bid && hex) map[bid] = { hex, hours: l.hours }
     })
     return map
-  }, [landmarks])
+  }, [listings])
 
   useEffect(() => {
     const handleKeyDown = (e) => { if (e.key === 'Escape') deselect() }
@@ -916,7 +918,7 @@ function LafayetteScene() {
 
       {/* Buildings */}
       {buildingsData.buildings.map(b => (
-        <Building key={b.id} building={b} categoryHex={neonLookup[b.id]} />
+        <Building key={b.id} building={b} neonInfo={neonLookup[b.id]} />
       ))}
 
       {/* Street labels — hidden only in hero mode */}

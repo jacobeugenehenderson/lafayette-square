@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
-import useBusinessData from '../hooks/useBusinessData'
+import useListings from '../hooks/useListings'
 import buildingsData from '../data/buildings.json'
 import BusinessCard from './BusinessCard'
 
@@ -13,13 +13,14 @@ const INSTRUCTIONS = {
 
 function Controls() {
   const selectedId = useSelectedBuilding((state) => state.selectedId)
-  const selectedLandmarkId = useSelectedBuilding((state) => state.selectedLandmarkId)
+  const selectedListingId = useSelectedBuilding((state) => state.selectedListingId)
   const showCard = useSelectedBuilding((state) => state.showCard)
   const deselect = useSelectedBuilding((state) => state.deselect)
   const viewMode = useCamera((state) => state.viewMode)
   const [buildingInfo, setBuildingInfo] = useState(null)
-  const getById = useBusinessData((s) => s.getById)
-  const getByBuildingId = useBusinessData((s) => s.getByBuildingId)
+  const getById = useListings((s) => s.getById)
+  const getByBuildingId = useListings((s) => s.getByBuildingId)
+  const getListingsForBuilding = useListings((s) => s.getListingsForBuilding)
 
   useEffect(() => {
     if (selectedId) {
@@ -32,9 +33,11 @@ function Controls() {
     }
   }, [selectedId])
 
-  const landmark = selectedId
-    ? (selectedLandmarkId ? getById(selectedLandmarkId) : getByBuildingId(selectedId))
+  const listing = selectedId
+    ? (selectedListingId ? getById(selectedListingId) : getByBuildingId(selectedId))
     : null
+
+  const allListings = selectedId ? getListingsForBuilding(selectedId) : []
 
   const text = INSTRUCTIONS[viewMode] || ''
 
@@ -48,8 +51,9 @@ function Controls() {
 
       {showCard && selectedId && buildingInfo && (
         <BusinessCard
-          landmark={landmark}
+          listing={listing}
           building={buildingInfo}
+          allListings={allListings}
           onClose={deselect}
         />
       )}
