@@ -2,10 +2,10 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import useLocalStatus from '../hooks/useLocalStatus'
 import useGuardianStatus from '../hooks/useGuardianStatus'
+import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
-import { getReviews, postReview, getEvents, postEvent, getBusinessTags } from '../lib/api'
+import { getReviews, postReview, getEvents, postEvent, updateListing as apiUpdateListing, acceptListing as apiAcceptListing, removeListing as apiRemoveListing } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
-import ManageTab from './ManageTab'
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const DAY_LABELS = {
@@ -171,6 +171,87 @@ function getPlaceholderPhotos(category) {
   return colors[category] || ['#3a3a3a', '#2a2a2a']
 }
 
+function getStyleGradient(styleGroup) {
+  const gradients = {
+    italianate: ['#5a2e1a', '#3d1a0a'],
+    mansard: ['#2e3a4f', '#1a2840'],
+    revival: ['#4a1e2e', '#331428'],
+    craftsman: ['#1e3a22', '#142818'],
+    modernistic: ['#3a3a40', '#28282e'],
+  }
+  return gradients[styleGroup] || ['#2a2a30', '#1a1a20']
+}
+
+function cleanAddress(addr) {
+  if (!addr) return null
+  return addr.replace(/\s+/g, ' ').trim()
+}
+
+// ─── Editable field wrapper (guardian inline editing) ────────────────
+function EditableField({ value, field, listingId, isGuardian, placeholder, multiline, children }) {
+  const [editing, setEditing] = useState(false)
+  const [localValue, setLocalValue] = useState(value || '')
+  const [saving, setSaving] = useState(false)
+
+  if (!isGuardian) return children || <span>{value}</span>
+
+  const save = async () => {
+    if (localValue === (value || '')) {
+      setEditing(false)
+      return
+    }
+    setSaving(true)
+    try {
+      const dh = await getDeviceHash()
+      await apiUpdateListing(dh, listingId, { [field]: localValue })
+      useListings.getState().updateListing(listingId, { [field]: localValue })
+    } catch { /* silent */ }
+    setSaving(false)
+    setEditing(false)
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !multiline) save()
+    if (e.key === 'Escape') { setLocalValue(value || ''); setEditing(false) }
+  }
+
+  if (editing) {
+    const cls = "w-full bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white/40"
+    return multiline ? (
+      <textarea
+        value={localValue}
+        onChange={e => setLocalValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={handleKeyDown}
+        autoFocus
+        rows={3}
+        className={cls + " resize-none"}
+        disabled={saving}
+      />
+    ) : (
+      <input
+        value={localValue}
+        onChange={e => setLocalValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={handleKeyDown}
+        autoFocus
+        className={cls}
+        disabled={saving}
+      />
+    )
+  }
+
+  return (
+    <span
+      onClick={() => { setLocalValue(value || ''); setEditing(true) }}
+      className="cursor-pointer hover:bg-white/5 rounded px-0.5 -mx-0.5 transition-colors"
+      title="Click to edit"
+    >
+      {value || <em className="text-white/30">{placeholder || `Add ${field}...`}</em>}
+    </span>
+  )
+}
+
 // ─── Detail row helper ───────────────────────────────────────────────
 function DetailRow({ label, children }) {
   return (
@@ -181,8 +262,67 @@ function DetailRow({ label, children }) {
   )
 }
 
+// ─── Accept/Remove Banner for pending listings ──────────────────────
+function PendingBanner({ listingId }) {
+  const [acting, setActing] = useState(false)
+
+  const handleAccept = async () => {
+    setActing(true)
+    try {
+      const dh = await getDeviceHash()
+      await apiAcceptListing(dh, listingId)
+      useListings.getState().updateListing(listingId, { status: 'active', accepted: true })
+    } catch { /* silent */ }
+    setActing(false)
+  }
+
+  const handleRemove = async () => {
+    setActing(true)
+    try {
+      const dh = await getDeviceHash()
+      await apiRemoveListing(dh, listingId)
+      useListings.getState().updateListing(listingId, { status: 'removed' })
+    } catch { /* silent */ }
+    setActing(false)
+  }
+
+  return (
+    <div className="mx-4 mt-3 rounded-lg bg-amber-500/15 border border-amber-500/30 p-3 flex items-center gap-3">
+      <div className="flex-1">
+        <p className="text-amber-300 text-xs font-medium">Pending listing</p>
+        <p className="text-white/50 text-[10px] mt-0.5">Accept to make visible to all users</p>
+      </div>
+      <button
+        onClick={handleAccept}
+        disabled={acting}
+        className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-medium hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+      >
+        Accept
+      </button>
+      <button
+        onClick={handleRemove}
+        disabled={acting}
+        className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50"
+      >
+        Remove
+      </button>
+    </div>
+  )
+}
+
 // ─── Tab: Overview ───────────────────────────────────────────────────
-function OverviewTab({ address, phone, website, hours, openStatus, formattedHours, building, category, subcategory, rentRange, amenities }) {
+function OverviewTab({ listing, building, isGuardian }) {
+  const address = listing?.address || building?.address || null
+  const phone = listing?.phone || null
+  const website = listing?.website || null
+  const hours = listing?.hours || null
+  const rentRange = building?.rent_range || null
+  const amenities = listing?.amenities || null
+  const listingId = listing?.id
+
+  const openStatus = useMemo(() => getOpenStatus(hours), [hours])
+  const formattedHours = useMemo(() => formatHoursDisplay(hours), [hours])
+
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-3">
@@ -190,29 +330,41 @@ function OverviewTab({ address, phone, website, hours, openStatus, formattedHour
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
-        <span className="text-sm text-white/70">{address ? `${address}, St. Louis, MO` : <em className="text-white/30">Address unknown</em>}</span>
+        <span className="text-sm text-white/70">
+          {isGuardian ? (
+            <EditableField value={address} field="address" listingId={listingId} isGuardian placeholder="Add address..." />
+          ) : (
+            address ? `${address}, St. Louis, MO` : <em className="text-white/30">Address unknown</em>
+          )}
+        </span>
       </div>
 
-      {phone && (
-        <div className="flex items-center gap-3">
-          <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-          </svg>
+      <div className="flex items-center gap-3">
+        <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+        </svg>
+        {isGuardian ? (
+          <EditableField value={phone} field="phone" listingId={listingId} isGuardian placeholder="Add phone..." />
+        ) : phone ? (
           <a href={`tel:${phone}`} className="text-sm text-blue-400 hover:text-blue-300 transition-colors">{phone}</a>
-        </div>
-      )}
+        ) : null}
+        {!isGuardian && !phone && null}
+      </div>
 
-      {website && (
-        <div className="flex items-center gap-3">
-          <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-          </svg>
+      <div className="flex items-center gap-3">
+        <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+        </svg>
+        {isGuardian ? (
+          <EditableField value={website} field="website" listingId={listingId} isGuardian placeholder="Add website..." />
+        ) : website ? (
           <a href={website} target="_blank" rel="noopener noreferrer"
             className="text-sm text-blue-400 hover:text-blue-300 transition-colors truncate">
             {website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
           </a>
-        </div>
-      )}
+        ) : null}
+        {!isGuardian && !website && null}
+      </div>
 
       {rentRange && (
         <div className="flex items-center gap-3">
@@ -256,6 +408,18 @@ function OverviewTab({ address, phone, website, hours, openStatus, formattedHour
           </div>
         </div>
       )}
+
+      {listing?.description && (
+        <div className="mt-2">
+          {isGuardian ? (
+            <EditableField value={listing.description} field="description" listingId={listingId} isGuardian placeholder="Add description..." multiline>
+              <p className="text-xs text-white/60 leading-relaxed">{listing.description}</p>
+            </EditableField>
+          ) : (
+            <p className="text-xs text-white/60 leading-relaxed">{listing.description}</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -283,7 +447,7 @@ function StarPicker({ value, onChange }) {
 }
 
 // ─── Review form (locals only) ──────────────────────────────────────
-function ReviewForm({ businessId, onSubmitted }) {
+function ReviewForm({ listingId, onSubmitted }) {
   const [text, setText] = useState('')
   const [rating, setRating] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -294,7 +458,7 @@ function ReviewForm({ businessId, onSubmitted }) {
     setSubmitting(true)
     try {
       const dh = await getDeviceHash()
-      await postReview(dh, businessId, text.trim(), rating)
+      await postReview(dh, listingId, text.trim(), rating)
       setText('')
       setRating(0)
       onSubmitted()
@@ -325,17 +489,18 @@ function ReviewForm({ businessId, onSubmitted }) {
 }
 
 // ─── Tab: Reviews ────────────────────────────────────────────────────
-function ReviewsTab({ businessId, isLocal }) {
+function ReviewsTab({ listingId, isLocal }) {
   const [reviews, setReviews] = useState([])
   const [loaded, setLoaded] = useState(false)
 
   const fetchReviews = useCallback(async () => {
     try {
-      const res = await getReviews(businessId)
-      setReviews(res.data?.reviews || [])
+      const res = await getReviews(listingId)
+      const data = res.data
+      setReviews(Array.isArray(data) ? data : data?.reviews || [])
     } catch { /* silent */ }
     setLoaded(true)
-  }, [businessId])
+  }, [listingId])
 
   useEffect(() => { fetchReviews() }, [fetchReviews])
 
@@ -354,7 +519,7 @@ function ReviewsTab({ businessId, isLocal }) {
 
   return (
     <div>
-      {isLocal && <ReviewForm businessId={businessId} onSubmitted={fetchReviews} />}
+      {isLocal && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} />}
 
       {!isLocal && (
         <div className="text-center py-2 mb-4 rounded-lg bg-white/5 border border-white/10">
@@ -477,7 +642,6 @@ function ArchitectureTab({ building }) {
         <DetailRow label="Renovation Cost">{arch.renovation_cost}</DetailRow>
       )}
 
-      {/* Assessment section */}
       {(building.assessed_value || building.building_sqft || building.lot_acres || building.zoning) && (
         <>
           <div className="border-t border-white/10 mt-3 pt-2">
@@ -502,6 +666,92 @@ function ArchitectureTab({ building }) {
             </>
           )}
         </>
+      )}
+    </div>
+  )
+}
+
+// ─── Tab: Property (bare buildings only) ─────────────────────────────
+function PropertyTab({ building }) {
+  if (!building) return null
+  const arch = building.architecture || {}
+
+  return (
+    <div className="space-y-2">
+      {arch.nps_context && (
+        <p className="text-white/60 text-xs italic leading-relaxed">
+          &ldquo;{arch.nps_context.trim()}&rdquo;
+          <span className="text-white/30 ml-1 not-italic">&mdash; NPS Nomination</span>
+        </p>
+      )}
+
+      <div className="space-y-1.5">
+        {arch.architect && <DetailRow label="Architect">{arch.architect}</DetailRow>}
+        {arch.original_owner && <DetailRow label="Built For">{arch.original_owner}</DetailRow>}
+        {arch.historic_name && <DetailRow label="Historic Name">{arch.historic_name}</DetailRow>}
+        {building.stories && (
+          <DetailRow label="Stories">{building.stories} {building.stories === 1 ? 'story' : 'stories'}</DetailRow>
+        )}
+        {building.year_built && building.year_renovated && (
+          <DetailRow label="Renovated">{building.year_renovated}</DetailRow>
+        )}
+        {arch.nps_style_period && <DetailRow label="Style Period">{arch.nps_style_period}</DetailRow>}
+        {arch.renovation_cost && <DetailRow label="Renovation Cost">{arch.renovation_cost}</DetailRow>}
+      </div>
+
+      {arch.materials && (
+        <div className="mt-2">
+          <span className="text-white/40 text-xs">Materials</span>
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {arch.materials.map((m, i) => (
+              <span key={i} className="px-2 py-0.5 rounded bg-white/8 text-white/60 text-[10px]">{m}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      {arch.features && (
+        <div className="mt-2">
+          <span className="text-white/40 text-xs">Features</span>
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {arch.features.map((f, i) => (
+              <span key={i} className="px-2 py-0.5 rounded bg-white/8 text-white/60 text-[10px]">{f}</span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Tab: Assessment (bare buildings only) ───────────────────────────
+function AssessmentTab({ building }) {
+  if (!building) return null
+
+  return (
+    <div className="space-y-1.5">
+      {building.assessed_value && (
+        <DetailRow label="Assessed Value">${building.assessed_value.toLocaleString()}</DetailRow>
+      )}
+      {building.building_sqft && (
+        <DetailRow label="Building Area">{building.building_sqft.toLocaleString()} sq ft</DetailRow>
+      )}
+      {building.lot_acres && (
+        <DetailRow label="Lot Size">{building.lot_acres} acres</DetailRow>
+      )}
+      {building.zoning && (
+        <DetailRow label="Zoning">{building.zoning}{ZONING_LABELS[building.zoning] ? ` \u2013 ${ZONING_LABELS[building.zoning]}` : ''}</DetailRow>
+      )}
+      {building.size && (
+        <>
+          <DetailRow label="Footprint">{building.size[0].toFixed(0)} x {building.size[2].toFixed(0)}m</DetailRow>
+          <DetailRow label="Height">{building.size[1].toFixed(0)}m</DetailRow>
+        </>
+      )}
+      {building.units && (
+        <DetailRow label="Units">{building.units}</DetailRow>
+      )}
+      {building.rent_range && (
+        <DetailRow label="Rent Range">{building.rent_range}</DetailRow>
       )}
     </div>
   )
@@ -533,11 +783,12 @@ function PhotosTab({ photos, facadeImage, name }) {
 }
 
 // ─── Event form (guardians only) ─────────────────────────────────────
-function EventForm({ businessId, onSubmitted }) {
+function EventForm({ listingId, onSubmitted }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [type, setType] = useState('event')
   const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = async (e) => {
@@ -546,11 +797,12 @@ function EventForm({ businessId, onSubmitted }) {
     setSubmitting(true)
     try {
       const dh = await getDeviceHash()
-      await postEvent(dh, businessId, title.trim(), description.trim(), startDate, endDate || startDate)
+      await postEvent(dh, listingId, title.trim(), description.trim(), startDate, endDate || startDate, type)
       setTitle('')
       setDescription('')
       setStartDate('')
       setEndDate('')
+      setType('event')
       onSubmitted()
     } finally {
       setSubmitting(false)
@@ -559,6 +811,18 @@ function EventForm({ businessId, onSubmitted }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2 border-b border-white/10 pb-4 mb-4">
+      <div className="flex gap-2">
+        {['event', 'special', 'sale', 'partnership'].map(t => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setType(t)}
+            className={`px-2 py-0.5 rounded text-[10px] transition-colors ${type === t ? 'bg-white/15 text-white' : 'bg-white/5 text-white/40 hover:text-white/60'}`}
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
+      </div>
       <input
         value={title}
         onChange={e => setTitle(e.target.value)}
@@ -600,23 +864,23 @@ function EventForm({ businessId, onSubmitted }) {
 }
 
 // ─── Tab: Events ─────────────────────────────────────────────────────
-function EventsTab({ businessId, isGuardian }) {
+function EventsTab({ listingId, isGuardian }) {
   const [events, setEvents] = useState([])
   const [loaded, setLoaded] = useState(false)
 
   const fetchEvents = useCallback(async () => {
     try {
       const res = await getEvents()
-      const all = res.data?.events || []
+      const all = Array.isArray(res.data) ? res.data : res.data?.events || []
       const now = new Date().toISOString().slice(0, 10)
       setEvents(
         all
-          .filter(e => e.business_id === businessId && e.end_date >= now)
+          .filter(e => e.listing_id === listingId && (e.end_date || e.start_date) >= now)
           .sort((a, b) => a.start_date.localeCompare(b.start_date))
       )
     } catch { /* silent */ }
     setLoaded(true)
-  }, [businessId])
+  }, [listingId])
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
@@ -625,12 +889,19 @@ function EventsTab({ businessId, isGuardian }) {
     const s = new Date(start + 'T12:00:00').toLocaleDateString('en-US', opts)
     if (!end || end === start) return s
     const e = new Date(end + 'T12:00:00').toLocaleDateString('en-US', opts)
-    return `${s} – ${e}`
+    return `${s} \u2013 ${e}`
+  }
+
+  const TYPE_COLORS = {
+    event: 'bg-blue-500/15 text-blue-400',
+    special: 'bg-amber-500/15 text-amber-400',
+    sale: 'bg-emerald-500/15 text-emerald-400',
+    partnership: 'bg-purple-500/15 text-purple-400',
   }
 
   return (
     <div>
-      {isGuardian && <EventForm businessId={businessId} onSubmitted={fetchEvents} />}
+      {isGuardian && <EventForm listingId={listingId} onSubmitted={fetchEvents} />}
 
       {events.length === 0 && loaded && (
         <div className="text-center py-6">
@@ -643,7 +914,14 @@ function EventsTab({ businessId, isGuardian }) {
         {events.map((event, idx) => (
           <div key={event.id || idx} className="rounded-lg bg-white/5 border border-white/10 p-3">
             <div className="flex items-start justify-between gap-2">
-              <h4 className="text-sm font-medium text-white">{event.title}</h4>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-medium text-white">{event.title}</h4>
+                {event.type && event.type !== 'event' && (
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${TYPE_COLORS[event.type] || ''}`}>
+                    {event.type}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] text-white/40 whitespace-nowrap flex-shrink-0">
                 {formatDateRange(event.start_date, event.end_date)}
               </span>
@@ -661,62 +939,73 @@ function EventsTab({ businessId, isGuardian }) {
 // ═════════════════════════════════════════════════════════════════════
 // Main BusinessCard
 // ═════════════════════════════════════════════════════════════════════
-function BusinessCard({ landmark, building, onClose }) {
-  const [activeTab, setActiveTab] = useState('overview')
+function BusinessCard({ listing, building, onClose, allListings }) {
+  const [activeTab, setActiveTab] = useState(null)
+  const [activeListingIdx, setActiveListingIdx] = useState(0)
   const { isLocal } = useLocalStatus()
   const { isGuardianOf } = useGuardianStatus()
-  const panelOpen = useCamera((s) => s.panelOpen)
 
-  // Merge data from landmark and building — landmark wins for shared fields
-  const name = landmark?.name || building?.name || 'Unknown Building'
-  const address = landmark?.address || building?.address || null
-  const phone = landmark?.phone || building?.phone || null
-  const website = landmark?.website || building?.website || null
-  const category = landmark?.category || building?.category || null
-  const subcategory = landmark?.subcategory || null
-  const hours = landmark?.hours || building?.hours || null
-  const rating = landmark?.rating || building?.rating || (landmark ? 3.5 + (name.length % 15) / 10 : null)
-  const reviewCount = landmark?.review_count || building?.review_count || null
-  const photos = landmark?.photos || building?.photos || null
+  // Multi-tenant: if multiple listings for this building, show tabs
+  const listings = allListings && allListings.length > 1 ? allListings : (listing ? [listing] : [])
+  const activeListing = listings[activeListingIdx] || listing
+
+  const name = activeListing?.name || building?.name || 'Unknown Building'
+  const category = activeListing?.category || null
+  const subcategory = activeListing?.subcategory || null
+  const hours = activeListing?.hours || null
+  const rating = activeListing?.rating || (activeListing ? 3.5 + (name.length % 15) / 10 : null)
+  const reviewCount = activeListing?.review_count || null
+  const photos = activeListing?.photos || null
   const facadeImage = building?.facade_image || null
   const heroPhoto = photos?.[0] || facadeImage?.thumb_1024 || null
-  const rentRange = building?.rent_range || null
-  const amenities = landmark?.amenities || building?.amenities || null
-  const history = landmark?.history || building?.history || null
-  const description = landmark?.description || building?.description || null
-  const hasLandmarkInfo = !!landmark
-  const businessId = landmark?.id || building?.id || null
+  const history = activeListing?.history || null
+  const description = activeListing?.description || null
+  const hasListingInfo = !!activeListing
+  const listingId = activeListing?.id || null
   const isAdmin = import.meta.env.DEV
-  const isGuardian = isAdmin || (businessId ? isGuardianOf(businessId) : false)
+  const isGuardian = isAdmin || (listingId ? isGuardianOf(listingId) : false)
+  const isPending = activeListing?.status === 'pending'
 
-  // Fetch guardian tags
-  const [guardianTags, setGuardianTags] = useState(null)
-  useEffect(() => {
-    if (!isGuardian || !businessId) return
-    getBusinessTags(businessId).then(res => {
-      const d = res.data
-      if (d) setGuardianTags({ primary: d.primary_tag, tags: d.tags || [] })
-    }).catch(() => {})
-  }, [isGuardian, businessId])
-
-  const openStatus = useMemo(() => getOpenStatus(hours), [hours])
-  const formattedHours = useMemo(() => formatHoursDisplay(hours), [hours])
   const placeholderPhotos = getPlaceholderPhotos(category)
+
+  // Architecture data for property card (bare buildings)
+  const arch = building?.architecture || {}
+  const yearBuilt = building?.year_built || arch.year_built
+  const styleName = arch.style || building?.style
+  const hasPropertyData = !!(yearBuilt || styleName || arch.materials || arch.nps_context || arch.architect)
+  const hasAssessment = !!(building?.assessed_value || building?.building_sqft || building?.lot_acres || building?.zoning)
 
   // Build dynamic tabs based on available data
   const hasHistory = !!(history?.length || description)
   const hasArchitecture = !!(building && (building.year_built || building.style || building.architect || building.historic_status || building.architecture))
 
   const tabs = useMemo(() => {
-    const t = [{ id: 'overview', label: 'Overview' }]
-    if (hasLandmarkInfo) t.push({ id: 'reviews', label: 'Reviews' })
-    if (hasLandmarkInfo) t.push({ id: 'events', label: 'Events' })
+    if (hasListingInfo) {
+      // ── Listing path: unchanged ──
+      const t = [{ id: 'overview', label: 'Overview' }]
+      t.push({ id: 'reviews', label: 'Reviews' })
+      t.push({ id: 'events', label: 'Events' })
+      if (hasHistory) t.push({ id: 'history', label: 'History' })
+      if (hasArchitecture) t.push({ id: 'architecture', label: 'Details' })
+      t.push({ id: 'photos', label: 'Photos' })
+      return t
+    }
+    // ── Property card path: bare buildings ──
+    const t = []
+    if (hasPropertyData) t.push({ id: 'property', label: 'Property' })
     if (hasHistory) t.push({ id: 'history', label: 'History' })
-    if (hasArchitecture) t.push({ id: 'architecture', label: 'Details' })
     t.push({ id: 'photos', label: 'Photos' })
-    if (isGuardian) t.push({ id: 'manage', label: 'Tags' })
+    if (hasAssessment) t.push({ id: 'assessment', label: 'Assessment' })
     return t
-  }, [hasLandmarkInfo, hasHistory, hasArchitecture, isGuardian])
+  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, hasAssessment])
+
+  // Default tab: first available
+  const defaultTab = tabs[0]?.id || 'photos'
+  const currentTab = activeTab && tabs.some(t => t.id === activeTab) ? activeTab : defaultTab
+
+  // Style-tinted gradient for bare buildings
+  const styleGradient = !hasListingInfo ? getStyleGradient(arch.nps_style_group) : null
+
 
   return (
     <div className="absolute top-3 left-3 right-3 bg-black/95 backdrop-blur-md rounded-xl text-white shadow-2xl border border-white/10 overflow-hidden flex flex-col z-50" style={{ bottom: 'calc(35dvh - 1.5rem + 18px)' }}>
@@ -724,7 +1013,7 @@ function BusinessCard({ landmark, building, onClose }) {
       <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (
           <img src={heroPhoto} alt={name} className="w-full h-full object-cover" />
-        ) : hasLandmarkInfo ? (
+        ) : hasListingInfo ? (
           <div
             className="w-full h-full flex items-center justify-center"
             style={{ background: `linear-gradient(135deg, ${placeholderPhotos[0]}, ${placeholderPhotos[1]})` }}
@@ -737,12 +1026,17 @@ function BusinessCard({ landmark, building, onClose }) {
             </div>
           </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-900">
-            <div className="text-center text-white/20">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${styleGradient[0]}, ${styleGradient[1]})` }}
+          >
+            {styleName ? (
+              <span className="text-white/15 text-lg font-light tracking-wide">{styleName}</span>
+            ) : (
+              <svg className="w-16 h-16 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-            </div>
+            )}
           </div>
         )}
 
@@ -763,38 +1057,109 @@ function BusinessCard({ landmark, building, onClose }) {
       </div>
 
       <div className="overflow-y-auto flex-1">
-        {/* Title block */}
-        <div className="p-4 pb-3">
-          <h2 className="text-xl font-semibold text-white leading-tight">{name}</h2>
+        {hasListingInfo ? (
+          <>
+            {/* ── Listing path: everything unchanged ── */}
 
-          {rating && (
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-white font-medium text-sm">{rating.toFixed(1)}</span>
-              <StarRating rating={rating} />
-              {reviewCount && <span className="text-white/50 text-xs">({reviewCount})</span>}
+            {/* Multi-tenant pill tabs */}
+            {listings.length > 1 && (
+              <div className="flex gap-1.5 px-4 pt-3 overflow-x-auto">
+                {listings.map((l, idx) => (
+                  <button
+                    key={l.id}
+                    onClick={() => { setActiveListingIdx(idx); setActiveTab('overview') }}
+                    className={`flex-shrink-0 px-3 py-1 rounded-full text-xs transition-colors ${
+                      idx === activeListingIdx
+                        ? 'bg-white/15 text-white'
+                        : 'bg-white/5 text-white/50 hover:text-white/70'
+                    }`}
+                  >
+                    {l.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Pending banner */}
+            {isPending && isGuardian && <PendingBanner listingId={listingId} />}
+
+            {/* Title block */}
+            <div className="p-4 pb-3">
+              <h2 className="text-xl font-semibold text-white leading-tight">
+                {isGuardian ? (
+                  <EditableField value={name} field="name" listingId={listingId} isGuardian placeholder="Business name">
+                    {name}
+                  </EditableField>
+                ) : name}
+              </h2>
+
+              {rating && (
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-white font-medium text-sm">{Number(rating).toFixed(1)}</span>
+                  <StarRating rating={Number(rating)} />
+                  {reviewCount && <span className="text-white/50 text-xs">({reviewCount})</span>}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {(category || subcategory) && (
+                  <>
+                    {subcategory && (
+                      <span className="px-2 py-0.5 rounded-md bg-white/10 text-white/70 text-xs">
+                        {SUBCATEGORY_LABELS[subcategory] || subcategory}
+                      </span>
+                    )}
+                    {category && !subcategory && (
+                      <span className="px-2 py-0.5 rounded-md bg-white/10 text-white/70 text-xs">
+                        {CATEGORY_LABELS[category] || category}
+                      </span>
+                    )}
+                  </>
+                )}
+                {building?.historic_status && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400/80 text-xs">Historic</span>
+                )}
+              </div>
             </div>
-          )}
+          </>
+        ) : (
+          <>
+            {/* ── Property card path: bare buildings ── */}
 
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {(category || subcategory) && (
-              <>
-                {subcategory && (
-                  <span className="px-2 py-0.5 rounded-md bg-white/10 text-white/70 text-xs">
-                    {SUBCATEGORY_LABELS[subcategory] || subcategory}
-                  </span>
+            {/* Property headline */}
+            <div className="px-4 pt-3 pb-2">
+              {(yearBuilt || styleName) ? (
+                <h2 className="text-lg font-medium text-white leading-tight">
+                  {yearBuilt && <span>{yearBuilt}</span>}
+                  {yearBuilt && styleName && <span> </span>}
+                  {styleName && <span>{styleName}</span>}
+                </h2>
+              ) : (
+                <h2 className="text-lg font-medium text-white/60 leading-tight">
+                  {cleanAddress(building?.address) || 'Unknown Building'}
+                </h2>
+              )}
+
+              {/* Address (below headline when we have year/style) */}
+              {(yearBuilt || styleName) && building?.address && (
+                <p className="text-xs text-white/40 mt-0.5">{cleanAddress(building.address)}</p>
+              )}
+
+              {/* Badges */}
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                {arch.contributing && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400/80 text-[11px]">Contributing</span>
                 )}
-                {category && !subcategory && (
-                  <span className="px-2 py-0.5 rounded-md bg-white/10 text-white/70 text-xs">
-                    {CATEGORY_LABELS[category] || category}
-                  </span>
+                {arch.nps_listed && (
+                  <span className="px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-300/90 text-[11px]">NPS Listed</span>
                 )}
-              </>
-            )}
-            {building?.historic_status && (
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400/80 text-xs">Historic</span>
-            )}
-          </div>
-        </div>
+                {arch.district && (
+                  <span className="text-white/30 text-[11px]">{arch.district.replace(' Historic District', '')}</span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Tab bar */}
         <div className="flex border-b border-white/10 overflow-x-auto">
@@ -802,7 +1167,7 @@ function BusinessCard({ landmark, building, onClose }) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-colors ${activeTab === tab.id ? 'text-white border-b-2 border-white' : 'text-white/50 hover:text-white/70'}`}
+              className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-colors ${currentTab === tab.id ? 'text-white border-b-2 border-white' : 'text-white/50 hover:text-white/70'}`}
             >
               {tab.label}
             </button>
@@ -811,30 +1176,24 @@ function BusinessCard({ landmark, building, onClose }) {
 
         {/* Tab content */}
         <div className="p-4">
-          {activeTab === 'overview' && (
-            <OverviewTab
-              address={address} phone={phone} website={website}
-              hours={hours} openStatus={openStatus} formattedHours={formattedHours}
-              building={building} category={category} subcategory={subcategory}
-              rentRange={rentRange} amenities={amenities}
-            />
+          {/* Listing tabs (unchanged) */}
+          {currentTab === 'overview' && (
+            <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} />
           )}
-          {activeTab === 'reviews' && <ReviewsTab businessId={businessId} isLocal={isLocal} />}
-          {activeTab === 'events' && <EventsTab businessId={businessId} isGuardian={isGuardian} />}
-          {activeTab === 'history' && <HistoryTab history={history} description={description} />}
-          {activeTab === 'architecture' && <ArchitectureTab building={building} />}
-          {activeTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} name={name} />}
-          {activeTab === 'manage' && isGuardian && (
-            <ManageTab
-              businessId={businessId}
-              initialPrimary={guardianTags?.primary || subcategory}
-              initialTags={guardianTags?.tags?.length ? guardianTags.tags : [subcategory].filter(Boolean)}
-            />
-          )}
+          {currentTab === 'reviews' && <ReviewsTab listingId={listingId} isLocal={isLocal} />}
+          {currentTab === 'events' && <EventsTab listingId={listingId} isGuardian={isGuardian} />}
+          {currentTab === 'architecture' && <ArchitectureTab building={building} />}
+          {/* Shared tabs */}
+          {currentTab === 'history' && <HistoryTab history={history} description={description} />}
+          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} name={name} />}
+          {/* Property card tabs */}
+          {currentTab === 'property' && <PropertyTab building={building} />}
+          {currentTab === 'assessment' && <AssessmentTab building={building} />}
         </div>
       </div>
 
-      {hasLandmarkInfo && (
+      {/* Footer */}
+      {hasListingInfo ? (
         <div className="p-4 pt-2 border-t border-white/10 bg-black/95 flex-shrink-0">
           {isGuardian ? (
             <div className="flex items-center justify-center gap-2 text-emerald-400/70 text-xs py-1">
@@ -854,6 +1213,17 @@ function BusinessCard({ landmark, building, onClose }) {
               Is this your business?
             </button>
           )}
+        </div>
+      ) : (
+        <div className="p-4 pt-2 border-t border-white/10 bg-black/95 flex-shrink-0">
+          <button
+            className="w-full py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
+            </svg>
+            This is my house
+          </button>
         </div>
       )}
     </div>

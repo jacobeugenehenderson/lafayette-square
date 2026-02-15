@@ -9,7 +9,7 @@ import useUserLocation from '../hooks/useUserLocation'
 import { CATEGORY_LIST, COLOR_CLASSES } from '../tokens/categories'
 import buildingsData from '../data/buildings.json'
 import streetsData from '../data/streets.json'
-import useBusinessData from '../hooks/useBusinessData'
+import useListings from '../hooks/useListings'
 
 // ── Camera helpers ──────────────────────────────────────────────────
 const _buildingMap = {}
@@ -629,16 +629,16 @@ function LafayetteSubsection({ section, color }) {
   const { activeTags, toggleTag } = useLandmarkFilter()
   const deselect = useSelectedBuilding((s) => s.deselect)
   const highlight = useSelectedBuilding((s) => s.highlight)
-  const selectedLandmarkId = useSelectedBuilding((s) => s.selectedLandmarkId)
+  const selectedListingId = useSelectedBuilding((s) => s.selectedListingId)
   const flyTo = useCamera((s) => s.flyTo)
   const clearFly = useCamera((s) => s.clearFly)
-  const landmarks = useBusinessData((s) => s.landmarks)
+  const listings = useListings((s) => s.listings)
   const colors = COLOR_CLASSES[color]
   const isActive = activeTags.has(section.id)
 
   const businesses = useMemo(() => {
-    return landmarks.filter(l => l.subcategory === section.id)
-  }, [section.id, landmarks])
+    return listings.filter(l => l.subcategory === section.id)
+  }, [section.id, listings])
 
   const handleToggleCategory = () => {
     // Clear any single-business selection
@@ -692,10 +692,10 @@ function LafayetteSubsection({ section, color }) {
         {businesses.length > 0 && <span className="text-[10px] text-white/40">{businesses.length}</span>}
       </button>
 
-      {(isActive || businesses.some(b => b.id === selectedLandmarkId)) && businesses.length > 0 && (
+      {(isActive || businesses.some(b => b.id === selectedListingId)) && businesses.length > 0 && (
         <div className="ml-4 mb-1">
           {businesses.map(biz => {
-            const isFocused = selectedLandmarkId === biz.id
+            const isFocused = selectedListingId === biz.id
             return (
               <button
                 key={biz.id}
@@ -716,14 +716,14 @@ function LafayetteSubsection({ section, color }) {
 }
 
 function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
-  const landmarks = useBusinessData((s) => s.landmarks)
+  const listings = useListings((s) => s.listings)
   const colors = COLOR_CLASSES[category.color]
 
   const totalCount = useMemo(() => {
-    return landmarks.filter(l =>
+    return listings.filter(l =>
       category.sections.some(s => s.id === l.subcategory)
     ).length
-  }, [category, landmarks])
+  }, [category, listings])
 
   return (
     <div className={`border ${colors.border} rounded-lg overflow-hidden transition-all duration-200 ${isExpanded ? colors.activeBg : 'bg-black/40'}`}>
@@ -758,7 +758,7 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
 function LafayettePagesTab() {
   const [expandedId, setExpandedId] = useState(null)
   const { activeTags, clearTags } = useLandmarkFilter()
-  const landmarks = useBusinessData((s) => s.landmarks)
+  const listings = useListings((s) => s.listings)
   const hasActiveTags = activeTags.size > 0
 
   return (
@@ -776,7 +776,7 @@ function LafayettePagesTab() {
         </div>
       </div>
       <div className="px-4 py-2 border-t border-white/5 flex items-center justify-between">
-        <span className="text-[10px] text-white/30">{landmarks.length} verified listings</span>
+        <span className="text-[10px] text-white/30">{listings.length} verified listings</span>
         {hasActiveTags && (
           <button
             onClick={clearTags}
@@ -847,9 +847,15 @@ function SidePanel({ showAdmin = true }) {
           <button
             key={tab.id}
             onClick={() => {
-              if (collapsed) { setCollapsed(false) } else { setActiveTab(tab.id) }
+              if (collapsed) {
+                setActiveTab(tab.id)
+                setCollapsed(false)
+              } else if (tab.id === activeTab) {
+                setCollapsed(true)
+              } else {
+                setActiveTab(tab.id)
+              }
             }}
-            onDoubleClick={() => { if (!collapsed) setCollapsed(true) }}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-xs transition-colors duration-150 ${
               activeTab === tab.id
                 ? 'bg-white/10 text-white border-b-2 border-white/50'

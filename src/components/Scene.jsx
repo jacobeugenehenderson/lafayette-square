@@ -249,6 +249,10 @@ const _sph = new THREE.Spherical()
 const _offset = new THREE.Vector3()
 const _lerpPos = new THREE.Vector3()
 const _lerpTarget = new THREE.Vector3()
+const _raycaster = new THREE.Raycaster()
+const _pointer = new THREE.Vector2()
+const _groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+const _groundHit = new THREE.Vector3()
 
 function CameraRig() {
   const { camera, gl } = useThree()
@@ -318,13 +322,26 @@ function CameraRig() {
     }
   }, [])
 
+  // Where the user grabbed when leaving hero mode
+  const grabTarget = useRef(null)
+
   // Deliberate canvas interaction: exit hero on click or scroll on the 3D canvas
   useEffect(() => {
     const canvas = gl.domElement
-    const engage = () => {
+    const engage = (e) => {
       const cam = useCamera.getState()
       cam.resetIdle()
       if (cam.viewMode === 'hero') {
+        // Raycast pointer to ground plane to find where the user is looking
+        if (e.clientX !== undefined) {
+          const rect = canvas.getBoundingClientRect()
+          _pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+          _pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+          _raycaster.setFromCamera(_pointer, camera)
+          if (_raycaster.ray.intersectPlane(_groundPlane, _groundHit)) {
+            grabTarget.current = [_groundHit.x, 0, _groundHit.z]
+          }
+        }
         cam.setMode('browse')
         useUserLocation.getState().start()
       }
@@ -335,7 +352,7 @@ function CameraRig() {
       canvas.removeEventListener('pointerdown', engage)
       canvas.removeEventListener('wheel', engage)
     }
-  }, [gl])
+  }, [gl, camera])
 
   useFrame(({ clock }) => {
     const ctl = controlsRef.current
@@ -363,12 +380,18 @@ function CameraRig() {
       cinematicQueue.current = []
 
       if (leaving === 'hero' && entering === 'browse') {
-        // Cinematic crane-up: 2-segment transition
-        beginCinematic([
-          { position: [0, 350, 50], target: [0, 0, 0], fov: 38, duration: 1800 },
-          { position: PRESETS.browse.position, target: PRESETS.browse.target,
-            fov: PRESETS.browse.fov, duration: 1200 },
-        ])
+        // Drop straight above where the user grabbed
+        const gt = grabTarget.current || PRESETS.browse.target
+        grabTarget.current = null
+        // Clamp to neighborhood bounds (±800m from center)
+        const cx = Math.max(-800, Math.min(800, gt[0]))
+        const cz = Math.max(-800, Math.min(800, gt[2]))
+        beginTransition(
+          [cx, PRESETS.browse.position[1], cz + 1],
+          [cx, 0, cz],
+          PRESETS.browse.fov,
+          1500
+        )
       } else if (entering === 'planetarium') {
         // Street-level sky view at the clicked position
         const origin = state.planetariumOrigin || [0, 0]
