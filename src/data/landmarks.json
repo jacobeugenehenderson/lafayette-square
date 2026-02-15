@@ -2561,6 +2561,240 @@
         }
       ],
       "description": "One of America's oldest garage door dealers, family-owned since 1924. Three generations of Zumwalts have operated from this 1916 Lafayette Avenue building, providing commercial and residential garage doors, loading dock equipment, and specialty door products across the St. Louis metro area."
+    },
+    {
+      "id": "lmk-042",
+      "name": "Gausnell, O'Keefe & Thomas",
+      "address": "1717 Park Avenue",
+      "phone": "(314) 257-9800",
+      "website": "https://gotlawstl.com",
+      "category": "professional",
+      "subcategory": "legal",
+      "building_id": "bldg-0653",
+      "hours": {
+        "monday": { "open": "08:30", "close": "17:00" },
+        "tuesday": { "open": "08:30", "close": "17:00" },
+        "wednesday": { "open": "08:30", "close": "17:00" },
+        "thursday": { "open": "08:30", "close": "17:00" },
+        "friday": { "open": "08:30", "close": "17:00" }
+      },
+      "logo": "/logos/gausnell.png",
+      "photos": [
+        "/photos/gausnell/01.png"
+      ],
+      "amenities": [
+        "AV Rated by Martindale-Hubbell",
+        "Licensed in MO, IL, and KS",
+        "12 attorneys on staff",
+        "Mediation and arbitration services"
+      ],
+      "history": [
+        {
+          "year": 2022,
+          "event": "Firm relocates to permanent home at 1717 Park Ave, an 1885 former livery stable converted to modern offices."
+        }
+      ],
+      "description": "Trial-focused civil litigation firm with 12 attorneys who have collectively tried nearly 250 jury trials to verdict. Practice areas include construction law, insurance coverage, product liability, medical malpractice, and transportation."
+    },
+    {
+      "id": "lmk-043",
+      "name": "Edward Jones",
+      "address": "1908 Park Avenue",
+      "phone": "(314) 577-0167",
+      "website": "https://www.edwardjones.com/us-en/financial-advisor/ryan-ederle",
+      "category": "professional",
+      "subcategory": "financial",
+      "building_id": "bldg-0379",
+      "hours": {
+        "monday": { "open": "09:00", "close": "17:00" },
+        "tuesday": { "open": "09:00", "close": "17:00" },
+        "wednesday": { "open": "09:00", "close": "17:00" },
+        "thursday": { "open": "09:00", "close": "17:00" },
+        "friday": { "open": "09:00", "close": "17:00" }
+      },
+      "photos": [],
+      "amenities": [
+        "Personalized investment management",
+        "Retirement planning",
+        "401(k) rollovers",
+        "529 college savings plans"
+      ],
+      "description": "Financial advisor Ryan Ederle provides personalized investment management, retirement planning, and insurance services from his Lafayette Square office."
+    },
+    {
+      "id": "lmk-044",
+      "name": "Modern Dollar Planning",
+      "address": "1807 Park Avenue",
+      "phone": "(314) 827-5852",
+      "website": "https://www.modern-dollar.com",
+      "category": "professional",
+      "subcategory": "financial",
+      "building_id": "bldg-0381",
+      "hours": {
+        "monday": { "open": "09:00", "close": "17:00" },
+        "tuesday": { "open": "09:00", "close": "17:00" },
+        "wednesday": { "open": "09:00", "close": "17:00" },
+        "thursday": { "open": "09:00", "close": "17:00" },
+        "friday": { "open": "09:00", "close": "17:00" }
+      },
+      "photos": [],
+      "amenities": [
+        "Fee-only fiduciary",
+        "CFP, CFA, and CPA credentials",
+        "Corporate executive specialization",
+        "Medical professional specialization"
+      ],
+      "history": [
+        {
+          "year": 2015,
+          "event": "Modern Dollar Planning founded."
+        },
+        {
+          "year": 2017,
+          "event": "Mark Schweiss acquires the firm and relocates to Lafayette Square, bringing 25+ years of advisory experience."
+        }
+      ],
+      "description": "Fee-only fiduciary financial planning and investment management firm specializing in corporate executives and medical professionals. Led by Mark Schweiss (CFP, CFA, CPA) with $104M in client assets under management."
+    },
+    {
+      "id": "lmk-045",
+      "name": "McAvoy Realty",
+      "address": "1909 Park Avenue",
+      "phone": "(314) 531-1900",
+      "website": "https://www.mcavoyrealty.com",
+      "category": "professional",
+      "subcategory": "real-estate",
+      "building_id": "bldg-0385",
+      "rating": 4.8,
+      "review_count": 24,
+      "hours": {
+        "monday": { "open": "08:30", "close": "17:00" },
+        "tuesday": { "open": "08:30", "close": "17:00" },
+        "wednesday": { "open": "08:30", "close": "17:00" },
+        "thursday": { "open": "08:30", "close": "17:00" },
+        "friday": { "open": "08:30", "close": "17:00" }
+      },
+      "reviews": [
+        {
+          "author": "Zillow Buyer",
+          "rating": 5,
+          "text": "Mr. McAvoy made the experience less daunting and actually very seamless. He addressed everything we requested, including replacing a roof during a winter closing.",
+          "time": "2024"
+        },
+        {
+          "author": "Website Testimonial",
+          "rating": 5,
+          "text": "Great company, great service. Wanted a house in Lafayette Square — they stuck with me and got me into exactly what I wanted.",
+          "time": "2024"
+        },
+        {
+          "author": "Website Testimonial",
+          "rating": 5,
+          "text": "We had a great experience working with John Grass and Fritz McAvoy. They helped match us to a house that was the right fit.",
+          "time": "2023"
+        }
+      ],
+      "photos": [
+        "/photos/mcavoy/01.jpg",
+        "/photos/mcavoy/02.jpg",
+        "/photos/mcavoy/03.jpg"
+      ],
+      "amenities": [
+        "Family-owned for 40+ years",
+        "Historic property expertise",
+        "Weekend appointments available"
+      ],
+      "history": [
+        {
+          "year": 1983,
+          "event": "Mike and Carolyn McAvoy found the brokerage in Lafayette Square."
+        },
+        {
+          "year": 2010,
+          "event": "Fritz McAvoy takes over as second-generation owner, continuing the family legacy of neighborhood real estate expertise."
+        }
+      ],
+      "description": "Multi-generational, family-owned real estate brokerage with 40+ years in Lafayette Square. Specializes in residential buying and selling throughout the St. Louis metro, with deep expertise in historic south city properties."
+    },
+    {
+      "id": "lmk-046",
+      "name": "Rome West Realty",
+      "address": "2756 Lafayette Avenue",
+      "phone": "(314) 833-5551",
+      "website": "http://www.romewestrealtyllc.com",
+      "category": "professional",
+      "subcategory": "real-estate",
+      "building_id": null,
+      "photos": [],
+      "amenities": [
+        "Commercial and residential sales",
+        "Leasing services"
+      ],
+      "history": [
+        {
+          "year": 2016,
+          "event": "Susan Sauer founds Rome West Realty, named for the architectural and cultural parallels between St. Louis and Rome."
+        }
+      ],
+      "description": "Full-service real estate brokerage providing commercial and residential sales and leasing across the St. Louis region. Founded by Susan Sauer with 16+ years of market experience."
+    },
+    {
+      "id": "lmk-047",
+      "name": "Incite Design Studio",
+      "address": "1800 Lafayette Avenue, Suite B",
+      "phone": "(314) 279-4500",
+      "website": "https://www.incitedesignstudio.com",
+      "category": "professional",
+      "subcategory": "architecture",
+      "building_id": "bldg-1139",
+      "photos": [],
+      "amenities": [
+        "14 licensed architects on staff",
+        "K-12 educational facility specialization",
+        "Bond referendum assistance (90%+ success rate)",
+        "Four offices: KC, Overland Park, STL, Wichita"
+      ],
+      "history": [
+        {
+          "year": 2001,
+          "event": "Incite Design Studio founded to provide client-focused architectural design, initially specializing in K-12 education facilities."
+        }
+      ],
+      "description": "Multi-office architectural design firm with 31 professionals including 14 licensed architects. Specializes in K-12 educational facilities, commercial buildings, and government projects. St. Louis studio led by Michelle Muir."
+    },
+    {
+      "id": "lmk-048",
+      "name": "Kuhl Swaine",
+      "address": "1016 Mississippi Avenue",
+      "phone": "(314) 932-5463",
+      "website": "https://kuhlswaine.com",
+      "category": "professional",
+      "subcategory": "advertising",
+      "building_id": "bldg-0048",
+      "logo": "/logos/kuhl-swaine.png",
+      "photos": [
+        "/photos/kuhl-swaine/01.jpg",
+        "/photos/kuhl-swaine/02.jpg",
+        "/photos/kuhl-swaine/03.jpg",
+        "/photos/kuhl-swaine/04.jpg",
+        "/photos/kuhl-swaine/05.jpg"
+      ],
+      "amenities": [
+        "Full-service advertising and branding",
+        "Strategic creative campaigns",
+        "National and local client roster"
+      ],
+      "history": [
+        {
+          "year": 2000,
+          "event": "Dave Swaine and David Kuhl found the agency in Lafayette Square after leaving Arnold Worldwide. Swaine previously co-created the legendary Budweiser Frogs campaign (Super Bowl XXIX, 1995)."
+        },
+        {
+          "year": 2015,
+          "event": "Agency grows to 14 employees operating from a three-story brownstone. Clients include Bass Pro Shops, Stifel Financial, and the St. Louis Blues."
+        }
+      ],
+      "description": "Independent full-service advertising agency founded by Budweiser Frogs co-creator Dave Swaine. Known for bold, category-disrupting campaigns for clients including Bass Pro Shops, Stifel Financial, St. Louis Blues, and Klipsch."
     }
   ]
 }

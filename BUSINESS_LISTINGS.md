@@ -1,8 +1,8 @@
 # Lafayette Square Business Listings — Master Tracker
 
 ## Summary
-- **Listed:** 33
-- **To add:** 26
+- **Listed:** 40
+- **To add:** 19
 - **Total:** 59
 
 ---
@@ -59,13 +59,13 @@
 | 39 | Salon One Six One | 2758 Lafayette Ave | services/beauty | Aveda salon | ☐ |
 | 40 | Lafayette Square Chiropractic Centre | 1013 S. 18th St | services/health | Dr. Crystal Peairs | ☐ |
 | 41 | Associated Counseling & Assessment | 1709 Park Ave | services/health | Mental health counseling | ☐ |
-| 42 | Gausnell, O'Keefe & Thomas, LLC | 1717 Park Ave | professional/legal | Personal injury, civil litigation | ☐ |
-| 43 | Edward Jones (Ryan Ederle) | 1908 Park Ave | professional/financial | Investment management | ☐ |
-| 44 | Modern Dollar | 1807 Park Ave | professional/financial | Fee-only financial planning | ☐ |
-| 45 | McAvoy Realty | 1909 Park Ave | professional/real-estate | Family-owned 40+ years | ☐ |
-| 46 | Rome West Realty | 2756 Lafayette Ave | professional/real-estate | Commercial and residential | ☐ |
-| 47 | Incite Design Studio | 1800 Lafayette Ave, Suite B | professional/architecture | Architecture and interior design | ☐ |
-| 48 | Kuhl Swaine | 1016 Mississippi Ave | professional/advertising | Full-service ad agency | ☐ |
+| 42 | Gausnell, O'Keefe & Thomas | 1717 Park Ave | professional/legal | lmk-042, bldg-0653 | ✅ |
+| 43 | Edward Jones (Ryan Ederle) | 1908 Park Ave | professional/financial | lmk-043, bldg-0379 | ✅ |
+| 44 | Modern Dollar Planning | 1807 Park Ave | professional/financial | lmk-044, bldg-0381 | ✅ |
+| 45 | McAvoy Realty | 1909 Park Ave | professional/real-estate | lmk-045, bldg-0385 | ✅ |
+| 46 | Rome West Realty | 2756 Lafayette Ave | professional/real-estate | lmk-046, no building | ✅ |
+| 47 | Incite Design Studio | 1800 Lafayette Ave | professional/architecture | lmk-047, bldg-1139 | ✅ |
+| 48 | Kuhl Swaine | 1016 Mississippi Ave | professional/advertising | lmk-048, bldg-0048 | ✅ |
 | 49 | Climb So iLL | 1419 Carroll St | recreation/fitness | Indoor climbing gym in Power Plant building | ☐ |
 | 50 | Moulin Events & Meetings | 2017 Chouteau Ave | services/events | Event space in Malt House | ☐ |
 | 51 | Comfort Inn & Suites Lafayette Square | 2625 Lafayette Ave | hospitality/hotels | Hotel, complimentary breakfast | ☐ |
