@@ -1,9 +1,9 @@
 # Lafayette Square Business Listings — Master Tracker
 
 ## Summary
-- **Listed:** 59
+- **Listed:** 75
 - **To add:** 0
-- **Total:** 59
+- **Total:** 75
 
 ---
 
@@ -77,3 +77,19 @@
 | 57 | 2200 LaSalle at Lafayette Square | 2200 LaSalle St | residential/apartments | lmk-067, no building | ✅ |
 | 58 | Lafayette Park Conservancy | Lafayette Park | community/nonprofit | lmk-059, bldg-0987 | ✅ |
 | 59 | Walgreens | 1530 Lafayette Ave | shopping/pharmacy | lmk-064, no building | ✅ |
+| 60 | Family Dollar | 1549 S Jefferson Ave | shopping/discount | lmk-079, no building | ✅ |
+| 61 | Fit City STL | 1601 S Jefferson Ave | recreation/fitness | lmk-080, no building | ✅ |
+| 62 | H&R Block | 1601 S Jefferson Ave Ste B | professional/tax | lmk-081, no building | ✅ |
+| 63 | RE/MAX Gold | 1900 Park Ave | professional/real-estate | lmk-082, no building | ✅ |
+| 64 | Care Solutions In-Home Services | 1800 Lafayette Ave | services/health | lmk-083, no building | ✅ |
+| 65 | Onyx Dagger Tattoo & Gallery | 1917 Park Ave | services/tattoo | lmk-068, no building | ✅ |
+| 66 | Lehmann House B&B | 10 Benton Place | hospitality/B&B | lmk-069, no building | ✅ |
+| 67 | Wildflowers STL | 2754 Lafayette Ave (Rear) | shopping/florist | lmk-070, no building | ✅ |
+| 68 | Rescued Furnishings | 2714 Lafayette Ave | shopping/furniture | lmk-071, no building | ✅ |
+| 69 | Sognare on Lafayette | 2714 Lafayette Ave | services/events | lmk-072, no building | ✅ |
+| 70 | Architectural Artifacts | 2711 Lafayette Ave | shopping/antiques | lmk-073, no building | ✅ |
+| 71 | Lafayette Park B&B | 1415 Missouri Ave | hospitality/B&B | lmk-074, no building | ✅ |
+| 72 | J3 Studio | 1128 S. 18th St | services/beauty | lmk-075, no building | ✅ |
+| 73 | Lafayette Square Wellness | 2327 Hickory St | services/wellness | lmk-076, no building | ✅ |
+| 74 | Grand Hall on Chouteau | 2319 Chouteau Ave | services/events | lmk-077, no building | ✅ |
+| 75 | ATSU Dental Center | 1500 Park Ave | services/health | lmk-078, no building | ✅ |

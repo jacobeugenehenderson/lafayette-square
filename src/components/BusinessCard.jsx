@@ -7,6 +7,9 @@ import useCamera from '../hooks/useCamera'
 import { getReviews, postReview, getEvents, postEvent, updateListing as apiUpdateListing, acceptListing as apiAcceptListing, removeListing as apiRemoveListing } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 
+const BASE = import.meta.env.BASE_URL
+const assetUrl = (url) => url?.startsWith('http') ? url : `${BASE}${url?.replace(/^\//, '')}`
+
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const DAY_LABELS = {
   sunday: 'Sun', monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed',
@@ -773,7 +776,7 @@ function PhotosTab({ photos, facadeImage, name }) {
   return (
     <div className="space-y-2">
       {allPhotos.map((url, i) => (
-        <img key={i} src={url} alt={`${name} ${i + 1}`} className="w-full rounded-lg" loading="lazy" />
+        <img key={i} src={assetUrl(url)} alt={`${name} ${i + 1}`} className="w-full rounded-lg" loading="lazy" />
       ))}
       {!photos && facadeImage && (
         <p className="text-white/40 text-xs text-center">Street view - Mapillary</p>
@@ -1012,7 +1015,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
       {/* Hero Photo Area */}
       <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (
-          <img src={heroPhoto} alt={name} className="w-full h-full object-cover" />
+          <img src={assetUrl(heroPhoto)} alt={name} className="w-full h-full object-cover" />
         ) : hasListingInfo ? (
           <div
             className="w-full h-full flex items-center justify-center"

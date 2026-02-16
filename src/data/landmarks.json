@@ -2572,11 +2572,26 @@
       "subcategory": "legal",
       "building_id": "bldg-0653",
       "hours": {
-        "monday": { "open": "08:30", "close": "17:00" },
-        "tuesday": { "open": "08:30", "close": "17:00" },
-        "wednesday": { "open": "08:30", "close": "17:00" },
-        "thursday": { "open": "08:30", "close": "17:00" },
-        "friday": { "open": "08:30", "close": "17:00" }
+        "monday": {
+          "open": "08:30",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "08:30",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "08:30",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "08:30",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "08:30",
+          "close": "17:00"
+        }
       },
       "logo": "/logos/gausnell.png",
       "photos": [
@@ -2606,11 +2621,26 @@
       "subcategory": "financial",
       "building_id": "bldg-0379",
       "hours": {
-        "monday": { "open": "09:00", "close": "17:00" },
-        "tuesday": { "open": "09:00", "close": "17:00" },
-        "wednesday": { "open": "09:00", "close": "17:00" },
-        "thursday": { "open": "09:00", "close": "17:00" },
-        "friday": { "open": "09:00", "close": "17:00" }
+        "monday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "17:00"
+        }
       },
       "photos": [],
       "amenities": [
@@ -2631,11 +2661,26 @@
       "subcategory": "financial",
       "building_id": "bldg-0381",
       "hours": {
-        "monday": { "open": "09:00", "close": "17:00" },
-        "tuesday": { "open": "09:00", "close": "17:00" },
-        "wednesday": { "open": "09:00", "close": "17:00" },
-        "thursday": { "open": "09:00", "close": "17:00" },
-        "friday": { "open": "09:00", "close": "17:00" }
+        "monday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "17:00"
+        }
       },
       "photos": [],
       "amenities": [
@@ -2668,11 +2713,26 @@
       "rating": 4.8,
       "review_count": 24,
       "hours": {
-        "monday": { "open": "08:30", "close": "17:00" },
-        "tuesday": { "open": "08:30", "close": "17:00" },
-        "wednesday": { "open": "08:30", "close": "17:00" },
-        "thursday": { "open": "08:30", "close": "17:00" },
-        "friday": { "open": "08:30", "close": "17:00" }
+        "monday": {
+          "open": "08:30",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "08:30",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "08:30",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "08:30",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "08:30",
+          "close": "17:00"
+        }
       },
       "reviews": [
         {
@@ -2808,12 +2868,30 @@
       "rating": 4.9,
       "review_count": 282,
       "hours": {
-        "monday": { "open": "07:00", "close": "15:00" },
-        "tuesday": { "open": "07:00", "close": "15:00" },
-        "wednesday": { "open": "07:00", "close": "15:00" },
-        "thursday": { "open": "07:00", "close": "15:00" },
-        "friday": { "open": "07:00", "close": "15:00" },
-        "saturday": { "open": "07:00", "close": "15:00" }
+        "monday": {
+          "open": "07:00",
+          "close": "15:00"
+        },
+        "tuesday": {
+          "open": "07:00",
+          "close": "15:00"
+        },
+        "wednesday": {
+          "open": "07:00",
+          "close": "15:00"
+        },
+        "thursday": {
+          "open": "07:00",
+          "close": "15:00"
+        },
+        "friday": {
+          "open": "07:00",
+          "close": "15:00"
+        },
+        "saturday": {
+          "open": "07:00",
+          "close": "15:00"
+        }
       },
       "reviews": [
         {
@@ -2864,10 +2942,22 @@
       "subcategory": "bars",
       "building_id": "bldg-0086",
       "hours": {
-        "friday": { "open": "17:00", "close": "01:00" },
-        "saturday": { "open": "17:00", "close": "01:00" },
-        "sunday": { "open": "17:00", "close": "01:00" },
-        "monday": { "open": "17:00", "close": "01:00" }
+        "friday": {
+          "open": "17:00",
+          "close": "01:00"
+        },
+        "saturday": {
+          "open": "17:00",
+          "close": "01:00"
+        },
+        "sunday": {
+          "open": "17:00",
+          "close": "01:00"
+        },
+        "monday": {
+          "open": "17:00",
+          "close": "01:00"
+        }
       },
       "photos": [],
       "amenities": [
@@ -2899,11 +2989,26 @@
       "rating": 5.0,
       "review_count": 25,
       "hours": {
-        "wednesday": { "open": "09:00", "close": "18:00" },
-        "thursday": { "open": "09:00", "close": "18:00" },
-        "friday": { "open": "09:00", "close": "18:00" },
-        "saturday": { "open": "09:00", "close": "19:00" },
-        "sunday": { "open": "09:00", "close": "19:00" }
+        "wednesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "saturday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "sunday": {
+          "open": "09:00",
+          "close": "19:00"
+        }
       },
       "reviews": [
         {
@@ -2940,12 +3045,30 @@
       "rating": 4.9,
       "review_count": 114,
       "hours": {
-        "monday": { "open": "08:00", "close": "20:00" },
-        "tuesday": { "open": "08:00", "close": "20:00" },
-        "wednesday": { "open": "08:00", "close": "20:00" },
-        "thursday": { "open": "08:00", "close": "20:00" },
-        "friday": { "open": "08:00", "close": "20:00" },
-        "saturday": { "open": "08:00", "close": "14:00" }
+        "monday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "14:00"
+        }
       },
       "reviews": [
         {
@@ -3002,10 +3125,22 @@
       "review_count": 273,
       "logo": "/logos/chiropractic.png",
       "hours": {
-        "monday": { "open": "10:00", "close": "18:00" },
-        "tuesday": { "open": "10:00", "close": "18:00" },
-        "wednesday": { "open": "14:00", "close": "18:00" },
-        "thursday": { "open": "09:30", "close": "17:30" }
+        "monday": {
+          "open": "10:00",
+          "close": "18:00"
+        },
+        "tuesday": {
+          "open": "10:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "14:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "09:30",
+          "close": "17:30"
+        }
       },
       "reviews": [
         {
@@ -3077,13 +3212,34 @@
       "rating": 4.7,
       "review_count": 182,
       "hours": {
-        "monday": { "open": "09:00", "close": "19:00" },
-        "tuesday": { "open": "09:00", "close": "19:00" },
-        "wednesday": { "open": "09:00", "close": "19:00" },
-        "thursday": { "open": "09:00", "close": "19:00" },
-        "friday": { "open": "09:00", "close": "19:00" },
-        "saturday": { "open": "09:00", "close": "17:00" },
-        "sunday": { "open": "10:00", "close": "17:00" }
+        "monday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "saturday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "sunday": {
+          "open": "10:00",
+          "close": "17:00"
+        }
       },
       "reviews": [
         {
@@ -3133,13 +3289,34 @@
       "subcategory": "wellness",
       "building_id": null,
       "hours": {
-        "monday": { "open": "08:00", "close": "22:00" },
-        "tuesday": { "open": "08:00", "close": "22:00" },
-        "wednesday": { "open": "08:00", "close": "22:00" },
-        "thursday": { "open": "08:00", "close": "22:00" },
-        "friday": { "open": "08:00", "close": "22:00" },
-        "saturday": { "open": "08:00", "close": "22:00" },
-        "sunday": { "open": "08:00", "close": "22:00" }
+        "monday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "22:00"
+        }
       },
       "photos": [],
       "amenities": [
@@ -3193,12 +3370,30 @@
       "subcategory": "library",
       "building_id": null,
       "hours": {
-        "monday": { "open": "12:00", "close": "20:00" },
-        "tuesday": { "open": "10:00", "close": "18:00" },
-        "wednesday": { "open": "10:00", "close": "18:00" },
-        "thursday": { "open": "10:00", "close": "18:00" },
-        "friday": { "open": "10:00", "close": "17:00" },
-        "saturday": { "open": "10:00", "close": "17:00" }
+        "monday": {
+          "open": "12:00",
+          "close": "20:00"
+        },
+        "tuesday": {
+          "open": "10:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "10:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "10:00",
+          "close": "18:00"
+        },
+        "friday": {
+          "open": "10:00",
+          "close": "17:00"
+        },
+        "saturday": {
+          "open": "10:00",
+          "close": "17:00"
+        }
       },
       "photos": [],
       "amenities": [
@@ -3264,13 +3459,34 @@
       "rating": 4.8,
       "review_count": 547,
       "hours": {
-        "monday": { "open": "11:00", "close": "22:00" },
-        "tuesday": { "open": "11:00", "close": "22:00" },
-        "wednesday": { "open": "11:00", "close": "22:00" },
-        "thursday": { "open": "11:00", "close": "22:00" },
-        "friday": { "open": "11:00", "close": "22:00" },
-        "saturday": { "open": "10:00", "close": "20:00" },
-        "sunday": { "open": "10:00", "close": "18:00" }
+        "monday": {
+          "open": "11:00",
+          "close": "22:00"
+        },
+        "tuesday": {
+          "open": "11:00",
+          "close": "22:00"
+        },
+        "wednesday": {
+          "open": "11:00",
+          "close": "22:00"
+        },
+        "thursday": {
+          "open": "11:00",
+          "close": "22:00"
+        },
+        "friday": {
+          "open": "11:00",
+          "close": "22:00"
+        },
+        "saturday": {
+          "open": "10:00",
+          "close": "20:00"
+        },
+        "sunday": {
+          "open": "10:00",
+          "close": "18:00"
+        }
       },
       "reviews": [
         {
@@ -3416,11 +3632,26 @@
       "rating": 5.0,
       "review_count": 18,
       "hours": {
-        "monday": { "open": "08:00", "close": "18:00" },
-        "tuesday": { "open": "08:00", "close": "18:00" },
-        "wednesday": { "open": "08:00", "close": "18:00" },
-        "thursday": { "open": "08:00", "close": "18:00" },
-        "friday": { "open": "08:00", "close": "18:00" }
+        "monday": {
+          "open": "08:00",
+          "close": "18:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "18:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "18:00"
+        }
       },
       "reviews": [
         {
@@ -3469,13 +3700,34 @@
       "rating": 3.2,
       "review_count": 48,
       "hours": {
-        "monday": { "open": "07:00", "close": "22:00" },
-        "tuesday": { "open": "07:00", "close": "22:00" },
-        "wednesday": { "open": "07:00", "close": "22:00" },
-        "thursday": { "open": "07:00", "close": "22:00" },
-        "friday": { "open": "07:00", "close": "22:00" },
-        "saturday": { "open": "07:00", "close": "22:00" },
-        "sunday": { "open": "07:00", "close": "22:00" }
+        "monday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "tuesday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "wednesday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "thursday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "friday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "saturday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "sunday": {
+          "open": "07:00",
+          "close": "22:00"
+        }
       },
       "reviews": [
         {
@@ -3582,6 +3834,796 @@
         }
       ],
       "description": "128-unit luxury apartment complex with resort-style amenities on the former Praxair site. Studio, one-, and two-bedroom units with premium finishes, quartz countertops, and open-concept design."
+    },
+    {
+      "id": "lmk-079",
+      "name": "Family Dollar",
+      "address": "1549 S Jefferson Avenue",
+      "phone": "(314) 328-7176",
+      "website": "https://locations.familydollar.com/mo/st-louis/1549-s-jefferson-avenue",
+      "category": "shopping",
+      "subcategory": "discount",
+      "building_id": null,
+      "rating": 3.3,
+      "review_count": 215,
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "22:00"
+        }
+      },
+      "reviews": [],
+      "photos": [],
+      "amenities": [
+        "EBT accepted",
+        "ATM",
+        "Tobacco products",
+        "Propane exchange",
+        "Helium balloons",
+        "Ice",
+        "Refrigerated foods",
+        "Bill pay services"
+      ],
+      "history": [],
+      "description": "National discount retail chain offering household essentials, cleaning supplies, food and beverages, health and beauty products, and seasonal items at everyday low prices."
+    },
+    {
+      "id": "lmk-080",
+      "name": "Fit City STL",
+      "address": "1601 S Jefferson Avenue",
+      "phone": "(314) 300-9202",
+      "website": "https://fitcitystl.com",
+      "category": "recreation",
+      "subcategory": "fitness",
+      "building_id": null,
+      "rating": 4.8,
+      "review_count": 146,
+      "hours": {
+        "monday": {
+          "open": "05:00",
+          "close": "22:00"
+        },
+        "tuesday": {
+          "open": "05:00",
+          "close": "22:00"
+        },
+        "wednesday": {
+          "open": "05:00",
+          "close": "22:00"
+        },
+        "thursday": {
+          "open": "05:00",
+          "close": "22:00"
+        },
+        "friday": {
+          "open": "05:00",
+          "close": "22:00"
+        },
+        "saturday": {
+          "open": "06:00",
+          "close": "20:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "20:00"
+        }
+      },
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Huge gym with a wide variety of equipment. Plenty of free weights, machines, a power lifting room, ballistic training space, cardio equipment including rowers, a children's area, decent locker rooms, and a sauna.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Great gym with a supportive community atmosphere. The staff is friendly and the equipment is well-maintained. Best value gym in St. Louis.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "55+ cardio machines (StepMills, rowers, assault bikes)",
+        "43+ plate-loaded and free weight stations",
+        "8-stack customized jungle gym",
+        "Tanning beds",
+        "Saunas",
+        "Personal training",
+        "Childcare",
+        "Smoothie bar",
+        "TrueForm treadmill"
+      ],
+      "history": [
+        {
+          "year": 2016,
+          "event": "Fit City STL opens at 1601 S Jefferson Avenue in the Jefferson Commons plaza, offering a full-service gym with extensive free weight and cardio equipment."
+        }
+      ],
+      "description": "Full-service gym in the Jefferson Commons plaza with one of the largest and most diverse equipment selections in St. Louis. Features 55+ cardio pieces, 43+ plate-loaded machines, tanning, saunas, personal training, childcare, and a smoothie bar. Also operates a second location in St. Peters."
+    },
+    {
+      "id": "lmk-081",
+      "name": "H&R Block",
+      "address": "1601 S Jefferson Avenue, Suite B",
+      "phone": "(314) 772-1300",
+      "website": "https://www.hrblock.com/tax-office-near-me/missouri/st-louis/49153/",
+      "category": "professional",
+      "subcategory": "tax",
+      "building_id": null,
+      "hours": {
+        "monday": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "saturday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "sunday": {
+          "open": "12:00",
+          "close": "16:00"
+        }
+      },
+      "reviews": [],
+      "photos": [],
+      "amenities": [
+        "In-person tax preparation",
+        "Virtual tax prep appointments",
+        "Walk-ins welcome",
+        "Appointment scheduling online"
+      ],
+      "history": [],
+      "description": "National tax preparation franchise offering in-person and virtual tax filing services. Located in Suite B of the Jefferson Commons plaza near Lafayette Square."
+    },
+    {
+      "id": "lmk-082",
+      "name": "RE/MAX Gold",
+      "address": "1900 Park Avenue",
+      "phone": "(314) 329-7800",
+      "website": "https://gold-st-louis-mo.remax.com",
+      "category": "professional",
+      "subcategory": "real-estate",
+      "building_id": null,
+      "hours": {
+        "monday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "18:00"
+        }
+      },
+      "reviews": [],
+      "photos": [],
+      "amenities": [
+        "Residential and commercial real estate",
+        "Multiple licensed agents on staff",
+        "Part of the #1 RE/MAX franchise worldwide"
+      ],
+      "history": [
+        {
+          "year": 2002,
+          "event": "RE/MAX Gold office opens at 1900 Park Avenue in Lafayette Square, growing into one of the top-producing RE/MAX franchises in the country."
+        }
+      ],
+      "description": "Real estate brokerage office on Park Avenue in the heart of Lafayette Square. Part of the Gold Nation network — the #1 RE/MAX franchise in the world — with multiple licensed agents serving the St. Louis metro area in residential and commercial real estate."
+    },
+    {
+      "id": "lmk-083",
+      "name": "Care Solutions In-Home Services",
+      "address": "1800 Lafayette Avenue, 1st Floor",
+      "phone": "(314) 289-9990",
+      "website": "https://www.caresolutionsihs.com",
+      "category": "services",
+      "subcategory": "health",
+      "building_id": null,
+      "hours": {
+        "monday": {
+          "open": "09:00",
+          "close": "16:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "16:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "16:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "16:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "16:00"
+        }
+      },
+      "reviews": [],
+      "photos": [],
+      "amenities": [
+        "Personal care and hygiene assistance",
+        "Light housekeeping",
+        "Medication management and reminders",
+        "Meal preparation",
+        "Errand services",
+        "Accepts Medicaid In-Home Services",
+        "Veterans Aid & Attendance program",
+        "Community Care Network (VA)",
+        "Private pay accepted",
+        "Free CPR classes and safety equipment",
+        "Black-owned business"
+      ],
+      "history": [],
+      "description": "Private, nurse-owned and family-operated home care agency providing customized supportive services including personal care, medication management, meal preparation, and errands. Serves private pay clients as well as Medicaid In-Home Services and Veterans benefit programs across St. Louis and surrounding counties. Neighborhood Favorite on Nextdoor in 2023."
+    },
+    {
+      "id": "lmk-068",
+      "name": "Onyx Dagger Tattoo & Gallery",
+      "address": "1917 Park Avenue",
+      "phone": "(314) 745-8641",
+      "website": "https://onyxdaggerstl.com",
+      "category": "services",
+      "subcategory": "tattoo",
+      "building_id": null,
+      "rating": 4.9,
+      "review_count": 43,
+      "hours": {
+        "monday": { "open": "12:00", "close": "19:00" },
+        "tuesday": { "open": "12:00", "close": "19:00" },
+        "wednesday": { "open": "12:00", "close": "19:00" },
+        "thursday": { "open": "12:00", "close": "19:00" },
+        "friday": { "open": "12:00", "close": "20:00" },
+        "saturday": { "open": "12:00", "close": "20:00" },
+        "sunday": { "open": "12:00", "close": "18:00" }
+      },
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Valencia is not only incredibly talented, but extremely personable with an extreme passion for her work. The gallery space is beautiful and the whole experience felt welcoming and creative.",
+          "time": "2024"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Super laid back, relaxing, and clean atmosphere. Miss V is an absolute badass artist who knows exactly what she's doing. I've never been more comfortable getting tattooed.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Valencia is one of the best black and grey fine line artists in the area. She's sweet, a great conversationalist, and you are in great hands.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Rotating fine art gallery featuring local and national artists",
+        "Custom tattoo design by appointment only",
+        "Private, relaxed studio atmosphere",
+        "Art available for purchase on site"
+      ],
+      "history": [
+        {
+          "year": 2018,
+          "event": "Valencia Miller, known as 'Miss V,' founds Onyx Dagger Tattoo, becoming the first Black woman in Missouri to own and operate a custom tattoo shop."
+        },
+        {
+          "year": 2022,
+          "event": "Onyx Dagger reopens at 1917 Park Avenue in Lafayette Square as a combined tattoo studio and fine art gallery, featuring rotating exhibitions alongside custom tattoo work."
+        }
+      ],
+      "description": "Female-owned custom tattoo studio and fine art gallery in the heart of Lafayette Square. Owner Valencia Miller, the first Black woman in Missouri to own a custom tattoo shop, combines over 16 years of tattooing expertise with a curated gallery showcasing local and nationally renowned artists."
+    },
+    {
+      "id": "lmk-069",
+      "name": "Lehmann House Bed & Breakfast",
+      "address": "10 Benton Place",
+      "phone": "(314) 422-1483",
+      "website": "https://www.lehmannhouse.com",
+      "category": "hospitality",
+      "subcategory": "bed-and-breakfast",
+      "building_id": null,
+      "rating": 4.8,
+      "review_count": 140,
+      "hours": {},
+      "reviews": [
+        {
+          "author": "TripAdvisor Reviewer",
+          "rating": 5,
+          "text": "Unforgettable house, breakfast, and host. Marie's gourmet breakfasts served in the beautiful dining room put this location above every other lodging in St. Louis.",
+          "time": "2024"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "A truly special place to stay. The breakfast was amazing — fresh pastries, a four-course meal, and Marie is a wonderful host who makes every guest feel at home.",
+          "time": "2024"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Wonderful experience. The neighborhood is quiet and beautiful with its Federal-style homes. Rooms are spacious, comfortable, and full of period charm.",
+          "time": "2025"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Gourmet four-course breakfast served daily",
+        "Free Wi-Fi and free off-street parking",
+        "Guest library with baby grand piano in the parlor",
+        "Five individually decorated rooms with private baths and fireplaces"
+      ],
+      "history": [
+        {
+          "year": 1893,
+          "event": "Financier Edward S. Rowse builds the grand 26-room mansion at 10 Benton Place, St. Louis's oldest private street."
+        },
+        {
+          "year": 1898,
+          "event": "Frederick and Nora Lehmann purchase the mansion. As U.S. Solicitor General and director of the 1904 World's Fair, Lehmann hosts three sitting presidents in the home."
+        },
+        {
+          "year": 1989,
+          "event": "After two years of renovation, the mansion opens as the Lehmann House Bed & Breakfast — now the longest-running B&B in the St. Louis area."
+        }
+      ],
+      "description": "Historic 1893 Victorian mansion on Benton Place, St. Louis's oldest private street, operating as the city's longest-running bed and breakfast. Five individually appointed guest rooms with period antiques, private baths, and fireplaces."
+    },
+    {
+      "id": "lmk-070",
+      "name": "Wildflowers STL",
+      "address": "2754 Lafayette Avenue (Rear)",
+      "phone": "(314) 772-9900",
+      "website": "https://wildflowersstl.com",
+      "category": "shopping",
+      "subcategory": "florist",
+      "building_id": null,
+      "rating": 4.7,
+      "review_count": 32,
+      "hours": {
+        "monday": { "open": "09:00", "close": "17:00" },
+        "tuesday": { "open": "09:00", "close": "17:00" },
+        "wednesday": { "open": "09:00", "close": "17:00" },
+        "thursday": { "open": "09:00", "close": "17:00" },
+        "friday": { "open": "09:00", "close": "15:00" }
+      },
+      "reviews": [
+        {
+          "author": "WeddingWire Reviewer",
+          "rating": 5,
+          "text": "Sara and her team were so easy to work with and everything turned out so beautiful. By far, the most artistic and creative floral designer in St. Louis.",
+          "time": "2025"
+        },
+        {
+          "author": "The Knot Reviewer",
+          "rating": 5,
+          "text": "The flowers were gorgeous — the bridal bouquet was exceptional. Even my photographer was in awe. Sara really is so talented.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Same-day delivery (order by 10 a.m.)",
+        "Custom wedding and event florals",
+        "Locally sourced seasonal blooms",
+        "Daily fresh arrangements and sympathy flowers"
+      ],
+      "history": [
+        {
+          "year": 1997,
+          "event": "Wildflowers founded by Jane Winter in Webster Groves. Relocated in 2001 to St. Louis's historic Floral Row near LaSalle Street. Sara purchased the studio in 2016, earning eight Knot Best of Weddings awards."
+        }
+      ],
+      "description": "A premier artisan florist with nearly 30 years in business, tucked behind Lafayette Avenue on historic Floral Row. Owner Sara crafts whimsical, garden-style arrangements with blooms sourced daily from local farms and around the world."
+    },
+    {
+      "id": "lmk-071",
+      "name": "Rescued Furnishings",
+      "address": "2714 Lafayette Avenue",
+      "phone": "(314) 898-0047",
+      "website": "https://rescuedfurnishings.com",
+      "category": "shopping",
+      "subcategory": "furniture",
+      "building_id": null,
+      "rating": 4.5,
+      "review_count": 28,
+      "hours": {
+        "thursday": { "open": "11:00", "close": "18:00" },
+        "friday": { "open": "11:00", "close": "18:00" },
+        "saturday": { "open": "10:00", "close": "16:00" },
+        "sunday": { "open": "10:00", "close": "16:00" }
+      },
+      "reviews": [
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "The brick and mortar store is adorably cute with handmade one-of-a-kind furniture and decor everywhere. Always styled so beautifully with interesting items.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 4,
+          "text": "Fun spot in Lafayette Square with beautiful vintage furniture and eclectic home decor. The DIY painting classes are a blast — you build a piece of furniture in one night.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "DIY furniture painting and building classes",
+        "Custom vintage and antique furniture restoration",
+        "Cabinet painting and kitchen remodel services",
+        "Curated home decor and gift shop"
+      ],
+      "history": [
+        {
+          "year": 2013,
+          "event": "Nicole and Brandt Genz, both engineers, turn their garage furniture-flipping hobby into Rescued Furnishings. Nicole leaves her Boeing career in 2014 to run it full-time."
+        }
+      ],
+      "description": "A husband-and-wife furniture studio specializing in one-of-a-kind vintage and antique pieces restored with custom paint, stain, and carpentry. The Lafayette Square showroom doubles as a home-decor gift shop and DIY workshop."
+    },
+    {
+      "id": "lmk-072",
+      "name": "Sognare on Lafayette",
+      "address": "2714 Lafayette Avenue",
+      "phone": "(314) 886-8457",
+      "website": "https://www.sognareonlafayette.com",
+      "category": "services",
+      "subcategory": "events",
+      "building_id": null,
+      "rating": 4.8,
+      "review_count": 19,
+      "hours": {},
+      "reviews": [
+        {
+          "author": "The Knot Reviewer",
+          "rating": 5,
+          "text": "It's owned and operated by an award-winning design company. They truly have thought out every detail in the space and help you plan out your dream day.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "A beautiful, modern event space in the iconic pink DREAM building. The two-hundred-year-old wooden beams and Botticelli-inspired restroom wallpaper are unforgettable touches.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Flexible floor plan for up to 150 seated guests",
+        "Fully equipped prep kitchen",
+        "Ample free parking",
+        "In-house floral and decor styling via An Affair to Remember and Styled & Staged"
+      ],
+      "history": [
+        {
+          "year": 2024,
+          "event": "Sognare on Lafayette opens inside the pink DREAM building at 2714 Lafayette Avenue, created by the woman-owned Dream by Design team. 'Sognare' is Italian for 'to dream.'"
+        }
+      ],
+      "description": "A chic, contemporary event space inside Lafayette Square's iconic pink DREAM building, designed by award-winning event planners. Lush overhead greenery, bistro lighting, hanging rattan chandeliers, and white-washed brick walls accommodate weddings and celebrations for up to 150 guests."
+    },
+    {
+      "id": "lmk-073",
+      "name": "Architectural Artifacts of St. Louis",
+      "address": "2711 Lafayette Avenue",
+      "phone": "(314) 771-4442",
+      "website": "https://www.artifactsstl.com",
+      "category": "shopping",
+      "subcategory": "antiques",
+      "building_id": null,
+      "rating": 4.8,
+      "review_count": 47,
+      "hours": {
+        "thursday": { "open": "10:00", "close": "14:00" },
+        "saturday": { "open": "10:00", "close": "14:00" }
+      },
+      "reviews": [
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "I would give this place a million stars if I could. Bruce saves the most beautiful architecture — stained glass, terra cotta, cast iron storefronts. Absolute treasure trove.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "36,000 square feet of salvaged history. Found a five-foot mahogany pocket door and red-veined marble rescued from the Ambassador Theater. Nowhere else like it.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "36,000 sq ft warehouse and outdoor yards",
+        "Salvaged cast iron, terra cotta, stone, and brick",
+        "Reclaimed lumber and leaded glass",
+        "Free on-site parking"
+      ],
+      "history": [
+        {
+          "year": 1973,
+          "event": "Bruce Gerrie founds the business as 'After the Paint' at 18th & Hickory in Lafayette Square — the first architectural salvage operation in St. Louis."
+        },
+        {
+          "year": 1995,
+          "event": "Gerrie begins collaborating with artist Bob Cassilly, supplying salvaged materials for the City Museum and curating its St. Louis Architectural Museum gallery."
+        }
+      ],
+      "description": "The oldest architectural salvage business in St. Louis, founded in 1973 by Bruce Gerrie. A 36,000 sq ft warehouse packed with cast iron storefronts, decorative terra cotta, stained glass, reclaimed lumber, and historic building fragments. Open Thursdays and Saturdays only."
+    },
+    {
+      "id": "lmk-074",
+      "name": "Lafayette Park Bed and Breakfast",
+      "address": "1415 Missouri Avenue",
+      "phone": "(314) 771-7700",
+      "category": "hospitality",
+      "subcategory": "bed-and-breakfast",
+      "building_id": null,
+      "rating": 4.9,
+      "review_count": 28,
+      "hours": {},
+      "reviews": [
+        {
+          "author": "TripAdvisor Reviewer",
+          "rating": 5,
+          "text": "Exceptional in every way. Perfect location for our itinerary — Larry was a marvelous host. Accommodations were great, bed very comfortable.",
+          "time": "2025"
+        },
+        {
+          "author": "TripAdvisor Reviewer",
+          "rating": 5,
+          "text": "Beautiful Victorian home directly across from Lafayette Park. Larry knows everything about the neighborhood's history. Walking distance to great restaurants.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Complimentary breakfast",
+        "Free Wi-Fi",
+        "Free on-street parking",
+        "Walking distance to Lafayette Park and neighborhood restaurants"
+      ],
+      "history": [
+        {
+          "year": 1876,
+          "event": "Victorian residence constructed on Missouri Avenue facing Lafayette Park during the neighborhood's Gilded Age building boom, later restored and converted into a bed and breakfast by innkeeper Larry Bennett."
+        }
+      ],
+      "description": "A Victorian bed and breakfast facing Lafayette Park in the heart of the historic district, hosted by innkeeper Larry Bennett. Period-furnished guest rooms with complimentary breakfast and walking access to the neighborhood's best restaurants."
+    },
+    {
+      "id": "lmk-075",
+      "name": "J3 Studio",
+      "address": "1128 S 18th Street",
+      "phone": "(314) 621-6060",
+      "website": "https://www.j3-studio.com",
+      "category": "services",
+      "subcategory": "beauty",
+      "building_id": null,
+      "rating": 4.7,
+      "review_count": 60,
+      "hours": {},
+      "reviews": [
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "Judith is an absolute professional, making what could be a painful experience an enjoyable wax appointment. She's thorough, fast, and always makes me feel comfortable.",
+          "time": "2024"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "I highly recommend J3 for your next skincare needs. They truly care about their clients and the facials are luxurious. Best kept secret in Lafayette Square.",
+          "time": "2025"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Luxurious facials and skincare treatments",
+        "Expert waxing services",
+        "Lash extensions and makeup application",
+        "By appointment only"
+      ],
+      "history": [
+        {
+          "year": 2008,
+          "event": "Judith Southard opens J3 Studio in Lafayette Square, establishing a woman-owned boutique spa offering facials, waxing, lash extensions, and makeup services."
+        }
+      ],
+      "description": "Woman-owned boutique spa in Lafayette Square, open since 2008. Owner and licensed esthetician Judith Southard offers luxurious facials, expert waxing, lash extensions, and makeup application in a calm, welcoming setting. By appointment only."
+    },
+    {
+      "id": "lmk-076",
+      "name": "Lafayette Square Wellness",
+      "address": "2327 Hickory Street",
+      "phone": "(314) 449-4696",
+      "website": "https://www.lafayettesquarewellness.com",
+      "category": "services",
+      "subcategory": "wellness",
+      "building_id": null,
+      "rating": 4.8,
+      "review_count": 18,
+      "hours": {
+        "monday": { "open": "09:00", "close": "18:00" },
+        "tuesday": { "open": "09:00", "close": "18:00" },
+        "wednesday": { "open": "09:00", "close": "18:00" },
+        "thursday": { "open": "09:00", "close": "18:00" },
+        "friday": { "open": "09:00", "close": "18:00" },
+        "saturday": { "open": "09:00", "close": "14:00" }
+      },
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "The infrared sauna is so relaxing — I feel refreshed every time. The facility is clean and the staff is incredibly welcoming. A hidden gem on Hickory Street.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 4,
+          "text": "Love the swim spa for low-impact workouts. Great addition to the neighborhood. The chemical peel I got was exactly what my skin needed.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Infrared sauna",
+        "Swim spa for fitness and relaxation",
+        "HydraFacials and chemical peels",
+        "Neurotoxin and dermal filler injections"
+      ],
+      "history": [
+        {
+          "year": 2023,
+          "event": "Lafayette Square Wellness opens at 2327 Hickory Street, bringing infrared sauna, swim spa, facials, chemical peels, and aesthetic injection services to the neighborhood."
+        }
+      ],
+      "description": "Full-service wellness studio on Hickory Street offering infrared sauna sessions, swim spa workouts, spa facials, HydraFacials, chemical peels, and aesthetic treatments including neurotoxin and dermal filler injections."
+    },
+    {
+      "id": "lmk-077",
+      "name": "Grand Hall on Chouteau",
+      "address": "2319 Chouteau Avenue",
+      "phone": "(314) 638-6660",
+      "website": "https://orlandogardens.com/the-grand-hall-on-chouteau/",
+      "category": "services",
+      "subcategory": "events",
+      "building_id": null,
+      "rating": 4.6,
+      "review_count": 128,
+      "hours": {},
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "I have absolutely no words for how amazing this wedding venue is. The team made everything flawless from ceremony to reception. The space is breathtaking.",
+          "time": "2025"
+        },
+        {
+          "author": "WeddingWire Reviewer",
+          "rating": 5,
+          "text": "The Chouteau room was gorgeous — perfect for a ceremony of 100 to 150 people. The Jefferson Ballroom offered plenty of room for the band, dance floor, and tables.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Over 13,000 sq ft ballroom with 40-foot stage",
+        "2,800 sq ft Atrium for cocktail hours and ceremonies",
+        "State-of-the-art audio/visual equipment",
+        "Exclusive catering by Orlando's"
+      ],
+      "history": [
+        {
+          "year": 2011,
+          "event": "Sheet Metal Workers Local 36 completes a $29.5 million retrofit of its training complex at Jefferson and Chouteau, earning LEED Platinum certification. The Grand Hall opens as a premier event space within the complex."
+        }
+      ],
+      "description": "Over 13,000 sq ft event venue inside the LEED Platinum Sheet Metal Workers Local 36 complex, featuring a breathtaking ballroom with soaring ceilings, skylights, and a 40-foot stage accommodating up to 500 seated or 850 standing guests. Orlando's Catering is the exclusive caterer."
+    },
+    {
+      "id": "lmk-078",
+      "name": "St. Louis Dental Education & Oral Health Center",
+      "address": "1500 Park Avenue",
+      "phone": "(314) 833-2758",
+      "website": "https://affiniahealthcare.org/st-louis-dental-education-and-oral-health-center-location/",
+      "category": "services",
+      "subcategory": "health",
+      "building_id": null,
+      "rating": 3.3,
+      "review_count": 161,
+      "hours": {
+        "monday": { "open": "07:00", "close": "19:00" },
+        "tuesday": { "open": "07:00", "close": "17:00" },
+        "wednesday": { "open": "07:00", "close": "19:00" },
+        "thursday": { "open": "07:00", "close": "17:00" },
+        "friday": { "open": "07:00", "close": "17:00" },
+        "saturday": { "open": "08:00", "close": "12:00" }
+      },
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "The place is good, and the students are really helpful and professional. They truly care about your concerns and are very kind.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 4,
+          "text": "I finally found a dentist that's excellent — they let you know what's going on and explain everything. The front desk staff are also very nice.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "92-chair dental clinic with general and specialty care",
+        "Sliding fee scale for uninsured patients",
+        "Pediatric dentistry and special needs dental services",
+        "Full specialty care: periodontics, endodontics, prosthodontics, oral surgery"
+      ],
+      "history": [
+        {
+          "year": 2015,
+          "event": "The $24 million, 79,000 sq ft clinic opens June 15 — a partnership between A.T. Still University's Missouri School of Dentistry and Affinia Healthcare, training dental students while serving thousands of underserved St. Louis residents."
+        }
+      ],
+      "description": "A $24 million, 79,000 sq ft state-of-the-art dental clinic and teaching facility operated by Affinia Healthcare in partnership with A.T. Still University. The 92-chair clinic provides affordable general and specialty dental care to underserved communities while training the next generation of dentists."
     }
   ]
 }
