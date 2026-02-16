@@ -1,8 +1,8 @@
 # Lafayette Square Business Listings — Master Tracker
 
 ## Summary
-- **Listed:** 51
-- **To add:** 8
+- **Listed:** 59
+- **To add:** 0
 - **Total:** 59
 
 ---
@@ -66,14 +66,14 @@
 | 46 | Rome West Realty | 2756 Lafayette Ave | professional/real-estate | lmk-046, no building | ✅ |
 | 47 | Incite Design Studio | 1800 Lafayette Ave | professional/architecture | lmk-047, bldg-1139 | ✅ |
 | 48 | Kuhl Swaine | 1016 Mississippi Ave | professional/advertising | lmk-048, bldg-0048 | ✅ |
-| 49 | Climb So iLL | 1419 Carroll St | recreation/fitness | Indoor climbing gym in Power Plant building | ☐ |
-| 50 | Moulin Events & Meetings | 2017 Chouteau Ave | services/events | Event space in Malt House | ☐ |
-| 51 | Comfort Inn & Suites Lafayette Square | 2625 Lafayette Ave | hospitality/hotels | Hotel, complimentary breakfast | ☐ |
+| 49 | Climb So iLL | 1419 Carroll St | recreation/fitness | lmk-060, no building | ✅ |
+| 50 | Moulin Events & Meetings | 2017 Chouteau Ave | services/events | lmk-061, bldg-0086 | ✅ |
+| 51 | Comfort Inn & Suites Lafayette Square | 2625 Lafayette Ave | hospitality/hotels | lmk-062, no building | ✅ |
 | 52 | Lafayette Square Restoration Committee | 2023 Lafayette Ave | community/nonprofit | lmk-057, bldg-0987 | ✅ |
 | 53 | Barr Branch Library | 1701 S. Jefferson Ave | community/library | lmk-058, no building | ✅ |
-| 54 | The Dreamer's Loft | 2710 Lafayette Ave | services/coworking | Creative coworking and content space | ☐ |
-| 55 | Lofts at Lafayette Square | 1119 Mississippi Ave | residential/apartments | Loft apartments | ☐ |
-| 56 | Wireworks Lofts | 1435 S. 18th St | residential/apartments | 79-unit loft community | ☐ |
-| 57 | 2200 LaSalle at Lafayette Square | 2200 LaSalle St | residential/apartments | 128-unit luxury, opened ~2023 | ☐ |
+| 54 | The Dreamer's Loft | 2710 Lafayette Ave | services/coworking | lmk-063, no building | ✅ |
+| 55 | Lofts at Lafayette Square | 1119 Mississippi Ave | residential/apartments | lmk-065, no building | ✅ |
+| 56 | Wireworks Lofts | 1435 S. 18th St | residential/apartments | lmk-066, no building | ✅ |
+| 57 | 2200 LaSalle at Lafayette Square | 2200 LaSalle St | residential/apartments | lmk-067, no building | ✅ |
 | 58 | Lafayette Park Conservancy | Lafayette Park | community/nonprofit | lmk-059, bldg-0987 | ✅ |
-| 59 | Walgreens | S. Jefferson Ave | shopping/pharmacy | Pharmacy and convenience | ☐ |
+| 59 | Walgreens | 1530 Lafayette Ave | shopping/pharmacy | lmk-064, no building | ✅ |

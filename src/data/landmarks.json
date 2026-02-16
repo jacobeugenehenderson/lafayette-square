@@ -3251,6 +3251,337 @@
         }
       ],
       "description": "501(c)(3) nonprofit preserving Lafayette Park — the oldest developed urban park west of the Mississippi, established 1851. Major projects include restoring the ornamental iron fence and returning the 1876 Music Stand to its Victorian appearance."
+    },
+    {
+      "id": "lmk-060",
+      "name": "Climb So iLL",
+      "address": "1419 Carroll Street",
+      "phone": "(314) 621-1700",
+      "website": "https://climbsoill.com",
+      "category": "recreation",
+      "subcategory": "fitness",
+      "building_id": null,
+      "rating": 4.8,
+      "review_count": 547,
+      "hours": {
+        "monday": { "open": "11:00", "close": "22:00" },
+        "tuesday": { "open": "11:00", "close": "22:00" },
+        "wednesday": { "open": "11:00", "close": "22:00" },
+        "thursday": { "open": "11:00", "close": "22:00" },
+        "friday": { "open": "11:00", "close": "22:00" },
+        "saturday": { "open": "10:00", "close": "20:00" },
+        "sunday": { "open": "10:00", "close": "18:00" }
+      },
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "From the moment you walk in, the vibe is super welcoming — whether you're a total beginner or experienced climber, you immediately feel like you belong here.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 4,
+          "text": "A nice climbing gym. It has a few auto belays, top ropes, and a nice lead climb section. Diverse climbing options for all levels.",
+          "time": "2024"
+        },
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "Great staff, well-maintained equipment, and suitable climbs for both beginners and experts. The historic Power Plant building is an incredible setting.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "30,000+ sq ft of climbing terrain (bouldering, top rope, lead)",
+        "Yoga and fitness classes",
+        "Full weight and cardio fitness area",
+        "Corporate events and birthday parties"
+      ],
+      "history": [
+        {
+          "year": 2012,
+          "event": "Brothers David and Daniel Chancellor and friend Ian Anderson open Climb So iLL, expanding their climbing hold company So iLL Holds into a full gym inside the historic Power Plant of the 1905 City Hospital complex."
+        }
+      ],
+      "description": "World-class indoor climbing gym in the restored Power Plant of the historic City Hospital complex, identifiable by its towering smokestack. Over 30,000 sq ft of bouldering, top rope, and lead climbing terrain for all skill levels."
+    },
+    {
+      "id": "lmk-061",
+      "name": "Moulin Events & Meetings",
+      "address": "2017 Chouteau Avenue",
+      "phone": "(314) 241-4949",
+      "website": "https://moulinevents.com",
+      "category": "services",
+      "subcategory": "events",
+      "building_id": "bldg-0086",
+      "rating": 4.6,
+      "review_count": 72,
+      "hours": {},
+      "reviews": [
+        {
+          "author": "Yelp Reviewer",
+          "rating": 5,
+          "text": "The staff was fabulous! With the old wood floors and exposed brick, the place has a ton of character and warmth — it's truly one of a kind.",
+          "time": "2025"
+        },
+        {
+          "author": "WeddingWire Reviewer",
+          "rating": 5,
+          "text": "The exposed brick, original flooring, and cafe lighting gave it a romantic feel without being over the top. Working with Ann was amazing — attentive to every detail.",
+          "time": "2024"
+        },
+        {
+          "author": "WeddingWire Reviewer",
+          "rating": 5,
+          "text": "Ann took our vision of our wedding day and made it even better than we could have envisioned. The Moulin staff added so many thoughtful touches.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Eight private event spaces (20 to 750 guests)",
+        "Full-service event planning and catering",
+        "Rooftop deck with Arch and downtown skyline views",
+        "Arcade game room with pinball, skee ball, and jukebox"
+      ],
+      "history": [
+        {
+          "year": 1876,
+          "event": "Centennial Malt House built by Joseph Schnaider as the mill for his Chouteau Avenue Brewery — one of St. Louis's top three breweries. 'Moulin' is French for mill, honoring this origin."
+        },
+        {
+          "year": 2006,
+          "event": "After a $4 million restoration by Wendy and Paul Hamilton, Moulin Events hosts its first event on April 29. Named to Landmarks Association's Eleven Most Enhanced Places."
+        }
+      ],
+      "description": "Full-service event venue occupying eight private spaces across the restored 1876 Centennial Malt House, with exposed brick, arched windows, soaring ceilings, and views of the Gateway Arch."
+    },
+    {
+      "id": "lmk-062",
+      "name": "Comfort Inn & Suites Lafayette Square",
+      "address": "2625 Lafayette Avenue",
+      "phone": "(314) 773-6500",
+      "website": "https://www.choicehotels.com/missouri/saint-louis/comfort-inn-hotels/mo575",
+      "category": "hospitality",
+      "subcategory": "hotels",
+      "building_id": null,
+      "rating": 3.5,
+      "review_count": 649,
+      "hours": {},
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 4,
+          "text": "Great location just two blocks from Lafayette Park. The bed was perfectly firm and the free breakfast was a nice bonus. Staff at the front desk were friendly and helpful.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 2,
+          "text": "Room had an odd musty smell when we checked in. The AC issue was fixed quickly, but the overall condition of the room could use some updating.",
+          "time": "2024"
+        },
+        {
+          "author": "TripAdvisor Reviewer",
+          "rating": 4,
+          "text": "For the price, these are adequate accommodations with an ideal location near downtown. Staff was very friendly and the complimentary breakfast was solid.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Complimentary hot breakfast buffet",
+        "Free self-parking and Wi-Fi",
+        "Fitness center and meeting space",
+        "Pet-friendly rooms available"
+      ],
+      "history": [
+        {
+          "year": 2020,
+          "event": "Built and opened as Hotel Avyan, a 64-room hotel on Lafayette Avenue. Later rebranded as a Comfort Inn & Suites franchise under Choice Hotels."
+        }
+      ],
+      "description": "A 64-room Comfort Inn franchise two blocks from Lafayette Park, offering complimentary breakfast, free parking, and pet-friendly accommodations. Formerly Hotel Avyan, convenient to downtown St. Louis and the Gateway Arch."
+    },
+    {
+      "id": "lmk-063",
+      "name": "The Dreamer's Loft",
+      "address": "2710 Lafayette Avenue",
+      "website": "https://www.thedreamersloft.com",
+      "category": "services",
+      "subcategory": "coworking",
+      "building_id": null,
+      "rating": 5.0,
+      "review_count": 18,
+      "hours": {
+        "monday": { "open": "08:00", "close": "18:00" },
+        "tuesday": { "open": "08:00", "close": "18:00" },
+        "wednesday": { "open": "08:00", "close": "18:00" },
+        "thursday": { "open": "08:00", "close": "18:00" },
+        "friday": { "open": "08:00", "close": "18:00" }
+      },
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Truly a hidden gem — my go-to space for meeting clients or focusing on work. The Zoom rooms are perfect for calls, and the spa room with a zero gravity massage chair helps me reset.",
+          "time": "2024"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "The space was absolutely adorable with thoughtfully done details, a beautiful color scheme, and fun wallpaper. The staff was incredibly welcoming.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Incredible customer service and the space is beyond beautiful. Love the free snacks and coffee options. I'd give it 10 stars if I could.",
+          "time": "2025"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Content creation studio with photo-ready backdrops and ring lights",
+        "Three designer Zoom rooms for video calls",
+        "Wellness room with zero gravity massage chair",
+        "Event space for workshops, pop-ups, and private gatherings"
+      ],
+      "history": [
+        {
+          "year": 2024,
+          "event": "Jody Cox, founder of Dream by Design STL and veteran event designer of 15 years, opens The Dreamer's Loft as St. Louis's first creative coworking and content creation studio in the iconic pink building at 2710 Lafayette Avenue."
+        }
+      ],
+      "description": "St. Louis's first creative coworking and content creation studio, housed in a striking pink building on Lafayette Avenue. Offers dedicated desks, meeting rooms, photo-ready studios, and event rentals for creatives and entrepreneurs."
+    },
+    {
+      "id": "lmk-064",
+      "name": "Walgreens",
+      "address": "1530 Lafayette Avenue",
+      "phone": "(314) 678-1039",
+      "website": "https://www.walgreens.com",
+      "category": "shopping",
+      "subcategory": "pharmacy",
+      "building_id": null,
+      "rating": 3.2,
+      "review_count": 48,
+      "hours": {
+        "monday": { "open": "07:00", "close": "22:00" },
+        "tuesday": { "open": "07:00", "close": "22:00" },
+        "wednesday": { "open": "07:00", "close": "22:00" },
+        "thursday": { "open": "07:00", "close": "22:00" },
+        "friday": { "open": "07:00", "close": "22:00" },
+        "saturday": { "open": "07:00", "close": "22:00" },
+        "sunday": { "open": "07:00", "close": "22:00" }
+      },
+      "reviews": [
+        {
+          "author": "Google Reviewer",
+          "rating": 5,
+          "text": "Stefani in the pharmacy went above and beyond helping me get the cost of my medication down when insurance wouldn't cover it. Compassionate and patient staff.",
+          "time": "2025"
+        },
+        {
+          "author": "Google Reviewer",
+          "rating": 4,
+          "text": "Good consistent service through the pharmacy. They are knowledgeable, fast, and nice every time I visit.",
+          "time": "2024"
+        }
+      ],
+      "photos": [],
+      "amenities": [
+        "Full-service pharmacy with drive-thru window",
+        "Immunizations and flu shots",
+        "Photo printing and passport photos",
+        "Health screenings and medical equipment"
+      ],
+      "history": [],
+      "description": "Full-service Walgreens drugstore and pharmacy at the corner of Lafayette Ave and S. Jefferson Ave, serving the neighborhood with prescriptions, health services, and everyday essentials."
+    },
+    {
+      "id": "lmk-065",
+      "name": "Lofts at Lafayette Square",
+      "address": "1119 Mississippi Avenue",
+      "phone": "(888) 410-9924",
+      "website": "https://www.loftsatlafayette.com",
+      "category": "residential",
+      "subcategory": "apartments",
+      "building_id": null,
+      "hours": {},
+      "reviews": [],
+      "photos": [],
+      "amenities": [
+        "14-foot ceilings and open loft floor plans",
+        "In-unit full-size washer and dryer",
+        "Pet-friendly community",
+        "24-hour emergency maintenance"
+      ],
+      "history": [
+        {
+          "year": 1903,
+          "event": "Roberts, Johnson & Rand — then the largest shoe manufacturer in the U.S. — operates its factory at this site during Lafayette Square's industrial heyday."
+        },
+        {
+          "year": 2003,
+          "event": "The 148,000 sq ft shoe plant is converted into 115 loft apartments with soaring ceilings and industrial character preserved."
+        }
+      ],
+      "description": "115-unit loft apartment community in the converted Roberts, Johnson & Rand shoe factory, featuring 14-foot ceilings, open floor plans, and historic industrial character in the heart of Lafayette Square."
+    },
+    {
+      "id": "lmk-066",
+      "name": "Wireworks Lofts",
+      "address": "1435 S 18th Street",
+      "phone": "(314) 887-9022",
+      "website": "https://www.wireworksstl.com",
+      "category": "residential",
+      "subcategory": "apartments",
+      "building_id": null,
+      "hours": {},
+      "reviews": [],
+      "photos": [],
+      "amenities": [
+        "High ceilings and large windows",
+        "Ground-floor retail including SqWires Restaurant",
+        "Pet-friendly community",
+        "Walking distance to Lafayette Park"
+      ],
+      "history": [
+        {
+          "year": 2001,
+          "event": "The historic Western Wire Products factory is converted into 79 market-rate loft apartments and 8,000 sq ft of ground-floor retail and office space, financed with historic preservation tax credits."
+        }
+      ],
+      "description": "79-unit loft community in the converted Western Wire Products factory, featuring high ceilings, large windows, and ground-floor retail anchored by SqWires Restaurant."
+    },
+    {
+      "id": "lmk-067",
+      "name": "2200 LaSalle at Lafayette Square",
+      "address": "2200 LaSalle Street",
+      "phone": "(314) 907-1308",
+      "website": "https://www.2200lasalle.com",
+      "category": "residential",
+      "subcategory": "apartments",
+      "building_id": null,
+      "hours": {},
+      "reviews": [],
+      "photos": [],
+      "amenities": [
+        "Resort-style pool with sundeck",
+        "Underground garage parking",
+        "Clubhouse with cocktail bar and fitness center",
+        "Courtyard with fire pit, pavilion, and lawn games"
+      ],
+      "history": [
+        {
+          "year": 2024,
+          "event": "128-unit, five-story luxury apartment complex opens on the former Praxair industrial site — phase one of a 12-acre master-planned redevelopment at Jefferson and Chouteau. Designed by HOK, built by IMPACT Strategies."
+        }
+      ],
+      "description": "128-unit luxury apartment complex with resort-style amenities on the former Praxair site. Studio, one-, and two-bedroom units with premium finishes, quartz countertops, and open-concept design."
     }
   ]
 }
