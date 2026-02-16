@@ -2682,7 +2682,15 @@
           "close": "17:00"
         }
       },
-      "photos": [],
+      "photos": [
+        "/photos/modern-dollar/01.jpg",
+        "/photos/modern-dollar/02.jpg",
+        "/photos/modern-dollar/03.jpeg",
+        "/photos/modern-dollar/03.jpg",
+        "/photos/modern-dollar/04.jpg",
+        "/photos/modern-dollar/05.jpg",
+        "/photos/modern-dollar/06.jpg"
+      ],
       "amenities": [
         "Fee-only fiduciary",
         "CFP, CFA, and CPA credentials",
@@ -2807,7 +2815,16 @@
       "category": "professional",
       "subcategory": "architecture",
       "building_id": "bldg-1139",
-      "photos": [],
+      "photos": [
+        "/photos/incite-design/01.jpg",
+        "/photos/incite-design/02.jpg",
+        "/photos/incite-design/03.jpg",
+        "/photos/incite-design/04.jpg",
+        "/photos/incite-design/05.jpg",
+        "/photos/incite-design/06.jpg",
+        "/photos/incite-design/07.jpg",
+        "/photos/incite-design/08.jpg"
+      ],
       "amenities": [
         "14 licensed architects on staff",
         "K-12 educational facility specialization",
@@ -2959,7 +2976,16 @@
           "close": "01:00"
         }
       },
-      "photos": [],
+      "photos": [
+        "/photos/prohibition/01.jpg",
+        "/photos/prohibition/02.jpg",
+        "/photos/prohibition/03.jpg",
+        "/photos/prohibition/04.jpg",
+        "/photos/prohibition/05.jpg",
+        "/photos/prohibition/06.jpg",
+        "/photos/prohibition/07.jpg",
+        "/photos/prohibition/08.jpg"
+      ],
       "amenities": [
         "Craft cocktails by NYC-trained beverage director",
         "Stone-walled 1876 basement setting",
@@ -3162,7 +3188,17 @@
           "time": "2024"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/chiropractic/01.png",
+        "/photos/chiropractic/02.jpg",
+        "/photos/chiropractic/03.jpg",
+        "/photos/chiropractic/04.jpg",
+        "/photos/chiropractic/05.jpg",
+        "/photos/chiropractic/06.jpg",
+        "/photos/chiropractic/07.jpg",
+        "/photos/chiropractic/08.jpg",
+        "/photos/chiropractic/logo.png"
+      ],
       "amenities": [
         "3 Doctors of Chiropractic on staff",
         "BBB A+ rated",
@@ -3255,7 +3291,13 @@
           "time": "2024"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/four-muddy-paws/01.jpg",
+        "/photos/four-muddy-paws/02.jpg",
+        "/photos/four-muddy-paws/03.jpg",
+        "/photos/four-muddy-paws/04.jpg",
+        "/photos/four-muddy-paws/05.jpg"
+      ],
       "amenities": [
         "Self-service dog wash",
         "Professional grooming",
@@ -3341,7 +3383,18 @@
       "category": "community",
       "subcategory": "nonprofit",
       "building_id": "bldg-0987",
-      "photos": [],
+      "photos": [
+        "/photos/lsrc/01.jpeg",
+        "/photos/lsrc/01.jpg",
+        "/photos/lsrc/02.jpeg",
+        "/photos/lsrc/02.jpg",
+        "/photos/lsrc/03.jpeg",
+        "/photos/lsrc/04.jpg",
+        "/photos/lsrc/05.jpg",
+        "/photos/lsrc/06.jpeg",
+        "/photos/lsrc/07.jpg",
+        "/photos/lsrc/08.jpg"
+      ],
       "amenities": [
         "Park House community center",
         "Community gardens and plaza",
@@ -3428,7 +3481,15 @@
       "category": "community",
       "subcategory": "nonprofit",
       "building_id": "bldg-0987",
-      "photos": [],
+      "photos": [
+        "/photos/lafayette-park-conservancy/01.jpg",
+        "/photos/lafayette-park-conservancy/02.jpg",
+        "/photos/lafayette-park-conservancy/03.jpg",
+        "/photos/lafayette-park-conservancy/04.jpg",
+        "/photos/lafayette-park-conservancy/05.jpg",
+        "/photos/lafayette-park-conservancy/06.jpg",
+        "/photos/lafayette-park-conservancy/07.jpg"
+      ],
       "amenities": [
         "Ornamental iron fence restoration",
         "1876 Music Stand restoration",
@@ -3508,7 +3569,13 @@
           "time": "2024"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/climb-so-ill/01.jpg",
+        "/photos/climb-so-ill/02.jpg",
+        "/photos/climb-so-ill/03.jpg",
+        "/photos/climb-so-ill/04.jpg",
+        "/photos/climb-so-ill/05.jpg"
+      ],
       "amenities": [
         "30,000+ sq ft of climbing terrain (bouldering, top rope, lead)",
         "Yoga and fitness classes",
@@ -3555,7 +3622,13 @@
           "time": "2024"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/moulin-events/01.jpg",
+        "/photos/moulin-events/02.jpg",
+        "/photos/moulin-events/03.jpg",
+        "/photos/moulin-events/04.jpg",
+        "/photos/moulin-events/05.jpg"
+      ],
       "amenities": [
         "Eight private event spaces (20 to 750 guests)",
         "Full-service event planning and catering",
@@ -3673,7 +3746,16 @@
           "time": "2025"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/dreamers-loft/01.jpg",
+        "/photos/dreamers-loft/02.jpg",
+        "/photos/dreamers-loft/03.jpg",
+        "/photos/dreamers-loft/04.jpg",
+        "/photos/dreamers-loft/05.jpg",
+        "/photos/dreamers-loft/06.jpg",
+        "/photos/dreamers-loft/07.jpg",
+        "/photos/dreamers-loft/08.jpg"
+      ],
       "amenities": [
         "Content creation studio with photo-ready backdrops and ring lights",
         "Three designer Zoom rooms for video calls",
@@ -3794,7 +3876,10 @@
       "building_id": null,
       "hours": {},
       "reviews": [],
-      "photos": [],
+      "photos": [
+        "/photos/wireworks-lofts/01.jpg",
+        "/photos/wireworks-lofts/02.jpg"
+      ],
       "amenities": [
         "High ceilings and large windows",
         "Ground-floor retail including SqWires Restaurant",
@@ -3946,7 +4031,16 @@
           "time": "2024"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/fit-city/01.jpg",
+        "/photos/fit-city/02.jpg",
+        "/photos/fit-city/03.jpg",
+        "/photos/fit-city/04.jpg",
+        "/photos/fit-city/05.jpg",
+        "/photos/fit-city/06.jpg",
+        "/photos/fit-city/07.jpg",
+        "/photos/fit-city/08.jpg"
+      ],
       "amenities": [
         "55+ cardio machines (StepMills, rowers, assault bikes)",
         "43+ plate-loaded and free weight stations",
@@ -4123,13 +4217,34 @@
       "rating": 4.9,
       "review_count": 43,
       "hours": {
-        "monday": { "open": "12:00", "close": "19:00" },
-        "tuesday": { "open": "12:00", "close": "19:00" },
-        "wednesday": { "open": "12:00", "close": "19:00" },
-        "thursday": { "open": "12:00", "close": "19:00" },
-        "friday": { "open": "12:00", "close": "20:00" },
-        "saturday": { "open": "12:00", "close": "20:00" },
-        "sunday": { "open": "12:00", "close": "18:00" }
+        "monday": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "tuesday": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "wednesday": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "thursday": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "friday": {
+          "open": "12:00",
+          "close": "20:00"
+        },
+        "saturday": {
+          "open": "12:00",
+          "close": "20:00"
+        },
+        "sunday": {
+          "open": "12:00",
+          "close": "18:00"
+        }
       },
       "reviews": [
         {
@@ -4202,7 +4317,16 @@
           "time": "2025"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/lehmann-house/01.jpg",
+        "/photos/lehmann-house/02.jpg",
+        "/photos/lehmann-house/03.jpg",
+        "/photos/lehmann-house/04.jpg",
+        "/photos/lehmann-house/05.jpg",
+        "/photos/lehmann-house/06.jpg",
+        "/photos/lehmann-house/07.jpg",
+        "/photos/lehmann-house/08.jpg"
+      ],
       "amenities": [
         "Gourmet four-course breakfast served daily",
         "Free Wi-Fi and free off-street parking",
@@ -4237,11 +4361,26 @@
       "rating": 4.7,
       "review_count": 32,
       "hours": {
-        "monday": { "open": "09:00", "close": "17:00" },
-        "tuesday": { "open": "09:00", "close": "17:00" },
-        "wednesday": { "open": "09:00", "close": "17:00" },
-        "thursday": { "open": "09:00", "close": "17:00" },
-        "friday": { "open": "09:00", "close": "15:00" }
+        "monday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "15:00"
+        }
       },
       "reviews": [
         {
@@ -4284,10 +4423,22 @@
       "rating": 4.5,
       "review_count": 28,
       "hours": {
-        "thursday": { "open": "11:00", "close": "18:00" },
-        "friday": { "open": "11:00", "close": "18:00" },
-        "saturday": { "open": "10:00", "close": "16:00" },
-        "sunday": { "open": "10:00", "close": "16:00" }
+        "thursday": {
+          "open": "11:00",
+          "close": "18:00"
+        },
+        "friday": {
+          "open": "11:00",
+          "close": "18:00"
+        },
+        "saturday": {
+          "open": "10:00",
+          "close": "16:00"
+        },
+        "sunday": {
+          "open": "10:00",
+          "close": "16:00"
+        }
       },
       "reviews": [
         {
@@ -4344,7 +4495,16 @@
           "time": "2024"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/sognare/01.jpg",
+        "/photos/sognare/02.jpg",
+        "/photos/sognare/03.jpg",
+        "/photos/sognare/04.jpg",
+        "/photos/sognare/05.jpg",
+        "/photos/sognare/06.jpg",
+        "/photos/sognare/07.jpg",
+        "/photos/sognare/08.jpg"
+      ],
       "amenities": [
         "Flexible floor plan for up to 150 seated guests",
         "Fully equipped prep kitchen",
@@ -4371,8 +4531,14 @@
       "rating": 4.8,
       "review_count": 47,
       "hours": {
-        "thursday": { "open": "10:00", "close": "14:00" },
-        "saturday": { "open": "10:00", "close": "14:00" }
+        "thursday": {
+          "open": "10:00",
+          "close": "14:00"
+        },
+        "saturday": {
+          "open": "10:00",
+          "close": "14:00"
+        }
       },
       "reviews": [
         {
@@ -4388,7 +4554,13 @@
           "time": "2024"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/architectural-artifacts/01.jpg",
+        "/photos/architectural-artifacts/02.jpg",
+        "/photos/architectural-artifacts/03.jpg",
+        "/photos/architectural-artifacts/04.jpg",
+        "/photos/architectural-artifacts/05.jpg"
+      ],
       "amenities": [
         "36,000 sq ft warehouse and outdoor yards",
         "Salvaged cast iron, terra cotta, stone, and brick",
@@ -4473,7 +4645,13 @@
           "time": "2025"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/j3-studio/01.jpg",
+        "/photos/j3-studio/02.jpg",
+        "/photos/j3-studio/03.jpg",
+        "/photos/j3-studio/04.jpg",
+        "/photos/j3-studio/05.jpg"
+      ],
       "amenities": [
         "Luxurious facials and skincare treatments",
         "Expert waxing services",
@@ -4500,12 +4678,30 @@
       "rating": 4.8,
       "review_count": 18,
       "hours": {
-        "monday": { "open": "09:00", "close": "18:00" },
-        "tuesday": { "open": "09:00", "close": "18:00" },
-        "wednesday": { "open": "09:00", "close": "18:00" },
-        "thursday": { "open": "09:00", "close": "18:00" },
-        "friday": { "open": "09:00", "close": "18:00" },
-        "saturday": { "open": "09:00", "close": "14:00" }
+        "monday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "saturday": {
+          "open": "09:00",
+          "close": "14:00"
+        }
       },
       "reviews": [
         {
@@ -4562,7 +4758,16 @@
           "time": "2024"
         }
       ],
-      "photos": [],
+      "photos": [
+        "/photos/grand-hall/01.jpg",
+        "/photos/grand-hall/02.jpg",
+        "/photos/grand-hall/03.jpg",
+        "/photos/grand-hall/04.jpg",
+        "/photos/grand-hall/05.jpg",
+        "/photos/grand-hall/06.jpg",
+        "/photos/grand-hall/07.jpg",
+        "/photos/grand-hall/08.jpg"
+      ],
       "amenities": [
         "Over 13,000 sq ft ballroom with 40-foot stage",
         "2,800 sq ft Atrium for cocktail hours and ceremonies",
@@ -4589,12 +4794,30 @@
       "rating": 3.3,
       "review_count": 161,
       "hours": {
-        "monday": { "open": "07:00", "close": "19:00" },
-        "tuesday": { "open": "07:00", "close": "17:00" },
-        "wednesday": { "open": "07:00", "close": "19:00" },
-        "thursday": { "open": "07:00", "close": "17:00" },
-        "friday": { "open": "07:00", "close": "17:00" },
-        "saturday": { "open": "08:00", "close": "12:00" }
+        "monday": {
+          "open": "07:00",
+          "close": "19:00"
+        },
+        "tuesday": {
+          "open": "07:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "07:00",
+          "close": "19:00"
+        },
+        "thursday": {
+          "open": "07:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "07:00",
+          "close": "17:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "12:00"
+        }
       },
       "reviews": [
         {
@@ -4624,6 +4847,40 @@
         }
       ],
       "description": "A $24 million, 79,000 sq ft state-of-the-art dental clinic and teaching facility operated by Affinia Healthcare in partnership with A.T. Still University. The 92-chair clinic provides affordable general and specialty dental care to underserved communities while training the next generation of dentists."
+    },
+    {
+      "id": "lmk-084",
+      "name": "Eden Lofts",
+      "address": "1720 Chouteau Avenue",
+      "phone": "(314) 887-7653",
+      "category": "residential",
+      "subcategory": "apartments",
+      "building_id": null,
+      "hours": {},
+      "reviews": [],
+      "photos": [],
+      "amenities": [
+        "12-foot ceilings and exposed brick walls",
+        "In-unit washer and dryer",
+        "Secure gated entry and parking",
+        "Pet-friendly (cats and dogs)",
+        "Gateway Arch views from upper units"
+      ],
+      "history": [
+        {
+          "year": 1896,
+          "event": "Built for the Eden Publishing Company, a major German-language religious publisher. The adjacent five-story Art Deco wing designed by Hoener, Boehm & Froese was added in 1929."
+        },
+        {
+          "year": 1986,
+          "event": "Added to the National Register of Historic Places for architectural and historical significance."
+        },
+        {
+          "year": 2006,
+          "event": "Converted into 40 residential loft condominiums with open floor plans, 12-foot ceilings, and preserved industrial character."
+        }
+      ],
+      "description": "40-unit loft condominium building in the converted 1896 Eden Publishing Company headquarters, a National Register-listed Art Deco landmark on Chouteau Avenue. Features 12-foot ceilings, exposed brick, secure gated parking, and Gateway Arch views."
     }
   ]
 }

@@ -1,9 +1,9 @@
 # Lafayette Square Business Listings — Master Tracker
 
 ## Summary
-- **Listed:** 75
+- **Listed:** 76
 - **To add:** 0
-- **Total:** 75
+- **Total:** 76
 
 ---
 
@@ -93,3 +93,4 @@
 | 73 | Lafayette Square Wellness | 2327 Hickory St | services/wellness | lmk-076, no building | ✅ |
 | 74 | Grand Hall on Chouteau | 2319 Chouteau Ave | services/events | lmk-077, no building | ✅ |
 | 75 | ATSU Dental Center | 1500 Park Ave | services/health | lmk-078, no building | ✅ |
+| 76 | Eden Lofts | 1720 Chouteau Ave | residential/apartments | lmk-084, no building | ✅ |
