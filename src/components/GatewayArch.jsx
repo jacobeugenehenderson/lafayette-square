@@ -98,7 +98,7 @@ export default function GatewayArch() {
       roughness: 0.04,
       emissive: '#8888aa',
       emissiveIntensity: 0,
-      transparent: false,
+      transparent: true,
       depthWrite: true,
     })
 
@@ -239,17 +239,11 @@ export default function GatewayArch() {
          float shimmer = fresnel * 0.12 + 0.02;
          gl_FragColor.rgb += vec3(0.5, 0.52, 0.6) * shimmer * (0.1 + uDayFactor * 0.6);
 
-         // ── 8. Fade feet into ground ──
-         // Discard underground, darken near ground, dithered dissolve at contact
-         if (vArchWorld.y < -5.0) discard;
-         float footFade = smoothstep(-5.0, 100.0, vArchWorld.y);
-         gl_FragColor.rgb *= footFade * footFade;
-         // Screen-door dissolve: dithered discard so background shows through
-         float dissolveFactor = smoothstep(-5.0, 25.0, vArchWorld.y);
-         // 4x4 Bayer dither matrix via screen coords
-         vec2 sc = gl_FragCoord.xy;
-         float bayer = fract(dot(floor(mod(sc, 4.0)), vec2(1.0/4.0, 4.0/16.0)));
-         if (bayer > dissolveFactor) discard;`
+         // ── 8. Fade feet into sky ──
+         // No ground plane beneath the arch — just dissolve the lowest geometry
+         if (vArchWorld.y < -20.0) discard;
+         float footAlpha = smoothstep(-20.0, 40.0, vArchWorld.y);
+         gl_FragColor.a *= footAlpha;`
       )
 
       shaderRef.current = shader

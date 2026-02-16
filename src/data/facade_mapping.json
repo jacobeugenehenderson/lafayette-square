@@ -1,0 +1,2606 @@
+{
+  "bldg-1160": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/005.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1914, these twin Classical Revival-style apartment buildings feature red brick exteriors, rough-hewn stone bases, nine-over-one, six-over-one, and one-over-one windows, sun porches on the front facades, bracketed cornices with modillions, stone trim, doors with pointed headers, bay windows ",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 48.51,
+      "mid_x": 511.75,
+      "mid_z": 221.85,
+      "nx": 0.159,
+      "nz": -0.987,
+      "angle": 2.9822
+    }
+  },
+  "bldg-1161": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/068.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1908, this Classical Revival-style townhouse features a red brick exterior, decorative patterned brickwork framing the second floor windows, one-over-one windows, a stained glass fanlight transom at the first floor window on the front facade, a simple cornice, and a recessed doorway behind ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.26,
+      "mid_x": 464.0,
+      "mid_z": 233.1,
+      "nx": 0.152,
+      "nz": -0.988,
+      "angle": 2.9889
+    }
+  },
+  "bldg-1158": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/012.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1890, this Queen Anne-style house features a formstone-clad exterior, a hipped roof with copper cresting, a two-story bay window on the east facade, one-over-one windows, a cylindrical turret with a conical roof and finial at the northwestern corer of the house, arched bays not eh first flo",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.77,
+      "mid_x": 445.65,
+      "mid_z": 245.8,
+      "nx": -0.148,
+      "nz": 0.989,
+      "angle": -0.1482
+    }
+  },
+  "bldg-1156": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/076.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1884, this Italianate-style three-bay townhouse features a stone-clad front facade, red brick cladding on the side and rear facades, one-over-one double-hung windows with decorative trim surrounds, a bracketed cornice with dentils, a three-story bay window on the east facade, a double front",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.99,
+      "mid_x": 438.05,
+      "mid_z": 241.05,
+      "nx": -0.157,
+      "nz": 0.988,
+      "angle": -0.1581
+    }
+  },
+  "bldg-1157": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/023.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1885, this Second Empire-style three-bay townhouse features a stone-clad front facade with red brick cladding at the side and rear facades, one-over-one double-hung windows, a bracketed cornice, a mansard roof, gabled dormers, and a double front door with decorative wooden paneling.  The bu",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.38,
+      "mid_x": 431.45,
+      "mid_z": 240.0,
+      "nx": -0.157,
+      "nz": 0.988,
+      "angle": -0.1574
+    }
+  },
+  "bldg-1152": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/024.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1885, this Second Empire-style three-bay townhouse features a stone-clad front facade with red brick cladding at the side and rear facades, one-over-one double-hung windows, a bracketed cornice, a mansard roof, gabled dormers, and a double front door with decorative wooden paneling.  The bu",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.79,
+      "mid_x": 423.35,
+      "mid_z": 239.1,
+      "nx": -0.154,
+      "nz": 0.988,
+      "angle": -0.1546
+    }
+  },
+  "bldg-1151": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/013.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1890, this Queen Anne-style house features a formstone-clad exterior, a hipped roof with copper cresting, a two-story bay window on the east facade, one-over-one windows, a cylindrical turret with a conical roof and finial at the northwestern corer of the house, arched bays not eh first flo",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.61,
+      "mid_x": 415.75,
+      "mid_z": 237.85,
+      "nx": -0.171,
+      "nz": 0.985,
+      "angle": -0.1716
+    }
+  },
+  "bldg-1153": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/019.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1890, this Queen Anne-style house features a red brick exterior, a cylindrical tower with a conical roof and a copper finial at the northwest corner of the building, one-over-one double-hung windows, a porch on the western facade with brick piers and a hipped roof, an elliptical oxeye windo",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.63,
+      "mid_x": 408.25,
+      "mid_z": 236.5,
+      "nx": -0.183,
+      "nz": 0.983,
+      "angle": -0.1845
+    }
+  },
+  "bldg-1154": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/020.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1890, this Queen Anne-style house features a red brick exterior, a cylindrical tower with a conical roof and a copper finial at the northwest corner of the building, one-over-one double-hung windows, a porch on the western facade with brick piers and a hipped roof, an elliptical oxeye windo",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.18,
+      "mid_x": 400.95,
+      "mid_z": 235.25,
+      "nx": -0.153,
+      "nz": 0.988,
+      "angle": -0.1537
+    }
+  },
+  "bldg-1139": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/027.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 15.82,
+      "mid_x": 349.7,
+      "mid_z": 269.4,
+      "nx": 0.164,
+      "nz": -0.986,
+      "angle": 2.9764
+    }
+  },
+  "bldg-1134": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/006.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1914, these twin Classical Revival-style apartment buildings feature red brick exteriors, rough-hewn stone bases, nine-over-one, six-over-one, and one-over-one windows, sun porches on the front facades, bracketed cornices with modillions, stone trim, doors with pointed headers, bay windows ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 9.22,
+      "mid_x": 343.25,
+      "mid_z": 231.55,
+      "nx": -0.163,
+      "nz": 0.987,
+      "angle": -0.1634
+    }
+  },
+  "bldg-1140": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/028.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire-style townhouse features a red brick exterior, arched Queen Anne-style double-hung windows, a slate mansard roof with gabled dormers, a cornice with brackets and modillions, a rusticated base, a balcony with decorative brackets at the center of the front facade of t",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.92,
+      "mid_x": 326.2,
+      "mid_z": 294.3,
+      "nx": -0.177,
+      "nz": 0.984,
+      "angle": -0.1776
+    }
+  },
+  "bldg-1147": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/029.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.49,
+      "mid_x": 323.6,
+      "mid_z": 313.85,
+      "nx": -0.169,
+      "nz": 0.986,
+      "angle": -0.1702
+    }
+  },
+  "bldg-1130": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/035.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Italianate and Queen Anne-style house features a red brick exterior, stone trim, a hipped roof with front and side gables, decorative brackets, a decorative cornice, one-over-one windows, stone trim, decorative patterned brickwork, a gabled dormer, a front entrance vestibule with",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.99,
+      "mid_x": 328.25,
+      "mid_z": 224.25,
+      "nx": -0.157,
+      "nz": 0.988,
+      "angle": -0.1581
+    }
+  },
+  "bldg-0833": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/018.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, this Queen Anne-style house features a red brick exterior, slate hipped roof, a cylindrical tower with a conical roofat the northwest corner of the building, one-over-one double-hung windows, a semi-circular bay window on the east facade, a porch with wooden columns and a hipped roof ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.6,
+      "mid_x": 325.75,
+      "mid_z": 191.0,
+      "nx": 0.158,
+      "nz": -0.987,
+      "angle": 2.9829
+    }
+  },
+  "bldg-1141": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/031.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1880, this Second Empire-style three-bay townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, gabled dormers, a double front door with decorative wooden panels, and red brick cladding on the side and rear facades.  The building is a contri",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.12,
+      "mid_x": 310.9,
+      "mid_z": 288.8,
+      "nx": -0.172,
+      "nz": 0.985,
+      "angle": -0.1732
+    }
+  },
+  "bldg-1129": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/021.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, this Queen Anne-style house features a red brick exterior, slate hipped roof, a cylindrical tower with a conical roofat the northwest corner of the building, one-over-one double-hung windows, a semi-circular bay window on the east facade, a porch with wooden columns and a hipped roof ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.3,
+      "mid_x": 318.1,
+      "mid_z": 223.0,
+      "nx": -0.164,
+      "nz": 0.986,
+      "angle": -0.1651
+    }
+  },
+  "bldg-1142": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/025.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style three-bay townhouse features a painted brick exterior with a mansard roof, arched one-over-one windows, a recessed entrance behind an arched opening, and a bracketed cornice.  The building is a contributing structure in the Lafayette Square Historic District, ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.26,
+      "mid_x": 301.3,
+      "mid_z": 293.0,
+      "nx": -0.152,
+      "nz": 0.988,
+      "angle": -0.1526
+    }
+  },
+  "bldg-1128": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/026.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style townhouse features a stone-clad front facade, red brick cladding on the side and rear facades, a slate mansard roof with dormers, bay windows on the east facades, a recessed front door, one-over-one windows, and decorative trim on the front facade.  The buildi",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.69,
+      "mid_x": 308.3,
+      "mid_z": 222.1,
+      "nx": -0.156,
+      "nz": 0.988,
+      "angle": -0.1566
+    }
+  },
+  "bldg-1143": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/030.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style townhouse features a stone-clad front facade and red brick-clad side and rear facades, one-over-one double-hung windows, a slate mansard roof with gabled dormers, a cornice with brackets and dentils, a rough-hewn stone base, a double front door with decorative",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.26,
+      "mid_x": 296.1,
+      "mid_z": 292.2,
+      "nx": -0.152,
+      "nz": 0.988,
+      "angle": -0.1526
+    }
+  },
+  "bldg-1127": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/090.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style buildings feature red brick exteriors, mansard roofs, bracketed cornices, one-over-one double-hung windows, and first floor retail shopfronts with plate glass windows, transoms, and decorative cast iron piers.  The buildings are contributing structures in the",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.79,
+      "mid_x": 300.05,
+      "mid_z": 220.65,
+      "nx": -0.162,
+      "nz": 0.987,
+      "angle": -0.1627
+    }
+  },
+  "bldg-1145": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/037.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style three-bay townhouse features a stone-clad front facade with red brick cladding at the side and rear facades, one-over-one replacement windows, a cornice with modillions, a slate mansard roof, gabled dormers, and a double front door.  The building is a contribu",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.26,
+      "mid_x": 289.5,
+      "mid_z": 272.0,
+      "nx": 0.152,
+      "nz": -0.988,
+      "angle": 2.9889
+    }
+  },
+  "bldg-1144": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/038.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style three-bay townhouse features a painted brick exterior with a mansard roof, arched one-over-one windows, a recessed entrance behind an arched opening, and a bracketed cornice.  The building is a contributing structure in the Lafayette Square Historic District, ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.26,
+      "mid_x": 281.3,
+      "mid_z": 289.6,
+      "nx": -0.152,
+      "nz": 0.988,
+      "angle": -0.1526
+    }
+  },
+  "bldg-1125": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/054.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style three-bay townhouse features a stone-clad front facade with red brick cladding at the side and rear facades, one-over-one double-hung windows, a bracketed cornice, a slate mansard roof, a hipped dormer, and a double front door with decorative wooden paneling. ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.89,
+      "mid_x": 290.6,
+      "mid_z": 219.35,
+      "nx": -0.16,
+      "nz": 0.987,
+      "angle": -0.1604
+    }
+  },
+  "bldg-1126": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/055.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style three-bay townhouse features a painted brick exterior with a mansard roof, gabled dormers, arched two-over-two windows, a recessed entrance behind an arched opening, and a bracketed cornice.  The building is a contributing structure in the Lafayette Square His",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.47,
+      "mid_x": 283.6,
+      "mid_z": 217.95,
+      "nx": -0.164,
+      "nz": 0.986,
+      "angle": -0.1651
+    }
+  },
+  "bldg-1124": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/040.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.18,
+      "mid_x": 277.15,
+      "mid_z": 264.0,
+      "nx": 0.162,
+      "nz": -0.987,
+      "angle": 2.9791
+    }
+  },
+  "bldg-1123": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/041.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 4.96,
+      "mid_x": 266.95,
+      "mid_z": 281.2,
+      "nx": -0.161,
+      "nz": 0.987,
+      "angle": -0.1618
+    }
+  },
+  "bldg-1119": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/056.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style three-bay townhouse features a red brick exterior, one-over-one windows, a slab mansard roof, a recessed front entrance behind an arched opening, and a simple cornice.  The building is a contributing structure in the Lafayette Square Historic District, listed ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.61,
+      "mid_x": 275.85,
+      "mid_z": 216.75,
+      "nx": -0.171,
+      "nz": 0.985,
+      "angle": -0.1716
+    }
+  },
+  "bldg-1120": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/042.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.26,
+      "mid_x": 265.0,
+      "mid_z": 262.0,
+      "nx": 0.152,
+      "nz": -0.988,
+      "angle": 2.9889
+    }
+  },
+  "bldg-0842": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/057.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style townhouse features a red brick exterior, slate mansard roof with gabled dormers, a bracketed cornice, one-over-one double-hung windows, a one-story bay window at the first floor of the front facade, a double front door with decorative wooden panels, and a rust",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.49,
+      "mid_x": 273.4,
+      "mid_z": 183.15,
+      "nx": 0.169,
+      "nz": -0.986,
+      "angle": 2.9714
+    }
+  },
+  "bldg-1121": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/045.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.69,
+      "mid_x": 259.6,
+      "mid_z": 261.1,
+      "nx": 0.176,
+      "nz": -0.984,
+      "angle": 2.9649
+    }
+  },
+  "bldg-1118": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/059.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, this Second Empire-style townhouse features a stone-clad front facade and red brick-clad side and rear facades, one-over-one double-hung windows, a slate mansard roof with gabled dormers, a cornice with brackets and dentils, a rough-hewn stone base, a double front door with decorative",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.2,
+      "mid_x": 261.05,
+      "mid_z": 212.75,
+      "nx": -0.158,
+      "nz": 0.987,
+      "angle": -0.1591
+    }
+  },
+  "bldg-1122": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/058.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire-style townhouse features a red brick exterior, arched Queen Anne-style double-hung windows, a slate mansard roof with gabled dormers, a cornice with brackets and modillions, a rusticated base, a balcony with decorative brackets at the center of the front facade of t",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.51,
+      "mid_x": 253.6,
+      "mid_z": 260.0,
+      "nx": 0.184,
+      "nz": -0.983,
+      "angle": 2.9562
+    }
+  },
+  "bldg-0843": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/069.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.0,
+      "mid_x": 257.85,
+      "mid_z": 186.85,
+      "nx": -0.183,
+      "nz": 0.983,
+      "angle": -0.1843
+    }
+  },
+  "bldg-1117": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/070.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.34,
+      "mid_x": 247.5,
+      "mid_z": 211.15,
+      "nx": -0.18,
+      "nz": 0.984,
+      "angle": -0.1809
+    }
+  },
+  "bldg-0844": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/094.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, these vernacular twin duplexes feature red brick exteriors, decorative brick corbeling, arched one-over-one double-hung windows, two-story bay windows on the side facades, hipped roofs, and a rough-hewn stone base.  The buildings are contributing structures in the Lafayette Square His",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.91,
+      "mid_x": 238.1,
+      "mid_z": 209.3,
+      "nx": -0.174,
+      "nz": 0.985,
+      "angle": -0.1747
+    }
+  },
+  "bldg-0845": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/095.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, these vernacular twin duplexes feature red brick exteriors, decorative brick corbeling, arched one-over-one double-hung windows, two-story bay windows on the side facades, hipped roofs, and a rough-hewn stone base.  The buildings are contributing structures in the Lafayette Square His",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.08,
+      "mid_x": 230.7,
+      "mid_z": 208.0,
+      "nx": -0.164,
+      "nz": 0.986,
+      "angle": -0.1651
+    }
+  },
+  "bldg-0846": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/099.jpg",
+    "confidence": 0.9,
+    "description": "Built in 2016, this Italianate-style three-bay townhouse features a red brick exterior, one-over-one windows, a bracketed cornice, decorative window headers and sills, and a front stoop.  The building is an example of the neotraditional infill development from the late 20th Century and early 21st Ce",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 7.41,
+      "mid_x": 222.35,
+      "mid_z": 177.85,
+      "nx": 0.175,
+      "nz": -0.985,
+      "angle": 2.9654
+    }
+  },
+  "bldg-0992": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/032.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1880, this Second Empire-style three-bay townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, gabled dormers, a double front door with decorative wooden panels, and red brick cladding on the side and rear facades.  The building is a contri",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 9.52,
+      "mid_x": 129.4,
+      "mid_z": 262.35,
+      "nx": -0.158,
+      "nz": 0.988,
+      "angle": -0.1582
+    }
+  },
+  "bldg-0993": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/036.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1880, this Italianate-style house features a stone-clad front facade, red brick cladding on the side and rear facades, a hipped roof with a bracketed cornice, one-over-one double-hung windows, a two-story bay window on the east facade, and a double front door with decorative wooden paneling",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.69,
+      "mid_x": 122.3,
+      "mid_z": 238.45,
+      "nx": 0.164,
+      "nz": -0.986,
+      "angle": 2.9764
+    }
+  },
+  "bldg-0991": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/072.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1885, these Second Empire-style rowhouses feature a stone-clad front facade, red brick side and rear facades, replacement windows, decorative trim, including pilasters, engaged columns, festoons, and corbels, transoms, arched bays on the first floor, recessed front doors, a slate mansard ro",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.68,
+      "mid_x": 111.8,
+      "mid_z": 235.5,
+      "nx": 0.138,
+      "nz": -0.99,
+      "angle": 3.003
+    }
+  },
+  "bldg-1018": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/049.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1870, this Second Empire-style three-bay townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, gabled dormers, a double front door with decorative wooden panels, a two-story bay window on the east facade, and red brick cladding on the side ",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 11.75,
+      "mid_x": 25.0,
+      "mid_z": 222.05,
+      "nx": 0.162,
+      "nz": -0.987,
+      "angle": 2.9792
+    }
+  },
+  "bldg-1017": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/007.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1914, these twin Classical Revival-style apartment buildings feature red brick exteriors, rough-hewn stone bases, nine-over-one, six-over-one, and one-over-one windows, sun porches on the front facades, bracketed cornices with modillions, stone trim, doors with pointed headers, bay windows ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 14.93,
+      "mid_x": 2.65,
+      "mid_z": 242.2,
+      "nx": -0.174,
+      "nz": 0.985,
+      "angle": -0.1751
+    }
+  },
+  "bldg-1016": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/008.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1914, these twin Classical Revival-style apartment buildings feature red brick exteriors, rough-hewn stone bases, nine-over-one, six-over-one, and one-over-one windows, sun porches on the front facades, bracketed cornices with modillions, stone trim, doors with pointed headers, bay windows ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 10.14,
+      "mid_x": -11.2,
+      "mid_z": 240.05,
+      "nx": -0.168,
+      "nz": 0.986,
+      "angle": -0.1684
+    }
+  },
+  "bldg-1019": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/048.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1880, this Second Empire-style three-bay townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, gabled dormers, a double front door with decorative wooden panels, a one-story bay window on the east facade, and red brick cladding on the side ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.6,
+      "mid_x": -61.25,
+      "mid_z": 213.05,
+      "nx": 0.151,
+      "nz": -0.989,
+      "angle": 2.9898
+    }
+  },
+  "bldg-1024": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/050.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1870, this Second Empire-style townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, hipped dormers, a double front door with decorative wooden panels, a one-story bay window on the front facade, a two-story bay window on the east facade, a",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 10.04,
+      "mid_x": -81.25,
+      "mid_z": 234.45,
+      "nx": -0.169,
+      "nz": 0.986,
+      "angle": -0.1701
+    }
+  },
+  "bldg-1023": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/080.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1870, this Second Empire-style townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, hipped dormers, a double front door with decorative wooden panels, a one-story bay window on the front facade, a two-story bay window on the east facade, a",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.42,
+      "mid_x": -88.95,
+      "mid_z": 207.4,
+      "nx": 0.166,
+      "nz": -0.986,
+      "angle": 2.9745
+    }
+  },
+  "bldg-1020": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/081.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1870, this Second Empire-style townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, hipped dormers, a double front door with decorative wooden panels, a one-story bay window on the front facade, a two-story bay window on the east facade, a",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.02,
+      "mid_x": -99.75,
+      "mid_z": 206.5,
+      "nx": 0.174,
+      "nz": -0.985,
+      "angle": 2.9662
+    }
+  },
+  "bldg-1022": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/084.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1870, this Second Empire-style townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, hipped dormers, a double front door with decorative wooden panels, a one-story bay window on the front facade, a two-story bay window on the east facade, a",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.5,
+      "mid_x": -110.1,
+      "mid_z": 204.4,
+      "nx": 0.16,
+      "nz": -0.987,
+      "angle": 2.9808
+    }
+  },
+  "bldg-1021": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/113.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1890, this Renaissance Revival-style house features a stone front facade and red brick cladding on the side and rear facades, decorative Renaissance gables at the dormers, a hipped roof, an octagonal tower with a bell-shaped roof and finial, one-over-one double-hung windows, a one-story bay",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 10.97,
+      "mid_x": -126.6,
+      "mid_z": 205.95,
+      "nx": 0.173,
+      "nz": -0.985,
+      "angle": 2.9674
+    }
+  },
+  "bldg-0984": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/053.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1931, this Arts and Crafts-style duplex features a red brick exterior, six-over-one double-hung windows, a bonnet awning with decorative brackets, a front porch with brick piers and a metal railing on the second floor, a rough-hewn stone base and wooden doors on the first and second floors ",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 8.63,
+      "mid_x": -195.35,
+      "mid_z": 208.25,
+      "nx": -0.174,
+      "nz": 0.985,
+      "angle": -0.1747
+    }
+  },
+  "bldg-1036": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/091.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style buildings feature red brick exteriors, mansard roofs, bracketed cornices, one-over-one double-hung windows, and first floor retail shopfronts with plate glass windows, transoms, and decorative cast iron piers.  The buildings are contributing structures in the",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 10.21,
+      "mid_x": -212.75,
+      "mid_z": 216.75,
+      "nx": -0.147,
+      "nz": 0.989,
+      "angle": -0.1474
+    }
+  },
+  "bldg-1037": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/093.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, this Queen Anne-style townhouse features a red brick exterior with a hipped roof, arched one-over-one double-hung windows on the ground floor, a rough-hewn stone base, triple one-over-one double-hung windows on the second floor of the front facade, stone trim, a cornice with corbels, ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.89,
+      "mid_x": -218.0,
+      "mid_z": 240.25,
+      "nx": -0.16,
+      "nz": 0.987,
+      "angle": -0.1604
+    }
+  },
+  "bldg-0983": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/088.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Italianate and Queen Anne-style house features a red brick exterior, stone trim, a hipped roof with front and side gables, decorative brackets, a decorative cornice, one-over-one windows, stone trim, decorative patterned brickwork, a gabled dormer, a front entrance vestibule with",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 13.0,
+      "mid_x": -225.7,
+      "mid_z": 186.65,
+      "nx": 0.177,
+      "nz": -0.984,
+      "angle": 2.9638
+    }
+  },
+  "bldg-0982": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/114.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1890, this Renaissance Revival-style house features a stone front facade and red brick cladding on the side and rear facades, decorative Renaissance gables at the dormers, a hipped roof, an octagonal tower with a bell-shaped roof and finial, one-over-one double-hung windows, a one-story bay",
+    "wall_height": 8.6,
+    "front_edge": {
+      "width": 17.21,
+      "mid_x": -247.9,
+      "mid_z": 181.15,
+      "nx": 0.157,
+      "nz": -0.988,
+      "angle": 2.9841
+    }
+  },
+  "bldg-0976": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/061.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1880, this Second Empire-style three-bay townhouse features a stone-clad front facade, a slate mansard roof, one-over-one windows, a bracketed and paneled cornice, gabled dormers, a double front door with decorative wooden panels, and red brick cladding on the side and rear facades.  The bu",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.51,
+      "mid_x": -298.9,
+      "mid_z": 97.15,
+      "nx": 0.2,
+      "nz": -0.98,
+      "angle": 2.9406
+    }
+  },
+  "bldg-1159": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/009.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1914, these twin Classical Revival-style apartment buildings feature red brick exteriors, rough-hewn stone bases, nine-over-one, six-over-one, and one-over-one windows, sun porches on the front facades, bracketed cornices with modillions, stone trim, doors with pointed headers, bay windows ",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 7.38,
+      "mid_x": 464.15,
+      "mid_z": 226.85,
+      "nx": -0.149,
+      "nz": 0.989,
+      "angle": -0.1496
+    }
+  },
+  "bldg-1150": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/010.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1914, these twin Classical Revival-style apartment buildings feature red brick exteriors, rough-hewn stone bases, nine-over-one, six-over-one, and one-over-one windows, sun porches on the front facades, bracketed cornices with modillions, stone trim, doors with pointed headers, bay windows ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.26,
+      "mid_x": 456.5,
+      "mid_z": 247.2,
+      "nx": -0.152,
+      "nz": 0.988,
+      "angle": -0.1526
+    }
+  },
+  "bldg-1155": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/011.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1914, these twin Classical Revival-style apartment buildings feature red brick exteriors, rough-hewn stone bases, nine-over-one, six-over-one, and one-over-one windows, sun porches on the front facades, bracketed cornices with modillions, stone trim, doors with pointed headers, bay windows ",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 4.55,
+      "mid_x": 458.65,
+      "mid_z": 215.55,
+      "nx": 0.154,
+      "nz": -0.988,
+      "angle": 2.9873
+    }
+  },
+  "bldg-0981": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/001.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1896 and heavily renovated and expanded in 1926, this Gothic Revival-style building was constructed to house the congregation of Lafayette Park Baptist Church, replacing an earlier building that was destroyed by the 1896 St. Louis-East St. Louis Tornado.  The building features a red brick e",
+    "wall_height": 18,
+    "front_edge": {
+      "width": 28.28,
+      "mid_x": -296.55,
+      "mid_z": 212.8,
+      "nx": -0.163,
+      "nz": 0.987,
+      "angle": -0.1634
+    }
+  },
+  "bldg-1162": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/002.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1896 and heavily renovated and expanded in 1926, this Gothic Revival-style building was constructed to house the congregation of Lafayette Park Baptist Church, replacing an earlier building that was destroyed by the 1896 St. Louis-East St. Louis Tornado.  The building features a red brick e",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 23.03,
+      "mid_x": 600.55,
+      "mid_z": 311.95,
+      "nx": 0.169,
+      "nz": -0.986,
+      "angle": 2.9714
+    }
+  },
+  "bldg-1138": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/022.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1914, this Commercial-style building features a red brick exterior, a crenellated parapet with a terra cotta cap, two large bays with large windows, and a low-slope roof behind the parapet.  The building is a contributing structure in the Lafayette Square Historic District, listed on the Na",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.61,
+      "mid_x": 391.55,
+      "mid_z": 239.55,
+      "nx": -0.171,
+      "nz": 0.985,
+      "angle": -0.1716
+    }
+  },
+  "bldg-1137": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/017.jpg",
+    "confidence": 0.5,
+    "description": "Built in the early 20th Century, these buildings feature red brick exteriors, decorative parapets, one-over-one windows, and relatively simple ornament and trim, with the one-story building along Lafayette Avenue being home to a restaurant, and the rear building housing apartments.  The buildings ar",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.32,
+      "mid_x": 384.2,
+      "mid_z": 238.25,
+      "nx": -0.178,
+      "nz": 0.984,
+      "angle": -0.1786
+    }
+  },
+  "bldg-0824": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/033.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1877, this Gothic Revival and Italianate-style house features a stone-clad front facade, red brick-clad side and rear facades, one-over-one windows, gothic arched panels above the windows on the first floor, a double front door with decorative wooden paneling and a gothic arched transom, a ",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.59,
+      "mid_x": 349.65,
+      "mid_z": 202.6,
+      "nx": -0.179,
+      "nz": 0.984,
+      "angle": -0.1799
+    }
+  },
+  "bldg-0825": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/034.jpg",
+    "confidence": 0.5,
+    "description": "Built in the late 19th Century, these Second Empire-style townhouses are nearly identical, and feature stone-clad front facades, mansard roofs, one-over-one windows, bracketed cornices, hipped dormers, double front doors with decorative wooden panels, one-story bay windows on the front facades, two-",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.48,
+      "mid_x": 340.4,
+      "mid_z": 201.1,
+      "nx": -0.154,
+      "nz": 0.988,
+      "angle": -0.155
+    }
+  },
+  "bldg-1131": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/039.jpg",
+    "confidence": 0.5,
+    "description": "Built in the 19th Century and 20th Century, these buildings demonstrate the general character, variety of housing types, architectural styles, and materials that can be found throughout the historic Lafayette Square neighborhood.  Most of the buildings are contributing structures in the Lafayette Sq",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.18,
+      "mid_x": 335.65,
+      "mid_z": 230.3,
+      "nx": -0.162,
+      "nz": 0.987,
+      "angle": -0.1625
+    }
+  },
+  "bldg-1116": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/073.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1880, this Second Empire-style three-bay townhouse features a stone-clad front facade, a slate mansard roof, one-over-one windows, a bracketed and paneled cornice, gabled dormers, a double front door with decorative wooden panels, and red brick cladding on the side and rear facades.  The bu",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.4,
+      "mid_x": 216.05,
+      "mid_z": 194.45,
+      "nx": 0.155,
+      "nz": -0.988,
+      "angle": 2.9862
+    }
+  },
+  "bldg-1115": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/074.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1880, this Second Empire-style three-bay townhouse features a stone-clad front facade, a slate mansard roof, one-over-one windows, a bracketed and paneled cornice, gabled dormers, a double front door with decorative wooden panels, and red brick cladding on the side and rear facades.  The bu",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 33.69,
+      "mid_x": 207.3,
+      "mid_z": 298.05,
+      "nx": -0.169,
+      "nz": 0.986,
+      "angle": -0.17
+    }
+  },
+  "bldg-1114": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/075.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1880, this Second Empire-style three-bay townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, gabled dormers, a double front door with decorative wooden panels, and red brick cladding on the side and rear facades.  The building is a contri",
+    "wall_height": 18,
+    "front_edge": {
+      "width": 13.69,
+      "mid_x": 178.15,
+      "mid_z": 279.25,
+      "nx": -0.168,
+      "nz": 0.986,
+      "angle": -0.1688
+    }
+  },
+  "bldg-0988": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/082.jpg",
+    "confidence": 0.5,
+    "description": "Built in the late 19th Century, these Second Empire-style townhouses are nearly identical, and feature stone-clad front facades, mansard roofs, one-over-one windows, bracketed cornices, hipped dormers, double front doors with decorative wooden panels, one-story bay windows on the front facades, two-",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 12.15,
+      "mid_x": 85.4,
+      "mid_z": 242.35,
+      "nx": -0.156,
+      "nz": 0.988,
+      "angle": -0.157
+    }
+  },
+  "bldg-0989": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/083.jpg",
+    "confidence": 0.5,
+    "description": "Built in the late 19th Century, these Second Empire-style townhouses are nearly identical, and feature stone-clad front facades, mansard roofs, one-over-one windows, bracketed cornices, hipped dormers, double front doors with decorative wooden panels, one-story bay windows on the front facades, two-",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 10.52,
+      "mid_x": 56.7,
+      "mid_z": 230.7,
+      "nx": 0.152,
+      "nz": -0.988,
+      "angle": 2.9889
+    }
+  },
+  "bldg-1015": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/085.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1870, this Second Empire-style townhouse features a stone-clad front facade, a mansard roof, one-over-one windows, a bracketed cornice, hipped dormers, a double front door with decorative wooden panels, a one-story bay window on the front facade, a two-story bay window on the east facade, a",
+    "wall_height": 4.9,
+    "front_edge": {
+      "width": 10.52,
+      "mid_x": 31.7,
+      "mid_z": 270.9,
+      "nx": -0.152,
+      "nz": 0.988,
+      "angle": -0.1526
+    }
+  },
+  "bldg-0924": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/087.jpg",
+    "confidence": 0.5,
+    "description": "Built in 1880, this Italianate-style three-bay townhouse features a stone front facade and red brick cladding on the side and rear facades, a rough-hewn stone base, a two-story rear ell, one-over-one double-hung windows, arched windows on the front facade, a double front door with decorative wooden ",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 11.63,
+      "mid_x": 48.2,
+      "mid_z": -4.65,
+      "nx": -0.198,
+      "nz": 0.98,
+      "angle": -0.1991
+    }
+  },
+  "bldg-1008": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/089.jpg",
+    "confidence": 0.5,
+    "description": "Built in the 1880s, these Second Empire-style three-bay townhouses feature stone-clad front facades and red brick-clad exteriors, one-over-one double-hung windows, bracketed cornices, mansard roofs, and gabled dormers.  The buildings are contributing structures in the Lafayette Square Historic Distr",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.07,
+      "mid_x": 1.5,
+      "mid_z": 277.75,
+      "nx": 0.148,
+      "nz": -0.989,
+      "angle": 2.9927
+    }
+  },
+  "bldg-0972": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/112.jpg",
+    "confidence": 0.5,
+    "description": "St. Louis, Missouri",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 16.31,
+      "mid_x": -293.55,
+      "mid_z": 65.3,
+      "nx": 0.159,
+      "nz": -0.987,
+      "angle": 2.9815
+    }
+  },
+  "bldg-0973": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/115.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1890, this Renaissance Revival-style house features a stone front facade and red brick cladding on the side and rear facades, decorative Renaissance gables at the dormers, a hipped roof, an octagonal tower with a bell-shaped roof and finial, one-over-one double-hung windows, a one-story bay",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 15.31,
+      "mid_x": -311.55,
+      "mid_z": 71.45,
+      "nx": -0.163,
+      "nz": 0.987,
+      "angle": -0.1641
+    }
+  },
+  "bldg-1575": {
+    "image": "/public/photos/lafayette-square/lafayette-ave/117.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1890, this Renaissance Revival-style house features a stone front facade and red brick cladding on the side and rear facades, decorative Renaissance gables at the dormers, a hipped roof, an octagonal tower with a bell-shaped roof and finial, one-over-one double-hung windows, a one-story bay",
+    "wall_height": 18.5,
+    "front_edge": {
+      "width": 35.36,
+      "mid_x": -347.45,
+      "mid_z": 113.65,
+      "nx": -0.161,
+      "nz": 0.987,
+      "angle": -0.1619
+    }
+  },
+  "bldg-0049": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/009.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 5.77,
+      "mid_x": 349.2,
+      "mid_z": -499.7,
+      "nx": -0.97,
+      "nz": -0.243,
+      "angle": -1.8158
+    }
+  },
+  "bldg-0048": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/010.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, this Italianate-style three-bay townhouse features a stone front facade, red brick side and rear facades, one-over-one double-hung windows, a bracketed cornice, and a double front door with wooden paneling and an arched transom.  The building is a contributing structure in the Lafayet",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 5.87,
+      "mid_x": 335.1,
+      "mid_z": -491.85,
+      "nx": -0.971,
+      "nz": -0.239,
+      "angle": -1.8116
+    }
+  },
+  "bldg-0071": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/003.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1886, this Second Empire-style three-bay townhouse features a stone-clad front facade, a slate mansard roof, one-over-one windows, a bracketed and paneled cornice, gabled dormers, a double front door with decorative wooden panels, and red brick cladding on the side and rear facades.  The bu",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.48,
+      "mid_x": 331.65,
+      "mid_z": -471.35,
+      "nx": -0.973,
+      "nz": -0.232,
+      "angle": -1.8045
+    }
+  },
+  "bldg-0463": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/017.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1904, this Romanesque Revival-style townhouse features a red brick exterior, a parapet with a central gable, one-over-one double-hung windows, a front porch with a hipped roof and doric columns, a rough-hewn stone base, and decorative brick corbeling.  The building is a contributing structu",
+    "wall_height": 18.5,
+    "front_edge": {
+      "width": 140.42,
+      "mid_x": 207.4,
+      "mid_z": -387.2,
+      "nx": -0.303,
+      "nz": 0.953,
+      "angle": -0.3082
+    }
+  },
+  "bldg-0467": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/023.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1984, these Neotraditional-style rowhouses feature a stucco-clad front facade, mansard roof, dormers with arched pediments, a bracketed cornice, one-over-one windows with decorative trim, and brick side facades.  The building is an example of the neotraditional infill development from the l",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 23.16,
+      "mid_x": 265.05,
+      "mid_z": -333.5,
+      "nx": 0.967,
+      "nz": 0.255,
+      "angle": 1.3133
+    }
+  },
+  "bldg-0446": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/030.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Italianate-style two-bay townhouse features a red brick exterior, arched one-over-one double-hung windows, a hipped roof, a paneled cornice, a side porch, and a rough-hewn stone base.  The building is a contributing structure in the Lafayette Square Historic District, listed on t",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.48,
+      "mid_x": 257.15,
+      "mid_z": -304.5,
+      "nx": 0.956,
+      "nz": 0.293,
+      "angle": 1.2734
+    }
+  },
+  "bldg-0447": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/065.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Italianate-style two-bay townhouse features a red brick exterior, arched one-over-one double-hung windows, a hipped roof, a paneled cornice, a side porch, and a rough-hewn stone base.  The building is a contributing structure in the Lafayette Square Historic District, listed on t",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.39,
+      "mid_x": 238.95,
+      "mid_z": -302.05,
+      "nx": -0.955,
+      "nz": -0.297,
+      "angle": -1.8727
+    }
+  },
+  "bldg-0442": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/079.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.39,
+      "mid_x": 236.95,
+      "mid_z": -294.75,
+      "nx": -0.955,
+      "nz": -0.297,
+      "angle": -1.8727
+    }
+  },
+  "bldg-0444": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/081.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 6.51,
+      "mid_x": 234.6,
+      "mid_z": -287.5,
+      "nx": -0.952,
+      "nz": -0.307,
+      "angle": -1.8828
+    }
+  },
+  "bldg-0443": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/082.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 6.26,
+      "mid_x": 248.7,
+      "mid_z": -275.2,
+      "nx": 0.958,
+      "nz": 0.287,
+      "angle": 1.2793
+    }
+  },
+  "bldg-0408": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/024.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1984, these Neotraditional-style rowhouses feature a stucco-clad front facade, mansard roof, dormers with arched pediments, a bracketed cornice, one-over-one windows with decorative trim, and brick side facades.  The building is an example of the neotraditional infill development from the l",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 4.71,
+      "mid_x": 271.2,
+      "mid_z": -240.85,
+      "nx": -0.955,
+      "nz": -0.297,
+      "angle": -1.8724
+    }
+  },
+  "bldg-0412": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/026.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1984, these Neotraditional-style rowhouses feature a stucco-clad front facade, mansard roof, dormers with arched pediments, a bracketed cornice, one-over-one windows with decorative trim, and brick side facades.  The building is an example of the neotraditional infill development from the l",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 4.68,
+      "mid_x": 280.95,
+      "mid_z": -232.85,
+      "nx": 0.961,
+      "nz": 0.278,
+      "angle": 1.2896
+    }
+  },
+  "bldg-0407": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/028.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1984, these Neotraditional-style rowhouses feature a stucco-clad front facade, mansard roof, dormers with arched pediments, a bracketed cornice, one-over-one windows with decorative trim, and brick side facades.  The building is an example of the neotraditional infill development from the l",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.35,
+      "mid_x": 284.7,
+      "mid_z": -219.95,
+      "nx": -0.954,
+      "nz": -0.299,
+      "angle": -1.8748
+    }
+  },
+  "bldg-0413": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/029.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1984, these Neotraditional-style rowhouses feature a stucco-clad front facade, mansard roof, dormers with arched pediments, a bracketed cornice, one-over-one windows with decorative trim, and brick side facades.  The building is an example of the neotraditional infill development from the l",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 4.74,
+      "mid_x": 268.35,
+      "mid_z": -231.85,
+      "nx": -0.949,
+      "nz": -0.316,
+      "angle": -1.8925
+    }
+  },
+  "bldg-0414": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/031.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1984, these Neotraditional-style rowhouses feature a stucco-clad front facade, mansard roof, dormers with arched pediments, a bracketed cornice, one-over-one windows with decorative trim, and brick side facades.  The building is an example of the neotraditional infill development from the l",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 4.4,
+      "mid_x": 266.95,
+      "mid_z": -227.5,
+      "nx": -0.955,
+      "nz": -0.296,
+      "angle": -1.871
+    }
+  },
+  "bldg-0415": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/013.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.93,
+      "mid_x": 279.65,
+      "mid_z": -213.6,
+      "nx": 0.953,
+      "nz": 0.303,
+      "angle": 1.2627
+    }
+  },
+  "bldg-0416": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/014.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.42,
+      "mid_x": 281.6,
+      "mid_z": -206.05,
+      "nx": 0.95,
+      "nz": 0.312,
+      "angle": 1.254
+    }
+  },
+  "bldg-0421": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/004.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1886, these twin Second Empire-style three-bay townhouses feature stone-clad front facades, mansard roofs with curved profiles, one-over-one windows, bracketed and paneled cornices, gabled dormers, double front doors with decorative wooden panels, one-story bay windows on the first floor wi",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.7,
+      "mid_x": 256.65,
+      "mid_z": -200.45,
+      "nx": -0.965,
+      "nz": -0.263,
+      "angle": -1.837
+    }
+  },
+  "bldg-0420": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/015.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.14,
+      "mid_x": 255.05,
+      "mid_z": -194.75,
+      "nx": -0.961,
+      "nz": -0.277,
+      "angle": -1.8513
+    }
+  },
+  "bldg-0419": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/016.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.51,
+      "mid_x": 253.45,
+      "mid_z": -189.15,
+      "nx": -0.962,
+      "nz": -0.272,
+      "angle": -1.8466
+    }
+  },
+  "bldg-0378": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/002.jpg",
+    "confidence": 1.0,
+    "description": "Built in 2017, these twin Italianate-style three-bay townhouses feature red brick exteriors, one-over-one windows, bracketed cornices, decorative window headers and sills, and front stoops.  The buildings are examples of the neotraditional infill development from the late 20th Century and early 21st",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 10.23,
+      "mid_x": 270.1,
+      "mid_z": -111.55,
+      "nx": -0.988,
+      "nz": -0.156,
+      "angle": -1.7279
+    }
+  },
+  "bldg-0905": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/022.jpg",
+    "confidence": 0.9,
+    "description": "Built in 2017, these twin Italianate-style three-bay townhouses feature red brick exteriors, one-over-one windows, bracketed cornices, decorative window headers and sills, and front stoops.  The buildings are examples of the neotraditional infill development from the late 20th Century and early 21st",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.91,
+      "mid_x": 274.45,
+      "mid_z": -98.8,
+      "nx": 0.986,
+      "nz": 0.164,
+      "angle": 1.4056
+    }
+  },
+  "bldg-0377": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/039.jpg",
+    "confidence": 1.0,
+    "description": "Built in 2017, these twin Italianate-style three-bay townhouses feature red brick exteriors, one-over-one windows, bracketed cornices, decorative window headers and sills, and front stoops.  The buildings are examples of the neotraditional infill development from the late 20th Century and early 21st",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.61,
+      "mid_x": 239.2,
+      "mid_z": -115.35,
+      "nx": -0.987,
+      "nz": -0.163,
+      "angle": -1.734
+    }
+  },
+  "bldg-0906": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/025.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, these twin Second Empire-style three-bay townhouses feature stone-clad front facades, mansard roofs with curved profiles, one-over-one windows, bracketed and paneled cornices, gabled dormers, double front doors with decorative wooden panels, one-story bay windows on the first floor wi",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 6.18,
+      "mid_x": 265.6,
+      "mid_z": -90.95,
+      "nx": -0.987,
+      "nz": -0.162,
+      "angle": -1.7333
+    }
+  },
+  "bldg-0912": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/042.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, these twin Second Empire-style three-bay townhouses feature stone-clad front facades, mansard roofs with curved profiles, one-over-one windows, bracketed and paneled cornices, gabled dormers, double front doors with decorative wooden panels, one-story bay windows on the first floor wi",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.81,
+      "mid_x": 272.05,
+      "mid_z": -81.15,
+      "nx": 0.986,
+      "nz": 0.166,
+      "angle": 1.4035
+    }
+  },
+  "bldg-0907": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/040.jpg",
+    "confidence": 0.9,
+    "description": "Built in 2017, these twin Italianate-style three-bay townhouses feature red brick exteriors, one-over-one windows, bracketed cornices, decorative window headers and sills, and front stoops.  The buildings are examples of the neotraditional infill development from the late 20th Century and early 21st",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.71,
+      "mid_x": 237.0,
+      "mid_z": -104.0,
+      "nx": -0.987,
+      "nz": -0.161,
+      "angle": -1.7322
+    }
+  },
+  "bldg-0908": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/049.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1886, these twin Second Empire-style three-bay townhouses feature stone-clad front facades, mansard roofs with curved profiles, one-over-one windows, bracketed and paneled cornices, gabled dormers, double front doors with decorative wooden panels, one-story bay windows on the first floor wi",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.28,
+      "mid_x": 235.5,
+      "mid_z": -95.3,
+      "nx": -0.987,
+      "nz": -0.159,
+      "angle": -1.7307
+    }
+  },
+  "bldg-0913": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/083.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.12,
+      "mid_x": 270.75,
+      "mid_z": -73.8,
+      "nx": 0.983,
+      "nz": 0.183,
+      "angle": 1.3872
+    }
+  },
+  "bldg-0909": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/084.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.09,
+      "mid_x": 234.15,
+      "mid_z": -88.0,
+      "nx": -0.988,
+      "nz": -0.155,
+      "angle": -1.7267
+    }
+  },
+  "bldg-0910": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/085.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.77,
+      "mid_x": 233.85,
+      "mid_z": -80.25,
+      "nx": -0.988,
+      "nz": -0.156,
+      "angle": -1.7274
+    }
+  },
+  "bldg-0914": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/086.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.51,
+      "mid_x": 264.6,
+      "mid_z": -58.7,
+      "nx": 0.983,
+      "nz": 0.184,
+      "angle": 1.3854
+    }
+  },
+  "bldg-0911": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/052.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1984, these Neotraditional-style rowhouses feature a stucco-clad front facade, mansard roof, dormers with arched pediments, a bracketed cornice, one-over-one windows with decorative trim, and brick side facades.  The building is an example of the neotraditional infill development from the l",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.17,
+      "mid_x": 232.25,
+      "mid_z": -73.35,
+      "nx": -0.989,
+      "nz": -0.146,
+      "angle": -1.7173
+    }
+  },
+  "bldg-0923": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/066.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1984, these Neotraditional-style rowhouses feature a stucco-clad front facade, mansard roof, dormers with arched pediments, a bracketed cornice, one-over-one windows with decorative trim, and brick side facades.  The building is an example of the neotraditional infill development from the l",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.49,
+      "mid_x": 240.4,
+      "mid_z": -61.0,
+      "nx": 0.983,
+      "nz": 0.182,
+      "angle": 1.3877
+    }
+  },
+  "bldg-0874": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/087.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 4.98,
+      "mid_x": 234.35,
+      "mid_z": -25.15,
+      "nx": -0.984,
+      "nz": -0.181,
+      "angle": -1.7524
+    }
+  },
+  "bldg-0875": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/011.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1895, this Queen Anne-style townhouse features a red brick exterior, cylindrical front tower with a conical roof and finial, slate bonnet roof, a front gable, one-over-one double-hung windows, a hipped front porch with doric columns and a rough-hewn stone base, roman arched transoms above t",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.99,
+      "mid_x": 249.75,
+      "mid_z": -11.55,
+      "nx": -0.988,
+      "nz": -0.157,
+      "angle": -1.7289
+    }
+  },
+  "bldg-0873": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/051.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1895, this Classical Revival-style house features a red brick exterior, red brick trim at the window bays, a rusticated first floor facade, a double front door with decorative wooden panels, one-over-one double-hung windows, a hipped roof with wide overhanging eaves, a hipped dormer, a two-",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 10.13,
+      "mid_x": 221.8,
+      "mid_z": -16.2,
+      "nx": -0.987,
+      "nz": -0.158,
+      "angle": -1.7295
+    }
+  },
+  "bldg-0876": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/018.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, this Italianate-style three-bay townhouse features a stucco-clad front facade with red brick cladding on the side and rear facades, one-over-one double-hung windows with decorative trim, and a low-slope roof obscured behind a parapet.  The building is a contributing structure in the L",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 6.99,
+      "mid_x": 254.75,
+      "mid_z": 1.85,
+      "nx": 0.988,
+      "nz": 0.157,
+      "angle": 1.4127
+    }
+  },
+  "bldg-0871": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/019.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, this Italianate-style three-bay townhouse features a red brick exterior, one-over-one double-hung windows, a bracketed cornice, a contemporary one-story brick garage to the rear, decorative window headers, and a double front door with decorative wooden paneling, a three-story bay wind",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 6.69,
+      "mid_x": 246.35,
+      "mid_z": 9.3,
+      "nx": -0.986,
+      "nz": -0.164,
+      "angle": -1.7359
+    }
+  },
+  "bldg-0872": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/053.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1895, this Classical Revival-style house features a red brick exterior, red brick trim at the window bays, a rusticated first floor facade, a double front door with decorative wooden panels, one-over-one double-hung windows, a hipped roof with wide overhanging eaves, a hipped dormer, a two-",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.27,
+      "mid_x": 221.7,
+      "mid_z": -3.3,
+      "nx": -0.99,
+      "nz": -0.138,
+      "angle": -1.7088
+    }
+  },
+  "bldg-0880": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/032.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.61,
+      "mid_x": 251.95,
+      "mid_z": 19.45,
+      "nx": 0.985,
+      "nz": 0.171,
+      "angle": 1.3992
+    }
+  },
+  "bldg-0870": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/056.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1895, this Queen Anne-style townhouse features a red brick exterior, cylindrical front tower with a conical roof and finial, slate bonnet roof, a front gable, one-over-one double-hung windows, a hipped front porch with doric columns and a rough-hewn stone base, roman arched transoms above t",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.69,
+      "mid_x": 218.7,
+      "mid_z": 4.5,
+      "nx": -0.988,
+      "nz": -0.156,
+      "angle": -1.7274
+    }
+  },
+  "bldg-0881": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/033.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 6.87,
+      "mid_x": 218.4,
+      "mid_z": 13.3,
+      "nx": -0.989,
+      "nz": -0.145,
+      "angle": -1.7168
+    }
+  },
+  "bldg-0882": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/034.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.06,
+      "mid_x": 244.0,
+      "mid_z": 32.8,
+      "nx": -0.987,
+      "nz": -0.158,
+      "angle": -1.7295
+    }
+  },
+  "bldg-0883": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/036.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.79,
+      "mid_x": 215.55,
+      "mid_z": 28.55,
+      "nx": -0.987,
+      "nz": -0.162,
+      "angle": -1.7335
+    }
+  },
+  "bldg-0863": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/037.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, this Italianate-style three-bay townhouse features a red brick exterior, one-over-one double-hung windows, a bracketed cornice, a contemporary one-story brick garage to the rear, decorative window headers, and a double front door with decorative wooden paneling, a three-story bay wind",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.1,
+      "mid_x": 243.0,
+      "mid_z": 48.5,
+      "nx": -0.986,
+      "nz": -0.169,
+      "angle": -1.7406
+    }
+  },
+  "bldg-0884": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/045.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.09,
+      "mid_x": 214.4,
+      "mid_z": 35.9,
+      "nx": -0.989,
+      "nz": -0.148,
+      "angle": -1.7197
+    }
+  },
+  "bldg-0864": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/047.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, this Italianate-style three-bay townhouse features a red brick exterior, one-over-one double-hung windows, a bracketed cornice, a contemporary one-story brick garage to the rear, decorative window headers, and a double front door with decorative wooden paneling, a three-story bay wind",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.06,
+      "mid_x": 240.6,
+      "mid_z": 55.9,
+      "nx": -0.987,
+      "nz": -0.158,
+      "angle": -1.7295
+    }
+  },
+  "bldg-0885": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/054.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.6,
+      "mid_x": 235.6,
+      "mid_z": 47.15,
+      "nx": 0.987,
+      "nz": 0.158,
+      "angle": 1.4121
+    }
+  },
+  "bldg-0865": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/055.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 5,
+    "front_edge": {
+      "width": 7.2,
+      "mid_x": 246.5,
+      "mid_z": 63.95,
+      "nx": 0.986,
+      "nz": 0.167,
+      "angle": 1.4034
+    }
+  },
+  "bldg-0867": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/057.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.09,
+      "mid_x": 234.45,
+      "mid_z": 54.4,
+      "nx": 0.988,
+      "nz": 0.155,
+      "angle": 1.4149
+    }
+  },
+  "bldg-0866": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/058.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 8.12,
+      "mid_x": 210.8,
+      "mid_z": 58.2,
+      "nx": -0.985,
+      "nz": -0.172,
+      "angle": -1.744
+    }
+  },
+  "bldg-0869": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/035.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1911, this Arts and Crafts-style house features a red brick exterior with a hipped roof, a gabled front dormer, three-over-one double-hung windows, a front porch with a front-gable roof featuring half-timbering and brick columns with corinthian columns.  The building is a contributing struc",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 10.62,
+      "mid_x": 221.5,
+      "mid_z": 80.45,
+      "nx": 0.989,
+      "nz": 0.151,
+      "angle": 1.4196
+    }
+  },
+  "bldg-0855": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/059.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.6,
+      "mid_x": 208.0,
+      "mid_z": 88.55,
+      "nx": -0.987,
+      "nz": -0.158,
+      "angle": -1.7295
+    }
+  },
+  "bldg-0852": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/060.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 9.55,
+      "mid_x": 228.15,
+      "mid_z": 108.7,
+      "nx": 0.984,
+      "nz": 0.178,
+      "angle": 1.3919
+    }
+  },
+  "bldg-0851": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/020.jpg",
+    "confidence": 1.0,
+    "description": "Built in 2009, these Neotraditional-style townhouses demonstrate the multiple approaches by developers and architects to copy the existing historic urban fabric of Lafayette Square to build new infill housing, with various details pulled from buildings in the neighborhood, including mansard roofs, b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.2,
+      "mid_x": 217.0,
+      "mid_z": 136.75,
+      "nx": 0.986,
+      "nz": 0.167,
+      "angle": 1.4034
+    }
+  },
+  "bldg-0850": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/021.jpg",
+    "confidence": 0.9,
+    "description": "Built in 2009, these Neotraditional-style townhouses demonstrate the multiple approaches by developers and architects to copy the existing historic urban fabric of Lafayette Square to build new infill housing, with various details pulled from buildings in the neighborhood, including mansard roofs, b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 14.37,
+      "mid_x": 208.1,
+      "mid_z": 155.7,
+      "nx": 0.988,
+      "nz": 0.153,
+      "angle": 1.4171
+    }
+  },
+  "bldg-0848": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/048.jpg",
+    "confidence": 1.0,
+    "description": "Built in 2009, these Neotraditional-style townhouses demonstrate the multiple approaches by developers and architects to copy the existing historic urban fabric of Lafayette Square to build new infill housing, with various details pulled from buildings in the neighborhood, including mansard roofs, b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 20.63,
+      "mid_x": 204.15,
+      "mid_z": 175.3,
+      "nx": 0.989,
+      "nz": 0.15,
+      "angle": 1.42
+    }
+  },
+  "bldg-0849": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/063.jpg",
+    "confidence": 1.0,
+    "description": "Built in 2009, these Neotraditional-style townhouses demonstrate the multiple approaches by developers and architects to copy the existing historic urban fabric of Lafayette Square to build new infill housing, with various details pulled from buildings in the neighborhood, including mansard roofs, b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 15.08,
+      "mid_x": 206.65,
+      "mid_z": 200.85,
+      "nx": 0.988,
+      "nz": 0.153,
+      "angle": 1.4176
+    }
+  },
+  "bldg-0994": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/061.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 5,
+    "front_edge": {
+      "width": 7.42,
+      "mid_x": 137.2,
+      "mid_z": 288.1,
+      "nx": 0.997,
+      "nz": 0.081,
+      "angle": 1.4899
+    }
+  },
+  "bldg-0997": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/069.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 8.22,
+      "mid_x": 145.2,
+      "mid_z": 305.75,
+      "nx": 0.985,
+      "nz": 0.17,
+      "angle": 1.3996
+    }
+  },
+  "bldg-0996": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/071.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 7.2,
+      "mid_x": 118.9,
+      "mid_z": 308.15,
+      "nx": -0.986,
+      "nz": -0.167,
+      "angle": -1.7382
+    }
+  },
+  "bldg-0998": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/072.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.2,
+      "mid_x": 143.0,
+      "mid_z": 321.25,
+      "nx": 0.986,
+      "nz": 0.167,
+      "angle": 1.4034
+    }
+  },
+  "bldg-0999": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/074.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, this Italianate-style three-bay townhouse features a stucco-clad front facade with red brick cladding on the side and rear facades, one-over-one double-hung windows with decorative trim, and a low-slope roof obscured behind a parapet.  The building is a contributing structure in the L",
+    "wall_height": 4.7,
+    "front_edge": {
+      "width": 7.83,
+      "mid_x": 139.4,
+      "mid_z": 337.35,
+      "nx": 0.984,
+      "nz": 0.179,
+      "angle": 1.3909
+    }
+  },
+  "bldg-1000": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/075.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1888, this Italianate-style three-bay townhouse features a red brick exterior, one-over-one double-hung windows, a bracketed cornice, a contemporary one-story brick garage to the rear, decorative window headers, and a double front door with decorative wooden paneling, a three-story bay wind",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 4.85,
+      "mid_x": 114.65,
+      "mid_z": 327.1,
+      "nx": -0.99,
+      "nz": -0.144,
+      "angle": -1.7156
+    }
+  },
+  "bldg-0070": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/041.jpg",
+    "confidence": 0.7,
+    "description": "Built in 2017, these twin Italianate-style three-bay townhouses feature red brick exteriors, one-over-one windows, bracketed cornices, decorative window headers and sills, and front stoops.  The buildings are examples of the neotraditional infill development from the late 20th Century and early 21st",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.94,
+      "mid_x": 330.3,
+      "mid_z": -462.45,
+      "nx": -0.966,
+      "nz": -0.259,
+      "angle": -1.8333
+    }
+  },
+  "bldg-0069": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/088.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.79,
+      "mid_x": 326.95,
+      "mid_z": -454.05,
+      "nx": -0.963,
+      "nz": -0.27,
+      "angle": -1.8438
+    }
+  },
+  "bldg-0073": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/067.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1895, this Classical Revival-style house features a red brick exterior, red brick trim at the window bays, a rusticated first floor facade, a double front door with decorative wooden panels, one-over-one double-hung windows, a hipped roof with wide overhanging eaves, a hipped dormer, a two-",
+    "wall_height": 18.5,
+    "front_edge": {
+      "width": 16.16,
+      "mid_x": 289.15,
+      "mid_z": -416.9,
+      "nx": 0.953,
+      "nz": 0.303,
+      "angle": 1.2627
+    }
+  },
+  "bldg-0464": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/068.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1895, this Queen Anne-style townhouse features a red brick exterior, cylindrical front tower with a conical roof and finial, slate bonnet roof, a front gable, one-over-one double-hung windows, a hipped front porch with doric columns and a rough-hewn stone base, roman arched transoms above t",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 14.83,
+      "mid_x": 218.6,
+      "mid_z": -416.45,
+      "nx": -0.951,
+      "nz": -0.31,
+      "angle": -1.8862
+    }
+  },
+  "bldg-0856": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/078.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1908, this Second Empire-style building features a red brick exterior, arched one-over-one windows, a slate mansard roof, gabled dormers, a ground floor retail shopfront with a corner brick piers, and a one-story rear annex housing multiple retail shopfronts.  The building is a contributing",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.4,
+      "mid_x": 243.05,
+      "mid_z": 72.05,
+      "nx": 0.985,
+      "nz": 0.172,
+      "angle": 1.3979
+    }
+  },
+  "bldg-0868": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/080.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1908, this Second Empire-style building features a red brick exterior, arched one-over-one windows, a slate mansard roof, gabled dormers, a ground floor retail shopfront with a corner brick piers, and a one-story rear annex housing multiple retail shopfronts.  The building is a contributing",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 9.12,
+      "mid_x": 209.75,
+      "mid_z": 67.8,
+      "nx": -0.986,
+      "nz": -0.164,
+      "angle": -1.7359
+    }
+  },
+  "bldg-1113": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/077.jpg",
+    "confidence": 0.7,
+    "description": "Built in 1888, these Second Empire-style three-bay townhouses feature stone front facades and red brick side and rear facades, hipped roof with curved profiles, gabled dormers one-over-one windows, bracketed cornices, double front doors with decorative wooden paneling, and some iron cresting.  The b",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 12.79,
+      "mid_x": 167.7,
+      "mid_z": 310.0,
+      "nx": -0.985,
+      "nz": -0.172,
+      "angle": -1.7437
+    }
+  },
+  "bldg-0054": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/001.jpg",
+    "confidence": 0.5,
+    "description": "Built in the 19th Century, these buildings demonstrate the general character, variety of housing types, architectural styles, and materials that can be found throughout the historic Lafayette Square neighborhood.  The buildings are contributing structures in the Lafayette Square Historic District, l",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 6.82,
+      "mid_x": 334.25,
+      "mid_z": -480.7,
+      "nx": -0.968,
+      "nz": -0.249,
+      "angle": -1.8229
+    }
+  },
+  "bldg-0076": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/007.jpg",
+    "confidence": 0.5,
+    "description": "Built in the late 19th Century, these houses feature red brick exteriors, roman arched window bays, one-over-one double-hung windows, front porches, and decorative patterned brickwork.  The buildings are contributing structures in the Lafayette Square Historic District, listed on the National Regist",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 37.23,
+      "mid_x": 250.65,
+      "mid_z": -490.5,
+      "nx": -0.967,
+      "nz": -0.255,
+      "angle": -1.8288
+    }
+  },
+  "bldg-0075": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/008.jpg",
+    "confidence": 0.5,
+    "description": "Built in the late 19th Century, these houses feature red brick exteriors, roman arched window bays, one-over-one double-hung windows, front porches, and decorative patterned brickwork.  The buildings are contributing structures in the Lafayette Square Historic District, listed on the National Regist",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 37.57,
+      "mid_x": 225.55,
+      "mid_z": -497.15,
+      "nx": -0.966,
+      "nz": -0.258,
+      "angle": -1.8319
+    }
+  },
+  "bldg-0074": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/006.jpg",
+    "confidence": 0.5,
+    "description": "Built in the late 19th Century, these houses feature red brick exteriors, roman arched window bays, one-over-one double-hung windows, front porches, and decorative patterned brickwork.  The buildings are contributing structures in the Lafayette Square Historic District, listed on the National Regist",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 36.68,
+      "mid_x": 213.8,
+      "mid_z": -500.2,
+      "nx": -0.965,
+      "nz": -0.262,
+      "angle": -1.8356
+    }
+  },
+  "bldg-0922": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/046.jpg",
+    "confidence": 0.5,
+    "description": "Built in the early 20th Century, these houses feature red brick exteriors, double-hung windows, front porches, and prominently placed front doors.  The buildings are contributing structures in the Lafayette Square Historic District, listed on the National Register of Historic Places in 1972.",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.57,
+      "mid_x": 231.75,
+      "mid_z": -56.95,
+      "nx": -0.987,
+      "nz": -0.161,
+      "angle": -1.733
+    }
+  },
+  "bldg-0917": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/044.jpg",
+    "confidence": 0.5,
+    "description": "Built in the late 19th Century, these houses feature red brick exteriors, roman arched window bays, one-over-one double-hung windows, front porches, and decorative patterned brickwork.  The buildings are contributing structures in the Lafayette Square Historic District, listed on the National Regist",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 4.88,
+      "mid_x": 260.75,
+      "mid_z": -36.2,
+      "nx": 0.983,
+      "nz": 0.184,
+      "angle": 1.3854
+    }
+  },
+  "bldg-0921": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/050.jpg",
+    "confidence": 0.5,
+    "description": "Built in the 19th Century, 20th Century, and 21st Century, these buildings demonstrate the general character, variety of housing types, architectural styles, and materials that can be found throughout the historic Lafayette Square neighborhood.  Most of the buildings are contributing structures in t",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 4.79,
+      "mid_x": 230.85,
+      "mid_z": -51.85,
+      "nx": -0.982,
+      "nz": -0.188,
+      "angle": -1.76
+    }
+  },
+  "bldg-0916": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/043.jpg",
+    "confidence": 0.5,
+    "description": "Built in the 19th Century, 20th Century, and 21st Century, these buildings demonstrate the general character, variety of housing types, architectural styles, and materials that can be found throughout the historic Lafayette Square neighborhood.  Most of the buildings are contributing structures in t",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.51,
+      "mid_x": 253.7,
+      "mid_z": -29.7,
+      "nx": -0.983,
+      "nz": -0.184,
+      "angle": -1.7561
+    }
+  },
+  "bldg-0918": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/038.jpg",
+    "confidence": 0.5,
+    "description": "Built in the early 20th Century, these houses feature red brick exteriors, double-hung windows, front porches, and prominently placed front doors.  The buildings are contributing structures in the Lafayette Square Historic District, listed on the National Register of Historic Places in 1972.",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.4,
+      "mid_x": 229.85,
+      "mid_z": -46.35,
+      "nx": -0.985,
+      "nz": -0.172,
+      "angle": -1.7437
+    }
+  },
+  "bldg-0920": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/062.jpg",
+    "confidence": 0.5,
+    "description": "Built in the 19th Century and 20th Century, these buildings demonstrate the general character, variety of housing types, architectural styles, and materials that can be found throughout the historic Lafayette Square neighborhood.  Most of the buildings are contributing structures in the Lafayette Sq",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.28,
+      "mid_x": 228.85,
+      "mid_z": -40.6,
+      "nx": -0.985,
+      "nz": -0.171,
+      "angle": -1.7422
+    }
+  },
+  "bldg-0919": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/064.jpg",
+    "confidence": 0.5,
+    "description": "Built in the 19th Century, 20th Century, and 21st Century, these buildings demonstrate the general character, variety of housing types, architectural styles, and materials that can be found throughout the historic Lafayette Square neighborhood.  Most of the buildings are contributing structures in t",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.28,
+      "mid_x": 227.95,
+      "mid_z": -35.4,
+      "nx": -0.985,
+      "nz": -0.171,
+      "angle": -1.7422
+    }
+  },
+  "bldg-1103": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/089.jpg",
+    "confidence": 0.4,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.0,
+      "mid_x": 167.4,
+      "mid_z": 321.45,
+      "nx": -0.985,
+      "nz": -0.171,
+      "angle": -1.743
+    }
+  },
+  "bldg-1101": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/090.jpg",
+    "confidence": 0.2,
+    "description": "Built in 1908, this Second Empire-style building features a red brick exterior, arched one-over-one windows, a slate mansard roof, gabled dormers, a ground floor retail shopfront with a corner brick piers, and a one-story rear annex housing multiple retail shopfronts.  The building is a contributing",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 6.79,
+      "mid_x": 189.85,
+      "mid_z": 343.15,
+      "nx": 0.987,
+      "nz": 0.162,
+      "angle": 1.4081
+    }
+  },
+  "bldg-1102": {
+    "image": "/public/photos/lafayette-square/mississippi-ave/091.jpg",
+    "confidence": 0.4,
+    "description": "Built in 1885, this Second Empire and Queen Anne-style mixed-use building features a red brick exterior, a slate mansard roof, gabled dormers, one-over-one double-hung windows with decorative transoms, a chamfered corner, first floor bays with retail shopfronts with plate glass windows and transoms,",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 8.73,
+      "mid_x": 180.95,
+      "mid_z": 344.4,
+      "nx": 0.985,
+      "nz": 0.172,
+      "angle": 1.3981
+    }
+  },
+  "bldg-0150": {
+    "image": "/public/photos/lafayette-square/missouri-ave/001.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1896, this Queen Anne and Romanesque Revival-style mansion was designed by Ernst Janssen.  The house features a red brick exterior, a hipped and gabled roof, a curved facade at the southeast corner of the house, a cylindrical tower with a conical roof at the northeast corner of the house, o",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 8.96,
+      "mid_x": -109.85,
+      "mid_z": -419.7,
+      "nx": 0.96,
+      "nz": 0.279,
+      "angle": 1.2879
+    }
+  },
+  "bldg-0151": {
+    "image": "/public/photos/lafayette-square/missouri-ave/002.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1896, this Queen Anne and Romanesque Revival-style mansion was designed by Ernst Janssen.  The house features a red brick exterior, a hipped and gabled roof, a curved facade at the southeast corner of the house, a cylindrical tower with a conical roof at the northeast corner of the house, o",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 5.73,
+      "mid_x": -114.3,
+      "mid_z": -413.35,
+      "nx": 0.96,
+      "nz": 0.279,
+      "angle": 1.2877
+    }
+  },
+  "bldg-0256": {
+    "image": "/public/photos/lafayette-square/missouri-ave/003.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1881, this Gothic Revival-style church was constructed to house the Lafayette Park Presbyterian Church congregation.  The building features a rough-hewn exterior with gothic arched stained glass and double-hung windows, buttresses at the corners and flanking the window bays, pinnacles at th",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 14.68,
+      "mid_x": -106.4,
+      "mid_z": -386.9,
+      "nx": -0.954,
+      "nz": -0.3,
+      "angle": -1.8753
+    }
+  },
+  "bldg-0351": {
+    "image": "/public/photos/lafayette-square/missouri-ave/004.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1881, this Gothic Revival-style church was constructed to house the Lafayette Park Presbyterian Church congregation.  The building features a rough-hewn exterior with gothic arched stained glass and double-hung windows, buttresses at the corners and flanking the window bays, pinnacles at th",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 7.68,
+      "mid_x": -192.15,
+      "mid_z": -133.3,
+      "nx": 0.99,
+      "nz": 0.143,
+      "angle": 1.4271
+    }
+  },
+  "bldg-0352": {
+    "image": "/public/photos/lafayette-square/missouri-ave/005.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1881, this Gothic Revival-style church was constructed to house the Lafayette Park Presbyterian Church congregation.  The building features a rough-hewn exterior with gothic arched stained glass and double-hung windows, buttresses at the corners and flanking the window bays, pinnacles at th",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 6.59,
+      "mid_x": -194.15,
+      "mid_z": -123.35,
+      "nx": 0.986,
+      "nz": 0.167,
+      "angle": 1.4032
+    }
+  },
+  "bldg-0367": {
+    "image": "/public/photos/lafayette-square/benton-place/001.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style three-bay townhouses feature stone-clad front facades with one-over-one double-hung windows, slate mansard roofs, bracketed cornices with dentils, gabled dormers, double entry doors with decorative wooden panels, and red brick cladding on the side and rear fa",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 13.94,
+      "mid_x": 78.65,
+      "mid_z": -215.8,
+      "nx": -0.186,
+      "nz": 0.982,
+      "angle": -0.1876
+    }
+  },
+  "bldg-0200": {
+    "image": "/public/photos/lafayette-square/benton-place/022.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1889, this Second Empire-style house features a stone-clad front facade with quoins, one-over-one double-hung windows a front portico with ionic columns, a slate mansard roof, gabled dormers, a cornice with modillions and dentils, and red brick cladding on the side and rear facades.  The bu",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 8.38,
+      "mid_x": 17.3,
+      "mid_z": -264.95,
+      "nx": 0.298,
+      "nz": -0.954,
+      "angle": 2.8387
+    }
+  },
+  "bldg-0199": {
+    "image": "/public/photos/lafayette-square/benton-place/006.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1892, this Second Empire-style house features a stone-clad front facade, a mansard roof, a cornice with modillions, two-over-two and one-over-one double-hung windows, a one-story bay window on the front facade, a double front entrance door with decorative wooden panels, and red brick claddi",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 15.28,
+      "mid_x": 35.0,
+      "mid_z": -261.35,
+      "nx": -0.295,
+      "nz": 0.956,
+      "angle": -0.299
+    }
+  },
+  "bldg-0194": {
+    "image": "/public/photos/lafayette-square/benton-place/010.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style three-bay townhouses feature stone-clad front facades with one-over-one double-hung windows, slate mansard roofs, bracketed cornices with dentils, gabled dormers, double entry doors with decorative wooden panels, and red brick cladding on the side and rear fa",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 18.56,
+      "mid_x": 41.65,
+      "mid_z": -288.1,
+      "nx": -0.302,
+      "nz": 0.953,
+      "angle": -0.3064
+    }
+  },
+  "bldg-0193": {
+    "image": "/public/photos/lafayette-square/benton-place/023.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1892, this Second Empire-style house features a stone-clad front facade, a mansard roof, a cornice with modillions, two-over-two and one-over-one double-hung windows, a one-story bay window on the front facade, a double front entrance door with decorative wooden panels, and red brick claddi",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 9.71,
+      "mid_x": 121.55,
+      "mid_z": -274.5,
+      "nx": -0.288,
+      "nz": 0.958,
+      "angle": -0.2924
+    }
+  },
+  "bldg-0195": {
+    "image": "/public/photos/lafayette-square/benton-place/029.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1892, this Second Empire-style house features a stone-clad front facade, a mansard roof, a cornice with modillions, two-over-two and one-over-one double-hung windows, a one-story bay window on the front facade, a double front entrance door with decorative wooden panels, and red brick claddi",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 16.54,
+      "mid_x": 52.35,
+      "mid_z": -309.9,
+      "nx": 0.314,
+      "nz": -0.949,
+      "angle": 2.8218
+    }
+  },
+  "bldg-0188": {
+    "image": "/public/photos/lafayette-square/benton-place/013.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire-style house features a stone-clad front facade, a slate mansard roof, one-over-one windows, a bracketed and paneled cornice, gabled dormers, a metal balcony on the south facade, and red brick cladding on the side and rear facades.  The building is a contributing str",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 21.58,
+      "mid_x": 119.55,
+      "mid_z": -306.75,
+      "nx": 0.283,
+      "nz": -0.959,
+      "angle": 2.855
+    }
+  },
+  "bldg-0196": {
+    "image": "/public/photos/lafayette-square/benton-place/014.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire-style house features a stone-clad front facade, a slate mansard roof, one-over-one windows, a bracketed and paneled cornice, gabled dormers, a metal balcony on the south facade, and red brick cladding on the side and rear facades.  The building is a contributing str",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 13.22,
+      "mid_x": 57.4,
+      "mid_z": -330.6,
+      "nx": 0.303,
+      "nz": -0.953,
+      "angle": 2.8342
+    }
+  },
+  "bldg-0222": {
+    "image": "/public/photos/lafayette-square/benton-place/020.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style three-bay townhouses feature stone-clad front facades with one-over-one double-hung windows, slate mansard roofs, bracketed cornices with dentils, gabled dormers, double entry doors with decorative wooden panels, and red brick cladding on the side and rear fa",
+    "wall_height": 4.5,
+    "front_edge": {
+      "width": 7.53,
+      "mid_x": 40.0,
+      "mid_z": -339.6,
+      "nx": 0.292,
+      "nz": -0.956,
+      "angle": 2.845
+    }
+  },
+  "bldg-0187": {
+    "image": "/public/photos/lafayette-square/benton-place/021.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, these Second Empire-style three-bay townhouses feature stone-clad front facades with one-over-one double-hung windows, slate mansard roofs, bracketed cornices with dentils, gabled dormers, double entry doors with decorative wooden panels, and red brick cladding on the side and rear fa",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 22.14,
+      "mid_x": 122.55,
+      "mid_z": -318.45,
+      "nx": 0.303,
+      "nz": -0.953,
+      "angle": 2.8341
+    }
+  },
+  "bldg-0180": {
+    "image": "/public/photos/lafayette-square/benton-place/024.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1885, this Second Empire-style house features a stone-clad front facade, a slate mansard roof, one-over-one windows, a bracketed and paneled cornice, gabled dormers, a metal balcony on the south facade, and red brick cladding on the side and rear facades.  The building is a contributing str",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 18.95,
+      "mid_x": 128.35,
+      "mid_z": -338.9,
+      "nx": 0.296,
+      "nz": -0.955,
+      "angle": 2.8415
+    }
+  },
+  "bldg-0183": {
+    "image": "/public/photos/lafayette-square/benton-place/016.jpg",
+    "confidence": 0.9,
+    "description": "Built in 1887, this Second Empire-style house features a stone-clad front facade, subtle decorative trim at the bays on the front facade, red brick cladding on the side and rear facades, a two-story bay window on the south facade, a slate mansard roof with gabled dormers, one-over-one double-hung wi",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 25.36,
+      "mid_x": 134.05,
+      "mid_z": -347.15,
+      "nx": 0.311,
+      "nz": -0.95,
+      "angle": 2.8248
+    }
+  },
+  "bldg-0178": {
+    "image": "/public/photos/lafayette-square/benton-place/005.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1900, these Classical Revival-style townhouses feature brick exteriors with one-over-one double-hung windows, a engaged ionic columns at the double windows on the second floor, front porches with front pediments and rectilinear columns, and front doors with sidelights and transoms.  The bui",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 13.41,
+      "mid_x": 74.35,
+      "mid_z": -367.85,
+      "nx": 0.321,
+      "nz": -0.947,
+      "angle": 2.8151
+    }
+  },
+  "bldg-0179": {
+    "image": "/public/photos/lafayette-square/benton-place/012.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1900, this Classical Revival-style townhouse features a brick exterior with a gabled parapet, one-over-one double-hung windows, an engaged ionic column at the double window on the second floor, a front porch with a front pediment and rectilinear columns, and a front door with sidelights and",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 5.47,
+      "mid_x": 52.9,
+      "mid_z": -372.75,
+      "nx": 0.311,
+      "nz": -0.95,
+      "angle": 2.8256
+    }
+  },
+  "bldg-0176": {
+    "image": "/public/photos/lafayette-square/benton-place/026.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1900, this Classical Revival-style townhouse features a brick exterior with a crenellated parapet, one-over-one double-hung windows, an engaged ionic column at the double window on the second floor, a front porch with a front pediment and rectilinear columns with ionic capitals, and a front",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 16.35,
+      "mid_x": 75.45,
+      "mid_z": -377.0,
+      "nx": 0.318,
+      "nz": -0.948,
+      "angle": 2.8179
+    }
+  },
+  "bldg-0181": {
+    "image": "/public/photos/lafayette-square/benton-place/002.jpg",
+    "confidence": 1.0,
+    "description": "Built in 1865, this Second Empire-style house features a stone-clad front facade, a slate mansard roof with hipped dormers, a band of festoons below the eaves of the roof, likely added around the turn of the 20th Century, one-over-one double-hung windows, an early 20th Century front porch with brick",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 14.01,
+      "mid_x": 132.8,
+      "mid_z": -364.35,
+      "nx": 0.293,
+      "nz": -0.956,
+      "angle": 2.8447
+    }
+  },
+  "bldg-0177": {
+    "image": "/public/photos/lafayette-square/benton-place/032.jpg",
+    "confidence": 0.5,
+    "description": "Built in 1893, this Queen Anne and Romanesque Revival-style house features a red brick exterior, hipped roof, a cylindrical tower at the southwest corner of the house with a conical roof, gabled dormers, one-over-one and three-over-three double-hung windows, a three-story bay window on the south fac",
+    "wall_height": 8.5,
+    "front_edge": {
+      "width": 15.21,
+      "mid_x": 80.95,
+      "mid_z": -392.7,
+      "nx": 0.302,
+      "nz": -0.953,
+      "angle": 2.8344
+    }
+  },
+  "bldg-0175": {
+    "image": "/public/photos/lafayette-square/benton-place/034.jpg",
+    "confidence": 0.5,
+    "description": "Built in 1893, this Queen Anne and Romanesque Revival-style house features a red brick exterior, hipped roof, a cylindrical tower at the southwest corner of the house with a conical roof, gabled dormers, one-over-one and three-over-three double-hung windows, a three-story bay window on the south fac",
+    "wall_height": 11.5,
+    "front_edge": {
+      "width": 15.5,
+      "mid_x": 135.7,
+      "mid_z": -369.2,
+      "nx": -0.297,
+      "nz": 0.955,
+      "angle": -0.3013
+    }
+  },
+  "bldg-0576": {
+    "image": "/public/photos/lafayette-square/dolman-st/001.jpg",
+    "confidence": 0.5,
+    "description": "Dolman Row, St. Louis, MO",
+    "wall_height": 4.9,
+    "front_edge": {
+      "width": 7.54,
+      "mid_x": 573.15,
+      "mid_z": -393.05,
+      "nx": 0.968,
+      "nz": 0.252,
+      "angle": 1.3162
+    }
+  }
+}

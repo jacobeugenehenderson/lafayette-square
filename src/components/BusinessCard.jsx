@@ -7,8 +7,19 @@ import useCamera from '../hooks/useCamera'
 import { getReviews, postReview, getEvents, postEvent, updateListing as apiUpdateListing, acceptListing as apiAcceptListing, removeListing as apiRemoveListing } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 
+import facadeMapping from '../data/facade_mapping.json'
+
 const BASE = import.meta.env.BASE_URL
 const assetUrl = (url) => url?.startsWith('http') ? url : `${BASE}${url?.replace(/^\//, '')}`
+
+// Facade photo lookup: building_id -> { image path, description }
+function getFacadeInfo(buildingId) {
+  const entry = facadeMapping[buildingId]
+  if (!entry) return null
+  // Strip /public/ prefix — Vite serves public/ at root
+  const photo = entry.image.replace(/^\/public\//, '/')
+  return { photo, description: entry.description }
+}
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const DAY_LABELS = {
@@ -761,10 +772,13 @@ function AssessmentTab({ building }) {
 }
 
 // ─── Tab: Photos ─────────────────────────────────────────────────────
-function PhotosTab({ photos, facadeImage, name }) {
+function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
   const allPhotos = photos || (facadeImage ? [facadeImage.thumb_2048 || facadeImage.thumb_1024] : [])
 
-  if (allPhotos.length === 0) {
+  const hasFacade = !!facadeInfo?.photo
+  const hasAny = allPhotos.length > 0 || hasFacade
+
+  if (!hasAny) {
     return (
       <div className="text-center py-8">
         <p className="text-white/40 text-sm">No photos yet</p>
@@ -774,11 +788,20 @@ function PhotosTab({ photos, facadeImage, name }) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {allPhotos.map((url, i) => (
         <img key={i} src={assetUrl(url)} alt={`${name} ${i + 1}`} className="w-full rounded-lg" loading="lazy" />
       ))}
-      {!photos && facadeImage && (
+      {hasFacade && (
+        <div>
+          <img src={assetUrl(facadeInfo.photo)} alt={`${name} facade`} className="w-full rounded-lg" loading="lazy" />
+          {facadeInfo.description && (
+            <p className="text-white/50 text-xs mt-1.5 leading-relaxed">{facadeInfo.description}</p>
+          )}
+          <p className="text-white/30 text-xs mt-1">Photo: w_lemay / Wikimedia Commons (CC BY-SA 2.0)</p>
+        </div>
+      )}
+      {!photos && !hasFacade && facadeImage && (
         <p className="text-white/40 text-xs text-center">Street view - Mapillary</p>
       )}
     </div>
@@ -947,6 +970,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
   const [activeListingIdx, setActiveListingIdx] = useState(0)
   const { isLocal } = useLocalStatus()
   const { isGuardianOf } = useGuardianStatus()
+  const panelOpen = useCamera(s => s.panelOpen)
 
   // Multi-tenant: if multiple listings for this building, show tabs
   const listings = allListings && allListings.length > 1 ? allListings : (listing ? [listing] : [])
@@ -960,7 +984,8 @@ function BusinessCard({ listing, building, onClose, allListings }) {
   const reviewCount = activeListing?.review_count || null
   const photos = activeListing?.photos || null
   const facadeImage = building?.facade_image || null
-  const heroPhoto = photos?.[0] || facadeImage?.thumb_1024 || null
+  const facadeInfo = building?.id ? getFacadeInfo(building.id) : null
+  const heroPhoto = photos?.[0] || facadeImage?.thumb_1024 || facadeInfo?.photo || null
   const history = activeListing?.history || null
   const description = activeListing?.description || null
   const hasListingInfo = !!activeListing
@@ -1011,7 +1036,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
 
 
   return (
-    <div className="absolute top-3 left-3 right-3 bg-black/95 backdrop-blur-md rounded-xl text-white shadow-2xl border border-white/10 overflow-hidden flex flex-col z-50" style={{ bottom: 'calc(35dvh - 1.5rem + 18px)' }}>
+    <div className="absolute top-3 left-3 right-3 bg-black/40 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden flex flex-col z-50" style={{ bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : 'calc(44px + 18px)' }}>
       {/* Hero Photo Area */}
       <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (
@@ -1188,7 +1213,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
           {currentTab === 'architecture' && <ArchitectureTab building={building} />}
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
-          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} name={name} />}
+          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} />}
           {/* Property card tabs */}
           {currentTab === 'property' && <PropertyTab building={building} />}
           {currentTab === 'assessment' && <AssessmentTab building={building} />}
@@ -1197,7 +1222,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
 
       {/* Footer */}
       {hasListingInfo ? (
-        <div className="p-4 pt-2 border-t border-white/10 bg-black/95 flex-shrink-0">
+        <div className="p-4 pt-2 border-t border-white/15 bg-white/4 flex-shrink-0">
           {isGuardian ? (
             <div className="flex items-center justify-center gap-2 text-emerald-400/70 text-xs py-1">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1218,7 +1243,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
           )}
         </div>
       ) : (
-        <div className="p-4 pt-2 border-t border-white/10 bg-black/95 flex-shrink-0">
+        <div className="p-4 pt-2 border-t border-white/15 bg-white/4 flex-shrink-0">
           <button
             className="w-full py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >

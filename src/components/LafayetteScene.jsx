@@ -13,6 +13,22 @@ import useBusinessState from '../hooks/useBusinessState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
+// import FacadeBillboards from './FacadeBillboards'  // shelved — future street-level facade rendering
+
+// ============ BUILDING TEXTURES ============
+// Tileable PBR textures for walls and roofs (CC0, Poly Haven)
+const _texLoader = new THREE.TextureLoader()
+const _BASE = import.meta.env.BASE_URL
+const _buildingTextures = {}
+
+;['brick_red', 'brick_weathered', 'stone', 'slate', 'metal', 'wood_siding', 'stucco'].forEach(name => {
+  const tex = _texLoader.load(`${_BASE}textures/buildings/${name}.jpg`)
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.minFilter = THREE.LinearMipmapLinearFilter
+  tex.magFilter = THREE.LinearFilter
+  _buildingTextures[name] = tex
+})
 
 // ── Drag guard: suppress clicks after pointer moves >6px (prevents accidental selection during pan) ──
 let _pdx = 0, _pdy = 0
@@ -529,12 +545,129 @@ function Building({ building, neonInfo }) {
     return geo
   }, [building, baseColor])
 
-  const material = useMemo(() => new THREE.MeshStandardMaterial({
-    color: baseColor,
-    flatShading: true,
-    roughness: 0.9,
-    metalness: 0.05,
-  }), [baseColor])
+  // Material with tileable texture injection
+  const wallTex = _buildingTextures[building.wall_material] || _buildingTextures.brick_red
+  const roofMat = building.roof_material
+  const roofTex = (roofMat && roofMat !== 'flat') ? (_buildingTextures[roofMat] || null) : null
+  const shaderRef = useRef(null)
+
+  // Roof tint: derived from building color — desaturated + darkened to keep per-building personality
+  const roofTintColor = useMemo(() => {
+    const hsl = {}
+    baseColor.getHSL(hsl)
+    // Material-specific darkening: slate darkest, metal lighter, others mid
+    const lum = roofMat === 'slate' ? 0.15 : roofMat === 'metal' ? 0.28 : 0.20
+    const sat = hsl.s * 0.3  // keep a hint of the building's hue
+    const c = new THREE.Color().setHSL(hsl.h, sat, lum)
+    return new THREE.Vector3(c.r, c.g, c.b)
+  }, [roofMat, baseColor])
+
+  const material = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: baseColor,
+      flatShading: true,
+      roughness: 0.9,
+      metalness: 0.05,
+    })
+
+    const wallHeight = building.size[1]
+    const roofStartY = foundationY + wallHeight - 0.3  // 30cm below top for clean transition
+
+    mat.onBeforeCompile = (shader) => {
+      shaderRef.current = shader
+      shader.uniforms.uWallTex = { value: wallTex }
+      shader.uniforms.uRoofTex = { value: roofTex || wallTex }
+      shader.uniforms.uHasRoofTex = { value: roofTex ? 1.0 : 0.0 }
+      shader.uniforms.uRoofStartY = { value: roofStartY }
+      shader.uniforms.uRoofTint = { value: roofTintColor }
+      shader.uniforms.uTexStrength = { value: 0.4 }
+      shader.uniforms.uDarkFactor = { value: 0.0 }
+
+      // Vertex: pass world position and normal to fragment
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        `#include <common>
+         varying vec3 vBldgWorldPos;
+         varying vec3 vBldgWorldNorm;`
+      )
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+         vBldgWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+         vBldgWorldNorm = normalize(mat3(modelMatrix) * normal);`
+      )
+
+      // Fragment: texture declarations
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <common>',
+        `#include <common>
+         uniform sampler2D uWallTex;
+         uniform sampler2D uRoofTex;
+         uniform float uHasRoofTex;
+         uniform float uRoofStartY;
+         uniform vec3 uRoofTint;
+         uniform float uTexStrength;
+         uniform float uDarkFactor;
+         varying vec3 vBldgWorldPos;
+         varying vec3 vBldgWorldNorm;`
+      )
+
+      // Fragment: sample textures and blend
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+
+         // Roof vs wall: Y position threshold
+         float bRoofMask = smoothstep(uRoofStartY, uRoofStartY + 0.1, vBldgWorldPos.y);
+
+         // Wall UV: triplanar — pick dominant axis
+         vec2 bWallUV;
+         if (abs(vBldgWorldNorm.x) > abs(vBldgWorldNorm.z)) {
+           bWallUV = vec2(vBldgWorldPos.z, vBldgWorldPos.y) * 0.25;
+         } else {
+           bWallUV = vec2(vBldgWorldPos.x, vBldgWorldPos.y) * 0.25;
+         }
+
+         // Roof UV: world XZ plane
+         vec2 bRoofUV = vBldgWorldPos.xz * 0.2;
+
+         // Sample textures
+         vec3 bWallSample = texture2D(uWallTex, bWallUV).rgb;
+         vec3 bRoofSample = texture2D(uRoofTex, bRoofUV).rgb;
+
+         // Overlay blend: preserves base color luminance + saturation
+         // overlay(a,b) = a<0.5 ? 2ab : 1-2(1-a)(1-b)
+         vec3 bBase = diffuseColor.rgb;
+         vec3 bOverlay = mix(
+           2.0 * bBase * bWallSample,
+           1.0 - 2.0 * (1.0 - bBase) * (1.0 - bWallSample),
+           step(0.5, bBase)
+         );
+         // Blend between pure color and overlay-textured by strength
+         vec3 bWallColor = mix(bBase, bOverlay, uTexStrength);
+
+         // Night factor for roofs (synced with wall day/night cycle)
+         float bRoofNight = 1.0 - uDarkFactor * 0.75;
+
+         if (uHasRoofTex > 0.5) {
+           // Shaped roof: tint derived from building color, texture adds surface detail
+           vec3 bRoofOverlay = mix(
+             2.0 * uRoofTint * bRoofSample,
+             1.0 - 2.0 * (1.0 - uRoofTint) * (1.0 - bRoofSample),
+             step(0.5, uRoofTint)
+           );
+           vec3 bRoofColor = mix(uRoofTint, bRoofOverlay, uTexStrength) * bRoofNight;
+           diffuseColor.rgb = mix(bWallColor, bRoofColor, bRoofMask);
+         } else {
+           // Flat roof: dark neutral top, wall texture on sides
+           vec3 bFlatRoof = vec3(0.04, 0.04, 0.045) * bRoofNight;
+           diffuseColor.rgb = mix(bWallColor, bFlatRoof, bRoofMask);
+         }`
+      )
+    }
+
+    return mat
+  }, [baseColor, wallTex, roofTex, roofTintColor])
 
   useFrame(() => {
     if (!meshRef.current) return
@@ -558,6 +691,11 @@ function Building({ building, neonInfo }) {
       mat.color.copy(_tmpColor)
       mat.emissive.setHex(emissiveHex)
       mat.needsUpdate = true
+
+      // Sync roof darkness with day/night cycle
+      if (shaderRef.current) {
+        shaderRef.current.uniforms.uDarkFactor.value = darkFactor
+      }
     }
   })
 
@@ -928,6 +1066,9 @@ function LafayetteScene() {
 
       {/* Landmark markers — hidden only in hero mode */}
       {viewMode !== 'hero' && <LandmarkMarkers />}
+
+      {/* Facade photos — billboard planes on building fronts (shelved for future) */}
+      {/* {viewMode !== 'hero' && <FacadeBillboards />} */}
     </group>
   )
 }

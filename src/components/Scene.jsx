@@ -271,6 +271,7 @@ function CameraRig() {
   // Mode / flyTo tracking
   const prevMode = useRef('hero')
   const prevFlyTarget = useRef(null)
+  const transToHero = useRef(false)
 
   // Start a transition
   function beginTransition(pos, target, fov, duration) {
@@ -415,6 +416,7 @@ function CameraRig() {
         // Transition to mode preset
         const p = PRESETS[entering]
         const dur = entering === 'hero' ? 2500 : 1500
+        transToHero.current = entering === 'hero'
         beginTransition(p.position, p.target, p.fov, dur)
       }
     }
@@ -437,6 +439,24 @@ function CameraRig() {
     // ── During transition ──
     if (transitioning.current) {
       relaxConstraints(ctl)
+
+      // If transitioning into hero, chase the moving pan position
+      if (transToHero.current) {
+        const panElapsed = Math.max(0, clock.elapsedTime - 3)
+        const panT = panElapsed / PAN_PERIOD + HERO_PHASE
+        const swing = Math.sin(panT * Math.PI * 2)
+        const panOff = swing * PAN_HALF_LENGTH
+        _toPos.set(
+          HERO_CENTER[0] + PAN_PERP[0] * panOff,
+          HERO_CENTER[1],
+          HERO_CENTER[2] + PAN_PERP[1] * panOff
+        )
+        _toTarget.set(
+          HERO_TARGET[0] + PAN_PERP[0] * panOff * 0.3,
+          HERO_TARGET[1],
+          HERO_TARGET[2] + PAN_PERP[1] * panOff * 0.3
+        )
+      }
 
       const elapsed = Date.now() - transStart.current
       const t = Math.min(elapsed / transDuration.current, 1)
@@ -461,6 +481,7 @@ function CameraRig() {
           beginTransition(next.position, next.target, next.fov, next.duration)
         } else {
           transitioning.current = false
+          transToHero.current = false
           // Post-transition snap: force pure top-down for browse
           if (vm === 'browse') {
             const tx = ctl.target.x, tz = ctl.target.z

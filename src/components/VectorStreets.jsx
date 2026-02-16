@@ -541,7 +541,7 @@ function VectorStreets() {
           }
         }}
       >
-        <circleGeometry args={[5000, 64]} />
+        <circleGeometry args={[2000, 64]} />
         <meshStandardMaterial
           color="#0a0a0c"
           roughness={0.95}
@@ -566,7 +566,7 @@ function VectorStreets() {
               '#include <dithering_fragment>',
               `#include <dithering_fragment>
                float dist = length(vWorldXZ);
-               float fade = 1.0 - smoothstep(3500.0, 4800.0, dist);
+               float fade = 1.0 - smoothstep(500.0, 1900.0, dist);
                gl_FragColor.a *= fade;`
             )
           }}

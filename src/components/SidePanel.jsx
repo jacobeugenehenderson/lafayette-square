@@ -15,6 +15,39 @@ import useListings from '../hooks/useListings'
 const _buildingMap = {}
 buildingsData.buildings.forEach(b => { _buildingMap[b.id] = b })
 
+// Neighborhood bounding box (precomputed once)
+const _neighborhoodBounds = (() => {
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
+  for (const b of buildingsData.buildings) {
+    minX = Math.min(minX, b.position[0])
+    maxX = Math.max(maxX, b.position[0])
+    minZ = Math.min(minZ, b.position[2])
+    maxZ = Math.max(maxZ, b.position[2])
+  }
+  return { minX, maxX, minZ, maxZ }
+})()
+
+// Compute neighborhood framing using actual viewport dimensions
+function getNeighborhoodTarget() {
+  const { minX, maxX, minZ, maxZ } = _neighborhoodBounds
+  const cx = (minX + maxX) / 2
+  const cz = (minZ + maxZ) / 2
+  const spanX = maxX - minX
+  const spanZ = maxZ - minZ
+  const aspect = window.innerWidth / window.innerHeight
+  const vTan = V_TAN
+  const hTan = vTan * aspect
+  const visV = VIS_V
+  const hForX = spanX / (2 * hTan)
+  const hForZ = spanZ / (2 * vTan * visV)
+  const height = Math.max(hForX, hForZ)
+  const zOff = panelOffset(height)
+  return {
+    position: [cx, height, cz + zOff + 1],
+    lookAt: [cx, 0, cz + zOff],
+  }
+}
+
 // Browse: top-down, vertical FOV 45°.
 // Portrait mobile aspect ~0.46 → horizontal is the tight dimension.
 const V_TAN = Math.tan((45 / 2) * Math.PI / 180) // 0.414
@@ -301,7 +334,7 @@ function BulletinBoard() {
         {BULLETIN_SECTIONS.map((section) => {
           const isOpen = expandedId === section.id
           return (
-            <div key={section.id} className="rounded-md overflow-hidden bg-white/5 border border-white/5">
+            <div key={section.id} className="rounded-lg overflow-hidden bg-white/5 border border-white/8">
               <button
                 onClick={() => setExpandedId(isOpen ? null : section.id)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-colors"
@@ -424,7 +457,7 @@ function AlmanacTab({ showAdmin = false }) {
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 overflow-y-auto min-h-0">
-      <div className="px-4 py-3 border-b border-white/10 bg-white/5">
+      <div className="px-4 py-3 border-b border-white/10 bg-white/4">
         <div className="flex items-baseline justify-between">
           <div
             className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
@@ -492,7 +525,7 @@ function AlmanacTab({ showAdmin = false }) {
       </div>
 
 
-      <div className="px-4 py-2 border-t border-white/5 bg-white/5">
+      <div className="px-4 py-2 border-t border-white/8 bg-white/4">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[10px] text-white/30 uppercase tracking-widest">Lighting</span>
           {!useRealTime && (
@@ -540,7 +573,7 @@ function AlmanacTab({ showAdmin = false }) {
       </CollapsibleSection>
 
       {showAdmin && (
-        <CollapsibleSection title="Business Simulation" defaultOpen={false} bg="bg-black/50">
+        <CollapsibleSection title="Business Simulation" defaultOpen={false} bg="bg-white/3">
           <div className="px-4 pb-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] text-white/50">
@@ -601,7 +634,7 @@ function AlmanacTab({ showAdmin = false }) {
       )}
       </div>
 
-      <div className="flex-shrink-0 px-4 py-2 border-t border-white/5 text-[10px] text-white/30 tracking-wide">
+      <div className="flex-shrink-0 px-4 py-2 border-t border-white/8 text-[10px] text-white/30 tracking-wide">
         <div>2,164 residents</div>
         <div className="mt-0.5">{buildingsData.buildings.length.toLocaleString()} buildings &middot; {streetsData.streets.length} streets</div>
         <div className="mt-0.5">38.62&deg;N 90.22&deg;W &middot; St. Louis, MO</div>
@@ -647,17 +680,12 @@ function LafayetteSubsection({ section, color }) {
     // Toggle the subcategory (single-select: replaces prior)
     toggleTag(section.id)
 
-    // If activating (not deactivating), zoom to fit all pins
-    if (!isActive && businesses.length > 0) {
-      // Switch to browse if in hero so flyTo is honored
+    // If activating (not deactivating), center the whole neighborhood
+    if (!isActive) {
       const cam = useCamera.getState()
       if (cam.viewMode !== 'browse') cam.setMode('browse')
-
-      const buildings = businesses
-        .map(biz => _buildingMap[biz.building_id])
-        .filter(Boolean)
-      const target = computeZoomToFit(buildings)
-      if (target) flyTo(target.position, target.lookAt)
+      const target = getNeighborhoodTarget()
+      flyTo(target.position, target.lookAt)
     } else {
       clearFly()
     }
@@ -726,7 +754,7 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
   }, [category, listings])
 
   return (
-    <div className={`border ${colors.border} rounded-lg overflow-hidden transition-all duration-200 ${isExpanded ? colors.activeBg : 'bg-black/40'}`}>
+    <div className={`border ${colors.border} rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? colors.activeBg : 'bg-white/5'}`}>
       <button
         onClick={onToggle}
         className={`w-full flex items-center gap-3 p-3 text-left transition-colors duration-150 ${colors.hover}`}
@@ -831,14 +859,14 @@ function SidePanel({ showAdmin = true }) {
 
   return (
     <div
-      className="absolute bottom-3 left-3 right-3 flex flex-col select-none bg-black/80 backdrop-blur-md rounded-lg border border-white/10 overflow-hidden z-50 transition-all duration-300 ease-out"
+      className="absolute bottom-3 left-3 right-3 flex flex-col select-none bg-white/8 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden z-50 transition-all duration-300 ease-out"
       style={{
         fontFamily: 'ui-monospace, monospace',
         height: collapsed ? '44px' : 'calc(35dvh - 1.5rem)',
       }}
     >
       <div
-        className="flex border-b border-white/10 flex-shrink-0 cursor-grab active:cursor-grabbing"
+        className="flex border-b border-white/15 flex-shrink-0 cursor-grab active:cursor-grabbing"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -858,7 +886,7 @@ function SidePanel({ showAdmin = true }) {
             }}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-xs transition-colors duration-150 ${
               activeTab === tab.id
-                ? 'bg-white/10 text-white border-b-2 border-white/50'
+                ? 'bg-white/12 text-white border-b-2 border-white/40'
                 : 'text-white/50 hover:text-white/70 hover:bg-white/5'
             }`}
           >
