@@ -35,6 +35,8 @@ __pycache__/
 
 # Large reference assets (not needed for build)
 assets/botanical-reference-hires/
+models/
+public/models/
 
 # Raw data cache (regenerable via scripts/)
 scripts/raw/
