@@ -37,6 +37,7 @@ __pycache__/
 assets/botanical-reference-hires/
 models/
 public/models/
+public/photos/lafayette-square/
 
 # Raw data cache (regenerable via scripts/)
 scripts/raw/
