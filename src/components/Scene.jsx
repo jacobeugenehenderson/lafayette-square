@@ -150,11 +150,13 @@ const MODE_CONSTRAINTS = {
     touches: { ONE: 1, TWO: 2 },  // one-finger pan, pinch zoom
   },
   planetarium: {
-    enableRotate: true, enablePan: false, enableZoom: false,
-    rotateSpeed: 0.35,
+    enableRotate: true, enablePan: true, enableZoom: false,
+    rotateSpeed: 0.35, panSpeed: 80,
+    screenSpacePanning: false,          // pan on XZ ground plane
     minDistance: 0.5, maxDistance: 0.5,  // locked — orbit in place
     minPolarAngle: Math.PI / 2,         // horizontal (horizon)
     maxPolarAngle: Math.PI * 0.99,      // nearly straight up (zenith)
+    mouseButtons: { LEFT: 0, MIDDLE: 2, RIGHT: 2 }, // left=orbit, right/ctrl+click=pan
     touches: { ONE: 0, TWO: 2 },       // one-finger orbit, pinch zoom
   },
 }
@@ -293,9 +295,14 @@ function CameraRig() {
     beginTransition(first.position, first.target, first.fov, first.duration)
   }
 
+  // Track ctrl key state for planetarium pan modifier
+  const ctrlHeld = useRef(false)
+
   // ESC key: planetarium → browse, browse → hero
+  // Ctrl key: track for planetarium lateral pan
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (e.key === 'Control') ctrlHeld.current = true
       if (e.key !== 'Escape') return
       const { viewMode } = useCamera.getState()
       if (viewMode === 'planetarium') {
@@ -304,8 +311,15 @@ function CameraRig() {
         useCamera.getState().goHero()
       }
     }
+    const handleKeyUp = (e) => {
+      if (e.key === 'Control') ctrlHeld.current = false
+    }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
   }, [])
 
   // Idle detection: any movement resets timer (doesn't exit hero)
@@ -319,13 +333,40 @@ function CameraRig() {
     }
   }, [])
 
-  // Deliberate canvas interaction: drag or scroll exits hero; click opens building card without moving
+  // Deliberate canvas interaction: drag or scroll exits hero; ctrl+click enters planetarium
   useEffect(() => {
     const canvas = gl.domElement
     let downXY = null
 
+    // Raycast mouse position to ground plane (Y=0)
+    const _ray = new THREE.Raycaster()
+    const _mouse = new THREE.Vector2()
+    const _groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+    const _hit = new THREE.Vector3()
+
+    function groundHit(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect()
+      _mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1
+      _mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1
+      _ray.setFromCamera(_mouse, camera)
+      if (_ray.ray.intersectPlane(_groundPlane, _hit)) {
+        return { x: _hit.x, z: _hit.z }
+      }
+      return null
+    }
+
     const onDown = (e) => {
       useCamera.getState().resetIdle()
+
+      // Ctrl+click (Mac: button=2) or right-click in browse → planetarium
+      if ((e.ctrlKey || e.button === 2) && useCamera.getState().viewMode === 'browse') {
+        e.preventDefault()
+        e.stopPropagation()
+        const g = groundHit(e.clientX, e.clientY)
+        if (g) useCamera.getState().enterPlanetarium(g.x, g.z)
+        return
+      }
+
       downXY = { x: e.clientX, y: e.clientY }
     }
 
@@ -353,17 +394,27 @@ function CameraRig() {
       }
     }
 
-    canvas.addEventListener('pointerdown', onDown)
+    // Suppress browser context menu on canvas (Mac ctrl+click = right-click)
+    const onContextMenu = (e) => {
+      const vm = useCamera.getState().viewMode
+      if (vm === 'browse' || vm === 'planetarium') {
+        e.preventDefault()
+      }
+    }
+
+    canvas.addEventListener('pointerdown', onDown, { capture: true })
     canvas.addEventListener('pointermove', onMove)
     canvas.addEventListener('pointerup', onUp)
     canvas.addEventListener('wheel', onWheel)
+    canvas.addEventListener('contextmenu', onContextMenu)
     return () => {
-      canvas.removeEventListener('pointerdown', onDown)
+      canvas.removeEventListener('pointerdown', onDown, { capture: true })
       canvas.removeEventListener('pointermove', onMove)
       canvas.removeEventListener('pointerup', onUp)
       canvas.removeEventListener('wheel', onWheel)
+      canvas.removeEventListener('contextmenu', onContextMenu)
     }
-  }, [gl])
+  }, [gl, camera])
 
   useFrame(({ clock }) => {
     const ctl = controlsRef.current

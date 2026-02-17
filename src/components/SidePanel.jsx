@@ -818,6 +818,98 @@ function LafayettePagesTab() {
   )
 }
 
+// ============ ADDRESS SEARCH ============
+
+// Pre-build search index: address + id for each building
+const _searchIndex = buildingsData.buildings.map(b => ({
+  id: b.id,
+  address: (b.address || '').toUpperCase(),
+  text: `${(b.address || '')} ${b.id}`.toUpperCase(),
+}))
+
+function AddressSearch() {
+  const [query, setQuery] = useState('')
+  const [focused, setFocused] = useState(false)
+  const inputRef = useRef(null)
+  const flyTo = useCamera((s) => s.flyTo)
+  const highlight = useSelectedBuilding((s) => s.highlight)
+
+  const results = useMemo(() => {
+    if (query.length < 2) return []
+    const q = query.toUpperCase()
+    const terms = q.split(/\s+/)
+    return _searchIndex
+      .filter(entry => terms.every(t => entry.text.includes(t)))
+      .slice(0, 5)
+  }, [query])
+
+  const selectBuilding = useCallback((entry) => {
+    const building = _buildingMap[entry.id]
+    if (!building) return
+    const cam = useCamera.getState()
+    if (cam.viewMode !== 'browse') cam.setMode('browse')
+    const target = computeCenterOn(building)
+    flyTo(target.position, target.lookAt)
+    highlight(null, entry.id)
+    setQuery('')
+    inputRef.current?.blur()
+  }, [flyTo, highlight])
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && results.length > 0) {
+      e.preventDefault()
+      selectBuilding(results[0])
+    } else if (e.key === 'Escape') {
+      setQuery('')
+      inputRef.current?.blur()
+    }
+  }, [results, selectBuilding])
+
+  const showDropdown = focused && results.length > 0
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2 px-3 py-2 mx-2 mt-2 mb-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/15">
+        <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+        </svg>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search address or building ID..."
+          className="flex-1 bg-transparent text-[11px] text-white/80 placeholder-white/25 outline-none"
+        />
+        {query && (
+          <button onClick={() => setQuery('')} className="text-white/30 hover:text-white/60 text-xs">
+            &times;
+          </button>
+        )}
+      </div>
+      {showDropdown && (
+        <div className="absolute left-0 right-0 bottom-full mb-px bg-black/80 backdrop-blur-xl rounded-t-lg border border-white/15 overflow-hidden z-50">
+          {results.map((entry) => (
+            <button
+              key={entry.id}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => selectBuilding(entry)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-left hover:bg-white/10 transition-colors"
+            >
+              <span className="text-[11px] text-white/70 truncate">{entry.address || entry.id}</span>
+              <span className="text-[9px] text-white/30 flex-shrink-0 ml-2">{entry.id}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ============ MAIN SIDEPANEL ============
 
 const TABS = [
@@ -862,9 +954,10 @@ function SidePanel({ showAdmin = true }) {
       className="absolute bottom-3 left-3 right-3 flex flex-col select-none bg-white/8 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden z-50 transition-all duration-300 ease-out"
       style={{
         fontFamily: 'ui-monospace, monospace',
-        height: collapsed ? '44px' : 'calc(35dvh - 1.5rem)',
+        height: collapsed ? '76px' : 'calc(35dvh - 1.5rem)',
       }}
     >
+      {/* <AddressSearch /> */}
       <div
         className="flex border-b border-white/15 flex-shrink-0 cursor-grab active:cursor-grabbing"
         onTouchStart={handleTouchStart}

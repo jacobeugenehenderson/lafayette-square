@@ -14,6 +14,7 @@ import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
 // import FacadeBillboards from './FacadeBillboards'  // shelved — future street-level facade rendering
+import FacadeElements from './FacadeElements'
 
 // ============ BUILDING TEXTURES ============
 // Tileable PBR textures for walls and roofs (CC0, Poly Haven)
@@ -609,7 +610,8 @@ function Building({ building, neonInfo }) {
          uniform float uTexStrength;
          uniform float uDarkFactor;
          varying vec3 vBldgWorldPos;
-         varying vec3 vBldgWorldNorm;`
+         varying vec3 vBldgWorldNorm;
+`
       )
 
       // Fragment: sample textures and blend
@@ -662,7 +664,9 @@ function Building({ building, neonInfo }) {
            // Flat roof: dark neutral top, wall texture on sides
            vec3 bFlatRoof = vec3(0.04, 0.04, 0.045) * bRoofNight;
            diffuseColor.rgb = mix(bWallColor, bFlatRoof, bRoofMask);
-         }`
+         }
+
+`
       )
     }
 
@@ -1066,6 +1070,9 @@ function LafayetteScene() {
 
       {/* Landmark markers — hidden only in hero mode */}
       {viewMode !== 'hero' && <LandmarkMarkers />}
+
+      {/* 3D facade elements — windows, doors, stoops (has own 60m LOD) */}
+      {viewMode !== 'hero' && <FacadeElements />}
 
       {/* Facade photos — billboard planes on building fronts (shelved for future) */}
       {/* {viewMode !== 'hero' && <FacadeBillboards />} */}

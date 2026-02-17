@@ -1,0 +1,99 @@
+{
+  "catalog": {
+    "entrance-01": {
+      "file": "models/facade/entrance-01.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [2.3, 3.6, 0.8]
+    },
+    "entrance-02": {
+      "file": "models/facade/entrance-02.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [1.4, 2.6, 0.5]
+    },
+    "small-window": {
+      "file": "models/facade/small-window-01.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [1.1, 2.0, 0.15],
+      "materialMap": { "6": "windowFrame", "8": "glass" }
+    },
+    "baywindow-01": {
+      "file": "models/facade/baywindow-01.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [2.0, 2.5, 0.8]
+    },
+    "baywindow-02": {
+      "file": "models/facade/baywindow-02.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [2.0, 2.5, 0.8]
+    },
+    "baywindow-03": {
+      "file": "models/facade/baywindow-03.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [1.5, 2.0, 0.6]
+    },
+    "brick-door": {
+      "file": "models/facade/brick-door.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [1.2, 2.4, 0.3]
+    },
+    "brick-oriel": {
+      "file": "models/facade/brick-oriel.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [1.8, 2.5, 0.8]
+    },
+    "stoop": {
+      "file": "models/facade/stoop.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [3.5, 2.4, 3.0],
+      "materialMap": { "0": "foundation", "1": "foundation", "2": "frame" }
+    },
+    "parlor-window": {
+      "file": "models/facade/small-window-01.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [1.1, 2.8, 0.15],
+      "materialMap": { "6": "windowFrame", "8": "glass" }
+    },
+    "cornice-bracket": {
+      "file": "models/facade/cornice-bracket.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [1.0, 0.4, 0.3]
+    },
+    "scroll-bracket": {
+      "file": "models/facade/cornice-bracket-scroll.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [0.3, 0.5, 0.25]
+    },
+    "brick-ledge": {
+      "file": "models/facade/brick-ledge.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [7.0, 0.2, 0.4]
+    },
+    "dormer": {
+      "file": "models/facade/dormer.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [1.5, 1.5, 1.0]
+    },
+    "round-window": {
+      "file": "models/facade/round-window.fbx",
+      "scale": 1.0,
+      "rotateY": 0,
+      "size": [0.8, 0.8, 0.15]
+    }
+  },
+  "buildings": {
+  }
+}
