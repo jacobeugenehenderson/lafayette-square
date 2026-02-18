@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react'
+import { useMemo, useRef, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -27,6 +27,13 @@ const PARK = {
 const FENCE_HEIGHT = 1.5
 const FENCE_POST_SPACING = 8
 const TAU = Math.PI * 2
+
+// ── SVG clip mask for park boundary ──────────────────────────────────
+const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg`
+const SVG_WORLD_X = -497.7
+const SVG_WORLD_Z = -732.5
+const SVG_VB_W = 1309
+const SVG_VB_H = 1152.7
 
 // Foliage color palettes per tree shape
 const CANOPY_COLORS = {
@@ -149,6 +156,53 @@ function mergeGeos(geos) {
 // ── Park Ground with procedural grass texture ──────────────────────────
 function ParkGround() {
   const grassShaderRef = useRef()
+  const [clipTexture, setClipTexture] = useState(null)
+
+  // Fetch SVG and rasterize park-boundary to a clip mask texture
+  useEffect(() => {
+    fetch(svgUrl)
+      .then(r => r.text())
+      .then(svgText => {
+        const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
+        const parkGroup = doc.getElementById('park-boundary')
+        if (!parkGroup) return
+        const dAttrs = [...parkGroup.querySelectorAll('path')]
+          .map(p => p.getAttribute('d')).filter(Boolean)
+        if (!dAttrs.length) return
+
+        const RES = 1024
+        const canvas = document.createElement('canvas')
+        canvas.width = RES
+        canvas.height = Math.round(RES * (SVG_VB_H / SVG_VB_W))
+        const ctx = canvas.getContext('2d')
+
+        ctx.fillStyle = '#000'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.fillStyle = '#fff'
+        ctx.scale(canvas.width / SVG_VB_W, canvas.height / SVG_VB_H)
+
+        // Fill each subpath individually to cover entire park interior
+        for (const d of dAttrs) {
+          for (const sub of d.split(/(?=M)/)) {
+            ctx.fill(new Path2D(sub))
+          }
+        }
+
+        const tex = new THREE.CanvasTexture(canvas)
+        tex.flipY = false
+        tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
+        tex.minFilter = THREE.LinearFilter
+        setClipTexture(tex)
+      })
+  }, [])
+
+  // Update clip uniform when texture loads (shader already compiled)
+  useEffect(() => {
+    if (grassShaderRef.current && clipTexture) {
+      grassShaderRef.current.uniforms.uClipMap.value = clipTexture
+      grassShaderRef.current.uniforms.uHasClip.value = 1.0
+    }
+  }, [clipTexture])
 
   // GPU-computed grass: world-space FBM noise injected into MeshStandardMaterial.
   // No tiling, infinite resolution, full PBR lighting + shadows preserved.
@@ -156,7 +210,13 @@ function ParkGround() {
     const mat = new THREE.MeshStandardMaterial({ roughness: 0.92, color: '#2d5a2d' })
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunAltitude = { value: 0.5 }
+      // Clip mask uniforms — updated async when SVG loads
+      shader.uniforms.uClipMap = { value: null }
+      shader.uniforms.uClipMin = { value: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z) }
+      shader.uniforms.uClipSize = { value: new THREE.Vector2(SVG_VB_W, SVG_VB_H) }
+      shader.uniforms.uHasClip = { value: 0.0 }
       grassShaderRef.current = shader
+
       // Vertex: pass world position to fragment
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
@@ -169,11 +229,15 @@ function ParkGround() {
          vGrassPos = (modelMatrix * vec4(position, 1.0)).xyz;`
       )
 
-      // Fragment: multi-octave noise-based grass coloring
+      // Fragment: multi-octave noise-based grass coloring + park boundary clip
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <common>',
         `#include <common>
          uniform float uSunAltitude;
+         uniform sampler2D uClipMap;
+         uniform vec2 uClipMin;
+         uniform vec2 uClipSize;
+         uniform float uHasClip;
          varying vec3 vGrassPos;
 
          float gHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -225,6 +289,16 @@ function ParkGround() {
          // sRGB values → linear space (shader operates in linear)
          diffuseColor.rgb = pow(grass, vec3(2.2));`
       )
+      // Clip grass to park boundary (discard fragments outside mask)
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+         if (uHasClip > 0.5) {
+           vec2 clipUV = (vGrassPos.xz - uClipMin) / uClipSize;
+           float mask = texture2D(uClipMap, clipUV).r;
+           if (mask < 0.5) discard;
+         }`
+      )
     }
     return mat
   }, [])
@@ -233,16 +307,20 @@ function ParkGround() {
     if (grassShaderRef.current) {
       const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
       grassShaderRef.current.uniforms.uSunAltitude.value = sunAltitude
+      // Apply clip mask (also handles HMR where shader recompiles after texture loaded)
+      if (clipTexture) {
+        grassShaderRef.current.uniforms.uClipMap.value = clipTexture
+        grassShaderRef.current.uniforms.uHasClip.value = 1.0
+      }
     }
   })
 
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]} receiveShadow material={grassMat}>
-      <planeGeometry args={[PARK.width, PARK.depth, 1, 1]} />
+      <planeGeometry args={[500, 500, 1, 1]} />
     </mesh>
   )
 }
-
 
 // ── Park Paths (walking/cycling paths from OSM) ───────────────────────
 function ParkPaths() {

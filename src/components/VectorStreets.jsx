@@ -272,7 +272,7 @@ const SVG_LAYERS = {
   blocks:    { y: 0.08, color: '#333333' },
   service:   { y: 0.09, color: '#4c4c4c' },
   paths:     { y: 0.10, color: '#8a8578', clipId: 'clippath' },
-  streets:   { y: 0.05, color: '#000000' },
+  streets:   { y: 0.05, color: '#000000', strokeColor: '#cccccc' },
   sidewalks: { y: 0.12, color: '#7f7c73' },
 }
 
@@ -414,10 +414,15 @@ function SvgMapLayers() {
           for (const path of paths) {
             const style = path.userData.style
 
-            // Streets layer: fill the road surface shapes, skip stroke
+            // Streets layer: fill road surface shapes, but preserve stroke-only paths
             if (groupId === 'streets') {
-              style.fill = '#000000'
-              style.stroke = 'none'
+              const origFill = style.fill
+              if (origFill === 'none' || origFill === 'transparent') {
+                // Stroke-only path (e.g. streets_stroke) — keep original styling
+              } else {
+                style.fill = '#000000'
+                style.stroke = 'none'
+              }
             }
 
             // ── Fills (blocks, sidewalks) ──
@@ -507,7 +512,7 @@ function SvgMapLayers() {
           {layer.strokeGeometry && (
             <mesh geometry={layer.strokeGeometry} position={[0, layer.y + 0.01, 0]} frustumCulled={false} receiveShadow>
               <meshStandardMaterial
-                color={layer.color}
+                color={layer.strokeColor || layer.color}
                 roughness={0.85}
                 side={THREE.DoubleSide}
                 onBeforeCompile={layer.clipTexture ? makeClipShader(layer.clipTexture) : undefined}

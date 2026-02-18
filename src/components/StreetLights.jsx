@@ -1,56 +1,58 @@
-import { useRef, useMemo, useEffect } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useRef, useMemo, useEffect, useState } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import lampData from '../data/street_lamps.json'
 
-// Street light post: thin cylinder + lamp head
-// Uses InstancedMesh for performance (641 posts, 641 lamp heads)
-const POST_HEIGHT = 7
-const POST_RADIUS = 0.12
-const HEAD_RADIUS = 0.4
-const HEAD_HEIGHT = 0.5
+// ── Constants ──────────────────────────────────────────────────────────────────
+const LAMP_URL = `${import.meta.env.BASE_URL}models/lamp-posts/victorian-lamp.glb`
+const LAMP_MODEL_HEIGHT = 2.65
+const LAMP_TARGET_HEIGHT = 7.0
+const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT
 
-// Warm sodium vapor lamp color
-const LAMP_COLOR_ON = new THREE.Color('#ffcc66')
-const LAMP_COLOR_OFF = new THREE.Color('#444444')
-
-// Ground light pool
-const POOL_RADIUS = 12
-const POOL_Y = 0.5  // above SVG block shapes (y=0.3) and streets (y=0.45)
-
-// Dynamic PointLights — nearest N lamps get real lights that illuminate surfaces
-const DYNAMIC_LIGHT_COUNT = 8
+const LAMP_COLOR_ON = new THREE.Color('#ffd9b0')  // warm peach
+const GLOW_Y = 6.3       // world Y of lantern center
+const GLOW_RADIUS = 0.12 // sphere radius — small warm dot, bloom expands it
+const POOL_RADIUS = 14
+const POOL_Y = 0.5
+const SHADOW_RADIUS = 1.8 // soft dark contact shadow at lamp base
 
 function StreetLights() {
-  const postRef = useRef()
-  const headRef = useRef()
+  const lampRef = useRef()
+  const glowRef = useRef()
   const poolRef = useRef()
-  const lightsRef = useRef([])
-  const prevLitRef = useRef(null)
-  const getLightingPhase = useTimeOfDay((s) => s.getLightingPhase)
-  const { scene } = useThree()
+  const baseRef = useRef()
+  const sunAltUniform = useRef({ value: 0.5 })
+  const lampMatRef = useRef(null)
+  const glowMatRef = useRef(null)
+  const getLightingPhase = useTimeOfDay(s => s.getLightingPhase)
 
-  const lamps = lampData.lamps
-  const count = lamps.length
+  const allLamps = lampData.lamps
 
-  const postGeo = useMemo(() => {
-    const g = new THREE.CylinderGeometry(POST_RADIUS * 0.7, POST_RADIUS, POST_HEIGHT, 6)
-    g.translate(0, POST_HEIGHT / 2, 0)
-    return g
-  }, [])
-
-  const headGeo = useMemo(() => {
-    const g = new THREE.SphereGeometry(HEAD_RADIUS, 8, 6)
-    g.scale(1, 0.6, 1)
-    return g
-  }, [])
-
+  // ── Shared geometries ───────────────────────────────────────────────────────
+  const glowGeo = useMemo(() => new THREE.SphereGeometry(1, 8, 6), [])
   const poolGeo = useMemo(() => new THREE.CircleGeometry(POOL_RADIUS, 24), [])
+  const baseGeo = useMemo(() => new THREE.CircleGeometry(SHADOW_RADIUS, 16), [])
 
+  // ── Glow orb material — additive blended, self-lit ──────────────────────────
+  const glowMat = useMemo(() => {
+    const mat = new THREE.MeshBasicMaterial({
+      color: LAMP_COLOR_ON,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+    glowMatRef.current = mat
+    return mat
+  }, [])
+
+  // ── Pool material ───────────────────────────────────────────────────────────
   const poolMat = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
-      uColor: { value: new THREE.Color('#ffcc66') },
+      uColor: { value: new THREE.Color('#ffd9b0') },
       uIntensity: { value: 0.0 },
     },
     vertexShader: `
@@ -58,167 +60,238 @@ function StreetLights() {
       void main() {
         vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
-      }
-    `,
+      }`,
     fragmentShader: `
       uniform vec3 uColor;
       uniform float uIntensity;
       varying vec2 vUv;
       void main() {
         float dist = length(vUv - 0.5) * 2.0;
-        // Softer radial falloff — cubic ease for natural light spread
         float falloff = 1.0 - smoothstep(0.0, 1.0, dist);
-        falloff = falloff * falloff * falloff;
-        // Reduce center brightness, more even spread
-        float alpha = falloff * uIntensity * 0.5;
-        gl_FragColor = vec4(uColor * 0.8, alpha);
-      }
-    `,
+        falloff = pow(falloff, 1.5);
+        float alpha = falloff * uIntensity * 0.25;
+        gl_FragColor = vec4(uColor, alpha);
+      }`,
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   }), [])
 
-  const postMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#1a1a1a',
-    roughness: 0.7,
-    metalness: 0.5,
+  // Dark contact shadow — soft radial blur at lamp base
+  const baseMat = useMemo(() => new THREE.ShaderMaterial({
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      varying vec2 vUv;
+      void main() {
+        float dist = length(vUv - 0.5) * 2.0;
+        // Dense dark core fading to transparent edge
+        float shadow = 1.0 - smoothstep(0.0, 1.0, dist);
+        shadow = shadow * shadow; // sharper falloff
+        gl_FragColor = vec4(0.0, 0.0, 0.0, shadow * 0.6);
+      }`,
+    transparent: true,
+    depthWrite: false,
   }), [])
 
-  const headMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#999999',
-    emissive: '#ffcc66',
-    emissiveIntensity: 0.4,
-    roughness: 0.3,
-    metalness: 0.1,
-  }), [])
+  // ── Load Victorian GLTF ─────────────────────────────────────────────────────
+  // Strip KHR_materials_transmission (incompatible with InstancedMesh).
+  // Glass panels are cut out via alphaTest so glow orbs show through the cage.
+  const [lampModel, setLampModel] = useState(null)
 
-  // Create dynamic PointLight objects for real surface illumination
   useEffect(() => {
-    const lights = []
-    for (let i = 0; i < DYNAMIC_LIGHT_COUNT; i++) {
-      const light = new THREE.PointLight('#ffcc66', 0, 35, 1.5)
-      light.position.set(0, -1000, 0) // start offscreen
-      scene.add(light)
-      lights.push(light)
-    }
-    lightsRef.current = lights
-    return () => {
-      lights.forEach(l => scene.remove(l))
-    }
-  }, [scene])
+    const loader = new GLTFLoader()
+    loader.setMeshoptDecoder(MeshoptDecoder)
+    loader.load(
+      LAMP_URL,
+      (gltf) => {
+        let found = false
+        gltf.scene.updateMatrixWorld(true)
+        gltf.scene.traverse(child => {
+          if (child.isMesh && !found) {
+            found = true
+            const mat = child.material
 
-  // Set instance transforms
+            // Save transmission texture (identifies glass vs iron areas)
+            const txMap = mat.transmissionMap
+
+            // Strip transmission (incompatible with InstancedMesh)
+            mat.transmission = 0
+            mat.transmissionMap = null
+
+            // Glass glow: transmissionTexture becomes emissiveMap
+            // Glass areas glow warm amber at night, iron stays dark
+            mat.emissive = LAMP_COLOR_ON.clone()
+            mat.emissiveMap = txMap
+            mat.emissiveIntensity = 0
+
+            // Enable transparency so glass panels can fade to clear during day
+            mat.transparent = true
+
+            mat.onBeforeCompile = (shader) => {
+              shader.uniforms.uSunAltitude = sunAltUniform.current
+              if (txMap) {
+                shader.uniforms.uTxMap = { value: txMap }
+              }
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <common>',
+                `#include <common>
+                uniform float uSunAltitude;
+                ${txMap ? 'uniform sampler2D uTxMap;' : ''}`
+              )
+
+              // Night-darken iron parts for contrast against glass glow
+              shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <color_fragment>',
+                `#include <color_fragment>
+                float nightDarken = mix(0.4, 1.0, smoothstep(-0.1, 0.1, uSunAltitude));
+                diffuseColor.rgb *= nightDarken;`
+              )
+
+              // Glass alpha: clear during day, opaque at night (smooth golden hour fade)
+              if (txMap) {
+                shader.fragmentShader = shader.fragmentShader.replace(
+                  '#include <dithering_fragment>',
+                  `#include <dithering_fragment>
+                  float glassMask = texture2D(uTxMap, vMapUv).r;
+                  float glassVisible = 1.0 - smoothstep(-0.05, 0.15, uSunAltitude);
+                  gl_FragColor.a *= mix(1.0, glassVisible, glassMask);`
+                )
+              }
+            }
+
+            lampMatRef.current = mat
+
+            setLampModel({
+              geometry: child.geometry,
+              material: mat,
+              nodeMatrix: child.matrixWorld.clone(),
+            })
+          }
+        })
+      },
+      undefined,
+      (err) => console.warn('Victorian lamp model failed to load:', err)
+    )
+  }, [])
+
+  // ── Instance transforms — lamp posts ────────────────────────────────────────
   useEffect(() => {
-    if (!postRef.current || !headRef.current || !poolRef.current) return
-    const dummy = new THREE.Object3D()
+    if (!lampRef.current || !lampModel) return
+    const d = new THREE.Object3D()
+    const combined = new THREE.Matrix4()
 
-    lamps.forEach((lamp, i) => {
-      // Post
-      dummy.position.set(lamp.x, 0, lamp.z)
-      dummy.rotation.set(0, 0, 0)
-      dummy.scale.set(1, 1, 1)
-      dummy.updateMatrix()
-      postRef.current.setMatrixAt(i, dummy.matrix)
-
-      // Lamp head
-      dummy.position.set(lamp.x, POST_HEIGHT + HEAD_HEIGHT * 0.3, lamp.z)
-      dummy.updateMatrix()
-      headRef.current.setMatrixAt(i, dummy.matrix)
-
-      // Ground light pool (circle flat on ground)
-      dummy.position.set(lamp.x, POOL_Y, lamp.z)
-      dummy.rotation.set(-Math.PI / 2, 0, 0)
-      dummy.scale.set(1, 1, 1)
-      dummy.updateMatrix()
-      poolRef.current.setMatrixAt(i, dummy.matrix)
+    allLamps.forEach((lamp, i) => {
+      d.position.set(lamp.x, 0, lamp.z)
+      d.rotation.set(0, Math.random() * Math.PI * 2, 0)
+      d.scale.setScalar(LAMP_SCALE)
+      d.updateMatrix()
+      combined.copy(d.matrix).multiply(lampModel.nodeMatrix)
+      lampRef.current.setMatrixAt(i, combined)
     })
+    lampRef.current.instanceMatrix.needsUpdate = true
+  }, [allLamps, lampModel])
 
-    postRef.current.instanceMatrix.needsUpdate = true
-    headRef.current.instanceMatrix.needsUpdate = true
-    poolRef.current.instanceMatrix.needsUpdate = true
-  }, [lamps])
+  // ── Instance transforms — glow orbs ─────────────────────────────────────────
+  useEffect(() => {
+    if (!glowRef.current) return
+    const d = new THREE.Object3D()
+    allLamps.forEach((lamp, i) => {
+      d.position.set(lamp.x, GLOW_Y, lamp.z)
+      d.rotation.set(0, 0, 0)
+      d.scale.setScalar(GLOW_RADIUS)
+      d.updateMatrix()
+      glowRef.current.setMatrixAt(i, d.matrix)
+    })
+    glowRef.current.instanceMatrix.needsUpdate = true
+  }, [allLamps, lampModel])
 
-  const prevIntensityRef = useRef(-1)
-  const sortScratch = useMemo(() => lamps.map((l, i) => ({ i, x: l.x, z: l.z, d: 0 })), [lamps])
-
-  useFrame(({ camera }) => {
-    if (!headRef.current) return
-    const { shouldGlow, sunAltitude } = getLightingPhase()
-
-    if (!shouldGlow) {
-      if (prevIntensityRef.current !== 0) {
-        prevIntensityRef.current = 0
-        headMat.emissive.set('#ffcc66')
-        headMat.emissiveIntensity = 0.4
-        headMat.color.set('#999999')
-        headMat.needsUpdate = true
-        poolMat.uniforms.uIntensity.value = 0
-        // Hide ground pools entirely during day — no GPU work
-        if (poolRef.current) poolRef.current.visible = false
-        // Hide dynamic lights entirely — Three.js skips them in lighting pass
-        lightsRef.current.forEach(l => { l.visible = false })
-      }
-      return
+  // ── Instance transforms — pools + base rings ───────────────────────────────
+  useEffect(() => {
+    const d = new THREE.Object3D()
+    if (poolRef.current) {
+      allLamps.forEach((lamp, i) => {
+        d.position.set(lamp.x, POOL_Y, lamp.z)
+        d.rotation.set(-Math.PI / 2, 0, 0)
+        d.scale.setScalar(1)
+        d.updateMatrix()
+        poolRef.current.setMatrixAt(i, d.matrix)
+      })
+      poolRef.current.instanceMatrix.needsUpdate = true
     }
-
-    // Re-show pools and lights when glow kicks in (only on transition)
-    if (prevIntensityRef.current === 0) {
-      if (poolRef.current) poolRef.current.visible = true
-      lightsRef.current.forEach(l => { l.visible = true })
+    if (baseRef.current) {
+      allLamps.forEach((lamp, i) => {
+        d.position.set(lamp.x, 0.05, lamp.z)
+        d.rotation.set(-Math.PI / 2, 0, 0)
+        d.scale.setScalar(1)
+        d.updateMatrix()
+        baseRef.current.setMatrixAt(i, d.matrix)
+      })
+      baseRef.current.instanceMatrix.needsUpdate = true
     }
+  }, [allLamps, lampModel])
 
-    const t = Math.min(1, Math.max(0, (0.05 - sunAltitude) / 0.35))
-    const intensity = 1.0 + t * 7.0
+  // ── Per-frame time-of-day animation ─────────────────────────────────────────
+  // Transition starts at golden hour (sunAlt=0.15) for a gradual warm-up
+  useFrame(() => {
+    const { sunAltitude } = getLightingPhase()
 
-    const rounded = Math.round(intensity * 10) / 10
-    if (prevIntensityRef.current !== rounded) {
-      prevIntensityRef.current = rounded
-      headMat.emissive.copy(LAMP_COLOR_ON)
-      headMat.emissiveIntensity = intensity
-      headMat.color.copy(LAMP_COLOR_ON)
-      headMat.needsUpdate = true
-    }
+    sunAltUniform.current.value = sunAltitude
 
-    // Ground pool — softer than before
-    poolMat.uniforms.uIntensity.value = Math.min(1.0, t * 0.5)
+    // Ramp: 0 at sunAlt≥0.15 (day), 1 at sunAlt≤-0.3 (deep night)
+    const t = Math.min(1, Math.max(0, (0.15 - sunAltitude) / 0.45))
+    const isActive = t > 0.01
 
-    // Position dynamic PointLights at the nearest lamps to camera
-    const cx = camera.position.x, cz = camera.position.z
-    for (let j = 0; j < sortScratch.length; j++) {
-      const s = sortScratch[j]
-      const dx = s.x - cx, dz = s.z - cz
-      s.d = dx * dx + dz * dz
-    }
-    // Partial sort: find the closest N (selection sort for small N)
-    for (let j = 0; j < DYNAMIC_LIGHT_COUNT && j < sortScratch.length; j++) {
-      let minIdx = j
-      for (let k = j + 1; k < sortScratch.length; k++) {
-        if (sortScratch[k].d < sortScratch[minIdx].d) minIdx = k
-      }
-      if (minIdx !== j) {
-        const tmp = sortScratch[j]
-        sortScratch[j] = sortScratch[minIdx]
-        sortScratch[minIdx] = tmp
-      }
-    }
+    // Glass panels glow via emissiveMap
+    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = t * 1.2
+    // Glow orb opacity
+    if (glowMatRef.current) glowMatRef.current.opacity = t * 0.4
+    // Ground pools
+    poolMat.uniforms.uIntensity.value = Math.min(0.5, t * 0.6)
 
-    // PointLight intensity: ramp with darkness, scale with distance-based decay
-    const lightIntensity = t * 40
-    const lights = lightsRef.current
-    if (!lights.length) return
-    for (let j = 0; j < DYNAMIC_LIGHT_COUNT; j++) {
-      const lamp = sortScratch[j]
-      lights[j].position.set(lamp.x, POST_HEIGHT - 0.5, lamp.z)
-      lights[j].intensity = lightIntensity
-    }
+    // Show/hide pool + glow layers
+    if (poolRef.current) poolRef.current.visible = isActive
+    if (glowRef.current) glowRef.current.visible = isActive
   })
+
+  if (!lampModel) return null
 
   return (
     <group>
-      <instancedMesh ref={postRef} args={[postGeo, postMat, count]} castShadow frustumCulled={false} />
-      <instancedMesh ref={headRef} args={[headGeo, headMat, count]} frustumCulled={false} />
-      <instancedMesh ref={poolRef} args={[poolGeo, poolMat, count]} frustumCulled={false} />
+      {/* Victorian lamp posts — iron with glass cutouts (1 draw call) */}
+      <instancedMesh
+        ref={lampRef}
+        args={[lampModel.geometry, lampModel.material, allLamps.length]}
+        castShadow
+        frustumCulled={false}
+      />
+
+      {/* Warm glow orbs at lantern heads (1 draw call) */}
+      <instancedMesh
+        ref={glowRef}
+        args={[glowGeo, glowMat, allLamps.length]}
+        frustumCulled={false}
+      />
+
+      {/* Ground light pools (1 draw call) */}
+      <instancedMesh
+        ref={poolRef}
+        args={[poolGeo, poolMat, allLamps.length]}
+        frustumCulled={false}
+      />
+
+      {/* Dark base rings (1 draw call) */}
+      <instancedMesh
+        ref={baseRef}
+        args={[baseGeo, baseMat, allLamps.length]}
+        frustumCulled={false}
+      />
+
     </group>
   )
 }

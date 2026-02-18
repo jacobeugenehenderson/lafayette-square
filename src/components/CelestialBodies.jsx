@@ -97,10 +97,10 @@ function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, 
         shadow-mapSize-width={4096}
         shadow-mapSize-height={4096}
         shadow-camera-far={2400}
-        shadow-camera-left={-600}
-        shadow-camera-right={600}
-        shadow-camera-top={600}
-        shadow-camera-bottom={-600}
+        shadow-camera-left={-900}
+        shadow-camera-right={900}
+        shadow-camera-top={900}
+        shadow-camera-bottom={-900}
         shadow-bias={-0.0001}
         shadow-normalBias={0.15}
       />
@@ -841,7 +841,7 @@ function CelestialBodies() {
     }
 
     if (isNight) {
-      const moonBrightness = 0.3 + moonIllum.fraction * 0.4
+      const moonBrightness = 0.5 + moonIllum.fraction * 0.3
       if (moonAlt > 0) {
         celestialToPosition(moonPos.azimuth + Math.PI, moonPos.altitude, LIGHT_RADIUS, _nightLP)
       } else {
@@ -862,7 +862,7 @@ function CelestialBodies() {
         intensity: 0.25,
       }
       sky = { top: '#0a1020', bottom: '#1a2545' }
-      ambient = { color: '#334466', intensity: 0.35 }
+      ambient = { color: '#3a4a70', intensity: 0.45 }
     } else if (isTwilight) {
       const t = (sunAlt + 0.12) / 0.17
       primary = {
@@ -967,15 +967,19 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.08 : 0.45) * (1 + cc * 0.4)} />
+      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.15 : 0.45) * (1 + cc * 0.4)} />
       <ambientLight
         color={lighting.ambient.color}
         intensity={lighting.ambient.intensity * (1 + cc * 0.4)}
       />
+      {/* Warm street-light scatter — simulates aggregate lamp glow in the atmosphere */}
+      {lighting.isNight && (
+        <ambientLight color="#8a7060" intensity={0.15} />
+      )}
       <hemisphereLight
-        color={lighting.isNight ? '#4466aa' : '#ffeedd'}
-        groundColor={lighting.isNight ? '#222233' : '#443333'}
-        intensity={(lighting.isNight ? 0.1 : 0.35) * (1 + cc * 0.5)}
+        color={lighting.isNight ? '#556688' : '#ffeedd'}
+        groundColor={lighting.isNight ? '#443322' : '#443333'}
+        intensity={(lighting.isNight ? 0.25 : 0.35) * (1 + cc * 0.5)}
       />
       <PrimaryOrb {...primaryWeathered} />
       <SecondaryOrb {...lighting.secondary} />
