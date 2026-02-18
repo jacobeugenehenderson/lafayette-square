@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-const useBusinessState = create((set, get) => ({
+const usePlaceState = create((set, get) => ({
   openBuildings: new Set(),
   openPercentage: 0,
 
@@ -24,4 +24,4 @@ const useBusinessState = create((set, get) => ({
   openAll: (ids) => set({ openBuildings: new Set(ids) }),
 }))
 
-export default useBusinessState
+export default usePlaceState

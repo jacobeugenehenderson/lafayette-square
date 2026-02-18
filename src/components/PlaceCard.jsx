@@ -537,7 +537,7 @@ function ReviewsTab({ listingId, isLocal }) {
 
       {!isLocal && (
         <div className="text-center py-2 mb-4 rounded-lg bg-white/5 border border-white/10">
-          <p className="text-white/40 text-xs">Scan a QR code at a local business to unlock reviews</p>
+          <p className="text-white/40 text-xs">Scan a QR code at a local place to unlock reviews</p>
         </div>
       )}
 
@@ -963,9 +963,9 @@ function EventsTab({ listingId, isGuardian }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════
-// Main BusinessCard
+// Main PlaceCard
 // ═════════════════════════════════════════════════════════════════════
-function BusinessCard({ listing, building, onClose, allListings }) {
+function PlaceCard({ listing, building, onClose, allListings }) {
   const [activeTab, setActiveTab] = useState(null)
   const [activeListingIdx, setActiveListingIdx] = useState(0)
   const { isLocal } = useLocalStatus()
@@ -1115,7 +1115,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
             <div className="p-4 pb-3">
               <h2 className="text-xl font-semibold text-white leading-tight">
                 {isGuardian ? (
-                  <EditableField value={name} field="name" listingId={listingId} isGuardian placeholder="Business name">
+                  <EditableField value={name} field="name" listingId={listingId} isGuardian placeholder="Place name">
                     {name}
                   </EditableField>
                 ) : name}
@@ -1228,7 +1228,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              You are the guardian of this business
+              You are the guardian of this place
             </div>
           ) : (
             <button
@@ -1238,7 +1238,7 @@ function BusinessCard({ listing, building, onClose, allListings }) {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              Is this your business?
+              Is this your place?
             </button>
           )}
         </div>
@@ -1258,4 +1258,4 @@ function BusinessCard({ listing, building, onClose, allListings }) {
   )
 }
 
-export default BusinessCard
+export default PlaceCard

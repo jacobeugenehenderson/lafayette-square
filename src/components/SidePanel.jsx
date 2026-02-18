@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import useBusinessState from '../hooks/useBusinessState'
+import usePlaceState from '../hooks/usePlaceState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
@@ -279,8 +279,8 @@ const BULLETIN_SECTIONS = [
     ],
   },
   {
-    id: 'business-services',
-    title: 'Business Services',
+    id: 'professional-services',
+    title: 'Professional Services',
     posts: [
       { text: 'CPA, 15yr resident \u2014 tax prep for neighbors, fair rates', age: '3h', tag: 'Verified' },
       { text: 'Freelance graphic designer, happy to help with flyers, logos, signage', age: '8h' },
@@ -404,17 +404,17 @@ function AlmanacTab({ showAdmin = false }) {
   const [useRealTime, setUseRealTime] = useState(true)
   const [use24Hour, setUse24Hour] = useState(false)
   const [useCelsius, setUseCelsius] = useState(false)
-  const { randomize, openAll, closeAll } = useBusinessState()
+  const { randomize, openAll, closeAll } = usePlaceState()
   const buildingIds = useRef(buildingsData.buildings.map(b => b.id))
 
-  // Count real businesses currently open based on their hours
+  // Count real places currently open based on their hours
   const realOpenCount = useMemo(() => {
     return _buildingsWithHours.filter(b => _isWithinHours(b.hours, currentTime)).length
   }, [currentTime])
 
   const [sliderValue, setSliderValue] = useState(realOpenCount)
 
-  // Keep slider >= realOpenCount when real businesses open/close
+  // Keep slider >= realOpenCount when real places open/close
   useEffect(() => {
     setSliderValue(v => Math.max(v, realOpenCount))
   }, [realOpenCount])
@@ -573,7 +573,7 @@ function AlmanacTab({ showAdmin = false }) {
       </CollapsibleSection>
 
       {showAdmin && (
-        <CollapsibleSection title="Business Simulation" defaultOpen={false} bg="bg-white/3">
+        <CollapsibleSection title="Storefront Simulation" defaultOpen={false} bg="bg-white/3">
           <div className="px-4 pb-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] text-white/50">
@@ -669,12 +669,12 @@ function LafayetteSubsection({ section, color }) {
   const colors = COLOR_CLASSES[color]
   const isActive = activeTags.has(section.id)
 
-  const businesses = useMemo(() => {
+  const places = useMemo(() => {
     return listings.filter(l => l.subcategory === section.id)
   }, [section.id, listings])
 
   const handleToggleCategory = () => {
-    // Clear any single-business selection
+    // Clear any single-place selection
     deselect()
 
     // Toggle the subcategory (single-select: replaces prior)
@@ -691,10 +691,10 @@ function LafayetteSubsection({ section, color }) {
     }
   }
 
-  const handleSelectBusiness = (biz) => {
-    // Clear category tags — single business mode
+  const handleSelectPlace = (biz) => {
+    // Clear category tags — single place mode
     useLandmarkFilter.getState().clearTags()
-    // Highlight the business (shows pin, card opens on building click)
+    // Highlight the place (shows pin, card opens on building click)
     highlight(biz.id, biz.building_id)
     // Switch to browse if in hero so flyTo is honored
     const cam = useCamera.getState()
@@ -717,17 +717,17 @@ function LafayetteSubsection({ section, color }) {
       >
         <span className={`w-1.5 h-1.5 rounded-full ${isActive ? colors.dot : 'bg-white/30'}`} />
         <span className={`text-xs flex-1 ${isActive ? 'text-white' : 'text-white/80'}`}>{section.name}</span>
-        {businesses.length > 0 && <span className="text-[10px] text-white/40">{businesses.length}</span>}
+        {places.length > 0 && <span className="text-[10px] text-white/40">{places.length}</span>}
       </button>
 
-      {(isActive || businesses.some(b => b.id === selectedListingId)) && businesses.length > 0 && (
+      {(isActive || places.some(b => b.id === selectedListingId)) && places.length > 0 && (
         <div className="ml-4 mb-1">
-          {businesses.map(biz => {
+          {places.map(biz => {
             const isFocused = selectedListingId === biz.id
             return (
               <button
                 key={biz.id}
-                onClick={() => handleSelectBusiness(biz)}
+                onClick={() => handleSelectPlace(biz)}
                 className={`w-full flex items-center gap-2 px-3 py-1 text-left transition-colors duration-150 rounded ${
                   isFocused ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white/80 hover:bg-white/5'
                 } cursor-pointer`}

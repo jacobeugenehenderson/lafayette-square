@@ -41,7 +41,7 @@ export default function ClaimPage({ listingId, secret }) {
             className="rounded-xl p-4 border"
             style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
           >
-            <p className="text-white font-medium">You're already the guardian of this business.</p>
+            <p className="text-white font-medium">You're already the guardian of this place.</p>
             <p className="text-white/50 text-sm mt-1">You can post events and specials from the main map.</p>
           </div>
         )}
@@ -65,7 +65,7 @@ export default function ClaimPage({ listingId, secret }) {
                 <div className="text-2xl mb-1">&#10003;</div>
                 <p className="text-white font-medium">Claim successful!</p>
                 <p className="text-white/50 text-sm mt-2">
-                  This device is now the guardian of {landmark?.name || 'this business'}.
+                  This device is now the guardian of {landmark?.name || 'this place'}.
                   You can post events and specials from the map view.
                 </p>
               </div>
@@ -73,7 +73,7 @@ export default function ClaimPage({ listingId, secret }) {
               <div className="rounded-xl p-4 border border-red-500/30 bg-red-500/10">
                 <p className="text-red-300 text-sm">{result.error || 'Claim failed'}</p>
                 <p className="text-white/40 text-xs mt-2">
-                  The secret may be invalid or this business is already claimed by another device.
+                  The secret may be invalid or this place is already claimed by another device.
                 </p>
               </div>
             )}

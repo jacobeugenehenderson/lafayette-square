@@ -3,7 +3,7 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
 import buildingsData from '../data/buildings.json'
-import BusinessCard from './BusinessCard'
+import PlaceCard from './PlaceCard'
 
 const INSTRUCTIONS = {
   hero: '',
@@ -50,7 +50,7 @@ function Controls() {
       )}
 
       {showCard && selectedId && buildingInfo && (
-        <BusinessCard
+        <PlaceCard
           listing={listing}
           building={buildingInfo}
           allListings={allListings}

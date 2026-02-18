@@ -32,7 +32,7 @@ const useLocalStatus = create((set, get) => ({
     }
   },
 
-  /** Log a check-in at a business location */
+  /** Log a check-in at a local place */
   checkin: async (locationId) => {
     set({ loading: true, error: null })
     try {

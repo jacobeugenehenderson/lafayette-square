@@ -49,7 +49,7 @@ function App() {
     return <CheckinPage locationId={route.locationId} />
   }
   if (route.page === 'claim') {
-    return <ClaimPage businessId={route.businessId} secret={route.secret} />
+    return <ClaimPage listingId={route.listingId} secret={route.secret} />
   }
 
   const isGround = window.location.search.includes('ground')
@@ -70,7 +70,7 @@ function parseRoute() {
   const checkinMatch = path.match(/^\/checkin\/([^/]+)$/)
   if (checkinMatch) return { page: 'checkin', locationId: checkinMatch[1] }
   const claimMatch = path.match(/^\/claim\/([^/]+)\/([^/]+)$/)
-  if (claimMatch) return { page: 'claim', businessId: claimMatch[1], secret: claimMatch[2] }
+  if (claimMatch) return { page: 'claim', listingId: claimMatch[1], secret: claimMatch[2] }
   return { page: 'scene' }
 }
 

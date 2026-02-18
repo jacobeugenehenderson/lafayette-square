@@ -9,7 +9,7 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { mergeBufferGeometries } from '../lib/mergeGeometries'
 
-import useBusinessState from '../hooks/useBusinessState'
+import usePlaceState from '../hooks/usePlaceState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
@@ -360,7 +360,7 @@ function Foundations() {
 }
 
 // ============ NEON BAND ============
-// Glows when the business is currently open AND it's dark enough to see.
+// Glows when the place is currently open AND it's dark enough to see.
 // Real listings check their hours; simulated listings are always "open."
 const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 function _isWithinHours(hours, time) {
@@ -479,8 +479,8 @@ function Building({ building, neonInfo }) {
   const foundationY = getFoundationHeight(building)
 
   // Neon band: real listings always mount (hours checked inside NeonBand),
-  // simulated listings mount only when the business sim slider marks them open
-  const isSimOpen = useBusinessState((s) => s.openBuildings.has(building.id))
+  // simulated listings mount only when the storefront sim slider marks them open
+  const isSimOpen = usePlaceState((s) => s.openBuildings.has(building.id))
   const categoryHex = neonInfo?.hex
   const listingHours = neonInfo?.hours
   const showNeon = !!categoryHex || isSimOpen
