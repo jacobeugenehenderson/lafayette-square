@@ -37,6 +37,9 @@ __pycache__/
 assets/botanical-reference-hires/
 models/
 public/models/
+# Allow the victorian lamp model (needed at runtime)
+!public/models/lamp-posts/
+!public/models/lamp-posts/victorian-lamp.glb
 public/photos/lafayette-square/
 
 # Raw data cache (regenerable via scripts/)
