@@ -3,6 +3,25 @@ import { getDeviceHash } from '../lib/device'
 import { postClaim } from '../lib/api'
 
 const GUARDIAN_KEY = 'lsq_guardian_listings'
+const ADMIN_KEY = 'lsq_admin'
+const ADMIN_SECRET = 'lafayette1850'
+
+// Check for ?admin= param on load, persist to localStorage
+function checkAdminParam() {
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const secret = params.get('admin')
+    if (secret === ADMIN_SECRET) {
+      localStorage.setItem(ADMIN_KEY, 'true')
+      // Clean URL
+      params.delete('admin')
+      const clean = params.toString()
+      window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
+      return true
+    }
+    return localStorage.getItem(ADMIN_KEY) === 'true'
+  } catch { return false }
+}
 
 function loadGuardianList() {
   try {
@@ -18,11 +37,12 @@ function loadGuardianList() {
 
 const useGuardianStatus = create((set, get) => ({
   guardianOf: loadGuardianList(),
+  isAdmin: checkAdminParam(),
   loading: false,
   error: null,
 
   isGuardianOf(listingId) {
-    return get().guardianOf.includes(listingId)
+    return get().isAdmin || get().guardianOf.includes(listingId)
   },
 
   /** Claim guardian ownership of a listing via secret QR code */

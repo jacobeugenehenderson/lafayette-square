@@ -88,6 +88,7 @@ function doGet(e) {
       case 'reviews':      return getReviews(e.parameter.bid)
       case 'events':       return getEvents()
       case 'checkin-status': return getCheckinStatus(e.parameter.dh)
+      case 'listings':     return getBusinesses()
       default:             return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
@@ -114,6 +115,7 @@ function doPost(e) {
       case 'event':          return postEvent(body)
       case 'claim':          return postClaim(body)
       case 'community-post': return postCommunityPost(body)
+      case 'update-listing': return postUpdateListing(body)
       default:               return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
@@ -139,6 +141,7 @@ function getBusinesses() {
     ...biz,
     hours:        parseJsonField(biz.hours_json),
     amenities:    parseJsonField(biz.amenities_json),
+    tags:         parseJsonField(biz.tags_json),
     photos:       parseJsonField(biz.photos_json),
     architecture: parseJsonField(biz.architecture_json),
     history:      parseJsonField(biz.history_json),
@@ -254,7 +257,8 @@ function postCheckin(body) {
 // ─── POST: Review ───────────────────────────────────────────────────────────
 
 function postReview(body) {
-  const { device_hash, business_id, text, rating } = body
+  const business_id = body.business_id || body.listing_id
+  const { device_hash, text, rating } = body
   if (!device_hash || !business_id || !text) {
     return errorResponse('Missing required fields', 'bad_request')
   }
@@ -284,7 +288,8 @@ function postReview(body) {
 // ─── POST: Event ────────────────────────────────────────────────────────────
 
 function postEvent(body) {
-  const { device_hash, business_id, title, description, start_date, end_date, category_tag } = body
+  const business_id = body.business_id || body.listing_id
+  const { device_hash, title, description, start_date, end_date, category_tag } = body
   if (!device_hash || !business_id || !title || !start_date) {
     return errorResponse('Missing required fields', 'bad_request')
   }
@@ -312,7 +317,8 @@ function postEvent(body) {
 // ─── POST: Claim (Guardian) ─────────────────────────────────────────────────
 
 function postClaim(body) {
-  const { device_hash, business_id, secret } = body
+  const business_id = body.business_id || body.listing_id
+  const { device_hash, secret } = body
   if (!device_hash || !business_id || !secret) {
     return errorResponse('Missing required fields', 'bad_request')
   }
@@ -342,6 +348,63 @@ function postClaim(body) {
   sheet.appendRow([device_hash, business_id, token, nowISO()])
 
   return jsonResponse({ token: token, claimed: true })
+}
+
+// ─── POST: Update Listing (Guardian) ────────────────────────────────────────
+
+function postUpdateListing(body) {
+  const business_id = body.listing_id || body.business_id
+  const { device_hash, fields } = body
+  if (!device_hash || !business_id || !fields) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  // Verify device is a guardian for this business
+  const guardians = sheetToObjects(getSheet('Guardians'))
+  const isGuardian = guardians.some(g =>
+    g.device_hash === device_hash && g.business_id === business_id
+  )
+  if (!isGuardian) {
+    return errorResponse('Not a guardian for this business', 'unauthorized')
+  }
+
+  // Find business row
+  const sheet = getSheet('Businesses')
+  const data = sheet.getDataRange().getValues()
+  const headers = data[0]
+  const idCol = headers.indexOf('id')
+  let targetRow = -1
+  for (let r = 1; r < data.length; r++) {
+    if (data[r][idCol] === business_id) {
+      targetRow = r + 1  // 1-indexed for Sheets API
+      break
+    }
+  }
+  if (targetRow === -1) {
+    return errorResponse('Business not found', 'not_found')
+  }
+
+  // Map field names to sheet columns, writing JSON for complex fields
+  const JSON_FIELDS = {
+    hours: 'hours_json',
+    amenities: 'amenities_json',
+    tags: 'tags_json',
+    photos: 'photos_json',
+    architecture: 'architecture_json',
+    history: 'history_json',
+  }
+
+  const updated = []
+  Object.entries(fields).forEach(([key, value]) => {
+    const colName = JSON_FIELDS[key] || key
+    const colIdx = headers.indexOf(colName)
+    if (colIdx === -1) return  // unknown column, skip
+    const cellValue = JSON_FIELDS[key] ? JSON.stringify(value) : value
+    sheet.getRange(targetRow, colIdx + 1).setValue(cellValue)
+    updated.push(key)
+  })
+
+  return jsonResponse({ updated: updated })
 }
 
 // ─── POST: Community Post ───────────────────────────────────────────────────
@@ -504,7 +567,7 @@ function setupSheets() {
 
   const tabs = {
     'Buildings':       ['id', 'name', 'address', 'color', 'stories', 'year_built', 'year_renovated', 'zoning', 'assessed_value', 'building_sqft', 'lot_acres', 'description', 'architect', 'style', 'units', 'historic_status', 'facade_image'],
-    'Businesses':      ['id', 'building_id', 'name', 'address', 'category', 'subcategory', 'phone', 'website', 'description', 'rating', 'hours_json', 'amenities_json', 'photos_json', 'rent_range', 'architecture_json', 'history_json', 'active'],
+    'Businesses':      ['id', 'building_id', 'name', 'address', 'category', 'subcategory', 'phone', 'website', 'description', 'rating', 'hours_json', 'amenities_json', 'tags_json', 'photos_json', 'logo', 'rent_range', 'architecture_json', 'history_json', 'active'],
     'Categories':      ['id', 'name', 'type', 'parent_id', 'color_hex', 'emoji'],
     'Checkins':        ['device_hash', 'location_id', 'timestamp', 'date'],
     'Reviews':         ['id', 'business_id', 'device_hash', 'text', 'rating', 'timestamp'],

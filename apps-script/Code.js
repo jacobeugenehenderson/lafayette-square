@@ -396,11 +396,22 @@ function postUpdateListing(body) {
     'hours_json', 'amenities_json', 'tags_json', 'photos_json', 'history_json'
   ]
 
+  // Map shorthand field names to JSON column names
+  const JSON_FIELD_MAP = {
+    hours: 'hours_json',
+    amenities: 'amenities_json',
+    tags: 'tags_json',
+    photos: 'photos_json',
+    history: 'history_json',
+  }
+
   const headerMap = getHeaderMap(sheet)
   const updated = []
   for (const [key, value] of Object.entries(fields)) {
-    if (EDITABLE.includes(key)) {
-      updateCell(sheet, result.rowIndex, headerMap, key, value)
+    const colName = JSON_FIELD_MAP[key] || key
+    if (EDITABLE.includes(colName)) {
+      const cellValue = JSON_FIELD_MAP[key] ? JSON.stringify(value) : value
+      updateCell(sheet, result.rowIndex, headerMap, colName, cellValue)
       updated.push(key)
     }
   }

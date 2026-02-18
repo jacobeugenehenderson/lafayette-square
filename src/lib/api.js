@@ -25,7 +25,7 @@ const MOCKS = {
   },
   'events':         () => ({ data: _mockEvents }),
   'listings':       () => ({ data: [] }),
-  'update-listing': () => ({ data: { success: true, updated: [] } }),
+  'update-listing': (body) => ({ data: { success: true, updated: Object.keys(body.fields || {}) } }),
   'accept-listing': () => ({ data: { success: true } }),
   'remove-listing': () => ({ data: { success: true } }),
 }
@@ -65,13 +65,13 @@ export async function getCheckinStatus(deviceHash) {
 // ── Guardian claim ──────────────────────────────────────────────────────
 
 export async function postClaim(deviceHash, listingId, secret) {
-  return post('claim', { device_hash: deviceHash, listing_id: listingId, secret })
+  return post('claim', { device_hash: deviceHash, listing_id: listingId, business_id: listingId, secret })
 }
 
 // ── Reviews (local-only) ────────────────────────────────────────────────
 
 export async function postReview(deviceHash, listingId, text, rating) {
-  return post('review', { device_hash: deviceHash, listing_id: listingId, text, rating })
+  return post('review', { device_hash: deviceHash, listing_id: listingId, business_id: listingId, text, rating })
 }
 
 export async function getReviews(listingId) {
@@ -84,6 +84,7 @@ export async function postEvent(deviceHash, listingId, title, description, start
   return post('event', {
     device_hash: deviceHash,
     listing_id: listingId,
+    business_id: listingId,
     title, description,
     start_date: startDate,
     end_date: endDate,
@@ -102,7 +103,7 @@ export async function getListings() {
 }
 
 export async function updateListing(deviceHash, listingId, fields) {
-  return post('update-listing', { device_hash: deviceHash, listing_id: listingId, fields })
+  return post('update-listing', { device_hash: deviceHash, listing_id: listingId, business_id: listingId, fields })
 }
 
 export async function acceptListing(deviceHash, listingId) {

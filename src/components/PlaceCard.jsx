@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
+import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
 import useLocalStatus from '../hooks/useLocalStatus'
 import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
@@ -266,6 +267,305 @@ function EditableField({ value, field, listingId, isGuardian, placeholder, multi
   )
 }
 
+// ─── Hours editor (guardian inline editing) ───────────────────────────
+function HoursEditor({ hours, listingId }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(() => {
+    const d = {}
+    DAY_NAMES.forEach(day => {
+      d[day] = hours?.[day]
+        ? { enabled: true, open: hours[day].open, close: hours[day].close }
+        : { enabled: false, open: '09:00', close: '17:00' }
+    })
+    return d
+  })
+  const [saving, setSaving] = useState(false)
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const result = {}
+      DAY_NAMES.forEach(day => {
+        if (draft[day].enabled) {
+          result[day] = { open: draft[day].open, close: draft[day].close }
+        }
+      })
+      const dh = await getDeviceHash()
+      await apiUpdateListing(dh, listingId, { hours: result })
+      useListings.getState().updateListing(listingId, { hours: result })
+    } catch { /* silent */ }
+    setSaving(false)
+    setEditing(false)
+  }
+
+  const openStatus = useMemo(() => getOpenStatus(hours), [hours])
+  const formattedHours = useMemo(() => formatHoursDisplay(hours), [hours])
+
+  if (!editing) {
+    return (
+      <div
+        className="cursor-pointer group/hours"
+        onClick={() => setEditing(true)}
+        title="Click to edit hours"
+      >
+        {formattedHours ? (
+          <details className="group" onClick={e => e.stopPropagation()}>
+            <summary className="cursor-pointer text-sm text-white/60 hover:text-white/80 transition-colors flex items-center gap-2">
+              <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className={openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400' : ''}>
+                {openStatus.text}
+              </span>
+              <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              <span className="text-white/20 text-[10px] opacity-0 group-hover/hours:opacity-100 transition-opacity">edit</span>
+            </summary>
+            <div className="mt-2 ml-6 space-y-1">
+              {formattedHours.map(({ day, hours: h }) => (
+                <div key={day} className="flex justify-between text-xs">
+                  <span className="text-white/50">{day}</span>
+                  <span className={h === 'Closed' ? 'text-white/30' : 'text-white/70'}>{h}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-white/60 hover:text-white/80 transition-colors">
+            <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <em className="text-white/30">Add hours...</em>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-white/50 font-medium">Hours</span>
+        <div className="flex gap-2">
+          <button onClick={() => setEditing(false)} className="text-[10px] text-white/40 hover:text-white/60">Cancel</button>
+          <button onClick={save} disabled={saving} className="text-[10px] text-emerald-400 hover:text-emerald-300 disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </div>
+      <div className="space-y-1">
+        {DAY_NAMES.map(day => (
+          <div key={day} className="flex items-center gap-2 text-xs">
+            <span className="w-8 text-white/50">{DAY_LABELS[day]}</span>
+            <button
+              type="button"
+              onClick={() => setDraft(d => ({ ...d, [day]: { ...d[day], enabled: !d[day].enabled } }))}
+              className={`w-10 h-5 rounded-full transition-colors relative ${draft[day].enabled ? 'bg-emerald-500/30' : 'bg-white/10'}`}
+            >
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${draft[day].enabled ? 'left-5 bg-emerald-400' : 'left-0.5 bg-white/30'}`} />
+            </button>
+            {draft[day].enabled ? (
+              <>
+                <input
+                  type="time"
+                  value={draft[day].open}
+                  onChange={e => setDraft(d => ({ ...d, [day]: { ...d[day], open: e.target.value } }))}
+                  className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-white text-xs w-[5.5rem] focus:outline-none focus:border-white/30 [color-scheme:dark]"
+                />
+                <span className="text-white/30">&ndash;</span>
+                <input
+                  type="time"
+                  value={draft[day].close}
+                  onChange={e => setDraft(d => ({ ...d, [day]: { ...d[day], close: e.target.value } }))}
+                  className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-white text-xs w-[5.5rem] focus:outline-none focus:border-white/30 [color-scheme:dark]"
+                />
+              </>
+            ) : (
+              <span className="text-white/30 text-xs">Closed</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Tag Picker (guardian tag management) ─────────────────────────────
+function TagPicker({ listing, isGuardian }) {
+  const [editing, setEditing] = useState(false)
+  const tags = listing?.tags || []
+  const listingId = listing?.id
+  const category = listing?.category
+
+  // Derive current state from tags
+  const currentSubcatId = tags.find(t => SUBCATEGORY_TAG_IDS.has(t)) || null
+  const currentFeatures = tags.filter(t => TAG_BY_ID[t]?.level === 'feature')
+  const currentAmenities = tags.filter(t => TAG_BY_ID[t]?.level === 'amenity')
+
+  const [selectedSubcat, setSelectedSubcat] = useState(currentSubcatId || listing?.subcategory || null)
+  const [selectedFeatures, setSelectedFeatures] = useState(new Set(currentFeatures))
+  const [selectedAmenities, setSelectedAmenities] = useState(new Set(currentAmenities))
+  const [saving, setSaving] = useState(false)
+
+  const toggleFeature = (id) => setSelectedFeatures(s => {
+    const next = new Set(s)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+
+  const toggleAmenity = (id) => setSelectedAmenities(s => {
+    const next = new Set(s)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const allTags = [
+        ...(selectedSubcat ? [selectedSubcat] : []),
+        ...selectedFeatures,
+        ...selectedAmenities,
+      ]
+      const derivedCategory = selectedSubcat ? primaryTagToCategory(selectedSubcat) : category
+      const dh = await getDeviceHash()
+      await apiUpdateListing(dh, listingId, {
+        tags: allTags,
+        category: derivedCategory,
+        subcategory: selectedSubcat,
+      })
+      useListings.getState().updateListing(listingId, {
+        tags: allTags,
+        category: derivedCategory,
+        subcategory: selectedSubcat,
+      })
+    } catch { /* silent */ }
+    setSaving(false)
+    setEditing(false)
+  }
+
+  // Display mode: show active tags as pills
+  if (!editing) {
+    const displayTags = tags.filter(t => TAG_BY_ID[t] && !SUBCATEGORY_TAG_IDS.has(t))
+    const fallbackAmenities = (!tags.length && listing?.amenities) ? listing.amenities : null
+
+    return (
+      <div className="mt-2">
+        <div className="flex flex-wrap gap-1.5">
+          {displayTags.map(t => (
+            <span key={t} className="px-2 py-0.5 rounded-full bg-white/8 text-white/60 text-[10px]">
+              {TAG_BY_ID[t].label}
+            </span>
+          ))}
+          {fallbackAmenities && fallbackAmenities.map((a, i) => (
+            <span key={i} className="px-2 py-0.5 rounded-full bg-white/8 text-white/60 text-[10px]">{a}</span>
+          ))}
+          {isGuardian && (
+            <button
+              onClick={() => setEditing(true)}
+              className="px-2 py-0.5 rounded-full bg-white/5 text-white/30 text-[10px] hover:text-white/50 hover:bg-white/10 transition-colors"
+            >
+              {displayTags.length || fallbackAmenities?.length ? 'edit tags' : '+ add tags'}
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Edit mode: grouped tag sections
+  const catGroup = primaryTagToCategory(selectedSubcat) || category
+  const featureTags = catGroup ? (TAGS_BY_GROUP[catGroup] || []).filter(t => t.level === 'feature') : []
+  const amenityTagsList = TAGS_BY_GROUP['amenities'] || []
+
+  // Group subcategory tags by parent category for the type selector
+  const subcatsByCategory = {}
+  for (const [catId, group] of Object.entries(TAGS_BY_GROUP)) {
+    if (catId === 'amenities') continue
+    const subs = group.filter(t => t.level === 'subcategory')
+    if (subs.length) subcatsByCategory[catId] = subs
+  }
+
+  return (
+    <div className="mt-2 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-white/50 font-medium">Tags</span>
+        <div className="flex gap-2">
+          <button onClick={() => setEditing(false)} className="text-[10px] text-white/40 hover:text-white/60">Cancel</button>
+          <button onClick={save} disabled={saving} className="text-[10px] text-emerald-400 hover:text-emerald-300 disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </div>
+
+      {/* Type (subcategory) — single select */}
+      <div>
+        <span className="text-[10px] text-white/40 uppercase tracking-wider">Type</span>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {Object.entries(subcatsByCategory).map(([catId, subs]) =>
+            subs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedSubcat(t.id === selectedSubcat ? null : t.id)}
+                className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+                  t.id === selectedSubcat
+                    ? 'bg-white/20 text-white'
+                    : 'bg-white/5 text-white/40 hover:text-white/60'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Features — multi-select, filtered to category */}
+      {featureTags.length > 0 && (
+        <div>
+          <span className="text-[10px] text-white/40 uppercase tracking-wider">Features</span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {featureTags.map(t => (
+              <button
+                key={t.id}
+                onClick={() => toggleFeature(t.id)}
+                className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+                  selectedFeatures.has(t.id)
+                    ? 'bg-blue-500/20 text-blue-300'
+                    : 'bg-white/5 text-white/40 hover:text-white/60'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Amenities — multi-select, always shown */}
+      <div>
+        <span className="text-[10px] text-white/40 uppercase tracking-wider">Amenities</span>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {amenityTagsList.map(t => (
+            <button
+              key={t.id}
+              onClick={() => toggleAmenity(t.id)}
+              className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+                selectedAmenities.has(t.id)
+                  ? 'bg-emerald-500/20 text-emerald-300'
+                  : 'bg-white/5 text-white/40 hover:text-white/60'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Detail row helper ───────────────────────────────────────────────
 function DetailRow({ label, children }) {
   return (
@@ -380,6 +680,19 @@ function OverviewTab({ listing, building, isGuardian }) {
         {!isGuardian && !website && null}
       </div>
 
+      {(isGuardian || listing?.logo) && (
+        <div className="flex items-center gap-3">
+          <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          {isGuardian ? (
+            <EditableField value={listing?.logo} field="logo" listingId={listingId} isGuardian placeholder="Add logo URL..." />
+          ) : listing?.logo ? (
+            <img src={assetUrl(listing.logo)} alt="Logo" className="h-8 rounded" />
+          ) : null}
+        </div>
+      )}
+
       {rentRange && (
         <div className="flex items-center gap-3">
           <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,7 +702,9 @@ function OverviewTab({ listing, building, isGuardian }) {
         </div>
       )}
 
-      {formattedHours && (
+      {isGuardian ? (
+        <HoursEditor hours={hours} listingId={listingId} />
+      ) : formattedHours ? (
         <details className="group mt-1">
           <summary className="cursor-pointer text-sm text-white/60 hover:text-white/80 transition-colors flex items-center gap-2">
             <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -411,17 +726,9 @@ function OverviewTab({ listing, building, isGuardian }) {
             ))}
           </div>
         </details>
-      )}
+      ) : null}
 
-      {amenities && amenities.length > 0 && (
-        <div className="mt-2">
-          <div className="flex flex-wrap gap-1.5">
-            {amenities.map((a, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-full bg-white/8 text-white/60 text-[10px]">{a}</span>
-            ))}
-          </div>
-        </div>
-      )}
+      <TagPicker listing={listing} isGuardian={isGuardian} />
 
       {listing?.description && (
         <div className="mt-2">
@@ -772,26 +1079,111 @@ function AssessmentTab({ building }) {
 }
 
 // ─── Tab: Photos ─────────────────────────────────────────────────────
-function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
+function PhotoManager({ photos, listingId }) {
+  const [draft, setDraft] = useState(photos || [])
+  const [newUrl, setNewUrl] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const addPhoto = () => {
+    const url = newUrl.trim()
+    if (!url) return
+    setDraft(d => [...d, url])
+    setNewUrl('')
+  }
+
+  const removePhoto = (idx) => setDraft(d => d.filter((_, i) => i !== idx))
+
+  const movePhoto = (idx, dir) => {
+    setDraft(d => {
+      const next = [...d]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return d
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
+  }
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const dh = await getDeviceHash()
+      await apiUpdateListing(dh, listingId, { photos: draft })
+      useListings.getState().updateListing(listingId, { photos: draft })
+    } catch { /* silent */ }
+    setSaving(false)
+  }
+
+  const changed = JSON.stringify(draft) !== JSON.stringify(photos || [])
+
+  return (
+    <div className="space-y-3">
+      {/* Thumbnail grid */}
+      {draft.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {draft.map((url, i) => (
+            <div key={i} className="relative group/photo aspect-square rounded-lg overflow-hidden bg-white/5">
+              <img src={assetUrl(url)} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                {i > 0 && (
+                  <button onClick={() => movePhoto(i, -1)} className="w-6 h-6 rounded bg-white/20 text-white text-xs flex items-center justify-center hover:bg-white/30">&uarr;</button>
+                )}
+                {i < draft.length - 1 && (
+                  <button onClick={() => movePhoto(i, 1)} className="w-6 h-6 rounded bg-white/20 text-white text-xs flex items-center justify-center hover:bg-white/30">&darr;</button>
+                )}
+                <button onClick={() => removePhoto(i)} className="w-6 h-6 rounded bg-red-500/30 text-red-300 text-xs flex items-center justify-center hover:bg-red-500/50">&times;</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add photo URL */}
+      <div className="flex gap-2">
+        <input
+          value={newUrl}
+          onChange={e => setNewUrl(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addPhoto()}
+          placeholder="Photo URL..."
+          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/25"
+        />
+        <button
+          onClick={addPhoto}
+          disabled={!newUrl.trim()}
+          className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors disabled:opacity-30"
+        >
+          Add
+        </button>
+      </div>
+
+      {changed && (
+        <button
+          onClick={save}
+          disabled={saving}
+          className="w-full py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-medium hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Save Photos'}
+        </button>
+      )}
+    </div>
+  )
+}
+
+function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingId }) {
   const allPhotos = photos || (facadeImage ? [facadeImage.thumb_2048 || facadeImage.thumb_1024] : [])
 
   const hasFacade = !!facadeInfo?.photo
   const hasAny = allPhotos.length > 0 || hasFacade
 
-  if (!hasAny) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-white/40 text-sm">No photos yet</p>
-        <p className="text-white/30 text-xs mt-1">Be the first to add a photo</p>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-3">
-      {allPhotos.map((url, i) => (
+      {/* Guardian photo manager */}
+      {isGuardian && <PhotoManager photos={photos} listingId={listingId} />}
+
+      {/* Photo display */}
+      {!isGuardian && allPhotos.map((url, i) => (
         <img key={i} src={assetUrl(url)} alt={`${name} ${i + 1}`} className="w-full rounded-lg" loading="lazy" />
       ))}
+
       {hasFacade && (
         <div>
           <img src={assetUrl(facadeInfo.photo)} alt={`${name} facade`} className="w-full rounded-lg" loading="lazy" />
@@ -801,6 +1193,13 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
           <p className="text-white/30 text-xs mt-1">Photo: w_lemay / Wikimedia Commons (CC BY-SA 2.0)</p>
         </div>
       )}
+
+      {!hasAny && !isGuardian && (
+        <div className="text-center py-8">
+          <p className="text-white/40 text-sm">No photos yet</p>
+        </div>
+      )}
+
       {!photos && !hasFacade && facadeImage && (
         <p className="text-white/40 text-xs text-center">Street view - Mapillary</p>
       )}
@@ -969,7 +1368,7 @@ function PlaceCard({ listing, building, onClose, allListings }) {
   const [activeTab, setActiveTab] = useState(null)
   const [activeListingIdx, setActiveListingIdx] = useState(0)
   const { isLocal } = useLocalStatus()
-  const { isGuardianOf } = useGuardianStatus()
+  const { isGuardianOf, isAdmin: isStoreAdmin } = useGuardianStatus()
   const panelOpen = useCamera(s => s.panelOpen)
 
   // Multi-tenant: if multiple listings for this building, show tabs
@@ -990,7 +1389,7 @@ function PlaceCard({ listing, building, onClose, allListings }) {
   const description = activeListing?.description || null
   const hasListingInfo = !!activeListing
   const listingId = activeListing?.id || null
-  const isAdmin = import.meta.env.DEV
+  const isAdmin = import.meta.env.DEV || isStoreAdmin
   const isGuardian = isAdmin || (listingId ? isGuardianOf(listingId) : false)
   const isPending = activeListing?.status === 'pending'
 
@@ -1213,7 +1612,7 @@ function PlaceCard({ listing, building, onClose, allListings }) {
           {currentTab === 'architecture' && <ArchitectureTab building={building} />}
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
-          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} />}
+          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />}
           {/* Property card tabs */}
           {currentTab === 'property' && <PropertyTab building={building} />}
           {currentTab === 'assessment' && <AssessmentTab building={building} />}
