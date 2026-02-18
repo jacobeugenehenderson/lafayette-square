@@ -1,0 +1,2104 @@
+/* =======================================================================
+   CodeDesk — THEME.CSS
+   Master style sheet controlling UI variables, theming, and component look.
+   Author: Jacob Eugene Henderson
+   -----------------------------------------------------------------------
+   STRUCTURE OVERVIEW
+   -----------------------------------------------------------------------
+   1.  CONTROL PANEL — BASE
+         • Global design tokens and CSS variables (color, radii, density, motion)
+         • Consumes canonical --lsq-* tokens from lsq-tokens.css
+   2.  GLOBAL SCAFFOLD
+         • Body background gradients, theme grid overlay, layout padding
+   3.  CARDS / SURFACES
+         • Card containers, elevation shadows, stepper highlights
+   4.  CONTROLS
+         • Inputs, selects, buttons, and top-bar menu items
+         • Includes hover/focus, emoji picker, and color-chip definitions
+   5.  PREVIEW LAYOUT
+         • QR preview area, SVG mount, transparent-frame styling
+   6.  ARROWS
+         • Navigation arrows for QR subtype switching
+   7.  FOOTER
+         • Fixed footer gradient bar and copyright text
+   8.  THEME MODES
+         • :root.light, :root.hc, and reduced-motion overrides
+   9.  UTILITIES / OVERRIDES (sandbox)
+         • Temporary tweaks, experimental features, or future controls
+   -----------------------------------------------------------------------
+   NOTES
+   -----------------------------------------------------------------------
+   • Variables follow --lsq-* (Lafayette Square) and --ui-* (local alias) prefixes.
+   • JS can read certain variables via `getComputedStyle()` (e.g., --export-*).
+   • To add new features, prefer creating new tokens at the top-level :root.
+   • For experiments or nonstandard styling, append at the bottom section (9).
+   ======================================================================= */
+
+/* =========================
+   1. CONTROL PANEL — BASE
+========================= */
+:root{
+
+  /* ── LSQ Design Tokens (self-contained) ── */
+  --lsq-accent:        #4fd1c5;
+  --lsq-accent-hover:  #38b2ac;
+  --lsq-accent-soft:   rgba(79, 209, 197, 0.12);
+  --lsq-bg:            #e7ecf5;
+  --lsq-surface:       #ffffff;
+  --lsq-surface-hover: #f8fafc;
+  --lsq-surface-active:#eef2f7;
+  --lsq-text:          #020617;
+  --lsq-text-muted:    #64748b;
+  --lsq-label:         #475569;
+  --lsq-border:        rgba(15, 23, 42, 0.22);
+  --lsq-border-control:rgba(148, 163, 184, 0.85);
+  --lsq-radius:        10px;
+  --lsq-radius-lg:     22px;
+  --lsq-grid-line:     rgba(0, 81, 255, 0.15);
+  --lsq-grid-glow:     rgba(79, 209, 197, 0.12);
+  --lsq-grid-wash:     rgba(79, 209, 197, 0.10);
+  --lsq-grid-major:    48px;
+  --lsq-grid-minor:    12px;
+
+  /* ----- Header ----- */
+  --header-h: 56px;
+
+  /* ----- Primary color ----- */
+  --ui-primary:          var(--lsq-accent);
+  --ui-primary-hover:    color-mix(in oklab, var(--ui-primary) 86%, white);
+  --ui-primary-pressed:  color-mix(in oklab, var(--ui-primary) 78%, black);
+  --ui-on-primary:       #ffffff;
+
+  /* QR frame cosmetics */
+  --stage-frame:   var(--lsq-accent);
+  --stage-frame-w: 2px;
+
+  /* ---------------------------------------------------------
+     UI ALIASES (authoritative, applies in BOTH dark + light)
+     --------------------------------------------------------- */
+  --ui-surface:         var(--lsq-surface);
+  --ui-surface-variant: var(--lsq-surface);
+  --ui-stroke:          var(--lsq-border);
+  --ui-stroke-hover:    color-mix(in oklab, var(--lsq-border) 70%, var(--ui-primary) 30%);
+  --ui-focus-ring:      var(--ui-primary);
+  --ui-glow-color:      var(--ui-primary);
+
+  /* QR frame (Transparent mode) */
+  --qr-stroke-color:   rgba(139,92,246,.70);
+  --qr-stroke-width:   1;
+  --qr-stroke-glow:    0 0 18px rgba(139,92,246,.28);
+
+  /* ----- Shape corners ----- */
+  --shape-corner-sm:   6px;
+  --shape-corner-md:   var(--lsq-radius);
+  --shape-corner-lg:   var(--lsq-radius-lg);
+  --shape-corner-full: 9999px;
+
+  /* ----- Elevation ----- */
+  --elevation-1: 0 1px 2px rgba(0,0,0,.06);
+  --elevation-2: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+
+  /* ----- Typography ----- */
+  --font-family: system-ui, -apple-system, sans-serif;
+
+  /* ----- Density / Compact scale ----- */
+  --density-scale: 1;
+  --density-control-h-base: 2.25rem;
+  --density-gap-base: .75rem;
+  --density-control-h: calc(var(--density-control-h-base) * var(--density-scale));
+  --density-gap:       calc(var(--density-gap-base) * var(--density-scale));
+
+  /* ----- Focus ring (consistent keyboard focus) ----- */
+  --focus-ring-width: 2px;
+  --focus-ring-color: color-mix(in oklab, var(--ui-primary) 35%, transparent);
+
+  /* ----- Motion scale (global speed) ----- */
+  --motion-scale: 1;
+  --motion-duration-1-base: 120ms;
+  --motion-duration-2-base: 180ms;
+  --motion-duration-1: calc(var(--motion-duration-1-base) * var(--motion-scale));
+  --motion-duration-2: calc(var(--motion-duration-2-base) * var(--motion-scale));
+  --motion-ease: cubic-bezier(.2,.6,.2,1);
+
+  /* ----- Export defaults (read by JS) ----- */
+  --export-png-scale: 3;
+  --export-filename: "Codedesk";
+
+  /* ----- Grid overlay knobs ----- */
+  --grid-size:              var(--lsq-grid-major);
+  --grid-opacity:           1;
+  --grid-line-color:        var(--lsq-grid-line);
+  --grid-glow-color:        var(--lsq-grid-glow);
+  --grid-glow-opacity:      1;
+  --grid-glow-blur:         0px;
+  --grid-vignette-strength: 0.20;
+  --grid-vignette-size:     55%;
+  --grid-vignette-y:        top;
+
+  /* Hover / focus glow knobs */
+  --hover-glow-color: color-mix(in oklab, var(--ui-primary) 30%, transparent);
+  --hover-glow-blur:  8px;
+  --focus-glow-blur:  10px;
+
+  /* Shared chevron for top controls */
+  --chev-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'><path d='M5.23 7.21a.75.75 0 011.06.02L10 10.17l3.71-2.94a.75.75 0 111.04 1.08l-4.23 3.35a.75.75 0 01-.96 0L5.21 8.31a.75.75 0 01.02-1.1z'/></svg>");
+
+  /* Phone radius */
+  --phone-radius: var(--lsq-radius-lg);
+
+  /* Arrows placement */
+  --edge-gutter: clamp(24px, 2vw, 24px);
+
+  /* Footer height token */
+  --footer-h: 72px;
+
+  /* Spacing rhythm */
+  --stack-gap: 0rem;
+
+  /* ----- BG CARD STROKE (filled mode) ----- */
+  --bg-card-stroke-color: hsl(179, 100%, 38%);
+  --bg-card-stroke-width: 1px;
+  --bg-card-stroke-glow:  0 0 10px rgba(0,240,200,.35);
+
+  /* Featured / open card accent */
+  --featured-stroke-width: 1px;
+  --step-color-primary: var(--ui-primary);
+  --featured-stroke-color: color-mix(in oklab, var(--step-color-primary) 45%, transparent);
+  --featured-stroke-glow: none;
+
+  /* Open step fills (used only inside cards) */
+  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 85%, var(--step-color-primary) 15%);
+  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
+
+  --stepper-stroke-closed: var(--lsq-border);
+
+}
+
+  /* ==========================================================
+   SECTION COLOR THEMES
+   ========================================================== */
+
+/* shared sticky offset */
+.stage-stick {
+  position: sticky;
+  top: var(--header-h);
+}
+
+/* =========================
+   2. GLOBAL SCAFFOLD (functional only)
+========================= */
+
+html, body{
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto; /* allow native scroll + middle-click autoscroll */
+}
+
+body{
+  margin: 0;
+  color: var(--lsq-text);
+
+  /* LSQ grid background */
+  background-color: var(--lsq-bg);
+  background-image:
+    linear-gradient(to right, var(--lsq-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--lsq-grid-line) 1px, transparent 1px),
+    linear-gradient(to right, var(--lsq-grid-glow) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--lsq-grid-glow) 1px, transparent 1px),
+    radial-gradient(circle at top, var(--lsq-grid-wash), transparent 55%);
+  background-size:
+    var(--lsq-grid-major) var(--lsq-grid-major),
+    var(--lsq-grid-major) var(--lsq-grid-major),
+    var(--lsq-grid-minor) var(--lsq-grid-minor),
+    var(--lsq-grid-minor) var(--lsq-grid-minor),
+    auto;
+  background-attachment: fixed;
+  background-repeat: repeat;
+
+  position: relative;
+  isolation: isolate;
+}
+
+/* Ensure the actual UI sits above any upstream decorative layers */
+#app, #root, main, header, footer, .app, .shell, .wrap, #stepper, #qrPreview, .preview-stage{
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================
+   3. CARDS / SURFACES
+========================= */
+.card{
+  background: var(--lsq-surface);
+  color: var(--lsq-text);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--phone-radius);
+  box-shadow: var(--elevation-2);
+}
+.step-card{ overflow:hidden; } /* remove square border artifact on rounded cards */
+
+/* Open card highlight */
+#stepper>div{ transition:background-color .15s,border-color .15s; }
+#stepper .step-header{ transition:background-color .15s,border-color .15s,color .15s; }
+
+/* Collapsed header: subtle tint + crisp edge (reuses existing knobs) */
+#stepper > .step-card:not(.is-open) .step-header{
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Hover tint must hit the FULL header shell (wrap), not just the left button chunk */
+#stepper > div:not(.is-open) .step-header-wrap:hover{
+  background: color-mix(in oklab, var(--ui-surface) 88%, var(--step-color-primary) 12%);
+}
+
+/* Caption has no wrap — tint the button itself */
+#stepper > div[data-step="caption"]:not(.is-open) > .step-header:hover{
+  background: color-mix(in oklab, var(--ui-surface) 88%, var(--step-color-primary) 12%);
+}
+
+#stepper>div.is-open .step-header {
+  border-bottom: var(--featured-stroke-width) solid var(--featured-stroke-color);
+  background: var(--step-header-open-bg);
+  backdrop-filter: saturate(1.1) blur(6px);
+}
+
+/* Open header slab: same height as closed, flat bottom corners */
+#stepper > div.is-open .step-header-wrap{
+  min-height: 3.4rem;
+  border-radius: var(--phone-radius) var(--phone-radius) 0 0;
+}
+
+/* When a step is open, its outer shell adopts the local step color story */
+.step-card.is-open{
+  --ui-stroke: color-mix(in oklab, var(--step-color-primary) 40%, transparent);
+  --ui-stroke-hover: color-mix(in oklab, var(--step-color-primary) 60%, transparent);
+
+  background: var(--ui-surface);
+  border-color: var(--featured-stroke-color);
+  box-shadow: var(--featured-stroke-glow);
+}
+
+/* Inputs & labels inside the active step pick up the section accent */
+#stepper > div.is-open input:not([type="range"]),
+#stepper > div.is-open select,
+#stepper > div.is-open textarea,
+#stepper > div.is-open .control,
+#stepper > div.is-open .topctl {
+  border-color: color-mix(in oklab, var(--step-color-primary) 40%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--step-color-primary) 40%, transparent) inset;
+}
+
+#stepper > div.is-open label,
+#stepper > div.is-open .field-label {
+  color: color-mix(in oklab, var(--lsq-text) 86%, var(--step-color-primary) 14%);
+}
+
+/* Business (open): unified stripe, full-bleed to card edge */
+.step-card[data-step="business"].is-open .step-header-wrap {
+  background: var(--step-header-open-bg);
+  border-bottom: 0 !important;
+  position: relative;
+
+  /* harden full-bleed geometry */
+  margin: 0;
+  width: 100%;
+
+  /* match closed indentation */
+  padding-inline: 1.25rem;
+}
+
+.step-card[data-step="business"].is-open .step-header {
+  background: transparent !important;
+  border-bottom: 0 !important;
+}
+
+/* Single thin rule painted behind ECC pill (visual match with Caption) */
+.step-card[data-step="business"].is-open .step-header-wrap::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--ui-stroke);
+  pointer-events: none;
+}
+
+/* Business body should match other panels' surface */
+.step-card[data-step="business"] [data-step-panel]{
+  background: var(--ui-surface-variant);
+}
+
+/* Nudge the panel up 1px so it tucks under the header line (no step) */
+.step-card[data-step="business"].is-open [data-step-panel]{
+  margin-top: -1px;
+}
+
+/* Keep it "alive" even if something disables it */
+#codedeskFilename:disabled{
+  opacity: 1;
+  -webkit-text-fill-color: currentColor;
+  cursor: text;
+}
+
+/* Optional: when locked, keep the filename fully vivid even if other UI dims */
+body.codedesk-locked #codedeskFilename{
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* The stepper is the scroll container + the gap owner */
+#stepper{
+  display:flex;
+  flex-direction:column;
+  height:auto;
+  overflow:visible;
+  gap: var(--stack-gap);
+  min-width:0; width:100%; max-width:720px; margin-inline:auto;
+  scroll-padding-top: calc(var(--header-h,56px) + var(--preview-overlap, 200px));
+  padding-bottom: 16px;
+}
+
+#captionEl{
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+  text-wrap: balance;
+}
+
+#captionBox{
+  max-width: 90%;
+  margin: .5rem auto 0;
+   max-height: clamp(3rem, 16vh, 220px);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+#captionBox::-webkit-scrollbar{ width: 8px; }
+#captionBox::-webkit-scrollbar-thumb{ border-radius: 999px; background: var(--ui-stroke-hover); }
+
+#captionEl{
+  font-size: clamp(.9rem, 2.2vw, 1.5rem);
+  line-height: 1.15;
+}
+
+.step-card[data-step="caption"] .caption-toggle-row { justify-self: start; }
+
+.step-card[data-step="caption"] label:has(#campaign),
+.step-card[data-step="caption"] label:has(#captionBody){
+  display: block;
+  width: 100%;
+}
+
+.step-card[data-step="caption"] label:has(#showCaption){
+  justify-self: start;
+}
+
+/* Ensure the caption text field spans the whole card */
+.step-card[data-step="caption"] label:has(#campaign){
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.step-card[data-step="caption"] #campaign{
+  width: 100%;
+}
+
+/* Put the toggle on its own row under the input, left-aligned */
+.step-card[data-step="caption"] #showCaption,
+.step-card[data-step="caption"] [for="showCaption"]{
+  justify-self: start;
+}
+
+/* (Optional) tighten the vertical rhythm of the toggle row */
+.step-card[data-step="caption"] [for="showCaption"]{
+  line-height: 1.2;
+}
+
+/* Caption text input: single row, full width */
+#campaign{
+  display:block;
+  width: 100%;
+  height: var(--density-control-h);
+  line-height: var(--density-control-h);
+  padding: 0 .75rem;
+  resize: none;
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+/* Caption body input: multi-line, matching shell */
+#captionBody{
+  display:block;
+  width: 100%;
+  min-height: calc(var(--density-control-h) * 1.5);
+  padding: 0.5rem .75rem;
+  line-height: 1.3;
+  resize: vertical;
+  overflow: auto;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+/* Header slab must be full-bleed; padding moves to title only */
+.step-card .step-header {
+  padding: 0;
+}
+
+.step-card [data-step-panel]{
+  padding-top: 0.75rem;
+}
+
+/* Optional: give the very first control inside a panel a bit of air */
+.step-card [data-step-panel] > :first-child {
+  margin-top: 0.25rem;
+}
+
+/* Base step card + header use token surfaces (theme-aware) */
+.step-card{
+  background: var(--ui-surface);
+  color: var(--lsq-text);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--phone-radius);
+  box-shadow: var(--elevation-2);
+}
+
+/* When a step is open, its outer shell adopts the local step color story */
+#stepper .step-card.is-open{
+  --ui-stroke: color-mix(in oklab, var(--step-color-primary) 40%, transparent);
+  --ui-stroke-hover: color-mix(in oklab, var(--step-color-primary) 60%, transparent);
+
+  background: var(--ui-surface);
+  border-color: var(--featured-stroke-color);
+  box-shadow: var(--featured-stroke-glow);
+}
+
+.step-card:not(.is-open) .step-header{
+  color: var(--lsq-text);
+  border-bottom: 1px solid var(--ui-stroke);
+}
+
+/* Panel body (the content region) */
+.step-card [data-step-panel]{
+  background: var(--ui-surface-variant);
+  color: var(--lsq-text);
+}
+
+/* Hover/focus feedback (matches your global glow) */
+.step-card .step-header:hover{
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+.step-card .step-header:focus-visible{
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* Tinted placeholder text */
+.card--fill text.placeholder {
+  fill: rgb(3, 162, 171);
+}
+
+/* Closed accordion buttons: navy stroke */
+#stepper > div:not(.is-open) .step-header-wrap,
+#stepper > div[data-step="caption"]:not(.is-open) > .step-header{
+  background: var(--ui-surface);
+  border: 1px solid color-mix(in oklab, var(--lsq-text) 22%, transparent);
+  border-radius: var(--phone-radius);
+
+  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+
+  min-height: 3.4rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  .step-card[data-step="business"]:not(.is-open) .step-header { padding-bottom: 1rem; }
+}
+
+/* Make header wraps true edge-to-edge slabs (Design/Business/Finish) */
+.step-header-wrap{
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+
+  /* slab geometry */
+  width: 100%;
+  margin: 0;
+
+  /* canonical horizontal inset for ALL headers */
+  padding-inline: 1.25rem;
+}
+
+/* Caption must match the same inset, always */
+.step-card[data-step="caption"] .step-header-wrap{
+  padding-inline: 1.25rem;
+}
+
+/* Keep the existing business selector for specificity parity */
+.step-card[data-step="business"] .step-header-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* Let the title take the left */
+.step-card[data-step="business"] .step-header-wrap [data-step-toggle] {
+  flex: 1 1 auto;
+  padding-right: 0;
+}
+
+/* Design (open): unified stripe, full-bleed to card edge */
+.step-card[data-step="design"].is-open .step-header-wrap{
+  background: var(--step-header-open-bg);
+  border-bottom: 0 !important;
+  position: relative;
+
+  /* harden full-bleed geometry */
+  margin: 0;
+  width: 100%;
+
+  /* match closed indentation */
+  padding-inline: 1.25rem;
+}
+
+/* Caption has NO .step-header-wrap — tint the button itself when open */
+.step-card[data-step="caption"].is-open > .step-header{
+  background: var(--step-header-open-bg) !important;
+  border-bottom: var(--featured-stroke-width) solid var(--featured-stroke-color);
+  backdrop-filter: saturate(1.1) blur(6px);
+  min-height: 3.4rem;
+  border-radius: var(--phone-radius) var(--phone-radius) 0 0;
+  padding-inline: 1.25rem;
+}
+
+/* Design uses the wrap slab, not the button */
+.step-card[data-step="design"].is-open .step-header{ background: transparent !important; border-bottom: 0 !important; }
+.step-card[data-step="design"].is-open .step-header-wrap::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ui-stroke); pointer-events:none;
+}
+.step-card[data-step="design"] #fontPill{ display:flex !important; }
+
+/* Pills: hide when their flipper is not active */
+.step-card[data-step="design"]:not(.is-open) #fontPill{
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.step-card[data-step="design"].is-open #fontPill{
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.step-card[data-step="design"] .step-header-wrap #fontPill.ecc-pill{
+  align-items:center;
+  flex-wrap:nowrap;
+  gap:var(--density-gap);
+  margin-left:auto;
+}
+
+/* Font pill alignment */
+.step-card[data-step="design"] .step-header-wrap{
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+}
+
+/* Let the title take the left; pill pushes right */
+.step-card[data-step="design"] .step-header-wrap [data-step-toggle]{
+  flex:1 1 auto;
+  padding-right:0;
+}
+
+/* =========================
+   4. CONTROLS (inputs/selects/Menu)
+========================= */
+
+/* =========================
+   CODEDESK HEADER BAR
+========================= */
+
+/* Header bar: dark surface, light text */
+.header-bar {
+  background: #0d1224 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f7fafc;
+}
+
+/* CODEDESK header mark: light text on dark header */
+.header-bar .codedesk-mark,
+.header-bar .codedesk-mark a {
+  color: #f7fafc !important;
+  text-decoration: none;
+}
+.header-bar .codedesk-mark a:hover { text-decoration: underline; }
+
+/* Types dropdown on dark header */
+.header-bar select#qrType {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f7fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--lsq-radius);
+  height: auto;
+  padding: 8px 32px 8px 12px;
+  font: 600 0.84rem/1.2 var(--font-family, system-ui);
+  box-shadow: none;
+  cursor: pointer;
+
+  /* Custom chevron (light) */
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.7) 50%),
+    linear-gradient(135deg, rgba(255,255,255,0.7) 50%, transparent 50%) !important;
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 8px) 50% !important;
+  background-size: 5px 5px, 5px 5px !important;
+  background-repeat: no-repeat !important;
+}
+
+.header-bar select#qrType:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.header-bar select#qrType:focus {
+  outline: none;
+  border-color: var(--lsq-accent);
+  box-shadow: 0 0 0 2px var(--lsq-accent-soft);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="search"],
+input[type="password"],
+input[type="color"],
+select{
+  background: var(--ui-surface-variant);
+  color: var(--lsq-text);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+  height: var(--density-control-h);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease),
+    color var(--motion-duration-1) var(--motion-ease),
+    background-color var(--motion-duration-1) var(--motion-ease);
+}
+
+input:hover,
+textarea:hover,
+select:hover{
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+
+/* Muted/disabled helper */
+.field-muted,
+.field-muted *{
+  opacity:.55;
+  pointer-events:none;
+}
+
+/* Finish mode must keep the export sparkle clickable */
+#stepper.finish-active #exportBtn{
+  pointer-events:auto !important;
+  opacity: 1 !important;
+
+  /* Match header pills (icon-only circle) */
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 999px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--lsq-surface);
+  border: 1px solid var(--lsq-border-control);
+  color: var(--lsq-text);
+  font: 600 0.85rem/1 var(--font-family, system-ui);
+}
+
+/* === TOP BAR — text styling (only) =================================== */
+#qrType{
+  font: 600 var(--typo-input-size)/1 var(--font-family);
+  letter-spacing: .01em;
+  color: var(--lsq-text);
+}
+
+/* === TOP BAR — pill layout =========================================== */
+#qrType{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  line-height: 1;
+  padding-inline: 1rem;
+}
+
+/* Safari/WebKit quirk: ensure the selected option uses the same weight */
+#qrType option { font-weight: 600; }
+
+/* Unified top-bar controls (selects + Menu) */
+.control,
+#appMenuBtn,
+#qrType,
+select.rounded-md,
+.topctl{
+  background: var(--ui-surface);
+  color: var(--lsq-text);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+  height: var(--density-control-h);
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease);
+}
+
+#fontPill select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
+  height: var(--density-control-h);
+  padding-inline: 1rem;
+}
+
+/* Make top-bar controls feel like pill buttons on hover/focus/active */
+.topctl:hover,
+#qrType:hover,
+#appMenuBtn:hover,
+.topctl:focus-visible,
+#qrType:focus-visible,
+#appMenuBtn:focus-visible{
+  background: rgba(255,255,255,.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+/* Active/click state parity with your focus ring tokens */
+.topctl:active,
+#qrType:active,
+#appMenuBtn:active{
+  transform: translateY(0);
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+  border-color: var(--ui-primary);
+}
+
+/* Emoji picker buttons */
+#emojiGrid button{
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-sm);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+
+  /* emoji = square glyph buttons, not form controls */
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-grid;
+  place-items: center;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+}
+
+#emojiGrid button:hover{
+  box-shadow: 0 0 0 1px var(--ui-stroke-hover) inset;
+}
+
+/* HOVER: keep thin inset + add faint outer glow */
+.control:hover,
+#appMenuBtn:hover,
+select.rounded-md:hover,
+.topctl:hover{
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+/* Hide all focus by default (mouse/touch or scripted focus) */
+:focus { outline: none; }
+
+/* Show the ring only when the user is tabbing (keyboard) */
+body.kbd .control:focus-visible,
+body.kbd #appMenuBtn:focus-visible,
+body.kbd select.rounded-md:focus-visible,
+body.kbd .topctl:focus-visible,
+body.kbd button[data-emoji-target]:focus-visible,
+body.kbd input:focus-visible,
+body.kbd textarea:focus-visible,
+body.kbd select:focus-visible{
+  outline: none;
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* Remove native arrow so our chevron matches */
+select.rounded-md,
+select.topctl{
+  -webkit-appearance:none;
+  appearance:none;
+  padding-right:2rem;
+}
+button.topctl{ padding-right:2rem; }
+
+/* Chevron for top controls */
+.topctl--chev{ position: relative; }
+
+.topctl--chev::after{
+  content:"";
+  pointer-events:none;
+  position:absolute;
+  right:.6rem;
+  top:50%;
+  width:.75rem;
+  height:.75rem;
+  transform:translateY(-50%);
+  opacity:.85;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:100% 100%;
+  background-image: var(--chev-icon);
+}
+
+/* Emoji picker trigger = match other controls */
+button[data-emoji-target]{
+  /* visuals */
+  background: var(--ui-surface);
+  color: var(--lsq-text);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+    box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+
+  /* sizing / type */
+  height: var(--density-control-h);
+  padding: 0 .875rem;
+  line-height: 1;
+  font-size: .875rem;
+  font-weight: 600;
+
+  /* behavior */
+  cursor: pointer;
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease);
+}
+
+button[data-emoji-target]:hover{
+  box-shadow: 0 0 0 1px var(--ui-stroke-hover) inset, var(--elevation-2);
+}
+
+#emojiGrid button:focus{
+  outline: none;
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* If it was getting a white default button style anywhere, neutralize it */
+button[data-emoji-target]::-moz-focus-inner{ border: 0; }
+
+/* DISPLAY: section headers (Caption / Design / Business / Finish) */
+.step-header{
+  font-family: var(--font-family);
+  font-size: var(--typo-display-size, 1rem);
+  font-weight: var(--typo-display-weight, 700);
+  letter-spacing: var(--typo-display-track, .01em);
+  color: var(--lsq-text);
+
+  /* horizontal padding lives on .step-header-wrap */
+  padding: 0;
+
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+
+  width: 100%;
+  display: flex;
+  align-items: center;
+  min-height: 3.4rem;
+}
+
+.step-card[data-step="caption"] [data-step-panel]{
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
+/* Caption step does NOT use .step-header-wrap in the HTML.
+   So: treat the .step-header itself as the header slab. */
+
+/* Caption — parity with other steps (stowed stroke + open header slab) */
+.step-card[data-step="caption"]{
+  --stepper-stroke-closed: var(--lsq-border);
+
+  border: 1px solid var(--stepper-stroke-closed);
+  border-radius: var(--phone-radius);
+  background: var(--ui-surface);
+  overflow: hidden;
+
+  box-shadow: 0 0 0 1px var(--stepper-stroke-closed) inset;
+}
+
+/* Closed: subtle tint + crisp edge */
+#stepper > .step-card[data-step="caption"]:not(.is-open) .step-header{
+  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
+  border-bottom: 1px solid var(--stepper-stroke-closed);
+  box-shadow:
+    0 0 0 1px var(--stepper-stroke-closed) inset,
+    0 1px 0 rgba(0,0,0,.06);
+}
+
+/* Caption header padding (since there is no .step-header-wrap) */
+.step-card[data-step="caption"] .step-header{
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
+/* CLOSED: the header IS the pill — keep full rounding */
+#stepper > .step-card[data-step="caption"]:not(.is-open) > .step-header{
+  border-radius: var(--phone-radius) !important;
+}
+
+/* OPEN: header becomes the slab — round only the top corners */
+#stepper > .step-card[data-step="caption"].is-open > .step-header{
+  border-radius: var(--phone-radius) var(--phone-radius) 0 0 !important;
+}
+
+/* Open: header slab styling (applied to .step-header directly) */
+#stepper .step-card[data-step="caption"].is-open .step-header{
+  background: var(--step-header-open-bg);
+  backdrop-filter: saturate(1.1) blur(6px);
+  border-bottom: 0 !important;
+  min-height: 3.4rem;
+  border-radius: var(--phone-radius) var(--phone-radius) 0 0;
+  position: relative;
+}
+
+/* Open: single thin rule at bottom of header slab */
+#stepper .step-card[data-step="caption"].is-open .step-header::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:1px;
+  background: var(--ui-stroke);
+  pointer-events:none;
+}
+
+/* Open: tuck the panel under the header rule (no step) */
+#stepper .step-card[data-step="caption"].is-open [data-step-panel]{
+  margin-top: -1px;
+  background: var(--ui-surface-variant);
+}
+
+.step-header .title{
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  display: block;
+  padding: 0;
+}
+
+/* LABELS: field labels like "Module Fill", "Background" */
+label,
+.field-label{
+  font-family: var(--font-family);
+  font-size: var(--typo-label-size);
+  font-weight: var(--typo-label-weight);
+  letter-spacing: var(--typo-label-track);
+  color: var(--typo-label-color);
+}
+
+/* INPUT TEXT: value text inside inputs/selects/buttons */
+input, textarea, select,
+.control, .topctl, button[data-emoji-target]{
+  font-family: var(--font-family);
+  font-size: var(--typo-input-size);
+  font-weight: var(--typo-input-weight);
+}
+
+/* PLACEHOLDERS: "dummy" text in fields */
+input::placeholder,
+textarea::placeholder{
+  color: var(--typo-ph-color);
+  font-weight: var(--typo-ph-weight);
+  opacity: var(--typo-ph-opacity);
+}
+
+/* Utility: "temp" or dummy inline text outside inputs */
+.text-temp {
+  color: var(--typo-ph-color);
+  font-weight: var(--typo-ph-weight);
+  opacity: var(--typo-ph-opacity);
+  font-style: italic;
+}
+
+/* default: no transitions before JS marks ready */
+:not(.ui-ready) #stepper .step-header,
+:not(.ui-ready) #stepper > .step-card{
+  transition: none !important;
+  box-shadow: none !important;
+}
+
+/* Design & Business: scroll inside a viewport-based cap that clears the footer */
+.step-card[data-step="design"].is-open [data-step-panel],
+.step-card[data-step="business"].is-open [data-step-panel]{
+  overflow: auto;
+  max-height: calc(
+    100dvh
+    - var(--header-h,56px)
+    - 24px
+  );
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-stroke-hover) transparent;
+}
+
+/* Business: no internal scroller; let #stepper scroll instead */
+.step-card[data-step="business"].is-open [data-step-panel]{
+  overflow: visible !important;
+  max-height: none !important;
+  overscroll-behavior: auto;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+}
+.step-card[data-step="business"].is-open [data-step-panel]::-webkit-scrollbar { display: none; }
+
+/* Kill any competing header paint so the wrap shows through */
+.step-card[data-step="business"].is-open .step-header {
+  background: transparent !important;
+  border-bottom: 0;
+}
+
+#emojiSearch { display: none !important; }
+
+/* There should be no "Details" step in CodeDesk */
+.step-card[data-step="details"]{
+  display: none !important;
+}
+
+/* =========================
+   5. PREVIEW LAYOUT
+========================= */
+
+/* -----------------------------------------------------------------------
+   QR PREVIEW CARD — single geometry; stroke (OFF) vs gradient fill (ON)
+   ----------------------------------------------------------------------- */
+#qrPreview{
+  position: relative;
+  border-radius: var(--phone-radius);
+  overflow: clip;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  isolation: isolate;
+}
+
+/* One pseudo-element draws BOTH modes so size/shape never drift */
+#qrPreview::before{
+  content:"";
+  position:absolute;
+  z-index: 0;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+}
+
+/* Background ON = gradient fill (set via --bg-fill) */
+#qrPreview.card--fill::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background: var(--bg-paint, #fff);
+  opacity: var(--bg-alpha, 1);
+  box-shadow:none;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* Background OFF = empty bright turquoise stroke */
+#qrPreview.card--stroke::before{
+  inset:0;
+  border-radius:inherit;
+  background: transparent;
+  opacity: 1;
+  box-shadow:none;
+  border: var(--stage-frame-w, 3px) solid var(--stage-frame, #1ff0ff);
+}
+
+/* Portrait stage wrapper (outer container) */
+.preview-stage{
+  position: relative;
+  background: transparent !important;
+  width: clamp(250px, 26vw, 330px);
+  aspect-ratio: .63 / 1;
+  margin-inline: auto;
+  border-radius: var(--phone-radius);
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  overflow: visible;
+  padding: 0;
+}
+
+/* Square state when there is no caption */
+.preview-stage.preview--square{
+  width: clamp(250px, 26vw, 330px);
+  aspect-ratio: 1 / 1;
+  align-items: start;
+}
+
+/* QR background paint layer (real element for better browser support) */
+#qrBgPaint{
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: #ffffff;
+}
+
+/* QR mount = container for the SVG */
+#qrMount{
+  position: relative;
+  z-index: 1;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: inherit;
+  overflow: clip;
+  background: transparent !important;
+}
+
+/* Circular color tiles: add a visible ring around the CIRCLE (not the cell) */
+input[type="color"].color-dot{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 9999px;
+  background: transparent;
+  border: 1px solid color-mix(in oklab, var(--lsq-text) 18%, transparent);
+}
+
+input[type="color"].color-dot::-webkit-color-swatch-wrapper{
+  padding: 0;
+  border-radius: 9999px;
+}
+input[type="color"].color-dot::-webkit-color-swatch{
+  border: 0;
+  border-radius: 9999px;
+}
+input[type="color"].color-dot::-moz-color-swatch{
+  border: 0;
+  border-radius: 9999px;
+}
+
+#qrMount > svg{
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+  .preview-stage,
+  #qrPreview,
+  #prevSubtype,
+  #nextSubtype { z-index: 1; }
+
+  /* Let the stepper slide under the preview */
+  #stepper {
+    position: relative;
+    z-index: 1;
+  }
+
+/* Finish: header-only row; let it flow like others */
+.step-card[data-step="finish"]{
+  position: static !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  backdrop-filter: none !important;
+  border-top: 1px solid var(--ui-stroke);
+}
+
+/* Finish header row should look like the other header slabs */
+.step-card[data-step="finish"] .step-header-wrap{
+  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
+  border-bottom: 1px solid var(--stepper-stroke-closed);
+  box-shadow:
+    0 0 0 1px var(--stepper-stroke-closed) inset,
+    0 1px 0 rgba(0,0,0,.06);
+}
+
+/* When finish card is "open" (if JS ever adds .is-open), use the open slab */
+.step-card[data-step="finish"].is-open .step-header-wrap{
+  background: var(--step-header-open-bg);
+}
+
+/* …but keep the on-phone UI (arrows) interactive */
+.preview-stage .nav-arrow {
+  pointer-events: auto;
+  z-index: 50;
+  position: absolute;
+}
+
+/* Make the WHOLE sticky preview block "glass" on mobile/stacked */
+@media (max-width: 1279px){
+  /* Make only the phone preview "glass" on mobile; never mute the stepper controls */
+  .preview-stage,
+  .preview-stage > .absolute,
+  #qrPreview,
+  #qrMount,
+  #qrMount > svg { pointer-events: none !important; }
+
+  /* …but keep the L/R arrows on the phone clickable */
+  .preview-stage .nav-arrow {
+    pointer-events: auto !important;
+  }
+}
+
+/* =========================
+   6. ARROWS
+========================= */
+.nav-arrow{
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-full);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+}
+.nav-arrow:hover{
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+.nav-arrow:focus{
+  outline: none;
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* Triangle glyphs */
+#prevSubtype::after,
+#nextSubtype::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+}
+#prevSubtype::after{
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 10px solid var(--lsq-text);
+}
+#nextSubtype::after{
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 10px solid var(--lsq-text);
+}
+
+/* Put each arrow just outside the card edges */
+#prevSubtype{
+  top:50%;
+  left: calc(-2 * var(--edge-gutter));
+  right: auto;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+#nextSubtype{
+  top:50%;
+  right: calc(-2 * var(--edge-gutter));
+  left:  auto;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+
+/* High-contrast toggle (add .hc on <html>) */
+
+html.hc, :root.hc{
+  --lsq-text: #fff;
+  --lsq-border: rgba(255,255,255,.65);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  :root{ --motion-scale: .01; }
+}
+
+/* Optional hover/focus feedback (subtle glow) */
+input[type="color"]:hover{
+  filter: drop-shadow(0 0 4px var(--ui-stroke-hover));
+}
+input[type="color"]:focus{
+  outline: none;
+  filter: drop-shadow(0 0 6px var(--focus-ring-color));
+}
+
+/* Group color pickers + hex fields neatly */
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: var(--density-gap);
+}
+
+/* Make hex field visually tied to its picker */
+.color-field input[type="text"] {
+  flex: 1;
+  text-align: center;
+  font-family: monospace;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--lsq-text);
+  background: var(--ui-surface-variant);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+  height: var(--density-control-h);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease);
+}
+
+.color-field input[type="text"]:hover {
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+.color-field input[type="text"]:focus {
+  outline: none;
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* Color chip: fixed, perfect circle — never stretch */
+input[type="color"]{
+  width: 1.75rem;
+  height: 1.75rem;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 1.75rem;
+  align-self: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+          appearance: none;
+  box-sizing: content-box;
+}
+
+/* Make the actual swatch inherit shape and remove its inner border */
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 50% }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50% }
+input[type="color"]::-moz-color-swatch { border: none; border-radius: 50% }
+
+/* ---- Color rows: keep chip circular and let the hex input take the width ---- */
+
+/* Generic label rows: title + control */
+label.text-sm.block{
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: .75rem;
+}
+
+/* Rows that include a color swatch: title · swatch · hex */
+.step-card[data-step="design"] label:has(input[type="color"]),
+.step-card[data-step="business"] label:has(input[type="color"]){
+  grid-template-columns: auto auto 1fr;
+}
+
+/* Make the hex field actually flex and not collapse */
+.step-card[data-step="design"] label:has(input[type="color"]) input[type="text"],
+.step-card[data-step="business"] label:has(input[type="color"]) input[type="text"]{
+  width: 100%;
+  min-width: 16ch;
+}
+
+/* Optional: keep the chip from crowding the field */
+.step-card[data-step="design"] label:has(input[type="color"]) input[type="color"],
+.step-card[data-step="business"] label:has(input[type="color"]) input[type="color"]{
+  margin-inline-start: .25rem;
+}
+
+/* === Modal & legacy dropdown overrides (safe, CSS-only) ================== */
+
+/* 2) Bulletproof centering of the dialog card (ignores any old absolute rules) */
+#appModal > div,
+#emojiModal > div {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
+/* === Modal overlays (final, consolidated) =============================== */
+
+/* Hide any legacy dropdown if it still exists */
+#appMenu { display: none !important; }
+
+/* Prevent locked state when hidden */
+#appModal.hidden,
+#emojiModal.hidden {
+  display: none !important;
+}
+
+/* Neutralize legacy popover positioning inside overlays */
+#appModal [role="menu"],
+#emojiModal [role="menu"] {
+  position: static !important;
+}
+
+/* Backdrop polish + allow dismissal clicks */
+.modal-bg {
+  background: rgba(255,255,255,.70);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+
+/* force emoji dialog to light */
+#emojiModal > div{
+  background: #fff !important;
+  color: #0b0b0b !important;
+  border: 1px solid rgba(15, 23, 42, .18) !important;
+}
+
+/* make the emoji picker a real, full-width grid */
+#emojiGrid{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr)) !important;
+  gap: .5rem !important;
+  width: 100% !important;
+}
+
+/* When hidden, backdrop ignores all input */
+#appModal.hidden .modal-bg,
+#emojiModal.hidden .modal-bg {
+  pointer-events: none;
+}
+
+/* === QR Types: show the custom chevron === */
+#qrType {
+  -webkit-appearance: none;
+          appearance: none;
+  padding-right: 2rem;
+  background-image: var(--chev-icon);
+  background-repeat: no-repeat;
+  background-position: right .65rem center;
+  background-size: .75rem .75rem;
+}
+
+/* Types Hover for Pills (shared) */
+#qrType:hover {
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+/* === Hamburger: no chevron; keep icon centered ======================== */
+#appMenuBtn::after { content: none !important; }
+#appMenuBtn {
+  padding-inline: 1rem;
+}
+
+
+/* =========================
+  MOBILE OVERRIDES
+========================= */
+
+/* --- Single-column / stacked behavior (< 1280px) -------------------- */
+@media (max-width: 1279px) {
+  /* Only the *first* stage-stick (the preview section) is sticky */
+  main > section.stage-stick:first-of-type {
+    position: sticky;
+    top: calc(var(--header-h, 56px) + 8px);
+    z-index: 30;
+  }
+
+  /* Let the stepper flow normally (no fixed footer) */
+  #stepper{
+  position: static;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  padding-bottom: 96px;
+  margin-bottom: 16px;
+}
+
+  /* No fixed footer spacing needed */
+  main{
+    padding-bottom: 0;
+  }
+
+  /* Ensure the stepper is not sticky in stacked mode */
+  #stepper.stage-stick {
+    position: static;
+    top: auto;
+  }
+}
+
+  /* Park the stepper up under the phone */
+@media (max-width: 1279px){
+  :root{
+  --preview-overlap: clamp(180px, 52vh, 320px);
+  --preview-gap: 12px;
+  --park-nudge: 16px;
+}
+
+  #stepper{
+    margin-top: calc(var(--preview-overlap) * -1);
+    padding-top: calc(var(--preview-overlap) + var(--preview-gap));
+    scroll-padding-top: calc(var(--header-h, 56px) + var(--park-offset, 180px));
+    scroll-behavior: smooth;
+  }
+
+   #stepper .step-header{
+    scroll-margin-top: calc(var(--header-h, 56px) + var(--park-offset, 180px));
+  }
+}
+
+ /* Desktop align fix */
+@media (min-width: 1280px){
+  .stage-stick { position: static; top: auto; }
+
+  /* Standard scroll: #stepper does not own scrolling on desktop. */
+  #stepper{
+    height: auto;
+    overflow: visible;
+    margin-top: 0;
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 1279px){
+  html { scroll-padding-top: calc(var(--header-h,56px) + var(--park-offset,180px)); }
+}
+
+ /* === Emoji modal: always on top, full-viewport ======================= */
+ #emojiModal {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: grid;
+    place-items: center;
+}
+#emojiModal.hidden { display: none; }
+
+/* While the emoji modal is open, make everything under the phone ignore taps */
+:root.emoji-open .preview-stage,
+:root.emoji-open #qrPreview {
+  pointer-events: none !important;
+}
+:root.emoji-open #emojiModal {
+  pointer-events: auto !important;
+}
+
+/* Step parking: every step header parks under the phone cleanly */
+.step-card .step-header {
+  scroll-margin-top: calc(var(--header-h, 56px) + var(--park-offset, 180px));
+}
+
+/* Stack the "Show caption" toggle below the text field */
+.step-card[data-step="caption"] .step-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* --- Global Modal Priority Layer --- */
+.modal-bg,
+[id$="Modal"] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+/* ------------------------------------------------------------
+   Background controls: branded link + clean color tiles + blue sliders
+------------------------------------------------------------ */
+
+/* No squares around circular color tiles (override any utility borders) */
+input[type="color"] {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 9999px !important;
+  padding: 0 !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  cursor: pointer;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 9999px !important;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: none !important;
+  border-radius: 9999px !important;
+}
+
+/* LSQ-blue sliders */
+input[type="range"] {
+  accent-color: var(--lsq-accent) !important;
+}
+
+/* Branded link button */
+#bgLink {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 0.75rem;
+  border: 1px solid var(--lsq-border);
+  background: var(--lsq-surface);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+#bgLink:hover {
+  background: color-mix(in oklab, var(--lsq-surface), var(--lsq-accent) 6%);
+}
+#bgLink:active {
+  transform: translateY(1px);
+}
+
+/* CodeDesk — Mandatory filename capture (under preview) */
+#codedeskFilenameSection{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 12px;
+}
+
+#codedeskFilenameSection > label{
+  display: block;
+  width: min(360px, calc(100% - 24px));
+  margin: 0 auto;
+}
+
+/* Make the field read as a real, opaque input */
+#codedeskFilename{
+  appearance: none;
+  width: 100%;
+  height: var(--density-control-h);
+  line-height: var(--density-control-h);
+  padding: 0 12px;
+  box-sizing: border-box;
+
+  background: var(--lsq-surface);
+  color: var(--lsq-text);
+
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset, var(--elevation-1);
+}
+
+#codedeskFilename::placeholder{
+  opacity: .65;
+}
+
+#codedeskFilename:focus{
+  outline: none;
+  border-color: var(--lsq-accent);
+  box-shadow:
+    0 0 0 1px var(--lsq-accent) inset,
+    0 0 0 3px var(--lsq-accent-soft);
+}
+
+/* Emoji picker should own its layout */
+#emojiModal emoji-picker{
+  max-height: none !important;
+  height: auto !important;
+}
+
+/* =========================================================
+ * RESPONSIVE SCALING — Laptop & Small Screen Support
+ * ======================================================= */
+
+/* Base: Fluid typography */
+html {
+  font-size: clamp(0.875rem, 0.82rem + 0.2vw, 1rem);
+}
+
+/* Large laptops (1366px and below) */
+@media (max-width: 1366px) {
+  :root {
+    --density-scale: 0.95;
+    --phone-radius: 18px;
+  }
+
+  #stepper {
+    max-width: 640px;
+  }
+
+  .preview-stage {
+    width: clamp(220px, 24vw, 300px);
+  }
+}
+
+/* Medium laptops (1024px - 1279px) — fills the gap */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  :root {
+    --density-scale: 0.9;
+    --phone-radius: 16px;
+    --header-h: 48px;
+  }
+
+  #stepper {
+    max-width: 580px;
+    gap: 0.5rem;
+  }
+
+  .preview-stage {
+    width: clamp(200px, 22vw, 280px);
+  }
+
+  .step-header {
+    min-height: 3rem;
+    font-size: 0.9rem;
+  }
+
+  .step-card [data-step-panel] {
+    padding: 0.6rem 1rem;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="url"],
+  input[type="number"],
+  select {
+    height: calc(var(--density-control-h) * 0.9);
+    font-size: 0.85rem;
+  }
+
+  label, .field-label {
+    font-size: 0.8rem;
+  }
+}
+
+/* Tablets (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --density-scale: 0.85;
+    --phone-radius: 14px;
+    --header-h: 44px;
+  }
+
+  #stepper {
+    max-width: 520px;
+    padding-inline: 0.75rem;
+  }
+
+  .preview-stage {
+    width: clamp(180px, 28vw, 240px);
+  }
+
+  .step-header {
+    min-height: 2.8rem;
+    font-size: 0.85rem;
+  }
+
+  .step-header-wrap {
+    padding-inline: 1rem;
+  }
+
+  #codedeskFilenameSection > label {
+    width: min(300px, calc(100% - 16px));
+  }
+}
+
+/* Small screens / large phones (< 768px) */
+@media (max-width: 767px) {
+  :root {
+    --density-scale: 0.8;
+    --phone-radius: 12px;
+    --edge-gutter: 12px;
+  }
+
+  #stepper {
+    max-width: 100%;
+    padding-inline: 0.5rem;
+  }
+
+  .preview-stage {
+    width: clamp(160px, 50vw, 220px);
+  }
+
+  .step-card {
+    border-radius: 12px;
+  }
+
+  .step-header {
+    min-height: 2.6rem;
+    font-size: 0.8rem;
+  }
+
+  .step-header-wrap {
+    padding-inline: 0.75rem;
+  }
+
+  .step-card [data-step-panel] {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Smaller nav arrows */
+  #prevSubtype, #nextSubtype {
+    width: 28px;
+    height: 28px;
+  }
+
+  #prevSubtype::after {
+    border-right-width: 7px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+  }
+
+  #nextSubtype::after {
+    border-left-width: 7px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+  }
+
+  /* Caption text scales */
+  #captionEl {
+    font-size: clamp(0.75rem, 2vw, 1.1rem);
+  }
+
+  #codedeskFilenameSection > label {
+    width: calc(100% - 12px);
+  }
+
+  #codedeskFilename {
+    font-size: 0.85rem;
+  }
+}
+
+/* Prevent horizontal overflow */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Ensure nothing breaks out of container */
+#stepper, .step-card, [data-step-panel] {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* =========================
+   BUSINESS PANEL — DYNAMIC FORM FIELDS
+   Styling for fields generated by qr_ui_toolkit.js
+========================= */
+
+/* Container for the #detailsPanel form fields */
+#detailsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--density-gap, 0.75rem);
+}
+
+/* Form row: label + input stacked vertically */
+.fldRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Field label: uppercase, muted */
+.fldLbl {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lsq-label);
+}
+
+/* Field input: full-width with proper sizing */
+.fldInp {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--ui-stroke);
+  background: var(--ui-surface-variant);
+  color: var(--lsq-text);
+  border-radius: var(--lsq-radius);
+  padding: 9px 10px;
+  font: 500 0.86rem/1.25 var(--font-family, system-ui);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset, 0 1px 0 rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease);
+}
+
+.fldInp:hover {
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+.fldInp:focus {
+  outline: none;
+  border-color: var(--lsq-accent);
+  box-shadow:
+    0 0 0 2px var(--lsq-accent-soft),
+    0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+/* Select dropdown: add custom chevron */
+select.fldInp {
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(2, 6, 23, 0.65) 50%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.65) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+/* Textarea: taller with vertical resize */
+textarea.fldInp {
+  min-height: calc(var(--density-control-h, 2.25rem) * 1.5);
+  line-height: 1.4;
+  resize: vertical;
+}
+
+/* Checkbox row: inline layout */
+.fldCheckRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+/* Checkbox input */
+.fldCheck {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--lsq-accent);
+  cursor: pointer;
+}
+
+/* Checkbox label text */
+.fldCheckLabel {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--lsq-text);
+}
+
+/* Empty state message */
+.fldEmpty {
+  font-size: 0.8rem;
+  color: var(--lsq-text-muted);
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+/* =========================
+   BUSINESS LISTBOX — scrollable list of clickable items
+========================= */
+.fldListbox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 52vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-stroke-hover) transparent;
+}
+
+.biz-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: var(--shape-corner-sm);
+  background: transparent;
+  color: var(--lsq-text);
+  font: 500 0.86rem/1.35 var(--font-family, system-ui);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-1) var(--motion-ease);
+}
+
+.biz-item:hover {
+  background: color-mix(in oklab, var(--ui-surface) 82%, var(--step-color-primary) 18%);
+}
+
+.biz-item.is-active {
+  background: color-mix(in oklab, var(--ui-surface) 72%, var(--step-color-primary) 28%);
+  font-weight: 600;
+}
+
+.biz-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.biz-item-cat {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--lsq-text-muted);
+  white-space: nowrap;
+}

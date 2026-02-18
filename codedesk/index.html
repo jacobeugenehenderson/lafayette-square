@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>Lafayette Square — QR Generator</title>
+  <meta name="description" content="Generate styled QR codes for Lafayette Square businesses.">
+  <meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+
+<!-- Fonts & Tailwind -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2
+?family=Bebas+Neue
+&family=IBM+Plex+Sans:wght@400;600
+&family=IBM+Plex+Serif:wght@400;600
+&family=Public+Sans:wght@400;600
+&family=Playfair+Display:wght@600
+&family=Space+Grotesk:wght@400;600
+&family=Manrope:wght@400;600
+&family=Inter:wght@400;600
+&family=JetBrains+Mono:wght@400;600
+&family=Work+Sans:wght@400;600
+&display=swap">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="stylesheet" href="/lsq-tokens.css">
+  <link rel="stylesheet" href="./styles/theme.css">
+
+  <style>
+    /* Download button styling */
+    .lsq-download-row {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+    }
+    .lsq-download-btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      border-radius: var(--lsq-radius);
+      font: 600 0.85rem/1 system-ui, sans-serif;
+      cursor: pointer;
+      transition: all 120ms ease;
+      border: 1px solid var(--lsq-border-control);
+      background: var(--lsq-surface);
+      color: var(--lsq-text);
+    }
+    .lsq-download-btn:hover {
+      background: var(--lsq-surface-hover);
+      transform: translateY(-1px);
+    }
+    .lsq-download-btn--primary {
+      background: #0d1224;
+      color: #f7fafc;
+      border-color: #0d1224;
+    }
+    .lsq-download-btn--primary:hover {
+      background: #1a2238;
+    }
+
+    /* Generated URL display */
+    .lsq-url-display {
+      padding: 0.5rem 1.25rem;
+      font-size: 0.75rem;
+      color: var(--lsq-text-muted);
+      word-break: break-all;
+      font-family: 'JetBrains Mono', monospace;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen text-neutral-900">
+
+  <!-- HEADER -->
+  <header class="header-bar sticky top-0 z-30">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex items-center gap-8">
+      <h1 class="text-lg font-semibold tracking-tight codedesk-mark">
+        <a href="./index.html">Lafayette Square QR</a>
+      </h1>
+
+      <!-- Controls (right-aligned) -->
+      <div class="ml-auto flex items-center gap-3" id="topControls">
+        <!-- Type -->
+        <label>
+          <span class="sr-only">Type</span>
+          <select id="qrType" aria-label="Type">
+            <option value="Check-in" selected>Check-in</option>
+            <option value="Claim">Claim</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main
+  class="mx-auto max-w-7xl px-6 py-8 grid
+         grid-cols-1
+         xl:grid-cols-2
+         justify-items-center xl:justify-items-start
+         items-start gap-10">
+
+<!-- LEFT: Preview Stage -->
+<div class="stage-stick w-full flex flex-col items-center gap-3 justify-self-center">
+  <section class="w-full flex justify-center">
+    <div class="preview-stage relative mx-auto overflow-visible">
+      <div class="absolute inset-0 p-0" style="overflow:visible">
+        <div id="qrPreview" class="w-full h-full overflow-visible flex flex-col relative">
+          <div id="qrBgPaint" class="absolute inset-0 rounded-[inherit] pointer-events-none" style="z-index:0;"></div>
+          <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- URL display (shows generated QR target URL) -->
+  <div id="lsqUrlDisplay" class="lsq-url-display text-center w-full max-w-[360px]"></div>
+</div>
+
+<!-- RIGHT: Stepper (controls) -->
+<section id="stepper"
+  class="stage-stick space-y-4 w-full max-w-[560px] mx-auto justify-self-center">
+
+  <!-- Caption -->
+  <div class="step-card"
+       data-step="caption">
+    <button class="w-full step-header px-4 py-3 text-left font-medium" data-step-toggle>
+      Caption
+    </button>
+    <div class="px-4 pb-4 space-y-3" data-step-panel style="display:none">
+      <label class="block text-sm">
+        <span class="sr-only">Headline</span>
+        <textarea id="campaign"
+          rows="1"
+          maxlength="20"
+          class="w-full rounded-md border px-3 py-2"
+          placeholder="Headline"></textarea>
+      </label>
+      <label class="block text-sm">
+        <span class="sr-only">Body (optional)</span>
+        <textarea id="captionBody"
+          rows="1"
+          maxlength="60"
+          class="w-full rounded-md border px-3 py-2"
+          placeholder="Body (optional)"></textarea>
+      </label>
+    </div>
+  </div>
+
+<!-- Design -->
+<div class="step-card"
+     data-step="design">
+    <div class="step-header-wrap flex items-center gap-3">
+      <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
+        Design
+      </button>
+      <div id="fontPill" class="ecc-pill" role="group" aria-label="Preview font">
+        <label class="text-sm sr-only" for="fontFamily">Preview font</label>
+        <select id="fontFamily" class="topctl topctl--chev text-sm" aria-label="Preview font">
+          <option value="IBM Plex Sans">IBM Plex Sans</option>
+          <option value="IBM Plex Serif">IBM Plex Serif</option>
+          <option value="Bebas Neue">Bebas Neue</option>
+          <option value="Public Sans">Public Sans</option>
+          <option value="Playfair Display">Playfair Display</option>
+          <option value="Space Grotesk">Space Grotesk</option>
+          <option value="Manrope">Manrope</option>
+          <option value="Inter">Inter</option>
+          <option value="JetBrains Mono">JetBrains Mono</option>
+          <option value="Work Sans">Work Sans</option>
+        </select>
+      </div>
+    </div>
+  <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
+    <!-- Color quadrant -->
+    <div class="grid gap-3 sm:grid-cols-2">
+      <label class="text-sm">
+        <span class="block mb-1">Caption Text Color</span>
+        <div class="flex items-center gap-2">
+          <input id="captionColor" type="color" class="h-9 w-10 rounded-md border" value="#000000" />
+          <input id="captionColorHex" type="text" class="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="#RRGGBB" />
+        </div>
+      </label>
+      <label class="text-sm">
+        <span class="block mb-1">Body</span>
+        <div class="flex items-center gap-2">
+          <input id="bodyColor" type="color" class="h-9 w-10 rounded-md border" value="#000000" />
+          <input id="bodyColorHex" type="text" class="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="#RRGGBB" />
+        </div>
+      </label>
+      <label class="text-sm">
+        <span class="block mb-1">Eye Ring</span>
+        <div class="flex items-center gap-2">
+          <input id="eyeRingColor" type="color" class="h-9 w-10 rounded-md border" value="#9CA3AF" />
+          <input id="eyeRingColorHex" type="text" class="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="#RRGGBB" />
+        </div>
+      </label>
+      <label class="text-sm">
+        <span class="block mb-1">Eye Center</span>
+        <div class="flex items-center gap-2">
+          <input id="eyeCenterColor" type="color" class="h-9 w-10 rounded-md border" value="#6B7280" />
+          <input id="eyeCenterColorHex" type="text" class="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="#RRGGBB" />
+        </div>
+      </label>
+    </div>
+
+    <!-- Shapes -->
+    <div class="grid gap-3 sm:grid-cols-3">
+      <label class="text-sm">
+        <span class="block mb-1">Modules</span>
+        <select id="moduleShape" class="w-full rounded-md border px-3 py-2">
+          <option>Square</option><option>Rounded</option><option>Circle</option>
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="block mb-1">Eye Ring</span>
+        <select id="eyeRingShape" class="w-full rounded-md border px-3 py-2">
+          <option>Square</option><option>Rounded</option><option>Circle</option>
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="block mb-1">Eye Center</span>
+        <select id="eyeCenterShape" class="w-full rounded-md border px-3 py-2">
+          <option>Square</option><option>Rounded</option><option>Circle</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Eye Center fill -->
+    <div class="grid gap-3 sm:grid-cols-3">
+      <label class="text-sm">
+        <span class="block mb-1">Eye Center Fill</span>
+        <select id="eyeCenterMode" class="w-full rounded-md border px-3 py-2">
+          <option>Shape</option><option>Emoji</option>
+        </select>
+      </label>
+      <label class="text-sm" id="eyeCenterEmojiWrap">
+        <span class="block mb-1">Emoji</span>
+        <div class="flex gap-2">
+          <input id="eyeCenterEmoji" type="text" class="w-full rounded-md border px-3 py-2" value="" />
+          <button type="button" data-emoji-target="eyeCenterEmoji" class="px-3 py-2 text-sm rounded-md border hover:bg-neutral-50">Pick</button>
+        </div>
+      </label>
+      <label class="text-sm" id="eyeCenterScaleWrap">
+        <span class="block mb-1">Scale</span>
+        <div class="flex items-center gap-2">
+          <input id="eyeCenterScale" type="number" step="0.05" min="0.1" max="1.5" class="w-full rounded-md border px-3 py-2" value="0.9" />
+        </div>
+      </label>
+    </div>
+
+    <!-- Module fill -->
+    <div class="grid gap-3 sm:grid-cols-3">
+      <label class="text-sm">
+        <span class="block mb-1">Module Fill</span>
+        <select id="modulesMode" class="w-full rounded-md border px-3 py-2">
+          <option>Shape</option><option>Emoji</option>
+        </select>
+      </label>
+      <label class="text-sm" id="modulesEmojiWrap">
+        <span class="block mb-1">Emoji</span>
+        <div class="flex gap-2">
+          <input id="modulesEmoji" type="text" class="w-full rounded-md border px-3 py-2" value="" />
+          <button type="button" data-emoji-target="modulesEmoji" class="px-3 py-2 text-sm rounded-md border hover:bg-neutral-50">Pick</button>
+        </div>
+      </label>
+      <label class="text-sm" id="modulesScaleWrap">
+        <span class="block mb-1">Scale</span>
+        <div class="flex items-center gap-2">
+          <input id="modulesScale" type="number" step="0.05" min="0.1" max="1" class="w-full rounded-md border px-3 py-2" value="0.9" />
+        </div>
+      </label>
+    </div>
+
+    <!-- Center content -->
+    <div class="grid gap-3 sm:grid-cols-3 items-start">
+      <label class="text-sm">
+        <span class="block mb-1">Center content</span>
+        <select id="centerMode" class="w-full rounded-md border px-3 py-2">
+          <option>None</option>
+          <option>Blank</option>
+          <option>Emoji</option>
+        </select>
+      </label>
+      <label class="text-sm" id="centerEmojiWrap">
+        <span class="block mb-1">Emoji</span>
+        <div class="flex gap-2">
+          <input id="centerEmoji" type="text" class="w-full rounded-md border px-3 py-2" value="" />
+          <button type="button" data-emoji-target="centerEmoji" class="px-3 py-2 text-sm rounded-md border hover:bg-neutral-50">Pick</button>
+        </div>
+      </label>
+      <label class="text-sm" id="centerScaleWrap">
+        <span class="block mb-1">Scale</span>
+        <div class="flex items-center gap-2">
+          <input id="centerScale" type="number" step="0.05" min="0.1" max="1.5" class="w-full rounded-md border px-3 py-2" value="2" />
+        </div>
+      </label>
+    </div>
+
+    <!-- Divider -->
+    <div class="border-t border-neutral-200 dark:border-neutral-800 my-2"></div>
+
+    <!-- Background -->
+    <div class="space-y-2">
+      <div class="text-sm font-medium">Background</div>
+            <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] grid-rows-2 items-center gap-2">
+              <div class="flex items-center gap-2">
+                <input id="bgTopColor" type="color" class="color-dot h-9 w-9" value="#FFFFFF" />
+                <input id="bgTopHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+              </div>
+              <div class="grid grid-cols-[auto_minmax(0,1fr)] grid-rows-2 items-center gap-2 row-span-2">
+                <button id="bgLink" type="button"
+                        class="row-span-2 self-center"
+                        aria-label="Background linked"
+                        aria-pressed="true"
+                        title="Background linked">&#128279;</button>
+                <input id="bgTopAlpha" type="range" min="0" max="100" step="1" class="w-full h-6" value="100" />
+                <input id="bgBottomAlpha" type="range" min="0" max="100" step="1" class="w-full h-6" value="100" />
+              </div>
+              <input id="bgTopAlphaNum" type="number" min="0" max="100" step="1" value="100"
+                    class="w-16 rounded-md border px-2 py-2 text-sm justify-self-start"
+                    aria-label="Top opacity (%)" />
+              <div class="flex items-center gap-2">
+                <input id="bgBottomColor" type="color" class="color-dot h-9 w-9" value="#FFFFFF" />
+                <input id="bgBottomHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+              </div>
+              <input id="bgBottomAlphaNum" type="number" min="0" max="100" step="1" value="100"
+                    class="w-16 rounded-md border px-2 py-2 text-sm justify-self-start"
+                    aria-label="Bottom opacity (%)" />
+            </div>
+    </div>
+  </div>
+</div>
+
+<!-- Business -->
+<div class="step-card"
+     data-step="business">
+  <div class="step-header-wrap flex items-center gap-3">
+    <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
+      Business
+    </button>
+  </div>
+  <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
+    <div id="detailsPanel" class="space-y-4"></div>
+  </div>
+</div>
+
+<!-- Download -->
+<div class="step-card"
+     data-step="download">
+  <div class="step-header-wrap flex items-center gap-3">
+    <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
+      Download
+    </button>
+  </div>
+  <div class="lsq-download-row" data-step-panel style="display:none">
+    <button type="button" class="lsq-download-btn lsq-download-btn--primary" style="width:100%" onclick="window.downloadPng && window.downloadPng('lafayette-square-qr.png', 3)">
+      PNG
+    </button>
+  </div>
+</div>
+
+  <!-- Emoji Modal -->
+  <div id="emojiModal" class="hidden fixed inset-0 z-50 modal-bg grid place-items-center p-4">
+    <div class="w-full max-w-3xl rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-lg">
+      <div class="flex items-center gap-3 px-4 py-3 border-b dark:border-neutral-800">
+        <div class="text-sm font-medium"></div>
+        <input id="emojiSearch" type="text" placeholder="Search..." class="ml-auto w-64 rounded-md border px-3 py-2 text-sm" />
+        <button
+        id="emojiClose"
+        class="ml-auto px-3 py-2 rounded-md border bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100 text-sm hover:bg-neutral-300 dark:hover:bg-neutral-600 transition"
+      >
+      x
+      </button>
+      </div>
+      <div class="max-h-[60vh] overflow-auto p-4">
+        <div id="emojiGrid" class="grid emoji-grid gap-2"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Lafayette Square — API configuration
+  // Set this to your Google Apps Script deployment URL
+  window.LSQ_API_URL =
+    'https://script.google.com/macros/s/AKfycbxcKT2eSOKfXsb_p1Vs3xfpxy28N3ceVnBFRRP0whDcJ7u45zrzjHwcSUG7GGNxZ5ckTw/exec';
+</script>
+
+<!-- CodeDesk split modules (ordered, deterministic) -->
+<script defer src="./qr_app-bootstrapper.js?v=20260207"></script>
+<script defer src="./qr_ui_toolkit.js?v=20260207"></script>
+<script defer src="./qr_render_engine.js?v=20260207"></script>
+<script defer src="./qr_state_engine.js?v=20260207"></script>
+<script defer src="./qr_sync_pipeline.js?v=20260207"></script>
+
+<!-- Emoji picker wiring -->
+<script type="module">
+  import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js';
+
+  const emojiModal  = document.getElementById('emojiModal');
+  const emojiClose  = document.getElementById('emojiClose');
+  let   emojiTarget = null;
+
+  function openEmoji(targetId) {
+    emojiTarget = document.getElementById(targetId) || null;
+    emojiModal.classList.remove('hidden');
+    queueMicrotask(() => document.querySelector('emoji-picker')?.focus());
+  }
+  function closeEmoji() {
+    emojiModal.classList.add('hidden');
+    emojiTarget = null;
+    if (typeof window.render === 'function') window.render();
+  }
+  window.openEmoji  = openEmoji;
+  window.closeEmoji = closeEmoji;
+
+  document.addEventListener('click', function(e){
+    const btn = e.target && e.target.closest && e.target.closest('button[data-emoji-target]');
+    if (!btn) return;
+    try { e.preventDefault(); } catch(_e){}
+    try { e.stopPropagation(); } catch(_e){}
+    const tid = btn.getAttribute('data-emoji-target') || '';
+    if (!tid) return;
+    openEmoji(tid);
+  }, true);
+
+  emojiClose?.addEventListener('click', closeEmoji);
+  emojiModal?.addEventListener('click', (e) => { if (e.target === emojiModal) closeEmoji(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !emojiModal.classList.contains('hidden')) closeEmoji(); });
+
+  const grid   = document.getElementById('emojiGrid');
+  const picker = document.createElement('emoji-picker');
+  picker.setAttribute('emojis-per-row', '10');
+  picker.setAttribute('skin-tone-emoji', '\uD83D\uDC4D');
+  picker.style.width = '100%';
+  picker.style.maxHeight = '60vh';
+  picker.style.border = '0';
+
+  const applyPickerTheme = () => {
+    picker.setAttribute('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  };
+  applyPickerTheme();
+  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', applyPickerTheme);
+  new MutationObserver(() => applyPickerTheme())
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+  grid.replaceWith(picker);
+
+  picker.addEventListener('emoji-click', (e) => {
+    const char = e.detail.unicode;
+    if (emojiTarget) {
+      emojiTarget.value = char;
+      emojiTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    closeEmoji();
+  });
+</script>
+
+<script>
+(function () {
+  const onTab = e => { if (e.key === 'Tab') document.body.classList.add('kbd'); };
+  const onMouse = () => document.body.classList.remove('kbd');
+  window.addEventListener('keydown', onTab, { once: true });
+  window.addEventListener('mousedown', onMouse);
+})();
+</script>
+
+<script>
+(function(){
+  const sel = document.getElementById('qrType');
+  if (!sel) return;
+  const sync = () => sel.classList.toggle('start-here', !sel.value);
+  sel.addEventListener('change', sync);
+  sync();
+})();
+</script>
+
+</body>
+</html>

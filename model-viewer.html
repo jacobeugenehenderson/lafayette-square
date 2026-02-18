@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FBX Model Viewer</title>
+  <style>
+    body { margin: 0; background: #222; color: #eee; font-family: monospace; display: flex; height: 100vh; }
+    #sidebar { width: 380px; padding: 10px; overflow-y: auto; background: #1a1a1a; border-right: 1px solid #444; }
+    #sidebar h3 { margin: 0 0 6px; font-size: 14px; }
+    #sidebar h4 { margin: 10px 0 4px; font-size: 12px; color: #aaa; }
+    .model-btn { display: block; width: 100%; text-align: left; padding: 5px 8px; margin: 1px 0; background: #333; color: #eee; border: 1px solid #444; cursor: pointer; font-family: monospace; font-size: 11px; }
+    .model-btn:hover { background: #444; }
+    .model-btn.active { background: #4a6; color: #fff; }
+    .thumb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin: 6px 0; }
+    .thumb-btn { background: #333; border: 1px solid #444; cursor: pointer; padding: 2px; text-align: center; }
+    .thumb-btn:hover { border-color: #888; }
+    .thumb-btn.active { border-color: #4a6; background: #2a4a2a; }
+    .thumb-btn img { width: 100%; height: auto; display: block; image-rendering: auto; }
+    .thumb-btn span { font-size: 9px; color: #aaa; display: block; }
+    #info { padding: 8px; margin-top: 10px; background: #2a2a2a; border: 1px solid #444; font-size: 11px; white-space: pre-wrap; max-height: 40vh; overflow-y: auto; }
+    #canvas-wrap { flex: 1; position: relative; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #mat-controls { margin-top: 8px; padding: 6px; background: #2a2a2a; border: 1px solid #444; }
+    #mat-controls h4 { margin: 0 0 4px; font-size: 11px; }
+    .mat-btn { display: inline-block !important; width: auto !important; padding: 3px 6px !important; margin: 1px !important; font-size: 10px !important; background: #333; color: #eee; border: 1px solid #555; cursor: pointer; font-family: monospace; }
+    .mat-btn.highlight { background: #a44 !important; color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h3>Facade Model Library</h3>
+    <h4>Current Models</h4>
+    <div id="model-list"></div>
+    <h4>Decor Collection (88 pieces) — click thumbnail to load</h4>
+    <div id="decor-grid" class="thumb-grid"></div>
+    <div id="mat-controls">
+      <h4>Material highlight (click to isolate):</h4>
+      <div id="mat-buttons"></div>
+      <button id="reset-mats" class="model-btn" style="margin-top:4px;width:auto;display:inline-block;">Reset</button>
+    </div>
+    <div id="info"></div>
+  </div>
+  <div id="canvas-wrap"></div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three'
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+
+    const currentModels = [
+      'models/facade/small-window-01.fbx',
+      'models/facade/entrance-01.fbx',
+      'models/facade/entrance-02.fbx',
+      'models/facade/stoop.fbx',
+      'models/facade/cornice-bracket.fbx',
+      'models/facade/brick-ledge.fbx',
+      'models/facade/brick-ledge-end.fbx',
+      'models/facade/baywindow-01.fbx',
+      'models/facade/baywindow-02.fbx',
+      'models/facade/baywindow-03.fbx',
+      'models/facade/brick-door.fbx',
+      'models/facade/brick-oriel.fbx',
+      'models/facade/dormer.fbx',
+      'models/facade/round-window.fbx',
+    ]
+
+    const HIGHLIGHT_COLORS = [
+      '#ff3333', '#33ff33', '#3333ff', '#ffff33', '#ff33ff', '#33ffff',
+      '#ff8833', '#8833ff', '#33ff88', '#ff3388', '#88ff33', '#3388ff',
+    ]
+
+    const wrap = document.getElementById('canvas-wrap')
+    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight)
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.0
+    wrap.appendChild(renderer.domElement)
+
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('#444')
+    const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 10000)
+    camera.position.set(200, 200, 400)
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.enableDamping = true
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6))
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0)
+    dir.position.set(200, 400, 300)
+    scene.add(dir)
+    scene.add(new THREE.GridHelper(1000, 20, '#666', '#555'))
+    scene.add(new THREE.AxesHelper(100))
+
+    const loader = new FBXLoader()
+    let currentModel = null
+    const info = document.getElementById('info')
+    const matButtonsEl = document.getElementById('mat-buttons')
+    const dimMat = new THREE.MeshStandardMaterial({ color: '#222', transparent: true, opacity: 0.15 })
+
+    function clearActive() {
+      document.querySelectorAll('.model-btn, .thumb-btn').forEach(b => b.classList.remove('active'))
+    }
+
+    function highlightMaterial(matIdx) {
+      if (!currentModel) return
+      currentModel.traverse(child => {
+        if (!child.isMesh || !child.userData._origMats) return
+        child.material = child.userData._origMats.map((m, i) =>
+          i === matIdx ? new THREE.MeshStandardMaterial({ color: HIGHLIGHT_COLORS[matIdx % HIGHLIGHT_COLORS.length] }) : dimMat
+        )
+        if (child.material.length === 1) child.material = child.material[0]
+      })
+    }
+
+    function resetMaterials() {
+      if (!currentModel) return
+      currentModel.traverse(child => {
+        if (!child.isMesh || !child.userData._origMats) return
+        const o = child.userData._origMats
+        child.material = o.length === 1 ? o[0] : o
+      })
+      matButtonsEl.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('highlight'))
+    }
+    document.getElementById('reset-mats').onclick = resetMaterials
+
+    function loadModel(url) {
+      if (currentModel) { scene.remove(currentModel); currentModel = null }
+      info.textContent = `Loading ${url}...`
+      matButtonsEl.innerHTML = ''
+
+      loader.load(url, (fbx) => {
+        scene.add(fbx); currentModel = fbx
+        const bbox = new THREE.Box3().setFromObject(fbx)
+        const size = new THREE.Vector3(); bbox.getSize(size)
+        const center = new THREE.Vector3(); bbox.getCenter(center)
+
+        let lines = [`=== ${url.split('/').pop()} ===`]
+        lines.push(`BBox: ${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)} cm`)
+        lines.push(`Center: ${center.x.toFixed(1)}, ${center.y.toFixed(1)}, ${center.z.toFixed(1)}`)
+        lines.push('')
+
+        const allMats = new Map()
+        let meshIdx = 0
+        fbx.traverse(child => {
+          if (!child.isMesh) return
+          const mats = Array.isArray(child.material) ? child.material : [child.material]
+          child.userData._origMats = [...mats]
+          lines.push(`Mesh ${meshIdx}: "${child.name}"`)
+          lines.push(`  Verts: ${child.geometry.getAttribute('position')?.count || 0}`)
+          const groups = child.geometry.groups
+          const posAttr = child.geometry.getAttribute('position')
+          const usedIdx = new Set(groups?.map(g => g.materialIndex) || [])
+
+          if (groups?.length > 0) {
+            lines.push(`  Groups (${groups.length}):`)
+            const idx = child.geometry.index
+            groups.forEach((g, gi) => {
+              let sumY = 0, cnt = 0, mnY = Infinity, mxY = -Infinity
+              for (let i = g.start; i < g.start + g.count; i++) {
+                const vi = idx ? idx.getX(i) : i
+                const y = posAttr.getY(vi); sumY += y; cnt++
+                if (y < mnY) mnY = y; if (y > mxY) mxY = y
+              }
+              lines.push(`    [${gi}] matIdx=${g.materialIndex} "${mats[g.materialIndex]?.name||'?'}" faces=${(g.count/3)|0} y=${mnY.toFixed(0)}..${mxY.toFixed(0)}`)
+            })
+          }
+          lines.push(`  Materials (${mats.length}):`)
+          mats.forEach((m, i) => {
+            const map = m.map ? 'YES' : 'NO'
+            const col = m.color ? '#' + m.color.getHexString() : '-'
+            const u = usedIdx.size > 0 ? (usedIdx.has(i) ? ' ★' : ' (unused)') : ''
+            lines.push(`    [${i}] "${m.name}" col=${col} map=${map}${u}`)
+            if (!allMats.has(i)) allMats.set(i, m.name || `mat_${i}`)
+          })
+          lines.push(''); meshIdx++
+        })
+        info.textContent = lines.join('\n')
+
+        matButtonsEl.innerHTML = ''
+        for (const [idx, name] of allMats) {
+          const btn = document.createElement('button')
+          btn.className = 'mat-btn'
+          btn.style.borderLeft = `4px solid ${HIGHLIGHT_COLORS[idx % HIGHLIGHT_COLORS.length]}`
+          btn.textContent = `[${idx}] ${name.substring(0, 20)}`
+          btn.onclick = () => {
+            matButtonsEl.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('highlight'))
+            btn.classList.add('highlight')
+            highlightMaterial(idx)
+          }
+          matButtonsEl.appendChild(btn)
+        }
+
+        const maxDim = Math.max(size.x, size.y, size.z)
+        camera.position.set(center.x + maxDim, center.y + maxDim * 0.5, center.z + maxDim * 1.5)
+        controls.target.copy(center); controls.update()
+      }, undefined, (err) => { info.textContent = `ERROR: ${err}` })
+    }
+
+    // Build current model buttons
+    const listEl = document.getElementById('model-list')
+    currentModels.forEach(url => {
+      const btn = document.createElement('button')
+      btn.className = 'model-btn'
+      btn.textContent = url.split('/').pop()
+      btn.onclick = () => { clearActive(); btn.classList.add('active'); loadModel(url) }
+      listEl.appendChild(btn)
+    })
+
+    // Build decor thumbnail grid
+    const gridEl = document.getElementById('decor-grid')
+    for (let i = 1; i <= 88; i++) {
+      const num = String(i).padStart(2, '0')
+      const cell = document.createElement('div')
+      cell.className = 'thumb-btn'
+      cell.innerHTML = `<img src="models/facade/decor-icons/decor_${num}.png" alt="${num}"><span>${num}</span>`
+      cell.onclick = () => {
+        clearActive(); cell.classList.add('active')
+        loadModel(`models/facade/decor/decor_${num}.fbx`)
+      }
+      gridEl.appendChild(cell)
+    }
+
+    function animate() {
+      requestAnimationFrame(animate)
+      controls.update()
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    window.addEventListener('resize', () => {
+      camera.aspect = wrap.clientWidth / wrap.clientHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(wrap.clientWidth, wrap.clientHeight)
+    })
+
+    listEl.querySelector('.model-btn').click()
+  </script>
+</body>
+</html>
