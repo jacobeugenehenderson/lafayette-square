@@ -114,6 +114,20 @@ function updateCell(sheet, rowIndex, headerMap, columnName, value) {
   sheet.getRange(rowIndex, colIdx + 1).setValue(value)
 }
 
+/** Delete all rows where columnName === value. Iterates bottom-up to preserve indices. */
+function deleteRowsByColumn(sheet, columnName, value) {
+  if (!sheet) return
+  var data = sheet.getDataRange().getValues()
+  if (data.length < 2) return
+  var col = data[0].indexOf(columnName)
+  if (col === -1) return
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][col] === value) {
+      sheet.deleteRow(i + 1)
+    }
+  }
+}
+
 // ─── GET handler ────────────────────────────────────────────────────────────
 
 function doGet(e) {
@@ -121,11 +135,17 @@ function doGet(e) {
 
   try {
     switch (action) {
-      case 'listings':       return getListings()
-      case 'reviews':        return getReviews(e.parameter.lid)
-      case 'events':         return getEvents()
-      case 'checkin-status': return getCheckinStatus(e.parameter.dh)
-      default:               return errorResponse('Unknown action: ' + action, 'bad_request')
+      case 'listings':        return getListings()
+      case 'reviews':         return getReviews(e.parameter.lid)
+      case 'events':          return getEvents()
+      case 'checkin-status':  return getCheckinStatus(e.parameter.dh)
+      case 'handle':          return getHandle(e.parameter.dh)
+      case 'check-handle':    return checkHandle(e.parameter.h)
+      case 'bulletins':       return getBulletins(e.parameter.dh)
+      case 'threads':         return getThreads(e.parameter.dh)
+      case 'thread-messages': return getThreadMessages(e.parameter.tid, e.parameter.dh)
+      case 'comments':        return getComments(e.parameter.bid, e.parameter.dh)
+      default:                return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
     return errorResponse(err.message, 'server_error')
@@ -146,14 +166,22 @@ function doPost(e) {
 
   try {
     switch (action) {
-      case 'checkin':         return postCheckin(body)
-      case 'review':          return postReview(body)
-      case 'event':           return postEvent(body)
-      case 'claim':           return postClaim(body)
-      case 'update-listing':  return postUpdateListing(body)
-      case 'accept-listing':  return postAcceptListing(body)
-      case 'remove-listing':  return postRemoveListing(body)
-      default:                return errorResponse('Unknown action: ' + action, 'bad_request')
+      case 'checkin':          return postCheckin(body)
+      case 'review':           return postReview(body)
+      case 'event':            return postEvent(body)
+      case 'claim':            return postClaim(body)
+      case 'update-listing':   return postUpdateListing(body)
+      case 'accept-listing':   return postAcceptListing(body)
+      case 'remove-listing':   return postRemoveListing(body)
+      case 'set-handle':       return postSetHandle(body)
+      case 'bulletin':         return postBulletin(body)
+      case 'remove-bulletin':  return postRemoveBulletin(body)
+      case 'start-thread':     return postStartThread(body)
+      case 'send-message':     return postSendMessage(body)
+      case 'close-thread':     return postCloseThread(body)
+      case 'comment':          return postComment(body)
+      case 'remove-comment':   return postRemoveComment(body)
+      default:                 return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
     return errorResponse(err.message, 'server_error')
@@ -285,7 +313,7 @@ function postCheckin(body) {
 // ─── POST: Review ───────────────────────────────────────────────────────────
 
 function postReview(body) {
-  const { device_hash, listing_id, text, rating } = body
+  const { device_hash, listing_id, text, rating, handle } = body
   if (!device_hash || !listing_id || !text) {
     return errorResponse('Missing required fields', 'bad_request')
   }
@@ -305,9 +333,16 @@ function postReview(body) {
     return errorResponse('Not a verified local', 'unauthorized')
   }
 
+  // Look up handle if not provided
+  var reviewHandle = handle || ''
+  if (!reviewHandle) {
+    var handleRow = findRow(getSheet('Handles'), 'device_hash', device_hash)
+    if (handleRow) reviewHandle = handleRow.rowData.handle || ''
+  }
+
   const sheet = getSheet('Reviews')
   const id = generateId('rev')
-  sheet.appendRow([id, listing_id, device_hash, text, rating || '', nowISO()])
+  sheet.appendRow([id, listing_id, device_hash, reviewHandle, text, rating || '', nowISO()])
 
   return jsonResponse({ id: id, logged: true })
 }
@@ -472,6 +507,391 @@ function postRemoveListing(body) {
   return jsonResponse({ success: true })
 }
 
+// ─── Helper: verify device is a townie (local) ─────────────────────────────
+
+function isTownie(deviceHash) {
+  const checkins = sheetToObjects(getSheet('Checkins'))
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
+  const cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  const distinctDates = new Set()
+  checkins.forEach(r => {
+    if (r.device_hash === deviceHash && r.date >= cutoffStr) {
+      distinctDates.add(r.date)
+    }
+  })
+  return distinctDates.size >= LOCAL_THRESHOLD
+}
+
+// ─── GET: Handle lookup ─────────────────────────────────────────────────────
+
+function getHandle(deviceHash) {
+  if (!deviceHash) return errorResponse('Missing dh parameter', 'bad_request')
+  const result = findRow(getSheet('Handles'), 'device_hash', deviceHash)
+  return jsonResponse({ handle: result ? result.rowData.handle : null })
+}
+
+// ─── GET: Check handle availability ─────────────────────────────────────────
+
+function checkHandle(handle) {
+  if (!handle) return errorResponse('Missing h parameter', 'bad_request')
+  const sheet = getSheet('Handles')
+  const rows = sheetToObjects(sheet)
+  const taken = rows.some(r => (r.handle || '').toLowerCase() === handle.toLowerCase())
+  return jsonResponse({ available: !taken })
+}
+
+// ─── POST: Set handle ───────────────────────────────────────────────────────
+
+function postSetHandle(body) {
+  const { device_hash, handle } = body
+  if (!device_hash || !handle) {
+    return errorResponse('Missing device_hash or handle', 'bad_request')
+  }
+
+  // Validate format: 3-20 chars, alphanumeric + underscores
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(handle)) {
+    return errorResponse('Handle must be 3-20 characters, alphanumeric and underscores only', 'bad_request')
+  }
+
+  const sheet = getSheet('Handles')
+
+  // Check if device already has a handle
+  const existing = findRow(sheet, 'device_hash', device_hash)
+  if (existing) {
+    return jsonResponse({ success: true, handle: existing.rowData.handle, already_set: true })
+  }
+
+  // Check uniqueness (case-insensitive)
+  const rows = sheetToObjects(sheet)
+  const taken = rows.some(r => (r.handle || '').toLowerCase() === handle.toLowerCase())
+  if (taken) {
+    return errorResponse('Handle already taken', 'conflict')
+  }
+
+  sheet.appendRow([device_hash, handle, nowISO()])
+  return jsonResponse({ success: true, handle: handle })
+}
+
+// ─── GET: Bulletins ─────────────────────────────────────────────────────────
+
+function getBulletins(requesterHash) {
+  const sheet = getSheet('Bulletins')
+  const rows = sheetToObjects(sheet)
+  const active = rows.filter(r =>
+    r.status === 'active'
+  ).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+
+  // Count comments per bulletin
+  const commentSheet = getSheet('Comments')
+  const commentRows = commentSheet ? sheetToObjects(commentSheet) : []
+  const commentCounts = {}
+  commentRows.forEach(c => {
+    commentCounts[c.bulletin_id] = (commentCounts[c.bulletin_id] || 0) + 1
+  })
+
+  // Strip device_hash from response; hide handle on anonymous posts; flag own posts
+  const cleaned = active.map(r => {
+    const isMine = requesterHash && r.device_hash === requesterHash
+    const out = { ...r }
+    delete out.device_hash
+    if (out.anonymous === true || out.anonymous === 'true' || out.anonymous === 'TRUE') {
+      out.handle = null
+    }
+    out.is_mine = isMine
+    out.comment_count = commentCounts[r.id] || 0
+    return out
+  })
+  return jsonResponse(cleaned)
+}
+
+// ─── POST: Bulletin ─────────────────────────────────────────────────────────
+
+function postBulletin(body) {
+  const { device_hash, section, text, anonymous } = body
+  if (!device_hash || !section || !text) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  if (!isTownie(device_hash)) {
+    return errorResponse('Must be a verified local to post', 'unauthorized')
+  }
+
+  // Look up handle
+  const handleRow = findRow(getSheet('Handles'), 'device_hash', device_hash)
+  if (!handleRow) {
+    return errorResponse('Must set a handle before posting', 'bad_request')
+  }
+  const handle = handleRow.rowData.handle
+
+  const sheet = getSheet('Bulletins')
+  const id = generateId('blt')
+  const now = nowISO()
+
+  sheet.appendRow([id, device_hash, handle, section, text, anonymous ? true : false, now, '', 'active'])
+  return jsonResponse({ id: id, success: true })
+}
+
+// ─── POST: Remove bulletin ──────────────────────────────────────────────────
+
+function postRemoveBulletin(body) {
+  const { device_hash, bulletin_id } = body
+  if (!device_hash || !bulletin_id) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  const sheet = getSheet('Bulletins')
+  const result = findRow(sheet, 'id', bulletin_id)
+  if (!result) return errorResponse('Bulletin not found', 'not_found')
+
+  // Only author can remove
+  if (result.rowData.device_hash !== device_hash) {
+    return errorResponse('Not authorized', 'unauthorized')
+  }
+
+  // Delete all comments for this bulletin
+  deleteRowsByColumn(getSheet('Comments'), 'bulletin_id', bulletin_id)
+
+  // Delete the bulletin row itself
+  sheet.deleteRow(result.rowIndex)
+  return jsonResponse({ success: true })
+}
+
+// ─── GET: Comments ──────────────────────────────────────────────────────────
+
+function getComments(bulletinId, requesterHash) {
+  if (!bulletinId) return errorResponse('Missing bulletin_id', 'bad_request')
+  const sheet = getSheet('Comments')
+  const rows = sheetToObjects(sheet)
+  const filtered = rows
+    .filter(r => r.bulletin_id === bulletinId)
+    .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+
+  const cleaned = filtered.map(r => {
+    const isMine = requesterHash && r.device_hash === requesterHash
+    const out = { ...r }
+    delete out.device_hash
+    if (out.anonymous === true || out.anonymous === 'true' || out.anonymous === 'TRUE') {
+      out.handle = null
+    }
+    out.is_mine = isMine
+    return out
+  })
+  return jsonResponse(cleaned)
+}
+
+// ─── POST: Comment ──────────────────────────────────────────────────────────
+
+function postComment(body) {
+  var device_hash = body.device_hash
+  var bulletin_id = body.bulletin_id
+  var text = body.text
+  var anonymous = body.anonymous
+
+  if (!device_hash || !bulletin_id || !text) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  if (!isTownie(device_hash)) {
+    return errorResponse('Must be a verified local to comment', 'unauthorized')
+  }
+
+  var handleRow = findRow(getSheet('Handles'), 'device_hash', device_hash)
+  if (!handleRow) {
+    return errorResponse('Must set a handle before commenting', 'bad_request')
+  }
+  var handle = handleRow.rowData.handle
+
+  var sheet = getSheet('Comments')
+  var id = generateId('cmt')
+  var now = nowISO()
+
+  sheet.appendRow([id, bulletin_id, device_hash, handle, anonymous ? true : false, text, now])
+  return jsonResponse({ id: id, success: true })
+}
+
+// ─── POST: Remove comment ───────────────────────────────────────────────────
+
+function postRemoveComment(body) {
+  var device_hash = body.device_hash
+  var comment_id = body.comment_id
+  if (!device_hash || !comment_id) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  var sheet = getSheet('Comments')
+  var result = findRow(sheet, 'id', comment_id)
+  if (!result) return errorResponse('Comment not found', 'not_found')
+
+  if (result.rowData.device_hash !== device_hash) {
+    return errorResponse('Not authorized', 'unauthorized')
+  }
+
+  sheet.deleteRow(result.rowIndex)
+  return jsonResponse({ success: true })
+}
+
+// ─── POST: Start thread ─────────────────────────────────────────────────────
+
+function postStartThread(body) {
+  const { device_hash, bulletin_id } = body
+  if (!device_hash || !bulletin_id) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  if (!isTownie(device_hash)) {
+    return errorResponse('Must be a verified local', 'unauthorized')
+  }
+
+  // Look up the bulletin to get the poster's device hash
+  const bulletin = findRow(getSheet('Bulletins'), 'id', bulletin_id)
+  if (!bulletin) return errorResponse('Bulletin not found', 'not_found')
+  if (bulletin.rowData.status !== 'active') return errorResponse('Bulletin no longer active', 'bad_request')
+
+  const posterHash = bulletin.rowData.device_hash
+  if (posterHash === device_hash) {
+    return errorResponse('Cannot message yourself', 'bad_request')
+  }
+
+  // Check for existing thread between same parties on same bulletin
+  const threads = sheetToObjects(getSheet('Threads'))
+  const existing = threads.find(t =>
+    t.bulletin_id === bulletin_id &&
+    t.status === 'active' &&
+    ((t.party_a_hash === posterHash && t.party_b_hash === device_hash) ||
+     (t.party_a_hash === device_hash && t.party_b_hash === posterHash))
+  )
+  if (existing) {
+    return jsonResponse({ thread_id: existing.id, already_exists: true })
+  }
+
+  // Look up handles
+  var aHandle = bulletin.rowData.handle || ''
+  var bHandleRow = findRow(getSheet('Handles'), 'device_hash', device_hash)
+  var bHandle = bHandleRow ? bHandleRow.rowData.handle : ''
+
+  const sheet = getSheet('Threads')
+  const id = generateId('thr')
+  const now = nowISO()
+
+  // party_a = bulletin poster, party_b = thread initiator
+  sheet.appendRow([id, bulletin_id, posterHash, device_hash, aHandle, bHandle, 'active', now, ''])
+  return jsonResponse({ thread_id: id, success: true })
+}
+
+// ─── POST: Send message ─────────────────────────────────────────────────────
+
+function postSendMessage(body) {
+  const { device_hash, thread_id, text } = body
+  if (!device_hash || !thread_id || !text) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  const threadResult = findRow(getSheet('Threads'), 'id', thread_id)
+  if (!threadResult) return errorResponse('Thread not found', 'not_found')
+  if (threadResult.rowData.status !== 'active') return errorResponse('Thread is closed', 'bad_request')
+
+  // Verify sender is a party
+  if (threadResult.rowData.party_a_hash !== device_hash && threadResult.rowData.party_b_hash !== device_hash) {
+    return errorResponse('Not authorized', 'unauthorized')
+  }
+
+  const sheet = getSheet('Messages')
+  const id = generateId('msg')
+  const now = nowISO()
+  sheet.appendRow([id, thread_id, device_hash, text, now])
+
+  return jsonResponse({ id: id, success: true })
+}
+
+// ─── GET: Threads for a device ──────────────────────────────────────────────
+
+function getThreads(deviceHash) {
+  if (!deviceHash) return errorResponse('Missing dh parameter', 'bad_request')
+
+  const threads = sheetToObjects(getSheet('Threads'))
+  const messages = sheetToObjects(getSheet('Messages'))
+
+  const active = threads.filter(t =>
+    t.status === 'active' &&
+    (t.party_a_hash === deviceHash || t.party_b_hash === deviceHash)
+  )
+
+  const result = active.map(t => {
+    // Get last message for preview
+    const threadMsgs = messages.filter(m => m.thread_id === t.id)
+      .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+    const lastMsg = threadMsgs[0] || null
+
+    // Determine the other party's handle
+    const otherHandle = t.party_a_hash === deviceHash ? t.b_handle : t.a_handle
+
+    return {
+      id: t.id,
+      bulletin_id: t.bulletin_id,
+      other_handle: otherHandle,
+      last_message: lastMsg ? lastMsg.text : null,
+      last_message_at: lastMsg ? lastMsg.created_at : t.created_at,
+      message_count: threadMsgs.length,
+      created_at: t.created_at,
+      expires_at: t.expires_at,
+    }
+  }).sort((a, b) => (b.last_message_at || '').localeCompare(a.last_message_at || ''))
+
+  return jsonResponse(result)
+}
+
+// ─── GET: Thread messages ───────────────────────────────────────────────────
+
+function getThreadMessages(threadId, deviceHash) {
+  if (!threadId || !deviceHash) return errorResponse('Missing tid or dh parameter', 'bad_request')
+
+  const threadResult = findRow(getSheet('Threads'), 'id', threadId)
+  if (!threadResult) return errorResponse('Thread not found', 'not_found')
+
+  // Verify requester is a party
+  if (threadResult.rowData.party_a_hash !== deviceHash && threadResult.rowData.party_b_hash !== deviceHash) {
+    return errorResponse('Not authorized', 'unauthorized')
+  }
+
+  const messages = sheetToObjects(getSheet('Messages'))
+  const threadMsgs = messages
+    .filter(m => m.thread_id === threadId)
+    .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+    .map(m => ({
+      id: m.id,
+      text: m.text,
+      is_mine: m.sender_hash === deviceHash,
+      created_at: m.created_at,
+    }))
+
+  return jsonResponse({ messages: threadMsgs })
+}
+
+// ─── POST: Close thread ─────────────────────────────────────────────────────
+
+function postCloseThread(body) {
+  const { device_hash, thread_id } = body
+  if (!device_hash || !thread_id) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  const threadSheet = getSheet('Threads')
+  const threadResult = findRow(threadSheet, 'id', thread_id)
+  if (!threadResult) return errorResponse('Thread not found', 'not_found')
+
+  // Verify requester is a party
+  if (threadResult.rowData.party_a_hash !== device_hash && threadResult.rowData.party_b_hash !== device_hash) {
+    return errorResponse('Not authorized', 'unauthorized')
+  }
+
+  // Purge all messages then delete the thread row
+  deleteRowsByColumn(getSheet('Messages'), 'thread_id', thread_id)
+  threadSheet.deleteRow(threadResult.rowIndex)
+
+  return jsonResponse({ success: true })
+}
+
 // ─── Utility: Create all tabs with headers ──────────────────────────────────
 
 function setupSheets() {
@@ -485,9 +905,14 @@ function setupSheets() {
       'photos_json', 'history_json', 'created_by', 'accepted', 'accepted_at',
       'guardian_hash', 'guardian_token', 'created_at', 'updated_at'
     ],
-    'Checkins': ['device_hash', 'location_id', 'timestamp', 'date'],
-    'Reviews':  ['id', 'listing_id', 'device_hash', 'text', 'rating', 'timestamp'],
-    'Events':   ['id', 'listing_id', 'device_hash', 'type', 'title', 'description', 'start_date', 'end_date', 'created_at'],
+    'Checkins':  ['device_hash', 'location_id', 'timestamp', 'date'],
+    'Reviews':   ['id', 'listing_id', 'device_hash', 'handle', 'text', 'rating', 'timestamp'],
+    'Events':    ['id', 'listing_id', 'device_hash', 'type', 'title', 'description', 'start_date', 'end_date', 'created_at'],
+    'Handles':   ['device_hash', 'handle', 'created_at'],
+    'Bulletins': ['id', 'device_hash', 'handle', 'section', 'text', 'anonymous', 'created_at', 'expires_at', 'status'],
+    'Threads':   ['id', 'bulletin_id', 'party_a_hash', 'party_b_hash', 'a_handle', 'b_handle', 'status', 'created_at', 'expires_at'],
+    'Messages':  ['id', 'thread_id', 'sender_hash', 'text', 'created_at'],
+    'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
   }
 
   Object.entries(tabs).forEach(([name, headers]) => {

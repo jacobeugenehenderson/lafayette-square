@@ -1,12 +1,13 @@
-import { useMemo, useState, useEffect, useCallback } from 'react'
+import React, { useMemo, useState, useEffect, useCallback, useContext } from 'react'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
 import useLocalStatus from '../hooks/useLocalStatus'
 import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
-import { getReviews, postReview, getEvents, postEvent, updateListing as apiUpdateListing, acceptListing as apiAcceptListing, removeListing as apiRemoveListing } from '../lib/api'
+import { getReviews, postReview, getEvents, postEvent, updateListing as apiUpdateListing } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
+import useHandle from '../hooks/useHandle'
 
 import facadeMapping from '../data/facade_mapping.json'
 
@@ -203,72 +204,119 @@ function cleanAddress(addr) {
 }
 
 // ─── Editable field wrapper (guardian inline editing) ────────────────
-function EditableField({ value, field, listingId, isGuardian, placeholder, multiline, children }) {
-  const [editing, setEditing] = useState(false)
-  const [localValue, setLocalValue] = useState(value || '')
+// ─── Shared edit context for unified Save/Cancel ─────────────────────
+const EditContext = React.createContext(null)
+
+function EditProvider({ listingId, children }) {
+  const [edits, setEdits] = useState({})  // { field: newValue }
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const hasEdits = Object.keys(edits).length > 0
 
-  if (!isGuardian) return children || <span>{value}</span>
+  const setField = useCallback((field, value) => {
+    setEdits(prev => ({ ...prev, [field]: value }))
+    setError(null)
+  }, [])
 
-  const save = async () => {
-    if (localValue === (value || '')) {
-      setEditing(false)
-      return
-    }
+  const clearField = useCallback((field) => {
+    setEdits(prev => {
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+  }, [])
+
+  const saveAll = useCallback(async () => {
+    if (!hasEdits) return
     setSaving(true)
+    setError(null)
     try {
       const dh = await getDeviceHash()
-      await apiUpdateListing(dh, listingId, { [field]: localValue })
-      useListings.getState().updateListing(listingId, { [field]: localValue })
-    } catch { /* silent */ }
+      const res = await apiUpdateListing(dh, listingId, edits)
+      if (res?.data?.error || res?.error) {
+        setError(res?.data?.message || res?.message || 'Save failed')
+        setSaving(false)
+        return
+      }
+      useListings.getState().updateListing(listingId, edits)
+      setEdits({})
+    } catch (err) {
+      console.error('Save failed:', err)
+      setError('Could not reach server')
+    }
     setSaving(false)
-    setEditing(false)
-  }
+  }, [edits, hasEdits, listingId])
+
+  const cancelAll = useCallback(() => { setEdits({}); setError(null) }, [])
+
+  return (
+    <EditContext.Provider value={{ edits, setField, clearField, saveAll, cancelAll, saving, hasEdits }}>
+      {children}
+      {(hasEdits || error) && (
+        <div className="sticky bottom-0 bg-black/60 backdrop-blur-sm border-t border-white/10 px-4 py-2 flex items-center justify-end gap-3 z-10">
+          {error && <span className="text-red-400 text-xs mr-auto">{error}</span>}
+          <button onClick={cancelAll} disabled={saving} className="text-xs text-white/50 hover:text-white/70">
+            Cancel
+          </button>
+          <button onClick={saveAll} disabled={saving} className="text-xs text-emerald-400 hover:text-emerald-300 disabled:opacity-50 bg-emerald-500/15 rounded-lg px-3 py-1 font-medium">
+            {saving ? 'Saving...' : 'Save changes'}
+          </button>
+        </div>
+      )}
+    </EditContext.Provider>
+  )
+}
+
+function EditableField({ value, field, isGuardian, placeholder, multiline, children }) {
+  const ctx = useContext(EditContext)
+  const [editing, setEditing] = useState(false)
+  const pendingValue = ctx?.edits[field]
+  const displayValue = pendingValue !== undefined ? pendingValue : (value || '')
+
+  if (!isGuardian || !ctx) return children || <span>{value}</span>
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !multiline) save()
-    if (e.key === 'Escape') { setLocalValue(value || ''); setEditing(false) }
+    if (e.key === 'Escape') { ctx.clearField(field); setEditing(false) }
   }
 
   if (editing) {
     const cls = "w-full bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white/40"
     return multiline ? (
       <textarea
-        value={localValue}
-        onChange={e => setLocalValue(e.target.value)}
-        onBlur={save}
+        value={displayValue}
+        onChange={e => ctx.setField(field, e.target.value)}
+        onBlur={() => setEditing(false)}
         onKeyDown={handleKeyDown}
         autoFocus
         rows={3}
         className={cls + " resize-none"}
-        disabled={saving}
       />
     ) : (
       <input
-        value={localValue}
-        onChange={e => setLocalValue(e.target.value)}
-        onBlur={save}
+        value={displayValue}
+        onChange={e => ctx.setField(field, e.target.value)}
+        onBlur={() => setEditing(false)}
         onKeyDown={handleKeyDown}
         autoFocus
         className={cls}
-        disabled={saving}
       />
     )
   }
 
   return (
     <span
-      onClick={() => { setLocalValue(value || ''); setEditing(true) }}
+      onClick={() => setEditing(true)}
       className="cursor-pointer hover:bg-white/5 rounded px-0.5 -mx-0.5 transition-colors"
       title="Click to edit"
     >
-      {value || <em className="text-white/30">{placeholder || `Add ${field}...`}</em>}
+      {displayValue || <em className="text-white/30">{placeholder || `Add ${field}...`}</em>}
     </span>
   )
 }
 
 // ─── Hours editor (guardian inline editing) ───────────────────────────
 function HoursEditor({ hours, listingId }) {
+  const ctx = useContext(EditContext)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(() => {
     const d = {}
@@ -279,23 +327,30 @@ function HoursEditor({ hours, listingId }) {
     })
     return d
   })
-  const [saving, setSaving] = useState(false)
 
-  const save = async () => {
-    setSaving(true)
-    try {
-      const result = {}
-      DAY_NAMES.forEach(day => {
-        if (draft[day].enabled) {
-          result[day] = { open: draft[day].open, close: draft[day].close }
-        }
-      })
-      const dh = await getDeviceHash()
-      await apiUpdateListing(dh, listingId, { hours: result })
-      useListings.getState().updateListing(listingId, { hours: result })
-    } catch { /* silent */ }
-    setSaving(false)
+  // Push draft changes into EditContext whenever draft changes while editing
+  useEffect(() => {
+    if (!editing || !ctx) return
+    const result = {}
+    DAY_NAMES.forEach(day => {
+      if (draft[day].enabled) {
+        result[day] = { open: draft[day].open, close: draft[day].close }
+      }
+    })
+    ctx.setField('hours', result)
+  }, [draft, editing])
+
+  const stopEditing = () => {
     setEditing(false)
+    if (ctx) ctx.clearField('hours')
+    // Reset draft to match current hours
+    const d = {}
+    DAY_NAMES.forEach(day => {
+      d[day] = hours?.[day]
+        ? { enabled: true, open: hours[day].open, close: hours[day].close }
+        : { enabled: false, open: '09:00', close: '17:00' }
+    })
+    setDraft(d)
   }
 
   const openStatus = useMemo(() => getOpenStatus(hours), [hours])
@@ -303,13 +358,9 @@ function HoursEditor({ hours, listingId }) {
 
   if (!editing) {
     return (
-      <div
-        className="cursor-pointer group/hours"
-        onClick={() => setEditing(true)}
-        title="Click to edit hours"
-      >
+      <div className="group/hours">
         {formattedHours ? (
-          <details className="group" onClick={e => e.stopPropagation()}>
+          <details className="group">
             <summary className="cursor-pointer text-sm text-white/60 hover:text-white/80 transition-colors flex items-center gap-2">
               <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -320,7 +371,10 @@ function HoursEditor({ hours, listingId }) {
               <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-              <span className="text-white/20 text-[10px] opacity-0 group-hover/hours:opacity-100 transition-opacity">edit</span>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true) }}
+                className="text-white/20 text-[10px] opacity-0 group-hover/hours:opacity-100 transition-opacity hover:text-white/50"
+              >edit</button>
             </summary>
             <div className="mt-2 ml-6 space-y-1">
               {formattedHours.map(({ day, hours: h }) => (
@@ -332,7 +386,10 @@ function HoursEditor({ hours, listingId }) {
             </div>
           </details>
         ) : (
-          <div className="flex items-center gap-2 text-sm text-white/60 hover:text-white/80 transition-colors">
+          <div
+            onClick={() => setEditing(true)}
+            className="cursor-pointer flex items-center gap-2 text-sm text-white/60 hover:text-white/80 transition-colors"
+          >
             <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -347,17 +404,12 @@ function HoursEditor({ hours, listingId }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-xs text-white/50 font-medium">Hours</span>
-        <div className="flex gap-2">
-          <button onClick={() => setEditing(false)} className="text-[10px] text-white/40 hover:text-white/60">Cancel</button>
-          <button onClick={save} disabled={saving} className="text-[10px] text-emerald-400 hover:text-emerald-300 disabled:opacity-50">
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
+        <button onClick={stopEditing} className="text-[10px] text-white/40 hover:text-white/60">Done</button>
       </div>
       <div className="space-y-1">
         {DAY_NAMES.map(day => (
           <div key={day} className="flex items-center gap-2 text-xs">
-            <span className="w-8 text-white/50">{DAY_LABELS[day]}</span>
+            <span className="w-10 flex-shrink-0 text-white/50">{DAY_LABELS[day]}</span>
             <button
               type="button"
               onClick={() => setDraft(d => ({ ...d, [day]: { ...d[day], enabled: !d[day].enabled } }))}
@@ -371,14 +423,14 @@ function HoursEditor({ hours, listingId }) {
                   type="time"
                   value={draft[day].open}
                   onChange={e => setDraft(d => ({ ...d, [day]: { ...d[day], open: e.target.value } }))}
-                  className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-white text-xs w-[5.5rem] focus:outline-none focus:border-white/30 [color-scheme:dark]"
+                  className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-white text-xs min-w-0 flex-1 focus:outline-none focus:border-white/30 [color-scheme:dark]"
                 />
-                <span className="text-white/30">&ndash;</span>
+                <span className="text-white/30 flex-shrink-0">&ndash;</span>
                 <input
                   type="time"
                   value={draft[day].close}
                   onChange={e => setDraft(d => ({ ...d, [day]: { ...d[day], close: e.target.value } }))}
-                  className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-white text-xs w-[5.5rem] focus:outline-none focus:border-white/30 [color-scheme:dark]"
+                  className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-white text-xs min-w-0 flex-1 focus:outline-none focus:border-white/30 [color-scheme:dark]"
                 />
               </>
             ) : (
@@ -576,54 +628,6 @@ function DetailRow({ label, children }) {
   )
 }
 
-// ─── Accept/Remove Banner for pending listings ──────────────────────
-function PendingBanner({ listingId }) {
-  const [acting, setActing] = useState(false)
-
-  const handleAccept = async () => {
-    setActing(true)
-    try {
-      const dh = await getDeviceHash()
-      await apiAcceptListing(dh, listingId)
-      useListings.getState().updateListing(listingId, { status: 'active', accepted: true })
-    } catch { /* silent */ }
-    setActing(false)
-  }
-
-  const handleRemove = async () => {
-    setActing(true)
-    try {
-      const dh = await getDeviceHash()
-      await apiRemoveListing(dh, listingId)
-      useListings.getState().updateListing(listingId, { status: 'removed' })
-    } catch { /* silent */ }
-    setActing(false)
-  }
-
-  return (
-    <div className="mx-4 mt-3 rounded-lg bg-amber-500/15 border border-amber-500/30 p-3 flex items-center gap-3">
-      <div className="flex-1">
-        <p className="text-amber-300 text-xs font-medium">Pending listing</p>
-        <p className="text-white/50 text-[10px] mt-0.5">Accept to make visible to all users</p>
-      </div>
-      <button
-        onClick={handleAccept}
-        disabled={acting}
-        className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-medium hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
-      >
-        Accept
-      </button>
-      <button
-        onClick={handleRemove}
-        disabled={acting}
-        className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50"
-      >
-        Remove
-      </button>
-    </div>
-  )
-}
-
 // ─── Tab: Overview ───────────────────────────────────────────────────
 function OverviewTab({ listing, building, isGuardian }) {
   const address = listing?.address || building?.address || null
@@ -637,68 +641,42 @@ function OverviewTab({ listing, building, isGuardian }) {
   const openStatus = useMemo(() => getOpenStatus(hours), [hours])
   const formattedHours = useMemo(() => formatHoursDisplay(hours), [hours])
 
+  // Build contact items for inline/stacked layout
+  const contactItems = []
+  if (address || isGuardian) {
+    contactItems.push(isGuardian
+      ? <EditableField key="addr" value={address} field="address" isGuardian placeholder="Add address..." />
+      : <span key="addr">{address ? `${address}, St. Louis, MO` : <em className="text-white/30">Address unknown</em>}</span>
+    )
+  }
+  if (phone || isGuardian) {
+    contactItems.push(isGuardian
+      ? <EditableField key="phone" value={phone} field="phone" isGuardian placeholder="Add phone..." />
+      : phone ? <a key="phone" href={`tel:${phone}`} className="text-blue-400 hover:text-blue-300 transition-colors">{phone}</a> : null
+    )
+  }
+  if (website || isGuardian) {
+    contactItems.push(isGuardian
+      ? <EditableField key="web" value={website} field="website" isGuardian placeholder="Add website..." />
+      : website ? <a key="web" href={website} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">{website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a> : null
+    )
+  }
+  if (rentRange) {
+    contactItems.push(<span key="rent">{rentRange}</span>)
+  }
+  const visibleItems = contactItems.filter(Boolean)
+
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-3">
-        <svg className="w-4 h-4 text-white/40 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        <span className="text-sm text-white/70">
-          {isGuardian ? (
-            <EditableField value={address} field="address" listingId={listingId} isGuardian placeholder="Add address..." />
-          ) : (
-            address ? `${address}, St. Louis, MO` : <em className="text-white/30">Address unknown</em>
-          )}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-        </svg>
-        {isGuardian ? (
-          <EditableField value={phone} field="phone" listingId={listingId} isGuardian placeholder="Add phone..." />
-        ) : phone ? (
-          <a href={`tel:${phone}`} className="text-sm text-blue-400 hover:text-blue-300 transition-colors">{phone}</a>
-        ) : null}
-        {!isGuardian && !phone && null}
-      </div>
-
-      <div className="flex items-center gap-3">
-        <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-        </svg>
-        {isGuardian ? (
-          <EditableField value={website} field="website" listingId={listingId} isGuardian placeholder="Add website..." />
-        ) : website ? (
-          <a href={website} target="_blank" rel="noopener noreferrer"
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors truncate">
-            {website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-          </a>
-        ) : null}
-        {!isGuardian && !website && null}
-      </div>
-
-      {(isGuardian || listing?.logo) && (
-        <div className="flex items-center gap-3">
-          <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          {isGuardian ? (
-            <EditableField value={listing?.logo} field="logo" listingId={listingId} isGuardian placeholder="Add logo URL..." />
-          ) : listing?.logo ? (
-            <img src={assetUrl(listing.logo)} alt="Logo" className="h-8 rounded" />
-          ) : null}
-        </div>
-      )}
-
-      {rentRange && (
-        <div className="flex items-center gap-3">
-          <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="text-sm text-white/70">{rentRange}</span>
+      {/* Contact info: inline with bullet separators, wrapping as needed */}
+      {visibleItems.length > 0 && (
+        <div className="text-sm text-white/70 flex flex-wrap items-center gap-x-1 gap-y-0.5">
+          {visibleItems.map((item, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <span className="text-white/25 mx-0.5">&bull;</span>}
+              {item}
+            </React.Fragment>
+          ))}
         </div>
       )}
 
@@ -733,7 +711,7 @@ function OverviewTab({ listing, building, isGuardian }) {
       {listing?.description && (
         <div className="mt-2">
           {isGuardian ? (
-            <EditableField value={listing.description} field="description" listingId={listingId} isGuardian placeholder="Add description..." multiline>
+            <EditableField value={listing.description} field="description" isGuardian placeholder="Add description..." multiline>
               <p className="text-xs text-white/60 leading-relaxed">{listing.description}</p>
             </EditableField>
           ) : (
@@ -772,6 +750,7 @@ function ReviewForm({ listingId, onSubmitted }) {
   const [text, setText] = useState('')
   const [rating, setRating] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const handle = useHandle(s => s.handle)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -779,7 +758,7 @@ function ReviewForm({ listingId, onSubmitted }) {
     setSubmitting(true)
     try {
       const dh = await getDeviceHash()
-      await postReview(dh, listingId, text.trim(), rating)
+      await postReview(dh, listingId, text.trim(), rating, handle)
       setText('')
       setRating(0)
       onSubmitted()
@@ -851,30 +830,34 @@ function ReviewsTab({ listingId, isLocal }) {
       {reviews.length === 0 && loaded && (
         <div className="text-center py-6">
           <p className="text-white/40 text-sm">No reviews yet</p>
-          {isLocal && <p className="text-white/30 text-xs mt-1">Be the first to review!</p>}
+          <p className="text-white/30 text-xs mt-1">Be the first to rate this place!</p>
         </div>
       )}
 
       <div className="space-y-4">
-        {reviews.map((review, idx) => (
-          <div key={review.id || idx} className="border-b border-white/10 pb-4 last:border-0">
-            <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-medium flex-shrink-0">
-                L
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-white/80">Local</span>
-                  <span className="text-xs text-white/30">{relativeTime(review.created_at) || review.time}</span>
+        {reviews.map((review, idx) => {
+          const displayName = review.handle ? `@${review.handle}` : 'Local'
+          const initial = review.handle ? review.handle[0].toUpperCase() : 'L'
+          return (
+            <div key={review.id || idx} className="border-b border-white/10 pb-4 last:border-0">
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-medium flex-shrink-0">
+                  {initial}
                 </div>
-                {review.rating && (
-                  <div className="mt-0.5"><StarRating rating={review.rating} size="sm" /></div>
-                )}
-                <p className="text-sm text-white/70 mt-1.5">{review.text}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-white/80">{displayName}</span>
+                    <span className="text-xs text-white/30">{relativeTime(review.created_at) || review.time}</span>
+                  </div>
+                  {review.rating && (
+                    <div className="mt-0.5"><StarRating rating={review.rating} size="sm" /></div>
+                  )}
+                  <p className="text-sm text-white/70 mt-1.5">{review.text}</p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -1079,96 +1062,7 @@ function AssessmentTab({ building }) {
 }
 
 // ─── Tab: Photos ─────────────────────────────────────────────────────
-function PhotoManager({ photos, listingId }) {
-  const [draft, setDraft] = useState(photos || [])
-  const [newUrl, setNewUrl] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  const addPhoto = () => {
-    const url = newUrl.trim()
-    if (!url) return
-    setDraft(d => [...d, url])
-    setNewUrl('')
-  }
-
-  const removePhoto = (idx) => setDraft(d => d.filter((_, i) => i !== idx))
-
-  const movePhoto = (idx, dir) => {
-    setDraft(d => {
-      const next = [...d]
-      const target = idx + dir
-      if (target < 0 || target >= next.length) return d
-      ;[next[idx], next[target]] = [next[target], next[idx]]
-      return next
-    })
-  }
-
-  const save = async () => {
-    setSaving(true)
-    try {
-      const dh = await getDeviceHash()
-      await apiUpdateListing(dh, listingId, { photos: draft })
-      useListings.getState().updateListing(listingId, { photos: draft })
-    } catch { /* silent */ }
-    setSaving(false)
-  }
-
-  const changed = JSON.stringify(draft) !== JSON.stringify(photos || [])
-
-  return (
-    <div className="space-y-3">
-      {/* Thumbnail grid */}
-      {draft.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {draft.map((url, i) => (
-            <div key={i} className="relative group/photo aspect-square rounded-lg overflow-hidden bg-white/5">
-              <img src={assetUrl(url)} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                {i > 0 && (
-                  <button onClick={() => movePhoto(i, -1)} className="w-6 h-6 rounded bg-white/20 text-white text-xs flex items-center justify-center hover:bg-white/30">&uarr;</button>
-                )}
-                {i < draft.length - 1 && (
-                  <button onClick={() => movePhoto(i, 1)} className="w-6 h-6 rounded bg-white/20 text-white text-xs flex items-center justify-center hover:bg-white/30">&darr;</button>
-                )}
-                <button onClick={() => removePhoto(i)} className="w-6 h-6 rounded bg-red-500/30 text-red-300 text-xs flex items-center justify-center hover:bg-red-500/50">&times;</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Add photo URL */}
-      <div className="flex gap-2">
-        <input
-          value={newUrl}
-          onChange={e => setNewUrl(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addPhoto()}
-          placeholder="Photo URL..."
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/25"
-        />
-        <button
-          onClick={addPhoto}
-          disabled={!newUrl.trim()}
-          className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors disabled:opacity-30"
-        >
-          Add
-        </button>
-      </div>
-
-      {changed && (
-        <button
-          onClick={save}
-          disabled={saving}
-          className="w-full py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-medium hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Save Photos'}
-        </button>
-      )}
-    </div>
-  )
-}
-
-function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingId }) {
+function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
   const allPhotos = photos || (facadeImage ? [facadeImage.thumb_2048 || facadeImage.thumb_1024] : [])
 
   const hasFacade = !!facadeInfo?.photo
@@ -1176,11 +1070,8 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
 
   return (
     <div className="space-y-3">
-      {/* Guardian photo manager */}
-      {isGuardian && <PhotoManager photos={photos} listingId={listingId} />}
-
       {/* Photo display */}
-      {!isGuardian && allPhotos.map((url, i) => (
+      {allPhotos.map((url, i) => (
         <img key={i} src={assetUrl(url)} alt={`${name} ${i + 1}`} className="w-full rounded-lg" loading="lazy" />
       ))}
 
@@ -1194,7 +1085,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
         </div>
       )}
 
-      {!hasAny && !isGuardian && (
+      {!hasAny && (
         <div className="text-center py-8">
           <p className="text-white/40 text-sm">No photos yet</p>
         </div>
@@ -1364,12 +1255,18 @@ function EventsTab({ listingId, isGuardian }) {
 // ═════════════════════════════════════════════════════════════════════
 // Main PlaceCard
 // ═════════════════════════════════════════════════════════════════════
-function PlaceCard({ listing, building, onClose, allListings }) {
+function PlaceCard({ listing: listingProp, building, onClose, allListings: allListingsProp }) {
   const [activeTab, setActiveTab] = useState(null)
   const [activeListingIdx, setActiveListingIdx] = useState(0)
   const { isLocal } = useLocalStatus()
   const { isGuardianOf, isAdmin: isStoreAdmin } = useGuardianStatus()
   const panelOpen = useCamera(s => s.panelOpen)
+
+  // Subscribe to store so guardian edits trigger re-render
+  const storeListing = useListings(s => listingProp?.id ? s.listings.find(l => l.id === listingProp.id) : null)
+  const storeAllListings = useListings(s => building?.id ? s.listings.filter(l => l.building_id === building.id) : [])
+  const listing = storeListing || listingProp
+  const allListings = storeAllListings.length > 0 ? storeAllListings : allListingsProp
 
   // Multi-tenant: if multiple listings for this building, show tabs
   const listings = allListings && allListings.length > 1 ? allListings : (listing ? [listing] : [])
@@ -1379,7 +1276,7 @@ function PlaceCard({ listing, building, onClose, allListings }) {
   const category = activeListing?.category || null
   const subcategory = activeListing?.subcategory || null
   const hours = activeListing?.hours || null
-  const rating = activeListing?.rating || (activeListing ? 3.5 + (name.length % 15) / 10 : null)
+  const rating = activeListing?.rating || null
   const reviewCount = activeListing?.review_count || null
   const photos = activeListing?.photos || null
   const facadeImage = building?.facade_image || null
@@ -1391,7 +1288,6 @@ function PlaceCard({ listing, building, onClose, allListings }) {
   const listingId = activeListing?.id || null
   const isAdmin = import.meta.env.DEV || isStoreAdmin
   const isGuardian = isAdmin || (listingId ? isGuardianOf(listingId) : false)
-  const isPending = activeListing?.status === 'pending'
 
   const placeholderPhotos = getPlaceholderPhotos(category)
 
@@ -1435,7 +1331,7 @@ function PlaceCard({ listing, building, onClose, allListings }) {
 
 
   return (
-    <div className="absolute top-3 left-3 right-3 bg-black/40 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden flex flex-col z-50" style={{ bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : 'calc(44px + 18px)' }}>
+    <div className="absolute top-3 left-3 right-3 bg-black/40 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden flex flex-col z-50" style={{ bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : 'calc(76px + 18px)' }}>
       {/* Hero Photo Area */}
       <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (
@@ -1483,6 +1379,7 @@ function PlaceCard({ listing, building, onClose, allListings }) {
         )}
       </div>
 
+      <EditProvider listingId={listingId}>
       <div className="overflow-y-auto flex-1">
         {hasListingInfo ? (
           <>
@@ -1507,26 +1404,31 @@ function PlaceCard({ listing, building, onClose, allListings }) {
               </div>
             )}
 
-            {/* Pending banner */}
-            {isPending && isGuardian && <PendingBanner listingId={listingId} />}
 
             {/* Title block */}
             <div className="p-4 pb-3">
-              <h2 className="text-xl font-semibold text-white leading-tight">
-                {isGuardian ? (
-                  <EditableField value={name} field="name" listingId={listingId} isGuardian placeholder="Place name">
-                    {name}
-                  </EditableField>
-                ) : name}
-              </h2>
+              <div className="flex items-start gap-3">
+                {activeListing?.logo && (
+                  <img src={assetUrl(activeListing.logo)} alt="" className="w-10 h-10 rounded-lg object-contain bg-white/10 flex-shrink-0 mt-0.5" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl font-semibold text-white leading-tight">
+                    {isGuardian ? (
+                      <EditableField value={name} field="name" isGuardian placeholder="Place name">
+                        {name}
+                      </EditableField>
+                    ) : name}
+                  </h2>
 
-              {rating && (
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-white font-medium text-sm">{Number(rating).toFixed(1)}</span>
-                  <StarRating rating={Number(rating)} />
-                  {reviewCount && <span className="text-white/50 text-xs">({reviewCount})</span>}
+                  {rating && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-white font-medium text-sm">{Number(rating).toFixed(1)}</span>
+                      <StarRating rating={Number(rating)} />
+                      {reviewCount && <span className="text-white/50 text-xs">({reviewCount})</span>}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {(category || subcategory) && (
@@ -1608,16 +1510,18 @@ function PlaceCard({ listing, building, onClose, allListings }) {
             <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} />
           )}
           {currentTab === 'reviews' && <ReviewsTab listingId={listingId} isLocal={isLocal} />}
-          {currentTab === 'events' && <EventsTab listingId={listingId} isGuardian={isGuardian} />}
+          {currentTab === 'events' && <EventsTab isGuardian={isGuardian} />}
           {currentTab === 'architecture' && <ArchitectureTab building={building} />}
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
-          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />}
+          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} />}
           {/* Property card tabs */}
           {currentTab === 'property' && <PropertyTab building={building} />}
           {currentTab === 'assessment' && <AssessmentTab building={building} />}
         </div>
       </div>
+
+      </EditProvider>
 
       {/* Footer */}
       {hasListingInfo ? (

@@ -10,6 +10,8 @@ import { CATEGORY_LIST, COLOR_CLASSES } from '../tokens/categories'
 import buildingsData from '../data/buildings.json'
 import streetsData from '../data/streets.json'
 import useListings from '../hooks/useListings'
+import useBulletin from '../hooks/useBulletin'
+import useGuardianStatus from '../hooks/useGuardianStatus'
 
 // ── Camera helpers ──────────────────────────────────────────────────
 const _buildingMap = {}
@@ -223,153 +225,7 @@ function _isWithinHours(hours, time) {
 const _buildingsWithHours = buildingsData.buildings.filter(b => b.hours)
 const TOTAL_BUILDINGS = buildingsData.buildings.length
 
-// ============ BULLETIN BOARD DATA ============
-
-const BULLETIN_SECTIONS = [
-  {
-    id: 'buy-nothing',
-    title: 'Buy Nothing',
-    posts: [
-      { text: 'Free: working window AC unit, you haul \u2014 Mackay Place', age: '1h' },
-      { text: 'Clothing swap this Saturday, Park Ave Community Room, 10am\u20131pm', age: '5h' },
-      { text: 'Free firewood, already split, drying in my alley \u2014 come grab it', age: '1d' },
-      { text: 'Lending library box restocked on Benton Place \u2014 kids books, cookbooks', age: '2d' },
-      { text: 'ISO: anyone have a pressure washer I can borrow this weekend?', age: '3d' },
-    ],
-  },
-  {
-    id: 'for-sale',
-    title: 'For Sale',
-    posts: [
-      { text: 'Vintage iron fence panels, salvaged from a Benton Place rehab \u2014 $200', age: '3h' },
-      { text: 'Two matching Restoration Hardware barstools, $75 each OBO', age: '8h' },
-      { text: 'Bulk mulch split \u2014 10 yards arriving Friday, $30/yard if 3+ neighbors go in', age: '1d' },
-      { text: 'Original 1890s transom window, needs reglaze, $150', age: '4d' },
-    ],
-  },
-  {
-    id: 'missed-connections',
-    title: 'Missed Connections',
-    posts: [
-      { text: 'To the guy who helped me carry groceries up Mackay in the rain \u2014 thank you, I owe you a beer', age: '2h' },
-      { text: 'Woman with the three-legged dog at the park Saturday morning \u2014 your dog made my kid\'s whole week', age: '1d' },
-      { text: 'Whoever left flowers on the bench at Missouri and Park \u2014 that was really beautiful', age: '3d' },
-      { text: 'Lost a glove on Lafayette Ave near 18th \u2014 black leather, left hand. Sentimental value', age: '5d' },
-    ],
-  },
-  {
-    id: 'delivery-errands',
-    title: 'Delivery & Errands',
-    posts: [
-      { text: 'Heading to Costco tomorrow 10am \u2014 happy to grab stuff, just Venmo me', age: '1h' },
-      { text: 'Can someone pick up a prescription at Walgreens on Jefferson? I\'m home with a sick kid', age: '4h' },
-      { text: 'Driving to IKEA Saturday, have a full SUV of room \u2014 DM if you need something', age: '1d' },
-      { text: 'Weekly farmers market run \u2014 I go every Saturday at 8am, happy to add to my list', age: '2d', tag: 'Recurring' },
-    ],
-  },
-  {
-    id: 'concierge',
-    title: 'Concierge',
-    posts: [
-      { text: 'Best plumber in the neighborhood? Leaky faucet, not urgent', age: '2h' },
-      { text: 'Where do people get keys cut around here?', age: '6h' },
-      { text: 'Looking for a good vet that\'s walkable from the square', age: '1d' },
-      { text: 'Anyone know a notary who does house calls?', age: '2d' },
-      { text: 'Rec for a tailor? Need a suit altered before a wedding', age: '4d' },
-    ],
-  },
-  {
-    id: 'professional-services',
-    title: 'Professional Services',
-    posts: [
-      { text: 'CPA, 15yr resident \u2014 tax prep for neighbors, fair rates', age: '3h', tag: 'Verified' },
-      { text: 'Freelance graphic designer, happy to help with flyers, logos, signage', age: '8h' },
-      { text: 'Tutoring: math & science, middle/high school, $30/hr at the library', age: '1d' },
-      { text: 'Notary public on Dolman \u2014 evenings and weekends, $5/stamp', age: '3d', tag: 'Verified' },
-      { text: 'Estate planning attorney, free 15min consults for neighbors', age: '5d' },
-    ],
-  },
-  {
-    id: 'domestic-services',
-    title: 'Domestic Services',
-    posts: [
-      { text: 'Licensed electrician, 20yr resident \u2014 fair rates for neighbors', age: '2h', tag: 'Verified' },
-      { text: 'Experienced babysitter available weekday evenings, CPR certified', age: '6h' },
-      { text: 'Dog walking, $10/walk, I know every block in the square', age: '1d' },
-      { text: 'House cleaning, biweekly or monthly, references from 6 households on the square', age: '2d', tag: 'Verified' },
-      { text: 'Will haul anything to the dump \u2014 truck + muscle, just ask', age: '4d' },
-    ],
-  },
-  {
-    id: 'emergency-supplies',
-    title: 'Emergency Supplies',
-    posts: [
-      { text: 'Free hot meals every Sunday 11am at Lafayette Park gazebo', age: '2h', tag: 'Recurring' },
-      { text: 'Emergency pet food available \u2014 DM for pickup, no questions asked', age: '5h' },
-      { text: 'Baby formula and diapers (size 3 & 4) \u2014 free, porch pickup on Mackay', age: '1d' },
-      { text: 'Need help shoveling? Text the snow hotline \u2014 volunteers on standby', age: '2d', tag: 'Active' },
-      { text: 'Space heater available to loan \u2014 if your heat goes out, just call', age: '4d' },
-    ],
-  },
-  {
-    id: 'square-notes',
-    title: 'Square Notes',
-    posts: [
-      { text: 'The hawk is back on the church steeple. Third year in a row. Magnificent.', age: '1h' },
-      { text: 'Whoever is practicing trumpet on Dolman around 7pm \u2014 you\'re getting better. Keep going.', age: '3h' },
-      { text: 'The magnolia on Benton Place is about to pop. Just a heads up for anyone who needs a good day.', age: '8h' },
-      { text: 'Someone\'s Christmas lights are still up on Mackay. It\'s February. I\'m not mad, just impressed.', age: '1d' },
-      { text: 'To the person who chalked "you are loved" on the park sidewalk \u2014 I needed that today', age: '2d' },
-      { text: 'The alley cats behind Missouri Ave have formed some kind of council. There were seven of them in a circle.', age: '3d' },
-    ],
-  },
-]
-
-function BulletinBoard() {
-  const [expandedId, setExpandedId] = useState(null)
-
-  return (
-    <div className="px-3 py-2">
-      <div className="space-y-1">
-        {BULLETIN_SECTIONS.map((section) => {
-          const isOpen = expandedId === section.id
-          return (
-            <div key={section.id} className="rounded-lg overflow-hidden bg-white/5 border border-white/8">
-              <button
-                onClick={() => setExpandedId(isOpen ? null : section.id)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-colors"
-              >
-                <span className="text-[11px] text-white/80 flex-1">{section.title}</span>
-                <span className="text-[9px] text-white/30">{section.posts.length}</span>
-                <svg
-                  className={`w-3 h-3 text-white/30 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div className={`overflow-hidden transition-all duration-200 ease-out ${isOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="px-3 pb-2 space-y-1.5">
-                  {section.posts.map((post, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      <div className="flex-1 text-[10px] text-white/60 leading-relaxed">{post.text}</div>
-                      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                        <span className="text-[9px] text-white/20">{post.age}</span>
-                        {post.tag && (
-                          <span className="text-[8px] px-1 py-0.5 rounded bg-white/10 text-white/40">{post.tag}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
+// ============ BULLETIN BOARD BUTTON ============
 
 // ============ COLLAPSIBLE SECTION ============
 
@@ -568,9 +424,17 @@ function AlmanacTab({ showAdmin = false }) {
         )}
       </div>
 
-      <CollapsibleSection title="Bulletin Board" defaultOpen={false} highlight>
-        <BulletinBoard />
-      </CollapsibleSection>
+      <div className="border-t border-white/5">
+        <button
+          onClick={() => useBulletin.getState().setModalOpen(true)}
+          className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/5 transition-colors"
+        >
+          <span className="text-[10px] uppercase tracking-widest text-white/60 font-semibold">Bulletin Board</span>
+          <svg className="w-3.5 h-3.5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
 
       {showAdmin && (
         <CollapsibleSection title="Storefront Simulation" defaultOpen={false} bg="bg-white/3">
@@ -634,10 +498,14 @@ function AlmanacTab({ showAdmin = false }) {
       )}
       </div>
 
-      <div className="flex-shrink-0 px-4 py-2 border-t border-white/8 text-[10px] text-white/30 tracking-wide">
-        <div>2,164 residents</div>
-        <div className="mt-0.5">{buildingsData.buildings.length.toLocaleString()} buildings &middot; {streetsData.streets.length} streets</div>
-        <div className="mt-0.5">38.62&deg;N 90.22&deg;W &middot; St. Louis, MO</div>
+      <div className="flex-shrink-0 px-4 py-2 border-t border-white/8 text-[10px] text-white/30 tracking-wide flex flex-wrap items-center gap-x-1">
+        <span>2,164 residents</span>
+        <span>&middot;</span>
+        <span>{buildingsData.buildings.length.toLocaleString()} buildings</span>
+        <span>&middot;</span>
+        <span>{streetsData.streets.length} streets</span>
+        <span>&middot;</span>
+        <span>38.62&deg;N 90.22&deg;W</span>
       </div>
     </div>
   )
@@ -917,8 +785,10 @@ const TABS = [
   { id: 'lafayettepages', label: 'Society Pages', icon: '\u25C8' },
 ]
 
-function SidePanel({ showAdmin = true }) {
+function SidePanel() {
   const [activeTab, setActiveTab] = useState('almanac')
+  const { isAdmin: isStoreAdmin } = useGuardianStatus()
+  const showAdmin = import.meta.env.DEV || isStoreAdmin
   const panelOpen = useCamera((s) => s.panelOpen)
   const setPanelOpen = useCamera((s) => s.setPanelOpen)
   const collapsed = !panelOpen

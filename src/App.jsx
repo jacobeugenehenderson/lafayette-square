@@ -2,6 +2,7 @@ import Scene from './components/Scene'
 import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
 import SidePanel from './components/SidePanel'
+import BulletinModal from './components/BulletinModal'
 import useCamera from './hooks/useCamera'
 import useSelectedBuilding from './hooks/useSelectedBuilding'
 import CheckinPage from './pages/CheckinPage'
@@ -59,7 +60,8 @@ function App() {
       <Scene />
       {!isGround && <Controls />}
       {!isGround && <CompassRose />}
-      {!isGround && <SidePanel showAdmin={true} />}
+      {!isGround && <SidePanel />}
+      {!isGround && <BulletinModal />}
       {!isGround && <ModeOverlay />}
     </div>
   )

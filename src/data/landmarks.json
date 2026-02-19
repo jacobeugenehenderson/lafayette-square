@@ -10,8 +10,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-0652",
-      "rating": 4.5,
-      "review_count": 903,
       "hours": {
         "monday": {
           "open": "11:00",
@@ -42,32 +40,6 @@
           "close": "20:00"
         }
       },
-      "reviews": [
-        {
-          "author": "John Moore",
-          "rating": 5,
-          "text": "They make their own whiskeys, gins, vodkas, rum and agave. The historic building alone is worth the visit.",
-          "time": "2025"
-        },
-        {
-          "author": "Billie Hawkins",
-          "rating": 5,
-          "text": "The beer cheese soup is a must. The bartender was fantastic with recommendations.",
-          "time": "2025"
-        },
-        {
-          "author": "Yvonne Clark",
-          "rating": 5,
-          "text": "The food was excellent and the prices were very reasonable. The grits in the shrimp and grits were smooth and creamy.",
-          "time": "2024"
-        },
-        {
-          "author": "Valerie Griffin",
-          "rating": 5,
-          "text": "The food is always delicious and the service is always top notch. A great place to visit — children are welcome.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/square-one/01.jpg",
         "/photos/square-one/02.jpg",
@@ -140,8 +112,6 @@
       "opening_hours_raw": "Mo-Fr 06:30-18:00; Sa 07:00-18:00; Su 07:30-18:00",
       "building_id": "bldg-0386",
       "logo": "/logos/park-avenue-coffee.png",
-      "rating": 4.4,
-      "review_count": 107,
       "hours": {
         "monday": {
           "open": "07:00",
@@ -172,32 +142,6 @@
           "close": "14:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Phyllis B.",
-          "rating": 5,
-          "text": "The gooey butter cake is amazing! They have so many different varieties — the traditional and turtle are my favorites. Definitely the best gooey butter cake in St. Louis.",
-          "time": "2024"
-        },
-        {
-          "author": "Jennifer M.",
-          "rating": 5,
-          "text": "Some of the best coffee I've ever had. The baristas are friendly and make awesome lattes, plus the gooey butter cake is divine. The outdoor patio is the best of any coffee shop in the city.",
-          "time": "Summer 2024"
-        },
-        {
-          "author": "Michael T.",
-          "rating": 4,
-          "text": "Great coffee shop in a charming historic building. Love that it's housed in an old bank — you can actually sit in the vault! They roast their own beans.",
-          "time": "Jan 2025"
-        },
-        {
-          "author": "Sarah K.",
-          "rating": 5,
-          "text": "The location near Lafayette Park is absolutely beautiful. Good selection of coffees, lattes, and pastries with fast service. Free WiFi and cozy atmosphere make it perfect for working.",
-          "time": "6 months ago"
-        }
-      ],
       "photos": [
         "/photos/park-avenue-coffee/01.jpg",
         "/photos/park-avenue-coffee/02.jpg",
@@ -255,8 +199,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-0086",
-      "rating": 4.6,
-      "review_count": 57,
       "hours": {
         "tuesday": {
           "open": "17:00",
@@ -279,32 +221,6 @@
           "close": "22:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Amanda S.",
-          "rating": 5,
-          "text": "Dazzling seafood makes Extra Wavy one of the best new restaurants in St. Louis. The raw bar selections are exceptional, and the whimsical menu balances familiarity with flair.",
-          "time": "Dec 2025"
-        },
-        {
-          "author": "Tyler R.",
-          "rating": 5,
-          "text": "If you're in the St. Louis area and want a classy, amazing seafood experience, try this place. The baked oysters and crab pasta are outstanding.",
-          "time": "Nov 2025"
-        },
-        {
-          "author": "Nicole B.",
-          "rating": 5,
-          "text": "Amazing service and unique ambiance that gives off vibes similar to Yellowbelly and The Lazy Tiger. The lobster doughnut is a must-try.",
-          "time": "3 months ago"
-        },
-        {
-          "author": "Jason P.",
-          "rating": 4,
-          "text": "Great cocktails and fresh oysters. Tim Wiggins' martini program is inventive and balanced, with reasonable prices. The space itself is stunning.",
-          "time": "Jan 2026"
-        }
-      ],
       "photos": [
         "/photos/extra-wavy/01.jpg",
         "/photos/extra-wavy/02.jpg",
@@ -361,8 +277,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-1594",
-      "rating": 3.6,
-      "review_count": 45,
       "hours": {
         "monday": {
           "open": "11:30",
@@ -389,32 +303,6 @@
           "close": "22:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Marcus L.",
-          "rating": 5,
-          "text": "The rice is off the chain — absolute must-try. Their hot braised chicken is a warm welcome to something different. A dollar cheaper than any other place and they're the closest.",
-          "time": "2025"
-        },
-        {
-          "author": "Jason H.",
-          "rating": 5,
-          "text": "The crab rangoon was actually totally good — could see the crab through the wonton. Authentic and delicious. I will be going back again and again!",
-          "time": "2025"
-        },
-        {
-          "author": "Rachel T.",
-          "rating": 4,
-          "text": "Delicious and reasonably priced food brimming with flavor. Service is fast and friendly. Worth the wait for a small shop.",
-          "time": "2024"
-        },
-        {
-          "author": "Kevin P.",
-          "rating": 2,
-          "text": "The wings in the combination plate weren't great, but their fried rice has good flavor without needing extra sauce. Cash only, which caught me off guard.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/jefferson-chop-suey/01.jpg",
         "/photos/jefferson-chop-suey/02.jpg",
@@ -468,7 +356,6 @@
       "building_id": "bldg-1594",
       "description": "Neighborhood hair salon specializing in natural hair care with unique and fun styles for every occasion. Services include blowouts, sew-in weaves, braids, retwists, relaxer & style, press & curl, and protective styling. Book via Booksy.",
       "hours": {},
-      "reviews": [],
       "photos": [],
       "amenities": [
         "Natural hair care specialist",
@@ -558,8 +445,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-0376",
-      "rating": 4.7,
-      "review_count": 1555,
       "hours": {
         "monday": {
           "open": "17:00",
@@ -590,38 +475,6 @@
           "close": "21:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Caleb H.",
-          "rating": 5,
-          "text": "This place is phenomenal! Highly recommend the chicken and waffles, the spice level was well balanced!",
-          "time": "2 months ago"
-        },
-        {
-          "author": "Jeanne W.",
-          "rating": 5,
-          "text": "Chicken & waffles were the absolute best I've ever tasted & the cherry on top was the Thai chili maple syrup, OMG!",
-          "time": "3 months ago"
-        },
-        {
-          "author": "Linus B.",
-          "rating": 5,
-          "text": "I've never had a waffle that good and the chicken was cooked to perfection!",
-          "time": "4 months ago"
-        },
-        {
-          "author": "Rachel S.",
-          "rating": 4,
-          "text": "Food was good and came in large portions. They also have a bottomless mimosa deal that I felt was worth it.",
-          "time": "5 months ago"
-        },
-        {
-          "author": "Shreya N.",
-          "rating": 5,
-          "text": "The potato wedges and waffles were spectacular! Those were the best wedges I ever had.",
-          "time": "6 months ago"
-        }
-      ],
       "photos": [
         "/photos/polite-society/01.jpeg",
         "/photos/polite-society/02.jpeg",
@@ -689,8 +542,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-0387",
-      "rating": 4.4,
-      "review_count": 312,
       "hours": {
         "wednesday": {
           "open": "17:00",
@@ -713,32 +564,6 @@
           "close": "22:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Sarah M.",
-          "rating": 5,
-          "text": "Perfect date night spot with incredible atmosphere. The chocolate martinis are absolutely divine, and the Signature with house-made Oban chocolate ice cream was out of this world.",
-          "time": "Oct 2024"
-        },
-        {
-          "author": "Michael K.",
-          "rating": 5,
-          "text": "The Lover's Plate was exceptional — champagne sorbet, chocolate inebriation, s'mores brownie. Each dessert crafted to perfection by their pastry chefs.",
-          "time": "Dec 2024"
-        },
-        {
-          "author": "Jessica L.",
-          "rating": 4,
-          "text": "Charming spot for desserts and cocktails. The cheese boards are excellent with house-made breads, and the outdoor heated patio is a nice touch.",
-          "time": "2 months ago"
-        },
-        {
-          "author": "David R.",
-          "rating": 5,
-          "text": "Been coming here since they opened 20 years ago. The quality never disappoints — from the flatbreads with prosciutto and brie to the decadent brownies with salted caramel ice cream.",
-          "time": "Nov 2025"
-        }
-      ],
       "photos": [
         "/photos/baileys/01.jpg",
         "/photos/baileys/02.jpg",
@@ -794,8 +619,6 @@
       "category": "dining",
       "subcategory": "bars",
       "building_id": "bldg-0385",
-      "rating": 4.5,
-      "review_count": 107,
       "hours": {
         "tuesday": {
           "open": "17:00",
@@ -832,26 +655,6 @@
         "Cheese and charcuterie boards (Volpi, Salume Beddu)",
         "Food by Khana (butter chicken flatbread, Brussels sprouts)",
         "Monthly wine club"
-      ],
-      "reviews": [
-        {
-          "author": "Catherine R.",
-          "rating": 5,
-          "text": "We sat at the bar and were served by the owner who clearly has a great passion for wine. He recommended a couple and each one was fantastic! The Riesling was probably the best I have ever tried.",
-          "time": "2024"
-        },
-        {
-          "author": "Mark D.",
-          "rating": 5,
-          "text": "A charming little wine bar in a boutique row of shops in beautifully historic Lafayette Square. You'd never know they have an 85-page wine, spirits and beer list!",
-          "time": "2024"
-        },
-        {
-          "author": "Jessica L.",
-          "rating": 5,
-          "text": "The patio is wonderful — feels like a New Orleans courtyard. Great cheese boards with Union Loafers bread. Staff is incredibly knowledgeable and never pretentious.",
-          "time": "2025"
-        }
       ],
       "history": [
         {
@@ -891,8 +694,6 @@
       "subcategory": "beauty",
       "building_id": "bldg-0384",
       "description": "Boutique hair salon founded in 2017 by Josie Acosta, who trained at one of the Top 200 Salons in North America (Bobby Cooper Salon, Indianapolis) and with top technicians in New York and Chicago. Specializes in color, cutting, extensions, and Brazilian blowouts. Nextdoor Neighborhood Favorite 2018 and 2019.",
-      "rating": 5,
-      "review_count": 67,
       "hours": {
         "tuesday": {
           "open": "13:00",
@@ -919,14 +720,6 @@
         "Brazilian blowout treatments",
         "Online booking via Square",
         "Gift cards available"
-      ],
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "Josie is incredibly talented — her color work is the best I've found in St. Louis. She takes the time to understand exactly what you want.",
-          "time": "2024"
-        }
       ],
       "history": [
         {
@@ -957,8 +750,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-0379",
-      "rating": 4.9,
-      "review_count": 58,
       "hours": {
         "friday": {
           "open": "11:30",
@@ -986,26 +777,6 @@
         "Italian specialty market and imported goods",
         "Friday Aperitivo happy hour 4-6 PM",
         "European-inspired antiques and home décor"
-      ],
-      "reviews": [
-        {
-          "author": "Anna K.",
-          "rating": 5,
-          "text": "The cacio e pepe is absolute perfection. Just pecorino Romano, black pepper, and pasta water come together in a way that's downright magical. The pasta is cooked just right, the sauce is creamy without being heavy.",
-          "time": "2024"
-        },
-        {
-          "author": "David M.",
-          "rating": 5,
-          "text": "The cacio e pepe and rigatoni in vodka sauce were both wonderful, with perfect pasta cook and luxurious sauces. Feels like you're in Rome.",
-          "time": "2024"
-        },
-        {
-          "author": "Lauren S.",
-          "rating": 5,
-          "text": "The pasta was well made and delicious. Cozy environment, delicious food, and friendly service. The mortadella and pistachio panino is a must-try.",
-          "time": "2025"
-        }
       ],
       "history": [
         {
@@ -1106,7 +877,6 @@
         }
       },
       "photos": [],
-      "reviews": [],
       "amenities": [
         "Hair coloring, cutting, and styling",
         "Hair extensions (consultation required)",
@@ -1167,20 +937,6 @@
         "Same-day and next-day rush service",
         "Hanger recycling program"
       ],
-      "reviews": [
-        {
-          "author": "Local Resident",
-          "rating": 5,
-          "text": "I LOVE Nu-Look and walk there if I must, so worth it.",
-          "time": "2023"
-        },
-        {
-          "author": "Foursquare User",
-          "rating": 5,
-          "text": "Excellent service. The quality of the dry cleaning is the best I've ever seen.",
-          "time": "2022"
-        }
-      ],
       "history": [
         {
           "year": 1984,
@@ -1205,8 +961,6 @@
       "category": "dining",
       "subcategory": "bars",
       "building_id": "bldg-0082",
-      "rating": 4.5,
-      "review_count": 65,
       "hours": {
         "tuesday": {
           "open": "15:00",
@@ -1242,32 +996,6 @@
         "/photos/winnies/01.jpg",
         "/photos/winnies/02.jpg",
         "/photos/winnies/03.jpg"
-      ],
-      "reviews": [
-        {
-          "author": "Karen L.",
-          "rating": 5,
-          "text": "A fantastic spot that opens at 3:00 and offers a great selection of drinks and delectable food. The Kale and Parmesan dip is a must-try, and their mac and cheese is simply fantastic.",
-          "time": "2024"
-        },
-        {
-          "author": "Dawn M.",
-          "rating": 5,
-          "text": "Not only did we have great food but our server made our dining experience extra special! She was pleasant, funny, helpful, and even took us on a tour of Hamilton's Bourbon Bar.",
-          "time": "2024"
-        },
-        {
-          "author": "Steve R.",
-          "rating": 5,
-          "text": "The bar's unique backstory adds a charming touch. Whether you're into Old World or New World wines, Winnie's is a delightful place to unwind and enjoy great company.",
-          "time": "2023"
-        },
-        {
-          "author": "Lisa T.",
-          "rating": 4,
-          "text": "Thoughtfully designed space with comfortable seating, cozy couches, and warm incandescent lighting. Wine flights are a great way to explore. Service can be slow during peak hours.",
-          "time": "2025"
-        }
       ],
       "history": [
         {
@@ -1372,8 +1100,6 @@
       "subcategory": "restaurants",
       "opening_hours_raw": "Mo-Fr 11:00-20:00; Sa 09:00-20:00; Su 09:00-14:00,17:00-20:00",
       "building_id": "bldg-0892",
-      "rating": 4.4,
-      "review_count": 1498,
       "hours": {
         "tuesday": {
           "open": "11:00",
@@ -1400,32 +1126,6 @@
           "close": "14:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Jade Harrison",
-          "rating": 5,
-          "text": "My first time at SqWires for brunch and it did not disappoint! Rustic chic vibe, all the food was DELICIOUS. The bottomless mimosa and bloody Mary bar is worth the visit!",
-          "time": "Jul 2024"
-        },
-        {
-          "author": "Capri Danzeisen",
-          "rating": 5,
-          "text": "Beautiful decor, immediate greeting, fast service. The food was amazing! Will definitely return next time.",
-          "time": "Oct 2025"
-        },
-        {
-          "author": "Rachel Lebo",
-          "rating": 5,
-          "text": "Stopped by on the home and garden tour weekend. The place was swamped but our server was doing her absolute darnedest — the food was great!",
-          "time": "Jul 2025"
-        },
-        {
-          "author": "Good Food STL",
-          "rating": 5,
-          "text": "The old factory is a stunner of a dining room — heavy timbers, exposed brick, and original wire-factory machinery overhead.",
-          "time": "2017"
-        }
-      ],
       "photos": [
         "/photos/sqwires/01.jpg",
         "/photos/sqwires/02.jpg",
@@ -1497,8 +1197,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-0464",
-      "rating": 4.8,
-      "review_count": 4658,
       "hours": {
         "tuesday": {
           "open": "11:00",
@@ -1521,32 +1219,6 @@
           "close": "22:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Jennifer M.",
-          "rating": 5,
-          "text": "The wild boar ravioli is exceptional and consistently a standout. The focaccia with rosemary and caramelized onion is incredible. Warm, casual-elegant atmosphere with cozy brick-and-wood decor.",
-          "time": "2 months ago"
-        },
-        {
-          "author": "Michael K.",
-          "rating": 5,
-          "text": "Outstanding service and menu. The braised pork shank is fall-off-the-bone tender with sweet potato puree. One of my favorites in STL for both special occasions and business dinners.",
-          "time": "4 months ago"
-        },
-        {
-          "author": "Sarah B.",
-          "rating": 5,
-          "text": "My husband and I took family here when they visited and we LOVED it. Our server was friendly, prompt, and attentive. Everyone ordered different items and the food was excellent.",
-          "time": "6 months ago"
-        },
-        {
-          "author": "David R.",
-          "rating": 4,
-          "text": "Great patio dining experience. Food quality is consistently good with generous portions. The wine list is unparalleled and the exposed brick walls create a welcoming space.",
-          "time": "Aug 2025"
-        }
-      ],
       "photos": [
         "/photos/eleven-eleven/01.jpg",
         "/photos/eleven-eleven/02.jpg",
@@ -1748,8 +1420,6 @@
       "subcategory": "restaurants",
       "building_id": "bldg-0082",
       "logo": "/logos/hamiltons.png",
-      "rating": 4.7,
-      "review_count": 1240,
       "hours": {
         "tuesday": {
           "open": "15:00",
@@ -1772,32 +1442,6 @@
           "close": "22:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Jim T.",
-          "rating": 5,
-          "text": "The ribeye with added scallops and shrimp was incredible and prepared perfectly. The atmosphere is intimate and romantic, perfect for date night.",
-          "time": "Nov 2024"
-        },
-        {
-          "author": "Sarah M.",
-          "rating": 5,
-          "text": "Hands down best filet I've ever had, paired with bourbon peppercorn sauce. The charcuterie board with the bacon fat candle is probably the best I've ever had anywhere.",
-          "time": "3 months ago"
-        },
-        {
-          "author": "Michael R.",
-          "rating": 5,
-          "text": "My medium ribeye was cooked and seasoned to perfection with a dry rub that was on point. The bourbon selection is impressive and fairly priced.",
-          "time": "Aug 2024"
-        },
-        {
-          "author": "Jennifer K.",
-          "rating": 4,
-          "text": "Way-above-average steaks and delightful sides in a relaxed, comfortable setting. The space has speakeasy-ish styling with exposed brick and rustic touches.",
-          "time": "2 months ago"
-        }
-      ],
       "photos": [
         "/photos/hamiltons/01.jpg",
         "/photos/hamiltons/02.jpg",
@@ -1850,8 +1494,6 @@
       "category": "dining",
       "subcategory": "bars",
       "building_id": "bldg-0050",
-      "rating": 4.6,
-      "review_count": 392,
       "hours": {
         "tuesday": {
           "open": "16:00",
@@ -1891,32 +1533,6 @@
         "/photos/planters-house/01.jpg",
         "/photos/planters-house/02.jpg",
         "/photos/planters-house/03.jpg"
-      ],
-      "reviews": [
-        {
-          "author": "Catherine P.",
-          "rating": 5,
-          "text": "After a round of cocktails at Planter's House, you'll never want to order a cocktail anywhere else. Their cocktails are so interesting and original! Incredible take on an old-fashioned.",
-          "time": "2025"
-        },
-        {
-          "author": "Mark S.",
-          "rating": 5,
-          "text": "Two of us had specialty cocktails that were dynamite, and two had classic Rye Old Fashioneds made to perfection. Our bartender Brandy was truly a top-notch mixologist.",
-          "time": "2025"
-        },
-        {
-          "author": "Kelly W.",
-          "rating": 5,
-          "text": "We frequent Planter's House and no matter the time of day, there are always impeccably crafted, creative cocktails. The atmosphere and service are charming and great.",
-          "time": "2024"
-        },
-        {
-          "author": "James H.",
-          "rating": 5,
-          "text": "The food was very good — the fries are a must order. The house Manhattan was excellent. Five stars based on drinks alone. Happy hour deals are amazing.",
-          "time": "2025"
-        }
       ],
       "history": [
         {
@@ -2107,8 +1723,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-0822",
-      "rating": 4.7,
-      "review_count": 89,
       "hours": {
         "monday": {
           "open": "17:00",
@@ -2131,32 +1745,6 @@
           "close": "21:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Michele F.",
-          "rating": 5,
-          "text": "The meatball pizza was delicious. Great service and very attentive staff. The intimate atmosphere with windows looking out into the neighborhood creates a perfect setting.",
-          "time": "2024"
-        },
-        {
-          "author": "Chris W.",
-          "rating": 5,
-          "text": "Awesome service, hip interior and romantic atmosphere. The octopus slow braised with fennel sausage in saffron broth was incredible. The nitro wine bar is unique and very cool.",
-          "time": "2023"
-        },
-        {
-          "author": "Lauren D.",
-          "rating": 5,
-          "text": "Food is authentic and excellent — the lasagna and pasta Norma were fantastic. The bouillabaisse is elegant and classy. Service was exceptional.",
-          "time": "2024"
-        },
-        {
-          "author": "Andrew T.",
-          "rating": 4,
-          "text": "Delicious food and wonderful service. The Godfather pizza with mortadella, pecorino, mozzarella and wild oregano is a standout. Small enough to be cozy without feeling cramped.",
-          "time": "2023"
-        }
-      ],
       "photos": [
         "/photos/rose-by-peno/01.jpg",
         "/photos/rose-by-peno/02.jpg",
@@ -2210,8 +1798,6 @@
       "category": "dining",
       "subcategory": "bars",
       "building_id": "bldg-0083",
-      "rating": 4.4,
-      "review_count": 38,
       "status": "private_events_only",
       "hours": {},
       "amenities": [
@@ -2227,32 +1813,6 @@
         "/photos/rhone-rum-bar/01.jpg",
         "/photos/rhone-rum-bar/02.jpg",
         "/photos/rhone-rum-bar/03.jpg"
-      ],
-      "reviews": [
-        {
-          "author": "Chris M.",
-          "rating": 5,
-          "text": "Our server was very knowledgeable about the many rums they have. Great place to step out of the cold and pretend you are in the Caribbean for a little while.",
-          "time": "2019"
-        },
-        {
-          "author": "Ashley R.",
-          "rating": 5,
-          "text": "We used this venue for our ten-year high school reunion and the whole experience was easy and fun. Debbie with Moulin Events was beyond helpful and accommodating.",
-          "time": "2019"
-        },
-        {
-          "author": "Paul D.",
-          "rating": 4,
-          "text": "Food was tasty though limited in options and quantity. Staff was wonderful and knowledgeable. The patio feels like you're at a beach in the Caribbean.",
-          "time": "2019"
-        },
-        {
-          "author": "Monica J.",
-          "rating": 4,
-          "text": "The conch fritters with Key lime remoulade are excellent, and the frozen cocktails are creative and refreshing. Named after the famous RMS Rhone shipwreck dive site.",
-          "time": "2019"
-        }
       ],
       "history": [
         {
@@ -2286,8 +1846,6 @@
       "subcategory": "grocery",
       "building_id": "bldg-1606",
       "description": "Discount grocery store anchoring the Jefferson Commons development. Opened in 2013 to address a federally designated food desert after the space sat vacant for nearly a decade. Recently remodeled with a $1M investment. Accepts EBT, WIC, and offers delivery via DoorDash and Instacart.",
-      "rating": 4.1,
-      "review_count": 922,
       "hours": {
         "monday": {
           "open": "08:00",
@@ -2330,20 +1888,6 @@
         "Partners with Too Good To Go (surplus food bags $6.99)",
         "Recently remodeled interior",
         "Bike parking available"
-      ],
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "The produce section is much better than expected, beautifully displayed at the entry. Recommended meat counter.",
-          "time": "2024"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "Staff is friendly and it's less crowded than other stores. Recent remodel resembling Aldi's layout was a nice improvement.",
-          "time": "2025"
-        }
       ],
       "history": [
         {
@@ -2402,8 +1946,6 @@
       "subcategory": "restaurants",
       "building_id": "bldg-0711",
       "logo": "/logos/bellwether.jpg",
-      "rating": 4.6,
-      "review_count": 503,
       "hours": {
         "tuesday": {
           "open": "17:00",
@@ -2430,32 +1972,6 @@
           "close": "14:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Birthday diner",
-          "rating": 5,
-          "text": "Fabulous food, drinks and service in a lovely space! Every entree and drink was delicious.",
-          "time": "Jul 2025"
-        },
-        {
-          "author": "Michael Renner",
-          "rating": 5,
-          "text": "Grand luxe dining with a decidedly unfussy attitude — subtle opulence without the opulent attitude.",
-          "time": "Sauce Magazine"
-        },
-        {
-          "author": "TripAdvisor Reviewer",
-          "rating": 5,
-          "text": "Some of the best crabcakes I have ever had and the Mahi Mahi was wonderful.",
-          "time": "2024"
-        },
-        {
-          "author": "Good Food STL",
-          "rating": 5,
-          "text": "Each small plate impeccably crafted and flawlessly served. You will quickly recover from any food fatigue.",
-          "time": "Jan 2020"
-        }
-      ],
       "photos": [
         "/photos/bellwether/01.jpeg",
         "/photos/bellwether/02.jpeg",
@@ -2513,8 +2029,6 @@
       "category": "dining",
       "subcategory": "restaurants",
       "building_id": "bldg-1132",
-      "rating": 4.6,
-      "review_count": 743,
       "hours": {
         "monday": {
           "open": "12:00",
@@ -2545,32 +2059,6 @@
           "close": "22:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "The gooey butter cake ice cream is the best thing I have ever tasted. St. Louis in a cone.",
-          "time": "2025"
-        },
-        {
-          "author": "TripAdvisor Reviewer",
-          "rating": 5,
-          "text": "The naughty flavors are genius — bourbon vanilla and rosé are incredible. Worth every penny.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Great selection of unique flavors. The staff is always friendly and happy to let you sample. Dog-friendly patio is a huge plus.",
-          "time": "2024"
-        },
-        {
-          "author": "Yelp Reviewer",
-          "rating": 4,
-          "text": "Lines can be long on summer weekends but it moves fast. The lavender ice cream was a pleasant surprise.",
-          "time": "2024"
-        }
-      ],
       "logo": "/logos/clementines.png",
       "photos": [
         "/photos/clementines/01.jpg",
@@ -2632,8 +2120,6 @@
       "category": "services",
       "subcategory": "industrial",
       "building_id": "bldg-1160",
-      "rating": 4.9,
-      "review_count": 48,
       "hours": {
         "monday": {
           "open": "07:30",
@@ -2656,32 +2142,6 @@
           "close": "16:30"
         }
       },
-      "reviews": [
-        {
-          "author": "Angi Reviewer",
-          "rating": 5,
-          "text": "With multiple garage doors, I use only Zumwalt because I know they will do the job quickly and correctly. Great customer service and quick appointment times.",
-          "time": "2024"
-        },
-        {
-          "author": "Angi Reviewer",
-          "rating": 5,
-          "text": "Very easy to work with, quick, and did a fantastic job at a great price. Came out the next day for a quote and installed within three days.",
-          "time": "2024"
-        },
-        {
-          "author": "Nextdoor Neighbor",
-          "rating": 5,
-          "text": "Prompt and courteous service that has been unmatched by anyone else. They always fix the problem correctly the first time.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "Solid local company with deep roots in the neighborhood. Scheduling can take a little while but the work quality is excellent.",
-          "time": "2024"
-        }
-      ],
       "logo": "/logos/zumwalt.png",
       "photos": [
         "/photos/zumwalt/01.jpg",
@@ -2914,8 +2374,6 @@
       "category": "professional",
       "subcategory": "real-estate",
       "building_id": "bldg-0385",
-      "rating": 4.8,
-      "review_count": 24,
       "hours": {
         "monday": {
           "open": "08:30",
@@ -2938,26 +2396,6 @@
           "close": "17:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Zillow Buyer",
-          "rating": 5,
-          "text": "Mr. McAvoy made the experience less daunting and actually very seamless. He addressed everything we requested, including replacing a roof during a winter closing.",
-          "time": "2024"
-        },
-        {
-          "author": "Website Testimonial",
-          "rating": 5,
-          "text": "Great company, great service. Wanted a house in Lafayette Square — they stuck with me and got me into exactly what I wanted.",
-          "time": "2024"
-        },
-        {
-          "author": "Website Testimonial",
-          "rating": 5,
-          "text": "We had a great experience working with John Grass and Fritz McAvoy. They helped match us to a house that was the right fit.",
-          "time": "2023"
-        }
-      ],
       "photos": [
         "/photos/mcavoy/01.jpg",
         "/photos/mcavoy/02.jpg",
@@ -3092,8 +2530,6 @@
       "category": "dining",
       "subcategory": "cafes",
       "building_id": null,
-      "rating": 4.9,
-      "review_count": 282,
       "hours": {
         "monday": {
           "open": "07:00",
@@ -3120,26 +2556,6 @@
           "close": "15:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "Phenomenal! Great food, great drinks, lovely indoor and outdoor seating — all in a cute little country store. Can't wait to come back!",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "It's cozy, welcoming, and perfect for a casual lunch. The outdoor patio is a great spot to relax. Down-to-earth, friendly, and just plain good.",
-          "time": "2024"
-        },
-        {
-          "author": "TripAdvisor Reviewer",
-          "rating": 5,
-          "text": "Fun place to have breakfast. Went in with family before the Cardinals game. Very friendly service and the food was amazing.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "Farm-to-table from own Hereford cattle ranch",
@@ -3231,8 +2647,6 @@
       "category": "services",
       "subcategory": "beauty",
       "building_id": "bldg-0379",
-      "rating": 5,
-      "review_count": 25,
       "hours": {
         "wednesday": {
           "open": "09:00",
@@ -3255,20 +2669,6 @@
           "close": "19:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "Terra does a beautiful and meticulous job every time. Services are affordable and everyone here is warm and welcoming.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Jean did a fantastic job on my hair — she listened and really worked to getting the color I wanted while focusing on maintaining healthy hair.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "Hair care for all ethnicities",
@@ -3291,8 +2691,6 @@
       "category": "services",
       "subcategory": "beauty",
       "building_id": null,
-      "rating": 4.9,
-      "review_count": 114,
       "hours": {
         "monday": {
           "open": "08:00",
@@ -3319,26 +2717,6 @@
           "close": "14:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "I absolutely LOVE my new hair. Christina is amazing — highly recommended for her fantastic all-over coloring skills.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Sally is the best — I have never gotten a bad haircut from her.",
-          "time": "2024"
-        },
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "Super chic and extremely nice staff. This salon is amazing.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/salon-161/01.png",
         "/photos/salon-161/02.jpg",
@@ -3374,8 +2752,6 @@
       "category": "services",
       "subcategory": "health",
       "building_id": "bldg-0022",
-      "rating": 4.9,
-      "review_count": 273,
       "logo": "/logos/chiropractic.png",
       "hours": {
         "monday": {
@@ -3395,26 +2771,6 @@
           "close": "17:30"
         }
       },
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "The most amazing office visit. Friendly home environment. The Doctor treated me like family. I would recommend Lafayette Square to everyone.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Since seeing the doctor, not only has my neck pain improved but I have more energy, improved posture, and a greater ability to handle stress.",
-          "time": "2024"
-        },
-        {
-          "author": "Birdeye Reviewer",
-          "rating": 5,
-          "text": "Personal, caring and effective. If you're living in pain, like I was for 20 years, LSC can help you.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/chiropractic/01.png",
         "/photos/chiropractic/02.jpg",
@@ -3478,8 +2834,6 @@
       "category": "shopping",
       "subcategory": "pets",
       "building_id": "bldg-0723",
-      "rating": 4.7,
-      "review_count": 182,
       "hours": {
         "monday": {
           "open": "09:00",
@@ -3510,20 +2864,6 @@
           "close": "17:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "Love this place! Great selection of natural pet food and the self-service dog wash is so convenient. Staff is always helpful and friendly.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Best pet store in the city. They really know their products and care about your pet's health. The grooming is top-notch too.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/four-muddy-paws/01.jpg",
         "/photos/four-muddy-paws/02.jpg",
@@ -3770,8 +3110,6 @@
       "category": "recreation",
       "subcategory": "fitness",
       "building_id": null,
-      "rating": 4.8,
-      "review_count": 547,
       "hours": {
         "monday": {
           "open": "11:00",
@@ -3802,26 +3140,6 @@
           "close": "18:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "From the moment you walk in, the vibe is super welcoming — whether you're a total beginner or experienced climber, you immediately feel like you belong here.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "A nice climbing gym. It has a few auto belays, top ropes, and a nice lead climb section. Diverse climbing options for all levels.",
-          "time": "2024"
-        },
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "Great staff, well-maintained equipment, and suitable climbs for both beginners and experts. The historic Power Plant building is an incredible setting.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/climb-so-ill/01.jpg",
         "/photos/climb-so-ill/02.jpg",
@@ -3857,29 +3175,7 @@
       "category": "services",
       "subcategory": "events",
       "building_id": "bldg-0086",
-      "rating": 4.6,
-      "review_count": 72,
       "hours": {},
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "The staff was fabulous! With the old wood floors and exposed brick, the place has a ton of character and warmth — it's truly one of a kind.",
-          "time": "2025"
-        },
-        {
-          "author": "WeddingWire Reviewer",
-          "rating": 5,
-          "text": "The exposed brick, original flooring, and cafe lighting gave it a romantic feel without being over the top. Working with Ann was amazing — attentive to every detail.",
-          "time": "2024"
-        },
-        {
-          "author": "WeddingWire Reviewer",
-          "rating": 5,
-          "text": "Ann took our vision of our wedding day and made it even better than we could have envisioned. The Moulin staff added so many thoughtful touches.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/moulin-events/01.jpg",
         "/photos/moulin-events/02.jpg",
@@ -3920,29 +3216,7 @@
       "category": "hospitality",
       "subcategory": "hotels",
       "building_id": null,
-      "rating": 3.5,
-      "review_count": 649,
       "hours": {},
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "Great location just two blocks from Lafayette Park. The bed was perfectly firm and the free breakfast was a nice bonus. Staff at the front desk were friendly and helpful.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 2,
-          "text": "Room had an odd musty smell when we checked in. The AC issue was fixed quickly, but the overall condition of the room could use some updating.",
-          "time": "2024"
-        },
-        {
-          "author": "TripAdvisor Reviewer",
-          "rating": 4,
-          "text": "For the price, these are adequate accommodations with an ideal location near downtown. Staff was very friendly and the complimentary breakfast was solid.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "Complimentary hot breakfast buffet",
@@ -3974,8 +3248,6 @@
       "category": "services",
       "subcategory": "coworking",
       "building_id": null,
-      "rating": 5,
-      "review_count": 18,
       "hours": {
         "monday": {
           "open": "08:00",
@@ -3998,26 +3270,6 @@
           "close": "18:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Truly a hidden gem — my go-to space for meeting clients or focusing on work. The Zoom rooms are perfect for calls, and the spa room with a zero gravity massage chair helps me reset.",
-          "time": "2024"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "The space was absolutely adorable with thoughtfully done details, a beautiful color scheme, and fun wallpaper. The staff was incredibly welcoming.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Incredible customer service and the space is beyond beautiful. Love the free snacks and coffee options. I'd give it 10 stars if I could.",
-          "time": "2025"
-        }
-      ],
       "photos": [
         "/photos/dreamers-loft/01.jpg",
         "/photos/dreamers-loft/02.jpg",
@@ -4057,8 +3309,6 @@
       "category": "shopping",
       "subcategory": "pharmacy",
       "building_id": null,
-      "rating": 3.2,
-      "review_count": 48,
       "hours": {
         "monday": {
           "open": "07:00",
@@ -4089,20 +3339,6 @@
           "close": "22:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Stefani in the pharmacy went above and beyond helping me get the cost of my medication down when insurance wouldn't cover it. Compassionate and patient staff.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "Good consistent service through the pharmacy. They are knowledgeable, fast, and nice every time I visit.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "Full-service pharmacy with drive-thru window",
@@ -4126,7 +3362,6 @@
       "subcategory": "apartments",
       "building_id": null,
       "hours": {},
-      "reviews": [],
       "photos": [],
       "amenities": [
         "14-foot ceilings and open loft floor plans",
@@ -4160,7 +3395,6 @@
       "subcategory": "apartments",
       "building_id": null,
       "hours": {},
-      "reviews": [],
       "photos": [
         "/photos/wireworks-lofts/01.jpg",
         "/photos/wireworks-lofts/02.jpg"
@@ -4193,7 +3427,6 @@
       "subcategory": "apartments",
       "building_id": null,
       "hours": {},
-      "reviews": [],
       "photos": [],
       "amenities": [
         "Resort-style pool with sundeck",
@@ -4224,8 +3457,6 @@
       "category": "shopping",
       "subcategory": "discount",
       "building_id": null,
-      "rating": 3.3,
-      "review_count": 215,
       "hours": {
         "monday": {
           "open": "08:00",
@@ -4256,7 +3487,6 @@
           "close": "22:00"
         }
       },
-      "reviews": [],
       "photos": [],
       "amenities": [
         "EBT accepted",
@@ -4283,8 +3513,6 @@
       "category": "recreation",
       "subcategory": "fitness",
       "building_id": null,
-      "rating": 4.8,
-      "review_count": 146,
       "hours": {
         "monday": {
           "open": "05:00",
@@ -4315,20 +3543,6 @@
           "close": "20:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Huge gym with a wide variety of equipment. Plenty of free weights, machines, a power lifting room, ballistic training space, cardio equipment including rowers, a children's area, decent locker rooms, and a sauna.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Great gym with a supportive community atmosphere. The staff is friendly and the equipment is well-maintained. Best value gym in St. Louis.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/fit-city/01.jpg",
         "/photos/fit-city/02.jpg",
@@ -4402,7 +3616,6 @@
           "close": "16:00"
         }
       },
-      "reviews": [],
       "photos": [],
       "amenities": [
         "In-person tax preparation",
@@ -4449,7 +3662,6 @@
           "close": "18:00"
         }
       },
-      "reviews": [],
       "photos": [],
       "amenities": [
         "Residential and commercial real estate",
@@ -4498,7 +3710,6 @@
           "close": "16:00"
         }
       },
-      "reviews": [],
       "photos": [],
       "amenities": [
         "Personal care and hygiene assistance",
@@ -4530,8 +3741,6 @@
       "category": "services",
       "subcategory": "tattoo",
       "building_id": null,
-      "rating": 4.9,
-      "review_count": 43,
       "hours": {
         "monday": {
           "open": "12:00",
@@ -4562,26 +3771,6 @@
           "close": "18:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Valencia is not only incredibly talented, but extremely personable with an extreme passion for her work. The gallery space is beautiful and the whole experience felt welcoming and creative.",
-          "time": "2024"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Super laid back, relaxing, and clean atmosphere. Miss V is an absolute badass artist who knows exactly what she's doing. I've never been more comfortable getting tattooed.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Valencia is one of the best black and grey fine line artists in the area. She's sweet, a great conversationalist, and you are in great hands.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "Rotating fine art gallery featuring local and national artists",
@@ -4615,29 +3804,7 @@
       "category": "hospitality",
       "subcategory": "bed-and-breakfast",
       "building_id": null,
-      "rating": 4.8,
-      "review_count": 140,
       "hours": {},
-      "reviews": [
-        {
-          "author": "TripAdvisor Reviewer",
-          "rating": 5,
-          "text": "Unforgettable house, breakfast, and host. Marie's gourmet breakfasts served in the beautiful dining room put this location above every other lodging in St. Louis.",
-          "time": "2024"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "A truly special place to stay. The breakfast was amazing — fresh pastries, a four-course meal, and Marie is a wonderful host who makes every guest feel at home.",
-          "time": "2024"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "Wonderful experience. The neighborhood is quiet and beautiful with its Federal-style homes. Rooms are spacious, comfortable, and full of period charm.",
-          "time": "2025"
-        }
-      ],
       "photos": [
         "/photos/lehmann-house/01.jpg",
         "/photos/lehmann-house/02.jpg",
@@ -4684,8 +3851,6 @@
       "category": "shopping",
       "subcategory": "florist",
       "building_id": null,
-      "rating": 4.7,
-      "review_count": 32,
       "hours": {
         "monday": {
           "open": "09:00",
@@ -4708,20 +3873,6 @@
           "close": "15:00"
         }
       },
-      "reviews": [
-        {
-          "author": "WeddingWire Reviewer",
-          "rating": 5,
-          "text": "Sara and her team were so easy to work with and everything turned out so beautiful. By far, the most artistic and creative floral designer in St. Louis.",
-          "time": "2025"
-        },
-        {
-          "author": "The Knot Reviewer",
-          "rating": 5,
-          "text": "The flowers were gorgeous — the bridal bouquet was exceptional. Even my photographer was in awe. Sara really is so talented.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "Same-day delivery (order by 10 a.m.)",
@@ -4751,8 +3902,6 @@
       "category": "shopping",
       "subcategory": "furniture",
       "building_id": null,
-      "rating": 4.5,
-      "review_count": 28,
       "hours": {
         "thursday": {
           "open": "11:00",
@@ -4771,20 +3920,6 @@
           "close": "16:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "The brick and mortar store is adorably cute with handmade one-of-a-kind furniture and decor everywhere. Always styled so beautifully with interesting items.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "Fun spot in Lafayette Square with beautiful vintage furniture and eclectic home decor. The DIY painting classes are a blast — you build a piece of furniture in one night.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "DIY furniture painting and building classes",
@@ -4816,23 +3951,7 @@
       "category": "services",
       "subcategory": "events",
       "building_id": null,
-      "rating": 4.8,
-      "review_count": 19,
       "hours": {},
-      "reviews": [
-        {
-          "author": "The Knot Reviewer",
-          "rating": 5,
-          "text": "It's owned and operated by an award-winning design company. They truly have thought out every detail in the space and help you plan out your dream day.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "A beautiful, modern event space in the iconic pink DREAM building. The two-hundred-year-old wooden beams and Botticelli-inspired restroom wallpaper are unforgettable touches.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/sognare/01.jpg",
         "/photos/sognare/02.jpg",
@@ -4870,8 +3989,6 @@
       "category": "shopping",
       "subcategory": "antiques",
       "building_id": null,
-      "rating": 4.8,
-      "review_count": 47,
       "hours": {
         "thursday": {
           "open": "10:00",
@@ -4882,20 +3999,6 @@
           "close": "14:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "I would give this place a million stars if I could. Bruce saves the most beautiful architecture — stained glass, terra cotta, cast iron storefronts. Absolute treasure trove.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "36,000 square feet of salvaged history. Found a five-foot mahogany pocket door and red-veined marble rescued from the Ambassador Theater. Nowhere else like it.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/architectural-artifacts/01.jpg",
         "/photos/architectural-artifacts/02.jpg",
@@ -4933,23 +4036,7 @@
       "category": "hospitality",
       "subcategory": "bed-and-breakfast",
       "building_id": null,
-      "rating": 4.9,
-      "review_count": 28,
       "hours": {},
-      "reviews": [
-        {
-          "author": "TripAdvisor Reviewer",
-          "rating": 5,
-          "text": "Exceptional in every way. Perfect location for our itinerary — Larry was a marvelous host. Accommodations were great, bed very comfortable.",
-          "time": "2025"
-        },
-        {
-          "author": "TripAdvisor Reviewer",
-          "rating": 5,
-          "text": "Beautiful Victorian home directly across from Lafayette Park. Larry knows everything about the neighborhood's history. Walking distance to great restaurants.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "Complimentary breakfast",
@@ -4979,23 +4066,7 @@
       "category": "services",
       "subcategory": "beauty",
       "building_id": null,
-      "rating": 4.7,
-      "review_count": 60,
       "hours": {},
-      "reviews": [
-        {
-          "author": "Yelp Reviewer",
-          "rating": 5,
-          "text": "Judith is an absolute professional, making what could be a painful experience an enjoyable wax appointment. She's thorough, fast, and always makes me feel comfortable.",
-          "time": "2024"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "I highly recommend J3 for your next skincare needs. They truly care about their clients and the facials are luxurious. Best kept secret in Lafayette Square.",
-          "time": "2025"
-        }
-      ],
       "photos": [
         "/photos/j3-studio/01.jpg",
         "/photos/j3-studio/02.jpg",
@@ -5030,8 +4101,6 @@
       "category": "services",
       "subcategory": "wellness",
       "building_id": null,
-      "rating": 4.8,
-      "review_count": 18,
       "hours": {
         "monday": {
           "open": "09:00",
@@ -5058,20 +4127,6 @@
           "close": "14:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "The infrared sauna is so relaxing — I feel refreshed every time. The facility is clean and the staff is incredibly welcoming. A hidden gem on Hickory Street.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "Love the swim spa for low-impact workouts. Great addition to the neighborhood. The chemical peel I got was exactly what my skin needed.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "Infrared sauna",
@@ -5100,23 +4155,7 @@
       "category": "services",
       "subcategory": "events",
       "building_id": null,
-      "rating": 4.6,
-      "review_count": 128,
       "hours": {},
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "I have absolutely no words for how amazing this wedding venue is. The team made everything flawless from ceremony to reception. The space is breathtaking.",
-          "time": "2025"
-        },
-        {
-          "author": "WeddingWire Reviewer",
-          "rating": 5,
-          "text": "The Chouteau room was gorgeous — perfect for a ceremony of 100 to 150 people. The Jefferson Ballroom offered plenty of room for the band, dance floor, and tables.",
-          "time": "2024"
-        }
-      ],
       "photos": [
         "/photos/grand-hall/01.jpg",
         "/photos/grand-hall/02.jpg",
@@ -5155,8 +4194,6 @@
       "category": "services",
       "subcategory": "health",
       "building_id": null,
-      "rating": 3.3,
-      "review_count": 161,
       "hours": {
         "monday": {
           "open": "07:00",
@@ -5183,20 +4220,6 @@
           "close": "12:00"
         }
       },
-      "reviews": [
-        {
-          "author": "Google Reviewer",
-          "rating": 5,
-          "text": "The place is good, and the students are really helpful and professional. They truly care about your concerns and are very kind.",
-          "time": "2025"
-        },
-        {
-          "author": "Google Reviewer",
-          "rating": 4,
-          "text": "I finally found a dentist that's excellent — they let you know what's going on and explain everything. The front desk staff are also very nice.",
-          "time": "2024"
-        }
-      ],
       "photos": [],
       "amenities": [
         "92-chair dental clinic with general and specialty care",
@@ -5224,7 +4247,6 @@
       "subcategory": "apartments",
       "building_id": "bldg-1645",
       "hours": {},
-      "reviews": [],
       "photos": [],
       "amenities": [
         "12-foot ceilings and exposed brick walls",
