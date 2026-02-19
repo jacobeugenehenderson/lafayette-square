@@ -841,7 +841,7 @@ function CelestialBodies() {
     }
 
     if (isNight) {
-      const moonBrightness = 0.5 + moonIllum.fraction * 0.3
+      const moonBrightness = 2.0 + moonIllum.fraction * 1.5
       if (moonAlt > 0) {
         celestialToPosition(moonPos.azimuth + Math.PI, moonPos.altitude, LIGHT_RADIUS, _nightLP)
       } else {
@@ -859,10 +859,10 @@ function CelestialBodies() {
       secondary = {
         position: _secP.set(-150, 100, -150),
         color: '#4466aa',
-        intensity: 0.25,
+        intensity: 0.8,
       }
       sky = { top: '#0a1020', bottom: '#1a2545' }
-      ambient = { color: '#3a4a70', intensity: 0.45 }
+      ambient = { color: '#3a4a70', intensity: 1.0 }
     } else if (isTwilight) {
       const t = (sunAlt + 0.12) / 0.17
       primary = {
@@ -967,7 +967,7 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.15 : 0.45) * (1 + cc * 0.4)} />
+      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.45 : 0.45) * (1 + cc * 0.4)} />
       <ambientLight
         color={lighting.ambient.color}
         intensity={lighting.ambient.intensity * (1 + cc * 0.4)}
@@ -979,13 +979,13 @@ function CelestialBodies() {
       <hemisphereLight
         color={lighting.isNight ? '#556688' : '#ffeedd'}
         groundColor={lighting.isNight ? '#443322' : '#443333'}
-        intensity={(lighting.isNight ? 0.25 : 0.35) * (1 + cc * 0.5)}
+        intensity={(lighting.isNight ? 0.6 : 0.35) * (1 + cc * 0.5)}
       />
       <PrimaryOrb {...primaryWeathered} />
       <SecondaryOrb {...lighting.secondary} />
       <directionalLight
         position={[0, 100, -400]}
-        intensity={lighting.isNight ? 0.15 : 0.12}
+        intensity={lighting.isNight ? 0.5 : 0.12}
         color={lighting.isNight ? '#5577aa' : '#ffeedd'}
       />
     </>

@@ -17,7 +17,7 @@ const GLOW_Y = 6.3       // world Y of lantern center
 const GLOW_RADIUS = 0.12 // sphere radius — small warm dot, bloom expands it
 const POOL_RADIUS = 14
 const POOL_Y = 0.5
-const SHADOW_RADIUS = 1.8 // soft dark contact shadow at lamp base
+const SHADOW_RADIUS = 2.8 // AO contact shadow at lamp base
 
 function StreetLights() {
   const lampRef = useRef()
@@ -89,10 +89,11 @@ function StreetLights() {
       varying vec2 vUv;
       void main() {
         float dist = length(vUv - 0.5) * 2.0;
-        // Dense dark core fading to transparent edge
-        float shadow = 1.0 - smoothstep(0.0, 1.0, dist);
-        shadow = shadow * shadow; // sharper falloff
-        gl_FragColor = vec4(0.0, 0.0, 0.0, shadow * 0.6);
+        // AO-style: dense dark core with soft gaussian blur outward
+        float ao = exp(-dist * dist * 4.0);        // tight gaussian core
+        float soft = exp(-dist * dist * 1.2) * 0.4; // wider soft penumbra
+        float shadow = ao * 0.9 + soft;              // combine
+        gl_FragColor = vec4(0.0, 0.0, 0.0, shadow);
       }`,
     transparent: true,
     depthWrite: false,

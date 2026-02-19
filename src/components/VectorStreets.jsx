@@ -267,13 +267,14 @@ function cleanShape(shape) {
 
 // ── SVG Map Layers (parsed as geometry from Illustrator SVG) ─────────────────
 
-// Layer config — keyed by SVG group ID, ready for CSS token mapping
+// Layer config — keyed by SVG group ID
+// Colors are read from the SVG at parse time; polygonOffset handles depth ordering
 const SVG_LAYERS = {
-  blocks:    { y: 0.08, color: '#333333' },
-  service:   { y: 0.09, color: '#4c4c4c' },
-  paths:     { y: 0.10, color: '#8a8578', clipId: 'clippath' },
-  streets:   { y: 0.05, color: '#000000', strokeColor: '#cccccc' },
-  sidewalks: { y: 0.12, color: '#7f7c73' },
+  streets:   { y: 0.02, order: 1, pOffset: 4, noDepthWrite: true },
+  blocks:    { y: 0.03, order: 2, pOffset: 3 },
+  service:   { y: 0.04, order: 3, pOffset: 2 },
+  paths:     { y: 0.05, order: 4, pOffset: 1, clipId: 'clippath' },
+  sidewalks: { y: 0.06, order: 5, pOffset: 0 },
 }
 
 // Transform geometry vertices from SVG 2D to world XZ
@@ -329,6 +330,7 @@ function makeClipShader(clipTexture) {
     )
   }
 }
+
 
 function SvgMapLayers() {
   const [layers, setLayers] = useState(null)
@@ -410,32 +412,21 @@ function SvgMapLayers() {
 
           const fillGeos = []
           const strokeGeos = []
+          let fillColor = null   // capture from SVG
+          let strokeColor = null // capture from SVG
 
           for (const path of paths) {
             const style = path.userData.style
 
-            // Streets layer: fill road surface shapes, but preserve stroke-only paths
-            if (groupId === 'streets') {
-              const origFill = style.fill
-              if (origFill === 'none' || origFill === 'transparent') {
-                // Stroke-only path (e.g. streets_stroke) — keep original styling
-              } else {
-                style.fill = '#000000'
-                style.stroke = 'none'
-              }
-            }
-
-            // ── Fills (blocks, sidewalks) ──
-            // Only fill when explicit fill attribute is present and not 'none'
-            // Illustrator "Presentation Attributes" export includes fill= on every filled path
+            // ── Fills ──
             const fc = style.fill
             if (fc && fc !== 'none' && fc !== 'transparent') {
+              if (!fillColor) fillColor = fc
               try {
                 const shapes = SVGLoader.createShapes(path)
                 for (const shape of shapes) {
                   const cleaned = cleanShape(shape)
                   if (!cleaned) continue
-                  // curveSegments=1 — curves already flattened in cleanShape
                   const geo = new THREE.ShapeGeometry(cleaned, 1)
                   if (geo.attributes.position.count > 0) {
                     transformSvgToWorld(geo)
@@ -449,9 +440,10 @@ function SvgMapLayers() {
               }
             }
 
-            // ── Strokes (service roads, park paths, sidewalk edges) ──
+            // ── Strokes ──
             const sc = style.stroke
             if (sc && sc !== 'none' && sc !== 'transparent') {
+              if (!strokeColor) strokeColor = sc
               try {
                 for (const subPath of path.subPaths) {
                   const pts = subPath.getPoints(12)
@@ -469,7 +461,9 @@ function SvgMapLayers() {
           }
 
           // Merge all fills and strokes for this layer
-          const layer = { ...config, fillGeometry: null, strokeGeometry: null, clipGeometry: null }
+          const layer = { ...config, fillGeometry: null, strokeGeometry: null,
+            fillColor: fillColor || '#333333',
+            strokeColor: strokeColor || '#cccccc' }
           if (fillGeos.length) {
             layer.fillGeometry = mergeBufferGeometries(fillGeos)
             fillGeos.forEach(g => g.dispose())
@@ -499,22 +493,43 @@ function SvgMapLayers() {
     <group>
       {Object.entries(layers).map(([id, layer]) => (
         <group key={id}>
-          {layer.fillGeometry && (
-            <mesh geometry={layer.fillGeometry} position={[0, layer.y, 0]} frustumCulled={false} receiveShadow>
+          {layer.fillGeometry ? (
+            <mesh
+              geometry={layer.fillGeometry}
+              position={[0, layer.y, 0]}
+              renderOrder={layer.order}
+              frustumCulled={false}
+              receiveShadow
+            >
               <meshStandardMaterial
-                color={layer.color}
-                roughness={0.85}
+                color={layer.fillColor}
+                roughness={0.95}
+                metalness={0}
                 side={THREE.DoubleSide}
+                depthWrite={!layer.noDepthWrite}
+                polygonOffset
+                polygonOffsetFactor={layer.pOffset}
+                polygonOffsetUnits={layer.pOffset}
                 onBeforeCompile={layer.clipTexture ? makeClipShader(layer.clipTexture) : undefined}
               />
             </mesh>
-          )}
+          ) : null}
           {layer.strokeGeometry && (
-            <mesh geometry={layer.strokeGeometry} position={[0, layer.y + 0.01, 0]} frustumCulled={false} receiveShadow>
+            <mesh
+              geometry={layer.strokeGeometry}
+              position={[0, layer.y + 0.01, 0]}
+              renderOrder={layer.order}
+              frustumCulled={false}
+              receiveShadow
+            >
               <meshStandardMaterial
-                color={layer.strokeColor || layer.color}
-                roughness={0.85}
+                color={layer.strokeColor}
+                roughness={0.95}
+                metalness={0}
                 side={THREE.DoubleSide}
+                polygonOffset
+                polygonOffsetFactor={layer.pOffset}
+                polygonOffsetUnits={layer.pOffset}
                 onBeforeCompile={layer.clipTexture ? makeClipShader(layer.clipTexture) : undefined}
               />
             </mesh>

@@ -337,7 +337,7 @@ function Foundations() {
   const prevDarkRef = useRef(-1)
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
   const dayColor = useMemo(() => new THREE.Color('#B8A88A'), [])
-  const nightColor = useMemo(() => new THREE.Color('#4a4038'), [])
+  const nightColor = useMemo(() => new THREE.Color('#6a5e52'), [])
 
   useFrame(() => {
     if (!meshRef.current) return
@@ -496,7 +496,7 @@ function Building({ building, neonInfo }) {
     const hsl = {}
     c.getHSL(hsl)
     const coolHue = hsl.h + 0.03
-    c.setHSL(coolHue, hsl.s * 0.65, hsl.l * 0.25)
+    c.setHSL(coolHue, hsl.s * 0.65, hsl.l * 0.45)
     return c
   }, [baseColor])
 

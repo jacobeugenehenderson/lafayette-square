@@ -280,9 +280,9 @@ function ParkGround() {
          grass = mix(grass, gCool, smoothstep(0.2, 0.45, gn4) * 0.2);
          grass += (gn3 - 0.5) * 0.018;
 
-         // Time-of-day: darken and blue-shift at night
+         // Time-of-day: blue-shift at night, keep brightness for moonlight
          float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
-         float brightness = mix(0.45, 1.0, dayBright);
+         float brightness = mix(0.7, 1.0, dayBright);
          vec3 nightTint = vec3(0.6, 0.7, 1.0);
          grass = mix(grass * nightTint, grass, dayBright) * brightness;
 
@@ -479,7 +479,7 @@ function ParkPaths() {
 
          // Time-of-day
          float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
-         float brightness = mix(0.45, 1.0, dayBright);
+         float brightness = mix(0.7, 1.0, dayBright);
          vec3 nightTint = vec3(0.6, 0.7, 1.0);
          gravelCol = mix(gravelCol * nightTint, gravelCol, dayBright) * brightness;
 
@@ -891,7 +891,7 @@ function ParkTrees() {
          diffuseColor.rgb *= 0.92 + grain2 * 0.16;
 
          float dayB = smoothstep(-0.12, 0.3, uSunAltitude);
-         float bright = mix(0.5, 1.0, dayB);
+         float bright = mix(0.7, 1.0, dayB);
          vec3 nightT = vec3(0.6, 0.7, 1.0);
          diffuseColor.rgb = mix(diffuseColor.rgb * nightT, diffuseColor.rgb, dayB) * bright;`
       )
@@ -988,7 +988,7 @@ function ParkTrees() {
            diffuseColor.rgb += emGlow * dayBF * 0.25;
 
            // Day/night brightness
-           float brightF = mix(0.55, 1.15, dayBF);
+           float brightF = mix(0.75, 1.15, dayBF);
            vec3 nightTF = vec3(0.6, 0.7, 1.0);
            diffuseColor.rgb = mix(diffuseColor.rgb * nightTF, diffuseColor.rgb, dayBF) * brightF;`
         )
