@@ -21,6 +21,9 @@ const useSkyState = create((set, get) => ({
   turbidity: 0,
   precipitationIntensity: 0,
   windVector: new THREE.Vector2(0, 0),
+  temperatureF: null,  // real temp from Open-Meteo (°F), null until first fetch
+  currentWeatherCode: null,  // WMO code from current conditions
+  hourlyForecast: [],  // Array<{ time: Date, temperatureF: number, weatherCode: number }>
 
   // ── Creative / derived ──
   astronomyAlpha: 1,      // star visibility factor (sun + clouds)
@@ -46,6 +49,8 @@ const useSkyState = create((set, get) => ({
       _targetTurbidity: data.turbidity ?? get()._targetTurbidity,
       _targetPrecipitation: data.precipitationIntensity ?? get()._targetPrecipitation,
       _targetWind: data.windVector ?? get()._targetWind,
+      temperatureF: data.temperatureF !== undefined ? data.temperatureF : get().temperatureF,
+      currentWeatherCode: data.currentWeatherCode !== undefined ? data.currentWeatherCode : get().currentWeatherCode,
     })
   },
 
@@ -61,6 +66,8 @@ const useSkyState = create((set, get) => ({
       moonAltitude: data.moonAltitude ?? state.moonAltitude,
     })
   },
+
+  setHourlyForecast: (f) => set({ hourlyForecast: f }),
 
   setBeautyBias: (v) => set({ beautyBias: Math.max(0, Math.min(1, v)) }),
   setLiveMode: () => set({ beautyBias: 0.6 }),

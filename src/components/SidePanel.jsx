@@ -13,6 +13,10 @@ import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
 import useGuardianStatus from '../hooks/useGuardianStatus'
 import { useCodeDesk } from './CodeDeskModal'
+import useSkyState from '../hooks/useSkyState'
+import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
+import { interpolateForecast } from '../lib/dawnTimeline'
+import WeatherTimeline from './WeatherTimeline'
 
 // ── Camera helpers ──────────────────────────────────────────────────
 const _buildingMap = {}
@@ -125,27 +129,6 @@ function getMoonPhase(phase) {
   return MOON_PHASES[index]
 }
 
-// Simulated temperature for St. Louis, MO based on seasonal + diurnal cycles
-// Monthly averages modeled from NOAA climate data for downtown STL
-function getTemperatureF(date) {
-  const dayOfYear = Math.floor(
-    (date - new Date(date.getFullYear(), 0, 0)) / 86400000
-  )
-  const hour = date.getHours() + date.getMinutes() / 60
-
-  // Seasonal: peaks ~Jul 21 (day 202), troughs ~Jan 21 (day 21)
-  const seasonal = Math.sin(((dayOfYear - 111) / 365) * 2 * Math.PI)
-
-  // Daily average: annual mean 57°F, ±24°F seasonal swing
-  const dailyAvg = 57 + 24 * seasonal
-
-  // Diurnal: peaks ~3pm, troughs ~5am
-  const diurnal = Math.sin(((hour - 9) / 24) * 2 * Math.PI)
-  const diurnalSwing = 8 + seasonal * 1.5 // ±6.5°F winter to ±9.5°F summer
-
-  return Math.round(dailyAvg + diurnalSwing * diurnal)
-}
-
 function formatTimeShort(date) {
   return date.toLocaleTimeString('en-US', {
     hour: 'numeric',
@@ -154,60 +137,6 @@ function formatTimeShort(date) {
   }).replace(' ', '')
 }
 
-
-// ── Responsive time slider (local state, RAF-throttled store updates) ──
-
-function TimeSlider({ minutes: externalMinutes }) {
-  const [localMin, setLocalMin] = useState(externalMinutes)
-  const dragging = useRef(false)
-  const rafId = useRef(null)
-
-  // Sync from store when not dragging
-  useEffect(() => {
-    if (!dragging.current) setLocalMin(externalMinutes)
-  }, [externalMinutes])
-
-  const pushToStore = useCallback((val) => {
-    if (rafId.current) cancelAnimationFrame(rafId.current)
-    rafId.current = requestAnimationFrame(() => {
-      useTimeOfDay.getState().setMinuteOfDay(val)
-    })
-  }, [])
-
-  const formatSliderTime = (m) => {
-    const h = Math.floor(m / 60) % 24
-    const mm = m % 60
-    return `${h.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}`
-  }
-
-  return (
-    <>
-      <div className="text-center text-xs text-white/60 mb-1 font-mono">{formatSliderTime(localMin)}</div>
-      <input
-        type="range"
-        min="0"
-        max="1440"
-        step="1"
-        value={localMin}
-        onChange={(e) => {
-          const v = parseInt(e.target.value)
-          setLocalMin(v)
-          pushToStore(v)
-        }}
-        onPointerDown={() => { dragging.current = true }}
-        onPointerUp={() => { dragging.current = false }}
-        className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
-      />
-      <div className="flex justify-between text-[9px] text-white/30 mt-1">
-        <span>00:00</span>
-        <span>06:00</span>
-        <span>12:00</span>
-        <span>18:00</span>
-        <span>24:00</span>
-      </div>
-    </>
-  )
-}
 
 // ── Hours check (mirrors LafayetteScene._isWithinHours) ─────────────
 const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -225,6 +154,7 @@ function _isWithinHours(hours, time) {
 // Pre-compute which buildings have real hours data
 const _buildingsWithHours = buildingsData.buildings.filter(b => b.hours)
 const TOTAL_BUILDINGS = buildingsData.buildings.length
+const _namedStreetCount = new Set(streetsData.streets.map(s => s.name).filter(Boolean)).size
 
 // ============ BULLETIN BOARD BUTTON ============
 
@@ -257,7 +187,7 @@ function CollapsibleSection({ title, defaultOpen = false, bg = '', highlight = f
 // ============ ALMANAC TAB ============
 
 function AlmanacTab({ showAdmin = false }) {
-  const { currentTime, setTime, setHour } = useTimeOfDay()
+  const { currentTime, setTime } = useTimeOfDay()
   const [useRealTime, setUseRealTime] = useState(true)
   const [use24Hour, setUse24Hour] = useState(false)
   const [useCelsius, setUseCelsius] = useState(false)
@@ -287,9 +217,6 @@ function AlmanacTab({ showAdmin = false }) {
   const moonIllum = SunCalc.getMoonIllumination(currentTime)
   const moonPhase = getMoonPhase(moonIllum.phase)
 
-  const hours = currentTime.getHours()
-  const minutes = currentTime.getMinutes()
-
   const timeString = (() => {
     const raw = currentTime.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -312,17 +239,53 @@ function AlmanacTab({ showAdmin = false }) {
     (currentTime - new Date(currentTime.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)
   )
 
+  // Weather: live from store, or interpolated from forecast when scrubbing
+  const liveTemp = useSkyState((s) => s.temperatureF)
+  const liveCode = useSkyState((s) => s.currentWeatherCode)
+  const hourlyForecast = useSkyState((s) => s.hourlyForecast)
+  const sunElevation = useSkyState((s) => s.sunElevation)
+  const isNight = sunElevation < -0.12
+
+  const displayWeather = useMemo(() => {
+    if (useRealTime) {
+      return { temperatureF: liveTemp, weatherCode: liveCode }
+    }
+    const interp = interpolateForecast(currentTime, hourlyForecast)
+    if (interp) return { temperatureF: interp.temperatureF, weatherCode: interp.weatherCode }
+    return { temperatureF: liveTemp, weatherCode: liveCode }
+  }, [useRealTime, currentTime, hourlyForecast, liveTemp, liveCode])
+
+  const condition = getWeatherCondition(displayWeather.weatherCode ?? 0)
+  const headerTempF = displayWeather.temperatureF != null ? Math.round(displayWeather.temperatureF) : null
+  const headerTempC = headerTempF != null ? Math.round((headerTempF - 32) * 5 / 9) : null
+  const headerTemp = headerTempF != null ? (useCelsius ? headerTempC : headerTempF) : '--'
+  const headerTempColor = headerTempF == null ? 'text-white/40'
+    : headerTempF <= 32 ? 'text-blue-400'
+    : headerTempF <= 55 ? 'text-sky-300'
+    : headerTempF <= 75 ? 'text-white/90'
+    : headerTempF <= 90 ? 'text-amber-400'
+    : 'text-red-400'
+
+  // Day length
+  const dayLengthMs = sunTimes.sunset - sunTimes.sunrise
+  const dayLengthMin = Math.round(dayLengthMs / 60000)
+  const dayH = Math.floor(dayLengthMin / 60)
+  const dayM = dayLengthMin % 60
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 overflow-y-auto min-h-0">
-      <div className="px-4 py-3 border-b border-white/10 bg-white/4">
-        <div className="flex items-baseline justify-between">
+
+      {/* ── Section 1: Time + Weather + Temp ── */}
+      <div className="px-4 py-3 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between">
+          {/* Left: Clock + time */}
           <div
             className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
             onClick={() => setUse24Hour(!use24Hour)}
             title="Click to toggle 12/24 hour format"
           >
-            <svg className="w-4 h-4 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+            <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" strokeLinecap="round" />
             </svg>
@@ -330,34 +293,50 @@ function AlmanacTab({ showAdmin = false }) {
               {timeString}
             </span>
           </div>
-          {(() => {
-            const tempF = getTemperatureF(currentTime)
-            const tempC = Math.round((tempF - 32) * 5 / 9)
-            const temp = useCelsius ? tempC : tempF
-            const unit = useCelsius ? 'C' : 'F'
-            const color = tempF <= 32 ? 'text-blue-400' : tempF <= 55 ? 'text-sky-300' : tempF <= 75 ? 'text-white/90' : tempF <= 90 ? 'text-amber-400' : 'text-red-400'
-            return (
-              <div
-                className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
-                onClick={() => setUseCelsius(!useCelsius)}
-                title="Click to toggle °F / °C"
-              >
-                <svg className="w-4 h-4 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                  <path d="M12 2v14m0 0a4 4 0 110 0m-3-11h6M9 8h6" strokeLinecap="round" />
-                </svg>
-                <span className={`text-2xl font-light tracking-wide ${color}`}>
-                  {temp}&deg;{unit}
-                </span>
-              </div>
-            )
-          })()}
+
+          {/* Center: Weather icon + condition */}
+          <div className="flex items-center gap-1.5">
+            <WeatherIcon
+              code={displayWeather.weatherCode}
+              isNight={isNight}
+              size={48}
+            />
+            <span className="text-xs text-white/50">{condition.label}</span>
+          </div>
+
+          {/* Right: Thermometer + temp */}
+          <div
+            className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+            onClick={() => setUseCelsius(!useCelsius)}
+            title="Click to toggle °F / °C"
+          >
+            <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M12 2v14m0 0a4 4 0 110 0m-3-11h6M9 8h6" strokeLinecap="round" />
+            </svg>
+            <span className={`text-2xl font-light tracking-wide ${headerTempColor}`}>
+              {headerTemp}&deg;{useCelsius ? 'C' : 'F'}
+            </span>
+          </div>
         </div>
         <div className="text-xs text-white/40 mt-1 tracking-wide">
           {dateString} &middot; Day {dayOfYear}
         </div>
       </div>
 
-      <div className="px-4 py-3 flex gap-6">
+      {/* ── Section 2: Timeline slider ── */}
+      <div className="bg-white/[0.04] border-b border-white/[0.06]">
+        <WeatherTimeline
+          currentTime={currentTime}
+          isLive={useRealTime}
+          useCelsius={useCelsius}
+          onScrub={(date) => { setUseRealTime(false); setTime(date) }}
+          onReturnToLive={() => { setUseRealTime(true); setTime(new Date()) }}
+          onToggleCelsius={() => setUseCelsius(!useCelsius)}
+        />
+      </div>
+
+      {/* ── Section 3: Sun / Moon / Day ── */}
+      <div className="px-4 py-3 flex gap-4 border-b border-white/[0.06]">
         <div className="flex-1">
           <div className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Sun</div>
           <div className="flex items-center gap-2 text-xs text-white/70">
@@ -373,66 +352,48 @@ function AlmanacTab({ showAdmin = false }) {
         <div className="flex-1">
           <div className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Moon</div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl">{moonPhase.icon}</span>
+            <span className="text-2xl leading-none">{moonPhase.icon}</span>
             <div>
               <div className="text-xs text-white/70">{moonPhase.name}</div>
-              <div className="text-[10px] text-white/40">{Math.round(moonIllum.fraction * 100)}% illuminated</div>
+              <div className="text-[10px] text-white/40">{Math.round(moonIllum.fraction * 100)}%</div>
             </div>
           </div>
         </div>
+
+        <div className="flex-1">
+          <div className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Day</div>
+          <div className="text-xs text-white/70">{dayH}h {dayM}m</div>
+          {/* Day/night bar: midnight → dawn → dusk → midnight */}
+          {(() => {
+            const dawnMin = sunTimes.dawn.getHours() * 60 + sunTimes.dawn.getMinutes()
+            const duskMin = sunTimes.dusk.getHours() * 60 + sunTimes.dusk.getMinutes()
+            const dawnPct = (dawnMin / 1440) * 100
+            const dayPct = ((duskMin - dawnMin) / 1440) * 100
+            const nightPct = 100 - dawnPct - dayPct
+            return (
+              <div className="flex h-[6px] rounded-full overflow-hidden mt-1.5" title={`${dayH}h ${dayM}m daylight`}>
+                <div className="bg-indigo-400/30" style={{ width: `${dawnPct}%` }} />
+                <div className="bg-amber-400/60" style={{ width: `${dayPct}%` }} />
+                <div className="bg-indigo-400/30" style={{ width: `${nightPct}%` }} />
+              </div>
+            )
+          })()}
+        </div>
       </div>
 
-
-      <div className="px-4 py-2 border-t border-white/8 bg-white/4">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] text-white/30 uppercase tracking-widest">Lighting</span>
-          {!useRealTime && (
-            <button
-              onClick={() => {
-                setUseRealTime(true)
-                useTimeOfDay.getState().setPaused(false)
-                setTime(new Date())
-              }}
-              className="text-[10px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
-            >
-              Return to Live
-            </button>
-          )}
-        </div>
-        <div className="flex justify-between text-[10px]">
-          {[
-            { label: 'Dawn', color: 'text-rose-400/60', time: sunTimes.dawn },
-            { label: 'Noon', color: 'text-orange-400/60', time: sunTimes.solarNoon },
-            { label: 'Golden', color: 'text-amber-400/60', time: sunTimes.goldenHour },
-            { label: 'Dusk', color: 'text-purple-400/60', time: sunTimes.dusk },
-          ].map(({ label, color, time }) => (
-            <button
-              key={label}
-              className="hover:bg-white/10 rounded px-1.5 py-0.5 transition-colors"
-              onClick={() => {
-                setUseRealTime(false)
-                setTime(time)
-              }}
-            >
-              <span className={color}>{label} </span>
-              <span className="text-white/40">{formatTimeShort(time)}</span>
-            </button>
-          ))}
-        </div>
-        {!useRealTime && (
-          <div className="mt-2">
-            <TimeSlider minutes={hours * 60 + minutes} />
-          </div>
-        )}
-      </div>
-
-      <div className="border-t border-white/5">
+      {/* ── Section 4: Bulletin Board ── */}
+      <div>
         <button
           onClick={() => useBulletin.getState().setModalOpen(true)}
-          className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/5 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
         >
-          <span className="text-[10px] uppercase tracking-widest text-white/60 font-semibold">Bulletin Board</span>
-          <svg className="w-3.5 h-3.5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+            <span className="text-[10px] uppercase tracking-widest text-amber-300/80 font-semibold">Bulletin Board</span>
+          </div>
+          <svg className="w-3.5 h-3.5 text-amber-400/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -511,15 +472,6 @@ function AlmanacTab({ showAdmin = false }) {
       )}
       </div>
 
-      <div className="flex-shrink-0 px-4 py-2 border-t border-white/8 text-[10px] text-white/30 tracking-wide flex flex-wrap items-center gap-x-1">
-        <span>2,164 residents</span>
-        <span>&middot;</span>
-        <span>{buildingsData.buildings.length.toLocaleString()} buildings</span>
-        <span>&middot;</span>
-        <span>{streetsData.streets.length} streets</span>
-        <span>&middot;</span>
-        <span>38.62&deg;N 90.22&deg;W</span>
-      </div>
     </div>
   )
 }
@@ -832,17 +784,59 @@ function SidePanel() {
     dragRef.current = null
   }
 
+  // Two glass styles: stowed = liquid glass (low blur, high clarity), open = frosted/readable
+  // Apple's liquid glass: very low blur + high saturation/brightness + sharp spectral highlights
+  const glassStyle = collapsed ? {
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)',
+    backdropFilter: 'blur(2px) saturate(200%) brightness(125%) contrast(110%)',
+    WebkitBackdropFilter: 'blur(2px) saturate(200%) brightness(125%) contrast(110%)',
+    boxShadow: [
+      'inset 0 1px 0 rgba(255,255,255,0.45)',       // sharp top edge highlight
+      'inset 0 -1px 0 rgba(255,255,255,0.08)',       // subtle bottom edge
+      'inset 0 0 20px -5px rgba(255,255,255,0.06)',   // inner glow
+      '0 8px 40px rgba(0,0,0,0.5)',                   // outer shadow for float
+      '0 2px 4px rgba(0,0,0,0.3)',                    // tight shadow
+    ].join(', '),
+    border: '1px solid rgba(255,255,255,0.30)',
+  } : {
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)',
+    backdropFilter: 'blur(40px) saturate(180%) brightness(110%)',
+    WebkitBackdropFilter: 'blur(40px) saturate(180%) brightness(110%)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 32px rgba(0,0,0,0.35)',
+    border: '1px solid rgba(255,255,255,0.15)',
+  }
+
   return (
     <div
-      className="absolute bottom-3 left-3 right-3 flex flex-col select-none bg-white/8 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden z-50 transition-all duration-300 ease-out"
+      className="absolute bottom-3 left-3 right-3 flex flex-col select-none rounded-2xl overflow-hidden z-50 transition-all duration-300 ease-out"
       style={{
         fontFamily: 'ui-monospace, monospace',
-        height: collapsed ? '76px' : 'calc(35dvh - 1.5rem)',
+        height: collapsed ? 'auto' : 'calc(35dvh - 1.5rem)',
+        ...glassStyle,
       }}
     >
-      {/* <AddressSearch /> */}
+      {/* ── Spectral highlight — top edge shimmer ── */}
       <div
-        className="flex border-b border-white/15 flex-shrink-0 cursor-grab active:cursor-grabbing"
+        className="absolute inset-x-0 top-0 h-[1px] pointer-events-none z-10"
+        style={{
+          background: collapsed
+            ? 'linear-gradient(90deg, transparent 2%, rgba(255,255,255,0.5) 10%, rgba(180,220,255,0.7) 30%, rgba(255,255,255,0.6) 50%, rgba(255,220,180,0.6) 70%, rgba(255,255,255,0.5) 90%, transparent 98%)'
+            : 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 20%, rgba(200,220,255,0.3) 40%, rgba(255,255,255,0.25) 60%, rgba(255,220,200,0.25) 80%, transparent 100%)',
+        }}
+      />
+      {/* Secondary specular band for stowed state */}
+      {collapsed && (
+        <div
+          className="absolute inset-x-4 top-[1px] h-[1px] pointer-events-none z-10 rounded-full"
+          style={{
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%, transparent 100%)',
+          }}
+        />
+      )}
+
+      {/* ── Glass tab bar ── */}
+      <div
+        className="relative flex flex-shrink-0 cursor-grab active:cursor-grabbing"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -860,21 +854,44 @@ function SidePanel() {
                 setActiveTab(tab.id)
               }
             }}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-xs transition-colors duration-150 ${
+            className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs transition-all duration-200 ${
               activeTab === tab.id
-                ? 'bg-white/12 text-white border-b-2 border-white/40'
-                : 'text-white/50 hover:text-white/70 hover:bg-white/5'
+                ? 'text-white'
+                : 'text-white/30 hover:text-white/50'
             }`}
+            style={activeTab === tab.id ? {
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)',
+            } : {
+              background: 'rgba(0,0,0,0.15)',
+            }}
           >
             <span className="text-sm">{tab.icon}</span>
-            <span>{tab.label}</span>
+            <span className="font-medium tracking-wide">{tab.label}</span>
+            {/* Sharp active indicator line */}
+            {activeTab === tab.id && (
+              <div className="absolute bottom-0 inset-x-0 h-[2px] bg-white/70" />
+            )}
           </button>
         ))}
       </div>
 
-      <div className={`flex-1 min-h-0 overflow-hidden transition-opacity duration-200 ${collapsed ? 'opacity-0' : 'opacity-100'}`}>
-        {activeTab === 'almanac' && <AlmanacTab showAdmin={showAdmin} />}
-        {activeTab === 'lafayettepages' && <LafayettePagesTab />}
+      {/* ── Content body — hidden when collapsed ── */}
+      {!collapsed && (
+        <div className="flex-1 min-h-0 overflow-hidden bg-black/55">
+          {activeTab === 'almanac' && <AlmanacTab showAdmin={showAdmin} />}
+          {activeTab === 'lafayettepages' && <LafayettePagesTab />}
+        </div>
+      )}
+
+      {/* ── Demographics footer — always visible, always dark ── */}
+      <div className="flex-shrink-0 px-4 py-1.5 text-[10px] tracking-wide flex flex-wrap items-center gap-x-1 text-white/30 bg-black/80 border-t border-white/[0.06]">
+        <span>2,164 residents</span>
+        <span>&middot;</span>
+        <span>{buildingsData.buildings.length.toLocaleString()} buildings</span>
+        <span>&middot;</span>
+        <span>{_namedStreetCount} streets</span>
+        <span>&middot;</span>
+        <span>38.62&deg;N 90.22&deg;W</span>
       </div>
     </div>
   )
