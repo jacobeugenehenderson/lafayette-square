@@ -12,6 +12,7 @@ import streetsData from '../data/streets.json'
 import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
 import useGuardianStatus from '../hooks/useGuardianStatus'
+import { useCodeDesk } from './CodeDeskModal'
 
 // ── Camera helpers ──────────────────────────────────────────────────
 const _buildingMap = {}
@@ -260,6 +261,7 @@ function AlmanacTab({ showAdmin = false }) {
   const [useRealTime, setUseRealTime] = useState(true)
   const [use24Hour, setUse24Hour] = useState(false)
   const [useCelsius, setUseCelsius] = useState(false)
+  const openCodeDesk = useCodeDesk((s) => s.setOpen)
   const { randomize, openAll, closeAll } = usePlaceState()
   const buildingIds = useRef(buildingsData.buildings.map(b => b.id))
 
@@ -437,61 +439,72 @@ function AlmanacTab({ showAdmin = false }) {
       </div>
 
       {showAdmin && (
-        <CollapsibleSection title="Storefront Simulation" defaultOpen={false} bg="bg-white/3">
-          <div className="px-4 pb-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-white/50">
-                Open: {sliderValue.toLocaleString()} of {TOTAL_BUILDINGS.toLocaleString()}
-              </span>
-            </div>
-            <input
-              type="range"
-              min={realOpenCount}
-              max={TOTAL_BUILDINGS}
-              step="1"
-              value={sliderValue}
-              onChange={(e) => setSliderValue(parseInt(e.target.value))}
-              onMouseUp={() => {
-                const simExtra = sliderValue - realOpenCount
-                const simPct = TOTAL_BUILDINGS > realOpenCount
-                  ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
-                  : 0
-                randomize(buildingIds.current, simPct)
-              }}
-              onTouchEnd={() => {
-                const simExtra = sliderValue - realOpenCount
-                const simPct = TOTAL_BUILDINGS > realOpenCount
-                  ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
-                  : 0
-                randomize(buildingIds.current, simPct)
-              }}
-              className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-            />
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={() => {
+        <CollapsibleSection title="Admin" defaultOpen={false} bg="bg-white/3">
+          <div className="px-4 pb-3 space-y-3">
+            <button
+              onClick={() => openCodeDesk(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded bg-white/8 hover:bg-white/15 text-[10px] text-white/60 hover:text-white/80 transition-colors"
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+              QR Generator
+            </button>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] text-white/50">
+                  Storefront Simulation — Open: {sliderValue.toLocaleString()} of {TOTAL_BUILDINGS.toLocaleString()}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={realOpenCount}
+                max={TOTAL_BUILDINGS}
+                step="1"
+                value={sliderValue}
+                onChange={(e) => setSliderValue(parseInt(e.target.value))}
+                onMouseUp={() => {
                   const simExtra = sliderValue - realOpenCount
                   const simPct = TOTAL_BUILDINGS > realOpenCount
                     ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
                     : 0
                   randomize(buildingIds.current, simPct)
                 }}
-                className="flex-1 text-[10px] px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
-              >
-                Randomize
-              </button>
-              <button
-                onClick={() => { openAll(buildingIds.current); setSliderValue(TOTAL_BUILDINGS) }}
-                className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
-              >
-                All
-              </button>
-              <button
-                onClick={() => { closeAll(); setSliderValue(realOpenCount) }}
-                className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
-              >
-                Actual
-              </button>
+                onTouchEnd={() => {
+                  const simExtra = sliderValue - realOpenCount
+                  const simPct = TOTAL_BUILDINGS > realOpenCount
+                    ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
+                    : 0
+                  randomize(buildingIds.current, simPct)
+                }}
+                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => {
+                    const simExtra = sliderValue - realOpenCount
+                    const simPct = TOTAL_BUILDINGS > realOpenCount
+                      ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
+                      : 0
+                    randomize(buildingIds.current, simPct)
+                  }}
+                  className="flex-1 text-[10px] px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
+                >
+                  Randomize
+                </button>
+                <button
+                  onClick={() => { openAll(buildingIds.current); setSliderValue(TOTAL_BUILDINGS) }}
+                  className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => { closeAll(); setSliderValue(realOpenCount) }}
+                  className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+                >
+                  Actual
+                </button>
+              </div>
             </div>
           </div>
         </CollapsibleSection>

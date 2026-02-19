@@ -79,6 +79,32 @@
 </head>
 
 <body class="min-h-screen text-neutral-900">
+<script>
+  // Embed mode: strip header + background when loaded inside an iframe
+  if (new URLSearchParams(location.search).has('embed')) {
+    document.body.classList.add('embed');
+    document.documentElement.classList.add('embed');
+
+    // Listen for messages from parent React modal
+    window.addEventListener('message', function(e) {
+      if (!e.data) return;
+      if (e.data.type === 'lsq-set-qr-type') {
+        var sel = document.getElementById('qrType');
+        if (sel && sel.value !== e.data.value) {
+          sel.value = e.data.value;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      if (e.data.type === 'lsq-set-listing') {
+        var bizSel = document.getElementById('bizSelect');
+        if (bizSel) {
+          bizSel.value = e.data.value;
+          bizSel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+    });
+  }
+</script>
 
   <!-- HEADER -->
   <header class="header-bar sticky top-0 z-30">
@@ -93,8 +119,8 @@
         <label>
           <span class="sr-only">Type</span>
           <select id="qrType" aria-label="Type">
-            <option value="Check-in" selected>Check-in</option>
-            <option value="Claim">Claim</option>
+            <option value="Townie" selected>Townie</option>
+            <option value="Guardian">Guardian</option>
           </select>
         </label>
       </div>
@@ -345,7 +371,7 @@
      data-step="business">
   <div class="step-header-wrap flex items-center gap-3">
     <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Business
+      Place
     </button>
   </div>
   <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
@@ -393,7 +419,7 @@
   // Lafayette Square — API configuration
   // Set this to your Google Apps Script deployment URL
   window.LSQ_API_URL =
-    'https://script.google.com/macros/s/AKfycbxcKT2eSOKfXsb_p1Vs3xfpxy28N3ceVnBFRRP0whDcJ7u45zrzjHwcSUG7GGNxZ5ckTw/exec';
+    'https://script.google.com/macros/s/AKfycbwt3WFfB2v2jOf7VLXM-ssGABBf0TA9HkgXpiPo2bnTyAqC3ci4UG5FGoD0hV4hSgRFFQ/exec';
 </script>
 
 <!-- CodeDesk split modules (ordered, deterministic) -->

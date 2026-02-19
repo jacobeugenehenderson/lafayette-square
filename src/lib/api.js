@@ -20,6 +20,7 @@ const MOCKS = {
   'checkin':        () => ({ data: { logged: true, distinct_days: 1, is_local: true } }),
   'checkin-status': () => ({ data: { distinct_days: 1, threshold: 1, is_local: true } }),
   'claim':          () => ({ data: { success: true } }),
+  'claim-secret':   () => ({ data: { claim_secret: 'mock1234' } }),
   'review':         (body) => {
     _mockReviews.push({ id: String(Date.now()), text: body.text, rating: body.rating, listing_id: body.listing_id, handle: body.handle || '', created_at: new Date().toISOString() })
     return { data: { success: true } }
@@ -146,6 +147,16 @@ export async function postEvent(deviceHash, listingId, title, description, start
 
 export async function getEvents() {
   return get('events')
+}
+
+// ── Claim secret ─────────────────────────────────────────────────────
+
+export async function getClaimSecret(listingId, deviceHash) {
+  return get('claim-secret', { lid: listingId, dh: deviceHash })
+}
+
+export async function getClaimSecretAdmin(listingId) {
+  return get('claim-secret', { lid: listingId, admin: 'lafayette1850' })
 }
 
 // ── Listings ────────────────────────────────────────────────────────────

@@ -5,10 +5,12 @@ import useLocalStatus from '../hooks/useLocalStatus'
 import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
-import { getReviews, postReview, getEvents, postEvent, updateListing as apiUpdateListing } from '../lib/api'
+import { getReviews, postReview, getEvents, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
 
+import QRCode from 'qrcode'
+import { useCodeDesk } from './CodeDeskModal'
 import facadeMapping from '../data/facade_mapping.json'
 
 const BASE = import.meta.env.BASE_URL
@@ -1252,6 +1254,135 @@ function EventsTab({ listingId, isGuardian }) {
   )
 }
 
+// ─── Tab: QR Codes (guardian / admin) ─────────────────────────────
+function QrTab({ listingId, isAdmin }) {
+  const [townieQr, setTownieQr] = useState(null)
+  const [guardianQr, setGuardianQr] = useState(null)
+  const [townieUrl, setTownieUrl] = useState('')
+  const [guardianUrl, setGuardianUrl] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(null)
+
+  useEffect(() => {
+    const origin = window.location.origin
+    // Townie QR
+    const tUrl = `${origin}/checkin/${listingId}`
+    setTownieUrl(tUrl)
+    QRCode.toDataURL(tUrl, { width: 256, margin: 2 }).then(setTownieQr)
+
+    // Guardian QR: fetch claim_secret
+    async function loadSecret() {
+      try {
+        const dh = await getDeviceHash()
+        const res = isAdmin
+          ? await getClaimSecretAdmin(listingId)
+          : await getClaimSecret(listingId, dh)
+        const secret = res?.data?.claim_secret
+        if (secret) {
+          const gUrl = `${origin}/claim/${listingId}/${secret}`
+          setGuardianUrl(gUrl)
+          QRCode.toDataURL(gUrl, { width: 256, margin: 2 }).then(setGuardianQr)
+        }
+      } catch { /* silent */ }
+      setLoading(false)
+    }
+    loadSecret()
+  }, [listingId, isAdmin])
+
+  const copyUrl = async (url, label) => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(label)
+      setTimeout(() => setCopied(null), 2000)
+    } catch { /* silent */ }
+  }
+
+  const shareUrl = async (url, title) => {
+    if (navigator.share) {
+      try { await navigator.share({ title, url }) } catch { /* silent */ }
+    } else {
+      copyUrl(url, title)
+    }
+  }
+
+  const openQrStudio = () => {
+    useCodeDesk.getState().setOpen(true, { listingId, qrType: 'Townie' })
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Townie QR */}
+      <div className="rounded-lg bg-white/5 border border-white/10 p-4">
+        <div className="text-sm font-medium text-white mb-0.5">Townie</div>
+        <div className="text-[10px] text-white/40 mb-3">For customers to check in</div>
+        {townieQr && (
+          <div className="flex justify-center mb-3">
+            <img src={townieQr} alt="Townie QR" className="w-48 h-48 rounded-lg" />
+          </div>
+        )}
+        <div className="text-[10px] text-white/30 font-mono truncate mb-2" title={townieUrl}>{townieUrl}</div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => copyUrl(townieUrl, 'townie')}
+            className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
+          >
+            {copied === 'townie' ? 'Copied!' : 'Copy URL'}
+          </button>
+          <button
+            onClick={() => shareUrl(townieUrl, 'Check in here')}
+            className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
+          >
+            Share
+          </button>
+        </div>
+      </div>
+
+      {/* Guardian QR */}
+      <div className="rounded-lg bg-white/5 border border-white/10 p-4">
+        <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
+        <div className="text-[10px] text-white/40 mb-3">To onboard a new guardian</div>
+        {loading ? (
+          <div className="text-center py-6 text-white/30 text-xs">Loading...</div>
+        ) : guardianQr ? (
+          <>
+            <div className="flex justify-center mb-3">
+              <img src={guardianQr} alt="Guardian QR" className="w-48 h-48 rounded-lg" />
+            </div>
+            <div className="text-[10px] text-white/30 font-mono truncate mb-2" title={guardianUrl}>{guardianUrl}</div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => copyUrl(guardianUrl, 'guardian')}
+                className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
+              >
+                {copied === 'guardian' ? 'Copied!' : 'Copy URL'}
+              </button>
+              <button
+                onClick={() => shareUrl(guardianUrl, 'Become a guardian')}
+                className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
+              >
+                Share
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-4 text-white/30 text-xs">No claim secret available</div>
+        )}
+      </div>
+
+      {/* Design button */}
+      <button
+        onClick={openQrStudio}
+        className="w-full py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+        </svg>
+        Design in QR Studio
+      </button>
+    </div>
+  )
+}
+
 // ═════════════════════════════════════════════════════════════════════
 // Main PlaceCard
 // ═════════════════════════════════════════════════════════════════════
@@ -1304,13 +1435,14 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
   const tabs = useMemo(() => {
     if (hasListingInfo) {
-      // ── Listing path: unchanged ──
+      // ── Listing path ──
       const t = [{ id: 'overview', label: 'Overview' }]
       t.push({ id: 'reviews', label: 'Reviews' })
       t.push({ id: 'events', label: 'Events' })
       if (hasHistory) t.push({ id: 'history', label: 'History' })
       if (hasArchitecture) t.push({ id: 'architecture', label: 'Details' })
       t.push({ id: 'photos', label: 'Photos' })
+      if (isGuardian || isAdmin) t.push({ id: 'qr', label: 'QR' })
       return t
     }
     // ── Property card path: bare buildings ──
@@ -1320,7 +1452,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
     t.push({ id: 'photos', label: 'Photos' })
     if (hasAssessment) t.push({ id: 'assessment', label: 'Assessment' })
     return t
-  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, hasAssessment])
+  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, hasAssessment, isGuardian, isAdmin])
 
   // Default tab: first available
   const defaultTab = tabs[0]?.id || 'photos'
@@ -1510,11 +1642,12 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} />
           )}
           {currentTab === 'reviews' && <ReviewsTab listingId={listingId} isLocal={isLocal} />}
-          {currentTab === 'events' && <EventsTab isGuardian={isGuardian} />}
+          {currentTab === 'events' && <EventsTab listingId={listingId} isGuardian={isGuardian} />}
           {currentTab === 'architecture' && <ArchitectureTab building={building} />}
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
           {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} />}
+          {currentTab === 'qr' && <QrTab listingId={listingId} isAdmin={isAdmin} />}
           {/* Property card tabs */}
           {currentTab === 'property' && <PropertyTab building={building} />}
           {currentTab === 'assessment' && <AssessmentTab building={building} />}

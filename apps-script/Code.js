@@ -145,6 +145,7 @@ function doGet(e) {
       case 'threads':         return getThreads(e.parameter.dh)
       case 'thread-messages': return getThreadMessages(e.parameter.tid, e.parameter.dh)
       case 'comments':        return getComments(e.parameter.bid, e.parameter.dh)
+      case 'claim-secret':   return getClaimSecret(e.parameter.lid, e.parameter.dh, e.parameter.admin)
       default:                return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
@@ -194,6 +195,11 @@ function getListings() {
   const rows = sheetToObjects(getSheet('Listings'))
   const visible = rows.filter(r => r.status !== 'removed')
 
+  // Build guardian lookup from Guardians sheet
+  const guardianRows = sheetToObjects(getSheet('Guardians'))
+  const guardianMap = {}
+  guardianRows.forEach(r => { guardianMap[r.listing_id] = true })
+
   const parsed = visible.map(listing => {
     const out = {
       ...listing,
@@ -206,13 +212,14 @@ function getListings() {
     // Strip guardian secrets from response
     delete out.guardian_hash
     delete out.guardian_token
+    delete out.claim_secret
     delete out.hours_json
     delete out.amenities_json
     delete out.tags_json
     delete out.photos_json
     delete out.history_json
     // Expose guardian status as boolean
-    out.has_guardian = !!(listing.guardian_hash)
+    out.has_guardian = !!(guardianMap[listing.id] || listing.guardian_hash)
     return out
   })
 
@@ -356,8 +363,7 @@ function postEvent(body) {
   }
 
   // Verify device is a guardian for this listing
-  const listing = findRow(getSheet('Listings'), 'id', listing_id)
-  if (!listing || listing.rowData.guardian_hash !== device_hash) {
+  if (!isGuardianOf(listing_id, device_hash)) {
     return errorResponse('Not a guardian for this listing', 'unauthorized')
   }
 
@@ -385,24 +391,29 @@ function postClaim(body) {
     return errorResponse('Listing not found', 'not_found')
   }
 
-  // Already claimed by this device?
-  if (result.rowData.guardian_hash === device_hash) {
-    return jsonResponse({ token: result.rowData.guardian_token, already_claimed: true })
+  // Validate claim secret
+  if (result.rowData.claim_secret && result.rowData.claim_secret !== secret) {
+    return errorResponse('Invalid claim secret', 'unauthorized')
   }
 
-  // Already claimed by someone else?
-  if (result.rowData.guardian_hash) {
-    return errorResponse('Listing already claimed by another device', 'conflict')
+  // Check if already a guardian
+  if (isGuardianOf(listing_id, device_hash)) {
+    return jsonResponse({ success: true, already_claimed: true })
   }
 
-  // Write guardian fields directly to the Listings row
-  const headerMap = getHeaderMap(sheet)
-  const token = 'grd-' + Utilities.getUuid().replace(/-/g, '').substring(0, 16)
-  updateCell(sheet, result.rowIndex, headerMap, 'guardian_hash', device_hash)
-  updateCell(sheet, result.rowIndex, headerMap, 'guardian_token', token)
-  updateCell(sheet, result.rowIndex, headerMap, 'updated_at', nowISO())
+  // Add to Guardians sheet
+  getSheet('Guardians').appendRow([listing_id, device_hash, nowISO()])
 
-  return jsonResponse({ token: token, claimed: true, success: true })
+  // Also set legacy guardian_hash if not yet set (first guardian)
+  if (!result.rowData.guardian_hash) {
+    const headerMap = getHeaderMap(sheet)
+    const token = 'grd-' + Utilities.getUuid().replace(/-/g, '').substring(0, 16)
+    updateCell(sheet, result.rowIndex, headerMap, 'guardian_hash', device_hash)
+    updateCell(sheet, result.rowIndex, headerMap, 'guardian_token', token)
+    updateCell(sheet, result.rowIndex, headerMap, 'updated_at', nowISO())
+  }
+
+  return jsonResponse({ success: true, claimed: true })
 }
 
 // ─── POST: Update Listing (Guardian edits) ──────────────────────────────────
@@ -419,8 +430,8 @@ function postUpdateListing(body) {
     return errorResponse('Listing not found', 'not_found')
   }
 
-  // Auth: guardian_hash must match
-  if (result.rowData.guardian_hash !== device_hash) {
+  // Auth: must be a guardian of this listing
+  if (!isGuardianOf(listing_id, device_hash)) {
     return errorResponse('Not authorized', 'unauthorized')
   }
 
@@ -469,7 +480,7 @@ function postAcceptListing(body) {
     return errorResponse('Listing not found', 'not_found')
   }
 
-  if (result.rowData.guardian_hash !== device_hash) {
+  if (!isGuardianOf(listing_id, device_hash)) {
     return errorResponse('Not authorized', 'unauthorized')
   }
 
@@ -496,7 +507,7 @@ function postRemoveListing(body) {
     return errorResponse('Listing not found', 'not_found')
   }
 
-  if (result.rowData.guardian_hash !== device_hash) {
+  if (!isGuardianOf(listing_id, device_hash)) {
     return errorResponse('Not authorized', 'unauthorized')
   }
 
@@ -521,6 +532,28 @@ function isTownie(deviceHash) {
     }
   })
   return distinctDates.size >= LOCAL_THRESHOLD
+}
+
+// ─── GET: Claim secret for a listing ─────────────────────────────────────
+
+function getClaimSecret(listingId, deviceHash, adminKey) {
+  if (!listingId) return errorResponse('Missing lid', 'bad_request')
+  const listing = findRow(getSheet('Listings'), 'id', listingId)
+  if (!listing) return errorResponse('Not found', 'not_found')
+
+  const isAdmin = adminKey === 'lafayette1850'
+  const isGuardian = deviceHash && isGuardianOf(listingId, deviceHash)
+  if (!isGuardian && !isAdmin) return errorResponse('Not authorized', 'unauthorized')
+
+  return jsonResponse({ claim_secret: listing.rowData.claim_secret || '' })
+}
+
+// ─── Helper: check if device is a guardian for a listing ─────────────────
+
+function isGuardianOf(listingId, deviceHash) {
+  if (!listingId || !deviceHash) return false
+  const rows = sheetToObjects(getSheet('Guardians'))
+  return rows.some(r => r.listing_id === listingId && r.device_hash === deviceHash)
 }
 
 // ─── GET: Handle lookup ─────────────────────────────────────────────────────
@@ -903,7 +936,7 @@ function setupSheets() {
       'phone', 'website', 'description', 'logo', 'home_based', 'status',
       'rating', 'review_count', 'hours_json', 'amenities_json', 'tags_json',
       'photos_json', 'history_json', 'created_by', 'accepted', 'accepted_at',
-      'guardian_hash', 'guardian_token', 'created_at', 'updated_at'
+      'guardian_hash', 'guardian_token', 'claim_secret', 'created_at', 'updated_at'
     ],
     'Checkins':  ['device_hash', 'location_id', 'timestamp', 'date'],
     'Reviews':   ['id', 'listing_id', 'device_hash', 'handle', 'text', 'rating', 'timestamp'],
@@ -913,6 +946,7 @@ function setupSheets() {
     'Threads':   ['id', 'bulletin_id', 'party_a_hash', 'party_b_hash', 'a_handle', 'b_handle', 'status', 'created_at', 'expires_at'],
     'Messages':  ['id', 'thread_id', 'sender_hash', 'text', 'created_at'],
     'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
+    'Guardians': ['listing_id', 'device_hash', 'created_at'],
   }
 
   Object.entries(tabs).forEach(([name, headers]) => {
@@ -945,15 +979,16 @@ function seedListings() {
   // phone, website, description, logo, home_based, status,
   // rating, review_count, hours_json, amenities_json, tags_json,
   // photos_json, history_json, created_by, accepted, accepted_at,
-  // guardian_hash, guardian_token, created_at, updated_at
+  // guardian_hash, guardian_token, claim_secret, created_at, updated_at
   function row(id, buildingId, name, address, category, subcategory, opts) {
     const o = opts || {}
+    const secret = Utilities.getUuid().split('-')[0]  // 8-char hex
     return [
       id, buildingId, name, address, category, subcategory,
       o.phone || '', o.website || '', o.description || '', o.logo || '', o.home_based || false, 'pending',
       o.rating || '', o.review_count || '', o.hours_json || '', o.amenities_json || '', o.tags_json || '',
       o.photos_json || '', o.history_json || '', 'seed', false, '',
-      '', '', now, now
+      '', '', secret, now, now
     ]
   }
 

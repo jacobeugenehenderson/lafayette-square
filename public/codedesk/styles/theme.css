@@ -2102,3 +2102,83 @@ textarea.fldInp {
   color: var(--lsq-text-muted);
   white-space: nowrap;
 }
+
+/* =========================
+   EMBED MODE (?embed param)
+   Hides chrome, transparent bg for iframe use inside the main app.
+   QR preview is always visible on top; stepper scrolls behind it.
+========================= */
+html.embed body {
+  background: transparent !important;
+  background-image: none !important;
+}
+
+html.embed .header-bar {
+  display: none !important;
+}
+
+/* Type selector hidden — parent React modal owns it */
+html.embed #topControls {
+  display: none !important;
+}
+
+html.embed {
+  --header-h: 0px;
+}
+
+/* Single-column layout, no side-by-side */
+html.embed main {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  height: 100%;
+  overflow: hidden !important;
+}
+
+/* QR preview: fixed at top, never scrolls */
+html.embed .stage-stick:first-child {
+  position: relative !important;
+  top: auto !important;
+  flex-shrink: 0;
+  z-index: 10;
+  padding: 0.5rem 0;
+}
+
+/* Shrink the preview stage to fit the modal */
+html.embed .preview-stage {
+  width: clamp(140px, 30vw, 200px) !important;
+}
+
+/* URL display: compact, part of the fixed top area */
+html.embed #lsqUrlDisplay {
+  padding: 0 1rem 0.25rem;
+  font-size: 0.65rem;
+}
+
+/* Stepper: takes remaining space, scrolls independently */
+html.embed #stepper {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  margin-top: 0 !important;
+  padding: 0.5rem 3.75rem 2rem !important;
+  scroll-padding-top: 0 !important;
+  position: relative !important;
+  max-width: 100% !important;
+}
+
+html.embed #stepper.stage-stick {
+  position: relative !important;
+  top: auto !important;
+}
+
+/* Remove the stepper overlap/parking that the stacked mode uses */
+html.embed .step-card .step-header {
+  scroll-margin-top: 0 !important;
+}
+
+/* Hide mechanical controls in embed mode */
+html.embed .step-card[data-step="business"] { display: none !important; }
+html.embed .step-card[data-step="download"] { display: none !important; }

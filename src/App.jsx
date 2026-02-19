@@ -3,6 +3,7 @@ import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
 import SidePanel from './components/SidePanel'
 import BulletinModal from './components/BulletinModal'
+import CodeDeskModal from './components/CodeDeskModal'
 import useCamera from './hooks/useCamera'
 import useSelectedBuilding from './hooks/useSelectedBuilding'
 import CheckinPage from './pages/CheckinPage'
@@ -62,6 +63,7 @@ function App() {
       {!isGround && <CompassRose />}
       {!isGround && <SidePanel />}
       {!isGround && <BulletinModal />}
+      {!isGround && <CodeDeskModal />}
       {!isGround && <ModeOverlay />}
     </div>
   )

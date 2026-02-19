@@ -103,7 +103,7 @@ function populateBizSelect(businesses) {
 
     var ph = document.createElement('option');
     ph.value = '';
-    ph.textContent = '\u2014 Select a business \u2014';
+    ph.textContent = '\u2014 Select a place \u2014';
     ph.disabled = true;
     if (!current) ph.selected = true;
     sel.appendChild(ph);
@@ -179,7 +179,7 @@ window.populateBizSelect = populateBizSelect;
   try {
     var typeSel = document.getElementById('qrType');
     if (typeSel && typeof window.renderTypeForm === 'function') {
-      window.renderTypeForm(typeSel.value || 'Check-in');
+      window.renderTypeForm(typeSel.value || 'Townie');
     }
   } catch (e) {}
 
@@ -190,13 +190,11 @@ window.populateBizSelect = populateBizSelect;
   var apiUrl = window.LSQ_API_URL || '';
   if (apiUrl) {
     try {
-      var bizRes = await fetch(apiUrl + '?action=businesses', { cache: 'no-store' });
+      var bizRes = await fetch(apiUrl + '?action=listings', { cache: 'no-store' });
       if (bizRes.ok) {
         var bizData = await bizRes.json();
-        var businesses = (bizData.data && bizData.data.businesses)
-          ? bizData.data.businesses
-          : (bizData.businesses || []);
-        if (Array.isArray(businesses) && businesses.length > 0) {
+        var businesses = Array.isArray(bizData.data) ? bizData.data : [];
+        if (businesses.length > 0) {
           window.LSQ_BUSINESSES = businesses;
           populateBizSelect(businesses);
         }
