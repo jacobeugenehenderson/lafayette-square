@@ -1,4 +1,4 @@
-import { useRef, useEffect, Suspense, useMemo, forwardRef } from 'react'
+import { useRef, useEffect, Suspense, useMemo, forwardRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, SoftShadows } from '@react-three/drei'
 import { EffectComposer, Bloom, N8AO, DepthOfField } from '@react-three/postprocessing'
@@ -626,8 +626,21 @@ function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
   const isPlanetarium = viewMode === 'planetarium'
 
+  // Portal div for CSS3D SVG ground — rendered BEHIND the transparent WebGL canvas.
+  // See VectorStreets.jsx header comment for full architecture explanation.
+  // useState (not useRef) so the state change propagates into the R3F reconciler —
+  // a ref object is referentially stable, so R3F wouldn't detect the .current update.
+  const [svgPortalEl, setSvgPortalEl] = useState(null)
+
   return (
+    <div style={{ position: 'relative', width: '100%', height: '100%', background: '#000' }}>
+      {/* SVG ground portal — behind the canvas (z-index: 0) */}
+      <div
+        ref={setSvgPortalEl}
+        style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}
+      />
     <Canvas
+      style={{ position: 'relative', zIndex: 1 }}
       frameloop="demand"
       camera={{
         position: PRESETS.hero.position,
@@ -636,12 +649,14 @@ function Scene() {
         far: 60000,
       }}
       gl={{
+        alpha: true,
         antialias: true,
         stencil: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 0.95,
       }}
+      onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
       dpr={[1, 1.5]}
       shadows={IS_GROUND ? false : 'soft'}
     >
@@ -652,7 +667,7 @@ function Scene() {
       <WeatherPoller />
       <CelestialBodies />
       <CloudDome />
-      <VectorStreets />
+      <VectorStreets svgPortal={svgPortalEl} />
       <LafayettePark />
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <LafayetteScene />}
@@ -681,6 +696,7 @@ function Scene() {
         </EffectComposer>
       )}
     </Canvas>
+    </div>
   )
 }
 

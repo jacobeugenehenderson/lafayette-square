@@ -9,15 +9,15 @@ import lampData from '../data/street_lamps.json'
 // ── Constants ──────────────────────────────────────────────────────────────────
 const LAMP_URL = `${import.meta.env.BASE_URL}models/lamp-posts/victorian-lamp.glb`
 const LAMP_MODEL_HEIGHT = 2.65
-const LAMP_TARGET_HEIGHT = 7.0
-const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT
+const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
+const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
 
 const LAMP_COLOR_ON = new THREE.Color('#ffd9b0')  // warm peach
-const GLOW_Y = 6.3       // world Y of lantern center
+const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = 0.12 // sphere radius — small warm dot, bloom expands it
-const POOL_RADIUS = 14
-const POOL_Y = 0.5
-const SHADOW_RADIUS = 2.8 // AO contact shadow at lamp base
+const POOL_RADIUS = 8
+const POOL_Y = 0.3
+const SHADOW_RADIUS = 1.5 // AO contact shadow at lamp base
 
 function StreetLights() {
   const lampRef = useRef()
@@ -97,6 +97,9 @@ function StreetLights() {
       }`,
     transparent: true,
     depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
   }), [])
 
   // ── Load Victorian GLTF ─────────────────────────────────────────────────────
@@ -146,10 +149,17 @@ function StreetLights() {
                 ${txMap ? 'uniform sampler2D uTxMap;' : ''}`
               )
 
-              // Night-darken iron parts for contrast against glass glow
+              // Force flat dark wrought-iron on non-glass areas, night-darken all
               shader.fragmentShader = shader.fragmentShader.replace(
                 '#include <color_fragment>',
                 `#include <color_fragment>
+                vec3 ironColor = pow(vec3(0.04, 0.04, 0.04), vec3(2.2));
+                ${txMap ? `
+                float ironMask = 1.0 - texture2D(uTxMap, vMapUv).r;
+                diffuseColor.rgb = mix(diffuseColor.rgb, ironColor, ironMask);
+                ` : `
+                diffuseColor.rgb = ironColor;
+                `}
                 float nightDarken = mix(0.4, 1.0, smoothstep(-0.1, 0.1, uSunAltitude));
                 diffuseColor.rgb *= nightDarken;`
               )
@@ -227,7 +237,7 @@ function StreetLights() {
     }
     if (baseRef.current) {
       allLamps.forEach((lamp, i) => {
-        d.position.set(lamp.x, 0.05, lamp.z)
+        d.position.set(lamp.x, 0.12, lamp.z)
         d.rotation.set(-Math.PI / 2, 0, 0)
         d.scale.setScalar(1)
         d.updateMatrix()
@@ -291,6 +301,7 @@ function StreetLights() {
         ref={baseRef}
         args={[baseGeo, baseMat, allLamps.length]}
         frustumCulled={false}
+        renderOrder={1}
       />
 
     </group>

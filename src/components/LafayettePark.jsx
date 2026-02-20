@@ -29,7 +29,7 @@ const FENCE_POST_SPACING = 8
 const TAU = Math.PI * 2
 
 // ── SVG clip mask for park boundary ──────────────────────────────────
-const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg`
+const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg?v=${Date.now()}`
 const SVG_WORLD_X = -497.7
 const SVG_WORLD_Z = -732.5
 const SVG_VB_W = 1309
@@ -164,11 +164,51 @@ function ParkGround() {
       .then(r => r.text())
       .then(svgText => {
         const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
-        const parkGroup = doc.getElementById('park-boundary')
-        if (!parkGroup) return
-        const dAttrs = [...parkGroup.querySelectorAll('path')]
-          .map(p => p.getAttribute('d')).filter(Boolean)
-        if (!dAttrs.length) return
+        // Check for XML parse errors
+        if (doc.querySelector('parsererror')) {
+          console.warn('[ParkGround] SVG parse error:', doc.querySelector('parsererror').textContent)
+          return
+        }
+        // The park boundary can come from two sources:
+        // 1. The clip-path used by the paths group (simple closed polygon — preferred)
+        // 2. The #park-boundary element (may be a sidewalk donut with 2 subpaths)
+        // We prefer the clip-path because it's always a single closed polygon.
+        let dAttrs = []
+
+        // Strategy 1 (preferred): clip-path from the paths group
+        const pathsGroup = doc.querySelector('[id="paths1"]')
+        if (pathsGroup) {
+          const clipped = pathsGroup.querySelector('[clip-path]') || pathsGroup
+          const clipRef = (clipped.getAttribute('clip-path') || '').match(/url\(#(.+?)\)/)
+          if (clipRef) {
+            const clipEl = doc.querySelector(`[id="${clipRef[1]}"]`)
+            if (clipEl) {
+              dAttrs = [...clipEl.querySelectorAll('path')].map(p => p.getAttribute('d')).filter(Boolean)
+            }
+          }
+        }
+
+        // Strategy 2 (fallback): #park-boundary element — split multi-M paths
+        // to fill each subpath separately (avoids winding cancellation)
+        if (!dAttrs.length) {
+          const boundary = doc.querySelector('[id^="park-boundary"]')
+          if (boundary) {
+            const ln = (boundary.tagName || '').toLowerCase()
+            const paths = ln === 'path' ? [boundary] : [...boundary.querySelectorAll('path')]
+            for (const p of paths) {
+              const d = p.getAttribute('d')
+              if (d) {
+                // Split compound paths at M commands — fill each subpath independently
+                // to avoid winding rule cancellation (outer+inner = empty with nonzero rule)
+                for (const sub of d.split(/(?=M)/)) {
+                  if (sub.length > 10) dAttrs.push(sub)
+                }
+              }
+            }
+          }
+        }
+
+        if (!dAttrs.length) { console.warn('[ParkGround] no park boundary found'); return }
 
         const RES = 1024
         const canvas = document.createElement('canvas')
@@ -181,11 +221,9 @@ function ParkGround() {
         ctx.fillStyle = '#fff'
         ctx.scale(canvas.width / SVG_VB_W, canvas.height / SVG_VB_H)
 
-        // Fill each subpath individually to cover entire park interior
+        // Fill park interior in white — grass renders inside this mask
         for (const d of dAttrs) {
-          for (const sub of d.split(/(?=M)/)) {
-            ctx.fill(new Path2D(sub))
-          }
+          ctx.fill(new Path2D(d))
         }
 
         const tex = new THREE.CanvasTexture(canvas)
@@ -193,7 +231,9 @@ function ParkGround() {
         tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
         tex.minFilter = THREE.LinearFilter
         setClipTexture(tex)
+        console.log('[ParkGround] clip mask loaded, dAttrs:', dAttrs.length, 'total chars:', dAttrs.reduce((s, d) => s + d.length, 0))
       })
+      .catch(err => console.warn('[ParkGround] SVG fetch failed:', err))
   }, [])
 
   // Update clip uniform when texture loads (shader already compiled)
@@ -316,80 +356,124 @@ function ParkGround() {
   })
 
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]} receiveShadow material={grassMat}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]} receiveShadow material={grassMat} frustumCulled={false}>
       <planeGeometry args={[500, 500, 1, 1]} />
     </mesh>
   )
 }
 
-// ── Park Paths (walking/cycling paths from OSM) ───────────────────────
+// ── Park Paths (rasterized from SVG compound path) ────────────────────
+// The SVG #paths group contains hand-drawn compound paths.
+// Instead of tessellating Bezier curves (earcut artifacts), we rasterize
+// the SVG paths to a texture and use it as a discard mask on a flat plane.
+// The browser's native SVG renderer gives perfect anti-aliased curves.
+// Same proven technique as ParkGround's grass clip mask.
 function ParkPaths() {
+  const [pathMask, setPathMask] = useState(null)
   const pathShaderRef = useRef()
 
-  const pathGeo = useMemo(() => {
-    const geos = []
-
-    parkPathData.paths.forEach(path => {
-      const pts = path.points
-      const halfW = path.highway === 'cycleway' ? 1.5 : 1.25 // 3.0m or 2.5m total width
-
-      if (pts.length < 2) return
-
-      // Build triangle strip: for each segment, extrude perpendicular
-      const positions = []
-      const normals = []
-      const uvs = []
-      const indices = []
-
-      for (let i = 0; i < pts.length; i++) {
-        // Tangent direction
-        let tx, tz
-        if (i === 0) {
-          tx = pts[1][0] - pts[0][0]; tz = pts[1][1] - pts[0][1]
-        } else if (i === pts.length - 1) {
-          tx = pts[i][0] - pts[i - 1][0]; tz = pts[i][1] - pts[i - 1][1]
-        } else {
-          // Average of adjacent tangents for smooth joins
-          tx = pts[i + 1][0] - pts[i - 1][0]; tz = pts[i + 1][1] - pts[i - 1][1]
+  // Rasterize SVG #paths to a clip mask texture (white paths on black)
+  useEffect(() => {
+    fetch(svgUrl)
+      .then(r => r.text())
+      .then(svgText => {
+        const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
+        if (doc.querySelector('parsererror')) {
+          console.warn('[ParkPaths] SVG parse error:', doc.querySelector('parsererror').textContent)
+          return
         }
-        const tLen = Math.sqrt(tx * tx + tz * tz)
-        if (tLen < 0.001) continue
-        tx /= tLen; tz /= tLen
-        // Perpendicular (in x,z plane)
-        const nx = -tz, nz = tx
+        // Look for the compound path directly (most reliable), then fall back
+        // to searching inside #paths1 or #paths groups. The user may rename/move
+        // these in Illustrator, so we try multiple strategies.
+        const dAttrs = []
+        const compound = doc.querySelector('[id="paths-compound"]')
+        if (compound) {
+          const d = compound.getAttribute('d')
+          if (d) dAttrs.push(d)
+        }
+        if (!dAttrs.length) {
+          // Fallback: search #paths1 then #paths for any filled path
+          const group = doc.querySelector('[id="paths1"]') || doc.querySelector('[id="paths"]')
+          if (group) {
+            for (const p of group.querySelectorAll('path')) {
+              const fill = p.getAttribute('fill')
+              if (fill === 'none') continue
+              const d = p.getAttribute('d')
+              if (d && d.length > 10) dAttrs.push(d)
+            }
+          }
+        }
+        if (!dAttrs.length) { console.warn('[ParkPaths] no compound path found (tried #paths-compound, #paths1, #paths)'); return }
 
-        const x = pts[i][0], z = pts[i][1]
-        // Left vertex (v=0 = edge)
-        positions.push(x + nx * halfW, 0, z + nz * halfW)
-        normals.push(0, 1, 0)
-        uvs.push(0, 0)
-        // Right vertex (v=1 = edge)
-        positions.push(x - nx * halfW, 0, z - nz * halfW)
-        normals.push(0, 1, 0)
-        uvs.push(0, 1)
-      }
+        // Rasterize to canvas
+        const RES = 2048
+        const canvas = document.createElement('canvas')
+        canvas.width = RES
+        canvas.height = Math.round(RES * (SVG_VB_H / SVG_VB_W))
+        const ctx = canvas.getContext('2d')
 
-      // Indices: triangle strip pairs
-      const vertCount = positions.length / 3
-      for (let i = 0; i < vertCount - 2; i += 2) {
-        indices.push(i, i + 1, i + 2)
-        indices.push(i + 1, i + 3, i + 2)
-      }
+        ctx.fillStyle = '#000'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.fillStyle = '#fff'
+        ctx.scale(canvas.width / SVG_VB_W, canvas.height / SVG_VB_H)
 
-      if (positions.length < 6) return
+        for (const d of dAttrs) {
+          ctx.fill(new Path2D(d))
+        }
 
-      const geo = new THREE.BufferGeometry()
-      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-      geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
-      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-      geo.setIndex(indices)
-      geos.push(geo)
-    })
+        // ── Clip paths to park boundary ────────────────────────────────
+        // Find park boundary polygon (same strategy as ParkGround)
+        let boundaryDs = []
 
-    if (geos.length === 0) return new THREE.BufferGeometry()
-    return mergeGeos(geos)
+        // Strategy 1: clip-path from paths group (simple closed polygon)
+        const pathsGroup = doc.querySelector('[id="paths1"]')
+        if (pathsGroup) {
+          const clipped = pathsGroup.querySelector('[clip-path]') || pathsGroup
+          const clipRef = (clipped.getAttribute('clip-path') || '').match(/url\(#(.+?)\)/)
+          if (clipRef) {
+            const clipEl = doc.querySelector(`[id="${clipRef[1]}"]`)
+            if (clipEl) {
+              boundaryDs = [...clipEl.querySelectorAll('path')].map(p => p.getAttribute('d')).filter(Boolean)
+            }
+          }
+        }
+        // Strategy 2: #park-boundary element
+        if (!boundaryDs.length) {
+          const boundary = doc.querySelector('[id^="park-boundary"]')
+          if (boundary) {
+            const ln = (boundary.tagName || '').toLowerCase()
+            const paths = ln === 'path' ? [boundary] : [...boundary.querySelectorAll('path')]
+            for (const p of paths) {
+              const d = p.getAttribute('d')
+              if (d) {
+                for (const sub of d.split(/(?=M)/)) {
+                  if (sub.length > 10) boundaryDs.push(sub)
+                }
+              }
+            }
+          }
+        }
+
+        // Intersect: keep only path pixels inside the park boundary
+        if (boundaryDs.length) {
+          ctx.globalCompositeOperation = 'destination-in'
+          for (const d of boundaryDs) {
+            ctx.fill(new Path2D(d))
+          }
+          ctx.globalCompositeOperation = 'source-over'
+        }
+
+        const tex = new THREE.CanvasTexture(canvas)
+        tex.flipY = false
+        tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
+        tex.minFilter = THREE.LinearFilter
+        setPathMask(tex)
+        console.log('[ParkPaths] mask loaded, paths:', dAttrs.length, 'clipped to boundary:', boundaryDs.length > 0)
+      })
+      .catch(err => console.warn('[ParkPaths] SVG fetch failed:', err))
   }, [])
 
+  // Gravel material with path mask — discard fragments outside path shapes
   const pathMat = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
       roughness: 0.95,
@@ -397,27 +481,32 @@ function ParkPaths() {
     })
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunAltitude = { value: 0.5 }
+      shader.uniforms.uPathMask = { value: null }
+      shader.uniforms.uMaskMin = { value: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z) }
+      shader.uniforms.uMaskSize = { value: new THREE.Vector2(SVG_VB_W, SVG_VB_H) }
+      shader.uniforms.uHasMask = { value: 0.0 }
       pathShaderRef.current = shader
 
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
         `#include <common>
-         varying vec3 vPathPos;
-         varying float vEdge;`
+         varying vec3 vPathPos;`
       )
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
-         vPathPos = (modelMatrix * vec4(position, 1.0)).xyz;
-         vEdge = abs(uv.y - 0.5) * 2.0;`  // 0 at center, 1 at edges
+         vPathPos = (modelMatrix * vec4(position, 1.0)).xyz;`
       )
 
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <common>',
         `#include <common>
          uniform float uSunAltitude;
+         uniform sampler2D uPathMask;
+         uniform vec2 uMaskMin;
+         uniform vec2 uMaskSize;
+         uniform float uHasMask;
          varying vec3 vPathPos;
-         varying float vEdge;
 
          float pHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
          vec2 pHash2(vec2 p) { return vec2(pHash(p), pHash(p + vec2(37.0, 91.0))); }
@@ -457,7 +546,7 @@ function ParkPaths() {
         `#include <color_fragment>
          vec2 pp = vPathPos.xz;
 
-         // ── Pebble-scale voronoi ──
+         // Pebble-scale voronoi
          vec3 vr = pVoronoi(pp * 3.0);
          float vDist = vr.x;
          float stoneId = pHash(vr.yz);
@@ -471,10 +560,10 @@ function ParkPaths() {
          float gap = smoothstep(0.30, 0.38, vDist);
          vec3 gravelCol = mix(stoneCol, vec3(0.12, 0.10, 0.08), gap * 0.7);
 
-         // Surface grain within each stone
+         // Surface grain
          gravelCol *= 0.9 + pNoise(pp * 12.0 + vr.yz * 7.0) * 0.2;
 
-         // Large-scale worn patches
+         // Worn patches
          gravelCol = mix(gravelCol, gravelCol * 0.85, smoothstep(0.4, 0.65, pFBM(pp * 0.3)));
 
          // Time-of-day
@@ -483,27 +572,50 @@ function ParkPaths() {
          vec3 nightTint = vec3(0.6, 0.7, 1.0);
          gravelCol = mix(gravelCol * nightTint, gravelCol, dayBright) * brightness;
 
-         // ── Soft edges: blend gravel → grass at path borders ──
-         float edgeNoise = pNoise(pp * 4.0 + 17.0) * 0.15;
-         float edgeMix = smoothstep(0.55, 0.95 + edgeNoise, vEdge);
-         vec3 grassCol = mix(vec3(0.22, 0.28, 0.12), vec3(0.18, 0.24, 0.10), dayBright);
-         gravelCol = mix(gravelCol, grassCol * brightness, edgeMix);
-
          diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
+      )
+      // Discard fragments outside path mask (after all shading)
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+         if (uHasMask > 0.5) {
+           vec2 maskUV = (vPathPos.xz - uMaskMin) / uMaskSize;
+           float pathMask = texture2D(uPathMask, maskUV).r;
+           if (pathMask < 0.5) discard;
+         }`
       )
     }
     return mat
   }, [])
 
+  // Push mask texture into shader uniforms once loaded
+  useEffect(() => {
+    if (pathShaderRef.current && pathMask) {
+      pathShaderRef.current.uniforms.uPathMask.value = pathMask
+      pathShaderRef.current.uniforms.uHasMask.value = 1.0
+    }
+  }, [pathMask])
+
   useFrame(() => {
     if (pathShaderRef.current) {
       const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
       pathShaderRef.current.uniforms.uSunAltitude.value = sunAltitude
+      // Also push mask on every frame (handles HMR shader recompile)
+      if (pathMask) {
+        pathShaderRef.current.uniforms.uPathMask.value = pathMask
+        pathShaderRef.current.uniforms.uHasMask.value = 1.0
+      }
     }
   })
 
+  // Large flat plane covering the SVG extent, clipped to path shapes by the mask.
+  // Counter-rotate: SVG coords are world-aligned, parent group has GRID_ROTATION.
   return (
-    <mesh geometry={pathGeo} position={[0, 0.15, 0]} receiveShadow material={pathMat} />
+    <group rotation={[0, -GRID_ROTATION, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.4, 0]} receiveShadow material={pathMat} frustumCulled={false}>
+        <planeGeometry args={[500, 500, 1, 1]} />
+      </mesh>
+    </group>
   )
 }
 
