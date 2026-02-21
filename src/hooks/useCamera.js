@@ -20,6 +20,7 @@ const useCamera = create((set, get) => ({
       previousMode: current,
       viewMode: mode,
       flyTarget: null,
+      lastInteraction: Date.now(),
     })
   },
 
@@ -39,6 +40,7 @@ const useCamera = create((set, get) => ({
     set({
       viewMode: prev === 'planetarium' ? 'browse' : prev,
       flyTarget: null,
+      lastInteraction: Date.now(),
     })
   },
 
