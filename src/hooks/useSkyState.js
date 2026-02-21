@@ -14,6 +14,7 @@ const useSkyState = create((set, get) => ({
   moonPhase: 0,
   moonIllumination: 0,
   moonAltitude: 0,
+  horizonColor: new THREE.Color('#1a1525'),  // sky color at h=0, pushed from GradientSky
 
   // ── Weather (smoothly interpolated toward targets) ──
   cloudCover: 0,

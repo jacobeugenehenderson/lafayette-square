@@ -30,10 +30,10 @@ const TAU = Math.PI * 2
 
 // ── SVG clip mask for park boundary ──────────────────────────────────
 const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg?v=${Date.now()}`
-const SVG_WORLD_X = -497.7
-const SVG_WORLD_Z = -732.5
-const SVG_VB_W = 1309
-const SVG_VB_H = 1152.7
+const SVG_WORLD_X = -843.2
+const SVG_WORLD_Z = -1156.1
+const SVG_VB_W = 2000
+const SVG_VB_H = 2000
 
 // Foliage color palettes per tree shape
 const CANOPY_COLORS = {

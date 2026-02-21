@@ -237,6 +237,7 @@ function SkyStateTicker() {
   return null
 }
 
+
 // ── Camera rig ───────────────────────────────────────────────────────────────
 
 const IDLE_TIMEOUT = 300000        // 5 minutes for browse

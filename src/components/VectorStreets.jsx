@@ -45,25 +45,44 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import useCamera from '../hooks/useCamera'
+import useSkyState from '../hooks/useSkyState'
 
 // SVG served from public/ — swap the file to change the map artwork
 const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg`
 
 // ── SVG coordinate mapping ──────────────────────────────────────────────────
-// SVG viewBox: 0 0 1309 1152.7
-// SVG origin (0,0) = world (-497.7, -732.5), 1 SVG unit ≈ 1 meter
-const SVG_WORLD_X = -497.7
-const SVG_WORLD_Z = -732.5
-const SVG_WIDTH = 1309
-const SVG_HEIGHT = 1152.7
+// SVG viewBox: 0 0 2000 2000
+// SVG origin (0,0) = world (-843.2, -1156.1), 1 SVG unit ≈ 1 meter
+const SVG_WORLD_X = -843.2
+const SVG_WORLD_Z = -1156.1
+const SVG_WIDTH = 2000
+const SVG_HEIGHT = 2000
 const PLANE_CX = SVG_WORLD_X + SVG_WIDTH / 2   // ≈ 156.8
-const PLANE_CZ = SVG_WORLD_Z + SVG_HEIGHT / 2  // ≈ -156.15
+const PLANE_CZ = SVG_WORLD_Z + SVG_HEIGHT / 2  // ≈ -156.1
 
 // Raster oversampling: CSS 3D transforms cause the browser to rasterize SVG
 // elements at their CSS pixel dimensions before compositing on the GPU.
 // Setting the SVG 4× larger gives 4× rasterization resolution (~4 px/m).
 // The CSS3DObject scale compensates so it appears at the correct world size.
 const RASTER_SCALE = 4
+
+// Apply the same ACES filmic tone mapping + sRGB gamma that the WebGL canvas
+// uses, so the portal background color matches the rendered sky exactly.
+const EXPOSURE = 0.95
+function acesToneMap(x) {
+  x *= EXPOSURE
+  return Math.max(0, Math.min(1, (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14)))
+}
+function linearToSRGB(c) {
+  return c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055
+}
+function toHex(v) { return Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0') }
+function horizonToCSS(color) {
+  const r = linearToSRGB(acesToneMap(color.r))
+  const g = linearToSRGB(acesToneMap(color.g))
+  const b = linearToSRGB(acesToneMap(color.b))
+  return '#' + toHex(r) + toHex(g) + toHex(b)
+}
 
 function VectorStreets({ svgPortal }) {
   const { camera, size } = useThree()
@@ -118,6 +137,12 @@ function VectorStreets({ svgPortal }) {
     if (!renderer || !scene) return
     renderer.setSize(size.width, size.height)
     renderer.render(scene, camera)
+
+    // Match portal background to the sky horizon color, tone-mapped to match
+    // the WebGL rendering pipeline (ACES filmic + sRGB gamma).
+    if (svgPortal) {
+      svgPortal.style.backgroundColor = horizonToCSS(useSkyState.getState().horizonColor)
+    }
   })
 
   // Opaque ground plane — renders in the opaque pass (before transparent materials),
@@ -125,17 +150,30 @@ function VectorStreets({ svgPortal }) {
   // stars from bleeding through the transparent canvas where the SVG ground should be.
   // Without this, the ShadowMaterial (transparent) blends on top of already-rendered
   // sky pixels and can't erase them — stars show through the ground.
-  const clearMat = useMemo(() => new THREE.ShaderMaterial({
-    vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `void main() { gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); }`,
-    depthWrite: true,
-  }), [])
+  // Stencil-based ground mask: marks the ground area in the stencil buffer so
+  // sky/stars don't render there (canvas stays transparent → SVG shows through).
+  // Does NOT write depth — this lets the Gateway Arch legs render freely without
+  // being blocked by the ground plane's depth.
+  const clearMat = useMemo(() => {
+    const mat = new THREE.ShaderMaterial({
+      vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `void main() { gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); }`,
+      depthWrite: false,
+    })
+    mat.stencilWrite = true
+    mat.stencilRef = 1
+    mat.stencilFunc = THREE.AlwaysStencilFunc
+    mat.stencilZPass = THREE.ReplaceStencilOp
+    mat.stencilFail = THREE.KeepStencilOp
+    mat.stencilZFail = THREE.KeepStencilOp
+    return mat
+  }, [])
 
   return (
     <group>
       {/* Ground eraser — opaque pass, clears sky/star pixels to transparent */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} material={clearMat}>
-        <circleGeometry args={[2000, 64]} />
+        <circleGeometry args={[8000, 64]} />
       </mesh>
 
       {/* Shadow-catcher — transparent pass, darkens SVG where shadows fall */}
@@ -151,7 +189,7 @@ function VectorStreets({ svgPortal }) {
           }
         }}
       >
-        <circleGeometry args={[2000, 64]} />
+        <circleGeometry args={[8000, 64]} />
         <shadowMaterial opacity={0.4} />
       </mesh>
     </group>

@@ -386,6 +386,9 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
         u.moonIllum.value = moonGlow.illumination
         u.moonVisible.value = moonGlow.altitude > 0 ? 1.0 : 0.0
       }
+      // Push horizon color to shared state for portal background matching
+      useSkyState.getState().horizonColor.copy(u.bandHorizon.value)
+
       // Weather uniforms from useSkyState
       const sky = useSkyState.getState()
       u.uCloudCover.value = sky.cloudCover
@@ -453,10 +456,8 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
         skyColor = mix(skyColor, bandMid, t2);
         skyColor = mix(skyColor, bandHigh, t3);
 
-        // Below horizon: fade to dark ground
-        float belowHorizon = smoothstep(0.0, -0.15, h);
-        vec3 groundColor = bandHorizon * 0.3;
-        vec3 finalColor = mix(skyColor, groundColor, belowHorizon);
+        // Below horizon: sky color continues (SVG ground handles the dark tones)
+        vec3 finalColor = skyColor;
 
         // ── Directional sun glow ──
         float sunDot = dot(dir, sunDir);
@@ -549,15 +550,28 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
         // Warm offset during sunset
         finalColor += vec3(0.08, 0.03, 0.0) * uSunsetPotential * uBeautyBias * smoothstep(0.0, 0.2, max(0.0, sunDot));
 
-        // Fade to transparent below horizon so sky wraps closer to neighborhood
-        float groundAlpha = smoothstep(-0.18, -0.02, h);
-        gl_FragColor = vec4(finalColor, groundAlpha);
+        // Fade sky alpha over a wide band near the horizon so the stencil
+        // boundary between "sky sphere" and "portal background" is invisible.
+        float horizonAlpha = smoothstep(-0.05, 0.25, h);
+        gl_FragColor = vec4(finalColor, horizonAlpha);
       }
     `,
     side: THREE.BackSide,
     depthWrite: false,
     transparent: true,
   }), [])
+
+  // Block sky from rendering in the ground area (stencil written by ground eraser)
+  useEffect(() => {
+    if (skyMaterial) {
+      skyMaterial.stencilWrite = true
+      skyMaterial.stencilRef = 1
+      skyMaterial.stencilFunc = THREE.NotEqualStencilFunc
+      skyMaterial.stencilZPass = THREE.KeepStencilOp
+      skyMaterial.stencilFail = THREE.KeepStencilOp
+      skyMaterial.stencilZFail = THREE.KeepStencilOp
+    }
+  }, [skyMaterial])
 
   // Catalog stars (~523 brightest, mag ≤ 4.0) with per-frame RA/Dec conversion
   const starRef = useRef()
@@ -636,6 +650,12 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
+      stencilWrite: true,
+      stencilRef: 1,
+      stencilFunc: THREE.NotEqualStencilFunc,
+      stencilZPass: THREE.KeepStencilOp,
+      stencilFail: THREE.KeepStencilOp,
+      stencilZFail: THREE.KeepStencilOp,
     })
 
     // Create empty geometry — positions filled each frame from sidereal time
@@ -701,6 +721,12 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
+      stencilWrite: true,
+      stencilRef: 1,
+      stencilFunc: THREE.NotEqualStencilFunc,
+      stencilZPass: THREE.KeepStencilOp,
+      stencilFail: THREE.KeepStencilOp,
+      stencilZFail: THREE.KeepStencilOp,
     })
 
     return {

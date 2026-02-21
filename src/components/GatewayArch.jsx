@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
 import { LATITUDE, LONGITUDE } from './CelestialBodies'
 
@@ -80,8 +81,8 @@ function createArchGeometry(curveSegs = 120) {
 }
 
 const ARCH_POSITION = [1470, 0, -490]
-const ARCH_SCALE = 2.1
-const ARCH_Y_OFFSET = -30
+const ARCH_SCALE = 2.73
+const ARCH_Y_OFFSET = -150
 
 // Real arch faces roughly north-south (legs N/S, curve arches E-W).
 const ARCH_FIXED_ROTATION = 1.36 // radians
@@ -110,6 +111,8 @@ export default function GatewayArch() {
       shader.uniforms.uCameraPos = { value: new THREE.Vector3() }
       shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
       shader.uniforms.uDayFactor = { value: 1.0 }
+      shader.uniforms.uHorizonColor = { value: new THREE.Color('#9dc5e0') }
+      shader.uniforms.uGroundColor = { value: new THREE.Color('#3a4a3a') }
 
       // Vertex: pass curve param, edge param, world position, world normal
       shader.vertexShader = shader.vertexShader.replace(
@@ -143,6 +146,8 @@ export default function GatewayArch() {
          uniform vec3 uCameraPos;
          uniform vec3 uSunDir;
          uniform float uDayFactor;
+         uniform vec3 uHorizonColor;
+         uniform vec3 uGroundColor;
          varying float vCurveParam;
          varying float vEdge;
          varying vec3 vArchWorld;
@@ -239,11 +244,16 @@ export default function GatewayArch() {
          float shimmer = fresnel * 0.12 + 0.02;
          gl_FragColor.rgb += vec3(0.5, 0.52, 0.6) * shimmer * (0.1 + uDayFactor * 0.6);
 
-         // ── 8. Fade feet into sky ──
-         // No ground plane beneath the arch — just dissolve the lowest geometry
-         if (vArchWorld.y < -20.0) discard;
-         float footAlpha = smoothstep(-20.0, 40.0, vArchWorld.y);
-         gl_FragColor.a *= footAlpha;`
+         // ── 8. Blend feet into ground→sky gradient ──
+         // Paint the leg tips with a vertical gradient: ground color at
+         // the base, horizon/sky color higher up — matches what's behind.
+         float footDist = min(vCurveParam, 1.0 - vCurveParam);
+         float footBlend = smoothstep(0.0, 0.10, footDist);
+         float paintStrength = (1.0 - footBlend) * 0.50;
+         // Height-based gradient: ground at Y≈0, sky by Y≈120
+         float heightFrac = smoothstep(-20.0, 120.0, vArchWorld.y);
+         vec3 paintColor = mix(uGroundColor, uHorizonColor, heightFrac);
+         gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);`
       )
 
       shaderRef.current = shader
@@ -269,6 +279,11 @@ export default function GatewayArch() {
       // Push camera position for view-dependent specular
       shaderRef.current.uniforms.uCameraPos.value.copy(camera.position)
       shaderRef.current.uniforms.uDayFactor.value = day
+      const hc = useSkyState.getState().horizonColor
+      shaderRef.current.uniforms.uHorizonColor.value.copy(hc)
+      // Ground color: darkened horizon with a warm/green shift
+      const gc = shaderRef.current.uniforms.uGroundColor.value
+      gc.set(hc.r * 0.35 + 0.02, hc.g * 0.35 + 0.03, hc.b * 0.30)
 
       // Sun direction for specular reflection
       let azimuth, altitude
