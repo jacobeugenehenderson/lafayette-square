@@ -51,23 +51,19 @@ import useSkyState from '../hooks/useSkyState'
 const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg`
 
 // ── SVG coordinate mapping ──────────────────────────────────────────────────
-// SVG viewBox: 0 0 2000 2000
-// SVG origin (0,0) = world (-843.2, -1156.1), 1 SVG unit ≈ 1 meter
+// SVG viewBox origin (0,0) maps to world (-843.2, -1156.1), 1 SVG unit ≈ 1 meter.
+// Content bounds and center are computed dynamically after stripping the
+// #horizon circle from the fetched SVG (see fetch callback).
 const SVG_WORLD_X = -843.2
 const SVG_WORLD_Z = -1156.1
-const SVG_WIDTH = 2000
-const SVG_HEIGHT = 2000
-const PLANE_CX = SVG_WORLD_X + SVG_WIDTH / 2   // ≈ 156.8
-const PLANE_CZ = SVG_WORLD_Z + SVG_HEIGHT / 2  // ≈ -156.1
 
-// Raster oversampling: CSS 3D transforms cause the browser to rasterize SVG
-// elements at their CSS pixel dimensions before compositing on the GPU.
-// Setting the SVG N× larger gives N× rasterization resolution.
-// The CSS3DObject scale compensates so it appears at the correct world size.
-// Mobile uses 2× to stay within GPU compositing limits (2000×2×3dpr = 12k px/side).
-// Desktop uses 4× for sharper street-level zoom (~4 px/m).
-const IS_MOBILE_DEVICE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-const RASTER_SCALE = IS_MOBILE_DEVICE ? 2 : 4
+// ── GPU compositing pixel budget ────────────────────────────────────────────
+// CSS 3D transforms force the browser to rasterize the SVG element into a GPU
+// texture at (CSS width × height × devicePixelRatio²) pixels. We want the
+// highest RASTER_SCALE (up to 4) that fits within a safe pixel budget.
+// iPhone 3× DPR with old 1309×1152 SVG at scale=4 ≈ 217M px — known working.
+const MAX_GPU_PIXELS = 200_000_000
+const DPR = Math.min(window.devicePixelRatio || 1, 3)
 
 // Apply the same ACES filmic tone mapping + sRGB gamma that the WebGL canvas
 // uses, so the portal background color matches the rendered sky exactly.
@@ -91,6 +87,7 @@ function VectorStreets({ svgPortal }) {
   const { camera, size } = useThree()
   const css3d = useRef({ renderer: null, scene: null })
   const svgRef = useRef(null)
+  const earthRef = useRef(null)
   const alive = useRef(true)
 
   // ── Initialize CSS3DRenderer ──────────────────────────────────────────────
@@ -104,8 +101,9 @@ function VectorStreets({ svgPortal }) {
     css3d.current = { renderer, scene }
 
     // Fetch SVG and embed as inline <svg> for resolution-independent rendering.
-    // <img> rasterizes at CSS pixel dimensions and becomes pixelated on zoom.
-    // Inline <svg> re-renders vectors at display resolution — crisp at any zoom.
+    // The #horizon circle is stripped and replaced with a CSS radial-gradient
+    // background — this shrinks the compositing layer so RASTER_SCALE=4 fits
+    // within the mobile GPU's pixel budget.
     fetch(svgUrl, { cache: 'reload' })
       .then(r => r.text())
       .then(svgText => {
@@ -114,24 +112,73 @@ function VectorStreets({ svgPortal }) {
         const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
         const svg = doc.documentElement
 
-        // Rasterize SVG at RASTER_SCALE× resolution, then scale the CSS3DObject
-        // down to the correct world size. This gives crisp rendering at zoom.
-        svg.setAttribute('width', SVG_WIDTH * RASTER_SCALE)
-        svg.setAttribute('height', SVG_HEIGHT * RASTER_SCALE)
+        // ── Strip #horizon circle to shrink compositing layer ──────────────
+        // The earth-horizon circle expanded the viewBox to 2000×2000. At
+        // RASTER_SCALE=4 on a 3× DPR phone that's 576M device pixels — enough
+        // to crash the GPU. Remove it and recreate the gradient as a CSS
+        // background, which doesn't inflate the rasterization layer.
+        const horizon = svg.querySelector('#horizon')
+        if (horizon) horizon.remove()
+
+        // ── Compute tight content bounds ───────────────────────────────────
+        // getBBox() requires the SVG to be in the DOM.
+        const probe = document.createElement('div')
+        probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;width:2000px;height:2000px;overflow:hidden'
+        document.body.appendChild(probe)
+        probe.appendChild(svg)
+        const bbox = svg.getBBox()
+        svg.remove()
+        probe.remove()
+
+        // Pad to avoid clipping anti-aliased stroke edges
+        const PAD = 20
+        const cropX = Math.max(0, Math.floor(bbox.x - PAD))
+        const cropY = Math.max(0, Math.floor(bbox.y - PAD))
+        const cropW = Math.ceil(bbox.width + PAD * 2)
+        const cropH = Math.ceil(bbox.height + PAD * 2)
+        svg.setAttribute('viewBox', `${cropX} ${cropY} ${cropW} ${cropH}`)
+
+        // ── Compute optimal RASTER_SCALE within GPU pixel budget ───────────
+        const maxScale = Math.floor(Math.sqrt(MAX_GPU_PIXELS / (cropW * cropH * DPR * DPR)))
+        const scale = Math.max(1, Math.min(4, maxScale))
+
+        svg.setAttribute('width', cropW * scale)
+        svg.setAttribute('height', cropH * scale)
         svg.style.display = 'block'
         svg.style.overflow = 'visible'
+
         svgRef.current = svg
 
+        // ── Earth gradient as a separate CSS3DObject ───────────────────────
+        // The removed #horizon circle was a radial gradient disc centered at
+        // SVG (1000,1000) r=1000. Recreate as a plain div with CSS gradient.
+        // At 2000×2000 CSS px (3× DPR = 36M device px) — negligible GPU cost.
+        const earthDiv = document.createElement('div')
+        earthDiv.style.width = '2000px'
+        earthDiv.style.height = '2000px'
+        earthDiv.style.borderRadius = '50%'
+        earthDiv.style.background = 'radial-gradient(circle closest-side at center, ' +
+          '#141100 30%, rgba(25,21,0,0.9) 70%, rgba(46,39,0,0.5) 90%, rgba(77,65,0,0) 100%)'
+        earthRef.current = earthDiv
+        const earthObj = new CSS3DObject(earthDiv)
+        earthObj.position.set(SVG_WORLD_X + 1000, -0.1, SVG_WORLD_Z + 1000)
+        earthObj.rotation.set(-Math.PI / 2, 0, 0)
+        scene.add(earthObj)
+
+        // Position SVG CSS3DObject at the center of the cropped content area
+        const centerX = SVG_WORLD_X + cropX + cropW / 2
+        const centerZ = SVG_WORLD_Z + cropY + cropH / 2
         const obj = new CSS3DObject(svg)
-        obj.position.set(PLANE_CX, 0, PLANE_CZ)
+        obj.position.set(centerX, 0, centerZ)
         obj.rotation.set(-Math.PI / 2, 0, 0)
-        obj.scale.set(1 / RASTER_SCALE, 1 / RASTER_SCALE, 1)
+        obj.scale.set(1 / scale, 1 / scale, 1)
         scene.add(obj)
       })
 
     return () => {
       alive.current = false
       svgRef.current = null
+      earthRef.current = null
       while (svgPortal.firstChild) svgPortal.removeChild(svgPortal.firstChild)
       css3d.current = { renderer: null, scene: null }
     }
@@ -179,8 +226,10 @@ function VectorStreets({ svgPortal }) {
       // (#ccc, #d8d3c7) without darkening the overall scene further.
       const contrast = 0.65 + 0.35 * day
 
-      svgRef.current.style.filter =
+      const filterStr =
         `brightness(${brightness.toFixed(3)}) contrast(${contrast.toFixed(3)}) saturate(${saturate.toFixed(3)}) sepia(${sepia.toFixed(3)}) hue-rotate(${hue.toFixed(1)}deg)`
+      svgRef.current.style.filter = filterStr
+      if (earthRef.current) earthRef.current.style.filter = filterStr
     }
   })
 
