@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react'
+
 /**
  * Map WMO weather code → { label, iconKey }
  */
@@ -28,17 +30,48 @@ export function getWeatherIconName(wmoCode, isNight = false) {
 
 /**
  * Animated Meteocons weather icon (loaded from /weather-icons/).
+ * Inlined as live SVG DOM so SMIL animations play on all browsers (mobile Safari
+ * strips animations from <img>-loaded SVGs).
  */
+
+const svgCache = new Map()
+
+function fetchSvg(name) {
+  if (svgCache.has(name)) return svgCache.get(name)
+  const promise = fetch(`/weather-icons/${name}.svg`)
+    .then((r) => r.text())
+    .then((text) => {
+      // Force SVG to fill its container
+      const sized = text.replace('<svg ', '<svg width="100%" height="100%" ')
+      svgCache.set(name, sized)
+      return sized
+    })
+  svgCache.set(name, promise)
+  return promise
+}
+
 export function WeatherIcon({ code, isNight = false, size = 24, className = '' }) {
   const name = getWeatherIconName(code, isNight)
+  const [svg, setSvg] = useState(() => {
+    const cached = svgCache.get(name)
+    return typeof cached === 'string' ? cached : ''
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    const cached = svgCache.get(name)
+    if (typeof cached === 'string') { setSvg(cached); return }
+    fetchSvg(name).then((text) => { if (!cancelled) setSvg(text) })
+    return () => { cancelled = true }
+  }, [name])
+
   return (
-    <img
-      src={`/weather-icons/${name}.svg`}
-      alt={getWeatherCondition(code ?? 0).label}
-      width={size}
-      height={size}
+    <span
+      role="img"
+      aria-label={getWeatherCondition(code ?? 0).label}
       className={className}
-      style={{ display: 'inline-block' }}
+      style={{ display: 'inline-block', width: size, height: size }}
+      dangerouslySetInnerHTML={{ __html: svg }}
     />
   )
 }
