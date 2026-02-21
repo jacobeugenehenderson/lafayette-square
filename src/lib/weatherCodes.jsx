@@ -38,7 +38,7 @@ const svgCache = new Map()
 
 function fetchSvg(name) {
   if (svgCache.has(name)) return svgCache.get(name)
-  const promise = fetch(`/weather-icons/${name}.svg`)
+  const promise = fetch(`${import.meta.env.BASE_URL}weather-icons/${name}.svg`)
     .then((r) => r.text())
     .then((text) => {
       // Force SVG to fill its container
