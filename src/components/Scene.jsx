@@ -628,6 +628,7 @@ function CameraRig() {
 // ── Scene ────────────────────────────────────────────────────────────────────
 
 const IS_GROUND = window.location.search.includes('ground')
+const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
@@ -686,10 +687,10 @@ function Scene() {
           {viewMode !== 'hero' && (
             <N8AO
               halfRes
-              aoRadius={12}
+              aoRadius={IS_MOBILE ? 6 : 12}
               intensity={3}
               distanceFalloff={0.3}
-              quality="medium"
+              quality={IS_MOBILE ? 'performance' : 'medium'}
             />
           )}
           <FilmGrade />
