@@ -1124,8 +1124,9 @@ function ParkTrees() {
     })
   })
 
+  // Counter-rotate: tree coords are world-aligned, parent group has GRID_ROTATION.
   return (
-    <group>
+    <group rotation={[0, -GRID_ROTATION, 0]}>
       <mesh geometry={woodGeo} material={barkMat} castShadow />
       {treeRoots.length > 0 && (
         <instancedMesh ref={aoRef} args={[aoGeo, aoMat, treeRoots.length]} frustumCulled={false} />
