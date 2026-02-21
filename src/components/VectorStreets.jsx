@@ -87,6 +87,7 @@ function horizonToCSS(color) {
 function VectorStreets({ svgPortal }) {
   const { camera, size } = useThree()
   const css3d = useRef({ renderer: null, scene: null })
+  const svgRef = useRef(null)
   const alive = useRef(true)
 
   // ── Initialize CSS3DRenderer ──────────────────────────────────────────────
@@ -116,6 +117,7 @@ function VectorStreets({ svgPortal }) {
         svg.setAttribute('height', SVG_HEIGHT * RASTER_SCALE)
         svg.style.display = 'block'
         svg.style.overflow = 'visible'
+        svgRef.current = svg
 
         const obj = new CSS3DObject(svg)
         obj.position.set(PLANE_CX, 0, PLANE_CZ)
@@ -126,6 +128,7 @@ function VectorStreets({ svgPortal }) {
 
     return () => {
       alive.current = false
+      svgRef.current = null
       while (svgPortal.firstChild) svgPortal.removeChild(svgPortal.firstChild)
       css3d.current = { renderer: null, scene: null }
     }
@@ -142,6 +145,39 @@ function VectorStreets({ svgPortal }) {
     // the WebGL rendering pipeline (ACES filmic + sRGB gamma).
     if (svgPortal) {
       svgPortal.style.backgroundColor = horizonToCSS(useSkyState.getState().horizonColor)
+    }
+
+    // ── Time-of-day CSS filter on SVG ground map ──────────────────────────
+    if (svgRef.current) {
+      const sky = useSkyState.getState()
+      const sunElev = sky.sunElevation
+      // Day factor: 0 = deep night (sun < -0.3), 1 = full day (sun > 0.15)
+      const raw = Math.max(0, Math.min(1, (sunElev + 0.3) / 0.45))
+      const day = raw * raw * (3 - 2 * raw)
+      const night = 1 - day
+
+      const brightness = 0.35 + 0.65 * day
+      const saturate = 0.30 + 0.70 * day
+
+      // Night blue tint: sepia strips color → hue-rotate shifts to blue
+      const nightBlue = Math.max(0, night - 0.2) * 1.25
+      const nightSepia = nightBlue * 0.5
+      const nightHue = nightBlue * 200
+
+      // Golden hour warmth
+      const goldenRaw = Math.max(0, 1 - Math.abs(sunElev - 0.05) / 0.12)
+      const golden = goldenRaw * Math.max(0, Math.min(1, (sunElev + 0.1) * 5))
+      const goldenSepia = golden * 0.25
+
+      const sepia = Math.max(nightSepia, goldenSepia)
+      const hue = nightSepia > goldenSepia ? nightHue : 0
+
+      // Contrast reduction at night crushes the bright sidewalks/strokes
+      // (#ccc, #d8d3c7) without darkening the overall scene further.
+      const contrast = 0.65 + 0.35 * day
+
+      svgRef.current.style.filter =
+        `brightness(${brightness.toFixed(3)}) contrast(${contrast.toFixed(3)}) saturate(${saturate.toFixed(3)}) sepia(${sepia.toFixed(3)}) hue-rotate(${hue.toFixed(1)}deg)`
     }
   })
 
