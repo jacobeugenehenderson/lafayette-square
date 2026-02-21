@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useUserLocation from '../hooks/useUserLocation'
+import useCamera from '../hooks/useCamera'
 
 const DOT_RADIUS = 3
 const RING_RADIUS = 6
@@ -9,6 +10,7 @@ const RING_RADIUS = 6
 export default function UserDot() {
   const dotRef = useRef()
   const ringRef = useRef()
+  const viewMode = useCamera((s) => s.viewMode)
   const x = useUserLocation((s) => s.x)
   const z = useUserLocation((s) => s.z)
   const inBounds = useUserLocation((s) => s.inBounds)
@@ -30,7 +32,7 @@ export default function UserDot() {
     ringMat.opacity = 0.35 * (1 - t * 0.6)
   })
 
-  if (x == null || z == null || !inBounds) return null
+  if (viewMode === 'hero' || x == null || z == null || !inBounds) return null
 
   return (
     <group position={[x, 35, z]} rotation={[-Math.PI / 2, 0, 0]}>
