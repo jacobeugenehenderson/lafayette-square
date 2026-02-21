@@ -275,6 +275,7 @@ function CameraRig() {
   const prevMode = useRef('hero')
   const prevFlyTarget = useRef(null)
   const transToHero = useRef(false)
+  const modeChangedAt = useRef(Date.now())
 
   // Start a transition
   function beginTransition(pos, target, fov, duration) {
@@ -438,6 +439,7 @@ function CameraRig() {
       const entering = vm
       const leaving = prevMode.current
       prevMode.current = vm
+      modeChangedAt.current = Date.now()
 
       // Clear any interrupted cinematic
       cinematicQueue.current = []
@@ -599,7 +601,8 @@ function CameraRig() {
 
     // ── Idle → hero ──
     const idleLimit = vm === 'planetarium' ? IDLE_TIMEOUT_PLANET : IDLE_TIMEOUT
-    if (Date.now() - state.lastInteraction > idleLimit && vm !== 'hero') {
+    const modeAge = Date.now() - modeChangedAt.current
+    if (modeAge > 10000 && Date.now() - state.lastInteraction > idleLimit && vm !== 'hero') {
       useCamera.getState().goHero()
     }
 
