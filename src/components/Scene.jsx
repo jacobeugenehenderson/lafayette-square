@@ -684,13 +684,13 @@ function Scene() {
       <CameraRig />
       {!IS_GROUND && (
         <EffectComposer>
-          {viewMode !== 'hero' && !IS_MOBILE && (
+          {viewMode !== 'hero' && (
             <N8AO
               halfRes
-              aoRadius={12}
+              aoRadius={IS_MOBILE ? 8 : 12}
               intensity={3}
               distanceFalloff={0.3}
-              quality="medium"
+              quality={IS_MOBILE ? 'low' : 'medium'}
             />
           )}
           <FilmGrade />

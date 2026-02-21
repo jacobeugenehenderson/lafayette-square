@@ -62,9 +62,12 @@ const PLANE_CZ = SVG_WORLD_Z + SVG_HEIGHT / 2  // ≈ -156.1
 
 // Raster oversampling: CSS 3D transforms cause the browser to rasterize SVG
 // elements at their CSS pixel dimensions before compositing on the GPU.
-// Setting the SVG 4× larger gives 4× rasterization resolution (~4 px/m).
+// Setting the SVG N× larger gives N× rasterization resolution.
 // The CSS3DObject scale compensates so it appears at the correct world size.
-const RASTER_SCALE = 4
+// Mobile uses 2× to stay within GPU compositing limits (2000×2×3dpr = 12k px/side).
+// Desktop uses 4× for sharper street-level zoom (~4 px/m).
+const IS_MOBILE_DEVICE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+const RASTER_SCALE = IS_MOBILE_DEVICE ? 2 : 4
 
 // Apply the same ACES filmic tone mapping + sRGB gamma that the WebGL canvas
 // uses, so the portal background color matches the rendered sky exactly.
