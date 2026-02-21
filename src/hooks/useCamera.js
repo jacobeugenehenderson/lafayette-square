@@ -57,6 +57,7 @@ const useCamera = create((set, get) => ({
 
   flyTo: (position, lookAt) => set({
     flyTarget: { position, lookAt },
+    lastInteraction: Date.now(),
   }),
 
   clearFly: () => set({ flyTarget: null }),
