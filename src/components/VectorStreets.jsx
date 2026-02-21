@@ -157,8 +157,9 @@ function VectorStreets({ svgPortal }) {
         earthDiv.style.width = '2000px'
         earthDiv.style.height = '2000px'
         earthDiv.style.borderRadius = '50%'
+        // Initial gradient — immediately updated by useFrame with time-aware colors
         earthDiv.style.background = 'radial-gradient(circle closest-side at center, ' +
-          '#141100 30%, rgba(25,21,0,0.9) 70%, rgba(46,39,0,0.5) 90%, rgba(77,65,0,0) 100%)'
+          '#3a3226 30%, rgba(58,50,38,0.9) 70%, rgba(82,70,52,0.5) 90%, rgba(82,70,52,0) 100%)'
         earthRef.current = earthDiv
         const earthObj = new CSS3DObject(earthDiv)
         earthObj.position.set(SVG_WORLD_X + 1000, -0.1, SVG_WORLD_Z + 1000)
@@ -226,10 +227,23 @@ function VectorStreets({ svgPortal }) {
       // (#ccc, #d8d3c7) without darkening the overall scene further.
       const contrast = 0.65 + 0.35 * day
 
-      const filterStr =
+      svgRef.current.style.filter =
         `brightness(${brightness.toFixed(3)}) contrast(${contrast.toFixed(3)}) saturate(${saturate.toFixed(3)}) sepia(${sepia.toFixed(3)}) hue-rotate(${hue.toFixed(1)}deg)`
-      svgRef.current.style.filter = filterStr
-      if (earthRef.current) earthRef.current.style.filter = filterStr
+
+      // ── Earth disc: time-aware gradient ──────────────────────────────────
+      // Darkish warm gray during day → near-black at night.
+      // Direct color control (not CSS filter) for predictable appearance.
+      if (earthRef.current) {
+        const mix = (a, b, t) => Math.round(a + (b - a) * t)
+        // Center (30% stop): warm brown-gray
+        const cr = mix(8, 58, day), cg = mix(7, 50, day), cb = mix(2, 38, day)
+        // Edge (90–100% stops): slightly warmer before fading to transparent
+        const er = mix(14, 82, day), eg = mix(12, 70, day), eb = mix(4, 52, day)
+        earthRef.current.style.background =
+          `radial-gradient(circle closest-side at center, ` +
+          `rgb(${cr},${cg},${cb}) 30%, rgba(${cr},${cg},${cb},0.9) 70%, ` +
+          `rgba(${er},${eg},${eb},0.5) 90%, rgba(${er},${eg},${eb},0) 100%)`
+      }
     }
   })
 
