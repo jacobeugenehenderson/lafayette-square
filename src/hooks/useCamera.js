@@ -2,6 +2,15 @@ import { create } from 'zustand'
 import useLandmarkFilter from './useLandmarkFilter'
 import useSelectedBuilding from './useSelectedBuilding'
 
+// ── Debug logger (visible with ?debug URL param) ──
+window.__cameraLog = []
+function _dlog(msg) {
+  const t = new Date().toISOString().slice(14, 23)
+  window.__cameraLog.push(`${t} ${msg}`)
+  if (window.__cameraLog.length > 30) window.__cameraLog.shift()
+  console.log(`[cam] ${msg}`)
+}
+
 const useCamera = create((set, get) => ({
   viewMode: 'hero',       // 'hero' | 'browse' | 'planetarium'
   previousMode: 'hero',
@@ -16,6 +25,7 @@ const useCamera = create((set, get) => ({
   setMode: (mode) => {
     const current = get().viewMode
     if (current === mode) return
+    _dlog(`setMode ${current}→${mode}`)
     set({
       previousMode: current,
       viewMode: mode,
@@ -45,20 +55,27 @@ const useCamera = create((set, get) => ({
   },
 
   goHero: () => {
+    const from = get().viewMode
+    const stack = new Error().stack || ''
+    const caller = stack.split('\n').slice(1, 4).map(s => s.trim()).join(' < ')
+    _dlog(`goHero from=${from} via: ${caller}`)
     useLandmarkFilter.getState().clearTags()
     useSelectedBuilding.getState().deselect()
     set({
-      previousMode: get().viewMode,
+      previousMode: from,
       viewMode: 'hero',
       flyTarget: null,
       panelOpen: false,
     })
   },
 
-  flyTo: (position, lookAt) => set({
-    flyTarget: { position, lookAt },
-    lastInteraction: Date.now(),
-  }),
+  flyTo: (position, lookAt) => {
+    _dlog(`flyTo pos=[${position.map(v=>v.toFixed(0))}]`)
+    set({
+      flyTarget: { position, lookAt },
+      lastInteraction: Date.now(),
+    })
+  },
 
   clearFly: () => set({ flyTarget: null }),
   setAzimuth: (angle) => set({ azimuth: angle }),

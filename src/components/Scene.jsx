@@ -440,6 +440,7 @@ function CameraRig() {
       const leaving = prevMode.current
       prevMode.current = vm
       modeChangedAt.current = Date.now()
+      if (window.__cameraLog) window.__cameraLog.push(`${new Date().toISOString().slice(14,23)} rig: ${leaving}→${entering}`)
 
       // Clear any interrupted cinematic
       cinematicQueue.current = []
@@ -536,6 +537,7 @@ function CameraRig() {
         } else {
           transitioning.current = false
           transToHero.current = false
+          if (window.__cameraLog) window.__cameraLog.push(`${new Date().toISOString().slice(14,23)} trans done vm=${vm} y=${camera.position.y.toFixed(0)}`)
           // Post-transition snap: force pure top-down for browse
           if (vm === 'browse') {
             const tx = ctl.target.x, tz = ctl.target.z
@@ -603,6 +605,7 @@ function CameraRig() {
     const idleLimit = vm === 'planetarium' ? IDLE_TIMEOUT_PLANET : IDLE_TIMEOUT
     const modeAge = Date.now() - modeChangedAt.current
     if (modeAge > 10000 && Date.now() - state.lastInteraction > idleLimit && vm !== 'hero') {
+      if (window.__cameraLog) window.__cameraLog.push(`${new Date().toISOString().slice(14,23)} IDLE FIRE modeAge=${(modeAge/1000).toFixed(0)}s idle=${((Date.now()-state.lastInteraction)/1000).toFixed(0)}s`)
       useCamera.getState().goHero()
     }
 

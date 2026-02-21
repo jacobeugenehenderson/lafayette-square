@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import Scene from './components/Scene'
 import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
@@ -44,6 +45,32 @@ function ModeOverlay() {
   )
 }
 
+function DebugOverlay() {
+  const viewMode = useCamera((s) => s.viewMode)
+  const [, tick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => tick((n) => n + 1), 500)
+    return () => clearInterval(id)
+  }, [])
+  const logs = window.__cameraLog || []
+  return (
+    <div
+      style={{
+        position: 'fixed', bottom: 70, left: 4, zIndex: 9999,
+        background: 'rgba(0,0,0,0.88)', color: '#0f0', fontSize: 9,
+        fontFamily: 'monospace', padding: '3px 6px', borderRadius: 4,
+        maxWidth: '90vw', maxHeight: 160, overflowY: 'auto',
+        pointerEvents: 'none', lineHeight: 1.3,
+      }}
+    >
+      <div style={{ color: '#ff0', marginBottom: 2 }}>mode: {viewMode}</div>
+      {logs.slice(-12).map((l, i) => (
+        <div key={i} style={{ color: l.includes('goHero') || l.includes('IDLE') ? '#f44' : '#0f0' }}>{l}</div>
+      ))}
+    </div>
+  )
+}
+
 function App() {
   const route = parseRoute()
 
@@ -55,6 +82,7 @@ function App() {
   }
 
   const isGround = window.location.search.includes('ground')
+  const showDebug = window.location.search.includes('debug')
 
   return (
     <div className="w-full h-full relative">
@@ -65,6 +93,7 @@ function App() {
       {!isGround && <BulletinModal />}
       {!isGround && <CodeDeskModal />}
       {!isGround && <ModeOverlay />}
+      {showDebug && <DebugOverlay />}
     </div>
   )
 }
