@@ -299,7 +299,7 @@ function AlmanacTab({ showAdmin = false }) {
             <WeatherIcon
               code={displayWeather.weatherCode}
               isNight={isNight}
-              size={48}
+              size={36}
             />
             <span className="text-xs text-white/50">{condition.label}</span>
           </div>
@@ -311,7 +311,7 @@ function AlmanacTab({ showAdmin = false }) {
             title="Click to toggle °F / °C"
           >
             <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path d="M12 2v14m0 0a4 4 0 110 0m-3-11h6M9 8h6" strokeLinecap="round" />
+              <path d="M14 14.76V3.5a2 2 0 0 0-4 0v11.26a4.5 4.5 0 1 0 4 0Z" strokeLinecap="round" />
             </svg>
             <span className={`text-2xl font-light tracking-wide ${headerTempColor}`}>
               {headerTemp}&deg;{useCelsius ? 'C' : 'F'}
