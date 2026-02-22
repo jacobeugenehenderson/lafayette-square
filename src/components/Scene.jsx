@@ -773,6 +773,16 @@ function PostProcessing({ viewMode, aoReady }) {
 const IS_GROUND = window.location.search.includes('ground')
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
+// Defer street lights on mobile until after hero settles (GLB fetch + 641 instances)
+function DeferredStreetLights({ viewMode }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    if (viewMode !== 'hero' && !ready) setReady(true)
+  }, [viewMode, ready])
+  if (!ready) return null
+  return <StreetLights />
+}
+
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
   const isPlanetarium = viewMode === 'planetarium'
@@ -827,10 +837,11 @@ function Scene() {
       <LafayettePark />
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <LafayetteScene />}
-      {!IS_GROUND && <StreetLights />}
+      {!IS_GROUND && !IS_MOBILE && <StreetLights />}
       {!IS_GROUND && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
+      {!IS_GROUND && IS_MOBILE && <DeferredStreetLights viewMode={viewMode} />}
     </Canvas>
     </div>
   )

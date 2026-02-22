@@ -1084,9 +1084,9 @@ function LafayetteScene() {
 
       <Foundations />
 
-      {/* Buildings */}
+      {/* Buildings — defer neon bands on mobile until browse (subpixel in hero telephoto) */}
       {buildingsData.buildings.map(b => (
-        <Building key={b.id} building={b} neonInfo={neonLookup[b.id]} />
+        <Building key={b.id} building={b} neonInfo={(isMobile && !labelsReady) ? undefined : neonLookup[b.id]} />
       ))}
 
       {/* Street labels — first batch (lightest GPU cost) */}
