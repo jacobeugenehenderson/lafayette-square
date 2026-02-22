@@ -631,21 +631,10 @@ function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
   const isPlanetarium = viewMode === 'planetarium'
 
-  // Defer N8AO on mobile until after the camera transition settles.
-  // Mounting N8AO (shader compile + texture alloc) simultaneously with the
-  // hero→browse transition exceeds mobile GPU budget and crashes the page.
-  const [aoReady, setAoReady] = useState(false)
-  useEffect(() => {
-    if (viewMode !== 'hero') {
-      if (IS_MOBILE) {
-        const id = setTimeout(() => setAoReady(true), 2000)
-        return () => clearTimeout(id)
-      }
-      setAoReady(true)
-    } else {
-      setAoReady(false)
-    }
-  }, [viewMode])
+  // N8AO (SSAO) is disabled on mobile — its render targets leak GPU memory
+  // across mount/unmount cycles (hero↔browse), causing the second category
+  // click to crash. On desktop, enable only outside hero view.
+  const aoReady = !IS_MOBILE && viewMode !== 'hero'
 
   // Portal div for CSS3D SVG ground — rendered BEHIND the transparent WebGL canvas.
   // See VectorStreets.jsx header comment for full architecture explanation.
