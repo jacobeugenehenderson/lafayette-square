@@ -998,18 +998,23 @@ function LafayetteScene() {
   const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
 
-  // Defer heavy components (LandmarkMarkers, FacadeElements) until after the
-  // camera transition completes. Mounting N8AO + Html-based MapPins + facade
-  // meshes simultaneously on mobile exceeds the GPU's VRAM budget and crashes.
-  // The 1.8s delay lets N8AO compile its shaders before pins start allocating.
+  // On mobile, defer ALL browse-only content (street labels, markers, facades)
+  // until after the camera transition settles. Mounting SDF text textures +
+  // Html MapPins + N8AO simultaneously during hero→browse crashes mobile GPUs.
+  // Desktop mounts everything immediately.
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
   const [heavyReady, setHeavyReady] = useState(false)
   useEffect(() => {
     if (viewMode !== 'hero') {
-      const id = setTimeout(() => setHeavyReady(true), 1800)
-      return () => clearTimeout(id)
+      if (isMobile) {
+        const id = setTimeout(() => setHeavyReady(true), 2000)
+        return () => clearTimeout(id)
+      }
+      setHeavyReady(true)
+    } else {
+      setHeavyReady(false)
     }
-    setHeavyReady(false)
-  }, [viewMode])
+  }, [viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build a buildingId → { hex, hours } lookup from listings
   const neonLookup = useMemo(() => {
@@ -1076,8 +1081,8 @@ function LafayetteScene() {
         <Building key={b.id} building={b} neonInfo={neonLookup[b.id]} />
       ))}
 
-      {/* Street labels — hidden only in hero mode */}
-      {viewMode !== 'hero' && streetLabels.map((label, i) => (
+      {/* Street labels — deferred on mobile with other browse-only content */}
+      {heavyReady && streetLabels.map((label, i) => (
         <StreetLabel key={`label-${i}`} label={label} />
       ))}
 
