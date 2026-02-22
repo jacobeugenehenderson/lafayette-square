@@ -1,11 +1,10 @@
 import React, { useMemo, useState, useEffect, useCallback, useContext } from 'react'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
-import useLocalStatus from '../hooks/useLocalStatus'
 import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
-import { getReviews, postReview, getEvents, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin } from '../lib/api'
+import { getReviews, postReview, postReply, getEvents, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
 
@@ -747,23 +746,29 @@ function StarPicker({ value, onChange }) {
   )
 }
 
-// ─── Review form (locals only) ──────────────────────────────────────
+// ─── Review form (shown to all non-guardians) ──────────────────────────────
 function ReviewForm({ listingId, onSubmitted }) {
   const [text, setText] = useState('')
   const [rating, setRating] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const [gateMessage, setGateMessage] = useState(null)
   const handle = useHandle(s => s.handle)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!text.trim() || rating === 0) return
     setSubmitting(true)
+    setGateMessage(null)
     try {
       const dh = await getDeviceHash()
-      await postReview(dh, listingId, text.trim(), rating, handle)
-      setText('')
-      setRating(0)
-      onSubmitted()
+      const res = await postReview(dh, listingId, text.trim(), rating, handle)
+      if (res?.data?.status === 'not_townie' || res?.status === 'not_townie') {
+        setGateMessage(res?.data?.message || 'Become a Townie to post reviews \u2014 visit 3 local spots within 14 days by scanning their QR codes.')
+      } else {
+        setText('')
+        setRating(0)
+        onSubmitted()
+      }
     } finally {
       setSubmitting(false)
     }
@@ -779,6 +784,11 @@ function ReviewForm({ listingId, onSubmitted }) {
         rows={2}
         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-white/25"
       />
+      {gateMessage && (
+        <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+          <p className="text-amber-300/90 text-xs leading-relaxed">{gateMessage}</p>
+        </div>
+      )}
       <button
         type="submit"
         disabled={submitting || !text.trim() || rating === 0}
@@ -790,8 +800,46 @@ function ReviewForm({ listingId, onSubmitted }) {
   )
 }
 
+// ─── Reply form (guardians only) ────────────────────────────────────────────
+function ReplyForm({ reviewId, listingId, onSubmitted }) {
+  const [text, setText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!text.trim()) return
+    setSubmitting(true)
+    try {
+      const dh = await getDeviceHash()
+      await postReply(dh, reviewId, listingId, text.trim())
+      setText('')
+      onSubmitted()
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex gap-2 mt-2 ml-10">
+      <input
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Reply as guardian..."
+        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/25"
+      />
+      <button
+        type="submit"
+        disabled={submitting || !text.trim()}
+        className="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        {submitting ? '...' : 'Reply'}
+      </button>
+    </form>
+  )
+}
+
 // ─── Tab: Reviews ────────────────────────────────────────────────────
-function ReviewsTab({ listingId, isLocal }) {
+function ReviewsTab({ listingId, isGuardian }) {
   const [reviews, setReviews] = useState([])
   const [loaded, setLoaded] = useState(false)
 
@@ -821,13 +869,7 @@ function ReviewsTab({ listingId, isLocal }) {
 
   return (
     <div>
-      {isLocal && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} />}
-
-      {!isLocal && (
-        <div className="text-center py-2 mb-4 rounded-lg bg-white/5 border border-white/10">
-          <p className="text-white/40 text-xs">Scan a QR code at a local place to unlock reviews</p>
-        </div>
-      )}
+      {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} />}
 
       {reviews.length === 0 && loaded && (
         <div className="text-center py-6">
@@ -840,6 +882,7 @@ function ReviewsTab({ listingId, isLocal }) {
         {reviews.map((review, idx) => {
           const displayName = review.handle ? `@${review.handle}` : 'Local'
           const initial = review.handle ? review.handle[0].toUpperCase() : 'L'
+          const replies = review.replies || []
           return (
             <div key={review.id || idx} className="border-b border-white/10 pb-4 last:border-0">
               <div className="flex items-start gap-3">
@@ -857,6 +900,24 @@ function ReviewsTab({ listingId, isLocal }) {
                   <p className="text-sm text-white/70 mt-1.5">{review.text}</p>
                 </div>
               </div>
+
+              {/* Guardian replies */}
+              {replies.map((reply, ri) => (
+                <div key={reply.id || ri} className="flex items-start gap-2 mt-2 ml-10">
+                  <svg className="w-4 h-4 text-emerald-400/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-emerald-400/80">{reply.handle ? `@${reply.handle}` : 'Guardian'}</span>
+                      <span className="text-[10px] text-white/25">{relativeTime(reply.created_at)}</span>
+                    </div>
+                    <p className="text-xs text-white/60 mt-0.5">{reply.text}</p>
+                  </div>
+                </div>
+              ))}
+
+              {isGuardian && <ReplyForm reviewId={review.id} listingId={listingId} onSubmitted={fetchReviews} />}
             </div>
           )
         })}
@@ -1255,18 +1316,19 @@ function EventsTab({ listingId, isGuardian }) {
 }
 
 // ─── Tab: QR Codes (guardian / admin) ─────────────────────────────
-function QrTab({ listingId, isAdmin }) {
+function QrTab({ listingId, listingName, isAdmin }) {
   const [townieQr, setTownieQr] = useState(null)
   const [guardianQr, setGuardianQr] = useState(null)
   const [townieUrl, setTownieUrl] = useState('')
   const [guardianUrl, setGuardianUrl] = useState('')
+  const [claimSecret, setClaimSecret] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [copied, setCopied] = useState(null)
 
   useEffect(() => {
     const origin = window.location.origin
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '')
     // Townie QR
-    const tUrl = `${origin}/checkin/${listingId}`
+    const tUrl = `${origin}${base}/checkin/${listingId}`
     setTownieUrl(tUrl)
     QRCode.toDataURL(tUrl, { width: 256, margin: 2 }).then(setTownieQr)
 
@@ -1279,7 +1341,8 @@ function QrTab({ listingId, isAdmin }) {
           : await getClaimSecret(listingId, dh)
         const secret = res?.data?.claim_secret
         if (secret) {
-          const gUrl = `${origin}/claim/${listingId}/${secret}`
+          setClaimSecret(secret)
+          const gUrl = `${origin}${base}/claim/${listingId}/${secret}`
           setGuardianUrl(gUrl)
           QRCode.toDataURL(gUrl, { width: 256, margin: 2 }).then(setGuardianQr)
         }
@@ -1289,24 +1352,18 @@ function QrTab({ listingId, isAdmin }) {
     loadSecret()
   }, [listingId, isAdmin])
 
-  const copyUrl = async (url, label) => {
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(label)
-      setTimeout(() => setCopied(null), 2000)
-    } catch { /* silent */ }
-  }
-
   const shareUrl = async (url, title) => {
     if (navigator.share) {
       try { await navigator.share({ title, url }) } catch { /* silent */ }
     } else {
-      copyUrl(url, title)
+      try {
+        await navigator.clipboard.writeText(url)
+      } catch { /* silent */ }
     }
   }
 
   const openQrStudio = () => {
-    useCodeDesk.getState().setOpen(true, { listingId, qrType: 'Townie' })
+    useCodeDesk.getState().setOpen(true, { listingId, qrType: 'Townie', claimSecret, mode: 'guardian', placeName: listingName })
   }
 
   return (
@@ -1320,21 +1377,12 @@ function QrTab({ listingId, isAdmin }) {
             <img src={townieQr} alt="Townie QR" className="w-48 h-48 rounded-lg" />
           </div>
         )}
-        <div className="text-[10px] text-white/30 font-mono truncate mb-2" title={townieUrl}>{townieUrl}</div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => copyUrl(townieUrl, 'townie')}
-            className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
-          >
-            {copied === 'townie' ? 'Copied!' : 'Copy URL'}
-          </button>
-          <button
-            onClick={() => shareUrl(townieUrl, 'Check in here')}
-            className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
-          >
-            Share
-          </button>
-        </div>
+        <button
+          onClick={() => shareUrl(townieUrl, 'Check in here')}
+          className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
+        >
+          Share
+        </button>
       </div>
 
       {/* Guardian QR */}
@@ -1348,21 +1396,12 @@ function QrTab({ listingId, isAdmin }) {
             <div className="flex justify-center mb-3">
               <img src={guardianQr} alt="Guardian QR" className="w-48 h-48 rounded-lg" />
             </div>
-            <div className="text-[10px] text-white/30 font-mono truncate mb-2" title={guardianUrl}>{guardianUrl}</div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => copyUrl(guardianUrl, 'guardian')}
-                className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
-              >
-                {copied === 'guardian' ? 'Copied!' : 'Copy URL'}
-              </button>
-              <button
-                onClick={() => shareUrl(guardianUrl, 'Become a guardian')}
-                className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
-              >
-                Share
-              </button>
-            </div>
+            <button
+              onClick={() => shareUrl(guardianUrl, 'Become a guardian')}
+              className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
+            >
+              Share
+            </button>
           </>
         ) : (
           <div className="text-center py-4 text-white/30 text-xs">No claim secret available</div>
@@ -1389,7 +1428,6 @@ function QrTab({ listingId, isAdmin }) {
 function PlaceCard({ listing: listingProp, building, onClose, allListings: allListingsProp }) {
   const [activeTab, setActiveTab] = useState(null)
   const [activeListingIdx, setActiveListingIdx] = useState(0)
-  const { isLocal } = useLocalStatus()
   const { isGuardianOf, isAdmin: isStoreAdmin } = useGuardianStatus()
   const panelOpen = useCamera(s => s.panelOpen)
 
@@ -1495,6 +1533,27 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </div>
         )}
 
+
+        {listingId && (
+          <button
+            onClick={() => {
+              const origin = window.location.origin
+              const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+              const url = `${origin}${base}/place/${listingId}`
+              if (navigator.share) {
+                navigator.share({ title: name, url }).catch(() => {})
+              } else {
+                navigator.clipboard.writeText(url).catch(() => {})
+              }
+            }}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white/70 hover:text-white hover:bg-black/70 transition-colors"
+            title="Share"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+            </svg>
+          </button>
+        )}
 
         {photos && photos.length > 1 && (
           <div className="absolute bottom-2 right-3 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-white/70">
@@ -1633,13 +1692,13 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           {currentTab === 'overview' && (
             <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} />
           )}
-          {currentTab === 'reviews' && <ReviewsTab listingId={listingId} isLocal={isLocal} />}
+          {currentTab === 'reviews' && <ReviewsTab listingId={listingId} isGuardian={isGuardian} />}
           {currentTab === 'events' && <EventsTab listingId={listingId} isGuardian={isGuardian} />}
           {currentTab === 'architecture' && <ArchitectureTab building={building} />}
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
           {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} />}
-          {currentTab === 'qr' && <QrTab listingId={listingId} isAdmin={isAdmin} />}
+          {currentTab === 'qr' && <QrTab listingId={listingId} listingName={name} isAdmin={isAdmin} />}
           {/* Property card tabs */}
           {currentTab === 'property' && <PropertyTab building={building} />}
           {currentTab === 'assessment' && <AssessmentTab building={building} />}
@@ -1659,27 +1718,28 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               You are the guardian of this place
             </div>
           ) : (
-            <button
-              onClick={() => setActiveTab('events')}
+            <a
+              href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('Claim: ' + name)}`}
               className="w-full py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               Is this your place?
-            </button>
+            </a>
           )}
         </div>
       ) : (
         <div className="p-4 pt-2 border-t border-white/15 bg-white/4 flex-shrink-0">
-          <button
+          <a
+            href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('My place: ' + (cleanAddress(building?.address) || 'Unknown'))}`}
             className="w-full py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
             </svg>
             This is my house
-          </button>
+          </a>
         </div>
       )}
     </div>

@@ -998,21 +998,29 @@ function LafayetteScene() {
   const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
 
-  // On mobile, defer ALL browse-only content (street labels, markers, facades)
-  // until after the camera transition settles. Mounting SDF text textures +
-  // Html MapPins + N8AO simultaneously during hero→browse crashes mobile GPUs.
+  // On mobile, stagger browse-only content across several seconds so the GPU
+  // can compile shaders and upload textures in batches instead of all at once.
+  // Mounting SDF text + Html MapPins + facade geo simultaneously crashes mobile.
   // Desktop mounts everything immediately.
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-  const [heavyReady, setHeavyReady] = useState(false)
+  const [labelsReady, setLabelsReady] = useState(false)
+  const [markersReady, setMarkersReady] = useState(false)
+  const [facadesReady, setFacadesReady] = useState(false)
   useEffect(() => {
     if (viewMode !== 'hero') {
       if (isMobile) {
-        const id = setTimeout(() => setHeavyReady(true), 2000)
-        return () => clearTimeout(id)
+        const t1 = setTimeout(() => setLabelsReady(true), 2000)
+        const t2 = setTimeout(() => setMarkersReady(true), 3500)
+        const t3 = setTimeout(() => setFacadesReady(true), 5000)
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
       }
-      setHeavyReady(true)
+      setLabelsReady(true)
+      setMarkersReady(true)
+      setFacadesReady(true)
     } else {
-      setHeavyReady(false)
+      setLabelsReady(false)
+      setMarkersReady(false)
+      setFacadesReady(false)
     }
   }, [viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1081,16 +1089,16 @@ function LafayetteScene() {
         <Building key={b.id} building={b} neonInfo={neonLookup[b.id]} />
       ))}
 
-      {/* Street labels — deferred on mobile with other browse-only content */}
-      {heavyReady && streetLabels.map((label, i) => (
+      {/* Street labels — first batch (lightest GPU cost) */}
+      {labelsReady && streetLabels.map((label, i) => (
         <StreetLabel key={`label-${i}`} label={label} />
       ))}
 
-      {/* Landmark markers — deferred until after camera transition to avoid GPU spike */}
-      {heavyReady && <LandmarkMarkers />}
+      {/* Landmark markers — second batch (Html overlays + pin meshes) */}
+      {markersReady && <LandmarkMarkers />}
 
-      {/* 3D facade elements — windows, doors, stoops (has own 60m LOD) */}
-      {heavyReady && <FacadeElements />}
+      {/* 3D facade elements — last batch (heaviest: geometry + shaders) */}
+      {facadesReady && <FacadeElements />}
 
       {/* Facade photos — billboard planes on building fronts (shelved for future) */}
       {/* {viewMode !== 'hero' && <FacadeBillboards />} */}

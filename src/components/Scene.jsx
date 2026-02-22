@@ -107,41 +107,34 @@ const FilmGrain = forwardRef((props, ref) => {
 // ── Adaptive bloom — time-of-day driven ──────────────────────────────────────
 // Simulates real camera lens behavior: minimal diffusion in daylight,
 // soft halation at twilight, pronounced halos on point sources at night.
+// Updates bloom directly via ref (no React re-renders — critical for smooth hero pan).
 
-function useBloomParams(viewMode) {
-  const [params, setParams] = useState({ intensity: 0.3, threshold: 0.8, smoothing: 0.5 })
+function useAdaptiveBloom(bloomRef, viewMode) {
   const isPlanetarium = viewMode === 'planetarium'
 
   useFrame(() => {
+    const bloom = bloomRef.current
+    if (!bloom) return
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
 
     let intensity, threshold, smoothing
     if (isPlanetarium) {
       intensity = 1.8; threshold = 0.15; smoothing = 0.9
     } else {
-      // sunAltitude: night < -0.12, twilight -0.12..0.05, day > 0.05
-      // darkness: 1 = deep night, 0 = full day
       const darkness = sunAltitude > 0.1
         ? 0
         : sunAltitude < -0.15
           ? 1
           : 1 - (sunAltitude + 0.15) / 0.25
-
-      // Day  → soft pro-mist diffusion on sky and highlights
-      // Night → lamp halos, window glow, neon bleed
       intensity = 0.3 + darkness * 0.6
       threshold = 0.75 - darkness * 0.45
       smoothing = 0.5 + darkness * 0.3
     }
 
-    setParams(prev => {
-      if (Math.abs(prev.intensity - intensity) < 0.01 &&
-          Math.abs(prev.threshold - threshold) < 0.01) return prev
-      return { intensity, threshold, smoothing }
-    })
+    bloom.intensity = intensity
+    bloom.luminanceMaterial.threshold = threshold
+    bloom.luminanceMaterial.smoothing = smoothing
   })
-
-  return params
 }
 
 // ── Aerial perspective — telephoto atmospheric haze ──────────────────────────
@@ -209,67 +202,6 @@ const AerialPerspective = forwardRef((props, ref) => {
   })
 
   return <primitive ref={internalRef} object={effect} dispose={null} />
-})
-
-// ── Lens diffusion — depth-aware disc blur with bokeh character ──────────────
-// Telephoto lens simulation: sharp focal band in the midground (the neighborhood),
-// gentle softening toward the horizon and extreme foreground. 12-tap Poisson disc
-// gives organic bokeh quality. Screen-space Y stands in for depth (top = far,
-// bottom = near) since the real depth buffer is unusable at our range.
-
-class LensDiffusionEffect extends Effect {
-  constructor() {
-    super('LensDiffusion', /* glsl */`
-      uniform vec2 uResolution;
-      uniform float uRadius;
-
-      // 12-tap Poisson disc — organic, non-uniform sampling
-      const vec2 disc[12] = vec2[12](
-        vec2(-0.326, -0.406), vec2(-0.840, -0.074), vec2(-0.696,  0.457),
-        vec2(-0.203,  0.621), vec2( 0.962, -0.195), vec2( 0.473, -0.480),
-        vec2( 0.519,  0.767), vec2( 0.185, -0.893), vec2( 0.507,  0.064),
-        vec2(-0.321,  0.932), vec2(-0.860, -0.493), vec2( 0.063,  0.340)
-      );
-
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        // Focus band: sharpest around uv.y ≈ 0.45 (neighborhood roofline)
-        // Softens toward top (distant arch/sky) and bottom (extreme foreground)
-        float focusDist = abs(uv.y - 0.45);
-        float blur = smoothstep(0.0, 0.4, focusDist);
-
-        // Slight extra softening on bright areas (simulates CoC on highlights)
-        float lum = dot(inputColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-        blur += smoothstep(0.6, 1.0, lum) * 0.3;
-
-        float radius = blur * uRadius / uResolution.y;
-        float aspect = uResolution.x / uResolution.y;
-
-        vec3 sum = inputColor.rgb;
-        for (int i = 0; i < 12; i++) {
-          vec2 offset = disc[i] * radius;
-          offset.x /= aspect;
-          sum += texture2D(inputBuffer, uv + offset).rgb;
-        }
-        sum /= 13.0;
-
-        outputColor = vec4(mix(inputColor.rgb, sum, blur * 0.7), inputColor.a);
-      }
-    `, {
-      uniforms: new Map([
-        ['uResolution', new THREE.Uniform(new THREE.Vector2(1920, 1080))],
-        ['uRadius', new THREE.Uniform(4.0)],
-      ])
-    })
-  }
-}
-
-const LensDiffusion = forwardRef((props, ref) => {
-  const effect = useMemo(() => new LensDiffusionEffect(), [])
-  const { size } = useThree()
-  useEffect(() => {
-    effect.uniforms.get('uResolution').value.set(size.width, size.height)
-  }, [size, effect])
-  return <primitive ref={ref} object={effect} dispose={null} />
 })
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -810,7 +742,9 @@ function CameraRig() {
 // ── Scene ────────────────────────────────────────────────────────────────────
 
 function PostProcessing({ viewMode, aoReady }) {
-  const bloom = useBloomParams(viewMode)
+  const bloomRef = useRef()
+  useAdaptiveBloom(bloomRef, viewMode)
+
   return (
     <EffectComposer>
       {aoReady && (
@@ -823,12 +757,13 @@ function PostProcessing({ viewMode, aoReady }) {
         />
       )}
       <Bloom
-        intensity={bloom.intensity}
-        luminanceThreshold={bloom.threshold}
-        luminanceSmoothing={bloom.smoothing}
+        ref={bloomRef}
+        intensity={0.3}
+        luminanceThreshold={0.75}
+        luminanceSmoothing={0.5}
         mipmapBlur
       />
-      <AerialPerspective />
+      {!IS_MOBILE && <AerialPerspective />}
       <FilmGrade />
       <FilmGrain />
     </EffectComposer>
@@ -845,7 +780,7 @@ function Scene() {
   // N8AO (SSAO) is disabled on mobile — its render targets leak GPU memory
   // across mount/unmount cycles (hero↔browse), causing the second category
   // click to crash. Enabled in all desktop modes including hero.
-  const aoReady = !IS_MOBILE
+  const aoReady = false
 
   // Portal div for CSS3D SVG ground — rendered BEHIND the transparent WebGL canvas.
   // See VectorStreets.jsx header comment for full architecture explanation.

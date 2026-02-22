@@ -82,7 +82,7 @@ export default function ClaimPage({ listingId, secret }) {
 
         {/* Link back */}
         <a
-          href="/"
+          href={import.meta.env.BASE_URL}
           className="inline-block text-sm px-4 py-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/15 transition-colors"
         >
           Explore the neighborhood &rarr;

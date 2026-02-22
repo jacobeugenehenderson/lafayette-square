@@ -2104,6 +2104,48 @@ textarea.fldInp {
 }
 
 /* =========================
+   BUSINESS GROUP FOLDERS (Commercial / Residential)
+========================= */
+.biz-group {
+  border-bottom: 1px solid var(--ui-stroke);
+}
+.biz-group:last-child { border-bottom: none; }
+
+.biz-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
+  color: var(--lsq-text-muted);
+  font: 600 0.72rem/1.35 var(--font-family, system-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background-color var(--motion-duration-1) var(--motion-ease);
+}
+.biz-group-header:hover {
+  background: color-mix(in oklab, var(--ui-surface) 84%, var(--step-color-primary) 16%);
+}
+.biz-group.is-open .biz-group-header {
+  color: var(--lsq-text);
+}
+
+.biz-group-count {
+  font-size: 0.68rem;
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.biz-group-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* =========================
    EMBED MODE (?embed param)
    Hides chrome, transparent bg for iframe use inside the main app.
    QR preview is always visible on top; stepper scrolls behind it.
@@ -2179,6 +2221,8 @@ html.embed .step-card .step-header {
   scroll-margin-top: 0 !important;
 }
 
-/* Hide mechanical controls in embed mode */
-html.embed .step-card[data-step="business"] { display: none !important; }
+/* Hide download button in embed mode (parent handles export) */
 html.embed .step-card[data-step="download"] { display: none !important; }
+
+/* Guardian embed: hide Places accordion (place is pre-selected by parent) */
+html.embed-guardian .step-card[data-step="business"] { display: none !important; }

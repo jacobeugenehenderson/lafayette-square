@@ -182,6 +182,7 @@ function doPost(e) {
       case 'close-thread':     return postCloseThread(body)
       case 'comment':          return postComment(body)
       case 'remove-comment':   return postRemoveComment(body)
+      case 'reply':            return postReply(body)
       default:                 return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
@@ -234,6 +235,24 @@ function getReviews(listingId) {
   const filtered = rows
     .filter(r => r.listing_id === listingId)
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+
+  // Attach replies to each review
+  var replySheet = getSheet('Replies')
+  var replyRows = replySheet ? sheetToObjects(replySheet) : []
+  var replyMap = {}
+  replyRows.forEach(function(r) {
+    if (!replyMap[r.review_id]) replyMap[r.review_id] = []
+    replyMap[r.review_id].push({
+      id: r.id,
+      handle: r.handle || '',
+      text: r.text,
+      created_at: r.created_at
+    })
+  })
+  filtered.forEach(function(r) {
+    r.replies = replyMap[r.id] || []
+  })
+
   return jsonResponse(filtered)
 }
 
@@ -345,7 +364,7 @@ function postReview(body) {
     }
   })
   if (distinctDates.size < LOCAL_THRESHOLD) {
-    return errorResponse('Not a verified local', 'unauthorized')
+    return jsonResponse({ error: 'Not a verified townie', status: 'not_townie', message: 'Become a Townie to post reviews — visit 3 local spots within 14 days by scanning their QR codes.' }, 'not_townie')
   }
 
   // Look up handle if not provided
@@ -360,6 +379,32 @@ function postReview(body) {
   sheet.appendRow([id, listing_id, device_hash, reviewHandle, text, rating || '', nowISO()])
 
   return jsonResponse({ id: id, logged: true })
+}
+
+// ─── POST: Reply (guardian replies to a review) ─────────────────────────────
+
+function postReply(body) {
+  var device_hash = body.device_hash
+  var review_id = body.review_id
+  var listing_id = body.listing_id
+  var text = body.text
+  if (!device_hash || !review_id || !listing_id || !text) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+
+  // Must be a guardian of the listing
+  if (!isGuardianOf(listing_id, device_hash)) {
+    return errorResponse('Not a guardian for this listing', 'unauthorized')
+  }
+
+  // Look up handle
+  var handleRow = findRow(getSheet('Handles'), 'device_hash', device_hash)
+  var handle = handleRow ? handleRow.rowData.handle : ''
+
+  var sheet = getSheet('Replies')
+  var id = generateId('rpl')
+  sheet.appendRow([id, review_id, listing_id, device_hash, handle, text, nowISO()])
+  return jsonResponse({ id: id, success: true })
 }
 
 // ─── POST: Event ────────────────────────────────────────────────────────────
@@ -954,6 +999,7 @@ function setupSheets() {
     'Threads':   ['id', 'bulletin_id', 'party_a_hash', 'party_b_hash', 'a_handle', 'b_handle', 'status', 'created_at', 'expires_at'],
     'Messages':  ['id', 'thread_id', 'sender_hash', 'text', 'created_at'],
     'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
+    'Replies':   ['id', 'review_id', 'listing_id', 'device_hash', 'handle', 'text', 'created_at'],
     'Guardians': ['listing_id', 'device_hash', 'created_at'],
   }
 

@@ -41,59 +41,121 @@ window.getLsqBaseUrl = getLsqBaseUrl;
 
 // Populate all bizSelect elements with business data
 // Supports both <select> and listbox (.fldListbox) rendering
+// Groups into category folders (Dining, Shopping, Residential, etc.)
+var CATEGORY_ORDER = ['dining', 'shopping', 'services', 'arts', 'community', 'historic', 'hospitality', 'professional', 'recreation', 'residential'];
+var CATEGORY_LABELS = {
+  dining: 'Dining', shopping: 'Shopping', services: 'Services',
+  arts: 'Arts', community: 'Community', historic: 'Historic',
+  hospitality: 'Hospitality', professional: 'Professional',
+  recreation: 'Recreation', residential: 'Residential',
+};
+
+function _makeBizItem(biz, current, hiddenInput, listbox) {
+  var id = biz.id || biz.building_id || '';
+  var name = biz.name || biz.id || 'Unknown';
+
+  var item = document.createElement('button');
+  item.type = 'button';
+  item.className = 'biz-item' + (id === current ? ' is-active' : '');
+  item.dataset.bizId = id;
+
+  var nameSpan = document.createElement('span');
+  nameSpan.className = 'biz-item-name';
+  nameSpan.textContent = name;
+  item.appendChild(nameSpan);
+
+  item.addEventListener('click', function() {
+    var prev = listbox.querySelector('.biz-item.is-active');
+    if (prev) prev.classList.remove('is-active');
+    item.classList.add('is-active');
+    hiddenInput.value = id;
+    hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  return item;
+}
+
+function _groupByCategory(businesses) {
+  var catMap = {};
+  businesses.forEach(function(biz) {
+    var cat = biz.category || 'other';
+    if (!catMap[cat]) catMap[cat] = [];
+    catMap[cat].push(biz);
+  });
+  // Sort each group alphabetically
+  Object.keys(catMap).forEach(function(cat) {
+    catMap[cat].sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+  });
+  // Return ordered array of { key, label, items }
+  var result = [];
+  CATEGORY_ORDER.forEach(function(cat) {
+    if (catMap[cat]) {
+      result.push({ key: cat, label: CATEGORY_LABELS[cat] || cat, items: catMap[cat] });
+      delete catMap[cat];
+    }
+  });
+  // Append any remaining categories not in the order list
+  Object.keys(catMap).sort().forEach(function(cat) {
+    result.push({ key: cat, label: CATEGORY_LABELS[cat] || cat, items: catMap[cat] });
+  });
+  return result;
+}
+
 function populateBizSelect(businesses) {
   var hiddenInput = document.getElementById('bizSelect');
   var listbox = document.querySelector('.fldListbox[data-for="bizSelect"]');
 
-  // Listbox mode: render clickable items
+  // Listbox mode: render clickable items grouped into category folders
   if (listbox && hiddenInput) {
     var current = hiddenInput.value || '';
     listbox.innerHTML = '';
 
-    var sorted = businesses.slice().sort(function(a, b) {
-      return (a.name || '').localeCompare(b.name || '');
-    });
+    var groups = _groupByCategory(businesses);
 
-    sorted.forEach(function(biz) {
-      var id = biz.id || biz.building_id || '';
-      var name = biz.name || biz.id || 'Unknown';
-      var cat = biz.category || '';
+    groups.forEach(function(group) {
+      if (!group.items.length) return;
 
-      var item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'biz-item' + (id === current ? ' is-active' : '');
-      item.dataset.bizId = id;
+      var folder = document.createElement('div');
+      folder.className = 'biz-group';
 
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'biz-item-name';
-      nameSpan.textContent = name;
-      item.appendChild(nameSpan);
+      var header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'biz-group-header';
+      header.innerHTML = '<span class="biz-group-label">' + group.label +
+        '</span><span class="biz-group-count">' + group.items.length + '</span>';
 
-      if (cat) {
-        var catSpan = document.createElement('span');
-        catSpan.className = 'biz-item-cat';
-        catSpan.textContent = cat;
-        item.appendChild(catSpan);
-      }
+      var content = document.createElement('div');
+      content.className = 'biz-group-content';
+      content.style.display = 'none';
 
-      item.addEventListener('click', function() {
-        // Deselect previous
-        var prev = listbox.querySelector('.biz-item.is-active');
-        if (prev) prev.classList.remove('is-active');
-
-        // Select this one
-        item.classList.add('is-active');
-        hiddenInput.value = id;
-        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+      header.addEventListener('click', function() {
+        var isOpen = content.style.display !== 'none';
+        content.style.display = isOpen ? 'none' : '';
+        folder.classList.toggle('is-open', !isOpen);
       });
 
-      listbox.appendChild(item);
+      group.items.forEach(function(biz) {
+        content.appendChild(_makeBizItem(biz, current, hiddenInput, listbox));
+      });
+
+      // Auto-open if current selection is in this group
+      var hasActive = group.items.some(function(b) {
+        return (b.id || b.building_id || '') === current;
+      });
+      if (hasActive) {
+        content.style.display = '';
+        folder.classList.add('is-open');
+      }
+
+      folder.appendChild(header);
+      folder.appendChild(content);
+      listbox.appendChild(folder);
     });
 
     return;
   }
 
-  // Fallback: legacy <select> mode
+  // Fallback: legacy <select> mode with optgroups
   var selects = document.querySelectorAll('select#bizSelect');
   if (!selects.length) return;
 
@@ -108,18 +170,19 @@ function populateBizSelect(businesses) {
     if (!current) ph.selected = true;
     sel.appendChild(ph);
 
-    var sorted = businesses.slice().sort(function(a, b) {
-      return (a.name || '').localeCompare(b.name || '');
-    });
-
-    sorted.forEach(function(biz) {
-      var opt = document.createElement('option');
-      opt.value = biz.id || biz.building_id || '';
-      var label = biz.name || biz.id || 'Unknown';
-      if (biz.category) label += '  (' + biz.category + ')';
-      opt.textContent = label;
-      if (opt.value === current) opt.selected = true;
-      sel.appendChild(opt);
+    var groups = _groupByCategory(businesses);
+    groups.forEach(function(group) {
+      if (!group.items.length) return;
+      var optgroup = document.createElement('optgroup');
+      optgroup.label = group.label;
+      group.items.forEach(function(biz) {
+        var opt = document.createElement('option');
+        opt.value = biz.id || biz.building_id || '';
+        opt.textContent = biz.name || biz.id || 'Unknown';
+        if (opt.value === current) opt.selected = true;
+        optgroup.appendChild(opt);
+      });
+      sel.appendChild(optgroup);
     });
   });
 }

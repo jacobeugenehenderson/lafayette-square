@@ -16,6 +16,8 @@ const _mockMessages = []
 const _mockComments = []
 let _mockIdCounter = 1
 
+const _mockReplies = []
+
 const MOCKS = {
   'checkin':        () => ({ data: { logged: true, distinct_days: 1, is_local: true } }),
   'checkin-status': () => ({ data: { distinct_days: 1, threshold: 1, is_local: true } }),
@@ -25,7 +27,11 @@ const MOCKS = {
     _mockReviews.push({ id: String(Date.now()), text: body.text, rating: body.rating, listing_id: body.listing_id, handle: body.handle || '', created_at: new Date().toISOString() })
     return { data: { success: true } }
   },
-  'reviews':        (params) => ({ data: _mockReviews.filter(r => r.listing_id === params.lid) }),
+  'reviews':        (params) => ({ data: _mockReviews.filter(r => r.listing_id === params.lid).map(r => ({ ...r, replies: _mockReplies.filter(rp => rp.review_id === r.id) })) }),
+  'reply':          (body) => {
+    _mockReplies.push({ id: String(Date.now()), review_id: body.review_id, listing_id: body.listing_id, handle: body.handle || 'guardian', text: body.text, created_at: new Date().toISOString() })
+    return { data: { success: true } }
+  },
   'event':          (body) => {
     _mockEvents.push({ id: String(Date.now()), title: body.title, description: body.description, listing_id: body.listing_id, type: body.type || 'event', start_date: body.start_date, end_date: body.end_date, created_at: new Date().toISOString() })
     return { data: { success: true } }
@@ -129,6 +135,10 @@ export async function postReview(deviceHash, listingId, text, rating, handle) {
 
 export async function getReviews(listingId) {
   return get('reviews', { lid: listingId })
+}
+
+export async function postReply(deviceHash, reviewId, listingId, text) {
+  return post('reply', { device_hash: deviceHash, review_id: reviewId, listing_id: listingId, text })
 }
 
 // ── Events (guardian-only) ──────────────────────────────────────────────

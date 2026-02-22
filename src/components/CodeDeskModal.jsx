@@ -1,62 +1,99 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { create } from 'zustand'
 import useCamera from '../hooks/useCamera'
+import useListings from '../hooks/useListings'
+import buildingsData from '../data/buildings.json'
 
 export const useCodeDesk = create((set) => ({
   open: false,
   listingId: null,
-  qrType: 'Townie',
+  qrType: 'Guardian',
+  claimSecret: null,
+  mode: 'admin', // 'admin' = full Places picker, 'guardian' = single place
+  placeName: null,
   setOpen: (open, opts) => set({
     open,
     listingId: opts?.listingId || null,
-    qrType: opts?.qrType || 'Townie',
+    qrType: opts?.qrType || 'Guardian',
+    claimSecret: opts?.claimSecret || null,
+    mode: opts?.mode || 'admin',
+    placeName: opts?.placeName || null,
   }),
 }))
 
+// Thin gate: renders nothing when closed — no hooks, no subscriptions on mobile boot
 export default function CodeDeskModal() {
   const open = useCodeDesk((s) => s.open)
+  if (!open) return null
+  return <CodeDeskModalInner />
+}
+
+// Only mounted when modal is open
+function CodeDeskModalInner() {
   const storeListingId = useCodeDesk((s) => s.listingId)
   const storeQrType = useCodeDesk((s) => s.qrType)
+  const storeClaimSecret = useCodeDesk((s) => s.claimSecret)
+  const mode = useCodeDesk((s) => s.mode)
+  const placeName = useCodeDesk((s) => s.placeName)
   const close = useCallback(() => useCodeDesk.getState().setOpen(false), [])
-  const [qrType, setQrType] = useState('Townie')
+  const [qrType, setQrType] = useState(storeQrType || 'Guardian')
+  const [saved, setSaved] = useState(false)
   const iframeRef = useRef(null)
+  const listings = useListings((s) => s.listings)
+  const isGuardianMode = mode === 'guardian'
 
-  // Sync local qrType from store when modal opens
-  useEffect(() => {
-    if (open) setQrType(storeQrType || 'Townie')
-  }, [open, storeQrType])
+  // Merge landmarks + non-landmark buildings as residential
+  const allPlaces = useMemo(() => {
+    const landmarkBuildingIds = new Set(listings.map(l => l.building_id).filter(Boolean))
+    const residential = buildingsData.buildings
+      .filter(b => b.address && !landmarkBuildingIds.has(b.id))
+      .map(b => ({ id: b.id, name: b.address, category: 'residential' }))
+    return [...listings, ...residential]
+  }, [listings])
 
   // Auto-collapse SidePanel when modal opens
   useEffect(() => {
-    if (open) useCamera.getState().setPanelOpen(false)
-  }, [open])
+    useCamera.getState().setPanelOpen(false)
+  }, [])
 
   // ESC to close
   useEffect(() => {
-    if (!open) return
     const handleKey = (e) => { if (e.key === 'Escape') close() }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [open, close])
+  }, [close])
 
   // Send type changes to iframe via postMessage
   useEffect(() => {
     const iframe = iframeRef.current
-    if (!iframe || !open) return
+    if (!iframe) return
     iframe.contentWindow?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
-  }, [qrType, open])
+  }, [qrType])
 
-  // Also send type + listing on iframe load (initial sync)
+  // On iframe load: send places dataset (admin) or single listing (guardian)
   const handleIframeLoad = useCallback(() => {
     const iframe = iframeRef.current
     if (!iframe) return
+    if (!isGuardianMode) {
+      iframe.contentWindow?.postMessage({ type: 'lsq-set-businesses', value: allPlaces }, '*')
+    }
     iframe.contentWindow?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
     if (storeListingId) {
       iframe.contentWindow?.postMessage({ type: 'lsq-set-listing', value: storeListingId }, '*')
     }
-  }, [qrType, storeListingId])
+    if (storeClaimSecret) {
+      iframe.contentWindow?.postMessage({ type: 'lsq-set-claim-secret', value: storeClaimSecret }, '*')
+    }
+  }, [isGuardianMode, allPlaces, qrType, storeListingId, storeClaimSecret])
 
-  if (!open) return null
+  // Save button flash
+  const handleSave = useCallback(() => {
+    const iframe = iframeRef.current
+    if (!iframe) return
+    iframe.contentWindow?.postMessage({ type: 'lsq-save' }, '*')
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1500)
+  }, [])
 
   return (
     <div
@@ -68,22 +105,42 @@ export default function CodeDeskModal() {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 flex-shrink-0">
-        <h2 className="text-sm font-medium text-white">QR Generator</h2>
+        {isGuardianMode ? (
+          <div className="flex items-center gap-2 min-w-0">
+            <h2 className="text-sm font-medium text-white truncate">{placeName || 'QR Designer'}</h2>
+          </div>
+        ) : (
+          <h2 className="text-sm font-medium text-white">QR Generator</h2>
+        )}
         <div className="flex items-center gap-2">
-          <select
-            value={qrType}
-            onChange={(e) => setQrType(e.target.value)}
-            className="bg-white/10 text-white text-xs rounded-lg border border-white/20 px-2 py-1 outline-none hover:bg-white/15 transition-colors"
-            style={{ fontFamily: 'ui-monospace, monospace' }}
-          >
-            <option value="Townie" className="bg-neutral-800 text-white">Townie</option>
-            <option value="Guardian" className="bg-neutral-800 text-white">Guardian</option>
-          </select>
+          {isGuardianMode ? (
+            <button
+              onClick={handleSave}
+              className={`h-8 px-3 text-xs rounded-lg border transition-all duration-200 ${
+                saved
+                  ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
+                  : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/15'
+              }`}
+              style={{ fontFamily: 'ui-monospace, monospace' }}
+            >
+              {saved ? 'Saved' : 'Save'}
+            </button>
+          ) : (
+            <select
+              value={qrType}
+              onChange={(e) => setQrType(e.target.value)}
+              className="h-8 bg-white/10 text-white text-xs rounded-lg border border-white/20 px-2 outline-none hover:bg-white/15 transition-colors"
+              style={{ fontFamily: 'ui-monospace, monospace' }}
+            >
+              <option value="Townie" className="bg-neutral-800 text-white">Townie</option>
+              <option value="Guardian" className="bg-neutral-800 text-white">Guardian</option>
+            </select>
+          )}
           <button
             onClick={close}
-            className="w-8 h-8 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -93,7 +150,7 @@ export default function CodeDeskModal() {
       {/* Iframe */}
       <iframe
         ref={iframeRef}
-        src="/codedesk/?embed"
+        src={`${import.meta.env.BASE_URL}codedesk/?embed${isGuardianMode ? '&guardian' : ''}`}
         onLoad={handleIframeLoad}
         className="flex-1 min-h-0 w-full border-0"
         style={{ background: 'transparent' }}

@@ -81,13 +81,28 @@
 <body class="min-h-screen text-neutral-900">
 <script>
   // Embed mode: strip header + background when loaded inside an iframe
-  if (new URLSearchParams(location.search).has('embed')) {
+  var _params = new URLSearchParams(location.search);
+  if (_params.has('embed')) {
     document.body.classList.add('embed');
     document.documentElement.classList.add('embed');
+
+    // Guardian mode: hide the Places accordion (place is pre-selected by parent)
+    if (_params.has('guardian')) {
+      document.documentElement.classList.add('embed-guardian');
+    }
 
     // Listen for messages from parent React modal
     window.addEventListener('message', function(e) {
       if (!e.data) return;
+      if (e.data.type === 'lsq-set-businesses') {
+        var places = e.data.value;
+        if (Array.isArray(places) && places.length) {
+          window.LSQ_BUSINESSES = places;
+          if (typeof window.populateBizSelect === 'function') {
+            window.populateBizSelect(places);
+          }
+        }
+      }
       if (e.data.type === 'lsq-set-qr-type') {
         var sel = document.getElementById('qrType');
         if (sel && sel.value !== e.data.value) {
@@ -101,6 +116,17 @@
           bizSel.value = e.data.value;
           bizSel.dispatchEvent(new Event('change', { bubbles: true }));
         }
+      }
+      if (e.data.type === 'lsq-set-claim-secret') {
+        var secretInput = document.getElementById('claimSecret');
+        if (secretInput) {
+          secretInput.value = e.data.value;
+          secretInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      if (e.data.type === 'lsq-save') {
+        // Trigger immediate save (auto-save is debounced; this forces it now)
+        if (typeof window.render === 'function') window.render();
       }
     });
   }
@@ -371,7 +397,7 @@
      data-step="business">
   <div class="step-header-wrap flex items-center gap-3">
     <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Place
+      Places
     </button>
   </div>
   <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
