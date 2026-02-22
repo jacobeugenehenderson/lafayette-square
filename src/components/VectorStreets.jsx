@@ -46,6 +46,7 @@ import * as THREE from 'three'
 import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js'
 import useCamera from '../hooks/useCamera'
 import useSkyState from '../hooks/useSkyState'
+import lampData from '../data/street_lamps.json'
 
 // SVG served from public/ — swap the file to change the map artwork
 const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg`
@@ -85,6 +86,41 @@ function horizonToCSS(color) {
   const b = linearToSRGB(acesToneMap(color.b))
   return '#' + toHex(r) + toHex(g) + toHex(b)
 }
+
+// ── Bake neighborhood lamp lightmap for night overlay ─────────────────────
+// Same Gaussian approach as park lightmap but covers ±500m for the full
+// neighborhood. At night a WebGL overlay mesh uses this to add warm glow
+// pools near each lamp while the rest of the scene stays dark.
+function bakeNeighborhoodLampMap() {
+  const SIZE = 512
+  const EXTENT = 500
+  const SIGMA = 15
+  const SIGMA2 = 2 * SIGMA * SIGMA
+  const CUTOFF2 = (4 * SIGMA) * (4 * SIGMA)
+  const data = new Float32Array(SIZE * SIZE)
+  const lamps = lampData.lamps
+  for (let j = 0; j < SIZE; j++) {
+    const wz = (j / (SIZE - 1)) * 2 * EXTENT - EXTENT
+    for (let i = 0; i < SIZE; i++) {
+      const wx = (i / (SIZE - 1)) * 2 * EXTENT - EXTENT
+      let acc = 0
+      for (let l = 0; l < lamps.length; l++) {
+        const dx = wx - lamps[l].x
+        const dz = wz - lamps[l].z
+        const dist2 = dx * dx + dz * dz
+        if (dist2 > CUTOFF2) continue
+        acc += Math.exp(-dist2 / SIGMA2)
+      }
+      data[j * SIZE + i] = Math.min(acc, 1.5)
+    }
+  }
+  const tex = new THREE.DataTexture(data, SIZE, SIZE, THREE.RedFormat, THREE.FloatType)
+  tex.minFilter = THREE.LinearFilter
+  tex.magFilter = THREE.LinearFilter
+  tex.needsUpdate = true
+  return tex
+}
+const neighborhoodLampMap = bakeNeighborhoodLampMap()
 
 function VectorStreets({ svgPortal }) {
   const { camera, size } = useThree()
@@ -216,7 +252,7 @@ function VectorStreets({ svgPortal }) {
       const day = raw * raw * (3 - 2 * raw)
       const night = 1 - day
 
-      const brightness = 0.35 + 0.65 * day
+      const brightness = 0.12 + 0.88 * day
       const saturate = 0.30 + 0.70 * day
 
       // Night blue tint: sepia strips color → hue-rotate shifts to blue
@@ -265,6 +301,46 @@ function VectorStreets({ svgPortal }) {
   // sky/stars don't render there (canvas stays transparent → SVG shows through).
   // Does NOT write depth — this lets the Gateway Arch legs render freely without
   // being blocked by the ground plane's depth.
+  // ── Night lamp glow overlay ────────────────────────────────────────────────
+  // WebGL mesh on top of the shadow catcher that adds warm glow pools near
+  // park lamps at night. CSS filter darkens the SVG overall; this adds back
+  // warm light where lamps are. Invisible during the day.
+  const nightOverlayMat = useMemo(() => new THREE.ShaderMaterial({
+    uniforms: {
+      uLampMap: { value: neighborhoodLampMap },
+      uLampOn: { value: 0.0 },
+    },
+    transparent: true,
+    depthWrite: false,
+    vertexShader: `
+      varying vec3 vWorldPos;
+      void main() {
+        vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D uLampMap;
+      uniform float uLampOn;
+      varying vec3 vWorldPos;
+      void main() {
+        vec2 uv = (vWorldPos.xz + 500.0) / 1000.0;
+        float lampI = texture2D(uLampMap, uv).r;
+        float glow = lampI * uLampOn;
+        // Warm amber — matches StreetLights LAMP_COLOR_ON (#ffd9b0)
+        vec3 warmColor = vec3(0.35, 0.25, 0.10);
+        gl_FragColor = vec4(warmColor * glow, glow * 0.5);
+      }
+    `,
+  }), [])
+
+  // Drive the overlay's lampOn uniform from the same ramp as StreetLights
+  useFrame(() => {
+    const sunElev = useSkyState.getState().sunElevation
+    const lampOn = Math.max(0, Math.min(1, (0.15 - sunElev) / 0.45))
+    nightOverlayMat.uniforms.uLampOn.value = lampOn
+  })
+
   const clearMat = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
       vertexShader: `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -301,7 +377,17 @@ function VectorStreets({ svgPortal }) {
         }}
       >
         <circleGeometry args={[8000, 64]} />
-        <shadowMaterial opacity={0.4} />
+        <shadowMaterial opacity={0.4} depthWrite={false} />
+      </mesh>
+
+      {/* Night lamp glow overlay — warm pools near park lamps on the ground */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.02, 0]}
+        material={nightOverlayMat}
+        renderOrder={2}
+      >
+        <circleGeometry args={[500, 64]} />
       </mesh>
     </group>
   )

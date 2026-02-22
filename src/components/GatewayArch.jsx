@@ -81,8 +81,8 @@ function createArchGeometry(curveSegs = 120) {
 }
 
 const ARCH_POSITION = [1470, 0, -490]
-const ARCH_SCALE = 2.73
-const ARCH_Y_OFFSET = -150
+const ARCH_SCALE = 2.66
+const ARCH_Y_OFFSET = -165
 
 // Real arch faces roughly north-south (legs N/S, curve arches E-W).
 const ARCH_FIXED_ROTATION = 1.36 // radians

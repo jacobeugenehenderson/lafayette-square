@@ -785,7 +785,7 @@ function StreetLabel({ label }) {
   const text = label.name.toUpperCase()
 
   return (
-    <group position={[label.x, 0.3, label.z]} rotation={[-Math.PI / 2, 0, -label.angle]}>
+    <group position={[label.x, 0.08, label.z]} rotation={[-Math.PI / 2, 0, -label.angle]}>
       <Text
         fontSize={fontSize}
         color={isPrimary ? '#c8c8d0' : '#888890'}

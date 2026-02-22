@@ -187,8 +187,7 @@ function CollapsibleSection({ title, defaultOpen = false, bg = '', highlight = f
 // ============ ALMANAC TAB ============
 
 function AlmanacTab({ showAdmin = false }) {
-  const { currentTime, setTime } = useTimeOfDay()
-  const [useRealTime, setUseRealTime] = useState(true)
+  const { currentTime, setTime, isLive } = useTimeOfDay()
   const [use24Hour, setUse24Hour] = useState(false)
   const [useCelsius, setUseCelsius] = useState(false)
   const openCodeDesk = useCodeDesk((s) => s.setOpen)
@@ -208,10 +207,10 @@ function AlmanacTab({ showAdmin = false }) {
   }, [realOpenCount])
 
   useEffect(() => {
-    if (!useRealTime) return
-    const interval = setInterval(() => setTime(new Date()), 1000)
+    if (!isLive) return
+    const interval = setInterval(() => useTimeOfDay.getState().returnToLive(), 1000)
     return () => clearInterval(interval)
-  }, [useRealTime, setTime])
+  }, [isLive])
 
   const sunTimes = SunCalc.getTimes(currentTime, LATITUDE, LONGITUDE)
   const moonIllum = SunCalc.getMoonIllumination(currentTime)
@@ -247,13 +246,13 @@ function AlmanacTab({ showAdmin = false }) {
   const isNight = sunElevation < -0.12
 
   const displayWeather = useMemo(() => {
-    if (useRealTime) {
+    if (isLive) {
       return { temperatureF: liveTemp, weatherCode: liveCode }
     }
     const interp = interpolateForecast(currentTime, hourlyForecast)
     if (interp) return { temperatureF: interp.temperatureF, weatherCode: interp.weatherCode }
     return { temperatureF: liveTemp, weatherCode: liveCode }
-  }, [useRealTime, currentTime, hourlyForecast, liveTemp, liveCode])
+  }, [isLive, currentTime, hourlyForecast, liveTemp, liveCode])
 
   const condition = getWeatherCondition(displayWeather.weatherCode ?? 0)
   const headerTempF = displayWeather.temperatureF != null ? Math.round(displayWeather.temperatureF) : null
@@ -327,11 +326,9 @@ function AlmanacTab({ showAdmin = false }) {
       <div className="bg-white/[0.04] border-b border-white/[0.06]">
         <WeatherTimeline
           currentTime={currentTime}
-          isLive={useRealTime}
+          isLive={isLive}
           useCelsius={useCelsius}
-          onScrub={(date) => { setUseRealTime(false); setTime(date) }}
-          onReturnToLive={() => { setUseRealTime(true); setTime(new Date()) }}
-          onToggleCelsius={() => setUseCelsius(!useCelsius)}
+          onScrub={(date) => setTime(date)}
         />
       </div>
 

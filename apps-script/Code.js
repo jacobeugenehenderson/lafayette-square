@@ -243,10 +243,18 @@ function getEvents() {
   const rows = sheetToObjects(getSheet('Events'))
   const today = todayCentral()
   const active = rows.filter(r => {
-    const end = r.end_date || r.start_date
+    var endRaw = r.end_date || r.start_date
+    var end = endRaw instanceof Date
+      ? Utilities.formatDate(endRaw, TIMEZONE, 'yyyy-MM-dd')
+      : String(endRaw)
     return end >= today
   })
-  return jsonResponse(active.sort((a, b) => a.start_date.localeCompare(b.start_date)))
+  // Normalize Date objects to strings before sending
+  active.forEach(r => {
+    if (r.start_date instanceof Date) r.start_date = Utilities.formatDate(r.start_date, TIMEZONE, 'yyyy-MM-dd')
+    if (r.end_date instanceof Date) r.end_date = Utilities.formatDate(r.end_date, TIMEZONE, 'yyyy-MM-dd')
+  })
+  return jsonResponse(active.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || '')))
 }
 
 // ─── GET: Check-in status (is device a local?) ─────────────────────────────
@@ -1212,4 +1220,76 @@ function seedListings() {
 
   listings.forEach(r => sheet.appendRow(r))
   Logger.log('Seeded ' + listings.length + ' listings')
+}
+
+// ─── Utility: Seed sample events for the next 3 days ────────────────────────
+
+function seedEvents() {
+  var sheet = getSheet('Events')
+  var now = nowISO()
+
+  // Clear existing data (keep sheet) and set correct headers
+  sheet.clear()
+  var headers = ['id', 'listing_id', 'device_hash', 'type', 'title', 'description', 'start_date', 'end_date', 'created_at']
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers])
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold')
+
+  // Build date strings for today + next 2 days
+  var d = new Date()
+  var dates = []
+  for (var i = 0; i < 3; i++) {
+    var dd = new Date(d)
+    dd.setDate(dd.getDate() + i)
+    dates.push(Utilities.formatDate(dd, TIMEZONE, 'yyyy-MM-dd'))
+  }
+
+  // Events sheet columns: id, listing_id, device_hash, type, title, description, start_date, end_date, created_at
+  var events = [
+    // ── Square One Brewery (lmk-001) ──
+    [generateId('evt'), 'lmk-001', 'seed', 'special', 'Sunday Brunch & Bloody Mary Bar',
+     'Build-your-own Bloody Mary bar with brunch classics and 15 beers on tap.',
+     dates[0], '', now],
+    [generateId('evt'), 'lmk-001', 'seed', 'event', 'Monday Night Trivia',
+     'Six rounds of pub trivia with prizes. Teams of up to 6. Starts at 7 PM.',
+     dates[1], '', now],
+    [generateId('evt'), 'lmk-001', 'seed', 'special', 'Taco Tuesday & $5 House Beers',
+     'Street tacos and $5 pints of all house-brewed beers.',
+     dates[2], '', now],
+
+    // ── SqWires (lmk-027) ──
+    [generateId('evt'), 'lmk-027', 'seed', 'event', 'Sunday Jazz Brunch',
+     'Live jazz trio accompanies weekend brunch in the converted wire factory.',
+     dates[0], '', now],
+    [generateId('evt'), 'lmk-027', 'seed', 'special', 'Industry Night — Half-Off Bottles',
+     'Half-price bottles of wine for hospitality workers. Bring your pay stub.',
+     dates[1], '', now],
+    [generateId('evt'), 'lmk-027', 'seed', 'event', 'Live Jazz with the STL Quintet',
+     'The STL Quintet plays standards and originals. 7–10 PM, no cover.',
+     dates[2], '', now],
+
+    // ── Polite Society (lmk-010) ──
+    [generateId('evt'), 'lmk-010', 'seed', 'special', 'Sunday Supper — Prix Fixe Menu',
+     'Three-course prix fixe dinner for $45. Rotating seasonal menu by Chef.',
+     dates[0], '', now],
+    [generateId('evt'), 'lmk-010', 'seed', 'event', 'Cocktail Class: Classic Sours',
+     'Learn to shake a Whiskey Sour, Daiquiri, and more. 6 PM. $35/person.',
+     dates[1], '', now],
+    [generateId('evt'), 'lmk-010', 'seed', 'event', 'Wine & Cheese Pairing Night',
+     'Five wines paired with artisan cheeses. Guided tasting at 7 PM.',
+     dates[2], '', now],
+
+    // ── The Bellwether (lmk-008) ──
+    [generateId('evt'), 'lmk-008', 'seed', 'event', 'Bellwether Rooftop Brunch',
+     'Weekend brunch on the rooftop patio with craft cocktails and Arch views.',
+     dates[0], '', now],
+    [generateId('evt'), 'lmk-008', 'seed', 'special', 'Pasta & Pinot Monday',
+     'House-made pasta and half-price Pinot Noir. Perfect start to the week.',
+     dates[1], '', now],
+    [generateId('evt'), 'lmk-008', 'seed', 'special', "Chef's Table Tasting Menu",
+     'Five-course tasting with wine pairings. Limited to 12 seats. Reserve via Tock.',
+     dates[2], '', now],
+  ]
+
+  events.forEach(function(r) { sheet.appendRow(r) })
+  Logger.log('Seeded ' + events.length + ' events across ' + dates.join(', '))
 }

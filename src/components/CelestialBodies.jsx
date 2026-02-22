@@ -26,6 +26,7 @@ const _secP = new THREE.Vector3()
 const _nightLP = new THREE.Vector3()
 const _sunD = new THREE.Vector3()
 const _moonD = new THREE.Vector3()
+const _camFwd = new THREE.Vector3()
 const _lc1 = new THREE.Color()
 const _lc2 = new THREE.Color()
 
@@ -118,7 +119,7 @@ function SecondaryOrb({ position, color, intensity }) {
   )
 }
 
-function Moon({ position, phase, illumination, visible }) {
+function Moon({ position, phase, illumination, sunDirection, dayFactor, visible }) {
   const moonRef = useRef()
   const glowRef = useRef()
   const moonTexture = useTexture(`${import.meta.env.BASE_URL}textures/moon.jpg`)
@@ -128,20 +129,29 @@ function Moon({ position, phase, illumination, visible }) {
       uniforms: {
         moonMap: { value: moonTexture },
         phase: { value: phase },
-        shadowColor: { value: new THREE.Color('#0a0a12') },
+        dayFactor: { value: 0.0 },
+        // Full 3D sun direction in billboard-local space (X=right, Y=up, Z=toward camera).
+        // The Z component is critical: when the sun is angularly far from the moon
+        // (crescent phases), Z is large and negative, creating a narrow crescent.
+        // Without Z, the shader can't distinguish a crescent from a gibbous phase.
+        sunDir3D: { value: new THREE.Vector3(1, 0, 0) },
       },
       vertexShader: `
         varying vec2 vUv;
+        varying vec3 vWorldPos;
         void main() {
           vUv = uv;
+          vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
         uniform sampler2D moonMap;
         uniform float phase;
-        uniform vec3 shadowColor;
+        uniform float dayFactor;
+        uniform vec3 sunDir3D;
         varying vec2 vUv;
+        varying vec3 vWorldPos;
         #define PI 3.14159265359
         void main() {
           vec2 uv = (vUv - 0.5) * 2.0;
@@ -149,44 +159,79 @@ function Moon({ position, phase, illumination, visible }) {
           float edgeWidth = fwidth(dist) * 1.5;
           float alpha = 1.0 - smoothstep(0.96 - edgeWidth, 0.96 + edgeWidth, dist);
           if (alpha < 0.01) discard;
+
+          // Sphere normal at this pixel (hemisphere facing camera)
           float z = sqrt(1.0 - min(dist * dist, 1.0));
+          vec3 normal = vec3(uv.x, uv.y, z);
+
+          // True 3D sun direction in billboard space
+          vec3 lightDir = normalize(sunDir3D);
+          float NdotL = dot(normal, lightDir);
+
+          // Wide soft terminator — real moon surface is rough (craters, regolith),
+          // so the shadow boundary is gradual, not a hard knife-edge.
+          float lit = smoothstep(-0.15, 0.15, NdotL);
+
+          // Texture mapping (spherical projection for moon surface detail)
           float theta = atan(uv.x, z);
           float phi = asin(clamp(uv.y, -1.0, 1.0));
           vec2 texUv;
           texUv.x = (theta / PI) * 0.5 + 0.5;
           texUv.y = (phi / PI) + 0.5;
           vec3 texColor = texture2D(moonMap, texUv).rgb;
-          float angle = phase * 6.28318;
-          float terminator = cos(angle);
-          float lit = smoothstep(terminator - 0.12, terminator + 0.12, uv.x);
-          // Shadow side goes transparent instead of black — sky shows through
+
+          // Limb darkening
           vec3 color = texColor * (0.85 + z * 0.15);
-          float litAlpha = alpha * (0.04 + lit * 0.96);
+
+          // ── Luma-based alpha: dark pixels knock themselves out ─────────────
+          // Bright highlands are more opaque, dark maria are more transparent.
+          // This naturally makes the moon ghostly during the day and gives the
+          // dark side a soft fade rather than a hard crescent edge.
+          float luma = dot(color, vec3(0.299, 0.587, 0.114));
+          float lumaAlpha = luma * luma;  // squared for stronger falloff
+
+          // Crescent mask: lit side visible, shadow side fades out
+          float litAlpha = alpha * mix(0.02, lumaAlpha, lit);
+
+          // Overall transparency dial
+          litAlpha *= mix(0.85, 0.50, dayFactor);
+
+          // Soft horizon fade — moon emerges smoothly from behind the horizon.
+          vec3 viewDir = normalize(vWorldPos - cameraPosition);
+          float elevAngle = asin(viewDir.y);
+          litAlpha *= smoothstep(-0.02, 0.008, elevAngle);
+          if (litAlpha < 0.005) discard;
+
           gl_FragColor = vec4(color, litAlpha);
         }
       `,
       transparent: true,
       depthWrite: false,
     })
-  }, [moonTexture])
+  }, [moonTexture, 5])
 
   const glowMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
         glowColor: { value: new THREE.Color('#c8d8e8') },
         intensity: { value: illumination },
+        dayFactor: { value: 0.0 },
       },
       vertexShader: `
         varying vec2 vUv;
+        varying vec3 vWorldPos;
         void main() {
           vUv = uv;
+          vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
         uniform vec3 glowColor;
         uniform float intensity;
+        uniform float dayFactor;
         varying vec2 vUv;
+        varying vec3 vWorldPos;
         void main() {
           vec2 uv = (vUv - 0.5) * 2.0;
           float dist = length(uv);
@@ -195,6 +240,13 @@ function Moon({ position, phase, illumination, visible }) {
           glow = pow(glow, 3.0);
           glow *= smoothstep(0.15, moonRadius, dist);
           glow *= intensity * 0.01;
+          // Suppress glow during daytime — the moon doesn't visibly glow against a bright sky
+          glow *= (1.0 - dayFactor);
+          // Soft horizon fade — match moon disc
+          vec3 viewDir = normalize(vWorldPos - cameraPosition);
+          float elevAngle = asin(viewDir.y);
+          glow *= smoothstep(-0.02, 0.008, elevAngle);
+          if (glow < 0.002) discard;
           gl_FragColor = vec4(glowColor, glow);
         }
       `,
@@ -207,16 +259,36 @@ function Moon({ position, phase, illumination, visible }) {
     if (moonRef.current) {
       moonRef.current.quaternion.copy(camera.quaternion)
       moonRef.current.material.uniforms.phase.value = phase
+      moonRef.current.material.uniforms.dayFactor.value = dayFactor
+
+      // Compute sun direction in billboard-local space (camera-aligned XYZ).
+      // X = camera right, Y = camera up, Z = camera forward (toward viewer).
+      // The Z component is essential: for crescent phases the sun is angularly
+      // far from the moon, so Z is large and negative (sun behind the moon
+      // from the camera's POV). This makes NdotL negative for most of the
+      // front-facing hemisphere, producing a thin crescent.
+      if (sunDirection) {
+        const camRight = _sunD.set(1, 0, 0).applyQuaternion(camera.quaternion)
+        const camUp = _moonD.set(0, 1, 0).applyQuaternion(camera.quaternion)
+        camera.getWorldDirection(_camFwd)
+        const sx = sunDirection.dot(camRight)
+        const sy = sunDirection.dot(camUp)
+        // Negate: camFwd points INTO scene, but billboard +Z points TOWARD camera
+        const sz = -sunDirection.dot(_camFwd)
+        moonRef.current.material.uniforms.sunDir3D.value.set(sx, sy, sz)
+      }
     }
     if (glowRef.current) {
       glowRef.current.quaternion.copy(camera.quaternion)
       glowRef.current.material.uniforms.intensity.value = illumination
+      glowRef.current.material.uniforms.dayFactor.value = dayFactor
     }
   })
 
   if (!visible) return null
 
-  const moonSize = 350 * (MOON_RADIUS / 3400)  // scale proportionally to new distance
+  // ~1.5° angular diameter (3× real moon — artistic but not overwhelming)
+  const moonSize = 2 * MOON_RADIUS * Math.tan(1.5 * Math.PI / 360)
   const glowSize = moonSize * 6
 
   return (
@@ -859,11 +931,21 @@ function CelestialBodies() {
     let sky = {}
     let ambient = {}
 
+    // Sun direction in world space (normalized) — used by Moon shader for
+    // physically-based crescent lighting from the actual sun position.
+    const sunDirWorld = _sunVP.clone().normalize()
+
+    // Day factor for moon appearance: 0 = night (full detail), 1 = day (pale/translucent).
+    // Transitions smoothly through twilight.
+    const dayFactor = Math.max(0, Math.min(1, (sunAlt - 0.02) / 0.25))
+
     const moon = {
       position: _moonP,
       phase: moonIllum.phase,
       illumination: moonIllum.fraction,
-      visible: moonAlt > 0,
+      sunDirection: sunDirWorld,
+      dayFactor,
+      visible: moonAlt > -0.05,  // Show slightly below horizon so it rises/sets behind buildings
     }
 
     if (isNight) {

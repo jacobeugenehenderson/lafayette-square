@@ -8,14 +8,6 @@ import {
   getHiLo,
 } from '../lib/dawnTimeline'
 
-function formatTime(date) {
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).replace(' ', '')
-}
-
 function formatTimeCompact(date) {
   const h = date.getHours()
   const m = date.getMinutes()
@@ -24,11 +16,10 @@ function formatTimeCompact(date) {
   return `${h12}:${String(m).padStart(2, '0')}${suffix}`
 }
 
-export default function WeatherTimeline({ currentTime, isLive, useCelsius, onScrub, onReturnToLive }) {
+export default function WeatherTimeline({ currentTime, isLive, useCelsius, onScrub }) {
   const [dragging, setDragging] = useState(false)
   const [scrubFraction, setScrubFraction] = useState(0)
   const rafId = useRef(null)
-  const pointerStart = useRef(null)
 
   const hourlyForecast = useSkyState((s) => s.hourlyForecast)
 
@@ -40,13 +31,6 @@ export default function WeatherTimeline({ currentTime, isLive, useCelsius, onScr
   ])
 
   const waypoints = useMemo(() => getWaypoints(dawnWindow), [dawnWindow])
-
-  // All snap targets: dawn edges + all waypoints (including ticOnly)
-  const snapTargets = useMemo(() => [
-    { fraction: 0, time: dawnWindow.start },
-    ...waypoints.map(wp => ({ fraction: wp.fraction, time: wp.time })),
-    { fraction: 1, time: dawnWindow.end },
-  ], [dawnWindow, waypoints])
 
   const hiLo = useMemo(
     () => getHiLo(dawnWindow, hourlyForecast),
@@ -62,20 +46,6 @@ export default function WeatherTimeline({ currentTime, isLive, useCelsius, onScr
     if (!dragging) setScrubFraction(nowFraction)
   }, [nowFraction, dragging])
 
-  const displayTime = dragging ? fractionToDate(scrubFraction, dawnWindow) : currentTime
-
-  // Snap to nearest waypoint for a given fraction
-  const snapToNearest = useCallback((frac) => {
-    let closest = snapTargets[0]
-    let minDist = Math.abs(frac - closest.fraction)
-    for (const t of snapTargets) {
-      const d = Math.abs(frac - t.fraction)
-      if (d < minDist) { closest = t; minDist = d }
-    }
-    setScrubFraction(closest.fraction)
-    onScrub(closest.time)
-  }, [snapTargets, onScrub])
-
   const handleSliderChange = useCallback((e) => {
     const frac = parseInt(e.target.value) / 10000
     setScrubFraction(frac)
@@ -85,44 +55,20 @@ export default function WeatherTimeline({ currentTime, isLive, useCelsius, onScr
     })
   }, [dawnWindow, onScrub])
 
-  const handlePointerDown = useCallback((e) => {
-    pointerStart.current = { x: e.clientX, y: e.clientY, frac: parseInt(e.target.value) / 10000 }
+  const handlePointerDown = useCallback(() => {
     setDragging(true)
   }, [])
 
-  const handlePointerUp = useCallback((e) => {
+  const handlePointerUp = useCallback(() => {
     setDragging(false)
-    // If pointer barely moved, treat as click → snap to nearest tic
-    if (pointerStart.current) {
-      const dx = Math.abs(e.clientX - pointerStart.current.x)
-      const dy = Math.abs(e.clientY - pointerStart.current.y)
-      if (dx < 5 && dy < 5) {
-        const frac = parseInt(e.target.value) / 10000
-        snapToNearest(frac)
-      }
-      pointerStart.current = null
-    }
-  }, [snapToNearest])
+  }, [])
 
   const isLiveMode = isLive && !dragging
   const markerColor = isLiveMode ? '#4ade80' : '#60a5fa'
 
   return (
     <div className="py-1">
-      {/* Row 1: scrub time + Live (only when not live) */}
-      {!isLive && (
-        <div className="flex items-center justify-between h-5 px-4 mb-0.5">
-          <span className="text-[10px] text-white/50 font-medium">{formatTime(displayTime)}</span>
-          <button
-            onClick={onReturnToLive}
-            className="text-[10px] px-2 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
-          >
-            Live
-          </button>
-        </div>
-      )}
-
-      {/* Row 2: waypoint labels — on zebra stripe */}
+      {/* Row 1: waypoint labels — on zebra stripe */}
       <div className="relative h-3.5 mx-4">
         <button
           className="absolute left-0.5 text-[9px] text-rose-400/50 hover:text-rose-400/80 transition-colors cursor-pointer"

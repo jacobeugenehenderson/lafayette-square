@@ -1046,13 +1046,8 @@ export default function BulletinModal() {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
+      <div className="flex items-center px-4 py-3 border-b border-white/10 flex-shrink-0">
         <h2 className="text-sm font-medium text-white">Bulletin Board</h2>
-        <button onClick={close} className="w-8 h-8 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </div>
 
       {/* Content */}

@@ -1495,14 +1495,6 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </div>
         )}
 
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 w-8 h-8 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
 
         {photos && photos.length > 1 && (
           <div className="absolute bottom-2 right-3 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-white/70">

@@ -9,8 +9,10 @@ const useTimeOfDay = create((set, get) => ({
   currentTime: new Date(),
   timeSpeed: 1,
   isPaused: false,
+  isLive: true,
 
-  setTime: (date) => set({ currentTime: date }),
+  setTime: (date) => set({ currentTime: date, isLive: false }),
+  returnToLive: () => set({ isLive: true, currentTime: new Date() }),
   setTimeSpeed: (speed) => set({ timeSpeed: speed }),
   setPaused: (v) => set({ isPaused: v }),
   togglePause: () => set((state) => ({ isPaused: !state.isPaused })),

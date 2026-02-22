@@ -8,6 +8,7 @@ import parkTreeData from '../data/park_trees.json'
 import parkWaterData from '../data/park_water.json'
 import parkPathData from '../data/park_paths.json'
 import leafTypesData from '../data/leafTypes.json'
+import lampData from '../data/street_lamps.json'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin
 // Bounded by Park Ave (N), Lafayette Ave (S),
@@ -27,6 +28,40 @@ const PARK = {
 const FENCE_HEIGHT = 1.5
 const FENCE_POST_SPACING = 8
 const TAU = Math.PI * 2
+
+// ── Bake park lamp positions into a 256×256 lightmap DataTexture ─────
+// Each texel = accumulated Gaussian falloff from nearby lamps. σ=12m.
+// Covers ±200m from origin. Baked once at module load (~50ms).
+function bakeLampLightmap() {
+  const SIZE = 256
+  const EXTENT = 200
+  const SIGMA = 12
+  const SIGMA2 = 2 * SIGMA * SIGMA
+  const CUTOFF2 = (4 * SIGMA) * (4 * SIGMA)
+  const data = new Float32Array(SIZE * SIZE)
+  const lamps = lampData.lamps
+  for (let j = 0; j < SIZE; j++) {
+    const wz = (j / (SIZE - 1)) * 2 * EXTENT - EXTENT
+    for (let i = 0; i < SIZE; i++) {
+      const wx = (i / (SIZE - 1)) * 2 * EXTENT - EXTENT
+      let acc = 0
+      for (let l = 0; l < lamps.length; l++) {
+        const dx = wx - lamps[l].x
+        const dz = wz - lamps[l].z
+        const dist2 = dx * dx + dz * dz
+        if (dist2 > CUTOFF2) continue
+        acc += Math.exp(-dist2 / SIGMA2)
+      }
+      data[j * SIZE + i] = Math.min(acc, 1.5)
+    }
+  }
+  const tex = new THREE.DataTexture(data, SIZE, SIZE, THREE.RedFormat, THREE.FloatType)
+  tex.minFilter = THREE.LinearFilter
+  tex.magFilter = THREE.LinearFilter
+  tex.needsUpdate = true
+  return tex
+}
+const lampLightmap = bakeLampLightmap()
 
 // ── SVG clip mask for park boundary ──────────────────────────────────
 const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg?v=${Date.now()}`
@@ -210,7 +245,7 @@ function ParkGround() {
 
         if (!dAttrs.length) { console.warn('[ParkGround] no park boundary found'); return }
 
-        const RES = 1024
+        const RES = 4096
         const canvas = document.createElement('canvas')
         canvas.width = RES
         canvas.height = Math.round(RES * (SVG_VB_H / SVG_VB_W))
@@ -255,6 +290,7 @@ function ParkGround() {
       shader.uniforms.uClipMin = { value: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z) }
       shader.uniforms.uClipSize = { value: new THREE.Vector2(SVG_VB_W, SVG_VB_H) }
       shader.uniforms.uHasClip = { value: 0.0 }
+      shader.uniforms.uLampMap = { value: lampLightmap }
       grassShaderRef.current = shader
 
       // Vertex: pass world position to fragment
@@ -278,6 +314,7 @@ function ParkGround() {
          uniform vec2 uClipMin;
          uniform vec2 uClipSize;
          uniform float uHasClip;
+         uniform sampler2D uLampMap;
          varying vec3 vGrassPos;
 
          float gHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -325,6 +362,14 @@ function ParkGround() {
          float brightness = mix(0.7, 1.0, dayBright);
          vec3 nightTint = vec3(0.6, 0.7, 1.0);
          grass = mix(grass * nightTint, grass, dayBright) * brightness;
+
+         // Park lamp glow (un-rotate from park frame to world for lightmap lookup)
+         vec2 grassWorld = vec2(vGrassPos.x * 0.9871 + vGrassPos.z * 0.1599,
+                               -vGrassPos.x * 0.1599 + vGrassPos.z * 0.9871);
+         vec2 grassLampUV = (grassWorld + 200.0) / 400.0;
+         float grassLampI = texture2D(uLampMap, grassLampUV).r;
+         float grassLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
+         grass += vec3(0.40, 0.50, 0.22) * grassLampI * grassLampOn * 0.4;
 
          // sRGB values → linear space (shader operates in linear)
          diffuseColor.rgb = pow(grass, vec3(2.2));`
@@ -406,7 +451,7 @@ function ParkPaths() {
         if (!dAttrs.length) { console.warn('[ParkPaths] no compound path found (tried #paths-compound, #paths1, #paths)'); return }
 
         // Rasterize to canvas
-        const RES = 2048
+        const RES = 4096
         const canvas = document.createElement('canvas')
         canvas.width = RES
         canvas.height = Math.round(RES * (SVG_VB_H / SVG_VB_W))
@@ -478,6 +523,8 @@ function ParkPaths() {
     const mat = new THREE.MeshStandardMaterial({
       roughness: 0.95,
       color: '#7a7468',
+      transparent: true,
+      depthWrite: false,
     })
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunAltitude = { value: 0.5 }
@@ -485,6 +532,7 @@ function ParkPaths() {
       shader.uniforms.uMaskMin = { value: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z) }
       shader.uniforms.uMaskSize = { value: new THREE.Vector2(SVG_VB_W, SVG_VB_H) }
       shader.uniforms.uHasMask = { value: 0.0 }
+      shader.uniforms.uLampMap = { value: lampLightmap }
       pathShaderRef.current = shader
 
       shader.vertexShader = shader.vertexShader.replace(
@@ -506,6 +554,7 @@ function ParkPaths() {
          uniform vec2 uMaskMin;
          uniform vec2 uMaskSize;
          uniform float uHasMask;
+         uniform sampler2D uLampMap;
          varying vec3 vPathPos;
 
          float pHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -572,16 +621,23 @@ function ParkPaths() {
          vec3 nightTint = vec3(0.6, 0.7, 1.0);
          gravelCol = mix(gravelCol * nightTint, gravelCol, dayBright) * brightness;
 
+         // Park lamp glow
+         vec2 pathLampUV = (pp + 200.0) / 400.0;
+         float pathLampI = texture2D(uLampMap, pathLampUV).r;
+         float pathLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
+         gravelCol += vec3(0.50, 0.45, 0.28) * pathLampI * pathLampOn * 0.4;
+
          diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
       )
-      // Discard fragments outside path mask (after all shading)
+      // Soft-edge path mask — smoothstep alpha fade at gravel-grass boundary
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <dithering_fragment>',
         `#include <dithering_fragment>
          if (uHasMask > 0.5) {
            vec2 maskUV = (vPathPos.xz - uMaskMin) / uMaskSize;
            float pathMask = texture2D(uPathMask, maskUV).r;
-           if (pathMask < 0.5) discard;
+           if (pathMask < 0.05) discard;
+           gl_FragColor.a *= smoothstep(0.05, 0.55, pathMask);
          }`
       )
     }
@@ -706,10 +762,20 @@ function ParkTrees() {
     // Push a foliage billboard card position into the correct morphology group
     function addLeaf(morph, cx, cy, cz, radius, rng) {
       const arr = canopyByMorph[morph] || canopyByMorph.ovate_large
+      // Derive multiple random values from single seed for varied orientation
+      const r2 = seed(rng * 10000 + 1)
+      const r3 = seed(rng * 10000 + 2)
+      const r4 = seed(rng * 10000 + 3)
+      const r5 = seed(rng * 10000 + 4)
+      const r6 = seed(rng * 10000 + 5)
       arr.push({
         x: cx, y: cy, z: cz,
-        sx: radius * 4.5, sy: radius * 3.5, sz: radius * 4.5,
-        ry: rng * TAU,
+        sx: radius * 4.5 * (0.7 + r4 * 0.6),   // ±30% width variation
+        sy: radius * 3.5 * (0.7 + r5 * 0.6),   // ±30% height variation
+        sz: radius * 4.5 * (0.7 + r6 * 0.6),   // ±30% depth variation
+        rx: (r2 - 0.5) * 0.7,                   // ±20° X tilt
+        ry: rng * TAU,                           // full Y rotation
+        rz: (r3 - 0.5) * 0.7,                   // ±20° Z tilt
       })
     }
 
@@ -920,7 +986,7 @@ function ParkTrees() {
       if (!mesh || blobs.length === 0) return
       blobs.forEach((b, i) => {
         dummy.position.set(b.x, b.y, b.z)
-        dummy.rotation.set(0, b.ry, 0)
+        dummy.rotation.set(b.rx, b.ry, b.rz)
         dummy.scale.set(b.sx, b.sy, b.sz)
         dummy.updateMatrix()
         mesh.setMatrixAt(i, dummy.matrix)
@@ -970,6 +1036,7 @@ function ParkTrees() {
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 })
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunAltitude = { value: 0.5 }
+      shader.uniforms.uLampMap = { value: lampLightmap }
       shaderRef.current = shader
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
@@ -985,6 +1052,7 @@ function ParkTrees() {
         '#include <common>',
         `#include <common>
          uniform float uSunAltitude;
+         uniform sampler2D uLampMap;
          varying vec3 vBarkWorld;
          float bHash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
          float bNoise(vec2 p) {
@@ -1005,7 +1073,13 @@ function ParkTrees() {
          float dayB = smoothstep(-0.12, 0.3, uSunAltitude);
          float bright = mix(0.7, 1.0, dayB);
          vec3 nightT = vec3(0.6, 0.7, 1.0);
-         diffuseColor.rgb = mix(diffuseColor.rgb * nightT, diffuseColor.rgb, dayB) * bright;`
+         diffuseColor.rgb = mix(diffuseColor.rgb * nightT, diffuseColor.rgb, dayB) * bright;
+
+         // Park lamp glow (already linear, linearize glow color inline)
+         vec2 barkLampUV = (vBarkWorld.xz + 200.0) / 400.0;
+         float barkLampI = texture2D(uLampMap, barkLampUV).r;
+         float barkLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
+         diffuseColor.rgb += pow(vec3(0.45, 0.40, 0.25), vec3(2.2)) * barkLampI * barkLampOn * 0.4;`
       )
     }
     return mat
@@ -1031,6 +1105,7 @@ function ParkTrees() {
         shader.uniforms.uSunAltitude = { value: 0.5 }
         shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
         shader.uniforms.uWindTime = { value: 0.0 }
+        shader.uniforms.uLampMap = { value: lampLightmap }
         foliageShaderRefs.current[lt.id] = shader
         shader.vertexShader = shader.vertexShader.replace(
           '#include <common>',
@@ -1078,6 +1153,7 @@ function ParkTrees() {
           `#include <common>
            uniform float uSunAltitude;
            uniform vec3 uSunDir;
+           uniform sampler2D uLampMap;
            varying vec3 vFoliageWorld;
            varying vec3 vFoliageNormal;`
         )
@@ -1102,7 +1178,14 @@ function ParkTrees() {
            // Day/night brightness
            float brightF = mix(0.75, 1.15, dayBF);
            vec3 nightTF = vec3(0.6, 0.7, 1.0);
-           diffuseColor.rgb = mix(diffuseColor.rgb * nightTF, diffuseColor.rgb, dayBF) * brightF;`
+           diffuseColor.rgb = mix(diffuseColor.rgb * nightTF, diffuseColor.rgb, dayBF) * brightF;
+
+           // Park lamp glow (height-attenuated: canopy tops receive less)
+           vec2 foliageLampUV = (vFoliageWorld.xz + 200.0) / 400.0;
+           float foliageLampI = texture2D(uLampMap, foliageLampUV).r;
+           float foliageLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
+           float heightAtten = smoothstep(12.0, 3.0, vFoliageWorld.y);
+           diffuseColor.rgb += pow(vec3(0.35, 0.55, 0.20), vec3(2.2)) * foliageLampI * foliageLampOn * heightAtten * 0.4;`
         )
       }
       mats[lt.id] = mat
