@@ -61,8 +61,11 @@ const SVG_WORLD_Z = -1156.1
 // CSS 3D transforms force the browser to rasterize the SVG element into a GPU
 // texture at (CSS width × height × devicePixelRatio²) pixels. We want the
 // highest RASTER_SCALE (up to 4) that fits within a safe pixel budget.
-// iPhone 3× DPR with old 1309×1152 SVG at scale=4 ≈ 217M px — known working.
-const MAX_GPU_PIXELS = 200_000_000
+// Mobile gets a tighter budget (80M → scale=2 ≈ 60M device px) because
+// SidePanel backdrop-blur creates additional compositing layers during
+// category clicks that compete for the same GPU memory.
+const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+const MAX_GPU_PIXELS = IS_MOBILE ? 80_000_000 : 200_000_000
 const DPR = Math.min(window.devicePixelRatio || 1, 3)
 
 // Apply the same ACES filmic tone mapping + sRGB gamma that the WebGL canvas
