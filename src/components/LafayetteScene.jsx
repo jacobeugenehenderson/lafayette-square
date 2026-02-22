@@ -998,6 +998,19 @@ function LafayetteScene() {
   const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
 
+  // Defer heavy components (LandmarkMarkers, FacadeElements) until after the
+  // camera transition completes. Mounting N8AO + Html-based MapPins + facade
+  // meshes simultaneously on mobile exceeds the GPU's VRAM budget and crashes.
+  // The 1.8s delay lets N8AO compile its shaders before pins start allocating.
+  const [heavyReady, setHeavyReady] = useState(false)
+  useEffect(() => {
+    if (viewMode !== 'hero') {
+      const id = setTimeout(() => setHeavyReady(true), 1800)
+      return () => clearTimeout(id)
+    }
+    setHeavyReady(false)
+  }, [viewMode])
+
   // Build a buildingId → { hex, hours } lookup from listings
   const neonLookup = useMemo(() => {
     const map = {}
@@ -1068,11 +1081,11 @@ function LafayetteScene() {
         <StreetLabel key={`label-${i}`} label={label} />
       ))}
 
-      {/* Landmark markers — hidden only in hero mode */}
-      {viewMode !== 'hero' && <LandmarkMarkers />}
+      {/* Landmark markers — deferred until after camera transition to avoid GPU spike */}
+      {heavyReady && <LandmarkMarkers />}
 
       {/* 3D facade elements — windows, doors, stoops (has own 60m LOD) */}
-      {viewMode !== 'hero' && <FacadeElements />}
+      {heavyReady && <FacadeElements />}
 
       {/* Facade photos — billboard planes on building fronts (shelved for future) */}
       {/* {viewMode !== 'hero' && <FacadeBillboards />} */}
