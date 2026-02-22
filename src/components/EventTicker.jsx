@@ -55,9 +55,11 @@ export default function EventTicker() {
   }, [])
 
   useEffect(() => {
-    fetchTodayEvents()
+    // Delay first fetch so mobile GPU can settle; retry quickly if it fails
+    const boot = setTimeout(fetchTodayEvents, 3000)
+    const retry = setTimeout(fetchTodayEvents, 8000)
     const id = setInterval(fetchTodayEvents, POLL_INTERVAL)
-    return () => clearInterval(id)
+    return () => { clearTimeout(boot); clearTimeout(retry); clearInterval(id) }
   }, [fetchTodayEvents])
 
   // Rotation timer for 2+ events

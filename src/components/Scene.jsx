@@ -841,6 +841,12 @@ function Scene() {
       {!IS_GROUND && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
+      {!IS_GROUND && IS_MOBILE && (
+        <EffectComposer>
+          <FilmGrade />
+          <FilmGrain />
+        </EffectComposer>
+      )}
       {!IS_GROUND && IS_MOBILE && <DeferredStreetLights viewMode={viewMode} />}
     </Canvas>
     </div>
