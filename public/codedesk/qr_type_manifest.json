@@ -4,8 +4,7 @@
       "bizSelect"
     ],
     "Guardian": [
-      "bizSelect",
-      "claimSecret"
+      "bizSelect"
     ]
   },
   "fields": {
@@ -13,11 +12,6 @@
       "label": "",
       "type": "listbox",
       "options": []
-    },
-    "claimSecret": {
-      "label": "Guardian Secret",
-      "type": "text",
-      "placeholder": "Enter the secret phrase from the guardian QR"
     }
   },
   "presets": {
