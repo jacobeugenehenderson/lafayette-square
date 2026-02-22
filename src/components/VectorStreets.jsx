@@ -149,23 +149,6 @@ function VectorStreets({ svgPortal }) {
 
         svgRef.current = svg
 
-        // ── Earth gradient as a separate CSS3DObject ───────────────────────
-        // The removed #horizon circle was a radial gradient disc centered at
-        // SVG (1000,1000) r=1000. Recreate as a plain div with CSS gradient.
-        // At 2000×2000 CSS px (3× DPR = 36M device px) — negligible GPU cost.
-        const earthDiv = document.createElement('div')
-        earthDiv.style.width = '2000px'
-        earthDiv.style.height = '2000px'
-        earthDiv.style.borderRadius = '50%'
-        // Initial gradient — immediately updated by useFrame with time-aware colors
-        earthDiv.style.background = 'radial-gradient(circle closest-side at center, ' +
-          '#3a3226 30%, rgba(58,50,38,0.9) 70%, rgba(82,70,52,0.5) 90%, rgba(82,70,52,0) 100%)'
-        earthRef.current = earthDiv
-        const earthObj = new CSS3DObject(earthDiv)
-        earthObj.position.set(SVG_WORLD_X + 1000, -0.1, SVG_WORLD_Z + 1000)
-        earthObj.rotation.set(-Math.PI / 2, 0, 0)
-        scene.add(earthObj)
-
         // Position SVG CSS3DObject at the center of the cropped content area
         const centerX = SVG_WORLD_X + cropX + cropW / 2
         const centerZ = SVG_WORLD_Z + cropY + cropH / 2
@@ -174,6 +157,29 @@ function VectorStreets({ svgPortal }) {
         obj.rotation.set(-Math.PI / 2, 0, 0)
         obj.scale.set(1 / scale, 1 / scale, 1)
         scene.add(obj)
+
+        // ── Earth gradient as a small CSS3DObject ────────────────────────
+        // Recreate the removed #horizon disc as a CSS div, sized to tightly
+        // surround the SVG content. Uses a small CSS element (low compositing
+        // cost ~2.25M device px on 3× DPR) with CSS3D scale to reach the
+        // target visual size. The disc must not extend far beyond the SVG
+        // content bounds or it will poke above the horizon in hero view.
+        const earthRadius = Math.max(cropW, cropH) * 0.75
+        const earthCSS = 500 // CSS px — small for low compositing cost
+        const earthScale = (earthRadius * 2) / earthCSS
+        const earthDiv = document.createElement('div')
+        earthDiv.style.width = earthCSS + 'px'
+        earthDiv.style.height = earthCSS + 'px'
+        earthDiv.style.borderRadius = '50%'
+        earthDiv.style.background = 'radial-gradient(circle closest-side at center, ' +
+          '#3a3226 30%, rgba(58,50,38,0.9) 70%, rgba(82,70,52,0.5) 90%, rgba(82,70,52,0) 100%)'
+        earthRef.current = earthDiv
+        const earthObj = new CSS3DObject(earthDiv)
+        // Center on SVG content, slightly below ground plane
+        earthObj.position.set(centerX, -0.1, centerZ)
+        earthObj.rotation.set(-Math.PI / 2, 0, 0)
+        earthObj.scale.set(earthScale, earthScale, 1)
+        scene.add(earthObj)
       })
 
     return () => {
