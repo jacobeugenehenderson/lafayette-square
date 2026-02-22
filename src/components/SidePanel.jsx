@@ -881,14 +881,20 @@ function SidePanel() {
       )}
 
       {/* ── Demographics footer — always visible, always dark ── */}
-      <div className="flex-shrink-0 px-4 py-1.5 text-[10px] tracking-wide flex flex-wrap items-center gap-x-1 text-white/30 bg-black/80 border-t border-white/[0.06]">
-        <span>2,164 residents</span>
-        <span>&middot;</span>
-        <span>{buildingsData.buildings.length.toLocaleString()} buildings</span>
-        <span>&middot;</span>
-        <span>{_namedStreetCount} streets</span>
-        <span>&middot;</span>
-        <a href="mailto:lafayette-square@jacobhenderson.studio" className="text-white/40 hover:text-white/60 transition-colors">Contact</a>
+      <div className="flex-shrink-0 px-4 py-1.5 text-[10px] tracking-wide flex items-center justify-between bg-black/80 border-t border-white/[0.06]">
+        <div className="flex flex-wrap items-center gap-x-1 text-white/30">
+          <span>2,164 residents</span>
+          <span>&middot;</span>
+          <span>{buildingsData.buildings.length.toLocaleString()} buildings</span>
+          <span>&middot;</span>
+          <span>{_namedStreetCount} streets</span>
+        </div>
+        <a href="mailto:lafayette-square@jacobhenderson.studio" className="text-white/50 hover:text-white/80 transition-colors flex items-center gap-1">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+          </svg>
+          Contact
+        </a>
       </div>
     </div>
   )

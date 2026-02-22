@@ -773,12 +773,39 @@ function PostProcessing({ viewMode, aoReady }) {
 const IS_GROUND = window.location.search.includes('ground')
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
-// Defer street lights on mobile until after hero settles (GLB fetch + 641 instances)
-function DeferredStreetLights({ viewMode }) {
+// Mobile post-processing: FilmGrade + FilmGrain immediately, Bloom deferred
+function MobilePostProcessing({ viewMode }) {
+  const bloomRef = useRef()
+  const [bloomReady, setBloomReady] = useState(false)
+  useAdaptiveBloom(bloomRef, viewMode)
+  useEffect(() => {
+    const id = setTimeout(() => setBloomReady(true), 5000)
+    return () => clearTimeout(id)
+  }, [])
+  return (
+    <EffectComposer>
+      {bloomReady && (
+        <Bloom
+          ref={bloomRef}
+          intensity={0.3}
+          luminanceThreshold={0.75}
+          luminanceSmoothing={0.5}
+          mipmapBlur
+        />
+      )}
+      <FilmGrade />
+      <FilmGrain />
+    </EffectComposer>
+  )
+}
+
+// Defer street lights on mobile — let hero settle before GLB fetch + 641 instances
+function DeferredStreetLights() {
   const [ready, setReady] = useState(false)
   useEffect(() => {
-    if (viewMode !== 'hero' && !ready) setReady(true)
-  }, [viewMode, ready])
+    const id = setTimeout(() => setReady(true), 4000)
+    return () => clearTimeout(id)
+  }, [])
   if (!ready) return null
   return <StreetLights />
 }
@@ -841,13 +868,8 @@ function Scene() {
       {!IS_GROUND && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
-      {!IS_GROUND && IS_MOBILE && (
-        <EffectComposer>
-          <FilmGrade />
-          <FilmGrain />
-        </EffectComposer>
-      )}
-      {!IS_GROUND && IS_MOBILE && <DeferredStreetLights viewMode={viewMode} />}
+      {!IS_GROUND && IS_MOBILE && <MobilePostProcessing viewMode={viewMode} />}
+      {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
     </Canvas>
     </div>
   )
