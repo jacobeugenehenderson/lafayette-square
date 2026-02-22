@@ -36,4 +36,18 @@ function serveCodedesk() {
 export default defineConfig(({ command }) => ({
   plugins: [serveCodedesk(), react()],
   base: command === 'build' ? '/lafayette-square/' : '/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split Three.js ecosystem into a cacheable vendor chunk (~1.8MB)
+          vendor: ['three', 'three/examples/jsm/loaders/GLTFLoader.js', 'three/examples/jsm/libs/meshopt_decoder.module.js'],
+          // React + fiber bridge
+          react: ['react', 'react-dom', '@react-three/fiber', '@react-three/drei'],
+          // Post-processing (shader compilation is the expensive part)
+          postfx: ['postprocessing', '@react-three/postprocessing'],
+        },
+      },
+    },
+  },
 }))
