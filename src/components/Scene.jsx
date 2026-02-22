@@ -824,9 +824,9 @@ function Scene() {
       }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
       dpr={[1, 1.5]}
-      shadows={IS_GROUND ? false : 'soft'}
+      shadows={IS_GROUND || IS_MOBILE ? false : 'soft'}
     >
-      {!IS_GROUND && <SoftShadows size={52} samples={16} focus={0.35} />}
+      {!IS_GROUND && !IS_MOBILE && <SoftShadows size={52} samples={16} focus={0.35} />}
       <FrameLimiter />
       <TimeTicker />
       <SkyStateTicker />
@@ -840,7 +840,7 @@ function Scene() {
       {!IS_GROUND && !IS_MOBILE && <StreetLights />}
       {!IS_GROUND && <GatewayArch />}
       <CameraRig />
-      {!IS_GROUND && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
+      {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
       {!IS_GROUND && IS_MOBILE && <DeferredStreetLights viewMode={viewMode} />}
     </Canvas>
     </div>
