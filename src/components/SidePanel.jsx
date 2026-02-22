@@ -889,6 +889,8 @@ function SidePanel() {
         <span>{_namedStreetCount} streets</span>
         <span>&middot;</span>
         <span>38.62&deg;N 90.22&deg;W</span>
+        <span>&middot;</span>
+        <a href="mailto:lafayette-square@jacobhenderson.studio" className="text-white/40 hover:text-white/60 transition-colors">Contact</a>
       </div>
     </div>
   )

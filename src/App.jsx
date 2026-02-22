@@ -117,25 +117,6 @@ function PlaceOpener({ listingId }) {
   return null
 }
 
-function ContactButton() {
-  const viewMode = useCamera(s => s.viewMode)
-  const showCard = useSelectedBuilding(s => s.showCard)
-  const bulletinOpen = useBulletin(s => s.modalOpen)
-  if (viewMode === 'hero' || showCard || bulletinOpen) return null
-  return (
-    <a
-      href="mailto:lafayette-square@jacobhenderson.studio"
-      className="absolute bottom-20 left-3 z-40 px-3 py-1.5 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 text-xs font-medium transition-all duration-200 flex items-center gap-1.5 hover:bg-white/20 hover:text-white/80"
-      title="Contact"
-    >
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-      </svg>
-      Contact
-    </a>
-  )
-}
-
 function App() {
   const route = parseRoute()
 
@@ -154,7 +135,6 @@ function App() {
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {!isGround && <Controls />}
       {!isGround && <CompassRose />}
-      {!isGround && <ContactButton />}
       {!isGround && <SidePanel />}
       {!isGround && <EventTicker />}
       {!isGround && <BulletinModal />}
