@@ -20,6 +20,7 @@ export default function EventTicker() {
   const [visible, setVisible] = useState(true)
   const [transitioning, setTransitioning] = useState(false)
   const [displayIndex, setDisplayIndex] = useState(0)
+  const [fetchState, setFetchState] = useState('pending') // pending | ok | error
 
   const idleTimer = useRef(null)
   const rotateTimer = useRef(null)
@@ -49,8 +50,9 @@ export default function EventTicker() {
       })
       filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
       setEvents(filtered)
-    } catch {
-      // silent
+      setFetchState(filtered.length > 0 ? 'ok' : 'empty')
+    } catch (err) {
+      setFetchState('error:' + (err?.message || 'unknown'))
     }
   }, [])
 
@@ -105,9 +107,18 @@ export default function EventTicker() {
     useSelectedBuilding.getState().select(event.listing_id, buildingId)
   }, [])
 
-  if (events.length === 0) return null
   if (viewMode !== 'hero') return null
   if (showCard || bulletinOpen) return null
+
+  // Temporary diagnostic — shows fetch state when no events load
+  if (events.length === 0) {
+    if (fetchState === 'pending') return null
+    return (
+      <div className="absolute top-2 left-2 z-50 text-[9px] text-red-400/60 font-mono">
+        ticker: {fetchState}
+      </div>
+    )
+  }
 
   const current = events[displayIndex] || events[0]
 

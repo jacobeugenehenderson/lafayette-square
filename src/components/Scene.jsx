@@ -773,26 +773,10 @@ function PostProcessing({ viewMode, aoReady }) {
 const IS_GROUND = window.location.search.includes('ground')
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
-// Mobile post-processing: FilmGrade + FilmGrain immediately, Bloom deferred
-function MobilePostProcessing({ viewMode }) {
-  const bloomRef = useRef()
-  const [bloomReady, setBloomReady] = useState(false)
-  useAdaptiveBloom(bloomRef, viewMode)
-  useEffect(() => {
-    const id = setTimeout(() => setBloomReady(true), 5000)
-    return () => clearTimeout(id)
-  }, [])
+// Mobile post-processing: FilmGrade + FilmGrain only (no Bloom — render targets too heavy)
+function MobilePostProcessing() {
   return (
     <EffectComposer>
-      {bloomReady && (
-        <Bloom
-          ref={bloomRef}
-          intensity={0.3}
-          luminanceThreshold={0.75}
-          luminanceSmoothing={0.5}
-          mipmapBlur
-        />
-      )}
       <FilmGrade />
       <FilmGrain />
     </EffectComposer>
@@ -868,7 +852,7 @@ function Scene() {
       {!IS_GROUND && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
-      {!IS_GROUND && IS_MOBILE && <MobilePostProcessing viewMode={viewMode} />}
+      {!IS_GROUND && IS_MOBILE && <MobilePostProcessing />}
       {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
     </Canvas>
     </div>

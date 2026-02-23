@@ -1011,8 +1011,8 @@ function LafayetteScene() {
       if (isMobile) {
         const t1 = setTimeout(() => setLabelsReady(true), 2000)
         const t2 = setTimeout(() => setMarkersReady(true), 3500)
-        const t3 = setTimeout(() => setFacadesReady(true), 5000)
-        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+        // No facades on mobile — too small to see, saves ~10MB GPU memory
+        return () => { clearTimeout(t1); clearTimeout(t2) }
       }
       setLabelsReady(true)
       setMarkersReady(true)
