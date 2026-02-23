@@ -995,6 +995,7 @@ function LandmarkMarkers() {
 // ============ MAIN ============
 function LafayetteScene() {
   const deselect = useSelectedBuilding((state) => state.deselect)
+  const showCard = useSelectedBuilding((state) => state.showCard)
   const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
 
@@ -1084,18 +1085,18 @@ function LafayetteScene() {
 
       <Foundations />
 
-      {/* Buildings — defer neon bands on mobile until browse (subpixel in hero telephoto) */}
+      {/* Buildings — defer neon bands on mobile until browse, hide when card open */}
       {buildingsData.buildings.map(b => (
-        <Building key={b.id} building={b} neonInfo={(isMobile && !labelsReady) ? undefined : neonLookup[b.id]} />
+        <Building key={b.id} building={b} neonInfo={(isMobile && (!labelsReady || showCard)) ? undefined : neonLookup[b.id]} />
       ))}
 
-      {/* Street labels — first batch (lightest GPU cost) */}
-      {labelsReady && streetLabels.map((label, i) => (
+      {/* Street labels — unmount on mobile when PlaceCard open to free GPU */}
+      {labelsReady && !(isMobile && showCard) && streetLabels.map((label, i) => (
         <StreetLabel key={`label-${i}`} label={label} />
       ))}
 
-      {/* Landmark markers — second batch (Html overlays + pin meshes) */}
-      {markersReady && <LandmarkMarkers />}
+      {/* Landmark markers — unmount on mobile when PlaceCard open */}
+      {markersReady && !(isMobile && showCard) && <LandmarkMarkers />}
 
       {/* 3D facade elements — last batch (heaviest: geometry + shaders) */}
       {facadesReady && <FacadeElements />}

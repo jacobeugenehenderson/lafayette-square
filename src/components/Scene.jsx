@@ -827,7 +827,7 @@ function Scene() {
       }}
       gl={{
         alpha: true,
-        antialias: true,
+        antialias: !IS_MOBILE,
         stencil: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
