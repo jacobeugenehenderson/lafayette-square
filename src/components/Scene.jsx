@@ -834,7 +834,7 @@ function Scene() {
         toneMappingExposure: 0.95,
       }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
-      dpr={[1, 1.5]}
+      dpr={IS_MOBILE ? 1 : [1, 1.5]}
       shadows={IS_GROUND || IS_MOBILE ? false : 'soft'}
     >
       {!IS_GROUND && !IS_MOBILE && <SoftShadows size={52} samples={16} focus={0.35} />}
@@ -849,10 +849,10 @@ function Scene() {
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <LafayetteScene />}
       {!IS_GROUND && !IS_MOBILE && <StreetLights />}
-      {!IS_GROUND && <GatewayArch />}
+      {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
-      {!IS_GROUND && IS_MOBILE && <MobilePostProcessing />}
+      {/* No post-processing on mobile — EffectComposer render targets exhaust VRAM */}
       {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
     </Canvas>
     </div>
