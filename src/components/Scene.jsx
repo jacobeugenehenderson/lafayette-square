@@ -801,7 +801,7 @@ function Scene() {
   // N8AO (SSAO) is disabled on mobile — its render targets leak GPU memory
   // across mount/unmount cycles (hero↔browse), causing the second category
   // click to crash. Enabled in all desktop modes including hero.
-  const aoReady = false
+  const aoReady = !IS_MOBILE
 
   // Portal div for CSS3D SVG ground — rendered BEHIND the transparent WebGL canvas.
   // See VectorStreets.jsx header comment for full architecture explanation.

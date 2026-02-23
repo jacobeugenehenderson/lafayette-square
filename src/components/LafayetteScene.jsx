@@ -18,18 +18,23 @@ import FacadeElements from './FacadeElements'
 
 // ============ BUILDING TEXTURES ============
 // Tileable PBR textures for walls and roofs (CC0, Poly Haven)
+// Desktop-only: on mobile the telephoto/browse views can't resolve individual
+// brick patterns, but the 7 × 1024² textures cost ~28 MB VRAM.
+const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 const _texLoader = new THREE.TextureLoader()
 const _BASE = import.meta.env.BASE_URL
 const _buildingTextures = {}
 
-;['brick_red', 'brick_weathered', 'stone', 'slate', 'metal', 'wood_siding', 'stucco'].forEach(name => {
-  const tex = _texLoader.load(`${_BASE}textures/buildings/${name}.jpg`)
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
-  tex.colorSpace = THREE.SRGBColorSpace
-  tex.minFilter = THREE.LinearMipmapLinearFilter
-  tex.magFilter = THREE.LinearFilter
-  _buildingTextures[name] = tex
-})
+if (!_IS_MOBILE) {
+  ;['brick_red', 'brick_weathered', 'stone', 'slate', 'metal', 'wood_siding', 'stucco'].forEach(name => {
+    const tex = _texLoader.load(`${_BASE}textures/buildings/${name}.jpg`)
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+    tex.colorSpace = THREE.SRGBColorSpace
+    tex.minFilter = THREE.LinearMipmapLinearFilter
+    tex.magFilter = THREE.LinearFilter
+    _buildingTextures[name] = tex
+  })
+}
 
 // ── Drag guard: suppress clicks after pointer moves >6px (prevents accidental selection during pan) ──
 let _pdx = 0, _pdy = 0
@@ -546,11 +551,12 @@ function Building({ building, neonInfo }) {
     return geo
   }, [building, baseColor])
 
-  // Material with tileable texture injection
+  // Material with tileable texture injection (desktop only)
   const wallTex = _buildingTextures[building.wall_material] || _buildingTextures.brick_red
   const roofMat = building.roof_material
   const roofTex = (roofMat && roofMat !== 'flat') ? (_buildingTextures[roofMat] || null) : null
   const shaderRef = useRef(null)
+  const hasTextures = !!wallTex  // false on mobile (no textures loaded)
 
   // Roof tint: derived from building color — desaturated + darkened to keep per-building personality
   const roofTintColor = useMemo(() => {
@@ -570,6 +576,10 @@ function Building({ building, neonInfo }) {
       roughness: 0.9,
       metalness: 0.05,
     })
+
+    // Mobile: skip texture shader entirely — plain colored material.
+    // Saves ~28 MB VRAM and eliminates per-building shader compilation.
+    if (!hasTextures) return mat
 
     const wallHeight = building.size[1]
     const roofStartY = foundationY + wallHeight - 0.3  // 30cm below top for clean transition
@@ -995,7 +1005,6 @@ function LandmarkMarkers() {
 // ============ MAIN ============
 function LafayetteScene() {
   const deselect = useSelectedBuilding((state) => state.deselect)
-  const showCard = useSelectedBuilding((state) => state.showCard)
   const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
 
@@ -1085,18 +1094,18 @@ function LafayetteScene() {
 
       <Foundations />
 
-      {/* Buildings — defer neon bands on mobile until browse, hide when card open */}
+      {/* Buildings — defer neon bands on mobile until browse labels are ready */}
       {buildingsData.buildings.map(b => (
-        <Building key={b.id} building={b} neonInfo={(isMobile && (!labelsReady || showCard)) ? undefined : neonLookup[b.id]} />
+        <Building key={b.id} building={b} neonInfo={(isMobile && !labelsReady) ? undefined : neonLookup[b.id]} />
       ))}
 
-      {/* Street labels — unmount on mobile when PlaceCard open to free GPU */}
-      {labelsReady && !(isMobile && showCard) && streetLabels.map((label, i) => (
+      {/* Street labels */}
+      {labelsReady && streetLabels.map((label, i) => (
         <StreetLabel key={`label-${i}`} label={label} />
       ))}
 
-      {/* Landmark markers — unmount on mobile when PlaceCard open */}
-      {markersReady && !(isMobile && showCard) && <LandmarkMarkers />}
+      {/* Landmark markers */}
+      {markersReady && <LandmarkMarkers />}
 
       {/* 3D facade elements — last batch (heaviest: geometry + shaders) */}
       {facadesReady && <FacadeElements />}
