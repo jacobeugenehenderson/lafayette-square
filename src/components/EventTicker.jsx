@@ -114,7 +114,7 @@ export default function EventTicker() {
   if (events.length === 0) {
     if (fetchState === 'pending') return null
     return (
-      <div className="absolute top-2 left-2 z-50 text-[9px] text-red-400/60 font-mono">
+      <div className="absolute top-4 left-4 z-50 text-sm text-red-400 font-mono bg-black/70 px-3 py-2 rounded">
         ticker: {fetchState}
       </div>
     )
