@@ -50,7 +50,7 @@ export default function EventTicker() {
       })
       filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
       setEvents(filtered)
-      setFetchState(filtered.length > 0 ? 'ok' : `empty (${all.length} total, today=${today})`)
+      setFetchState(filtered.length > 0 ? 'ok' : `empty (${all.length} total, today=${today}, keys=${Object.keys(res).join(',')})`)
     } catch (err) {
       setFetchState('error:' + (err?.message || 'unknown'))
     }
