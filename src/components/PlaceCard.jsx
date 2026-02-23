@@ -1501,7 +1501,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
 
   return (
-    <div className="absolute top-3 left-3 right-3 bg-black/40 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden flex flex-col z-50" style={{ bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : 'calc(76px + 18px)' }}>
+    <div className="absolute top-3 left-3 right-3 bg-black/90 sm:bg-black/40 sm:backdrop-blur-2xl sm:backdrop-saturate-150 rounded-2xl text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden flex flex-col z-50" style={{ bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : 'calc(76px + 18px)' }}>
       {/* Hero Photo Area */}
       <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (

@@ -95,7 +95,7 @@ async function get(action, params = {}) {
   url.searchParams.set('action', action)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
 
-  const res = await fetch(url, { method: 'GET' })
+  const res = await fetch(url, { method: 'GET', credentials: 'omit' })
   if (!res.ok) throw new Error(`API GET ${action} failed: ${res.status}`)
   return res.json()
 }
@@ -104,6 +104,7 @@ async function post(action, body = {}) {
   if (USE_MOCKS && MOCKS[action]) return MOCKS[action](body)
   const res = await fetch(API_URL, {
     method: 'POST',
+    credentials: 'omit',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ action, ...body }),
   })
