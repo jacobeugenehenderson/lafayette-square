@@ -1078,16 +1078,27 @@ function LafayetteScene() {
     }
   }, [viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Build a buildingId → { hex, hours } lookup from listings
+  // Build a buildingId → { hex, hours } lookup — only for currently open listings.
+  // Re-check every 60s so neon bands mount/unmount as places open and close,
+  // instead of mounting all ~100+ and hiding with opacity:0.
+  const [neonTick, setNeonTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setNeonTick(t => t + 1), 60000)
+    return () => clearInterval(id)
+  }, [])
+
   const neonLookup = useMemo(() => {
     const map = {}
+    const time = useTimeOfDay.getState().currentTime
     listings.forEach(l => {
       const bid = l.building_id || l.id
       const hex = CATEGORY_HEX[l.category]
-      if (bid && hex) map[bid] = { hex, hours: l.hours }
+      if (bid && hex && _isWithinHours(l.hours, time)) {
+        map[bid] = { hex, hours: l.hours }
+      }
     })
     return map
-  }, [listings])
+  }, [listings, neonTick])
 
   useEffect(() => {
     const handleKeyDown = (e) => { if (e.key === 'Escape') deselect() }
@@ -1138,9 +1149,9 @@ function LafayetteScene() {
 
       <Foundations />
 
-      {/* Buildings — no neon on mobile (hidden behind tags, saves GPU) */}
+      {/* Buildings — neon only mounts for currently-open places */}
       {buildingsData.buildings.map(b => (
-        <Building key={b.id} building={b} neonInfo={isMobile ? undefined : neonLookup[b.id]} />
+        <Building key={b.id} building={b} neonInfo={neonLookup[b.id]} />
       ))}
 
       {/* Street labels */}
