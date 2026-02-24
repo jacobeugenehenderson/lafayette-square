@@ -29,10 +29,18 @@ export default function EventTicker() {
   const viewMode = useCamera((s) => s.viewMode)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
 
-  // Fetch and filter today's events
+  // Fetch and filter today's events — raw fetch for mobile debugging
   const fetchTodayEvents = useCallback(async () => {
     try {
-      const res = await getEvents()
+      const apiUrl = import.meta.env.VITE_API_URL
+      if (!apiUrl) { setFetchState('no API_URL'); return }
+      const url = new URL(apiUrl)
+      url.searchParams.set('action', 'events')
+      url.searchParams.set('_t', Date.now())
+      const resp = await fetch(url, { method: 'GET', credentials: 'omit', cache: 'no-store', redirect: 'follow' })
+      const text = await resp.text()
+      let res
+      try { res = JSON.parse(text) } catch { setFetchState('parse fail: ' + text.slice(0, 120)); return }
       const all = Array.isArray(res.data) ? res.data : []
       const today = getTodayStr()
       const filtered = all.filter(e => {
@@ -50,7 +58,12 @@ export default function EventTicker() {
       })
       filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
       setEvents(filtered)
-      setFetchState(filtered.length > 0 ? 'ok' : `empty (${all.length} total, today=${today}, keys=${Object.keys(res).join(',')})`)
+      if (filtered.length > 0) {
+        setFetchState('ok')
+      } else {
+        // Show raw snippet so we can see what the API actually returned
+        setFetchState(`${all.length} events, ${filtered.length} today (${today}) | raw: ${text.slice(0, 150)}`)
+      }
     } catch (err) {
       setFetchState('error:' + (err?.message || 'unknown'))
     }
