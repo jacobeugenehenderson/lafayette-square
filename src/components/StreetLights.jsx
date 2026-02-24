@@ -13,10 +13,10 @@ const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
 const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
 
 const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-const LAMP_COLOR_ON = new THREE.Color('#ffd9b0')  // warm peach
+const LAMP_COLOR_ON = new THREE.Color('#fff2e0')  // warm incandescent white
 const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.12 // mobile: larger since no bloom to expand
-const POOL_RADIUS = 10
+const POOL_RADIUS = 16   // large enough for neighboring pools to overlap
 const POOL_Y = 0.3
 const SHADOW_RADIUS = 1.5 // AO contact shadow at lamp base
 
@@ -53,7 +53,7 @@ function StreetLights() {
   // ── Pool material ───────────────────────────────────────────────────────────
   const poolMat = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
-      uColor: { value: new THREE.Color('#ffd9b0') },
+      uColor: { value: new THREE.Color('#fff2e0') },
       uIntensity: { value: 0.0 },
     },
     vertexShader: `
@@ -68,9 +68,11 @@ function StreetLights() {
       varying vec2 vUv;
       void main() {
         float dist = length(vUv - 0.5) * 2.0;
-        float falloff = 1.0 - smoothstep(0.0, 1.0, dist);
-        falloff = pow(falloff, 1.5);
-        float alpha = falloff * uIntensity * ${_IS_MOBILE ? '0.5' : '0.25'};
+        // Two-zone falloff: bright inner pool + soft extended penumbra
+        float core = exp(-dist * dist * 8.0);      // tight warm center
+        float penumbra = exp(-dist * dist * 1.2);   // wide atmospheric scatter
+        float falloff = core * 0.5 + penumbra * 0.5;
+        float alpha = falloff * uIntensity * ${_IS_MOBILE ? '0.3' : '0.15'};
         gl_FragColor = vec4(uColor, alpha);
       }`,
     transparent: true,
@@ -259,12 +261,12 @@ function StreetLights() {
     const t = Math.min(1, Math.max(0, (0.15 - sunAltitude) / 0.45))
     const isActive = t > 0.01
 
-    // Glass panels glow via emissiveMap
-    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = t * (_IS_MOBILE ? 1.8 : 1.2)
+    // Glass panels — warm white when lit, no procedural glow
+    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = t * 0.8
     // Glow orb opacity — boosted on mobile to compensate for lack of bloom
     if (glowMatRef.current) glowMatRef.current.opacity = t * (_IS_MOBILE ? 0.7 : 0.4)
-    // Ground pools — larger alpha budget on mobile (no bloom to expand glow)
-    poolMat.uniforms.uIntensity.value = Math.min(_IS_MOBILE ? 0.8 : 0.5, t * (_IS_MOBILE ? 1.0 : 0.6))
+    // Ground pools — lower per-pool alpha, rely on overlap for fill
+    poolMat.uniforms.uIntensity.value = Math.min(_IS_MOBILE ? 0.6 : 0.4, t * (_IS_MOBILE ? 0.8 : 0.5))
 
     // Show/hide pool + glow layers
     if (poolRef.current) poolRef.current.visible = isActive

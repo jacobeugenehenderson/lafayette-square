@@ -78,7 +78,9 @@ class FilmGrainEffect extends Effect {
 
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         float lum = dot(inputColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-        float strength = mix(0.007, 0.002, smoothstep(0.0, 0.5, lum)) * uScale;
+        // Suppress grain on near-black pixels (prevents sparkle on dark reflective surfaces)
+        float darkSuppress = smoothstep(0.0, 0.08, lum);
+        float strength = mix(0.007, 0.002, smoothstep(0.0, 0.5, lum)) * uScale * darkSuppress;
         float grain = (grainHash(uv * 1000.0 + uSeed) - 0.5) * strength;
         outputColor = vec4(inputColor.rgb + grain, inputColor.a);
       }

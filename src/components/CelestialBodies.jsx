@@ -183,15 +183,12 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
           // Limb darkening
           vec3 color = texColor * (0.85 + z * 0.15);
 
-          // ── Luma-based alpha: dark pixels knock themselves out ─────────────
-          // Bright highlands are more opaque, dark maria are more transparent.
-          // This naturally makes the moon ghostly during the day and gives the
-          // dark side a soft fade rather than a hard crescent edge.
+          // ── Luma-based alpha: bright highlands opaque, dark maria softer ───
           float luma = dot(color, vec3(0.299, 0.587, 0.114));
-          float lumaAlpha = luma * luma;  // squared for stronger falloff
+          float lumaAlpha = luma;  // linear — keeps lit crescent clearly visible
 
           // Crescent mask: lit side visible, shadow side fades out
-          float litAlpha = alpha * mix(0.02, lumaAlpha, lit);
+          float litAlpha = alpha * mix(0.03, lumaAlpha, lit);
 
           // Overall transparency dial
           litAlpha *= mix(0.85, 0.50, dayFactor);
