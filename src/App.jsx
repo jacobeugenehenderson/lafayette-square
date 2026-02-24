@@ -127,6 +127,26 @@ function BulletinOpener() {
   return null
 }
 
+function ContactButton() {
+  const viewMode = useCamera((s) => s.viewMode)
+  const showCard = useSelectedBuilding((s) => s.showCard)
+  const bulletinOpen = useBulletin((s) => s.modalOpen)
+
+  if (viewMode === 'hero' || showCard || bulletinOpen) return null
+
+  return (
+    <a
+      href="mailto:lafayette-square@jacobhenderson.studio"
+      className="absolute bottom-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/50 text-xs transition-all duration-200 hover:bg-white/20 hover:text-white/70"
+    >
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0l-9.75 6.5-9.75-6.5" />
+      </svg>
+      Contact
+    </a>
+  )
+}
+
 function App() {
   const route = parseRoute()
 
@@ -151,6 +171,7 @@ function App() {
       {!isGround && <BulletinModal />}
       {!isGround && <CodeDeskModal />}
       {!isGround && <ModeOverlay />}
+      {!isGround && <ContactButton />}
     </div>
   )
 }
