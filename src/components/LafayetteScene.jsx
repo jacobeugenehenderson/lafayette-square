@@ -1138,9 +1138,9 @@ function LafayetteScene() {
 
       <Foundations />
 
-      {/* Buildings — defer neon bands on mobile until browse labels are ready */}
+      {/* Buildings — no neon on mobile (hidden behind tags, saves GPU) */}
       {buildingsData.buildings.map(b => (
-        <Building key={b.id} building={b} neonInfo={(isMobile && !labelsReady) ? undefined : neonLookup[b.id]} />
+        <Building key={b.id} building={b} neonInfo={isMobile ? undefined : neonLookup[b.id]} />
       ))}
 
       {/* Street labels */}
