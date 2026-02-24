@@ -20,7 +20,6 @@ export default function EventTicker() {
   const [visible, setVisible] = useState(true)
   const [transitioning, setTransitioning] = useState(false)
   const [displayIndex, setDisplayIndex] = useState(0)
-  const [fetchState, setFetchState] = useState('pending') // pending | ok | error
 
   const idleTimer = useRef(null)
   const rotateTimer = useRef(null)
@@ -29,18 +28,10 @@ export default function EventTicker() {
   const viewMode = useCamera((s) => s.viewMode)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
 
-  // Fetch and filter today's events — raw fetch for mobile debugging
+  // Fetch and filter today's events
   const fetchTodayEvents = useCallback(async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL
-      if (!apiUrl) { setFetchState('no API_URL'); return }
-      const url = new URL(apiUrl)
-      url.searchParams.set('action', 'events')
-      url.searchParams.set('_t', Date.now())
-      const resp = await fetch(url, { method: 'GET', credentials: 'omit', cache: 'no-store', redirect: 'follow' })
-      const text = await resp.text()
-      let res
-      try { res = JSON.parse(text) } catch { setFetchState('parse fail: ' + text.slice(0, 120)); return }
+      const res = await getEvents()
       const all = Array.isArray(res.data) ? res.data : []
       const today = getTodayStr()
       const filtered = all.filter(e => {
@@ -58,14 +49,8 @@ export default function EventTicker() {
       })
       filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
       setEvents(filtered)
-      if (filtered.length > 0) {
-        setFetchState('ok')
-      } else {
-        // Show raw snippet so we can see what the API actually returned
-        setFetchState(`${all.length} events, ${filtered.length} today (${today}) | raw: ${text.slice(0, 150)}`)
-      }
     } catch (err) {
-      setFetchState('error:' + (err?.message || 'unknown'))
+      // Silent fail — ticker simply won't show
     }
   }, [])
 
@@ -122,16 +107,7 @@ export default function EventTicker() {
 
   if (viewMode !== 'hero') return null
   if (showCard || bulletinOpen) return null
-
-  // Temporary diagnostic — shows fetch state when no events load
-  if (events.length === 0) {
-    if (fetchState === 'pending') return null
-    return (
-      <div className="absolute top-4 left-4 z-50 text-sm text-red-400 font-mono bg-black/70 px-3 py-2 rounded">
-        ticker: {fetchState}
-      </div>
-    )
-  }
+  if (events.length === 0) return null
 
   const current = events[displayIndex] || events[0]
 
