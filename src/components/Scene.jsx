@@ -803,25 +803,28 @@ function HeroSnapshotCacher() {
     captured.current = true
     setTimeout(() => {
       try {
+        // Temporarily make canvas opaque with the current sky horizon color
+        // so the sky sphere, clouds, and celestial bodies composite naturally
+        // instead of rendering over transparent black.
+        const skyColor = useSkyState.getState().horizonColor
+        gl.setClearColor(skyColor, 1)
         gl.render(scene, camera)
+        gl.setClearColor(0x000000, 0) // restore transparent for normal compositing
+
         const src = gl.domElement
         const dpr = window.devicePixelRatio || 1
 
-        // Measure the SidePanel to find the visible viewport above it
-        // SidePanel: absolute bottom-3 (12px) + its rendered height
+        // Crop to the visible viewport above the SidePanel
         const panel = document.querySelector('[class*="bottom-3"][class*="rounded-2xl"][class*="z-50"]')
         const panelCSS = panel ? panel.getBoundingClientRect().height + 12 : 94
         const visH = Math.round((window.innerHeight - panelCSS) * dpr)
-        const fullW = src.width
-        const fullH = src.height
+        const cropH = Math.min(visH, src.height)
 
-        // Crop: top portion of canvas (y=0 in canvas coords = top of screen)
-        const cropH = Math.min(visH, fullH)
         const crop = document.createElement('canvas')
-        crop.width = fullW
+        crop.width = src.width
         crop.height = cropH
         const ctx = crop.getContext('2d')
-        ctx.drawImage(src, 0, 0, fullW, cropH, 0, 0, fullW, cropH)
+        ctx.drawImage(src, 0, 0, src.width, cropH, 0, 0, src.width, cropH)
         crop.toBlob((blob) => {
           if (blob) _heroSnapshotBlob = blob
         }, 'image/jpeg', 0.85)
