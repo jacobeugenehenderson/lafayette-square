@@ -784,8 +784,8 @@ function MobilePostProcessing() {
 }
 
 // ── Hero snapshot cache ─────────────────────────────────────────────────────
-// Captures the hero camera view after a settle delay and caches as a JPEG blob.
-// Share FABs across the app use this for rich SMS/iMessage previews.
+// Captures the hero camera view cropped to the visible viewport above the
+// SidePanel — the nearly-square region the user actually sees.
 let _heroSnapshotBlob = null
 export function getHeroSnapshot() { return _heroSnapshotBlob }
 
@@ -795,19 +795,34 @@ function HeroSnapshotCacher() {
   const viewMode = useCamera(s => s.viewMode)
 
   useEffect(() => {
-    // Re-capture when returning to hero (lighting may have changed)
     if (viewMode === 'hero') captured.current = false
   }, [viewMode])
 
   useFrame(() => {
     if (captured.current || viewMode !== 'hero') return
-    // Wait a few seconds for scene to settle (geometry, textures, post-fx)
     captured.current = true
     setTimeout(() => {
       try {
-        // Force a render then grab the canvas
         gl.render(scene, camera)
-        gl.domElement.toBlob((blob) => {
+        const src = gl.domElement
+        const dpr = window.devicePixelRatio || 1
+
+        // Measure the SidePanel to find the visible viewport above it
+        // SidePanel: absolute bottom-3 (12px) + its rendered height
+        const panel = document.querySelector('[class*="bottom-3"][class*="rounded-2xl"][class*="z-50"]')
+        const panelCSS = panel ? panel.getBoundingClientRect().height + 12 : 94
+        const visH = Math.round((window.innerHeight - panelCSS) * dpr)
+        const fullW = src.width
+        const fullH = src.height
+
+        // Crop: top portion of canvas (y=0 in canvas coords = top of screen)
+        const cropH = Math.min(visH, fullH)
+        const crop = document.createElement('canvas')
+        crop.width = fullW
+        crop.height = cropH
+        const ctx = crop.getContext('2d')
+        ctx.drawImage(src, 0, 0, fullW, cropH, 0, 0, fullW, cropH)
+        crop.toBlob((blob) => {
           if (blob) _heroSnapshotBlob = blob
         }, 'image/jpeg', 0.85)
       } catch { /* non-critical */ }
