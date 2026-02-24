@@ -10,6 +10,7 @@ import useHandle from '../hooks/useHandle'
 
 import QRCode from 'qrcode'
 import { useCodeDesk } from './CodeDeskModal'
+import { getHeroSnapshot } from './Scene'
 import facadeMapping from '../data/facade_mapping.json'
 
 const BASE = import.meta.env.BASE_URL
@@ -1535,49 +1536,10 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
 
         {photos && photos.length > 1 && (
-          <div className="absolute bottom-2 left-3 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-white/70">
+          <div className="absolute bottom-2 right-3 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-white/70">
             {photos.length} photos
           </div>
         )}
-
-        {/* Share FAB — captures WebGL canvas snapshot + deep link */}
-        <button
-          onClick={async () => {
-            const origin = window.location.origin
-            const base = import.meta.env.BASE_URL.replace(/\/$/, '')
-            const url = `${origin}${base}/place/${listingId || building?.id || ''}`
-            const shareTitle = name || 'Lafayette Square'
-
-            // Try to capture a scene snapshot for rich sharing
-            let file = null
-            try {
-              const canvas = document.querySelector('canvas')
-              if (canvas) {
-                const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85))
-                if (blob) {
-                  file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
-                }
-              }
-            } catch { /* snapshot optional */ }
-
-            if (navigator.share) {
-              const shareData = { title: shareTitle, url }
-              // Attach snapshot if supported
-              if (file && navigator.canShare?.({ files: [file] })) {
-                shareData.files = [file]
-              }
-              navigator.share(shareData).catch(() => {})
-            } else {
-              navigator.clipboard?.writeText(url).catch(() => {})
-            }
-          }}
-          className="absolute bottom-2 right-2 w-10 h-10 rounded-full backdrop-blur-md bg-sky-500/20 border border-sky-400/40 text-sky-300 transition-all duration-200 flex items-center justify-center hover:bg-sky-500/30 shadow-lg"
-          title="Share"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-          </svg>
-        </button>
       </div>
 
       <EditProvider listingId={listingId}>
@@ -1760,6 +1722,41 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </a>
         </div>
       )}
+
+      {/* Share FAB — floats over bottom-right of card */}
+      <button
+        onClick={async () => {
+          const origin = window.location.origin
+          const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+          const url = `${origin}${base}/place/${listingId || building?.id || ''}`
+          const typeLabel = hasListingInfo ? 'place' : 'house'
+          const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${name}`
+
+          let file = null
+          try {
+            const blob = getHeroSnapshot()
+            if (blob) {
+              file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
+            }
+          } catch { /* snapshot optional */ }
+
+          if (navigator.share) {
+            const shareData = { title: name, text: shareText, url }
+            if (file && navigator.canShare?.({ files: [file] })) {
+              shareData.files = [file]
+            }
+            navigator.share(shareData).catch(() => {})
+          } else {
+            navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
+          }
+        }}
+        className="absolute bottom-3 right-3 w-10 h-10 rounded-full backdrop-blur-md bg-sky-500/20 border border-sky-400/40 text-sky-300 transition-all duration-200 flex items-center justify-center hover:bg-sky-500/30 shadow-lg z-10"
+        title="Share"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+        </svg>
+      </button>
     </div>
   )
 }

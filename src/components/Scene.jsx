@@ -783,6 +783,40 @@ function MobilePostProcessing() {
   )
 }
 
+// ── Hero snapshot cache ─────────────────────────────────────────────────────
+// Captures the hero camera view after a settle delay and caches as a JPEG blob.
+// Share FABs across the app use this for rich SMS/iMessage previews.
+let _heroSnapshotBlob = null
+export function getHeroSnapshot() { return _heroSnapshotBlob }
+
+function HeroSnapshotCacher() {
+  const { gl, scene, camera } = useThree()
+  const captured = useRef(false)
+  const viewMode = useCamera(s => s.viewMode)
+
+  useEffect(() => {
+    // Re-capture when returning to hero (lighting may have changed)
+    if (viewMode === 'hero') captured.current = false
+  }, [viewMode])
+
+  useFrame(() => {
+    if (captured.current || viewMode !== 'hero') return
+    // Wait a few seconds for scene to settle (geometry, textures, post-fx)
+    captured.current = true
+    setTimeout(() => {
+      try {
+        // Force a render then grab the canvas
+        gl.render(scene, camera)
+        gl.domElement.toBlob((blob) => {
+          if (blob) _heroSnapshotBlob = blob
+        }, 'image/jpeg', 0.85)
+      } catch { /* non-critical */ }
+    }, 3000)
+  })
+
+  return null
+}
+
 // Defer street lights on mobile — let hero settle before GLB fetch + 641 instances
 function DeferredStreetLights() {
   const [ready, setReady] = useState(false)
@@ -855,6 +889,7 @@ function Scene() {
       {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
       {!IS_GROUND && IS_MOBILE && <MobilePostProcessing />}
       {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
+      <HeroSnapshotCacher />
     </Canvas>
     </div>
   )
