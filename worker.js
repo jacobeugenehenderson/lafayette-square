@@ -26,14 +26,10 @@ function escHtml(s) {
 export default {
   async fetch(request) {
     var url = new URL(request.url);
-    var path = url.pathname;
+    var target = ORIGIN + url.pathname + url.search;
+    var res = await fetch(target, { redirect: "follow" });
 
-    var target = new URL(path + url.search, ORIGIN);
-    var res = await fetch(target, {
-      headers: { "Host": "jacobeugenehenderson.github.io" }
-    });
-
-    var placeMatch = path.match(/^\/lafayette-square\/place\/([^/]+)$/);
+    var placeMatch = url.pathname.match(/^\/lafayette-square\/place\/([^/]+)$/);
     if (!placeMatch) {
       return new Response(res.body, { status: res.status, headers: res.headers });
     }
