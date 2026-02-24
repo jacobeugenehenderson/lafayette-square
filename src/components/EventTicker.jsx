@@ -20,6 +20,7 @@ export default function EventTicker() {
   const [visible, setVisible] = useState(true)
   const [transitioning, setTransitioning] = useState(false)
   const [displayIndex, setDisplayIndex] = useState(0)
+  const [fetchState, setFetchState] = useState('pending')
 
   const idleTimer = useRef(null)
   const rotateTimer = useRef(null)
@@ -49,8 +50,9 @@ export default function EventTicker() {
       })
       filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
       setEvents(filtered)
+      setFetchState(filtered.length > 0 ? 'ok' : `0/${all.length} today=${today}`)
     } catch (err) {
-      // Silent fail — ticker simply won't show
+      setFetchState('err:' + (err?.message || 'unknown'))
     }
   }, [])
 
@@ -107,7 +109,14 @@ export default function EventTicker() {
 
   if (viewMode !== 'hero') return null
   if (showCard || bulletinOpen) return null
-  if (events.length === 0) return null
+  if (events.length === 0) {
+    if (fetchState === 'pending') return null
+    return (
+      <div className="absolute top-4 left-4 z-50 text-sm text-red-400 font-mono bg-black/70 px-3 py-2 rounded">
+        ticker: {fetchState}
+      </div>
+    )
+  }
 
   const current = events[displayIndex] || events[0]
 

@@ -94,10 +94,8 @@ async function get(action, params = {}) {
   const url = new URL(API_URL)
   url.searchParams.set('action', action)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
-  // Cache-bust: GAS redirect responses cache aggressively on mobile Safari
-  url.searchParams.set('_t', Date.now())
 
-  const res = await fetch(url, { method: 'GET', credentials: 'omit', cache: 'no-store', redirect: 'follow' })
+  const res = await fetch(url, { method: 'GET', credentials: 'omit' })
   if (!res.ok) throw new Error(`API GET ${action} failed: ${res.status}`)
   return res.json()
 }
