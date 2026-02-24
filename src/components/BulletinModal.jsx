@@ -1048,7 +1048,39 @@ export default function BulletinModal() {
     >
       {/* Header */}
       <div className="flex items-center px-4 py-3 border-b border-white/10 flex-shrink-0">
-        <h2 className="text-sm font-medium text-white">Bulletin Board</h2>
+        <h2 className="flex-1 text-sm font-medium text-white">Bulletin Board</h2>
+        <button
+          onClick={async () => {
+            const origin = window.location.origin
+            const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+            const url = `${origin}${base}/bulletin`
+            const shareText = 'Check out the Bulletin Board in Lafayette Square!'
+
+            let file = null
+            try {
+              const blob = getHeroSnapshot()
+              if (blob) {
+                file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
+              }
+            } catch { /* snapshot optional */ }
+
+            if (navigator.share) {
+              if (file && navigator.canShare?.({ files: [file] })) {
+                navigator.share({ files: [file], text: `${shareText}\n${url}` }).catch(() => {})
+              } else {
+                navigator.share({ title: 'Lafayette Square', text: shareText, url }).catch(() => {})
+              }
+            } else {
+              navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
+            }
+          }}
+          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors flex items-center justify-center"
+          title="Share"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+          </svg>
+        </button>
       </div>
 
       {/* Content */}
@@ -1072,40 +1104,6 @@ export default function BulletinModal() {
           <ThreadDetailView onBack={() => { setView('threads'); useBulletin.setState({ activeThread: null }) }} />
         )}
       </div>
-
-      {/* Share FAB — floats over bottom-right of modal */}
-      <button
-        onClick={async () => {
-          const origin = window.location.origin
-          const base = import.meta.env.BASE_URL.replace(/\/$/, '')
-          const url = `${origin}${base}/bulletin`
-          const shareText = 'Check out the Bulletin Board in Lafayette Square!'
-
-          let file = null
-          try {
-            const blob = getHeroSnapshot()
-            if (blob) {
-              file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
-            }
-          } catch { /* snapshot optional */ }
-
-          if (navigator.share) {
-            if (file && navigator.canShare?.({ files: [file] })) {
-              navigator.share({ files: [file], text: `${shareText}\n${url}` }).catch(() => {})
-            } else {
-              navigator.share({ title: 'Lafayette Square', text: shareText, url }).catch(() => {})
-            }
-          } else {
-            navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
-          }
-        }}
-        className="absolute bottom-3 right-3 w-10 h-10 rounded-full backdrop-blur-md bg-sky-500/20 border border-sky-400/40 text-sky-300 transition-all duration-200 flex items-center justify-center hover:bg-sky-500/30 shadow-lg z-10"
-        title="Share"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-        </svg>
-      </button>
     </div>
   )
 }

@@ -1688,77 +1688,64 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
       </EditProvider>
 
       {/* Footer */}
-      {hasListingInfo ? (
-        <div className="p-4 pt-2 border-t border-white/15 bg-white/4 flex-shrink-0">
-          {isGuardian ? (
-            <div className="flex items-center justify-center gap-2 text-emerald-400/70 text-xs py-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              You are the guardian of this place
-            </div>
-          ) : (
-            <a
-              href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('Claim: ' + name)}`}
-              className="w-full py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              Is this your place?
-            </a>
-          )}
-        </div>
-      ) : (
-        <div className="p-4 pt-2 border-t border-white/15 bg-white/4 flex-shrink-0">
+      <div className="px-4 py-2.5 border-t border-white/15 bg-white/4 flex-shrink-0 flex items-center gap-2">
+        {/* Left: guardian badge or claim CTA or house CTA */}
+        {hasListingInfo && isGuardian && (
+          <div className="flex-1 flex items-center gap-2 text-emerald-400/70 text-xs">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            You are the guardian of this place
+          </div>
+        )}
+        {!hasListingInfo && (
           <a
             href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('My place: ' + (cleanAddress(building?.address) || 'Unknown'))}`}
-            className="w-full py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
             </svg>
             This is my house
           </a>
-        </div>
-      )}
+        )}
 
-      {/* Share FAB — floats over bottom-right of card */}
-      <button
-        onClick={async () => {
-          const origin = window.location.origin
-          const base = import.meta.env.BASE_URL.replace(/\/$/, '')
-          const url = `${origin}${base}/place/${listingId || building?.id || ''}`
-          const typeLabel = hasListingInfo ? 'place' : 'house'
-          const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${name}`
+        {/* Right: share icon — fills footer for non-guardian listings */}
+        <button
+          onClick={async () => {
+            const origin = window.location.origin
+            const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+            const url = `${origin}${base}/place/${listingId || building?.id || ''}`
+            const typeLabel = hasListingInfo ? 'place' : 'house'
+            const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${name}`
 
-          let file = null
-          try {
-            const blob = getHeroSnapshot()
-            if (blob) {
-              file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
-            }
-          } catch { /* snapshot optional */ }
+            let file = null
+            try {
+              const blob = getHeroSnapshot()
+              if (blob) {
+                file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
+              }
+            } catch { /* snapshot optional */ }
 
-          if (navigator.share) {
-            if (file && navigator.canShare?.({ files: [file] })) {
-              // Image + text as single item — URL embedded in text to avoid
-              // iOS splitting into 3 separate share items (image, text, link card)
-              navigator.share({ files: [file], text: `${shareText}\n${url}` }).catch(() => {})
+            if (navigator.share) {
+              if (file && navigator.canShare?.({ files: [file] })) {
+                navigator.share({ files: [file], text: `${shareText}\n${url}` }).catch(() => {})
+              } else {
+                navigator.share({ title: name, text: shareText, url }).catch(() => {})
+              }
             } else {
-              navigator.share({ title: name, text: shareText, url }).catch(() => {})
+              navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
             }
-          } else {
-            navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
-          }
-        }}
-        className="absolute bottom-3 right-3 w-10 h-10 rounded-full backdrop-blur-md bg-sky-500/20 border border-sky-400/40 text-sky-300 transition-all duration-200 flex items-center justify-center hover:bg-sky-500/30 shadow-lg z-10"
-        title="Share"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-        </svg>
-      </button>
+          }}
+          className={`${hasListingInfo && !isGuardian ? 'flex-1 py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium' : 'w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white'} transition-colors flex items-center justify-center gap-2`}
+          title="Share"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+          </svg>
+          {hasListingInfo && !isGuardian && <span>Share</span>}
+        </button>
+      </div>
     </div>
   )
 }
