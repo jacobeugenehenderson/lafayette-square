@@ -16,7 +16,7 @@ const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 const LAMP_COLOR_ON = new THREE.Color('#fff2e0')  // warm incandescent white
 const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.12 // mobile: larger since no bloom to expand
-const POOL_RADIUS = 16   // large enough for neighboring pools to overlap
+const POOL_RADIUS = _IS_MOBILE ? 10 : 16  // mobile: smaller to limit fill overdraw
 const POOL_Y = 0.3
 const SHADOW_RADIUS = 1.5 // AO contact shadow at lamp base
 
