@@ -1713,7 +1713,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         <button
           onClick={async () => {
             const typeLabel = hasListingInfo ? 'place' : 'house'
-            const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${name}`
+            const placeUrl = listingId ? `${window.location.origin}${BASE}place/${listingId}` : `${window.location.origin}${BASE}`
+            const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${name}\n${placeUrl}`
 
             let file = null
             if (heroPhoto) {
