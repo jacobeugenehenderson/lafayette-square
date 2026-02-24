@@ -785,15 +785,6 @@ function MobilePostProcessing() {
   )
 }
 
-// ── Static share image ──────────────────────────────────────────────────────
-// Pre-made hero JPEG in public/share-hero.jpg — no canvas capture needed.
-let _shareImageBlob = null
-export function getShareImage() { return _shareImageBlob }
-
-fetch(`${import.meta.env.BASE_URL}share-hero.jpg`)
-  .then(r => r.ok ? r.blob() : null)
-  .then(b => { if (b) _shareImageBlob = b })
-  .catch(() => {})
 
 // Defer street lights on mobile — let hero settle before GLB fetch + 641 instances
 function DeferredStreetLights() {

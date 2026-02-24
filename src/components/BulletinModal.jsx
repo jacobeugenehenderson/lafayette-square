@@ -3,7 +3,6 @@ import useBulletin from '../hooks/useBulletin'
 import useHandle from '../hooks/useHandle'
 import useLocalStatus from '../hooks/useLocalStatus'
 import useCamera from '../hooks/useCamera'
-import { getShareImage } from './Scene'
 
 const SECTIONS = [
   { id: 'buy-nothing', title: 'Buy Nothing' },
@@ -1052,21 +1051,8 @@ export default function BulletinModal() {
         <button
           onClick={async () => {
             const shareText = 'Check out the Bulletin Board in Lafayette Square!'
-
-            let file = null
-            try {
-              const blob = getShareImage()
-              if (blob) {
-                file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
-              }
-            } catch { /* snapshot optional */ }
-
             if (navigator.share) {
-              if (file && navigator.canShare?.({ files: [file] })) {
-                navigator.share({ files: [file], text: shareText }).catch(() => {})
-              } else {
-                navigator.share({ text: shareText }).catch(() => {})
-              }
+              navigator.share({ text: shareText }).catch(() => {})
             } else {
               navigator.clipboard?.writeText(shareText).catch(() => {})
             }

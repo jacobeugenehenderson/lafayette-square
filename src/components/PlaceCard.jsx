@@ -10,7 +10,6 @@ import useHandle from '../hooks/useHandle'
 
 import QRCode from 'qrcode'
 import { useCodeDesk } from './CodeDeskModal'
-import { getShareImage } from './Scene'
 import facadeMapping from '../data/facade_mapping.json'
 
 const BASE = import.meta.env.BASE_URL
@@ -1717,12 +1716,16 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${name}`
 
             let file = null
-            try {
-              const blob = getShareImage()
-              if (blob) {
-                file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
-              }
-            } catch { /* snapshot optional */ }
+            if (heroPhoto) {
+              try {
+                const url = heroPhoto.startsWith('http') ? heroPhoto : `${window.location.origin}${BASE}${heroPhoto.replace(/^\//, '')}`
+                const res = await fetch(url)
+                if (res.ok) {
+                  const blob = await res.blob()
+                  file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' })
+                }
+              } catch { /* photo fetch optional */ }
+            }
 
             if (navigator.share) {
               if (file && navigator.canShare?.({ files: [file] })) {
