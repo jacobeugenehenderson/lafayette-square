@@ -1050,8 +1050,7 @@ export default function BulletinModal() {
         <h2 className="flex-1 text-sm font-medium text-white">Bulletin Board</h2>
         <button
           onClick={async () => {
-            const bulletinUrl = `${window.location.origin}${import.meta.env.BASE_URL}bulletin`
-            const shareText = `Check out the Bulletin Board in Lafayette Square!\n${bulletinUrl}`
+            const shareText = `Check out the Bulletin Board in Lafayette Square!\nhttps://jacobhenderson.studio/lafayette-square/bulletin`
             if (navigator.share) {
               navigator.share({ text: shareText }).catch(() => {})
             } else {
