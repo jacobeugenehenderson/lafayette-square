@@ -10,7 +10,7 @@ import useHandle from '../hooks/useHandle'
 
 import QRCode from 'qrcode'
 import { useCodeDesk } from './CodeDeskModal'
-import { getHeroSnapshot } from './Scene'
+import { getShareImage } from './Scene'
 import facadeMapping from '../data/facade_mapping.json'
 
 const BASE = import.meta.env.BASE_URL
@@ -1718,7 +1718,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
             let file = null
             try {
-              const blob = getHeroSnapshot()
+              const blob = getShareImage()
               if (blob) {
                 file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
               }

@@ -3,7 +3,7 @@ import useBulletin from '../hooks/useBulletin'
 import useHandle from '../hooks/useHandle'
 import useLocalStatus from '../hooks/useLocalStatus'
 import useCamera from '../hooks/useCamera'
-import { getHeroSnapshot } from './Scene'
+import { getShareImage } from './Scene'
 
 const SECTIONS = [
   { id: 'buy-nothing', title: 'Buy Nothing' },
@@ -1055,7 +1055,7 @@ export default function BulletinModal() {
 
             let file = null
             try {
-              const blob = getHeroSnapshot()
+              const blob = getShareImage()
               if (blob) {
                 file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
               }

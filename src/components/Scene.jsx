@@ -783,57 +783,15 @@ function MobilePostProcessing() {
   )
 }
 
-// ── Hero snapshot cache ─────────────────────────────────────────────────────
-// Captures the hero camera view cropped to the visible viewport above the
-// SidePanel — the nearly-square region the user actually sees.
-let _heroSnapshotBlob = null
-export function getHeroSnapshot() { return _heroSnapshotBlob }
+// ── Static share image ──────────────────────────────────────────────────────
+// Pre-made hero JPEG in public/share-hero.jpg — no canvas capture needed.
+let _shareImageBlob = null
+export function getShareImage() { return _shareImageBlob }
 
-function HeroSnapshotCacher() {
-  const { gl, scene, camera } = useThree()
-  const captured = useRef(false)
-  const viewMode = useCamera(s => s.viewMode)
-
-  useEffect(() => {
-    if (viewMode === 'hero') captured.current = false
-  }, [viewMode])
-
-  useFrame(() => {
-    if (captured.current || viewMode !== 'hero') return
-    captured.current = true
-    setTimeout(() => {
-      try {
-        // Temporarily make canvas opaque with the current sky horizon color
-        // so the sky sphere, clouds, and celestial bodies composite naturally
-        // instead of rendering over transparent black.
-        const skyColor = useSkyState.getState().horizonColor
-        gl.setClearColor(skyColor, 1)
-        gl.render(scene, camera)
-        gl.setClearColor(0x000000, 0) // restore transparent for normal compositing
-
-        const src = gl.domElement
-        const dpr = window.devicePixelRatio || 1
-
-        // Crop to the visible viewport above the SidePanel
-        const panel = document.querySelector('[class*="bottom-3"][class*="rounded-2xl"][class*="z-50"]')
-        const panelCSS = panel ? panel.getBoundingClientRect().height + 12 : 94
-        const visH = Math.round((window.innerHeight - panelCSS) * dpr)
-        const cropH = Math.min(visH, src.height)
-
-        const crop = document.createElement('canvas')
-        crop.width = src.width
-        crop.height = cropH
-        const ctx = crop.getContext('2d')
-        ctx.drawImage(src, 0, 0, src.width, cropH, 0, 0, src.width, cropH)
-        crop.toBlob((blob) => {
-          if (blob) _heroSnapshotBlob = blob
-        }, 'image/jpeg', 0.85)
-      } catch { /* non-critical */ }
-    }, 3000)
-  })
-
-  return null
-}
+fetch(`${import.meta.env.BASE_URL}share-hero.jpg`)
+  .then(r => r.ok ? r.blob() : null)
+  .then(b => { if (b) _shareImageBlob = b })
+  .catch(() => {})
 
 // Defer street lights on mobile — let hero settle before GLB fetch + 641 instances
 function DeferredStreetLights() {
@@ -881,7 +839,6 @@ function Scene() {
         alpha: true,
         antialias: !IS_MOBILE,
         stencil: true,
-        preserveDrawingBuffer: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 0.95,
@@ -907,7 +864,6 @@ function Scene() {
       {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
       {!IS_GROUND && IS_MOBILE && <MobilePostProcessing />}
       {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
-      <HeroSnapshotCacher />
     </Canvas>
     </div>
   )
