@@ -12,10 +12,11 @@ const LAMP_MODEL_HEIGHT = 2.65
 const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
 const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
 
+const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 const LAMP_COLOR_ON = new THREE.Color('#ffd9b0')  // warm peach
 const GLOW_Y = 3.3       // world Y of lantern center
-const GLOW_RADIUS = 0.12 // sphere radius — small warm dot, bloom expands it
-const POOL_RADIUS = 8
+const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.12 // mobile: larger since no bloom to expand
+const POOL_RADIUS = 10
 const POOL_Y = 0.3
 const SHADOW_RADIUS = 1.5 // AO contact shadow at lamp base
 
@@ -69,7 +70,7 @@ function StreetLights() {
         float dist = length(vUv - 0.5) * 2.0;
         float falloff = 1.0 - smoothstep(0.0, 1.0, dist);
         falloff = pow(falloff, 1.5);
-        float alpha = falloff * uIntensity * 0.25;
+        float alpha = falloff * uIntensity * ${_IS_MOBILE ? '0.5' : '0.25'};
         gl_FragColor = vec4(uColor, alpha);
       }`,
     transparent: true,
@@ -259,11 +260,11 @@ function StreetLights() {
     const isActive = t > 0.01
 
     // Glass panels glow via emissiveMap
-    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = t * 1.2
-    // Glow orb opacity
-    if (glowMatRef.current) glowMatRef.current.opacity = t * 0.4
-    // Ground pools
-    poolMat.uniforms.uIntensity.value = Math.min(0.5, t * 0.6)
+    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = t * (_IS_MOBILE ? 1.8 : 1.2)
+    // Glow orb opacity — boosted on mobile to compensate for lack of bloom
+    if (glowMatRef.current) glowMatRef.current.opacity = t * (_IS_MOBILE ? 0.7 : 0.4)
+    // Ground pools — larger alpha budget on mobile (no bloom to expand glow)
+    poolMat.uniforms.uIntensity.value = Math.min(_IS_MOBILE ? 0.8 : 0.5, t * (_IS_MOBILE ? 1.0 : 0.6))
 
     // Show/hide pool + glow layers
     if (poolRef.current) poolRef.current.visible = isActive

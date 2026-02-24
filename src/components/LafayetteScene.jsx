@@ -577,12 +577,56 @@ function Building({ building, neonInfo }) {
       metalness: 0.05,
     })
 
-    // Mobile: skip texture shader entirely — plain colored material.
-    // Saves ~28 MB VRAM and eliminates per-building shader compilation.
-    if (!hasTextures) return mat
-
     const wallHeight = building.size[1]
     const roofStartY = foundationY + wallHeight - 0.3  // 30cm below top for clean transition
+    const roofType = classifyRoof(building)
+    const hasShapedRoof = roofType === 'mansard' || roofType === 'hip'
+
+    if (!hasTextures) {
+      // Mobile: lightweight roof-tinting shader — no texture sampling, just Y-threshold color.
+      // Saves ~28 MB VRAM vs desktop textures while keeping roofs visually distinct.
+      mat.onBeforeCompile = (shader) => {
+        shaderRef.current = shader
+        shader.uniforms.uRoofStartY = { value: roofStartY }
+        shader.uniforms.uRoofTint = { value: roofTintColor }
+        shader.uniforms.uHasShapedRoof = { value: hasShapedRoof ? 1.0 : 0.0 }
+        shader.uniforms.uDarkFactor = { value: 0.0 }
+
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <common>',
+          `#include <common>
+           varying float vWorldY;`
+        )
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <begin_vertex>',
+          `#include <begin_vertex>
+           vWorldY = (modelMatrix * vec4(position, 1.0)).y;`
+        )
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <common>',
+          `#include <common>
+           uniform float uRoofStartY;
+           uniform vec3 uRoofTint;
+           uniform float uHasShapedRoof;
+           uniform float uDarkFactor;
+           varying float vWorldY;`
+        )
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+           float bRoofMask = smoothstep(uRoofStartY, uRoofStartY + 0.1, vWorldY);
+           float bRoofNight = 1.0 - uDarkFactor * 0.75;
+           if (uHasShapedRoof > 0.5) {
+             diffuseColor.rgb = mix(diffuseColor.rgb, uRoofTint * bRoofNight, bRoofMask);
+           } else {
+             vec3 bFlatRoof = vec3(0.04, 0.04, 0.045) * bRoofNight;
+             diffuseColor.rgb = mix(diffuseColor.rgb, bFlatRoof, bRoofMask);
+           }`
+        )
+      }
+      return mat
+    }
 
     mat.onBeforeCompile = (shader) => {
       shaderRef.current = shader
@@ -681,7 +725,7 @@ function Building({ building, neonInfo }) {
     }
 
     return mat
-  }, [baseColor, wallTex, roofTex, roofTintColor])
+  }, [baseColor, wallTex, roofTex, roofTintColor, hasTextures, foundationY, building])
 
   useFrame(() => {
     if (!meshRef.current) return
