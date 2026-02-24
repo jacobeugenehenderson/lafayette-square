@@ -1,6 +1,7 @@
 var GAS_API = "https://script.google.com/macros/s/AKfycbxv3JihCx0U7JfGqle6ZpsLamkRS5PAEGRn6_NaM0Nc7r5zdY7kyctDioScGy8nVcAqWQ/exec";
 var ORIGIN = "https://jacobeugenehenderson.github.io";
 var VANITY = "https://jacobhenderson.studio/lafayette-square";
+var INDEX_URL = ORIGIN + "/lafayette-square/";
 
 var listingsCache = null;
 var cacheTime = 0;
@@ -26,20 +27,25 @@ function escHtml(s) {
 export default {
   async fetch(request) {
     var url = new URL(request.url);
-    var target = ORIGIN + url.pathname + url.search;
-    var res = await fetch(target, { redirect: "follow" });
+    var path = url.pathname;
 
-    var placeMatch = url.pathname.match(/^\/lafayette-square\/place\/([^/]+)$/);
+    var placeMatch = path.match(/^\/lafayette-square\/place\/([^/]+)$/);
+
+    // Non-place routes: straight proxy
     if (!placeMatch) {
-      return new Response(res.body, { status: res.status, headers: res.headers });
+      var target = ORIGIN + path + url.search;
+      return fetch(target, { redirect: "follow" });
     }
+
+    // Place routes: fetch index.html (not the 404 page) and inject OG tags
+    var res = await fetch(INDEX_URL, { redirect: "follow" });
 
     var listingId = placeMatch[1];
     var listings = await fetchListings();
     var listing = listings.find(function(l) { return l.id === listingId; });
 
     if (!listing) {
-      return new Response(res.body, { status: res.status, headers: res.headers });
+      return new Response(res.body, { status: 200, headers: res.headers });
     }
 
     var title = escHtml(listing.name || "Lafayette Square");
