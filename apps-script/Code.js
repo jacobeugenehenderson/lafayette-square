@@ -183,6 +183,9 @@ function doPost(e) {
       case 'comment':          return postComment(body)
       case 'remove-comment':   return postRemoveComment(body)
       case 'reply':            return postReply(body)
+      // Read-only actions via POST to bypass Google's redirect cache
+      case 'events':           return getEvents()
+      case 'listings':         return getListings()
       default:                 return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
