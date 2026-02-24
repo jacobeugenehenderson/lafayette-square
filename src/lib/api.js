@@ -158,7 +158,7 @@ export async function postEvent(deviceHash, listingId, title, description, start
 }
 
 export async function getEvents() {
-  return get('ev')
+  return get('events')
 }
 
 // ── Claim secret ─────────────────────────────────────────────────────
