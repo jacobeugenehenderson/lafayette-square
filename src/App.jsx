@@ -109,6 +109,8 @@ function ModeOverlay() {
 function PlaceOpener({ listingId }) {
   const listings = useListings(s => s.listings)
   useEffect(() => {
+    // Start in browse view so recipient has locational context behind the card
+    useCamera.getState().setMode('browse')
     const listing = listings.find(l => l.id === listingId)
     if (listing) {
       useSelectedBuilding.getState().select(listingId, listing.building_id)
@@ -119,6 +121,7 @@ function PlaceOpener({ listingId }) {
 
 function BulletinOpener() {
   useEffect(() => {
+    useCamera.getState().setMode('browse')
     useBulletin.getState().setModalOpen(true)
   }, [])
   return null
