@@ -1711,30 +1711,14 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
         {/* Right: share icon — fills footer for non-guardian listings */}
         <button
-          onClick={async () => {
+          onClick={() => {
             const typeLabel = hasListingInfo ? 'place' : 'house'
             const vanity = 'https://jacobhenderson.studio/lafayette-square'
             const placeUrl = listingId ? `${vanity}/place/${listingId}` : vanity
             const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${name}\n${placeUrl}`
 
-            let file = null
-            if (heroPhoto) {
-              try {
-                const url = heroPhoto.startsWith('http') ? heroPhoto : `${window.location.origin}${BASE}${heroPhoto.replace(/^\//, '')}`
-                const res = await fetch(url)
-                if (res.ok) {
-                  const blob = await res.blob()
-                  file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' })
-                }
-              } catch { /* photo fetch optional */ }
-            }
-
             if (navigator.share) {
-              if (file && navigator.canShare?.({ files: [file] })) {
-                navigator.share({ files: [file], text: shareText }).catch(() => {})
-              } else {
-                navigator.share({ text: shareText }).catch(() => {})
-              }
+              navigator.share({ text: shareText }).catch(() => {})
             } else {
               navigator.clipboard?.writeText(shareText).catch(() => {})
             }
