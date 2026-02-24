@@ -1741,11 +1741,13 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           } catch { /* snapshot optional */ }
 
           if (navigator.share) {
-            const shareData = { title: name, text: shareText, url }
             if (file && navigator.canShare?.({ files: [file] })) {
-              shareData.files = [file]
+              // Image + text as single item — URL embedded in text to avoid
+              // iOS splitting into 3 separate share items (image, text, link card)
+              navigator.share({ files: [file], text: `${shareText}\n${url}` }).catch(() => {})
+            } else {
+              navigator.share({ title: name, text: shareText, url }).catch(() => {})
             }
-            navigator.share(shareData).catch(() => {})
           } else {
             navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
           }

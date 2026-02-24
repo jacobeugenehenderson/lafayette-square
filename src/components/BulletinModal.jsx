@@ -1090,11 +1090,11 @@ export default function BulletinModal() {
           } catch { /* snapshot optional */ }
 
           if (navigator.share) {
-            const shareData = { title: 'Lafayette Square', text: shareText, url }
             if (file && navigator.canShare?.({ files: [file] })) {
-              shareData.files = [file]
+              navigator.share({ files: [file], text: `${shareText}\n${url}` }).catch(() => {})
+            } else {
+              navigator.share({ title: 'Lafayette Square', text: shareText, url }).catch(() => {})
             }
-            navigator.share(shareData).catch(() => {})
           } else {
             navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
           }
