@@ -29,10 +29,20 @@ export default function EventTicker() {
   const viewMode = useCamera((s) => s.viewMode)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
 
-  // Fetch and filter today's events
+  // Fetch and filter today's events — raw fetch for debugging
   const fetchTodayEvents = useCallback(async () => {
+    const API = import.meta.env.VITE_API_URL
+    if (!API) { setFetchState('no-url'); return }
     try {
-      const res = await getEvents()
+      const resp = await fetch(API, {
+        method: 'POST',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'events' }),
+      })
+      const text = await resp.text()
+      let res
+      try { res = JSON.parse(text) } catch { setFetchState('bad json:' + text.slice(0, 80)); return }
       const all = Array.isArray(res.data) ? res.data : []
       const today = getTodayStr()
       const filtered = all.filter(e => {
@@ -50,7 +60,7 @@ export default function EventTicker() {
       })
       filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
       setEvents(filtered)
-      setFetchState(filtered.length > 0 ? 'ok' : `0/${all.length} today=${today}`)
+      setFetchState(filtered.length > 0 ? 'ok' : `${resp.status} ${all.length}ev ${filtered.length}today ${today} |${text.slice(0,100)}`)
     } catch (err) {
       setFetchState('err:' + (err?.message || 'unknown'))
     }
