@@ -137,7 +137,8 @@ function doGet(e) {
     switch (action) {
       case 'listings':        return getListings()
       case 'reviews':         return getReviews(e.parameter.lid)
-      case 'events':          return getEvents()
+      case 'events':
+      case 'ev':              return getEvents()
       case 'checkin-status':  return getCheckinStatus(e.parameter.dh)
       case 'handle':          return getHandle(e.parameter.dh)
       case 'check-handle':    return checkHandle(e.parameter.h)
