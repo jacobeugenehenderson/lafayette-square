@@ -852,7 +852,7 @@ function Scene() {
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <GatewayArch />}
       <CameraRig />
       {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
-      {/* No post-processing on mobile — EffectComposer render targets exhaust VRAM */}
+      {!IS_GROUND && IS_MOBILE && <MobilePostProcessing />}
       {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
     </Canvas>
     </div>
