@@ -1046,8 +1046,45 @@ export default function BulletinModal() {
       }}
     >
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-white/10 flex-shrink-0">
+      <div className="relative flex items-center px-4 py-3 border-b border-white/10 flex-shrink-0">
         <h2 className="text-sm font-medium text-white">Bulletin Board</h2>
+
+        {/* Share FAB — captures WebGL canvas snapshot + deep link */}
+        <button
+          onClick={async () => {
+            const origin = window.location.origin
+            const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+            const url = `${origin}${base}/bulletin`
+            const shareTitle = 'Lafayette Square Bulletin Board'
+
+            let file = null
+            try {
+              const canvas = document.querySelector('canvas')
+              if (canvas) {
+                const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85))
+                if (blob) {
+                  file = new File([blob], 'lafayette-square.jpg', { type: 'image/jpeg' })
+                }
+              }
+            } catch { /* snapshot optional */ }
+
+            if (navigator.share) {
+              const shareData = { title: shareTitle, url }
+              if (file && navigator.canShare?.({ files: [file] })) {
+                shareData.files = [file]
+              }
+              navigator.share(shareData).catch(() => {})
+            } else {
+              navigator.clipboard?.writeText(url).catch(() => {})
+            }
+          }}
+          className="absolute right-2 w-8 h-8 rounded-full backdrop-blur-md bg-sky-500/20 border border-sky-400/40 text-sky-300 transition-all duration-200 flex items-center justify-center hover:bg-sky-500/30"
+          title="Share"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+          </svg>
+        </button>
       </div>
 
       {/* Content */}

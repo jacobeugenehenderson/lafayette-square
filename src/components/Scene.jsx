@@ -829,6 +829,7 @@ function Scene() {
         alpha: true,
         antialias: !IS_MOBILE,
         stencil: true,
+        preserveDrawingBuffer: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 0.95,

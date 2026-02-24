@@ -117,6 +117,13 @@ function PlaceOpener({ listingId }) {
   return null
 }
 
+function BulletinOpener() {
+  useEffect(() => {
+    useBulletin.getState().setModalOpen(true)
+  }, [])
+  return null
+}
+
 function App() {
   const route = parseRoute()
 
@@ -133,6 +140,7 @@ function App() {
     <div className="w-full h-full relative">
       <Scene />
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
+      {route.page === 'bulletin' && <BulletinOpener />}
       {!isGround && <Controls />}
       {!isGround && <CompassRose />}
       {!isGround && <SidePanel />}
@@ -154,6 +162,7 @@ function parseRoute() {
   if (claimMatch) return { page: 'claim', listingId: claimMatch[1], secret: claimMatch[2] }
   const placeMatch = path.match(/^\/place\/([^/]+)$/)
   if (placeMatch) return { page: 'place', listingId: placeMatch[1] }
+  if (path === '/bulletin') return { page: 'bulletin' }
   return { page: 'scene' }
 }
 
