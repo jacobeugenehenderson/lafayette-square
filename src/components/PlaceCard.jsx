@@ -1713,9 +1713,6 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Right: share icon — fills footer for non-guardian listings */}
         <button
           onClick={async () => {
-            const origin = window.location.origin
-            const base = import.meta.env.BASE_URL.replace(/\/$/, '')
-            const url = `${origin}${base}/place/${listingId || building?.id || ''}`
             const typeLabel = hasListingInfo ? 'place' : 'house'
             const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${name}`
 
@@ -1729,12 +1726,12 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
             if (navigator.share) {
               if (file && navigator.canShare?.({ files: [file] })) {
-                navigator.share({ files: [file], text: `${shareText}\n${url}` }).catch(() => {})
+                navigator.share({ files: [file], text: shareText }).catch(() => {})
               } else {
-                navigator.share({ title: name, text: shareText, url }).catch(() => {})
+                navigator.share({ text: shareText }).catch(() => {})
               }
             } else {
-              navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
+              navigator.clipboard?.writeText(shareText).catch(() => {})
             }
           }}
           className={`${hasListingInfo && !isGuardian ? 'flex-1 py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium' : 'w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white'} transition-colors flex items-center justify-center gap-2`}

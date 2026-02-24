@@ -1051,9 +1051,6 @@ export default function BulletinModal() {
         <h2 className="flex-1 text-sm font-medium text-white">Bulletin Board</h2>
         <button
           onClick={async () => {
-            const origin = window.location.origin
-            const base = import.meta.env.BASE_URL.replace(/\/$/, '')
-            const url = `${origin}${base}/bulletin`
             const shareText = 'Check out the Bulletin Board in Lafayette Square!'
 
             let file = null
@@ -1066,12 +1063,12 @@ export default function BulletinModal() {
 
             if (navigator.share) {
               if (file && navigator.canShare?.({ files: [file] })) {
-                navigator.share({ files: [file], text: `${shareText}\n${url}` }).catch(() => {})
+                navigator.share({ files: [file], text: shareText }).catch(() => {})
               } else {
-                navigator.share({ title: 'Lafayette Square', text: shareText, url }).catch(() => {})
+                navigator.share({ text: shareText }).catch(() => {})
               }
             } else {
-              navigator.clipboard?.writeText(`${shareText}\n${url}`).catch(() => {})
+              navigator.clipboard?.writeText(shareText).catch(() => {})
             }
           }}
           className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors flex items-center justify-center"
