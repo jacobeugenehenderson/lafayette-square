@@ -175,44 +175,54 @@ export default function CheckinPage({ locationId }) {
               <div className="rounded-xl p-4 border border-red-500/30 bg-red-500/10">
                 <p className="text-red-300 text-sm">{result.error}</p>
               </div>
+            ) : result.logged === false && isLocal ? (
+              <div className="rounded-xl p-4 border border-emerald-500/30 bg-emerald-500/10">
+                <div className="text-2xl mb-1">{emoji}</div>
+                <p className="text-emerald-300 font-medium">Welcome back, Townie</p>
+                {handle && (
+                  <p className="text-white/50 text-xs mt-1">@{handle}</p>
+                )}
+              </div>
             ) : (
               <div
                 className="rounded-xl p-4 border"
                 style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
               >
                 <div className="text-2xl mb-1">&#10003;</div>
-                <p className="text-white font-medium">
-                  {result.logged === false ? 'Already checked in today!' : 'Check-in recorded!'}
-                </p>
+                <p className="text-white font-medium">Check-in recorded!</p>
                 {handle && (
                   <p className="text-white/50 text-xs mt-1">Signed in as @{handle}</p>
                 )}
               </div>
             )}
 
-            {/* Progress toward local */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-white/50">
-                <span>Local progress</span>
-                <span>{distinctDays} / {threshold} days</span>
-              </div>
-              <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${Math.min(100, (distinctDays / threshold) * 100)}%`,
-                    backgroundColor: accentHex,
-                  }}
-                />
-              </div>
-            </div>
+            {/* Progress toward local (hide for returning townies) */}
+            {!(result.logged === false && isLocal) && (
+              <>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-white/50">
+                    <span>Local progress</span>
+                    <span>{distinctDays} / {threshold} days</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${Math.min(100, (distinctDays / threshold) * 100)}%`,
+                        backgroundColor: accentHex,
+                      }}
+                    />
+                  </div>
+                </div>
 
-            {isLocal && (
-              <div className="rounded-xl p-4 border border-emerald-500/30 bg-emerald-500/10">
-                <p className="text-emerald-300 font-medium text-sm">
-                  You're a verified local! Society Pages unlocked.
-                </p>
-              </div>
+                {isLocal && (
+                  <div className="rounded-xl p-4 border border-emerald-500/30 bg-emerald-500/10">
+                    <p className="text-emerald-300 font-medium text-sm">
+                      You're a verified local! Society Pages unlocked.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
