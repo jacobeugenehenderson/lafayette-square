@@ -175,7 +175,7 @@ export default function CheckinPage({ locationId }) {
               <div className="rounded-xl p-4 border border-red-500/30 bg-red-500/10">
                 <p className="text-red-300 text-sm">{result.error}</p>
               </div>
-            ) : result.logged === false && isLocal ? (
+            ) : result.logged === false && (result.is_local || isLocal) ? (
               <div className="rounded-xl p-4 border border-emerald-500/30 bg-emerald-500/10">
                 <div className="text-2xl mb-1">{emoji}</div>
                 <p className="text-emerald-300 font-medium">Welcome back, Townie</p>
@@ -197,7 +197,7 @@ export default function CheckinPage({ locationId }) {
             )}
 
             {/* Progress toward local (hide for returning townies) */}
-            {!(result.logged === false && isLocal) && (
+            {!(result.logged === false && (result.is_local || isLocal)) && (
               <>
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-white/50">
