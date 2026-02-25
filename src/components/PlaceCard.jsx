@@ -1399,7 +1399,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
         <div className="text-[10px] text-white/40 mb-3">For customers to check in</div>
         {townieQr && (
           <div className="flex justify-center mb-3">
-            <img src={townieQr} alt="Townie QR" className="w-48 h-48 rounded-lg" />
+            <img src={townieQr} alt="Townie QR" className="w-48 rounded-lg" />
           </div>
         )}
         <button
@@ -1425,7 +1425,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
           <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
           <div className="text-[10px] text-white/40 mb-3">To onboard a new guardian</div>
           <div className="flex justify-center">
-            <img src={guardianQr} alt="Guardian QR" className="w-48 h-48 rounded-lg" />
+            <img src={guardianQr} alt="Guardian QR" className="w-48 rounded-lg" />
           </div>
         </div>
       )}

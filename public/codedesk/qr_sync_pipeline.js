@@ -189,6 +189,26 @@ window.addEventListener('beforeunload', function() {
 });
 
 // =====================================================
+//  DEFAULT STATE — clean slate for a fresh QR type
+// =====================================================
+var _LSQ_DEFAULT_STATE = {
+  v: 1, at: 0,
+  fields: {},
+  style: {
+    fontFamily: 'IBM Plex Sans',
+    campaign: '', captionBody: '',
+    captionColor: '#000000', bodyColor: '#000000',
+    eyeRingColor: '#9CA3AF', eyeCenterColor: '#6B7280',
+    bgTransparent: false, bgTopHex: '#FFFFFF', bgBottomHex: '#FFFFFF',
+    bgTopAlpha: '100', bgBottomAlpha: '100',
+    moduleShape: 'Square', eyeRingShape: 'Square', eyeCenterShape: 'Square',
+    modulesMode: 'Shape', modulesEmoji: '', modulesScale: '0.9',
+    centerMode: 'None', centerEmoji: '', centerScale: '2',
+    eyeCenterMode: 'Shape', eyeCenterEmoji: '', eyeCenterScale: '0.9'
+  }
+};
+
+// =====================================================
 //  LOAD DESIGN (for a specific bizId + type)
 // =====================================================
 function _lsqLoadDesign(bizId, type) {
@@ -197,6 +217,9 @@ function _lsqLoadDesign(bizId, type) {
   var local = _lsqLoadLocal(bizId, type);
   if (local && typeof window.codedeskImportState === 'function') {
     window.codedeskImportState(local);
+  } else if (typeof window.codedeskImportState === 'function') {
+    // No saved design — reset to defaults
+    window.codedeskImportState(_LSQ_DEFAULT_STATE);
   }
 
   // Background: check API for newer version
