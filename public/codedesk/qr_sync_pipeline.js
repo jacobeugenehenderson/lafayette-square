@@ -1,5 +1,5 @@
 // Lafayette Square QR — Sync pipeline
-// Local-first persistence: localStorage is authoritative, API syncs in background
+// Save-on-demand: only persist on explicit Save. Session cache for type switching.
 "use strict";
 
 // Legacy stubs — other modules may still reference these
@@ -13,7 +13,7 @@ window.__CODEDESK_FILENAME_ACCEPTED__ = true;
 window.__CODEDESK_SETUP_DONE__ = true;
 
 // =====================================================
-//  LOCAL STORAGE LAYER (instant, authoritative)
+//  LOCAL STORAGE LAYER (persistent, written only on Save)
 // =====================================================
 var LSQ_DESIGN_PREFIX = 'lsq-qr-design-';
 var LSQ_IMAGE_PREFIX = 'lsq-qr-image-';
@@ -87,33 +87,30 @@ async function _lsqLoadRemote(bizId, type) {
 }
 
 // =====================================================
-//  DEBOUNCE TIMERS
+//  SESSION CACHE — in-memory drafts for type switching
+//  Not persisted; only written to storage on explicit Save.
 // =====================================================
-var _lsqLocalTimer = null;
-var _lsqRemoteTimer = null;
-var LOCAL_DEBOUNCE_MS = 500;
-var REMOTE_DEBOUNCE_MS = 3000;
+var _lsqSessionCache = {};
 
-function _lsqSaveDebounced() {
-  if (window.__CODEDESK_IMPORTING_STATE__) return;
+function _lsqSessionKey(bizId, type) {
+  return bizId + '-' + type;
+}
 
-  var bizId = _lsqGetCurrentBizId();
-  var type = _lsqGetCurrentType();
-  if (!bizId) return;
+// =====================================================
+//  DIRTY TRACKING — notify parent when edits are made
+// =====================================================
+var _lsqDirty = false;
+// Delay dirty tracking until initial setup (manifest, design load, etc.) settles.
+// Prevents the bootstrapper's initial render() from immediately marking dirty.
+var _lsqDirtyEnabled = false;
+setTimeout(function() { _lsqDirtyEnabled = true; }, 1500);
 
-  clearTimeout(_lsqLocalTimer);
-  _lsqLocalTimer = setTimeout(function() {
-    if (typeof window.codedeskExportState !== 'function') return;
-    var state = window.codedeskExportState();
-    _lsqSaveLocal(bizId, state, type);
-  }, LOCAL_DEBOUNCE_MS);
-
-  clearTimeout(_lsqRemoteTimer);
-  _lsqRemoteTimer = setTimeout(function() {
-    if (typeof window.codedeskExportState !== 'function') return;
-    var state = window.codedeskExportState();
-    _lsqSaveRemote(bizId, state, type);
-  }, REMOTE_DEBOUNCE_MS);
+function _lsqSetDirty(dirty) {
+  if (_lsqDirty === dirty) return;
+  _lsqDirty = dirty;
+  try {
+    window.parent.postMessage({ type: 'lsq-dirty', value: dirty }, '*');
+  } catch (e) {}
 }
 
 // =====================================================
@@ -128,25 +125,30 @@ window._lsqSaveNow = function _lsqSaveNow() {
     var state = window.codedeskExportState();
     _lsqSaveLocal(bizId, state, type);
     _lsqSaveRemote(bizId, state, type);
+    // Update session cache too
+    _lsqSessionCache[_lsqSessionKey(bizId, type)] = state;
   }
 
   // Export rendered PNG and store it
   if (typeof window.codedeskExportPngDataUrl === 'function') {
     window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
       _lsqSaveImage(bizId, dataUrl, type);
+      _lsqSetDirty(false);
       window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type, image: dataUrl }, '*');
     }).catch(function() {
+      _lsqSetDirty(false);
       window.parent.postMessage({ type: 'lsq-saved' }, '*');
     });
   } else {
+    _lsqSetDirty(false);
     window.parent.postMessage({ type: 'lsq-saved' }, '*');
   }
 };
 
 // =====================================================
-//  RENDER HOOK — auto-save after every render()
+//  RENDER HOOK — track dirty state (no auto-save)
 // =====================================================
-(function hookRenderForAutoSave() {
+(function hookRenderForDirtyTracking() {
   var _hookInstalled = false;
 
   function installHook() {
@@ -154,9 +156,12 @@ window._lsqSaveNow = function _lsqSaveNow() {
     if (typeof window.render !== 'function') return;
 
     var _originalRender = window.render;
-    window.render = function lsqAutoSaveRender() {
+    window.render = function lsqDirtyTrackingRender() {
       var result = _originalRender.apply(this, arguments);
-      _lsqSaveDebounced();
+      // Only mark dirty for genuine user edits, not imports, type switches, or initial setup
+      if (_lsqDirtyEnabled && !window.__CODEDESK_IMPORTING_STATE__ && !__lsq_switching_type) {
+        _lsqSetDirty(true);
+      }
       return result;
     };
     _hookInstalled = true;
@@ -172,28 +177,6 @@ window._lsqSaveNow = function _lsqSaveNow() {
     }, 100);
   }
 })();
-
-// =====================================================
-//  BEFOREUNLOAD — immediate save on tab close
-// =====================================================
-window.addEventListener('beforeunload', function() {
-  var bizId = _lsqGetCurrentBizId();
-  var type = _lsqGetCurrentType();
-  if (!bizId) return;
-  if (typeof window.codedeskExportState !== 'function') return;
-
-  var state = window.codedeskExportState();
-  _lsqSaveLocal(bizId, state, type);
-
-  if (navigator.sendBeacon && window.LSQ_API_URL) {
-    try {
-      navigator.sendBeacon(
-        window.LSQ_API_URL,
-        JSON.stringify({ action: 'saveDesign', bizId: bizId + '-' + type, design: state })
-      );
-    } catch (e) {}
-  }
-});
 
 // =====================================================
 //  DEFAULT STATE — clean slate for a fresh QR type
@@ -249,7 +232,7 @@ function _lsqLoadDesign(bizId, type) {
 }
 
 // =====================================================
-//  TYPE SWITCH — save old type, load new type
+//  TYPE SWITCH — cache old type in memory, load new type
 //  Guard: skip during import to prevent loops
 // =====================================================
 var __lsq_switching_type = false;
@@ -270,14 +253,7 @@ window._lsqSaveBeforeTypeSwitch = function(newType) {
 
   if (typeof window.codedeskExportState === 'function') {
     var state = window.codedeskExportState();
-    _lsqSaveLocal(bizId, state, oldType);
-    _lsqSaveRemote(bizId, state, oldType);
-
-    if (typeof window.codedeskExportPngDataUrl === 'function') {
-      window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
-        _lsqSaveImage(bizId, dataUrl, oldType);
-      }).catch(function() {});
-    }
+    _lsqSessionCache[_lsqSessionKey(bizId, oldType)] = state;
   }
   __lsq_pre_saved_for = oldType;
 };
@@ -294,24 +270,23 @@ function _lsqOnTypeSwitch(newType) {
 
   __lsq_switching_type = true;
 
-  // Save current design for the old type (skip if pre-saved)
+  // Save current design to session cache (skip if pre-saved)
   if (__lsq_pre_saved_for !== oldType && typeof window.codedeskExportState === 'function') {
     var state = window.codedeskExportState();
-    _lsqSaveLocal(bizId, state, oldType);
-    _lsqSaveRemote(bizId, state, oldType);
-
-    if (typeof window.codedeskExportPngDataUrl === 'function') {
-      window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
-        _lsqSaveImage(bizId, dataUrl, oldType);
-      }).catch(function() {});
-    }
+    _lsqSessionCache[_lsqSessionKey(bizId, oldType)] = state;
   }
   __lsq_pre_saved_for = null;
 
   window.__lsq_last_type = newType;
 
-  // Load new type's design
-  _lsqLoadDesign(bizId, newType);
+  // Load new type: session cache first, then persistent storage
+  var cached = _lsqSessionCache[_lsqSessionKey(bizId, newType)];
+  if (cached && typeof window.codedeskImportState === 'function') {
+    delete cached.type;
+    window.codedeskImportState(cached);
+  } else {
+    _lsqLoadDesign(bizId, newType);
+  }
 
   // Release guard after microtask (import dispatches events synchronously)
   queueMicrotask(function() { __lsq_switching_type = false; });

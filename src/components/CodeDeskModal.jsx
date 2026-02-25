@@ -38,6 +38,8 @@ function CodeDeskModalInner() {
   const close = useCallback(() => useCodeDesk.getState().setOpen(false), [])
   const [qrType, setQrType] = useState(storeQrType || 'Guardian')
   const [saved, setSaved] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  const [confirmClose, setConfirmClose] = useState(false)
   const iframeRef = useRef(null)
   const listings = useListings((s) => s.listings)
   const isGuardianMode = mode === 'guardian'
@@ -56,12 +58,43 @@ function CodeDeskModalInner() {
     useCamera.getState().setPanelOpen(false)
   }, [])
 
-  // ESC to close
+  // Listen for dirty state from iframe
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') close() }
+    const handler = (e) => {
+      if (e.data?.type === 'lsq-dirty') setDirty(e.data.value)
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [])
+
+  // Close with unsaved-changes guard
+  const handleClose = useCallback(() => {
+    if (dirty) {
+      setConfirmClose(true)
+    } else {
+      close()
+    }
+  }, [dirty, close])
+
+  const confirmDiscard = useCallback(() => {
+    setConfirmClose(false)
+    close()
+  }, [close])
+
+  // ESC to close (or dismiss confirmation)
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape') {
+        if (confirmClose) {
+          setConfirmClose(false)
+        } else {
+          handleClose()
+        }
+      }
+    }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [close])
+  }, [handleClose, confirmClose])
 
   // Send type changes to iframe via postMessage
   useEffect(() => {
@@ -87,7 +120,7 @@ function CodeDeskModalInner() {
     iframe.contentWindow?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
   }, [isGuardianMode, allPlaces, qrType, storeListingId, storeClaimSecret])
 
-  // Save button flash
+  // Save — flash confirmation, dirty resets via lsq-dirty message from iframe
   const handleSave = useCallback(() => {
     const iframe = iframeRef.current
     if (!iframe) return
@@ -124,7 +157,7 @@ function CodeDeskModalInner() {
             <option value="Guardian" className="bg-neutral-800 text-white">Guardian</option>
           </select>
           <button
-            onClick={close}
+            onClick={handleClose}
             className="w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
             title="Close"
           >
@@ -153,13 +186,41 @@ function CodeDeskModalInner() {
             className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
               saved
                 ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300'
-                : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 hover:text-white'
+                : dirty
+                  ? 'bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/30'
+                  : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 hover:text-white'
             }`}
             style={{ fontFamily: 'ui-monospace, monospace' }}
           >
-            {saved ? 'Saved' : 'Save'}
+            {saved ? 'Saved' : dirty ? 'Save changes' : 'Save'}
           </button>
         </div>
+
+      {/* Unsaved changes confirmation overlay */}
+      {confirmClose && (
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-neutral-900 border border-white/20 rounded-xl p-5 max-w-xs text-center space-y-4">
+            <p className="text-white text-sm font-medium">You have unsaved changes</p>
+            <p className="text-white/50 text-xs">Close without saving?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmClose(false)}
+                className="flex-1 py-2 px-3 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-sm transition-colors"
+                style={{ fontFamily: 'ui-monospace, monospace' }}
+              >
+                Keep editing
+              </button>
+              <button
+                onClick={confirmDiscard}
+                className="flex-1 py-2 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-300 text-sm transition-colors"
+                style={{ fontFamily: 'ui-monospace, monospace' }}
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
