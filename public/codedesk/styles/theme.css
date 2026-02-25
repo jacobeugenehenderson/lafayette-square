@@ -253,10 +253,7 @@ body{
   background: color-mix(in oklab, var(--ui-surface) 88%, var(--step-color-primary) 12%);
 }
 
-/* Caption has no wrap — tint the button itself */
-#stepper > div[data-step="caption"]:not(.is-open) > .step-header:hover{
-  background: color-mix(in oklab, var(--ui-surface) 88%, var(--step-color-primary) 12%);
-}
+/* Caption now has .step-header-wrap — generic wrap hover rule at line 252 covers it */
 
 #stepper>div.is-open .step-header {
   border-bottom: var(--featured-stroke-width) solid var(--featured-stroke-color);
@@ -571,13 +568,13 @@ body.codedesk-locked #codedeskFilename{
   padding-inline: 1.25rem;
 }
 
-/* Caption has NO .step-header-wrap — tint the button itself when open */
-.step-card[data-step="caption"].is-open > .step-header{
-  background: var(--step-header-open-bg) !important;
-  border-bottom: var(--featured-stroke-width) solid var(--featured-stroke-color);
-  backdrop-filter: saturate(1.1) blur(6px);
-  min-height: 3.4rem;
-  border-radius: var(--phone-radius) var(--phone-radius) 0 0;
+/* Caption (open): unified stripe on the wrap, full-bleed to card edge */
+.step-card[data-step="caption"].is-open .step-header-wrap{
+  background: var(--step-header-open-bg);
+  border-bottom: 0 !important;
+  position: relative;
+  margin: 0;
+  width: 100%;
   padding-inline: 1.25rem;
 }
 
@@ -586,20 +583,22 @@ body.codedesk-locked #codedeskFilename{
 .step-card[data-step="design"].is-open .step-header-wrap::after{
   content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ui-stroke); pointer-events:none;
 }
-.step-card[data-step="design"] #fontPill{ display:flex !important; }
+
+/* Font pill: lives in Caption header */
+.step-card[data-step="caption"] #fontPill{ display:flex !important; }
 
 /* Pills: hide when their flipper is not active */
-.step-card[data-step="design"]:not(.is-open) #fontPill{
+.step-card[data-step="caption"]:not(.is-open) #fontPill{
   visibility: hidden;
   pointer-events: none;
 }
 
-.step-card[data-step="design"].is-open #fontPill{
+.step-card[data-step="caption"].is-open #fontPill{
   visibility: visible;
   pointer-events: auto;
 }
 
-.step-card[data-step="design"] .step-header-wrap #fontPill.ecc-pill{
+.step-card[data-step="caption"] .step-header-wrap #fontPill.ecc-pill{
   align-items:center;
   flex-wrap:nowrap;
   gap:var(--density-gap);
@@ -607,16 +606,22 @@ body.codedesk-locked #codedeskFilename{
 }
 
 /* Font pill alignment */
-.step-card[data-step="design"] .step-header-wrap{
+.step-card[data-step="caption"] .step-header-wrap{
   display:flex;
   align-items:center;
   gap:.5rem;
 }
 
 /* Let the title take the left; pill pushes right */
-.step-card[data-step="design"] .step-header-wrap [data-step-toggle]{
+.step-card[data-step="caption"] .step-header-wrap [data-step-toggle]{
   flex:1 1 auto;
   padding-right:0;
+}
+
+/* Caption open header: transparent bg + separator like Design */
+.step-card[data-step="caption"].is-open .step-header{ background: transparent !important; border-bottom: 0 !important; }
+.step-card[data-step="caption"].is-open .step-header-wrap::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ui-stroke); pointer-events:none;
 }
 
 /* =========================
@@ -946,10 +951,10 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   padding-right: 1.25rem !important;
 }
 
-/* Caption step does NOT use .step-header-wrap in the HTML.
-   So: treat the .step-header itself as the header slab. */
+/* Caption step — now uses .step-header-wrap (same pattern as Design).
+   Wrap gets the accent stripe; .step-header inside goes transparent. */
 
-/* Caption — parity with other steps (stowed stroke + open header slab) */
+/* Caption — base card styling */
 .step-card[data-step="caption"]{
   --stepper-stroke-closed: var(--lsq-border);
 
@@ -961,54 +966,14 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   box-shadow: 0 0 0 1px var(--stepper-stroke-closed) inset;
 }
 
-/* Closed: subtle tint + crisp edge */
+/* Closed: step-header transparent (wrap handles the chrome) */
 #stepper > .step-card[data-step="caption"]:not(.is-open) .step-header{
-  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
-  border-bottom: 1px solid var(--stepper-stroke-closed);
-  box-shadow:
-    0 0 0 1px var(--stepper-stroke-closed) inset,
-    0 1px 0 rgba(0,0,0,.06);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
-/* Caption header padding (since there is no .step-header-wrap) */
-.step-card[data-step="caption"] .step-header{
-  padding-left: 1.25rem !important;
-  padding-right: 1.25rem !important;
-}
-
-/* CLOSED: the header IS the pill — keep full rounding */
-#stepper > .step-card[data-step="caption"]:not(.is-open) > .step-header{
-  border-radius: var(--phone-radius) !important;
-}
-
-/* OPEN: header becomes the slab — round only the top corners */
-#stepper > .step-card[data-step="caption"].is-open > .step-header{
-  border-radius: var(--phone-radius) var(--phone-radius) 0 0 !important;
-}
-
-/* Open: header slab styling (applied to .step-header directly) */
-#stepper .step-card[data-step="caption"].is-open .step-header{
-  background: var(--step-header-open-bg);
-  backdrop-filter: saturate(1.1) blur(6px);
-  border-bottom: 0 !important;
-  min-height: 3.4rem;
-  border-radius: var(--phone-radius) var(--phone-radius) 0 0;
-  position: relative;
-}
-
-/* Open: single thin rule at bottom of header slab */
-#stepper .step-card[data-step="caption"].is-open .step-header::after{
-  content:"";
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
-  height:1px;
-  background: var(--ui-stroke);
-  pointer-events:none;
-}
-
-/* Open: tuck the panel under the header rule (no step) */
+/* Open: tuck the panel under the header rule */
 #stepper .step-card[data-step="caption"].is-open [data-step-panel]{
   margin-top: -1px;
   background: var(--ui-surface-variant);
@@ -2189,7 +2154,7 @@ html.embed .stage-stick:first-child {
 
 /* Shrink the preview stage to fit the modal */
 html.embed .preview-stage {
-  width: clamp(140px, 30vw, 200px) !important;
+  width: clamp(120px, 25vw, 180px) !important;
 }
 
 /* URL display: compact, part of the fixed top area */
@@ -2205,7 +2170,7 @@ html.embed #stepper {
   overflow-y: auto !important;
   overflow-x: hidden !important;
   margin-top: 0 !important;
-  padding: 0.5rem 3.75rem 2rem !important;
+  padding: 0.5rem 0.75rem 2rem !important;
   scroll-padding-top: 0 !important;
   position: relative !important;
   max-width: 100% !important;
@@ -2226,3 +2191,56 @@ html.embed .step-card[data-step="download"] { display: none !important; }
 
 /* Guardian embed: hide Places accordion (place is pre-selected by parent) */
 html.embed-guardian .step-card[data-step="business"] { display: none !important; }
+
+/* Emoji picker as bottom-sheet — QR preview stays visible above */
+html.embed #emojiModal {
+  display: grid !important;
+  place-items: end center !important;
+  padding: 0 !important;
+}
+html.embed #emojiModal.hidden {
+  display: none !important;
+}
+html.embed #emojiModal > div {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  max-height: 50vh;
+  border-radius: 12px 12px 0 0 !important;
+  margin: 0 !important;
+  background: #fff !important;
+  color: #0b0b0b !important;
+  border: 1px solid rgba(15, 23, 42, .18) !important;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+}
+html.embed #emojiModal emoji-picker {
+  max-height: 38vh !important;
+  height: 38vh !important;
+}
+
+/* Kill Design step's internal scroller — single scroll owner = #stepper */
+html.embed .step-card[data-step="design"].is-open {
+  overflow: visible !important;
+}
+html.embed .step-card[data-step="design"].is-open [data-step-panel] {
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+/* Fix text field vertical clipping */
+html.embed input[type="text"],
+html.embed input[type="number"],
+html.embed select,
+html.embed textarea {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.625rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Compact step headers + panel padding */
+html.embed .step-header { min-height: 2.6rem; font-size: 0.8rem; }
+html.embed .step-header-wrap { min-height: 2.6rem; }
+html.embed .step-card [data-step-panel] { padding: 0.5rem 0.75rem; }

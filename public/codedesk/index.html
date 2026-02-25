@@ -189,32 +189,6 @@
 <section id="stepper"
   class="stage-stick space-y-4 w-full max-w-[560px] mx-auto justify-self-center">
 
-  <!-- Caption -->
-  <div class="step-card"
-       data-step="caption">
-    <button class="w-full step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Caption
-    </button>
-    <div class="px-4 pb-4 space-y-3" data-step-panel style="display:none">
-      <label class="block text-sm">
-        <span class="sr-only">Headline</span>
-        <textarea id="campaign"
-          rows="1"
-          maxlength="20"
-          class="w-full rounded-md border px-3 py-2"
-          placeholder="Headline"></textarea>
-      </label>
-      <label class="block text-sm">
-        <span class="sr-only">Body (optional)</span>
-        <textarea id="captionBody"
-          rows="1"
-          maxlength="60"
-          class="w-full rounded-md border px-3 py-2"
-          placeholder="Body (optional)"></textarea>
-      </label>
-    </div>
-  </div>
-
 <!-- Design -->
 <div class="step-card"
      data-step="design">
@@ -222,21 +196,6 @@
       <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
         Design
       </button>
-      <div id="fontPill" class="ecc-pill" role="group" aria-label="Preview font">
-        <label class="text-sm sr-only" for="fontFamily">Preview font</label>
-        <select id="fontFamily" class="topctl topctl--chev text-sm" aria-label="Preview font">
-          <option value="IBM Plex Sans">IBM Plex Sans</option>
-          <option value="IBM Plex Serif">IBM Plex Serif</option>
-          <option value="Bebas Neue">Bebas Neue</option>
-          <option value="Public Sans">Public Sans</option>
-          <option value="Playfair Display">Playfair Display</option>
-          <option value="Space Grotesk">Space Grotesk</option>
-          <option value="Manrope">Manrope</option>
-          <option value="Inter">Inter</option>
-          <option value="JetBrains Mono">JetBrains Mono</option>
-          <option value="Work Sans">Work Sans</option>
-        </select>
-      </div>
     </div>
   <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
     <!-- Color quadrant -->
@@ -373,7 +332,7 @@
             <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] grid-rows-2 items-center gap-2">
               <div class="flex items-center gap-2">
                 <input id="bgTopColor" type="color" class="color-dot h-9 w-9" value="#FFFFFF" />
-                <input id="bgTopHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+                <input id="bgTopHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" value="#FFFFFF" />
               </div>
               <div class="grid grid-cols-[auto_minmax(0,1fr)] grid-rows-2 items-center gap-2 row-span-2">
                 <button id="bgLink" type="button"
@@ -389,7 +348,7 @@
                     aria-label="Top opacity (%)" />
               <div class="flex items-center gap-2">
                 <input id="bgBottomColor" type="color" class="color-dot h-9 w-9" value="#FFFFFF" />
-                <input id="bgBottomHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+                <input id="bgBottomHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" value="#FFFFFF" />
               </div>
               <input id="bgBottomAlphaNum" type="number" min="0" max="100" step="1" value="100"
                     class="w-16 rounded-md border px-2 py-2 text-sm justify-self-start"
@@ -398,6 +357,49 @@
     </div>
   </div>
 </div>
+
+  <!-- Caption -->
+  <div class="step-card"
+       data-step="caption">
+    <div class="step-header-wrap flex items-center gap-3">
+      <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
+        Caption
+      </button>
+      <div id="fontPill" class="ecc-pill" role="group" aria-label="Preview font">
+        <label class="text-sm sr-only" for="fontFamily">Preview font</label>
+        <select id="fontFamily" class="topctl topctl--chev text-sm" aria-label="Preview font">
+          <option value="IBM Plex Sans">IBM Plex Sans</option>
+          <option value="IBM Plex Serif">IBM Plex Serif</option>
+          <option value="Bebas Neue">Bebas Neue</option>
+          <option value="Public Sans">Public Sans</option>
+          <option value="Playfair Display">Playfair Display</option>
+          <option value="Space Grotesk">Space Grotesk</option>
+          <option value="Manrope">Manrope</option>
+          <option value="Inter">Inter</option>
+          <option value="JetBrains Mono">JetBrains Mono</option>
+          <option value="Work Sans">Work Sans</option>
+        </select>
+      </div>
+    </div>
+    <div class="px-4 pb-4 space-y-3" data-step-panel style="display:none">
+      <label class="block text-sm">
+        <span class="sr-only">Headline</span>
+        <textarea id="campaign"
+          rows="1"
+          maxlength="20"
+          class="w-full rounded-md border px-3 py-2"
+          placeholder="Headline"></textarea>
+      </label>
+      <label class="block text-sm">
+        <span class="sr-only">Body (optional)</span>
+        <textarea id="captionBody"
+          rows="1"
+          maxlength="60"
+          class="w-full rounded-md border px-3 py-2"
+          placeholder="Body (optional)"></textarea>
+      </label>
+    </div>
+  </div>
 
 <!-- Business -->
 <div class="step-card"

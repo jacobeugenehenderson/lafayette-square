@@ -976,6 +976,8 @@ function getTypeFields(type){
   const typeSel = document.getElementById('qrType');
   if(typeSel){
     typeSel.addEventListener('change', ()=>{
+      // Pre-save current design before form rebuild destroys old DOM
+      try { if (typeof window._lsqSaveBeforeTypeSwitch === 'function') window._lsqSaveBeforeTypeSwitch(typeSel.value); } catch (e) {}
       try { renderTypeForm(typeSel.value); } catch (e) {}
       // Refresh color hex bindings after dynamic field changes
       try { if(typeof window.wireColorHexSync === 'function') window.wireColorHexSync(); } catch (e) {}

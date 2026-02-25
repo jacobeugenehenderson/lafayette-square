@@ -254,6 +254,34 @@ function _lsqLoadDesign(bizId, type) {
 // =====================================================
 var __lsq_switching_type = false;
 
+// Pre-save hook: called by ui_toolkit BEFORE renderTypeForm destroys the DOM.
+// Captures current state while fields still exist.
+var __lsq_pre_saved_for = null;
+
+window._lsqSaveBeforeTypeSwitch = function(newType) {
+  if (__lsq_switching_type) return;
+  if (window.__CODEDESK_IMPORTING_STATE__) return;
+
+  var bizId = _lsqGetCurrentBizId();
+  if (!bizId) return;
+
+  var oldType = window.__lsq_last_type || 'Townie';
+  if (oldType === newType) return;
+
+  if (typeof window.codedeskExportState === 'function') {
+    var state = window.codedeskExportState();
+    _lsqSaveLocal(bizId, state, oldType);
+    _lsqSaveRemote(bizId, state, oldType);
+
+    if (typeof window.codedeskExportPngDataUrl === 'function') {
+      window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
+        _lsqSaveImage(bizId, dataUrl, oldType);
+      }).catch(function() {});
+    }
+  }
+  __lsq_pre_saved_for = oldType;
+};
+
 function _lsqOnTypeSwitch(newType) {
   if (__lsq_switching_type) return;
   if (window.__CODEDESK_IMPORTING_STATE__) return;
@@ -266,8 +294,8 @@ function _lsqOnTypeSwitch(newType) {
 
   __lsq_switching_type = true;
 
-  // Save current design for the old type
-  if (typeof window.codedeskExportState === 'function') {
+  // Save current design for the old type (skip if pre-saved)
+  if (__lsq_pre_saved_for !== oldType && typeof window.codedeskExportState === 'function') {
     var state = window.codedeskExportState();
     _lsqSaveLocal(bizId, state, oldType);
     _lsqSaveRemote(bizId, state, oldType);
@@ -278,6 +306,7 @@ function _lsqOnTypeSwitch(newType) {
       }).catch(function() {});
     }
   }
+  __lsq_pre_saved_for = null;
 
   window.__lsq_last_type = newType;
 
