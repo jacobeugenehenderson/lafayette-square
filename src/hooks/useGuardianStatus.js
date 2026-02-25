@@ -6,14 +6,24 @@ const GUARDIAN_KEY = 'lsq_guardian_listings'
 const ADMIN_KEY = 'lsq_admin'
 const ADMIN_SECRET = 'lafayette1850'
 
-// Check for ?admin= param on load, persist to localStorage
+// Check for ?admin= or ?logout param on load, persist to localStorage
 function checkAdminParam() {
   try {
     const params = new URLSearchParams(window.location.search)
+
+    // ?logout — drop admin + guardian status, clean URL
+    if (params.has('logout')) {
+      localStorage.removeItem(ADMIN_KEY)
+      localStorage.removeItem(GUARDIAN_KEY)
+      params.delete('logout')
+      const clean = params.toString()
+      window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
+      return false
+    }
+
     const secret = params.get('admin')
     if (secret === ADMIN_SECRET) {
       localStorage.setItem(ADMIN_KEY, 'true')
-      // Clean URL
       params.delete('admin')
       const clean = params.toString()
       window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
