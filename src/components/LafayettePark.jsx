@@ -687,7 +687,12 @@ function ParkTrees() {
     const loader = new THREE.TextureLoader()
     const map = {}
     leafTypesData.types.forEach(lt => {
-      const tex = loader.load(`${import.meta.env.BASE_URL}textures/leaves/${lt.texture}`)
+      const tex = loader.load(
+        `${import.meta.env.BASE_URL}textures/leaves/${lt.texture}`,
+        undefined,
+        undefined,
+        (err) => console.warn(`[ParkTrees] Failed to load leaf texture ${lt.texture}:`, err)
+      )
       tex.colorSpace = THREE.SRGBColorSpace
       map[lt.id] = tex
     })
@@ -1561,7 +1566,7 @@ function LafayettePark() {
       <PerimeterFence />
 
       <Text
-        position={[0, 4, PARK.minZ - 15]}
+        position={[0, 0.08, PARK.minZ - 15]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={6}
         color="#e8e8f0"
@@ -1574,7 +1579,7 @@ function LafayettePark() {
         LAFAYETTE PARK
       </Text>
       <Text
-        position={[0, 4, PARK.minZ - 23]}
+        position={[0, 0.08, PARK.minZ - 23]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={3}
         color="#888890"

@@ -54,7 +54,7 @@ function raDecToXYZ(raDeg, decDeg, lstRad, out) {
   out.x = R * cosAlt * Math.sin(az)
   out.y = R * sinAlt
   out.z = -R * cosAlt * Math.cos(az)
-  return alt > -0.05
+  return alt > 0
 }
 
 // ─── Kepler solver ─────────────────────────────────────────────────
@@ -148,11 +148,27 @@ function ConstellationLines() {
     for (const constellation of constellationsData) {
       for (const seg of constellation.lines) {
         raDecToXYZ(seg[0][0], seg[0][1], lstRad, _v)
-        pos[idx] = _v.x; pos[idx + 1] = _v.y; pos[idx + 2] = _v.z
-        idx += 3
+        let x0 = _v.x, y0 = _v.y, z0 = _v.z
         raDecToXYZ(seg[1][0], seg[1][1], lstRad, _v)
-        pos[idx] = _v.x; pos[idx + 1] = _v.y; pos[idx + 2] = _v.z
-        idx += 3
+        let x1 = _v.x, y1 = _v.y, z1 = _v.z
+
+        if (y0 < 0 && y1 < 0) {
+          // Both below horizon — hide entire segment (collapse to degenerate line)
+          pos[idx] = 0; pos[idx + 1] = 0; pos[idx + 2] = 0; idx += 3
+          pos[idx] = 0; pos[idx + 1] = 0; pos[idx + 2] = 0; idx += 3
+        } else {
+          // Clip below-horizon endpoint to the horizon (lerp to y=0)
+          if (y0 < 0) {
+            const t = y1 / (y1 - y0)
+            x0 = x1 + t * (x0 - x1); y0 = 0; z0 = z1 + t * (z0 - z1)
+          }
+          if (y1 < 0) {
+            const t = y0 / (y0 - y1)
+            x1 = x0 + t * (x1 - x0); y1 = 0; z1 = z0 + t * (z1 - z0)
+          }
+          pos[idx] = x0; pos[idx + 1] = y0; pos[idx + 2] = z0; idx += 3
+          pos[idx] = x1; pos[idx + 1] = y1; pos[idx + 2] = z1; idx += 3
+        }
       }
     }
     posAttr.needsUpdate = true
@@ -214,8 +230,10 @@ function ConstellationDots() {
         void main() {
           vDegree = aDegree;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          float baseSize = vDegree >= 3.0 ? 800.0 : 550.0;
-          gl_PointSize = baseSize * (800.0 / -mv.z);
+          float baseSize = vDegree >= 3.0 ? 1200.0 : 800.0;
+          gl_PointSize = baseSize * (800.0 / length(mv.xyz));
+          // Fade out below horizon
+          gl_PointSize *= smoothstep(-500.0, 0.0, position.y);
           gl_Position = projectionMatrix * mv;
         }
       `,
@@ -226,29 +244,25 @@ function ConstellationDots() {
           vec2 uv = (gl_PointCoord - 0.5) * 2.0;
           float d = length(uv);
 
-          // Outer ring (empty circle)
-          float ringOuter = 0.85;
-          float ringInner = 0.6;
-          float ring = smoothstep(ringInner - 0.08, ringInner + 0.02, d)
-                     * (1.0 - smoothstep(ringOuter - 0.02, ringOuter + 0.08, d));
+          // Bright filled star core
+          float star = 1.0 - smoothstep(0.0, 0.45, d);
 
-          // Inner bright core
-          float core = 1.0 - smoothstep(0.0, 0.35, d);
-          core *= core;
+          // Soft glow halo
+          float halo = exp(-d * 3.0) * 0.3;
 
           // 4-pointed star rays for junction nodes (degree >= 3)
           float rays = 0.0;
           if (vDegree >= 3.0) {
             float angle = atan(uv.y, uv.x);
-            // 4 pointed rays at 45 degree offsets
             float ray4 = pow(abs(cos(angle * 2.0)), 12.0);
             rays = ray4 * (1.0 - smoothstep(0.0, 0.9, d)) * 0.6;
           }
 
-          float alpha = max(max(ring * 0.5, core), rays);
+          float alpha = max(star, max(halo, rays));
 
-          // Warm gold color matching the constellation lines
-          vec3 color = vec3(1.0, 0.91, 0.69);
+          // White-hot center fading to warm gold
+          float whiteness = 1.0 - smoothstep(0.0, 0.3, d);
+          vec3 color = mix(vec3(1.0, 0.91, 0.69), vec3(1.0), whiteness);
 
           if (alpha < 0.01) discard;
           gl_FragColor = vec4(color * alpha, alpha);
@@ -355,7 +369,7 @@ function PlanetMarker({ planet, earth }) {
   const _v = useMemo(() => new THREE.Vector3(), [])
   const _dir = useMemo(() => new THREE.Vector3(), [])
   const planetColor = useMemo(() => new THREE.Color(planet.color), [planet.color])
-  const baseSize = (PLANET_SIZES[planet.name] || 0.5) * 2400
+  const baseSize = (PLANET_SIZES[planet.name] || 0.5) * 4000
 
   const glowMat = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
@@ -382,11 +396,11 @@ function PlanetMarker({ planet, earth }) {
         float glow = exp(-d * 5.0) * 0.7;
 
         // Outer soft halo
-        float halo = exp(-d * 1.8) * 0.25;
+        float halo = exp(-d * 1.2) * 0.35;
 
         // 4-pointed diffraction spikes
         float angle = atan(uv.y, uv.x);
-        float spikes = pow(abs(cos(angle * 2.0)), 24.0) * exp(-d * 2.5) * 0.4;
+        float spikes = pow(abs(cos(angle * 2.0)), 24.0) * exp(-d * 1.8) * 0.4;
 
         float alpha = core + glow + halo + spikes;
         vec3 col = uColor * (glow * 2.0 + halo + spikes * 1.5);

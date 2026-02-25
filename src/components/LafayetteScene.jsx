@@ -27,7 +27,12 @@ const _buildingTextures = {}
 
 if (!_IS_MOBILE) {
   ;['brick_red', 'brick_weathered', 'stone', 'slate', 'metal', 'wood_siding', 'stucco'].forEach(name => {
-    const tex = _texLoader.load(`${_BASE}textures/buildings/${name}.jpg`)
+    const tex = _texLoader.load(
+      `${_BASE}textures/buildings/${name}.jpg`,
+      undefined,
+      undefined,
+      (err) => console.warn(`[Buildings] Failed to load texture ${name}:`, err)
+    )
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping
     tex.colorSpace = THREE.SRGBColorSpace
     tex.minFilter = THREE.LinearMipmapLinearFilter
@@ -38,7 +43,7 @@ if (!_IS_MOBILE) {
 
 // ── Drag guard: suppress clicks after pointer moves >6px (prevents accidental selection during pan) ──
 let _pdx = 0, _pdy = 0
-document.addEventListener('pointerdown', (e) => { _pdx = e.clientX; _pdy = e.clientY })
+const _onPointerDown = (e) => { _pdx = e.clientX; _pdy = e.clientY }
 function isDrag(e) {
   const ce = e.nativeEvent || e
   const dx = ce.clientX - _pdx, dy = ce.clientY - _pdy
@@ -1051,6 +1056,12 @@ function LafayetteScene() {
   const deselect = useSelectedBuilding((state) => state.deselect)
   const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
+
+  // Register drag-guard listener with cleanup (avoids stacking on HMR)
+  useEffect(() => {
+    document.addEventListener('pointerdown', _onPointerDown)
+    return () => document.removeEventListener('pointerdown', _onPointerDown)
+  }, [])
 
   // On mobile, stagger browse-only content across several seconds so the GPU
   // can compile shaders and upload textures in batches instead of all at once.

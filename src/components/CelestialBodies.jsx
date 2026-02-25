@@ -7,6 +7,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
 import useSkyState from '../hooks/useSkyState'
 import brightStars from '../data/bright_stars.json'
+import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
 
 // Lafayette Square, St. Louis, MO coordinates
@@ -681,6 +682,32 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
       starSizes[i] = (0.8 + magNorm * magNorm * 5.0) * 20.0
     }
 
+    // Build constellation membership flag: mark catalog stars near any constellation vertex
+    const isConstellation = new Uint8Array(N)
+    const constellationVertices = []
+    for (const c of constellationsData) {
+      for (const seg of c.lines) {
+        for (const pt of seg) {
+          constellationVertices.push([pt[0] * DEG, pt[1] * DEG]) // RA/Dec in radians
+        }
+      }
+    }
+    const MATCH_THRESHOLD = 1.0 * DEG // 1.0 degree — generous to catch rounding/epoch drift
+    for (let i = 0; i < N; i++) {
+      const sRA = raRad[i], sDec = decRad[i]
+      for (let j = 0; j < constellationVertices.length; j++) {
+        const dRA = sRA - constellationVertices[j][0]
+        const dDec = sDec - constellationVertices[j][1]
+        // Quick angular distance approximation (accurate for small separations)
+        const cosDec = Math.cos(sDec)
+        const dist2 = (dRA * cosDec) * (dRA * cosDec) + dDec * dDec
+        if (dist2 < MATCH_THRESHOLD * MATCH_THRESHOLD) {
+          isConstellation[i] = 1
+          break
+        }
+      }
+    }
+
     const mat = new THREE.ShaderMaterial({
       uniforms: { uOpacity: { value: 0.0 } },
       vertexShader: `
@@ -692,7 +719,11 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
           vCol = aColor;
           vBright = aSize / 120.0;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = aSize * (800.0 / -mv.z);
+          // Use distance (not -mv.z) — all sky-dome stars are equidistant,
+          // so depth-based scaling blows up at the camera side plane.
+          gl_PointSize = max(aSize * (800.0 / length(mv.xyz)), 1.0);
+          // Fade out below horizon (position is world-space, Y=0 is horizon)
+          gl_PointSize *= smoothstep(-500.0, 0.0, position.y);
           gl_Position = projectionMatrix * mv;
         }
       `,
@@ -704,7 +735,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
           float d = length(gl_PointCoord - 0.5);
           float a = 1.0 - smoothstep(0.0, 0.5, d);
           a *= a;
-          if (a * uOpacity < 0.005) discard;
+          if (a * uOpacity < 0.01) discard;
           // Chromatic aberration: R shifts outward, B inward — stronger for bright stars
           float spread = 0.08 + vBright * 0.12;
           float dR = length((gl_PointCoord - 0.5) * (1.0 + spread));
@@ -733,6 +764,8 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3))
     geo.setAttribute('aColor', new THREE.BufferAttribute(starColors, 3))
     geo.setAttribute('aSize', new THREE.BufferAttribute(starSizes, 1))
+    // Explicit bounding sphere so frustum culling never hides the full-sky group
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), SKY_RADIUS * 2)
 
     // ── Background filler stars (equatorial cartesian, rotated as rigid group) ──
     const NOISE_N = 3000
@@ -753,7 +786,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
       noiseColors[i * 3 + 1] = 0.7 + rng() * 0.3
       noiseColors[i * 3 + 2] = 0.8 + rng() * 0.2
       // Sizes large enough to be visible at sky-dome distance
-      noiseSizes[i] = (6.0 + rng() * 10.0) * 20.0
+      noiseSizes[i] = (10.0 + rng() * 14.0) * 20.0
     }
     const nGeo = new THREE.BufferGeometry()
     nGeo.setAttribute('position', new THREE.BufferAttribute(noisePositions, 3))
@@ -771,8 +804,10 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
         void main() {
           vCol = aColor;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          // max prevents blow-up when stars cross the camera's side plane
-          gl_PointSize = aSize * (800.0 / max(-mv.z, 100.0));
+          gl_PointSize = aSize * (800.0 / length(mv.xyz));
+          // Fade out below horizon (world Y < 0)
+          vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+          gl_PointSize *= smoothstep(-500.0, 0.0, worldPos.y);
           gl_Position = projectionMatrix * mv;
         }
       `,
@@ -799,7 +834,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
     })
 
     return {
-      starCatalog: { raRad, decRad, count: N, radius: R },
+      starCatalog: { raRad, decRad, count: N, radius: R, isConstellation },
       starGeo: geo,
       starMat: mat,
       noiseGeo: nGeo,
@@ -818,13 +853,17 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
     // Skip expensive sidereal position computation when stars are invisible
     if (!planetariumActive && astronomyAlpha < 0.01) return
 
-    // Scale star sizes in planetarium mode (40x for visibility at sky-dome distance)
+    // Scale star sizes in planetarium mode (constellation stars 40x, others 4x)
     const sizeAttr = starRef.current.geometry.getAttribute('aSize')
     const wasScaled = sizeAttr._planetariumScaled === true
     if (wasScaled !== planetariumActive) {
       const arr = sizeAttr.array
-      const scale = planetariumActive ? 40.0 : (1.0 / 40.0)
-      for (let i = 0; i < arr.length; i++) arr[i] *= scale
+      const { isConstellation: isCon } = starCatalog
+      if (planetariumActive) {
+        for (let i = 0; i < arr.length; i++) arr[i] *= isCon[i] ? 40.0 : 4.0
+      } else {
+        for (let i = 0; i < arr.length; i++) arr[i] *= isCon[i] ? (1.0 / 40.0) : (1.0 / 4.0)
+      }
       sizeAttr.needsUpdate = true
       sizeAttr._planetariumScaled = planetariumActive
     }
@@ -855,8 +894,8 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
       const sinAlt = sinDec * sinLat + cosDec * cosLat * cosHA
       const alt = Math.asin(sinAlt)
 
-      // Skip stars below horizon (optimization)
-      if (alt < -0.05) {
+      // Skip stars below horizon
+      if (alt < 0) {
         pos[i * 3] = 0; pos[i * 3 + 1] = -R; pos[i * 3 + 2] = 0
         continue
       }

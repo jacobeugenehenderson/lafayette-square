@@ -46,6 +46,11 @@ function fetchSvg(name) {
       svgCache.set(name, sized)
       return sized
     })
+    .catch((err) => {
+      console.warn(`[WeatherIcon] Failed to load ${name}.svg:`, err)
+      svgCache.delete(name) // clear so next render can retry
+      return ''
+    })
   svgCache.set(name, promise)
   return promise
 }

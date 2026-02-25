@@ -108,6 +108,17 @@ const useSkyState = create((set, get) => ({
     const hazeBonus = 1 + turbidity * 0.5
     const sunsetPotential = Math.min(1, lowSunFactor * partialCloudBonus * hazeBonus * (1 - storminess))
 
+    // Skip set() when all values have converged (avoids per-frame re-render churn)
+    const EPS = 5e-4
+    if (
+      Math.abs(cloudCover - s.cloudCover) < EPS &&
+      Math.abs(storminess - s.storminess) < EPS &&
+      Math.abs(turbidity - s.turbidity) < EPS &&
+      Math.abs(precipitationIntensity - s.precipitationIntensity) < EPS &&
+      Math.abs(astronomyAlpha - s.astronomyAlpha) < EPS &&
+      Math.abs(sunsetPotential - s.sunsetPotential) < EPS
+    ) return
+
     set({
       cloudCover,
       storminess,

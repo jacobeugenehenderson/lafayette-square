@@ -220,11 +220,16 @@ function VectorStreets({ svgPortal }) {
         earthObj.scale.set(earthScale, earthScale, 1)
         scene.add(earthObj)
       })
+      .catch(err => {
+        console.warn('[VectorStreets] SVG fetch failed:', err)
+      })
 
     return () => {
       alive.current = false
       svgRef.current = null
       earthRef.current = null
+      // Clear CSS3D scene objects so Three.js releases internal references
+      while (scene.children.length) scene.remove(scene.children[0])
       while (svgPortal.firstChild) svgPortal.removeChild(svgPortal.firstChild)
       css3d.current = { renderer: null, scene: null }
     }
