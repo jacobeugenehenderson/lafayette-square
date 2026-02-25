@@ -77,7 +77,10 @@ function todayCentral() {
 
 // Sheets auto-converts date strings to Date objects; normalize for string comparison
 function toDateStr(val) {
-  if (val instanceof Date) return Utilities.formatDate(val, TIMEZONE, 'yyyy-MM-dd')
+  try {
+    if (val instanceof Date) return Utilities.formatDate(val, TIMEZONE, 'yyyy-MM-dd')
+    if (typeof val === 'number') return Utilities.formatDate(new Date(val), TIMEZONE, 'yyyy-MM-dd')
+  } catch (_) {}
   return String(val || '')
 }
 
