@@ -122,19 +122,6 @@ function CodeDeskModalInner() {
             <option value="Townie" className="bg-neutral-800 text-white">Townie</option>
             <option value="Guardian" className="bg-neutral-800 text-white">Guardian</option>
           </select>
-          {isGuardianMode && (
-            <button
-              onClick={handleSave}
-              className={`h-8 px-3 text-xs rounded-lg border transition-all duration-200 ${
-                saved
-                  ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
-                  : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/15'
-              }`}
-              style={{ fontFamily: 'ui-monospace, monospace' }}
-            >
-              {saved ? 'Saved' : 'Save'}
-            </button>
-          )}
         </div>
       </div>
 
@@ -148,6 +135,23 @@ function CodeDeskModalInner() {
         title="QR Generator"
         allow="clipboard-write"
       />
+
+      {/* Footer — Save button */}
+      {isGuardianMode && (
+        <div className="px-4 py-2.5 border-t border-white/10 flex-shrink-0">
+          <button
+            onClick={handleSave}
+            className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+              saved
+                ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300'
+                : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 hover:text-white'
+            }`}
+            style={{ fontFamily: 'ui-monospace, monospace' }}
+          >
+            {saved ? 'Saved' : 'Save'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
