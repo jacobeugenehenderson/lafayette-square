@@ -147,6 +147,7 @@ function doGet(e) {
       case 'thread-messages': return getThreadMessages(e.parameter.tid, e.parameter.dh)
       case 'comments':        return getComments(e.parameter.bid, e.parameter.dh)
       case 'claim-secret':   return getClaimSecret(e.parameter.lid, e.parameter.dh, e.parameter.admin)
+      case 'getdesign':      return getDesign(e.parameter.bizId)
       default:                return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
@@ -184,6 +185,7 @@ function doPost(e) {
       case 'comment':          return postComment(body)
       case 'remove-comment':   return postRemoveComment(body)
       case 'reply':            return postReply(body)
+      case 'savedesign':       return saveDesign(body)
       // Read-only actions via POST to bypass Google's redirect cache
       case 'events':           return getEvents()
       case 'listings':         return getListings()
@@ -994,6 +996,51 @@ function postCloseThread(body) {
   return jsonResponse({ success: true })
 }
 
+// ─── GET: QR design for a listing+type ──────────────────────────────────────
+
+function getDesign(bizId) {
+  if (!bizId) return errorResponse('Missing bizId', 'bad_request')
+  var sheet = getSheet('Designs')
+  if (!sheet) return jsonResponse({ design: null })
+  const result = findRow(sheet, 'biz_id', bizId)
+  if (!result) return jsonResponse({ design: null })
+  return jsonResponse({ design: parseJsonField(result.rowData.design_json) })
+}
+
+// ─── POST: Save QR design for a listing+type ────────────────────────────────
+
+function saveDesign(body) {
+  var bizId = body.bizId
+  var design = body.design
+  if (!bizId) return errorResponse('Missing bizId', 'bad_request')
+  if (!design || typeof design !== 'object') return errorResponse('Missing design', 'bad_request')
+
+  var sheet = getSheet('Designs')
+  if (!sheet) {
+    // Auto-create Designs sheet if it doesn't exist
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID)
+    sheet = ss.insertSheet('Designs')
+    sheet.getRange(1, 1, 1, 3).setValues([['biz_id', 'design_json', 'updated_at']])
+    sheet.getRange(1, 1, 1, 3).setFontWeight('bold')
+  }
+
+  var designJson = JSON.stringify(design)
+  var now = nowISO()
+  var existing = findRow(sheet, 'biz_id', bizId)
+
+  if (existing) {
+    // Update existing row
+    var headerMap = getHeaderMap(sheet)
+    updateCell(sheet, existing.rowIndex, headerMap, 'design_json', designJson)
+    updateCell(sheet, existing.rowIndex, headerMap, 'updated_at', now)
+  } else {
+    // Append new row: biz_id, design_json, updated_at
+    sheet.appendRow([bizId, designJson, now])
+  }
+
+  return jsonResponse({ success: true })
+}
+
 // ─── Utility: Create all tabs with headers ──────────────────────────────────
 
 function setupSheets() {
@@ -1017,6 +1064,7 @@ function setupSheets() {
     'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
     'Replies':   ['id', 'review_id', 'listing_id', 'device_hash', 'handle', 'text', 'created_at'],
     'Guardians': ['listing_id', 'device_hash', 'created_at'],
+    'Designs':   ['biz_id', 'design_json', 'updated_at'],
   }
 
   Object.entries(tabs).forEach(([name, headers]) => {
