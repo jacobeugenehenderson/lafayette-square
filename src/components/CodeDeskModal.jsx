@@ -103,8 +103,8 @@ function CodeDeskModalInner() {
         bottom: 'calc(76px + 18px)',
       }}
     >
-      {/* Header — close button is provided by ModeOverlay (floating top-right system button) */}
-      <div className="flex items-center justify-between px-4 pr-12 py-2.5 border-b border-white/10 flex-shrink-0">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 flex-shrink-0">
         {isGuardianMode ? (
           <div className="flex items-center gap-2 min-w-0">
             <h2 className="text-sm font-medium text-white truncate">{placeName || 'QR Designer'}</h2>
@@ -122,6 +122,15 @@ function CodeDeskModalInner() {
             <option value="Townie" className="bg-neutral-800 text-white">Townie</option>
             <option value="Guardian" className="bg-neutral-800 text-white">Guardian</option>
           </select>
+          <button
+            onClick={close}
+            className="w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
+            title="Close"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
 

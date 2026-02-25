@@ -1048,22 +1048,33 @@ export default function BulletinModal() {
       {/* Header */}
       <div className="flex items-center px-4 py-3 border-b border-white/10 flex-shrink-0">
         <h2 className="flex-1 text-sm font-medium text-white">Bulletin Board</h2>
-        <button
-          onClick={async () => {
-            const shareText = `Check out the Bulletin Board in Lafayette Square!\nhttps://jacobhenderson.studio/lafayette-square/bulletin`
-            if (navigator.share) {
-              navigator.share({ text: shareText }).catch(() => {})
-            } else {
-              navigator.clipboard?.writeText(shareText).catch(() => {})
-            }
-          }}
-          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors flex items-center justify-center"
-          title="Share"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              const shareText = `Check out the Bulletin Board in Lafayette Square!\nhttps://jacobhenderson.studio/lafayette-square/bulletin`
+              if (navigator.share) {
+                navigator.share({ text: shareText }).catch(() => {})
+              } else {
+                navigator.clipboard?.writeText(shareText).catch(() => {})
+              }
+            }}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors flex items-center justify-center"
+            title="Share"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+            </svg>
+          </button>
+          <button
+            onClick={() => { useBulletin.getState().setModalOpen(false); useBulletin.setState({ activeThread: null, messages: [] }) }}
+            className="w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
+            title="Close"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Content */}

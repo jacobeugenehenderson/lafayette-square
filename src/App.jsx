@@ -42,48 +42,8 @@ function ModeOverlay() {
   const codeDeskOpen = useCodeDesk((s) => s.open)
   const isLive = useTimeOfDay((s) => s.isLive)
 
-  // Close buttons — rose accent for dismiss actions
-  if (codeDeskOpen) {
-    return (
-      <button
-        onClick={() => useCodeDesk.getState().setOpen(false)}
-        className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
-        title="Close"
-      >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    )
-  }
-
-  if (showCard) {
-    return (
-      <button
-        onClick={() => useSelectedBuilding.getState().deselect()}
-        className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
-        title="Close"
-      >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    )
-  }
-
-  if (bulletinOpen) {
-    return (
-      <button
-        onClick={() => { useBulletin.getState().setModalOpen(false); useBulletin.setState({ activeThread: null, messages: [] }) }}
-        className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
-        title="Close"
-      >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    )
-  }
+  // Close buttons now live inside each modal's own header
+  if (codeDeskOpen || showCard || bulletinOpen) return null
 
   // Live button takes over the top-right slot when not live — any mode, including hero
   if (!isLive) return <LiveButton />
