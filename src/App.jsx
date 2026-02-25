@@ -4,7 +4,7 @@ import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
 import SidePanel from './components/SidePanel'
 import BulletinModal from './components/BulletinModal'
-import CodeDeskModal from './components/CodeDeskModal'
+import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import EventTicker from './components/EventTicker'
 import useCamera from './hooks/useCamera'
 import useTimeOfDay from './hooks/useTimeOfDay'
@@ -21,10 +21,10 @@ function LiveButton() {
   return (
     <button
       onClick={() => useTimeOfDay.getState().returnToLive()}
-      className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
+      className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
       title="Return to live time"
     >
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
         <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
         <path strokeLinecap="round" d="M8.5 8.5a5 5 0 0 0 0 7" />
         <path strokeLinecap="round" d="M15.5 8.5a5 5 0 0 1 0 7" />
@@ -39,17 +39,32 @@ function ModeOverlay() {
   const viewMode = useCamera((s) => s.viewMode)
   const showCard = useSelectedBuilding((s) => s.showCard)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
+  const codeDeskOpen = useCodeDesk((s) => s.open)
   const isLive = useTimeOfDay((s) => s.isLive)
 
   // Close buttons — rose accent for dismiss actions
+  if (codeDeskOpen) {
+    return (
+      <button
+        onClick={() => useCodeDesk.getState().setOpen(false)}
+        className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
+        title="Close"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    )
+  }
+
   if (showCard) {
     return (
       <button
         onClick={() => useSelectedBuilding.getState().deselect()}
-        className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
+        className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
         title="Close"
       >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
@@ -60,10 +75,10 @@ function ModeOverlay() {
     return (
       <button
         onClick={() => { useBulletin.getState().setModalOpen(false); useBulletin.setState({ activeThread: null, messages: [] }) }}
-        className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
+        className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
         title="Close"
       >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
@@ -80,10 +95,10 @@ function ModeOverlay() {
     return (
       <button
         onClick={() => useCamera.getState().exitPlanetarium()}
-        className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
+        className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
         title="Exit street view"
       >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
           <rect x="3" y="3" width="7" height="7" rx="1" />
           <rect x="14" y="3" width="7" height="7" rx="1" />
           <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -96,10 +111,10 @@ function ModeOverlay() {
   return (
     <button
       onClick={() => useCamera.getState().goHero()}
-      className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 transition-all duration-200 flex items-center justify-center hover:bg-white/20 hover:text-white/80"
+      className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 transition-all duration-200 flex items-center justify-center hover:bg-white/20 hover:text-white/80"
       title="Return to hero view"
     >
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
       </svg>
     </button>

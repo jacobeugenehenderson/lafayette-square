@@ -595,14 +595,26 @@ function isTownie(deviceHash) {
 
 function getClaimSecret(listingId, deviceHash, adminKey) {
   if (!listingId) return errorResponse('Missing lid', 'bad_request')
-  const listing = findRow(getSheet('Listings'), 'id', listingId)
+  const sheet = getSheet('Listings')
+  const listing = findRow(sheet, 'id', listingId)
   if (!listing) return errorResponse('Not found', 'not_found')
 
   const isAdmin = adminKey === 'lafayette1850'
   const isGuardian = deviceHash && isGuardianOf(listingId, deviceHash)
   if (!isGuardian && !isAdmin) return errorResponse('Not authorized', 'unauthorized')
 
-  return jsonResponse({ claim_secret: listing.rowData.claim_secret || '' })
+  // Auto-generate and persist a claim secret if none exists
+  var secret = listing.rowData.claim_secret
+  if (!secret) {
+    secret = Utilities.getUuid().split('-')[0]  // 8-char hex
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    var colIdx = headers.indexOf('claim_secret')
+    if (colIdx >= 0) {
+      sheet.getRange(listing.rowIndex, colIdx + 1).setValue(secret)
+    }
+  }
+
+  return jsonResponse({ claim_secret: secret })
 }
 
 // ─── Helper: check if device is a guardian for a listing ─────────────────

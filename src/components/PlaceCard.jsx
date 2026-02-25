@@ -1323,16 +1323,27 @@ function QrTab({ listingId, listingName, isAdmin }) {
   const [guardianUrl, setGuardianUrl] = useState('')
   const [claimSecret, setClaimSecret] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [townieCopied, setTownieCopied] = useState(false)
+  const [guardianCopied, setGuardianCopied] = useState(false)
+
+  // Listen for lsq-saved from QR Studio iframe to refresh QR codes
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === 'lsq-saved') setRefreshKey(k => k + 1)
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [])
 
   useEffect(() => {
-    const origin = window.location.origin
-    const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+    const vanity = 'https://jacobhenderson.studio/lafayette-square'
     // Townie QR
-    const tUrl = `${origin}${base}/checkin/${listingId}`
+    const tUrl = `${vanity}/checkin/${listingId}`
     setTownieUrl(tUrl)
     QRCode.toDataURL(tUrl, { width: 256, margin: 2 }).then(setTownieQr)
 
-    // Guardian QR: fetch claim_secret
+    // Guardian QR: fetch claim_secret (auto-generated server-side if none exists)
     async function loadSecret() {
       try {
         const dh = await getDeviceHash()
@@ -1342,7 +1353,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
         const secret = res?.data?.claim_secret
         if (secret) {
           setClaimSecret(secret)
-          const gUrl = `${origin}${base}/claim/${listingId}/${secret}`
+          const gUrl = `${vanity}/claim/${listingId}/${secret}`
           setGuardianUrl(gUrl)
           QRCode.toDataURL(gUrl, { width: 256, margin: 2 }).then(setGuardianQr)
         }
@@ -1350,21 +1361,25 @@ function QrTab({ listingId, listingName, isAdmin }) {
       setLoading(false)
     }
     loadSecret()
-  }, [listingId, isAdmin])
+  }, [listingId, isAdmin, refreshKey])
 
-  const shareUrl = async (url, title) => {
-    if (navigator.share) {
-      try { await navigator.share({ title, url }) } catch { /* silent */ }
-    } else {
-      try {
-        await navigator.clipboard.writeText(url)
-      } catch { /* silent */ }
-    }
+  const copyUrl = async (url, setCopied) => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch { /* silent */ }
   }
 
   const openQrStudio = () => {
     useCodeDesk.getState().setOpen(true, { listingId, qrType: 'Townie', claimSecret, mode: 'guardian', placeName: listingName })
   }
+
+  const ShareIcon = () => (
+    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+    </svg>
+  )
 
   return (
     <div className="space-y-4">
@@ -1378,35 +1393,37 @@ function QrTab({ listingId, listingName, isAdmin }) {
           </div>
         )}
         <button
-          onClick={() => shareUrl(townieUrl, 'Check in here')}
-          className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
+          onClick={() => copyUrl(townieUrl, setTownieCopied)}
+          className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
         >
-          Share
+          <ShareIcon />
+          {townieCopied ? 'Copied!' : 'Copy Link'}
         </button>
       </div>
 
       {/* Guardian QR */}
-      <div className="rounded-lg bg-white/5 border border-white/10 p-4">
-        <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
-        <div className="text-[10px] text-white/40 mb-3">To onboard a new guardian</div>
-        {loading ? (
+      {loading ? (
+        <div className="rounded-lg bg-white/5 border border-white/10 p-4">
+          <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
+          <div className="text-[10px] text-white/40 mb-3">To onboard a new guardian</div>
           <div className="text-center py-6 text-white/30 text-xs">Loading...</div>
-        ) : guardianQr ? (
-          <>
-            <div className="flex justify-center mb-3">
-              <img src={guardianQr} alt="Guardian QR" className="w-48 h-48 rounded-lg" />
-            </div>
-            <button
-              onClick={() => shareUrl(guardianUrl, 'Become a guardian')}
-              className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors"
-            >
-              Share
-            </button>
-          </>
-        ) : (
-          <div className="text-center py-4 text-white/30 text-xs">No claim secret available</div>
-        )}
-      </div>
+        </div>
+      ) : guardianQr && (
+        <div className="rounded-lg bg-white/5 border border-white/10 p-4">
+          <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
+          <div className="text-[10px] text-white/40 mb-3">To onboard a new guardian</div>
+          <div className="flex justify-center mb-3">
+            <img src={guardianQr} alt="Guardian QR" className="w-48 h-48 rounded-lg" />
+          </div>
+          <button
+            onClick={() => copyUrl(guardianUrl, setGuardianCopied)}
+            className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
+          >
+            <ShareIcon />
+            {guardianCopied ? 'Copied!' : 'Copy Link'}
+          </button>
+        </div>
+      )}
 
       {/* Design button */}
       <button
@@ -1709,9 +1726,10 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </a>
         )}
 
-        {/* Right: share icon — fills footer for non-guardian listings */}
+        {/* Right: share icon — fills footer for non-guardian listings, disabled for guardians */}
         <button
           onClick={() => {
+            if (isGuardian) return
             const typeLabel = hasListingInfo ? 'place' : 'house'
             const vanity = 'https://jacobhenderson.studio/lafayette-square'
             const placeUrl = listingId ? `${vanity}/place/${listingId}` : vanity
@@ -1723,7 +1741,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               navigator.clipboard?.writeText(shareText).catch(() => {})
             }
           }}
-          className={`${hasListingInfo && !isGuardian ? 'flex-1 py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium' : 'w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white'} transition-colors flex items-center justify-center gap-2`}
+          className={`${hasListingInfo && !isGuardian ? 'flex-1 py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium' : 'w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white'} transition-colors flex items-center justify-center gap-2${isGuardian ? ' opacity-30 pointer-events-none' : ''}`}
           title="Share"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

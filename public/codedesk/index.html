@@ -127,6 +127,8 @@
       if (e.data.type === 'lsq-save') {
         // Trigger immediate save (auto-save is debounced; this forces it now)
         if (typeof window.render === 'function') window.render();
+        // Notify parent that save completed so QrTab can refresh
+        window.parent.postMessage({ type: 'lsq-saved' }, '*');
       }
     });
   }
