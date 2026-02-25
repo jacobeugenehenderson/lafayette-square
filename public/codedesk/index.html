@@ -125,19 +125,10 @@
         }
       }
       if (e.data.type === 'lsq-save') {
-        // Trigger immediate save (auto-save is debounced; this forces it now)
+        // Trigger render then immediate save + PNG export
         if (typeof window.render === 'function') window.render();
-
-        // Export PNG and save to localStorage, then notify parent
-        var bizId = (document.getElementById('bizSelect') || {}).value || '';
-        var type = (document.getElementById('qrType') || {}).value || 'Townie';
-        if (bizId && typeof window.codedeskExportPngDataUrl === 'function') {
-          window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
-            try { localStorage.setItem('lsq-qr-image-' + bizId + '-' + type, dataUrl); } catch(e) {}
-            window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type, image: dataUrl }, '*');
-          }).catch(function() {
-            window.parent.postMessage({ type: 'lsq-saved' }, '*');
-          });
+        if (typeof window._lsqSaveNow === 'function') {
+          window._lsqSaveNow();
         } else {
           window.parent.postMessage({ type: 'lsq-saved' }, '*');
         }

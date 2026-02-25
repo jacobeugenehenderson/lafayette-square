@@ -23,23 +23,26 @@ function _lsqGetCurrentType() {
   return sel ? (sel.value || 'Townie') : 'Townie';
 }
 
-function _lsqDesignKey(bizId, type) {
-  return LSQ_DESIGN_PREFIX + bizId + '-' + (type || _lsqGetCurrentType());
+function _lsqGetCurrentBizId() {
+  var sel = document.getElementById('bizSelect');
+  return sel ? (sel.value || '').trim() : '';
 }
 
+// Storage key: lsq-qr-design-{bizId}-{type}
+function _lsqDesignKey(bizId, type) {
+  return LSQ_DESIGN_PREFIX + bizId + '-' + type;
+}
 function _lsqImageKey(bizId, type) {
-  return LSQ_IMAGE_PREFIX + bizId + '-' + (type || _lsqGetCurrentType());
+  return LSQ_IMAGE_PREFIX + bizId + '-' + type;
 }
 
 function _lsqSaveLocal(bizId, state, type) {
-  if (!bizId) return;
-  try {
-    localStorage.setItem(_lsqDesignKey(bizId, type), JSON.stringify(state));
-  } catch (e) {}
+  if (!bizId || !type) return;
+  try { localStorage.setItem(_lsqDesignKey(bizId, type), JSON.stringify(state)); } catch (e) {}
 }
 
 function _lsqLoadLocal(bizId, type) {
-  if (!bizId) return null;
+  if (!bizId || !type) return null;
   try {
     var raw = localStorage.getItem(_lsqDesignKey(bizId, type));
     return raw ? JSON.parse(raw) : null;
@@ -47,36 +50,32 @@ function _lsqLoadLocal(bizId, type) {
 }
 
 function _lsqSaveImage(bizId, dataUrl, type) {
-  if (!bizId || !dataUrl) return;
-  try {
-    localStorage.setItem(_lsqImageKey(bizId, type), dataUrl);
-  } catch (e) {}
+  if (!bizId || !dataUrl || !type) return;
+  try { localStorage.setItem(_lsqImageKey(bizId, type), dataUrl); } catch (e) {}
 }
 
 // =====================================================
 //  API LAYER (background, non-blocking)
 // =====================================================
 function _lsqSaveRemote(bizId, state, type) {
-  if (!bizId || !window.LSQ_API_URL) return;
-  var key = bizId + '-' + (type || _lsqGetCurrentType());
+  if (!bizId || !type || !window.LSQ_API_URL) return;
   try {
     fetch(window.LSQ_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'saveDesign', bizId: key, design: state })
-    }).catch(function() {}); // silent fail — localStorage is primary
+      body: JSON.stringify({ action: 'saveDesign', bizId: bizId + '-' + type, design: state })
+    }).catch(function() {});
   } catch (e) {}
 }
 
 async function _lsqLoadRemote(bizId, type) {
-  if (!bizId || !window.LSQ_API_URL) return null;
-  var key = bizId + '-' + (type || _lsqGetCurrentType());
+  if (!bizId || !type || !window.LSQ_API_URL) return null;
   try {
     var res = await fetch(
-      window.LSQ_API_URL + '?action=getDesign&bizId=' + encodeURIComponent(key)
+      window.LSQ_API_URL + '?action=getDesign&bizId=' + encodeURIComponent(bizId + '-' + type)
     );
     var data = await res.json();
-    return (data && data.design) || null;
+    return (data && data.data && data.data.design) || null;
   } catch (e) { return null; }
 }
 
@@ -88,40 +87,59 @@ var _lsqRemoteTimer = null;
 var LOCAL_DEBOUNCE_MS = 500;
 var REMOTE_DEBOUNCE_MS = 3000;
 
-function _lsqGetCurrentBizId() {
-  var sel = document.getElementById('bizSelect');
-  return sel ? (sel.value || '').trim() : '';
-}
-
 function _lsqSaveDebounced() {
-  // Don't save during import (prevents save-during-load loops)
   if (window.__CODEDESK_IMPORTING_STATE__) return;
 
   var bizId = _lsqGetCurrentBizId();
+  var type = _lsqGetCurrentType();
   if (!bizId) return;
 
-  // Debounce local save (500ms)
   clearTimeout(_lsqLocalTimer);
   _lsqLocalTimer = setTimeout(function() {
     if (typeof window.codedeskExportState !== 'function') return;
     var state = window.codedeskExportState();
-    _lsqSaveLocal(bizId, state);
+    _lsqSaveLocal(bizId, state, type);
   }, LOCAL_DEBOUNCE_MS);
 
-  // Debounce remote save (3s)
   clearTimeout(_lsqRemoteTimer);
   _lsqRemoteTimer = setTimeout(function() {
     if (typeof window.codedeskExportState !== 'function') return;
     var state = window.codedeskExportState();
-    _lsqSaveRemote(bizId, state);
+    _lsqSaveRemote(bizId, state, type);
   }, REMOTE_DEBOUNCE_MS);
 }
+
+// =====================================================
+//  IMMEDIATE SAVE + IMAGE EXPORT (called by parent on Save)
+// =====================================================
+window._lsqSaveNow = function _lsqSaveNow() {
+  var bizId = _lsqGetCurrentBizId();
+  var type = _lsqGetCurrentType();
+  if (!bizId) return;
+
+  if (typeof window.codedeskExportState === 'function') {
+    var state = window.codedeskExportState();
+    _lsqSaveLocal(bizId, state, type);
+    _lsqSaveRemote(bizId, state, type);
+  }
+
+  // Export rendered PNG and store it
+  if (typeof window.codedeskExportPngDataUrl === 'function') {
+    window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
+      _lsqSaveImage(bizId, dataUrl, type);
+      window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type, image: dataUrl }, '*');
+    }).catch(function() {
+      window.parent.postMessage({ type: 'lsq-saved' }, '*');
+    });
+  } else {
+    window.parent.postMessage({ type: 'lsq-saved' }, '*');
+  }
+};
 
 // =====================================================
 //  RENDER HOOK — auto-save after every render()
 // =====================================================
 (function hookRenderForAutoSave() {
-  // Wait for render engine to be available, then wrap render()
   var _hookInstalled = false;
 
   function installHook() {
@@ -131,15 +149,12 @@ function _lsqSaveDebounced() {
     var _originalRender = window.render;
     window.render = function lsqAutoSaveRender() {
       var result = _originalRender.apply(this, arguments);
-      // Auto-save after render completes
       _lsqSaveDebounced();
       return result;
     };
-
     _hookInstalled = true;
   }
 
-  // Try immediately, then poll until render exists
   installHook();
   if (!_hookInstalled) {
     var attempts = 0;
@@ -156,48 +171,41 @@ function _lsqSaveDebounced() {
 // =====================================================
 window.addEventListener('beforeunload', function() {
   var bizId = _lsqGetCurrentBizId();
+  var type = _lsqGetCurrentType();
   if (!bizId) return;
   if (typeof window.codedeskExportState !== 'function') return;
 
-  var type = _lsqGetCurrentType();
   var state = window.codedeskExportState();
-
-  // Immediate localStorage save
   _lsqSaveLocal(bizId, state, type);
 
-  // Best-effort API save via sendBeacon
   if (navigator.sendBeacon && window.LSQ_API_URL) {
-    var key = bizId + '-' + type;
     try {
       navigator.sendBeacon(
         window.LSQ_API_URL,
-        JSON.stringify({ action: 'saveDesign', bizId: key, design: state })
+        JSON.stringify({ action: 'saveDesign', bizId: bizId + '-' + type, design: state })
       );
     } catch (e) {}
   }
 });
 
 // =====================================================
-//  LOAD ON BUSINESS SELECTION
+//  LOAD DESIGN (for a specific bizId + type)
 // =====================================================
-function _lsqOnBusinessSelect(bizId, type) {
-  if (!bizId) return;
-  var t = type || _lsqGetCurrentType();
+function _lsqLoadDesign(bizId, type) {
+  if (!bizId || !type) return;
 
-  // Layer 1: Immediate load from localStorage
-  var local = _lsqLoadLocal(bizId, t);
+  var local = _lsqLoadLocal(bizId, type);
   if (local && typeof window.codedeskImportState === 'function') {
     window.codedeskImportState(local);
   }
 
-  // Layer 2: Background load from API (merge if newer)
-  _lsqLoadRemote(bizId, t).then(function(remote) {
+  // Background: check API for newer version
+  _lsqLoadRemote(bizId, type).then(function(remote) {
     if (!remote) return;
     var localTs = local ? (local.at || 0) : 0;
     var remoteTs = remote.at || 0;
     if (remoteTs > localTs) {
-      // Remote is newer — update localStorage and re-import
-      _lsqSaveLocal(bizId, remote, t);
+      _lsqSaveLocal(bizId, remote, type);
       if (typeof window.codedeskImportState === 'function') {
         window.codedeskImportState(remote);
       }
@@ -205,18 +213,30 @@ function _lsqOnBusinessSelect(bizId, type) {
   }).catch(function() {});
 }
 
-// On QR type switch: save current type, load new type
+// =====================================================
+//  TYPE SWITCH — save old type, load new type
+//  Guard: skip during import to prevent loops
+// =====================================================
+var __lsq_switching_type = false;
+
 function _lsqOnTypeSwitch(newType) {
+  if (__lsq_switching_type) return;
+  if (window.__CODEDESK_IMPORTING_STATE__) return;
+
   var bizId = _lsqGetCurrentBizId();
   if (!bizId) return;
 
-  // Save current design + image for the OLD type before switching
   var oldType = window.__lsq_last_type || 'Townie';
+  if (oldType === newType) return;
+
+  __lsq_switching_type = true;
+
+  // Save current design for the old type
   if (typeof window.codedeskExportState === 'function') {
     var state = window.codedeskExportState();
     _lsqSaveLocal(bizId, state, oldType);
     _lsqSaveRemote(bizId, state, oldType);
-    // Save rendered image for old type
+
     if (typeof window.codedeskExportPngDataUrl === 'function') {
       window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
         _lsqSaveImage(bizId, dataUrl, oldType);
@@ -227,10 +247,13 @@ function _lsqOnTypeSwitch(newType) {
   window.__lsq_last_type = newType;
 
   // Load new type's design
-  _lsqOnBusinessSelect(bizId, newType);
+  _lsqLoadDesign(bizId, newType);
+
+  // Release guard after microtask (import dispatches events synchronously)
+  queueMicrotask(function() { __lsq_switching_type = false; });
 }
 
-// Track type changes
+// Wire #qrType change
 (function wireTypeSwitch() {
   function wire() {
     var sel = document.getElementById('qrType');
@@ -250,28 +273,25 @@ function _lsqOnTypeSwitch(newType) {
   setTimeout(wire, 500);
 })();
 
-// Hook into bizSelect changes
+// Wire #bizSelect change — load design for selected biz + current type
 (function wireBizSelectSync() {
   function wire() {
     var sel = document.getElementById('bizSelect');
-    if (!sel) return;
-    if (sel.__lsq_sync_wired) return;
+    if (!sel || sel.__lsq_sync_wired) return;
     sel.__lsq_sync_wired = true;
 
     sel.addEventListener('change', function() {
       var bizId = (sel.value || '').trim();
-      if (bizId) _lsqOnBusinessSelect(bizId);
+      if (bizId) _lsqLoadDesign(bizId, _lsqGetCurrentType());
     });
   }
 
-  // bizSelect is dynamically created by renderTypeForm, so we observe
   var observer = new MutationObserver(function() { wire(); });
   var target = document.getElementById('detailsPanel');
   if (target) {
     observer.observe(target, { childList: true, subtree: true });
   }
 
-  // Also try wiring on DOMContentLoaded and after a delay
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', wire, { once: true });
   } else {
