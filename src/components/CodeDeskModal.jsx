@@ -71,19 +71,20 @@ function CodeDeskModalInner() {
   }, [qrType])
 
   // On iframe load: send places dataset (admin) or single listing (guardian)
+  // Order matters: businesses → listing → secret → type (type triggers design load, needs bizId first)
   const handleIframeLoad = useCallback(() => {
     const iframe = iframeRef.current
     if (!iframe) return
     if (!isGuardianMode) {
       iframe.contentWindow?.postMessage({ type: 'lsq-set-businesses', value: allPlaces }, '*')
     }
-    iframe.contentWindow?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
     if (storeListingId) {
       iframe.contentWindow?.postMessage({ type: 'lsq-set-listing', value: storeListingId }, '*')
     }
     if (storeClaimSecret) {
       iframe.contentWindow?.postMessage({ type: 'lsq-set-claim-secret', value: storeClaimSecret }, '*')
     }
+    iframe.contentWindow?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
   }, [isGuardianMode, allPlaces, qrType, storeListingId, storeClaimSecret])
 
   // Save button flash

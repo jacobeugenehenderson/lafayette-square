@@ -308,4 +308,15 @@ window.populateBizSelect = populateBizSelect;
     });
   }
 
+  // --- Embed: load design for cached biz+type ---
+  // Parent sends lsq-set-listing before #bizSelect exists (async timing).
+  // Now that the form is built, set bizSelect from cache and load the design.
+  if (document.documentElement.classList.contains('embed') && window.__lsq_cached_biz_id) {
+    var _bSel = document.getElementById('bizSelect');
+    if (_bSel) {
+      _bSel.value = window.__lsq_cached_biz_id;
+      _bSel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
 })();
