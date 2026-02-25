@@ -107,7 +107,7 @@ function populateBizSelect(businesses) {
 
   // Listbox mode: render clickable items grouped into category folders
   if (listbox && hiddenInput) {
-    var current = hiddenInput.value || '';
+    var current = hiddenInput.value || window.__lsq_cached_biz_id || '';
     listbox.innerHTML = '';
 
     var groups = _groupByCategory(businesses);
@@ -152,6 +152,9 @@ function populateBizSelect(businesses) {
       listbox.appendChild(folder);
     });
 
+    // Restore hidden input value after rebuilding (renderTypeForm clears it)
+    if (current) hiddenInput.value = current;
+
     return;
   }
 
@@ -160,7 +163,7 @@ function populateBizSelect(businesses) {
   if (!selects.length) return;
 
   selects.forEach(function(sel) {
-    var current = sel.value || '';
+    var current = sel.value || window.__lsq_cached_biz_id || '';
     sel.innerHTML = '';
 
     var ph = document.createElement('option');

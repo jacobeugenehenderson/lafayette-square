@@ -23,9 +23,16 @@ function _lsqGetCurrentType() {
   return sel ? (sel.value || 'Townie') : 'Townie';
 }
 
+// Cache bizId — #bizSelect is destroyed/recreated by renderTypeForm on
+// every type switch, so the DOM element is empty when _lsqOnTypeSwitch
+// reads it.  The cache persists across form rebuilds.
+window.__lsq_cached_biz_id = '';
+
 function _lsqGetCurrentBizId() {
   var sel = document.getElementById('bizSelect');
-  return sel ? (sel.value || '').trim() : '';
+  var fromDom = sel ? (sel.value || '').trim() : '';
+  if (fromDom) window.__lsq_cached_biz_id = fromDom;
+  return fromDom || window.__lsq_cached_biz_id;
 }
 
 // Storage key: lsq-qr-design-{bizId}-{type}

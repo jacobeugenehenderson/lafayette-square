@@ -111,6 +111,8 @@
         }
       }
       if (e.data.type === 'lsq-set-listing') {
+        // Prime the sync pipeline's bizId cache (survives form rebuilds)
+        window.__lsq_cached_biz_id = e.data.value || '';
         var bizSel = document.getElementById('bizSelect');
         if (bizSel) {
           bizSel.value = e.data.value;
