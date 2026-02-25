@@ -16,41 +16,64 @@ window.__CODEDESK_SETUP_DONE__ = true;
 //  LOCAL STORAGE LAYER (instant, authoritative)
 // =====================================================
 var LSQ_DESIGN_PREFIX = 'lsq-qr-design-';
+var LSQ_IMAGE_PREFIX = 'lsq-qr-image-';
 
-function _lsqSaveLocal(bizId, state) {
+function _lsqGetCurrentType() {
+  var sel = document.getElementById('qrType');
+  return sel ? (sel.value || 'Townie') : 'Townie';
+}
+
+function _lsqDesignKey(bizId, type) {
+  return LSQ_DESIGN_PREFIX + bizId + '-' + (type || _lsqGetCurrentType());
+}
+
+function _lsqImageKey(bizId, type) {
+  return LSQ_IMAGE_PREFIX + bizId + '-' + (type || _lsqGetCurrentType());
+}
+
+function _lsqSaveLocal(bizId, state, type) {
   if (!bizId) return;
   try {
-    localStorage.setItem(LSQ_DESIGN_PREFIX + bizId, JSON.stringify(state));
+    localStorage.setItem(_lsqDesignKey(bizId, type), JSON.stringify(state));
   } catch (e) {}
 }
 
-function _lsqLoadLocal(bizId) {
+function _lsqLoadLocal(bizId, type) {
   if (!bizId) return null;
   try {
-    var raw = localStorage.getItem(LSQ_DESIGN_PREFIX + bizId);
+    var raw = localStorage.getItem(_lsqDesignKey(bizId, type));
     return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
+}
+
+function _lsqSaveImage(bizId, dataUrl, type) {
+  if (!bizId || !dataUrl) return;
+  try {
+    localStorage.setItem(_lsqImageKey(bizId, type), dataUrl);
+  } catch (e) {}
 }
 
 // =====================================================
 //  API LAYER (background, non-blocking)
 // =====================================================
-function _lsqSaveRemote(bizId, state) {
+function _lsqSaveRemote(bizId, state, type) {
   if (!bizId || !window.LSQ_API_URL) return;
+  var key = bizId + '-' + (type || _lsqGetCurrentType());
   try {
     fetch(window.LSQ_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'saveDesign', bizId: bizId, design: state })
+      body: JSON.stringify({ action: 'saveDesign', bizId: key, design: state })
     }).catch(function() {}); // silent fail — localStorage is primary
   } catch (e) {}
 }
 
-async function _lsqLoadRemote(bizId) {
+async function _lsqLoadRemote(bizId, type) {
   if (!bizId || !window.LSQ_API_URL) return null;
+  var key = bizId + '-' + (type || _lsqGetCurrentType());
   try {
     var res = await fetch(
-      window.LSQ_API_URL + '?action=getDesign&bizId=' + encodeURIComponent(bizId)
+      window.LSQ_API_URL + '?action=getDesign&bizId=' + encodeURIComponent(key)
     );
     var data = await res.json();
     return (data && data.design) || null;
@@ -136,17 +159,19 @@ window.addEventListener('beforeunload', function() {
   if (!bizId) return;
   if (typeof window.codedeskExportState !== 'function') return;
 
+  var type = _lsqGetCurrentType();
   var state = window.codedeskExportState();
 
   // Immediate localStorage save
-  _lsqSaveLocal(bizId, state);
+  _lsqSaveLocal(bizId, state, type);
 
   // Best-effort API save via sendBeacon
   if (navigator.sendBeacon && window.LSQ_API_URL) {
+    var key = bizId + '-' + type;
     try {
       navigator.sendBeacon(
         window.LSQ_API_URL,
-        JSON.stringify({ action: 'saveDesign', bizId: bizId, design: state })
+        JSON.stringify({ action: 'saveDesign', bizId: key, design: state })
       );
     } catch (e) {}
   }
@@ -155,29 +180,75 @@ window.addEventListener('beforeunload', function() {
 // =====================================================
 //  LOAD ON BUSINESS SELECTION
 // =====================================================
-function _lsqOnBusinessSelect(bizId) {
+function _lsqOnBusinessSelect(bizId, type) {
   if (!bizId) return;
+  var t = type || _lsqGetCurrentType();
 
   // Layer 1: Immediate load from localStorage
-  var local = _lsqLoadLocal(bizId);
+  var local = _lsqLoadLocal(bizId, t);
   if (local && typeof window.codedeskImportState === 'function') {
     window.codedeskImportState(local);
   }
 
   // Layer 2: Background load from API (merge if newer)
-  _lsqLoadRemote(bizId).then(function(remote) {
+  _lsqLoadRemote(bizId, t).then(function(remote) {
     if (!remote) return;
     var localTs = local ? (local.at || 0) : 0;
     var remoteTs = remote.at || 0;
     if (remoteTs > localTs) {
       // Remote is newer — update localStorage and re-import
-      _lsqSaveLocal(bizId, remote);
+      _lsqSaveLocal(bizId, remote, t);
       if (typeof window.codedeskImportState === 'function') {
         window.codedeskImportState(remote);
       }
     }
   }).catch(function() {});
 }
+
+// On QR type switch: save current type, load new type
+function _lsqOnTypeSwitch(newType) {
+  var bizId = _lsqGetCurrentBizId();
+  if (!bizId) return;
+
+  // Save current design + image for the OLD type before switching
+  var oldType = window.__lsq_last_type || 'Townie';
+  if (typeof window.codedeskExportState === 'function') {
+    var state = window.codedeskExportState();
+    _lsqSaveLocal(bizId, state, oldType);
+    _lsqSaveRemote(bizId, state, oldType);
+    // Save rendered image for old type
+    if (typeof window.codedeskExportPngDataUrl === 'function') {
+      window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
+        _lsqSaveImage(bizId, dataUrl, oldType);
+      }).catch(function() {});
+    }
+  }
+
+  window.__lsq_last_type = newType;
+
+  // Load new type's design
+  _lsqOnBusinessSelect(bizId, newType);
+}
+
+// Track type changes
+(function wireTypeSwitch() {
+  function wire() {
+    var sel = document.getElementById('qrType');
+    if (!sel || sel.__lsq_type_wired) return;
+    sel.__lsq_type_wired = true;
+    window.__lsq_last_type = sel.value || 'Townie';
+
+    sel.addEventListener('change', function() {
+      _lsqOnTypeSwitch(sel.value);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wire, { once: true });
+  } else {
+    wire();
+  }
+  setTimeout(wire, 500);
+})();
 
 // Hook into bizSelect changes
 (function wireBizSelectSync() {

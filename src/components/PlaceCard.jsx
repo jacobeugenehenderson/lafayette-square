@@ -1325,6 +1325,13 @@ function QrTab({ listingId, listingName, isAdmin }) {
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
 
+  // Read styled QR images from localStorage (shared with iframe)
+  const readStyledImage = useCallback((type) => {
+    try {
+      return localStorage.getItem(`lsq-qr-image-${listingId}-${type}`) || null
+    } catch { return null }
+  }, [listingId])
+
   // Listen for lsq-saved from QR Studio iframe to refresh QR codes
   useEffect(() => {
     const handler = (e) => {
@@ -1336,12 +1343,18 @@ function QrTab({ listingId, listingName, isAdmin }) {
 
   useEffect(() => {
     const vanity = 'https://jacobhenderson.studio/lafayette-square'
-    // Townie QR
+
+    // Townie QR: prefer styled image from localStorage
     const tUrl = `${vanity}/checkin/${listingId}`
     setTownieUrl(tUrl)
-    QRCode.toDataURL(tUrl, { width: 256, margin: 2 }).then(setTownieQr)
+    const styledTownie = readStyledImage('Townie')
+    if (styledTownie) {
+      setTownieQr(styledTownie)
+    } else {
+      QRCode.toDataURL(tUrl, { width: 256, margin: 2 }).then(setTownieQr)
+    }
 
-    // Guardian QR: fetch claim_secret (auto-generated server-side if none exists)
+    // Guardian QR: fetch claim_secret, then prefer styled image
     async function loadSecret() {
       try {
         const dh = await getDeviceHash()
@@ -1353,13 +1366,18 @@ function QrTab({ listingId, listingName, isAdmin }) {
           setClaimSecret(secret)
           const gUrl = `${vanity}/claim/${listingId}/${secret}`
           setGuardianUrl(gUrl)
-          QRCode.toDataURL(gUrl, { width: 256, margin: 2 }).then(setGuardianQr)
+          const styledGuardian = readStyledImage('Guardian')
+          if (styledGuardian) {
+            setGuardianQr(styledGuardian)
+          } else {
+            QRCode.toDataURL(gUrl, { width: 256, margin: 2 }).then(setGuardianQr)
+          }
         }
       } catch { /* silent */ }
       setLoading(false)
     }
     loadSecret()
-  }, [listingId, isAdmin, refreshKey])
+  }, [listingId, isAdmin, refreshKey, readStyledImage])
 
   const shareUrl = async (url, title) => {
     if (navigator.share) {
