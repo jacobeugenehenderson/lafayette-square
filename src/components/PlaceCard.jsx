@@ -1729,6 +1729,17 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             You are the guardian of this place
           </div>
         )}
+        {hasListingInfo && !isGuardian && (
+          <a
+            href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('My place: ' + name)}`}
+            className="flex-1 py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Is this your place?
+          </a>
+        )}
         {!hasListingInfo && (
           <a
             href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('My place: ' + (cleanAddress(building?.address) || 'Unknown'))}`}
@@ -1741,10 +1752,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </a>
         )}
 
-        {/* Right: share icon — fills footer for non-guardian listings, disabled for guardians */}
+        {/* Right: share icon */}
         <button
           onClick={() => {
-            if (isGuardian) return
             const typeLabel = hasListingInfo ? 'place' : 'house'
             const vanity = 'https://jacobhenderson.studio/lafayette-square'
             const placeUrl = listingId ? `${vanity}/place/${listingId}` : vanity
@@ -1756,13 +1766,12 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               navigator.clipboard?.writeText(shareText).catch(() => {})
             }
           }}
-          className={`${hasListingInfo && !isGuardian ? 'flex-1 py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium' : 'w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white'} transition-colors flex items-center justify-center gap-2${isGuardian ? ' opacity-30 pointer-events-none' : ''}`}
+          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors flex items-center justify-center"
           title="Share"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
           </svg>
-          {hasListingInfo && !isGuardian && <span>Share</span>}
         </button>
       </div>
     </div>
