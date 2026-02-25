@@ -113,7 +113,16 @@ function CodeDeskModalInner() {
           <h2 className="text-sm font-medium text-white">QR Generator</h2>
         )}
         <div className="flex items-center gap-2">
-          {isGuardianMode ? (
+          <select
+            value={qrType}
+            onChange={(e) => setQrType(e.target.value)}
+            className="h-8 bg-white/10 text-white text-xs rounded-lg border border-white/20 px-2 outline-none hover:bg-white/15 transition-colors"
+            style={{ fontFamily: 'ui-monospace, monospace' }}
+          >
+            <option value="Townie" className="bg-neutral-800 text-white">Townie</option>
+            <option value="Guardian" className="bg-neutral-800 text-white">Guardian</option>
+          </select>
+          {isGuardianMode && (
             <button
               onClick={handleSave}
               className={`h-8 px-3 text-xs rounded-lg border transition-all duration-200 ${
@@ -125,16 +134,6 @@ function CodeDeskModalInner() {
             >
               {saved ? 'Saved' : 'Save'}
             </button>
-          ) : (
-            <select
-              value={qrType}
-              onChange={(e) => setQrType(e.target.value)}
-              className="h-8 bg-white/10 text-white text-xs rounded-lg border border-white/20 px-2 outline-none hover:bg-white/15 transition-colors"
-              style={{ fontFamily: 'ui-monospace, monospace' }}
-            >
-              <option value="Townie" className="bg-neutral-800 text-white">Townie</option>
-              <option value="Guardian" className="bg-neutral-800 text-white">Guardian</option>
-            </select>
           )}
         </div>
       </div>

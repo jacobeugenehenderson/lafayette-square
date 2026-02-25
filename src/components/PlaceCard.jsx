@@ -1324,8 +1324,6 @@ function QrTab({ listingId, listingName, isAdmin }) {
   const [claimSecret, setClaimSecret] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [townieCopied, setTownieCopied] = useState(false)
-  const [guardianCopied, setGuardianCopied] = useState(false)
 
   // Listen for lsq-saved from QR Studio iframe to refresh QR codes
   useEffect(() => {
@@ -1363,23 +1361,17 @@ function QrTab({ listingId, listingName, isAdmin }) {
     loadSecret()
   }, [listingId, isAdmin, refreshKey])
 
-  const copyUrl = async (url, setCopied) => {
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch { /* silent */ }
+  const shareUrl = async (url, title) => {
+    if (navigator.share) {
+      try { await navigator.share({ title, url }) } catch { /* silent */ }
+    } else {
+      try { await navigator.clipboard.writeText(url) } catch { /* silent */ }
+    }
   }
 
   const openQrStudio = () => {
     useCodeDesk.getState().setOpen(true, { listingId, qrType: 'Townie', claimSecret, mode: 'guardian', placeName: listingName })
   }
-
-  const ShareIcon = () => (
-    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-    </svg>
-  )
 
   return (
     <div className="space-y-4">
@@ -1393,11 +1385,13 @@ function QrTab({ listingId, listingName, isAdmin }) {
           </div>
         )}
         <button
-          onClick={() => copyUrl(townieUrl, setTownieCopied)}
+          onClick={() => shareUrl(townieUrl, 'Check in here')}
           className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
         >
-          <ShareIcon />
-          {townieCopied ? 'Copied!' : 'Copy Link'}
+          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+          </svg>
+          Share
         </button>
       </div>
 
@@ -1412,16 +1406,9 @@ function QrTab({ listingId, listingName, isAdmin }) {
         <div className="rounded-lg bg-white/5 border border-white/10 p-4">
           <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
           <div className="text-[10px] text-white/40 mb-3">To onboard a new guardian</div>
-          <div className="flex justify-center mb-3">
+          <div className="flex justify-center">
             <img src={guardianQr} alt="Guardian QR" className="w-48 h-48 rounded-lg" />
           </div>
-          <button
-            onClick={() => copyUrl(guardianUrl, setGuardianCopied)}
-            className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
-          >
-            <ShareIcon />
-            {guardianCopied ? 'Copied!' : 'Copy Link'}
-          </button>
         </div>
       )}
 
