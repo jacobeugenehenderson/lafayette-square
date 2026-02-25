@@ -16,7 +16,7 @@ const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 const LAMP_COLOR_ON = new THREE.Color('#fff2e0')  // warm incandescent white
 const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.12 // mobile: larger since no bloom to expand
-const POOL_RADIUS = _IS_MOBILE ? 10 : 16  // mobile: smaller to limit fill overdraw
+const POOL_RADIUS = _IS_MOBILE ? 15 : 24  // mobile: smaller to limit fill overdraw
 const POOL_Y = 0.3
 const SHADOW_RADIUS = 1.5 // AO contact shadow at lamp base
 
@@ -70,8 +70,10 @@ function StreetLights() {
         float dist = length(vUv - 0.5) * 2.0;
         // Two-zone falloff: bright inner pool + soft extended penumbra
         float core = exp(-dist * dist * 8.0);      // tight warm center
-        float penumbra = exp(-dist * dist * 1.2);   // wide atmospheric scatter
-        float falloff = core * 0.5 + penumbra * 0.5;
+        float penumbra = exp(-dist * dist * 0.8);   // wider atmospheric scatter
+        float falloff = core * 0.4 + penumbra * 0.6;
+        // Smooth fade to zero at edge — kills the hard circle cutoff
+        falloff *= smoothstep(1.0, 0.5, dist);
         float alpha = falloff * uIntensity * ${_IS_MOBILE ? '0.3' : '0.15'};
         gl_FragColor = vec4(uColor, alpha);
       }`,

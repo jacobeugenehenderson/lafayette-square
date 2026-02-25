@@ -522,7 +522,7 @@ function ParkPaths() {
   const pathMat = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
       roughness: 0.95,
-      color: '#7a7468',
+      color: '#928a7c',
       transparent: true,
       depthWrite: false,
     })
@@ -625,7 +625,7 @@ function ParkPaths() {
          vec2 pathLampUV = (pp + 200.0) / 400.0;
          float pathLampI = texture2D(uLampMap, pathLampUV).r;
          float pathLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
-         gravelCol += vec3(0.50, 0.45, 0.28) * pathLampI * pathLampOn * 0.4;
+         gravelCol += vec3(0.50, 0.45, 0.28) * pathLampI * pathLampOn * 0.7;
 
          diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
       )
