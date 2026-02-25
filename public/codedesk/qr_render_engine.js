@@ -310,7 +310,7 @@ function buildQrSvg({
   modulesScale = 1.5,
   modulesEmoji = '😀',
   centerMode = 'None',
-  centerScale = 0.9,
+  centerScale = 1,
   centerEmoji = '😊',
   captionText = '',
   captionColor = '#000000',

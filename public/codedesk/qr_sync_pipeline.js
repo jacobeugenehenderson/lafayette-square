@@ -210,7 +210,7 @@ var _LSQ_DEFAULT_STATE = {
     bgTopAlpha: '100', bgBottomAlpha: '100',
     moduleShape: 'Square', eyeRingShape: 'Square', eyeCenterShape: 'Square',
     modulesMode: 'Shape', modulesEmoji: '', modulesScale: '0.9',
-    centerMode: 'None', centerEmoji: '', centerScale: '2',
+    centerMode: 'None', centerEmoji: '', centerScale: '1',
     eyeCenterMode: 'Shape', eyeCenterEmoji: '', eyeCenterScale: '0.9'
   }
 };
