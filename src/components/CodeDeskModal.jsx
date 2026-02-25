@@ -147,8 +147,7 @@ function CodeDeskModalInner() {
       />
 
       {/* Footer — Save button */}
-      {isGuardianMode && (
-        <div className="px-4 py-2.5 border-t border-white/10 flex-shrink-0">
+      <div className="px-4 py-2.5 border-t border-white/10 flex-shrink-0">
           <button
             onClick={handleSave}
             className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -161,7 +160,6 @@ function CodeDeskModalInner() {
             {saved ? 'Saved' : 'Save'}
           </button>
         </div>
-      )}
     </div>
   )
 }
