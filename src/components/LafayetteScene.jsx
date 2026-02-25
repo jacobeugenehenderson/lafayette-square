@@ -442,7 +442,7 @@ function NeonBand({ building, categoryHex, hours, forceOn = false }) {
 
       if (isOpen) {
         mat.opacity = 1
-        mat.emissiveIntensity = 2.5
+        mat.emissiveIntensity = 4.0
         mat.color.copy(baseColor)
         mat.emissive.copy(baseColor)
       } else {
@@ -1088,8 +1088,6 @@ function LafayetteScene() {
   }, [])
 
   const neonLookup = useMemo(() => {
-    // Hero is too far to see neon — skip entirely to save GPU
-    if (viewMode === 'hero') return {}
     const map = {}
     const time = useTimeOfDay.getState().currentTime
     listings.forEach(l => {
@@ -1100,7 +1098,42 @@ function LafayetteScene() {
       }
     })
     return map
-  }, [listings, neonTick, viewMode])
+  }, [listings, neonTick])
+
+  // Frustum-cull neon: only mount NeonBand for buildings the camera can actually see.
+  // Checks every 30 frames (~0.5s) to avoid per-frame churn.
+  const _neonFrustum = useRef(new THREE.Frustum())
+  const _neonMatrix = useRef(new THREE.Matrix4())
+  const _neonPt = useRef(new THREE.Vector3())
+  const [visibleNeonIds, setVisibleNeonIds] = useState(() => new Set())
+  const _frameCount = useRef(0)
+  const _bldgPosMap = useMemo(() => {
+    const m = {}
+    buildingsData.buildings.forEach(b => { m[b.id] = b })
+    return m
+  }, [])
+
+  useFrame(({ camera }) => {
+    if (++_frameCount.current % 30 !== 0) return
+    const eligible = Object.keys(neonLookup)
+    if (eligible.length === 0) { if (visibleNeonIds.size > 0) setVisibleNeonIds(new Set()); return }
+
+    _neonMatrix.current.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+    _neonFrustum.current.setFromProjectionMatrix(_neonMatrix.current)
+
+    const next = new Set()
+    for (const bid of eligible) {
+      const b = _bldgPosMap[bid]
+      if (!b) continue
+      _neonPt.current.set(b.position[0], b.size[1] / 2, b.position[2])
+      if (_neonFrustum.current.containsPoint(_neonPt.current)) next.add(bid)
+    }
+
+    // Only trigger re-render if the set actually changed
+    if (next.size !== visibleNeonIds.size || [...next].some(id => !visibleNeonIds.has(id))) {
+      setVisibleNeonIds(next)
+    }
+  })
 
   useEffect(() => {
     const handleKeyDown = (e) => { if (e.key === 'Escape') deselect() }
@@ -1151,9 +1184,9 @@ function LafayetteScene() {
 
       <Foundations />
 
-      {/* Buildings — neon only mounts for currently-open places */}
+      {/* Buildings — neon only mounts for open places in camera frustum */}
       {buildingsData.buildings.map(b => (
-        <Building key={b.id} building={b} neonInfo={neonLookup[b.id]} />
+        <Building key={b.id} building={b} neonInfo={visibleNeonIds.has(b.id) ? neonLookup[b.id] : undefined} />
       ))}
 
       {/* Street labels */}
