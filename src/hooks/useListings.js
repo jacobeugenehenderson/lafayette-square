@@ -32,11 +32,15 @@ const useListings = create((set, get) => ({
         staticData.landmarks.forEach(lm => staticLookup.set(lm.id, lm))
 
         // Merge: API wins over static (guardian edits override bundled data)
+        // but skip null/empty API fields so rich static data (history, photos, etc.) is preserved
         const merged = apiListings.map(api => {
           const lm = staticLookup.get(api.id)
           if (!lm) return api
-          // Static is base, API overlays — API wins for dynamic fields
-          return { ...lm, ...api }
+          const out = { ...lm }
+          for (const [k, v] of Object.entries(api)) {
+            if (v != null && !(Array.isArray(v) && v.length === 0)) out[k] = v
+          }
+          return out
         })
 
         // Add any static landmarks not in API (shouldn't happen, but safety net)
