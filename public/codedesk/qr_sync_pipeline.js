@@ -216,6 +216,10 @@ function _lsqLoadDesign(bizId, type) {
 
   var local = _lsqLoadLocal(bizId, type);
   if (local && typeof window.codedeskImportState === 'function') {
+    // Strip `type` — the dropdown is already correct; letting import
+    // touch it causes it to flip back (export captures the *new* type
+    // value because the dropdown has already changed when we save).
+    delete local.type;
     window.codedeskImportState(local);
   } else if (typeof window.codedeskImportState === 'function') {
     // No saved design — reset to defaults
@@ -229,6 +233,7 @@ function _lsqLoadDesign(bizId, type) {
     var remoteTs = remote.at || 0;
     if (remoteTs > localTs) {
       _lsqSaveLocal(bizId, remote, type);
+      delete remote.type;
       if (typeof window.codedeskImportState === 'function') {
         window.codedeskImportState(remote);
       }
