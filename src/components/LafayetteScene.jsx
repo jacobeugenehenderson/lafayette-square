@@ -1088,6 +1088,8 @@ function LafayetteScene() {
   }, [])
 
   const neonLookup = useMemo(() => {
+    // Hero is too far to see neon — skip entirely to save GPU
+    if (viewMode === 'hero') return {}
     const map = {}
     const time = useTimeOfDay.getState().currentTime
     listings.forEach(l => {
@@ -1098,7 +1100,7 @@ function LafayetteScene() {
       }
     })
     return map
-  }, [listings, neonTick])
+  }, [listings, neonTick, viewMode])
 
   useEffect(() => {
     const handleKeyDown = (e) => { if (e.key === 'Escape') deselect() }
