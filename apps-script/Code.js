@@ -75,6 +75,12 @@ function todayCentral() {
   return Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd')
 }
 
+// Sheets auto-converts date strings to Date objects; normalize for string comparison
+function toDateStr(val) {
+  if (val instanceof Date) return Utilities.formatDate(val, TIMEZONE, 'yyyy-MM-dd')
+  return String(val || '')
+}
+
 function parseJsonField(val) {
   if (!val) return null
   try { return JSON.parse(val) } catch (e) { return null }
@@ -294,8 +300,9 @@ function getCheckinStatus(deviceHash) {
 
   const distinctDates = new Set()
   rows.forEach(r => {
-    if (r.device_hash === deviceHash && r.date >= cutoffStr) {
-      distinctDates.add(r.date)
+    var d = toDateStr(r.date)
+    if (r.device_hash === deviceHash && d >= cutoffStr) {
+      distinctDates.add(d)
     }
   })
 
@@ -324,27 +331,27 @@ function postCheckin(body) {
   const alreadyToday = existing.some(r =>
     r.device_hash === device_hash &&
     r.location_id === location_id &&
-    r.date === date
+    toDateStr(r.date) === date
   )
-  if (alreadyToday) {
-    return jsonResponse({ logged: false, reason: 'Already checked in here today' })
+  if (!alreadyToday) {
+    sheet.appendRow([device_hash, location_id, timestamp, date])
   }
-
-  sheet.appendRow([device_hash, location_id, timestamp, date])
 
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
   const cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
   const distinctDates = new Set()
   existing.forEach(r => {
-    if (r.device_hash === device_hash && r.date >= cutoffStr) {
-      distinctDates.add(r.date)
+    var d = toDateStr(r.date)
+    if (r.device_hash === device_hash && d >= cutoffStr) {
+      distinctDates.add(d)
     }
   })
   distinctDates.add(date)
 
   return jsonResponse({
-    logged: true,
+    logged: !alreadyToday,
+    reason: alreadyToday ? 'Already checked in here today' : undefined,
     distinct_days: distinctDates.size,
     is_local: distinctDates.size >= LOCAL_THRESHOLD,
   })

@@ -171,20 +171,22 @@ export default function CheckinPage({ locationId }) {
 
         {!loading && result && !showHandlePicker && (
           <div className="space-y-4">
-            {result.logged !== false ? (
+            {result.error ? (
+              <div className="rounded-xl p-4 border border-red-500/30 bg-red-500/10">
+                <p className="text-red-300 text-sm">{result.error}</p>
+              </div>
+            ) : (
               <div
                 className="rounded-xl p-4 border"
                 style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
               >
                 <div className="text-2xl mb-1">&#10003;</div>
-                <p className="text-white font-medium">Check-in recorded!</p>
+                <p className="text-white font-medium">
+                  {result.logged === false ? 'Already checked in today!' : 'Check-in recorded!'}
+                </p>
                 {handle && (
                   <p className="text-white/50 text-xs mt-1">Signed in as @{handle}</p>
                 )}
-              </div>
-            ) : (
-              <div className="rounded-xl p-4 border border-red-500/30 bg-red-500/10">
-                <p className="text-red-300 text-sm">{result.error || 'Something went wrong'}</p>
               </div>
             )}
 
