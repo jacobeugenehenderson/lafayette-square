@@ -19,14 +19,18 @@ export default function ClaimPage({ listingId, secret }) {
   }, [listingId, secret, fired, alreadyClaimed, claim])
 
   const accentHex = cat?.hex || '#0ea5e9'
+  const placeName = landmark?.name || 'this place'
+  const claimed = alreadyClaimed || result?.success
 
   return (
     <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center p-4">
       <div className="max-w-sm w-full rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 text-center space-y-5">
         {/* Header */}
         <div>
-          <div className="text-4xl mb-2">{'\ud83d\udee1\ufe0f'}</div>
-          <h1 className="text-xl font-semibold text-white">Guardian Claim</h1>
+          <div className="text-4xl mb-2">{claimed ? '\ud83d\udee1\ufe0f' : '\ud83d\udd10'}</div>
+          <h1 className="text-xl font-semibold text-white">
+            {claimed ? `Welcome, Guardian` : 'Guardian Claim'}
+          </h1>
           {landmark && (
             <>
               <p className="text-white/80 mt-2">{landmark.name}</p>
@@ -34,17 +38,6 @@ export default function ClaimPage({ listingId, secret }) {
             </>
           )}
         </div>
-
-        {/* Already claimed */}
-        {alreadyClaimed && (
-          <div
-            className="rounded-xl p-4 border"
-            style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
-          >
-            <p className="text-white font-medium">You're already the guardian of this place.</p>
-            <p className="text-white/50 text-sm mt-1">You can post events and specials from the main map.</p>
-          </div>
-        )}
 
         {/* Loading */}
         {loading && !alreadyClaimed && (
@@ -54,29 +47,31 @@ export default function ClaimPage({ listingId, secret }) {
           </div>
         )}
 
-        {/* Result */}
-        {!loading && result && !alreadyClaimed && (
-          <div>
-            {result.success ? (
-              <div
-                className="rounded-xl p-4 border"
-                style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
-              >
-                <div className="text-2xl mb-1">&#10003;</div>
-                <p className="text-white font-medium">Claim successful!</p>
-                <p className="text-white/50 text-sm mt-2">
-                  This device is now the guardian of {landmark?.name || 'this place'}.
-                  You can post events and specials from the map view.
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-xl p-4 border border-red-500/30 bg-red-500/10">
-                <p className="text-red-300 text-sm">{result.error || 'Claim failed'}</p>
-                <p className="text-white/40 text-xs mt-2">
-                  The secret may be invalid or this place is already claimed by another device.
-                </p>
-              </div>
-            )}
+        {/* Claimed — either just now or returning */}
+        {claimed && !loading && (
+          <div
+            className="rounded-xl p-5 border"
+            style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
+          >
+            <p className="text-white font-medium text-lg mb-2">
+              {alreadyClaimed && !result ? 'Welcome back' : 'You\'re in'}
+            </p>
+            <p className="text-white/60 text-sm leading-relaxed">
+              {alreadyClaimed && !result
+                ? `You're the guardian of ${placeName}. Manage it from the map.`
+                : `This device is now the guardian of ${placeName}. You can post events, respond to reviews, and customize your QR codes from the map.`
+              }
+            </p>
+          </div>
+        )}
+
+        {/* Error */}
+        {!loading && result && !result.success && (
+          <div className="rounded-xl p-4 border border-red-500/30 bg-red-500/10">
+            <p className="text-red-300 text-sm">{result.error || 'Claim failed'}</p>
+            <p className="text-white/40 text-xs mt-2">
+              The secret may be invalid or this place is already claimed by another device.
+            </p>
           </div>
         )}
 
@@ -85,7 +80,7 @@ export default function ClaimPage({ listingId, secret }) {
           href={import.meta.env.BASE_URL}
           className="inline-block text-sm px-4 py-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/15 transition-colors"
         >
-          Explore the neighborhood &rarr;
+          {claimed ? `Open ${placeName} on the map` : 'Explore the neighborhood'} &rarr;
         </a>
       </div>
     </div>
