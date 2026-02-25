@@ -52,7 +52,7 @@ const useGuardianStatus = create((set, get) => ({
   error: null,
 
   isGuardianOf(listingId) {
-    return get().isAdmin || get().guardianOf.includes(listingId)
+    return get().guardianOf.includes(listingId)
   },
 
   /** Claim guardian ownership of a listing via secret QR code */
