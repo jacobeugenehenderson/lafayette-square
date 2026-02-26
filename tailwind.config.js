@@ -62,18 +62,7 @@ export default {
         '2xl':  'var(--radius-2xl)',
         'full': 'var(--radius-full)',
       },
-      backdropBlur: {
-        'sm': 'var(--blur-sm)',
-        'md': 'var(--blur-md)',
-        'lg': 'var(--blur-lg)',
-        'xl': 'var(--blur-xl)',
-      },
-      blur: {
-        'sm': 'var(--blur-sm)',
-        'md': 'var(--blur-md)',
-        'lg': 'var(--blur-lg)',
-        'xl': 'var(--blur-xl)',
-      },
+      // blur/backdropBlur: use Tailwind defaults (CSS vars in backdrop-filter can crash Safari)
     },
   },
   plugins: [],
