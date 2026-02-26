@@ -1,7 +1,7 @@
 /**
- * Two-step avatar editor modal.
- * Step 1: emoji-mart picker (dark theme, full categories + search)
- * Step 2: VignetteChooser (preview + swatch selection)
+ * Avatar editor modal.
+ * Opens to style chooser if user already has an emoji, emoji picker otherwise.
+ * "Change emoji" from the style screen → emoji picker → back to style.
  */
 import { useState, useEffect } from 'react'
 import Picker from '@emoji-mart/react'
@@ -9,16 +9,16 @@ import data from '@emoji-mart/data'
 import VignetteChooser from './VignetteChooser'
 
 export default function AvatarEditor({ open, onClose, currentEmoji, currentVignette, onSave }) {
-  const [step, setStep] = useState(1)       // 1 = emoji picker, 2 = vignette chooser
+  const [step, setStep] = useState(1)       // 1 = emoji picker, 2 = style chooser
   const [emoji, setEmoji] = useState(null)
   const [vignette, setVignette] = useState(null)
 
-  // Reset state when modal opens
+  // Reset state when modal opens — go to style if we already have an emoji
   useEffect(() => {
     if (open) {
-      setStep(1)
       setEmoji(currentEmoji || null)
       setVignette(currentVignette || null)
+      setStep(currentEmoji ? 2 : 1)
     }
   }, [open, currentEmoji, currentVignette])
 
@@ -73,7 +73,7 @@ export default function AvatarEditor({ open, onClose, currentEmoji, currentVigne
           </div>
         ) : (
           <div className="p-6 min-w-[280px]">
-            <h3 className="text-white/70 text-xs text-center mb-4 font-medium">Choose a style</h3>
+            <h3 className="text-white/70 text-xs text-center mb-4 font-medium">Avatar style</h3>
             <VignetteChooser
               emoji={emoji}
               vignette={vignette}

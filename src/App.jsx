@@ -145,7 +145,7 @@ function AccountButton() {
                   onClick={() => { setOpen(false); setEditorOpen(true) }}
                   className="w-full py-2 rounded-lg text-xs font-medium bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80 transition-colors"
                 >
-                  Change avatar
+                  Edit avatar
                 </button>
               </div>
             </>
