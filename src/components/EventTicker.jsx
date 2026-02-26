@@ -79,23 +79,25 @@ export default function EventTicker() {
     return () => clearInterval(rotateTimer.current)
   }, [events.length])
 
-  // Idle auto-hide
+  // Idle auto-hide (desktop only — no reason to hide on mobile)
+  const isPointer = typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches
   const resetIdle = useCallback(() => {
     setVisible(true)
     clearTimeout(idleTimer.current)
-    idleTimer.current = setTimeout(() => setVisible(false), IDLE_TIMEOUT)
-  }, [])
+    if (isPointer) {
+      idleTimer.current = setTimeout(() => setVisible(false), IDLE_TIMEOUT)
+    }
+  }, [isPointer])
 
   useEffect(() => {
     resetIdle()
+    if (!isPointer) return
     window.addEventListener('mousemove', resetIdle)
-    window.addEventListener('touchstart', resetIdle)
     return () => {
       window.removeEventListener('mousemove', resetIdle)
-      window.removeEventListener('touchstart', resetIdle)
       clearTimeout(idleTimer.current)
     }
-  }, [resetIdle])
+  }, [resetIdle, isPointer])
 
   // Open a place card for an event
   const openEvent = useCallback((event) => {
