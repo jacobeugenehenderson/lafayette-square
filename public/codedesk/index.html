@@ -415,17 +415,20 @@
   </div>
 </div>
 
-<!-- Download -->
+<!-- Save + Download -->
 <div class="step-card"
      data-step="download">
   <div class="step-header-wrap flex items-center gap-3">
     <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Download
+      Save &amp; Download
     </button>
   </div>
-  <div class="lsq-download-row" data-step-panel style="display:none">
-    <button type="button" class="lsq-download-btn lsq-download-btn--primary" style="width:100%" onclick="window.downloadPng && window.downloadPng('lafayette-square-qr.png', 3)">
-      PNG
+  <div class="lsq-download-row" data-step-panel style="display:none; flex-direction:column">
+    <button type="button" id="btnSaveDesign" class="lsq-download-btn lsq-download-btn--primary" style="width:100%">
+      Save Design
+    </button>
+    <button type="button" class="lsq-download-btn" style="width:100%" onclick="window.downloadPng && window.downloadPng('lafayette-square-qr.png', 3)">
+      Download PNG
     </button>
   </div>
 </div>
@@ -459,11 +462,28 @@
 </script>
 
 <!-- CodeDesk split modules (ordered, deterministic) -->
-<script defer src="./qr_app-bootstrapper.js?v=20260226a"></script>
-<script defer src="./qr_ui_toolkit.js?v=20260226a"></script>
-<script defer src="./qr_render_engine.js?v=20260226a"></script>
-<script defer src="./qr_state_engine.js?v=20260226a"></script>
-<script defer src="./qr_sync_pipeline.js?v=20260226a"></script>
+<script defer src="./qr_app-bootstrapper.js?v=20260226b"></script>
+<script defer src="./qr_ui_toolkit.js?v=20260226b"></script>
+<script defer src="./qr_render_engine.js?v=20260226b"></script>
+<script defer src="./qr_state_engine.js?v=20260226b"></script>
+<script defer src="./qr_sync_pipeline.js?v=20260226b"></script>
+
+<!-- Wire standalone Save button -->
+<script defer>
+  document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('btnSaveDesign');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+      if (typeof window.render === 'function') window.render();
+      if (typeof window._lsqSaveNow === 'function') {
+        window._lsqSaveNow();
+        btn.textContent = 'Saved!';
+        btn.style.opacity = '0.7';
+        setTimeout(function() { btn.textContent = 'Save Design'; btn.style.opacity = '1'; }, 1500);
+      }
+    });
+  });
+</script>
 
 <!-- Emoji picker wiring -->
 <script type="module">

@@ -1056,8 +1056,13 @@ function saveDesign(body) {
     if (image) updateCell(sheet, existing.rowIndex, headerMap, 'image_dataurl', image)
     updateCell(sheet, existing.rowIndex, headerMap, 'updated_at', now)
   } else {
-    // Append new row: biz_id, design_json, image_dataurl, updated_at
-    sheet.appendRow([bizId, designJson, image || '', now])
+    // Append new row, then set values by column name (avoids column-order bugs)
+    var newRow = sheet.getLastRow() + 1
+    sheet.getRange(newRow, 1).setValue('_placeholder')
+    updateCell(sheet, newRow, headerMap, 'biz_id', bizId)
+    updateCell(sheet, newRow, headerMap, 'design_json', designJson)
+    if (image) updateCell(sheet, newRow, headerMap, 'image_dataurl', image)
+    updateCell(sheet, newRow, headerMap, 'updated_at', now)
   }
 
   return jsonResponse({ success: true })
