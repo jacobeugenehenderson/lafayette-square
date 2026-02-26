@@ -38,6 +38,7 @@ const MOCKS = {
     return { data: { success: true } }
   },
   'events':         () => ({ data: _mockEvents }),
+  'init':           (params) => ({ data: { listings: [], events: _mockEvents, handle: { handle: _mockHandles[params.dh]?.handle || null, avatar: _mockHandles[params.dh]?.avatar || null, vignette: _mockHandles[params.dh]?.vignette || null } } }),
   'listings':       () => ({ data: [] }),
   'getDesign':      () => ({ data: { design: null, image: null } }),
   'upload-photo':   () => ({ data: { success: true, url: 'https://example.com/mock-photo.jpg', photo_count: 1 } }),
@@ -188,6 +189,12 @@ export async function postEvent(deviceHash, listingId, title, description, start
 
 export async function getEvents() {
   return get('events')
+}
+
+// ── Init (batch: listings + events + handle) ─────────────────────────
+
+export async function getInit(deviceHash) {
+  return get('init', deviceHash ? { dh: deviceHash } : {})
 }
 
 // ── Claim secret ─────────────────────────────────────────────────────

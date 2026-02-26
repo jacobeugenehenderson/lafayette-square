@@ -17,6 +17,8 @@ import useCamera from '../hooks/useCamera'
 import useUserLocation from '../hooks/useUserLocation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
+import useLoadPhase from '../hooks/useLoadPhase'
+import R3FErrorBoundary from './R3FErrorBoundary'
 
 // ── Film grade (lift blacks, darken midtones) ────────────────────────────────
 
@@ -743,13 +745,19 @@ function CameraRig() {
 
 // ── Scene ────────────────────────────────────────────────────────────────────
 
-function PostProcessing({ viewMode, aoReady }) {
+const IS_GROUND = window.location.search.includes('ground')
+const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
+// Unified post-processing — always mounted once to avoid render target leaks
+// from N8AO mount/unmount cycles. On mobile: FilmGrade + FilmGrain only.
+// On desktop: N8AO + Bloom + AerialPerspective + FilmGrade + FilmGrain.
+function PostProcessing({ viewMode }) {
   const bloomRef = useRef()
-  useAdaptiveBloom(bloomRef, viewMode)
+  if (!IS_MOBILE) useAdaptiveBloom(bloomRef, viewMode)
 
   return (
     <EffectComposer>
-      {aoReady && (
+      {!IS_MOBILE && (
         <N8AO
           halfRes={viewMode !== 'hero'}
           aoRadius={viewMode === 'hero' ? 20 : 12}
@@ -758,13 +766,15 @@ function PostProcessing({ viewMode, aoReady }) {
           quality="medium"
         />
       )}
-      <Bloom
-        ref={bloomRef}
-        intensity={0.3}
-        luminanceThreshold={0.75}
-        luminanceSmoothing={0.5}
-        mipmapBlur
-      />
+      {!IS_MOBILE && (
+        <Bloom
+          ref={bloomRef}
+          intensity={0.3}
+          luminanceThreshold={0.75}
+          luminanceSmoothing={0.5}
+          mipmapBlur
+        />
+      )}
       {!IS_MOBILE && <AerialPerspective />}
       <FilmGrade />
       <FilmGrain />
@@ -772,39 +782,16 @@ function PostProcessing({ viewMode, aoReady }) {
   )
 }
 
-const IS_GROUND = window.location.search.includes('ground')
-const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
-// Mobile post-processing: FilmGrade + FilmGrain only (no Bloom — render targets too heavy)
-function MobilePostProcessing() {
-  return (
-    <EffectComposer>
-      <FilmGrade />
-      <FilmGrain />
-    </EffectComposer>
-  )
-}
-
-
-// Defer street lights on mobile — let hero settle before GLB fetch + 641 instances
-function DeferredStreetLights() {
-  const [ready, setReady] = useState(false)
-  useEffect(() => {
-    const id = setTimeout(() => setReady(true), 4000)
-    return () => clearTimeout(id)
-  }, [])
-  if (!ready) return null
-  return <StreetLights />
+// Kick off load phasing after Canvas mounts
+function LoadPhaseStarter() {
+  useEffect(() => useLoadPhase.getState().start(), [])
+  return null
 }
 
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
-  const isPlanetarium = viewMode === 'planetarium'
-
-  // N8AO (SSAO) is disabled on mobile — its render targets leak GPU memory
-  // across mount/unmount cycles (hero↔browse), causing the second category
-  // click to crash. Enabled in all desktop modes including hero.
-  const aoReady = !IS_MOBILE
+  const phase = useLoadPhase((s) => s.phase)
 
   // Portal div for CSS3D SVG ground — rendered BEHIND the transparent WebGL canvas.
   // See VectorStreets.jsx header comment for full architecture explanation.
@@ -836,27 +823,45 @@ function Scene() {
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 0.95,
       }}
-      onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
+      onCreated={({ gl }) => {
+        gl.setClearColor(0x000000, 0)
+        const canvas = gl.domElement
+        canvas.addEventListener('webglcontextlost', (e) => {
+          e.preventDefault()
+          console.warn('[WebGL] Context lost — waiting for restore')
+        })
+        canvas.addEventListener('webglcontextrestored', () => {
+          console.info('[WebGL] Context restored')
+        })
+      }}
       dpr={IS_MOBILE ? 1 : [1, 1.5]}
       shadows={IS_GROUND || IS_MOBILE ? false : 'soft'}
     >
+      {/* Phase 0: core systems (immediate) */}
       {!IS_GROUND && !IS_MOBILE && <SoftShadows size={52} samples={16} focus={0.35} />}
       <FrameLimiter />
+      <LoadPhaseStarter />
       <TimeTicker />
       <SkyStateTicker />
       <WeatherPoller />
       <CelestialBodies />
-      <CloudDome />
-      <VectorStreets svgPortal={svgPortalEl} />
-      <LafayettePark />
-      {!IS_GROUND && <UserDot />}
-      {!IS_GROUND && <LafayetteScene />}
-      {!IS_GROUND && !IS_MOBILE && <StreetLights />}
-      {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <GatewayArch />}
       <CameraRig />
-      {!IS_GROUND && !IS_MOBILE && <PostProcessing viewMode={viewMode} aoReady={aoReady} />}
-      {!IS_GROUND && IS_MOBILE && <MobilePostProcessing />}
-      {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
+
+      {/* Phase 1: ground map */}
+      {phase >= 1 && <R3FErrorBoundary name="VectorStreets"><VectorStreets svgPortal={svgPortalEl} /></R3FErrorBoundary>}
+
+      {/* Phase 2: park + buildings */}
+      {phase >= 2 && <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>}
+      {phase >= 2 && !IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>}
+
+      {/* Phase 3: details */}
+      {phase >= 3 && <CloudDome />}
+      {phase >= 3 && !IS_GROUND && <UserDot />}
+      {phase >= 3 && !IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
+      {phase >= 3 && !IS_GROUND && <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>}
+
+      {/* Phase 4: post-processing (single component for desktop + mobile) */}
+      {phase >= 4 && !IS_GROUND && <PostProcessing viewMode={viewMode} />}
     </Canvas>
     </div>
   )

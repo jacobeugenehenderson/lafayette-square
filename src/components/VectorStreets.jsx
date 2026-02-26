@@ -89,9 +89,10 @@ function horizonToCSS(color) {
 
 // ── Bake neighborhood lamp lightmap for night overlay ─────────────────────
 // Same Gaussian approach as park lightmap but covers ±500m for the full
-// neighborhood. At night a WebGL overlay mesh uses this to add warm glow
-// pools near each lamp while the rest of the scene stays dark.
-function bakeNeighborhoodLampMap() {
+// neighborhood. Lazy singleton — computed on first use, not at import.
+let _neighborhoodLampMapCache = null
+function getNeighborhoodLampMap() {
+  if (_neighborhoodLampMapCache) return _neighborhoodLampMapCache
   const SIZE = 512
   const EXTENT = 500
   const SIGMA = 15
@@ -118,9 +119,9 @@ function bakeNeighborhoodLampMap() {
   tex.minFilter = THREE.LinearFilter
   tex.magFilter = THREE.LinearFilter
   tex.needsUpdate = true
+  _neighborhoodLampMapCache = tex
   return tex
 }
-const neighborhoodLampMap = bakeNeighborhoodLampMap()
 
 function VectorStreets({ svgPortal }) {
   const { camera, size } = useThree()
@@ -312,7 +313,7 @@ function VectorStreets({ svgPortal }) {
   // warm light where lamps are. Invisible during the day.
   const nightOverlayMat = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
-      uLampMap: { value: neighborhoodLampMap },
+      uLampMap: { value: getNeighborhoodLampMap() },
       uLampOn: { value: 0.0 },
     },
     transparent: true,

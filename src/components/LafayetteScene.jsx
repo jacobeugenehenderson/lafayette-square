@@ -20,14 +20,19 @@ import FacadeElements from './FacadeElements'
 // Tileable PBR textures for walls and roofs (CC0, Poly Haven)
 // Desktop-only: on mobile the telephoto/browse views can't resolve individual
 // brick patterns, but the 7 × 1024² textures cost ~28 MB VRAM.
+// Lazy-loaded in useEffect — buildings render with vertex colors first,
+// textures enhance when ready.
 const _IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-const _texLoader = new THREE.TextureLoader()
 const _BASE = import.meta.env.BASE_URL
 const _buildingTextures = {}
+let _texturesLoaded = false
 
-if (!_IS_MOBILE) {
+function loadBuildingTextures() {
+  if (_texturesLoaded || _IS_MOBILE) return
+  _texturesLoaded = true
+  const loader = new THREE.TextureLoader()
   ;['brick_red', 'brick_weathered', 'stone', 'slate', 'metal', 'wood_siding', 'stucco'].forEach(name => {
-    const tex = _texLoader.load(
+    const tex = loader.load(
       `${_BASE}textures/buildings/${name}.jpg`,
       undefined,
       undefined,
@@ -1056,6 +1061,9 @@ function LafayetteScene() {
   const deselect = useSelectedBuilding((state) => state.deselect)
   const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
+
+  // Lazy-load building textures on first mount (desktop only)
+  useEffect(() => { loadBuildingTextures() }, [])
 
   // Register drag-guard listener with cleanup (avoids stacking on HMR)
   useEffect(() => {

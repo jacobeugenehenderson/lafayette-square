@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import Scene from './components/Scene'
+import SceneBoundary from './components/SceneBoundary'
 import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
 import SidePanel from './components/SidePanel'
@@ -12,6 +13,7 @@ import useSelectedBuilding from './hooks/useSelectedBuilding'
 import useBulletin from './hooks/useBulletin'
 import useListings from './hooks/useListings'
 import useHandle from './hooks/useHandle'
+import './hooks/useInit' // batch init — fires on import
 import CheckinPage from './pages/CheckinPage'
 import ClaimPage from './pages/ClaimPage'
 import LinkPage from './pages/LinkPage'
@@ -99,7 +101,7 @@ function AccountButton() {
           setLinkStatus('expired')
         }
       } catch {}
-    }, 2000)
+    }, 5000)
     return () => clearInterval(pollRef.current)
   }, [linkToken, open, handle, adoptIdentity])
 
@@ -269,7 +271,7 @@ function App() {
 
   return (
     <div className="w-full h-full relative">
-      <Scene />
+      <SceneBoundary><Scene /></SceneBoundary>
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && <BulletinOpener />}
       {!isGround && <Controls />}

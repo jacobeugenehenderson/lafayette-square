@@ -106,7 +106,6 @@ const useHandle = create((set, get) => ({
   },
 }))
 
-// Auto-refresh on first import
-useHandle.getState().refresh()
+// Auto-refresh removed — useInit.js handles the batch init call
 
 export default useHandle

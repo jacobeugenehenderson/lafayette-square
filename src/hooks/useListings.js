@@ -94,7 +94,6 @@ const useListings = create((set, get) => ({
   },
 }))
 
-// Auto-refresh on first import (non-blocking)
-useListings.getState().refresh()
+// Auto-refresh removed — useInit.js handles the batch init call
 
 export default useListings

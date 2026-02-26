@@ -1,17 +1,37 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getEvents } from '../lib/api'
 import useListings from '../hooks/useListings'
+import useEvents from '../hooks/useEvents'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
 import useBulletin from '../hooks/useBulletin'
 
 const ROTATE_INTERVAL = 5000
 const IDLE_TIMEOUT = 10000
-const POLL_INTERVAL = 60000
+const POLL_INTERVAL = 300000 // 5 minutes (down from 60s)
 
 function getTodayStr() {
   const d = new Date()
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+}
+
+function filterTodayEvents(allEvents) {
+  const today = getTodayStr()
+  const filtered = allEvents.filter(e => {
+    if (!e.start_date) return false
+    const start = e.start_date
+    const end = e.end_date || e.start_date
+    return start <= today && today <= end
+  })
+  filtered.forEach(e => {
+    const listing = useListings.getState().getById(e.listing_id)
+    if (listing) {
+      e._venueName = listing.name
+      e._buildingId = listing.building_id
+    }
+  })
+  filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
+  return filtered
 }
 
 export default function EventTicker() {
@@ -28,39 +48,29 @@ export default function EventTicker() {
   const viewMode = useCamera((s) => s.viewMode)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
 
-  // Fetch and filter today's events
-  const fetchTodayEvents = useCallback(async () => {
-    try {
-      const res = await getEvents()
-      const all = Array.isArray(res.data) ? res.data : []
-      const today = getTodayStr()
-      const filtered = all.filter(e => {
-        if (!e.start_date) return false
-        const start = e.start_date
-        const end = e.end_date || e.start_date
-        return start <= today && today <= end
-      })
-      filtered.forEach(e => {
-        const listing = useListings.getState().getById(e.listing_id)
-        if (listing) {
-          e._venueName = listing.name
-          e._buildingId = listing.building_id
-        }
-      })
-      filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
-      setEvents(filtered)
-    } catch {
-      // Silent fail — ticker simply won't show
-    }
-  }, [])
+  // Read from shared events store (populated by init)
+  const storeEvents = useEvents((s) => s.events)
+  const storeFetched = useEvents((s) => s.fetched)
 
+  // When the shared store updates, refilter for today
   useEffect(() => {
-    fetchTodayEvents()
-    // Retry after 10s in case first fetch fails under mobile load
-    const retry = setTimeout(fetchTodayEvents, 10000)
-    const id = setInterval(fetchTodayEvents, POLL_INTERVAL)
-    return () => { clearTimeout(retry); clearInterval(id) }
-  }, [fetchTodayEvents])
+    if (storeFetched && storeEvents.length > 0) {
+      setEvents(filterTodayEvents(storeEvents))
+    }
+  }, [storeEvents, storeFetched])
+
+  // Poll for fresh events at a much lower frequency (5 min)
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await getEvents()
+        const all = Array.isArray(res.data) ? res.data : []
+        useEvents.getState().setEvents(all)
+      } catch { /* silent */ }
+    }
+    const id = setInterval(poll, POLL_INTERVAL)
+    return () => clearInterval(id)
+  }, [])
 
   // Rotation timer for 2+ events
   useEffect(() => {

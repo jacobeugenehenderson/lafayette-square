@@ -31,8 +31,10 @@ const TAU = Math.PI * 2
 
 // ── Bake park lamp positions into a 256×256 lightmap DataTexture ─────
 // Each texel = accumulated Gaussian falloff from nearby lamps. σ=12m.
-// Covers ±200m from origin. Baked once at module load (~50ms).
-function bakeLampLightmap() {
+// Covers ±200m from origin. Lazy singleton — computed on first use, not at import.
+let _lampLightmapCache = null
+function getLampLightmap() {
+  if (_lampLightmapCache) return _lampLightmapCache
   const SIZE = 256
   const EXTENT = 200
   const SIGMA = 12
@@ -59,9 +61,9 @@ function bakeLampLightmap() {
   tex.minFilter = THREE.LinearFilter
   tex.magFilter = THREE.LinearFilter
   tex.needsUpdate = true
+  _lampLightmapCache = tex
   return tex
 }
-const lampLightmap = bakeLampLightmap()
 
 // ── SVG clip mask for park boundary ──────────────────────────────────
 const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg?v=${Date.now()}`
@@ -290,7 +292,7 @@ function ParkGround() {
       shader.uniforms.uClipMin = { value: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z) }
       shader.uniforms.uClipSize = { value: new THREE.Vector2(SVG_VB_W, SVG_VB_H) }
       shader.uniforms.uHasClip = { value: 0.0 }
-      shader.uniforms.uLampMap = { value: lampLightmap }
+      shader.uniforms.uLampMap = { value: getLampLightmap() }
       grassShaderRef.current = shader
 
       // Vertex: pass world position to fragment
@@ -532,7 +534,7 @@ function ParkPaths() {
       shader.uniforms.uMaskMin = { value: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z) }
       shader.uniforms.uMaskSize = { value: new THREE.Vector2(SVG_VB_W, SVG_VB_H) }
       shader.uniforms.uHasMask = { value: 0.0 }
-      shader.uniforms.uLampMap = { value: lampLightmap }
+      shader.uniforms.uLampMap = { value: getLampLightmap() }
       pathShaderRef.current = shader
 
       shader.vertexShader = shader.vertexShader.replace(
@@ -1041,7 +1043,7 @@ function ParkTrees() {
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 })
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunAltitude = { value: 0.5 }
-      shader.uniforms.uLampMap = { value: lampLightmap }
+      shader.uniforms.uLampMap = { value: getLampLightmap() }
       shaderRef.current = shader
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
@@ -1110,7 +1112,7 @@ function ParkTrees() {
         shader.uniforms.uSunAltitude = { value: 0.5 }
         shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
         shader.uniforms.uWindTime = { value: 0.0 }
-        shader.uniforms.uLampMap = { value: lampLightmap }
+        shader.uniforms.uLampMap = { value: getLampLightmap() }
         foliageShaderRefs.current[lt.id] = shader
         shader.vertexShader = shader.vertexShader.replace(
           '#include <common>',

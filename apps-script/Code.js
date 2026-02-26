@@ -146,6 +146,7 @@ function doGet(e) {
 
   try {
     switch (action) {
+      case 'init':            return getInit(e.parameter.dh)
       case 'listings':        return getListings()
       case 'reviews':         return getReviews(e.parameter.lid)
       case 'events':
@@ -205,6 +206,7 @@ function doPost(e) {
       case 'remove-photo':     return postRemovePhoto(body)
       case 'savedesign':       return saveDesign(body)
       // Read-only actions via POST to bypass Google's redirect cache
+      case 'init':             return getInit(body.device_hash)
       case 'events':           return getEvents()
       case 'listings':         return getListings()
       default:                 return errorResponse('Unknown action: ' + action, 'bad_request')
@@ -214,9 +216,19 @@ function doPost(e) {
   }
 }
 
+// ─── GET: Init (batch endpoint — listings + events + handle in one call) ────
+
+function getInit(deviceHash) {
+  return jsonResponse({
+    listings: fetchListingsData(),
+    events: fetchEventsData(),
+    handle: fetchHandleData(deviceHash),
+  })
+}
+
 // ─── GET: Listings ──────────────────────────────────────────────────────────
 
-function getListings() {
+function fetchListingsData() {
   const rows = sheetToObjects(getSheet('Listings'))
   const visible = rows.filter(r => r.status !== 'removed')
 
@@ -225,7 +237,7 @@ function getListings() {
   const guardianMap = {}
   guardianRows.forEach(r => { guardianMap[r.listing_id] = true })
 
-  const parsed = visible.map(listing => {
+  return visible.map(listing => {
     const out = {
       ...listing,
       hours:     parseJsonField(listing.hours_json),
@@ -234,7 +246,6 @@ function getListings() {
       photos:    parseJsonField(listing.photos_json),
       history:   parseJsonField(listing.history_json),
     }
-    // Strip guardian secrets from response
     delete out.guardian_hash
     delete out.guardian_token
     delete out.claim_secret
@@ -243,12 +254,13 @@ function getListings() {
     delete out.tags_json
     delete out.photos_json
     delete out.history_json
-    // Expose guardian status as boolean
     out.has_guardian = !!(guardianMap[listing.id] || listing.guardian_hash)
     return out
   })
+}
 
-  return jsonResponse(parsed)
+function getListings() {
+  return jsonResponse(fetchListingsData())
 }
 
 // ─── Helper: build handle→avatar lookup ─────────────────────────────────────
@@ -298,7 +310,7 @@ function getReviews(listingId) {
 
 // ─── GET: Active events ─────────────────────────────────────────────────────
 
-function getEvents() {
+function fetchEventsData() {
   const rows = sheetToObjects(getSheet('Events'))
   const today = todayCentral()
   const active = rows.filter(r => {
@@ -308,12 +320,15 @@ function getEvents() {
       : String(endRaw)
     return end >= today
   })
-  // Normalize Date objects to strings before sending
   active.forEach(r => {
     if (r.start_date instanceof Date) r.start_date = Utilities.formatDate(r.start_date, TIMEZONE, 'yyyy-MM-dd')
     if (r.end_date instanceof Date) r.end_date = Utilities.formatDate(r.end_date, TIMEZONE, 'yyyy-MM-dd')
   })
-  return jsonResponse(active.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || '')))
+  return active.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
+}
+
+function getEvents() {
+  return jsonResponse(fetchEventsData())
 }
 
 // ─── GET: Check-in status (is device a local?) ─────────────────────────────
@@ -714,10 +729,15 @@ function checkLinkToken(token) {
 
 // ─── GET: Handle lookup ─────────────────────────────────────────────────────
 
+function fetchHandleData(deviceHash) {
+  if (!deviceHash) return { handle: null, avatar: null, vignette: null }
+  const result = findRow(getSheet('Handles'), 'device_hash', deviceHash)
+  return { handle: result ? result.rowData.handle : null, avatar: result ? (result.rowData.avatar || null) : null, vignette: result ? (result.rowData.vignette || null) : null }
+}
+
 function getHandle(deviceHash) {
   if (!deviceHash) return errorResponse('Missing dh parameter', 'bad_request')
-  const result = findRow(getSheet('Handles'), 'device_hash', deviceHash)
-  return jsonResponse({ handle: result ? result.rowData.handle : null, avatar: result ? (result.rowData.avatar || null) : null, vignette: result ? (result.rowData.vignette || null) : null })
+  return jsonResponse(fetchHandleData(deviceHash))
 }
 
 // ─── GET: Check handle availability ─────────────────────────────────────────

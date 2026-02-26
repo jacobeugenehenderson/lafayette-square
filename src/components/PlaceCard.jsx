@@ -5,10 +5,11 @@ import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
-import { getReviews, postReview, postReply, getEvents, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto } from '../lib/api'
+import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto } from '../lib/api'
 import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
+import useEvents from '../hooks/useEvents'
 import AvatarCircle from './AvatarCircle'
 
 import QRCode from 'qrcode'
@@ -1581,24 +1582,19 @@ function EventForm({ listingId, onSubmitted }) {
 
 // ─── Tab: Events ─────────────────────────────────────────────────────
 function EventsTab({ listingId, isGuardian }) {
-  const [events, setEvents] = useState([])
-  const [loaded, setLoaded] = useState(false)
+  // Read from shared events store (populated by init) instead of separate fetch
+  const events = useEvents((s) => s.getForListing(listingId))
+  const loaded = useEvents((s) => s.fetched) || events.length > 0
 
+  // Refresh callback for after posting a new event
   const fetchEvents = useCallback(async () => {
     try {
+      const { getEvents } = await import('../lib/api')
       const res = await getEvents()
       const all = Array.isArray(res.data) ? res.data : res.data?.events || []
-      const now = new Date().toISOString().slice(0, 10)
-      setEvents(
-        all
-          .filter(e => e.listing_id === listingId && (e.end_date || e.start_date) >= now)
-          .sort((a, b) => a.start_date.localeCompare(b.start_date))
-      )
+      useEvents.getState().setEvents(all)
     } catch { /* silent */ }
-    setLoaded(true)
-  }, [listingId])
-
-  useEffect(() => { fetchEvents() }, [fetchEvents])
+  }, [])
 
   function formatDateRange(start, end) {
     const opts = { month: 'short', day: 'numeric' }
