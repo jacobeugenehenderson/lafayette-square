@@ -2,15 +2,24 @@
  * Step 2 of avatar editor — pick a vignette style for the chosen emoji.
  * Shows large preview + row of 3 swatch circles (v0–v2). No "none" option.
  */
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import AvatarCircle from './AvatarCircle'
-import { getVignetteSwatches } from '../lib/vignettePresets'
+import { getVignetteSwatches, warmUpEmojiColor } from '../lib/vignettePresets'
 
 const LABELS = { v0: 'Decorator', v1: 'Vivid', v2: 'Complement' }
 
 export default function VignetteChooser({ emoji, vignette, onVignetteChange, onBack, onSave }) {
-  const swatches = useMemo(() => getVignetteSwatches(emoji), [emoji])
+  const [ready, setReady] = useState(false)
   const active = vignette || 'v0'
+
+  // Warm up color extraction (async SVG render), then trigger re-render
+  useEffect(() => {
+    setReady(false)
+    if (!emoji) return
+    warmUpEmojiColor(emoji).then(() => setReady(true))
+  }, [emoji])
+
+  const swatches = useMemo(() => getVignetteSwatches(emoji), [emoji, ready])
 
   return (
     <div className="flex flex-col items-center gap-5">

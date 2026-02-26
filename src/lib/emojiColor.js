@@ -1,13 +1,18 @@
 /**
  * Extract dominant color from an emoji as HSL.
- * Renders emoji to a small offscreen canvas, bins pixel hues,
- * and returns { h, s, l } for decorative palette generation.
+ *
+ * Uses SVG foreignObject → canvas drawImage to get color emoji pixels
+ * (plain fillText renders monochrome on Apple platforms).
+ * Async because it needs Image.onload for the SVG blob.
+ *
+ * Returns a promise of { h, s, l }. Results are cached per emoji.
  */
 
 const cache = new Map()
+const pending = new Map()
 
-// Neutral fallback for monochrome/symbol emoji (muted blue-purple)
-const NEUTRAL = { h: 260, s: 20, l: 50 }
+// Neutral fallback for monochrome/symbol emoji
+const NEUTRAL = { h: 260, s: 25, l: 50 }
 
 function rgbToHsl(r, g, b) {
   r /= 255; g /= 255; b /= 255
@@ -24,38 +29,48 @@ function rgbToHsl(r, g, b) {
 }
 
 /**
- * Extract the dominant chromatic color from an emoji.
- * @param {string} emoji — single emoji character
- * @returns {{ h: number, s: number, l: number }}
+ * Render emoji via SVG foreignObject to get color pixels on all platforms.
  */
-export function extractEmojiColor(emoji) {
-  if (cache.has(emoji)) return cache.get(emoji)
+function renderEmojiToCanvas(emoji, size) {
+  return new Promise((resolve) => {
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+        <foreignObject width="${size}" height="${size}">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:${size - 8}px;line-height:${size}px;text-align:center;width:${size}px;height:${size}px;">${emoji}</div>
+        </foreignObject>
+      </svg>`
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0)
+      URL.revokeObjectURL(url)
+      resolve(ctx.getImageData(0, 0, size, size).data)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(null)
+    }
+    img.src = url
+  })
+}
 
-  const size = 64
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')
-  ctx.clearRect(0, 0, size, size)
-  ctx.font = `${size - 8}px serif`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(emoji, size / 2, size / 2 + 2)
+function analyzePixels(data) {
+  if (!data) return NEUTRAL
 
-  const { data } = ctx.getImageData(0, 0, size, size)
-
-  // Collect chromatic pixels (skip transparent and near-gray)
   const pixels = []
   for (let i = 0; i < data.length; i += 4) {
-    if (data[i + 3] < 128) continue
+    if (data[i + 3] < 100) continue
     const hsl = rgbToHsl(data[i], data[i + 1], data[i + 2])
-    if (hsl.s > 15 && hsl.l > 10 && hsl.l < 90) pixels.push(hsl)
+    // Keep chromatic pixels (skip grays and extremes)
+    if (hsl.s > 12 && hsl.l > 8 && hsl.l < 92) pixels.push(hsl)
   }
 
-  if (pixels.length < 5) {
-    cache.set(emoji, NEUTRAL)
-    return NEUTRAL
-  }
+  if (pixels.length < 5) return NEUTRAL
 
   // Bin hues into 12 buckets (30° each), pick the most populated
   const bins = new Array(12).fill(0)
@@ -74,12 +89,36 @@ export function extractEmojiColor(emoji) {
   }
 
   const count = bins[maxBin]
-  const result = {
+  return {
     h: binSums[maxBin].h / count,
-    s: Math.min(binSums[maxBin].s / count, 85),
-    l: Math.max(Math.min(binSums[maxBin].l / count, 65), 35),
+    s: binSums[maxBin].s / count,
+    l: binSums[maxBin].l / count,
   }
+}
 
-  cache.set(emoji, result)
-  return result
+/**
+ * Extract the dominant chromatic color from an emoji.
+ * @param {string} emoji — single emoji character
+ * @returns {Promise<{ h: number, s: number, l: number }>}
+ */
+export async function extractEmojiColor(emoji) {
+  if (cache.has(emoji)) return cache.get(emoji)
+  if (pending.has(emoji)) return pending.get(emoji)
+
+  const p = renderEmojiToCanvas(emoji, 64).then(data => {
+    const result = analyzePixels(data)
+    cache.set(emoji, result)
+    pending.delete(emoji)
+    return result
+  })
+  pending.set(emoji, p)
+  return p
+}
+
+/**
+ * Synchronous version — returns cached result or NEUTRAL.
+ * Use after an async extraction has completed, or as an instant fallback.
+ */
+export function extractEmojiColorSync(emoji) {
+  return cache.get(emoji) || NEUTRAL
 }
