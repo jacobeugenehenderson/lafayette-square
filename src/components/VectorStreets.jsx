@@ -66,7 +66,7 @@ const SVG_WORLD_Z = -1156.1
 // SidePanel backdrop-blur creates additional compositing layers during
 // category clicks that compete for the same GPU memory.
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-const MAX_GPU_PIXELS = IS_MOBILE ? 60_000_000 : 200_000_000
+const MAX_GPU_PIXELS = IS_MOBILE ? 80_000_000 : 200_000_000
 const DPR = Math.min(window.devicePixelRatio || 1, 3)
 
 // Apply the same ACES filmic tone mapping + sRGB gamma that the WebGL canvas
@@ -179,10 +179,8 @@ function VectorStreets({ svgPortal }) {
         svg.setAttribute('viewBox', `${cropX} ${cropY} ${cropW} ${cropH}`)
 
         // ── Compute optimal RASTER_SCALE within GPU pixel budget ───────────
-        // Mobile is capped at 1× to leave headroom for backdrop-filter layers
-        // and browser extensions that share the same GPU compositing memory.
         const maxScale = Math.floor(Math.sqrt(MAX_GPU_PIXELS / (cropW * cropH * DPR * DPR)))
-        const scale = IS_MOBILE ? 1 : Math.max(1, Math.min(4, maxScale))
+        const scale = Math.max(1, Math.min(4, maxScale))
 
         svg.setAttribute('width', cropW * scale)
         svg.setAttribute('height', cropH * scale)

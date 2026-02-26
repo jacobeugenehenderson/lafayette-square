@@ -35,6 +35,9 @@ function serveCodedesk() {
 
 export default defineConfig(({ command }) => ({
   plugins: [serveCodedesk(), react()],
+  define: {
+    __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
+  },
   base: command === 'build' ? '/lafayette-square/' : '/',
   build: {
     rollupOptions: {
