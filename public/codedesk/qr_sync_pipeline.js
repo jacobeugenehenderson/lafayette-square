@@ -71,7 +71,8 @@ function _lsqSaveRemote(bizId, state, type, image) {
   try {
     fetch(window.LSQ_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'omit',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     }).catch(function() {});
   } catch (e) {}
