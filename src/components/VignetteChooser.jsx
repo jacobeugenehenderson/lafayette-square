@@ -1,12 +1,10 @@
 /**
  * Step 2 of avatar editor — pick a vignette style for the chosen emoji.
- * Shows large preview + row of 4 swatch circles. No "none" option.
+ * Shows large preview + 8 swatch circles in 2 rows of 4.
  */
 import { useMemo } from 'react'
 import AvatarCircle from './AvatarCircle'
 import { getVignetteSwatches } from '../lib/vignettePresets'
-
-const LABELS = { v0: 'Decorator', v1: 'Soft', v2: 'Vivid', v3: 'Bold' }
 
 export default function VignetteChooser({ emoji, vignette, onVignetteChange, onBack, onSave }) {
   const active = vignette || 'v0'
@@ -17,28 +15,31 @@ export default function VignetteChooser({ emoji, vignette, onVignetteChange, onB
       {/* Large preview */}
       <AvatarCircle emoji={emoji} vignette={active} size={16} />
 
-      {/* Swatch row */}
-      <div className="flex items-center gap-3">
-        {swatches.map(({ id, style }) => (
-          <button
-            key={id}
-            onClick={() => onVignetteChange(id)}
-            className={`w-10 h-10 rounded-full transition-all duration-150 ${
-              active === id ? 'scale-110' : 'hover:scale-105'
-            }`}
-            style={{
-              ...(style ? {
-                background: style.background,
-                boxShadow: active === id
-                  ? `${style.boxShadow}, 0 0 0 2px rgba(255,255,255,0.6)`
-                  : style.boxShadow,
-                borderColor: style.borderColor,
-                borderWidth: '1.5px',
-                borderStyle: 'solid',
-              } : {}),
-            }}
-            title={LABELS[id]}
-          />
+      {/* Swatch grid — 2 rows of 4 */}
+      <div className="flex flex-col gap-2.5">
+        {[swatches.slice(0, 4), swatches.slice(4, 8)].map((row, ri) => (
+          <div key={ri} className="flex items-center justify-center gap-3">
+            {row.map(({ id, style }) => (
+              <button
+                key={id}
+                onClick={() => onVignetteChange(id)}
+                className={`w-10 h-10 rounded-full transition-all duration-150 ${
+                  active === id ? 'scale-110' : 'hover:scale-105'
+                }`}
+                style={{
+                  ...(style ? {
+                    background: style.background,
+                    boxShadow: active === id
+                      ? `${style.boxShadow}, 0 0 0 2px rgba(255,255,255,0.6)`
+                      : style.boxShadow,
+                    borderColor: style.borderColor,
+                    borderWidth: '1.5px',
+                    borderStyle: 'solid',
+                  } : {}),
+                }}
+              />
+            ))}
+          </div>
         ))}
       </div>
 

@@ -745,7 +745,7 @@ function postSetHandle(body) {
 
   // Validate avatar if provided (single emoji, max 8 chars for composite emoji)
   var cleanAvatar = (avatar || '').trim().slice(0, 8)
-  var cleanVignette = (vignette && /^v[0-3]$/.test(vignette)) ? vignette : ''
+  var cleanVignette = (vignette && /^v[0-7]$/.test(vignette)) ? vignette : ''
 
   const sheet = getSheet('Handles')
 
@@ -772,7 +772,7 @@ function postUpdateAvatar(body) {
   var device_hash = body.device_hash
   var avatar = (body.avatar || '').trim().slice(0, 8)
   var vignette = body.vignette
-  var cleanVignette = (vignette && /^v[0-3]$/.test(vignette)) ? vignette : ''
+  var cleanVignette = (vignette && /^v[0-7]$/.test(vignette)) ? vignette : ''
   if (!device_hash) return errorResponse('Missing device_hash', 'bad_request')
 
   var sheet = getSheet('Handles')
