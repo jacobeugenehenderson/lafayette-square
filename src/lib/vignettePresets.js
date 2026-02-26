@@ -1,54 +1,47 @@
 /**
- * Vignette presets — 3 tonal palette styles derived from emoji color via HCT.
- * Each produces a CSS radial-gradient string for use as background.
+ * Vignette presets — 3 decorative styles derived from emoji's dominant hue.
+ * Pure HSL math, no external dependencies.
+ *
+ * v0 "Decorator" — subtle watercolor wash. The tasteful default.
+ * v1 "Vivid"     — saturated center, dark edge. Bold and warm.
+ * v2 "Complement" — base hue center, split-complement edge. Artistic.
  */
-import { Hct } from '@material/material-color-utilities'
 import { extractEmojiColor } from './emojiColor'
 
 export const PRESET_IDS = ['v0', 'v1', 'v2']
 
-function hctToRgb(h, c, t) {
-  const argb = Hct.from(h, c, t).toInt()
-  const r = (argb >> 16) & 0xff
-  const g = (argb >> 8) & 0xff
-  const b = argb & 0xff
-  return `rgb(${r},${g},${b})`
+function hsl(h, s, l) {
+  return `hsl(${Math.round(h % 360)}, ${Math.round(s)}%, ${Math.round(l)}%)`
 }
 
 /**
- * v0 "Deep" — saturated center, dark edge. Rich, warm.
+ * v0 "Decorator" — gentle, low-saturation wash. Tasteful default.
  */
-function deep(hct) {
-  const h = hct.hue
-  const c = Math.max(hct.chroma, 30)
-  const center = hctToRgb(h, c, 55)
-  const edge = hctToRgb(h, c * 0.8, 15)
+function decorator({ h, s }) {
+  const center = hsl(h, Math.min(s * 0.45, 35), 72)
+  const edge = hsl(h, Math.min(s * 0.5, 40), 38)
   return `radial-gradient(circle, ${center}, ${edge})`
 }
 
 /**
- * v1 "Soft" — light center, medium edge. Airy, pastel.
+ * v1 "Vivid" — rich, saturated. Punchy.
  */
-function soft(hct) {
-  const h = hct.hue
-  const c = Math.max(hct.chroma * 0.6, 20)
-  const center = hctToRgb(h, c, 85)
-  const edge = hctToRgb(h, c, 45)
+function vivid({ h, s }) {
+  const center = hsl(h, Math.min(s * 1.1, 80), 55)
+  const edge = hsl(h, Math.min(s * 0.9, 70), 18)
   return `radial-gradient(circle, ${center}, ${edge})`
 }
 
 /**
- * v2 "Bold" — base hue center, complementary hue edge. High contrast.
+ * v2 "Complement" — base hue center, shifted hue edge. Unexpected pairing.
  */
-function bold(hct) {
-  const h = hct.hue
-  const c = Math.max(hct.chroma, 35)
-  const center = hctToRgb(h, c, 50)
-  const edge = hctToRgb((h + 180) % 360, c * 0.6, 20)
+function complement({ h, s }) {
+  const center = hsl(h, Math.min(s * 0.8, 65), 50)
+  const edge = hsl((h + 150) % 360, Math.min(s * 0.5, 45), 22)
   return `radial-gradient(circle, ${center}, ${edge})`
 }
 
-const generators = { v0: deep, v1: soft, v2: bold }
+const generators = { v0: decorator, v1: vivid, v2: complement }
 
 /**
  * Get CSS radial-gradient background for an emoji + preset combo.
@@ -58,8 +51,8 @@ const generators = { v0: deep, v1: soft, v2: bold }
  */
 export function getVignetteBackground(emoji, presetId) {
   if (!emoji || !presetId || !generators[presetId]) return 'none'
-  const hct = extractEmojiColor(emoji)
-  return generators[presetId](hct)
+  const color = extractEmojiColor(emoji)
+  return generators[presetId](color)
 }
 
 /**
@@ -69,6 +62,6 @@ export function getVignetteBackground(emoji, presetId) {
  */
 export function getVignetteSwatches(emoji) {
   if (!emoji) return PRESET_IDS.map(id => ({ id, background: 'none' }))
-  const hct = extractEmojiColor(emoji)
-  return PRESET_IDS.map(id => ({ id, background: generators[id](hct) }))
+  const color = extractEmojiColor(emoji)
+  return PRESET_IDS.map(id => ({ id, background: generators[id](color) }))
 }

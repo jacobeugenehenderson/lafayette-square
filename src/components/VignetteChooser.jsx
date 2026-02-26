@@ -1,44 +1,35 @@
 /**
  * Step 2 of avatar editor — pick a vignette style for the chosen emoji.
- * Shows large preview + row of 4 swatch circles (none + v0–v2).
+ * Shows large preview + row of 3 swatch circles (v0–v2). No "none" option.
  */
 import { useMemo } from 'react'
 import AvatarCircle from './AvatarCircle'
 import { getVignetteSwatches } from '../lib/vignettePresets'
 
+const LABELS = { v0: 'Decorator', v1: 'Vivid', v2: 'Complement' }
+
 export default function VignetteChooser({ emoji, vignette, onVignetteChange, onBack, onSave }) {
   const swatches = useMemo(() => getVignetteSwatches(emoji), [emoji])
+  const active = vignette || 'v0'
 
   return (
     <div className="flex flex-col items-center gap-5">
       {/* Large preview */}
-      <AvatarCircle emoji={emoji} vignette={vignette} size={16} />
+      <AvatarCircle emoji={emoji} vignette={active} size={16} />
 
       {/* Swatch row */}
       <div className="flex items-center gap-3">
-        {/* None option */}
-        <button
-          onClick={() => onVignetteChange(null)}
-          className={`w-10 h-10 rounded-full border-2 transition-all duration-150 flex items-center justify-center text-lg ${
-            !vignette
-              ? 'border-white/70 scale-110'
-              : 'border-white/20 hover:border-white/40'
-          }`}
-        >
-          {emoji}
-        </button>
-
-        {/* Generated swatches */}
         {swatches.map(s => (
           <button
             key={s.id}
             onClick={() => onVignetteChange(s.id)}
-            className={`w-10 h-10 rounded-full border-2 transition-all duration-150 ${
-              vignette === s.id
-                ? 'border-white/70 scale-110'
-                : 'border-white/20 hover:border-white/40'
+            className={`w-10 h-10 rounded-full ring-1 transition-all duration-150 ${
+              active === s.id
+                ? 'ring-white/70 scale-110'
+                : 'ring-white/20 hover:ring-white/40'
             }`}
             style={{ background: s.background }}
+            title={LABELS[s.id]}
           />
         ))}
       </div>

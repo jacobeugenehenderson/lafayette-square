@@ -26,11 +26,12 @@ export default function AvatarEditor({ open, onClose, currentEmoji, currentVigne
 
   const handleEmojiSelect = (emojiData) => {
     setEmoji(emojiData.native)
+    if (!vignette) setVignette('v0')
     setStep(2)
   }
 
   const handleSave = () => {
-    onSave(emoji, vignette)
+    onSave(emoji, vignette || 'v0')
     onClose()
   }
 
