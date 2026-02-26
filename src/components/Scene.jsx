@@ -17,7 +17,6 @@ import useCamera from '../hooks/useCamera'
 import useUserLocation from '../hooks/useUserLocation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
-import useLoadPhase from '../hooks/useLoadPhase'
 import R3FErrorBoundary from './R3FErrorBoundary'
 
 // ── Film grade (lift blacks, darken midtones) ────────────────────────────────
@@ -783,15 +782,19 @@ function PostProcessing({ viewMode }) {
 }
 
 
-// Kick off load phasing after Canvas mounts
-function LoadPhaseStarter() {
-  useEffect(() => useLoadPhase.getState().start(), [])
-  return null
+// Defer street lights on mobile — let hero settle before GLB fetch + 641 instances
+function DeferredStreetLights() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const id = setTimeout(() => setReady(true), 4000)
+    return () => clearTimeout(id)
+  }, [])
+  if (!ready) return null
+  return <StreetLights />
 }
 
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
-  const phase = useLoadPhase((s) => s.phase)
 
   // Portal div for CSS3D SVG ground — rendered BEHIND the transparent WebGL canvas.
   // See VectorStreets.jsx header comment for full architecture explanation.
@@ -837,31 +840,22 @@ function Scene() {
       dpr={IS_MOBILE ? 1 : [1, 1.5]}
       shadows={IS_GROUND || IS_MOBILE ? false : 'soft'}
     >
-      {/* Phase 0: core systems (immediate) */}
       {!IS_GROUND && !IS_MOBILE && <SoftShadows size={52} samples={16} focus={0.35} />}
       <FrameLimiter />
-      <LoadPhaseStarter />
       <TimeTicker />
       <SkyStateTicker />
       <WeatherPoller />
       <CelestialBodies />
+      <CloudDome />
+      <R3FErrorBoundary name="VectorStreets"><VectorStreets svgPortal={svgPortalEl} /></R3FErrorBoundary>
+      <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
+      {!IS_GROUND && <UserDot />}
+      {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>}
+      {!IS_GROUND && !IS_MOBILE && <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>}
+      {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       <CameraRig />
-
-      {/* Phase 1: ground map */}
-      {phase >= 1 && <R3FErrorBoundary name="VectorStreets"><VectorStreets svgPortal={svgPortalEl} /></R3FErrorBoundary>}
-
-      {/* Phase 2: park + buildings */}
-      {phase >= 2 && <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>}
-      {phase >= 2 && !IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>}
-
-      {/* Phase 3: details */}
-      {phase >= 3 && <CloudDome />}
-      {phase >= 3 && !IS_GROUND && <UserDot />}
-      {phase >= 3 && !IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
-      {phase >= 3 && !IS_GROUND && <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>}
-
-      {/* Phase 4: post-processing (single component for desktop + mobile) */}
-      {phase >= 4 && !IS_GROUND && <PostProcessing viewMode={viewMode} />}
+      {!IS_GROUND && <PostProcessing viewMode={viewMode} />}
+      {!IS_GROUND && IS_MOBILE && <DeferredStreetLights />}
     </Canvas>
     </div>
   )
