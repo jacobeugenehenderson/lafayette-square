@@ -1766,11 +1766,20 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                     ) : name}
                   </h2>
 
-                  {rating && (
+                  {hasListingInfo && (
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-white font-medium text-sm">{Number(rating).toFixed(1)}</span>
-                      <StarRating rating={Number(rating)} />
-                      {reviewCount && <span className="text-white/50 text-xs">({reviewCount})</span>}
+                      {rating ? (
+                        <>
+                          <span className="text-white font-medium text-sm">{Number(rating).toFixed(1)}</span>
+                          <StarRating rating={Number(rating)} />
+                          {reviewCount && <span className="text-white/50 text-xs">({reviewCount})</span>}
+                        </>
+                      ) : (
+                        <>
+                          <StarRating rating={0} />
+                          <span className="text-white/30 text-xs">No local reviews yet</span>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
