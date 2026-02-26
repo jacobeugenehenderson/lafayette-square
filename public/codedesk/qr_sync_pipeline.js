@@ -170,12 +170,17 @@ window._lsqSaveNow = function _lsqSaveNow() {
 
   // Export rendered PNG and store it locally + remotely
   if (typeof window.codedeskExportPngDataUrl === 'function') {
-    window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
-      _lsqSaveImage(bizId, dataUrl, type);
-      // Send design + image together to API so all devices get the PNG
-      if (state) _lsqSaveRemote(bizId, state, type, dataUrl);
-      window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type, image: dataUrl }, '*');
-    }).catch(function() {
+    // Scale 2 for localStorage (high-res), scale 1 for API (fits in Sheets cell)
+    window.codedeskExportPngDataUrl(2).then(function(hiRes) {
+      if (hiRes) _lsqSaveImage(bizId, hiRes, type);
+      // For API: use scale 1 to stay under Sheets 50K cell limit
+      return window.codedeskExportPngDataUrl(1).then(function(loRes) {
+        var apiImage = loRes || hiRes || '';
+        if (state) _lsqSaveRemote(bizId, state, type, apiImage);
+        window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type, image: hiRes || '' }, '*');
+      });
+    }).catch(function(err) {
+      console.warn('QR PNG export failed', err);
       // PNG export failed — save design without image
       if (state) _lsqSaveRemote(bizId, state, type);
       window.parent.postMessage({ type: 'lsq-saved' }, '*');
