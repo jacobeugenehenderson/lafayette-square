@@ -165,7 +165,7 @@ function StarRating({ rating, size = 'sm' }) {
     }
   }
 
-  return <div className="flex gap-0.5">{stars}</div>
+  return <div className="flex gap-0.5" role="img" aria-label={`${rating} out of 5 stars`}>{stars}</div>
 }
 
 function getEraLabel(year) {
@@ -258,12 +258,12 @@ function EditProvider({ listingId, children }) {
     <EditContext.Provider value={{ edits, setField, clearField, saveAll, cancelAll, saving, hasEdits }}>
       {children}
       {(hasEdits || error) && (
-        <div className="sticky bottom-0 bg-black/60 backdrop-blur-sm border-t border-white/10 px-4 py-2 flex items-center justify-end gap-3 z-10">
-          {error && <span className="text-red-400 text-xs mr-auto">{error}</span>}
-          <button onClick={cancelAll} disabled={saving} className="text-xs text-white/50 hover:text-white/70">
+        <div className="sticky bottom-0 bg-surface-dim backdrop-blur-sm border-t border-outline-variant px-4 py-2 flex items-center justify-end gap-3 z-10">
+          {error && <span className="text-red-400 text-body-sm mr-auto">{error}</span>}
+          <button onClick={cancelAll} disabled={saving} className="text-body-sm text-on-surface-subtle hover:text-on-surface-variant">
             Cancel
           </button>
-          <button onClick={saveAll} disabled={saving} className="text-xs text-emerald-400 hover:text-emerald-300 disabled:opacity-50 bg-emerald-500/15 rounded-lg px-3 py-1 font-medium">
+          <button onClick={saveAll} disabled={saving} className="text-body-sm text-emerald-400 hover:text-emerald-300 disabled:opacity-50 bg-emerald-500/15 rounded-lg px-3 py-1 font-medium">
             {saving ? 'Saving...' : 'Save changes'}
           </button>
         </div>
@@ -285,7 +285,7 @@ function EditableField({ value, field, isGuardian, placeholder, multiline, child
   }
 
   if (editing) {
-    const cls = "w-full bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white/40"
+    const cls = "w-full bg-surface-container border border-outline rounded px-2 py-1 text-body text-on-surface focus:outline-none focus:border-outline"
     return multiline ? (
       <textarea
         value={displayValue}
@@ -311,10 +311,10 @@ function EditableField({ value, field, isGuardian, placeholder, multiline, child
   return (
     <span
       onClick={() => setEditing(true)}
-      className="cursor-pointer hover:bg-white/5 rounded px-0.5 -mx-0.5 transition-colors"
+      className="cursor-pointer hover:bg-surface-container rounded px-0.5 -mx-0.5 transition-colors"
       title="Click to edit"
     >
-      {displayValue || <em className="text-white/30">{placeholder || `Add ${field}...`}</em>}
+      {displayValue || <em className="text-on-surface-disabled">{placeholder || `Add ${field}...`}</em>}
     </span>
   )
 }
@@ -366,8 +366,8 @@ function HoursEditor({ hours, listingId }) {
       <div className="group/hours">
         {formattedHours ? (
           <details className="group">
-            <summary className="cursor-pointer text-sm text-white/60 hover:text-white/80 transition-colors flex items-center gap-2">
-              <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <summary className="cursor-pointer text-body text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
+              <svg className="w-4 h-4 text-on-surface-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className={openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400' : ''}>
@@ -378,14 +378,14 @@ function HoursEditor({ hours, listingId }) {
               </svg>
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true) }}
-                className="text-white/20 text-[10px] opacity-0 group-hover/hours:opacity-100 transition-opacity hover:text-white/50"
+                className="text-on-surface-disabled text-caption opacity-0 group-hover/hours:opacity-100 transition-opacity hover:text-on-surface-subtle"
               >edit</button>
             </summary>
             <div className="mt-2 ml-6 space-y-1">
               {formattedHours.map(({ day, hours: h }) => (
-                <div key={day} className="flex justify-between text-xs">
-                  <span className="text-white/50">{day}</span>
-                  <span className={h === 'Closed' ? 'text-white/30' : 'text-white/70'}>{h}</span>
+                <div key={day} className="flex justify-between text-body-sm">
+                  <span className="text-on-surface-subtle">{day}</span>
+                  <span className={h === 'Closed' ? 'text-on-surface-disabled' : 'text-on-surface-variant'}>{h}</span>
                 </div>
               ))}
             </div>
@@ -393,12 +393,12 @@ function HoursEditor({ hours, listingId }) {
         ) : (
           <div
             onClick={() => setEditing(true)}
-            className="cursor-pointer flex items-center gap-2 text-sm text-white/60 hover:text-white/80 transition-colors"
+            className="cursor-pointer flex items-center gap-2 text-body text-on-surface-variant hover:text-on-surface transition-colors"
           >
-            <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-on-surface-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <em className="text-white/30">Add hours...</em>
+            <em className="text-on-surface-disabled">Add hours...</em>
           </div>
         )}
       </div>
@@ -408,19 +408,19 @@ function HoursEditor({ hours, listingId }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-white/50 font-medium">Hours</span>
-        <button onClick={stopEditing} className="text-[10px] text-white/40 hover:text-white/60">Done</button>
+        <span className="text-body-sm text-on-surface-subtle font-medium">Hours</span>
+        <button onClick={stopEditing} className="text-caption text-on-surface-subtle hover:text-on-surface-variant">Done</button>
       </div>
       <div className="space-y-1">
         {DAY_NAMES.map(day => (
-          <div key={day} className="flex items-center gap-2 text-xs">
-            <span className="w-10 flex-shrink-0 text-white/50">{DAY_LABELS[day]}</span>
+          <div key={day} className="flex items-center gap-2 text-body-sm">
+            <span className="w-10 flex-shrink-0 text-on-surface-subtle">{DAY_LABELS[day]}</span>
             <button
               type="button"
               onClick={() => setDraft(d => ({ ...d, [day]: { ...d[day], enabled: !d[day].enabled } }))}
-              className={`w-10 h-5 rounded-full transition-colors relative ${draft[day].enabled ? 'bg-emerald-500/30' : 'bg-white/10'}`}
+              className={`w-10 h-5 rounded-full transition-colors relative ${draft[day].enabled ? 'bg-emerald-500/30' : 'bg-surface-container-high'}`}
             >
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${draft[day].enabled ? 'left-5 bg-emerald-400' : 'left-0.5 bg-white/30'}`} />
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${draft[day].enabled ? 'left-5 bg-emerald-400' : 'left-0.5 bg-on-surface-disabled'}`} />
             </button>
             {draft[day].enabled ? (
               <>
@@ -428,18 +428,18 @@ function HoursEditor({ hours, listingId }) {
                   type="time"
                   value={draft[day].open}
                   onChange={e => setDraft(d => ({ ...d, [day]: { ...d[day], open: e.target.value } }))}
-                  className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-white text-xs min-w-0 flex-1 focus:outline-none focus:border-white/30 [color-scheme:dark]"
+                  className="bg-surface-container border border-outline-variant rounded px-1.5 py-0.5 text-on-surface text-body-sm min-w-0 flex-1 focus:outline-none focus:border-outline [color-scheme:dark]"
                 />
-                <span className="text-white/30 flex-shrink-0">&ndash;</span>
+                <span className="text-on-surface-disabled flex-shrink-0">&ndash;</span>
                 <input
                   type="time"
                   value={draft[day].close}
                   onChange={e => setDraft(d => ({ ...d, [day]: { ...d[day], close: e.target.value } }))}
-                  className="bg-white/5 border border-white/15 rounded px-1.5 py-0.5 text-white text-xs min-w-0 flex-1 focus:outline-none focus:border-white/30 [color-scheme:dark]"
+                  className="bg-surface-container border border-outline-variant rounded px-1.5 py-0.5 text-on-surface text-body-sm min-w-0 flex-1 focus:outline-none focus:border-outline [color-scheme:dark]"
                 />
               </>
             ) : (
-              <span className="text-white/30 text-xs">Closed</span>
+              <span className="text-on-surface-disabled text-body-sm">Closed</span>
             )}
           </div>
         ))}
@@ -511,17 +511,17 @@ function TagPicker({ listing, isGuardian }) {
       <div className="mt-2">
         <div className="flex flex-wrap gap-1.5">
           {displayTags.map(t => (
-            <span key={t} className="px-2 py-0.5 rounded-full bg-white/8 text-white/60 text-[10px]">
+            <span key={t} className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-caption">
               {TAG_BY_ID[t].label}
             </span>
           ))}
           {fallbackAmenities && fallbackAmenities.map((a, i) => (
-            <span key={i} className="px-2 py-0.5 rounded-full bg-white/8 text-white/60 text-[10px]">{a}</span>
+            <span key={i} className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-caption">{a}</span>
           ))}
           {isGuardian && (
             <button
               onClick={() => setEditing(true)}
-              className="px-2 py-0.5 rounded-full bg-white/5 text-white/30 text-[10px] hover:text-white/50 hover:bg-white/10 transition-colors"
+              className="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-disabled text-caption hover:text-on-surface-subtle hover:bg-surface-container-high transition-colors"
             >
               {displayTags.length || fallbackAmenities?.length ? 'edit tags' : '+ add tags'}
             </button>
@@ -547,10 +547,10 @@ function TagPicker({ listing, isGuardian }) {
   return (
     <div className="mt-2 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-white/50 font-medium">Tags</span>
+        <span className="text-body-sm text-on-surface-subtle font-medium">Tags</span>
         <div className="flex gap-2">
-          <button onClick={() => setEditing(false)} className="text-[10px] text-white/40 hover:text-white/60">Cancel</button>
-          <button onClick={save} disabled={saving} className="text-[10px] text-emerald-400 hover:text-emerald-300 disabled:opacity-50">
+          <button onClick={() => setEditing(false)} className="text-caption text-on-surface-subtle hover:text-on-surface-variant">Cancel</button>
+          <button onClick={save} disabled={saving} className="text-caption text-emerald-400 hover:text-emerald-300 disabled:opacity-50">
             {saving ? 'Saving...' : 'Save'}
           </button>
         </div>
@@ -558,17 +558,17 @@ function TagPicker({ listing, isGuardian }) {
 
       {/* Type (subcategory) — single select */}
       <div>
-        <span className="text-[10px] text-white/40 uppercase tracking-wider">Type</span>
+        <span className="text-caption text-on-surface-subtle uppercase tracking-wider">Type</span>
         <div className="flex flex-wrap gap-1 mt-1">
           {Object.entries(subcatsByCategory).map(([catId, subs]) =>
             subs.map(t => (
               <button
                 key={t.id}
                 onClick={() => setSelectedSubcat(t.id === selectedSubcat ? null : t.id)}
-                className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+                className={`px-2 py-0.5 rounded text-caption transition-colors ${
                   t.id === selectedSubcat
-                    ? 'bg-white/20 text-white'
-                    : 'bg-white/5 text-white/40 hover:text-white/60'
+                    ? 'bg-surface-container-highest text-on-surface'
+                    : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
                 }`}
               >
                 {t.label}
@@ -581,16 +581,16 @@ function TagPicker({ listing, isGuardian }) {
       {/* Features — multi-select, filtered to category */}
       {featureTags.length > 0 && (
         <div>
-          <span className="text-[10px] text-white/40 uppercase tracking-wider">Features</span>
+          <span className="text-caption text-on-surface-subtle uppercase tracking-wider">Features</span>
           <div className="flex flex-wrap gap-1 mt-1">
             {featureTags.map(t => (
               <button
                 key={t.id}
                 onClick={() => toggleFeature(t.id)}
-                className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+                className={`px-2 py-0.5 rounded text-caption transition-colors ${
                   selectedFeatures.has(t.id)
                     ? 'bg-blue-500/20 text-blue-300'
-                    : 'bg-white/5 text-white/40 hover:text-white/60'
+                    : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
                 }`}
               >
                 {t.label}
@@ -602,16 +602,16 @@ function TagPicker({ listing, isGuardian }) {
 
       {/* Amenities — multi-select, always shown */}
       <div>
-        <span className="text-[10px] text-white/40 uppercase tracking-wider">Amenities</span>
+        <span className="text-caption text-on-surface-subtle uppercase tracking-wider">Amenities</span>
         <div className="flex flex-wrap gap-1 mt-1">
           {amenityTagsList.map(t => (
             <button
               key={t.id}
               onClick={() => toggleAmenity(t.id)}
-              className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+              className={`px-2 py-0.5 rounded text-caption transition-colors ${
                 selectedAmenities.has(t.id)
                   ? 'bg-emerald-500/20 text-emerald-300'
-                  : 'bg-white/5 text-white/40 hover:text-white/60'
+                  : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
               }`}
             >
               {t.label}
@@ -626,9 +626,9 @@ function TagPicker({ listing, isGuardian }) {
 // ─── Detail row helper ───────────────────────────────────────────────
 function DetailRow({ label, children }) {
   return (
-    <div className="flex justify-between text-xs">
-      <span className="text-white/40">{label}</span>
-      <span className="text-white/70 text-right">{children}</span>
+    <div className="flex justify-between text-body-sm">
+      <span className="text-on-surface-subtle">{label}</span>
+      <span className="text-on-surface-variant text-right">{children}</span>
     </div>
   )
 }
@@ -651,7 +651,7 @@ function OverviewTab({ listing, building, isGuardian }) {
   if (address || isGuardian) {
     contactItems.push(isGuardian
       ? <EditableField key="addr" value={address} field="address" isGuardian placeholder="Add address..." />
-      : <span key="addr">{address ? `${address}, St. Louis, MO` : <em className="text-white/30">Address unknown</em>}</span>
+      : <span key="addr">{address ? `${address}, St. Louis, MO` : <em className="text-on-surface-disabled">Address unknown</em>}</span>
     )
   }
   if (phone || isGuardian) {
@@ -675,10 +675,10 @@ function OverviewTab({ listing, building, isGuardian }) {
     <div className="space-y-3">
       {/* Contact info: inline with bullet separators, wrapping as needed */}
       {visibleItems.length > 0 && (
-        <div className="text-sm text-white/70 flex flex-wrap items-center gap-x-1 gap-y-0.5">
+        <div className="text-body text-on-surface-variant flex flex-wrap items-center gap-x-1 gap-y-0.5">
           {visibleItems.map((item, i) => (
             <React.Fragment key={i}>
-              {i > 0 && <span className="text-white/25 mx-0.5">&bull;</span>}
+              {i > 0 && <span className="text-on-surface-disabled mx-0.5">&bull;</span>}
               {item}
             </React.Fragment>
           ))}
@@ -689,8 +689,8 @@ function OverviewTab({ listing, building, isGuardian }) {
         <HoursEditor hours={hours} listingId={listingId} />
       ) : formattedHours ? (
         <details className="group mt-1">
-          <summary className="cursor-pointer text-sm text-white/60 hover:text-white/80 transition-colors flex items-center gap-2">
-            <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <summary className="cursor-pointer text-body text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
+            <svg className="w-4 h-4 text-on-surface-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className={openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400' : ''}>
@@ -702,9 +702,9 @@ function OverviewTab({ listing, building, isGuardian }) {
           </summary>
           <div className="mt-2 ml-6 space-y-1">
             {formattedHours.map(({ day, hours }) => (
-              <div key={day} className="flex justify-between text-xs">
-                <span className="text-white/50">{day}</span>
-                <span className={hours === 'Closed' ? 'text-white/30' : 'text-white/70'}>{hours}</span>
+              <div key={day} className="flex justify-between text-body-sm">
+                <span className="text-on-surface-subtle">{day}</span>
+                <span className={hours === 'Closed' ? 'text-on-surface-disabled' : 'text-on-surface-variant'}>{hours}</span>
               </div>
             ))}
           </div>
@@ -718,13 +718,13 @@ function OverviewTab({ listing, building, isGuardian }) {
           {isGuardian ? (
             <EditableField value={listing?.description || ''} field="description" isGuardian placeholder="Add description..." multiline>
               {listing?.description ? (
-                <p className="text-xs text-white/60 leading-relaxed">{listing.description}</p>
+                <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
               ) : (
-                <p className="text-xs text-white/30 italic">Add description...</p>
+                <p className="text-body-sm text-on-surface-disabled italic">Add description...</p>
               )}
             </EditableField>
           ) : (
-            <p className="text-xs text-white/60 leading-relaxed">{listing.description}</p>
+            <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
           )}
         </div>
       )}
@@ -736,35 +736,35 @@ function OverviewTab({ listing, building, isGuardian }) {
             <>
               <EditableField value={listing?.reservation_url || ''} field="reservation_url" isGuardian placeholder="Add reservations link...">
                 {listing?.reservation_url ? (
-                  <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
+                  <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-body-sm font-medium px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface transition-colors" onClick={e => e.stopPropagation()}>
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     Reservations
                   </a>
                 ) : (
-                  <span className="text-xs text-white/30 italic">+ Reservations link</span>
+                  <span className="text-body-sm text-on-surface-disabled italic">+ Reservations link</span>
                 )}
               </EditableField>
               <EditableField value={listing?.menu_url || ''} field="menu_url" isGuardian placeholder="Add menu link...">
                 {listing?.menu_url ? (
-                  <a href={listing.menu_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
+                  <a href={listing.menu_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-body-sm font-medium px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface transition-colors" onClick={e => e.stopPropagation()}>
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                     Menu
                   </a>
                 ) : (
-                  <span className="text-xs text-white/30 italic">+ Menu link</span>
+                  <span className="text-body-sm text-on-surface-disabled italic">+ Menu link</span>
                 )}
               </EditableField>
             </>
           ) : (
             <>
               {listing?.reservation_url && (
-                <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors">
+                <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-body-sm font-medium px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface transition-colors">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   Reservations
                 </a>
               )}
               {listing?.menu_url && (
-                <a href={listing.menu_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors">
+                <a href={listing.menu_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-body-sm font-medium px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface transition-colors">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                   Menu
                 </a>
@@ -790,7 +790,7 @@ function StarPicker({ value, onChange }) {
           onClick={() => onChange(i)}
           className="p-0"
         >
-          <svg className={`w-5 h-5 ${(hover || value) >= i ? 'text-yellow-400' : 'text-white/20'} fill-current transition-colors`} viewBox="0 0 20 20">
+          <svg className={`w-5 h-5 ${(hover || value) >= i ? 'text-yellow-400' : 'text-on-surface-disabled'} fill-current transition-colors`} viewBox="0 0 20 20">
             <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
           </svg>
         </button>
@@ -828,14 +828,14 @@ function ReviewForm({ listingId, onSubmitted }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2 border-b border-white/10 pb-4 mb-4">
+    <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
       <StarPicker value={rating} onChange={setRating} />
       <textarea
         value={text}
         onChange={e => setText(e.target.value)}
         placeholder="Share your experience..."
         rows={2}
-        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-white/25"
+        className="input w-full resize-none"
       />
       {gateMessage && (
         <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
@@ -845,7 +845,7 @@ function ReviewForm({ listingId, onSubmitted }) {
       <button
         type="submit"
         disabled={submitting || !text.trim() || rating === 0}
-        className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         {submitting ? 'Posting...' : 'Post Review'}
       </button>
@@ -878,12 +878,12 @@ function ReplyForm({ reviewId, listingId, onSubmitted }) {
         value={text}
         onChange={e => setText(e.target.value)}
         placeholder="Reply as guardian..."
-        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/25"
+        className="input flex-1 py-1.5"
       />
       <button
         type="submit"
         disabled={submitting || !text.trim()}
-        className="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         {submitting ? '...' : 'Reply'}
       </button>
@@ -926,8 +926,8 @@ function ReviewsTab({ listingId, isGuardian }) {
 
       {reviews.length === 0 && loaded && (
         <div className="text-center py-6">
-          <p className="text-white/40 text-sm">No reviews yet</p>
-          <p className="text-white/30 text-xs mt-1">Be the first to rate this place!</p>
+          <p className="text-on-surface-subtle text-body">No reviews yet</p>
+          <p className="text-on-surface-disabled text-body-sm mt-1">Be the first to rate this place!</p>
         </div>
       )}
 
@@ -936,18 +936,18 @@ function ReviewsTab({ listingId, isGuardian }) {
           const displayName = review.handle ? `@${review.handle}` : 'Local'
           const replies = review.replies || []
           return (
-            <div key={review.id || idx} className="border-b border-white/10 pb-4 last:border-0">
+            <div key={review.id || idx} className="border-b border-outline-variant pb-4 last:border-0">
               <div className="flex items-start gap-3">
                 <AvatarCircle emoji={review.avatar} vignette={review.vignette} size={7} fallback={review.handle ? review.handle[0].toUpperCase() : 'L'} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-white/80">{displayName}</span>
-                    <span className="text-xs text-white/30">{relativeTime(review.created_at) || review.time}</span>
+                    <span className="text-body font-medium text-on-surface-medium">{displayName}</span>
+                    <span className="text-body-sm text-on-surface-disabled">{relativeTime(review.created_at) || review.time}</span>
                   </div>
                   {review.rating && (
                     <div className="mt-0.5"><StarRating rating={review.rating} size="sm" /></div>
                   )}
-                  <p className="text-sm text-white/70 mt-1.5">{review.text}</p>
+                  <p className="text-body text-on-surface-variant mt-1.5">{review.text}</p>
                 </div>
               </div>
 
@@ -960,9 +960,9 @@ function ReviewsTab({ listingId, isGuardian }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-medium text-emerald-400/80">{reply.handle ? `@${reply.handle}` : 'Guardian'}</span>
-                      <span className="text-[10px] text-white/25">{relativeTime(reply.created_at)}</span>
+                      <span className="text-caption text-on-surface-disabled">{relativeTime(reply.created_at)}</span>
                     </div>
-                    <p className="text-xs text-white/60 mt-0.5">{reply.text}</p>
+                    <p className="text-body-sm text-on-surface-variant mt-0.5">{reply.text}</p>
                   </div>
                 </div>
               ))}
@@ -981,16 +981,16 @@ function HistoryTab({ history, description }) {
   return (
     <div className="space-y-3">
       {description && (
-        <p className="text-xs text-white/60 leading-relaxed">{description}</p>
+        <p className="text-body-sm text-on-surface-variant leading-relaxed">{description}</p>
       )}
       {history && history.length > 0 && (
-        <div className="relative ml-3 border-l border-white/15 pl-4 space-y-4 mt-3">
+        <div className="relative ml-3 border-l border-outline pl-4 space-y-4 mt-3">
           {history.map((item, i) => (
             <div key={i} className="relative">
               <div className="absolute -left-[21px] top-0.5 w-2.5 h-2.5 rounded-full bg-amber-500/70 border border-amber-400/50" />
-              <div className="text-xs">
+              <div className="text-body-sm">
                 <span className="text-amber-400/80 font-medium">{item.year}</span>
-                <p className="text-white/60 mt-0.5 leading-relaxed">{item.event}</p>
+                <p className="text-on-surface-variant mt-0.5 leading-relaxed">{item.event}</p>
               </div>
             </div>
           ))}
@@ -1027,9 +1027,9 @@ function ArchitectureTab({ building }) {
         <DetailRow label="Units">{building.units}</DetailRow>
       )}
       {building.historic_status && (
-        <div className="flex justify-between text-xs items-center">
-          <span className="text-white/40">Historic Status</span>
-          <span className="bg-amber-500/20 text-amber-400 text-xs px-1.5 py-0.5 rounded">{building.historic_status}</span>
+        <div className="flex justify-between text-body-sm items-center">
+          <span className="text-on-surface-subtle">Historic Status</span>
+          <span className="bg-amber-500/20 text-amber-400 text-body-sm px-1.5 py-0.5 rounded">{building.historic_status}</span>
         </div>
       )}
       {arch?.district && (
@@ -1037,20 +1037,20 @@ function ArchitectureTab({ building }) {
       )}
       {arch?.materials && (
         <div className="mt-2">
-          <span className="text-white/40 text-xs">Materials</span>
+          <span className="text-on-surface-subtle text-body-sm">Materials</span>
           <div className="flex flex-wrap gap-1.5 mt-1">
             {arch.materials.map((m, i) => (
-              <span key={i} className="px-2 py-0.5 rounded bg-white/8 text-white/60 text-[10px]">{m}</span>
+              <span key={i} className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-caption">{m}</span>
             ))}
           </div>
         </div>
       )}
       {arch?.features && (
         <div className="mt-2">
-          <span className="text-white/40 text-xs">Features</span>
+          <span className="text-on-surface-subtle text-body-sm">Features</span>
           <div className="flex flex-wrap gap-1.5 mt-1">
             {arch.features.map((f, i) => (
-              <span key={i} className="px-2 py-0.5 rounded bg-white/8 text-white/60 text-[10px]">{f}</span>
+              <span key={i} className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-caption">{f}</span>
             ))}
           </div>
         </div>
@@ -1061,8 +1061,8 @@ function ArchitectureTab({ building }) {
 
       {(building.assessed_value || building.building_sqft || building.lot_acres || building.zoning) && (
         <>
-          <div className="border-t border-white/10 mt-3 pt-2">
-            <span className="text-white/30 text-[10px] uppercase tracking-wider">Assessment</span>
+          <div className="border-t border-outline-variant mt-3 pt-2">
+            <span className="text-on-surface-disabled text-caption uppercase tracking-wider">Assessment</span>
           </div>
           {building.assessed_value && (
             <DetailRow label="Assessed Value">${building.assessed_value.toLocaleString()}</DetailRow>
@@ -1096,9 +1096,9 @@ function PropertyTab({ building }) {
   return (
     <div className="space-y-2">
       {arch.nps_context && (
-        <p className="text-white/60 text-xs italic leading-relaxed">
+        <p className="text-on-surface-variant text-body-sm italic leading-relaxed">
           &ldquo;{arch.nps_context.trim()}&rdquo;
-          <span className="text-white/30 ml-1 not-italic">&mdash; NPS Nomination</span>
+          <span className="text-on-surface-disabled ml-1 not-italic">&mdash; NPS Nomination</span>
         </p>
       )}
 
@@ -1118,20 +1118,20 @@ function PropertyTab({ building }) {
 
       {arch.materials && (
         <div className="mt-2">
-          <span className="text-white/40 text-xs">Materials</span>
+          <span className="text-on-surface-subtle text-body-sm">Materials</span>
           <div className="flex flex-wrap gap-1.5 mt-1">
             {arch.materials.map((m, i) => (
-              <span key={i} className="px-2 py-0.5 rounded bg-white/8 text-white/60 text-[10px]">{m}</span>
+              <span key={i} className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-caption">{m}</span>
             ))}
           </div>
         </div>
       )}
       {arch.features && (
         <div className="mt-2">
-          <span className="text-white/40 text-xs">Features</span>
+          <span className="text-on-surface-subtle text-body-sm">Features</span>
           <div className="flex flex-wrap gap-1.5 mt-1">
             {arch.features.map((f, i) => (
-              <span key={i} className="px-2 py-0.5 rounded bg-white/8 text-white/60 text-[10px]">{f}</span>
+              <span key={i} className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-caption">{f}</span>
             ))}
           </div>
         </div>
@@ -1186,11 +1186,11 @@ function PhotoCredit({ credit, credit_url, className = '' }) {
   if (credit_url) {
     return (
       <a href={credit_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-        className={`text-white/50 hover:text-white/70 underline decoration-white/20 hover:decoration-white/40 transition-colors ${className}`}
+        className={`text-on-surface-subtle hover:text-on-surface-variant underline decoration-outline hover:decoration-outline transition-colors ${className}`}
       >{credit}</a>
     )
   }
-  return <span className={`text-white/40 ${className}`}>{credit}</span>
+  return <span className={`text-on-surface-subtle ${className}`}>{credit}</span>
 }
 
 function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingId }) {
@@ -1306,7 +1306,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
             <img src={assetUrl(hero.url)} alt={`${name} 1`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
             {lightboxEntries.length > 1 && (
-              <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/50 text-white/80 text-xs backdrop-blur-sm">
+              <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-surface-dim text-on-surface-medium text-body-sm backdrop-blur-sm">
                 1 / {lightboxEntries.length}
               </span>
             )}
@@ -1364,7 +1364,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           </button>
           {facadeInfo.description && (
-            <p className="text-white/50 text-xs mt-1.5 leading-relaxed">{facadeInfo.description}</p>
+            <p className="text-on-surface-subtle text-body-sm mt-1.5 leading-relaxed">{facadeInfo.description}</p>
           )}
         </div>
       )}
@@ -1376,7 +1376,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="w-full py-2.5 rounded-lg border border-dashed border-white/20 text-white/50 text-xs hover:border-white/30 hover:text-white/70 transition-colors disabled:opacity-40"
+            className="w-full py-2.5 rounded-lg border border-dashed border-outline text-on-surface-subtle text-body-sm hover:border-outline hover:text-on-surface-variant transition-colors disabled:opacity-40"
           >
             {uploading ? (
               <span className="flex items-center justify-center gap-2">
@@ -1395,12 +1395,12 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
 
       {!hasAny && !isGuardian && (
         <div className="text-center py-8">
-          <p className="text-white/40 text-sm">No photos yet</p>
+          <p className="text-on-surface-subtle text-body">No photos yet</p>
         </div>
       )}
 
       {!photos && !hasFacade && facadeImage && (
-        <p className="text-white/40 text-xs text-center">Street view - Mapillary</p>
+        <p className="text-on-surface-subtle text-body-sm text-center">Street view - Mapillary</p>
       )}
 
       {/* Lightbox overlay */}
@@ -1418,28 +1418,28 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
             onClick={(e) => e.stopPropagation()}
           />
           {/* Counter */}
-          <span className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/50 text-white/70 text-xs backdrop-blur-sm">
+          <span className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-surface-dim text-on-surface-variant text-body-sm backdrop-blur-sm">
             {lightbox + 1} / {lightboxEntries.length}
           </span>
           {/* Credit at bottom */}
           {editingCredit && editingCredit.idx === lightbox ? (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-72 max-w-[90vw] p-3 rounded-xl bg-black/80 backdrop-blur-sm border border-white/15 space-y-2" onClick={e => e.stopPropagation()}>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-72 max-w-[90vw] p-3 rounded-xl bg-surface backdrop-blur-sm border border-outline space-y-2" onClick={e => e.stopPropagation()}>
               <input
                 type="text" value={editingCredit.credit} placeholder="Credit (e.g. photographer name)"
                 onChange={e => setEditingCredit({ ...editingCredit, credit: e.target.value })}
-                className="w-full bg-white/5 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-white/30"
+                className="input w-full"
                 autoFocus
               />
               <input
                 type="text" value={editingCredit.credit_url} placeholder="Link (optional)"
                 onChange={e => setEditingCredit({ ...editingCredit, credit_url: e.target.value })}
-                className="w-full bg-white/5 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-white/30"
+                className="input w-full"
               />
               <div className="flex gap-2">
-                <button onClick={handleSaveCredit} disabled={savingCredit} className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-white/10 text-white/70 hover:bg-white/15 disabled:opacity-40">
+                <button onClick={handleSaveCredit} disabled={savingCredit} className="flex-1 py-1.5 rounded-lg text-body-sm font-medium bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest disabled:opacity-40">
                   {savingCredit ? '...' : 'Save'}
                 </button>
-                <button onClick={() => setEditingCredit(null)} className="px-3 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/60">
+                <button onClick={() => setEditingCredit(null)} className="px-3 py-1.5 rounded-lg text-body-sm text-on-surface-subtle hover:text-on-surface-variant">
                   Cancel
                 </button>
               </div>
@@ -1447,12 +1447,12 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
           ) : (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2" onClick={e => e.stopPropagation()}>
               {lightboxEntries[lightbox]?.credit ? (
-                <div className="px-3 py-1.5 rounded-full bg-black/50 text-xs backdrop-blur-sm flex items-center gap-2">
+                <div className="px-3 py-1.5 rounded-full bg-surface-dim text-body-sm backdrop-blur-sm flex items-center gap-2">
                   <PhotoCredit credit={lightboxEntries[lightbox].credit} credit_url={lightboxEntries[lightbox].credit_url} />
                   {isGuardian && lightbox < allPhotos.length && (
                     <button
                       onClick={() => setEditingCredit({ idx: lightbox, credit: lightboxEntries[lightbox].credit || '', credit_url: lightboxEntries[lightbox].credit_url || '' })}
-                      className="text-white/30 hover:text-white/60 transition-colors"
+                      className="text-on-surface-disabled hover:text-on-surface-variant transition-colors"
                       title="Edit credit"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -1462,7 +1462,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
               ) : isGuardian && lightbox < allPhotos.length ? (
                 <button
                   onClick={() => setEditingCredit({ idx: lightbox, credit: '', credit_url: '' })}
-                  className="px-3 py-1.5 rounded-full bg-black/50 text-white/30 text-xs hover:text-white/50 backdrop-blur-sm transition-colors"
+                  className="px-3 py-1.5 rounded-full bg-surface-dim text-on-surface-disabled text-body-sm hover:text-on-surface-subtle backdrop-blur-sm transition-colors"
                 >
                   + Add credit
                 </button>
@@ -1470,7 +1470,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
             </div>
           )}
           {/* Close */}
-          <button onClick={closeLightbox} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+          <button onClick={closeLightbox} aria-label="Close lightbox" className="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest flex items-center justify-center">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
           {/* Guardian: delete from lightbox */}
@@ -1485,10 +1485,10 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
           {/* Prev / Next */}
           {lightboxEntries.length > 1 && (
             <>
-              <button onClick={(e) => { e.stopPropagation(); prev() }} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+              <button onClick={(e) => { e.stopPropagation(); prev() }} aria-label="Previous photo" className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest flex items-center justify-center">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <button onClick={(e) => { e.stopPropagation(); next() }} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+              <button onClick={(e) => { e.stopPropagation(); next() }} aria-label="Next photo" className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest flex items-center justify-center">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
             </>
@@ -1527,14 +1527,14 @@ function EventForm({ listingId, onSubmitted }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2 border-b border-white/10 pb-4 mb-4">
+    <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
       <div className="flex gap-2">
         {['event', 'special', 'sale', 'partnership'].map(t => (
           <button
             key={t}
             type="button"
             onClick={() => setType(t)}
-            className={`px-2 py-0.5 rounded text-[10px] transition-colors ${type === t ? 'bg-white/15 text-white' : 'bg-white/5 text-white/40 hover:text-white/60'}`}
+            className={`px-2 py-0.5 rounded text-caption transition-colors ${type === t ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'}`}
           >
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
@@ -1544,35 +1544,35 @@ function EventForm({ listingId, onSubmitted }) {
         value={title}
         onChange={e => setTitle(e.target.value)}
         placeholder="Event title"
-        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/25"
+        className="input w-full"
       />
       <textarea
         value={description}
         onChange={e => setDescription(e.target.value)}
         placeholder="Description (optional)"
         rows={2}
-        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-white/25"
+        className="input w-full resize-none"
       />
       <div className="flex gap-2">
         <div className="flex-1">
-          <label className="text-[10px] text-white/40 block mb-0.5">Start</label>
+          <label className="text-caption text-on-surface-subtle block mb-0.5">Start</label>
           <input
             type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/25 [color-scheme:dark]"
+            className="input w-full py-1.5 [color-scheme:dark]"
           />
         </div>
         <div className="flex-1">
-          <label className="text-[10px] text-white/40 block mb-0.5">End</label>
+          <label className="text-caption text-on-surface-subtle block mb-0.5">End</label>
           <input
             type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/25 [color-scheme:dark]"
+            className="input w-full py-1.5 [color-scheme:dark]"
           />
         </div>
       </div>
       <button
         type="submit"
         disabled={submitting || !title.trim() || !startDate}
-        className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         {submitting ? 'Posting...' : 'Post Event'}
       </button>
@@ -1617,29 +1617,29 @@ function EventsTab({ listingId, isGuardian }) {
 
       {events.length === 0 && loaded && (
         <div className="text-center py-6">
-          <p className="text-white/40 text-sm">No upcoming events</p>
-          {isGuardian && <p className="text-white/30 text-xs mt-1">Post your first event above!</p>}
+          <p className="text-on-surface-subtle text-body">No upcoming events</p>
+          {isGuardian && <p className="text-on-surface-disabled text-body-sm mt-1">Post your first event above!</p>}
         </div>
       )}
 
       <div className="space-y-3">
         {events.map((event, idx) => (
-          <div key={event.id || idx} className="rounded-lg bg-white/5 border border-white/10 p-3">
+          <div key={event.id || idx} className="rounded-lg bg-surface-container border border-outline-variant p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
-                <h4 className="text-sm font-medium text-white">{event.title}</h4>
+                <h4 className="text-body font-medium text-on-surface">{event.title}</h4>
                 {event.type && event.type !== 'event' && (
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${TYPE_COLORS[event.type] || ''}`}>
+                  <span className={`text-caption px-1.5 py-0.5 rounded ${TYPE_COLORS[event.type] || ''}`}>
                     {event.type}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-white/40 whitespace-nowrap flex-shrink-0">
+              <span className="text-caption text-on-surface-subtle whitespace-nowrap flex-shrink-0">
                 {formatDateRange(event.start_date, event.end_date)}
               </span>
             </div>
             {event.description && (
-              <p className="text-xs text-white/60 mt-1.5 leading-relaxed">{event.description}</p>
+              <p className="text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">{event.description}</p>
             )}
           </div>
         ))}
@@ -1739,9 +1739,9 @@ function QrTab({ listingId, listingName, isAdmin }) {
   return (
     <div className="space-y-4">
       {/* Townie QR */}
-      <div className="rounded-lg bg-white/5 border border-white/10 p-4">
-        <div className="text-sm font-medium text-white mb-0.5">Townie</div>
-        <div className="text-[10px] text-white/40 mb-3">For customers to check in</div>
+      <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
+        <div className="text-body font-medium text-on-surface mb-0.5">Townie</div>
+        <div className="text-caption text-on-surface-subtle mb-3">For customers to check in</div>
         {townieQr && (
           <div className="flex justify-center mb-3">
             <img src={townieQr} alt="Townie QR" className="w-48 rounded-lg" />
@@ -1750,7 +1750,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
         <div className="flex gap-2">
           <button
             onClick={() => shareUrl(townieUrl, 'Check in here')}
-            className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
+            className="flex-1 px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-body-sm transition-colors flex items-center justify-center gap-1.5"
           >
             <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
@@ -1765,7 +1765,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
                 a.download = `${listingName || 'townie'}-qr.png`
                 a.click()
               }}
-              className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-body-sm transition-colors flex items-center justify-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -1778,13 +1778,13 @@ function QrTab({ listingId, listingName, isAdmin }) {
 
       {/* Guardian QR — hidden behind reveal toggle */}
       {loading ? (
-        <div className="rounded-lg bg-white/5 border border-white/10 p-4">
-          <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
-          <div className="text-[10px] text-white/40 mb-3">To onboard a new guardian</div>
-          <div className="text-center py-6 text-white/30 text-xs">Loading...</div>
+        <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
+          <div className="text-body font-medium text-on-surface mb-0.5">Guardian</div>
+          <div className="text-caption text-on-surface-subtle mb-3">To onboard a new guardian</div>
+          <div className="text-center py-6 text-on-surface-disabled text-body-sm">Loading...</div>
         </div>
       ) : guardianQr && (
-        <div className="rounded-lg bg-white/5 border border-white/10 p-4">
+        <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
           <button
             onClick={() => setGuardianRevealed(r => !r)}
             className="w-full flex items-center justify-between"
@@ -1796,9 +1796,9 @@ function QrTab({ listingId, listingName, isAdmin }) {
                 </svg>
                 Guardian
               </div>
-              <div className="text-[10px] text-white/40">Scan only — do not share digitally</div>
+              <div className="text-caption text-on-surface-subtle">Scan only — do not share digitally</div>
             </div>
-            <svg className={`w-4 h-4 text-white/40 transition-transform ${guardianRevealed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <svg className={`w-4 h-4 text-on-surface-subtle transition-transform ${guardianRevealed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
             </svg>
           </button>
@@ -1819,7 +1819,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
       {/* Design button */}
       <button
         onClick={openQrStudio}
-        className="w-full py-2.5 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+        className="w-full py-2.5 px-4 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -1918,7 +1918,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
 
   return (
-    <div className="absolute top-3 left-3 right-3 bg-black/90 sm:bg-black/40 sm:backdrop-blur-2xl sm:backdrop-saturate-150 rounded-2xl text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden flex flex-col z-50" style={{ bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : 'calc(76px + 18px)' }}>
+    <div role="dialog" aria-modal="true" aria-label={name} className="absolute top-3 left-3 right-3 bg-surface sm:bg-surface-glass sm:backdrop-blur-2xl sm:backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50" style={{ bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : 'calc(76px + 18px)' }}>
       {/* Hero Photo Area */}
       <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (
@@ -1928,11 +1928,11 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             className="w-full h-full flex items-center justify-center"
             style={{ background: `linear-gradient(135deg, ${placeholderPhotos[0]}, ${placeholderPhotos[1]})` }}
           >
-            <div className="text-center text-white/30">
+            <div className="text-center text-on-surface-disabled">
               <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p className="text-xs">No photos yet</p>
+              <p className="text-body-sm">No photos yet</p>
             </div>
           </div>
         ) : (
@@ -1954,7 +1954,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         <button
           onClick={onClose}
           className="absolute top-2 right-2 w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
-          title="Close"
+          aria-label="Close"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1962,7 +1962,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         </button>
 
         {photos && photos.length > 1 && (
-          <div className="absolute bottom-2 right-3 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-white/70">
+          <div className="absolute bottom-2 right-3 bg-surface-dim backdrop-blur-sm px-2 py-0.5 rounded text-caption text-on-surface-variant">
             {photos.length} photos
           </div>
         )}
@@ -1981,10 +1981,10 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                   <button
                     key={l.id}
                     onClick={() => { setActiveListingIdx(idx); setActiveTab('overview') }}
-                    className={`flex-shrink-0 px-3 py-1 rounded-full text-xs transition-colors ${
+                    className={`flex-shrink-0 px-3 py-1 rounded-full text-body-sm transition-colors ${
                       idx === activeListingIdx
-                        ? 'bg-white/15 text-white'
-                        : 'bg-white/5 text-white/50 hover:text-white/70'
+                        ? 'bg-surface-container-highest text-on-surface'
+                        : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
                     }`}
                   >
                     {l.name}
@@ -1998,10 +1998,10 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             <div className="p-4 pb-3">
               <div className="flex items-start gap-3">
                 {activeListing?.logo && (
-                  <img src={assetUrl(activeListing.logo)} alt="" className="w-10 h-10 rounded-lg object-contain bg-white/10 flex-shrink-0 mt-0.5" />
+                  <img src={assetUrl(activeListing.logo)} alt="" className="w-10 h-10 rounded-lg object-contain bg-surface-container-high flex-shrink-0 mt-0.5" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-xl font-semibold text-white leading-tight">
+                  <h2 className="text-headline font-semibold text-on-surface leading-tight">
                     {isGuardian ? (
                       <EditableField value={name} field="name" isGuardian placeholder="Place name">
                         {name}
@@ -2013,14 +2013,14 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                     <div className="flex items-center gap-2 mt-1">
                       {rating ? (
                         <>
-                          <span className="text-white font-medium text-sm">{Number(rating).toFixed(1)}</span>
+                          <span className="text-on-surface font-medium text-body">{Number(rating).toFixed(1)}</span>
                           <StarRating rating={Number(rating)} />
-                          {reviewCount && <span className="text-white/50 text-xs">({reviewCount})</span>}
+                          {reviewCount && <span className="text-on-surface-subtle text-body-sm">({reviewCount})</span>}
                         </>
                       ) : (
                         <>
                           <StarRating rating={0} />
-                          <span className="text-white/30 text-xs">No local reviews yet</span>
+                          <span className="text-on-surface-disabled text-body-sm">No local reviews yet</span>
                         </>
                       )}
                     </div>
@@ -2032,12 +2032,12 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 {(category || subcategory) && (
                   <>
                     {subcategory && (
-                      <span className="px-2 py-0.5 rounded-md bg-white/10 text-white/70 text-xs">
+                      <span className="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant text-body-sm">
                         {SUBCATEGORY_LABELS[subcategory] || subcategory}
                       </span>
                     )}
                     {category && !subcategory && (
-                      <span className="px-2 py-0.5 rounded-md bg-white/10 text-white/70 text-xs">
+                      <span className="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant text-body-sm">
                         {CATEGORY_LABELS[category] || category}
                       </span>
                     )}
@@ -2056,32 +2056,32 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             {/* Property headline */}
             <div className="px-4 pt-3 pb-2">
               {(yearBuilt || styleName) ? (
-                <h2 className="text-lg font-medium text-white leading-tight">
+                <h2 className="text-headline font-medium text-on-surface leading-tight">
                   {yearBuilt && <span>{yearBuilt}</span>}
                   {yearBuilt && styleName && <span> </span>}
                   {styleName && <span>{styleName}</span>}
                 </h2>
               ) : (
-                <h2 className="text-lg font-medium text-white/60 leading-tight">
+                <h2 className="text-headline font-medium text-on-surface-variant leading-tight">
                   {cleanAddress(building?.address) || 'Unknown Building'}
                 </h2>
               )}
 
               {/* Address (below headline when we have year/style) */}
               {(yearBuilt || styleName) && building?.address && (
-                <p className="text-xs text-white/40 mt-0.5">{cleanAddress(building.address)}</p>
+                <p className="text-body-sm text-on-surface-subtle mt-0.5">{cleanAddress(building.address)}</p>
               )}
 
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
                 {arch.contributing && (
-                  <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400/80 text-[11px]">Contributing</span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400/80 text-label-sm">Contributing</span>
                 )}
                 {arch.nps_listed && (
-                  <span className="px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-300/90 text-[11px]">NPS Listed</span>
+                  <span className="px-2 py-0.5 rounded-md bg-yellow-500/20 text-yellow-300/90 text-label-sm">NPS Listed</span>
                 )}
                 {arch.district && (
-                  <span className="text-white/30 text-[11px]">{arch.district.replace(' Historic District', '')}</span>
+                  <span className="text-on-surface-disabled text-label-sm">{arch.district.replace(' Historic District', '')}</span>
                 )}
               </div>
             </div>
@@ -2089,17 +2089,19 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         )}
 
         {/* Tab bar */}
-        <div className="flex border-b border-white/10 overflow-x-auto">
+        <nav aria-label="Place card tabs" className="flex border-b border-outline-variant overflow-x-auto">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-colors ${currentTab === tab.id ? 'text-white border-b-2 border-white' : 'text-white/50 hover:text-white/70'}`}
+              aria-selected={currentTab === tab.id}
+              role="tab"
+              className={`flex-shrink-0 px-3 py-2 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${currentTab === tab.id ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-subtle hover:text-on-surface-variant'}`}
             >
               {tab.label}
             </button>
           ))}
-        </div>
+        </nav>
 
         {/* Tab content */}
         <div className="p-4">
@@ -2123,10 +2125,10 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
       </EditProvider>
 
       {/* Footer */}
-      <div className="px-4 py-2.5 border-t border-white/15 bg-white/4 flex-shrink-0 flex items-center gap-2">
+      <div className="px-4 py-2.5 border-t border-outline bg-surface-container flex-shrink-0 flex items-center gap-2">
         {/* Left: guardian badge or claim CTA or house CTA */}
         {hasListingInfo && isGuardian && (
-          <div className="flex-1 flex items-center gap-2 text-emerald-400/70 text-xs">
+          <div className="flex-1 flex items-center gap-2 text-emerald-400/70 text-body-sm">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
@@ -2136,7 +2138,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {hasListingInfo && !isGuardian && (
           <a
             href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('My place: ' + name)}`}
-            className="flex-1 py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -2147,7 +2149,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {!hasListingInfo && (
           <a
             href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('My place: ' + (cleanAddress(building?.address) || 'Unknown'))}`}
-            className="flex-1 py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
@@ -2170,8 +2172,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               navigator.clipboard?.writeText(shareText).catch(() => {})
             }
           }}
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors flex items-center justify-center"
-          title="Share"
+          className="w-9 h-9 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center"
+          aria-label="Share"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />

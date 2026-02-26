@@ -810,7 +810,7 @@ function Scene() {
   const [svgPortalEl, setSvgPortalEl] = useState(null)
 
   return (
-    <div style={{
+    <div role="img" aria-label="3D visualization of Lafayette Square neighborhood" style={{
       position: 'relative', width: '100%', height: '100%', background: '#000',
       opacity: visible ? 1 : 0,
       transition: 'opacity 1.2s ease-in',

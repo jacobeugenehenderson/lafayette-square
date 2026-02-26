@@ -10,7 +10,7 @@ function CompassRose() {
   if (viewMode === 'hero' || showCard) return null
 
   return (
-    <div className="absolute top-4 left-4 select-none z-50">
+    <div className="absolute top-4 left-4 select-none z-50" role="img" aria-label="Compass rose">
       <div className="relative w-16 h-16">
         <svg
           viewBox="0 0 100 100"

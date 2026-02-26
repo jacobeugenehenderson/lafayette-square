@@ -8,7 +8,6 @@ export default {
     extend: {
       colors: {
         // Category hex colors (match src/tokens/categories.js)
-        // Use for neon-band-colored UI elements beyond the Tailwind palette
         'cat-dining':    '#f97316',
         'cat-historic':  '#f59e0b',
         'cat-arts':      '#8b5cf6',
@@ -18,6 +17,62 @@ export default {
         'cat-community': '#64748b',
         // Scene background
         'scene-bg': '#1a1a2e',
+        // Design token surfaces
+        'surface':                   'var(--surface)',
+        'surface-glass':             'var(--surface-glass)',
+        'surface-dim':               'var(--surface-dim)',
+        'surface-container':         'var(--surface-container)',
+        'surface-container-high':    'var(--surface-container-high)',
+        'surface-container-highest': 'var(--surface-container-highest)',
+        'surface-scrim':             'var(--surface-scrim)',
+        // Design token on-surface (text/icons)
+        'on-surface':          'var(--on-surface)',
+        'on-surface-medium':   'var(--on-surface-medium)',
+        'on-surface-variant':  'var(--on-surface-variant)',
+        'on-surface-subtle':   'var(--on-surface-subtle)',
+        'on-surface-disabled': 'var(--on-surface-disabled)',
+        // Design token outlines
+        'outline':         'var(--outline)',
+        'outline-variant': 'var(--outline-variant)',
+        // Status accents
+        'status-success':     'var(--success)',
+        'status-success-dim': 'var(--success-dim)',
+        'status-error':       'var(--error)',
+        'status-error-dim':   'var(--error-dim)',
+        'status-info':        'var(--info)',
+        'status-info-dim':    'var(--info-dim)',
+        'status-warning':     'var(--warning)',
+        'status-warning-dim': 'var(--warning-dim)',
+      },
+      fontSize: {
+        'display':  'var(--type-display)',
+        'headline': 'var(--type-headline)',
+        'title':    'var(--type-title)',
+        'body':     'var(--type-body)',
+        'body-sm':  'var(--type-body-sm)',
+        'label':    'var(--type-label)',
+        'label-sm': 'var(--type-label-sm)',
+        'caption':  'var(--type-caption)',
+      },
+      borderRadius: {
+        'sm':   'var(--radius-sm)',
+        'md':   'var(--radius-md)',
+        'lg':   'var(--radius-lg)',
+        'xl':   'var(--radius-xl)',
+        '2xl':  'var(--radius-2xl)',
+        'full': 'var(--radius-full)',
+      },
+      backdropBlur: {
+        'sm': 'var(--blur-sm)',
+        'md': 'var(--blur-md)',
+        'lg': 'var(--blur-lg)',
+        'xl': 'var(--blur-xl)',
+      },
+      blur: {
+        'sm': 'var(--blur-sm)',
+        'md': 'var(--blur-md)',
+        'lg': 'var(--blur-lg)',
+        'xl': 'var(--blur-xl)',
       },
     },
   },

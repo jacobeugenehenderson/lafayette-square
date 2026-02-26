@@ -44,7 +44,7 @@ function Controls() {
   return (
     <>
       {text && (
-        <div className="absolute bottom-4 right-4 text-gray-500 text-sm text-right z-50">
+        <div className="absolute bottom-4 right-4 text-on-surface-subtle text-body text-right z-50">
           <p>{text}</p>
         </div>
       )}

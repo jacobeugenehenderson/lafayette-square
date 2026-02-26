@@ -79,7 +79,7 @@ function renderMarkdown(text) {
   const flushBlockquote = () => {
     if (blockquoteLines.length > 0) {
       elements.push(
-        <blockquote key={key++} className="border-l-2 border-white/20 pl-3 my-1.5 text-white/50 italic">
+        <blockquote key={key++} className="border-l-2 border-outline pl-3 my-1.5 text-on-surface-subtle italic">
           {blockquoteLines.map((bl, i) => <span key={i}>{renderInline(bl)}{i < blockquoteLines.length - 1 && <br />}</span>)}
         </blockquote>
       )
@@ -107,21 +107,21 @@ function renderMarkdown(text) {
 
     // Horizontal rule
     if (/^-{3,}$/.test(line.trim())) {
-      elements.push(<hr key={key++} className="border-white/10 my-2" />)
+      elements.push(<hr key={key++} className="border-outline-variant my-2" />)
       continue
     }
 
     // Heading ##
     const h2Match = line.match(/^##\s+(.+)/)
     if (h2Match) {
-      elements.push(<div key={key++} className="text-[11px] font-semibold text-white/70 mt-2 mb-0.5">{renderInline(h2Match[1])}</div>)
+      elements.push(<div key={key++} className="text-label-sm font-semibold text-on-surface-variant mt-2 mb-0.5">{renderInline(h2Match[1])}</div>)
       continue
     }
 
     // Heading #
     const h1Match = line.match(/^#\s+(.+)/)
     if (h1Match) {
-      elements.push(<div key={key++} className="text-[13px] font-bold text-white/80 mt-2 mb-0.5">{renderInline(h1Match[1])}</div>)
+      elements.push(<div key={key++} className="text-body font-bold text-on-surface mt-2 mb-0.5">{renderInline(h1Match[1])}</div>)
       continue
     }
 
@@ -165,7 +165,7 @@ function renderInline(text) {
       <span key={key++} className="text-[14px]">{renderInline(m[1])}</span>
     )},
     { re: /\{small\}(.*?)\{\/small\}/, render: (m) => (
-      <span key={key++} className="text-[9px]">{renderInline(m[1])}</span>
+      <span key={key++} className="text-caption">{renderInline(m[1])}</span>
     )},
     // Markdown image: ![alt](url)
     { re: /!\[([^\]]*)\]\(([^)]+)\)/, render: (m) => (
@@ -176,11 +176,11 @@ function renderInline(text) {
       <a key={key++} href={m[2]} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">{m[1]}</a>
     )},
     // Bold: **text**
-    { re: /\*\*(.+?)\*\*/, render: (m) => <strong key={key++} className="font-semibold text-white/80">{m[1]}</strong> },
+    { re: /\*\*(.+?)\*\*/, render: (m) => <strong key={key++} className="font-semibold text-on-surface">{m[1]}</strong> },
     // Italic: *text*
     { re: /\*(.+?)\*/, render: (m) => <em key={key++}>{m[1]}</em> },
     // Strikethrough: ~~text~~
-    { re: /~~(.+?)~~/, render: (m) => <del key={key++} className="text-white/30">{m[1]}</del> },
+    { re: /~~(.+?)~~/, render: (m) => <del key={key++} className="text-on-surface-disabled">{m[1]}</del> },
     // Bare image URL
     { re: /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|svg)(\?[^\s]*)?)/, render: (m) => (
       <img key={key++} src={m[1]} alt="" className="max-w-full rounded my-1 inline-block" loading="lazy" />
@@ -305,10 +305,10 @@ function FormattedTextarea({ value, onChange, placeholder, rows = 4 }) {
     setShowColors(false)
   }, [wrap])
 
-  const btnClass = "px-1.5 py-1 rounded text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors text-[11px]"
+  const btnClass = "px-1.5 py-1 rounded text-on-surface-disabled hover:text-on-surface-variant hover:bg-surface-container-high transition-colors text-label-sm"
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 overflow-hidden focus-within:border-white/25 transition-colors">
+    <div className="rounded-lg border border-outline-variant bg-surface-container overflow-hidden focus-within:border-outline transition-colors">
       {/* Main toolbar */}
       <div className="flex items-center gap-0.5 px-1.5 py-1 border-b border-white/5 flex-wrap">
         <button type="button" onClick={() => wrap('**', '**')} className={btnClass} title="Bold">
@@ -325,7 +325,7 @@ function FormattedTextarea({ value, onChange, placeholder, rows = 4 }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
         </button>
-        <span className="w-px h-4 bg-white/10 mx-0.5" />
+        <span className="w-px h-4 bg-surface-container-high mx-0.5" />
         <button type="button" onClick={() => wrapLine('# ', '')} className={btnClass} title="Heading">
           H1
         </button>
@@ -345,7 +345,7 @@ function FormattedTextarea({ value, onChange, placeholder, rows = 4 }) {
         <button type="button" onClick={() => insertAtCursor('\n---\n')} className={btnClass} title="Divider">
           <span className="text-[9px]">---</span>
         </button>
-        <span className="w-px h-4 bg-white/10 mx-0.5" />
+        <span className="w-px h-4 bg-surface-container-high mx-0.5" />
         <button type="button" onClick={() => wrap('{big}', '{/big}')} className={btnClass} title="Large text">
           <span className="text-[13px] leading-none">A</span>
         </button>
@@ -362,19 +362,19 @@ function FormattedTextarea({ value, onChange, placeholder, rows = 4 }) {
             <path strokeLinecap="round" d="M4 6h16M8 12h12M6 18h14" />
           </svg>
         </button>
-        <span className="w-px h-4 bg-white/10 mx-0.5" />
+        <span className="w-px h-4 bg-surface-container-high mx-0.5" />
         {/* Color toggle */}
         <button
           type="button"
           onClick={() => setShowColors(!showColors)}
-          className={`${btnClass} ${showColors ? 'bg-white/10 text-white/60' : ''}`}
+          className={`${btnClass} ${showColors ? 'bg-surface-container-high text-on-surface-variant' : ''}`}
           title="Color"
         >
           <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
           </svg>
         </button>
-        <span className="ml-auto text-[10px] text-white/15">{value.length}/{POST_MAX_CHARS}</span>
+        <span className="ml-auto text-caption text-white/15">{value.length}/{POST_MAX_CHARS}</span>
       </div>
       {/* Color palette row */}
       {showColors && (
@@ -384,7 +384,7 @@ function FormattedTextarea({ value, onChange, placeholder, rows = 4 }) {
               key={name}
               type="button"
               onClick={() => applyColor(name)}
-              className="w-5 h-5 rounded-full border border-white/15 hover:border-white/40 transition-colors flex-shrink-0"
+              className="w-5 h-5 rounded-full border border-outline hover:border-outline transition-colors flex-shrink-0"
               style={{ backgroundColor: css }}
               title={label}
             />
@@ -398,7 +398,7 @@ function FormattedTextarea({ value, onChange, placeholder, rows = 4 }) {
         onChange={e => onChange(e.target.value.slice(0, POST_MAX_CHARS))}
         placeholder={placeholder}
         rows={rows}
-        className="w-full bg-transparent px-3 py-2 text-[12px] text-white placeholder-white/25 resize-none focus:outline-none leading-relaxed"
+        className="w-full bg-transparent px-3 py-2 text-body-sm text-on-surface placeholder-on-surface-disabled resize-none focus:outline-none leading-relaxed"
       />
     </div>
   )
@@ -437,12 +437,12 @@ function IdentityPopup({ section, handle, onConfirm, onCancel }) {
   }
 
   return (
-    <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-black/70 border border-white/15 rounded-xl p-4 max-w-xs w-full space-y-3">
-        <h3 className="text-[12px] font-semibold text-white/90">Post as...</h3>
+    <div className="absolute inset-0 z-10 bg-surface-scrim backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-black/70 border border-outline rounded-xl p-4 max-w-xs w-full space-y-3">
+        <h3 className="text-body-sm font-semibold text-on-surface">Post as...</h3>
 
         <div className="space-y-2">
-          <label className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
+          <label className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer hover:bg-surface-container transition-colors">
             <input
               type="radio"
               name="identity"
@@ -451,11 +451,11 @@ function IdentityPopup({ section, handle, onConfirm, onCancel }) {
               className="accent-blue-400"
             />
             <div>
-              <div className="text-[11px] text-white/80 font-medium">@{handle}</div>
-              <div className="text-[9px] text-white/35">Your handle is visible on the post</div>
+              <div className="text-label-sm text-on-surface-medium font-medium">@{handle}</div>
+              <div className="text-caption text-on-surface-disabled">Your handle is visible on the post</div>
             </div>
           </label>
-          <label className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
+          <label className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer hover:bg-surface-container transition-colors">
             <input
               type="radio"
               name="identity"
@@ -464,8 +464,8 @@ function IdentityPopup({ section, handle, onConfirm, onCancel }) {
               className="accent-blue-400"
             />
             <div>
-              <div className="text-[11px] text-white/80 font-medium">Anonymous</div>
-              <div className="text-[9px] text-white/35">No name shown; you can still delete it</div>
+              <div className="text-label-sm text-on-surface-medium font-medium">Anonymous</div>
+              <div className="text-caption text-on-surface-disabled">No name shown; you can still delete it</div>
             </div>
           </label>
         </div>
@@ -477,19 +477,19 @@ function IdentityPopup({ section, handle, onConfirm, onCancel }) {
             onChange={e => setDontAsk(e.target.checked)}
             className="accent-blue-400 w-3 h-3"
           />
-          <span className="text-[9px] text-white/30">Don't ask again</span>
+          <span className="text-caption text-on-surface-disabled">Don't ask again</span>
         </label>
 
         <div className="flex gap-2 pt-1">
           <button
             onClick={onCancel}
-            className="flex-1 py-1.5 rounded-lg bg-white/5 text-white/40 text-[11px] hover:bg-white/10 transition-colors"
+            className="flex-1 py-1.5 rounded-lg bg-surface-container text-on-surface-subtle text-label-sm hover:bg-surface-container-high transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 py-1.5 rounded-lg bg-white/15 text-white/80 text-[11px] hover:bg-white/20 transition-colors"
+            className="flex-1 py-1.5 rounded-lg bg-surface-container-highest text-on-surface text-label-sm hover:bg-surface-container-highest transition-colors"
           >
             Post
           </button>
@@ -498,7 +498,7 @@ function IdentityPopup({ section, handle, onConfirm, onCancel }) {
         {getStoredIdentityPref() && (
           <button
             onClick={clearIdentityPref}
-            className="w-full text-[9px] text-white/20 hover:text-white/40 transition-colors"
+            className="w-full text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
           >
             Reset "don't ask" preference
           </button>
@@ -549,23 +549,23 @@ function CommentSection({ bulletinId, section, canPost }) {
   }
 
   return (
-    <div className="mt-1.5 pl-3 border-l border-white/8">
+    <div className="mt-1.5 pl-3 border-l border-outline-variant">
       {/* Comment list */}
       {comments.length > 0 && (
         <div className="space-y-1.5 mb-1.5">
           {comments.map(c => (
-            <div key={c.id} className="text-[10px] leading-relaxed flex items-center gap-1">
+            <div key={c.id} className="text-caption leading-relaxed flex items-center gap-1">
               <div className="flex-1 min-w-0 flex items-center gap-1">
-                <span className="text-white/40 mr-0.5 inline-flex items-center gap-0.5">
-                  {c.handle ? <><AvatarCircle emoji={c.avatar} vignette={c.vignette} size={5} fallback={c.handle[0].toUpperCase()} />@{c.handle}</> : <em className="text-white/25">anon</em>}
+                <span className="text-on-surface-subtle mr-0.5 inline-flex items-center gap-0.5">
+                  {c.handle ? <><AvatarCircle emoji={c.avatar} vignette={c.vignette} size={5} fallback={c.handle[0].toUpperCase()} />@{c.handle}</> : <em className="text-on-surface-disabled">anon</em>}
                 </span>
-                <span className="text-white/50">{c.text}</span>
+                <span className="text-on-surface-subtle">{c.text}</span>
                 <span className="text-white/15 ml-1.5">{relativeTime(c.created_at)}</span>
               </div>
               {c.is_mine && (
                 <button
                   onClick={() => removeCommentAction(bulletinId, c.id)}
-                  className="text-[8px] text-red-400/30 hover:text-red-400/70 transition-colors flex-shrink-0"
+                  className="text-caption text-red-400/30 hover:text-red-400/70 transition-colors flex-shrink-0"
                   title="Delete comment"
                 >
                   x
@@ -585,12 +585,12 @@ function CommentSection({ bulletinId, section, canPost }) {
             onChange={e => setText(e.target.value.slice(0, COMMENT_MAX_CHARS))}
             onKeyDown={handleKeyDown}
             placeholder="Reply..."
-            className="flex-1 bg-white/3 border border-white/8 rounded px-2 py-1 text-[10px] text-white placeholder-white/20 focus:outline-none focus:border-white/15"
+            className="flex-1 input rounded px-2 py-1 text-caption"
           />
           <button
             onClick={handleSubmit}
             disabled={!text.trim() || posting}
-            className="text-[9px] px-2 py-1 rounded bg-white/5 text-white/40 hover:text-white/60 transition-colors disabled:opacity-30"
+            className="text-caption px-2 py-1 rounded bg-surface-container text-on-surface-subtle hover:text-on-surface-variant transition-colors disabled:opacity-30"
           >
             {posting ? '...' : 'Reply'}
           </button>
@@ -627,11 +627,11 @@ function BrowseView({ onNewPost, onOpenThreads }) {
   return (
     <div className="flex flex-col h-full">
       {/* Section filter pills */}
-      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto flex-shrink-0 border-b border-white/8">
+      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto flex-shrink-0 border-b border-outline-variant">
         <button
           onClick={() => setFilter(null)}
-          className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] transition-colors ${
-            !filter ? 'bg-white/15 text-white' : 'bg-white/5 text-white/40 hover:text-white/60'
+          className={`flex-shrink-0 px-2.5 py-1 rounded-full text-caption transition-colors ${
+            !filter ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
           }`}
         >
           All
@@ -640,8 +640,8 @@ function BrowseView({ onNewPost, onOpenThreads }) {
           <button
             key={s.id}
             onClick={() => setFilter(filter === s.id ? null : s.id)}
-            className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] transition-colors whitespace-nowrap ${
-              filter === s.id ? 'bg-white/15 text-white' : 'bg-white/5 text-white/40 hover:text-white/60'
+            className={`flex-shrink-0 px-2.5 py-1 rounded-full text-caption transition-colors whitespace-nowrap ${
+              filter === s.id ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
             }`}
           >
             {s.title}
@@ -653,8 +653,8 @@ function BrowseView({ onNewPost, onOpenThreads }) {
       <div className="flex-1 overflow-y-auto min-h-0">
         {filtered.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-white/40 text-sm">No posts yet</p>
-            <p className="text-white/30 text-xs mt-1">Be the first to post!</p>
+            <p className="text-on-surface-subtle text-body">No posts yet</p>
+            <p className="text-on-surface-disabled text-body-sm mt-1">Be the first to post!</p>
           </div>
         )}
         <div className="divide-y divide-white/5">
@@ -669,23 +669,23 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       {isAnon ? (
-                        <span className="text-[11px] text-white/40 italic">anonymous</span>
+                        <span className="text-label-sm text-on-surface-subtle italic">anonymous</span>
                       ) : (
-                        <span className="text-[11px] text-white/70 font-medium inline-flex items-center gap-1"><AvatarCircle emoji={post.avatar} vignette={post.vignette} size={5} fallback={post.handle?.[0]?.toUpperCase()} />@{post.handle}</span>
+                        <span className="text-label-sm text-on-surface-variant font-medium inline-flex items-center gap-1"><AvatarCircle emoji={post.avatar} vignette={post.vignette} size={5} fallback={post.handle?.[0]?.toUpperCase()} />@{post.handle}</span>
                       )}
-                      <span className="text-[9px] text-white/25">{relativeTime(post.created_at)}</span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-white/30">
+                      <span className="text-caption text-on-surface-disabled">{relativeTime(post.created_at)}</span>
+                      <span className="text-caption px-1.5 py-0.5 rounded bg-surface-container text-on-surface-disabled">
                         {SECTION_MAP[post.section] || post.section}
                       </span>
                     </div>
-                    <div className="text-[11px] text-white/60 leading-relaxed break-words">
+                    <div className="text-label-sm text-on-surface-variant leading-relaxed break-words">
                       {renderMarkdown(post.text)}
                     </div>
                     {/* Comment toggle + actions row */}
                     <div className="flex items-center gap-3 mt-1.5">
                       <button
                         onClick={() => toggleComments(post.id)}
-                        className="text-[9px] text-white/25 hover:text-white/50 transition-colors flex items-center gap-1"
+                        className="text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors flex items-center gap-1"
                       >
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -695,7 +695,7 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                       {!isMine && !isAnon && canPost && (
                         <button
                           onClick={() => startThreadAction(post.id)}
-                          className="text-[9px] text-white/25 hover:text-white/50 transition-colors"
+                          className="text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
                         >
                           Message
                         </button>
@@ -710,7 +710,7 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                     {isMine && (
                       <button
                         onClick={() => remove(post.id)}
-                        className="text-[9px] px-2 py-1 rounded bg-white/5 text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="text-caption px-2 py-1 rounded bg-surface-container text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                       >
                         Delete
                       </button>
@@ -724,27 +724,27 @@ function BrowseView({ onNewPost, onOpenThreads }) {
       </div>
 
       {/* Bottom bar */}
-      <div className="flex-shrink-0 p-3 border-t border-white/8 flex items-center justify-between gap-2">
+      <div className="flex-shrink-0 p-3 border-t border-outline-variant flex items-center justify-between gap-2">
         {threads.length > 0 && (
           <button
             onClick={onOpenThreads}
-            className="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 text-white/50 hover:text-white/70 hover:bg-white/10 transition-colors flex items-center gap-1.5"
+            className="text-label-sm px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-subtle hover:text-on-surface-variant hover:bg-surface-container-high transition-colors flex items-center gap-1.5"
           >
             Threads
-            <span className="bg-blue-500/20 text-blue-400 text-[9px] px-1.5 py-0.5 rounded-full">{threads.length}</span>
+            <span className="bg-blue-500/20 text-blue-400 text-caption px-1.5 py-0.5 rounded-full">{threads.length}</span>
           </button>
         )}
         {canPost ? (
           <button
             onClick={onNewPost}
-            className="ml-auto text-[11px] px-3 py-1.5 rounded-lg bg-white/10 text-white/70 hover:text-white hover:bg-white/15 transition-colors"
+            className="ml-auto text-label-sm px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors"
           >
             + New Post
           </button>
         ) : (
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-[10px] text-white/25">{gateReason}</span>
-            <span className="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 text-white/20 cursor-default">
+            <span className="text-caption text-on-surface-disabled">{gateReason}</span>
+            <span className="text-label-sm px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-disabled cursor-default">
               + New Post
             </span>
           </div>
@@ -794,7 +794,7 @@ function NewPostView({ onBack }) {
         />
       )}
 
-      <button onClick={onBack} className="text-white/40 text-xs hover:text-white/60 transition-colors flex items-center gap-1">
+      <button onClick={onBack} className="text-on-surface-subtle text-body-sm hover:text-on-surface-variant transition-colors flex items-center gap-1">
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -802,14 +802,14 @@ function NewPostView({ onBack }) {
       </button>
 
       <div>
-        <label className="text-[10px] text-white/40 uppercase tracking-wider block mb-1.5">Section</label>
+        <label className="text-caption text-on-surface-subtle uppercase tracking-wider block mb-1.5">Section</label>
         <div className="flex flex-wrap gap-1.5">
           {SECTIONS.map(s => (
             <button
               key={s.id}
               onClick={() => setSection(s.id)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] transition-colors ${
-                section === s.id ? 'bg-white/15 text-white' : 'bg-white/5 text-white/40 hover:text-white/60'
+              className={`px-2.5 py-1 rounded-lg text-caption transition-colors ${
+                section === s.id ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
               }`}
             >
               {s.title}
@@ -820,17 +820,17 @@ function NewPostView({ onBack }) {
 
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="text-[10px] text-white/40 uppercase tracking-wider">Post</label>
+          <label className="text-caption text-on-surface-subtle uppercase tracking-wider">Post</label>
           <button
             onClick={() => setShowPreview(!showPreview)}
-            className="text-[10px] text-white/25 hover:text-white/50 transition-colors"
+            className="text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
           >
             {showPreview ? 'Edit' : 'Preview'}
           </button>
         </div>
         {showPreview ? (
-          <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 min-h-[5rem] text-[12px] text-white/60 leading-relaxed break-words">
-            {text.trim() ? renderMarkdown(text) : <span className="text-white/20">Nothing to preview</span>}
+          <div className="rounded-lg border border-outline-variant bg-surface-container px-3 py-2 min-h-[5rem] text-body-sm text-on-surface-variant leading-relaxed break-words">
+            {text.trim() ? renderMarkdown(text) : <span className="text-on-surface-disabled">Nothing to preview</span>}
           </div>
         ) : (
           <FormattedTextarea
@@ -844,7 +844,7 @@ function NewPostView({ onBack }) {
       <button
         onClick={handleSubmit}
         disabled={!section || !text.trim() || posting}
-        className="w-full py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="w-full py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         {posting ? 'Posting...' : 'Post'}
       </button>
@@ -858,8 +858,8 @@ function ThreadListView({ onBack, onOpenThread }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-shrink-0 px-3 py-2 border-b border-white/8">
-        <button onClick={onBack} className="text-white/40 text-xs hover:text-white/60 transition-colors flex items-center gap-1">
+      <div className="flex-shrink-0 px-3 py-2 border-b border-outline-variant">
+        <button onClick={onBack} className="text-on-surface-subtle text-body-sm hover:text-on-surface-variant transition-colors flex items-center gap-1">
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
@@ -870,7 +870,7 @@ function ThreadListView({ onBack, onOpenThread }) {
       <div className="flex-1 overflow-y-auto min-h-0">
         {threads.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-white/40 text-sm">No active threads</p>
+            <p className="text-on-surface-subtle text-body">No active threads</p>
           </div>
         )}
         <div className="divide-y divide-white/5">
@@ -878,14 +878,14 @@ function ThreadListView({ onBack, onOpenThread }) {
             <button
               key={thread.id}
               onClick={() => onOpenThread(thread.id)}
-              className="w-full px-3 py-3 text-left hover:bg-white/5 transition-colors"
+              className="w-full px-3 py-3 text-left hover:bg-surface-container transition-colors"
             >
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[11px] text-white/70 font-medium">@{thread.other_handle}</span>
-                <span className="text-[9px] text-white/25">{relativeTime(thread.last_message_at)}</span>
+                <span className="text-label-sm text-on-surface-variant font-medium">@{thread.other_handle}</span>
+                <span className="text-caption text-on-surface-disabled">{relativeTime(thread.last_message_at)}</span>
               </div>
               {thread.last_message && (
-                <p className="text-[10px] text-white/40 truncate">{thread.last_message}</p>
+                <p className="text-caption text-on-surface-subtle truncate">{thread.last_message}</p>
               )}
             </button>
           ))}
@@ -939,17 +939,17 @@ function ThreadDetailView({ onBack }) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 px-3 py-2 border-b border-white/8 flex items-center justify-between">
-        <button onClick={onBack} className="text-white/40 text-xs hover:text-white/60 transition-colors flex items-center gap-1">
+      <div className="flex-shrink-0 px-3 py-2 border-b border-outline-variant flex items-center justify-between">
+        <button onClick={onBack} className="text-on-surface-subtle text-body-sm hover:text-on-surface-variant transition-colors flex items-center gap-1">
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        <span className="text-[11px] text-white/60">@{thread?.other_handle || '...'}</span>
+        <span className="text-label-sm text-on-surface-variant">@{thread?.other_handle || '...'}</span>
         <button
           onClick={() => setConfirmClose(true)}
-          className="text-[9px] text-red-400/50 hover:text-red-400 transition-colors"
+          className="text-caption text-red-400/50 hover:text-red-400 transition-colors"
         >
           Close
         </button>
@@ -958,10 +958,10 @@ function ThreadDetailView({ onBack }) {
       {/* Confirm close */}
       {confirmClose && (
         <div className="px-3 py-2 bg-red-500/10 border-b border-red-500/20 flex items-center justify-between">
-          <p className="text-red-300 text-[10px]">This will permanently delete all messages.</p>
+          <p className="text-red-300 text-caption">This will permanently delete all messages.</p>
           <div className="flex gap-2">
-            <button onClick={() => setConfirmClose(false)} className="text-[10px] text-white/40 hover:text-white/60">Cancel</button>
-            <button onClick={handleClose} className="text-[10px] text-red-400 hover:text-red-300">Delete</button>
+            <button onClick={() => setConfirmClose(false)} className="text-caption text-on-surface-subtle hover:text-on-surface-variant">Cancel</button>
+            <button onClick={handleClose} className="text-caption text-red-400 hover:text-red-300">Delete</button>
           </div>
         </div>
       )}
@@ -969,17 +969,17 @@ function ThreadDetailView({ onBack }) {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 p-3 space-y-2">
         {messages.length === 0 && (
-          <p className="text-center text-white/30 text-xs py-4">Start the conversation</p>
+          <p className="text-center text-on-surface-disabled text-body-sm py-4">Start the conversation</p>
         )}
         {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.is_mine ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] px-3 py-1.5 rounded-xl text-[11px] leading-relaxed ${
+            <div className={`max-w-[80%] px-3 py-1.5 rounded-xl text-label-sm leading-relaxed ${
               msg.is_mine
-                ? 'bg-blue-500/20 text-white/80 rounded-br-sm'
-                : 'bg-white/8 text-white/70 rounded-bl-sm'
+                ? 'bg-blue-500/20 text-on-surface-medium rounded-br-sm'
+                : 'bg-surface-container-high text-on-surface-variant rounded-bl-sm'
             }`}>
               {msg.text}
-              <div className={`text-[8px] mt-0.5 ${msg.is_mine ? 'text-blue-300/30' : 'text-white/20'}`}>
+              <div className={`text-caption mt-0.5 ${msg.is_mine ? 'text-blue-300/30' : 'text-on-surface-disabled'}`}>
                 {relativeTime(msg.created_at)}
               </div>
             </div>
@@ -988,19 +988,19 @@ function ThreadDetailView({ onBack }) {
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 p-2 border-t border-white/8 flex gap-2">
+      <div className="flex-shrink-0 p-2 border-t border-outline-variant flex gap-2">
         <input
           type="text"
           value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[11px] text-white placeholder-white/25 focus:outline-none focus:border-white/20"
+          className="flex-1 input rounded-lg px-3 py-1.5 text-label-sm"
         />
         <button
           onClick={handleSend}
           disabled={!text.trim() || sending}
-          className="px-3 py-1.5 rounded-lg bg-white/10 text-white/60 text-[11px] hover:bg-white/15 transition-colors disabled:opacity-30"
+          className="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant text-label-sm hover:bg-surface-container-highest transition-colors disabled:opacity-30"
         >
           Send
         </button>
@@ -1040,15 +1040,17 @@ export default function BulletinModal() {
 
   return (
     <div
-      className="absolute top-3 left-3 right-3 bg-black/40 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden flex flex-col z-50"
+      role="dialog"
+      aria-modal="true"
+      className="absolute top-3 left-3 right-3 bg-surface-glass backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50"
       style={{
         fontFamily: 'ui-monospace, monospace',
         bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : 'calc(76px + 18px)',
       }}
     >
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-white/10 flex-shrink-0">
-        <h2 className="flex-1 text-sm font-medium text-white">Bulletin Board</h2>
+      <div className="flex items-center px-4 py-3 border-b border-outline-variant flex-shrink-0">
+        <h2 className="flex-1 text-body font-medium text-on-surface">Bulletin Board</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {
@@ -1059,7 +1061,7 @@ export default function BulletinModal() {
                 navigator.clipboard?.writeText(shareText).catch(() => {})
               }
             }}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors flex items-center justify-center"
+            className="w-8 h-8 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center"
             title="Share"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -1070,6 +1072,7 @@ export default function BulletinModal() {
             onClick={() => { useBulletin.getState().setModalOpen(false); useBulletin.setState({ activeThread: null, messages: [] }) }}
             className="w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
             title="Close"
+            aria-label="Close"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

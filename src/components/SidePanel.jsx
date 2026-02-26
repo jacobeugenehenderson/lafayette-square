@@ -164,14 +164,15 @@ function CollapsibleSection({ title, defaultOpen = false, bg = '', highlight = f
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className={`border-t border-white/5 ${bg}`}>
+    <div className={`border-t border-outline-variant ${bg}`}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2 hover:bg-surface-container transition-colors"
+        aria-expanded={open}
       >
-        <span className={`text-[10px] uppercase tracking-widest ${highlight ? 'text-white/60 font-semibold' : 'text-white/30'}`}>{title}</span>
+        <span className={`text-caption uppercase tracking-widest ${highlight ? 'text-on-surface-variant font-semibold' : 'text-on-surface-disabled'}`}>{title}</span>
         <svg
-          className={`w-3 h-3 text-white/20 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`w-3 h-3 text-on-surface-disabled transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -258,10 +259,10 @@ function AlmanacTab({ showAdmin = false }) {
   const headerTempF = displayWeather.temperatureF != null ? Math.round(displayWeather.temperatureF) : null
   const headerTempC = headerTempF != null ? Math.round((headerTempF - 32) * 5 / 9) : null
   const headerTemp = headerTempF != null ? (useCelsius ? headerTempC : headerTempF) : '--'
-  const headerTempColor = headerTempF == null ? 'text-white/40'
+  const headerTempColor = headerTempF == null ? 'text-on-surface-subtle'
     : headerTempF <= 32 ? 'text-blue-400'
     : headerTempF <= 55 ? 'text-sky-300'
-    : headerTempF <= 75 ? 'text-white/90'
+    : headerTempF <= 75 ? 'text-on-surface'
     : headerTempF <= 90 ? 'text-amber-400'
     : 'text-red-400'
 
@@ -276,7 +277,7 @@ function AlmanacTab({ showAdmin = false }) {
       <div className="flex-1 overflow-y-auto min-h-0">
 
       {/* ── Section 1: Time + Weather + Temp ── */}
-      <div className="px-4 py-3 border-b border-white/[0.06]">
+      <div className="px-4 py-3 border-b border-outline-variant">
         <div className="flex items-center justify-between">
           {/* Left: Clock + time */}
           <div
@@ -284,11 +285,11 @@ function AlmanacTab({ showAdmin = false }) {
             onClick={() => setUse24Hour(!use24Hour)}
             title="Click to toggle 12/24 hour format"
           >
-            <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+            <svg className="w-4 h-4 text-on-surface-subtle flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" strokeLinecap="round" />
             </svg>
-            <span className="text-2xl font-light text-white tracking-wider">
+            <span className="text-display font-light text-on-surface tracking-wider">
               {timeString}
             </span>
           </div>
@@ -300,7 +301,7 @@ function AlmanacTab({ showAdmin = false }) {
               isNight={isNight}
               size={36}
             />
-            <span className="text-xs text-white/50">{condition.label}</span>
+            <span className="text-body-sm text-on-surface-subtle">{condition.label}</span>
           </div>
 
           {/* Right: Thermometer + temp */}
@@ -309,21 +310,21 @@ function AlmanacTab({ showAdmin = false }) {
             onClick={() => setUseCelsius(!useCelsius)}
             title="Click to toggle °F / °C"
           >
-            <svg className="w-4 h-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+            <svg className="w-4 h-4 text-on-surface-subtle flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
               <path d="M14 14.76V3.5a2 2 0 0 0-4 0v11.26a4.5 4.5 0 1 0 4 0Z" strokeLinecap="round" />
             </svg>
-            <span className={`text-2xl font-light tracking-wide ${headerTempColor}`}>
+            <span className={`text-display font-light tracking-wide ${headerTempColor}`}>
               {headerTemp}&deg;{useCelsius ? 'C' : 'F'}
             </span>
           </div>
         </div>
-        <div className="text-xs text-white/40 mt-1 tracking-wide">
+        <div className="text-body-sm text-on-surface-subtle mt-1 tracking-wide">
           {dateString} &middot; Day {dayOfYear}
         </div>
       </div>
 
       {/* ── Section 2: Timeline slider ── */}
-      <div className="bg-white/[0.04] border-b border-white/[0.06]">
+      <div className="bg-surface-container border-b border-outline-variant">
         <WeatherTimeline
           currentTime={currentTime}
           isLive={isLive}
@@ -333,33 +334,33 @@ function AlmanacTab({ showAdmin = false }) {
       </div>
 
       {/* ── Section 3: Sun / Moon / Day ── */}
-      <div className="px-4 py-3 flex gap-4 border-b border-white/[0.06]">
+      <div className="px-4 py-3 flex gap-4 border-b border-outline-variant">
         <div className="flex-1">
-          <div className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Sun</div>
-          <div className="flex items-center gap-2 text-xs text-white/70">
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Sun</div>
+          <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
             <span className="text-amber-400">&uarr;</span>
             <span>{formatTimeShort(sunTimes.sunrise)}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-white/70">
+          <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
             <span className="text-orange-400">&darr;</span>
             <span>{formatTimeShort(sunTimes.sunset)}</span>
           </div>
         </div>
 
         <div className="flex-1">
-          <div className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Moon</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Moon</div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl leading-none">{moonPhase.icon}</span>
+            <span className="text-display leading-none">{moonPhase.icon}</span>
             <div>
-              <div className="text-xs text-white/70">{moonPhase.name}</div>
-              <div className="text-[10px] text-white/40">{Math.round(moonIllum.fraction * 100)}%</div>
+              <div className="text-body-sm text-on-surface-variant">{moonPhase.name}</div>
+              <div className="text-caption text-on-surface-subtle">{Math.round(moonIllum.fraction * 100)}%</div>
             </div>
           </div>
         </div>
 
         <div className="flex-1">
-          <div className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Day</div>
-          <div className="text-xs text-white/70">{dayH}h {dayM}m</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Day</div>
+          <div className="text-body-sm text-on-surface-variant">{dayH}h {dayM}m</div>
           {/* Day/night bar: midnight → dawn → dusk → midnight */}
           {(() => {
             const dawnMin = sunTimes.dawn.getHours() * 60 + sunTimes.dawn.getMinutes()
@@ -388,7 +389,7 @@ function AlmanacTab({ showAdmin = false }) {
             <svg className="w-4 h-4 text-amber-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
             </svg>
-            <span className="text-[10px] uppercase tracking-widest text-amber-300/80 font-semibold">Bulletin Board</span>
+            <span className="text-caption uppercase tracking-widest text-amber-300/80 font-semibold">Bulletin Board</span>
           </div>
           <svg className="w-3.5 h-3.5 text-amber-400/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -397,11 +398,11 @@ function AlmanacTab({ showAdmin = false }) {
       </div>
 
       {showAdmin && (
-        <CollapsibleSection title="Admin" defaultOpen={false} bg="bg-white/3">
+        <CollapsibleSection title="Admin" defaultOpen={false} bg="bg-surface-container">
           <div className="px-4 pb-3 space-y-3">
             <button
               onClick={() => openCodeDesk(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded bg-white/8 hover:bg-white/15 text-[10px] text-white/60 hover:text-white/80 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-caption text-on-surface-variant hover:text-on-surface transition-colors"
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -410,7 +411,7 @@ function AlmanacTab({ showAdmin = false }) {
             </button>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-white/50">
+                <span className="text-caption text-on-surface-subtle">
                   Storefront Simulation — Open: {sliderValue.toLocaleString()} of {TOTAL_BUILDINGS.toLocaleString()}
                 </span>
               </div>
@@ -435,7 +436,7 @@ function AlmanacTab({ showAdmin = false }) {
                     : 0
                   randomize(buildingIds.current, simPct)
                 }}
-                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                className="w-full h-1 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-cyan-500"
               />
               <div className="flex gap-2 mt-2">
                 <button
@@ -446,19 +447,19 @@ function AlmanacTab({ showAdmin = false }) {
                       : 0
                     randomize(buildingIds.current, simPct)
                   }}
-                  className="flex-1 text-[10px] px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
+                  className="flex-1 text-caption px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
                 >
                   Randomize
                 </button>
                 <button
                   onClick={() => { openAll(buildingIds.current); setSliderValue(TOTAL_BUILDINGS) }}
-                  className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+                  className="text-caption px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
                 >
                   All
                 </button>
                 <button
                   onClick={() => { closeAll(); setSliderValue(realOpenCount) }}
-                  className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+                  className="text-caption px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
                 >
                   Actual
                 </button>
@@ -538,16 +539,16 @@ function LafayetteSubsection({ section, color }) {
   }
 
   return (
-    <div className="border-l-2 border-white/5 ml-3">
+    <div className="border-l-2 border-outline-variant ml-3">
       <button
         onClick={handleToggleCategory}
         className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors duration-150 ${
-          isActive ? 'bg-white/10' : 'hover:bg-white/5'
+          isActive ? 'bg-surface-container-high' : 'hover:bg-surface-container'
         } cursor-pointer`}
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? colors.dot : 'bg-white/30'}`} />
-        <span className={`text-xs flex-1 ${isActive ? 'text-white' : 'text-white/80'}`}>{section.name}</span>
-        {places.length > 0 && <span className="text-[10px] text-white/40">{places.length}</span>}
+        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? colors.dot : 'bg-on-surface-disabled'}`} />
+        <span className={`text-body-sm flex-1 ${isActive ? 'text-on-surface' : 'text-on-surface-medium'}`}>{section.name}</span>
+        {places.length > 0 && <span className="text-caption text-on-surface-subtle">{places.length}</span>}
       </button>
 
       {(isActive || places.some(b => b.id === selectedListingId)) && places.length > 0 && (
@@ -559,11 +560,11 @@ function LafayetteSubsection({ section, color }) {
                 key={biz.id}
                 onClick={() => handleSelectPlace(biz)}
                 className={`w-full flex items-center gap-2 px-3 py-1 text-left transition-colors duration-150 rounded ${
-                  isFocused ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+                  isFocused ? 'bg-surface-container-highest text-on-surface' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
                 } cursor-pointer`}
               >
-                <span className={`w-1 h-1 rounded-full ${isFocused ? colors.dot : 'bg-white/20'}`} />
-                <span className="text-[11px] truncate">{biz.name}</span>
+                <span className={`w-1 h-1 rounded-full ${isFocused ? colors.dot : 'bg-on-surface-disabled'}`} />
+                <span className="text-label-sm truncate">{biz.name}</span>
               </button>
             )
           })}
@@ -584,16 +585,17 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
   }, [category, listings])
 
   return (
-    <div className={`border ${colors.border} rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? colors.activeBg : 'bg-white/5'}`}>
+    <div className={`border ${colors.border} rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? colors.activeBg : 'bg-surface-container'}`}>
       <button
         onClick={onToggle}
+        aria-expanded={isExpanded}
         className={`w-full flex items-center gap-3 p-3 text-left transition-colors duration-150 ${colors.hover}`}
       >
         <div className="flex-1 min-w-0">
-          <div className={`text-xs font-medium ${colors.text}`}>{category.title}</div>
+          <div className={`text-body-sm font-medium ${colors.text}`}>{category.title}</div>
         </div>
-        {totalCount > 0 && <span className="text-[10px] text-white/30">{totalCount}</span>}
-        <div className="text-white/40">
+        {totalCount > 0 && <span className="text-caption text-on-surface-disabled">{totalCount}</span>}
+        <div className="text-on-surface-subtle">
           <ChevronIcon expanded={isExpanded} />
         </div>
       </button>
@@ -633,12 +635,12 @@ function LafayettePagesTab() {
           ))}
         </div>
       </div>
-      <div className="px-4 py-2 border-t border-white/5 flex items-center justify-between">
-        <span className="text-[10px] text-white/30">{listings.length} verified listings</span>
+      <div className="px-4 py-2 border-t border-outline-variant flex items-center justify-between">
+        <span className="text-caption text-on-surface-disabled">{listings.length} verified listings</span>
         {hasActiveTags && (
           <button
             onClick={clearTags}
-            className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+            className="text-caption px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
           >
             Clear
           </button>
@@ -699,8 +701,8 @@ function AddressSearch() {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 px-3 py-2 mx-2 mt-2 mb-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/15">
-        <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="flex items-center gap-2 px-3 py-2 mx-2 mt-2 mb-1 rounded-xl bg-surface-container-high backdrop-blur-md border border-outline">
+        <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <circle cx="11" cy="11" r="8" />
           <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
         </svg>
@@ -713,25 +715,25 @@ function AddressSearch() {
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           onKeyDown={handleKeyDown}
           placeholder="Search address or building ID..."
-          className="flex-1 bg-transparent text-[11px] text-white/80 placeholder-white/25 outline-none"
+          className="flex-1 bg-transparent text-label-sm text-on-surface placeholder-on-surface-disabled outline-none"
         />
         {query && (
-          <button onClick={() => setQuery('')} className="text-white/30 hover:text-white/60 text-xs">
+          <button onClick={() => setQuery('')} className="text-on-surface-disabled hover:text-on-surface-variant text-body-sm">
             &times;
           </button>
         )}
       </div>
       {showDropdown && (
-        <div className="absolute left-0 right-0 bottom-full mb-px bg-black/80 backdrop-blur-xl rounded-t-lg border border-white/15 overflow-hidden z-50">
+        <div className="absolute left-0 right-0 bottom-full mb-px bg-surface backdrop-blur-xl rounded-t-lg border border-outline overflow-hidden z-50">
           {results.map((entry) => (
             <button
               key={entry.id}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => selectBuilding(entry)}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-left hover:bg-white/10 transition-colors"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-left hover:bg-surface-container-high transition-colors"
             >
-              <span className="text-[11px] text-white/70 truncate">{entry.address || entry.id}</span>
-              <span className="text-[9px] text-white/30 flex-shrink-0 ml-2">{entry.id}</span>
+              <span className="text-label-sm text-on-surface-variant truncate">{entry.address || entry.id}</span>
+              <span className="text-caption text-on-surface-disabled flex-shrink-0 ml-2">{entry.id}</span>
             </button>
           ))}
         </div>
@@ -832,7 +834,8 @@ function SidePanel() {
       )}
 
       {/* ── Glass tab bar ── */}
-      <div
+      <nav
+        aria-label="Side panel tabs"
         className="relative flex flex-shrink-0 cursor-grab active:cursor-grabbing"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -841,6 +844,8 @@ function SidePanel() {
         {TABS.map((tab) => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
             onClick={() => {
               if (collapsed) {
                 setActiveTab(tab.id)
@@ -851,10 +856,10 @@ function SidePanel() {
                 setActiveTab(tab.id)
               }
             }}
-            className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs transition-all duration-200 ${
+            className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-body-sm transition-all duration-200 ${
               activeTab === tab.id
-                ? 'text-white'
-                : 'text-white/30 hover:text-white/50'
+                ? 'text-on-surface'
+                : 'text-on-surface-disabled hover:text-on-surface-subtle'
             }`}
             style={activeTab === tab.id ? {
               background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)',
@@ -862,27 +867,27 @@ function SidePanel() {
               background: 'rgba(0,0,0,0.15)',
             }}
           >
-            <span className="text-sm">{tab.icon}</span>
+            <span className="text-body">{tab.icon}</span>
             <span className="font-medium tracking-wide">{tab.label}</span>
             {/* Sharp active indicator line */}
             {activeTab === tab.id && (
-              <div className="absolute bottom-0 inset-x-0 h-[2px] bg-white/70" />
+              <div className="absolute bottom-0 inset-x-0 h-[2px] bg-on-surface-variant" />
             )}
           </button>
         ))}
-      </div>
+      </nav>
 
       {/* ── Content body — hidden when collapsed ── */}
       {!collapsed && (
-        <div className="flex-1 min-h-0 overflow-hidden bg-black/55">
+        <div className="flex-1 min-h-0 overflow-hidden bg-surface-dim">
           {activeTab === 'almanac' && <AlmanacTab showAdmin={showAdmin} />}
           {activeTab === 'lafayettepages' && <LafayettePagesTab />}
         </div>
       )}
 
       {/* ── Demographics footer — always visible, always dark ── */}
-      <div className="flex-shrink-0 px-4 py-1.5 text-[10px] tracking-wide flex items-center justify-between bg-black/80 border-t border-white/[0.06]">
-        <div className="flex flex-wrap items-center gap-x-1 text-white/30">
+      <div className="flex-shrink-0 px-4 py-1.5 text-caption tracking-wide flex items-center justify-between bg-surface border-t border-outline-variant">
+        <div className="flex flex-wrap items-center gap-x-1 text-on-surface-disabled">
           <span>2,164 residents</span>
           <span>&middot;</span>
           <span>{buildingsData.buildings.length.toLocaleString()} buildings</span>

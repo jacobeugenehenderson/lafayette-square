@@ -157,9 +157,9 @@ export default function EventTicker() {
             <div className="flex-1 min-w-0 relative h-5 overflow-hidden">
               {events.length <= 1 ? (
                 <div className="absolute inset-0 flex items-center gap-2">
-                  <span className="text-[11px] text-white/70 tracking-wide truncate">{current?.title}</span>
+                  <span className="text-label-sm text-on-surface-variant tracking-wide truncate">{current?.title}</span>
                   {current?._venueName && (
-                    <span className="text-[10px] text-white/35 truncate flex-shrink-0">
+                    <span className="text-caption text-on-surface-subtle truncate flex-shrink-0">
                       {current._venueName}
                     </span>
                   )}
@@ -174,9 +174,9 @@ export default function EventTicker() {
                       transition: 'opacity 600ms ease, transform 600ms ease',
                     }}
                   >
-                    <span className="text-[11px] text-white/70 tracking-wide truncate">{current?.title}</span>
+                    <span className="text-label-sm text-on-surface-variant tracking-wide truncate">{current?.title}</span>
                     {current?._venueName && (
-                      <span className="text-[10px] text-white/35 truncate flex-shrink-0">
+                      <span className="text-caption text-on-surface-subtle truncate flex-shrink-0">
                         {current._venueName}
                       </span>
                     )}
@@ -193,9 +193,9 @@ export default function EventTicker() {
                       const next = events[(displayIndex + 1) % events.length]
                       return (
                         <>
-                          <span className="text-[11px] text-white/70 tracking-wide truncate">{next?.title}</span>
+                          <span className="text-label-sm text-on-surface-variant tracking-wide truncate">{next?.title}</span>
                           {next?._venueName && (
-                            <span className="text-[10px] text-white/35 truncate flex-shrink-0">
+                            <span className="text-caption text-on-surface-subtle truncate flex-shrink-0">
                               {next._venueName}
                             </span>
                           )}

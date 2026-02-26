@@ -28,7 +28,7 @@ function LiveButton() {
     <button
       onClick={() => useTimeOfDay.getState().returnToLive()}
       className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
-      title="Return to live time"
+      aria-label="Return to live time"
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
         <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
@@ -124,28 +124,28 @@ function AccountButton() {
       <button
         onClick={() => setOpen(!open)}
         className={`w-9 h-9 rounded-full transition-all duration-200 flex items-center justify-center ${
-          avatar ? '' : 'backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20'
+          avatar ? '' : 'backdrop-blur-md bg-surface-container-high border border-outline hover:bg-surface-container-highest'
         }`}
-        title={handle ? `@${handle}` : 'Account'}
+        aria-label={handle ? `@${handle}` : 'Account'}
       >
         <AvatarCircle emoji={avatar} vignette={vignette} size={9} fallback={handle ? handle[0].toUpperCase() : null} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 w-56 rounded-xl bg-black/80 backdrop-blur-xl border border-white/15 p-3 space-y-3 shadow-2xl">
+        <div className="absolute right-0 top-11 w-56 rounded-xl bg-surface backdrop-blur-xl border border-outline p-3 space-y-3 shadow-2xl">
           {handle ? (
             <>
               <div className="text-center">
                 <div className="flex justify-center mb-1">
                   <AvatarCircle emoji={avatar} vignette={vignette} size={12} fallback={handle[0].toUpperCase()} />
                 </div>
-                <p className="text-white/70 text-xs font-medium">@{handle}</p>
+                <p className="text-on-surface-variant text-body-sm font-medium">@{handle}</p>
               </div>
 
-              <div className="border-t border-white/10 pt-3">
+              <div className="border-t border-outline-variant pt-3">
                 <button
                   onClick={() => { setOpen(false); setEditorOpen(true) }}
-                  className="w-full py-2 rounded-lg text-xs font-medium bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80 transition-colors"
+                  className="w-full py-2 rounded-lg text-body-sm font-medium bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors"
                 >
                   Edit avatar
                 </button>
@@ -155,21 +155,21 @@ function AccountButton() {
             <div className="text-center py-2 space-y-2">
               {linkStatus === 'expired' ? (
                 <>
-                  <p className="text-white/40 text-xs">Code expired</p>
+                  <p className="text-on-surface-subtle text-body-sm">Code expired</p>
                   <button
                     onClick={() => setLinkRefresh(n => n + 1)}
-                    className="text-xs text-white/60 underline hover:text-white/80"
+                    className="text-body-sm text-on-surface-variant underline hover:text-on-surface"
                   >
                     Generate new code
                   </button>
                 </>
               ) : linkQr ? (
                 <>
-                  <p className="text-white/40 text-[10px] mb-1">Scan from your signed-in device</p>
+                  <p className="text-on-surface-subtle text-caption mb-1">Scan from your signed-in device</p>
                   <img src={linkQr} alt="Link QR" className="w-36 h-36 mx-auto rounded-lg" />
                 </>
               ) : (
-                <p className="text-white/30 text-xs">Loading...</p>
+                <p className="text-on-surface-disabled text-body-sm">Loading...</p>
               )}
             </div>
           )}
@@ -208,7 +208,7 @@ function ModeOverlay() {
       <button
         onClick={() => useCamera.getState().exitPlanetarium()}
         className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
-        title="Exit street view"
+        aria-label="Exit street view"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
           <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -223,8 +223,8 @@ function ModeOverlay() {
   return (
     <button
       onClick={() => useCamera.getState().goHero()}
-      className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 transition-all duration-200 flex items-center justify-center hover:bg-white/20 hover:text-white/80"
-      title="Return to hero view"
+      className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-surface-container-high border border-outline text-on-surface-variant transition-all duration-200 flex items-center justify-center hover:bg-surface-container-highest hover:text-on-surface"
+      aria-label="Return to hero view"
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
