@@ -720,6 +720,38 @@ function OverviewTab({ listing, building, isGuardian }) {
           )}
         </div>
       )}
+
+      {/* Action links: reservations, menu */}
+      {(listing?.reservation_url || listing?.menu_url) && (
+        <div className="flex gap-2 mt-1">
+          {listing.reservation_url && (
+            <a
+              href={listing.reservation_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Reservations
+            </a>
+          )}
+          {listing.menu_url && (
+            <a
+              href={listing.menu_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              Menu
+            </a>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -1125,26 +1157,116 @@ function AssessmentTab({ building }) {
 }
 
 // ─── Tab: Photos ─────────────────────────────────────────────────────
+// Photo entries can be strings ("/photos/foo.jpg") or objects ({ url, credit, credit_url })
+function normalizePhoto(entry) {
+  if (typeof entry === 'string') return { url: entry, credit: null, credit_url: null }
+  return { url: entry.url, credit: entry.credit || null, credit_url: entry.credit_url || null }
+}
+
+function PhotoCredit({ credit, credit_url, className = '' }) {
+  if (!credit) return null
+  if (credit_url) {
+    return (
+      <a href={credit_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+        className={`text-white/50 hover:text-white/70 underline decoration-white/20 hover:decoration-white/40 transition-colors ${className}`}
+      >{credit}</a>
+    )
+  }
+  return <span className={`text-white/40 ${className}`}>{credit}</span>
+}
+
 function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
-  const allPhotos = photos || (facadeImage ? [facadeImage.thumb_2048 || facadeImage.thumb_1024] : [])
+  const rawPhotos = photos || (facadeImage ? [facadeImage.thumb_2048 || facadeImage.thumb_1024] : [])
+  const allPhotos = rawPhotos.map(normalizePhoto)
+  const [lightbox, setLightbox] = useState(null)
 
   const hasFacade = !!facadeInfo?.photo
-  const hasAny = allPhotos.length > 0 || hasFacade
+  // Build combined list for lightbox navigation (includes facade at end)
+  const lightboxEntries = [...allPhotos, ...(hasFacade ? [{ url: facadeInfo.photo, credit: 'w_lemay / Wikimedia Commons', credit_url: null }] : [])]
+  const hasAny = lightboxEntries.length > 0
+
+  const openLightbox = (idx) => setLightbox(idx)
+  const closeLightbox = () => setLightbox(null)
+  const prev = () => setLightbox(i => (i > 0 ? i - 1 : lightboxEntries.length - 1))
+  const next = () => setLightbox(i => (i < lightboxEntries.length - 1 ? i + 1 : 0))
+
+  // Swipe support for lightbox
+  const touchStart = React.useRef(null)
+  const handleTouchStart = (e) => { touchStart.current = e.touches[0].clientX }
+  const handleTouchEnd = (e) => {
+    if (touchStart.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStart.current
+    touchStart.current = null
+    if (Math.abs(dx) > 50) dx > 0 ? prev() : next()
+  }
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (lightbox === null) return
+    const handleKey = (e) => {
+      if (e.key === 'Escape') closeLightbox()
+      else if (e.key === 'ArrowLeft') prev()
+      else if (e.key === 'ArrowRight') next()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [lightbox])
+
+  const hero = allPhotos[0]
+  const grid = allPhotos.slice(1)
 
   return (
-    <div className="space-y-3">
-      {/* Photo display */}
-      {allPhotos.map((url, i) => (
-        <img key={i} src={assetUrl(url)} alt={`${name} ${i + 1}`} className="w-full rounded-lg" loading="lazy" />
-      ))}
+    <div className="space-y-2">
+      {/* Hero photo */}
+      {hero && (
+        <button onClick={() => openLightbox(0)} className="w-full block relative group rounded-lg overflow-hidden">
+          <img src={assetUrl(hero.url)} alt={`${name} 1`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+          <span className="absolute bottom-2 right-2 flex items-center gap-2">
+            {hero.credit && (
+              <span className="px-2 py-0.5 rounded-md bg-black/50 text-white/60 text-xs backdrop-blur-sm">
+                <PhotoCredit credit={hero.credit} credit_url={hero.credit_url} />
+              </span>
+            )}
+            {lightboxEntries.length > 1 && (
+              <span className="px-2 py-0.5 rounded-md bg-black/50 text-white/80 text-xs backdrop-blur-sm">
+                1 / {lightboxEntries.length}
+              </span>
+            )}
+          </span>
+        </button>
+      )}
 
+      {/* Grid of remaining photos */}
+      {grid.length > 0 && (
+        <div className="grid grid-cols-2 gap-1.5">
+          {grid.map((photo, i) => (
+            <button key={i} onClick={() => openLightbox(i + 1)} className="relative group rounded-lg overflow-hidden">
+              <img src={assetUrl(photo.url)} alt={`${name} ${i + 2}`} className="w-full aspect-square object-cover" loading="lazy" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+              {photo.credit && (
+                <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white/50 text-[10px] backdrop-blur-sm">
+                  <PhotoCredit credit={photo.credit} credit_url={photo.credit_url} />
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Facade photo */}
       {hasFacade && (
         <div>
-          <img src={assetUrl(facadeInfo.photo)} alt={`${name} facade`} className="w-full rounded-lg" loading="lazy" />
+          <button onClick={() => openLightbox(allPhotos.length)} className="w-full block relative group rounded-lg overflow-hidden">
+            <img src={assetUrl(facadeInfo.photo)} alt={`${name} facade`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white/50 text-[10px] backdrop-blur-sm">
+              w_lemay / Wikimedia Commons
+            </span>
+          </button>
           {facadeInfo.description && (
             <p className="text-white/50 text-xs mt-1.5 leading-relaxed">{facadeInfo.description}</p>
           )}
-          <p className="text-white/30 text-xs mt-1">Photo: w_lemay / Wikimedia Commons (CC BY-SA 2.0)</p>
         </div>
       )}
 
@@ -1157,6 +1279,52 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
       {!photos && !hasFacade && facadeImage && (
         <p className="text-white/40 text-xs text-center">Street view - Mapillary</p>
       )}
+
+      {/* Lightbox overlay */}
+      {lightbox !== null && (() => {
+        const entry = lightboxEntries[lightbox]
+        return (
+          <div
+            className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
+            onClick={closeLightbox}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <img
+              src={assetUrl(entry.url)}
+              alt={`${name} ${lightbox + 1}`}
+              className="max-w-full max-h-[85vh] object-contain select-none"
+              onClick={(e) => e.stopPropagation()}
+            />
+            {/* Counter + credit */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-black/50 text-white/70 text-xs backdrop-blur-sm">
+                {lightbox + 1} / {lightboxEntries.length}
+              </span>
+              {entry.credit && (
+                <span className="px-3 py-1 rounded-full bg-black/50 text-xs backdrop-blur-sm">
+                  <PhotoCredit credit={entry.credit} credit_url={entry.credit_url} />
+                </span>
+              )}
+            </div>
+            {/* Close */}
+            <button onClick={closeLightbox} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            {/* Prev / Next */}
+            {lightboxEntries.length > 1 && (
+              <>
+                <button onClick={(e) => { e.stopPropagation(); prev() }} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); next() }} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }

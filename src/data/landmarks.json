@@ -522,6 +522,8 @@
         }
       ],
       "description": "A restaurant, bar & gathering place in the heart of Lafayette Square. Eclectic contemporary American fare with a celebrated weekend brunch. Owned by Brian Schmitz and Jonathan Schoen, with Executive Chef Eliott Harris at the helm.",
+      "reservation_url": "https://www.exploretock.com/politesociety",
+      "menu_url": "https://www.politesocietystl.com/menu",
       "tags": [
         "reservations",
         "outdoor-seating",
@@ -1975,7 +1977,17 @@
       "photos": [
         "/photos/bellwether/01.jpeg",
         "/photos/bellwether/02.jpeg",
-        "/photos/bellwether/03.jpeg"
+        "/photos/bellwether/03.jpeg",
+        { "url": "/photos/bellwether/04.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
+        { "url": "/photos/bellwether/05.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
+        "/photos/bellwether/06.jpeg",
+        "/photos/bellwether/07.jpeg",
+        { "url": "/photos/bellwether/08.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
+        { "url": "/photos/bellwether/09.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
+        { "url": "/photos/bellwether/10.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
+        { "url": "/photos/bellwether/11.webp", "credit": "Sauce Magazine", "credit_url": "https://www.saucemagazine.com/places/review-the-bellwether-in-st-louis-17341636" },
+        { "url": "/photos/bellwether/12.jpeg", "credit": "Kevin A. Roberts / STL Mag" },
+        { "url": "/photos/bellwether/13.jpeg", "credit": "Kevin A. Roberts / STL Mag" }
       ],
       "amenities": [
         "Rooftop patio",
@@ -2011,6 +2023,9 @@
           "event": "The Bellwether opens May 31 in the former Element space on floors 2–3. Created by the Polite Society team: Brian Schmitz, Jonathan Schoen, and chef Thomas Futrell."
         }
       ],
+      "description": "A rooftop restaurant and cocktail bar by Be Polite Hospitality (Brian Schmitz & Jonathan Schoen) inside the 1937 City Hospital Power Plant. Executive Chef Thomas Futrell's seasonal American menu pairs with literary-themed cocktails named after novels. The Reference Room on the third floor offers private dining for up to 30 guests. Happy hour runs Tue–Fri 5–6 PM.",
+      "reservation_url": "https://www.exploretock.com/the-bellwether-st-louis",
+      "menu_url": "https://www.thebellwetherstl.com/menu",
       "tags": [
         "cocktails",
         "brunch",
