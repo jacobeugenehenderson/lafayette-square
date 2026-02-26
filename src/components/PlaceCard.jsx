@@ -1222,18 +1222,11 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
         <button onClick={() => openLightbox(0)} className="w-full block relative group rounded-lg overflow-hidden">
           <img src={assetUrl(hero.url)} alt={`${name} 1`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-          <span className="absolute bottom-2 right-2 flex items-center gap-2">
-            {hero.credit && (
-              <span className="px-2 py-0.5 rounded-md bg-black/50 text-white/60 text-xs backdrop-blur-sm">
-                <PhotoCredit credit={hero.credit} credit_url={hero.credit_url} />
-              </span>
-            )}
-            {lightboxEntries.length > 1 && (
-              <span className="px-2 py-0.5 rounded-md bg-black/50 text-white/80 text-xs backdrop-blur-sm">
-                1 / {lightboxEntries.length}
-              </span>
-            )}
-          </span>
+          {lightboxEntries.length > 1 && (
+            <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/50 text-white/80 text-xs backdrop-blur-sm">
+              1 / {lightboxEntries.length}
+            </span>
+          )}
         </button>
       )}
 
@@ -1244,11 +1237,6 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
             <button key={i} onClick={() => openLightbox(i + 1)} className="relative group rounded-lg overflow-hidden">
               <img src={assetUrl(photo.url)} alt={`${name} ${i + 2}`} className="w-full aspect-square object-cover" loading="lazy" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-              {photo.credit && (
-                <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white/50 text-[10px] backdrop-blur-sm">
-                  <PhotoCredit credit={photo.credit} credit_url={photo.credit_url} />
-                </span>
-              )}
             </button>
           ))}
         </div>
@@ -1260,9 +1248,6 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
           <button onClick={() => openLightbox(allPhotos.length)} className="w-full block relative group rounded-lg overflow-hidden">
             <img src={assetUrl(facadeInfo.photo)} alt={`${name} facade`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white/50 text-[10px] backdrop-blur-sm">
-              w_lemay / Wikimedia Commons
-            </span>
           </button>
           {facadeInfo.description && (
             <p className="text-white/50 text-xs mt-1.5 leading-relaxed">{facadeInfo.description}</p>
@@ -1296,17 +1281,16 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
               className="max-w-full max-h-[85vh] object-contain select-none"
               onClick={(e) => e.stopPropagation()}
             />
-            {/* Counter + credit */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-black/50 text-white/70 text-xs backdrop-blur-sm">
-                {lightbox + 1} / {lightboxEntries.length}
-              </span>
-              {entry.credit && (
-                <span className="px-3 py-1 rounded-full bg-black/50 text-xs backdrop-blur-sm">
-                  <PhotoCredit credit={entry.credit} credit_url={entry.credit_url} />
-                </span>
-              )}
-            </div>
+            {/* Counter */}
+            <span className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/50 text-white/70 text-xs backdrop-blur-sm">
+              {lightbox + 1} / {lightboxEntries.length}
+            </span>
+            {/* Credit at bottom */}
+            {entry.credit && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/50 text-xs backdrop-blur-sm" onClick={e => e.stopPropagation()}>
+                <PhotoCredit credit={entry.credit} credit_url={entry.credit_url} />
+              </div>
+            )}
             {/* Close */}
             <button onClick={closeLightbox} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
