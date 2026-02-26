@@ -18,6 +18,10 @@
     <meta name="twitter:title" content="Lafayette Square" />
     <meta name="twitter:image" content="https://jacobhenderson.studio/lafayette-square/photos/og-preview.jpg" />
     <script>
+      // Apply accessible class before first paint to avoid CSS repaint spike
+      try { if (localStorage.getItem('lsq-accessible') === '1') document.documentElement.classList.add('accessible') } catch(e) {}
+    </script>
+    <script>
       // SPA path restoration for GitHub Pages 404.html redirect
       (function () {
         var sp = new URLSearchParams(location.search);

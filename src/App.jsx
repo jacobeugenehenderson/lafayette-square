@@ -56,10 +56,8 @@ function AccountButton() {
   })
   const popoverRef = useRef(null)
 
-  // Restore accessible class on mount
-  useEffect(() => {
-    document.documentElement.classList.toggle('accessible', accessible)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Accessible class is applied synchronously in index.html <script> to
+  // avoid a post-mount CSS repaint that spikes GPU memory on mobile.
 
   // Link-device state
   const [linkToken, setLinkToken] = useState(null)
