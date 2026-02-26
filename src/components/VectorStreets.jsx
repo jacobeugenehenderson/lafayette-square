@@ -66,7 +66,7 @@ const SVG_WORLD_Z = -1156.1
 // SidePanel backdrop-blur creates additional compositing layers during
 // category clicks that compete for the same GPU memory.
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-const MAX_GPU_PIXELS = IS_MOBILE ? 80_000_000 : 200_000_000
+const MAX_GPU_PIXELS = IS_MOBILE ? 60_000_000 : 200_000_000
 const DPR = Math.min(window.devicePixelRatio || 1, 3)
 
 // Apply the same ACES filmic tone mapping + sRGB gamma that the WebGL canvas

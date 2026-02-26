@@ -54,15 +54,16 @@ export default {
         'label-sm': 'var(--type-label-sm)',
         'caption':  'var(--type-caption)',
       },
+      // borderRadius: static values (not CSS vars) to avoid extra compositing
+      // layers on mobile. Values match design.css tokens but are inlined.
       borderRadius: {
-        'sm':   'var(--radius-sm)',
-        'md':   'var(--radius-md)',
-        'lg':   'var(--radius-lg)',
-        'xl':   'var(--radius-xl)',
-        '2xl':  'var(--radius-2xl)',
-        'full': 'var(--radius-full)',
+        'sm':   '6px',
+        'md':   '8px',
+        'lg':   '12px',
+        'xl':   '16px',
+        '2xl':  '24px',
+        'full': '9999px',
       },
-      // blur/backdropBlur: use Tailwind defaults (CSS vars in backdrop-filter can crash Safari)
     },
   },
   plugins: [],
