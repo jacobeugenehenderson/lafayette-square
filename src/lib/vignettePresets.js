@@ -1,16 +1,16 @@
 /**
  * Vignette presets — 4 compositions using the 3 colors extracted from an emoji.
  * Each returns a style object { background, boxShadow, borderColor } for
- * dimensional, layered rendering — not flat discs.
+ * dimensional, layered rendering.
  *
- * Colors arrive as [light, mid, dark] from extractEmojiColorsSync.
+ * Colors arrive as [light, mid, dark] from extractEmojiColors.
  *
  * v0 "Decorator"  — Refined interplay of all 3, subtle banded depth
  * v1 "Soft"       — Desaturated, pastel, airy glow
  * v2 "Vivid"      — Saturated, rich, jewel-like with contrasting band
  * v3 "Bold"       — Near-black base, neon accent ring from the palette
  */
-import { extractEmojiColors, extractEmojiColorsSync } from './emojiColor'
+import { extractEmojiColors } from './emojiColor'
 
 export const PRESET_IDS = ['v0', 'v1', 'v2', 'v3']
 
@@ -30,7 +30,6 @@ function hsla(h, s, l, a) {
 
 /**
  * v0 "Decorator" — All 3 colors in a harmonious radial with a mid-tone band.
- * Refined, warm, balanced.
  */
 function decorator([light, mid, dark]) {
   const center = hsl(light.h, light.s * 0.7, Math.min(light.l, 72))
@@ -46,7 +45,7 @@ function decorator([light, mid, dark]) {
 /**
  * v1 "Soft" — Pastel, airy. Colors desaturated and lifted, gentle inner glow.
  */
-function soft([light, mid, dark]) {
+function soft([light, mid]) {
   const center = hsl(light.h, light.s * 0.4, Math.min(light.l + 15, 85))
   const outer = hsl(mid.h, mid.s * 0.45, Math.min(mid.l + 5, 60))
   return {
@@ -57,8 +56,7 @@ function soft([light, mid, dark]) {
 }
 
 /**
- * v2 "Vivid" — Saturated, rich. Colors pumped up with a contrasting inner band.
- * Jewel-like depth.
+ * v2 "Vivid" — Saturated, rich. Jewel-like with a contrasting inner band.
  */
 function vivid([light, mid, dark]) {
   const center = hsl(light.h, Math.max(light.s, 55), Math.min(light.l, 60))
@@ -71,11 +69,9 @@ function vivid([light, mid, dark]) {
 }
 
 /**
- * v3 "Bold" — Near-black base. A neon-ized accent from the palette glows
- * as an inner ring. Dramatic, high-contrast.
+ * v3 "Bold" — Near-black base, neon accent ring from the most saturated color.
  */
 function bold([light, mid, dark]) {
-  // Pick the most saturated color for the neon accent
   const accent = [light, mid, dark].reduce((a, b) => b.s > a.s ? b : a)
   const neon = hsl(accent.h, Math.min(accent.s * 1.3, 100), Math.min(accent.l + 15, 65))
   const neonGlow = hsla(accent.h, Math.min(accent.s * 1.3, 100), Math.min(accent.l + 15, 65), 0.4)
@@ -92,11 +88,10 @@ const generators = { v0: decorator, v1: soft, v2: vivid, v3: bold }
 
 /**
  * Get full vignette style object for an emoji + preset.
- * Returns { background, boxShadow, borderColor }.
  */
 export function getVignetteStyle(emoji, presetId) {
   if (!emoji || !presetId || !generators[presetId]) return null
-  const colors = extractEmojiColorsSync(emoji)
+  const colors = extractEmojiColors(emoji)
   return generators[presetId](colors)
 }
 
@@ -105,14 +100,6 @@ export function getVignetteStyle(emoji, presetId) {
  */
 export function getVignetteSwatches(emoji) {
   if (!emoji) return PRESET_IDS.map(id => ({ id, style: null }))
-  const colors = extractEmojiColorsSync(emoji)
+  const colors = extractEmojiColors(emoji)
   return PRESET_IDS.map(id => ({ id, style: generators[id](colors) }))
-}
-
-/**
- * Warm up the color cache for an emoji (async).
- * @returns {Promise<[{h,s,l},{h,s,l},{h,s,l}]>}
- */
-export async function warmUpEmojiColor(emoji) {
-  return extractEmojiColors(emoji)
 }

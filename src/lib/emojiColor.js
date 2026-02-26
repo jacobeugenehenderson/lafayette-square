@@ -1,14 +1,14 @@
 /**
  * Extract top 3 color clusters from an emoji.
  *
- * Uses SVG foreignObject → canvas drawImage to get color emoji pixels
- * (plain fillText renders monochrome on Apple platforms).
+ * Uses canvas fillText + getImageData. Works on Chrome (color emoji).
+ * On platforms where emoji render monochrome to canvas (Safari),
+ * falls back to a hue derived from the emoji's codepoint.
  *
- * Returns a promise of 3 HSL colors sorted lightest → darkest.
+ * Returns 3 HSL colors sorted lightest → darkest.
  */
 
 const cache = new Map()
-const pending = new Map()
 
 // Neutral fallback palette
 const NEUTRAL = [
@@ -31,40 +31,49 @@ function rgbToHsl(r, g, b) {
   return { h: h * 360, s: s * 100, l: l * 100 }
 }
 
-function renderEmojiToCanvas(emoji, size) {
-  return new Promise((resolve) => {
-    const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-        <foreignObject width="${size}" height="${size}">
-          <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:${size - 8}px;line-height:${size}px;text-align:center;width:${size}px;height:${size}px;">${emoji}</div>
-        </foreignObject>
-      </svg>`
-    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = size
-      canvas.height = size
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(img, 0, 0)
-      URL.revokeObjectURL(url)
-      resolve(ctx.getImageData(0, 0, size, size).data)
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
-    img.src = url
-  })
+/**
+ * Codepoint-based fallback hue for platforms that render monochrome emoji.
+ * Deterministic — same emoji always gives same hue.
+ */
+function codepointHue(emoji) {
+  let sum = 0
+  for (const cp of emoji) {
+    sum += cp.codePointAt(0)
+  }
+  return sum % 360
+}
+
+function buildFallbackPalette(emoji) {
+  const h = codepointHue(emoji)
+  return [
+    { h, s: 50, l: 65 },
+    { h: (h + 30) % 360, s: 45, l: 42 },
+    { h: (h + 15) % 360, s: 35, l: 22 },
+  ]
+}
+
+/**
+ * Render emoji to canvas and extract pixels.
+ */
+function extractPixels(emoji) {
+  const size = 64
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx.clearRect(0, 0, size, size)
+  ctx.font = `${size - 8}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(emoji, size / 2, size / 2 + 2)
+  return ctx.getImageData(0, 0, size, size).data
 }
 
 /**
  * Analyze pixel data into top 3 color clusters, sorted light → dark.
  */
-function analyzePixels(data) {
-  if (!data) return NEUTRAL
-
+function analyzePixels(data, emoji) {
+  // Collect chromatic pixels
   const pixels = []
   for (let i = 0; i < data.length; i += 4) {
     if (data[i + 3] < 100) continue
@@ -72,7 +81,8 @@ function analyzePixels(data) {
     if (hsl.s > 10 && hsl.l > 5 && hsl.l < 95) pixels.push(hsl)
   }
 
-  if (pixels.length < 5) return NEUTRAL
+  // Not enough chromatic pixels — platform likely rendered monochrome
+  if (pixels.length < 10) return buildFallbackPalette(emoji)
 
   // Bin hues into 12 buckets (30° each)
   const bins = new Array(12).fill(null).map(() => ({ count: 0, h: 0, s: 0, l: 0 }))
@@ -86,7 +96,6 @@ function analyzePixels(data) {
 
   // Sort by population, take top 3
   const ranked = bins
-    .map((b, i) => ({ i, ...b }))
     .filter(b => b.count > 0)
     .sort((a, b) => b.count - a.count)
     .slice(0, 3)
@@ -99,7 +108,7 @@ function analyzePixels(data) {
   // Pad to 3 if fewer clusters found
   while (ranked.length < 3) {
     const base = ranked[ranked.length - 1]
-    ranked.push({ h: base.h, s: base.s * 0.7, l: Math.max(base.l - 20, 10) })
+    ranked.push({ h: (base.h + 30) % 360, s: base.s * 0.7, l: Math.max(base.l - 20, 10) })
   }
 
   // Sort light → dark
@@ -108,27 +117,14 @@ function analyzePixels(data) {
 }
 
 /**
- * Extract top 3 color clusters from an emoji.
+ * Extract top 3 color clusters from an emoji (synchronous).
  * @param {string} emoji
- * @returns {Promise<[{h,s,l}, {h,s,l}, {h,s,l}]>} light → dark
+ * @returns {[{h,s,l}, {h,s,l}, {h,s,l}]} light → dark
  */
-export async function extractEmojiColors(emoji) {
+export function extractEmojiColors(emoji) {
   if (cache.has(emoji)) return cache.get(emoji)
-  if (pending.has(emoji)) return pending.get(emoji)
-
-  const p = renderEmojiToCanvas(emoji, 64).then(data => {
-    const result = analyzePixels(data)
-    cache.set(emoji, result)
-    pending.delete(emoji)
-    return result
-  })
-  pending.set(emoji, p)
-  return p
-}
-
-/**
- * Synchronous — returns cached 3-color palette or NEUTRAL.
- */
-export function extractEmojiColorsSync(emoji) {
-  return cache.get(emoji) || NEUTRAL
+  const data = extractPixels(emoji)
+  const result = analyzePixels(data, emoji)
+  cache.set(emoji, result)
+  return result
 }

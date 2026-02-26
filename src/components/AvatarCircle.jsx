@@ -3,8 +3,7 @@
  * Vignette is required for emoji avatars (auto-assigns Decorator if missing).
  * Applies layered gradient + inset shadows + colored border from the palette.
  */
-import { useState, useEffect } from 'react'
-import { getVignetteStyle, warmUpEmojiColor } from '../lib/vignettePresets'
+import { getVignetteStyle } from '../lib/vignettePresets'
 
 const SIZES = {
   5:  { box: 'w-5 h-5',   emoji: 'text-[10px]', letterSize: '8px' },
@@ -19,16 +18,6 @@ const DEFAULT_VIGNETTE = 'v0'
 export default function AvatarCircle({ emoji, vignette, size = 9, fallback, className = '' }) {
   const s = SIZES[size] || SIZES[9]
   const display = emoji || fallback || null
-  const isEmoji = display && /[^\x00-\x7F]/.test(display)
-
-  // Async warm-up: extract colors from emoji, then re-render with real vignette
-  const [, setReady] = useState(false)
-  useEffect(() => {
-    if (!isEmoji || !emoji) return
-    let cancelled = false
-    warmUpEmojiColor(emoji).then(() => { if (!cancelled) setReady(true) })
-    return () => { cancelled = true }
-  }, [emoji, isEmoji])
 
   // No emoji and no fallback → generic user icon
   if (!display) {
@@ -42,6 +31,7 @@ export default function AvatarCircle({ emoji, vignette, size = 9, fallback, clas
   }
 
   // Letter fallback (no emoji) → gradient background
+  const isEmoji = /[^\x00-\x7F]/.test(display)
   if (!isEmoji) {
     return (
       <div className={`${s.box} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 text-white font-medium ring-1 ring-white/15 ${className}`}
