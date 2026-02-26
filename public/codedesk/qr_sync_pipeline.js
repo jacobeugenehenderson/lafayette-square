@@ -128,21 +128,22 @@ function _lsqSessionKey(bizId, type) {
 }
 
 // =====================================================
-//  DIRTY TRACKING — notify parent when edits are made
+//  DIRTY CHECK — compare current state to last saved/loaded
+//  No continuous tracking; parent calls _lsqIsDirty() on close.
 // =====================================================
-var _lsqDirty = false;
-// Delay dirty tracking until initial setup (manifest, design load, etc.) settles.
-// Prevents the bootstrapper's initial render() from immediately marking dirty.
-var _lsqDirtyEnabled = false;
-setTimeout(function() { _lsqDirtyEnabled = true; }, 1500);
+var _lsqCleanStateJson = null;
 
-function _lsqSetDirty(dirty) {
-  if (_lsqDirty === dirty) return;
-  _lsqDirty = dirty;
-  try {
-    window.parent.postMessage({ type: 'lsq-dirty', value: dirty }, '*');
-  } catch (e) {}
+function _lsqSnapshotClean() {
+  if (typeof window.codedeskExportState === 'function') {
+    _lsqCleanStateJson = JSON.stringify(window.codedeskExportState());
+  }
 }
+
+window._lsqIsDirty = function() {
+  if (!_lsqCleanStateJson) return false;
+  if (typeof window.codedeskExportState !== 'function') return false;
+  return JSON.stringify(window.codedeskExportState()) !== _lsqCleanStateJson;
+};
 
 // =====================================================
 //  IMMEDIATE SAVE + IMAGE EXPORT (called by parent on Save)
@@ -160,54 +161,23 @@ window._lsqSaveNow = function _lsqSaveNow() {
     _lsqSessionCache[_lsqSessionKey(bizId, type)] = state;
   }
 
+  // Snapshot clean state after save
+  _lsqSnapshotClean();
+
   // Export rendered PNG and store it
   if (typeof window.codedeskExportPngDataUrl === 'function') {
     window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
       _lsqSaveImage(bizId, dataUrl, type);
-      _lsqSetDirty(false);
       window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type, image: dataUrl }, '*');
     }).catch(function() {
-      _lsqSetDirty(false);
       window.parent.postMessage({ type: 'lsq-saved' }, '*');
     });
   } else {
-    _lsqSetDirty(false);
     window.parent.postMessage({ type: 'lsq-saved' }, '*');
   }
 };
 
-// =====================================================
-//  RENDER HOOK — track dirty state (no auto-save)
-// =====================================================
-(function hookRenderForDirtyTracking() {
-  var _hookInstalled = false;
-
-  function installHook() {
-    if (_hookInstalled) return;
-    if (typeof window.render !== 'function') return;
-
-    var _originalRender = window.render;
-    window.render = function lsqDirtyTrackingRender() {
-      var result = _originalRender.apply(this, arguments);
-      // Only mark dirty for genuine user edits, not imports, type switches, or initial setup
-      if (_lsqDirtyEnabled && !window.__CODEDESK_IMPORTING_STATE__ && !__lsq_switching_type) {
-        _lsqSetDirty(true);
-      }
-      return result;
-    };
-    _hookInstalled = true;
-  }
-
-  installHook();
-  if (!_hookInstalled) {
-    var attempts = 0;
-    var iv = setInterval(function() {
-      attempts++;
-      installHook();
-      if (_hookInstalled || attempts > 100) clearInterval(iv);
-    }, 100);
-  }
-})();
+// (No render hook — dirty check is on-demand via _lsqIsDirty)
 
 // =====================================================
 //  DEFAULT STATE — clean slate for a fresh QR type
@@ -242,9 +212,11 @@ function _lsqLoadDesign(bizId, type) {
     // value because the dropdown has already changed when we save).
     delete local.type;
     window.codedeskImportState(local);
+    _lsqSnapshotClean();
   } else if (typeof window.codedeskImportState === 'function') {
     // No saved design — reset to defaults
     window.codedeskImportState(_LSQ_DEFAULT_STATE);
+    _lsqSnapshotClean();
   }
 
   // Background: check API for newer version
@@ -257,6 +229,7 @@ function _lsqLoadDesign(bizId, type) {
       delete remote.type;
       if (typeof window.codedeskImportState === 'function') {
         window.codedeskImportState(remote);
+        _lsqSnapshotClean();
       }
     }
   }).catch(function() {});
@@ -315,6 +288,7 @@ function _lsqOnTypeSwitch(newType) {
   if (cached && typeof window.codedeskImportState === 'function') {
     delete cached.type;
     window.codedeskImportState(cached);
+    _lsqSnapshotClean();
   } else {
     _lsqLoadDesign(bizId, newType);
   }

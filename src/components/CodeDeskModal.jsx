@@ -38,7 +38,6 @@ function CodeDeskModalInner() {
   const close = useCallback(() => useCodeDesk.getState().setOpen(false), [])
   const [qrType, setQrType] = useState(storeQrType || 'Guardian')
   const [saved, setSaved] = useState(false)
-  const [dirty, setDirty] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
   const iframeRef = useRef(null)
   const listings = useListings((s) => s.listings)
@@ -58,23 +57,17 @@ function CodeDeskModalInner() {
     useCamera.getState().setPanelOpen(false)
   }, [])
 
-  // Listen for dirty state from iframe
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.data?.type === 'lsq-dirty') setDirty(e.data.value)
-    }
-    window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
-  }, [])
-
-  // Close with unsaved-changes guard
+  // Close with on-demand dirty check (no continuous tracking)
   const handleClose = useCallback(() => {
-    if (dirty) {
-      setConfirmClose(true)
-    } else {
-      close()
-    }
-  }, [dirty, close])
+    try {
+      const iframe = iframeRef.current
+      if (iframe?.contentWindow?._lsqIsDirty?.()) {
+        setConfirmClose(true)
+        return
+      }
+    } catch (e) {}
+    close()
+  }, [close])
 
   const confirmDiscard = useCallback(() => {
     setConfirmClose(false)
@@ -120,7 +113,7 @@ function CodeDeskModalInner() {
     iframe.contentWindow?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
   }, [isGuardianMode, allPlaces, qrType, storeListingId, storeClaimSecret])
 
-  // Save — flash confirmation, dirty resets via lsq-dirty message from iframe
+  // Save button flash
   const handleSave = useCallback(() => {
     const iframe = iframeRef.current
     if (!iframe) return
@@ -186,13 +179,11 @@ function CodeDeskModalInner() {
             className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
               saved
                 ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300'
-                : dirty
-                  ? 'bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/30'
-                  : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 hover:text-white'
+                : 'bg-white/10 border border-white/20 text-white/80 hover:bg-white/20 hover:text-white'
             }`}
             style={{ fontFamily: 'ui-monospace, monospace' }}
           >
-            {saved ? 'Saved' : dirty ? 'Save changes' : 'Save'}
+            {saved ? 'Saved' : 'Save'}
           </button>
         </div>
 
