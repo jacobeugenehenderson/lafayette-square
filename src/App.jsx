@@ -39,15 +39,16 @@ function LiveButton() {
   )
 }
 
-const DEFAULT_AVATARS = ['🦊','🐻','🦉','🐝','🦋','🐢','🐙','🦎','🐸','🌻','🍄','🌵','🔥','⭐','🌊','🎲','🎯','🧊','🫧','🪴','🪻','🍀','🐿️','🦔','🐾','🪶']
+import AvatarCircle from './components/AvatarCircle'
+import AvatarEditor from './components/AvatarEditor'
 
 function AccountButton() {
   const handle = useHandle((s) => s.handle)
   const avatar = useHandle((s) => s.avatar)
+  const vignette = useHandle((s) => s.vignette)
   const { updateAvatar, adoptIdentity } = useHandle()
   const [open, setOpen] = useState(false)
-  const [emojiInput, setEmojiInput] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
   const popoverRef = useRef(null)
 
   // Link-device state
@@ -91,7 +92,7 @@ function AccountButton() {
         const s = res.data?.status
         if (s === 'claimed') {
           clearInterval(pollRef.current)
-          adoptIdentity(res.data.device_hash, res.data.handle, res.data.avatar)
+          adoptIdentity(res.data.device_hash, res.data.handle, res.data.avatar, res.data.vignette)
           setOpen(false)
         } else if (s === 'expired') {
           clearInterval(pollRef.current)
@@ -112,41 +113,18 @@ function AccountButton() {
     return () => document.removeEventListener('pointerdown', handler)
   }, [open])
 
-  const handleEmojiChange = (e) => {
-    const raw = e.target.value
-    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-      const seg = new Intl.Segmenter('en', { granularity: 'grapheme' })
-      const segments = [...seg.segment(raw)]
-      const emoji = segments.length > 0 ? segments[segments.length - 1].segment : ''
-      setEmojiInput(/[^\x00-\x7F]/.test(emoji) ? emoji : '')
-    } else {
-      setEmojiInput(raw.slice(0, 2))
-    }
+  const handleAvatarSave = async (newEmoji, newVignette) => {
+    await updateAvatar(newEmoji, newVignette)
   }
-
-  const saveEmoji = async () => {
-    if (!emojiInput && !avatar) return
-    setSaving(true)
-    await updateAvatar(emojiInput)
-    setSaving(false)
-    setEmojiInput('')
-    setOpen(false)
-  }
-
-  const buttonLabel = avatar || (handle ? handle[0].toUpperCase() : null)
 
   return (
     <div className="absolute top-4 right-4 z-50" ref={popoverRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-9 h-9 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 transition-all duration-200 flex items-center justify-center hover:bg-white/20 hover:text-white/80 text-sm"
+        className="w-9 h-9 rounded-full backdrop-blur-md bg-white/10 border border-white/20 transition-all duration-200 flex items-center justify-center hover:bg-white/20"
         title={handle ? `@${handle}` : 'Account'}
       >
-        {buttonLabel || (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
-          </svg>
-        )}
+        <AvatarCircle emoji={avatar} vignette={vignette} size={7} fallback={handle ? handle[0].toUpperCase() : null} />
       </button>
 
       {open && (
@@ -154,34 +132,18 @@ function AccountButton() {
           {handle ? (
             <>
               <div className="text-center">
-                <div className="text-2xl mb-1">{avatar || handle[0].toUpperCase()}</div>
+                <div className="flex justify-center mb-1">
+                  <AvatarCircle emoji={avatar} vignette={vignette} size={12} fallback={handle[0].toUpperCase()} />
+                </div>
                 <p className="text-white/70 text-xs font-medium">@{handle}</p>
               </div>
 
               <div className="border-t border-white/10 pt-3">
-                <p className="text-white/40 text-[10px] mb-2">Change avatar</p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={emojiInput}
-                    onChange={handleEmojiChange}
-                    placeholder={avatar || '?'}
-                    className="w-10 h-10 text-center text-xl bg-white/5 border border-white/15 rounded-lg focus:outline-none focus:border-white/30"
-                    inputMode="text"
-                  />
-                  <button
-                    onClick={saveEmoji}
-                    disabled={saving || !emojiInput}
-                    className="flex-1 py-2 rounded-lg text-xs font-medium bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80 disabled:opacity-30 transition-colors"
-                  >
-                    {saving ? '...' : 'Save'}
-                  </button>
-                </div>
                 <button
-                  onClick={() => setEmojiInput(DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)])}
-                  className="text-white/30 text-[10px] hover:text-white/50 mt-1.5 underline"
+                  onClick={() => { setOpen(false); setEditorOpen(true) }}
+                  className="w-full py-2 rounded-lg text-xs font-medium bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80 transition-colors"
                 >
-                  shuffle
+                  Change avatar
                 </button>
               </div>
             </>
@@ -209,6 +171,14 @@ function AccountButton() {
           )}
         </div>
       )}
+
+      <AvatarEditor
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        currentEmoji={avatar}
+        currentVignette={vignette}
+        onSave={handleAvatarSave}
+      />
     </div>
   )
 }

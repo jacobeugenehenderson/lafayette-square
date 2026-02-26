@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getDeviceHash } from '../lib/device'
 import { claimLinkToken } from '../lib/api'
+import AvatarCircle from '../components/AvatarCircle'
 
 export default function LinkPage({ token }) {
   const [status, setStatus] = useState('loading') // loading | no-handle | success | error
@@ -57,7 +58,9 @@ export default function LinkPage({ token }) {
 
         {status === 'success' && (
           <>
-            <div className="text-4xl">{avatar || '✅'}</div>
+            <div className="flex justify-center">
+              <AvatarCircle emoji={avatar} vignette={localStorage.getItem('lsq_vignette')} size={12} />
+            </div>
             <p className="text-white text-lg font-medium">Linked!</p>
             <p className="text-white/50 text-sm">
               @{handle} is now connected to your other device. You can close this tab.

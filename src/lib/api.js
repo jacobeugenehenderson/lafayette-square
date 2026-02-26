@@ -46,16 +46,16 @@ const MOCKS = {
   'accept-listing': () => ({ data: { success: true } }),
   'remove-listing': () => ({ data: { success: true } }),
   // Handle mocks
-  'handle':         (params) => ({ data: { handle: _mockHandles[params.dh]?.handle || null, avatar: _mockHandles[params.dh]?.avatar || null } }),
+  'handle':         (params) => ({ data: { handle: _mockHandles[params.dh]?.handle || null, avatar: _mockHandles[params.dh]?.avatar || null, vignette: _mockHandles[params.dh]?.vignette || null } }),
   'check-handle':   (params) => ({ data: { available: !Object.values(_mockHandles).some(h => (h.handle || h).toLowerCase() === (params.h || '').toLowerCase()) } }),
   'set-handle':     (body) => {
-    if (_mockHandles[body.device_hash]) return { data: { success: true, handle: _mockHandles[body.device_hash].handle, avatar: _mockHandles[body.device_hash].avatar || null, already_set: true } }
-    _mockHandles[body.device_hash] = { handle: body.handle, avatar: body.avatar || '' }
-    return { data: { success: true, handle: body.handle, avatar: body.avatar || null } }
+    if (_mockHandles[body.device_hash]) return { data: { success: true, handle: _mockHandles[body.device_hash].handle, avatar: _mockHandles[body.device_hash].avatar || null, vignette: _mockHandles[body.device_hash].vignette || null, already_set: true } }
+    _mockHandles[body.device_hash] = { handle: body.handle, avatar: body.avatar || '', vignette: body.vignette || '' }
+    return { data: { success: true, handle: body.handle, avatar: body.avatar || null, vignette: body.vignette || null } }
   },
   'update-avatar':  (body) => {
-    if (_mockHandles[body.device_hash]) _mockHandles[body.device_hash].avatar = body.avatar || ''
-    return { data: { success: true, avatar: body.avatar || null } }
+    if (_mockHandles[body.device_hash]) { _mockHandles[body.device_hash].avatar = body.avatar || ''; _mockHandles[body.device_hash].vignette = body.vignette || '' }
+    return { data: { success: true, avatar: body.avatar || null, vignette: body.vignette || null } }
   },
   // Bulletin mocks
   'bulletins':       (params) => ({ data: _mockBulletins.filter(b => b.status === 'active').map(b => ({ ...b, is_mine: !!params.dh && b._device_hash === params.dh, comment_count: _mockComments.filter(c => c.bulletin_id === b.id).length })) }),
@@ -106,7 +106,7 @@ const MOCKS = {
     if (!_mockLinkTokens[t] || _mockLinkTokens[t] !== 'pending') return { data: { error: 'Invalid or expired token' } }
     const h = _mockHandles[body.device_hash]
     if (!h) return { data: { error: 'No handle on this device' } }
-    _mockLinkTokens[t] = { device_hash: body.device_hash, handle: h.handle || h, avatar: h.avatar || null }
+    _mockLinkTokens[t] = { device_hash: body.device_hash, handle: h.handle || h, avatar: h.avatar || null, vignette: h.vignette || null }
     return { data: { success: true, handle: h.handle || h } }
   },
   'check-link-token': (params) => {
@@ -114,7 +114,7 @@ const MOCKS = {
     const val = _mockLinkTokens[t]
     if (!val) return { data: { status: 'expired' } }
     if (val === 'pending') return { data: { status: 'pending' } }
-    return { data: { status: 'claimed', device_hash: val.device_hash, handle: val.handle, avatar: val.avatar } }
+    return { data: { status: 'claimed', device_hash: val.device_hash, handle: val.handle, avatar: val.avatar, vignette: val.vignette || null } }
   },
 }
 
@@ -244,12 +244,12 @@ export async function removePhoto(deviceHash, listingId, photoUrl) {
 
 // ── Handles ─────────────────────────────────────────────────────────
 
-export async function setHandle(deviceHash, handle, avatar) {
-  return post('set-handle', { device_hash: deviceHash, handle, avatar: avatar || '' })
+export async function setHandle(deviceHash, handle, avatar, vignette) {
+  return post('set-handle', { device_hash: deviceHash, handle, avatar: avatar || '', vignette: vignette || '' })
 }
 
-export async function updateAvatar(deviceHash, avatar) {
-  return post('update-avatar', { device_hash: deviceHash, avatar: avatar || '' })
+export async function updateAvatar(deviceHash, avatar, vignette) {
+  return post('update-avatar', { device_hash: deviceHash, avatar: avatar || '', vignette: vignette || '' })
 }
 
 // ── Bulletins ───────────────────────────────────────────────────────

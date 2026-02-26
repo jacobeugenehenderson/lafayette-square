@@ -3,6 +3,7 @@ import useBulletin from '../hooks/useBulletin'
 import useHandle from '../hooks/useHandle'
 import useLocalStatus from '../hooks/useLocalStatus'
 import useCamera from '../hooks/useCamera'
+import AvatarCircle from './AvatarCircle'
 
 const SECTIONS = [
   { id: 'buy-nothing', title: 'Buy Nothing' },
@@ -553,10 +554,10 @@ function CommentSection({ bulletinId, section, canPost }) {
       {comments.length > 0 && (
         <div className="space-y-1.5 mb-1.5">
           {comments.map(c => (
-            <div key={c.id} className="text-[10px] leading-relaxed flex items-baseline gap-1">
-              <div className="flex-1 min-w-0">
-                <span className="text-white/40 mr-1.5">
-                  {c.handle ? <>{c.avatar && <span className="mr-0.5">{c.avatar}</span>}@{c.handle}</> : <em className="text-white/25">anon</em>}
+            <div key={c.id} className="text-[10px] leading-relaxed flex items-center gap-1">
+              <div className="flex-1 min-w-0 flex items-center gap-1">
+                <span className="text-white/40 mr-0.5 inline-flex items-center gap-0.5">
+                  {c.handle ? <><AvatarCircle emoji={c.avatar} vignette={c.vignette} size={5} fallback={c.handle[0].toUpperCase()} />@{c.handle}</> : <em className="text-white/25">anon</em>}
                 </span>
                 <span className="text-white/50">{c.text}</span>
                 <span className="text-white/15 ml-1.5">{relativeTime(c.created_at)}</span>
@@ -670,7 +671,7 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                       {isAnon ? (
                         <span className="text-[11px] text-white/40 italic">anonymous</span>
                       ) : (
-                        <span className="text-[11px] text-white/70 font-medium">{post.avatar && <span className="mr-0.5">{post.avatar}</span>}@{post.handle}</span>
+                        <span className="text-[11px] text-white/70 font-medium inline-flex items-center gap-1"><AvatarCircle emoji={post.avatar} vignette={post.vignette} size={5} fallback={post.handle?.[0]?.toUpperCase()} />@{post.handle}</span>
                       )}
                       <span className="text-[9px] text-white/25">{relativeTime(post.created_at)}</span>
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-white/30">

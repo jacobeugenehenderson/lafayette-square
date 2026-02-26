@@ -9,6 +9,7 @@ import { getReviews, postReview, postReply, getEvents, postEvent, updateListing 
 import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
+import AvatarCircle from './AvatarCircle'
 
 import QRCode from 'qrcode'
 import { useCodeDesk } from './CodeDeskModal'
@@ -932,14 +933,11 @@ function ReviewsTab({ listingId, isGuardian }) {
       <div className="space-y-4">
         {reviews.map((review, idx) => {
           const displayName = review.handle ? `@${review.handle}` : 'Local'
-          const avatarDisplay = review.avatar || (review.handle ? review.handle[0].toUpperCase() : 'L')
           const replies = review.replies || []
           return (
             <div key={review.id || idx} className="border-b border-white/10 pb-4 last:border-0">
               <div className="flex items-start gap-3">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${review.avatar ? 'text-lg' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-[10px] font-medium'}`}>
-                  {avatarDisplay}
-                </div>
+                <AvatarCircle emoji={review.avatar} vignette={review.vignette} size={7} fallback={review.handle ? review.handle[0].toUpperCase() : 'L'} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-white/80">{displayName}</span>

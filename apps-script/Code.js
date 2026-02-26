@@ -256,7 +256,7 @@ function getListings() {
 function buildAvatarMap() {
   var rows = sheetToObjects(getSheet('Handles'))
   var map = {}
-  rows.forEach(function(r) { if (r.handle && r.avatar) map[r.handle] = r.avatar })
+  rows.forEach(function(r) { if (r.handle) map[r.handle] = { avatar: r.avatar || null, vignette: r.vignette || null } })
   return map
 }
 
@@ -281,13 +281,15 @@ function getReviews(listingId) {
     replyMap[r.review_id].push({
       id: r.id,
       handle: r.handle || '',
-      avatar: avatarMap[r.handle] || null,
+      avatar: (avatarMap[r.handle] || {}).avatar || null,
+      vignette: (avatarMap[r.handle] || {}).vignette || null,
       text: r.text,
       created_at: r.created_at
     })
   })
   filtered.forEach(function(r) {
-    r.avatar = avatarMap[r.handle] || null
+    r.avatar = (avatarMap[r.handle] || {}).avatar || null
+    r.vignette = (avatarMap[r.handle] || {}).vignette || null
     r.replies = replyMap[r.id] || []
   })
 
@@ -688,7 +690,8 @@ function postClaimLinkToken(body) {
   var payload = JSON.stringify({
     device_hash: deviceHash,
     handle: result.rowData.handle,
-    avatar: result.rowData.avatar || null
+    avatar: result.rowData.avatar || null,
+    vignette: result.rowData.vignette || null
   })
   cache.put('link_' + token, payload, 300)
   return jsonResponse({ success: true, handle: result.rowData.handle })
@@ -703,7 +706,7 @@ function checkLinkToken(token) {
   if (val === 'pending') return jsonResponse({ status: 'pending' })
   try {
     var data = JSON.parse(val)
-    return jsonResponse({ status: 'claimed', device_hash: data.device_hash, handle: data.handle, avatar: data.avatar })
+    return jsonResponse({ status: 'claimed', device_hash: data.device_hash, handle: data.handle, avatar: data.avatar, vignette: data.vignette || null })
   } catch (e) {
     return jsonResponse({ status: 'expired' })
   }
@@ -714,7 +717,7 @@ function checkLinkToken(token) {
 function getHandle(deviceHash) {
   if (!deviceHash) return errorResponse('Missing dh parameter', 'bad_request')
   const result = findRow(getSheet('Handles'), 'device_hash', deviceHash)
-  return jsonResponse({ handle: result ? result.rowData.handle : null, avatar: result ? (result.rowData.avatar || null) : null })
+  return jsonResponse({ handle: result ? result.rowData.handle : null, avatar: result ? (result.rowData.avatar || null) : null, vignette: result ? (result.rowData.vignette || null) : null })
 }
 
 // ─── GET: Check handle availability ─────────────────────────────────────────
@@ -730,7 +733,7 @@ function checkHandle(handle) {
 // ─── POST: Set handle ───────────────────────────────────────────────────────
 
 function postSetHandle(body) {
-  const { device_hash, handle, avatar } = body
+  const { device_hash, handle, avatar, vignette } = body
   if (!device_hash || !handle) {
     return errorResponse('Missing device_hash or handle', 'bad_request')
   }
@@ -742,13 +745,14 @@ function postSetHandle(body) {
 
   // Validate avatar if provided (single emoji, max 8 chars for composite emoji)
   var cleanAvatar = (avatar || '').trim().slice(0, 8)
+  var cleanVignette = (vignette && /^v[0-2]$/.test(vignette)) ? vignette : ''
 
   const sheet = getSheet('Handles')
 
   // Check if device already has a handle
   const existing = findRow(sheet, 'device_hash', device_hash)
   if (existing) {
-    return jsonResponse({ success: true, handle: existing.rowData.handle, avatar: existing.rowData.avatar || null, already_set: true })
+    return jsonResponse({ success: true, handle: existing.rowData.handle, avatar: existing.rowData.avatar || null, vignette: existing.rowData.vignette || null, already_set: true })
   }
 
   // Check uniqueness (case-insensitive)
@@ -758,8 +762,8 @@ function postSetHandle(body) {
     return errorResponse('Handle already taken', 'conflict')
   }
 
-  sheet.appendRow([device_hash, handle, cleanAvatar, nowISO()])
-  return jsonResponse({ success: true, handle: handle, avatar: cleanAvatar || null })
+  sheet.appendRow([device_hash, handle, cleanAvatar, nowISO(), cleanVignette])
+  return jsonResponse({ success: true, handle: handle, avatar: cleanAvatar || null, vignette: cleanVignette || null })
 }
 
 // ─── POST: Update avatar ─────────────────────────────────────────────────────
@@ -767,6 +771,8 @@ function postSetHandle(body) {
 function postUpdateAvatar(body) {
   var device_hash = body.device_hash
   var avatar = (body.avatar || '').trim().slice(0, 8)
+  var vignette = body.vignette
+  var cleanVignette = (vignette && /^v[0-2]$/.test(vignette)) ? vignette : ''
   if (!device_hash) return errorResponse('Missing device_hash', 'bad_request')
 
   var sheet = getSheet('Handles')
@@ -776,13 +782,23 @@ function postUpdateAvatar(body) {
   var hmap = getHeaderMap(sheet)
   var avatarCol = hmap['avatar']
   if (avatarCol == null) {
-    // Auto-migrate: add avatar column
     var lastCol = sheet.getLastColumn()
     sheet.getRange(1, lastCol + 1).setValue('avatar')
     avatarCol = lastCol
+    hmap = getHeaderMap(sheet)
   }
   sheet.getRange(result.rowIndex, avatarCol + 1).setValue(avatar)
-  return jsonResponse({ success: true, avatar: avatar || null })
+
+  // Auto-migrate: add vignette column if missing
+  var vignetteCol = hmap['vignette']
+  if (vignetteCol == null) {
+    var lastCol2 = sheet.getLastColumn()
+    sheet.getRange(1, lastCol2 + 1).setValue('vignette')
+    vignetteCol = lastCol2
+  }
+  sheet.getRange(result.rowIndex, vignetteCol + 1).setValue(cleanVignette)
+
+  return jsonResponse({ success: true, avatar: avatar || null, vignette: cleanVignette || null })
 }
 
 // ─── GET: Bulletins ─────────────────────────────────────────────────────────
@@ -814,8 +830,10 @@ function getBulletins(requesterHash) {
     if (isAnon) {
       out.handle = null
       out.avatar = null
+      out.vignette = null
     } else {
-      out.avatar = avatarMap[r.handle] || null
+      out.avatar = (avatarMap[r.handle] || {}).avatar || null
+      out.vignette = (avatarMap[r.handle] || {}).vignette || null
     }
     out.is_mine = isMine
     out.comment_count = commentCounts[r.id] || 0
@@ -896,8 +914,10 @@ function getComments(bulletinId, requesterHash) {
     if (isAnon) {
       out.handle = null
       out.avatar = null
+      out.vignette = null
     } else {
-      out.avatar = avatarMap[r.handle] || null
+      out.avatar = (avatarMap[r.handle] || {}).avatar || null
+      out.vignette = (avatarMap[r.handle] || {}).vignette || null
     }
     out.is_mine = isMine
     return out
