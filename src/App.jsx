@@ -201,8 +201,6 @@ function AccountButton() {
                 <>
                   <p className="text-white/40 text-[10px] mb-1">Scan from your signed-in device</p>
                   <img src={linkQr} alt="Link QR" className="w-36 h-36 mx-auto rounded-lg" />
-                  <p className="text-white/30 text-[10px]">or enter code:</p>
-                  <p className="text-white/80 text-sm font-mono tracking-widest">{linkToken}</p>
                 </>
               ) : (
                 <p className="text-white/30 text-xs">Loading...</p>
