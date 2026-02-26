@@ -294,6 +294,30 @@ function BulletinOpener() {
   return null
 }
 
+function FadeIn() {
+  const [show, setShow] = useState(true)
+  const [opaque, setOpaque] = useState(true)
+
+  useEffect(() => {
+    // Two-frame delay: first frame renders black overlay, second frame triggers fade
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setOpaque(false)))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  if (!show) return null
+  return (
+    <div
+      onTransitionEnd={() => setShow(false)}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: '#000', pointerEvents: 'none',
+        opacity: opaque ? 1 : 0,
+        transition: 'opacity 1.2s ease-in',
+      }}
+    />
+  )
+}
+
 function App() {
   const route = parseRoute()
 
@@ -321,6 +345,7 @@ function App() {
       {!isGround && <BulletinModal />}
       {!isGround && <CodeDeskModal />}
       {!isGround && <ModeOverlay />}
+      <FadeIn />
     </div>
   )
 }
