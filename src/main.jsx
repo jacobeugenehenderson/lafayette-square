@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
-console.log('[LSQ] build', __BUILD_HASH__)
+if (import.meta.env.DEV) console.log('[LSQ] build', __BUILD_HASH__)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
