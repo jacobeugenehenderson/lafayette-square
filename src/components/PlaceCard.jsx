@@ -4,7 +4,8 @@ import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } f
 import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
-import { getReviews, postReview, postReply, getEvents, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin } from '../lib/api'
+import useSelectedBuilding from '../hooks/useSelectedBuilding'
+import { getReviews, postReview, postReply, getEvents, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
 
@@ -1474,11 +1475,23 @@ function QrTab({ listingId, listingName, isAdmin }) {
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  // Read styled QR images from localStorage (shared with iframe)
-  const readStyledImage = useCallback((type) => {
+  // Read styled QR image: localStorage first, then API fallback
+  const readStyledImage = useCallback(async (type) => {
     try {
-      return localStorage.getItem(`lsq-qr-image-${listingId}-${type}`) || null
-    } catch { return null }
+      const local = localStorage.getItem(`lsq-qr-image-${listingId}-${type}`)
+      if (local) return local
+    } catch { /* silent */ }
+    // Fallback: fetch from API (works across all devices)
+    try {
+      const res = await getQrDesign(listingId, type)
+      const image = res?.data?.image
+      if (image) {
+        // Cache locally for next time
+        try { localStorage.setItem(`lsq-qr-image-${listingId}-${type}`, image) } catch { /* silent */ }
+        return image
+      }
+    } catch { /* silent */ }
+    return null
   }, [listingId])
 
   // Listen for lsq-saved from QR Studio iframe to refresh QR codes
@@ -1492,40 +1505,39 @@ function QrTab({ listingId, listingName, isAdmin }) {
 
   useEffect(() => {
     const vanity = 'https://jacobhenderson.studio/lafayette-square'
+    let cancelled = false
 
-    // Townie QR: prefer styled image from localStorage
-    const tUrl = `${vanity}/checkin/${listingId}`
-    setTownieUrl(tUrl)
-    const styledTownie = readStyledImage('Townie')
-    if (styledTownie) {
-      setTownieQr(styledTownie)
-    } else {
-      QRCode.toDataURL(tUrl, { width: 256, margin: 2 }).then(setTownieQr)
-    }
+    async function loadQrs() {
+      // Townie QR
+      const tUrl = `${vanity}/checkin/${listingId}`
+      setTownieUrl(tUrl)
+      const styledTownie = await readStyledImage('Townie')
+      if (!cancelled) {
+        setTownieQr(styledTownie || await QRCode.toDataURL(tUrl, { width: 256, margin: 2 }))
+      }
 
-    // Guardian QR: fetch claim_secret, then prefer styled image
-    async function loadSecret() {
+      // Guardian QR: fetch claim_secret, then styled image
       try {
         const dh = await getDeviceHash()
         const res = isAdmin
           ? await getClaimSecretAdmin(listingId)
           : await getClaimSecret(listingId, dh)
         const secret = res?.data?.claim_secret
-        if (secret) {
+        if (secret && !cancelled) {
           setClaimSecret(secret)
           const gUrl = `${vanity}/claim/${listingId}/${secret}`
           setGuardianUrl(gUrl)
-          const styledGuardian = readStyledImage('Guardian')
-          if (styledGuardian) {
-            setGuardianQr(styledGuardian)
-          } else {
-            QRCode.toDataURL(gUrl, { width: 256, margin: 2 }).then(setGuardianQr)
+          const styledGuardian = await readStyledImage('Guardian')
+          if (!cancelled) {
+            setGuardianQr(styledGuardian || await QRCode.toDataURL(gUrl, { width: 256, margin: 2 }))
           }
         }
       } catch { /* silent */ }
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     }
-    loadSecret()
+
+    loadQrs()
+    return () => { cancelled = true }
   }, [listingId, isAdmin, refreshKey, readStyledImage])
 
   const shareUrl = async (url, title) => {
@@ -1601,6 +1613,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const [activeListingIdx, setActiveListingIdx] = useState(0)
   const { isGuardianOf, isAdmin: isStoreAdmin } = useGuardianStatus()
   const panelOpen = useCamera(s => s.panelOpen)
+  const initialTab = useSelectedBuilding(s => s.initialTab)
 
   // Subscribe to store so guardian edits trigger re-render
   const storeListing = useListings(s => listingProp?.id ? s.listings.find(l => l.id === listingProp.id) : null)
@@ -1666,6 +1679,14 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   // Default tab: first available
   const defaultTab = tabs[0]?.id || 'photos'
   const currentTab = activeTab && tabs.some(t => t.id === activeTab) ? activeTab : defaultTab
+
+  // Consume initialTab from store (e.g. EventTicker → Events tab)
+  useEffect(() => {
+    if (initialTab && tabs.some(t => t.id === initialTab)) {
+      setActiveTab(initialTab)
+      useSelectedBuilding.getState().clearInitialTab()
+    }
+  }, [initialTab, tabs])
 
   // Style-tinted gradient for bare buildings
   const styleGradient = !hasListingInfo ? getStyleGradient(arch.nps_style_group) : null

@@ -38,6 +38,7 @@ const MOCKS = {
   },
   'events':         () => ({ data: _mockEvents }),
   'listings':       () => ({ data: [] }),
+  'getDesign':      () => ({ data: { design: null, image: null } }),
   'update-listing': (body) => ({ data: { success: true, updated: Object.keys(body.fields || {}) } }),
   'accept-listing': () => ({ data: { success: true } }),
   'remove-listing': () => ({ data: { success: true } }),
@@ -162,6 +163,10 @@ export async function getEvents() {
 }
 
 // ── Claim secret ─────────────────────────────────────────────────────
+
+export async function getQrDesign(listingId, type) {
+  return get('getDesign', { bizId: listingId + '-' + type })
+}
 
 export async function getClaimSecret(listingId, deviceHash) {
   return get('claim-secret', { lid: listingId, dh: deviceHash })

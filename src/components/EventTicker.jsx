@@ -104,7 +104,7 @@ export default function EventTicker() {
     if (!event.listing_id) return
     const listing = useListings.getState().getById(event.listing_id)
     const buildingId = listing?.building_id || event._buildingId
-    useSelectedBuilding.getState().select(event.listing_id, buildingId)
+    useSelectedBuilding.getState().select(event.listing_id, buildingId, 'events')
   }, [])
 
   if (viewMode !== 'hero') return null

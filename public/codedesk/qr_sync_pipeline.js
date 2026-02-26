@@ -64,13 +64,15 @@ function _lsqSaveImage(bizId, dataUrl, type) {
 // =====================================================
 //  API LAYER (background, non-blocking)
 // =====================================================
-function _lsqSaveRemote(bizId, state, type) {
+function _lsqSaveRemote(bizId, state, type, image) {
   if (!bizId || !type || !window.LSQ_API_URL) return;
+  var payload = { action: 'saveDesign', bizId: bizId + '-' + type, design: state };
+  if (image) payload.image = image;
   try {
     fetch(window.LSQ_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'saveDesign', bizId: bizId + '-' + type, design: state })
+      body: JSON.stringify(payload)
     }).catch(function() {});
   } catch (e) {}
 }
@@ -153,10 +155,11 @@ window._lsqSaveNow = function _lsqSaveNow() {
   var type = _lsqGetCurrentType();
   if (!bizId) return;
 
+  var state = null;
   if (typeof window.codedeskExportState === 'function') {
-    var state = window.codedeskExportState();
+    state = window.codedeskExportState();
     _lsqSaveLocal(bizId, state, type);
-    _lsqSaveRemote(bizId, state, type);
+    // Remote save deferred until PNG is ready (sent together)
     // Update session cache too
     _lsqSessionCache[_lsqSessionKey(bizId, type)] = state;
   }
@@ -164,15 +167,20 @@ window._lsqSaveNow = function _lsqSaveNow() {
   // Snapshot clean state after save
   _lsqSnapshotClean();
 
-  // Export rendered PNG and store it
+  // Export rendered PNG and store it locally + remotely
   if (typeof window.codedeskExportPngDataUrl === 'function') {
     window.codedeskExportPngDataUrl(2).then(function(dataUrl) {
       _lsqSaveImage(bizId, dataUrl, type);
+      // Send design + image together to API so all devices get the PNG
+      if (state) _lsqSaveRemote(bizId, state, type, dataUrl);
       window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type, image: dataUrl }, '*');
     }).catch(function() {
+      // PNG export failed — save design without image
+      if (state) _lsqSaveRemote(bizId, state, type);
       window.parent.postMessage({ type: 'lsq-saved' }, '*');
     });
   } else {
+    if (state) _lsqSaveRemote(bizId, state, type);
     window.parent.postMessage({ type: 'lsq-saved' }, '*');
   }
 };
