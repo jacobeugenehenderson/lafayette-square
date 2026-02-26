@@ -158,6 +158,8 @@ function doGet(e) {
       case 'thread-messages': return getThreadMessages(e.parameter.tid, e.parameter.dh)
       case 'comments':        return getComments(e.parameter.bid, e.parameter.dh)
       case 'claim-secret':   return getClaimSecret(e.parameter.lid, e.parameter.dh, e.parameter.admin)
+      case 'create-link-token':  return createLinkToken()
+      case 'check-link-token':   return checkLinkToken(e.parameter.token)
       case 'getdesign':      return getDesign(e.parameter.bizId)
       case 'setup-photo-folder': if (e.parameter.admin === 'lafayette1850') { setupPhotoFolder(); return jsonResponse({ folder_id: PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') }) } return errorResponse('Unauthorized')
       default:                return errorResponse('Unknown action: ' + action, 'bad_request')
@@ -198,6 +200,7 @@ function doPost(e) {
       case 'comment':          return postComment(body)
       case 'remove-comment':   return postRemoveComment(body)
       case 'reply':            return postReply(body)
+      case 'claim-link-token': return postClaimLinkToken(body)
       case 'upload-photo':     return postUploadPhoto(body)
       case 'remove-photo':     return postRemovePhoto(body)
       case 'savedesign':       return saveDesign(body)
@@ -656,6 +659,54 @@ function isGuardianOf(listingId, deviceHash) {
   if (!listingId || !deviceHash) return false
   const rows = sheetToObjects(getSheet('Guardians'))
   return rows.some(r => r.listing_id === listingId && r.device_hash === deviceHash)
+}
+
+// ─── Link Device (cross-device identity via token) ──────────────────────────
+
+function createLinkToken() {
+  var token = Utilities.getUuid().slice(0, 6).toUpperCase()
+  var cache = CacheService.getScriptCache()
+  cache.put('link_' + token, 'pending', 300)
+  return jsonResponse({ token: token })
+}
+
+function postClaimLinkToken(body) {
+  var token = (body.token || '').toUpperCase()
+  var deviceHash = body.device_hash
+  if (!token || !deviceHash) return errorResponse('Missing token or device_hash', 'bad_request')
+
+  var cache = CacheService.getScriptCache()
+  var val = cache.get('link_' + token)
+  if (!val || val !== 'pending') return errorResponse('Invalid or expired token', 'bad_request')
+
+  // Look up handle/avatar from Handles sheet
+  var result = findRow(getSheet('Handles'), 'device_hash', deviceHash)
+  if (!result || !result.rowData.handle) {
+    return jsonResponse({ error: 'No handle on this device' })
+  }
+
+  var payload = JSON.stringify({
+    device_hash: deviceHash,
+    handle: result.rowData.handle,
+    avatar: result.rowData.avatar || null
+  })
+  cache.put('link_' + token, payload, 300)
+  return jsonResponse({ success: true, handle: result.rowData.handle })
+}
+
+function checkLinkToken(token) {
+  if (!token) return errorResponse('Missing token parameter', 'bad_request')
+  token = token.toUpperCase()
+  var cache = CacheService.getScriptCache()
+  var val = cache.get('link_' + token)
+  if (!val) return jsonResponse({ status: 'expired' })
+  if (val === 'pending') return jsonResponse({ status: 'pending' })
+  try {
+    var data = JSON.parse(val)
+    return jsonResponse({ status: 'claimed', device_hash: data.device_hash, handle: data.handle, avatar: data.avatar })
+  } catch (e) {
+    return jsonResponse({ status: 'expired' })
+  }
 }
 
 // ─── GET: Handle lookup ─────────────────────────────────────────────────────

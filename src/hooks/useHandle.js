@@ -1,9 +1,10 @@
 import { create } from 'zustand'
-import { getDeviceHash } from '../lib/device'
+import { getDeviceHash, clearCachedHash } from '../lib/device'
 import { getHandle, setHandle as apiSetHandle, checkHandleAvailability, updateAvatar as apiUpdateAvatar } from '../lib/api'
 
 const STORAGE_KEY = 'lsq_handle'
 const AVATAR_KEY = 'lsq_avatar'
+const DEVICE_KEY = 'lsq_device_hash'
 
 const useHandle = create((set, get) => ({
   handle: localStorage.getItem(STORAGE_KEY) || null,
@@ -79,6 +80,16 @@ const useHandle = create((set, get) => ({
     } catch {
       return false
     }
+  },
+
+  /** Adopt identity from another device (link flow) */
+  adoptIdentity: (deviceHash, handle, avatar) => {
+    localStorage.setItem(DEVICE_KEY, deviceHash)
+    localStorage.setItem(STORAGE_KEY, handle)
+    if (avatar) localStorage.setItem(AVATAR_KEY, avatar)
+    else localStorage.removeItem(AVATAR_KEY)
+    clearCachedHash()
+    set({ handle, avatar: avatar || null, loading: false, error: null })
   },
 }))
 

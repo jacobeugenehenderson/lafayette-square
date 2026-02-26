@@ -14,6 +14,9 @@ import useListings from './hooks/useListings'
 import useHandle from './hooks/useHandle'
 import CheckinPage from './pages/CheckinPage'
 import ClaimPage from './pages/ClaimPage'
+import LinkPage from './pages/LinkPage'
+import QRCode from 'qrcode'
+import { createLinkToken, checkLinkToken } from './lib/api'
 
 function LiveButton() {
   const isLive = useTimeOfDay((s) => s.isLive)
@@ -41,11 +44,63 @@ const DEFAULT_AVATARS = ['🦊','🐻','🦉','🐝','🦋','🐢','🐙','🦎'
 function AccountButton() {
   const handle = useHandle((s) => s.handle)
   const avatar = useHandle((s) => s.avatar)
-  const { updateAvatar } = useHandle()
+  const { updateAvatar, adoptIdentity } = useHandle()
   const [open, setOpen] = useState(false)
   const [emojiInput, setEmojiInput] = useState('')
   const [saving, setSaving] = useState(false)
   const popoverRef = useRef(null)
+
+  // Link-device state
+  const [linkToken, setLinkToken] = useState(null)
+  const [linkQr, setLinkQr] = useState(null)
+  const [linkStatus, setLinkStatus] = useState(null) // null | 'pending' | 'expired'
+  const [linkRefresh, setLinkRefresh] = useState(0)
+  const pollRef = useRef(null)
+
+  // Fetch link token when popover opens and no handle
+  useEffect(() => {
+    if (!open || handle) return
+    let cancelled = false
+    async function fetchToken() {
+      setLinkStatus(null)
+      setLinkToken(null)
+      setLinkQr(null)
+      try {
+        const res = await createLinkToken()
+        if (cancelled) return
+        const token = res.data?.token
+        if (!token) return
+        setLinkToken(token)
+        setLinkStatus('pending')
+        const base = window.location.origin + (import.meta.env.BASE_URL || '/')
+        const url = base.replace(/\/$/, '') + '/link/' + token
+        const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2, color: { dark: '#ffffff', light: '#00000000' } })
+        if (!cancelled) setLinkQr(dataUrl)
+      } catch {}
+    }
+    fetchToken()
+    return () => { cancelled = true }
+  }, [open, handle, linkRefresh])
+
+  // Poll for link token claim
+  useEffect(() => {
+    if (!linkToken || !open || handle) return
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await checkLinkToken(linkToken)
+        const s = res.data?.status
+        if (s === 'claimed') {
+          clearInterval(pollRef.current)
+          adoptIdentity(res.data.device_hash, res.data.handle, res.data.avatar)
+          setOpen(false)
+        } else if (s === 'expired') {
+          clearInterval(pollRef.current)
+          setLinkStatus('expired')
+        }
+      } catch {}
+    }, 2000)
+    return () => clearInterval(pollRef.current)
+  }, [linkToken, open, handle, adoptIdentity])
 
   // Close popover on outside click
   useEffect(() => {
@@ -131,8 +186,27 @@ function AccountButton() {
               </div>
             </>
           ) : (
-            <div className="text-center py-2">
-              <p className="text-white/50 text-xs">Scan a QR code at a local business to check in and set your handle.</p>
+            <div className="text-center py-2 space-y-2">
+              {linkStatus === 'expired' ? (
+                <>
+                  <p className="text-white/40 text-xs">Code expired</p>
+                  <button
+                    onClick={() => setLinkRefresh(n => n + 1)}
+                    className="text-xs text-white/60 underline hover:text-white/80"
+                  >
+                    Generate new code
+                  </button>
+                </>
+              ) : linkQr ? (
+                <>
+                  <p className="text-white/40 text-[10px] mb-1">Scan from your signed-in device</p>
+                  <img src={linkQr} alt="Link QR" className="w-36 h-36 mx-auto rounded-lg" />
+                  <p className="text-white/30 text-[10px]">or enter code:</p>
+                  <p className="text-white/80 text-sm font-mono tracking-widest">{linkToken}</p>
+                </>
+              ) : (
+                <p className="text-white/30 text-xs">Loading...</p>
+              )}
             </div>
           )}
         </div>
@@ -217,6 +291,9 @@ function App() {
   if (route.page === 'claim') {
     return <ClaimPage listingId={route.listingId} secret={route.secret} />
   }
+  if (route.page === 'link') {
+    return <LinkPage token={route.token} />
+  }
 
   const isGround = window.location.search.includes('ground')
 
@@ -244,6 +321,8 @@ function parseRoute() {
   if (checkinMatch) return { page: 'checkin', locationId: checkinMatch[1] }
   const claimMatch = path.match(/^\/claim\/([^/]+)\/([^/]+)$/)
   if (claimMatch) return { page: 'claim', listingId: claimMatch[1], secret: claimMatch[2] }
+  const linkMatch = path.match(/^\/link\/([A-Za-z0-9]+)$/)
+  if (linkMatch) return { page: 'link', token: linkMatch[1] }
   const placeMatch = path.match(/^\/place\/([^/]+)$/)
   if (placeMatch) return { page: 'place', listingId: placeMatch[1] }
   if (path === '/bulletin') return { page: 'bulletin' }

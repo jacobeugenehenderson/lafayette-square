@@ -25,6 +25,10 @@ async function generateFingerprint() {
 
 let cached = null
 
+export function clearCachedHash() {
+  cached = null
+}
+
 export async function getDeviceHash() {
   if (cached) return cached
 

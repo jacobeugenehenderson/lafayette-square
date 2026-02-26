@@ -14,6 +14,7 @@ const _mockBulletins = []
 const _mockThreads = []
 const _mockMessages = []
 const _mockComments = []
+const _mockLinkTokens = {}
 let _mockIdCounter = 1
 
 const _mockReplies = []
@@ -93,6 +94,27 @@ const MOCKS = {
     const anon = !!body.anonymous
     _mockComments.push({ id, bulletin_id: body.bulletin_id, handle: anon ? null : (_mockHandles[body.device_hash] || 'anon'), anonymous: anon, _device_hash: body.device_hash, text: body.text, created_at: now })
     return { data: { id, success: true } }
+  },
+  // Link-token mocks
+  'create-link-token': () => {
+    const token = Math.random().toString(36).slice(2, 8).toUpperCase()
+    _mockLinkTokens[token] = 'pending'
+    return { data: { token } }
+  },
+  'claim-link-token': (body) => {
+    const t = (body.token || '').toUpperCase()
+    if (!_mockLinkTokens[t] || _mockLinkTokens[t] !== 'pending') return { data: { error: 'Invalid or expired token' } }
+    const h = _mockHandles[body.device_hash]
+    if (!h) return { data: { error: 'No handle on this device' } }
+    _mockLinkTokens[t] = { device_hash: body.device_hash, handle: h.handle || h, avatar: h.avatar || null }
+    return { data: { success: true, handle: h.handle || h } }
+  },
+  'check-link-token': (params) => {
+    const t = (params.token || '').toUpperCase()
+    const val = _mockLinkTokens[t]
+    if (!val) return { data: { status: 'expired' } }
+    if (val === 'pending') return { data: { status: 'pending' } }
+    return { data: { status: 'claimed', device_hash: val.device_hash, handle: val.handle, avatar: val.avatar } }
   },
 }
 
@@ -278,4 +300,18 @@ export async function getThreadMessages(threadId, deviceHash) {
 
 export async function closeThread(deviceHash, threadId) {
   return post('close-thread', { device_hash: deviceHash, thread_id: threadId })
+}
+
+// ── Link Device ──────────────────────────────────────────────────────
+
+export async function createLinkToken() {
+  return get('create-link-token')
+}
+
+export async function claimLinkToken(token, deviceHash) {
+  return post('claim-link-token', { token, device_hash: deviceHash })
+}
+
+export async function checkLinkToken(token) {
+  return get('check-link-token', { token })
 }
