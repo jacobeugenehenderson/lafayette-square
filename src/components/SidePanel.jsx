@@ -887,7 +887,7 @@ function SidePanel() {
 
       {/* ── Demographics footer — always visible, always dark ── */}
       <div className="flex-shrink-0 px-4 py-1.5 text-caption tracking-wide flex items-center justify-between bg-surface border-t border-outline-variant">
-        <div className="flex items-center gap-x-1 text-on-surface-disabled overflow-hidden min-w-0">
+        <div className="flex flex-wrap items-center gap-x-1 text-on-surface-disabled">
           <span>2,164 residents</span>
           <span>&middot;</span>
           <span>{buildingsData.buildings.length.toLocaleString()} buildings</span>
