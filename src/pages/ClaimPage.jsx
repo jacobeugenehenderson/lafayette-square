@@ -77,7 +77,7 @@ export default function ClaimPage({ listingId, secret }) {
 
         {/* Link back */}
         <a
-          href={import.meta.env.BASE_URL}
+          href={`${import.meta.env.BASE_URL}place/${listingId}`}
           className="inline-block text-sm px-4 py-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/15 transition-colors"
         >
           {claimed ? `Open ${placeName} on the map` : 'Explore the neighborhood'} &rarr;
