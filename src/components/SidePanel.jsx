@@ -805,8 +805,19 @@ function SidePanel() {
     border: '1px solid rgba(255,255,255,0.15)',
   }
 
+  // Measure collapsed height so modals can position above us
+  const panelRef = useRef(null)
+  useEffect(() => {
+    if (!collapsed || !panelRef.current) return
+    const h = panelRef.current.offsetHeight
+    if (h > 0 && h !== useCamera.getState().panelCollapsedPx) {
+      useCamera.setState({ panelCollapsedPx: h })
+    }
+  }, [collapsed])
+
   return (
     <div
+      ref={panelRef}
       className="absolute bottom-3 left-3 right-3 flex flex-col select-none rounded-2xl overflow-hidden z-50 transition-all duration-300 ease-out"
       style={{
         fontFamily: 'ui-monospace, monospace',

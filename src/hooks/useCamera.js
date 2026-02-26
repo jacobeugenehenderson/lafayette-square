@@ -6,6 +6,7 @@ const useCamera = create((set, get) => ({
   viewMode: 'hero',       // 'hero' | 'browse' | 'planetarium'
   previousMode: 'hero',
   panelOpen: false,
+  panelCollapsedPx: 0,
   azimuth: 0,
   flyTarget: null,
   planetariumOrigin: null,  // [x, z] ground position for street-level sky view
