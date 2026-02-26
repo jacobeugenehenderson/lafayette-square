@@ -136,16 +136,21 @@ function _lsqSessionKey(bizId, type) {
 // =====================================================
 var _lsqCleanStateJson = null;
 
+function _lsqStripTimestamp(stateJson) {
+  // Remove "at":NNNN so timestamp doesn't cause false dirty flags
+  return stateJson.replace(/"at":\d+,?/, '');
+}
+
 function _lsqSnapshotClean() {
   if (typeof window.codedeskExportState === 'function') {
-    _lsqCleanStateJson = JSON.stringify(window.codedeskExportState());
+    _lsqCleanStateJson = _lsqStripTimestamp(JSON.stringify(window.codedeskExportState()));
   }
 }
 
 window._lsqIsDirty = function() {
   if (!_lsqCleanStateJson) return false;
   if (typeof window.codedeskExportState !== 'function') return false;
-  return JSON.stringify(window.codedeskExportState()) !== _lsqCleanStateJson;
+  return _lsqStripTimestamp(JSON.stringify(window.codedeskExportState())) !== _lsqCleanStateJson;
 };
 
 // =====================================================
