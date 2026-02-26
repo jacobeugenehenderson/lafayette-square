@@ -120,6 +120,7 @@
         }
       }
       if (e.data.type === 'lsq-set-claim-secret') {
+        window.__lsq_cached_claim_secret = e.data.value || '';
         var secretInput = document.getElementById('claimSecret');
         if (secretInput) {
           secretInput.value = e.data.value;

@@ -4,7 +4,8 @@
       "bizSelect"
     ],
     "Guardian": [
-      "bizSelect"
+      "bizSelect",
+      "claimSecret"
     ]
   },
   "fields": {
@@ -12,6 +13,10 @@
       "label": "",
       "type": "listbox",
       "options": []
+    },
+    "claimSecret": {
+      "label": "",
+      "type": "hidden"
     }
   },
   "presets": {

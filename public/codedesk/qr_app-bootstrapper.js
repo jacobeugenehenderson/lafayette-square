@@ -299,10 +299,15 @@ window.populateBizSelect = populateBizSelect;
   var typeSelect = document.getElementById('qrType');
   if (typeSelect) {
     typeSelect.addEventListener('change', function() {
-      // After renderTypeForm rebuilds the form, re-populate bizSelect
+      // After renderTypeForm rebuilds the form, re-populate bizSelect + claimSecret
       setTimeout(function() {
         if (window.LSQ_BUSINESSES && window.LSQ_BUSINESSES.length) {
           populateBizSelect(window.LSQ_BUSINESSES);
+        }
+        // Hydrate claimSecret for Guardian type after form rebuild
+        if (window.__lsq_cached_claim_secret) {
+          var cs = document.getElementById('claimSecret');
+          if (cs) cs.value = window.__lsq_cached_claim_secret;
         }
       }, 0);
     });
@@ -316,6 +321,11 @@ window.populateBizSelect = populateBizSelect;
     if (_bSel) {
       _bSel.value = window.__lsq_cached_biz_id;
       _bSel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // Hydrate claimSecret if cached
+    if (window.__lsq_cached_claim_secret) {
+      var _cSel = document.getElementById('claimSecret');
+      if (_cSel) _cSel.value = window.__lsq_cached_claim_secret;
     }
   }
 
