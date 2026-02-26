@@ -87,6 +87,37 @@ async function _lsqLoadRemote(bizId, type) {
 }
 
 // =====================================================
+//  CLAIM SECRET — auto-fetch for Guardian type
+// =====================================================
+var _lsqSecretCache = {};  // bizId → secret
+
+function _lsqFetchClaimSecret(bizId) {
+  if (!bizId || !window.LSQ_API_URL) return;
+  if (_lsqSecretCache[bizId]) {
+    _lsqApplySecret(_lsqSecretCache[bizId]);
+    return;
+  }
+  fetch(window.LSQ_API_URL + '?action=claim-secret&lid=' + encodeURIComponent(bizId) + '&admin=lafayette1850')
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      var secret = data && data.data && data.data.claim_secret;
+      if (secret) {
+        _lsqSecretCache[bizId] = secret;
+        _lsqApplySecret(secret);
+      }
+    })
+    .catch(function() {});
+}
+
+function _lsqApplySecret(secret) {
+  window.__lsq_cached_claim_secret = secret;
+  var el = document.getElementById('claimSecret');
+  if (el) el.value = secret;
+  // Re-render so QR URL updates
+  try { if (typeof window.render === 'function') window.render(); } catch (e) {}
+}
+
+// =====================================================
 //  SESSION CACHE — in-memory drafts for type switching
 //  Not persisted; only written to storage on explicit Save.
 // =====================================================
@@ -288,6 +319,11 @@ function _lsqOnTypeSwitch(newType) {
     _lsqLoadDesign(bizId, newType);
   }
 
+  // Fetch claim secret when switching to Guardian
+  if (newType === 'Guardian' && bizId) {
+    _lsqFetchClaimSecret(bizId);
+  }
+
   // Release guard after microtask (import dispatches events synchronously)
   queueMicrotask(function() { __lsq_switching_type = false; });
 }
@@ -321,7 +357,10 @@ function _lsqOnTypeSwitch(newType) {
 
     sel.addEventListener('change', function() {
       var bizId = (sel.value || '').trim();
-      if (bizId) _lsqLoadDesign(bizId, _lsqGetCurrentType());
+      if (!bizId) return;
+      var type = _lsqGetCurrentType();
+      _lsqLoadDesign(bizId, type);
+      if (type === 'Guardian') _lsqFetchClaimSecret(bizId);
     });
   }
 
