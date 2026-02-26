@@ -795,6 +795,13 @@ function DeferredStreetLights() {
 
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
+  const [visible, setVisible] = useState(false)
+
+  // Fade in from black once the Canvas has had a moment to render
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   // Portal div for CSS3D SVG ground — rendered BEHIND the transparent WebGL canvas.
   // See VectorStreets.jsx header comment for full architecture explanation.
@@ -803,7 +810,11 @@ function Scene() {
   const [svgPortalEl, setSvgPortalEl] = useState(null)
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', background: '#000' }}>
+    <div style={{
+      position: 'relative', width: '100%', height: '100%', background: '#000',
+      opacity: visible ? 1 : 0,
+      transition: 'opacity 1.2s ease-in',
+    }}>
       {/* SVG ground portal — behind the canvas (z-index: 0) */}
       <div
         ref={setSvgPortalEl}
