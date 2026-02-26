@@ -1266,49 +1266,46 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
       )}
 
       {/* Lightbox overlay */}
-      {lightbox !== null && (() => {
-        const entry = lightboxEntries[lightbox]
-        return (
-          <div
-            className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
-            onClick={closeLightbox}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            <img
-              src={assetUrl(entry.url)}
-              alt={`${name} ${lightbox + 1}`}
-              className="max-w-full max-h-[85vh] object-contain select-none"
-              onClick={(e) => e.stopPropagation()}
-            />
-            {/* Counter */}
-            <span className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/50 text-white/70 text-xs backdrop-blur-sm">
-              {lightbox + 1} / {lightboxEntries.length}
-            </span>
-            {/* Credit at bottom */}
-            {entry.credit && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/50 text-xs backdrop-blur-sm" onClick={e => e.stopPropagation()}>
-                <PhotoCredit credit={entry.credit} credit_url={entry.credit_url} />
-              </div>
-            )}
-            {/* Close */}
-            <button onClick={closeLightbox} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            {/* Prev / Next */}
-            {lightboxEntries.length > 1 && (
-              <>
-                <button onClick={(e) => { e.stopPropagation(); prev() }} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); next() }} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </>
-            )}
-          </div>
-        )
-      })()}
+      {lightbox !== null && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
+          onClick={closeLightbox}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <img
+            src={assetUrl(lightboxEntries[lightbox]?.url)}
+            alt={`${name} ${lightbox + 1}`}
+            className="max-w-full max-h-[85vh] object-contain select-none"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {/* Counter */}
+          <span className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/50 text-white/70 text-xs backdrop-blur-sm">
+            {lightbox + 1} / {lightboxEntries.length}
+          </span>
+          {/* Credit at bottom */}
+          {lightboxEntries[lightbox]?.credit && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/50 text-xs backdrop-blur-sm" onClick={e => e.stopPropagation()}>
+              <PhotoCredit credit={lightboxEntries[lightbox].credit} credit_url={lightboxEntries[lightbox].credit_url} />
+            </div>
+          )}
+          {/* Close */}
+          <button onClick={closeLightbox} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+          {/* Prev / Next */}
+          {lightboxEntries.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); prev() }} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); next() }} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
