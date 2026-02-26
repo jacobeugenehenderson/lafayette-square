@@ -1,18 +1,21 @@
 /**
- * Extract dominant color from an emoji as HSL.
+ * Extract top 3 color clusters from an emoji.
  *
  * Uses SVG foreignObject → canvas drawImage to get color emoji pixels
  * (plain fillText renders monochrome on Apple platforms).
- * Async because it needs Image.onload for the SVG blob.
  *
- * Returns a promise of { h, s, l }. Results are cached per emoji.
+ * Returns a promise of 3 HSL colors sorted lightest → darkest.
  */
 
 const cache = new Map()
 const pending = new Map()
 
-// Neutral fallback for monochrome/symbol emoji
-const NEUTRAL = { h: 260, s: 25, l: 50 }
+// Neutral fallback palette
+const NEUTRAL = [
+  { h: 260, s: 30, l: 65 },
+  { h: 260, s: 25, l: 45 },
+  { h: 260, s: 20, l: 25 },
+]
 
 function rgbToHsl(r, g, b) {
   r /= 255; g /= 255; b /= 255
@@ -28,9 +31,6 @@ function rgbToHsl(r, g, b) {
   return { h: h * 360, s: s * 100, l: l * 100 }
 }
 
-/**
- * Render emoji via SVG foreignObject to get color pixels on all platforms.
- */
 function renderEmojiToCanvas(emoji, size) {
   return new Promise((resolve) => {
     const svg = `
@@ -59,6 +59,9 @@ function renderEmojiToCanvas(emoji, size) {
   })
 }
 
+/**
+ * Analyze pixel data into top 3 color clusters, sorted light → dark.
+ */
 function analyzePixels(data) {
   if (!data) return NEUTRAL
 
@@ -66,42 +69,50 @@ function analyzePixels(data) {
   for (let i = 0; i < data.length; i += 4) {
     if (data[i + 3] < 100) continue
     const hsl = rgbToHsl(data[i], data[i + 1], data[i + 2])
-    // Keep chromatic pixels (skip grays and extremes)
-    if (hsl.s > 12 && hsl.l > 8 && hsl.l < 92) pixels.push(hsl)
+    if (hsl.s > 10 && hsl.l > 5 && hsl.l < 95) pixels.push(hsl)
   }
 
   if (pixels.length < 5) return NEUTRAL
 
-  // Bin hues into 12 buckets (30° each), pick the most populated
-  const bins = new Array(12).fill(0)
-  const binSums = Array.from({ length: 12 }, () => ({ h: 0, s: 0, l: 0 }))
+  // Bin hues into 12 buckets (30° each)
+  const bins = new Array(12).fill(null).map(() => ({ count: 0, h: 0, s: 0, l: 0 }))
   for (const p of pixels) {
     const bin = Math.floor(p.h / 30) % 12
-    bins[bin]++
-    binSums[bin].h += p.h
-    binSums[bin].s += p.s
-    binSums[bin].l += p.l
+    bins[bin].count++
+    bins[bin].h += p.h
+    bins[bin].s += p.s
+    bins[bin].l += p.l
   }
 
-  let maxBin = 0
-  for (let i = 1; i < 12; i++) {
-    if (bins[i] > bins[maxBin]) maxBin = i
+  // Sort by population, take top 3
+  const ranked = bins
+    .map((b, i) => ({ i, ...b }))
+    .filter(b => b.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+    .map(b => ({
+      h: b.h / b.count,
+      s: b.s / b.count,
+      l: b.l / b.count,
+    }))
+
+  // Pad to 3 if fewer clusters found
+  while (ranked.length < 3) {
+    const base = ranked[ranked.length - 1]
+    ranked.push({ h: base.h, s: base.s * 0.7, l: Math.max(base.l - 20, 10) })
   }
 
-  const count = bins[maxBin]
-  return {
-    h: binSums[maxBin].h / count,
-    s: binSums[maxBin].s / count,
-    l: binSums[maxBin].l / count,
-  }
+  // Sort light → dark
+  ranked.sort((a, b) => b.l - a.l)
+  return ranked
 }
 
 /**
- * Extract the dominant chromatic color from an emoji.
- * @param {string} emoji — single emoji character
- * @returns {Promise<{ h: number, s: number, l: number }>}
+ * Extract top 3 color clusters from an emoji.
+ * @param {string} emoji
+ * @returns {Promise<[{h,s,l}, {h,s,l}, {h,s,l}]>} light → dark
  */
-export async function extractEmojiColor(emoji) {
+export async function extractEmojiColors(emoji) {
   if (cache.has(emoji)) return cache.get(emoji)
   if (pending.has(emoji)) return pending.get(emoji)
 
@@ -116,9 +127,8 @@ export async function extractEmojiColor(emoji) {
 }
 
 /**
- * Synchronous version — returns cached result or NEUTRAL.
- * Use after an async extraction has completed, or as an instant fallback.
+ * Synchronous — returns cached 3-color palette or NEUTRAL.
  */
-export function extractEmojiColorSync(emoji) {
+export function extractEmojiColorsSync(emoji) {
   return cache.get(emoji) || NEUTRAL
 }

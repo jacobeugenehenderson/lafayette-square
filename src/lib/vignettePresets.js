@@ -1,76 +1,118 @@
 /**
- * Vignette presets — 3 decorative styles derived from emoji's dominant hue.
- * Pure HSL math, no external dependencies.
+ * Vignette presets — 4 compositions using the 3 colors extracted from an emoji.
+ * Each returns a style object { background, boxShadow, borderColor } for
+ * dimensional, layered rendering — not flat discs.
  *
- * v0 "Decorator" — soft watercolor wash. The tasteful default.
- * v1 "Vivid"     — saturated center, dark edge. Bold.
- * v2 "Complement" — base hue center, shifted hue edge. Artistic.
+ * Colors arrive as [light, mid, dark] from extractEmojiColorsSync.
+ *
+ * v0 "Decorator"  — Refined interplay of all 3, subtle banded depth
+ * v1 "Soft"       — Desaturated, pastel, airy glow
+ * v2 "Vivid"      — Saturated, rich, jewel-like with contrasting band
+ * v3 "Bold"       — Near-black base, neon accent ring from the palette
  */
-import { extractEmojiColor, extractEmojiColorSync } from './emojiColor'
+import { extractEmojiColors, extractEmojiColorsSync } from './emojiColor'
 
-export const PRESET_IDS = ['v0', 'v1', 'v2']
+export const PRESET_IDS = ['v0', 'v1', 'v2', 'v3']
 
 function hsl(h, s, l) {
-  return `hsl(${Math.round(((h % 360) + 360) % 360)}, ${Math.round(Math.max(0, s))}%, ${Math.round(Math.max(0, Math.min(100, l)))}%)`
+  h = ((h % 360) + 360) % 360
+  s = Math.max(0, Math.min(100, s))
+  l = Math.max(0, Math.min(100, l))
+  return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`
+}
+
+function hsla(h, s, l, a) {
+  h = ((h % 360) + 360) % 360
+  s = Math.max(0, Math.min(100, s))
+  l = Math.max(0, Math.min(100, l))
+  return `hsla(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%, ${a})`
 }
 
 /**
- * v0 "Decorator" — gentle wash, enough color to read clearly.
+ * v0 "Decorator" — All 3 colors in a harmonious radial with a mid-tone band.
+ * Refined, warm, balanced.
  */
-function decorator({ h, s }) {
-  const sat = Math.max(s, 40)
-  const center = hsl(h, sat * 0.55, 68)
-  const edge = hsl(h, sat * 0.65, 30)
-  return `radial-gradient(circle, ${center}, ${edge})`
+function decorator([light, mid, dark]) {
+  const center = hsl(light.h, light.s * 0.7, Math.min(light.l, 72))
+  const band = hsl(mid.h, mid.s * 0.8, mid.l)
+  const edge = hsl(dark.h, dark.s * 0.9, Math.max(dark.l * 0.6, 12))
+  return {
+    background: `radial-gradient(circle at 40% 35%, ${center} 0%, ${band} 55%, ${edge} 100%)`,
+    boxShadow: `inset 0 0 0 1.5px ${hsla(mid.h, mid.s * 0.6, mid.l + 15, 0.35)}, inset 0 -2px 6px ${hsla(dark.h, dark.s, dark.l * 0.4, 0.5)}`,
+    borderColor: hsl(dark.h, dark.s * 0.5, dark.l * 0.5),
+  }
 }
 
 /**
- * v1 "Vivid" — rich, punchy. High saturation.
+ * v1 "Soft" — Pastel, airy. Colors desaturated and lifted, gentle inner glow.
  */
-function vivid({ h, s }) {
-  const sat = Math.max(s, 50)
-  const center = hsl(h, sat * 0.95, 52)
-  const edge = hsl(h, sat * 0.8, 16)
-  return `radial-gradient(circle, ${center}, ${edge})`
+function soft([light, mid, dark]) {
+  const center = hsl(light.h, light.s * 0.4, Math.min(light.l + 15, 85))
+  const outer = hsl(mid.h, mid.s * 0.45, Math.min(mid.l + 5, 60))
+  return {
+    background: `radial-gradient(circle at 45% 40%, ${center} 0%, ${outer} 100%)`,
+    boxShadow: `inset 0 0 0 1.5px ${hsla(light.h, light.s * 0.3, 90, 0.3)}, inset 0 1px 4px ${hsla(light.h, light.s * 0.5, light.l + 10, 0.4)}`,
+    borderColor: hsl(mid.h, mid.s * 0.4, mid.l + 10),
+  }
 }
 
 /**
- * v2 "Complement" — base hue center, 150° shifted edge. Unexpected pairing.
+ * v2 "Vivid" — Saturated, rich. Colors pumped up with a contrasting inner band.
+ * Jewel-like depth.
  */
-function complement({ h, s }) {
-  const sat = Math.max(s, 45)
-  const center = hsl(h, sat * 0.8, 48)
-  const edge = hsl(h + 150, sat * 0.55, 18)
-  return `radial-gradient(circle, ${center}, ${edge})`
+function vivid([light, mid, dark]) {
+  const center = hsl(light.h, Math.max(light.s, 55), Math.min(light.l, 60))
+  const edge = hsl(dark.h, Math.max(dark.s, 40), Math.max(dark.l * 0.45, 10))
+  return {
+    background: `radial-gradient(circle at 40% 35%, ${center} 0%, ${edge} 100%)`,
+    boxShadow: `inset 0 0 0 2.5px ${hsla(mid.h, Math.max(mid.s, 50), mid.l + 10, 0.5)}, inset 0 -3px 8px ${hsla(dark.h, dark.s, dark.l * 0.3, 0.6)}`,
+    borderColor: hsl(mid.h, Math.max(mid.s, 40), Math.min(mid.l + 5, 55)),
+  }
 }
 
-const generators = { v0: decorator, v1: vivid, v2: complement }
-
 /**
- * Get CSS radial-gradient background for an emoji + preset combo.
- * Uses sync (cached) color — call warmUpEmojiColor() first for accuracy.
+ * v3 "Bold" — Near-black base. A neon-ized accent from the palette glows
+ * as an inner ring. Dramatic, high-contrast.
  */
-export function getVignetteBackground(emoji, presetId) {
-  if (!emoji || !presetId || !generators[presetId]) return 'none'
-  const color = extractEmojiColorSync(emoji)
-  return generators[presetId](color)
+function bold([light, mid, dark]) {
+  // Pick the most saturated color for the neon accent
+  const accent = [light, mid, dark].reduce((a, b) => b.s > a.s ? b : a)
+  const neon = hsl(accent.h, Math.min(accent.s * 1.3, 100), Math.min(accent.l + 15, 65))
+  const neonGlow = hsla(accent.h, Math.min(accent.s * 1.3, 100), Math.min(accent.l + 15, 65), 0.4)
+  const base = hsl(dark.h, dark.s * 0.3, 8)
+  const tint = hsl(dark.h, dark.s * 0.4, 14)
+  return {
+    background: `radial-gradient(circle at 45% 40%, ${tint} 0%, ${base} 100%)`,
+    boxShadow: `inset 0 0 0 2px ${neon}, 0 0 6px ${neonGlow}, inset 0 0 8px ${neonGlow}`,
+    borderColor: 'transparent',
+  }
+}
+
+const generators = { v0: decorator, v1: soft, v2: vivid, v3: bold }
+
+/**
+ * Get full vignette style object for an emoji + preset.
+ * Returns { background, boxShadow, borderColor }.
+ */
+export function getVignetteStyle(emoji, presetId) {
+  if (!emoji || !presetId || !generators[presetId]) return null
+  const colors = extractEmojiColorsSync(emoji)
+  return generators[presetId](colors)
 }
 
 /**
- * Get all 3 vignette swatches for an emoji.
- * Uses sync (cached) color.
+ * Get all 4 swatch styles for picker preview.
  */
 export function getVignetteSwatches(emoji) {
-  if (!emoji) return PRESET_IDS.map(id => ({ id, background: 'none' }))
-  const color = extractEmojiColorSync(emoji)
-  return PRESET_IDS.map(id => ({ id, background: generators[id](color) }))
+  if (!emoji) return PRESET_IDS.map(id => ({ id, style: null }))
+  const colors = extractEmojiColorsSync(emoji)
+  return PRESET_IDS.map(id => ({ id, style: generators[id](colors) }))
 }
 
 /**
  * Warm up the color cache for an emoji (async).
- * Call this when an emoji is selected, then re-render once resolved.
- * @returns {Promise<{ h, s, l }>}
+ * @returns {Promise<[{h,s,l},{h,s,l},{h,s,l}]>}
  */
 export async function warmUpEmojiColor(emoji) {
-  return extractEmojiColor(emoji)
+  return extractEmojiColors(emoji)
 }

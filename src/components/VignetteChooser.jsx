@@ -1,18 +1,17 @@
 /**
  * Step 2 of avatar editor — pick a vignette style for the chosen emoji.
- * Shows large preview + row of 3 swatch circles (v0–v2). No "none" option.
+ * Shows large preview + row of 4 swatch circles. No "none" option.
  */
 import { useMemo, useState, useEffect } from 'react'
 import AvatarCircle from './AvatarCircle'
 import { getVignetteSwatches, warmUpEmojiColor } from '../lib/vignettePresets'
 
-const LABELS = { v0: 'Decorator', v1: 'Vivid', v2: 'Complement' }
+const LABELS = { v0: 'Decorator', v1: 'Soft', v2: 'Vivid', v3: 'Bold' }
 
 export default function VignetteChooser({ emoji, vignette, onVignetteChange, onBack, onSave }) {
   const [ready, setReady] = useState(false)
   const active = vignette || 'v0'
 
-  // Warm up color extraction (async SVG render), then trigger re-render
   useEffect(() => {
     setReady(false)
     if (!emoji) return
@@ -28,17 +27,25 @@ export default function VignetteChooser({ emoji, vignette, onVignetteChange, onB
 
       {/* Swatch row */}
       <div className="flex items-center gap-3">
-        {swatches.map(s => (
+        {swatches.map(({ id, style }) => (
           <button
-            key={s.id}
-            onClick={() => onVignetteChange(s.id)}
-            className={`w-10 h-10 rounded-full ring-1 transition-all duration-150 ${
-              active === s.id
-                ? 'ring-white/70 scale-110'
-                : 'ring-white/20 hover:ring-white/40'
+            key={id}
+            onClick={() => onVignetteChange(id)}
+            className={`w-10 h-10 rounded-full transition-all duration-150 ${
+              active === id ? 'scale-110' : 'hover:scale-105'
             }`}
-            style={{ background: s.background }}
-            title={LABELS[s.id]}
+            style={{
+              ...(style ? {
+                background: style.background,
+                boxShadow: active === id
+                  ? `${style.boxShadow}, 0 0 0 2px rgba(255,255,255,0.6)`
+                  : style.boxShadow,
+                borderColor: style.borderColor,
+                borderWidth: '1.5px',
+                borderStyle: 'solid',
+              } : {}),
+            }}
+            title={LABELS[id]}
           />
         ))}
       </div>
