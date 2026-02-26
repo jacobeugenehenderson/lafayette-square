@@ -48,25 +48,25 @@ function HandlePicker({ accentHex, onDone }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl p-4 border border-white/15 bg-white/5">
-        <h3 className="text-white font-medium text-sm mb-3">Pick a handle</h3>
-        <p className="text-white/50 text-xs mb-3">
+      <div className="rounded-xl p-4 border border-outline bg-surface-container">
+        <h3 className="text-on-surface font-medium text-sm mb-3">Pick a handle</h3>
+        <p className="text-on-surface-subtle text-xs mb-3">
           Your handle is how neighbors will know you on the bulletin board and in threads.
         </p>
 
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">@</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-disabled text-sm">@</span>
           <input
             type="text"
             value={input}
             onChange={handleChange}
             placeholder="your_handle"
             maxLength={20}
-            className="w-full bg-white/5 border border-white/15 rounded-lg pl-7 pr-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30"
+            className="w-full bg-surface-container border border-outline rounded-lg pl-7 pr-3 py-2 text-sm text-on-surface placeholder-on-surface-disabled focus:outline-none focus:border-on-surface-disabled"
           />
           {checking && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-on-surface-disabled border-t-on-surface-variant rounded-full animate-spin" />
             </div>
           )}
           {!checking && available === true && valid && (
@@ -78,13 +78,13 @@ function HandlePicker({ accentHex, onDone }) {
             </span>
           )}
         </div>
-        <p className="text-white/30 text-[10px] mt-1">3-20 characters. Letters, numbers, and underscores.</p>
+        <p className="text-on-surface-disabled text-[10px] mt-1">3-20 characters. Letters, numbers, and underscores.</p>
       </div>
 
       {/* Avatar picker */}
-      <div className="rounded-xl p-4 border border-white/15 bg-white/5">
-        <h3 className="text-white font-medium text-sm mb-1">Pick your avatar</h3>
-        <p className="text-white/40 text-[10px] mb-3">Tap to choose your emoji and style.</p>
+      <div className="rounded-xl p-4 border border-outline bg-surface-container">
+        <h3 className="text-on-surface font-medium text-sm mb-1">Pick your avatar</h3>
+        <p className="text-on-surface-subtle text-[10px] mb-3">Tap to choose your emoji and style.</p>
         <div className="flex items-center gap-3">
           <button onClick={() => setEditorOpen(true)} className="focus:outline-none">
             <AvatarCircle emoji={avatar} vignette={vignette} size={12} />
@@ -92,11 +92,11 @@ function HandlePicker({ accentHex, onDone }) {
           <div className="flex-1">
             <button
               onClick={() => setEditorOpen(true)}
-              className="text-white/60 text-xs hover:text-white/80 underline transition-colors"
+              className="text-on-surface-variant text-xs hover:text-on-surface-medium underline transition-colors"
             >
               Choose emoji
             </button>
-            <p className="text-white/30 text-[10px] mt-0.5">
+            <p className="text-on-surface-disabled text-[10px] mt-0.5">
               Don't make it your face or anything rude.
             </p>
           </div>
@@ -111,14 +111,14 @@ function HandlePicker({ accentHex, onDone }) {
           onChange={(e) => setAccepted(e.target.checked)}
           className="mt-0.5 accent-emerald-500"
         />
-        <span className="text-white/50 text-xs leading-relaxed">
+        <span className="text-on-surface-subtle text-xs leading-relaxed">
           Be neighborly. No hate speech, harassment, or spam. Posts violating guidelines may be removed.
         </span>
       </label>
 
       {/* Terms */}
-      <details className="text-white/30 text-[10px]">
-        <summary className="cursor-pointer hover:text-white/50 transition-colors">Terms of use</summary>
+      <details className="text-on-surface-disabled text-[10px]">
+        <summary className="cursor-pointer hover:text-on-surface-subtle transition-colors">Terms of use</summary>
         <div className="mt-2 space-y-1 leading-relaxed">
           <p>Your handle is tied to this device only and cannot be transferred.</p>
           <p>Community content may be removed without notice at any time.</p>
@@ -141,7 +141,7 @@ function HandlePicker({ accentHex, onDone }) {
 
       <button
         onClick={onDone}
-        className="w-full text-white/30 text-xs hover:text-white/50 transition-colors"
+        className="w-full text-on-surface-disabled text-xs hover:text-on-surface-subtle transition-colors"
       >
         Skip for now
       </button>
@@ -187,23 +187,23 @@ export default function CheckinPage({ locationId }) {
   const emoji = cat?.emoji || '\ud83d\udccd'
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e] flex items-center justify-center p-4">
-      <div className="max-w-sm w-full rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-6 text-center space-y-5">
+    <div className="min-h-screen bg-scene-bg flex items-center justify-center p-4">
+      <div className="max-w-sm w-full rounded-2xl bg-surface-container border border-outline-variant backdrop-blur-sm p-6 text-center space-y-5">
         {/* Header */}
         <div>
           <div className="text-4xl mb-2">{emoji}</div>
-          <h1 className="text-xl font-semibold text-white">
+          <h1 className="text-xl font-semibold text-on-surface">
             {landmark ? landmark.name : 'Lafayette Square'}
           </h1>
           {landmark && (
-            <p className="text-sm text-white/50 mt-1">{landmark.address}</p>
+            <p className="text-sm text-on-surface-subtle mt-1">{landmark.address}</p>
           )}
         </div>
 
         {/* Status */}
         {loading && (
-          <div className="flex items-center justify-center gap-2 text-white/60">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <div className="flex items-center justify-center gap-2 text-on-surface-variant">
+            <div className="w-4 h-4 border-2 border-on-surface-disabled border-t-on-surface rounded-full animate-spin" />
             Checking in...
           </div>
         )}
@@ -219,7 +219,7 @@ export default function CheckinPage({ locationId }) {
                 <div className="text-2xl mb-1">{emoji}</div>
                 <p className="text-emerald-300 font-medium">Welcome back, Townie</p>
                 {handle && (
-                  <p className="text-white/50 text-xs mt-1">@{handle}</p>
+                  <p className="text-on-surface-subtle text-xs mt-1">@{handle}</p>
                 )}
               </div>
             ) : (
@@ -228,9 +228,9 @@ export default function CheckinPage({ locationId }) {
                 style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
               >
                 <div className="text-2xl mb-1">&#10003;</div>
-                <p className="text-white font-medium">Check-in recorded!</p>
+                <p className="text-on-surface font-medium">Check-in recorded!</p>
                 {handle && (
-                  <p className="text-white/50 text-xs mt-1">Signed in as @{handle}</p>
+                  <p className="text-on-surface-subtle text-xs mt-1">Signed in as @{handle}</p>
                 )}
               </div>
             )}
@@ -239,11 +239,11 @@ export default function CheckinPage({ locationId }) {
             {!(result.logged === false && (result.is_local || isLocal)) && (
               <>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-white/50">
+                  <div className="flex justify-between text-xs text-on-surface-subtle">
                     <span>Local progress</span>
                     <span>{distinctDays} / {threshold} days</span>
                   </div>
-                  <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-2 rounded-full bg-surface-container-high overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
@@ -274,7 +274,7 @@ export default function CheckinPage({ locationId }) {
         {/* Link back to map */}
         <a
           href={import.meta.env.BASE_URL}
-          className="inline-block text-sm px-4 py-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/15 transition-colors"
+          className="inline-block text-sm px-4 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
         >
           Explore the neighborhood &rarr;
         </a>

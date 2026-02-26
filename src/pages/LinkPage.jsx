@@ -41,16 +41,16 @@ export default function LinkPage({ token }) {
   }, [token])
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-6">
+    <div className="min-h-screen bg-scene-bg flex items-center justify-center p-6">
       <div className="w-full max-w-xs text-center space-y-4">
         {status === 'loading' && (
-          <p className="text-white/50 text-sm">Linking...</p>
+          <p className="text-on-surface-subtle text-sm">Linking...</p>
         )}
 
         {status === 'no-handle' && (
           <>
             <div className="text-4xl">📱</div>
-            <p className="text-white/70 text-sm">
+            <p className="text-on-surface-variant text-sm">
               Open this on the device where you're already signed in.
             </p>
           </>
@@ -61,8 +61,8 @@ export default function LinkPage({ token }) {
             <div className="flex justify-center">
               <AvatarCircle emoji={avatar} vignette={localStorage.getItem('lsq_vignette')} size={12} />
             </div>
-            <p className="text-white text-lg font-medium">Linked!</p>
-            <p className="text-white/50 text-sm">
+            <p className="text-on-surface text-lg font-medium">Linked!</p>
+            <p className="text-on-surface-subtle text-sm">
               @{handle} is now connected to your other device. You can close this tab.
             </p>
           </>
@@ -71,7 +71,7 @@ export default function LinkPage({ token }) {
         {status === 'error' && (
           <>
             <div className="text-4xl">⚠️</div>
-            <p className="text-white/70 text-sm">{errorMsg || 'Something went wrong'}</p>
+            <p className="text-on-surface-variant text-sm">{errorMsg || 'Something went wrong'}</p>
           </>
         )}
       </div>

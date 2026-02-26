@@ -41,14 +41,14 @@ export default function AvatarEditor({ open, onClose, currentEmoji, currentVigne
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-surface-scrim backdrop-blur-sm"
       onClick={handleBackdrop}
     >
-      <div className="relative rounded-2xl bg-[#1a1a2e]/95 border border-white/15 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+      <div className="relative rounded-2xl bg-surface border border-outline shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-white/10 text-white/50 hover:text-white/80 hover:bg-white/15 flex items-center justify-center transition-colors"
+          className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-surface-container-high text-on-surface-subtle hover:text-on-surface-medium hover:bg-surface-container-highest flex items-center justify-center transition-colors"
         >
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" d="M18 6L6 18M6 6l12 12" />
@@ -73,7 +73,7 @@ export default function AvatarEditor({ open, onClose, currentEmoji, currentVigne
           </div>
         ) : (
           <div className="p-6 min-w-[280px]">
-            <h3 className="text-white/70 text-xs text-center mb-4 font-medium">Avatar style</h3>
+            <h3 className="text-on-surface-variant text-xs text-center mb-4 font-medium">Avatar style</h3>
             <VignetteChooser
               emoji={emoji}
               vignette={vignette}

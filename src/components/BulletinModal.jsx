@@ -310,7 +310,7 @@ function FormattedTextarea({ value, onChange, placeholder, rows = 4 }) {
   return (
     <div className="rounded-lg border border-outline-variant bg-surface-container overflow-hidden focus-within:border-outline transition-colors">
       {/* Main toolbar */}
-      <div className="flex items-center gap-0.5 px-1.5 py-1 border-b border-white/5 flex-wrap">
+      <div className="flex items-center gap-0.5 px-1.5 py-1 border-b border-outline-variant flex-wrap">
         <button type="button" onClick={() => wrap('**', '**')} className={btnClass} title="Bold">
           <strong>B</strong>
         </button>
@@ -374,11 +374,11 @@ function FormattedTextarea({ value, onChange, placeholder, rows = 4 }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
           </svg>
         </button>
-        <span className="ml-auto text-caption text-white/15">{value.length}/{POST_MAX_CHARS}</span>
+        <span className="ml-auto text-caption text-on-surface-disabled">{value.length}/{POST_MAX_CHARS}</span>
       </div>
       {/* Color palette row */}
       {showColors && (
-        <div className="flex items-center gap-1 px-2 py-1.5 border-b border-white/5 bg-white/3">
+        <div className="flex items-center gap-1 px-2 py-1.5 border-b border-outline-variant bg-surface-container">
           {Object.entries(COLOR_PALETTE).map(([name, { label, css }]) => (
             <button
               key={name}
@@ -438,7 +438,7 @@ function IdentityPopup({ section, handle, onConfirm, onCancel }) {
 
   return (
     <div className="absolute inset-0 z-10 bg-surface-scrim backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-black/70 border border-outline rounded-xl p-4 max-w-xs w-full space-y-3">
+      <div className="bg-surface border border-outline rounded-xl p-4 max-w-xs w-full space-y-3">
         <h3 className="text-body-sm font-semibold text-on-surface">Post as...</h3>
 
         <div className="space-y-2">
@@ -560,7 +560,7 @@ function CommentSection({ bulletinId, section, canPost }) {
                   {c.handle ? <><AvatarCircle emoji={c.avatar} vignette={c.vignette} size={5} fallback={c.handle[0].toUpperCase()} />@{c.handle}</> : <em className="text-on-surface-disabled">anon</em>}
                 </span>
                 <span className="text-on-surface-subtle">{c.text}</span>
-                <span className="text-white/15 ml-1.5">{relativeTime(c.created_at)}</span>
+                <span className="text-on-surface-disabled ml-1.5">{relativeTime(c.created_at)}</span>
               </div>
               {c.is_mine && (
                 <button

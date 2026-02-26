@@ -1315,11 +1315,11 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
             <button
               onClick={() => handleRemove(hero.url)}
               disabled={removing === hero.url}
-              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white/70 hover:bg-red-500/80 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-surface-dim text-on-surface-variant hover:bg-red-500/80 hover:text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
               title="Remove photo"
             >
               {removing === hero.url ? (
-                <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-3 h-3 border border-on-surface-disabled border-t-on-surface rounded-full animate-spin" />
               ) : (
                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
               )}
@@ -1341,11 +1341,11 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
                 <button
                   onClick={() => handleRemove(photo.url)}
                   disabled={removing === photo.url}
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white/70 hover:bg-red-500/80 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-surface-dim text-on-surface-variant hover:bg-red-500/80 hover:text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                   title="Remove photo"
                 >
                   {removing === photo.url ? (
-                    <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-3 h-3 border border-on-surface-disabled border-t-on-surface rounded-full animate-spin" />
                   ) : (
                     <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
                   )}
@@ -1380,7 +1380,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
           >
             {uploading ? (
               <span className="flex items-center justify-center gap-2">
-                <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-on-surface-disabled border-t-on-surface-variant rounded-full animate-spin" />
                 Uploading...
               </span>
             ) : (
@@ -1406,7 +1406,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
       {/* Lightbox overlay */}
       {lightbox !== null && (
         <div
-          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
+          className="fixed inset-0 z-[200] bg-surface flex items-center justify-center"
           onClick={closeLightbox}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
@@ -1790,7 +1790,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
             className="w-full flex items-center justify-between"
           >
             <div className="text-left">
-              <div className="text-sm font-medium text-white mb-0.5 flex items-center gap-1.5">
+              <div className="text-sm font-medium text-on-surface mb-0.5 flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5 text-amber-400/70" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
                 </svg>
@@ -1941,9 +1941,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             style={{ background: `linear-gradient(135deg, ${styleGradient[0]}, ${styleGradient[1]})` }}
           >
             {styleName ? (
-              <span className="text-white/15 text-lg font-light tracking-wide">{styleName}</span>
+              <span className="text-on-surface-disabled text-lg font-light tracking-wide">{styleName}</span>
             ) : (
-              <svg className="w-16 h-16 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 text-on-surface-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             )}
@@ -2096,7 +2096,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               onClick={() => setActiveTab(tab.id)}
               aria-selected={currentTab === tab.id}
               role="tab"
-              className={`flex-shrink-0 px-3 py-2 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${currentTab === tab.id ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-subtle hover:text-on-surface-variant'}`}
+              className={`flex-shrink-0 px-3 py-2 text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-surface-subtle ${currentTab === tab.id ? 'text-on-surface border-b-2 border-on-surface' : 'text-on-surface-subtle hover:text-on-surface-variant'}`}
             >
               {tab.label}
             </button>

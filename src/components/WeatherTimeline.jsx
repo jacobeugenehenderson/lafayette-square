@@ -96,7 +96,7 @@ export default function WeatherTimeline({ currentTime, isLive, useCelsius, onScr
 
       {/* Row 3: track */}
       <div className="relative h-5 flex items-center mx-4">
-        <div className="absolute inset-x-0 h-[2px] bg-white/10 rounded-full top-1/2 -translate-y-1/2" />
+        <div className="absolute inset-x-0 h-[2px] bg-surface-container-high rounded-full top-1/2 -translate-y-1/2" />
 
         {/* Edge + waypoint tics */}
         <div className="absolute left-0 w-[1px] h-2 bg-rose-400/30 top-1/2 -translate-y-1/2" />

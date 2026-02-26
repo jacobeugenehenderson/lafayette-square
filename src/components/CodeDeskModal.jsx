@@ -147,8 +147,8 @@ function CodeDeskModalInner() {
             className="h-8 bg-surface-container-high text-on-surface text-body-sm rounded-lg border border-outline px-2 outline-none hover:bg-surface-container-highest transition-colors"
             style={{ fontFamily: 'ui-monospace, monospace' }}
           >
-            <option value="Townie" className="bg-neutral-800 text-white">Townie</option>
-            <option value="Guardian" className="bg-neutral-800 text-white">Guardian</option>
+            <option value="Townie" className="bg-neutral-800 text-on-surface">Townie</option>
+            <option value="Guardian" className="bg-neutral-800 text-on-surface">Guardian</option>
           </select>
           <button
             onClick={handleClose}

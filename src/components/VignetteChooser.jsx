@@ -47,13 +47,13 @@ export default function VignetteChooser({ emoji, vignette, onVignetteChange, onB
       <div className="flex flex-col items-center gap-2 w-full">
         <button
           onClick={onSave}
-          className="w-full py-2.5 rounded-lg text-sm font-medium bg-white/15 text-white hover:bg-white/20 transition-colors"
+          className="w-full py-2.5 rounded-lg text-sm font-medium bg-surface-container-highest text-on-surface hover:bg-outline transition-colors"
         >
           Save
         </button>
         <button
           onClick={onBack}
-          className="text-white/40 text-xs hover:text-white/60 transition-colors"
+          className="text-on-surface-subtle text-xs hover:text-on-surface-variant transition-colors"
         >
           Change emoji
         </button>
