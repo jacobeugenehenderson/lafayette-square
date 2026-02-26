@@ -121,10 +121,12 @@ function AccountButton() {
     <div className="absolute top-4 right-4 z-50" ref={popoverRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-9 h-9 rounded-full backdrop-blur-md bg-white/10 border border-white/20 transition-all duration-200 flex items-center justify-center hover:bg-white/20"
+        className={`w-9 h-9 rounded-full transition-all duration-200 flex items-center justify-center ${
+          avatar ? '' : 'backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20'
+        }`}
         title={handle ? `@${handle}` : 'Account'}
       >
-        <AvatarCircle emoji={avatar} vignette={vignette} size={7} fallback={handle ? handle[0].toUpperCase() : null} />
+        <AvatarCircle emoji={avatar} vignette={vignette} size={9} fallback={handle ? handle[0].toUpperCase() : null} />
       </button>
 
       {open && (
