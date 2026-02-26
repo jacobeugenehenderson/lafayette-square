@@ -309,6 +309,8 @@ window.populateBizSelect = populateBizSelect;
           var cs = document.getElementById('claimSecret');
           if (cs) cs.value = window.__lsq_cached_claim_secret;
         }
+        // Re-render with hydrated values so URL text + QR content update
+        try { if (typeof window.render === 'function') window.render(); } catch (e) {}
       }, 0);
     });
   }
