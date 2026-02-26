@@ -129,6 +129,9 @@ function VectorStreets({ svgPortal }) {
   const svgRef = useRef(null)
   const earthRef = useRef(null)
   const alive = useRef(true)
+  // Store crop/scale info for progressive upgrade
+  const svgMeta = useRef(null)
+  const svgObjRef = useRef(null)
 
   // ── Initialize CSS3DRenderer ──────────────────────────────────────────────
   useEffect(() => {
@@ -180,14 +183,19 @@ function VectorStreets({ svgPortal }) {
 
         // ── Compute optimal RASTER_SCALE within GPU pixel budget ───────────
         const maxScale = Math.floor(Math.sqrt(MAX_GPU_PIXELS / (cropW * cropH * DPR * DPR)))
-        const scale = Math.max(1, Math.min(4, maxScale))
+        const fullScale = Math.max(1, Math.min(4, maxScale))
 
-        svg.setAttribute('width', cropW * scale)
-        svg.setAttribute('height', cropH * scale)
+        // On mobile, start at scale=1 (low GPU cost) and upgrade later
+        // when the scene is stable. Desktop gets full scale immediately.
+        const initialScale = IS_MOBILE ? 1 : fullScale
+
+        svg.setAttribute('width', cropW * initialScale)
+        svg.setAttribute('height', cropH * initialScale)
         svg.style.display = 'block'
         svg.style.overflow = 'visible'
 
         svgRef.current = svg
+        svgMeta.current = { cropW, cropH, fullScale, currentScale: initialScale }
 
         // Position SVG CSS3DObject at the center of the cropped content area
         const centerX = SVG_WORLD_X + cropX + cropW / 2
@@ -195,8 +203,9 @@ function VectorStreets({ svgPortal }) {
         const obj = new CSS3DObject(svg)
         obj.position.set(centerX, 0, centerZ)
         obj.rotation.set(-Math.PI / 2, 0, 0)
-        obj.scale.set(1 / scale, 1 / scale, 1)
+        obj.scale.set(1 / initialScale, 1 / initialScale, 1)
         scene.add(obj)
+        svgObjRef.current = obj
 
         // ── Earth gradient as a small CSS3DObject ────────────────────────
         // Recreate the removed #horizon disc as a CSS div, sized to tightly
@@ -228,6 +237,7 @@ function VectorStreets({ svgPortal }) {
     return () => {
       alive.current = false
       svgRef.current = null
+      svgObjRef.current = null
       earthRef.current = null
       // Clear CSS3D scene objects so Three.js releases internal references
       while (scene.children.length) scene.remove(scene.children[0])
@@ -235,6 +245,31 @@ function VectorStreets({ svgPortal }) {
       css3d.current = { renderer: null, scene: null }
     }
   }, [svgPortal]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Progressive SVG upgrade (mobile only) ─────────────────────────────────
+  // Start at scale=1 (low GPU cost) in hero mode, then upgrade to full
+  // resolution when the user enters browse/map/society for close-up sharpness.
+  // A 300ms delay lets the camera transition settle before the GPU spike.
+  useEffect(() => {
+    if (!IS_MOBILE) return
+    const unsub = useCamera.subscribe((state) => {
+      const meta = svgMeta.current
+      const svg = svgRef.current
+      const obj = svgObjRef.current
+      if (!meta || !svg || !obj) return
+      if (meta.currentScale >= meta.fullScale) return
+      if (state.viewMode !== 'hero') {
+        setTimeout(() => {
+          if (!svgRef.current || !svgObjRef.current) return
+          svg.setAttribute('width', meta.cropW * meta.fullScale)
+          svg.setAttribute('height', meta.cropH * meta.fullScale)
+          obj.scale.set(1 / meta.fullScale, 1 / meta.fullScale, 1)
+          meta.currentScale = meta.fullScale
+        }, 300)
+      }
+    })
+    return unsub
+  }, [])
 
   // ── Sync CSS3D each frame ─────────────────────────────────────────────────
   useFrame(() => {
