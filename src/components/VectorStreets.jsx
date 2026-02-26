@@ -179,8 +179,10 @@ function VectorStreets({ svgPortal }) {
         svg.setAttribute('viewBox', `${cropX} ${cropY} ${cropW} ${cropH}`)
 
         // ── Compute optimal RASTER_SCALE within GPU pixel budget ───────────
+        // Mobile is capped at 1× to leave headroom for backdrop-filter layers
+        // and browser extensions that share the same GPU compositing memory.
         const maxScale = Math.floor(Math.sqrt(MAX_GPU_PIXELS / (cropW * cropH * DPR * DPR)))
-        const scale = Math.max(1, Math.min(4, maxScale))
+        const scale = IS_MOBILE ? 1 : Math.max(1, Math.min(4, maxScale))
 
         svg.setAttribute('width', cropW * scale)
         svg.setAttribute('height', cropH * scale)
