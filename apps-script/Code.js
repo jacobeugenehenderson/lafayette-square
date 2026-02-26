@@ -29,6 +29,8 @@ const SPREADSHEET_ID = '1UuNAXIbrWTKYrhpRcf3MSRmM_XHyGjlasvvwgGpiZso'
 const LOCAL_THRESHOLD = 3          // check-ins needed to become a local
 const LOCAL_WINDOW_DAYS = 14       // rolling window for distinct-day counting
 const TIMEZONE = 'America/Chicago' // Central Time for date calculations
+var PHOTO_FOLDER_ID = PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') || ''
+const MAX_PHOTOS_PER_LISTING = 10
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -157,6 +159,7 @@ function doGet(e) {
       case 'comments':        return getComments(e.parameter.bid, e.parameter.dh)
       case 'claim-secret':   return getClaimSecret(e.parameter.lid, e.parameter.dh, e.parameter.admin)
       case 'getdesign':      return getDesign(e.parameter.bizId)
+      case 'setup-photo-folder': if (e.parameter.admin === 'lafayette1850') { setupPhotoFolder(); return jsonResponse({ folder_id: PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') }) } return errorResponse('Unauthorized')
       default:                return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
@@ -186,6 +189,7 @@ function doPost(e) {
       case 'accept-listing':   return postAcceptListing(body)
       case 'remove-listing':   return postRemoveListing(body)
       case 'set-handle':       return postSetHandle(body)
+      case 'update-avatar':    return postUpdateAvatar(body)
       case 'bulletin':         return postBulletin(body)
       case 'remove-bulletin':  return postRemoveBulletin(body)
       case 'start-thread':     return postStartThread(body)
@@ -194,6 +198,8 @@ function doPost(e) {
       case 'comment':          return postComment(body)
       case 'remove-comment':   return postRemoveComment(body)
       case 'reply':            return postReply(body)
+      case 'upload-photo':     return postUploadPhoto(body)
+      case 'remove-photo':     return postRemovePhoto(body)
       case 'savedesign':       return saveDesign(body)
       // Read-only actions via POST to bypass Google's redirect cache
       case 'events':           return getEvents()
@@ -242,6 +248,15 @@ function getListings() {
   return jsonResponse(parsed)
 }
 
+// ─── Helper: build handle→avatar lookup ─────────────────────────────────────
+
+function buildAvatarMap() {
+  var rows = sheetToObjects(getSheet('Handles'))
+  var map = {}
+  rows.forEach(function(r) { if (r.handle && r.avatar) map[r.handle] = r.avatar })
+  return map
+}
+
 // ─── GET: Reviews for a listing ─────────────────────────────────────────────
 
 function getReviews(listingId) {
@@ -250,6 +265,9 @@ function getReviews(listingId) {
   const filtered = rows
     .filter(r => r.listing_id === listingId)
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+
+  // Build avatar lookup
+  var avatarMap = buildAvatarMap()
 
   // Attach replies to each review
   var replySheet = getSheet('Replies')
@@ -260,11 +278,13 @@ function getReviews(listingId) {
     replyMap[r.review_id].push({
       id: r.id,
       handle: r.handle || '',
+      avatar: avatarMap[r.handle] || null,
       text: r.text,
       created_at: r.created_at
     })
   })
   filtered.forEach(function(r) {
+    r.avatar = avatarMap[r.handle] || null
     r.replies = replyMap[r.id] || []
   })
 
@@ -508,7 +528,8 @@ function postUpdateListing(body) {
   const EDITABLE = [
     'name', 'address', 'category', 'subcategory', 'phone', 'website',
     'description', 'logo', 'home_based', 'rating', 'review_count',
-    'hours_json', 'amenities_json', 'tags_json', 'photos_json', 'history_json'
+    'hours_json', 'amenities_json', 'tags_json', 'photos_json', 'history_json',
+    'reservation_url', 'menu_url'
   ]
 
   // Map shorthand field names to JSON column names
@@ -642,7 +663,7 @@ function isGuardianOf(listingId, deviceHash) {
 function getHandle(deviceHash) {
   if (!deviceHash) return errorResponse('Missing dh parameter', 'bad_request')
   const result = findRow(getSheet('Handles'), 'device_hash', deviceHash)
-  return jsonResponse({ handle: result ? result.rowData.handle : null })
+  return jsonResponse({ handle: result ? result.rowData.handle : null, avatar: result ? (result.rowData.avatar || null) : null })
 }
 
 // ─── GET: Check handle availability ─────────────────────────────────────────
@@ -658,7 +679,7 @@ function checkHandle(handle) {
 // ─── POST: Set handle ───────────────────────────────────────────────────────
 
 function postSetHandle(body) {
-  const { device_hash, handle } = body
+  const { device_hash, handle, avatar } = body
   if (!device_hash || !handle) {
     return errorResponse('Missing device_hash or handle', 'bad_request')
   }
@@ -668,12 +689,15 @@ function postSetHandle(body) {
     return errorResponse('Handle must be 3-20 characters, alphanumeric and underscores only', 'bad_request')
   }
 
+  // Validate avatar if provided (single emoji, max 8 chars for composite emoji)
+  var cleanAvatar = (avatar || '').trim().slice(0, 8)
+
   const sheet = getSheet('Handles')
 
   // Check if device already has a handle
   const existing = findRow(sheet, 'device_hash', device_hash)
   if (existing) {
-    return jsonResponse({ success: true, handle: existing.rowData.handle, already_set: true })
+    return jsonResponse({ success: true, handle: existing.rowData.handle, avatar: existing.rowData.avatar || null, already_set: true })
   }
 
   // Check uniqueness (case-insensitive)
@@ -683,8 +707,31 @@ function postSetHandle(body) {
     return errorResponse('Handle already taken', 'conflict')
   }
 
-  sheet.appendRow([device_hash, handle, nowISO()])
-  return jsonResponse({ success: true, handle: handle })
+  sheet.appendRow([device_hash, handle, cleanAvatar, nowISO()])
+  return jsonResponse({ success: true, handle: handle, avatar: cleanAvatar || null })
+}
+
+// ─── POST: Update avatar ─────────────────────────────────────────────────────
+
+function postUpdateAvatar(body) {
+  var device_hash = body.device_hash
+  var avatar = (body.avatar || '').trim().slice(0, 8)
+  if (!device_hash) return errorResponse('Missing device_hash', 'bad_request')
+
+  var sheet = getSheet('Handles')
+  var result = findRow(sheet, 'device_hash', device_hash)
+  if (!result) return errorResponse('No handle set', 'not_found')
+
+  var hmap = getHeaderMap(sheet)
+  var avatarCol = hmap['avatar']
+  if (avatarCol == null) {
+    // Auto-migrate: add avatar column
+    var lastCol = sheet.getLastColumn()
+    sheet.getRange(1, lastCol + 1).setValue('avatar')
+    avatarCol = lastCol
+  }
+  sheet.getRange(result.rowIndex, avatarCol + 1).setValue(avatar)
+  return jsonResponse({ success: true, avatar: avatar || null })
 }
 
 // ─── GET: Bulletins ─────────────────────────────────────────────────────────
@@ -704,13 +751,20 @@ function getBulletins(requesterHash) {
     commentCounts[c.bulletin_id] = (commentCounts[c.bulletin_id] || 0) + 1
   })
 
+  // Build avatar lookup
+  var avatarMap = buildAvatarMap()
+
   // Strip device_hash from response; hide handle on anonymous posts; flag own posts
   const cleaned = active.map(r => {
     const isMine = requesterHash && r.device_hash === requesterHash
     const out = { ...r }
     delete out.device_hash
-    if (out.anonymous === true || out.anonymous === 'true' || out.anonymous === 'TRUE') {
+    const isAnon = out.anonymous === true || out.anonymous === 'true' || out.anonymous === 'TRUE'
+    if (isAnon) {
       out.handle = null
+      out.avatar = null
+    } else {
+      out.avatar = avatarMap[r.handle] || null
     }
     out.is_mine = isMine
     out.comment_count = commentCounts[r.id] || 0
@@ -781,12 +835,18 @@ function getComments(bulletinId, requesterHash) {
     .filter(r => r.bulletin_id === bulletinId)
     .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
 
+  var avatarMap = buildAvatarMap()
+
   const cleaned = filtered.map(r => {
     const isMine = requesterHash && r.device_hash === requesterHash
     const out = { ...r }
     delete out.device_hash
-    if (out.anonymous === true || out.anonymous === 'true' || out.anonymous === 'TRUE') {
+    const isAnon = out.anonymous === true || out.anonymous === 'true' || out.anonymous === 'TRUE'
+    if (isAnon) {
       out.handle = null
+      out.avatar = null
+    } else {
+      out.avatar = avatarMap[r.handle] || null
     }
     out.is_mine = isMine
     return out
@@ -1078,13 +1138,14 @@ function setupSheets() {
       'id', 'building_id', 'name', 'address', 'category', 'subcategory',
       'phone', 'website', 'description', 'logo', 'home_based', 'status',
       'rating', 'review_count', 'hours_json', 'amenities_json', 'tags_json',
-      'photos_json', 'history_json', 'created_by', 'accepted', 'accepted_at',
+      'photos_json', 'history_json', 'reservation_url', 'menu_url',
+      'created_by', 'accepted', 'accepted_at',
       'guardian_hash', 'guardian_token', 'claim_secret', 'created_at', 'updated_at'
     ],
     'Checkins':  ['device_hash', 'location_id', 'timestamp', 'date'],
     'Reviews':   ['id', 'listing_id', 'device_hash', 'handle', 'text', 'rating', 'timestamp'],
     'Events':    ['id', 'listing_id', 'device_hash', 'type', 'title', 'description', 'start_date', 'end_date', 'created_at'],
-    'Handles':   ['device_hash', 'handle', 'created_at'],
+    'Handles':   ['device_hash', 'handle', 'avatar', 'created_at'],
     'Bulletins': ['id', 'device_hash', 'handle', 'section', 'text', 'anonymous', 'created_at', 'expires_at', 'status'],
     'Threads':   ['id', 'bulletin_id', 'party_a_hash', 'party_b_hash', 'a_handle', 'b_handle', 'status', 'created_at', 'expires_at'],
     'Messages':  ['id', 'thread_id', 'sender_hash', 'text', 'created_at'],
@@ -1106,6 +1167,110 @@ function setupSheets() {
   })
 
   Logger.log('All tabs created with headers')
+}
+
+// ─── Photo Upload ──────────────────────────────────────────────────────────
+
+function postUploadPhoto(body) {
+  var device_hash = body.device_hash
+  var listing_id = body.listing_id
+  var image_data = body.image_data  // base64 JPEG (no data: prefix expected, but strip if present)
+
+  if (!device_hash || !listing_id || !image_data) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+  if (!isGuardianOf(listing_id, device_hash)) {
+    return errorResponse('Not a guardian for this listing', 'unauthorized')
+  }
+  if (!PHOTO_FOLDER_ID) {
+    return errorResponse('Photo uploads not configured — run setupPhotoFolder()', 'server_error')
+  }
+
+  // Strip data URI prefix if present
+  var b64 = image_data.replace(/^data:image\/[^;]+;base64,/, '')
+
+  // Decode and create file in Drive
+  var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', listing_id + '-' + Date.now() + '.jpg')
+  var folder = DriveApp.getFolderById(PHOTO_FOLDER_ID)
+  var file = folder.createFile(blob)
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW)
+  var fileId = file.getId()
+  var url = 'https://lh3.googleusercontent.com/d/' + fileId
+
+  // Append to listing's photos_json
+  var sheet = getSheet('Listings')
+  var result = findRow(sheet, 'id', listing_id)
+  if (!result) return errorResponse('Listing not found', 'not_found')
+
+  var headerMap = getHeaderMap(sheet)
+  var photosCol = headerMap['photos_json']
+  if (photosCol == null) return errorResponse('photos_json column not found', 'server_error')
+
+  var existing = parseJsonField(sheet.getRange(result.rowIndex, photosCol + 1).getValue()) || []
+  if (existing.length >= MAX_PHOTOS_PER_LISTING) {
+    file.setTrashed(true)
+    return errorResponse('Maximum ' + MAX_PHOTOS_PER_LISTING + ' photos per listing', 'bad_request')
+  }
+
+  existing.push(url)
+  sheet.getRange(result.rowIndex, photosCol + 1).setValue(JSON.stringify(existing))
+  updateCell(sheet, result.rowIndex, headerMap, 'updated_at', nowISO())
+
+  return jsonResponse({ success: true, url: url, photo_count: existing.length })
+}
+
+function postRemovePhoto(body) {
+  var device_hash = body.device_hash
+  var listing_id = body.listing_id
+  var photo_url = body.photo_url
+
+  if (!device_hash || !listing_id || !photo_url) {
+    return errorResponse('Missing required fields', 'bad_request')
+  }
+  if (!isGuardianOf(listing_id, device_hash)) {
+    return errorResponse('Not a guardian for this listing', 'unauthorized')
+  }
+
+  var sheet = getSheet('Listings')
+  var result = findRow(sheet, 'id', listing_id)
+  if (!result) return errorResponse('Listing not found', 'not_found')
+
+  var headerMap = getHeaderMap(sheet)
+  var photosCol = headerMap['photos_json']
+  if (photosCol == null) return errorResponse('photos_json column not found', 'server_error')
+
+  var existing = parseJsonField(sheet.getRange(result.rowIndex, photosCol + 1).getValue()) || []
+
+  // Filter out the photo (could be a string or an object with .url)
+  var filtered = existing.filter(function(p) {
+    var pUrl = typeof p === 'object' ? p.url : p
+    return pUrl !== photo_url
+  })
+
+  if (filtered.length === existing.length) {
+    return errorResponse('Photo not found in listing', 'not_found')
+  }
+
+  sheet.getRange(result.rowIndex, photosCol + 1).setValue(JSON.stringify(filtered))
+  updateCell(sheet, result.rowIndex, headerMap, 'updated_at', nowISO())
+
+  // Trash the Drive file if it's a Google Drive URL
+  var driveMatch = photo_url.match(/\/d\/([a-zA-Z0-9_-]+)/)
+  if (driveMatch) {
+    try { DriveApp.getFileById(driveMatch[1]).setTrashed(true) } catch (e) { /* file may already be gone */ }
+  }
+
+  return jsonResponse({ success: true, photo_count: filtered.length })
+}
+
+// ─── One-time: Create photo upload folder ────────────────────────────────────
+// Run once from the Apps Script editor. Sets the folder ID in script properties.
+function setupPhotoFolder() {
+  var folder = DriveApp.createFolder('Lafayette Square Photos')
+  folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW)
+  PropertiesService.getScriptProperties().setProperty('PHOTO_FOLDER_ID', folder.getId())
+  Logger.log('Created folder: ' + folder.getName() + ' (' + folder.getId() + ')')
+  Logger.log('URL: ' + folder.getUrl())
 }
 
 // ─── Utility: Seed listings from landmark data ─────────────────────────────
@@ -1188,7 +1353,7 @@ function seedListings() {
       rating: 4.6, review_count: 503,
       hours_json: JSON.stringify({tuesday:{open:"17:00",close:"21:00"},wednesday:{open:"17:00",close:"21:00"},thursday:{open:"17:00",close:"21:00"},friday:{open:"17:00",close:"21:30"},saturday:{open:"10:00",close:"21:30"},sunday:{open:"10:00",close:"14:00"}}),
       amenities_json: JSON.stringify(["Rooftop patio","Full craft cocktail bar","Weekend brunch","Reservations via Tock"]),
-      photos_json: JSON.stringify(["/photos/bellwether/01.jpeg","/photos/bellwether/02.jpeg","/photos/bellwether/03.jpeg"]),
+      photos_json: JSON.stringify(["/photos/bellwether/01.jpeg","/photos/bellwether/02.jpeg","/photos/bellwether/03.jpeg",{"url":"/photos/bellwether/04.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},{"url":"/photos/bellwether/05.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},"/photos/bellwether/06.jpeg","/photos/bellwether/07.jpeg",{"url":"/photos/bellwether/08.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},{"url":"/photos/bellwether/09.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},{"url":"/photos/bellwether/10.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},{"url":"/photos/bellwether/11.webp","credit":"Sauce Magazine","credit_url":"https://www.saucemagazine.com/places/review-the-bellwether-in-st-louis-17341636"},{"url":"/photos/bellwether/12.jpeg","credit":"Kevin A. Roberts / STL Mag"},{"url":"/photos/bellwether/13.jpeg","credit":"Kevin A. Roberts / STL Mag"}]),
     }),
     row('lmk-009', 'bldg-0419', 'Frontenac Cleaners West End', '1937 Park Avenue', 'services', 'beauty', {
       phone: '(314) 436-1355',
@@ -1429,4 +1594,32 @@ function seedEvents() {
 
   events.forEach(function(r) { sheet.appendRow(r) })
   Logger.log('Seeded ' + events.length + ' events across ' + dates.join(', '))
+}
+
+// ─── One-time utility: Sync Bellwether photos to Sheets ─────────────────────
+// Run this once from the Apps Script editor, then delete it.
+function syncBellwetherPhotos() {
+  var sheet = getSheet('Listings')
+  var found = findRow(sheet, 'id', 'lmk-008')
+  if (!found) { Logger.log('Bellwether not found'); return }
+  var hmap = getHeaderMap(sheet)
+  var col = hmap['photos_json']
+  if (col == null) { Logger.log('photos_json column not found'); return }
+  var photos = [
+    "/photos/bellwether/01.jpeg",
+    "/photos/bellwether/02.jpeg",
+    "/photos/bellwether/03.jpeg",
+    {"url":"/photos/bellwether/04.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},
+    {"url":"/photos/bellwether/05.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},
+    "/photos/bellwether/06.jpeg",
+    "/photos/bellwether/07.jpeg",
+    {"url":"/photos/bellwether/08.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},
+    {"url":"/photos/bellwether/09.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},
+    {"url":"/photos/bellwether/10.jpeg","credit":"STL Foodies","credit_url":"https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"},
+    {"url":"/photos/bellwether/11.webp","credit":"Sauce Magazine","credit_url":"https://www.saucemagazine.com/places/review-the-bellwether-in-st-louis-17341636"},
+    {"url":"/photos/bellwether/12.jpeg","credit":"Kevin A. Roberts / STL Mag"},
+    {"url":"/photos/bellwether/13.jpeg","credit":"Kevin A. Roberts / STL Mag"}
+  ]
+  sheet.getRange(found.rowIndex, col + 1).setValue(JSON.stringify(photos))
+  Logger.log('Updated Bellwether photos_json (' + photos.length + ' photos)')
 }

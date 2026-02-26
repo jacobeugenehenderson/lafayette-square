@@ -39,16 +39,22 @@ const MOCKS = {
   'events':         () => ({ data: _mockEvents }),
   'listings':       () => ({ data: [] }),
   'getDesign':      () => ({ data: { design: null, image: null } }),
+  'upload-photo':   () => ({ data: { success: true, url: 'https://example.com/mock-photo.jpg', photo_count: 1 } }),
+  'remove-photo':   () => ({ data: { success: true, photo_count: 0 } }),
   'update-listing': (body) => ({ data: { success: true, updated: Object.keys(body.fields || {}) } }),
   'accept-listing': () => ({ data: { success: true } }),
   'remove-listing': () => ({ data: { success: true } }),
   // Handle mocks
-  'handle':         (params) => ({ data: { handle: _mockHandles[params.dh] || null } }),
-  'check-handle':   (params) => ({ data: { available: !Object.values(_mockHandles).some(h => h.toLowerCase() === (params.h || '').toLowerCase()) } }),
+  'handle':         (params) => ({ data: { handle: _mockHandles[params.dh]?.handle || null, avatar: _mockHandles[params.dh]?.avatar || null } }),
+  'check-handle':   (params) => ({ data: { available: !Object.values(_mockHandles).some(h => (h.handle || h).toLowerCase() === (params.h || '').toLowerCase()) } }),
   'set-handle':     (body) => {
-    if (_mockHandles[body.device_hash]) return { data: { success: true, handle: _mockHandles[body.device_hash], already_set: true } }
-    _mockHandles[body.device_hash] = body.handle
-    return { data: { success: true, handle: body.handle } }
+    if (_mockHandles[body.device_hash]) return { data: { success: true, handle: _mockHandles[body.device_hash].handle, avatar: _mockHandles[body.device_hash].avatar || null, already_set: true } }
+    _mockHandles[body.device_hash] = { handle: body.handle, avatar: body.avatar || '' }
+    return { data: { success: true, handle: body.handle, avatar: body.avatar || null } }
+  },
+  'update-avatar':  (body) => {
+    if (_mockHandles[body.device_hash]) _mockHandles[body.device_hash].avatar = body.avatar || ''
+    return { data: { success: true, avatar: body.avatar || null } }
   },
   // Bulletin mocks
   'bulletins':       (params) => ({ data: _mockBulletins.filter(b => b.status === 'active').map(b => ({ ...b, is_mine: !!params.dh && b._device_hash === params.dh, comment_count: _mockComments.filter(c => c.bulletin_id === b.id).length })) }),
@@ -204,8 +210,24 @@ export async function checkHandleAvailability(handle) {
   return get('check-handle', { h: handle })
 }
 
-export async function setHandle(deviceHash, handle) {
-  return post('set-handle', { device_hash: deviceHash, handle })
+// ── Photo management ────────────────────────────────────────────────
+
+export async function uploadPhoto(deviceHash, listingId, imageData) {
+  return post('upload-photo', { device_hash: deviceHash, listing_id: listingId, image_data: imageData })
+}
+
+export async function removePhoto(deviceHash, listingId, photoUrl) {
+  return post('remove-photo', { device_hash: deviceHash, listing_id: listingId, photo_url: photoUrl })
+}
+
+// ── Handles ─────────────────────────────────────────────────────────
+
+export async function setHandle(deviceHash, handle, avatar) {
+  return post('set-handle', { device_hash: deviceHash, handle, avatar: avatar || '' })
+}
+
+export async function updateAvatar(deviceHash, avatar) {
+  return post('update-avatar', { device_hash: deviceHash, avatar: avatar || '' })
 }
 
 // ── Bulletins ───────────────────────────────────────────────────────

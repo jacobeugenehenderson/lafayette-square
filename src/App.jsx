@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Scene from './components/Scene'
 import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
@@ -11,6 +11,7 @@ import useTimeOfDay from './hooks/useTimeOfDay'
 import useSelectedBuilding from './hooks/useSelectedBuilding'
 import useBulletin from './hooks/useBulletin'
 import useListings from './hooks/useListings'
+import useHandle from './hooks/useHandle'
 import CheckinPage from './pages/CheckinPage'
 import ClaimPage from './pages/ClaimPage'
 
@@ -35,6 +36,111 @@ function LiveButton() {
   )
 }
 
+const DEFAULT_AVATARS = ['🦊','🐻','🦉','🐝','🦋','🐢','🐙','🦎','🐸','🌻','🍄','🌵','🔥','⭐','🌊','🎲','🎯','🧊','🫧','🪴','🪻','🍀','🐿️','🦔','🐾','🪶']
+
+function AccountButton() {
+  const handle = useHandle((s) => s.handle)
+  const avatar = useHandle((s) => s.avatar)
+  const { updateAvatar } = useHandle()
+  const [open, setOpen] = useState(false)
+  const [emojiInput, setEmojiInput] = useState('')
+  const [saving, setSaving] = useState(false)
+  const popoverRef = useRef(null)
+
+  // Close popover on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
+  }, [open])
+
+  const handleEmojiChange = (e) => {
+    const raw = e.target.value
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      const seg = new Intl.Segmenter('en', { granularity: 'grapheme' })
+      const segments = [...seg.segment(raw)]
+      const emoji = segments.length > 0 ? segments[segments.length - 1].segment : ''
+      setEmojiInput(/[^\x00-\x7F]/.test(emoji) ? emoji : '')
+    } else {
+      setEmojiInput(raw.slice(0, 2))
+    }
+  }
+
+  const saveEmoji = async () => {
+    if (!emojiInput && !avatar) return
+    setSaving(true)
+    await updateAvatar(emojiInput)
+    setSaving(false)
+    setEmojiInput('')
+    setOpen(false)
+  }
+
+  const buttonLabel = avatar || (handle ? handle[0].toUpperCase() : null)
+
+  return (
+    <div className="absolute top-4 right-4 z-50" ref={popoverRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-9 h-9 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white/60 transition-all duration-200 flex items-center justify-center hover:bg-white/20 hover:text-white/80 text-sm"
+        title={handle ? `@${handle}` : 'Account'}
+      >
+        {buttonLabel || (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+          </svg>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-11 w-56 rounded-xl bg-black/80 backdrop-blur-xl border border-white/15 p-3 space-y-3 shadow-2xl">
+          {handle ? (
+            <>
+              <div className="text-center">
+                <div className="text-2xl mb-1">{avatar || handle[0].toUpperCase()}</div>
+                <p className="text-white/70 text-xs font-medium">@{handle}</p>
+              </div>
+
+              <div className="border-t border-white/10 pt-3">
+                <p className="text-white/40 text-[10px] mb-2">Change avatar</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={emojiInput}
+                    onChange={handleEmojiChange}
+                    placeholder={avatar || '?'}
+                    className="w-10 h-10 text-center text-xl bg-white/5 border border-white/15 rounded-lg focus:outline-none focus:border-white/30"
+                    inputMode="text"
+                  />
+                  <button
+                    onClick={saveEmoji}
+                    disabled={saving || !emojiInput}
+                    className="flex-1 py-2 rounded-lg text-xs font-medium bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80 disabled:opacity-30 transition-colors"
+                  >
+                    {saving ? '...' : 'Save'}
+                  </button>
+                </div>
+                <button
+                  onClick={() => setEmojiInput(DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)])}
+                  className="text-white/30 text-[10px] hover:text-white/50 mt-1.5 underline"
+                >
+                  shuffle
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-2">
+              <p className="text-white/50 text-xs">Scan a QR code at a local business to check in and set your handle.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ModeOverlay() {
   const viewMode = useCamera((s) => s.viewMode)
   const showCard = useSelectedBuilding((s) => s.showCard)
@@ -48,8 +154,8 @@ function ModeOverlay() {
   // Live button takes over the top-right slot when not live — any mode, including hero
   if (!isLive) return <LiveButton />
 
-  // When live: hero mode shows nothing, other modes show their mode button
-  if (viewMode === 'hero') return null
+  // When live + hero: show account button as default idle state
+  if (viewMode === 'hero') return <AccountButton />
 
   if (viewMode === 'planetarium') {
     return (

@@ -5,7 +5,8 @@ import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
-import { getReviews, postReview, postReply, getEvents, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign } from '../lib/api'
+import { getReviews, postReview, postReply, getEvents, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto } from '../lib/api'
+import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
 
@@ -710,11 +711,15 @@ function OverviewTab({ listing, building, isGuardian }) {
 
       <TagPicker listing={listing} isGuardian={isGuardian} />
 
-      {listing?.description && (
+      {(listing?.description || isGuardian) && (
         <div className="mt-2">
           {isGuardian ? (
-            <EditableField value={listing.description} field="description" isGuardian placeholder="Add description..." multiline>
-              <p className="text-xs text-white/60 leading-relaxed">{listing.description}</p>
+            <EditableField value={listing?.description || ''} field="description" isGuardian placeholder="Add description..." multiline>
+              {listing?.description ? (
+                <p className="text-xs text-white/60 leading-relaxed">{listing.description}</p>
+              ) : (
+                <p className="text-xs text-white/30 italic">Add description...</p>
+              )}
             </EditableField>
           ) : (
             <p className="text-xs text-white/60 leading-relaxed">{listing.description}</p>
@@ -723,33 +728,46 @@ function OverviewTab({ listing, building, isGuardian }) {
       )}
 
       {/* Action links: reservations, menu */}
-      {(listing?.reservation_url || listing?.menu_url) && (
-        <div className="flex gap-2 mt-1">
-          {listing.reservation_url && (
-            <a
-              href={listing.reservation_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Reservations
-            </a>
-          )}
-          {listing.menu_url && (
-            <a
-              href={listing.menu_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              Menu
-            </a>
+      {(listing?.reservation_url || listing?.menu_url || isGuardian) && (
+        <div className="flex flex-wrap gap-2 mt-1">
+          {isGuardian ? (
+            <>
+              <EditableField value={listing?.reservation_url || ''} field="reservation_url" isGuardian placeholder="Add reservations link...">
+                {listing?.reservation_url ? (
+                  <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    Reservations
+                  </a>
+                ) : (
+                  <span className="text-xs text-white/30 italic">+ Reservations link</span>
+                )}
+              </EditableField>
+              <EditableField value={listing?.menu_url || ''} field="menu_url" isGuardian placeholder="Add menu link...">
+                {listing?.menu_url ? (
+                  <a href={listing.menu_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                    Menu
+                  </a>
+                ) : (
+                  <span className="text-xs text-white/30 italic">+ Menu link</span>
+                )}
+              </EditableField>
+            </>
+          ) : (
+            <>
+              {listing?.reservation_url && (
+                <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Reservations
+                </a>
+              )}
+              {listing?.menu_url && (
+                <a href={listing.menu_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                  Menu
+                </a>
+              )}
+            </>
           )}
         </div>
       )}
@@ -914,13 +932,13 @@ function ReviewsTab({ listingId, isGuardian }) {
       <div className="space-y-4">
         {reviews.map((review, idx) => {
           const displayName = review.handle ? `@${review.handle}` : 'Local'
-          const initial = review.handle ? review.handle[0].toUpperCase() : 'L'
+          const avatarDisplay = review.avatar || (review.handle ? review.handle[0].toUpperCase() : 'L')
           const replies = review.replies || []
           return (
             <div key={review.id || idx} className="border-b border-white/10 pb-4 last:border-0">
               <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-medium flex-shrink-0">
-                  {initial}
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${review.avatar ? 'text-lg' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-[10px] font-medium'}`}>
+                  {avatarDisplay}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -1176,15 +1194,79 @@ function PhotoCredit({ credit, credit_url, className = '' }) {
   return <span className={`text-white/40 ${className}`}>{credit}</span>
 }
 
-function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
+function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingId }) {
   const rawPhotos = photos || (facadeImage ? [facadeImage.thumb_2048 || facadeImage.thumb_1024] : [])
   const allPhotos = rawPhotos.map(normalizePhoto)
   const [lightbox, setLightbox] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [removing, setRemoving] = useState(null) // url being removed
+  const [editingCredit, setEditingCredit] = useState(null) // { idx, credit, credit_url }
+  const [savingCredit, setSavingCredit] = useState(false)
+  const fileInputRef = React.useRef(null)
 
   const hasFacade = !!facadeInfo?.photo
   // Build combined list for lightbox navigation (includes facade at end)
   const lightboxEntries = [...allPhotos, ...(hasFacade ? [{ url: facadeInfo.photo, credit: 'w_lemay / Wikimedia Commons', credit_url: null }] : [])]
   const hasAny = lightboxEntries.length > 0
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !listingId) return
+    setUploading(true)
+    try {
+      const compressed = await compressImage(file)
+      if (!compressed) { setUploading(false); return }
+      const dh = await getDeviceHash()
+      const res = await apiUploadPhoto(dh, listingId, compressed.base64)
+      if (res.data?.success && res.data?.url) {
+        // Optimistic update
+        const currentPhotos = photos || []
+        useListings.getState().updateListing(listingId, { photos: [...currentPhotos, res.data.url] })
+      }
+    } catch (err) { console.warn('Upload failed', err) }
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleRemove = async (photoUrl) => {
+    if (!listingId || removing) return
+    setRemoving(photoUrl)
+    try {
+      const dh = await getDeviceHash()
+      const res = await apiRemovePhoto(dh, listingId, photoUrl)
+      if (res.data?.success) {
+        const currentPhotos = (photos || []).filter(p => {
+          const pUrl = typeof p === 'object' ? p.url : p
+          return pUrl !== photoUrl
+        })
+        useListings.getState().updateListing(listingId, { photos: currentPhotos })
+        if (lightbox !== null) closeLightbox()
+      }
+    } catch (err) { console.warn('Remove failed', err) }
+    setRemoving(null)
+  }
+
+  const handleSaveCredit = async () => {
+    if (!editingCredit || !listingId) return
+    setSavingCredit(true)
+    try {
+      const currentPhotos = [...(photos || [])]
+      const idx = editingCredit.idx
+      if (idx >= 0 && idx < currentPhotos.length) {
+        const entry = currentPhotos[idx]
+        const url = typeof entry === 'string' ? entry : entry.url
+        const credit = editingCredit.credit.trim()
+        const credit_url = editingCredit.credit_url.trim()
+        // Convert to object if adding credit, or back to string if removing
+        currentPhotos[idx] = credit ? { url, credit, ...(credit_url ? { credit_url } : {}) } : url
+        const dh = await getDeviceHash()
+        await apiUpdateListing(dh, listingId, { photos: currentPhotos })
+        useListings.getState().updateListing(listingId, { photos: currentPhotos })
+      }
+    } catch (err) { console.warn('Credit save failed', err) }
+    setSavingCredit(false)
+    setEditingCredit(null)
+  }
 
   const openLightbox = (idx) => setLightbox(idx)
   const closeLightbox = () => setLightbox(null)
@@ -1220,25 +1302,57 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
     <div className="space-y-2">
       {/* Hero photo */}
       {hero && (
-        <button onClick={() => openLightbox(0)} className="w-full block relative group rounded-lg overflow-hidden">
-          <img src={assetUrl(hero.url)} alt={`${name} 1`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-          {lightboxEntries.length > 1 && (
-            <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/50 text-white/80 text-xs backdrop-blur-sm">
-              1 / {lightboxEntries.length}
-            </span>
+        <div className="relative group">
+          <button onClick={() => openLightbox(0)} className="w-full block relative rounded-lg overflow-hidden">
+            <img src={assetUrl(hero.url)} alt={`${name} 1`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+            {lightboxEntries.length > 1 && (
+              <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/50 text-white/80 text-xs backdrop-blur-sm">
+                1 / {lightboxEntries.length}
+              </span>
+            )}
+          </button>
+          {isGuardian && (
+            <button
+              onClick={() => handleRemove(hero.url)}
+              disabled={removing === hero.url}
+              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white/70 hover:bg-red-500/80 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              title="Remove photo"
+            >
+              {removing === hero.url ? (
+                <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              )}
+            </button>
           )}
-        </button>
+        </div>
       )}
 
       {/* Grid of remaining photos */}
       {grid.length > 0 && (
         <div className="grid grid-cols-2 gap-1.5">
           {grid.map((photo, i) => (
-            <button key={i} onClick={() => openLightbox(i + 1)} className="relative group rounded-lg overflow-hidden">
-              <img src={assetUrl(photo.url)} alt={`${name} ${i + 2}`} className="w-full aspect-square object-cover" loading="lazy" />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-            </button>
+            <div key={i} className="relative group">
+              <button onClick={() => openLightbox(i + 1)} className="w-full relative rounded-lg overflow-hidden">
+                <img src={assetUrl(photo.url)} alt={`${name} ${i + 2}`} className="w-full aspect-square object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+              </button>
+              {isGuardian && (
+                <button
+                  onClick={() => handleRemove(photo.url)}
+                  disabled={removing === photo.url}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white/70 hover:bg-red-500/80 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  title="Remove photo"
+                >
+                  {removing === photo.url ? (
+                    <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  )}
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -1256,7 +1370,31 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
         </div>
       )}
 
-      {!hasAny && (
+      {/* Guardian: Add photo button */}
+      {isGuardian && (
+        <div className="mt-2">
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="w-full py-2.5 rounded-lg border border-dashed border-white/20 text-white/50 text-xs hover:border-white/30 hover:text-white/70 transition-colors disabled:opacity-40"
+          >
+            {uploading ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                Uploading...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Add photo
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {!hasAny && !isGuardian && (
         <div className="text-center py-8">
           <p className="text-white/40 text-sm">No photos yet</p>
         </div>
@@ -1285,15 +1423,66 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name }) {
             {lightbox + 1} / {lightboxEntries.length}
           </span>
           {/* Credit at bottom */}
-          {lightboxEntries[lightbox]?.credit && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/50 text-xs backdrop-blur-sm" onClick={e => e.stopPropagation()}>
-              <PhotoCredit credit={lightboxEntries[lightbox].credit} credit_url={lightboxEntries[lightbox].credit_url} />
+          {editingCredit && editingCredit.idx === lightbox ? (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-72 max-w-[90vw] p-3 rounded-xl bg-black/80 backdrop-blur-sm border border-white/15 space-y-2" onClick={e => e.stopPropagation()}>
+              <input
+                type="text" value={editingCredit.credit} placeholder="Credit (e.g. photographer name)"
+                onChange={e => setEditingCredit({ ...editingCredit, credit: e.target.value })}
+                className="w-full bg-white/5 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-white/30"
+                autoFocus
+              />
+              <input
+                type="text" value={editingCredit.credit_url} placeholder="Link (optional)"
+                onChange={e => setEditingCredit({ ...editingCredit, credit_url: e.target.value })}
+                className="w-full bg-white/5 border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-white/25 focus:outline-none focus:border-white/30"
+              />
+              <div className="flex gap-2">
+                <button onClick={handleSaveCredit} disabled={savingCredit} className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-white/10 text-white/70 hover:bg-white/15 disabled:opacity-40">
+                  {savingCredit ? '...' : 'Save'}
+                </button>
+                <button onClick={() => setEditingCredit(null)} className="px-3 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/60">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2" onClick={e => e.stopPropagation()}>
+              {lightboxEntries[lightbox]?.credit ? (
+                <div className="px-3 py-1.5 rounded-full bg-black/50 text-xs backdrop-blur-sm flex items-center gap-2">
+                  <PhotoCredit credit={lightboxEntries[lightbox].credit} credit_url={lightboxEntries[lightbox].credit_url} />
+                  {isGuardian && lightbox < allPhotos.length && (
+                    <button
+                      onClick={() => setEditingCredit({ idx: lightbox, credit: lightboxEntries[lightbox].credit || '', credit_url: lightboxEntries[lightbox].credit_url || '' })}
+                      className="text-white/30 hover:text-white/60 transition-colors"
+                      title="Edit credit"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                  )}
+                </div>
+              ) : isGuardian && lightbox < allPhotos.length ? (
+                <button
+                  onClick={() => setEditingCredit({ idx: lightbox, credit: '', credit_url: '' })}
+                  className="px-3 py-1.5 rounded-full bg-black/50 text-white/30 text-xs hover:text-white/50 backdrop-blur-sm transition-colors"
+                >
+                  + Add credit
+                </button>
+              ) : null}
             </div>
           )}
           {/* Close */}
           <button onClick={closeLightbox} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 text-white/70 hover:bg-white/20 flex items-center justify-center">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
+          {/* Guardian: delete from lightbox */}
+          {isGuardian && lightbox < allPhotos.length && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleRemove(lightboxEntries[lightbox]?.url) }}
+              className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-red-500/20 text-red-300 text-xs hover:bg-red-500/30 transition-colors backdrop-blur-sm"
+            >
+              Remove photo
+            </button>
+          )}
           {/* Prev / Next */}
           {lightboxEntries.length > 1 && (
             <>
@@ -1474,6 +1663,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
   const [claimSecret, setClaimSecret] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [guardianRevealed, setGuardianRevealed] = useState(false)
 
   // Read styled QR image: localStorage first, then API fallback
   const readStyledImage = useCallback(async (type) => {
@@ -1563,18 +1753,36 @@ function QrTab({ listingId, listingName, isAdmin }) {
             <img src={townieQr} alt="Townie QR" className="w-48 rounded-lg" />
           </div>
         )}
-        <button
-          onClick={() => shareUrl(townieUrl, 'Check in here')}
-          className="w-full px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
-        >
-          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-          </svg>
-          Share
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => shareUrl(townieUrl, 'Check in here')}
+            className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
+          >
+            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+            </svg>
+            Share
+          </button>
+          {townieQr && (
+            <button
+              onClick={() => {
+                const a = document.createElement('a')
+                a.href = townieQr
+                a.download = `${listingName || 'townie'}-qr.png`
+                a.click()
+              }}
+              className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white/70 text-xs transition-colors flex items-center justify-center gap-1.5"
+            >
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Guardian QR */}
+      {/* Guardian QR — hidden behind reveal toggle */}
       {loading ? (
         <div className="rounded-lg bg-white/5 border border-white/10 p-4">
           <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
@@ -1583,11 +1791,34 @@ function QrTab({ listingId, listingName, isAdmin }) {
         </div>
       ) : guardianQr && (
         <div className="rounded-lg bg-white/5 border border-white/10 p-4">
-          <div className="text-sm font-medium text-white mb-0.5">Guardian</div>
-          <div className="text-[10px] text-white/40 mb-3">To onboard a new guardian</div>
-          <div className="flex justify-center">
-            <img src={guardianQr} alt="Guardian QR" className="w-48 rounded-lg" />
-          </div>
+          <button
+            onClick={() => setGuardianRevealed(r => !r)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="text-left">
+              <div className="text-sm font-medium text-white mb-0.5 flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-amber-400/70" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+                </svg>
+                Guardian
+              </div>
+              <div className="text-[10px] text-white/40">Scan only — do not share digitally</div>
+            </div>
+            <svg className={`w-4 h-4 text-white/40 transition-transform ${guardianRevealed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          {guardianRevealed && (
+            <div className="mt-3 flex justify-center" onContextMenu={e => e.preventDefault()}>
+              <img
+                src={guardianQr}
+                alt="Guardian QR"
+                className="w-48 rounded-lg pointer-events-none select-none"
+                draggable={false}
+                style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -1887,7 +2118,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           {currentTab === 'architecture' && <ArchitectureTab building={building} />}
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
-          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} />}
+          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />}
           {currentTab === 'qr' && <QrTab listingId={listingId} listingName={name} isAdmin={isAdmin} />}
           {/* Property card tabs */}
           {currentTab === 'property' && <PropertyTab building={building} />}

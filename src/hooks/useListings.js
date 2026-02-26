@@ -38,7 +38,20 @@ const useListings = create((set, get) => ({
           if (!lm) return api
           const out = { ...lm }
           for (const [k, v] of Object.entries(api)) {
-            if (v != null && !(Array.isArray(v) && v.length === 0)) out[k] = v
+            if (v != null && !(Array.isArray(v) && v.length === 0)) {
+              // For photos: prefer whichever array has richer entries (objects with credits)
+              if (k === 'photos' && Array.isArray(v) && Array.isArray(lm.photos)) {
+                const apiHasCredits = v.some(p => typeof p === 'object' && p?.credit)
+                const staticHasCredits = lm.photos.some(p => typeof p === 'object' && p?.credit)
+                if (staticHasCredits && !apiHasCredits) continue  // keep static
+                // API has credits or both do — take the longer/richer array
+                if (staticHasCredits && apiHasCredits) {
+                  out[k] = v.length >= lm.photos.length ? v : lm.photos
+                  continue
+                }
+              }
+              out[k] = v
+            }
           }
           return out
         })

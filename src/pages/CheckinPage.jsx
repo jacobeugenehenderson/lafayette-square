@@ -4,9 +4,12 @@ import useListings from '../hooks/useListings'
 import useHandle from '../hooks/useHandle'
 import CATEGORIES from '../tokens/categories'
 
+const DEFAULT_AVATARS = ['🦊','🐻','🦉','🐝','🦋','🐢','🐙','🦎','🐸','🌻','🍄','🌵','🔥','⭐','🌊','🎲','🎯','🧊','🫧','🪴','🪻','🍀','🐿️','🦔','🐾','🪶']
+
 function HandlePicker({ accentHex, onDone }) {
   const { setHandle, checkAvailability, loading: saving } = useHandle()
   const [input, setInput] = useState('')
+  const [avatar, setAvatar] = useState(() => DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)])
   const [available, setAvailable] = useState(null) // null | true | false
   const [checking, setChecking] = useState(false)
   const [accepted, setAccepted] = useState(false)
@@ -31,9 +34,25 @@ function HandlePicker({ accentHex, onDone }) {
     debounceRef.current = setTimeout(() => check(val), 400)
   }
 
+  const handleAvatarInput = (e) => {
+    // Accept only emoji-like characters (non-ASCII), limit to first grapheme cluster
+    const raw = e.target.value
+    // Use segmenter if available, otherwise just take first few chars
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      const seg = new Intl.Segmenter('en', { granularity: 'grapheme' })
+      const segments = [...seg.segment(raw)]
+      // Keep only the last grapheme (the newly typed one)
+      const emoji = segments.length > 0 ? segments[segments.length - 1].segment : ''
+      // Only accept if it contains non-ASCII (likely emoji)
+      setAvatar(/[^\x00-\x7F]/.test(emoji) ? emoji : '')
+    } else {
+      setAvatar(raw.slice(0, 2))
+    }
+  }
+
   const handleSubmit = async () => {
     if (!input || !available || !accepted) return
-    const ok = await setHandle(input)
+    const ok = await setHandle(input, avatar)
     if (ok) onDone()
     else setError('Could not save handle. Try another.')
   }
@@ -73,6 +92,33 @@ function HandlePicker({ accentHex, onDone }) {
           )}
         </div>
         <p className="text-white/30 text-[10px] mt-1">3-20 characters. Letters, numbers, and underscores.</p>
+      </div>
+
+      {/* Avatar picker */}
+      <div className="rounded-xl p-4 border border-white/15 bg-white/5">
+        <h3 className="text-white font-medium text-sm mb-1">Pick your avatar</h3>
+        <p className="text-white/40 text-[10px] mb-3">We picked one for you — tap to change it.</p>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={avatar}
+              onChange={handleAvatarInput}
+              className="w-12 h-12 text-center text-2xl bg-white/5 border border-white/15 rounded-xl focus:outline-none focus:border-white/30 cursor-pointer"
+              placeholder="?"
+              inputMode="text"
+            />
+          </div>
+          <div className="flex-1">
+            <p className="text-white/60 text-xs">
+              {avatar} is your avatar.
+              <button onClick={() => setAvatar(DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)])} className="text-white/30 hover:text-white/50 ml-2 underline">shuffle</button>
+            </p>
+            <p className="text-white/30 text-[10px] mt-0.5">
+              Don't make it your face or anything rude.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Guidelines */}

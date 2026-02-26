@@ -556,7 +556,7 @@ function CommentSection({ bulletinId, section, canPost }) {
             <div key={c.id} className="text-[10px] leading-relaxed flex items-baseline gap-1">
               <div className="flex-1 min-w-0">
                 <span className="text-white/40 mr-1.5">
-                  {c.handle ? `@${c.handle}` : <em className="text-white/25">anon</em>}
+                  {c.handle ? <>{c.avatar && <span className="mr-0.5">{c.avatar}</span>}@{c.handle}</> : <em className="text-white/25">anon</em>}
                 </span>
                 <span className="text-white/50">{c.text}</span>
                 <span className="text-white/15 ml-1.5">{relativeTime(c.created_at)}</span>
@@ -670,7 +670,7 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                       {isAnon ? (
                         <span className="text-[11px] text-white/40 italic">anonymous</span>
                       ) : (
-                        <span className="text-[11px] text-white/70 font-medium">@{post.handle}</span>
+                        <span className="text-[11px] text-white/70 font-medium">{post.avatar && <span className="mr-0.5">{post.avatar}</span>}@{post.handle}</span>
                       )}
                       <span className="text-[9px] text-white/25">{relativeTime(post.created_at)}</span>
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-white/30">
