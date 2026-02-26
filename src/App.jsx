@@ -51,7 +51,15 @@ function AccountButton() {
   const { updateAvatar, adoptIdentity } = useHandle()
   const [open, setOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
+  const [accessible, setAccessible] = useState(() => {
+    try { return localStorage.getItem('lsq-accessible') === '1' } catch { return false }
+  })
   const popoverRef = useRef(null)
+
+  // Restore accessible class on mount
+  useEffect(() => {
+    document.documentElement.classList.toggle('accessible', accessible)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Link-device state
   const [linkToken, setLinkToken] = useState(null)
@@ -142,12 +150,27 @@ function AccountButton() {
                 <p className="text-on-surface-variant text-body-sm font-medium">@{handle}</p>
               </div>
 
-              <div className="border-t border-outline-variant pt-3">
+              <div className="border-t border-outline-variant pt-3 space-y-2">
                 <button
                   onClick={() => { setOpen(false); setEditorOpen(true) }}
                   className="w-full py-2 rounded-lg text-body-sm font-medium bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors"
                 >
                   Edit avatar
+                </button>
+                <button
+                  onClick={() => {
+                    const next = !accessible
+                    document.documentElement.classList.toggle('accessible', next)
+                    setAccessible(next)
+                    try { localStorage.setItem('lsq-accessible', next ? '1' : '') } catch {}
+                  }}
+                  className="w-full py-2 rounded-lg text-body-sm font-medium bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <circle cx="12" cy="4.5" r="2" />
+                    <path strokeLinecap="round" d="M12 7.5v5m0 0l-3 5m3-5l3 5M7 10.5h10" />
+                  </svg>
+                  {accessible ? 'Standard mode' : 'Accessible mode'}
                 </button>
               </div>
             </>
@@ -171,6 +194,23 @@ function AccountButton() {
               ) : (
                 <p className="text-on-surface-disabled text-body-sm">Loading...</p>
               )}
+              <div className="border-t border-outline-variant pt-2 mt-2">
+                <button
+                  onClick={() => {
+                    const next = !accessible
+                    document.documentElement.classList.toggle('accessible', next)
+                    setAccessible(next)
+                    try { localStorage.setItem('lsq-accessible', next ? '1' : '') } catch {}
+                  }}
+                  className="w-full py-1.5 rounded-lg text-caption font-medium bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <circle cx="12" cy="4.5" r="2" />
+                    <path strokeLinecap="round" d="M12 7.5v5m0 0l-3 5m3-5l3 5M7 10.5h10" />
+                  </svg>
+                  {accessible ? 'Standard mode' : 'Accessible mode'}
+                </button>
+              </div>
             </div>
           )}
         </div>

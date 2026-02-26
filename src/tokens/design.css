@@ -65,8 +65,10 @@
 /* ---------- Mobile floor (≤640px) ---------- */
 @media (max-width: 640px) {
   :root {
-    --type-label-sm: 12px;
-    --type-caption:  11px;
+    --type-body-sm:  13px;
+    --type-label:    13px;
+    --type-label-sm: 13px;
+    --type-caption:  12px;
   }
 }
 
