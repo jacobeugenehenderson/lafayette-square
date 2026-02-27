@@ -1615,7 +1615,9 @@ function seedListings() {
   Logger.log('Seeded ' + listings.length + ' listings')
 }
 
-// ─── Utility: Seed sample events for the next 3 days ────────────────────────
+// ─── Utility: Seed recurring events for 7 days ─────────────────────────────
+// Each restaurant gets a daily event keyed to the day of the week.
+// Run anytime — clears old events and writes a fresh 7-day window.
 
 function seedEvents() {
   var sheet = getSheet('Events')
@@ -1627,64 +1629,82 @@ function seedEvents() {
   sheet.getRange(1, 1, 1, headers.length).setValues([headers])
   sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold')
 
-  // Build date strings for today + next 2 days
+  // Build date strings for today + next 6 days (7 total)
   var d = new Date()
   var dates = []
-  for (var i = 0; i < 3; i++) {
+  var days = []
+  for (var i = 0; i < 7; i++) {
     var dd = new Date(d)
     dd.setDate(dd.getDate() + i)
     dates.push(Utilities.formatDate(dd, TIMEZONE, 'yyyy-MM-dd'))
+    days.push(dd.getDay()) // 0=Sun … 6=Sat
   }
 
-  // Events sheet columns: id, listing_id, device_hash, type, title, description, start_date, end_date, created_at
-  var events = [
-    // ── Square One Brewery (lmk-001) ──
-    [generateId('evt'), 'lmk-001', 'seed', 'special', 'Sunday Brunch & Bloody Mary Bar',
-     'Build-your-own Bloody Mary bar with brunch classics and 15 beers on tap.',
-     dates[0], '', now],
-    [generateId('evt'), 'lmk-001', 'seed', 'event', 'Monday Night Trivia',
-     'Six rounds of pub trivia with prizes. Teams of up to 6. Starts at 7 PM.',
-     dates[1], '', now],
-    [generateId('evt'), 'lmk-001', 'seed', 'special', 'Taco Tuesday & $5 House Beers',
-     'Street tacos and $5 pints of all house-brewed beers.',
-     dates[2], '', now],
+  // Day-of-week event templates per restaurant
+  // [type, title, description]
+  var square1 = {
+    0: ['special', 'Brunch & Bloody Mary Bar', 'Build-your-own Bloody Mary bar with brunch classics and 15 beers on tap. 10 AM – 2 PM.'],
+    1: ['event',   'Monday Night Trivia', 'Six rounds of pub trivia with prizes. Teams of up to 6. Starts at 7 PM.'],
+    2: ['special', 'Taco Tuesday & $5 House Beers', 'Street tacos and $5 pints of all house-brewed beers. All day.'],
+    3: ['event',   'Brewmaster Wednesday', 'Meet the brewmaster and sample pilot batches straight from the tank. 5–8 PM.'],
+    4: ['special', 'Pint Night', 'Buy a pint, keep the glass. Rotating brewery glassware each week. While supplies last.'],
+    5: ['event',   'Live Music on the Patio', 'Local acts play the Square One patio. 7–10 PM, no cover.'],
+    6: ['special', 'Saturday Brunch & Mimosa Towers', 'Weekend brunch with bottomless mimosa towers for the table. 10 AM – 2 PM.'],
+  }
 
-    // ── SqWires (lmk-027) ──
-    [generateId('evt'), 'lmk-027', 'seed', 'event', 'Sunday Jazz Brunch',
-     'Live jazz trio accompanies weekend brunch in the converted wire factory.',
-     dates[0], '', now],
-    [generateId('evt'), 'lmk-027', 'seed', 'special', 'Industry Night — Half-Off Bottles',
-     'Half-price bottles of wine for hospitality workers. Bring your pay stub.',
-     dates[1], '', now],
-    [generateId('evt'), 'lmk-027', 'seed', 'event', 'Live Jazz with the STL Quintet',
-     'The STL Quintet plays standards and originals. 7–10 PM, no cover.',
-     dates[2], '', now],
+  var bellwether = {
+    0: ['event',   'Rooftop Brunch', 'Weekend brunch on the rooftop patio with craft cocktails and Arch views. 10 AM – 2 PM.'],
+    1: ['special', 'Pasta & Pinot Monday', 'House-made pasta and half-price Pinot Noir. The perfect start to the week.'],
+    2: ['event',   'Vinyl Tuesday', 'Bring your own records — turntable set up at the bar. Dealer\'s choice appetizer with every LP played.'],
+    3: ['special', 'Half-Price Bottles of Wine', 'Every bottle on the list at half price. Perfect excuse to try something new.'],
+    4: ['event',   'Chef\'s Table Tasting', 'Five-course tasting with wine pairings. Limited to 12 seats. Reserve ahead.'],
+    5: ['event',   'Neighborhood Happy Hour', 'Extended happy hour 3–7 PM. $8 cocktails, $5 drafts, and bar snack specials.'],
+    6: ['special', 'Saturday Rooftop Brunch', 'Brunch with a view. Seasonal menu, craft cocktails, live acoustic set. 10 AM – 2 PM.'],
+  }
 
-    // ── Polite Society (lmk-010) ──
-    [generateId('evt'), 'lmk-010', 'seed', 'special', 'Sunday Supper — Prix Fixe Menu',
-     'Three-course prix fixe dinner for $45. Rotating seasonal menu by Chef.',
-     dates[0], '', now],
-    [generateId('evt'), 'lmk-010', 'seed', 'event', 'Cocktail Class: Classic Sours',
-     'Learn to shake a Whiskey Sour, Daiquiri, and more. 6 PM. $35/person.',
-     dates[1], '', now],
-    [generateId('evt'), 'lmk-010', 'seed', 'event', 'Wine & Cheese Pairing Night',
-     'Five wines paired with artisan cheeses. Guided tasting at 7 PM.',
-     dates[2], '', now],
+  var politeSociety = {
+    0: ['special', 'Sunday Supper — Prix Fixe', 'Three-course prix fixe dinner for $45. Rotating seasonal menu by Chef.'],
+    1: ['event',   'Industry Night', 'Half-price drinks and late-night bites for hospitality workers. Bring your pay stub.'],
+    2: ['event',   'Cocktail Class: Classics', 'Learn to shake a Whiskey Sour, Daiquiri, and Negroni. 6 PM. $35/person.'],
+    3: ['special', 'Wine Wednesday', '$10 glasses and $30 bottles from the curated list. Sommelier picks each week.'],
+    4: ['event',   'Wine & Cheese Pairing', 'Five wines paired with artisan cheeses. Guided tasting at 7 PM. $40/person.'],
+    5: ['event',   'DJ Night', 'Resident DJ spins funk, soul, and disco. Craft cocktail specials. 9 PM – close.'],
+    6: ['special', 'Weekend Brunch', 'Brunch plates, fresh pastries, and cocktails in the sun-filled dining room. 10 AM – 2 PM.'],
+  }
 
-    // ── The Bellwether (lmk-008) ──
-    [generateId('evt'), 'lmk-008', 'seed', 'event', 'Bellwether Rooftop Brunch',
-     'Weekend brunch on the rooftop patio with craft cocktails and Arch views.',
-     dates[0], '', now],
-    [generateId('evt'), 'lmk-008', 'seed', 'special', 'Pasta & Pinot Monday',
-     'House-made pasta and half-price Pinot Noir. Perfect start to the week.',
-     dates[1], '', now],
-    [generateId('evt'), 'lmk-008', 'seed', 'special', "Chef's Table Tasting Menu",
-     'Five-course tasting with wine pairings. Limited to 12 seats. Reserve via Tock.',
-     dates[2], '', now],
+  var sqwires = {
+    0: ['event',   'Jazz Brunch', 'Live jazz trio accompanies weekend brunch in the converted wire factory. 10 AM – 2 PM.'],
+    1: ['special', 'Monday Market Plate', 'Chef\'s seasonal market plate — whatever is freshest from local farms. $18.'],
+    2: ['event',   'Open Mic Night', 'Singers, poets, comedians — sign up at the bar. Starts at 7:30 PM.'],
+    3: ['special', 'Midweek Date Night', 'Two entrees and a shared dessert for $65. Add wine pairing for $25.'],
+    4: ['event',   'Live Jazz with the STL Quintet', 'The STL Quintet plays standards and originals in the courtyard. 7–10 PM, no cover.'],
+    5: ['event',   'Friday Night Live', 'Rotating local bands on the courtyard stage. 8–11 PM, no cover.'],
+    6: ['special', 'Saturday Jazz Brunch', 'The weekend tradition — brunch in the wire factory with live jazz. 10 AM – 2 PM.'],
+  }
+
+  var venues = [
+    { id: 'lmk-001', schedule: square1 },
+    { id: 'lmk-008', schedule: bellwether },
+    { id: 'lmk-010', schedule: politeSociety },
+    { id: 'lmk-027', schedule: sqwires },
   ]
 
+  var events = []
+  for (var i = 0; i < 7; i++) {
+    var dow = days[i]
+    for (var v = 0; v < venues.length; v++) {
+      var tmpl = venues[v].schedule[dow]
+      if (tmpl) {
+        events.push([
+          generateId('evt'), venues[v].id, 'seed', tmpl[0], tmpl[1], tmpl[2],
+          dates[i], '', now
+        ])
+      }
+    }
+  }
+
   events.forEach(function(r) { sheet.appendRow(r) })
-  Logger.log('Seeded ' + events.length + ' events across ' + dates.join(', '))
+  Logger.log('Seeded ' + events.length + ' events across 7 days: ' + dates[0] + ' → ' + dates[6])
 }
 
 // ─── One-time utility: Sync Bellwether photos to Sheets ─────────────────────
