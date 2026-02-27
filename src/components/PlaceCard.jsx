@@ -1860,6 +1860,15 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
   // Multi-tenant: if multiple listings for this building, show tabs
   const listings = allListings && allListings.length > 1 ? allListings : (listing ? [listing] : [])
+
+  // When the clicked listing changes, jump to it in the multi-tenant list
+  useEffect(() => {
+    if (listing && listings.length > 1) {
+      const idx = listings.findIndex(l => l.id === listing.id)
+      if (idx >= 0) setActiveListingIdx(idx)
+    }
+  }, [listing?.id])
+
   const activeListing = listings[activeListingIdx] || listing
 
   const name = activeListing?.name || building?.name || 'Unknown Building'

@@ -650,7 +650,22 @@ function getClaimSecret(listingId, deviceHash, adminKey) {
   if (!listingId) return errorResponse('Missing lid', 'bad_request')
   const sheet = getSheet('Listings')
   const listing = findRow(sheet, 'id', listingId)
-  if (!listing) return errorResponse('Not found', 'not_found')
+  if (!listing) {
+    // Admin auto-provision: create a minimal listing row so Guardian QR works
+    if (adminKey !== 'lafayette1850') return errorResponse('Not found', 'not_found')
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    var secret = Utilities.getUuid().split('-')[0]
+    var now = nowISO()
+    var newRow = headers.map(function(h) {
+      if (h === 'id') return listingId
+      if (h === 'claim_secret') return secret
+      if (h === 'status') return 'pending'
+      if (h === 'created_at' || h === 'updated_at') return now
+      return ''
+    })
+    sheet.appendRow(newRow)
+    return jsonResponse({ claim_secret: secret })
+  }
 
   const isAdmin = adminKey === 'lafayette1850'
   const isGuardian = deviceHash && isGuardianOf(listingId, deviceHash)
@@ -1613,6 +1628,41 @@ function seedListings() {
 
   listings.forEach(r => sheet.appendRow(r))
   Logger.log('Seeded ' + listings.length + ' listings')
+}
+
+// ─── Utility: Provision missing listing rows ────────────────────────────────
+// Reads all listing IDs from the sheet, then creates minimal rows for any
+// landmark IDs (lmk-001 … lmk-NNN) that don't have a row yet.
+// Safe to run repeatedly — only appends, never overwrites.
+
+function provisionListings(maxId) {
+  maxId = maxId || 84
+  var sheet = getSheet('Listings')
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+  var rows = sheetToObjects(sheet)
+  var existing = {}
+  rows.forEach(function(r) { existing[r.id] = true })
+
+  var now = nowISO()
+  var added = 0
+
+  for (var i = 1; i <= maxId; i++) {
+    var id = 'lmk-' + String(i).padStart(3, '0')
+    if (existing[id]) continue
+
+    var secret = Utilities.getUuid().split('-')[0]
+    var newRow = headers.map(function(h) {
+      if (h === 'id') return id
+      if (h === 'claim_secret') return secret
+      if (h === 'status') return 'pending'
+      if (h === 'created_at' || h === 'updated_at') return now
+      return ''
+    })
+    sheet.appendRow(newRow)
+    added++
+  }
+
+  Logger.log('Provisioned ' + added + ' new listing rows (checked lmk-001 through lmk-' + String(maxId).padStart(3, '0') + ')')
 }
 
 // ─── Utility: Seed recurring events for 7 days ─────────────────────────────
