@@ -115,11 +115,11 @@ export default function EventTicker() {
               key={index}
               className="absolute inset-0 flex items-center gap-2 animate-ticker-in"
             >
-              <span className="text-label-sm text-on-surface-variant tracking-wide truncate">
+              <span className="text-label tracking-wide truncate text-white/90">
                 {current?.title}
               </span>
               {current?._venueName && (
-                <span className="text-caption text-on-surface-subtle truncate flex-shrink-0">
+                <span className="text-label-sm text-white/50 truncate flex-shrink-0">
                   {current._venueName}
                 </span>
               )}

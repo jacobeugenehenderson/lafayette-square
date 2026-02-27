@@ -165,7 +165,7 @@ function StreetLights() {
                 ` : `
                 diffuseColor.rgb = ironColor;
                 `}
-                float nightDarken = mix(0.4, 1.0, smoothstep(-0.1, 0.1, uSunAltitude));
+                float nightDarken = mix(0.15, 1.0, smoothstep(-0.1, 0.1, uSunAltitude));
                 diffuseColor.rgb *= nightDarken;`
               )
 
@@ -203,7 +203,7 @@ function StreetLights() {
     const combined = new THREE.Matrix4()
 
     allLamps.forEach((lamp, i) => {
-      d.position.set(lamp.x, 0, lamp.z)
+      d.position.set(lamp.x, -0.08, lamp.z)
       d.rotation.set(0, Math.random() * Math.PI * 2, 0)
       d.scale.setScalar(LAMP_SCALE)
       d.updateMatrix()
