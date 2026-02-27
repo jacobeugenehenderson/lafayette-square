@@ -259,15 +259,21 @@ function VectorStreets({ svgPortal }) {
       if (!meta || !svg || !obj) return
       if (meta.currentScale >= meta.fullScale) return
       if (state.viewMode !== 'hero') {
-        // Wait until after the 1500ms camera transition settles before the
-        // GPU-heavy SVG re-rasterization (can be 16× more pixels on 3× DPR).
-        setTimeout(() => {
+        // Step up SVG raster scale incrementally instead of jumping 1→4 in one
+        // shot. A single 16× pixel increase can blow iPhone's compositing budget
+        // and crash the WebGL context. Two 4× steps are each within budget.
+        function stepUp() {
           if (!svgRef.current || !svgObjRef.current) return
-          svg.setAttribute('width', meta.cropW * meta.fullScale)
-          svg.setAttribute('height', meta.cropH * meta.fullScale)
-          obj.scale.set(1 / meta.fullScale, 1 / meta.fullScale, 1)
-          meta.currentScale = meta.fullScale
-        }, 2000)
+          var m = svgMeta.current
+          if (!m || m.currentScale >= m.fullScale) return
+          var next = Math.min(m.currentScale * 2, m.fullScale)
+          svg.setAttribute('width', m.cropW * next)
+          svg.setAttribute('height', m.cropH * next)
+          obj.scale.set(1 / next, 1 / next, 1)
+          m.currentScale = next
+          if (next < m.fullScale) setTimeout(stepUp, 800)
+        }
+        setTimeout(stepUp, 2000)
       }
     })
     return unsub
