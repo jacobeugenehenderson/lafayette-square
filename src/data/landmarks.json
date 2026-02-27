@@ -2849,6 +2849,7 @@
       "category": "shopping",
       "subcategory": "pets",
       "building_id": "bldg-0723",
+      "logo": "/logos/four-muddy-paws.png",
       "hours": {
         "monday": {
           "open": "09:00",

@@ -921,13 +921,15 @@ function render() {
 
   if (!preview || !mount) return;
 
-  // QRCode lib loads async; retry if not ready
+  // QRCode lib loads async; retry if not ready (keep preview image visible)
   if (!window.QRCode || !window.QRCode.CorrectLevel) {
-    try { mount.innerHTML = ''; } catch (e) {}
     clearTimeout(render._qrRetry);
     render._qrRetry = setTimeout(render, 60);
     return;
   }
+
+  // Mark preview placeholder as replaced so postMessage won't overwrite
+  window.__lsq_preview_replaced = true;
 
   // Helpers
   const toHex = (v) => {

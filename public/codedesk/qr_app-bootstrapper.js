@@ -209,37 +209,70 @@ window.populateBizSelect = populateBizSelect;
     return window.location.origin + p;
   })();
 
-  // --- Load manifest ---
-  var manifest;
-  try {
-    var manifestUrl = new URL("qr_type_manifest.json", __CODEDESK_BASE_URL__).toString();
-    var res = await fetch(manifestUrl, { cache: "no-store" });
-    if (!res.ok) throw new Error("manifest not found: " + res.status);
-    manifest = await res.json();
-  } catch (e) {
+  // --- Load manifest + templates + businesses in parallel ---
+  var manifestUrl = new URL("qr_type_manifest.json", __CODEDESK_BASE_URL__).toString();
+  var templatesUrl = new URL("qr_templates.json", __CODEDESK_BASE_URL__).toString();
+  var apiUrl = window.LSQ_API_URL || '';
+
+  var manifestP = fetch(manifestUrl, { cache: "no-store" }).then(function(r) {
+    if (!r.ok) throw new Error("manifest not found: " + r.status);
+    return r.json();
+  }).catch(function(e) {
     console.warn("Manifest load failed, using inline fallback", e);
-    manifest = { types: {} };
-  }
+    return { types: {} };
+  });
+
+  var templatesP = fetch(templatesUrl, { cache: "no-store" }).then(function(r) {
+    if (!r.ok) return [];
+    return r.json().then(function(j) {
+      var t = Array.isArray(j.templates) ? j.templates : [];
+      return t.filter(function(tpl) { return tpl && typeof tpl === 'object' && tpl.id && tpl.state; });
+    });
+  }).catch(function(e) {
+    console.warn("Template load failed", e);
+    return [];
+  });
+
+  var bizP = (apiUrl
+    ? fetch(apiUrl + '?action=listings', { cache: 'no-store' }).then(function(r) {
+        if (!r.ok) return null;
+        return r.json().then(function(d) {
+          var b = Array.isArray(d.data) ? d.data : [];
+          return b.length > 0 ? b : null;
+        });
+      }).catch(function() { return null; })
+    : Promise.resolve(null)
+  ).then(function(biz) {
+    if (biz) return biz;
+    // Fallback: try local files
+    var base = getLsqBaseUrl();
+    var paths = [base + '/codedesk/businesses.json', base + '/data/landmarks.json'];
+    return paths.reduce(function(chain, path) {
+      return chain.then(function(found) {
+        if (found) return found;
+        return fetch(path, { cache: 'no-store' }).then(function(r) {
+          if (!r.ok) return null;
+          return r.json().then(function(d) {
+            var lm = d.landmarks || d.businesses || d;
+            return Array.isArray(lm) && lm.length > 0 ? lm : null;
+          });
+        }).catch(function() { return null; });
+      });
+    }, Promise.resolve(null));
+  });
+
+  var results = await Promise.all([manifestP, templatesP, bizP]);
+  var manifest = results[0];
+  var templates = results[1];
+  var businesses = results[2];
 
   window.manifest = window.manifest || {};
   try { Object.assign(window.manifest, manifest); } catch(_e) { window.manifest = manifest; }
-
-  // --- Load templates (separate from type manifest) ---
-  var templates = [];
-  try {
-    var templatesUrl = new URL("qr_templates.json", __CODEDESK_BASE_URL__).toString();
-    var tRes = await fetch(templatesUrl, { cache: "no-store" });
-    if (tRes.ok) {
-      var tJson = await tRes.json();
-      templates = Array.isArray(tJson.templates) ? tJson.templates : [];
-      templates = templates.filter(function(tpl) {
-        return tpl && typeof tpl === 'object' && tpl.id && tpl.state;
-      });
-    }
-  } catch (e) {
-    console.warn("Template load failed", e);
-  }
   window.CODEDESK_TEMPLATES = templates;
+  if (businesses) {
+    window.LSQ_BUSINESSES = businesses;
+    populateBizSelect(businesses);
+  }
 
   // --- Build the type-specific form (now that manifest is loaded) ---
   try {
@@ -251,49 +284,6 @@ window.populateBizSelect = populateBizSelect;
 
   // Force initial render
   try { if (typeof render === 'function') render(); } catch (e) {}
-
-  // --- Fetch businesses from Lafayette Square API ---
-  var apiUrl = window.LSQ_API_URL || '';
-  if (apiUrl) {
-    try {
-      var bizRes = await fetch(apiUrl + '?action=listings', { cache: 'no-store' });
-      if (bizRes.ok) {
-        var bizData = await bizRes.json();
-        var businesses = Array.isArray(bizData.data) ? bizData.data : [];
-        if (businesses.length > 0) {
-          window.LSQ_BUSINESSES = businesses;
-          populateBizSelect(businesses);
-        }
-      }
-    } catch (e) {
-      console.warn("Business fetch from API failed", e);
-    }
-  }
-
-  // Fallback: try to load from local landmarks.json (dev environment)
-  if (!window.LSQ_BUSINESSES || !window.LSQ_BUSINESSES.length) {
-    try {
-      var base = getLsqBaseUrl();
-      var paths = [
-        base + '/codedesk/businesses.json',
-        base + '/data/landmarks.json'
-      ];
-      for (var i = 0; i < paths.length; i++) {
-        try {
-          var fallbackRes = await fetch(paths[i], { cache: 'no-store' });
-          if (fallbackRes.ok) {
-            var fbData = await fallbackRes.json();
-            var landmarks = fbData.landmarks || fbData.businesses || fbData;
-            if (Array.isArray(landmarks) && landmarks.length > 0) {
-              window.LSQ_BUSINESSES = landmarks;
-              populateBizSelect(landmarks);
-              break;
-            }
-          }
-        } catch(e2) {}
-      }
-    } catch (e) {}
-  }
 
   // --- Wire type change to re-populate bizSelect ---
   var typeSelect = document.getElementById('qrType');

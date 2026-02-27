@@ -99,10 +99,19 @@ function CodeDeskModalInner() {
   }, [qrType])
 
   // On iframe load: send places dataset (admin) or single listing (guardian)
-  // Order matters: businesses → listing → secret → type (type triggers design load, needs bizId first)
+  // Order matters: preview (instant) → businesses → listing → secret → type (type triggers design load, needs bizId first)
   const handleIframeLoad = useCallback(() => {
     const iframe = iframeRef.current
     if (!iframe) return
+    // Send cached QR image as instant preview while interactive version loads
+    if (storeListingId) {
+      try {
+        const preview = localStorage.getItem(`lsq-qr-image-${storeListingId}-${qrType}`)
+        if (preview) {
+          iframe.contentWindow?.postMessage({ type: 'lsq-set-preview', value: preview }, '*')
+        }
+      } catch { /* silent */ }
+    }
     if (!isGuardianMode) {
       iframe.contentWindow?.postMessage({ type: 'lsq-set-businesses', value: allPlaces }, '*')
     }

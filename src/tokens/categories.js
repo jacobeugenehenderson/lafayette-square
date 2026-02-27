@@ -119,6 +119,7 @@ const CATEGORIES = {
       antiques:      { label: 'Antiques', emoji: '\ud83c\udffa' },
       'local-makers': { label: 'Local Makers', emoji: '\ud83d\udecd\ufe0f' },
       grocery:       { label: 'Grocery', emoji: '\ud83d\uded2' },
+      pets:          { label: 'Pets', emoji: '\ud83d\udc3e' },
     },
   },
   services: {
