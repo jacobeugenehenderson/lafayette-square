@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getEvents } from '../lib/api'
 import useListings from '../hooks/useListings'
 import useEvents from '../hooks/useEvents'
@@ -7,8 +7,7 @@ import useCamera from '../hooks/useCamera'
 import useBulletin from '../hooks/useBulletin'
 
 const ROTATE_INTERVAL = 5000
-const IDLE_TIMEOUT = 10000
-const POLL_INTERVAL = 300000 // 5 minutes (down from 60s)
+const POLL_INTERVAL = 300000 // 5 minutes
 
 function getTodayStr() {
   const d = new Date()
@@ -36,13 +35,7 @@ function filterTodayEvents(allEvents) {
 
 export default function EventTicker() {
   const [events, setEvents] = useState([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [visible, setVisible] = useState(true)
-  const [transitioning, setTransitioning] = useState(false)
-  const [displayIndex, setDisplayIndex] = useState(0)
-
-  const idleTimer = useRef(null)
-  const rotateTimer = useRef(null)
+  const [index, setIndex] = useState(0)
 
   const showCard = useSelectedBuilding((s) => s.showCard)
   const viewMode = useCamera((s) => s.viewMode)
@@ -72,42 +65,14 @@ export default function EventTicker() {
     return () => clearInterval(id)
   }, [])
 
-  // Rotation timer for 2+ events
+  // Simple rotation — advance index every ROTATE_INTERVAL
   useEffect(() => {
     if (events.length < 2) return
-    rotateTimer.current = setInterval(() => {
-      setTransitioning(true)
-      setTimeout(() => {
-        setCurrentIndex(i => {
-          const next = (i + 1) % events.length
-          setDisplayIndex(next)
-          return next
-        })
-        setTimeout(() => setTransitioning(false), 50)
-      }, 300)
+    const id = setInterval(() => {
+      setIndex(i => (i + 1) % events.length)
     }, ROTATE_INTERVAL)
-    return () => clearInterval(rotateTimer.current)
+    return () => clearInterval(id)
   }, [events.length])
-
-  // Idle auto-hide (desktop only — no reason to hide on mobile)
-  const isPointer = typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches
-  const resetIdle = useCallback(() => {
-    setVisible(true)
-    clearTimeout(idleTimer.current)
-    if (isPointer) {
-      idleTimer.current = setTimeout(() => setVisible(false), IDLE_TIMEOUT)
-    }
-  }, [isPointer])
-
-  useEffect(() => {
-    resetIdle()
-    if (!isPointer) return
-    window.addEventListener('mousemove', resetIdle)
-    return () => {
-      window.removeEventListener('mousemove', resetIdle)
-      clearTimeout(idleTimer.current)
-    }
-  }, [resetIdle, isPointer])
 
   // Open a place card for an event
   const openEvent = useCallback((event) => {
@@ -121,17 +86,10 @@ export default function EventTicker() {
   if (showCard || bulletinOpen) return null
   if (events.length === 0) return null
 
-  const current = events[displayIndex] || events[0]
+  const current = events[index % events.length]
 
   return (
-    <div
-      className="absolute top-0 left-0 right-0 z-50 select-none"
-      style={{
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? 'auto' : 'none',
-        transition: 'opacity 600ms ease',
-      }}
-    >
+    <div className="absolute top-0 left-0 right-0 z-50 select-none">
       <div
         className="flex items-center px-5 relative"
         style={{
@@ -148,69 +106,26 @@ export default function EventTicker() {
           }}
         />
 
-        {/* Event headline — left side */}
-        {events.length > 0 ? (
-          <button
-            onClick={() => openEvent(current)}
-            className="flex-1 min-w-0 flex items-center gap-2 text-left h-full"
-          >
-            <div className="flex-1 min-w-0 relative h-5 overflow-hidden">
-              {events.length <= 1 ? (
-                <div className="absolute inset-0 flex items-center gap-2">
-                  <span className="text-label-sm text-on-surface-variant tracking-wide truncate">{current?.title}</span>
-                  {current?._venueName && (
-                    <span className="text-caption text-on-surface-subtle truncate flex-shrink-0">
-                      {current._venueName}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div
-                    className="absolute inset-0 flex items-center gap-2"
-                    style={{
-                      opacity: transitioning ? 0 : 1,
-                      transform: transitioning ? 'translateY(-10px)' : 'translateY(0)',
-                      transition: 'opacity 600ms ease, transform 600ms ease',
-                    }}
-                  >
-                    <span className="text-label-sm text-on-surface-variant tracking-wide truncate">{current?.title}</span>
-                    {current?._venueName && (
-                      <span className="text-caption text-on-surface-subtle truncate flex-shrink-0">
-                        {current._venueName}
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    className="absolute inset-0 flex items-center gap-2"
-                    style={{
-                      opacity: transitioning ? 1 : 0,
-                      transform: transitioning ? 'translateY(0)' : 'translateY(10px)',
-                      transition: 'opacity 600ms ease, transform 600ms ease',
-                    }}
-                  >
-                    {(() => {
-                      const next = events[(displayIndex + 1) % events.length]
-                      return (
-                        <>
-                          <span className="text-label-sm text-on-surface-variant tracking-wide truncate">{next?.title}</span>
-                          {next?._venueName && (
-                            <span className="text-caption text-on-surface-subtle truncate flex-shrink-0">
-                              {next._venueName}
-                            </span>
-                          )}
-                        </>
-                      )
-                    })()}
-                  </div>
-                </>
+        <button
+          onClick={() => openEvent(current)}
+          className="flex-1 min-w-0 flex items-center gap-2 text-left h-full"
+        >
+          <div className="flex-1 min-w-0 relative h-5 overflow-hidden">
+            <div
+              key={index}
+              className="absolute inset-0 flex items-center gap-2 animate-ticker-in"
+            >
+              <span className="text-label-sm text-on-surface-variant tracking-wide truncate">
+                {current?.title}
+              </span>
+              {current?._venueName && (
+                <span className="text-caption text-on-surface-subtle truncate flex-shrink-0">
+                  {current._venueName}
+                </span>
               )}
             </div>
-          </button>
-        ) : (
-          <div className="flex-1" />
-        )}
-
+          </div>
+        </button>
       </div>
     </div>
   )
