@@ -1111,7 +1111,7 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.45 : 0.45) * (1 + cc * 0.4)} />
+      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.30 : 0.45) * (1 + cc * 0.4)} />
       <ambientLight
         color={lighting.ambient.color}
         intensity={lighting.ambient.intensity * (1 + cc * 0.4)}
