@@ -259,13 +259,15 @@ function VectorStreets({ svgPortal }) {
       if (!meta || !svg || !obj) return
       if (meta.currentScale >= meta.fullScale) return
       if (state.viewMode !== 'hero') {
+        // Wait until after the 1500ms camera transition settles before the
+        // GPU-heavy SVG re-rasterization (can be 16× more pixels on 3× DPR).
         setTimeout(() => {
           if (!svgRef.current || !svgObjRef.current) return
           svg.setAttribute('width', meta.cropW * meta.fullScale)
           svg.setAttribute('height', meta.cropH * meta.fullScale)
           obj.scale.set(1 / meta.fullScale, 1 / meta.fullScale, 1)
           meta.currentScale = meta.fullScale
-        }, 300)
+        }, 2000)
       }
     })
     return unsub

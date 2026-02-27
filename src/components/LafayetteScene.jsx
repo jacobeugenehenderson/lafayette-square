@@ -1082,8 +1082,9 @@ function LafayetteScene() {
   useEffect(() => {
     if (viewMode !== 'hero') {
       if (isMobile) {
-        const t1 = setTimeout(() => setLabelsReady(true), 2000)
-        const t2 = setTimeout(() => setMarkersReady(true), 3500)
+        // SVG re-rasterizes at 2s — stagger labels after that settles
+        const t1 = setTimeout(() => setLabelsReady(true), 3000)
+        const t2 = setTimeout(() => setMarkersReady(true), 4200)
         // No facades on mobile — too small to see, saves ~10MB GPU memory
         return () => { clearTimeout(t1); clearTimeout(t2) }
       }
