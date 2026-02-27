@@ -711,7 +711,7 @@ function composeCardSvg({
   const CAP_SIDE = Math.round(cardWidth * 0.08);
   const CAP_TOPPAD = Math.round(cardWidth * 0.05);
   const CAP_BOTPAD = Math.round(cardWidth * 0.06);
-  const QR_FRACTION = 0.75;
+  const QR_FRACTION = 0.85;
 
   // Corner radius
   let RADIUS = Math.round(cardWidth * 0.07);

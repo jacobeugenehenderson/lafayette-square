@@ -1656,6 +1656,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
   const [guardianUrl, setGuardianUrl] = useState('')
   const [claimSecret, setClaimSecret] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [styledLoading, setStyledLoading] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [guardianRevealed, setGuardianRevealed] = useState(false)
 
@@ -1692,15 +1693,17 @@ function QrTab({ listingId, listingName, isAdmin }) {
     let cancelled = false
 
     async function loadQrs() {
-      // Townie QR
+      // 1. Generate plain Townie QR instantly (client-side, no network)
       const tUrl = `${vanity}/checkin/${listingId}`
       setTownieUrl(tUrl)
-      const styledTownie = await readStyledImage('Townie')
+      const plainTownie = await QRCode.toDataURL(tUrl, { width: 256, margin: 2 })
       if (!cancelled) {
-        setTownieQr(styledTownie || await QRCode.toDataURL(tUrl, { width: 256, margin: 2 }))
+        setTownieQr(plainTownie)
+        setStyledLoading(true)
+        setLoading(false) // Plain QRs ready — show UI immediately
       }
 
-      // Guardian QR: fetch claim_secret, then styled image
+      // 2. Fetch guardian secret + generate plain Guardian QR
       try {
         const dh = await getDeviceHash()
         const res = isAdmin
@@ -1711,13 +1714,21 @@ function QrTab({ listingId, listingName, isAdmin }) {
           setClaimSecret(secret)
           const gUrl = `${vanity}/claim/${listingId}/${secret}`
           setGuardianUrl(gUrl)
-          const styledGuardian = await readStyledImage('Guardian')
-          if (!cancelled) {
-            setGuardianQr(styledGuardian || await QRCode.toDataURL(gUrl, { width: 256, margin: 2 }))
-          }
+          const plainGuardian = await QRCode.toDataURL(gUrl, { width: 256, margin: 2 })
+          if (!cancelled) setGuardianQr(plainGuardian)
         }
       } catch { /* silent */ }
-      if (!cancelled) setLoading(false)
+
+      // 3. Upgrade to styled versions in background
+      try {
+        const styledTownie = await readStyledImage('Townie')
+        if (styledTownie && !cancelled) setTownieQr(styledTownie)
+      } catch { /* silent */ }
+      try {
+        const styledGuardian = await readStyledImage('Guardian')
+        if (styledGuardian && !cancelled) setGuardianQr(prev => prev ? styledGuardian : prev)
+      } catch { /* silent */ }
+      if (!cancelled) setStyledLoading(false)
     }
 
     loadQrs()
@@ -1744,7 +1755,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
         <div className="text-caption text-on-surface-subtle mb-3">For customers to check in</div>
         {townieQr && (
           <div className="flex justify-center mb-3">
-            <img src={townieQr} alt="Townie QR" className="w-48 rounded-lg" />
+            <img src={townieQr} alt="Townie QR" className={`w-48 rounded-lg transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`} />
           </div>
         )}
         <div className="flex gap-2">
@@ -1777,7 +1788,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
       </div>
 
       {/* Guardian QR — hidden behind reveal toggle */}
-      {loading ? (
+      {(loading || (styledLoading && !guardianQr)) ? (
         <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
           <div className="text-body font-medium text-on-surface mb-0.5">Guardian</div>
           <div className="text-caption text-on-surface-subtle mb-3">To onboard a new guardian</div>
@@ -1807,7 +1818,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
               <img
                 src={guardianQr}
                 alt="Guardian QR"
-                className="w-48 rounded-lg pointer-events-none select-none"
+                className={`w-48 rounded-lg pointer-events-none select-none transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`}
                 draggable={false}
                 style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
               />
