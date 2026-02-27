@@ -16,8 +16,8 @@ if (typeof window.buildText !== 'function') {
       var biz = '';
       try { var b = document.getElementById('bizSelect'); biz = b ? (b.value || '') : ''; } catch(_e2){}
 
-      if (t === 'Check-in' && biz) return base + '/checkin/' + encodeURIComponent(biz);
-      if (t === 'Claim' && biz) return base + '/claim/' + encodeURIComponent(biz);
+      if (t === 'Townie' && biz) return base + '/checkin/' + encodeURIComponent(biz);
+      if (t === 'Guardian' && biz) return base + '/claim/' + encodeURIComponent(biz);
       return base;
     } catch (_e) {}
 
@@ -976,6 +976,8 @@ function getTypeFields(type){
   const typeSel = document.getElementById('qrType');
   if(typeSel){
     typeSel.addEventListener('change', ()=>{
+      // Pre-save current design before form rebuild destroys old DOM
+      try { if (typeof window._lsqSaveBeforeTypeSwitch === 'function') window._lsqSaveBeforeTypeSwitch(typeSel.value); } catch (e) {}
       try { renderTypeForm(typeSel.value); } catch (e) {}
       // Refresh color hex bindings after dynamic field changes
       try { if(typeof window.wireColorHexSync === 'function') window.wireColorHexSync(); } catch (e) {}
@@ -998,7 +1000,7 @@ function buildText(){
       : window.location.origin;
 
     switch(t){
-      case "Check-in": {
+      case "Townie": {
         const biz = (val("bizSelect") || "").trim();
         if (!biz) return base;
         const url = base + '/checkin/' + encodeURIComponent(biz);
@@ -1010,7 +1012,7 @@ function buildText(){
         return url;
       }
 
-      case "Claim": {
+      case "Guardian": {
         const biz = (val("bizSelect") || "").trim();
         const secret = (val("claimSecret") || "").trim();
         if (!biz) return base;

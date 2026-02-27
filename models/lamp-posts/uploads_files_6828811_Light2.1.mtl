@@ -1,0 +1,14 @@
+# Blender 5.0.1 MTL File: 'Light2.1.blend'
+# www.blender.org
+
+newmtl Light_mat
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd E:/PRODUCTS COMPLETED/2026/Architecture/Street Lights/Light2/Textures2.1-4K/Light_Bake1_PBR_Diffuse.png
+map_Ns E:/PRODUCTS COMPLETED/2026/Architecture/Street Lights/Light2/Textures2.1-4K/Light_Bake1_PBR_Roughness.png
+map_refl E:/PRODUCTS COMPLETED/2026/Architecture/Street Lights/Light2/Textures2.1-4K/Light_Bake1_PBR_Metalness.png
+map_Bump -bm 1.000000 E:/PRODUCTS COMPLETED/2026/Architecture/Street Lights/Light2/Textures2.1-4K/Light_Bake1_PBR_Normal.png

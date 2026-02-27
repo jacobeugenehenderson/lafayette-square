@@ -27,8 +27,8 @@ function _hexToRGBA(hex, a = 1) {
 }
 
 function _bgGradientFromKnobs() {
-  const top = document.getElementById('bgTopColor')?.value || '#FFFFFF';
-  const bot = document.getElementById('bgBottomColor')?.value || '#FFFFFF';
+  const top = document.getElementById('bgTopHex')?.value || document.getElementById('bgTopColor')?.value || '#FFFFFF';
+  const bot = document.getElementById('bgBottomHex')?.value || document.getElementById('bgBottomColor')?.value || '#FFFFFF';
 
   // IMPORTANT: do NOT use `|| 100` here; 0 is a valid value.
   const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
@@ -310,7 +310,7 @@ function buildQrSvg({
   modulesScale = 1.5,
   modulesEmoji = '😀',
   centerMode = 'None',
-  centerScale = 0.9,
+  centerScale = 1,
   centerEmoji = '😊',
   captionText = '',
   captionColor = '#000000',

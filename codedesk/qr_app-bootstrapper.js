@@ -41,85 +41,151 @@ window.getLsqBaseUrl = getLsqBaseUrl;
 
 // Populate all bizSelect elements with business data
 // Supports both <select> and listbox (.fldListbox) rendering
+// Groups into category folders (Dining, Shopping, Residential, etc.)
+var CATEGORY_ORDER = ['dining', 'shopping', 'services', 'arts', 'community', 'historic', 'hospitality', 'professional', 'recreation', 'residential'];
+var CATEGORY_LABELS = {
+  dining: 'Dining', shopping: 'Shopping', services: 'Services',
+  arts: 'Arts', community: 'Community', historic: 'Historic',
+  hospitality: 'Hospitality', professional: 'Professional',
+  recreation: 'Recreation', residential: 'Residential',
+};
+
+function _makeBizItem(biz, current, hiddenInput, listbox) {
+  var id = biz.id || biz.building_id || '';
+  var name = biz.name || biz.id || 'Unknown';
+
+  var item = document.createElement('button');
+  item.type = 'button';
+  item.className = 'biz-item' + (id === current ? ' is-active' : '');
+  item.dataset.bizId = id;
+
+  var nameSpan = document.createElement('span');
+  nameSpan.className = 'biz-item-name';
+  nameSpan.textContent = name;
+  item.appendChild(nameSpan);
+
+  item.addEventListener('click', function() {
+    var prev = listbox.querySelector('.biz-item.is-active');
+    if (prev) prev.classList.remove('is-active');
+    item.classList.add('is-active');
+    hiddenInput.value = id;
+    hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  return item;
+}
+
+function _groupByCategory(businesses) {
+  var catMap = {};
+  businesses.forEach(function(biz) {
+    var cat = biz.category || 'other';
+    if (!catMap[cat]) catMap[cat] = [];
+    catMap[cat].push(biz);
+  });
+  // Sort each group alphabetically
+  Object.keys(catMap).forEach(function(cat) {
+    catMap[cat].sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+  });
+  // Return ordered array of { key, label, items }
+  var result = [];
+  CATEGORY_ORDER.forEach(function(cat) {
+    if (catMap[cat]) {
+      result.push({ key: cat, label: CATEGORY_LABELS[cat] || cat, items: catMap[cat] });
+      delete catMap[cat];
+    }
+  });
+  // Append any remaining categories not in the order list
+  Object.keys(catMap).sort().forEach(function(cat) {
+    result.push({ key: cat, label: CATEGORY_LABELS[cat] || cat, items: catMap[cat] });
+  });
+  return result;
+}
+
 function populateBizSelect(businesses) {
   var hiddenInput = document.getElementById('bizSelect');
   var listbox = document.querySelector('.fldListbox[data-for="bizSelect"]');
 
-  // Listbox mode: render clickable items
+  // Listbox mode: render clickable items grouped into category folders
   if (listbox && hiddenInput) {
-    var current = hiddenInput.value || '';
+    var current = hiddenInput.value || window.__lsq_cached_biz_id || '';
     listbox.innerHTML = '';
 
-    var sorted = businesses.slice().sort(function(a, b) {
-      return (a.name || '').localeCompare(b.name || '');
-    });
+    var groups = _groupByCategory(businesses);
 
-    sorted.forEach(function(biz) {
-      var id = biz.id || biz.building_id || '';
-      var name = biz.name || biz.id || 'Unknown';
-      var cat = biz.category || '';
+    groups.forEach(function(group) {
+      if (!group.items.length) return;
 
-      var item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'biz-item' + (id === current ? ' is-active' : '');
-      item.dataset.bizId = id;
+      var folder = document.createElement('div');
+      folder.className = 'biz-group';
 
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'biz-item-name';
-      nameSpan.textContent = name;
-      item.appendChild(nameSpan);
+      var header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'biz-group-header';
+      header.innerHTML = '<span class="biz-group-label">' + group.label +
+        '</span><span class="biz-group-count">' + group.items.length + '</span>';
 
-      if (cat) {
-        var catSpan = document.createElement('span');
-        catSpan.className = 'biz-item-cat';
-        catSpan.textContent = cat;
-        item.appendChild(catSpan);
-      }
+      var content = document.createElement('div');
+      content.className = 'biz-group-content';
+      content.style.display = 'none';
 
-      item.addEventListener('click', function() {
-        // Deselect previous
-        var prev = listbox.querySelector('.biz-item.is-active');
-        if (prev) prev.classList.remove('is-active');
-
-        // Select this one
-        item.classList.add('is-active');
-        hiddenInput.value = id;
-        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+      header.addEventListener('click', function() {
+        var isOpen = content.style.display !== 'none';
+        content.style.display = isOpen ? 'none' : '';
+        folder.classList.toggle('is-open', !isOpen);
       });
 
-      listbox.appendChild(item);
+      group.items.forEach(function(biz) {
+        content.appendChild(_makeBizItem(biz, current, hiddenInput, listbox));
+      });
+
+      // Auto-open if current selection is in this group
+      var hasActive = group.items.some(function(b) {
+        return (b.id || b.building_id || '') === current;
+      });
+      if (hasActive) {
+        content.style.display = '';
+        folder.classList.add('is-open');
+      }
+
+      folder.appendChild(header);
+      folder.appendChild(content);
+      listbox.appendChild(folder);
     });
+
+    // Restore hidden input value after rebuilding (renderTypeForm clears it)
+    if (current) hiddenInput.value = current;
 
     return;
   }
 
-  // Fallback: legacy <select> mode
+  // Fallback: legacy <select> mode with optgroups
   var selects = document.querySelectorAll('select#bizSelect');
   if (!selects.length) return;
 
   selects.forEach(function(sel) {
-    var current = sel.value || '';
+    var current = sel.value || window.__lsq_cached_biz_id || '';
     sel.innerHTML = '';
 
     var ph = document.createElement('option');
     ph.value = '';
-    ph.textContent = '\u2014 Select a business \u2014';
+    ph.textContent = '\u2014 Select a place \u2014';
     ph.disabled = true;
     if (!current) ph.selected = true;
     sel.appendChild(ph);
 
-    var sorted = businesses.slice().sort(function(a, b) {
-      return (a.name || '').localeCompare(b.name || '');
-    });
-
-    sorted.forEach(function(biz) {
-      var opt = document.createElement('option');
-      opt.value = biz.id || biz.building_id || '';
-      var label = biz.name || biz.id || 'Unknown';
-      if (biz.category) label += '  (' + biz.category + ')';
-      opt.textContent = label;
-      if (opt.value === current) opt.selected = true;
-      sel.appendChild(opt);
+    var groups = _groupByCategory(businesses);
+    groups.forEach(function(group) {
+      if (!group.items.length) return;
+      var optgroup = document.createElement('optgroup');
+      optgroup.label = group.label;
+      group.items.forEach(function(biz) {
+        var opt = document.createElement('option');
+        opt.value = biz.id || biz.building_id || '';
+        opt.textContent = biz.name || biz.id || 'Unknown';
+        if (opt.value === current) opt.selected = true;
+        optgroup.appendChild(opt);
+      });
+      sel.appendChild(optgroup);
     });
   });
 }
@@ -179,7 +245,7 @@ window.populateBizSelect = populateBizSelect;
   try {
     var typeSel = document.getElementById('qrType');
     if (typeSel && typeof window.renderTypeForm === 'function') {
-      window.renderTypeForm(typeSel.value || 'Check-in');
+      window.renderTypeForm(typeSel.value || 'Townie');
     }
   } catch (e) {}
 
@@ -190,13 +256,11 @@ window.populateBizSelect = populateBizSelect;
   var apiUrl = window.LSQ_API_URL || '';
   if (apiUrl) {
     try {
-      var bizRes = await fetch(apiUrl + '?action=businesses', { cache: 'no-store' });
+      var bizRes = await fetch(apiUrl + '?action=listings', { cache: 'no-store' });
       if (bizRes.ok) {
         var bizData = await bizRes.json();
-        var businesses = (bizData.data && bizData.data.businesses)
-          ? bizData.data.businesses
-          : (bizData.businesses || []);
-        if (Array.isArray(businesses) && businesses.length > 0) {
+        var businesses = Array.isArray(bizData.data) ? bizData.data : [];
+        if (businesses.length > 0) {
           window.LSQ_BUSINESSES = businesses;
           populateBizSelect(businesses);
         }
@@ -235,13 +299,36 @@ window.populateBizSelect = populateBizSelect;
   var typeSelect = document.getElementById('qrType');
   if (typeSelect) {
     typeSelect.addEventListener('change', function() {
-      // After renderTypeForm rebuilds the form, re-populate bizSelect
+      // After renderTypeForm rebuilds the form, re-populate bizSelect + claimSecret
       setTimeout(function() {
         if (window.LSQ_BUSINESSES && window.LSQ_BUSINESSES.length) {
           populateBizSelect(window.LSQ_BUSINESSES);
         }
+        // Hydrate claimSecret for Guardian type after form rebuild
+        if (window.__lsq_cached_claim_secret) {
+          var cs = document.getElementById('claimSecret');
+          if (cs) cs.value = window.__lsq_cached_claim_secret;
+        }
+        // Re-render with hydrated values so URL text + QR content update
+        try { if (typeof window.render === 'function') window.render(); } catch (e) {}
       }, 0);
     });
+  }
+
+  // --- Embed: load design for cached biz+type ---
+  // Parent sends lsq-set-listing before #bizSelect exists (async timing).
+  // Now that the form is built, set bizSelect from cache and load the design.
+  if (document.documentElement.classList.contains('embed') && window.__lsq_cached_biz_id) {
+    var _bSel = document.getElementById('bizSelect');
+    if (_bSel) {
+      _bSel.value = window.__lsq_cached_biz_id;
+      _bSel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // Hydrate claimSecret if cached
+    if (window.__lsq_cached_claim_secret) {
+      var _cSel = document.getElementById('claimSecret');
+      if (_cSel) _cSel.value = window.__lsq_cached_claim_secret;
+    }
   }
 
 })();

@@ -1,9 +1,9 @@
 {
   "types": {
-    "Check-in": [
+    "Townie": [
       "bizSelect"
     ],
-    "Claim": [
+    "Guardian": [
       "bizSelect",
       "claimSecret"
     ]
@@ -15,13 +15,12 @@
       "options": []
     },
     "claimSecret": {
-      "label": "Guardian Secret",
-      "type": "text",
-      "placeholder": "Enter the secret phrase from the physical QR"
+      "label": "",
+      "type": "hidden"
     }
   },
   "presets": {
-    "Check-in": [],
-    "Claim": []
+    "Townie": [],
+    "Guardian": []
   }
 }

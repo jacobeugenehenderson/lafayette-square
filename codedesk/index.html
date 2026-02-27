@@ -79,6 +79,66 @@
 </head>
 
 <body class="min-h-screen text-neutral-900">
+<script>
+  // Embed mode: strip header + background when loaded inside an iframe
+  var _params = new URLSearchParams(location.search);
+  if (_params.has('embed')) {
+    document.body.classList.add('embed');
+    document.documentElement.classList.add('embed');
+
+    // Guardian mode: hide the Places accordion (place is pre-selected by parent)
+    if (_params.has('guardian')) {
+      document.documentElement.classList.add('embed-guardian');
+    }
+
+    // Listen for messages from parent React modal
+    window.addEventListener('message', function(e) {
+      if (!e.data) return;
+      if (e.data.type === 'lsq-set-businesses') {
+        var places = e.data.value;
+        if (Array.isArray(places) && places.length) {
+          window.LSQ_BUSINESSES = places;
+          if (typeof window.populateBizSelect === 'function') {
+            window.populateBizSelect(places);
+          }
+        }
+      }
+      if (e.data.type === 'lsq-set-qr-type') {
+        var sel = document.getElementById('qrType');
+        if (sel && sel.value !== e.data.value) {
+          sel.value = e.data.value;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      if (e.data.type === 'lsq-set-listing') {
+        // Prime the sync pipeline's bizId cache (survives form rebuilds)
+        window.__lsq_cached_biz_id = e.data.value || '';
+        var bizSel = document.getElementById('bizSelect');
+        if (bizSel) {
+          bizSel.value = e.data.value;
+          bizSel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      if (e.data.type === 'lsq-set-claim-secret') {
+        window.__lsq_cached_claim_secret = e.data.value || '';
+        var secretInput = document.getElementById('claimSecret');
+        if (secretInput) {
+          secretInput.value = e.data.value;
+          secretInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }
+      if (e.data.type === 'lsq-save') {
+        // Trigger render then immediate save + PNG export
+        if (typeof window.render === 'function') window.render();
+        if (typeof window._lsqSaveNow === 'function') {
+          window._lsqSaveNow();
+        } else {
+          window.parent.postMessage({ type: 'lsq-saved' }, '*');
+        }
+      }
+    });
+  }
+</script>
 
   <!-- HEADER -->
   <header class="header-bar sticky top-0 z-30">
@@ -93,8 +153,8 @@
         <label>
           <span class="sr-only">Type</span>
           <select id="qrType" aria-label="Type">
-            <option value="Check-in" selected>Check-in</option>
-            <option value="Claim">Claim</option>
+            <option value="Townie" selected>Townie</option>
+            <option value="Guardian">Guardian</option>
           </select>
         </label>
       </div>
@@ -130,32 +190,6 @@
 <section id="stepper"
   class="stage-stick space-y-4 w-full max-w-[560px] mx-auto justify-self-center">
 
-  <!-- Caption -->
-  <div class="step-card"
-       data-step="caption">
-    <button class="w-full step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Caption
-    </button>
-    <div class="px-4 pb-4 space-y-3" data-step-panel style="display:none">
-      <label class="block text-sm">
-        <span class="sr-only">Headline</span>
-        <textarea id="campaign"
-          rows="1"
-          maxlength="20"
-          class="w-full rounded-md border px-3 py-2"
-          placeholder="Headline"></textarea>
-      </label>
-      <label class="block text-sm">
-        <span class="sr-only">Body (optional)</span>
-        <textarea id="captionBody"
-          rows="1"
-          maxlength="60"
-          class="w-full rounded-md border px-3 py-2"
-          placeholder="Body (optional)"></textarea>
-      </label>
-    </div>
-  </div>
-
 <!-- Design -->
 <div class="step-card"
      data-step="design">
@@ -163,21 +197,6 @@
       <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
         Design
       </button>
-      <div id="fontPill" class="ecc-pill" role="group" aria-label="Preview font">
-        <label class="text-sm sr-only" for="fontFamily">Preview font</label>
-        <select id="fontFamily" class="topctl topctl--chev text-sm" aria-label="Preview font">
-          <option value="IBM Plex Sans">IBM Plex Sans</option>
-          <option value="IBM Plex Serif">IBM Plex Serif</option>
-          <option value="Bebas Neue">Bebas Neue</option>
-          <option value="Public Sans">Public Sans</option>
-          <option value="Playfair Display">Playfair Display</option>
-          <option value="Space Grotesk">Space Grotesk</option>
-          <option value="Manrope">Manrope</option>
-          <option value="Inter">Inter</option>
-          <option value="JetBrains Mono">JetBrains Mono</option>
-          <option value="Work Sans">Work Sans</option>
-        </select>
-      </div>
     </div>
   <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
     <!-- Color quadrant -->
@@ -300,7 +319,7 @@
       <label class="text-sm" id="centerScaleWrap">
         <span class="block mb-1">Scale</span>
         <div class="flex items-center gap-2">
-          <input id="centerScale" type="number" step="0.05" min="0.1" max="1.5" class="w-full rounded-md border px-3 py-2" value="2" />
+          <input id="centerScale" type="number" step="0.05" min="0.1" max="2" class="w-full rounded-md border px-3 py-2" value="1" />
         </div>
       </label>
     </div>
@@ -314,7 +333,7 @@
             <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] grid-rows-2 items-center gap-2">
               <div class="flex items-center gap-2">
                 <input id="bgTopColor" type="color" class="color-dot h-9 w-9" value="#FFFFFF" />
-                <input id="bgTopHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+                <input id="bgTopHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" value="#FFFFFF" />
               </div>
               <div class="grid grid-cols-[auto_minmax(0,1fr)] grid-rows-2 items-center gap-2 row-span-2">
                 <button id="bgLink" type="button"
@@ -330,7 +349,7 @@
                     aria-label="Top opacity (%)" />
               <div class="flex items-center gap-2">
                 <input id="bgBottomColor" type="color" class="color-dot h-9 w-9" value="#FFFFFF" />
-                <input id="bgBottomHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+                <input id="bgBottomHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" value="#FFFFFF" />
               </div>
               <input id="bgBottomAlphaNum" type="number" min="0" max="100" step="1" value="100"
                     class="w-16 rounded-md border px-2 py-2 text-sm justify-self-start"
@@ -340,12 +359,55 @@
   </div>
 </div>
 
+  <!-- Caption -->
+  <div class="step-card"
+       data-step="caption">
+    <div class="step-header-wrap flex items-center gap-3">
+      <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
+        Caption
+      </button>
+      <div id="fontPill" class="ecc-pill" role="group" aria-label="Preview font">
+        <label class="text-sm sr-only" for="fontFamily">Preview font</label>
+        <select id="fontFamily" class="topctl topctl--chev text-sm" aria-label="Preview font">
+          <option value="IBM Plex Sans">IBM Plex Sans</option>
+          <option value="IBM Plex Serif">IBM Plex Serif</option>
+          <option value="Bebas Neue">Bebas Neue</option>
+          <option value="Public Sans">Public Sans</option>
+          <option value="Playfair Display">Playfair Display</option>
+          <option value="Space Grotesk">Space Grotesk</option>
+          <option value="Manrope">Manrope</option>
+          <option value="Inter">Inter</option>
+          <option value="JetBrains Mono">JetBrains Mono</option>
+          <option value="Work Sans">Work Sans</option>
+        </select>
+      </div>
+    </div>
+    <div class="px-4 pb-4 space-y-3" data-step-panel style="display:none">
+      <label class="block text-sm">
+        <span class="sr-only">Headline</span>
+        <textarea id="campaign"
+          rows="1"
+          maxlength="20"
+          class="w-full rounded-md border px-3 py-2"
+          placeholder="Headline"></textarea>
+      </label>
+      <label class="block text-sm">
+        <span class="sr-only">Body (optional)</span>
+        <textarea id="captionBody"
+          rows="1"
+          maxlength="60"
+          class="w-full rounded-md border px-3 py-2"
+          placeholder="Body (optional)"></textarea>
+      </label>
+    </div>
+  </div>
+
 <!-- Business -->
 <div class="step-card"
      data-step="business">
   <div class="step-header-wrap flex items-center gap-3">
     <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Business
+      Places
     </button>
   </div>
   <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
@@ -353,17 +415,20 @@
   </div>
 </div>
 
-<!-- Download -->
+<!-- Save + Download -->
 <div class="step-card"
      data-step="download">
   <div class="step-header-wrap flex items-center gap-3">
     <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Download
+      Save &amp; Download
     </button>
   </div>
-  <div class="lsq-download-row" data-step-panel style="display:none">
-    <button type="button" class="lsq-download-btn lsq-download-btn--primary" style="width:100%" onclick="window.downloadPng && window.downloadPng('lafayette-square-qr.png', 3)">
-      PNG
+  <div class="lsq-download-row" data-step-panel style="display:none; flex-direction:column">
+    <button type="button" id="btnSaveDesign" class="lsq-download-btn lsq-download-btn--primary" style="width:100%">
+      Save Design
+    </button>
+    <button type="button" class="lsq-download-btn" style="width:100%" onclick="window.downloadPng && window.downloadPng('lafayette-square-qr.png', 3)">
+      Download PNG
     </button>
   </div>
 </div>
@@ -393,15 +458,32 @@
   // Lafayette Square — API configuration
   // Set this to your Google Apps Script deployment URL
   window.LSQ_API_URL =
-    'https://script.google.com/macros/s/AKfycbxcKT2eSOKfXsb_p1Vs3xfpxy28N3ceVnBFRRP0whDcJ7u45zrzjHwcSUG7GGNxZ5ckTw/exec';
+    'https://script.google.com/macros/s/AKfycbwt3WFfB2v2jOf7VLXM-ssGABBf0TA9HkgXpiPo2bnTyAqC3ci4UG5FGoD0hV4hSgRFFQ/exec';
 </script>
 
 <!-- CodeDesk split modules (ordered, deterministic) -->
-<script defer src="./qr_app-bootstrapper.js?v=20260207"></script>
-<script defer src="./qr_ui_toolkit.js?v=20260207"></script>
-<script defer src="./qr_render_engine.js?v=20260207"></script>
-<script defer src="./qr_state_engine.js?v=20260207"></script>
-<script defer src="./qr_sync_pipeline.js?v=20260207"></script>
+<script defer src="./qr_app-bootstrapper.js?v=20260226d"></script>
+<script defer src="./qr_ui_toolkit.js?v=20260226d"></script>
+<script defer src="./qr_render_engine.js?v=20260226d"></script>
+<script defer src="./qr_state_engine.js?v=20260226d"></script>
+<script defer src="./qr_sync_pipeline.js?v=20260226d"></script>
+
+<!-- Wire standalone Save button -->
+<script defer>
+  document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('btnSaveDesign');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+      if (typeof window.render === 'function') window.render();
+      if (typeof window._lsqSaveNow === 'function') {
+        window._lsqSaveNow();
+        btn.textContent = 'Saved!';
+        btn.style.opacity = '0.7';
+        setTimeout(function() { btn.textContent = 'Save Design'; btn.style.opacity = '1'; }, 1500);
+      }
+    });
+  });
+</script>
 
 <!-- Emoji picker wiring -->
 <script type="module">
