@@ -279,7 +279,7 @@ function getReviews(listingId) {
   const rows = sheetToObjects(getSheet('Reviews'))
   const filtered = rows
     .filter(r => r.listing_id === listingId)
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at))
 
   // Build avatar lookup
   var avatarMap = buildAvatarMap()
@@ -299,13 +299,34 @@ function getReviews(listingId) {
       created_at: r.created_at
     })
   })
+
+  // Compute rating aggregates from actual reviews
+  var distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  var ratingSum = 0
+  var ratingCount = 0
   filtered.forEach(function(r) {
     r.avatar = (avatarMap[r.handle] || {}).avatar || null
     r.vignette = (avatarMap[r.handle] || {}).vignette || null
     r.replies = replyMap[r.id] || []
+    // Normalize timestamp → created_at
+    if (r.timestamp && !r.created_at) r.created_at = r.timestamp
+    // Accumulate rating stats
+    var star = parseInt(r.rating, 10)
+    if (star >= 1 && star <= 5) {
+      distribution[star]++
+      ratingSum += star
+      ratingCount++
+    }
   })
 
-  return jsonResponse(filtered)
+  var avgRating = ratingCount > 0 ? Math.round((ratingSum / ratingCount) * 10) / 10 : 0
+
+  return jsonResponse({
+    reviews: filtered,
+    rating: avgRating,
+    review_count: ratingCount,
+    distribution: distribution
+  })
 }
 
 // ─── GET: Active events ─────────────────────────────────────────────────────

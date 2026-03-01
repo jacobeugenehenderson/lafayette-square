@@ -778,34 +778,76 @@ function OverviewTab({ listing, building, isGuardian }) {
 }
 
 // ─── Interactive star picker ─────────────────────────────────────────
+const STAR_LABELS = ['', 'Terrible', 'Poor', 'Okay', 'Great', 'Amazing']
+
 function StarPicker({ value, onChange }) {
   const [hover, setHover] = useState(0)
+  const active = hover || value
   return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(i => (
-        <button
-          key={i} type="button"
-          onMouseEnter={() => setHover(i)}
-          onMouseLeave={() => setHover(0)}
-          onClick={() => onChange(i)}
-          className="p-0"
-        >
-          <svg className={`w-5 h-5 ${(hover || value) >= i ? 'text-yellow-400' : 'text-on-surface-disabled'} fill-current transition-colors`} viewBox="0 0 20 20">
-            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-          </svg>
-        </button>
-      ))}
+    <div className="flex items-center gap-2">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map(i => (
+          <button
+            key={i} type="button"
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover(0)}
+            onClick={() => onChange(i)}
+            className="p-0"
+          >
+            <svg className={`w-7 h-7 ${active >= i ? 'text-yellow-400' : 'text-on-surface-disabled'} fill-current transition-colors`} viewBox="0 0 20 20">
+              <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+            </svg>
+          </button>
+        ))}
+      </div>
+      <span className="text-body-sm text-on-surface-subtle min-w-[4rem]">
+        {active ? STAR_LABELS[active] : 'Tap to rate'}
+      </span>
+    </div>
+  )
+}
+
+// ─── Rating summary bar ─────────────────────────────────────────────
+function RatingSummary({ rating, reviewCount, distribution }) {
+  if (!reviewCount) return null
+  const maxCount = Math.max(...Object.values(distribution), 1)
+  return (
+    <div className="flex gap-4 mb-4 pb-4 border-b border-outline-variant">
+      <div className="flex flex-col items-center justify-center min-w-[4.5rem]">
+        <span className="text-3xl font-semibold text-on-surface leading-none">{rating.toFixed(1)}</span>
+        <StarRating rating={rating} size="sm" />
+        <span className="text-caption text-on-surface-subtle mt-1">{reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}</span>
+      </div>
+      <div className="flex-1 flex flex-col justify-center gap-0.5">
+        {[5, 4, 3, 2, 1].map(star => {
+          const count = distribution[star] || 0
+          const pct = (count / maxCount) * 100
+          return (
+            <div key={star} className="flex items-center gap-2">
+              <span className="text-caption text-on-surface-subtle w-2 text-right">{star}</span>
+              <div className="flex-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
+                <div className="h-full rounded-full bg-yellow-400 transition-all" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
 // ─── Review form (shown to all non-guardians) ──────────────────────────────
+const MAX_REVIEW_CHARS = 500
+
 function ReviewForm({ listingId, onSubmitted }) {
   const [text, setText] = useState('')
   const [rating, setRating] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [gateMessage, setGateMessage] = useState(null)
+  const [success, setSuccess] = useState(false)
   const handle = useHandle(s => s.handle)
+
+  const charPct = text.length / MAX_REVIEW_CHARS
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -814,29 +856,48 @@ function ReviewForm({ listingId, onSubmitted }) {
     setGateMessage(null)
     try {
       const dh = await getDeviceHash()
-      const res = await postReview(dh, listingId, text.trim(), rating, handle)
+      const res = await postReview(dh, listingId, text.trim().slice(0, MAX_REVIEW_CHARS), rating, handle)
       if (res?.data?.status === 'not_townie' || res?.status === 'not_townie') {
         setGateMessage(res?.data?.message || 'Become a Townie to post reviews \u2014 visit 3 local spots within 14 days by scanning their QR codes.')
       } else {
         setText('')
         setRating(0)
+        setSuccess(true)
         onSubmitted()
+        setTimeout(() => setSuccess(false), 3000)
       }
     } finally {
       setSubmitting(false)
     }
   }
 
+  if (success) {
+    return (
+      <div className="border-b border-outline-variant pb-4 mb-4 text-center py-4">
+        <span className="text-lg">&#10024;</span>
+        <p className="text-on-surface-medium text-body font-medium mt-1">Thanks for your review!</p>
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
+      <p className="text-on-surface-medium text-body-sm font-medium">Write a review</p>
       <StarPicker value={rating} onChange={setRating} />
-      <textarea
-        value={text}
-        onChange={e => setText(e.target.value)}
-        placeholder="Share your experience..."
-        rows={2}
-        className="input w-full resize-none"
-      />
+      <div className="relative">
+        <textarea
+          value={text}
+          onChange={e => { if (e.target.value.length <= MAX_REVIEW_CHARS) setText(e.target.value) }}
+          placeholder="Share your experience..."
+          rows={3}
+          className="input w-full resize-none"
+        />
+        {text.length > 0 && (
+          <span className={`absolute bottom-2 right-2 text-caption ${charPct >= 0.9 ? 'text-amber-400' : 'text-on-surface-disabled'}`}>
+            {text.length}/{MAX_REVIEW_CHARS}
+          </span>
+        )}
+      </div>
       {gateMessage && (
         <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
           <p className="text-amber-300/90 text-xs leading-relaxed">{gateMessage}</p>
@@ -845,7 +906,7 @@ function ReviewForm({ listingId, onSubmitted }) {
       <button
         type="submit"
         disabled={submitting || !text.trim() || rating === 0}
-        className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         {submitting ? 'Posting...' : 'Post Review'}
       </button>
@@ -855,6 +916,7 @@ function ReviewForm({ listingId, onSubmitted }) {
 
 // ─── Reply form (guardians only) ────────────────────────────────────────────
 function ReplyForm({ reviewId, listingId, onSubmitted }) {
+  const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -866,19 +928,34 @@ function ReplyForm({ reviewId, listingId, onSubmitted }) {
       const dh = await getDeviceHash()
       await postReply(dh, reviewId, listingId, text.trim())
       setText('')
+      setOpen(false)
       onSubmitted()
     } finally {
       setSubmitting(false)
     }
   }
 
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 ml-10 text-body-sm text-emerald-400/80 hover:text-emerald-400 transition-colors"
+      >
+        Reply
+      </button>
+    )
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 mt-2 ml-10">
+    <form onSubmit={handleSubmit} className="flex gap-2 mt-2 ml-10 pl-3 border-l-2 border-emerald-500/20">
       <input
+        autoFocus
         value={text}
         onChange={e => setText(e.target.value)}
         placeholder="Reply as guardian..."
         className="input flex-1 py-1.5"
+        onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setText('') } }}
       />
       <button
         type="submit"
@@ -894,16 +971,26 @@ function ReplyForm({ reviewId, listingId, onSubmitted }) {
 // ─── Tab: Reviews ────────────────────────────────────────────────────
 function ReviewsTab({ listingId, isGuardian }) {
   const [reviews, setReviews] = useState([])
+  const [stats, setStats] = useState(null)
   const [loaded, setLoaded] = useState(false)
+  const updateListing = useListings(s => s.updateListing)
 
   const fetchReviews = useCallback(async () => {
     try {
       const res = await getReviews(listingId)
       const data = res.data
-      setReviews(Array.isArray(data) ? data : data?.reviews || [])
+      if (Array.isArray(data)) {
+        setReviews(data)
+      } else {
+        setReviews(data?.reviews || [])
+        if (data?.review_count != null) {
+          setStats({ rating: data.rating, review_count: data.review_count, distribution: data.distribution })
+          updateListing(listingId, { rating: data.rating, review_count: data.review_count })
+        }
+      }
     } catch { /* silent */ }
     setLoaded(true)
-  }, [listingId])
+  }, [listingId, updateListing])
 
   useEffect(() => { fetchReviews() }, [fetchReviews])
 
@@ -922,12 +1009,18 @@ function ReviewsTab({ listingId, isGuardian }) {
 
   return (
     <div>
+      {stats && stats.review_count > 0 && (
+        <RatingSummary rating={stats.rating} reviewCount={stats.review_count} distribution={stats.distribution} />
+      )}
+
       {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} />}
 
       {reviews.length === 0 && loaded && (
-        <div className="text-center py-6">
-          <p className="text-on-surface-subtle text-body">No reviews yet</p>
-          <p className="text-on-surface-disabled text-body-sm mt-1">Be the first to rate this place!</p>
+        <div className="text-center py-8">
+          <svg className="w-8 h-8 mx-auto text-on-surface-disabled/40 mb-2" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          </svg>
+          <p className="text-on-surface-subtle text-body">Be the first to share what makes this place special</p>
         </div>
       )}
 
@@ -941,19 +1034,19 @@ function ReviewsTab({ listingId, isGuardian }) {
                 <AvatarCircle emoji={review.avatar} vignette={review.vignette} size={7} fallback={review.handle ? review.handle[0].toUpperCase() : 'L'} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-body font-medium text-on-surface-medium">{displayName}</span>
-                    <span className="text-body-sm text-on-surface-disabled">{relativeTime(review.created_at) || review.time}</span>
+                    <span className="text-body font-medium text-on-surface">{displayName}</span>
+                    <span className="text-body-sm text-on-surface-disabled">{relativeTime(review.created_at || review.timestamp)}</span>
                   </div>
                   {review.rating && (
                     <div className="mt-0.5"><StarRating rating={review.rating} size="sm" /></div>
                   )}
-                  <p className="text-body text-on-surface-variant mt-1.5">{review.text}</p>
+                  <p className="text-body text-on-surface-medium leading-relaxed mt-1.5">{review.text}</p>
                 </div>
               </div>
 
               {/* Guardian replies */}
               {replies.map((reply, ri) => (
-                <div key={reply.id || ri} className="flex items-start gap-2 mt-2 ml-10">
+                <div key={reply.id || ri} className="flex items-start gap-2 mt-2 ml-10 pl-3 border-l-2 border-emerald-500/20">
                   <svg className="w-4 h-4 text-emerald-400/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
@@ -962,7 +1055,7 @@ function ReviewsTab({ listingId, isGuardian }) {
                       <span className="text-xs font-medium text-emerald-400/80">{reply.handle ? `@${reply.handle}` : 'Guardian'}</span>
                       <span className="text-caption text-on-surface-disabled">{relativeTime(reply.created_at)}</span>
                     </div>
-                    <p className="text-body-sm text-on-surface-variant mt-0.5">{reply.text}</p>
+                    <p className="text-body-sm text-on-surface-medium mt-0.5 leading-relaxed">{reply.text}</p>
                   </div>
                 </div>
               ))}

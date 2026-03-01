@@ -28,7 +28,13 @@ const MOCKS = {
     _mockReviews.push({ id: String(Date.now()), text: body.text, rating: body.rating, listing_id: body.listing_id, handle: body.handle || '', created_at: new Date().toISOString() })
     return { data: { success: true } }
   },
-  'reviews':        (params) => ({ data: _mockReviews.filter(r => r.listing_id === params.lid).map(r => ({ ...r, replies: _mockReplies.filter(rp => rp.review_id === r.id) })) }),
+  'reviews':        (params) => {
+    const reviews = _mockReviews.filter(r => r.listing_id === params.lid).map(r => ({ ...r, replies: _mockReplies.filter(rp => rp.review_id === r.id) }))
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    let sum = 0, count = 0
+    reviews.forEach(r => { const s = parseInt(r.rating, 10); if (s >= 1 && s <= 5) { distribution[s]++; sum += s; count++ } })
+    return { data: { reviews, rating: count ? Math.round((sum / count) * 10) / 10 : 0, review_count: count, distribution } }
+  },
   'reply':          (body) => {
     _mockReplies.push({ id: String(Date.now()), review_id: body.review_id, listing_id: body.listing_id, handle: body.handle || 'guardian', text: body.text, created_at: new Date().toISOString() })
     return { data: { success: true } }
