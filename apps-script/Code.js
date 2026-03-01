@@ -818,7 +818,7 @@ function postSetHandle(body) {
     return errorResponse('Handle already taken', 'conflict')
   }
 
-  sheet.appendRow([device_hash, handle, cleanAvatar, nowISO(), cleanVignette])
+  sheet.appendRow([device_hash, handle, nowISO(), cleanAvatar, cleanVignette])
   return jsonResponse({ success: true, handle: handle, avatar: cleanAvatar || null, vignette: cleanVignette || null })
 }
 
