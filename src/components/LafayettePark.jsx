@@ -877,12 +877,12 @@ function ParkTrees() {
       trunk.translate(0, trunkH / 2, 0)
       const lean = (r(0) - 0.5) * 0.06
       if (Math.abs(lean) > 0.001) trunk.rotateZ(lean)
-      trunk.translate(x, 0, z)
+      trunk.translate(x, -0.25, z)
       woodGeos.push(paint(trunk, bark))
 
       const flare = new THREE.CylinderGeometry(trunkRBot, trunkRBot * 1.4, 0.4, 8)
       flare.translate(0, 0.2, 0)
-      flare.translate(x, 0, z)
+      flare.translate(x, -0.25, z)
       woodGeos.push(paint(flare, bark))
 
       // ── Depth of branching scales with tree size ──
@@ -1029,7 +1029,7 @@ function ParkTrees() {
     if (!aoRef.current || treeRoots.length === 0) return
     const dummy = new THREE.Object3D()
     treeRoots.forEach((root, i) => {
-      dummy.position.set(root.x, 0.11, root.z)
+      dummy.position.set(root.x, 0.02, root.z)
       dummy.rotation.set(-Math.PI / 2, 0, 0)
       dummy.scale.set(root.r, root.r, 1)
       dummy.updateMatrix()

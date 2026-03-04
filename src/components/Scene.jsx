@@ -107,21 +107,65 @@ const FilmGrain = forwardRef((props, ref) => {
   return <primitive ref={ref} object={effect} dispose={null} />
 })
 
+// ── Lens softness — subtle blur for hero cinematic feel ──────────────────────
+// Single-pass 9-tap gaussian. uStrength=0 is a no-op; hero sets ~0.5–1.0.
+
+class LensSoftnessEffect extends Effect {
+  constructor() {
+    super('LensSoftness', /* glsl */`
+      uniform float uStrength;
+      uniform vec2 uResolution;
+      uniform float uFocusY;
+      uniform float uFocusRange;
+
+      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+        if (uStrength < 0.01) { outputColor = inputColor; return; }
+        // Blur ramps up with distance from focus band
+        float dist = abs(uv.y - uFocusY);
+        float blur = smoothstep(0.0, uFocusRange, dist) * uStrength;
+        if (blur < 0.05) { outputColor = inputColor; return; }
+        vec2 texel = blur / uResolution;
+        vec3 sum = vec3(0.0);
+        sum += texture2D(inputBuffer, uv + vec2(-texel.x, 0.0)).rgb * 0.12;
+        sum += texture2D(inputBuffer, uv + vec2( texel.x, 0.0)).rgb * 0.12;
+        sum += texture2D(inputBuffer, uv + vec2(0.0, -texel.y)).rgb * 0.12;
+        sum += texture2D(inputBuffer, uv + vec2(0.0,  texel.y)).rgb * 0.12;
+        sum += texture2D(inputBuffer, uv + vec2(-texel.x, -texel.y)).rgb * 0.08;
+        sum += texture2D(inputBuffer, uv + vec2( texel.x, -texel.y)).rgb * 0.08;
+        sum += texture2D(inputBuffer, uv + vec2(-texel.x,  texel.y)).rgb * 0.08;
+        sum += texture2D(inputBuffer, uv + vec2( texel.x,  texel.y)).rgb * 0.08;
+        sum += inputColor.rgb * 0.20;
+        outputColor = vec4(sum, inputColor.a);
+      }
+    `, {
+      uniforms: new Map([
+        ['uStrength', new THREE.Uniform(0)],
+        ['uResolution', new THREE.Uniform(new THREE.Vector2(1920, 1080))],
+        ['uFocusY', new THREE.Uniform(0.45)],
+        ['uFocusRange', new THREE.Uniform(0.35)],
+      ])
+    })
+  }
+}
+
+const LensSoftness = forwardRef((props, ref) => {
+  const effect = useMemo(() => new LensSoftnessEffect(), [])
+  return <primitive ref={ref} object={effect} dispose={null} />
+})
+
 // ── Adaptive bloom — time-of-day driven ──────────────────────────────────────
 // Simulates real camera lens behavior: minimal diffusion in daylight,
 // soft halation at twilight, pronounced halos on point sources at night.
 // Updates bloom directly via ref (no React re-renders — critical for smooth hero pan).
 
 function useAdaptiveBloom(bloomRef, viewMode) {
-  const isPlanetarium = viewMode === 'planetarium'
-
   useFrame(() => {
     const bloom = bloomRef.current
     if (!bloom) return
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
 
     let intensity, threshold, smoothing
-    if (isPlanetarium) {
+    if (viewMode === 'planetarium') {
       intensity = 1.8; threshold = 0.15; smoothing = 0.9
     } else {
       const darkness = sunAltitude > 0.1
@@ -227,15 +271,24 @@ const PANEL_FRACTION = 0.02
 // Direction to arch in XZ: [3116, -1196], perpendicular: [0.358, 0.934]
 const PAN_HALF_LENGTH = 140 // ±140m from center
 const PAN_PERP = [0.358, 0.934]
-const PAN_PERIOD = 480 // seconds for one full back-and-forth
+const PAN_PERIOD = 300 // seconds for one full back-and-forth
 const HERO_PHASE = Math.random() // randomized start position each visit
 
-// Reshaped sine: |sin|^0.6 pushes the curve toward a triangle wave —
-// nearly constant velocity through the middle, brief smooth turnarounds at extremes.
-// Pure sine spends ~25% of time in the last 10% of travel; this cuts that in half.
+// Smoothed triangle wave: linear motion with smooth turnarounds at extremes.
+// Uses smoothstep at the endpoints (within `r` of each end) to avoid abrupt direction change.
 function heroPanSwing(t) {
-  const s = Math.sin(t * Math.PI * 2)
-  return Math.sign(s) * Math.pow(Math.abs(s), 0.6)
+  const r = 0.20 // fraction of half-cycle spent easing at each end
+  let p = ((t % 1) + 1) % 1 // 0→1 sawtooth
+  let tri = p < 0.5 ? p * 2 : 2 - p * 2 // 0→1→0 triangle
+  // Smoothstep the bottom and top edges
+  if (tri < r) {
+    const x = tri / r
+    tri = x * x * (3 - 2 * x) * r
+  } else if (tri > 1 - r) {
+    const x = (1 - tri) / r
+    tri = 1 - x * x * (3 - 2 * x) * r
+  }
+  return tri * 2 - 1 // map 0–1 to -1–+1
 }
 
 // ── Camera presets ───────────────────────────────────────────────────────────
@@ -314,9 +367,9 @@ function relaxConstraints(ctl) {
   ctl.maxPolarAngle = Math.PI
 }
 
-// ── Frame limiter (30fps) ────────────────────────────────────────────────────
+// ── Frame limiter ────────────────────────────────────────────────────────────
 // Canvas uses frameloop="demand" so no frames render unless invalidated.
-// Uses rAF and skips every other frame to stay vSync-aligned (smooth 30fps).
+// Hero mode runs at 60fps for smooth pan; other modes skip every other frame (30fps).
 
 function FrameLimiter() {
   const invalidate = useThree((s) => s.invalidate)
@@ -324,7 +377,8 @@ function FrameLimiter() {
     let skip = false
     let id
     const loop = () => {
-      if (!skip) invalidate()
+      const isHero = !IS_MOBILE && useCamera.getState().viewMode === 'hero'
+      if (isHero || !skip) invalidate()
       skip = !skip
       id = requestAnimationFrame(loop)
     }
@@ -752,16 +806,29 @@ const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 // On desktop: N8AO + Bloom + AerialPerspective + FilmGrade + FilmGrain.
 function PostProcessing({ viewMode }) {
   const bloomRef = useRef()
+  const softnessRef = useRef()
+  const size = useThree((s) => s.size)
   if (!IS_MOBILE) useAdaptiveBloom(bloomRef, viewMode)
+
+  // Drive lens softness uniform per-frame
+  useFrame(() => {
+    const fx = softnessRef.current
+    if (!fx) return
+    fx.uniforms.get('uStrength').value = viewMode === 'hero' ? 1.05 : 0
+    fx.uniforms.get('uResolution').value.set(size.width, size.height)
+    // Focus band at arch height (~45% from top), blur ramps toward bottom and top
+    fx.uniforms.get('uFocusY').value = 0.55
+    fx.uniforms.get('uFocusRange').value = 0.35
+  })
 
   return (
     <EffectComposer>
       {!IS_MOBILE && (
         <N8AO
           halfRes={viewMode !== 'hero'}
-          aoRadius={viewMode === 'hero' ? 20 : 12}
-          intensity={viewMode === 'hero' ? 5 : 3}
-          distanceFalloff={viewMode === 'hero' ? 0.5 : 0.3}
+          aoRadius={viewMode === 'hero' ? 15 : 12}
+          intensity={viewMode === 'hero' ? 2.5 : 3}
+          distanceFalloff={0.3}
           quality="medium"
         />
       )}
@@ -775,6 +842,7 @@ function PostProcessing({ viewMode }) {
         />
       )}
       {!IS_MOBILE && <AerialPerspective />}
+      {!IS_MOBILE && <LensSoftness ref={softnessRef} />}
       <FilmGrade />
       <FilmGrain />
     </EffectComposer>
