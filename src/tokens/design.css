@@ -94,25 +94,47 @@
 
 /* ---------- Accessible (high-contrast) mode ---------- */
 .accessible {
-  --on-surface:          rgba(255, 255, 255, 0.93);
-  --on-surface-medium:   rgba(255, 255, 255, 0.85);
-  --on-surface-variant:  rgba(255, 255, 255, 0.72);
-  --on-surface-subtle:   rgba(255, 255, 255, 0.55);
-  --on-surface-disabled: rgba(255, 255, 255, 0.35);
-  --outline:             rgba(255, 255, 255, 0.25);
-  --outline-variant:     rgba(255, 255, 255, 0.14);
-  --surface-container-highest: rgba(255, 255, 255, 0.18);
+  /* Surfaces — gentle darkening, keep the glass feel */
+  --surface-glass:             rgba(0, 0, 0, 0.52);
+  --surface-container-highest: rgba(255, 255, 255, 0.20);
+
+  /* Text — push hard toward full white for real contrast */
+  --on-surface:          rgba(255, 255, 255, 1.0);
+  --on-surface-medium:   rgba(255, 255, 255, 0.95);
+  --on-surface-variant:  rgba(255, 255, 255, 0.85);
+  --on-surface-subtle:   rgba(255, 255, 255, 0.70);
+  --on-surface-disabled: rgba(255, 255, 255, 0.50);
+
+  /* Outlines */
+  --outline:             rgba(255, 255, 255, 0.30);
+  --outline-variant:     rgba(255, 255, 255, 0.18);
+}
+
+/* Accessible mobile — bump type sizes for readability */
+@media (max-width: 640px) {
+  .accessible {
+    --type-body:     15px;
+    --type-body-sm:  14px;
+    --type-label:    14px;
+    --type-label-sm: 13px;
+    --type-caption:  12px;
+  }
 }
 
 .accessible.light {
-  --on-surface:          rgba(0, 0, 0, 0.95);
-  --on-surface-medium:   rgba(0, 0, 0, 0.82);
-  --on-surface-variant:  rgba(0, 0, 0, 0.68);
-  --on-surface-subtle:   rgba(0, 0, 0, 0.52);
-  --on-surface-disabled: rgba(0, 0, 0, 0.40);
-  --outline:             rgba(0, 0, 0, 0.30);
-  --outline-variant:     rgba(0, 0, 0, 0.18);
-  --surface-container-highest: rgba(0, 0, 0, 0.15);
+  --surface-glass:             rgba(255, 255, 255, 0.75);
+  --surface-container-highest: rgba(0, 0, 0, 0.16);
+
+  /* Text */
+  --on-surface:          rgba(0, 0, 0, 1.0);
+  --on-surface-medium:   rgba(0, 0, 0, 0.92);
+  --on-surface-variant:  rgba(0, 0, 0, 0.78);
+  --on-surface-subtle:   rgba(0, 0, 0, 0.62);
+  --on-surface-disabled: rgba(0, 0, 0, 0.45);
+
+  /* Outlines */
+  --outline:             rgba(0, 0, 0, 0.32);
+  --outline-variant:     rgba(0, 0, 0, 0.20);
 }
 
 /* ---------- OS-level accessibility ---------- */

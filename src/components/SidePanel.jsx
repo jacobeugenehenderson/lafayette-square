@@ -17,6 +17,7 @@ import useSkyState from '../hooks/useSkyState'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { interpolateForecast } from '../lib/dawnTimeline'
 import WeatherTimeline from './WeatherTimeline'
+import { useContact } from './ContactModal'
 
 // ── Camera helpers ──────────────────────────────────────────────────
 const _buildingMap = {}
@@ -329,6 +330,7 @@ function AlmanacTab({ showAdmin = false }) {
           currentTime={currentTime}
           isLive={isLive}
           useCelsius={useCelsius}
+          use24Hour={use24Hour}
           onScrub={(date) => setTime(date)}
         />
       </div>
@@ -389,10 +391,10 @@ function AlmanacTab({ showAdmin = false }) {
             <svg className="w-4 h-4 text-amber-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
             </svg>
-            <span className="text-caption uppercase tracking-widest text-amber-300/80 font-semibold">Bulletin Board</span>
+            <span className="text-label-sm uppercase font-semibold text-amber-300/80" style={{ letterSpacing: '0.25em' }}>Bulletin Board</span>
           </div>
-          <svg className="w-3.5 h-3.5 text-amber-400/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          <svg className="w-3.5 h-3.5 text-amber-400/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
           </svg>
         </button>
       </div>
@@ -798,11 +800,11 @@ function SidePanel() {
     ].join(', '),
     border: '1px solid rgba(255,255,255,0.30)',
   } : {
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)',
+    background: 'var(--surface-glass)',
     backdropFilter: 'blur(40px) saturate(180%) brightness(110%)',
     WebkitBackdropFilter: 'blur(40px) saturate(180%) brightness(110%)',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 32px rgba(0,0,0,0.35)',
-    border: '1px solid rgba(255,255,255,0.15)',
+    border: '1px solid var(--outline)',
   }
 
   // Measure collapsed height so modals can position above us
@@ -905,12 +907,15 @@ function SidePanel() {
           <span>&middot;</span>
           <span>{_namedStreetCount} streets</span>
         </div>
-        <a href="mailto:hello@lafayette-square.com" className="text-yellow-300 hover:text-yellow-200 transition-colors flex items-center gap-1">
-          <svg className="w-3 h-3" fill="rgba(234,179,8,0.15)" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+        <button
+          onClick={() => useContact.getState().setOpen(true)}
+          className="text-yellow-300 hover:text-yellow-200 transition-colors flex items-center gap-1"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
           </svg>
           Contact
-        </a>
+        </button>
       </div>
     </div>
   )

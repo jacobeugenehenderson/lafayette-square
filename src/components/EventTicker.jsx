@@ -95,7 +95,7 @@ export default function EventTicker() {
         style={{
           height: '72px',
           fontFamily: 'ui-monospace, monospace',
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.15) 70%, transparent 100%)',
+          background: 'linear-gradient(180deg, var(--surface-glass) 0%, transparent 100%)',
         }}
       >
         {/* Spectral bottom-edge highlight */}
@@ -115,11 +115,11 @@ export default function EventTicker() {
               key={index}
               className="absolute inset-0 flex items-center gap-2 animate-ticker-in"
             >
-              <span className="text-label tracking-wide truncate text-white/90">
+              <span className="text-label tracking-wide truncate text-on-surface">
                 {current?.title}
               </span>
               {current?._venueName && (
-                <span className="text-label-sm text-white/50 truncate flex-shrink-0">
+                <span className="text-label-sm text-on-surface-variant truncate flex-shrink-0">
                   {current._venueName}
                 </span>
               )}

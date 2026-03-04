@@ -5,6 +5,7 @@ import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
 import SidePanel from './components/SidePanel'
 import BulletinModal from './components/BulletinModal'
+import ContactModal, { useContact } from './components/ContactModal'
 import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import EventTicker from './components/EventTicker'
 import useCamera from './hooks/useCamera'
@@ -230,10 +231,11 @@ function ModeOverlay() {
   const showCard = useSelectedBuilding((s) => s.showCard)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
   const codeDeskOpen = useCodeDesk((s) => s.open)
+  const contactOpen = useContact((s) => s.open)
   const isLive = useTimeOfDay((s) => s.isLive)
 
   // Close buttons now live inside each modal's own header
-  if (codeDeskOpen || showCard || bulletinOpen) return null
+  if (codeDeskOpen || showCard || bulletinOpen || contactOpen) return null
 
   // Live button takes over the top-right slot when not live — any mode, including hero
   if (!isLive) return <LiveButton />
@@ -317,6 +319,7 @@ function App() {
       {!isGround && <SidePanel />}
       {!isGround && <EventTicker />}
       {!isGround && <BulletinModal />}
+      {!isGround && <ContactModal />}
       {!isGround && <CodeDeskModal />}
       {!isGround && <ModeOverlay />}
     </div>
