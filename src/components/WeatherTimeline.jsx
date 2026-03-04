@@ -92,10 +92,36 @@ export default function WeatherTimeline({ currentTime, isLive, useCelsius, use24
 
   return (
     <div className="py-1">
-      {/* Row 1: waypoint labels */}
-      <div className="relative h-4 mx-4">
+      {/* Row 1: waypoint labels — flex on mobile, absolute on desktop */}
+      {/* Mobile: evenly spaced flex row */}
+      <div className="flex sm:hidden justify-between items-center h-4 mx-4">
         <button
-          className="absolute left-0.5 text-caption leading-none text-rose-400/50 hover:text-rose-400/80 transition-colors cursor-pointer"
+          className="text-caption leading-none text-rose-400/75 hover:text-rose-400 transition-colors cursor-pointer"
+          onClick={() => onScrub(dawnWindow.start)}
+        >
+          Dawn {formatTimeCompact(dawnWindow.start, use24Hour)}
+        </button>
+        {waypoints.filter(wp => !wp.ticOnly).map((wp) => (
+          <button
+            key={wp.label}
+            className="text-caption leading-none hover:opacity-100 transition-opacity cursor-pointer"
+            style={{ color: wp.color, opacity: 0.75 }}
+            onClick={() => onScrub(wp.time)}
+          >
+            {wp.label} {formatTimeCompact(wp.time, use24Hour)}
+          </button>
+        ))}
+        <button
+          className="text-caption leading-none text-rose-400/75 hover:text-rose-400 transition-colors cursor-pointer"
+          onClick={() => onScrub(dawnWindow.end)}
+        >
+          Dawn {formatTimeCompact(dawnWindow.end, use24Hour)}
+        </button>
+      </div>
+      {/* Desktop: absolute positioned over tic marks */}
+      <div className="hidden sm:block relative h-4 mx-4">
+        <button
+          className="absolute left-0.5 text-caption leading-none text-rose-400/75 hover:text-rose-400 transition-colors cursor-pointer"
           onClick={() => onScrub(dawnWindow.start)}
         >
           Dawn {formatTimeCompact(dawnWindow.start, use24Hour)}
@@ -104,14 +130,14 @@ export default function WeatherTimeline({ currentTime, isLive, useCelsius, use24
           <button
             key={wp.label}
             className="absolute -translate-x-1/2 text-caption leading-none hover:opacity-100 transition-opacity cursor-pointer"
-            style={{ left: `${wp.fraction * 100}%`, color: wp.color, opacity: 0.55 }}
+            style={{ left: `${wp.fraction * 100}%`, color: wp.color, opacity: 0.75 }}
             onClick={() => onScrub(wp.time)}
           >
             {wp.label} {formatTimeCompact(wp.time, use24Hour)}
           </button>
         ))}
         <button
-          className="absolute right-0.5 text-caption leading-none text-rose-400/50 hover:text-rose-400/80 transition-colors cursor-pointer"
+          className="absolute right-0.5 text-caption leading-none text-rose-400/75 hover:text-rose-400 transition-colors cursor-pointer"
           onClick={() => onScrub(dawnWindow.end)}
         >
           Dawn {formatTimeCompact(dawnWindow.end, use24Hour)}

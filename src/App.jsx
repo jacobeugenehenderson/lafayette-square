@@ -28,7 +28,7 @@ function LiveButton() {
   return (
     <button
       onClick={() => useTimeOfDay.getState().returnToLive()}
-      className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
+      className="absolute top-[18px] right-[18px] z-50 w-9 h-9 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
       aria-label="Return to live time"
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -127,7 +127,7 @@ function AccountButton() {
   }
 
   return (
-    <div className="absolute top-4 right-4 z-50" ref={popoverRef}>
+    <div className="absolute top-[18px] right-[18px] z-50" ref={popoverRef}>
       <button
         onClick={() => setOpen(!open)}
         className={`w-9 h-9 rounded-full transition-all duration-200 flex items-center justify-center ${
@@ -247,7 +247,7 @@ function ModeOverlay() {
     return (
       <button
         onClick={() => useCamera.getState().exitPlanetarium()}
-        className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
+        className="absolute top-[18px] right-[18px] z-50 w-9 h-9 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
         aria-label="Exit street view"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -263,7 +263,7 @@ function ModeOverlay() {
   return (
     <button
       onClick={() => useCamera.getState().goHero()}
-      className="absolute top-4 right-4 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-surface-container-high border border-outline text-on-surface-variant transition-all duration-200 flex items-center justify-center hover:bg-surface-container-highest hover:text-on-surface"
+      className="absolute top-[18px] right-[18px] z-50 w-9 h-9 rounded-full backdrop-blur-md bg-surface-container-high border border-outline text-on-surface-variant transition-all duration-200 flex items-center justify-center hover:bg-surface-container-highest hover:text-on-surface"
       aria-label="Return to hero view"
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
