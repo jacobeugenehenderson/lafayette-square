@@ -1,7 +1,7 @@
 var GAS_API = "https://script.google.com/macros/s/AKfycbxv3JihCx0U7JfGqle6ZpsLamkRS5PAEGRn6_NaM0Nc7r5zdY7kyctDioScGy8nVcAqWQ/exec";
-var ORIGIN = "https://jacobeugenehenderson.github.io";
-var VANITY = "https://jacobhenderson.studio/lafayette-square";
-var INDEX_URL = ORIGIN + "/lafayette-square/";
+var ORIGIN = "https://lafayette-square.com";
+var VANITY = "https://lafayette-square.com";
+var INDEX_URL = ORIGIN + "/";
 
 var listingsCache = null;
 var cacheTime = 0;
@@ -29,7 +29,7 @@ export default {
     var url = new URL(request.url);
     var path = url.pathname;
 
-    var placeMatch = path.match(/^\/lafayette-square\/place\/([^/]+)$/);
+    var placeMatch = path.match(/^\/place\/([^/]+)$/);
 
     // Non-place routes: straight proxy
     if (!placeMatch) {

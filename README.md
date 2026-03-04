@@ -2,7 +2,7 @@
 
 3D neighborhood visualization of Lafayette Square, St. Louis.
 
-**Live site:** https://jacobhenderson.studio/lafayette-square
+**Live site:** https://lafayette-square.com
 
 ---
 

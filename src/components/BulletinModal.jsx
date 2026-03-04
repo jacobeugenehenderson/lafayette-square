@@ -1055,7 +1055,7 @@ export default function BulletinModal() {
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {
-              const shareText = `Check out the Bulletin Board in Lafayette Square!\nhttps://jacobhenderson.studio/lafayette-square/bulletin`
+              const shareText = `Check out the Bulletin Board in Lafayette Square!\nhttps://lafayette-square.com/bulletin`
               if (navigator.share) {
                 navigator.share({ text: shareText }).catch(() => {})
               } else {

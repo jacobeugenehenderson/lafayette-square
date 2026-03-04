@@ -1782,7 +1782,7 @@ function QrTab({ listingId, listingName, isAdmin }) {
   }, [])
 
   useEffect(() => {
-    const vanity = 'https://jacobhenderson.studio/lafayette-square'
+    const vanity = 'https://lafayette-square.com'
     let cancelled = false
 
     async function loadQrs() {
@@ -2251,7 +2251,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         )}
         {hasListingInfo && !isGuardian && (
           <a
-            href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('My place: ' + name)}`}
+            href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('My place: ' + name)}`}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2262,7 +2262,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         )}
         {!hasListingInfo && (
           <a
-            href={`mailto:lafayette-square@jacobhenderson.studio?subject=${encodeURIComponent('My place: ' + (cleanAddress(building?.address) || 'Unknown'))}`}
+            href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('My place: ' + (cleanAddress(building?.address) || 'Unknown'))}`}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2276,7 +2276,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         <button
           onClick={() => {
             const typeLabel = hasListingInfo ? 'place' : 'house'
-            const vanity = 'https://jacobhenderson.studio/lafayette-square'
+            const vanity = 'https://lafayette-square.com'
             const placeUrl = listingId ? `${vanity}/place/${listingId}` : vanity
             const shareText = `Check out this ${typeLabel} in Lafayette Square!\n${placeUrl}`
 

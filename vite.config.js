@@ -38,7 +38,7 @@ export default defineConfig(({ command }) => ({
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
   },
-  base: command === 'build' ? '/lafayette-square/' : '/',
+  base: '/',
   build: {
     rollupOptions: {
       output: {
