@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import SunCalc from 'suncalc'
 import Scene from './components/Scene'
 import SceneBoundary from './components/SceneBoundary'
 import Controls from './components/Controls'
@@ -44,6 +45,7 @@ function LiveButton() {
 
 import AvatarCircle from './components/AvatarCircle'
 import AvatarEditor from './components/AvatarEditor'
+import InfoModal, { useInfo } from './components/InfoModal'
 
 function AccountButton() {
   const handle = useHandle((s) => s.handle)
@@ -172,6 +174,26 @@ function AccountButton() {
                   {accessible ? 'Standard mode' : 'Accessible mode'}
                 </button>
               </div>
+              <div className="border-t border-outline-variant pt-2 space-y-1">
+                <button
+                  onClick={() => { setOpen(false); useInfo.getState().openTo('about') }}
+                  className="w-full py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-3"
+                >
+                  About
+                </button>
+                <button
+                  onClick={() => { setOpen(false); useInfo.getState().openTo('guidelines') }}
+                  className="w-full py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-3"
+                >
+                  Guidelines
+                </button>
+                <button
+                  onClick={() => { setOpen(false); useInfo.getState().openTo('privacy') }}
+                  className="w-full py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-3"
+                >
+                  Privacy
+                </button>
+              </div>
             </>
           ) : (
             <div className="text-center py-2 space-y-2">
@@ -209,6 +231,26 @@ function AccountButton() {
                   </svg>
                   {accessible ? 'Standard mode' : 'Accessible mode'}
                 </button>
+                <div className="mt-2 pt-2 border-t border-outline-variant space-y-1">
+                  <button
+                    onClick={() => { setOpen(false); useInfo.getState().openTo('about') }}
+                    className="w-full py-1 rounded-lg text-caption text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-2"
+                  >
+                    About
+                  </button>
+                  <button
+                    onClick={() => { setOpen(false); useInfo.getState().openTo('guidelines') }}
+                    className="w-full py-1 rounded-lg text-caption text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-2"
+                  >
+                    Guidelines
+                  </button>
+                  <button
+                    onClick={() => { setOpen(false); useInfo.getState().openTo('privacy') }}
+                    className="w-full py-1 rounded-lg text-caption text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-2"
+                  >
+                    Privacy
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -232,10 +274,11 @@ function ModeOverlay() {
   const bulletinOpen = useBulletin((s) => s.modalOpen)
   const codeDeskOpen = useCodeDesk((s) => s.open)
   const contactOpen = useContact((s) => s.open)
+  const infoOpen = useInfo((s) => s.open)
   const isLive = useTimeOfDay((s) => s.isLive)
 
   // Close buttons now live inside each modal's own header
-  if (codeDeskOpen || showCard || bulletinOpen || contactOpen) return null
+  if (codeDeskOpen || showCard || bulletinOpen || contactOpen || infoOpen) return null
 
   // Live button takes over the top-right slot when not live — any mode, including hero
   if (!isLive) return <LiveButton />
@@ -294,6 +337,134 @@ function BulletinOpener() {
   return null
 }
 
+// ── Splash: time-pegged sky gradient + arch mark ─────────────────────
+const SPLASH_LAT = 38.6160, SPLASH_LON = -90.2161
+
+function splashSkyColors() {
+  const now = new Date()
+  const pos = SunCalc.getPosition(now, SPLASH_LAT, SPLASH_LON)
+  const alt = pos.altitude // radians
+
+  // Determine dawn vs dusk: sun azimuth < π means morning
+  const isDawn = pos.azimuth < Math.PI
+
+  const lerp = (a, b, t) => {
+    t = Math.max(0, Math.min(1, t))
+    const parse = (hex) => [
+      parseInt(hex.slice(1, 3), 16),
+      parseInt(hex.slice(3, 5), 16),
+      parseInt(hex.slice(5, 7), 16),
+    ]
+    const [ar, ag, ab] = parse(a)
+    const [br, bg, bb] = parse(b)
+    const r = Math.round(ar + (br - ar) * t)
+    const g = Math.round(ag + (bg - ag) * t)
+    const b2 = Math.round(ab + (bb - ab) * t)
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b2.toString(16).padStart(2, '0')}`
+  }
+
+  // Keyframes matching CelestialBodies GradientSky (horizon, zenith pairs)
+  const night   = { h: '#1a1525', z: '#050508' }
+  const deep    = isDawn ? { h: '#3a2838', z: '#0a0c1a' } : { h: '#7a3828', z: '#0a0c1a' }
+  const peak    = isDawn ? { h: '#c07050', z: '#141838' } : { h: '#cc6030', z: '#141835' }
+  const early   = isDawn ? { h: '#dda065', z: '#223060' } : { h: '#dd8840', z: '#1a2555' }
+  const golden  = isDawn ? { h: '#d0b888', z: '#3a6aaa' } : { h: '#ccaa70', z: '#3a68a8' }
+  const day     = { h: '#9dc5e0', z: '#4a90e0' }
+
+  let horizon, zenith
+  if (alt < -0.12) {
+    horizon = night.h; zenith = night.z
+  } else if (alt < -0.02) {
+    const t = (alt + 0.12) / 0.10
+    horizon = lerp(night.h, deep.h, t); zenith = lerp(night.z, deep.z, t)
+  } else if (alt < 0.03) {
+    const t = (alt + 0.02) / 0.05
+    horizon = lerp(deep.h, peak.h, t); zenith = lerp(deep.z, peak.z, t)
+  } else if (alt < 0.08) {
+    const t = (alt - 0.03) / 0.05
+    horizon = lerp(peak.h, early.h, t); zenith = lerp(peak.z, early.z, t)
+  } else if (alt < 0.22) {
+    const t = (alt - 0.08) / 0.14
+    horizon = lerp(early.h, golden.h, t); zenith = lerp(early.z, golden.z, t)
+  } else if (alt < 0.35) {
+    const t = (alt - 0.22) / 0.13
+    horizon = lerp(golden.h, day.h, t); zenith = lerp(golden.z, day.z, t)
+  } else {
+    horizon = day.h; zenith = day.z
+  }
+
+  return { horizon, zenith }
+}
+
+const _splashColors = splashSkyColors()
+
+// Generate static star dots for night splashes
+const _splashStars = (() => {
+  const pos = SunCalc.getPosition(new Date(), SPLASH_LAT, SPLASH_LON)
+  if (pos.altitude > -0.02) return [] // no stars during day/golden hour
+  // Fade in stars as it gets darker
+  const baseOpacity = Math.min(1, (-pos.altitude - 0.02) / 0.10)
+  const stars = []
+  // Seeded pseudo-random for consistent layout
+  let seed = 12345
+  const rand = () => { seed = (seed * 16807 + 0) % 2147483647; return seed / 2147483647 }
+  const count = 60
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      left: `${rand() * 100}%`,
+      top: `${rand() * 85}%`, // keep above horizon
+      size: 1 + rand() * 1.5,
+      opacity: (0.3 + rand() * 0.7) * baseOpacity,
+    })
+  }
+  return stars
+})()
+
+function Splash() {
+  const [visible, setVisible] = useState(true)
+  const [fading, setFading] = useState(false)
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setFading(true), 2500)
+    const t2 = setTimeout(() => setVisible(false), 3300)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [])
+
+  if (!visible) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[300] flex items-center justify-center"
+      style={{
+        background: `radial-gradient(ellipse at 50% 100%, ${_splashColors.horizon}, ${_splashColors.zenith} 70%)`,
+        opacity: fading ? 0 : 1,
+        transition: 'opacity 800ms ease-out',
+        pointerEvents: fading ? 'none' : 'auto',
+      }}
+    >
+      {_splashStars.map((s, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full bg-white"
+          style={{
+            left: s.left,
+            top: s.top,
+            width: s.size,
+            height: s.size,
+            opacity: s.opacity,
+          }}
+        />
+      ))}
+      <img
+        src={import.meta.env.BASE_URL + 'favicon.svg'}
+        alt="Lafayette Square"
+        className="w-20 h-20"
+        style={{ filter: 'invert(1) brightness(0.87)', opacity: 0.7 }}
+      />
+    </div>
+  )
+}
+
 function App() {
   const route = parseRoute()
 
@@ -314,14 +485,16 @@ function App() {
       <SceneBoundary><Scene /></SceneBoundary>
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && <BulletinOpener />}
-      {!isGround && <Controls />}
-      {!isGround && <CompassRose />}
-      {!isGround && <SidePanel />}
-      {!isGround && <EventTicker />}
+      {!isGround && <div className="fade-in" style={{ animationDelay: '1.2s' }}><Controls /></div>}
+      {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><CompassRose /></div>}
+      {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
+      {!isGround && <div className="fade-in" style={{ animationDelay: '0.8s' }}><EventTicker /></div>}
       {!isGround && <BulletinModal />}
       {!isGround && <ContactModal />}
       {!isGround && <CodeDeskModal />}
-      {!isGround && <ModeOverlay />}
+      {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}
+      {!isGround && <InfoModal />}
+      <Splash />
     </div>
   )
 }
