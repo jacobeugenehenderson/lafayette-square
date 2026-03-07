@@ -157,7 +157,7 @@ export default function InfoModal() {
             <h2 className="text-body font-semibold text-amber-300/80 tracking-wide uppercase mb-4 pl-3 border-l-2 border-amber-400/40">About</h2>
             <div className="space-y-3 text-body-sm text-on-surface-variant leading-relaxed">
               <p>Lafayette-Square.com is an independent project created by a neighbor for neighbors.</p>
-              <p>It is not affiliated with any company, advertiser, or government entity, and it is not funded by grants or sponsorships. The goal is simple: to celebrate and document one of the most extraordinary neighborhoods in America while building tools that help our community stay connected and resilient.</p>
+              <p>It is not affiliated with any company, advertiser, or government entity, and it is not funded by grants or sponsorships. The information used to build this project comes from public records, historical materials, and other openly available sources rather than corporate data services. The goal is simple: to celebrate and document one of the most extraordinary neighborhoods in America while building tools that help our community stay connected and resilient.</p>
               <p>The site includes several systems designed for everyday neighborhood life:</p>
               <ul className="list-disc list-outside ml-5 space-y-1">
                 <li><strong className="text-on-surface-medium">The Almanac</strong> — live connections to weather and astronomical services, providing daily environmental context for the Square.</li>
