@@ -162,6 +162,9 @@ function doGet(e) {
       case 'create-link-token':  return createLinkToken()
       case 'check-link-token':   return checkLinkToken(e.parameter.token)
       case 'getdesign':      return getDesign(e.parameter.bizId)
+      case 'residence-status': return getResidenceStatus(e.parameter.dh)
+      case 'resident-count':   return getResidentCount(e.parameter.bid)
+      case 'lobby-posts':      return getLobbyPosts(e.parameter.dh, e.parameter.bid)
       case 'setup-photo-folder': if (e.parameter.admin === 'lafayette1850') { setupPhotoFolder(); return jsonResponse({ folder_id: PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') }) } return errorResponse('Unauthorized')
       default:                return errorResponse('Unknown action: ' + action, 'bad_request')
     }
@@ -205,6 +208,10 @@ function doPost(e) {
       case 'upload-photo':     return postUploadPhoto(body)
       case 'remove-photo':     return postRemovePhoto(body)
       case 'savedesign':       return saveDesign(body)
+      case 'claim-residence':   return postClaimResidence(body)
+      case 'verify-resident':   return postVerifyResident(body)
+      case 'lobby-post':        return postLobbyPost(body)
+      case 'leave-residence':   return postLeaveResidence(body)
       // Read-only actions via POST to bypass Google's redirect cache
       case 'init':             return getInit(body.device_hash)
       case 'events':           return getEvents()
@@ -223,6 +230,7 @@ function getInit(deviceHash) {
     listings: fetchListingsData(),
     events: fetchEventsData(),
     handle: fetchHandleData(deviceHash),
+    residence: fetchResidenceData(deviceHash),
   })
 }
 
@@ -1255,6 +1263,150 @@ function saveDesign(body) {
   return jsonResponse({ success: true })
 }
 
+// ─── Residents ──────────────────────────────────────────────────────────────
+
+function fetchResidenceData(deviceHash) {
+  if (!deviceHash) return null
+  var rows = sheetToObjects(getSheet('Residents'))
+  var match = rows.filter(function(r) { return r.device_hash === deviceHash })[0]
+  if (!match) return null
+  return { building_id: match.building_id, status: match.status }
+}
+
+function getResidenceStatus(deviceHash) {
+  if (!deviceHash) return errorResponse('Missing dh', 'bad_request')
+  return jsonResponse(fetchResidenceData(deviceHash))
+}
+
+function getResidentCount(buildingId) {
+  if (!buildingId) return errorResponse('Missing bid', 'bad_request')
+  var rows = sheetToObjects(getSheet('Residents'))
+  var count = rows.filter(function(r) { return r.building_id === buildingId && r.status === 'verified' }).length
+  return jsonResponse({ building_id: buildingId, count: count })
+}
+
+function getLobbyPosts(deviceHash, buildingId) {
+  if (!deviceHash || !buildingId) return errorResponse('Missing dh or bid', 'bad_request')
+
+  // Caller must be a verified resident of this building
+  var residents = sheetToObjects(getSheet('Residents'))
+  var caller = residents.filter(function(r) { return r.device_hash === deviceHash && r.building_id === buildingId && r.status === 'verified' })[0]
+  if (!caller) return errorResponse('Not a verified resident', 'forbidden')
+
+  var posts = sheetToObjects(getSheet('LobbyPosts'))
+  var buildingPosts = posts
+    .filter(function(p) { return p.building_id === buildingId })
+    .sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at) })
+    .slice(0, 50)
+    .map(function(p) {
+      return { id: p.id, text: p.text, photo_url: p.photo_url || null, created_at: p.created_at }
+      // Note: no device_hash or identity — posts are anonymous
+    })
+
+  return jsonResponse({ posts: buildingPosts })
+}
+
+function postClaimResidence(body) {
+  var dh = body.device_hash
+  var bid = body.building_id
+  if (!dh || !bid) return errorResponse('Missing device_hash or building_id', 'bad_request')
+
+  var sheet = getSheet('Residents')
+  var rows = sheetToObjects(sheet)
+
+  // Check if already a resident somewhere
+  var existing = rows.filter(function(r) { return r.device_hash === dh })[0]
+  if (existing) {
+    if (existing.building_id === bid) {
+      return jsonResponse({ status: existing.status, building_id: bid })
+    }
+    // Already resident elsewhere — must leave first
+    return errorResponse('Already a resident of ' + existing.building_id + '. Leave that residence first.', 'conflict')
+  }
+
+  // Auto-verify if body.auto_verify is set (used when Guardian answers "I live here")
+  var status = body.auto_verify ? 'verified' : 'pending'
+  var verifiedBy = body.auto_verify ? 'self-guardian' : ''
+  var verifiedAt = body.auto_verify ? nowISO() : ''
+
+  sheet.appendRow([dh, bid, status, verifiedBy, nowISO(), verifiedAt])
+  return jsonResponse({ status: status, building_id: bid })
+}
+
+function postVerifyResident(body) {
+  var verifierHash = body.verifier_hash
+  var targetHash = body.target_hash
+  var bid = body.building_id
+  if (!verifierHash || !targetHash || !bid) return errorResponse('Missing required fields', 'bad_request')
+
+  var sheet = getSheet('Residents')
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var dhCol = headers.indexOf('device_hash')
+  var bidCol = headers.indexOf('building_id')
+  var statusCol = headers.indexOf('status')
+  var verifiedByCol = headers.indexOf('verified_by')
+  var verifiedAtCol = headers.indexOf('verified_at')
+
+  // Check verifier is a verified resident of this building
+  var verifierOk = false
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][dhCol] === verifierHash && data[i][bidCol] === bid && data[i][statusCol] === 'verified') {
+      verifierOk = true
+      break
+    }
+  }
+  if (!verifierOk) return errorResponse('Verifier is not a verified resident of this building', 'forbidden')
+
+  // Find target pending row
+  for (var j = 1; j < data.length; j++) {
+    if (data[j][dhCol] === targetHash && data[j][bidCol] === bid && data[j][statusCol] === 'pending') {
+      sheet.getRange(j + 1, statusCol + 1).setValue('verified')
+      sheet.getRange(j + 1, verifiedByCol + 1).setValue(verifierHash)
+      sheet.getRange(j + 1, verifiedAtCol + 1).setValue(nowISO())
+      return jsonResponse({ success: true })
+    }
+  }
+
+  return errorResponse('No pending resident found for this building', 'not_found')
+}
+
+function postLobbyPost(body) {
+  var dh = body.device_hash
+  var bid = body.building_id
+  var text = (body.text || '').trim()
+  if (!dh || !bid || !text) return errorResponse('Missing required fields', 'bad_request')
+  if (text.length > 2000) return errorResponse('Post too long', 'bad_request')
+
+  // Must be verified resident
+  var residents = sheetToObjects(getSheet('Residents'))
+  var caller = residents.filter(function(r) { return r.device_hash === dh && r.building_id === bid && r.status === 'verified' })[0]
+  if (!caller) return errorResponse('Not a verified resident', 'forbidden')
+
+  var id = generateId('lp')
+  getSheet('LobbyPosts').appendRow([id, bid, dh, text, body.photo_url || '', nowISO()])
+  return jsonResponse({ success: true, id: id })
+}
+
+function postLeaveResidence(body) {
+  var dh = body.device_hash
+  if (!dh) return errorResponse('Missing device_hash', 'bad_request')
+
+  var sheet = getSheet('Residents')
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var dhCol = headers.indexOf('device_hash')
+
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][dhCol] === dh) {
+      sheet.deleteRow(i + 1)
+      return jsonResponse({ success: true })
+    }
+  }
+
+  return jsonResponse({ success: true }) // no-op if not a resident
+}
+
 // ─── Utility: Create all tabs with headers ──────────────────────────────────
 
 function setupSheets() {
@@ -1279,6 +1431,8 @@ function setupSheets() {
     'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
     'Replies':   ['id', 'review_id', 'listing_id', 'device_hash', 'handle', 'text', 'created_at'],
     'Guardians': ['listing_id', 'device_hash', 'created_at'],
+    'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at'],
+    'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
     'Designs':   ['biz_id', 'design_json', 'updated_at'],
   }
 

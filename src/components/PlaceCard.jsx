@@ -5,7 +5,8 @@ import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
-import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto } from '../lib/api'
+import useResidence from '../hooks/useResidence'
+import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, claimResidence, getResidentCount, getLobbyPosts, postLobbyPost, leaveResidence } from '../lib/api'
 import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
@@ -1934,6 +1935,94 @@ function QrTab({ listingId, listingName, isAdmin }) {
   )
 }
 
+// ─── Tab: Lobby (verified residents only) ─────────────────────────
+function LobbyTab({ buildingId }) {
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [text, setText] = useState('')
+  const [posting, setPosting] = useState(false)
+
+  const fetchPosts = useCallback(async () => {
+    try {
+      const dh = await getDeviceHash()
+      const res = await getLobbyPosts(dh, buildingId)
+      setPosts(res?.data?.posts || [])
+    } catch { /* silent */ }
+    setLoading(false)
+  }, [buildingId])
+
+  useEffect(() => { fetchPosts() }, [fetchPosts])
+
+  const handlePost = async () => {
+    if (!text.trim() || posting) return
+    setPosting(true)
+    try {
+      const dh = await getDeviceHash()
+      await postLobbyPost(dh, buildingId, text.trim())
+      setText('')
+      await fetchPosts()
+    } catch { /* silent */ }
+    setPosting(false)
+  }
+
+  if (loading) {
+    return <div className="text-on-surface-subtle text-body-sm text-center py-6">Loading...</div>
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Compose */}
+      <div className="space-y-2">
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value.slice(0, 2000))}
+          placeholder="Post to the lobby..."
+          rows={3}
+          className="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-body text-on-surface placeholder:text-on-surface-disabled focus:outline-none focus:border-outline resize-none"
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-caption text-on-surface-disabled">{text.length}/2000</span>
+          <button
+            onClick={handlePost}
+            disabled={!text.trim() || posting}
+            className="px-3 py-1 rounded-lg bg-sage-500/20 text-[#7A8B6F] text-body-sm font-medium hover:bg-sage-500/30 disabled:opacity-40 transition-colors"
+            style={{ backgroundColor: text.trim() ? 'rgba(122,139,111,0.2)' : undefined }}
+          >
+            {posting ? 'Posting...' : 'Post'}
+          </button>
+        </div>
+      </div>
+
+      {/* Info banner */}
+      <div className="rounded-lg bg-surface-container-high px-3 py-2 text-caption text-on-surface-subtle">
+        Posts are anonymous — only verified residents can see or write here.
+      </div>
+
+      {/* Posts */}
+      {posts.length === 0 ? (
+        <div className="text-center py-6 text-on-surface-disabled text-body-sm">
+          No posts yet. Be the first to say hello.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {posts.map(p => (
+            <div key={p.id} className="rounded-lg bg-surface-container px-3 py-2.5 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.5 rounded bg-[#7A8B6F]/20 text-[#7A8B6F] text-caption font-medium">Resident</span>
+                <span className="text-caption text-on-surface-disabled">{new Date(p.created_at).toLocaleDateString()}</span>
+              </div>
+              <p className="text-body text-on-surface-variant whitespace-pre-wrap">{p.text}</p>
+              {p.photo_url && (
+                <img src={p.photo_url} alt="" className="rounded-lg max-h-48 mt-1" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ═════════════════════════════════════════════════════════════════════
 // Main PlaceCard
 // ═════════════════════════════════════════════════════════════════════
@@ -1941,9 +2030,13 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const [activeTab, setActiveTab] = useState(null)
   const [activeListingIdx, setActiveListingIdx] = useState(0)
   const { isGuardianOf, isAdmin: isStoreAdmin } = useGuardianStatus()
+  const residenceBuildingId = useResidence(s => s.buildingId)
+  const residenceStatus = useResidence(s => s.status)
   const panelOpen = useCamera(s => s.panelOpen)
   const panelCollapsedPx = useCamera(s => s.panelCollapsedPx)
   const initialTab = useSelectedBuilding(s => s.initialTab)
+  const [claiming, setClaiming] = useState(false)
+  const [residentCount, setResidentCount] = useState(null)
 
   // Subscribe to store so guardian edits trigger re-render
   const storeListing = useListings(s => listingProp?.id ? s.listings.find(l => l.id === listingProp.id) : null)
@@ -1994,16 +2087,24 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const hasHistory = !!(history?.length || description)
   const hasArchitecture = !!(building && (building.year_built || building.style || building.architect || building.historic_status || building.architecture))
 
+  const isResidential = activeListing?.category === 'residential'
+  const isResidentHere = isResidential && residenceBuildingId === building?.id && residenceStatus === 'verified'
+  const isPendingResident = isResidential && residenceBuildingId === building?.id && residenceStatus === 'pending'
+
   const tabs = useMemo(() => {
     if (hasListingInfo) {
       // ── Listing path ──
       const t = [{ id: 'overview', label: 'Overview' }]
-      t.push({ id: 'reviews', label: 'Reviews' })
-      t.push({ id: 'events', label: 'Events' })
+      if (!isResidential) {
+        t.push({ id: 'reviews', label: 'Reviews' })
+        t.push({ id: 'events', label: 'Events' })
+      }
+      if (isResidentHere) t.push({ id: 'lobby', label: 'Lobby' })
       if (hasHistory) t.push({ id: 'history', label: 'History' })
       if (hasArchitecture) t.push({ id: 'architecture', label: 'Details' })
+      if (hasAssessment) t.push({ id: 'assessment', label: 'Assessment' })
       t.push({ id: 'photos', label: 'Photos' })
-      if (isGuardian || isAdmin) t.push({ id: 'qr', label: 'QR' })
+      if (!isResidential && (isGuardian || isAdmin)) t.push({ id: 'qr', label: 'QR' })
       return t
     }
     // ── Property card path: bare buildings ──
@@ -2013,7 +2114,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
     t.push({ id: 'photos', label: 'Photos' })
     if (hasAssessment) t.push({ id: 'assessment', label: 'Assessment' })
     return t
-  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, hasAssessment, isGuardian, isAdmin])
+  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, hasAssessment, isGuardian, isAdmin, isResidential, isResidentHere])
 
   // Default tab: first available
   const defaultTab = tabs[0]?.id || 'photos'
@@ -2026,6 +2127,38 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
       useSelectedBuilding.getState().clearInitialTab()
     }
   }, [initialTab, tabs])
+
+  // Fetch resident count for residential buildings
+  useEffect(() => {
+    if (!isResidential || !building?.id) return
+    getResidentCount(building.id).then(res => {
+      setResidentCount(res?.data?.count ?? null)
+    }).catch(() => {})
+  }, [isResidential, building?.id])
+
+  // Claim residence handler
+  const handleClaimResidence = useCallback(async () => {
+    if (claiming || !building?.id) return
+    setClaiming(true)
+    try {
+      const dh = await getDeviceHash()
+      const res = await claimResidence(dh, building.id)
+      const d = res?.data
+      if (d) {
+        useResidence.setState({ buildingId: d.building_id || building.id, status: d.status || 'pending' })
+      }
+    } catch { /* silent */ }
+    setClaiming(false)
+  }, [building?.id, claiming])
+
+  // Leave residence handler
+  const handleLeaveResidence = useCallback(async () => {
+    try {
+      const dh = await getDeviceHash()
+      await leaveResidence(dh)
+      useResidence.setState({ buildingId: null, status: null })
+    } catch { /* silent */ }
+  }, [])
 
   // Style-tinted gradient for bare buildings
   const styleGradient = !hasListingInfo ? getStyleGradient(arch.nps_style_group) : null
@@ -2123,7 +2256,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                     ) : name}
                   </h2>
 
-                  {hasListingInfo && (
+                  {hasListingInfo && !isResidential && (
                     <div className="flex items-center gap-2 mt-1">
                       {rating ? (
                         <>
@@ -2225,6 +2358,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           )}
           {currentTab === 'reviews' && <ReviewsTab listingId={listingId} isGuardian={isGuardian} />}
           {currentTab === 'events' && <EventsTab listingId={listingId} isGuardian={isGuardian} />}
+          {currentTab === 'lobby' && <LobbyTab buildingId={building?.id} />}
           {currentTab === 'architecture' && <ArchitectureTab building={building} />}
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
@@ -2240,8 +2374,65 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
       {/* Footer */}
       <div className="px-4 py-2.5 border-t border-outline bg-surface-container flex-shrink-0 flex items-center gap-2">
-        {/* Left: guardian badge or claim CTA or house CTA */}
-        {hasListingInfo && isGuardian && (
+        {/* Left: context-sensitive status / CTA */}
+
+        {/* Residential: verified resident badge */}
+        {isResidential && isResidentHere && (
+          <div className="flex-1 flex items-center gap-2 text-[#7A8B6F] text-body-sm">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
+            </svg>
+            <span>Verified Resident</span>
+            {residentCount != null && residentCount > 1 && (
+              <span className="text-on-surface-disabled">&middot; {residentCount} neighbors</span>
+            )}
+          </div>
+        )}
+
+        {/* Residential: pending verification */}
+        {isResidential && isPendingResident && (
+          <div className="flex-1 flex items-center gap-2 text-amber-400/80 text-body-sm">
+            <svg className="w-4 h-4 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Pending — ask a verified neighbor to scan your QR
+          </div>
+        )}
+
+        {/* Residential: not a resident yet — "I live here" + manage link */}
+        {isResidential && !isResidentHere && !isPendingResident && (
+          <div className="flex-1 flex flex-col gap-1">
+            <button
+              onClick={handleClaimResidence}
+              disabled={claiming}
+              className="w-full py-1.5 px-3 rounded-lg bg-[#7A8B6F]/15 hover:bg-[#7A8B6F]/25 text-[#7A8B6F] text-body font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
+              </svg>
+              {claiming ? 'Claiming...' : 'I live here'}
+            </button>
+            <a
+              href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('Manage: ' + name)}`}
+              className="text-center text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
+            >
+              Manage this building?
+            </a>
+          </div>
+        )}
+
+        {/* Residential: verified/pending resident — manage link */}
+        {isResidential && (isResidentHere || isPendingResident) && (
+          <a
+            href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('Manage: ' + name)}`}
+            className="text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
+          >
+            Manage?
+          </a>
+        )}
+
+        {/* Non-residential: guardian badge */}
+        {!isResidential && hasListingInfo && isGuardian && (
           <div className="flex-1 flex items-center gap-2 text-emerald-400/70 text-body-sm">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -2249,7 +2440,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             You are the guardian of this place
           </div>
         )}
-        {hasListingInfo && !isGuardian && (
+
+        {/* Non-residential: claim CTA */}
+        {!isResidential && hasListingInfo && !isGuardian && (
           <a
             href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('My place: ' + name)}`}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
@@ -2260,6 +2453,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             Is this your place?
           </a>
         )}
+
+        {/* Bare building: house CTA */}
         {!hasListingInfo && (
           <a
             href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('My place: ' + (cleanAddress(building?.address) || 'Unknown'))}`}

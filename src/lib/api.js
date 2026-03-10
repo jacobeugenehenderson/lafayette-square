@@ -16,6 +16,8 @@ const _mockMessages = []
 const _mockComments = []
 const _mockLinkTokens = {}
 let _mockIdCounter = 1
+let _mockResidence = null
+const _mockLobbyPosts = []
 
 const _mockReplies = []
 
@@ -44,7 +46,7 @@ const MOCKS = {
     return { data: { success: true } }
   },
   'events':         () => ({ data: _mockEvents }),
-  'init':           (params) => ({ data: { listings: [], events: _mockEvents, handle: { handle: _mockHandles[params.dh]?.handle || null, avatar: _mockHandles[params.dh]?.avatar || null, vignette: _mockHandles[params.dh]?.vignette || null } } }),
+  'init':           (params) => ({ data: { listings: [], events: _mockEvents, handle: { handle: _mockHandles[params.dh]?.handle || null, avatar: _mockHandles[params.dh]?.avatar || null, vignette: _mockHandles[params.dh]?.vignette || null }, residence: _mockResidence } }),
   'listings':       () => ({ data: [] }),
   'getDesign':      () => ({ data: { design: null, image: null } }),
   'upload-photo':   () => ({ data: { success: true, url: 'https://example.com/mock-photo.jpg', photo_count: 1 } }),
@@ -123,6 +125,21 @@ const MOCKS = {
     if (val === 'pending') return { data: { status: 'pending' } }
     return { data: { status: 'claimed', device_hash: val.device_hash, handle: val.handle, avatar: val.avatar, vignette: val.vignette || null } }
   },
+  // Resident mocks
+  'residence-status': () => ({ data: null }),
+  'resident-count':   () => ({ data: { count: 3 } }),
+  'claim-residence':  (body) => {
+    _mockResidence = { building_id: body.building_id, status: body.auto_verify ? 'verified' : 'pending' }
+    return { data: _mockResidence }
+  },
+  'verify-resident':  () => ({ data: { success: true } }),
+  'lobby-posts':      () => ({ data: { posts: _mockLobbyPosts } }),
+  'lobby-post':       (body) => {
+    const id = 'lp-' + (_mockIdCounter++)
+    _mockLobbyPosts.unshift({ id, text: body.text, photo_url: body.photo_url || null, created_at: new Date().toISOString() })
+    return { data: { success: true, id } }
+  },
+  'leave-residence':  () => { _mockResidence = null; return { data: { success: true } } },
 }
 
 async function get(action, params = {}) {
@@ -327,4 +344,34 @@ export async function claimLinkToken(token, deviceHash) {
 
 export async function checkLinkToken(token) {
   return get('check-link-token', { token })
+}
+
+// ── Residents ──────────────────────────────────────────────────────────
+
+export async function getResidenceStatus(deviceHash) {
+  return get('residence-status', { dh: deviceHash })
+}
+
+export async function getResidentCount(buildingId) {
+  return get('resident-count', { bid: buildingId })
+}
+
+export async function claimResidence(deviceHash, buildingId, autoVerify = false) {
+  return post('claim-residence', { device_hash: deviceHash, building_id: buildingId, auto_verify: autoVerify })
+}
+
+export async function verifyResident(verifierHash, targetHash, buildingId) {
+  return post('verify-resident', { verifier_hash: verifierHash, target_hash: targetHash, building_id: buildingId })
+}
+
+export async function getLobbyPosts(deviceHash, buildingId) {
+  return get('lobby-posts', { dh: deviceHash, bid: buildingId })
+}
+
+export async function postLobbyPost(deviceHash, buildingId, text, photoUrl) {
+  return post('lobby-post', { device_hash: deviceHash, building_id: buildingId, text, photo_url: photoUrl })
+}
+
+export async function leaveResidence(deviceHash) {
+  return post('leave-residence', { device_hash: deviceHash })
 }

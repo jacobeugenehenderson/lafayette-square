@@ -88,7 +88,7 @@
           "event": "Becomes Missouri's first licensed micro-distillery since Prohibition, launching the Spirits of St. Louis line of whiskey, gin, vodka, rum, and agave spirits."
         }
       ],
-      "description": "A neighborhood brewery, distillery, and gastropub in a storied 1882 corner building on Park Avenue. Owner Steve Neukomm brews 35+ styles annually and distills the Spirits of St. Louis line — Missouri's first micro-distillery since Prohibition. The courtyard patio is widely considered one of the best in St. Louis.",
+      "description": "A neighborhood brewery, distillery, and gastropub in a storied 1882 corner building on Park Avenue. Owner Steve Neukomm brews 35+ styles annually and distills the Spirits of St. Louis line \u2014 Missouri's first micro-distillery since Prohibition. The courtyard patio is widely considered one of the best in St. Louis.",
       "tags": [
         "craft-beer",
         "outdoor-seating",
@@ -518,7 +518,7 @@
         },
         {
           "year": 2018,
-          "event": "The Drawing Room opens on the second floor — a 2,000 sq ft private event space with its own kitchen, bar, and a hidden speakeasy-style entrance behind a bookcase."
+          "event": "The Drawing Room opens on the second floor \u2014 a 2,000 sq ft private event space with its own kitchen, bar, and a hidden speakeasy-style entrance behind a bookcase."
         }
       ],
       "description": "A restaurant, bar & gathering place in the heart of Lafayette Square. Eclectic contemporary American fare with a celebrated weekend brunch. Owned by Brian Schmitz and Jonathan Schoen, with Executive Chef Eliott Harris at the helm.",
@@ -669,7 +669,7 @@
         },
         {
           "year": 2013,
-          "event": "Sommeliers James Smallwood and Jessica Spitzer purchase the bar — the second time it was sold to a loyal customer."
+          "event": "Sommeliers James Smallwood and Jessica Spitzer purchase the bar \u2014 the second time it was sold to a loyal customer."
         },
         {
           "year": 2024,
@@ -766,7 +766,7 @@
           "close": "17:30"
         }
       },
-      "description": "Handmade fresh pasta shop, café, and Italian market by chef Dawn Wilson, a molecular geneticist turned pasta artisan who trained in Tuscany. Best New Restaurant 2023 (Feast Magazine). Signature pici cacio e pepe.",
+      "description": "Handmade fresh pasta shop, caf\u00e9, and Italian market by chef Dawn Wilson, a molecular geneticist turned pasta artisan who trained in Tuscany. Best New Restaurant 2023 (Feast Magazine). Signature pici cacio e pepe.",
       "photos": [
         "/photos/vicini-pastaria/01.jpg",
         "/photos/vicini-pastaria/02.jpg",
@@ -774,11 +774,11 @@
       ],
       "amenities": [
         "Handmade fresh pasta sold by the pound",
-        "16-seat counter-service lunch café",
+        "16-seat counter-service lunch caf\u00e9",
         "Scratch-made pasta sauces (fresh and frozen)",
         "Italian specialty market and imported goods",
         "Friday Aperitivo happy hour 4-6 PM",
-        "European-inspired antiques and home décor"
+        "European-inspired antiques and home d\u00e9cor"
       ],
       "history": [
         {
@@ -791,7 +791,7 @@
         },
         {
           "year": 2022,
-          "event": "Wilson returns to St. Louis and opens Vicini Pastaria, Café & Market at 1916 Park Avenue in November, bringing handmade fresh pasta to Lafayette Square."
+          "event": "Wilson returns to St. Louis and opens Vicini Pastaria, Caf\u00e9 & Market at 1916 Park Avenue in November, bringing handmade fresh pasta to Lafayette Square."
         },
         {
           "year": 2023,
@@ -1057,7 +1057,7 @@
         },
         {
           "year": 1881,
-          "event": "Joseph Schnaider dies, leaving wife Elizabeth a prosperous brewery with a nationally-known open-air beer garden — one of St. Louis's most successful entertainment venues."
+          "event": "Joseph Schnaider dies, leaving wife Elizabeth a prosperous brewery with a nationally-known open-air beer garden \u2014 one of St. Louis's most successful entertainment venues."
         },
         {
           "year": 1889,
@@ -1069,7 +1069,7 @@
         },
         {
           "year": 2006,
-          "event": "Vin de Set restaurant opens — St. Louis's first rooftop restaurant with 4,000 sq ft rooftop patio. Named to Landmarks Association's 'Eleven Most Enhanced Places.'"
+          "event": "Vin de Set restaurant opens \u2014 St. Louis's first rooftop restaurant with 4,000 sq ft rooftop patio. Named to Landmarks Association's 'Eleven Most Enhanced Places.'"
         },
         {
           "year": 2022,
@@ -1144,9 +1144,9 @@
         "Outdoor patio overlooking Park Avenue Plaza Fountain",
         "On-site urban market",
         "Private dining (The Annex, up to 150 guests)",
-        "Live jazz & blues Thu–Sat",
+        "Live jazz & blues Thu\u2013Sat",
         "Reservations via Tock",
-        "Happy hour Tue–Fri 2–6 PM",
+        "Happy hour Tue\u2013Fri 2\u20136 PM",
         "Green Dining Alliance 5-star certified",
         "Wheelchair accessible"
       ],
@@ -1282,7 +1282,7 @@
       "category": "community",
       "subcategory": "churches",
       "building_id": "bldg-0201",
-      "description": "Former Church of the Unity (Unitarian, 1869) turned St. Joseph Lithuanian Catholic Church (1916–1970). A small stone Gothic Revival chapel at the corner of Park Avenue and MacKay Place, with stained glass windows and attached rectory. Closed since 1970 when the Lithuanian community moved out of the neighborhood.",
+      "description": "Former Church of the Unity (Unitarian, 1869) turned St. Joseph Lithuanian Catholic Church (1916\u20131970). A small stone Gothic Revival chapel at the corner of Park Avenue and MacKay Place, with stained glass windows and attached rectory. Closed since 1970 when the Lithuanian community moved out of the neighborhood.",
       "photos": [
         "/photos/st-josephs/01.jpg",
         "/photos/st-josephs/02.jpg",
@@ -1353,7 +1353,7 @@
         },
         {
           "year": 1901,
-          "event": "Kilgen pipe organ installed — a 2-manual, 14-rank instrument that remains in use today after professional restoration in 1999."
+          "event": "Kilgen pipe organ installed \u2014 a 2-manual, 14-rank instrument that remains in use today after professional restoration in 1999."
         },
         {
           "year": 1998,
@@ -1380,7 +1380,7 @@
         "/photos/city-church/03.jpg"
       ],
       "amenities": [
-        "Sunday School at 9:00 AM (Sept–May)",
+        "Sunday School at 9:00 AM (Sept\u2013May)",
         "Corporate Worship at 10:15 AM",
         "Community Groups",
         "Family, Men's, and Women's Ministries"
@@ -1526,7 +1526,7 @@
         "Award-winning craft cocktail program",
         "12 signature cocktails + 30 house classics",
         "Happy hour Tue-Fri 4-6pm, all day Sunday",
-        "The Bullock Room — hidden second bar behind velvet curtain",
+        "The Bullock Room \u2014 hidden second bar behind velvet curtain",
         "Reservations via Tock (groups up to 6)",
         "Patio seating",
         "Contemporary American cuisine"
@@ -1620,14 +1620,14 @@
       "category": "community",
       "subcategory": "schools",
       "building_id": "bldg-1115",
-      "description": "Top-ranked public charter school (PK–8) in a renovated 1868 Baptist church complex. Ranked #1 among St. Louis City schools in reading, science, and math. Sponsored by UMSL, serving 400+ students with a 7:1 student-teacher ratio.",
+      "description": "Top-ranked public charter school (PK\u20138) in a renovated 1868 Baptist church complex. Ranked #1 among St. Louis City schools in reading, science, and math. Sponsored by UMSL, serving 400+ students with a 7:1 student-teacher ratio.",
       "photos": [
         "/photos/lafayette-prep/01.jpg",
         "/photos/lafayette-prep/02.jpg",
         "/photos/lafayette-prep/03.jpg"
       ],
       "amenities": [
-        "PK–8 public charter school (tuition-free)",
+        "PK\u20138 public charter school (tuition-free)",
         "400+ students, 7:1 student-teacher ratio",
         "#1 in St. Louis City for reading, science, and math",
         "Full-sized gymnasium",
@@ -1679,7 +1679,7 @@
       "category": "historic",
       "subcategory": "notable-homes",
       "building_id": "bldg-0976",
-      "description": "Historic 1882 Romanesque Revival mansion, home to the Seib family for over 90 years. Carrie Seib ran the Independent Church of Truth from the third-floor ballroom (1933–1964), channeling poetry and spiritual messages. Beautifully restored in 2019.",
+      "description": "Historic 1882 Romanesque Revival mansion, home to the Seib family for over 90 years. Carrie Seib ran the Independent Church of Truth from the third-floor ballroom (1933\u20131964), channeling poetry and spiritual messages. Beautifully restored in 2019.",
       "photos": [
         "/photos/seib-house/01.jpg",
         "/photos/seib-house/02.jpg",
@@ -1718,7 +1718,7 @@
     },
     {
       "id": "lmk-039",
-      "name": "Rosé By Peno",
+      "name": "Ros\u00e9 By Peno",
       "address": "South 18th Street",
       "phone": "+13144058500",
       "website": "https://www.rosestl.com/",
@@ -1779,7 +1779,7 @@
         },
         {
           "year": 2023,
-          "event": "Chef Pepe Kehm opens Rosé by Peno on March 9, combining coastal French and Italian cuisine in an intimate 38-seat bistro with design by local artist Kevin Glazer."
+          "event": "Chef Pepe Kehm opens Ros\u00e9 by Peno on March 9, combining coastal French and Italian cuisine in an intimate 38-seat bistro with design by local artist Kevin Glazer."
         }
       ],
       "tags": [
@@ -1978,16 +1978,46 @@
         "/photos/bellwether/01.jpeg",
         "/photos/bellwether/02.jpeg",
         "/photos/bellwether/03.jpeg",
-        { "url": "/photos/bellwether/04.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
-        { "url": "/photos/bellwether/05.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
+        {
+          "url": "/photos/bellwether/04.jpeg",
+          "credit": "STL Foodies",
+          "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"
+        },
+        {
+          "url": "/photos/bellwether/05.jpeg",
+          "credit": "STL Foodies",
+          "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"
+        },
         "/photos/bellwether/06.jpeg",
         "/photos/bellwether/07.jpeg",
-        { "url": "/photos/bellwether/08.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
-        { "url": "/photos/bellwether/09.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
-        { "url": "/photos/bellwether/10.jpeg", "credit": "STL Foodies", "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/" },
-        { "url": "/photos/bellwether/11.webp", "credit": "Sauce Magazine", "credit_url": "https://www.saucemagazine.com/places/review-the-bellwether-in-st-louis-17341636" },
-        { "url": "/photos/bellwether/12.jpeg", "credit": "Kevin A. Roberts / STL Mag" },
-        { "url": "/photos/bellwether/13.jpeg", "credit": "Kevin A. Roberts / STL Mag" }
+        {
+          "url": "/photos/bellwether/08.jpeg",
+          "credit": "STL Foodies",
+          "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"
+        },
+        {
+          "url": "/photos/bellwether/09.jpeg",
+          "credit": "STL Foodies",
+          "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"
+        },
+        {
+          "url": "/photos/bellwether/10.jpeg",
+          "credit": "STL Foodies",
+          "credit_url": "https://stlfoodies314.com/directory-restaurant_m/restaurant/bellwether/"
+        },
+        {
+          "url": "/photos/bellwether/11.webp",
+          "credit": "Sauce Magazine",
+          "credit_url": "https://www.saucemagazine.com/places/review-the-bellwether-in-st-louis-17341636"
+        },
+        {
+          "url": "/photos/bellwether/12.jpeg",
+          "credit": "Kevin A. Roberts / STL Mag"
+        },
+        {
+          "url": "/photos/bellwether/13.jpeg",
+          "credit": "Kevin A. Roberts / STL Mag"
+        }
       ],
       "amenities": [
         "Rooftop patio",
@@ -1995,7 +2025,7 @@
         "Weekend brunch",
         "Private dining (The Reference Room)",
         "Reservations via Tock",
-        "Happy hour Mon–Fri 5–6 PM"
+        "Happy hour Mon\u2013Fri 5\u20136 PM"
       ],
       "history": [
         {
@@ -2020,10 +2050,10 @@
         },
         {
           "year": 2019,
-          "event": "The Bellwether opens May 31 in the former Element space on floors 2–3. Created by the Polite Society team: Brian Schmitz, Jonathan Schoen, and chef Thomas Futrell."
+          "event": "The Bellwether opens May 31 in the former Element space on floors 2\u20133. Created by the Polite Society team: Brian Schmitz, Jonathan Schoen, and chef Thomas Futrell."
         }
       ],
-      "description": "A rooftop restaurant and cocktail bar by Be Polite Hospitality (Brian Schmitz & Jonathan Schoen) inside the 1937 City Hospital Power Plant. Executive Chef Thomas Futrell's seasonal American menu pairs with literary-themed cocktails named after novels. The Reference Room on the third floor offers private dining for up to 30 guests. Happy hour runs Tue–Fri 5–6 PM.",
+      "description": "A rooftop restaurant and cocktail bar by Be Polite Hospitality (Brian Schmitz & Jonathan Schoen) inside the 1937 City Hospital Power Plant. Executive Chef Thomas Futrell's seasonal American menu pairs with literary-themed cocktails named after novels. The Reference Room on the third floor offers private dining for up to 30 guests. Happy hour runs Tue\u2013Fri 5\u20136 PM.",
       "reservation_url": "https://www.exploretock.com/the-bellwether-st-louis",
       "menu_url": "https://www.thebellwetherstl.com/menu",
       "tags": [
@@ -2581,7 +2611,7 @@
       "history": [
         {
           "year": 2017,
-          "event": "Steve St. Pierre purchases a 180-acre farm in Owensville, MO and buys 12 cows — with zero farming experience — inspired by a conversation about creating employment opportunities."
+          "event": "Steve St. Pierre purchases a 180-acre farm in Owensville, MO and buys 12 cows \u2014 with zero farming experience \u2014 inspired by a conversation about creating employment opportunities."
         },
         {
           "year": 2021,
@@ -2647,7 +2677,7 @@
           "event": "Cally and Rich Conyers open Prohibition on October 24 in the restored basement, with beverage director Benjamin Bauer (ex-NYC) and consulting from Tim Wiggins (Extra Wavy, upstairs)."
         }
       ],
-      "description": "1920s speakeasy-inspired cocktail bar in the stone-walled basement of the 1876 Centennial Malt House. No sign marks the entrance — guests discover it themselves. Dedicated to the remarkable women of the Prohibition era.",
+      "description": "1920s speakeasy-inspired cocktail bar in the stone-walled basement of the 1876 Centennial Malt House. No sign marks the entrance \u2014 guests discover it themselves. Dedicated to the remarkable women of the Prohibition era.",
       "tags": [
         "cocktails",
         "reservations",
@@ -2749,7 +2779,7 @@
       "history": [
         {
           "year": 2010,
-          "event": "Charlie Kirk-Martin founds Salon One Six One with just 2 stylists, naming it after the golden ratio (1.61) — timeless balance found in nature, architecture, and art."
+          "event": "Charlie Kirk-Martin founds Salon One Six One with just 2 stylists, naming it after the golden ratio (1.61) \u2014 timeless balance found in nature, architecture, and art."
         }
       ],
       "description": "Aveda concept salon named after the golden ratio (1.61), dedicated to balanced, timeless beauty with eco-friendly products. Founded by Charlie Kirk-Martin with a philosophy of stylist autonomy and continued education.",
@@ -2962,7 +2992,7 @@
       "history": [
         {
           "year": 2016,
-          "event": "David Palatnik and Dafna Revah open the first dedicated CBD Kratom store in Chicago's Bucktown — the first shop of its kind in the country."
+          "event": "David Palatnik and Dafna Revah open the first dedicated CBD Kratom store in Chicago's Bucktown \u2014 the first shop of its kind in the country."
         }
       ],
       "description": "CBD, kratom, and cannabis dispensary with over 300 products including edibles, beverages, topicals, and smokables. Part of the largest privately owned cannabis and kratom retailer in the US with 55+ locations.",
@@ -3068,10 +3098,10 @@
         },
         {
           "year": 2020,
-          "event": "Creative Experience makerspace launches, offering 3D printing, laser cutting, audio/video production, and VR — all free to the public."
+          "event": "Creative Experience makerspace launches, offering 3D printing, laser cutting, audio/video production, and VR \u2014 all free to the public."
         }
       ],
-      "description": "Historic 1906 Carnegie library designed by Theodore C. Link (architect of Union Station). Houses the Creative Experience makerspace with 3D printing, laser cutting, audio/video studios, and VR — all free to the public.",
+      "description": "Historic 1906 Carnegie library designed by Theodore C. Link (architect of Union Station). Houses the Creative Experience makerspace with 3D printing, laser cutting, audio/video studios, and VR \u2014 all free to the public.",
       "tags": [
         "wifi",
         "meeting-space",
@@ -3104,14 +3134,14 @@
       "history": [
         {
           "year": 1851,
-          "event": "Lafayette Park established by city ordinance — 30 acres reserved when the St. Louis Common was divided in 1836."
+          "event": "Lafayette Park established by city ordinance \u2014 30 acres reserved when the St. Louis Common was divided in 1836."
         },
         {
           "year": 2001,
           "event": "Lafayette Park Conservancy founded on the 150th anniversary of the park's creation, dedicated to restoring its historic legacy."
         }
       ],
-      "description": "501(c)(3) nonprofit preserving Lafayette Park — the oldest developed urban park west of the Mississippi, established 1851. Major projects include restoring the ornamental iron fence and returning the 1876 Music Stand to its Victorian appearance.",
+      "description": "501(c)(3) nonprofit preserving Lafayette Park \u2014 the oldest developed urban park west of the Mississippi, established 1851. Major projects include restoring the ornamental iron fence and returning the 1876 Music Stand to its Victorian appearance.",
       "tags": [
         "volunteer",
         "nonprofit"
@@ -3208,7 +3238,7 @@
       "history": [
         {
           "year": 1876,
-          "event": "Centennial Malt House built by Joseph Schnaider as the mill for his Chouteau Avenue Brewery — one of St. Louis's top three breweries. 'Moulin' is French for mill, honoring this origin."
+          "event": "Centennial Malt House built by Joseph Schnaider as the mill for his Chouteau Avenue Brewery \u2014 one of St. Louis's top three breweries. 'Moulin' is French for mill, honoring this origin."
         },
         {
           "year": 2006,
@@ -3366,102 +3396,6 @@
       "description": "Full-service Walgreens drugstore and pharmacy at the corner of Lafayette Ave and S. Jefferson Ave, serving the neighborhood with prescriptions, health services, and everyday essentials.",
       "tags": [
         "pharmacy"
-      ]
-    },
-    {
-      "id": "lmk-065",
-      "name": "Lofts at Lafayette Square",
-      "address": "1119 Mississippi Avenue",
-      "phone": "(888) 410-9924",
-      "website": "https://www.loftsatlafayette.com",
-      "category": "residential",
-      "subcategory": "apartments",
-      "building_id": null,
-      "hours": {},
-      "photos": [],
-      "amenities": [
-        "14-foot ceilings and open loft floor plans",
-        "In-unit full-size washer and dryer",
-        "Pet-friendly community",
-        "24-hour emergency maintenance"
-      ],
-      "history": [
-        {
-          "year": 1903,
-          "event": "Roberts, Johnson & Rand — then the largest shoe manufacturer in the U.S. — operates its factory at this site during Lafayette Square's industrial heyday."
-        },
-        {
-          "year": 2003,
-          "event": "The 148,000 sq ft shoe plant is converted into 115 loft apartments with soaring ceilings and industrial character preserved."
-        }
-      ],
-      "description": "115-unit loft apartment community in the converted Roberts, Johnson & Rand shoe factory, featuring 14-foot ceilings, open floor plans, and historic industrial character in the heart of Lafayette Square.",
-      "tags": [
-        "pet-friendly",
-        "apartments"
-      ]
-    },
-    {
-      "id": "lmk-066",
-      "name": "Wireworks Lofts",
-      "address": "1435 S 18th Street",
-      "phone": "(314) 887-9022",
-      "website": "https://www.wireworksstl.com",
-      "category": "residential",
-      "subcategory": "apartments",
-      "building_id": null,
-      "hours": {},
-      "photos": [
-        "/photos/wireworks-lofts/01.jpg",
-        "/photos/wireworks-lofts/02.jpg"
-      ],
-      "amenities": [
-        "High ceilings and large windows",
-        "Ground-floor retail including SqWires Restaurant",
-        "Pet-friendly community",
-        "Walking distance to Lafayette Park"
-      ],
-      "history": [
-        {
-          "year": 2001,
-          "event": "The historic Western Wire Products factory is converted into 79 market-rate loft apartments and 8,000 sq ft of ground-floor retail and office space, financed with historic preservation tax credits."
-        }
-      ],
-      "description": "79-unit loft community in the converted Western Wire Products factory, featuring high ceilings, large windows, and ground-floor retail anchored by SqWires Restaurant.",
-      "tags": [
-        "pet-friendly",
-        "apartments"
-      ]
-    },
-    {
-      "id": "lmk-067",
-      "name": "2200 LaSalle at Lafayette Square",
-      "address": "2200 LaSalle Street",
-      "phone": "(314) 907-1308",
-      "website": "https://www.2200lasalle.com",
-      "category": "residential",
-      "subcategory": "apartments",
-      "building_id": null,
-      "hours": {},
-      "photos": [],
-      "amenities": [
-        "Resort-style pool with sundeck",
-        "Underground garage parking",
-        "Clubhouse with cocktail bar and fitness center",
-        "Courtyard with fire pit, pavilion, and lawn games"
-      ],
-      "history": [
-        {
-          "year": 2024,
-          "event": "128-unit, five-story luxury apartment complex opens on the former Praxair industrial site — phase one of a 12-acre master-planned redevelopment at Jefferson and Chouteau. Designed by HOK, built by IMPACT Strategies."
-        }
-      ],
-      "description": "128-unit luxury apartment complex with resort-style amenities on the former Praxair site. Studio, one-, and two-bedroom units with premium finishes, quartz countertops, and open-concept design.",
-      "tags": [
-        "parking",
-        "cocktails",
-        "fitness",
-        "apartments"
       ]
     },
     {
@@ -3690,7 +3624,7 @@
           "event": "RE/MAX Gold office opens at 1900 Park Avenue in Lafayette Square, growing into one of the top-producing RE/MAX franchises in the country."
         }
       ],
-      "description": "Real estate brokerage office on Park Avenue in the heart of Lafayette Square. Part of the Gold Nation network — the #1 RE/MAX franchise in the world — with multiple licensed agents serving the St. Louis metro area in residential and commercial real estate.",
+      "description": "Real estate brokerage office on Park Avenue in the heart of Lafayette Square. Part of the Gold Nation network \u2014 the #1 RE/MAX franchise in the world \u2014 with multiple licensed agents serving the St. Louis metro area in residential and commercial real estate.",
       "tags": [
         "real-estate"
       ]
@@ -3848,7 +3782,7 @@
         },
         {
           "year": 1989,
-          "event": "After two years of renovation, the mansion opens as the Lehmann House Bed & Breakfast — now the longest-running B&B in the St. Louis area."
+          "event": "After two years of renovation, the mansion opens as the Lehmann House Bed & Breakfast \u2014 now the longest-running B&B in the St. Louis area."
         }
       ],
       "description": "Historic 1893 Victorian mansion on Benton Place, St. Louis's oldest private street, operating as the city's longest-running bed and breakfast. Five individually appointed guest rooms with period antiques, private baths, and fireplaces.",
@@ -4031,7 +3965,7 @@
       "history": [
         {
           "year": 1973,
-          "event": "Bruce Gerrie founds the business as 'After the Paint' at 18th & Hickory in Lafayette Square — the first architectural salvage operation in St. Louis."
+          "event": "Bruce Gerrie founds the business as 'After the Paint' at 18th & Hickory in Lafayette Square \u2014 the first architectural salvage operation in St. Louis."
         },
         {
           "year": 1995,
@@ -4246,7 +4180,7 @@
       "history": [
         {
           "year": 2015,
-          "event": "The $24 million, 79,000 sq ft clinic opens June 15 — a partnership between A.T. Still University's Missouri School of Dentistry and Affinia Healthcare, training dental students while serving thousands of underserved St. Louis residents."
+          "event": "The $24 million, 79,000 sq ft clinic opens June 15 \u2014 a partnership between A.T. Still University's Missouri School of Dentistry and Affinia Healthcare, training dental students while serving thousands of underserved St. Louis residents."
         }
       ],
       "description": "A $24 million, 79,000 sq ft state-of-the-art dental clinic and teaching facility operated by Affinia Healthcare in partnership with A.T. Still University. The 92-chair clinic provides affordable general and specialty dental care to underserved communities while training the next generation of dentists.",
@@ -4260,7 +4194,7 @@
       "address": "1720 Chouteau Avenue",
       "phone": "(314) 887-7653",
       "category": "residential",
-      "subcategory": "apartments",
+      "subcategory": "lofts",
       "building_id": "bldg-1645",
       "hours": {},
       "photos": [],
@@ -4290,6 +4224,194 @@
         "parking",
         "pet-friendly",
         "apartments"
+      ]
+    },
+    {
+      "id": "lmk-100",
+      "name": "The Georgian",
+      "address": "1515 Lafayette Ave",
+      "category": "residential",
+      "subcategory": "lofts",
+      "building_id": "bldg-1700",
+      "description": "A 100+ unit luxury loft community in the former St. Louis City Hospital complex. Built in 1905 as a Georgian Revival hospital, the building was converted to residential lofts in the early 2000s. Its distinctive red brick facade, arched windows, and symmetrical massing make it one of the most recognizable structures on the southern edge of Lafayette Square.",
+      "amenities": [
+        "100+ residential units",
+        "Secured entry",
+        "On-site parking",
+        "Rooftop access",
+        "Historic brick and timber interiors"
+      ],
+      "history": [
+        {
+          "year": 1845,
+          "event": "City Hospital established on this site, one of the oldest public hospitals west of the Mississippi River."
+        },
+        {
+          "year": 1905,
+          "event": "Georgian Revival hospital building constructed as part of the expanding City Hospital campus. Red brick, arched windows, symmetrical facade."
+        },
+        {
+          "year": 1985,
+          "event": "City Hospital closes after 140 years of continuous operation. The campus buildings go dormant."
+        },
+        {
+          "year": 2005,
+          "event": "Building adaptively reused and converted to luxury loft apartments, preserving the original brick, timber, and architectural character."
+        },
+        {
+          "year": 2024,
+          "event": "The Georgian continues as one of the largest residential communities adjacent to Lafayette Square, with over 100 units."
+        }
+      ],
+      "tags": [
+        "lofts",
+        "historic",
+        "adaptive-reuse",
+        "residential"
+      ]
+    },
+    {
+      "id": "lmk-101",
+      "name": "Wireworks",
+      "building_id": "bldg-0891",
+      "address": "1814 McNulty St",
+      "category": "residential",
+      "subcategory": "lofts",
+      "description": "A large-scale loft conversion in a former wire manufacturing facility. The industrial character \u2014 heavy timber, exposed brick, oversized windows \u2014 is preserved throughout. One of the largest residential buildings in the Lafayette Square area.",
+      "amenities": [
+        "Loft-style units",
+        "Industrial character",
+        "Exposed brick and timber",
+        "On-site parking"
+      ],
+      "tags": [
+        "lofts",
+        "historic",
+        "adaptive-reuse",
+        "residential"
+      ]
+    },
+    {
+      "id": "lmk-102",
+      "name": "The Bordeaux",
+      "building_id": "bldg-0721",
+      "address": "1322 Dolman St",
+      "category": "residential",
+      "subcategory": "lofts",
+      "description": "A four-story residential building on the western edge of Lafayette Square. Named in the French tradition of the neighborhood, the Bordeaux offers modern apartment living within the historic district.",
+      "amenities": [
+        "Multi-story residential",
+        "Historic district location",
+        "On-site parking"
+      ],
+      "tags": [
+        "lofts",
+        "residential"
+      ]
+    },
+    {
+      "id": "lmk-103",
+      "name": "Rutger Lofts",
+      "building_id": "bldg-0507",
+      "address": "1917 Rutger St",
+      "category": "residential",
+      "subcategory": "lofts",
+      "description": "A loft conversion on Rutger Street in the southern portion of Lafayette Square. The building offers residential units in a converted commercial structure.",
+      "amenities": [
+        "Loft-style units",
+        "Converted commercial building"
+      ],
+      "tags": [
+        "lofts",
+        "adaptive-reuse",
+        "residential"
+      ]
+    },
+    {
+      "id": "lmk-104",
+      "name": "Malt House Lofts",
+      "building_id": "bldg-0085",
+      "address": "2009 Chouteau Ave",
+      "category": "residential",
+      "subcategory": "lofts",
+      "description": "A converted malt house on Chouteau Avenue at the northern boundary of Lafayette Square. The building's industrial heritage is reflected in its architecture and interior character.",
+      "amenities": [
+        "Industrial loft units",
+        "Historic malt house conversion",
+        "Chouteau Avenue frontage"
+      ],
+      "tags": [
+        "lofts",
+        "historic",
+        "adaptive-reuse",
+        "residential"
+      ]
+    },
+    {
+      "id": "lmk-105",
+      "name": "The Lofts at Lafayette Square",
+      "building_id": "bldg-0463",
+      "address": "1119 Mississippi Ave",
+      "category": "residential",
+      "subcategory": "lofts",
+      "description": "A five-story residential building on Mississippi Avenue, one of the taller structures in the neighborhood. Offers loft-style living in the heart of Lafayette Square's commercial corridor.",
+      "amenities": [
+        "Five-story building",
+        "Mississippi Avenue location",
+        "Loft-style units"
+      ],
+      "tags": [
+        "lofts",
+        "residential"
+      ]
+    },
+    {
+      "id": "lmk-106",
+      "name": "Abbey on the Park",
+      "building_id": "bldg-0944",
+      "address": "1505 Missouri Ave",
+      "category": "residential",
+      "subcategory": "lofts",
+      "description": "A three-story condominium directly facing Lafayette Park on Missouri Avenue. One of the few residential buildings with an unobstructed park view, in the heart of the historic district.",
+      "amenities": [
+        "Condominium units",
+        "Direct park frontage",
+        "Historic district location"
+      ],
+      "tags": [
+        "condos",
+        "residential"
+      ]
+    },
+    {
+      "id": "lmk-107",
+      "name": "M Lofts",
+      "building_id": "bldg-0073",
+      "address": "1111 Mississippi Ave",
+      "category": "residential",
+      "subcategory": "lofts",
+      "description": "A five-story loft building on Mississippi Avenue, originally constructed in 1898. One of the larger historic conversions in Lafayette Square, with the original brick and commercial-scale architecture preserved.",
+      "history": [
+        {
+          "year": 1898,
+          "event": "Building constructed during the height of Lafayette Square's commercial development on Mississippi Avenue."
+        },
+        {
+          "year": 2000,
+          "event": "Converted to residential loft apartments, preserving the original brick facade and commercial-scale interior volumes."
+        }
+      ],
+      "amenities": [
+        "Five-story historic building",
+        "1898 construction",
+        "Loft-style units",
+        "Mississippi Avenue location"
+      ],
+      "tags": [
+        "lofts",
+        "historic",
+        "adaptive-reuse",
+        "residential"
       ]
     }
   ]

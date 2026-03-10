@@ -179,6 +179,7 @@ const CATEGORIES = {
     },
     subcategories: {
       'historic-homes': { label: 'Historic Homes', emoji: '\ud83c\udfdb\ufe0f' },
+      lofts:            { label: 'Lofts & Apartments', emoji: '\ud83c\udfd9\ufe0f' },
       neighbors:        { label: 'Neighbors', emoji: '\ud83d\udc4b' },
     },
   },

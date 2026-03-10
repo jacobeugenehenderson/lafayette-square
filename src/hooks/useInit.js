@@ -3,6 +3,7 @@ import { getDeviceHash } from '../lib/device'
 import useListings from './useListings'
 import useHandle from './useHandle'
 import useEvents from './useEvents'
+import useResidence from './useResidence'
 import staticData from '../data/landmarks.json'
 
 let _ran = false
@@ -73,6 +74,12 @@ export async function runInit() {
     if (h.vignette) localStorage.setItem(VIGNETTE_KEY, h.vignette)
     else localStorage.removeItem(VIGNETTE_KEY)
     useHandle.setState({ handle: h.handle || null, avatar: h.avatar || null, vignette: h.vignette || null, loading: false })
+
+    // Hydrate residence store
+    const r = data.residence
+    if (r && r.building_id) {
+      useResidence.setState({ buildingId: r.building_id, status: r.status })
+    }
   } catch (err) {
     // Init failed — stores keep their static/localStorage fallbacks
     console.warn('[init] batch fetch failed, using fallbacks:', err?.message)
