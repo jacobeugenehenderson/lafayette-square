@@ -91,12 +91,15 @@ function CodeDeskModalInner() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [handleClose, confirmClose])
 
-  // Send type changes to iframe via postMessage
+  // Send type changes to iframe via postMessage (re-send businesses to ensure list survives form rebuild)
   useEffect(() => {
     const iframe = iframeRef.current
     if (!iframe) return
+    if (!isGuardianMode) {
+      iframe.contentWindow?.postMessage({ type: 'lsq-set-businesses', value: allPlaces }, '*')
+    }
     iframe.contentWindow?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
-  }, [qrType])
+  }, [qrType, isGuardianMode, allPlaces])
 
   // On iframe load: send places dataset (admin) or single listing (guardian)
   // Order matters: preview (instant) → businesses → listing → secret → type (type triggers design load, needs bizId first)

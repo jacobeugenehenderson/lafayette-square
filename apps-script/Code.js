@@ -1366,9 +1366,20 @@ function postClaimResidence(body) {
   }
 
   // Check if resident of a DIFFERENT building — admin can be resident of multiple buildings
+  // QR invite (auto_verify) auto-leaves the old residence so neighbors can move freely
   var existingElsewhere = rows.filter(function(r) { return r.device_hash === dh && r.building_id !== bid })[0]
   if (existingElsewhere && !isAdmin) {
-    return errorResponse('Already a resident of ' + existingElsewhere.building_id + '. Leave that residence first.', 'conflict')
+    if (body.auto_verify) {
+      // Auto-leave old residence for QR invite flow
+      var allData = sheet.getDataRange().getValues()
+      for (var i = allData.length - 1; i >= 1; i--) {
+        if (allData[i][0] === dh && allData[i][1] !== bid) {
+          sheet.deleteRow(i + 1)
+        }
+      }
+    } else {
+      return errorResponse('Already a resident of ' + existingElsewhere.building_id + '. Leave that residence first.', 'conflict')
+    }
   }
 
   // Auto-verify if: admin, QR invite, OR caller's handle is already a verified resident of this building on another device

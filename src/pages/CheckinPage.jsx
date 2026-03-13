@@ -191,7 +191,7 @@ export default function CheckinPage({ locationId }) {
           const res = await claimResidence(dh, resolvedBuildingId, true)
           const d = res?.data
           if (d?.error) {
-            setResult({ error: d.message || 'Could not verify residence' })
+            setResult({ error: d.error || 'Could not verify residence' })
           } else if (d?.status === 'verified') {
             useResidence.setState({
               buildingId: d.building_id || resolvedBuildingId,
