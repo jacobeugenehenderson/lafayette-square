@@ -648,24 +648,16 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
   const formattedHours = useMemo(() => formatHoursDisplay(hours), [hours])
 
   // Build contact items for inline/stacked layout
+  // Guardian sees editable placeholders; public only sees actual data
   const contactItems = []
-  if (address || isGuardian) {
-    contactItems.push(isGuardian
-      ? <EditableField key="addr" value={address} field="address" isGuardian placeholder="Add address..." />
-      : <span key="addr">{address ? `${address}, St. Louis, MO` : <em className="text-on-surface-disabled">Address unknown</em>}</span>
-    )
-  }
-  if (phone || isGuardian) {
-    contactItems.push(isGuardian
-      ? <EditableField key="phone" value={phone} field="phone" isGuardian placeholder="Add phone..." />
-      : phone ? <a key="phone" href={`tel:${phone}`} className="text-blue-400 hover:text-blue-300 transition-colors">{phone}</a> : null
-    )
-  }
-  if (website || isGuardian) {
-    contactItems.push(isGuardian
-      ? <EditableField key="web" value={website} field="website" isGuardian placeholder="Add website..." />
-      : website ? <a key="web" href={website} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">{website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a> : null
-    )
+  if (isGuardian) {
+    contactItems.push(<EditableField key="addr" value={address} field="address" isGuardian placeholder="Add address..." />)
+    contactItems.push(<EditableField key="phone" value={phone} field="phone" isGuardian placeholder="Add phone..." />)
+    contactItems.push(<EditableField key="web" value={website} field="website" isGuardian placeholder="Add website..." />)
+  } else {
+    if (address) contactItems.push(<span key="addr">{address}, St. Louis, MO</span>)
+    if (phone) contactItems.push(<a key="phone" href={`tel:${phone}`} className="text-blue-400 hover:text-blue-300 transition-colors">{phone}</a>)
+    if (website) contactItems.push(<a key="web" href={website} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">{website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>)
   }
   if (rentRange) {
     contactItems.push(<span key="rent">{rentRange}</span>)
@@ -712,7 +704,8 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
         </details>
       ) : null)}
 
-      <TagPicker listing={listing} isGuardian={isGuardian} />
+      {/* Tags: guardian/manager only */}
+      {isGuardian && <TagPicker listing={listing} isGuardian={isGuardian} />}
 
       {(listing?.description || isGuardian) && (
         <div className="mt-2">
@@ -724,9 +717,9 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
                 <p className="text-body-sm text-on-surface-disabled italic">Add description...</p>
               )}
             </EditableField>
-          ) : (
+          ) : listing?.description ? (
             <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -2101,6 +2094,71 @@ function LobbyTab({ buildingId }) {
   )
 }
 
+// ─── Residential About Tab (consolidated single-scroll) ──────────────
+function ResidentialAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
+  const hasHistory = !!(history?.length || description)
+  const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
+
+  // Build section list for anchor chips
+  const sections = [{ id: 'about-overview', label: 'Overview' }]
+  if (hasPhotos) sections.push({ id: 'about-photos', label: 'Photos' })
+  if (hasHistory) sections.push({ id: 'about-history', label: 'History' })
+  if (hasArchitecture) sections.push({ id: 'about-details', label: 'Details' })
+
+  const scrollTo = (id) => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Anchor chips */}
+      {sections.length > 1 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+          {sections.map(s => (
+            <button
+              key={s.id}
+              onClick={() => scrollTo(s.id)}
+              className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Overview */}
+      <div id="about-overview">
+        <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={true} />
+      </div>
+
+      {/* Photos */}
+      {hasPhotos && (
+        <div id="about-photos" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Photos</h3>
+          <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
+        </div>
+      )}
+
+      {/* History */}
+      {hasHistory && (
+        <div id="about-history" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">History</h3>
+          <HistoryTab history={history} description={description} />
+        </div>
+      )}
+
+      {/* Building Details */}
+      {hasArchitecture && (
+        <div id="about-details" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Building Details</h3>
+          <ArchitectureTab building={building} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ═════════════════════════════════════════════════════════════════════
 // Main PlaceCard
 // ═════════════════════════════════════════════════════════════════════
@@ -2439,43 +2497,19 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         <div className="p-4">
           {/* Residential: consolidated About tab */}
           {currentTab === 'about' && (
-            <div className="space-y-0">
-              {/* Description / Overview */}
-              <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} isResidential={isResidential} />
-
-              {/* History section */}
-              {(history?.length > 0 || description) && (
-                <>
-                  <div className="border-t border-outline-variant my-4" />
-                  <div className="mb-1">
-                    <span className="text-on-surface-disabled text-caption uppercase tracking-wider">History</span>
-                  </div>
-                  <HistoryTab history={history} description={null} />
-                </>
-              )}
-
-              {/* Architecture / Details section */}
-              {hasArchitecture && (
-                <>
-                  <div className="border-t border-outline-variant my-4" />
-                  <div className="mb-2">
-                    <span className="text-on-surface-disabled text-caption uppercase tracking-wider">Building Details</span>
-                  </div>
-                  <ArchitectureTab building={building} />
-                </>
-              )}
-
-              {/* Photos section */}
-              {(photos?.length > 0 || facadeImage || facadeInfo) && (
-                <>
-                  <div className="border-t border-outline-variant my-4" />
-                  <div className="mb-2">
-                    <span className="text-on-surface-disabled text-caption uppercase tracking-wider">Photos</span>
-                  </div>
-                  <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
-                </>
-              )}
-            </div>
+            <ResidentialAboutTab
+              listing={activeListing}
+              building={building}
+              isGuardian={isGuardian}
+              history={history}
+              description={description}
+              hasArchitecture={hasArchitecture}
+              photos={photos}
+              facadeImage={facadeImage}
+              facadeInfo={facadeInfo}
+              name={name}
+              listingId={listingId}
+            />
           )}
           {/* Non-residential listing tabs */}
           {currentTab === 'overview' && (
