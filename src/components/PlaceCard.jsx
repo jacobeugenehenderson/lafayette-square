@@ -2112,18 +2112,20 @@ function ResidentialAboutTab({ listing, building, isGuardian, history, descripti
 
   return (
     <div className="space-y-5">
-      {/* Anchor chips */}
+      {/* Anchor chips — sticky within scroll container */}
       {sections.length > 1 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-          {sections.map(s => (
-            <button
-              key={s.id}
-              onClick={() => scrollTo(s.id)}
-              className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
-            >
-              {s.label}
-            </button>
-          ))}
+        <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#141414] border-b border-outline-variant">
+          <div className="flex gap-1.5 overflow-x-auto">
+            {sections.map(s => (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
