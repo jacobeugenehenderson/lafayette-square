@@ -1,29 +1,55 @@
 # Publishing Lafayette Square
 
+## Quick reference
+
+| What changed | What to do |
+|---|---|
+| Frontend code only | `git push` — Actions deploys automatically |
+| Apps Script only | `cd apps-script && npx clasp push && npx clasp deploy -i <ID>` |
+| Both | Do both. Order doesn't matter. |
+| Worker only | Update in Cloudflare dashboard |
+| New env var needed in prod | Add to GitHub Secrets + `deploy.yml`, push to trigger rebuild |
+
+---
+
 ## 1. Frontend (GitHub Pages)
 
 Deploys automatically on every push to `main`.
 
-```
-git add -A && git commit -m "description" && git push
+```bash
+git add <files> && git commit -m "description" && git push
 ```
 
-The GitHub Actions workflow (`.github/workflows/deploy.yml`) builds with `base: '/'` and deploys `dist/` via `actions/deploy-pages@v4`.
+The GitHub Actions workflow (`.github/workflows/deploy.yml`) builds with Vite and deploys `dist/` via `actions/deploy-pages@v4`.
 
 The `public/CNAME` file tells GitHub Pages to serve at `lafayette-square.com`.
 
 To trigger a re-deploy without code changes:
-```
+```bash
 git commit --allow-empty -m "Trigger deploy" && git push
 ```
 
-### Secrets
+### Build-time environment (GitHub Secrets)
+
+These are injected during `npm run build` in the Actions workflow:
 
 | Secret | Purpose |
 |--------|---------|
-| `VITE_API_URL` | Apps Script deployment URL, baked in at build time |
+| `VITE_API_URL` | Apps Script deployment URL |
+| `VITE_SUPABASE_URL` | Supabase project URL (for Cary, when live) |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key (for Cary, when live) |
 
 Set in repo [Settings > Secrets > Actions](https://github.com/jacobeugenehenderson/lafayette-square/settings/secrets/actions).
+
+When adding a new secret, also add it to `.github/workflows/deploy.yml` under the `npm run build` step's `env:` block.
+
+### Production build test
+
+```bash
+npm run build && npm run preview
+```
+
+Preview serves at `localhost:4173/`.
 
 ## 2. Backend (Google Apps Script)
 
@@ -50,6 +76,32 @@ https://script.google.com/macros/s/AKfycbxv3JihCx0U7JfGqle6ZpsLamkRS5PAEGRn6_NaM
 
 This URL is stable across `clasp deploy` calls (same deployment ID = same URL). There are multiple old deployments in the project — always use the ID above.
 
+### What the backend handles
+
+- **Listings** — CRUD for places, photos, tags, hours
+- **Reviews & events** — per-listing, device-hash auth
+- **Check-ins** — townie QR scans, local status progression
+- **Guardian claims** — secret-based, one device per listing
+- **Residence** — claim + verify flow, lobby posts, resident counts
+- **QR designs** — styled QR image storage for QR Studio
+- **Handles** — per-device identity (avatar, display name)
+
+### Sheets
+
+The Apps Script reads/writes to a Google Sheets workbook. Key sheets:
+
+| Sheet | Purpose |
+|-------|---------|
+| Listings | All landmark/business data (synced from `landmarks.json` on init) |
+| Checkins | Device check-in log per location |
+| Reviews | Star ratings + text reviews |
+| Events | Community calendar events |
+| Guardians | Device → listing guardian mapping |
+| Residents | Device → building residence claims + verification status |
+| LobbyPosts | Per-building resident-only posts |
+| Handles | Device → handle/avatar mapping |
+| QRDesigns | Styled QR images per listing |
+
 ## 3. Cloudflare Worker (`worker.js`)
 
 Injects per-place OG meta tags for social link previews on `/place/*` routes.
@@ -69,15 +121,19 @@ Route: `lafayette-square.com/place/*` on the `lafayette-square.com` zone.
 
 GitHub repo Settings > Pages: custom domain `lafayette-square.com`, Enforce HTTPS on.
 
-## Keeping them in sync
+## 5. Supabase (Cary — not yet live)
 
-| What changed | What to do |
-|---|---|
-| Frontend code only | Push to `main` — Actions deploys automatically |
-| Apps Script only | `clasp push && clasp deploy -i <ID>` |
-| Both | Do both. Order doesn't matter. |
-| Worker only | Update in Cloudflare dashboard |
-| New Apps Script deployment (new URL) | 1. Deploy new script. 2. Update `VITE_API_URL` in GitHub Secrets. 3. Update `.env` locally. 4. Push to trigger frontend rebuild. |
+Project: `ngbvgjzrpnfrqmzkqvch` on supabase.co
+
+The Cary courier system uses Supabase for:
+- Phone OTP auth (couriers)
+- Realtime subscriptions (request/session updates)
+- Edge functions (dispatch, session completion)
+
+Currently behind "coming soon" placeholders in the UI. When ready to launch:
+1. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to GitHub Secrets
+2. Add them to `deploy.yml` env block
+3. Push to trigger rebuild
 
 ## Troubleshooting
 
@@ -87,5 +143,8 @@ Check Actions tab — the workflow might have failed. Common causes: `npm ci` fa
 **Site shows old version?**
 GitHub Pages CDN can cache for up to 10 minutes. Hard-refresh or check the Actions log to confirm the deploy completed.
 
-**Local build looks wrong?**
-Run `npm run build && npm run preview` to test the production build locally. Preview serves at `localhost:4173/`.
+**`clasp push` says "invalid_grant"?**
+Run `npx clasp login` to re-authenticate.
+
+**Local dev freezes or crashes?**
+Check if `VITE_SUPABASE_URL` points to a running instance. If Supabase isn't set up locally, remove the var from `.env` — the stub client will keep the app functional.

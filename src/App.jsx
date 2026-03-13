@@ -21,6 +21,7 @@ import ClaimPage from './pages/ClaimPage'
 import LinkPage from './pages/LinkPage'
 import QRCode from 'qrcode'
 import { createLinkToken, checkLinkToken } from './lib/api'
+import CourierDashboard from './components/CourierDashboard'
 
 function LiveButton() {
   const isLive = useTimeOfDay((s) => s.isLive)
@@ -494,6 +495,7 @@ function App() {
       {!isGround && <CodeDeskModal />}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}
       {!isGround && <InfoModal />}
+      <CourierDashboard />
       <Splash />
     </div>
   )

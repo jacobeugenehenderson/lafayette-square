@@ -1,0 +1,26 @@
+[project]
+id = ""  # Set after creating Supabase project
+name = "cary"
+
+[api]
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+
+[realtime]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "https://lafayette-square.com"
+
+[auth.sms]
+enabled = true  # Phone verification for profiles
+
+[auth.external.apple]
+enabled = false  # Enable when ready
+
+[auth.external.google]
+enabled = false  # Enable when ready

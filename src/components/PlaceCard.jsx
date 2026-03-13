@@ -12,7 +12,6 @@ import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
 import useEvents from '../hooks/useEvents'
 import AvatarCircle from './AvatarCircle'
-
 import QRCode from 'qrcode'
 import { useCodeDesk } from './CodeDeskModal'
 import facadeMapping from '../data/facade_mapping.json'
@@ -635,7 +634,7 @@ function DetailRow({ label, children }) {
 }
 
 // ─── Tab: Overview ───────────────────────────────────────────────────
-function OverviewTab({ listing, building, isGuardian }) {
+function OverviewTab({ listing, building, isGuardian, isResidential }) {
   const address = listing?.address || building?.address || null
   const phone = listing?.phone || null
   const website = listing?.website || null
@@ -686,7 +685,7 @@ function OverviewTab({ listing, building, isGuardian }) {
         </div>
       )}
 
-      {isGuardian ? (
+      {!isResidential && (isGuardian ? (
         <HoursEditor hours={hours} listingId={listingId} />
       ) : formattedHours ? (
         <details className="group mt-1">
@@ -710,7 +709,7 @@ function OverviewTab({ listing, building, isGuardian }) {
             ))}
           </div>
         </details>
-      ) : null}
+      ) : null)}
 
       <TagPicker listing={listing} isGuardian={isGuardian} />
 
@@ -730,8 +729,8 @@ function OverviewTab({ listing, building, isGuardian }) {
         </div>
       )}
 
-      {/* Action links: reservations, menu */}
-      {(listing?.reservation_url || listing?.menu_url || isGuardian) && (
+      {/* Action links: reservations, menu (not shown for residential) */}
+      {!isResidential && (listing?.reservation_url || listing?.menu_url || isGuardian) && (
         <div className="flex flex-wrap gap-2 mt-1">
           {isGuardian ? (
             <>
@@ -774,6 +773,16 @@ function OverviewTab({ listing, building, isGuardian }) {
           )}
         </div>
       )}
+
+      {/* Cary action */}
+      <div className="mt-3">
+        <CaryButton
+          placeName={listing?.name || building?.name || 'Unknown'}
+          placeId={building?.id || listing?.id}
+          buildingPosition={building?.position}
+          isResidential={isResidential}
+        />
+      </div>
     </div>
   )
 }
@@ -1234,40 +1243,6 @@ function PropertyTab({ building }) {
   )
 }
 
-// ─── Tab: Assessment (bare buildings only) ───────────────────────────
-function AssessmentTab({ building }) {
-  if (!building) return null
-
-  return (
-    <div className="space-y-1.5">
-      {building.assessed_value && (
-        <DetailRow label="Assessed Value">${building.assessed_value.toLocaleString()}</DetailRow>
-      )}
-      {building.building_sqft && (
-        <DetailRow label="Building Area">{building.building_sqft.toLocaleString()} sq ft</DetailRow>
-      )}
-      {building.lot_acres && (
-        <DetailRow label="Lot Size">{building.lot_acres} acres</DetailRow>
-      )}
-      {building.zoning && (
-        <DetailRow label="Zoning">{building.zoning}{ZONING_LABELS[building.zoning] ? ` \u2013 ${ZONING_LABELS[building.zoning]}` : ''}</DetailRow>
-      )}
-      {building.size && (
-        <>
-          <DetailRow label="Footprint">{building.size[0].toFixed(0)} x {building.size[2].toFixed(0)}m</DetailRow>
-          <DetailRow label="Height">{building.size[1].toFixed(0)}m</DetailRow>
-        </>
-      )}
-      {building.units && (
-        <DetailRow label="Units">{building.units}</DetailRow>
-      )}
-      {building.rent_range && (
-        <DetailRow label="Rent Range">{building.rent_range}</DetailRow>
-      )}
-    </div>
-  )
-}
-
 // ─── Tab: Photos ─────────────────────────────────────────────────────
 // Photo entries can be strings ("/photos/foo.jpg") or objects ({ url, credit, credit_url })
 function normalizePhoto(entry) {
@@ -1300,7 +1275,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
   const hasFacade = !!facadeInfo?.photo
   // Build combined list for lightbox navigation (includes facade at end)
   const lightboxEntries = [...allPhotos, ...(hasFacade ? [{ url: facadeInfo.photo, credit: 'w_lemay / Wikimedia Commons', credit_url: null }] : [])]
-  const hasAny = lightboxEntries.length > 0
+  const hasAny = lightboxEntries.length > 0 || hasFacade
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -1388,78 +1363,49 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
     return () => window.removeEventListener('keydown', handleKey)
   }, [lightbox])
 
-  const hero = allPhotos[0]
-  const grid = allPhotos.slice(1)
+  // Merge facade into the gallery grid (at the end)
+  const gridPhotos = [...allPhotos, ...(hasFacade ? [{ url: facadeInfo.photo, credit: 'w_lemay / Wikimedia Commons', credit_url: null, _isFacade: true }] : [])]
+  const VISIBLE_LIMIT = 6
 
   return (
-    <div className="space-y-2">
-      {/* Hero photo */}
-      {hero && (
-        <div className="relative group">
-          <button onClick={() => openLightbox(0)} className="w-full block relative rounded-lg overflow-hidden">
-            <img src={assetUrl(hero.url)} alt={`${name} 1`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-            {lightboxEntries.length > 1 && (
-              <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-surface-dim text-on-surface-medium text-body-sm backdrop-blur-sm">
-                1 / {lightboxEntries.length}
-              </span>
-            )}
-          </button>
-          {isGuardian && (
-            <button
-              onClick={() => handleRemove(hero.url)}
-              disabled={removing === hero.url}
-              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-surface-dim text-on-surface-variant hover:bg-red-500/80 hover:text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-              title="Remove photo"
-            >
-              {removing === hero.url ? (
-                <div className="w-3 h-3 border border-on-surface-disabled border-t-on-surface rounded-full animate-spin" />
-              ) : (
-                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
-              )}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Grid of remaining photos */}
-      {grid.length > 0 && (
-        <div className="grid grid-cols-2 gap-1.5">
-          {grid.map((photo, i) => (
-            <div key={i} className="relative group">
-              <button onClick={() => openLightbox(i + 1)} className="w-full relative rounded-lg overflow-hidden">
-                <img src={assetUrl(photo.url)} alt={`${name} ${i + 2}`} className="w-full aspect-square object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-              </button>
-              {isGuardian && (
-                <button
-                  onClick={() => handleRemove(photo.url)}
-                  disabled={removing === photo.url}
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-surface-dim text-on-surface-variant hover:bg-red-500/80 hover:text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  title="Remove photo"
-                >
-                  {removing === photo.url ? (
-                    <div className="w-3 h-3 border border-on-surface-disabled border-t-on-surface rounded-full animate-spin" />
-                  ) : (
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
+    <div className="space-y-3">
+      {/* Gallery grid — 3 columns, restrained thumbnails */}
+      {gridPhotos.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {gridPhotos.slice(0, VISIBLE_LIMIT).map((photo, i) => {
+            const isLast = i === VISIBLE_LIMIT - 1 && gridPhotos.length > VISIBLE_LIMIT
+            const overflow = gridPhotos.length - VISIBLE_LIMIT
+            return (
+              <div key={i} className="relative group">
+                <button onClick={() => openLightbox(i)} className="w-full relative rounded-lg overflow-hidden">
+                  <img src={assetUrl(photo.url)} alt={`${name} ${i + 1}`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                  {isLast && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <span className="text-on-surface text-body font-medium">+{overflow}</span>
+                    </div>
                   )}
                 </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Facade photo */}
-      {hasFacade && (
-        <div>
-          <button onClick={() => openLightbox(allPhotos.length)} className="w-full block relative group rounded-lg overflow-hidden">
-            <img src={assetUrl(facadeInfo.photo)} alt={`${name} facade`} className="w-full aspect-[4/3] object-cover" loading="lazy" />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-          </button>
-          {facadeInfo.description && (
-            <p className="text-on-surface-subtle text-body-sm mt-1.5 leading-relaxed">{facadeInfo.description}</p>
-          )}
+                {photo.credit && (
+                  <p className="text-caption text-on-surface-disabled mt-0.5 truncate" title={photo.credit}>{photo.credit}</p>
+                )}
+                {isGuardian && !photo._isFacade && (
+                  <button
+                    onClick={() => handleRemove(photo.url)}
+                    disabled={removing === photo.url}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-surface-dim text-on-surface-variant hover:bg-red-500/80 hover:text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    title="Remove photo"
+                  >
+                    {removing === photo.url ? (
+                      <div className="w-3 h-3 border border-on-surface-disabled border-t-on-surface rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    )}
+                  </button>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -1742,8 +1688,38 @@ function EventsTab({ listingId, isGuardian }) {
   )
 }
 
+// ─── Cary Action Button (inline in PlaceCard) ────────────────────
+function CaryButton({ placeName, placeId, buildingPosition, isResidential }) {
+  const [tapped, setTapped] = useState(false)
+  const label = isResidential ? 'Pick me up here' : `Deliver from ${placeName}`
+  const comingSoon = isResidential ? 'Rides coming soon' : 'Delivery coming soon'
+
+  if (tapped) {
+    return (
+      <div className="w-full py-2.5 rounded-xl border border-outline-variant bg-surface-container text-on-surface-disabled text-body-sm font-medium flex items-center justify-center gap-2">
+        {comingSoon}
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => setTapped(true)}
+      className="w-full py-2.5 rounded-xl border border-outline-variant bg-surface-container text-on-surface-variant text-body-sm font-medium hover:border-on-surface-subtle hover:text-on-surface transition-colors flex items-center justify-center gap-2"
+    >
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        {isResidential
+          ? <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0H21a.75.75 0 00.75-.75V11.25L18 6H5.25A2.25 2.25 0 003 8.25v6" />
+          : <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+        }
+      </svg>
+      {label}
+    </button>
+  )
+}
+
 // ─── Tab: QR Codes (guardian / admin) ─────────────────────────────
-function QrTab({ listingId, listingName, isAdmin }) {
+function QrTab({ listingId, listingName, isAdmin, isResidential }) {
   const [townieQr, setTownieQr] = useState(null)
   const [guardianQr, setGuardianQr] = useState(null)
   const [townieUrl, setTownieUrl] = useState('')
@@ -1843,10 +1819,10 @@ function QrTab({ listingId, listingName, isAdmin }) {
 
   return (
     <div className="space-y-4">
-      {/* Townie QR */}
+      {/* Townie / Resident QR */}
       <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
-        <div className="text-body font-medium text-on-surface mb-0.5">Townie</div>
-        <div className="text-caption text-on-surface-subtle mb-3">For customers to check in</div>
+        <div className="text-body font-medium text-on-surface mb-0.5">{isResidential ? 'Resident' : 'Townie'}</div>
+        <div className="text-caption text-on-surface-subtle mb-3">{isResidential ? 'Show to a neighbor to invite them' : 'For customers to check in'}</div>
         {townieQr && (
           <div className="flex justify-center mb-3">
             <img src={townieQr} alt="Townie QR" className={`w-48 rounded-lg transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`} />
@@ -1881,56 +1857,78 @@ function QrTab({ listingId, listingName, isAdmin }) {
         </div>
       </div>
 
-      {/* Guardian QR — hidden behind reveal toggle */}
-      {(loading || (styledLoading && !guardianQr)) ? (
-        <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
-          <div className="text-body font-medium text-on-surface mb-0.5">Guardian</div>
-          <div className="text-caption text-on-surface-subtle mb-3">To onboard a new guardian</div>
-          <div className="text-center py-6 text-on-surface-disabled text-body-sm">Loading...</div>
-        </div>
-      ) : guardianQr && (
-        <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
-          <button
-            onClick={() => setGuardianRevealed(r => !r)}
-            className="w-full flex items-center justify-between"
-          >
-            <div className="text-left">
-              <div className="text-sm font-medium text-on-surface mb-0.5 flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 text-amber-400/70" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-                </svg>
-                Guardian
+      {/* Guardian QR — hidden behind reveal toggle (non-residential only) */}
+      {!isResidential && (
+        (loading || (styledLoading && !guardianQr)) ? (
+          <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
+            <div className="text-body font-medium text-on-surface mb-0.5">Guardian</div>
+            <div className="text-caption text-on-surface-subtle mb-3">To onboard a new guardian</div>
+            <div className="text-center py-6 text-on-surface-disabled text-body-sm">Loading...</div>
+          </div>
+        ) : guardianQr && (
+          <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
+            <button
+              onClick={() => setGuardianRevealed(r => !r)}
+              className="w-full flex items-center justify-between"
+            >
+              <div className="text-left">
+                <div className="text-sm font-medium text-on-surface mb-0.5 flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 text-amber-400/70" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+                  </svg>
+                  Guardian
+                </div>
+                <div className="text-caption text-on-surface-subtle">Scan only — do not share digitally</div>
               </div>
-              <div className="text-caption text-on-surface-subtle">Scan only — do not share digitally</div>
-            </div>
-            <svg className={`w-4 h-4 text-on-surface-subtle transition-transform ${guardianRevealed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              <svg className={`w-4 h-4 text-on-surface-subtle transition-transform ${guardianRevealed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+            {guardianRevealed && (
+              <div className="mt-3 flex justify-center" onContextMenu={e => e.preventDefault()}>
+                <img
+                  src={guardianQr}
+                  alt="Guardian QR"
+                  className={`w-48 rounded-lg pointer-events-none select-none transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`}
+                  draggable={false}
+                  style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                />
+              </div>
+            )}
+          </div>
+        )
+      )}
+
+      {/* Residential: how-it-works note */}
+      {isResidential && (
+        <div className="rounded-lg bg-surface-container border border-outline-variant p-4 space-y-2">
+          <div className="text-body-sm font-medium text-on-surface flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-[#7A8B6F]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-          </button>
-          {guardianRevealed && (
-            <div className="mt-3 flex justify-center" onContextMenu={e => e.preventDefault()}>
-              <img
-                src={guardianQr}
-                alt="Guardian QR"
-                className={`w-48 rounded-lg pointer-events-none select-none transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`}
-                draggable={false}
-                style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
-              />
-            </div>
-          )}
+            How it works
+          </div>
+          <ol className="text-caption text-on-surface-subtle space-y-1 list-decimal list-inside">
+            <li>Show this QR to a neighbor in person</li>
+            <li>They scan it and they're verified instantly</li>
+            <li>They can then invite their own neighbors</li>
+          </ol>
+          <p className="text-caption text-on-surface-disabled">No management, no apps — just word of mouth.</p>
         </div>
       )}
 
       {/* Design button */}
-      <button
-        onClick={openQrStudio}
-        className="w-full py-2.5 px-4 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-        </svg>
-        Design in QR Studio
-      </button>
+      {!isResidential && (
+        <button
+          onClick={openQrStudio}
+          className="w-full py-2.5 px-4 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+          </svg>
+          Design in QR Studio
+        </button>
+      )}
     </div>
   )
 }
@@ -2066,7 +2064,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const photos = activeListing?.photos || null
   const facadeImage = building?.facade_image || null
   const facadeInfo = building?.id ? getFacadeInfo(building.id) : null
-  const heroPhoto = photos?.[0] || facadeImage?.thumb_1024 || facadeInfo?.photo || null
+  const rawHero = photos?.[0]
+  const heroPhoto = (rawHero ? (typeof rawHero === 'string' ? rawHero : rawHero.url) : null) || facadeImage?.thumb_1024 || facadeInfo?.photo || null
   const history = activeListing?.history || null
   const description = activeListing?.description || null
   const hasListingInfo = !!activeListing
@@ -2081,7 +2080,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const yearBuilt = building?.year_built || arch.year_built
   const styleName = arch.style || building?.style
   const hasPropertyData = !!(yearBuilt || styleName || arch.materials || arch.nps_context || arch.architect)
-  const hasAssessment = !!(building?.assessed_value || building?.building_sqft || building?.lot_acres || building?.zoning)
+
 
   // Build dynamic tabs based on available data
   const hasHistory = !!(history?.length || description)
@@ -2102,9 +2101,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
       if (isResidentHere) t.push({ id: 'lobby', label: 'Lobby' })
       if (hasHistory) t.push({ id: 'history', label: 'History' })
       if (hasArchitecture) t.push({ id: 'architecture', label: 'Details' })
-      if (hasAssessment) t.push({ id: 'assessment', label: 'Assessment' })
       t.push({ id: 'photos', label: 'Photos' })
       if (!isResidential && (isGuardian || isAdmin)) t.push({ id: 'qr', label: 'QR' })
+      if (isResidential && (isResidentHere || isAdmin)) t.push({ id: 'qr', label: 'QR' })
       return t
     }
     // ── Property card path: bare buildings ──
@@ -2112,9 +2111,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
     if (hasPropertyData) t.push({ id: 'property', label: 'Property' })
     if (hasHistory) t.push({ id: 'history', label: 'History' })
     t.push({ id: 'photos', label: 'Photos' })
-    if (hasAssessment) t.push({ id: 'assessment', label: 'Assessment' })
     return t
-  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, hasAssessment, isGuardian, isAdmin, isResidential, isResidentHere])
+  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, isGuardian, isAdmin, isResidential, isResidentHere])
 
   // Default tab: first available
   const defaultTab = tabs[0]?.id || 'photos'
@@ -2354,7 +2352,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         <div className="p-4">
           {/* Listing tabs (unchanged) */}
           {currentTab === 'overview' && (
-            <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} />
+            <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} isResidential={isResidential} />
           )}
           {currentTab === 'reviews' && <ReviewsTab listingId={listingId} isGuardian={isGuardian} />}
           {currentTab === 'events' && <EventsTab listingId={listingId} isGuardian={isGuardian} />}
@@ -2363,10 +2361,21 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
           {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />}
-          {currentTab === 'qr' && <QrTab listingId={listingId} listingName={name} isAdmin={isAdmin} />}
+          {currentTab === 'qr' && <QrTab listingId={listingId} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />}
           {/* Property card tabs */}
-          {currentTab === 'property' && <PropertyTab building={building} />}
-          {currentTab === 'assessment' && <AssessmentTab building={building} />}
+          {currentTab === 'property' && (
+            <>
+              <PropertyTab building={building} />
+              <div className="mt-3">
+                <CaryButton
+                  placeName={name}
+                  placeId={building?.id}
+                  buildingPosition={building?.position}
+                  isResidential={true}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 

@@ -14,12 +14,16 @@
     "@react-three/drei": "^9.92.0",
     "@react-three/fiber": "^8.15.0",
     "@react-three/postprocessing": "^2.15.0",
+    "@supabase/supabase-js": "^2.99.1",
     "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "suncalc": "^1.9.0",
     "three": "^0.160.0",
     "zustand": "^4.4.0"
+  },
+  "overrides": {
+    "three": "$three"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

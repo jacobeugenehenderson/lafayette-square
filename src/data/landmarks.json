@@ -4192,23 +4192,32 @@
       "id": "lmk-084",
       "name": "Eden Lofts",
       "address": "1720 Chouteau Avenue",
-      "phone": "(314) 887-7653",
+      "phone": "+1-314-887-7653",
       "category": "residential",
       "subcategory": "lofts",
       "building_id": "bldg-1645",
       "hours": {},
       "photos": [],
       "amenities": [
-        "12-foot ceilings and exposed brick walls",
-        "In-unit washer and dryer",
-        "Secure gated entry and parking",
-        "Pet-friendly (cats and dogs)",
-        "Gateway Arch views from upper units"
+        "40 loft condominiums",
+        "12-foot ceilings",
+        "Exposed brick walls",
+        "In-unit washer/dryer",
+        "Secure gated entry",
+        "Assigned parking spaces",
+        "Elevator access",
+        "Pet friendly",
+        "Gateway Arch & St. Louis Wheel views",
+        "Walking distance to Union Station"
       ],
       "history": [
         {
           "year": 1896,
-          "event": "Built for the Eden Publishing Company, a major German-language religious publisher. The adjacent five-story Art Deco wing designed by Hoener, Boehm & Froese was added in 1929."
+          "event": "Built for the Eden Publishing Company, a major German-language religious publisher. Damaged within weeks of completion by the Great Cyclone of 1896."
+        },
+        {
+          "year": 1929,
+          "event": "Adjacent five-story Art Deco wing added, designed by Hoener, Boehm & Froese. Eden Publishing operated continuously until 1978."
         },
         {
           "year": 1986,
@@ -4219,27 +4228,37 @@
           "event": "Converted into 40 residential loft condominiums with open floor plans, 12-foot ceilings, and preserved industrial character."
         }
       ],
-      "description": "40-unit loft condominium building in the converted 1896 Eden Publishing Company headquarters, a National Register-listed Art Deco landmark on Chouteau Avenue. Features 12-foot ceilings, exposed brick, secure gated parking, and Gateway Arch views.",
+      "description": "40-unit loft condominium building in the converted 1896 Eden Publishing Company headquarters, a National Register-listed Art Deco landmark on Chouteau Avenue. Damaged by the Great Cyclone of 1896 just weeks after completion. Features 12-foot ceilings, exposed brick, secure gated parking, elevator, and Gateway Arch views from upper units.",
       "tags": [
+        "lofts",
+        "historic",
+        "adaptive-reuse",
         "parking",
         "pet-friendly",
-        "apartments"
+        "residential"
       ]
     },
     {
       "id": "lmk-100",
       "name": "The Georgian",
       "address": "1515 Lafayette Ave",
+      "phone": "+1-314-924-9502",
+      "website": "https://www.thegeorgianstl.com",
       "category": "residential",
       "subcategory": "lofts",
       "building_id": "bldg-1700",
-      "description": "A 100+ unit luxury loft community in the former St. Louis City Hospital complex. Built in 1905 as a Georgian Revival hospital, the building was converted to residential lofts in the early 2000s. Its distinctive red brick facade, arched windows, and symmetrical massing make it one of the most recognizable structures on the southern edge of Lafayette Square.",
+      "description": "A 104-unit luxury loft community in the former St. Louis City Hospital complex, one of the oldest public hospitals west of the Mississippi (est. 1845). The Georgian Revival building was designed by Albert Groves of Grable, Weber & Groves and rebuilt after the 1896 tornado. Converted to condominiums in 2004-2005 by Gilded Age Development, preserving the original red brick, arched windows, and symmetrical massing.",
       "amenities": [
-        "100+ residential units",
-        "Secured entry",
-        "On-site parking",
-        "Rooftop access",
-        "Historic brick and timber interiors"
+        "104 condominium units (1BR & 2BR)",
+        "24/7 fitness center",
+        "Second-floor resident lounge",
+        "Gated entrance & free parking",
+        "Pet spa",
+        "Bike racks",
+        "In-unit washer/dryer",
+        "Granite countertops",
+        "European cabinetry",
+        "Historic brick & timber interiors"
       ],
       "history": [
         {
@@ -4247,47 +4266,66 @@
           "event": "City Hospital established on this site, one of the oldest public hospitals west of the Mississippi River."
         },
         {
-          "year": 1905,
-          "event": "Georgian Revival hospital building constructed as part of the expanding City Hospital campus. Red brick, arched windows, symmetrical facade."
+          "year": 1896,
+          "event": "Hospital severely damaged by the Great Cyclone of 1896. Rebuilt in Georgian Revival style by architect Albert Groves (Grable, Weber & Groves), completed 1907-1912."
         },
         {
           "year": 1985,
           "event": "City Hospital closes after 140 years of continuous operation. The campus buildings go dormant."
         },
         {
-          "year": 2005,
-          "event": "Building adaptively reused and converted to luxury loft apartments, preserving the original brick, timber, and architectural character."
+          "year": 2001,
+          "event": "Placed on the National Register of Historic Places."
         },
         {
-          "year": 2024,
-          "event": "The Georgian continues as one of the largest residential communities adjacent to Lafayette Square, with over 100 units."
+          "year": 2005,
+          "event": "Converted to 104 luxury condominiums by Gilded Age Development, preserving the original brick, timber, and Georgian Revival architectural character."
         }
       ],
       "tags": [
         "lofts",
         "historic",
         "adaptive-reuse",
+        "parking",
+        "pet-friendly",
         "residential"
       ]
     },
     {
       "id": "lmk-101",
-      "name": "Wireworks",
+      "name": "Wireworks Lofts",
       "building_id": "bldg-0891",
-      "address": "1814 McNulty St",
+      "address": "1435 S 18th St",
+      "phone": "+1-314-897-4964",
+      "website": "https://www.wireworksstl.com",
       "category": "residential",
       "subcategory": "lofts",
-      "description": "A large-scale loft conversion in a former wire manufacturing facility. The industrial character \u2014 heavy timber, exposed brick, oversized windows \u2014 is preserved throughout. One of the largest residential buildings in the Lafayette Square area.",
+      "description": "A large-scale loft conversion in the former Western Wire Products factory buildings near Lafayette Square. Approximately 80 loft apartments across studio, one-, and two-bedroom layouts ranging from 1,028 to 1,493 sq ft. The industrial character — heavy timber, exposed brick, oversized windows — is preserved throughout.",
       "amenities": [
-        "Loft-style units",
-        "Industrial character",
-        "Exposed brick and timber",
-        "On-site parking"
+        "~80 loft apartments (studio–2BR)",
+        "1,028–1,493 sq ft layouts",
+        "Exposed brick & timber",
+        "Oversized industrial windows",
+        "Pet friendly",
+        "On-site parking",
+        "8,000 sq ft retail/office space"
+      ],
+      "history": [
+        {
+          "year": 1900,
+          "event": "Western Wire Products factory buildings constructed during the industrial expansion along Lafayette Square's northern edge."
+        },
+        {
+          "year": 2004,
+          "event": "Factory complex converted to market-rate loft apartments, preserving the industrial character while adding modern amenities."
+        }
       ],
       "tags": [
         "lofts",
         "historic",
         "adaptive-reuse",
+        "pet-friendly",
+        "parking",
         "residential"
       ]
     },
@@ -4296,17 +4334,55 @@
       "name": "The Bordeaux",
       "building_id": "bldg-0721",
       "address": "1322 Dolman St",
+      "phone": "+1-314-449-4058",
+      "website": "https://www.luxlivingstl.com/the-bordeaux",
       "category": "residential",
       "subcategory": "lofts",
-      "description": "A four-story residential building on the western edge of Lafayette Square. Named in the French tradition of the neighborhood, the Bordeaux offers modern apartment living within the historic district.",
+      "description": "A $10 million adaptive reuse of a 1910 industrial building into 51 loft apartments by LuxLiving. Original heavy timber beams, 16-foot ceilings, and exposed brick walls meet modern finishes — quartz countertops, waterfall kitchen islands, and industrial-scale windows. Steps from Lafayette Park on the neighborhood's western edge.",
+      "photos": [
+        { "url": "/photos/bordeaux/07.jpg", "credit": "LuxLiving", "credit_url": "https://bordeaux-stl.com" },
+        { "url": "/photos/bordeaux/08.jpg", "credit": "LuxLiving", "credit_url": "https://bordeaux-stl.com" },
+        { "url": "/photos/bordeaux/09.jpg", "credit": "LuxLiving", "credit_url": "https://bordeaux-stl.com" },
+        { "url": "/photos/bordeaux/10.jpg", "credit": "LuxLiving", "credit_url": "https://bordeaux-stl.com" },
+        { "url": "/photos/bordeaux/14.jpg", "credit": "LuxLiving", "credit_url": "https://bordeaux-stl.com" },
+        { "url": "/photos/bordeaux/11.jpg", "credit": "LuxLiving", "credit_url": "https://bordeaux-stl.com" },
+        "/photos/bordeaux/01.jpg",
+        "/photos/bordeaux/03.jpeg",
+        "/photos/bordeaux/04.jpeg",
+        "/photos/bordeaux/05.jpeg",
+        "/photos/bordeaux/06.jpeg"
+      ],
       "amenities": [
-        "Multi-story residential",
-        "Historic district location",
-        "On-site parking"
+        "51 loft units (studio\u20132BR)",
+        "16-foot ceilings",
+        "Exposed brick & timber beams",
+        "Quartz countertops",
+        "In-unit washer/dryer",
+        "Central air & heat",
+        "On-site parking",
+        "Package lockers",
+        "Pet friendly",
+        "Historic district location"
+      ],
+      "history": [
+        {
+          "year": 1910,
+          "event": "Built as an industrial/commercial building during Lafayette Square's early 20th-century growth period. Heavy timber post-and-beam construction with U-shaped plan."
+        },
+        {
+          "year": 2018,
+          "event": "LuxLiving and Big Sur Construction begin a $10 million adaptive reuse, converting the vacant industrial building into 51 loft apartments while preserving the original structure."
+        },
+        {
+          "year": 2019,
+          "event": "The Bordeaux opens, named in the French tradition of Lafayette Square. First residents move in."
+        }
       ],
       "tags": [
         "lofts",
-        "residential"
+        "residential",
+        "pet-friendly",
+        "historic"
       ]
     },
     {
@@ -4314,16 +4390,35 @@
       "name": "Rutger Lofts",
       "building_id": "bldg-0507",
       "address": "1917 Rutger St",
+      "phone": "+1-314-707-9975",
       "category": "residential",
       "subcategory": "lofts",
-      "description": "A loft conversion on Rutger Street in the southern portion of Lafayette Square. The building offers residential units in a converted commercial structure.",
+      "description": "A 30-unit loft conversion in a 1912 commercial building on Rutger Street in the southern portion of Lafayette Square. One- and two-bedroom layouts from 800 to 1,000 sq ft with a pool, fitness center, and basketball court.",
       "amenities": [
-        "Loft-style units",
-        "Converted commercial building"
+        "30 loft units (1BR & 2BR)",
+        "800–1,000 sq ft layouts",
+        "Swimming pool",
+        "Fitness center",
+        "Basketball court",
+        "In-unit washer/dryer",
+        "Pet friendly",
+        "On-site parking"
+      ],
+      "history": [
+        {
+          "year": 1912,
+          "event": "Two-story commercial building constructed on Rutger Street during Lafayette Square's early 20th-century development."
+        },
+        {
+          "year": 2005,
+          "event": "Building converted to 30 residential loft apartments with preserved commercial-scale interiors and added modern amenities."
+        }
       ],
       "tags": [
         "lofts",
         "adaptive-reuse",
+        "pet-friendly",
+        "parking",
         "residential"
       ]
     },
@@ -4331,14 +4426,35 @@
       "id": "lmk-104",
       "name": "Malt House Lofts",
       "building_id": "bldg-0085",
-      "address": "2009 Chouteau Ave",
+      "address": "2017 Chouteau Ave",
       "category": "residential",
       "subcategory": "lofts",
-      "description": "A converted malt house on Chouteau Avenue at the northern boundary of Lafayette Square. The building's industrial heritage is reflected in its architecture and interior character.",
+      "description": "A 46,000 sq ft 1870s-era Centennial Malt House undergoing a $2M renovation into 17 loft apartments with ground-floor restaurant and event spaces. Previously home to Vin de Set and PW Pizza. Purchased in 2024 by BOTI Architecture for adaptive reuse.",
       "amenities": [
-        "Industrial loft units",
-        "Historic malt house conversion",
+        "17 loft apartments (planned)",
+        "46,000 sq ft historic building",
+        "Ground-floor restaurant (Extra Wavy)",
+        "Seven event venues",
+        "1870s industrial architecture",
         "Chouteau Avenue frontage"
+      ],
+      "history": [
+        {
+          "year": 1870,
+          "event": "Centennial Malt House constructed during the height of St. Louis's brewing industry, processing malt for the city's numerous breweries."
+        },
+        {
+          "year": 2003,
+          "event": "Building reimagined as a dining and events destination, home to Vin de Set, PW Pizza, 21st Street Brewer's Bar, and Moulin event space."
+        },
+        {
+          "year": 2022,
+          "event": "Fire forces closure of the restaurant and event operations."
+        },
+        {
+          "year": 2024,
+          "event": "Purchased by Malt House Lofts LLC (BOTI Architecture) for $2.2M. $2M renovation underway to add 17 loft apartments while preserving the historic structure."
+        }
       ],
       "tags": [
         "lofts",
@@ -4352,16 +4468,39 @@
       "name": "The Lofts at Lafayette Square",
       "building_id": "bldg-0463",
       "address": "1119 Mississippi Ave",
+      "phone": "+1-888-410-9924",
+      "website": "https://www.loftsatlafayette.com",
       "category": "residential",
       "subcategory": "lofts",
-      "description": "A five-story residential building on Mississippi Avenue, one of the taller structures in the neighborhood. Offers loft-style living in the heart of Lafayette Square's commercial corridor.",
+      "description": "109 loft apartments in the former Brown Shoe Company complex on Mississippi Avenue. Five stories with 14-foot ceilings, exposed brick and timber, and units ranging from 743 to 2,130 sq ft. One of the largest residential conversions in Lafayette Square.",
       "amenities": [
-        "Five-story building",
-        "Mississippi Avenue location",
-        "Loft-style units"
+        "109 loft units (studio–2BR)",
+        "743–2,130 sq ft layouts",
+        "14-foot ceilings",
+        "Exposed brick & timber",
+        "In-unit washer/dryer",
+        "Fitness center",
+        "Resident lounge & coffee bar",
+        "Pet friendly",
+        "24-hour emergency maintenance",
+        "On-site parking"
+      ],
+      "history": [
+        {
+          "year": 1900,
+          "event": "Five-story commercial building constructed as part of the Brown Shoe Company complex on Mississippi Avenue."
+        },
+        {
+          "year": 2002,
+          "event": "Renovated into 109 loft apartments, preserving 14-foot ceilings, exposed brick, and heavy timber while adding modern amenities."
+        }
       ],
       "tags": [
         "lofts",
+        "historic",
+        "adaptive-reuse",
+        "pet-friendly",
+        "parking",
         "residential"
       ]
     },
@@ -4371,15 +4510,37 @@
       "building_id": "bldg-0944",
       "address": "1505 Missouri Ave",
       "category": "residential",
-      "subcategory": "lofts",
-      "description": "A three-story condominium directly facing Lafayette Park on Missouri Avenue. One of the few residential buildings with an unobstructed park view, in the heart of the historic district.",
+      "subcategory": "condos",
+      "description": "Nine luxury condominiums in the converted 1883 Lafayette Park Presbyterian Church, directly facing Lafayette Park at Missouri & Albion. Features 35-foot cathedral ceilings, original stained glass windows, carved wood ceilings, ornately painted organ pipes, and lighting design by Randy Burkett. Severely damaged by the 1896 tornado and lovingly restored.",
       "amenities": [
-        "Condominium units",
-        "Direct park frontage",
-        "Historic district location"
+        "9 luxury condominiums",
+        "35-foot cathedral ceilings",
+        "Original stained glass windows",
+        "Carved wood ceilings",
+        "Ornately painted organ pipes",
+        "Gas fireplaces",
+        "Granite countertops",
+        "Lighting by Randy Burkett",
+        "Direct Lafayette Park frontage"
+      ],
+      "history": [
+        {
+          "year": 1883,
+          "event": "Built as Lafayette Park Presbyterian Church in the Greek Revival style, facing Lafayette Park at Missouri and Albion."
+        },
+        {
+          "year": 1896,
+          "event": "Severely damaged by the Great Cyclone of 1896. Rebuilt and restored."
+        },
+        {
+          "year": 2005,
+          "event": "Converted to 9 luxury condominiums, preserving the 35-foot cathedral ceilings, stained glass windows, and carved wood ceilings."
+        }
       ],
       "tags": [
         "condos",
+        "historic",
+        "adaptive-reuse",
         "residential"
       ]
     },
@@ -4388,29 +4549,39 @@
       "name": "M Lofts",
       "building_id": "bldg-0073",
       "address": "1111 Mississippi Ave",
+      "phone": "+1-314-231-3600",
+      "website": "https://www.loftsatlafayette.com",
       "category": "residential",
       "subcategory": "lofts",
-      "description": "A five-story loft building on Mississippi Avenue, originally constructed in 1898. One of the larger historic conversions in Lafayette Square, with the original brick and commercial-scale architecture preserved.",
+      "description": "36 loft apartments in an 1898 five-story building on Mississippi Avenue, co-managed with The Lofts at Lafayette Square next door. Studio, one-, and two-bedroom layouts with 9-foot ceilings, hardwood floors, exposed brick and ductwork. One of the larger historic conversions in the neighborhood.",
       "history": [
         {
           "year": 1898,
-          "event": "Building constructed during the height of Lafayette Square's commercial development on Mississippi Avenue."
+          "event": "Five-story commercial building constructed during the height of Lafayette Square's commercial development on Mississippi Avenue."
         },
         {
           "year": 2000,
-          "event": "Converted to residential loft apartments, preserving the original brick facade and commercial-scale interior volumes."
+          "event": "Converted to 36 residential loft apartments, preserving the original brick facade and commercial-scale interior volumes."
         }
       ],
       "amenities": [
-        "Five-story historic building",
-        "1898 construction",
-        "Loft-style units",
-        "Mississippi Avenue location"
+        "36 loft units (studio–2BR)",
+        "9-foot ceilings",
+        "Hardwood floors",
+        "Exposed brick & ductwork",
+        "In-unit washer/dryer",
+        "Controlled access entry",
+        "Fitness center",
+        "Elevator",
+        "Gated parking",
+        "Pet friendly"
       ],
       "tags": [
         "lofts",
         "historic",
         "adaptive-reuse",
+        "pet-friendly",
+        "parking",
         "residential"
       ]
     }

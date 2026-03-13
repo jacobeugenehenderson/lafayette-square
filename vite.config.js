@@ -39,6 +39,11 @@ export default defineConfig(({ command }) => ({
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
   },
   base: '/',
+  server: {
+    watch: {
+      ignored: ['**/public/models/**', '**/public/photos/**'],
+    },
+  },
   build: {
     rollupOptions: {
       output: {

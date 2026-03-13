@@ -1324,9 +1324,9 @@ function postClaimResidence(body) {
     return errorResponse('Already a resident of ' + existing.building_id + '. Leave that residence first.', 'conflict')
   }
 
-  // Auto-verify if body.auto_verify is set (used when Guardian answers "I live here")
+  // Auto-verify if body.auto_verify is set (QR invite or guardian self-claim)
   var status = body.auto_verify ? 'verified' : 'pending'
-  var verifiedBy = body.auto_verify ? 'self-guardian' : ''
+  var verifiedBy = body.auto_verify ? (body.source || 'qr-invite') : ''
   var verifiedAt = body.auto_verify ? nowISO() : ''
 
   sheet.appendRow([dh, bid, status, verifiedBy, nowISO(), verifiedAt])
