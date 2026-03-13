@@ -1,15 +1,15 @@
 import React, { useState, useRef, useCallback } from 'react'
 
-// Curated color palette for {color:name} tags
-export const COLOR_PALETTE = {
-  brick:    { label: 'Brick',    css: 'rgb(183, 110, 97)'  },
-  sage:     { label: 'Sage',     css: 'rgb(138, 170, 132)' },
-  gold:     { label: 'Gold',     css: 'rgb(212, 175, 85)'  },
-  sky:      { label: 'Sky',      css: 'rgb(120, 170, 210)' },
-  coral:    { label: 'Coral',    css: 'rgb(210, 120, 120)' },
-  lavender: { label: 'Lavender', css: 'rgb(168, 140, 196)' },
-  cream:    { label: 'Cream',    css: 'rgb(225, 215, 195)' },
-  slate:    { label: 'Slate',    css: 'rgb(140, 150, 165)' },
+// Legacy named palette (for rendering old posts)
+const COLOR_PALETTE = {
+  brick:    'rgb(183, 110, 97)',
+  sage:     'rgb(138, 170, 132)',
+  gold:     'rgb(212, 175, 85)',
+  sky:      'rgb(120, 170, 210)',
+  coral:    'rgb(210, 120, 120)',
+  lavender: 'rgb(168, 140, 196)',
+  cream:    'rgb(225, 215, 195)',
+  slate:    'rgb(140, 150, 165)',
 }
 
 export function relativeTime(iso) {
@@ -25,15 +25,23 @@ export function relativeTime(iso) {
   return `${Math.floor(days / 7)}w`
 }
 
+function resolveColor(val) {
+  // Hex: #abc or #aabbcc
+  if (val.startsWith('#')) return val
+  // Named (legacy)
+  return COLOR_PALETTE[val] || null
+}
+
 function renderInline(text) {
   const parts = []
   let remaining = text
   let key = 0
 
   const patterns = [
-    { re: /\{color:(\w+)\}(.*?)\{\/color\}/, render: (m) => {
-      const c = COLOR_PALETTE[m[1]]
-      return <span key={key++} style={c ? { color: c.css } : undefined}>{renderInline(m[2])}</span>
+    // Color tag: {color:name}text{/color} or {color:#hex}text{/color}
+    { re: /\{color:([^}]+)\}(.*?)\{\/color\}/, render: (m) => {
+      const c = resolveColor(m[1])
+      return <span key={key++} style={c ? { color: c } : undefined}>{renderInline(m[2])}</span>
     }},
     { re: /\{big\}(.*?)\{\/big\}/, render: (m) => (
       <span key={key++} className="text-[14px]">{renderInline(m[1])}</span>
@@ -147,9 +155,29 @@ export function renderMarkdown(text) {
   return elements
 }
 
+// ── Toolbar button ──────────────────────────────────────────────────
+function Btn({ onClick, title, active, children, className = '' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`px-2 py-1.5 rounded-md text-body-sm transition-colors ${active ? 'bg-surface-container-highest text-on-surface' : 'text-on-surface-subtle hover:text-on-surface-variant hover:bg-surface-container-high'} ${className}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Sep() {
+  return <span className="w-px h-5 bg-outline-variant mx-1" />
+}
+
+// ── FormattedTextarea ───────────────────────────────────────────────
 export function FormattedTextarea({ value, onChange, placeholder, rows = 4, maxChars = 2000 }) {
   const ref = useRef(null)
-  const [showColors, setShowColors] = useState(false)
+  const colorRef = useRef(null)
+  const [pickedColor, setPickedColor] = useState('#e8a87c')
 
   const wrap = useCallback((before, after) => {
     const el = ref.current
@@ -213,69 +241,103 @@ export function FormattedTextarea({ value, onChange, placeholder, rows = 4, maxC
     })
   }, [value, onChange, maxChars])
 
-  const applyColor = useCallback((colorName) => { wrap(`{color:${colorName}}`, '{/color}'); setShowColors(false) }, [wrap])
-
-  const btnClass = "px-1.5 py-1 rounded text-on-surface-disabled hover:text-on-surface-variant hover:bg-surface-container-high transition-colors text-label-sm"
+  const applyColor = useCallback((hex) => {
+    wrap(`{color:${hex}}`, '{/color}')
+  }, [wrap])
 
   return (
     <div className="rounded-lg border border-outline-variant bg-surface-container overflow-hidden focus-within:border-outline transition-colors">
-      <div className="flex items-center gap-0.5 px-1.5 py-1 border-b border-outline-variant flex-wrap">
-        <button type="button" onClick={() => wrap('**', '**')} className={btnClass} title="Bold"><strong>B</strong></button>
-        <button type="button" onClick={() => wrap('*', '*')} className={btnClass} title="Italic"><em>I</em></button>
-        <button type="button" onClick={() => wrap('~~', '~~')} className={btnClass} title="Strikethrough"><del>S</del></button>
-        <button type="button" onClick={insertLink} className={btnClass} title="Link">
-          <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      {/* Row 1: Text formatting */}
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-outline-variant">
+        <Btn onClick={() => wrap('**', '**')} title="Bold"><strong>B</strong></Btn>
+        <Btn onClick={() => wrap('*', '*')} title="Italic"><em className="font-serif">I</em></Btn>
+        <Btn onClick={() => wrap('~~', '~~')} title="Strikethrough"><span className="line-through">S</span></Btn>
+        <Btn onClick={insertLink} title="Link">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
-        </button>
-        <span className="w-px h-4 bg-surface-container-high mx-0.5" />
-        <button type="button" onClick={() => wrapLine('# ', '')} className={btnClass} title="Heading">H1</button>
-        <button type="button" onClick={() => wrapLine('## ', '')} className={btnClass} title="Subheading">H2</button>
-        <button type="button" onClick={() => wrap('\n- ', '')} className={btnClass} title="List item">
-          <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        </Btn>
+
+        <Sep />
+
+        <Btn onClick={() => wrapLine('# ', '')} title="Title">
+          <span className="font-bold text-[13px]">T</span>
+        </Btn>
+        <Btn onClick={() => wrapLine('## ', '')} title="Subtitle">
+          <span className="font-semibold text-[11px]">T</span>
+        </Btn>
+        <Btn onClick={() => wrap('{big}', '{/big}')} title="Large text">
+          <span className="text-[15px] leading-none font-light">A</span>
+        </Btn>
+        <Btn onClick={() => wrap('{small}', '{/small}')} title="Small text">
+          <span className="text-[9px] leading-none font-light">A</span>
+        </Btn>
+
+        <Sep />
+
+        <Btn onClick={() => wrap('\n- ', '')} title="List">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
           </svg>
-        </button>
-        <button type="button" onClick={() => wrapLine('> ', '')} className={btnClass} title="Blockquote">
-          <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </Btn>
+        <Btn onClick={() => wrapLine('> ', '')} title="Quote">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M3 12h12M3 18h18" />
           </svg>
-        </button>
-        <button type="button" onClick={() => insertAtCursor('\n---\n')} className={btnClass} title="Divider">
-          <span className="text-[9px]">---</span>
-        </button>
-        <span className="w-px h-4 bg-surface-container-high mx-0.5" />
-        <button type="button" onClick={() => wrap('{big}', '{/big}')} className={btnClass} title="Large text">
-          <span className="text-[13px] leading-none">A</span>
-        </button>
-        <button type="button" onClick={() => wrap('{small}', '{/small}')} className={btnClass} title="Small text">
-          <span className="text-[8px] leading-none">A</span>
-        </button>
-        <button type="button" onClick={() => wrapLine('{center}', '{/center}')} className={btnClass} title="Center align">
-          <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" d="M4 6h16M7 12h10M5 18h14" />
-          </svg>
-        </button>
-        <button type="button" onClick={() => wrapLine('{right}', '{/right}')} className={btnClass} title="Right align">
-          <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" d="M4 6h16M8 12h12M6 18h14" />
-          </svg>
-        </button>
-        <span className="w-px h-4 bg-surface-container-high mx-0.5" />
-        <button type="button" onClick={() => setShowColors(!showColors)} className={`${btnClass} ${showColors ? 'bg-surface-container-high text-on-surface-variant' : ''}`} title="Color">
-          <svg className="w-3.5 h-3.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-          </svg>
-        </button>
+        </Btn>
+        <Btn onClick={() => insertAtCursor('\n---\n')} title="Divider">
+          <span className="text-[10px] tracking-widest">———</span>
+        </Btn>
+      </div>
+
+      {/* Row 2: Alignment + Color */}
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-outline-variant">
+        {/* Alignment group */}
+        <div className="flex rounded-md overflow-hidden border border-outline-variant">
+          <button type="button" onClick={() => {}} title="Left align (default)" className="px-1.5 py-1 text-on-surface-subtle hover:bg-surface-container-high transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" d="M4 6h16M4 12h10M4 18h14" />
+            </svg>
+          </button>
+          <button type="button" onClick={() => wrapLine('{center}', '{/center}')} title="Center" className="px-1.5 py-1 text-on-surface-subtle hover:bg-surface-container-high transition-colors border-x border-outline-variant">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" d="M4 6h16M7 12h10M5 18h14" />
+            </svg>
+          </button>
+          <button type="button" onClick={() => wrapLine('{right}', '{/right}')} title="Right" className="px-1.5 py-1 text-on-surface-subtle hover:bg-surface-container-high transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" d="M4 6h16M10 12h10M6 18h14" />
+            </svg>
+          </button>
+        </div>
+
+        <Sep />
+
+        {/* Color: native picker + apply */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative">
+            <input
+              ref={colorRef}
+              type="color"
+              value={pickedColor}
+              onChange={e => setPickedColor(e.target.value)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              title="Pick a color"
+            />
+            <div
+              className="w-6 h-6 rounded-full border-2 border-outline cursor-pointer"
+              style={{ backgroundColor: pickedColor }}
+            />
+          </div>
+          <Btn onClick={() => applyColor(pickedColor)} title="Apply color to selection">
+            <span style={{ color: pickedColor }} className="font-bold">A</span>
+          </Btn>
+        </div>
+
         <span className="ml-auto text-caption text-on-surface-disabled">{value.length}/{maxChars}</span>
       </div>
-      {showColors && (
-        <div className="flex items-center gap-1 px-2 py-1.5 border-b border-outline-variant bg-surface-container">
-          {Object.entries(COLOR_PALETTE).map(([name, { label, css }]) => (
-            <button key={name} type="button" onClick={() => applyColor(name)} className="w-5 h-5 rounded-full border border-outline hover:border-outline transition-colors flex-shrink-0" style={{ backgroundColor: css }} title={label} />
-          ))}
-        </div>
-      )}
+
+      {/* Textarea */}
       <textarea
         ref={ref}
         value={value}
