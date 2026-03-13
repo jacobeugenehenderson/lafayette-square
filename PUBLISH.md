@@ -76,6 +76,16 @@ https://script.google.com/macros/s/AKfycbxv3JihCx0U7JfGqle6ZpsLamkRS5PAEGRn6_NaM
 
 This URL is stable across `clasp deploy` calls (same deployment ID = same URL). There are multiple old deployments in the project — always use the ID above.
 
+### API URL must match in all three places
+
+The deployment URL above must be identical in:
+
+1. **`.env`** — `VITE_API_URL` (used by local dev server)
+2. **GitHub Secret** — `VITE_API_URL` in [repo Settings > Secrets > Actions](https://github.com/jacobeugenehenderson/lafayette-square/settings/secrets/actions) (used by prod build)
+3. **`public/codedesk/index.html`** — `window.LSQ_API_URL` (used by QR Generator iframe)
+
+If you create a new deployment, update all three. Mismatched URLs cause "Unknown-action" errors because old deployments don't have newer endpoints.
+
 ### What the backend handles
 
 - **Listings** — CRUD for places, photos, tags, hours
