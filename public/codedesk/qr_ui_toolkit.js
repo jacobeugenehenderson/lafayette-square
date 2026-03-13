@@ -17,6 +17,7 @@ if (typeof window.buildText !== 'function') {
       try { var b = document.getElementById('bizSelect'); biz = b ? (b.value || '') : ''; } catch(_e2){}
 
       if (t === 'Townie' && biz) return base + '/checkin/' + encodeURIComponent(biz);
+      if (t === 'Resident' && biz) return base + '/checkin/' + encodeURIComponent(biz);
       if (t === 'Guardian' && biz) return base + '/claim/' + encodeURIComponent(biz);
       return base;
     } catch (_e) {}
@@ -1005,6 +1006,17 @@ function buildText(){
         if (!biz) return base;
         const url = base + '/checkin/' + encodeURIComponent(biz);
         // Update URL display
+        try {
+          const disp = document.getElementById('lsqUrlDisplay');
+          if (disp) disp.textContent = url;
+        } catch(e){}
+        return url;
+      }
+
+      case "Resident": {
+        const biz = (val("bizSelect") || "").trim();
+        if (!biz) return base;
+        const url = base + '/checkin/' + encodeURIComponent(biz);
         try {
           const disp = document.getElementById('lsqUrlDisplay');
           if (disp) disp.textContent = url;

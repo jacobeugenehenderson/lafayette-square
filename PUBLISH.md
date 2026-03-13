@@ -130,6 +130,19 @@ The Cary courier system uses Supabase for:
 - Realtime subscriptions (request/session updates)
 - Edge functions (dispatch, session completion)
 
+**Do NOT run `supabase start` locally.** The local dev stack spins up ~7 Docker containers (~3-4 GB RAM) and has repeatedly crashed the system. All Cary development uses the hosted project.
+
+```bash
+# Link to the hosted project (one-time)
+supabase link --project-ref ngbvgjzrpnfrqmzkqvch
+
+# Push schema changes
+supabase db push
+
+# Deploy edge functions
+supabase functions deploy
+```
+
 Currently behind "coming soon" placeholders in the UI. When ready to launch:
 1. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to GitHub Secrets
 2. Add them to `deploy.yml` env block
@@ -147,4 +160,4 @@ GitHub Pages CDN can cache for up to 10 minutes. Hard-refresh or check the Actio
 Run `npx clasp login` to re-authenticate.
 
 **Local dev freezes or crashes?**
-Check if `VITE_SUPABASE_URL` points to a running instance. If Supabase isn't set up locally, remove the var from `.env` — the stub client will keep the app functional.
+If Docker/Supabase local is running, stop it immediately: `supabase stop`. The local stack uses ~3-4 GB RAM and is not needed — use the hosted project instead. If Supabase isn't the cause, check if `VITE_SUPABASE_URL` points to a running instance. If it's missing, remove the var from `.env` — the stub client will keep the app functional.

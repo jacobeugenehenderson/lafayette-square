@@ -3,6 +3,9 @@
     "Townie": [
       "bizSelect"
     ],
+    "Resident": [
+      "bizSelect"
+    ],
     "Guardian": [
       "bizSelect",
       "claimSecret"
@@ -21,6 +24,7 @@
   },
   "presets": {
     "Townie": [],
+    "Resident": [],
     "Guardian": []
   }
 }

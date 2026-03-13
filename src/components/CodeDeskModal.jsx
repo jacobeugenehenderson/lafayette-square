@@ -159,6 +159,7 @@ function CodeDeskModalInner() {
             style={{ fontFamily: 'ui-monospace, monospace' }}
           >
             <option value="Townie" className="bg-neutral-800 text-on-surface">Townie</option>
+            <option value="Resident" className="bg-neutral-800 text-on-surface">Resident</option>
             <option value="Guardian" className="bg-neutral-800 text-on-surface">Guardian</option>
           </select>
           <button

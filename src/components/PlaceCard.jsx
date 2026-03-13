@@ -6,7 +6,7 @@ import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useResidence from '../hooks/useResidence'
-import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, claimResidence, getResidentCount, getLobbyPosts, postLobbyPost, leaveResidence } from '../lib/api'
+import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, getResidentCount, getLobbyPosts, postLobbyPost, leaveResidence, claimResidence } from '../lib/api'
 import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
@@ -1814,7 +1814,7 @@ function QrTab({ listingId, listingName, isAdmin, isResidential }) {
   }
 
   const openQrStudio = () => {
-    useCodeDesk.getState().setOpen(true, { listingId, qrType: 'Townie', claimSecret, mode: 'guardian', placeName: listingName })
+    useCodeDesk.getState().setOpen(true, { listingId, qrType: isResidential ? 'Resident' : 'Townie', claimSecret, mode: 'guardian', placeName: listingName })
   }
 
   return (
@@ -1913,7 +1913,6 @@ function QrTab({ listingId, listingName, isAdmin, isResidential }) {
             <li>They scan it and they're verified instantly</li>
             <li>They can then invite their own neighbors</li>
           </ol>
-          <p className="text-caption text-on-surface-disabled">No management, no apps — just word of mouth.</p>
         </div>
       )}
 
@@ -2030,11 +2029,12 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const { isGuardianOf, isAdmin: isStoreAdmin } = useGuardianStatus()
   const residenceBuildingId = useResidence(s => s.buildingId)
   const residenceStatus = useResidence(s => s.status)
+  const handle = useHandle(s => s.handle)
   const panelOpen = useCamera(s => s.panelOpen)
   const panelCollapsedPx = useCamera(s => s.panelCollapsedPx)
   const initialTab = useSelectedBuilding(s => s.initialTab)
-  const [claiming, setClaiming] = useState(false)
   const [residentCount, setResidentCount] = useState(null)
+  const [claimingResidence, setClaimingResidence] = useState(false)
 
   // Subscribe to store so guardian edits trigger re-render
   const storeListing = useListings(s => listingProp?.id ? s.listings.find(l => l.id === listingProp.id) : null)
@@ -2088,7 +2088,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
   const isResidential = activeListing?.category === 'residential'
   const isResidentHere = isResidential && residenceBuildingId === building?.id && residenceStatus === 'verified'
-  const isPendingResident = isResidential && residenceBuildingId === building?.id && residenceStatus === 'pending'
+
 
   const tabs = useMemo(() => {
     if (hasListingInfo) {
@@ -2134,20 +2134,23 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
     }).catch(() => {})
   }, [isResidential, building?.id])
 
-  // Claim residence handler
+  // Claim residence handler (backend auto-verifies if admin or handle matches a verified resident)
   const handleClaimResidence = useCallback(async () => {
-    if (claiming || !building?.id) return
-    setClaiming(true)
+    if (!building?.id || claimingResidence) return
+    setClaimingResidence(true)
     try {
       const dh = await getDeviceHash()
-      const res = await claimResidence(dh, building.id)
+      const res = await claimResidence(dh, building.id, false, isStoreAdmin)
       const d = res?.data
-      if (d) {
-        useResidence.setState({ buildingId: d.building_id || building.id, status: d.status || 'pending' })
+      if (d && !d.error) {
+        useResidence.setState({
+          buildingId: d.building_id || building.id,
+          status: d.status || 'pending',
+        })
       }
     } catch { /* silent */ }
-    setClaiming(false)
-  }, [building?.id, claiming])
+    setClaimingResidence(false)
+  }, [building?.id, claimingResidence, isStoreAdmin])
 
   // Leave residence handler
   const handleLeaveResidence = useCallback(async () => {
@@ -2398,40 +2401,38 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </div>
         )}
 
-        {/* Residential: pending verification */}
-        {isResidential && isPendingResident && (
-          <div className="flex-1 flex items-center gap-2 text-amber-400/80 text-body-sm">
-            <svg className="w-4 h-4 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Pending — ask a verified neighbor to scan your QR
+        {/* Residential: pending resident — gentle nudge */}
+        {isResidential && !isResidentHere && residenceBuildingId === building?.id && residenceStatus === 'pending' && (
+          <div className="flex-1 text-on-surface-disabled text-caption">
+            Scan a Resident QR in your building or ask a neighbor to share theirs.
           </div>
         )}
 
-        {/* Residential: not a resident yet — "I live here" + manage link */}
-        {isResidential && !isResidentHere && !isPendingResident && (
-          <div className="flex-1 flex flex-col gap-1">
+        {/* Residential: not a resident — admin gets "I live here", others see info text */}
+        {isResidential && !isResidentHere && !(residenceBuildingId === building?.id && residenceStatus === 'pending') && (
+          isStoreAdmin ? (
             <button
               onClick={handleClaimResidence}
-              disabled={claiming}
-              className="w-full py-1.5 px-3 rounded-lg bg-[#7A8B6F]/15 hover:bg-[#7A8B6F]/25 text-[#7A8B6F] text-body font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              disabled={claimingResidence}
+              className="flex-1 py-1.5 px-3 rounded-lg bg-[#7A8B6F]/20 hover:bg-[#7A8B6F]/30 text-[#7A8B6F] text-body-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
               </svg>
-              {claiming ? 'Claiming...' : 'I live here'}
+              {claimingResidence ? 'Claiming...' : 'I live here'}
             </button>
-            <a
-              href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('Manage: ' + name)}`}
-              className="text-center text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
-            >
-              Manage this building?
-            </a>
-          </div>
+          ) : (
+            <div className="flex-1 flex items-center gap-2 text-on-surface-subtle text-body-sm">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
+              </svg>
+              <span>Live here? Ask a neighbor for their Resident code.</span>
+            </div>
+          )
         )}
 
-        {/* Residential: verified/pending resident — manage link */}
-        {isResidential && (isResidentHere || isPendingResident) && (
+        {/* Residential: verified resident — manage link */}
+        {isResidential && isResidentHere && (
           <a
             href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('Manage: ' + name)}`}
             className="text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"

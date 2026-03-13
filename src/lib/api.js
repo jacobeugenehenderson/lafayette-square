@@ -356,8 +356,10 @@ export async function getResidentCount(buildingId) {
   return get('resident-count', { bid: buildingId })
 }
 
-export async function claimResidence(deviceHash, buildingId, autoVerify = false) {
-  return post('claim-residence', { device_hash: deviceHash, building_id: buildingId, auto_verify: autoVerify })
+export async function claimResidence(deviceHash, buildingId, autoVerify = false, admin = false) {
+  const body = { device_hash: deviceHash, building_id: buildingId, auto_verify: autoVerify }
+  if (admin) body.admin = 'lafayette1850'
+  return post('claim-residence', body)
 }
 
 export async function verifyResident(verifierHash, targetHash, buildingId) {

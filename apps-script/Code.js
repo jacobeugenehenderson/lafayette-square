@@ -1268,9 +1268,35 @@ function saveDesign(body) {
 function fetchResidenceData(deviceHash) {
   if (!deviceHash) return null
   var rows = sheetToObjects(getSheet('Residents'))
+
+  // Direct match by device_hash
   var match = rows.filter(function(r) { return r.device_hash === deviceHash })[0]
+
+  // If no direct match, resolve via handle (linked devices share identity)
+  if (!match) {
+    var handleRow = findRow(getSheet('Handles'), 'device_hash', deviceHash)
+    if (handleRow && handleRow.rowData.handle) {
+      var handle = handleRow.rowData.handle
+      // Find all device_hashes that share this handle
+      var handleRows = sheetToObjects(getSheet('Handles'))
+      var linkedHashes = handleRows
+        .filter(function(h) { return h.handle && h.handle.toLowerCase() === handle.toLowerCase() })
+        .map(function(h) { return h.device_hash })
+      // Check if any linked device is a resident
+      for (var i = 0; i < linkedHashes.length; i++) {
+        var linked = rows.filter(function(r) { return r.device_hash === linkedHashes[i] })[0]
+        if (linked) { match = linked; break }
+      }
+    }
+  }
+
   if (!match) return null
-  return { building_id: match.building_id, status: match.status }
+  // Check expiry
+  if (match.expires_at) {
+    var exp = new Date(match.expires_at)
+    if (exp < new Date()) return null // Expired
+  }
+  return { building_id: match.building_id, status: match.status, expires_at: match.expires_at || null }
 }
 
 function getResidenceStatus(deviceHash) {
@@ -1288,10 +1314,11 @@ function getResidentCount(buildingId) {
 function getLobbyPosts(deviceHash, buildingId) {
   if (!deviceHash || !buildingId) return errorResponse('Missing dh or bid', 'bad_request')
 
-  // Caller must be a verified resident of this building
-  var residents = sheetToObjects(getSheet('Residents'))
-  var caller = residents.filter(function(r) { return r.device_hash === deviceHash && r.building_id === buildingId && r.status === 'verified' })[0]
-  if (!caller) return errorResponse('Not a verified resident', 'forbidden')
+  // Caller must be a verified resident of this building (check via handle for linked devices)
+  var residenceData = fetchResidenceData(deviceHash)
+  if (!residenceData || residenceData.building_id !== buildingId || residenceData.status !== 'verified') {
+    return errorResponse('Not a verified resident', 'forbidden')
+  }
 
   var posts = sheetToObjects(getSheet('LobbyPosts'))
   var buildingPosts = posts
@@ -1311,26 +1338,106 @@ function postClaimResidence(body) {
   var bid = body.building_id
   if (!dh || !bid) return errorResponse('Missing device_hash or building_id', 'bad_request')
 
+  var isAdmin = body.admin === 'lafayette1850'
   var sheet = getSheet('Residents')
   var rows = sheetToObjects(sheet)
 
-  // Check if already a resident somewhere
-  var existing = rows.filter(function(r) { return r.device_hash === dh })[0]
-  if (existing) {
-    if (existing.building_id === bid) {
-      return jsonResponse({ status: existing.status, building_id: bid })
+  // Check if already a resident of THIS building
+  var existingHere = rows.filter(function(r) { return r.device_hash === dh && r.building_id === bid })[0]
+  if (existingHere) {
+    if (existingHere.expires_at) {
+      var exp = new Date(existingHere.expires_at)
+      if (exp < new Date()) {
+        // Expired — remove old row and re-claim below
+        var allData = sheet.getDataRange().getValues()
+        for (var i = 1; i < allData.length; i++) {
+          if (allData[i][0] === dh && allData[i][1] === bid) {
+            sheet.deleteRow(i + 1)
+            break
+          }
+        }
+        // Fall through to create new row
+      } else {
+        return jsonResponse({ status: existingHere.status, building_id: bid, already_resident: true, expires_at: existingHere.expires_at })
+      }
+    } else {
+      return jsonResponse({ status: existingHere.status, building_id: bid, already_resident: true })
     }
-    // Already resident elsewhere — must leave first
-    return errorResponse('Already a resident of ' + existing.building_id + '. Leave that residence first.', 'conflict')
   }
 
-  // Auto-verify if body.auto_verify is set (QR invite or guardian self-claim)
-  var status = body.auto_verify ? 'verified' : 'pending'
-  var verifiedBy = body.auto_verify ? (body.source || 'qr-invite') : ''
-  var verifiedAt = body.auto_verify ? nowISO() : ''
+  // Check if resident of a DIFFERENT building — admin can be resident of multiple buildings
+  var existingElsewhere = rows.filter(function(r) { return r.device_hash === dh && r.building_id !== bid })[0]
+  if (existingElsewhere && !isAdmin) {
+    return errorResponse('Already a resident of ' + existingElsewhere.building_id + '. Leave that residence first.', 'conflict')
+  }
 
-  sheet.appendRow([dh, bid, status, verifiedBy, nowISO(), verifiedAt])
-  return jsonResponse({ status: status, building_id: bid })
+  // Auto-verify if: admin, QR invite, OR caller's handle is already a verified resident of this building on another device
+  var autoVerify = isAdmin || !!body.auto_verify
+  if (!autoVerify) {
+    var handleRow = findRow(getSheet('Handles'), 'device_hash', dh)
+    if (handleRow && handleRow.rowData.handle) {
+      var callerHandle = handleRow.rowData.handle
+      var handleRows = sheetToObjects(getSheet('Handles'))
+      var linkedHashes = handleRows
+        .filter(function(h) { return h.handle && h.handle.toLowerCase() === callerHandle.toLowerCase() && h.device_hash !== dh })
+        .map(function(h) { return h.device_hash })
+      for (var li = 0; li < linkedHashes.length; li++) {
+        var linkedRes = rows.filter(function(r) { return r.device_hash === linkedHashes[li] && r.building_id === bid && r.status === 'verified' })[0]
+        if (linkedRes) { autoVerify = true; break }
+      }
+    }
+  }
+
+  var status = autoVerify ? 'verified' : 'pending'
+  var verifiedBy = autoVerify ? (isAdmin ? 'admin' : body.auto_verify ? (body.source || 'qr-invite') : 'linked-device') : ''
+  var verifiedAt = autoVerify ? nowISO() : ''
+
+  // Residency expires 1 year from verification (or claim date if pending)
+  var expiryDate = new Date()
+  expiryDate.setFullYear(expiryDate.getFullYear() + 1)
+  var expiresAt = Utilities.formatDate(expiryDate, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss'Z'")
+
+  sheet.appendRow([dh, bid, status, verifiedBy, nowISO(), verifiedAt, expiresAt])
+
+  // Auto-verify also grants townie status (backfill check-in days to meet threshold)
+  if (autoVerify) {
+    grantTownieStatus(dh)
+  }
+
+  return jsonResponse({ status: status, building_id: bid, expires_at: expiresAt })
+}
+
+// Grant townie status by backfilling check-in records to meet LOCAL_THRESHOLD
+function grantTownieStatus(deviceHash) {
+  var sheet = getSheet('Checkins')
+  var existing = sheetToObjects(sheet)
+  var now = new Date()
+
+  // Count existing distinct days in the window
+  var cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
+  var cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  var distinctDates = {}
+  existing.forEach(function(r) {
+    var d = toDateStr(r.date)
+    if (r.device_hash === deviceHash && d >= cutoffStr) {
+      distinctDates[d] = true
+    }
+  })
+
+  var needed = LOCAL_THRESHOLD - Object.keys(distinctDates).length
+  if (needed <= 0) return // Already a townie
+
+  // Backfill synthetic check-ins on recent dates (today, yesterday, etc.)
+  for (var i = 0; i < needed; i++) {
+    var d = new Date(now)
+    d.setDate(d.getDate() - i)
+    var dateStr = Utilities.formatDate(d, TIMEZONE, 'yyyy-MM-dd')
+    if (!distinctDates[dateStr]) {
+      var ts = Utilities.formatDate(d, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss'Z'")
+      sheet.appendRow([deviceHash, 'resident-grant', ts, dateStr])
+    }
+  }
 }
 
 function postVerifyResident(body) {
