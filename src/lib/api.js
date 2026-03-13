@@ -370,8 +370,14 @@ export async function getLobbyPosts(deviceHash, buildingId) {
   return get('lobby-posts', { dh: deviceHash, bid: buildingId })
 }
 
-export async function postLobbyPost(deviceHash, buildingId, text, photoUrl) {
-  return post('lobby-post', { device_hash: deviceHash, building_id: buildingId, text, photo_url: photoUrl })
+export async function postLobbyPost(deviceHash, buildingId, text, photoUrl, imageData) {
+  const body = { device_hash: deviceHash, building_id: buildingId, text, photo_url: photoUrl }
+  if (imageData) body.image_data = imageData
+  return post('lobby-post', body)
+}
+
+export async function removeLobbyPost(deviceHash, postId) {
+  return post('remove-lobby-post', { device_hash: deviceHash, post_id: postId })
 }
 
 export async function leaveResidence(deviceHash) {

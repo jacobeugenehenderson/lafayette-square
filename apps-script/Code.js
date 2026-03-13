@@ -35,7 +35,18 @@ const MAX_PHOTOS_PER_LISTING = 10
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function getSheet(name) {
-  return SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name)
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID)
+  var sheet = ss.getSheetByName(name)
+  if (!sheet) {
+    // Auto-create missing sheets with known headers
+    var HEADERS = {
+      'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at'],
+      'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
+    }
+    sheet = ss.insertSheet(name)
+    if (HEADERS[name]) sheet.appendRow(HEADERS[name])
+  }
+  return sheet
 }
 
 function sheetToObjects(sheet) {
@@ -211,6 +222,7 @@ function doPost(e) {
       case 'claim-residence':   return postClaimResidence(body)
       case 'verify-resident':   return postVerifyResident(body)
       case 'lobby-post':        return postLobbyPost(body)
+      case 'remove-lobby-post': return removeLobbyPost(body)
       case 'leave-residence':   return postLeaveResidence(body)
       // Read-only actions via POST to bypass Google's redirect cache
       case 'init':             return getInit(body.device_hash)
@@ -1320,14 +1332,27 @@ function getLobbyPosts(deviceHash, buildingId) {
     return errorResponse('Not a verified resident', 'forbidden')
   }
 
+  // Build handle lookup for identity on posts
+  var handles = sheetToObjects(getSheet('Handles'))
+  var handleMap = {}
+  handles.forEach(function(h) { if (h.device_hash && h.handle) handleMap[h.device_hash] = h })
+
   var posts = sheetToObjects(getSheet('LobbyPosts'))
   var buildingPosts = posts
     .filter(function(p) { return p.building_id === buildingId })
     .sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at) })
     .slice(0, 50)
     .map(function(p) {
-      return { id: p.id, text: p.text, photo_url: p.photo_url || null, created_at: p.created_at }
-      // Note: no device_hash or identity — posts are anonymous
+      var h = handleMap[p.device_hash]
+      return {
+        id: p.id,
+        text: p.text,
+        photo_url: p.photo_url || null,
+        created_at: p.created_at,
+        handle: h ? h.handle : null,
+        avatar: h ? h.avatar : null,
+        is_mine: p.device_hash === deviceHash,
+      }
     })
 
   return jsonResponse({ posts: buildingPosts })
@@ -1493,7 +1518,8 @@ function postLobbyPost(body) {
   var dh = body.device_hash
   var bid = body.building_id
   var text = (body.text || '').trim()
-  if (!dh || !bid || !text) return errorResponse('Missing required fields', 'bad_request')
+  var imageData = body.image_data || ''
+  if (!dh || !bid || (!text && !imageData)) return errorResponse('Missing required fields', 'bad_request')
   if (text.length > 2000) return errorResponse('Post too long', 'bad_request')
 
   // Must be verified resident
@@ -1501,9 +1527,50 @@ function postLobbyPost(body) {
   var caller = residents.filter(function(r) { return r.device_hash === dh && r.building_id === bid && r.status === 'verified' })[0]
   if (!caller) return errorResponse('Not a verified resident', 'forbidden')
 
+  // Upload photo to Drive if provided
+  var photoUrl = body.photo_url || ''
+  if (imageData && PHOTO_FOLDER_ID) {
+    var b64 = imageData.replace(/^data:image\/[^;]+;base64,/, '')
+    var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', 'lobby-' + Date.now() + '.jpg')
+    var folder = DriveApp.getFolderById(PHOTO_FOLDER_ID)
+    var file = folder.createFile(blob)
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW)
+    photoUrl = 'https://lh3.googleusercontent.com/d/' + file.getId()
+  }
+
   var id = generateId('lp')
-  getSheet('LobbyPosts').appendRow([id, bid, dh, text, body.photo_url || '', nowISO()])
-  return jsonResponse({ success: true, id: id })
+  getSheet('LobbyPosts').appendRow([id, bid, dh, text, photoUrl, nowISO()])
+  return jsonResponse({ success: true, id: id, photo_url: photoUrl })
+}
+
+function removeLobbyPost(body) {
+  var dh = body.device_hash
+  var postId = body.post_id
+  if (!dh || !postId) return errorResponse('Missing required fields', 'bad_request')
+
+  var sheet = getSheet('LobbyPosts')
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var idCol = headers.indexOf('id')
+  var dhCol = headers.indexOf('device_hash')
+  var photoCol = headers.indexOf('photo_url')
+
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][idCol] === postId) {
+      if (data[i][dhCol] !== dh) return errorResponse('Not your post', 'forbidden')
+      // Trash Drive photo if present
+      var photoUrl = data[i][photoCol]
+      if (photoUrl) {
+        var driveMatch = String(photoUrl).match(/\/d\/([a-zA-Z0-9_-]+)/)
+        if (driveMatch) {
+          try { DriveApp.getFileById(driveMatch[1]).setTrashed(true) } catch (e) { /* silent */ }
+        }
+      }
+      sheet.deleteRow(i + 1)
+      return jsonResponse({ success: true })
+    }
+  }
+  return errorResponse('Post not found', 'not_found')
 }
 
 function postLeaveResidence(body) {
@@ -1549,7 +1616,7 @@ function setupSheets() {
     'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
     'Replies':   ['id', 'review_id', 'listing_id', 'device_hash', 'handle', 'text', 'created_at'],
     'Guardians': ['listing_id', 'device_hash', 'created_at'],
-    'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at'],
+    'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at'],
     'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
     'Designs':   ['biz_id', 'design_json', 'updated_at'],
   }

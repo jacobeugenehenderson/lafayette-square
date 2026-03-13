@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback, useContext } from 'react'
+import React, { useMemo, useState, useEffect, useCallback, useContext, useRef } from 'react'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
 import useGuardianStatus from '../hooks/useGuardianStatus'
@@ -6,7 +6,8 @@ import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useResidence from '../hooks/useResidence'
-import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, getResidentCount, getLobbyPosts, postLobbyPost, leaveResidence, claimResidence } from '../lib/api'
+import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, getResidentCount, getLobbyPosts, postLobbyPost, removeLobbyPost, leaveResidence, claimResidence } from '../lib/api'
+import { FormattedTextarea, renderMarkdown, relativeTime as lobbyRelativeTime } from '../lib/markdown'
 import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
@@ -1947,6 +1948,9 @@ function LobbyTab({ buildingId }) {
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
   const [posting, setPosting] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photoData, setPhotoData] = useState(null)
+  const fileRef = useRef(null)
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -1959,16 +1963,45 @@ function LobbyTab({ buildingId }) {
 
   useEffect(() => { fetchPosts() }, [fetchPosts])
 
+  // Auto-refresh when tab becomes visible
+  useEffect(() => {
+    const handler = () => { if (!document.hidden) fetchPosts() }
+    document.addEventListener('visibilitychange', handler)
+    return () => document.removeEventListener('visibilitychange', handler)
+  }, [fetchPosts])
+
+  const handlePhoto = useCallback(async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const result = await compressImage(file)
+    if (result) {
+      setPhotoPreview(result.base64)
+      setPhotoData(result.base64)
+    }
+    if (fileRef.current) fileRef.current.value = ''
+  }, [])
+
+  const clearPhoto = useCallback(() => { setPhotoPreview(null); setPhotoData(null) }, [])
+
   const handlePost = async () => {
-    if (!text.trim() || posting) return
+    if ((!text.trim() && !photoData) || posting) return
     setPosting(true)
     try {
       const dh = await getDeviceHash()
-      await postLobbyPost(dh, buildingId, text.trim())
+      await postLobbyPost(dh, buildingId, text.trim(), null, photoData)
       setText('')
+      clearPhoto()
       await fetchPosts()
     } catch { /* silent */ }
     setPosting(false)
+  }
+
+  const handleDelete = async (postId) => {
+    try {
+      const dh = await getDeviceHash()
+      await removeLobbyPost(dh, postId)
+      setPosts(prev => prev.filter(p => p.id !== postId))
+    } catch { /* silent */ }
   }
 
   if (loading) {
@@ -1979,20 +2012,38 @@ function LobbyTab({ buildingId }) {
     <div className="space-y-4">
       {/* Compose */}
       <div className="space-y-2">
-        <textarea
+        <FormattedTextarea
           value={text}
-          onChange={e => setText(e.target.value.slice(0, 2000))}
+          onChange={setText}
           placeholder="Post to the lobby..."
           rows={3}
-          className="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-body text-on-surface placeholder:text-on-surface-disabled focus:outline-none focus:border-outline resize-none"
+          maxChars={2000}
         />
+        {/* Photo preview */}
+        {photoPreview && (
+          <div className="relative inline-block">
+            <img src={photoPreview} alt="Upload preview" className="rounded-lg max-h-32" />
+            <button onClick={clearPhoto} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-surface-container border border-outline-variant text-on-surface-disabled hover:text-on-surface-variant text-xs flex items-center justify-center">&times;</button>
+          </div>
+        )}
         <div className="flex items-center justify-between">
-          <span className="text-caption text-on-surface-disabled">{text.length}/2000</span>
+          <div className="flex items-center gap-2">
+            <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="px-2 py-1 rounded-lg text-on-surface-disabled hover:text-on-surface-variant hover:bg-surface-container-high transition-colors"
+              title="Add photo"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v13.5A1.5 1.5 0 003.75 21zM8.25 8.625a1.125 1.125 0 11-2.25 0 1.125 1.125 0 012.25 0z" />
+              </svg>
+            </button>
+          </div>
           <button
             onClick={handlePost}
-            disabled={!text.trim() || posting}
-            className="px-3 py-1 rounded-lg bg-sage-500/20 text-[#7A8B6F] text-body-sm font-medium hover:bg-sage-500/30 disabled:opacity-40 transition-colors"
-            style={{ backgroundColor: text.trim() ? 'rgba(122,139,111,0.2)' : undefined }}
+            disabled={(!text.trim() && !photoData) || posting}
+            className="px-3 py-1 rounded-lg text-[#7A8B6F] text-body-sm font-medium disabled:opacity-40 transition-colors"
+            style={{ backgroundColor: (text.trim() || photoData) ? 'rgba(122,139,111,0.2)' : undefined }}
           >
             {posting ? 'Posting...' : 'Post'}
           </button>
@@ -2001,7 +2052,7 @@ function LobbyTab({ buildingId }) {
 
       {/* Info banner */}
       <div className="rounded-lg bg-surface-container-high px-3 py-2 text-caption text-on-surface-subtle">
-        Posts are anonymous — only verified residents can see or write here.
+        Only verified residents can see or write here.
       </div>
 
       {/* Posts */}
@@ -2012,15 +2063,36 @@ function LobbyTab({ buildingId }) {
       ) : (
         <div className="space-y-3">
           {posts.map(p => (
-            <div key={p.id} className="rounded-lg bg-surface-container px-3 py-2.5 space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="px-1.5 py-0.5 rounded bg-[#7A8B6F]/20 text-[#7A8B6F] text-caption font-medium">Resident</span>
-                <span className="text-caption text-on-surface-disabled">{new Date(p.created_at).toLocaleDateString()}</span>
+            <div key={p.id} className="rounded-lg bg-surface-container px-3 py-2.5">
+              <div className="flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    {p.handle ? (
+                      <span className="text-label-sm text-on-surface-variant font-medium inline-flex items-center gap-1">
+                        <AvatarCircle emoji={p.avatar} size={5} />
+                        @{p.handle}
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded bg-[#7A8B6F]/20 text-[#7A8B6F] text-caption font-medium">Resident</span>
+                    )}
+                    <span className="text-caption text-on-surface-disabled">{lobbyRelativeTime(p.created_at)}</span>
+                  </div>
+                  <div className="text-label-sm text-on-surface-variant leading-relaxed break-words">
+                    {renderMarkdown(p.text)}
+                  </div>
+                  {p.photo_url && (
+                    <img src={p.photo_url} alt="" className="rounded-lg max-h-48 mt-1.5" loading="lazy" />
+                  )}
+                </div>
+                {p.is_mine && (
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="text-caption px-2 py-1 rounded bg-surface-container text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
-              <p className="text-body text-on-surface-variant whitespace-pre-wrap">{p.text}</p>
-              {p.photo_url && (
-                <img src={p.photo_url} alt="" className="rounded-lg max-h-48 mt-1" />
-              )}
             </div>
           ))}
         </div>
