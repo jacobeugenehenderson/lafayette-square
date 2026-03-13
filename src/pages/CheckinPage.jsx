@@ -9,6 +9,7 @@ import AvatarCircle from '../components/AvatarCircle'
 import AvatarEditor from '../components/AvatarEditor'
 import { claimResidence } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
+import buildingsData from '../data/buildings.json'
 
 function HandlePicker({ accentHex, onDone }) {
   const { setHandle, checkAvailability, loading: saving } = useHandle()
@@ -171,34 +172,35 @@ export default function CheckinPage({ locationId }) {
   const [fired, setFired] = useState(false)
   const [showHandlePicker, setShowHandlePicker] = useState(false)
   const landmark = getById(locationId)
+  // If no listing found, check if locationId is a building ID (residential QR codes encode building IDs)
+  const building = !landmark ? buildingsData.buildings?.find(b => b.id === locationId) : null
+  const resolvedName = landmark?.name || building?.address || 'this building'
+  const resolvedBuildingId = landmark?.building_id || (building ? locationId : null)
   const cat = landmark ? CATEGORIES[landmark.category] : null
-  const isResidential = landmark?.category === 'residential'
+  const isResidential = landmark?.category === 'residential' || !!building
 
   useEffect(() => {
     if (fired) return
     setFired(true)
 
-    if (isResidential && landmark?.building_id) {
+    if (isResidential && resolvedBuildingId) {
       // Residential: claim + auto-verify residence via QR invite
       ;(async () => {
         try {
           const dh = await getDeviceHash()
-          const res = await claimResidence(dh, landmark.building_id, true)
+          const res = await claimResidence(dh, resolvedBuildingId, true)
           const d = res?.data
           if (d?.error) {
             setResult({ error: d.message || 'Could not verify residence' })
           } else if (d?.status === 'verified') {
             useResidence.setState({
-              buildingId: d.building_id || landmark.building_id,
+              buildingId: d.building_id || resolvedBuildingId,
               status: 'verified',
             })
-            // If they were already verified, the backend returns existing status
-            // New claims get auto_verify=true → verified. Either way, they're in.
             setResult({ success: true, status: 'verified' })
           } else {
-            // Shouldn't happen with auto_verify but handle gracefully
             useResidence.setState({
-              buildingId: d?.building_id || landmark.building_id,
+              buildingId: d?.building_id || resolvedBuildingId,
               status: d?.status || 'pending',
             })
             setResult({ success: true, status: d?.status || 'pending' })
@@ -210,7 +212,7 @@ export default function CheckinPage({ locationId }) {
     } else {
       checkin(locationId).then(setResult)
     }
-  }, [locationId, fired, checkin, isResidential, landmark?.building_id])
+  }, [locationId, fired, checkin, isResidential, resolvedBuildingId])
 
   // Show handle picker after successful check-in if no handle set (non-residential only)
   useEffect(() => {
@@ -229,10 +231,10 @@ export default function CheckinPage({ locationId }) {
         <div>
           <div className="text-4xl mb-2">{emoji}</div>
           <h1 className="text-xl font-semibold text-on-surface">
-            {landmark ? landmark.name : 'Lafayette Square'}
+            {landmark ? landmark.name : building ? building.address : 'Lafayette Square'}
           </h1>
-          {landmark && (
-            <p className="text-sm text-on-surface-subtle mt-1">{landmark.address}</p>
+          {(landmark || building) && (
+            <p className="text-sm text-on-surface-subtle mt-1">{landmark?.address || building?.address}</p>
           )}
         </div>
 
@@ -262,7 +264,7 @@ export default function CheckinPage({ locationId }) {
                 <div className="text-2xl mb-1">{emoji}</div>
                 <p className="text-[#7A8B6F] font-medium">Welcome home</p>
                 <p className="text-on-surface-variant text-sm mt-2">
-                  You're now a verified resident of {landmark?.name || 'this building'}.
+                  You're now a verified resident of {resolvedName}.
                 </p>
                 <p className="text-on-surface-subtle text-xs mt-3">
                   Open the map, tap your building, and visit the Lobby to connect with neighbors.
@@ -339,10 +341,10 @@ export default function CheckinPage({ locationId }) {
 
         {/* Link back to map */}
         <a
-          href={isResidential && landmark ? `${import.meta.env.BASE_URL}place/${locationId}` : import.meta.env.BASE_URL}
+          href={isResidential ? `${import.meta.env.BASE_URL}place/${locationId}` : import.meta.env.BASE_URL}
           className="inline-block text-sm px-4 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
         >
-          {isResidential ? `Open ${landmark?.name || 'building'} on the map` : 'Explore the neighborhood'} &rarr;
+          {isResidential ? `Open ${resolvedName} on the map` : 'Explore the neighborhood'} &rarr;
         </a>
       </div>
     </div>

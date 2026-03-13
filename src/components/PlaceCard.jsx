@@ -1719,7 +1719,9 @@ function CaryButton({ placeName, placeId, buildingPosition, isResidential }) {
 }
 
 // ─── Tab: QR Codes (guardian / admin) ─────────────────────────────
-function QrTab({ listingId, listingName, isAdmin, isResidential }) {
+function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
+  // For residential buildings, the QR encodes the building ID (not the listing ID)
+  const qrId = isResidential ? (buildingId || listingId) : listingId
   const [townieQr, setTownieQr] = useState(null)
   const [guardianQr, setGuardianQr] = useState(null)
   const [townieUrl, setTownieUrl] = useState('')
@@ -1733,21 +1735,21 @@ function QrTab({ listingId, listingName, isAdmin, isResidential }) {
   // Read styled QR image: localStorage first, then API fallback
   const readStyledImage = useCallback(async (type) => {
     try {
-      const local = localStorage.getItem(`lsq-qr-image-${listingId}-${type}`)
+      const local = localStorage.getItem(`lsq-qr-image-${qrId}-${type}`)
       if (local) return local
     } catch { /* silent */ }
     // Fallback: fetch from API (works across all devices)
     try {
-      const res = await getQrDesign(listingId, type)
+      const res = await getQrDesign(qrId, type)
       const image = res?.data?.image
       if (image) {
         // Cache locally for next time
-        try { localStorage.setItem(`lsq-qr-image-${listingId}-${type}`, image) } catch { /* silent */ }
+        try { localStorage.setItem(`lsq-qr-image-${qrId}-${type}`, image) } catch { /* silent */ }
         return image
       }
     } catch { /* silent */ }
     return null
-  }, [listingId])
+  }, [qrId])
 
   // Listen for lsq-saved from QR Studio iframe to refresh QR codes
   useEffect(() => {
@@ -1763,8 +1765,8 @@ function QrTab({ listingId, listingName, isAdmin, isResidential }) {
     let cancelled = false
 
     async function loadQrs() {
-      // 1. Generate plain Townie QR instantly (client-side, no network)
-      const tUrl = `${vanity}/checkin/${listingId}`
+      // 1. Generate plain QR instantly (client-side, no network)
+      const tUrl = `${vanity}/checkin/${qrId}`
       setTownieUrl(tUrl)
       const plainTownie = await QRCode.toDataURL(tUrl, { width: 256, margin: 2 })
       if (!cancelled) {
@@ -1773,37 +1775,42 @@ function QrTab({ listingId, listingName, isAdmin, isResidential }) {
         setLoading(false) // Plain QRs ready — show UI immediately
       }
 
-      // 2. Fetch guardian secret + generate plain Guardian QR
-      try {
-        const dh = await getDeviceHash()
-        const res = isAdmin
-          ? await getClaimSecretAdmin(listingId)
-          : await getClaimSecret(listingId, dh)
-        const secret = res?.data?.claim_secret
-        if (secret && !cancelled) {
-          setClaimSecret(secret)
-          const gUrl = `${vanity}/claim/${listingId}/${secret}`
-          setGuardianUrl(gUrl)
-          const plainGuardian = await QRCode.toDataURL(gUrl, { width: 256, margin: 2 })
-          if (!cancelled) setGuardianQr(plainGuardian)
-        }
-      } catch { /* silent */ }
+      // 2. Fetch guardian secret + generate plain Guardian QR (non-residential only)
+      if (!isResidential) {
+        try {
+          const dh = await getDeviceHash()
+          const res = isAdmin
+            ? await getClaimSecretAdmin(qrId)
+            : await getClaimSecret(qrId, dh)
+          const secret = res?.data?.claim_secret
+          if (secret && !cancelled) {
+            setClaimSecret(secret)
+            const gUrl = `${vanity}/claim/${qrId}/${secret}`
+            setGuardianUrl(gUrl)
+            const plainGuardian = await QRCode.toDataURL(gUrl, { width: 256, margin: 2 })
+            if (!cancelled) setGuardianQr(plainGuardian)
+          }
+        } catch { /* silent */ }
+      }
 
       // 3. Upgrade to styled versions in background
       try {
-        const styledTownie = await readStyledImage('Townie')
+        const styledType = isResidential ? 'Resident' : 'Townie'
+        const styledTownie = await readStyledImage(styledType)
         if (styledTownie && !cancelled) setTownieQr(styledTownie)
       } catch { /* silent */ }
-      try {
-        const styledGuardian = await readStyledImage('Guardian')
-        if (styledGuardian && !cancelled) setGuardianQr(prev => prev ? styledGuardian : prev)
-      } catch { /* silent */ }
+      if (!isResidential) {
+        try {
+          const styledGuardian = await readStyledImage('Guardian')
+          if (styledGuardian && !cancelled) setGuardianQr(prev => prev ? styledGuardian : prev)
+        } catch { /* silent */ }
+      }
       if (!cancelled) setStyledLoading(false)
     }
 
     loadQrs()
     return () => { cancelled = true }
-  }, [listingId, isAdmin, refreshKey, readStyledImage])
+  }, [qrId, isAdmin, isResidential, refreshKey, readStyledImage])
 
   const shareUrl = async (url, title) => {
     if (navigator.share) {
@@ -1814,7 +1821,7 @@ function QrTab({ listingId, listingName, isAdmin, isResidential }) {
   }
 
   const openQrStudio = () => {
-    useCodeDesk.getState().setOpen(true, { listingId, qrType: isResidential ? 'Resident' : 'Townie', claimSecret, mode: 'guardian', placeName: listingName })
+    useCodeDesk.getState().setOpen(true, { listingId: qrId, qrType: isResidential ? 'Resident' : 'Townie', claimSecret, mode: 'guardian', placeName: listingName })
   }
 
   return (
@@ -1825,36 +1832,38 @@ function QrTab({ listingId, listingName, isAdmin, isResidential }) {
         <div className="text-caption text-on-surface-subtle mb-3">{isResidential ? 'Show to a neighbor to invite them' : 'For customers to check in'}</div>
         {townieQr && (
           <div className="flex justify-center mb-3">
-            <img src={townieQr} alt="Townie QR" className={`w-48 rounded-lg transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`} />
+            <img src={townieQr} alt={isResidential ? 'Resident QR' : 'Townie QR'} className={`w-48 rounded-lg transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`} />
           </div>
         )}
-        <div className="flex gap-2">
-          <button
-            onClick={() => shareUrl(townieUrl, 'Check in here')}
-            className="flex-1 px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-body-sm transition-colors flex items-center justify-center gap-1.5"
-          >
-            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-            </svg>
-            Share
-          </button>
-          {townieQr && (
+        {!isResidential && (
+          <div className="flex gap-2">
             <button
-              onClick={() => {
-                const a = document.createElement('a')
-                a.href = townieQr
-                a.download = `${listingName || 'townie'}-qr.png`
-                a.click()
-              }}
+              onClick={() => shareUrl(townieUrl, 'Check in here')}
               className="flex-1 px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-body-sm transition-colors flex items-center justify-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
               </svg>
-              Download
+              Share
             </button>
-          )}
-        </div>
+            {townieQr && (
+              <button
+                onClick={() => {
+                  const a = document.createElement('a')
+                  a.href = townieQr
+                  a.download = `${listingName || 'townie'}-qr.png`
+                  a.click()
+                }}
+                className="flex-1 px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-body-sm transition-colors flex items-center justify-center gap-1.5"
+              >
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Download
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Guardian QR — hidden behind reveal toggle (non-residential only) */}
@@ -2364,7 +2373,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
           {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />}
-          {currentTab === 'qr' && <QrTab listingId={listingId} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />}
+          {currentTab === 'qr' && <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />}
           {/* Property card tabs */}
           {currentTab === 'property' && (
             <>
