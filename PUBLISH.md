@@ -1,5 +1,28 @@
 # Publishing Lafayette Square
 
+## Single source of truth: the deployment ID
+
+Every API URL in this project must use the same Apps Script deployment ID. It appears in **four** places:
+
+| Location | File / Setting | Used by |
+|----------|---------------|---------|
+| This file | Section 2 below | Humans reading docs |
+| `.env` | `VITE_API_URL` | Local dev server (`npm run dev`) |
+| GitHub Secret | `VITE_API_URL` | Production build (`npm run build` in Actions) |
+| CodeDesk iframe | `public/codedesk/index.html` → `window.LSQ_API_URL` | QR Generator |
+
+**Current deployment ID:** `AKfycbxv3JihCx0U7JfGqle6ZpsLamkRS5PAEGRn6_NaM0Nc7r5zdY7kyctDioScGy8nVcAqWQ`
+
+If these drift apart, you get "Unknown-action" errors because old deployments don't have newer endpoints. **After any `clasp deploy`, verify all four match.** Run this to check the code locations:
+
+```bash
+grep -r 'AKfycb' .env public/codedesk/index.html PUBLISH.md --include='*.md' --include='*.html' --include='*.env' | grep -v node_modules
+```
+
+The GitHub Secret must be checked manually at [Settings > Secrets > Actions](https://github.com/jacobeugenehenderson/lafayette-square/settings/secrets/actions).
+
+---
+
 ## Quick reference
 
 | What changed | What to do |
@@ -76,15 +99,7 @@ https://script.google.com/macros/s/AKfycbxv3JihCx0U7JfGqle6ZpsLamkRS5PAEGRn6_NaM
 
 This URL is stable across `clasp deploy` calls (same deployment ID = same URL). There are multiple old deployments in the project — always use the ID above.
 
-### API URL must match in all three places
-
-The deployment URL above must be identical in:
-
-1. **`.env`** — `VITE_API_URL` (used by local dev server)
-2. **GitHub Secret** — `VITE_API_URL` in [repo Settings > Secrets > Actions](https://github.com/jacobeugenehenderson/lafayette-square/settings/secrets/actions) (used by prod build)
-3. **`public/codedesk/index.html`** — `window.LSQ_API_URL` (used by QR Generator iframe)
-
-If you create a new deployment, update all three. Mismatched URLs cause "Unknown-action" errors because old deployments don't have newer endpoints.
+See **"Single source of truth"** at the top of this file for all locations that must match this deployment ID.
 
 ### What the backend handles
 
@@ -168,6 +183,9 @@ GitHub Pages CDN can cache for up to 10 minutes. Hard-refresh or check the Actio
 
 **`clasp push` says "invalid_grant"?**
 Run `npx clasp login` to re-authenticate.
+
+**"Unknown-action" error from the API?**
+The frontend is hitting an old Apps Script deployment that doesn't have the endpoint. The deployment ID has drifted — see **"Single source of truth"** at the top of this file. Check all four locations match, update the GitHub Secret, and push to trigger a rebuild.
 
 **Local dev freezes or crashes?**
 If Docker/Supabase local is running, stop it immediately: `supabase stop`. The local stack uses ~3-4 GB RAM and is not needed — use the hosted project instead. If Supabase isn't the cause, check if `VITE_SUPABASE_URL` points to a running instance. If it's missing, remove the var from `.env` — the stub client will keep the app functional.
