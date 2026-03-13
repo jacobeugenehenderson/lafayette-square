@@ -2173,18 +2173,21 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
   const tabs = useMemo(() => {
     if (hasListingInfo) {
-      // ── Listing path ──
-      const t = [{ id: 'overview', label: 'Overview' }]
-      if (!isResidential) {
-        t.push({ id: 'reviews', label: 'Reviews' })
-        t.push({ id: 'events', label: 'Events' })
+      if (isResidential) {
+        // ── Residential: consolidated tabs ──
+        const t = [{ id: 'about', label: 'About' }]
+        if (isResidentHere) t.push({ id: 'lobby', label: 'Lobby' })
+        if (isResidentHere || isAdmin) t.push({ id: 'qr', label: 'QR' })
+        return t
       }
-      if (isResidentHere) t.push({ id: 'lobby', label: 'Lobby' })
+      // ── Non-residential listing path ──
+      const t = [{ id: 'overview', label: 'Overview' }]
+      t.push({ id: 'reviews', label: 'Reviews' })
+      t.push({ id: 'events', label: 'Events' })
       if (hasHistory) t.push({ id: 'history', label: 'History' })
       if (hasArchitecture) t.push({ id: 'architecture', label: 'Details' })
       t.push({ id: 'photos', label: 'Photos' })
-      if (!isResidential && (isGuardian || isAdmin)) t.push({ id: 'qr', label: 'QR' })
-      if (isResidential && (isResidentHere || isAdmin)) t.push({ id: 'qr', label: 'QR' })
+      if (isGuardian || isAdmin) t.push({ id: 'qr', label: 'QR' })
       return t
     }
     // ── Property card path: bare buildings ──
@@ -2434,7 +2437,47 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
         {/* Tab content */}
         <div className="p-4">
-          {/* Listing tabs (unchanged) */}
+          {/* Residential: consolidated About tab */}
+          {currentTab === 'about' && (
+            <div className="space-y-0">
+              {/* Description / Overview */}
+              <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} isResidential={isResidential} />
+
+              {/* History section */}
+              {(history?.length > 0 || description) && (
+                <>
+                  <div className="border-t border-outline-variant my-4" />
+                  <div className="mb-1">
+                    <span className="text-on-surface-disabled text-caption uppercase tracking-wider">History</span>
+                  </div>
+                  <HistoryTab history={history} description={null} />
+                </>
+              )}
+
+              {/* Architecture / Details section */}
+              {hasArchitecture && (
+                <>
+                  <div className="border-t border-outline-variant my-4" />
+                  <div className="mb-2">
+                    <span className="text-on-surface-disabled text-caption uppercase tracking-wider">Building Details</span>
+                  </div>
+                  <ArchitectureTab building={building} />
+                </>
+              )}
+
+              {/* Photos section */}
+              {(photos?.length > 0 || facadeImage || facadeInfo) && (
+                <>
+                  <div className="border-t border-outline-variant my-4" />
+                  <div className="mb-2">
+                    <span className="text-on-surface-disabled text-caption uppercase tracking-wider">Photos</span>
+                  </div>
+                  <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
+                </>
+              )}
+            </div>
+          )}
+          {/* Non-residential listing tabs */}
           {currentTab === 'overview' && (
             <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} isResidential={isResidential} />
           )}
@@ -2442,7 +2485,6 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           {currentTab === 'events' && <EventsTab listingId={listingId} isGuardian={isGuardian} />}
           {currentTab === 'lobby' && <LobbyTab buildingId={building?.id} />}
           {currentTab === 'architecture' && <ArchitectureTab building={building} />}
-          {/* Shared tabs */}
           {currentTab === 'history' && <HistoryTab history={history} description={description} />}
           {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />}
           {currentTab === 'qr' && <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />}
