@@ -2094,41 +2094,57 @@ function LobbyTab({ buildingId }) {
   )
 }
 
-// ─── Residential About Tab (consolidated single-scroll) ──────────────
-function ResidentialAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
-  const hasHistory = !!(history?.length || description)
-  const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
+// ─── About section anchor chips (rendered in header, outside scroll) ──
+function useAboutSections({ history, description, hasArchitecture, photos, facadeImage, facadeInfo }) {
+  return useMemo(() => {
+    const hasHistory = !!(history?.length || description)
+    const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
+    const sections = [{ id: 'about-overview', label: 'Overview' }]
+    if (hasPhotos) sections.push({ id: 'about-photos', label: 'Photos' })
+    if (hasHistory) sections.push({ id: 'about-history', label: 'History' })
+    if (hasArchitecture) sections.push({ id: 'about-details', label: 'Details' })
+    return sections
+  }, [history, description, hasArchitecture, photos, facadeImage, facadeInfo])
+}
 
-  // Build section list for anchor chips
-  const sections = [{ id: 'about-overview', label: 'Overview' }]
-  if (hasPhotos) sections.push({ id: 'about-photos', label: 'Photos' })
-  if (hasHistory) sections.push({ id: 'about-history', label: 'History' })
-  if (hasArchitecture) sections.push({ id: 'about-details', label: 'Details' })
+function AboutChips({ sections, scrollContainerRef }) {
+  if (sections.length <= 1) return null
 
   const scrollTo = (id) => {
     const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const container = scrollContainerRef?.current
+    if (el && container) {
+      // Scroll within the container, accounting for sticky header height
+      const headerHeight = container.querySelector('[data-sticky-header]')?.offsetHeight || 0
+      const elTop = el.offsetTop - headerHeight
+      container.scrollTo({ top: elTop, behavior: 'smooth' })
+    } else if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 
   return (
-    <div className="space-y-5">
-      {/* Anchor chips — sticky within scroll container */}
-      {sections.length > 1 && (
-        <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#141414] border-b border-outline-variant">
-          <div className="flex gap-1.5 overflow-x-auto">
-            {sections.map(s => (
-              <button
-                key={s.id}
-                onClick={() => scrollTo(s.id)}
-                className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="flex gap-1.5 overflow-x-auto px-4 py-2">
+      {sections.map(s => (
+        <button
+          key={s.id}
+          onClick={() => scrollTo(s.id)}
+          className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
+        >
+          {s.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
+// ─── Residential About Tab (consolidated single-scroll) ──────────────
+function ResidentialAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
+  const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
+  const hasHistory = !!(history?.length || description)
+
+  return (
+    <div className="space-y-5">
       {/* Overview */}
       <div id="about-overview">
         <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={true} />
@@ -2215,6 +2231,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const isGuardian = isAdmin || (listingId ? isGuardianOf(listingId) : false)
 
   const placeholderPhotos = getPlaceholderPhotos(category)
+  const scrollRef = useRef(null)
+  const aboutSections = useAboutSections({ history, description, hasArchitecture, photos, facadeImage, facadeInfo })
 
   // Architecture data for property card (bare buildings)
   const arch = building?.architecture || {}
@@ -2361,10 +2379,12 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
       </div>
 
       <EditProvider listingId={listingId}>
-      <div className="overflow-y-auto flex-1">
+      <div ref={scrollRef} className="overflow-y-auto flex-1">
+        {/* Sticky header: title + tabs + section chips */}
+        <div data-sticky-header className="sticky top-0 z-10 bg-[#141414]">
         {hasListingInfo ? (
           <>
-            {/* ── Listing path: everything unchanged ── */}
+            {/* ── Listing path ── */}
 
             {/* Multi-tenant pill tabs */}
             {listings.length > 1 && (
@@ -2494,6 +2514,12 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             </button>
           ))}
         </nav>
+
+        {/* About section chips (inside sticky header) */}
+        {currentTab === 'about' && (
+          <AboutChips sections={aboutSections} scrollContainerRef={scrollRef} />
+        )}
+        </div>{/* end sticky header */}
 
         {/* Tab content */}
         <div className="p-4">
