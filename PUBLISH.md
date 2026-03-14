@@ -1,5 +1,17 @@
 # Publishing Lafayette Square
 
+## Working directory
+
+**All development happens from `~/Desktop/lafayette-square`.** This is the one and only working repo.
+
+The external drive (`/Volumes/Today/lafayette-square`) is a manual archive copy — do NOT develop from it. Claude Code, Vite dev server, Supabase CLI, and all git operations run from the Desktop copy.
+
+**Why:** The external drive is too slow for Vite's HMR and file watcher. Supabase's local Docker stack (7 containers, ~3-4 GB RAM) crashes the system when run from it. The Desktop SSD copy solves both.
+
+**To sync the archive:** `git -C /Volumes/Today/lafayette-square pull` (only when you want to update it manually).
+
+---
+
 ## Single source of truth: the deployment ID
 
 Every API URL in this project must use the same Apps Script deployment ID. It appears in **four** places:
