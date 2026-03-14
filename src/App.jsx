@@ -338,10 +338,12 @@ function BulletinOpener() {
   return null
 }
 
-function CaryOpener() {
+function CaryOpener({ tier }) {
   useEffect(() => {
-    useCourierDash.getState().setOpen(true)
-  }, [])
+    const state = useCourierDash.getState()
+    if (tier) state.setTier(tier)
+    state.setOpen(true)
+  }, [tier])
   return null
 }
 
@@ -493,7 +495,7 @@ function App() {
       <SceneBoundary><Scene /></SceneBoundary>
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && <BulletinOpener />}
-      {route.page === 'cary' && <CaryOpener />}
+      {route.page === 'cary' && <CaryOpener tier={route.tier} />}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.2s' }}><Controls /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><CompassRose /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
@@ -522,6 +524,8 @@ function parseRoute() {
   const placeMatch = path.match(/^\/place\/([^/]+)$/)
   if (placeMatch) return { page: 'place', listingId: placeMatch[1] }
   if (path === '/bulletin') return { page: 'bulletin' }
+  if (path === '/cary/deliver') return { page: 'cary', tier: 'deliver' }
+  if (path === '/cary/drive') return { page: 'cary', tier: 'drive' }
   if (path === '/cary/apply' || path === '/cary') return { page: 'cary' }
   return { page: 'scene' }
 }

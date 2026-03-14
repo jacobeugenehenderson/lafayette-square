@@ -19,7 +19,9 @@ import CaryAuth from './CaryAuth'
 // ── Store ─────────────────────────────────────────────────────
 export const useCourierDash = create((set) => ({
   open: false,
+  tier: null, // 'deliver' | 'drive' | null (null = show chooser)
   setOpen: (open) => set({ open }),
+  setTier: (tier) => set({ tier }),
 }))
 
 // ── Online/Offline Toggle ─────────────────────────────────────
@@ -281,10 +283,43 @@ function LiveMeter() {
   )
 }
 
+// ── Tier Chooser ─────────────────────────────────────────────
+function TierChooser({ onSelect }) {
+  return (
+    <div className="space-y-4">
+      <div className="text-center mb-2">
+        <p className="text-body text-on-surface font-medium">How do you want to earn?</p>
+      </div>
+      <button
+        onClick={() => onSelect('deliver')}
+        className="w-full text-left rounded-xl border border-outline-variant bg-surface-container p-4 hover:border-on-surface-subtle hover:bg-surface-container-high transition-colors"
+      >
+        <p className="text-body font-medium text-on-surface">Deliver</p>
+        <p className="text-body-sm text-on-surface-variant mt-1">
+          Packages, food, errands. Walk, bike, or drive. Ages 14+.
+        </p>
+        <p className="text-caption text-emerald-400 mt-2">Free — active in minutes</p>
+      </button>
+      <button
+        onClick={() => onSelect('drive')}
+        className="w-full text-left rounded-xl border border-outline-variant bg-surface-container p-4 hover:border-on-surface-subtle hover:bg-surface-container-high transition-colors"
+      >
+        <p className="text-body font-medium text-on-surface">Carry passengers</p>
+        <p className="text-body-sm text-on-surface-variant mt-1">
+          Rides starting in the Square, servicing the entire county. Must be 18+.
+        </p>
+        <p className="text-caption text-on-surface-subtle mt-2">~$42 — active in 1-3 days</p>
+      </button>
+    </div>
+  )
+}
+
 // ── Main Dashboard ────────────────────────────────────────────
 export default function CourierDashboard() {
   const open = useCourierDash((s) => s.open)
   const setOpen = useCourierDash((s) => s.setOpen)
+  const tier = useCourierDash((s) => s.tier)
+  const setTier = useCourierDash((s) => s.setTier)
   const {
     user,
     profile,
@@ -309,7 +344,10 @@ export default function CourierDashboard() {
   if (!open) return null
 
   // Determine subtitle based on state
-  const subtitle = isPreview ? 'Courier onboarding (preview)'
+  const subtitle = isPreview ? `Courier onboarding — ${tier || 'preview'}`
+    : !tier ? 'Join the network'
+    : tier === 'deliver' ? 'Deliver in the Square'
+    : tier === 'drive' ? 'Drive for Cary'
     : !user ? 'Apply to become a courier'
     : !profile ? 'Create your profile'
     : !courierProfile ? 'Courier application'
@@ -331,22 +369,27 @@ export default function CourierDashboard() {
             <p className="text-body-sm text-on-surface-subtle">{subtitle}</p>
           </div>
           <button
-            onClick={() => setOpen(false)}
+            onClick={() => { setOpen(false); setTier(null) }}
             className="w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 hover:bg-rose-500/30 flex items-center justify-center text-body-sm"
           >
             &times;
           </button>
         </div>
 
+        {/* Tier chooser: no tier selected yet */}
+        {!tier && !isPreview && !courierProfile?.status && (
+          <TierChooser onSelect={setTier} />
+        )}
+
         {/* Preview mode: show onboarding wizard without auth */}
-        {isPreview && <CourierOnboarding preview />}
+        {isPreview && <CourierOnboarding preview tier={tier || 'drive'} />}
 
         {/* Auth: not signed in yet */}
-        {!isPreview && !user && <CaryAuth />}
+        {!isPreview && tier && !user && <CaryAuth />}
 
         {/* Onboarding: signed in but not yet active */}
-        {!isPreview && user && profile && (!courierProfile || courierProfile.status !== 'active') && (
-          <CourierOnboarding />
+        {!isPreview && tier && user && profile && (!courierProfile || courierProfile.status !== 'active') && (
+          <CourierOnboarding tier={tier} />
         )}
 
         {/* Active courier */}

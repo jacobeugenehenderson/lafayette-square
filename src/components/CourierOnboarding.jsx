@@ -35,17 +35,17 @@ const VEHICLE_TYPES = [
 
 // ── Progress indicator ────────────────────────────────────────
 
-const STEP_LABELS = ['Identity', 'License', 'Background', 'Insurance', 'Vehicle', 'Agreement']
+const DEFAULT_LABELS = ['Identity', 'License', 'Background', 'Insurance', 'Vehicle', 'Agreement']
 
-function ProgressBar({ currentStep }) {
-  const stepIndex = STEP_LABELS.findIndex(
+function ProgressBar({ currentStep, labels = DEFAULT_LABELS }) {
+  const stepIndex = labels.findIndex(
     (s) => s.toLowerCase() === currentStep?.replace('pending_activation', 'done')
   )
-  const activeIndex = currentStep === 'pending_activation' ? STEP_LABELS.length : Math.max(0, stepIndex)
+  const activeIndex = currentStep === 'pending_activation' ? labels.length : Math.max(0, stepIndex)
 
   return (
     <div className="flex items-center gap-1 mb-6">
-      {STEP_LABELS.map((label, i) => (
+      {labels.map((label, i) => (
         <div key={label} className="flex-1 flex flex-col items-center gap-1">
           <div
             className={`w-full h-1 rounded-full transition-colors ${
@@ -551,20 +551,25 @@ function VehicleTypeStep({ onSelect }) {
 
 // ── Preview Mode (local state, no Supabase) ────────────────
 
-const STEP_ORDER = ['identity', 'license', 'background', 'insurance', 'vehicle', 'agreement', 'pending_activation']
+const DRIVE_STEPS = ['identity', 'license', 'background', 'insurance', 'vehicle', 'agreement', 'pending_activation']
+const DELIVER_STEPS = ['identity', 'vehicle', 'agreement', 'pending_activation']
 
-function PreviewOnboarding() {
+const DRIVE_LABELS = ['Identity', 'License', 'Background', 'Insurance', 'Vehicle', 'Agreement']
+const DELIVER_LABELS = ['Identity', 'Vehicle', 'Agreement']
+
+function PreviewOnboarding({ tier = 'drive' }) {
+  const steps = tier === 'deliver' ? DELIVER_STEPS : DRIVE_STEPS
   const [step, setStep] = useState(null) // null = vehicle type selector
   const [vehicleType, setVehicleType] = useState('car')
 
   const advanceStep = () => {
     if (!step) {
-      setStep('identity')
+      setStep(steps[0])
       return
     }
-    const idx = STEP_ORDER.indexOf(step)
-    if (idx < STEP_ORDER.length - 1) {
-      setStep(STEP_ORDER[idx + 1])
+    const idx = steps.indexOf(step)
+    if (idx < steps.length - 1) {
+      setStep(steps[idx + 1])
     }
   }
 
@@ -573,7 +578,9 @@ function PreviewOnboarding() {
     return (
       <div className="space-y-4">
         <div>
-          <h3 className="text-body font-medium text-on-surface">How will you deliver?</h3>
+          <h3 className="text-body font-medium text-on-surface">
+            {tier === 'deliver' ? 'How will you deliver?' : 'Select your vehicle'}
+          </h3>
           <p className="text-body-sm text-on-surface-variant mt-1">
             Select your primary mode of transport.
           </p>
@@ -593,7 +600,6 @@ function PreviewOnboarding() {
     )
   }
 
-  // In preview, wrap onNext so buttons always advance (no Supabase calls)
   const previewNext = advanceStep
   const stepComponent = {
     identity: <IdentityStep onNext={previewNext} preview />,
@@ -605,9 +611,11 @@ function PreviewOnboarding() {
     pending_activation: <PendingStep />,
   }
 
+  const labels = tier === 'deliver' ? DELIVER_LABELS : DRIVE_LABELS
+
   return (
     <>
-      <ProgressBar currentStep={step} />
+      <ProgressBar currentStep={step} labels={labels} />
       {stepComponent[step] || <PendingStep />}
     </>
   )
@@ -615,11 +623,11 @@ function PreviewOnboarding() {
 
 // ── Main Onboarding Component ───────────────────────────────
 
-export default function CourierOnboarding({ preview = false }) {
+export default function CourierOnboarding({ preview = false, tier = 'drive' }) {
   const { courierProfile, refreshOnboardingStatus } = useCary()
 
   // Preview mode: self-contained with local state
-  if (preview) return <PreviewOnboarding />
+  if (preview) return <PreviewOnboarding tier={tier} />
 
   const step = courierProfile?.onboarding_step
   const vehicleType = courierProfile?.vehicle_type
