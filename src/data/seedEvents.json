@@ -2,91 +2,81 @@
   {
     "id": "seed-001",
     "listing_id": "lmk-010",
-    "type": "special",
-    "title": "Weekend Brunch — new spring menu",
-    "description": "Chef Eliott Harris debuts the spring brunch lineup: chorizo avocado benedict, osso buco hash, and seasonal cocktails.",
-    "start_date": "2026-03-14",
-    "end_date": "2026-03-30"
+    "type": "event",
+    "title": "Polite Society — contemporary American in the heart of the Square",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-002",
     "listing_id": "lmk-008",
     "type": "event",
-    "title": "Literary Cocktail Night — new spring menu",
-    "description": "Spring cocktail debut featuring Gravity's Rainbow and Paradise Lost. House-made pasta specials all evening.",
-    "start_date": "2026-03-14",
-    "end_date": "2026-03-28"
+    "title": "The Bellwether — rooftop dining inside the 1937 City Hospital Power Plant",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-003",
     "listing_id": "lmk-027",
-    "type": "special",
-    "title": "Fish Fry Fridays",
-    "description": "Beer battered white fish or Gulf popcorn shrimp with sweet braised onions, whipped potatoes, green beans, and creamy slaw. $21 large / $16 small.",
-    "start_date": "2026-03-14",
-    "end_date": "2026-03-28"
+    "type": "event",
+    "title": "SqWires — seasonal fare in a converted 1900s wire factory",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-004",
     "listing_id": "lmk-011",
-    "type": "special",
-    "title": "Dubai Chocolate Martini — limited seasonal",
-    "description": "Chocolate vodka, dark chocolate liquor, pistachio ice cream, kataifi. Available while supplies last.",
-    "start_date": "2026-03-14",
-    "end_date": "2026-03-28"
+    "type": "event",
+    "title": "Baileys' Chocolate Bar — desserts and martinis on Park Avenue",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-005",
     "listing_id": "lmk-001",
     "type": "event",
-    "title": "Nilla Gorilla returns — imperial porter tapping",
-    "description": "Imperial vanilla bourbon porter aged in JJ Neukomm oak barrels. 11% ABV. One keg only.",
-    "start_date": "2026-03-15",
-    "end_date": "2026-03-15"
+    "title": "Square One — house-brewed beer and house-distilled spirits since 2006",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-006",
     "listing_id": "lmk-040",
-    "type": "special",
-    "title": "Winnie the Pooh spring flavors are here",
-    "description": "Eeyore's Birthday, Piglet's Red Balloon, Silly Old Bear, and What Tiggers Love Best (non-dairy). In parlors now.",
-    "start_date": "2026-03-14",
-    "end_date": "2026-03-31"
+    "type": "event",
+    "title": "Clementine's — small-batch ice cream on 18th Street",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-007",
     "listing_id": "lmk-021",
-    "type": "special",
-    "title": "Happy Hour daily 3-6pm — half off bottles under $75",
-    "description": "Wine bottles under $75 are half off, plus $10 Bermuda Triangle frosé and featured small plates.",
-    "start_date": "2026-03-14",
-    "end_date": "2026-03-28"
+    "type": "event",
+    "title": "Winnie's Wine Bar — wines, small plates, and cocktails on Chouteau",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-008",
-    "listing_id": "lmk-010",
+    "listing_id": "lmk-028",
     "type": "event",
-    "title": "The Drawing Room — private dining available",
-    "description": "2,000 sq ft private event space with its own kitchen, bar, and speakeasy-style entrance. Book for groups of 20-80.",
-    "start_date": "2026-03-17",
-    "end_date": "2026-03-31"
+    "title": "Eleven Eleven Mississippi — farm-to-table fine dining since 2001",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-009",
-    "listing_id": "lmk-008",
-    "type": "special",
-    "title": "Sunday brunch — churro cinnamon waffle",
-    "description": "Cinnamon sugar, chocolate whipped cream. Plus classic and lox benedicts, bacon fried rice, and bottomless brunch cocktails.",
-    "start_date": "2026-03-15",
-    "end_date": "2026-03-29"
+    "listing_id": "lmk-005",
+    "type": "event",
+    "title": "33 Wine Shop & Bar — 500+ curated wines and free tastings every Tuesday",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   },
   {
     "id": "seed-010",
-    "listing_id": "lmk-027",
+    "listing_id": "lmk-006",
     "type": "event",
-    "title": "Easter Brunch Buffet — April 5",
-    "description": "Omelet & carving station, seafood & salads, breakfast & brunch items, desserts & fruit, soft beverages included.",
-    "start_date": "2026-03-28",
-    "end_date": "2026-04-05"
+    "title": "Planter's House — craft cocktails in a historic mansion on Mississippi Ave",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
   }
 ]
