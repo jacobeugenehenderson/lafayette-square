@@ -17,6 +17,9 @@ const useCary = create((set, get) => ({
   loading: false,
   error: null,
 
+  // ── Onboarding state ────────────────────────────────────────
+  onboardingStatus: null, // result from get_onboarding_status RPC
+
   // ── Session state ───────────────────────────────────────────
   activeRequest: null,  // requester's current open/accepted request
   activeSession: null,  // live session (both sides)
@@ -127,6 +130,51 @@ const useCary = create((set, get) => ({
     }
     set({ courierProfile: data, loading: false })
     return true
+  },
+
+  // ── Courier: onboarding actions ─────────────────────────────
+  onboardingAction: async (action, extraFields = {}) => {
+    const courier = get().courierProfile
+    if (!courier) return null
+    set({ loading: true, error: null })
+
+    const { data, error } = await supabase.functions.invoke('onboarding', {
+      body: { action, courier_id: courier.id, ...extraFields },
+    })
+
+    if (error) {
+      set({ error: error.message, loading: false })
+      return null
+    }
+    // Refresh courier profile + onboarding status after each action
+    await get().refreshOnboardingStatus()
+    set({ loading: false })
+    return data
+  },
+
+  refreshOnboardingStatus: async () => {
+    const courier = get().courierProfile
+    const user = get().user
+    if (!user) return
+
+    // Refresh courier profile from DB
+    const { data: updatedCourier } = await supabase
+      .from('courier_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (updatedCourier) {
+      set({ courierProfile: updatedCourier })
+
+      // Fetch onboarding status if not yet active
+      if (updatedCourier.status !== 'active') {
+        const { data: statusData } = await supabase.rpc('get_onboarding_status', {
+          p_courier_id: updatedCourier.id,
+        })
+        if (statusData) set({ onboardingStatus: statusData })
+      }
+    }
   },
 
   // ── Requester: create request (uses device hash, no auth) ──

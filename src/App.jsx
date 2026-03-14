@@ -21,7 +21,7 @@ import ClaimPage from './pages/ClaimPage'
 import LinkPage from './pages/LinkPage'
 import QRCode from 'qrcode'
 import { createLinkToken, checkLinkToken } from './lib/api'
-import CourierDashboard from './components/CourierDashboard'
+import CourierDashboard, { useCourierDash } from './components/CourierDashboard'
 
 function LiveButton() {
   const isLive = useTimeOfDay((s) => s.isLive)
@@ -338,6 +338,13 @@ function BulletinOpener() {
   return null
 }
 
+function CaryOpener() {
+  useEffect(() => {
+    useCourierDash.getState().setOpen(true)
+  }, [])
+  return null
+}
+
 // ── Splash: time-pegged sky gradient + arch mark ─────────────────────
 const SPLASH_LAT = 38.6160, SPLASH_LON = -90.2161
 
@@ -486,6 +493,7 @@ function App() {
       <SceneBoundary><Scene /></SceneBoundary>
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && <BulletinOpener />}
+      {route.page === 'cary' && <CaryOpener />}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.2s' }}><Controls /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><CompassRose /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
@@ -514,6 +522,7 @@ function parseRoute() {
   const placeMatch = path.match(/^\/place\/([^/]+)$/)
   if (placeMatch) return { page: 'place', listingId: placeMatch[1] }
   if (path === '/bulletin') return { page: 'bulletin' }
+  if (path === '/cary/apply' || path === '/cary') return { page: 'cary' }
   return { page: 'scene' }
 }
 

@@ -13,6 +13,8 @@ import useCary from '../hooks/useCary'
 import { computeFare, computeBreakdown } from '../../cary/lib/meter.js'
 import { filterPoint } from '../../cary/lib/geo.js'
 import SafetyReport from './SafetyReport'
+import CourierOnboarding from './CourierOnboarding'
+import CaryAuth from './CaryAuth'
 
 // ── Store ─────────────────────────────────────────────────────
 export const useCourierDash = create((set) => ({
@@ -284,6 +286,8 @@ export default function CourierDashboard() {
   const open = useCourierDash((s) => s.open)
   const setOpen = useCourierDash((s) => s.setOpen)
   const {
+    user,
+    profile,
     courierProfile,
     activeSession,
     courierRequests,
@@ -300,7 +304,13 @@ export default function CourierDashboard() {
   }, [open, courierProfile?.status, subscribeAsCourier, unsubscribeAll])
 
   if (!open) return null
-  if (!courierProfile) return null
+
+  // Determine subtitle based on state
+  const subtitle = !user ? 'Apply to become a courier'
+    : !profile ? 'Create your profile'
+    : !courierProfile ? 'Courier application'
+    : courierProfile.status === 'active' ? 'Courier dashboard'
+    : 'Courier onboarding'
 
   return (
     <div className="fixed inset-0 z-[60] bg-surface/95 backdrop-blur-md overflow-y-auto">
@@ -314,13 +324,7 @@ export default function CourierDashboard() {
             >
               Cary
             </h2>
-            <p className="text-body-sm text-on-surface-subtle">
-              {courierProfile.status === 'active'
-                ? 'Courier dashboard'
-                : courierProfile.status === 'pending_checks'
-                ? 'Verification in progress...'
-                : `Status: ${courierProfile.status}`}
-            </p>
+            <p className="text-body-sm text-on-surface-subtle">{subtitle}</p>
           </div>
           <button
             onClick={() => setOpen(false)}
@@ -330,17 +334,12 @@ export default function CourierDashboard() {
           </button>
         </div>
 
-        {/* Not yet active */}
-        {courierProfile.status !== 'active' && (
-          <div className="rounded-xl border border-outline-variant bg-surface-container p-4 text-center">
-            <p className="text-body text-on-surface-variant">
-              {courierProfile.status === 'applying'
-                ? 'Your application is being reviewed. You\'ll need to complete a background check and identity verification.'
-                : courierProfile.status === 'pending_checks'
-                ? 'Your verifications are being processed. This usually takes 1-3 business days.'
-                : 'Your courier account is not currently active.'}
-            </p>
-          </div>
+        {/* Auth: not signed in yet */}
+        {!user && <CaryAuth />}
+
+        {/* Onboarding: signed in but not yet active */}
+        {user && profile && (!courierProfile || courierProfile.status !== 'active') && (
+          <CourierOnboarding />
         )}
 
         {/* Active courier */}
