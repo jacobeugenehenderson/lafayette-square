@@ -552,10 +552,10 @@ function VehicleTypeStep({ onSelect }) {
 // ── Preview Mode (local state, no Supabase) ────────────────
 
 const DRIVE_STEPS = ['identity', 'license', 'background', 'insurance', 'vehicle', 'agreement', 'pending_activation']
-const DELIVER_STEPS = ['identity', 'vehicle', 'agreement', 'pending_activation']
+const DELIVER_STEPS = ['identity', 'agreement', 'pending_activation']
 
 const DRIVE_LABELS = ['Identity', 'License', 'Background', 'Insurance', 'Vehicle', 'Agreement']
-const DELIVER_LABELS = ['Identity', 'Vehicle', 'Agreement']
+const DELIVER_LABELS = ['Identity', 'Agreement']
 
 function PreviewOnboarding({ tier = 'drive' }) {
   const steps = tier === 'deliver' ? DELIVER_STEPS : DRIVE_STEPS
@@ -625,6 +625,8 @@ function PreviewOnboarding({ tier = 'drive' }) {
 
 export default function CourierOnboarding({ preview = false, tier = 'drive' }) {
   const { courierProfile, refreshOnboardingStatus } = useCary()
+  const isDeliver = tier === 'deliver'
+  const labels = isDeliver ? DELIVER_LABELS : DRIVE_LABELS
 
   // Preview mode: self-contained with local state
   if (preview) return <PreviewOnboarding tier={tier} />
@@ -632,11 +634,12 @@ export default function CourierOnboarding({ preview = false, tier = 'drive' }) {
   const step = courierProfile?.onboarding_step
   const vehicleType = courierProfile?.vehicle_type
 
-  // No courier profile yet — show vehicle type selection to create one
+  // No courier profile yet — Deliver skips vehicle selection, Drive shows it
   if (!courierProfile) {
     return (
       <VehicleTypeStep
         onSelect={() => refreshOnboardingStatus()}
+        deliverOnly={isDeliver}
       />
     )
   }
@@ -646,60 +649,66 @@ export default function CourierOnboarding({ preview = false, tier = 'drive' }) {
 
   const advanceStep = () => refreshOnboardingStatus()
 
+  // Deliver tier: only identity → agreement → done
+  // Drive tier: full pipeline
   switch (step) {
     case 'identity':
       return (
         <>
-          <ProgressBar currentStep={step} />
+          <ProgressBar currentStep={step} labels={labels} />
           <IdentityStep onNext={advanceStep} />
         </>
       )
     case 'license':
+      if (isDeliver) { advanceStep(); return null } // skip for Deliver
       return (
         <>
-          <ProgressBar currentStep={step} />
+          <ProgressBar currentStep={step} labels={labels} />
           <LicenseStep onNext={advanceStep} />
         </>
       )
     case 'background':
+      if (isDeliver) { advanceStep(); return null }
       return (
         <>
-          <ProgressBar currentStep={step} />
+          <ProgressBar currentStep={step} labels={labels} />
           <BackgroundStep onNext={advanceStep} />
         </>
       )
     case 'insurance':
+      if (isDeliver) { advanceStep(); return null }
       return (
         <>
-          <ProgressBar currentStep={step} />
+          <ProgressBar currentStep={step} labels={labels} />
           <InsuranceStep onNext={advanceStep} vehicleType={vehicleType} />
         </>
       )
     case 'vehicle':
+      if (isDeliver) { advanceStep(); return null }
       return (
         <>
-          <ProgressBar currentStep={step} />
+          <ProgressBar currentStep={step} labels={labels} />
           <VehicleStep onNext={advanceStep} vehicleType={vehicleType} />
         </>
       )
     case 'agreement':
       return (
         <>
-          <ProgressBar currentStep={step} />
+          <ProgressBar currentStep={step} labels={labels} />
           <AgreementStep onNext={advanceStep} />
         </>
       )
     case 'pending_activation':
       return (
         <>
-          <ProgressBar currentStep={step} />
+          <ProgressBar currentStep={step} labels={labels} />
           <PendingStep />
         </>
       )
     default:
       return (
         <>
-          <ProgressBar currentStep={step} />
+          <ProgressBar currentStep={step} labels={labels} />
           <PendingStep />
         </>
       )

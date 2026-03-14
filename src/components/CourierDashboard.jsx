@@ -292,7 +292,7 @@ function TierChooser({ onSelect }) {
       </div>
       <button
         onClick={() => onSelect('deliver')}
-        className="w-full text-left rounded-xl border border-outline-variant bg-surface-container p-4 hover:border-on-surface-subtle hover:bg-surface-container-high transition-colors"
+        className="glass-card w-full text-left rounded-xl p-4 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
       >
         <p className="text-body font-medium text-on-surface">Deliver</p>
         <p className="text-body-sm text-on-surface-variant mt-1">
@@ -302,7 +302,7 @@ function TierChooser({ onSelect }) {
       </button>
       <button
         onClick={() => onSelect('drive')}
-        className="w-full text-left rounded-xl border border-outline-variant bg-surface-container p-4 hover:border-on-surface-subtle hover:bg-surface-container-high transition-colors"
+        className="glass-card w-full text-left rounded-xl p-4 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
       >
         <p className="text-body font-medium text-on-surface">Carry passengers</p>
         <p className="text-body-sm text-on-surface-variant mt-1">
@@ -355,7 +355,7 @@ export default function CourierDashboard() {
     : 'Courier onboarding'
 
   return (
-    <div className="fixed inset-0 z-[60] bg-surface/95 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-[60] glass-overlay overflow-y-auto">
       <div className="max-w-md mx-auto px-4 py-6 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -384,10 +384,10 @@ export default function CourierDashboard() {
         {/* Preview mode: show onboarding wizard without auth */}
         {isPreview && <CourierOnboarding preview tier={tier || 'drive'} />}
 
-        {/* Auth: not signed in yet */}
-        {!isPreview && tier && !user && <CaryAuth />}
+        {/* Auth + Profile creation: not signed in, or signed in but no profile */}
+        {!isPreview && tier && (!user || (user && !profile)) && <CaryAuth />}
 
-        {/* Onboarding: signed in but not yet active */}
+        {/* Onboarding: signed in with profile but not yet active */}
         {!isPreview && tier && user && profile && (!courierProfile || courierProfile.status !== 'active') && (
           <CourierOnboarding tier={tier} />
         )}

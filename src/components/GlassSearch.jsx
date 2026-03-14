@@ -2,6 +2,11 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
+import useBulletin from '../hooks/useBulletin'
+import { useCourierDash } from './CourierDashboard'
+import { useContact } from './ContactModal'
+import { useCodeDesk } from './CodeDeskModal'
+import { useInfo } from './InfoModal'
 import { TAG_BY_ID } from '../tokens/tags'
 import { SUBCATEGORY_LABELS, CATEGORY_LABELS } from '../tokens/categories'
 import buildingsData from '../data/buildings.json'
@@ -56,6 +61,15 @@ export default function GlassSearch() {
   const listings = useListings(s => s.listings)
   const flyTo = useCamera(s => s.flyTo)
   const highlight = useSelectedBuilding(s => s.highlight)
+
+  // Hide when any modal/overlay is open
+  const showCard = useSelectedBuilding(s => s.showCard)
+  const bulletinOpen = useBulletin(s => s.modalOpen)
+  const courierOpen = useCourierDash(s => s.open)
+  const contactOpen = useContact(s => s.open)
+  const codeDeskOpen = useCodeDesk(s => s.open)
+  const infoOpen = useInfo(s => s.open)
+  const suppressed = showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen
 
   const searchIndex = useMemo(() => buildSearchIndex(listings), [listings])
 
@@ -142,7 +156,7 @@ export default function GlassSearch() {
   }, [results, selectPlace])
 
   const showDropdown = focused && results.length > 0
-  const active = visible || focused
+  const active = (visible || focused) && !suppressed
 
   return (
     <div
@@ -155,15 +169,8 @@ export default function GlassSearch() {
       }}
     >
       {/* Glass search bar */}
-      <div
-        className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
-        style={{
-          background: 'rgba(20,20,20,0.45)',
-          backdropFilter: 'blur(24px) saturate(180%) brightness(110%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%) brightness(110%)',
-        }}
-      >
-        <svg className="w-4 h-4 text-white/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="glass-panel flex items-center gap-2.5 px-4 py-2.5 rounded-2xl">
+        <svg className="w-4 h-4 glass-text-dim flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <circle cx="11" cy="11" r="8" />
           <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
         </svg>
@@ -176,13 +183,13 @@ export default function GlassSearch() {
           onBlur={() => setTimeout(() => setFocused(false), 200)}
           onKeyDown={handleKeyDown}
           placeholder="Search places, menus, tags..."
-          className="flex-1 bg-transparent text-sm text-white/90 placeholder-white/30 outline-none"
+          className="flex-1 bg-transparent text-sm glass-text placeholder:glass-text-dim outline-none"
           style={{ fontFamily: 'ui-monospace, monospace' }}
         />
         {query && (
           <button
             onClick={() => { setQuery(''); inputRef.current?.focus() }}
-            className="text-white/30 hover:text-white/60 text-sm leading-none"
+            className="glass-text-dim glass-text-link text-sm leading-none"
           >
             &times;
           </button>
@@ -191,15 +198,7 @@ export default function GlassSearch() {
 
       {/* Dropdown results — below the input, max height capped */}
       {showDropdown && (
-        <div
-          className="mt-1.5 rounded-xl border border-white/15 overflow-y-auto shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
-          style={{
-            maxHeight: 'min(50vh, 400px)',
-            background: 'rgba(20,20,20,0.75)',
-            backdropFilter: 'blur(32px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(32px) saturate(180%)',
-          }}
-        >
+        <div className="glass-dropdown mt-1.5 rounded-xl overflow-y-auto" style={{ maxHeight: 'min(50vh, 400px)' }}>
           {results.map((result, i) => {
             const { listing } = result
             const logo = listing.logo
@@ -213,21 +212,21 @@ export default function GlassSearch() {
                   key={`${listing.id}-${item.name}-${i}`}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => selectPlace(listing)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/10 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-surface-container transition-colors"
                 >
                   {logo ? (
-                    <img src={logo} alt="" className="w-6 h-6 rounded object-contain bg-white/5 flex-shrink-0" />
+                    <img src={logo} alt="" className="w-6 h-6 rounded object-contain bg-surface-container flex-shrink-0" />
                   ) : (
                     <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center flex-shrink-0">
                       <span className="text-white/30 text-xs">{listing.name?.[0]}</span>
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white/90 truncate" style={{ fontFamily: 'ui-monospace, monospace' }}>{item.name}</div>
-                    <div className="text-xs text-white/40 truncate">
+                    <div className="text-sm glass-text truncate" style={{ fontFamily: 'ui-monospace, monospace' }}>{item.name}</div>
+                    <div className="text-xs glass-text-muted truncate">
                       {listing.name}
-                      {result.section?.menu && <span className="ml-1.5 text-white/30">· {MENU_LABELS[result.section.menu] || result.section.menu}</span>}
-                      {item.price != null && <span className="ml-1.5 text-white/50">${(item.price / 100).toFixed(0)}</span>}
+                      {result.section?.menu && <span className="ml-1.5 glass-text-dim">· {MENU_LABELS[result.section.menu] || result.section.menu}</span>}
+                      {item.price != null && <span className="ml-1.5 glass-text-secondary">${(item.price / 100).toFixed(0)}</span>}
                     </div>
                   </div>
                 </button>
@@ -240,18 +239,18 @@ export default function GlassSearch() {
                 key={listing.id}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => selectPlace(listing)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/10 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-surface-container transition-colors"
               >
                 {logo ? (
-                  <img src={logo} alt="" className="w-6 h-6 rounded object-contain bg-white/5 flex-shrink-0" />
+                  <img src={logo} alt="" className="w-6 h-6 rounded object-contain bg-surface-container flex-shrink-0" />
                 ) : (
-                  <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white/30 text-xs">{listing.name?.[0]}</span>
+                  <div className="w-6 h-6 rounded bg-surface-container flex items-center justify-center flex-shrink-0">
+                    <span className="glass-text-dim text-xs">{listing.name?.[0]}</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-white/90 truncate" style={{ fontFamily: 'ui-monospace, monospace' }}>{listing.name}</div>
-                  <div className="text-xs text-white/40 truncate">{sub}</div>
+                  <div className="text-sm glass-text truncate" style={{ fontFamily: 'ui-monospace, monospace' }}>{listing.name}</div>
+                  <div className="text-xs glass-text-muted truncate">{sub}</div>
                 </div>
               </button>
             )

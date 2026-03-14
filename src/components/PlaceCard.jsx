@@ -2311,7 +2311,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
     return total
   }, [cart, sections])
 
-  const MIN_ORDER = 2500 // $25 minimum order for delivery
+  const MIN_ORDER = 3500 // $35 minimum order for delivery
   const STL_TAX_RATE = 0.08725 // Missouri 4.225% + St. Louis city 4.5%
   const salesTax = Math.round(cartTotal * STL_TAX_RATE) // tax on food only, not delivery
   const caryFee = Math.round(cartTotal * 0.20) // 20% Cary fee — courier keeps 85%, platform keeps 15%
@@ -2447,7 +2447,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
 
           {belowMinimum && (
             <p className="text-caption text-amber-400/80 mt-1">
-              ${((MIN_ORDER - cartTotal) / 100).toFixed(2)} more to meet the $25 minimum
+              ${((MIN_ORDER - cartTotal) / 100).toFixed(2)} more to meet the $35 minimum
             </p>
           )}
 
@@ -2461,7 +2461,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
                   : 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]'
               }`}
             >
-              {belowMinimum ? `$25 minimum order` : `Place order — $${(orderTotal / 100).toFixed(2)}`}
+              {belowMinimum ? `$35 minimum order` : `Place order — $${(orderTotal / 100).toFixed(2)}`}
             </button>
           ) : (
             <div className="text-center py-3 rounded-xl bg-surface-container-high border border-outline-variant">

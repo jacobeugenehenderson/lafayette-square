@@ -56,9 +56,11 @@ const useCary = create((set, get) => ({
   // ── Courier: Phone OTP ────────────────────────────────────
   sendOtp: async (phone) => {
     set({ error: null })
-    const { error } = await supabase.auth.signInWithOtp({ phone })
-    if (error) {
-      set({ error: error.message })
+    console.log('[useCary] calling signInWithOtp for:', phone)
+    const result = await supabase.auth.signInWithOtp({ phone })
+    console.log('[useCary] signInWithOtp full result:', JSON.stringify(result))
+    if (result.error) {
+      set({ error: result.error.message })
       return false
     }
     return true
@@ -448,19 +450,19 @@ const useCary = create((set, get) => ({
   _loadProfile: async (user) => {
     set({ user })
 
-    // Fetch profile
+    // Fetch profile (may not exist yet for new users)
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     // Fetch courier profile if exists
     const { data: courierProfile } = await supabase
       .from('courier_profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     set({ profile, courierProfile })
 

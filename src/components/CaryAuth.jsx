@@ -8,25 +8,21 @@
 import { useState, useCallback } from 'react'
 import useCary from '../hooks/useCary'
 
-const RELATIONSHIPS = [
-  { id: 'resident', label: 'I live here' },
-  { id: 'worker', label: 'I work here' },
-  { id: 'visitor', label: 'Visiting' },
-]
-
 export default function CaryAuth() {
   const { sendOtp, verifyOtp, createProfile, user, profile, loading, error } = useCary()
   const [step, setStep] = useState('phone') // phone | verify | profile
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [relationship, setRelationship] = useState('resident')
 
   const handleSendOtp = useCallback(async () => {
     // Format phone — add +1 if no country code
     let formatted = phone.replace(/[^\d+]/g, '')
     if (!formatted.startsWith('+')) formatted = '+1' + formatted
+    console.log('[CaryAuth] sending OTP to:', formatted, 'digits:', phone.replace(/\D/g, '').length)
+    console.log('[CaryAuth] SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL || 'NOT SET')
     const ok = await sendOtp(formatted)
+    console.log('[CaryAuth] sendOtp result:', ok)
     if (ok) {
       setPhone(formatted)
       setStep('verify')
@@ -40,8 +36,8 @@ export default function CaryAuth() {
 
   const handleCreateProfile = useCallback(async () => {
     if (!displayName.trim()) return
-    await createProfile(displayName.trim(), relationship)
-  }, [displayName, relationship, createProfile])
+    await createProfile(displayName.trim(), 'resident')
+  }, [displayName, createProfile])
 
   // Already signed in with profile — shouldn't render this
   if (user && profile) return null
@@ -50,7 +46,7 @@ export default function CaryAuth() {
   if (user && !profile) {
     return (
       <div className="space-y-3">
-        <p className="text-body text-on-surface font-medium">Set up your profile</p>
+        <p className="text-body text-on-surface font-medium">What's your name?</p>
         <input
           type="text"
           value={displayName}
@@ -59,21 +55,6 @@ export default function CaryAuth() {
           maxLength={30}
           className="w-full rounded-lg bg-surface-container border border-outline-variant px-3 py-2 text-body text-on-surface placeholder:text-on-surface-disabled focus:outline-none focus:border-on-surface-subtle"
         />
-        <div className="flex gap-2">
-          {RELATIONSHIPS.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => setRelationship(r.id)}
-              className={`flex-1 rounded-lg border px-2 py-1.5 text-body-sm transition-colors ${
-                relationship === r.id
-                  ? 'border-on-surface bg-surface-container-high text-on-surface'
-                  : 'border-outline-variant text-on-surface-variant hover:border-on-surface-subtle'
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
         <button
           onClick={handleCreateProfile}
           disabled={loading || !displayName.trim()}

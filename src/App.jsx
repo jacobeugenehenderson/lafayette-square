@@ -340,11 +340,14 @@ function BulletinOpener() {
 }
 
 function CaryOpener({ tier }) {
+  const isAdmin = import.meta.env.DEV || useGuardianStatus.getState().isAdmin
   useEffect(() => {
+    // Only admin can access Cary onboarding until launch
+    if (!isAdmin) return
     const state = useCourierDash.getState()
     if (tier) state.setTier(tier)
     state.setOpen(true)
-  }, [tier])
+  }, [tier, isAdmin])
   return null
 }
 

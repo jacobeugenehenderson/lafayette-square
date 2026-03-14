@@ -5,6 +5,10 @@ import useEvents from '../hooks/useEvents'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
 import useBulletin from '../hooks/useBulletin'
+import { useCourierDash } from './CourierDashboard'
+import { useContact } from './ContactModal'
+import { useCodeDesk } from './CodeDeskModal'
+import { useInfo } from './InfoModal'
 
 const ROTATE_INTERVAL = 5000
 const POLL_INTERVAL = 300000 // 5 minutes
@@ -82,8 +86,13 @@ export default function EventTicker() {
     useSelectedBuilding.getState().select(event.listing_id, buildingId, 'events')
   }, [])
 
+  const courierOpen = useCourierDash(s => s.open)
+  const contactOpen = useContact(s => s.open)
+  const codeDeskOpen = useCodeDesk(s => s.open)
+  const infoOpen = useInfo(s => s.open)
+
   if (viewMode !== 'hero') return null
-  if (showCard || bulletinOpen) return null
+  if (showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen) return null
   if (events.length === 0) return null
 
   const current = events[index % events.length]

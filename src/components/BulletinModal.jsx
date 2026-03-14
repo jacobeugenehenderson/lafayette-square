@@ -714,7 +714,35 @@ function BrowseView({ onNewPost, onOpenThreads }) {
 
       {/* Posts list */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        {filtered.length === 0 && (
+        {/* Pinned: Cary courier recruitment — visible in Cary group or Courier Board */}
+        {(activeGroup === 'cary' || filter === 'courier-board') && (
+          <div className="pinned-post px-3 py-3">
+            <div className="flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-success-dim flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-3 h-3" style={{ color: 'var(--success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="pinned-post-title text-label-sm">Deliver for Cary</span>
+                  <span className="pinned-post-badge text-caption px-1.5 py-0.5 rounded">pinned</span>
+                </div>
+                <div className="text-label-sm leading-relaxed space-y-1.5">
+                  <p className="pinned-post-body">Lafayette Square's neighborhood delivery service is looking for couriers.</p>
+                  <p className="pinned-post-detail">How it works: a resident orders from a local restaurant through the map. You pick it up and deliver it within the neighborhood. You keep <span className="pinned-post-highlight">85% of the delivery fee</span>.</p>
+                  <p className="pinned-post-detail">Minimum payout: <span className="pinned-post-body font-medium">$5.95 per delivery</span> ($35 minimum order). Walk, bike, or drive. Set your own schedule.</p>
+                  <p className="pinned-post-detail">14+ for Deliver tier (free to join) · 18+ for Drive tier (~$42 background check)</p>
+                </div>
+                <div className="mt-2 px-4 py-2 rounded-lg text-body-sm text-center pinned-post-badge">
+                  Applications opening soon
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {filtered.length === 0 && !(activeGroup === 'cary' || filter === 'courier-board') && (
           <div className="text-center py-10">
             <p className="text-on-surface-subtle text-body">No posts yet</p>
             <p className="text-on-surface-disabled text-body-sm mt-1">Be the first to post!</p>
