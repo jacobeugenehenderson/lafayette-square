@@ -5,19 +5,48 @@ import useLocalStatus from '../hooks/useLocalStatus'
 import useCamera from '../hooks/useCamera'
 import AvatarCircle from './AvatarCircle'
 
-const SECTIONS = [
-  { id: 'buy-nothing', title: 'Buy Nothing' },
-  { id: 'for-sale', title: 'For Sale' },
-  { id: 'missed-connections', title: 'Missed Connections' },
-  { id: 'delivery-errands', title: 'Delivery & Errands' },
-  { id: 'concierge', title: 'Concierge' },
-  { id: 'professional-services', title: 'Professional Services' },
-  { id: 'domestic-services', title: 'Domestic Services' },
-  { id: 'emergency-supplies', title: 'Emergency Supplies' },
-  { id: 'square-notes', title: 'Square Notes' },
+// Two-level bulletin board: groups → sub-sections
+// Sub-section IDs are stable (existing posts keep their section ID)
+const GROUPS = [
+  {
+    id: 'marketplace', title: 'Marketplace',
+    sections: [
+      { id: 'buy-nothing', title: 'Buy Nothing' },
+      { id: 'for-sale', title: 'For Sale' },
+    ],
+  },
+  {
+    id: 'services', title: 'Services',
+    sections: [
+      { id: 'professional-services', title: 'Professional' },
+      { id: 'domestic-services', title: 'Domestic' },
+      { id: 'concierge', title: 'Concierge' },
+    ],
+  },
+  {
+    id: 'neighbors', title: 'Neighbors',
+    sections: [
+      { id: 'square-notes', title: 'Square Notes' },
+      { id: 'missed-connections', title: 'Missed Connections' },
+      { id: 'emergency-supplies', title: 'Emergency' },
+    ],
+  },
+  {
+    id: 'cary', title: 'Cary',
+    sections: [
+      { id: 'courier-board', title: 'Courier Board' },
+      { id: 'delivery-errands', title: 'Delivery & Errands' },
+    ],
+  },
 ]
 
+// Flat list for backwards compat
+const SECTIONS = GROUPS.flatMap(g => g.sections)
 const SECTION_MAP = Object.fromEntries(SECTIONS.map(s => [s.id, s.title]))
+// Group lookup: section ID → group
+const SECTION_TO_GROUP = Object.fromEntries(
+  GROUPS.flatMap(g => g.sections.map(s => [s.id, g]))
+)
 
 // Sections where anonymous posting is the default
 const ANON_DEFAULT_SECTIONS = new Set([
@@ -608,10 +637,19 @@ function BrowseView({ onNewPost, onOpenThreads }) {
   const { isLocal, distinctDays, threshold } = useLocalStatus()
   const remove = useBulletin(s => s.remove)
   const startThreadAction = useBulletin(s => s.startThread)
-  const [filter, setFilter] = useState(null)
+  const [filter, setFilter] = useState(null) // sub-section ID
+  const [activeGroup, setActiveGroup] = useState(null) // group ID
   const [expanded, setExpanded] = useState({}) // { [postId]: true } — expanded comment sections
 
-  const filtered = filter ? posts.filter(p => p.section === filter) : posts
+  // Filter by sub-section, or by group (all sub-sections in that group), or show all
+  const filtered = filter
+    ? posts.filter(p => p.section === filter)
+    : activeGroup
+      ? posts.filter(p => {
+          const g = SECTION_TO_GROUP[p.section]
+          return g && g.id === activeGroup
+        })
+      : posts
 
   const canPost = isLocal && handle
   const gateReason = !isLocal
@@ -626,27 +664,52 @@ function BrowseView({ onNewPost, onOpenThreads }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Section filter pills */}
-      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto flex-shrink-0 border-b border-outline-variant">
-        <button
-          onClick={() => setFilter(null)}
-          className={`flex-shrink-0 px-2.5 py-1 rounded-full text-caption transition-colors ${
-            !filter ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
-          }`}
-        >
-          All
-        </button>
-        {SECTIONS.map(s => (
+      {/* Group filter pills — tap group to show its sub-sections */}
+      <div className="flex-shrink-0 border-b border-outline-variant">
+        <div className="flex gap-1.5 px-3 py-2 overflow-x-auto">
           <button
-            key={s.id}
-            onClick={() => setFilter(filter === s.id ? null : s.id)}
-            className={`flex-shrink-0 px-2.5 py-1 rounded-full text-caption transition-colors whitespace-nowrap ${
-              filter === s.id ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
+            onClick={() => { setFilter(null); setActiveGroup(null) }}
+            className={`flex-shrink-0 px-2.5 py-1 rounded-full text-caption transition-colors ${
+              !filter && !activeGroup ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
             }`}
           >
-            {s.title}
+            All
           </button>
-        ))}
+          {GROUPS.map(g => {
+            const isActive = activeGroup === g.id
+            const hasFilterInGroup = filter && g.sections.some(s => s.id === filter)
+            return (
+              <button
+                key={g.id}
+                onClick={() => {
+                  if (isActive) { setActiveGroup(null); setFilter(null) }
+                  else { setActiveGroup(g.id); setFilter(null) }
+                }}
+                className={`flex-shrink-0 px-2.5 py-1 rounded-full text-caption transition-colors whitespace-nowrap ${
+                  isActive || hasFilterInGroup ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
+                }`}
+              >
+                {g.title}
+              </button>
+            )
+          })}
+        </div>
+        {/* Sub-section pills when a group is active */}
+        {activeGroup && (
+          <div className="flex gap-1 px-3 pb-2 overflow-x-auto">
+            {GROUPS.find(g => g.id === activeGroup)?.sections.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setFilter(filter === s.id ? null : s.id)}
+                className={`flex-shrink-0 px-2 py-0.5 rounded text-caption transition-colors whitespace-nowrap ${
+                  filter === s.id ? 'bg-on-surface/10 text-on-surface' : 'text-on-surface-disabled hover:text-on-surface-subtle'
+                }`}
+              >
+                {s.title}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Posts list */}
@@ -675,7 +738,7 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                       )}
                       <span className="text-caption text-on-surface-disabled">{relativeTime(post.created_at)}</span>
                       <span className="text-caption px-1.5 py-0.5 rounded bg-surface-container text-on-surface-disabled">
-                        {SECTION_MAP[post.section] || post.section}
+                        {SECTION_TO_GROUP[post.section]?.title || ''} · {SECTION_MAP[post.section] || post.section}
                       </span>
                     </div>
                     <div className="text-label-sm text-on-surface-variant leading-relaxed break-words">
@@ -803,17 +866,24 @@ function NewPostView({ onBack }) {
 
       <div>
         <label className="text-caption text-on-surface-subtle uppercase tracking-wider block mb-1.5">Section</label>
-        <div className="flex flex-wrap gap-1.5">
-          {SECTIONS.map(s => (
-            <button
-              key={s.id}
-              onClick={() => setSection(s.id)}
-              className={`px-2.5 py-1 rounded-lg text-caption transition-colors ${
-                section === s.id ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
-              }`}
-            >
-              {s.title}
-            </button>
+        <div className="space-y-2">
+          {GROUPS.map(g => (
+            <div key={g.id}>
+              <span className="text-caption text-on-surface-disabled block mb-1">{g.title}</span>
+              <div className="flex flex-wrap gap-1">
+                {g.sections.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setSection(s.id)}
+                    className={`px-2.5 py-1 rounded-lg text-caption transition-colors ${
+                      section === s.id ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
+                    }`}
+                  >
+                    {s.title}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
