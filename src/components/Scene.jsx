@@ -13,6 +13,7 @@ import GatewayArch from './GatewayArch'
 import CloudDome from './CloudDome'
 import WeatherPoller from './WeatherPoller'
 import UserDot from './UserDot'
+import CourierDots from './CourierDots'
 import useCamera from '../hooks/useCamera'
 import useUserLocation from '../hooks/useUserLocation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -920,6 +921,7 @@ function Scene() {
       <R3FErrorBoundary name="VectorStreets"><VectorStreets svgPortal={svgPortalEl} /></R3FErrorBoundary>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
       {!IS_GROUND && <UserDot />}
+      {!IS_GROUND && <CourierDots />}
       {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>}
       {!IS_GROUND && !IS_MOBILE && <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>}
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}

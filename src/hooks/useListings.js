@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { getListings } from '../lib/api'
 import staticData from '../data/landmarks.json'
+import menuData from '../data/menus.json'
 
 /**
  * Listing data store.
@@ -12,8 +13,13 @@ import staticData from '../data/landmarks.json'
  *
  * Consumers access `listings` (the array) or use the lookup helpers.
  */
+// Merge bundled menu data into static landmarks
+const landmarksWithMenus = staticData.landmarks.map(lm =>
+  menuData[lm.id] ? { ...lm, menu: menuData[lm.id] } : lm
+)
+
 const useListings = create((set, get) => ({
-  listings: staticData.landmarks,
+  listings: landmarksWithMenus,
   loading: false,
   fetched: false,
 
@@ -29,7 +35,7 @@ const useListings = create((set, get) => ({
       if (apiListings.length > 0) {
         // Build lookup from static data for fallback fields (logo, reviews, etc.)
         const staticLookup = new Map()
-        staticData.landmarks.forEach(lm => staticLookup.set(lm.id, lm))
+        landmarksWithMenus.forEach(lm => staticLookup.set(lm.id, lm))
 
         // Merge: API wins over static (guardian edits override bundled data)
         // but skip null/empty API fields so rich static data (history, photos, etc.) is preserved
@@ -39,6 +45,10 @@ const useListings = create((set, get) => ({
           const out = { ...lm }
           for (const [k, v] of Object.entries(api)) {
             if (v != null && !(Array.isArray(v) && v.length === 0)) {
+              // For menu: keep static bundled menu if API has no sections
+              if (k === 'menu' && lm.menu?.sections?.length) {
+                if (!v?.sections?.length) continue  // keep static
+              }
               // For photos: prefer whichever array has richer entries (objects with credits)
               if (k === 'photos' && Array.isArray(v) && Array.isArray(lm.photos)) {
                 const apiHasCredits = v.some(p => typeof p === 'object' && p?.credit)
@@ -58,7 +68,7 @@ const useListings = create((set, get) => ({
 
         // Add any static landmarks not in API (shouldn't happen, but safety net)
         const apiIds = new Set(apiListings.map(l => l.id))
-        staticData.landmarks.forEach(lm => {
+        landmarksWithMenus.forEach(lm => {
           if (!apiIds.has(lm.id)) merged.push(lm)
         })
 

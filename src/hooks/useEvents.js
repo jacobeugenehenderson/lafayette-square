@@ -1,14 +1,19 @@
 import { create } from 'zustand'
+import seedEvents from '../data/seedEvents.json'
 
 /**
  * Shared events store. Populated by the init call, read by
  * EventTicker and PlaceCard EventsTab.
+ * Falls back to bundled seed events when API has none.
  */
 const useEvents = create((set, get) => ({
-  events: [],
+  events: seedEvents,
   fetched: false,
 
-  setEvents: (events) => set({ events, fetched: true }),
+  setEvents: (events) => set({
+    events: events.length > 0 ? events : seedEvents,
+    fetched: true,
+  }),
 
   /** Get events for a specific listing that are currently active */
   getForListing: (listingId) => {

@@ -59,18 +59,16 @@ const featureTags = [
   { id: 'jewelry',        label: 'Jewelry',          group: 'shopping', level: 'feature' },
   { id: 'clothing',       label: 'Clothing',         group: 'shopping', level: 'feature' },
   { id: 'plants',         label: 'Plants',           group: 'shopping', level: 'feature' },
-  // Services
+  // Services (fitness is now a subcategory, not a feature)
   { id: 'appointments',   label: 'Appointments',     group: 'services', level: 'feature' },
   { id: 'walk-ins',       label: 'Walk-ins',         group: 'services', level: 'feature' },
   { id: 'yoga',           label: 'Yoga',             group: 'services', level: 'feature' },
-  { id: 'fitness',        label: 'Fitness',          group: 'services', level: 'feature' },
   { id: 'massage',        label: 'Massage',          group: 'services', level: 'feature' },
   { id: 'therapy',        label: 'Therapy',          group: 'services', level: 'feature' },
   { id: 'tutoring',       label: 'Tutoring',         group: 'services', level: 'feature' },
   // Historic
   { id: 'tours',          label: 'Tours',            group: 'historic', level: 'feature' },
-  // Community
-  { id: 'events-venue',   label: 'Events Venue',     group: 'community', level: 'feature' },
+  // Community (events-venue is now a subcategory, not a feature)
   { id: 'meeting-space',  label: 'Meeting Space',    group: 'community', level: 'feature' },
   { id: 'volunteer',      label: 'Volunteer',        group: 'community', level: 'feature' },
 ]

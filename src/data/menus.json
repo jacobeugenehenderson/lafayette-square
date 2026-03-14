@@ -1,0 +1,510 @@
+{
+  "lmk-010": {
+    "sections": [
+      {
+        "name": "Appetizers & Small Plates",
+        "menu": "dinner",
+        "items": [
+          { "name": "Shrimp & Grits", "description": "Blackened Gulf white shrimp, cheese grits, sofrito, lime crema", "price": 1800, "tags": ["gf"] },
+          { "name": "Tuna Poke", "description": "Yellowfin tuna, cucumber, seaweed, spring onion, watermelon radish, Korean chili dressing, rice crisp", "price": 1700 },
+          { "name": "Crispy Braised Spanish Octopus", "description": "Roasted sunchoke tomato salad, lemon caper chimichurri, table-side fumet", "price": 2000, "tags": ["gf"] },
+          { "name": "Deviled Eggs", "description": "Roe, fried capers, cayenne spice", "price": 1000, "tags": ["gf"] },
+          { "name": "Spätzle", "description": "Emmenthaler fondue, nutmeg, gremolata", "price": 1500 },
+          { "name": "PEI Mussels", "description": "Toasted baguette, shaved fennel, red onion, garlic, white wine, citrus, butter, basil", "price": 1800 },
+          { "name": "Crispy Broccolini", "description": "Roasted garlic ricotta, sambal balsamic reduction, gremolata", "price": 1500, "tags": ["gf"] },
+          { "name": "Lamb Meatballs", "description": "Preserved lemon herbed labneh, smoked tomato sauce", "price": 1800 },
+          { "name": "Bánh Mì Bruschetta", "description": "Spring Mountain pâté, carrot radish fresno salad, dashi vinaigrette", "price": 1600 },
+          { "name": "Farmhouse Cheeses & Charcuterie", "description": "Ask server for daily selection", "price": null }
+        ]
+      },
+      {
+        "name": "Salads",
+        "menu": "dinner",
+        "items": [
+          { "name": "Caesar Salad", "description": "Romaine, cotija, tajin gremolata, Caesar dressing, white anchovy", "price": 1400 },
+          { "name": "Saint Louis Salad", "description": "Artichoke heart, pepperoncini, hearts of palm, gorgonzola, red onion, romaine, iceberg, champagne vinaigrette", "price": 1400, "tags": ["gf"] },
+          { "name": "Poached Honey Crisp Apple", "description": "Whipped goat cheese, pistachio, hot honey", "price": 1400 }
+        ]
+      },
+      {
+        "name": "Entrées",
+        "menu": "dinner",
+        "items": [
+          { "name": "Pork Osso Bucco", "description": "Braised pork shank, goat cheese polenta, sautéed greens, marinated tomatoes", "price": 3500, "tags": ["gf"] },
+          { "name": "Bistro Steak", "description": "Crispy Brussels sprouts with maple dijon dressing, French fries, sauce foyot", "price": 3600, "tags": ["gf"] },
+          { "name": "Pan Seared Salmon", "description": "Chili crisp shiitake rice, miso braised napa cabbage, black garlic molasses", "price": 3700 },
+          { "name": "Strozzapreti Ragù Bolognese", "description": "Fresh house made pasta, whipped ricotta, herb oil", "price": 2800 },
+          { "name": "Dayboat Scallops", "description": "Pan seared, spaghetti squash, pancetta, sage lemon cream sauce", "price": 4200 },
+          { "name": "The Jimmy Burger", "description": "American cheese, onion straws, sweet smokey tomato glaze, whole grain mustard aioli, French fries, pretzel bun (Impossible or Ground Chuck)", "price": 1900 },
+          { "name": "Bayou Risotto", "description": "Crawfish tails, andouille sausage, crispy kale, seafood broth", "price": 2900, "tags": ["gf"] },
+          { "name": "Japanese Vegetable Curry", "description": "Napa cabbage, baby bok choy, shiitake mushrooms, blistered shishito, tomato, steamed rice", "price": 2500, "tags": ["v"] },
+          { "name": "Crispy Chicken", "description": "Chermoula airline breast, harissa spiked carrots, lemon herbed fingerlings, rose water pomegranate yogurt", "price": 2800, "tags": ["gf"] }
+        ]
+      },
+      {
+        "name": "Main Dishes",
+        "menu": "brunch",
+        "items": [
+          { "name": "Farmer's Breakfast", "description": "Two eggs, choice of meat, potatoes", "price": 1600 },
+          { "name": "Eggs Benedict", "description": "Two poached eggs, English muffin, Nueske's Canadian bacon, hollandaise, potato wedges", "price": 1700 },
+          { "name": "Chorizo Avocado Benedict", "description": "Two poached eggs, cheddar biscuit, guacamole, pico de gallo, chorizo, hollandaise, potato wedges", "price": 1900 },
+          { "name": "Baked Butter Pecan French Toast", "description": "Whipped cream", "price": 1500 },
+          { "name": "Osso Buco Hash", "description": "Wine braised pork, two poached eggs, diced potatoes, onion apple compote, peppers, spinach, butternut squash, port wine demi glace", "price": 2000 },
+          { "name": "Breakfast Tacos", "description": "Marinated steak, peppers, cotija, pico de gallo, lime crème, side of scrambled eggs", "price": 1800 },
+          { "name": "Chicken & Waffles", "description": "Panko crusted cutlet, sweet chili maple syrup", "price": 1800 },
+          { "name": "Shrimp & Grits", "description": "Blackened Gulf shrimp, cheese grits, sofrito, lime crema", "price": 1800 },
+          { "name": "Jimmy Burger", "description": "Double smash patty, American cheese, onion straws, potato wedges, whole grain mustard aioli, pretzel bun", "price": 1900 },
+          { "name": "Breakfast Sandwich", "description": "Bacon, sausage patty, American cheese, scrambled eggs, spinach, herbed baguette, sriracha aioli, potato wedges", "price": 1700 }
+        ]
+      },
+      {
+        "name": "Brunch Apps & Sides",
+        "menu": "brunch",
+        "items": [
+          { "name": "Bacon, Turkey Sausage, or Pork Sausage Links", "price": 600 },
+          { "name": "Avocado Toast", "description": "Avocado, wheat berry bread, pico de gallo, cotija cheese, balsamic glaze", "price": 1300 },
+          { "name": "Everything Bagel & Lox", "description": "Cream cheese, capers, red onion, marinated tomatoes", "price": 1600 },
+          { "name": "Toast or English Muffin", "price": 400 },
+          { "name": "Cheddar Grits", "price": 400 },
+          { "name": "Potato Wedges", "price": 600 }
+        ]
+      },
+      {
+        "name": "Specialty Cocktails",
+        "menu": "drinks",
+        "items": [
+          { "name": "Rye Down Under", "description": "James E Pepper Rye, eucalyptus syrup, Apologue celery root, lime juice", "price": 1400 },
+          { "name": "Sinner Man", "description": "Novo Fogo Silver Cachaca, Montenegro Amaro, cinnamon syrup, Meletti Anisette, lemon juice", "price": 1400 },
+          { "name": "Second Honeymoon", "description": "Cimmaron Reposado Tequila, Cappelletti, Giffard Crème de Cassis, honey, lime", "price": 1400 },
+          { "name": "Bourbon Murray", "description": "Four Roses Bourbon, Crème de Mure, house made peppercorn bitters", "price": 1300 },
+          { "name": "Glow Worm", "description": "Los Nahuales Joven Mezcal, Príncipe de los Apóstoles Gin, Ch. Arton Fine Blanche Armagnac, holy basil syrup, lemon", "price": 1500 },
+          { "name": "Thai Fighter", "description": "Knickerbocker Gin, Thai simple, peanut and coriander tincture, Lazzaroni Maraschino, lime", "price": 1400 },
+          { "name": "Strawberry Manilow", "description": "J. Rieger Gin, strawberry balsamic mint shrub, Cocchi Americano, lemon", "price": 1500 },
+          { "name": "Sanguine", "description": "Cooranbong Vodka, blood orange and cardamom gastrique, coconut water, lemon", "price": 1400 },
+          { "name": "The Bullfighter", "description": "Plantation Dark Rum, Eleven Wells Coffee Liqueur, chocolate bitters, espresso", "price": 1500 }
+        ]
+      }
+    ]
+  },
+  "lmk-008": {
+    "sections": [
+      {
+        "name": "Small Plates",
+        "menu": "dinner",
+        "items": [
+          { "name": "Mussels", "description": "Yellow curry and coconut milk broth, fennel, red onion, peppadew peppers, grilled baguette", "price": 2100 },
+          { "name": "Brussels Sprouts", "description": "Smoked shallot ricotta, lemon, garlic, capers, aleppo pepper", "price": 1700 },
+          { "name": "Crudités and Hummus", "description": "Garlic hummus, house giardiniera of cauliflower, peppers, carrots, seasonal vegetable, pita", "price": 1600 },
+          { "name": "Prosciutto and Burrata", "description": "Hot honey, dressed arugula, pickled red onions, peppadew peppers, crostini", "price": 1900 },
+          { "name": "Beef Tartare", "description": "Mustard aioli, black garlic molasses, charred radicchio, cured mullet roe, cured egg yolk, crostini", "price": 2000 },
+          { "name": "Garlic Herb Fries", "description": "Chives, lemon, buttermilk herb sauce", "price": 1500 },
+          { "name": "Crab Salad", "description": "Herb marinated crab, quinoa, toasted pepitas, cherry tomatoes, white cheddar, pineapple, arugula, strawberry basil vinaigrette", "price": 1800 }
+        ]
+      },
+      {
+        "name": "Salads",
+        "menu": "dinner",
+        "items": [
+          { "name": "Classic Caesar", "description": "Brioche croutons, shaved parmesan, white anchovy filets", "price": 1400 },
+          { "name": "Mixed Greens Salad", "description": "Mesclun greens, lemon poppy seed vinaigrette, pickled blueberries, candied pecans, chèvre", "price": 1500 },
+          { "name": "Sundried Tomato and Arugula", "description": "Grilled artichokes, Italian vinaigrette, lemon supremes, pickled cherries, parmesan", "price": 1600 }
+        ]
+      },
+      {
+        "name": "House Made Pasta",
+        "menu": "dinner",
+        "items": [
+          { "name": "Confit Duck Campanelle", "description": "Confit duck, red wine, cherries, grana padano", "price": 3700 },
+          { "name": "Mafalda Bolognese", "description": "Basil pesto, pecorino romano", "price": 2800 },
+          { "name": "Squid Ink Spaghetti with Shrimp", "description": "Garlic, preserved lemon, butter, grana padano, black truffle oil", "price": 3400 },
+          { "name": "Cacio e Pepe", "description": "Spaghetti, toasted peppercorn, pecorino romano, grana padano", "price": 2800 },
+          { "name": "Pesto Pappardelle", "description": "Balsamic vinegar, marinated heirloom tomatoes, ricotta salata", "price": 2700 },
+          { "name": "Wild Mushroom Pappardelle", "description": "Fresh herbs, grana padano, cream, lemon", "price": 2900 }
+        ]
+      },
+      {
+        "name": "Entrées",
+        "menu": "dinner",
+        "items": [
+          { "name": "Diver Scallops", "description": "Butter fried wild rice, roasted corn, romesco sauce, pomegranate reduction", "price": 4300 },
+          { "name": "Pan Roasted Duck Breast", "description": "Crispy herb gnocchi, seasonal mushrooms, celery root puree, confit cipollini onions, red wine demi", "price": 4000 },
+          { "name": "Strip Steak", "description": "Broccolini, potato mille feuille, crème fraîche, chimichurri", "price": 4600 },
+          { "name": "Grilled Salmon", "description": "Mediterranean couscous, cherry tomatoes, cucumber, grilled asparagus, shaved fennel and arugula", "price": 3700 },
+          { "name": "Bellwether Burger", "description": "Beef patty, brioche bun, Vermont cheddar, bacon, caramelized onion, roasted garlic aioli, salt and pepper fries", "price": 2200 },
+          { "name": "Okabe", "description": "Crispy tofu, rice noodle, red pepper, carrot, red onion, cilantro, bean sprouts, lime, peanuts, sesame", "price": 2700, "tags": ["v"] }
+        ]
+      },
+      {
+        "name": "Small Plates",
+        "menu": "brunch",
+        "items": [
+          { "name": "Whisk Cinnamon Roll", "description": "Cream cheese icing, berries, pistachio crumb", "price": 1100 },
+          { "name": "Cinnamon Toast Crunch French Toast", "description": "Four encrusted French toast sticks, fresh berries, maple praline, whipped cream", "price": 1500 },
+          { "name": "Plain Waffle", "description": "Powder sugar, butter, syrup", "price": 1000 }
+        ]
+      },
+      {
+        "name": "Specialties",
+        "menu": "brunch",
+        "items": [
+          { "name": "Bacon Fried Rice", "description": "Eggs, Nueske's bacon, green onion, tamari, sesame oil, sesame seeds", "price": 1900 },
+          { "name": "Brunch Wings", "description": "Honey maple glaze, house ranch dressing, summer mixed greens salad", "price": 1900 },
+          { "name": "Pork Belly Sandwich", "description": "Brown sugar pork belly, garlic aioli, arugula, cucumber, red onion jam, baguette, egg any style, smash fried potatoes", "price": 2200 },
+          { "name": "Spring Hash", "description": "Roasted potatoes, Brussels sprouts, red peppers, bacon lardons, arugula, goat cheese, pickled red onions, maple dijon dressing, egg any style", "price": 1900 },
+          { "name": "Churro Cinnamon Waffle", "description": "Cinnamon sugar, chocolate whipped cream", "price": 1700 }
+        ]
+      },
+      {
+        "name": "Benedicts",
+        "menu": "brunch",
+        "items": [
+          { "name": "Classic", "description": "Two poached eggs, English muffin, Nueske's Canadian bacon, hollandaise", "price": 1700 },
+          { "name": "Florentine", "description": "Two poached eggs, English muffin, spinach, tomato, hollandaise", "price": 1600 },
+          { "name": "Lox", "description": "Two poached eggs, chive cream cheese, pickled red onion, sliced tomato, fine herbs, hollandaise", "price": 2200 }
+        ]
+      },
+      {
+        "name": "Other Brunch Items",
+        "menu": "brunch",
+        "items": [
+          { "name": "Biscuits and Gravy", "description": "Two eggs any style, cheddar thyme biscuits, sausage and bacon gravy, smash fried potatoes", "price": 1900 },
+          { "name": "Farmer's Breakfast", "description": "Two eggs any style, smash fried potatoes, toast, choice of meat or avocado", "price": 1600 }
+        ]
+      },
+      {
+        "name": "Literary Cocktails",
+        "menu": "drinks",
+        "items": [
+          { "name": "Midnight's Children", "description": "Origin Gin, Apologue saffron liqueur, house allspice dram, lemon juice", "price": 1500 },
+          { "name": "A Farewell to Arms", "description": "Redwood Empire Rye, Cognac Park VSOP, Amaro Casoni, chipotle cacao bitters", "price": 1500 },
+          { "name": "The Fifth Season", "description": "Haku Vodka, Svöl Danish Aquavit, Leopold Bros. Fernet, spiced pomegranate syrup, lemon", "price": 1400 },
+          { "name": "The Plumed Serpent", "description": "Madre Mezcal, Sipsmith Sloe Gin, cherry coconut syrup, lime, cherry bark vanilla bitters", "price": 1400 },
+          { "name": "2666", "description": "Don Abraham Reposado Tequila, cucumber syrup, Leopold Bros. Three Pins, Mattei Cap Corse, lemon", "price": 1400 },
+          { "name": "Tender is the Night", "description": "Santa Anna Rum, Aelred Melon l'Aperitif, Amaro Cinpatrazzo, Big O Ginger Liqueur, lemon", "price": 1600 },
+          { "name": "Paradise Lost", "description": "High West Double Rye, Yzaguirre Dry Vermouth, Broadbent Rainwater Madeira, brown turkey fig leaf syrup, lime", "price": 1500 },
+          { "name": "Gravity's Rainbow", "description": "Russel Henry Hawaiian Ginger Gin, Giffard Crème de Banana, sena pod gastrique, magnolia bitters, lemon", "price": 1400 }
+        ]
+      }
+    ]
+  },
+  "lmk-027": {
+    "sections": [
+      {
+        "name": "Soups & Salads",
+        "menu": "dinner",
+        "items": [
+          { "name": "Baked Onion Soup", "price": 1040 },
+          { "name": "Caesar", "description": "Mayfair, asiago, rosemary parm croutons, skewered lemon", "price": 1248, "modifiers": [{ "name": "Add Chicken", "price": 520 }, { "name": "Add Shrimp (4)", "price": 728 }, { "name": "Add Salmon", "price": 832 }] },
+          { "name": "Spinach Salad", "description": "Goat cheese fritter, craisins, hearts of palm, red onion, spiced walnuts, strawberry poppyseed vinaigrette", "price": 1353, "tags": ["v"] },
+          { "name": "Greek Salad", "description": "Oregano vinaigrette, feta, olive tapenade, tomatoes, cucumber, red onion, artichokes, stuffed grape leaves, hummus & warm pita", "price": 1664, "tags": ["v"] }
+        ]
+      },
+      {
+        "name": "Small Plates",
+        "menu": "dinner",
+        "items": [
+          { "name": "Baked Brie", "description": "Dried fruits, pecans & maple, mini French baguette", "price": 1456, "tags": ["v"] },
+          { "name": "Wild Mushrooms & Broiled Goat Cheese", "description": "Herb griddled flatbread", "price": 1560, "tags": ["v"] },
+          { "name": "Crispy Cauliflower", "description": "Tempura, agave buffalo sauce", "price": 1352, "tags": ["vg"] },
+          { "name": "Calamari", "description": "Fried spinach & parmesan, house-made marinara", "price": 1664 },
+          { "name": "Roasted Wings", "description": "1 lb., agave buffalo sauce, house-made ranch or hoisin agave & ginger, cucumber yogurt", "price": 1560 },
+          { "name": "French Fries", "description": "Truffle oil, parmesan, fresh herbs, lemon sage aioli", "price": 1248, "tags": ["v"] },
+          { "name": "Gouda Fondue", "description": "Apple bacon jam & warm companion pub pretzels", "price": 1456, "tags": ["v"] },
+          { "name": "Crab & Shrimp Cake", "description": "Napa slaw & citrus aioli", "price": 1664 },
+          { "name": "Sesame Seed Seared Tuna", "description": "Sticky rice, avocado, arugula, cucumber soy ginger drizzle, crispy wontons", "price": 1664 }
+        ]
+      },
+      {
+        "name": "Large Plates",
+        "menu": "dinner",
+        "items": [
+          { "name": "Chicken Pot Pie", "description": "Pulled chicken, new potatoes, fresh herbs & veggies, topped with puff pastry", "price": 2392 },
+          { "name": "Pasta Pillows", "description": "Ricotta stuffed fresh jumbo ravioli, house-made basil pesto, parmesan cream, roasted tomato bruschetta", "price": 2392 },
+          { "name": "Center Cut Strip Steak", "description": "Iron seared & sliced, truffle romano mac n cheese, steakhouse butter, crispy Brussels, hand dipped onion ring", "price": 3952 },
+          { "name": "Meatloaf", "description": "Au jus, whipped potatoes, green beans, yellow onion & bacon", "price": 2496 },
+          { "name": "Grilled Scottish Salmon", "description": "Savory wild mushroom goat cheese, sun-dried tomato pesto glaze, goat cheese crumble & crushed roasted walnuts", "price": 3224 },
+          { "name": "SqWires Burger", "description": "Two 4oz smash patties, white cheddar, bacon, thyme mayo, parmesan fries & mixed greens", "price": 1768 },
+          { "name": "Fish & Chips", "description": "Beer battered wild caught white fish, house tartar, pickled red onion, house cut chips", "price": 2288 },
+          { "name": "Herb Encrusted Pork Tenderloin", "description": "Savory wild mushroom goat cheese bread pudding, bacon jam, fig reduction", "price": 2808 }
+        ]
+      },
+      {
+        "name": "Breakfast Plates",
+        "menu": "brunch",
+        "items": [
+          { "name": "Traditional", "description": "Two eggs, bacon or sausage, breakfast potatoes, country toast", "price": 1664 },
+          { "name": "Biscuits & Gravy", "description": "Buttermilk biscuits, sausage & sage gravy, cheddar scramble", "price": 1664 },
+          { "name": "Smoked Brisket Hash", "description": "Two eggs, country toast", "price": 1872 },
+          { "name": "SqWires Benedict", "description": "English muffin, poached eggs, fresh spinach, hollandaise, breakfast potatoes; choice of smoked salmon, pecan ham, or veggie sausage", "price": 1800 },
+          { "name": "4 Cheese Omelet", "description": "Brie, smoked gouda, ricotta & white cheddar with hollandaise, parmesan breakfast potatoes & country toast", "price": 1768 },
+          { "name": "Salmon Bagel Board", "description": "House-cured & smoked salmon, cream cheese, cucumber, radish, pickled onion, capers, hard boiled egg, tomato", "price": 2184 },
+          { "name": "Joe's Buttermilk Pancakes", "description": "Choice of bacon or sausage, whipped butter & syrup", "price": 1560 }
+        ]
+      },
+      {
+        "name": "Sandwiches",
+        "menu": "lunch",
+        "items": [
+          { "name": "Chicken Salad", "description": "Toasted pecans, dates, red onion, tarragon mayo, lettuce & tomato, on croissant bun or over greens", "price": 1500 },
+          { "name": "Turkey Reuben", "description": "House-smoked turkey breast, kraut, Swiss, Cajun mayo, griddled rye", "price": 1500 },
+          { "name": "Smoked Beef Brisket Dip", "description": "House-smoked, griddled brisket, Swiss cheese, caramelized onions, horseradish cream, pretzel roll, au jus", "price": 1600 },
+          { "name": "BLT", "description": "Toasted sourdough, peppered bacon, maple mayo, lettuce, tomato", "price": 1500 },
+          { "name": "SqWires Club Wrap", "description": "House-smoked turkey, bacon, tomato, lettuce, avocado, sun-dried tomato aioli, cheddar", "price": 1500 },
+          { "name": "SqWires Burger", "description": "Two quarter-pound griddled patties, cheese, mushrooms, caramelized onions, pico available", "price": 1600 },
+          { "name": "Gourmet Grilled Cheese", "description": "Texas toast, parmesan & rosemary butter, gouda, caramelized onions, spinach", "price": 1400, "tags": ["v"] }
+        ]
+      }
+    ]
+  },
+  "lmk-011": {
+    "sections": [
+      {
+        "name": "Signature Martinis",
+        "menu": "drinks",
+        "items": [
+          { "name": "The Signature Martini", "description": "Our house favorite for almost two decades", "price": 1300 },
+          { "name": "The Very Dark", "description": "Seductive blend of housemade chocolate and coffee liqueurs", "price": 1300 },
+          { "name": "Milk Chocolate", "description": "Satisfy your sweet tooth", "price": 1300 },
+          { "name": "Espresso", "description": "Chocolate vodka, espresso, coffee liqueur", "price": 1300 },
+          { "name": "Tiramisu", "description": "Vanilla ice cream, coffee liqueur, hazelnut", "price": 1300 },
+          { "name": "Salted Caramel", "description": "Salted caramel ice cream, hazelnut, coffee liqueur", "price": 1300 },
+          { "name": "Mexican", "description": "Chocolate vodka, tequila, coffee liqueur", "price": 1300 },
+          { "name": "The Sexual", "description": "Milk chocolate, pepper vodka, coffee liqueur", "price": 1300 }
+        ]
+      },
+      {
+        "name": "Seasonal Martinis",
+        "menu": "drinks",
+        "items": [
+          { "name": "Sugar Cookie", "description": "Vodka, sugar cookie ice cream", "price": 1300 },
+          { "name": "Dubai Chocolate", "description": "Chocolate vodka, dark chocolate liquor, pistachio ice cream, kataifi", "price": 1300 },
+          { "name": "Dark Raspberry", "description": "Dark chocolate & espresso liqueurs, framboise", "price": 1300 },
+          { "name": "Salted Caramel Old Fashioned", "description": "Small batch bourbon, chocolate bitters, caramel sauce", "price": 1300 },
+          { "name": "Cherry Dream", "description": "Gin, cherry vanilla shrub, whipped cream", "price": 1300 },
+          { "name": "Horchata", "description": "Cinnamon ice cream, coconut sorbet, dark rum, crème de cocoa", "price": 1300 },
+          { "name": "Macaroon", "description": "Coconut sorbet, frangelico, crème de cocoa", "price": 1300 },
+          { "name": "Mexican Coffee", "description": "Tequila, dark chocolate, orange bitters", "price": 1300 },
+          { "name": "Chocolate Covered Cherry", "description": "Chocolate vodka, dark chocolate liquor, cherry sorbet", "price": 1300 }
+        ]
+      },
+      {
+        "name": "Signature Desserts",
+        "menu": "dessert",
+        "items": [
+          { "name": "Baileys' Brownie", "description": "Caramel sauce, irish cream ice cream, almond toffee, caramel ganache cookie", "price": 1300 },
+          { "name": "Chocolate Inebriation", "description": "Chocolate stout cake, bourbon ganache, passionfruit, caramelized milk crumbs", "price": 1300 },
+          { "name": "Hazelnut Torte", "description": "Flourless cake, hazelnut dacquoise, nutella buttercream, pomegranate sauce, tuille cookie, candied hazelnuts", "price": 1300 },
+          { "name": "The Blondie", "description": "Pecans, white chocolate, cinnamon ice cream, caramel sauce, speculoos", "price": 1300 }
+        ]
+      },
+      {
+        "name": "Seasonal Desserts",
+        "menu": "dessert",
+        "items": [
+          { "name": "Spiced Chocolate Crème Brûlée", "description": "Caramelized banana, chocolate crunch, cream", "price": 1300 },
+          { "name": "Chocolate Cheesecake", "description": "Marshmallow fluff, chocolate crunch", "price": 1300 },
+          { "name": "Pineapple Upside Down", "description": "Brown butter financier, caramelized pineapple, cherry compote, amaretto custard sauce", "price": 1300 },
+          { "name": "Chocolate Orange Cake", "description": "Chocolate cake, orange chocolate ganache, orange curd, tuille", "price": 1300 },
+          { "name": "Maple Bread Pudding", "description": "Bourbon maple, mixed berry compote, whipped cream", "price": 1300 },
+          { "name": "White Russian Tiramisu", "description": "Ladyfingers, kahlua, mascarpone cream", "price": 1300 },
+          { "name": "Cannoli Chips & Dip", "description": "Cannoli chips, ricotta and mascarpone, candied orange peel, chocolate curls", "price": 1300 }
+        ]
+      },
+      {
+        "name": "Splits & Sundaes",
+        "menu": "dessert",
+        "items": [
+          { "name": "Brownie Royale", "description": "Baileys' brownie, chocolate, strawberry & vanilla ice cream, brûlée banana, fruit purée, whipped cream, toasted nuts", "price": 1500 },
+          { "name": "Classic Banana Split", "description": "Chocolate, vanilla & strawberry ice cream, brûlée banana, whipped cream, crushed peanuts", "price": 1500 }
+        ]
+      },
+      {
+        "name": "Nosh",
+        "menu": "all_day",
+        "items": [
+          { "name": "Cheese", "description": "Chef's selection of three cheeses, local honey, fig jam, fresh fruit, toasted baguette", "price": 2000 },
+          { "name": "Cheese & Charcuterie", "description": "Selection of 2 meats & cheeses, grain mustard, local honey, fig jam, fresh fruit, toasted baguette", "price": 2500 },
+          { "name": "Goat Cheese & Jam", "description": "Tomato jam, chèvre, basil, baguette", "price": 1200 },
+          { "name": "Edamame", "description": "Salt & pepper", "price": 800 },
+          { "name": "Frites", "description": "Garlic, parmesan, lemon aioli", "price": 600 },
+          { "name": "Crab Cakes", "description": "Roasted red pepper chutney", "price": 1200 },
+          { "name": "Spanakopita", "description": "Phyllo dough, spinach, feta, herbs", "price": 1200 },
+          { "name": "Sweet Potato Pavé", "description": "Gochujang-maple glaze, sesame seeds, chives", "price": 1200 }
+        ]
+      },
+      {
+        "name": "Flatbreads",
+        "menu": "all_day",
+        "items": [
+          { "name": "Duck & Apple", "description": "Duck sausage, caramelized onions, honey-roasted apples, goat cheese", "price": 1500 },
+          { "name": "Caprese", "description": "Burrata, roasted tomato, pesto, lemon zest, balsamic", "price": 1300 },
+          { "name": "Prosciutto", "description": "Brie, fig jam, arugula", "price": 1500 }
+        ]
+      },
+      {
+        "name": "Coffee",
+        "menu": "all_day",
+        "items": [
+          { "name": "Hot Coffee", "description": "Goshen coffee", "price": 350 },
+          { "name": "Espresso", "description": "Doppio, macchiato, cortado", "price": 400 },
+          { "name": "Espresso Drinks", "description": "Cafe latte, cafe mocha, cappuccino", "price": 500 },
+          { "name": "House Hot Chocolate", "price": 600 }
+        ]
+      },
+      {
+        "name": "Take Home",
+        "menu": "all_day",
+        "items": [
+          { "name": "Macarons (5)", "price": 1300 },
+          { "name": "Baileys' Chocolate Bar Cookies (6)", "price": 800 },
+          { "name": "Truffles (4)", "price": 600 },
+          { "name": "Caramel Popcorn", "price": 1000 }
+        ]
+      }
+    ]
+  },
+  "lmk-040": {
+    "sections": [
+      {
+        "name": "Signature — Naughty",
+        "menu": "all_day",
+        "items": [
+          { "name": "Maple Bourbon with Candied Pecans", "description": "Bourbon and maple syrup in vanilla ice cream with salted candied Missouri pecans. Contains alcohol." },
+          { "name": "Manhattan", "description": "Bourbon, sweet vermouth, tart cherry juice, and whole Amarena cherries. Contains alcohol." },
+          { "name": "Pink Champagne Sorbet", "description": "Sparkling wine flavor. Contains alcohol." }
+        ]
+      },
+      {
+        "name": "Signature — Nice",
+        "menu": "all_day",
+        "items": [
+          { "name": "Espresso Royale", "description": "Dark roast coffee with Ethiopian and Sumatra beans" },
+          { "name": "Gooey Butter Cake", "description": "Chunks of scratch-made gooey butter cake layered in rich and tangy cream cheese ice cream" },
+          { "name": "Italian Butter Cookie", "description": "Cookie pieces in speculoos ice cream" },
+          { "name": "Madagascar Vanilla", "description": "Proprietary vanilla flavor" },
+          { "name": "Malted Toffee Butter Pecan", "description": "Butterscotch ice cream with toffee pieces, candied pecans, and malt" },
+          { "name": "Midnight Pleasures", "description": "Triple dark chocolate ice cream" },
+          { "name": "Salted Caramel Cookies and Cream", "description": "Dark chocolate sandwich cookie crumble with salted caramel sauce" },
+          { "name": "Salted Cracker Caramel", "description": "Chocolate, caramel, and crackers in salted caramel ice cream" }
+        ]
+      },
+      {
+        "name": "Signature — Non-Dairy",
+        "menu": "all_day",
+        "items": [
+          { "name": "Billie's Tahini Chip Cookie", "description": "Tahini chocolate chip with chocolate chip cookie crumbles", "tags": ["vg"] },
+          { "name": "Coconut Fudge", "description": "Chocolate and coconut cream blend", "tags": ["vg"] },
+          { "name": "Lemon Poppyseed", "description": "Tart lemon with poppy seeds", "tags": ["vg"] }
+        ]
+      },
+      {
+        "name": "Seasonal Flavors",
+        "menu": "all_day",
+        "items": [
+          { "name": "Carrot Cake", "description": "Cream cheese ice cream with house-made pieces of carrot cake and toffee bits" },
+          { "name": "Eeyore's Birthday", "description": "Vanilla birthday cake ice cream featuring cake crumbles and rainbow sprinkles" },
+          { "name": "Piglet's Red Balloon", "description": "Bright strawberry ice cream with a raspberry swirl" },
+          { "name": "Silly Old Bear", "description": "Honey-sweetened golden ice cream" },
+          { "name": "What Tiggers Love Best", "description": "Malt coconut ice cream with chocolate flecks", "tags": ["vg"] }
+        ]
+      }
+    ]
+  },
+  "lmk-021": {
+    "sections": [
+      {
+        "name": "Small Plates",
+        "menu": "all_day",
+        "items": [
+          { "name": "House-Made Bread", "description": "Roasted garlic butter", "price": 599 },
+          { "name": "Ranch Pork Rinds", "price": 599 },
+          { "name": "Spinach Artichoke Dip", "description": "House-made crostinis", "price": 1299 },
+          { "name": "French Fries", "description": "Chipotle remoulade", "price": 999 },
+          { "name": "Flash Fried Lemon Brussels Sprouts", "price": 999 },
+          { "name": "Cauliflower Fritters", "description": "Chipotle remoulade", "price": 1399 },
+          { "name": "Cheese Board", "description": "Assorted cheeses, pickled vegetables & mango-ginger chutney", "price": 2099 },
+          { "name": "Charcuterie", "description": "Three cured meats, grilled-marinated vegetables & olive tapenade", "price": 2299 },
+          { "name": "Bourbon BBQ Glazed Pork Belly", "description": "Cauliflower risotto", "price": 1499 },
+          { "name": "Crab Cakes", "description": "Lemon aioli & mango-pineapple salsa", "price": 2099 },
+          { "name": "Seared Scallops", "description": "Honey whipped ricotta, bacon-sesame slaw & bourbon-cider gastrique", "price": 2299 },
+          { "name": "Lobster Mac-n-Cheese", "price": 2199 },
+          { "name": "Sesame Encrusted Seared Ahi Tuna", "description": "Red onion-carrot slaw, house-made pickles, kalbi aioli & crispy wontons", "price": 1999 },
+          { "name": "Prime Rib Sliders", "description": "White cheddar, sautéed onions, bourbon peppercorn sauce & horseradish crema", "price": 1599 }
+        ]
+      },
+      {
+        "name": "Desserts",
+        "menu": "dessert",
+        "items": [
+          { "name": "Bourbon Bread Pudding", "description": "Salted caramel ice cream", "price": 1199 },
+          { "name": "Carrot Cake", "description": "Coconut-pecan filling & cream cheese icing", "price": 1299 },
+          { "name": "Traditional Cheesecake", "description": "Maple-bourbon apples", "price": 1299 },
+          { "name": "Flourless Chocolate Torte & Espresso Mousse", "description": "Sea salt & caramel drizzle", "price": 1299 }
+        ]
+      },
+      {
+        "name": "Cocktails",
+        "menu": "drinks",
+        "items": [
+          { "name": "Mile High Margarita", "description": "Milagro tequila, fresh sour & sparkling wine", "price": 1600 },
+          { "name": "The Red Eye", "description": "Espresso, Tito's vodka, marshmallow & brown butter syrup", "price": 1200 },
+          { "name": "Whiskey, Tango, Foxtrot", "description": "Davies County cabernet cask bourbon, hickory smoked syrup & cherry bitters", "price": 1700 },
+          { "name": "Layover in London", "description": "Basil concentrate, cucumber syrup, lime juice, Hayman's Old Tom", "price": 1400 },
+          { "name": "Tuscan Spritz", "description": "Prosecco, Aperol, pomegranate juice, orange juice & splash of soda", "price": 1200 },
+          { "name": "Sashay on Your Escapade", "description": "Hayman's Old Tom gin, fig liqueur, vanilla simple syrup & prosecco", "price": 1400 },
+          { "name": "La Mochilera", "description": "Fidencio mezcal tequila, dry curaçao, chipotle-pineapple syrup, apple cider & orange", "price": 1700 }
+        ]
+      }
+    ]
+  },
+  "lmk-028": {
+    "sections": [
+      {
+        "name": "Desserts",
+        "menu": "dessert",
+        "items": [
+          { "name": "Flourless Chocolate Torta", "description": "Bittersweet chocolate cake topped with chocolate ganache, raspberry coulis & sauce anglaise", "price": 999 },
+          { "name": "Crème Custard Napoleon", "description": "Layers of crispy phyllo & crème custard with caramelized bananas & chocolate shavings", "price": 999 },
+          { "name": "Tiramisu", "description": "Espresso syrup", "price": 999 },
+          { "name": "Eleven Eleven Gooey Butter Cake", "price": 799 },
+          { "name": "Dessert Sampling", "description": "Flourless chocolate torta, crème custard napoleon & gooey butter cake", "price": 1999 },
+          { "name": "Ice Cream or Sorbet", "price": 499 }
+        ]
+      }
+    ]
+  },
+  "lmk-001": {
+    "sections": [
+      {
+        "name": "House Beers",
+        "menu": "drinks",
+        "items": [
+          { "name": "Bavarian Weizen", "description": "Traditional Southern German unfiltered wheat beer with banana fruitiness and clove spiciness. 4.69% ABV" },
+          { "name": "Easy Like Dry Hopped Session IPA", "description": "Crisp, tropical, citrus, easy drinking, bold flavor, light body. 4.5% ABV" },
+          { "name": "Light Squared", "description": "Golden ale, great bridge beer with malt and hop complexity. 4.25% ABV" },
+          { "name": "Single Malt Scotch Ale", "description": "Smooth, rich, full bodied malty beer made with Munich Dark malt. 5.75% ABV" },
+          { "name": "Irish Stout", "description": "Traditional dry stout. Dark and drinkable. 5.2% ABV" },
+          { "name": "Park Avenue Pale Ale", "description": "Copper-colored ale using Cascade hops. 5.5% ABV" },
+          { "name": "Disco Clam", "description": "Hop forward, caramel, toasty, medium bodied, aromatic hops. 5.6% ABV" },
+          { "name": "West Coast IPA", "description": "Classic reboot featuring Columbus, Summit & Amarillo hops. 6.25% ABV" },
+          { "name": "South City Eclipse Black IPA", "description": "Cascadian-style IPA with subtle roast notes and dank hop profile. 6.5% ABV" },
+          { "name": "Nilla Gorilla Imperial Vanilla Bourbon Porter", "description": "Imperial porter aged with JJ Neukomm oak barrels and vanilla beans. 11% ABV" }
+        ]
+      },
+      {
+        "name": "Cocktails",
+        "menu": "drinks",
+        "items": [
+          { "name": "Going Green", "description": "Green Tea Regatta Bay Gin, lavender honey, chamomile bitters, lemon" },
+          { "name": "Paper Plane", "description": "Urban Bourbon, Montenegro, Aperol, lemon" },
+          { "name": "Chai Fighter", "description": "Island Time Amber Rum, chai syrup, orange liqueur, lime, Angostura bitters, ginger beer" },
+          { "name": "Coca Loca", "description": "Agave Blue, cherry vanilla syrup, lemon, lime, cola" },
+          { "name": "That Me Espresso", "description": "Agave Blue, Licor 43, espresso, orange" },
+          { "name": "Southern Belle", "description": "Blueberry Urban Bourbon, limoncello, peach bitters, ginger beer" },
+          { "name": "Sugar & Spice", "description": "SOS Jalapeño Vodka, strawberry juice, simple, lime, club" },
+          { "name": "Dr. Good Good", "description": "Habanero-cilantro Agave Blue, orange liqueur, sour, ginger beer" }
+        ]
+      }
+    ]
+  }
+}

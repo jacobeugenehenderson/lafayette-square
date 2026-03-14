@@ -265,6 +265,7 @@ function fetchListingsData() {
       tags:      parseJsonField(listing.tags_json),
       photos:    parseJsonField(listing.photos_json),
       history:   parseJsonField(listing.history_json),
+      menu:      parseJsonField(listing.menu_json),
     }
     delete out.guardian_hash
     delete out.guardian_token
@@ -274,6 +275,7 @@ function fetchListingsData() {
     delete out.tags_json
     delete out.photos_json
     delete out.history_json
+    delete out.menu_json
     out.has_guardian = !!(guardianMap[listing.id] || listing.guardian_hash)
     return out
   })
@@ -590,7 +592,7 @@ function postUpdateListing(body) {
     'name', 'address', 'category', 'subcategory', 'phone', 'website',
     'description', 'logo', 'home_based', 'rating', 'review_count',
     'hours_json', 'amenities_json', 'tags_json', 'photos_json', 'history_json',
-    'reservation_url', 'menu_url'
+    'reservation_url', 'menu_url', 'menu_json'
   ]
 
   // Map shorthand field names to JSON column names
@@ -600,6 +602,7 @@ function postUpdateListing(body) {
     tags: 'tags_json',
     photos: 'photos_json',
     history: 'history_json',
+    menu: 'menu_json',
   }
 
   const headerMap = getHeaderMap(sheet)

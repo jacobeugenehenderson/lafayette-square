@@ -14,6 +14,7 @@ import useHandle from '../hooks/useHandle'
 import useEvents from '../hooks/useEvents'
 import AvatarCircle from './AvatarCircle'
 import QRCode from 'qrcode'
+import { useCourierAvailable } from './CourierDots'
 import { useCodeDesk } from './CodeDeskModal'
 import facadeMapping from '../data/facade_mapping.json'
 
@@ -449,6 +450,58 @@ function HoursEditor({ hours, listingId }) {
   )
 }
 
+// ─── Service Toggles (delivery/takeout — guardian only) ───────────────
+
+function ServiceToggles({ listing }) {
+  const editCtx = useContext(EditContext)
+  const tags = listing?.tags || []
+  const hasTakeout = tags.includes('takeout')
+  const hasDelivery = tags.includes('delivery')
+
+  const toggle = (tagId) => {
+    const current = [...tags]
+    const idx = current.indexOf(tagId)
+    if (idx >= 0) current.splice(idx, 1)
+    else current.push(tagId)
+    editCtx?.setField('tags', current)
+    // Optimistic update
+    useListings.getState().updateListing(listing.id, { tags: current })
+  }
+
+  return (
+    <div className="flex gap-2 mt-1">
+      <button
+        onClick={() => toggle('takeout')}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-body-sm font-medium transition-all ${
+          hasTakeout
+            ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+            : 'bg-surface-container-high border-outline-variant text-on-surface-disabled hover:text-on-surface-variant'
+        }`}
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+        </svg>
+        Takeout
+        {hasTakeout && <span className="text-emerald-400">On</span>}
+      </button>
+      <button
+        onClick={() => toggle('delivery')}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-body-sm font-medium transition-all ${
+          hasDelivery
+            ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+            : 'bg-surface-container-high border-outline-variant text-on-surface-disabled hover:text-on-surface-variant'
+        }`}
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0H21M3.375 14.25h.008M21 12.75V7.5a.75.75 0 00-.75-.75h-4.5m0 0V3.75a.75.75 0 00-.75-.75h-6a.75.75 0 00-.75.75V6.75m7.5 0h-7.5" />
+        </svg>
+        Delivery
+        {hasDelivery && <span className="text-emerald-400">On</span>}
+      </button>
+    </div>
+  )
+}
+
 // ─── Tag Picker (guardian tag management) ─────────────────────────────
 function TagPicker({ listing, isGuardian }) {
   const [editing, setEditing] = useState(false)
@@ -641,142 +694,145 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
   const website = listing?.website || null
   const hours = listing?.hours || null
   const rentRange = building?.rent_range || null
-  const amenities = listing?.amenities || null
+  const tags = listing?.tags || []
   const listingId = listing?.id
 
   const openStatus = useMemo(() => getOpenStatus(hours), [hours])
   const formattedHours = useMemo(() => formatHoursDisplay(hours), [hours])
 
-  // Build contact items for inline/stacked layout
-  // Guardian sees editable placeholders; public only sees actual data
-  const contactItems = []
-  if (isGuardian) {
-    contactItems.push(<EditableField key="addr" value={address} field="address" isGuardian placeholder="Add address..." />)
-    contactItems.push(<EditableField key="phone" value={phone} field="phone" isGuardian placeholder="Add phone..." />)
-    contactItems.push(<EditableField key="web" value={website} field="website" isGuardian placeholder="Add website..." />)
-  } else {
-    if (address) contactItems.push(<span key="addr">{address}, St. Louis, MO</span>)
-    if (phone) contactItems.push(<a key="phone" href={`tel:${phone}`} className="text-blue-400 hover:text-blue-300 transition-colors">{phone}</a>)
-    if (website) contactItems.push(<a key="web" href={website} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">{website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>)
-  }
-  if (rentRange) {
-    contactItems.push(<span key="rent">{rentRange}</span>)
-  }
-  const visibleItems = contactItems.filter(Boolean)
+  // Public-facing tags (exclude subcategory-level tags which are shown as chips in the header)
+  const displayTags = tags.filter(t => TAG_BY_ID[t] && TAG_BY_ID[t].level !== 'subcategory').map(t => TAG_BY_ID[t])
 
   return (
-    <div className="space-y-3">
-      {/* Contact info: inline with bullet separators, wrapping as needed */}
-      {visibleItems.length > 0 && (
-        <div className="text-body text-on-surface-variant flex flex-wrap items-center gap-x-1 gap-y-0.5">
-          {visibleItems.map((item, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <span className="text-on-surface-disabled mx-0.5">&bull;</span>}
-              {item}
-            </React.Fragment>
-          ))}
-        </div>
-      )}
+    <div className="space-y-2.5">
+      {/* Compact contact rows — icon + value */}
+      <div className="space-y-1">
+        {(address || (isGuardian)) && (
+          <div className="flex items-center gap-2 text-body-sm">
+            <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+            {isGuardian ? (
+              <EditableField value={address} field="address" isGuardian placeholder="Add address..." />
+            ) : (
+              <span className="text-on-surface-variant">{address}</span>
+            )}
+          </div>
+        )}
+        {(phone || isGuardian) && (
+          <div className="flex items-center gap-2 text-body-sm">
+            <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+            </svg>
+            {isGuardian ? (
+              <EditableField value={phone} field="phone" isGuardian placeholder="Add phone..." />
+            ) : (
+              <a href={`tel:${phone}`} className="text-on-surface-variant hover:text-on-surface transition-colors">{phone}</a>
+            )}
+          </div>
+        )}
+        {(website || isGuardian) && (
+          <div className="flex items-center gap-2 text-body-sm">
+            <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+            </svg>
+            {isGuardian ? (
+              <EditableField value={website} field="website" isGuardian placeholder="Add website..." />
+            ) : (
+              <a href={website} target="_blank" rel="noopener noreferrer" className="text-on-surface-variant hover:text-on-surface transition-colors truncate">{website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>
+            )}
+          </div>
+        )}
+        {rentRange && (
+          <div className="flex items-center gap-2 text-body-sm">
+            <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-on-surface-variant">{rentRange}</span>
+          </div>
+        )}
+      </div>
 
+      {/* Hours — compact inline with expandable detail */}
       {!isResidential && (isGuardian ? (
         <HoursEditor hours={hours} listingId={listingId} />
       ) : formattedHours ? (
-        <details className="group mt-1">
-          <summary className="cursor-pointer text-body text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
-            <svg className="w-4 h-4 text-on-surface-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <details className="group">
+          <summary className="cursor-pointer text-body-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-on-surface-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className={openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400' : ''}>
+            <span className={openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400/80' : 'text-on-surface-variant'}>
               {openStatus.text}
             </span>
-            <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform ml-auto text-on-surface-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </summary>
-          <div className="mt-2 ml-6 space-y-1">
+          <div className="mt-1.5 ml-[22px] space-y-0.5">
             {formattedHours.map(({ day, hours }) => (
-              <div key={day} className="flex justify-between text-body-sm">
-                <span className="text-on-surface-subtle">{day}</span>
-                <span className={hours === 'Closed' ? 'text-on-surface-disabled' : 'text-on-surface-variant'}>{hours}</span>
+              <div key={day} className="flex justify-between text-caption">
+                <span className="text-on-surface-disabled">{day}</span>
+                <span className={hours === 'Closed' ? 'text-on-surface-disabled' : 'text-on-surface-subtle'}>{hours}</span>
               </div>
             ))}
           </div>
         </details>
       ) : null)}
 
-      {/* Tags: guardian/manager only */}
-      {isGuardian && <TagPicker listing={listing} isGuardian={isGuardian} />}
-
+      {/* Description */}
       {(listing?.description || isGuardian) && (
-        <div className="mt-2">
-          {isGuardian ? (
-            <EditableField value={listing?.description || ''} field="description" isGuardian placeholder="Add description..." multiline>
-              {listing?.description ? (
-                <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
-              ) : (
-                <p className="text-body-sm text-on-surface-disabled italic">Add description...</p>
-              )}
-            </EditableField>
-          ) : listing?.description ? (
-            <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
-          ) : null}
+        isGuardian ? (
+          <EditableField value={listing?.description || ''} field="description" isGuardian placeholder="Add description..." multiline>
+            {listing?.description ? (
+              <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
+            ) : (
+              <p className="text-body-sm text-on-surface-disabled italic">Add description...</p>
+            )}
+          </EditableField>
+        ) : listing?.description ? (
+          <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
+        ) : null
+      )}
+
+      {/* Tags — public: subtle pills; guardian: full tag picker */}
+      {isGuardian ? (
+        <TagPicker listing={listing} isGuardian={isGuardian} />
+      ) : displayTags.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {displayTags.map(t => (
+            <span key={t.id} className="px-2 py-0.5 rounded text-caption bg-surface-container-high text-on-surface-subtle">
+              {t.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {/* Reservation link — compact, only if exists */}
+      {!isResidential && listing?.reservation_url && !isGuardian && (
+        <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-body-sm text-on-surface-variant hover:text-on-surface transition-colors">
+          <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+          </svg>
+          Make a reservation
+        </a>
+      )}
+
+      {/* Guardian: editable reservation/menu links — compact */}
+      {isGuardian && !isResidential && (
+        <div className="space-y-1">
+          <EditableField value={listing?.reservation_url || ''} field="reservation_url" isGuardian placeholder="Add reservations link...">
+            <div className="flex items-center gap-2 text-body-sm text-on-surface-subtle">
+              <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              {listing?.reservation_url ? 'Reservations' : <span className="italic text-on-surface-disabled">+ Reservations link</span>}
+            </div>
+          </EditableField>
         </div>
       )}
 
-      {/* Action links: reservations, menu (not shown for residential) */}
-      {!isResidential && (listing?.reservation_url || listing?.menu_url || isGuardian) && (
-        <div className="flex flex-wrap gap-2 mt-1">
-          {isGuardian ? (
-            <>
-              <EditableField value={listing?.reservation_url || ''} field="reservation_url" isGuardian placeholder="Add reservations link...">
-                {listing?.reservation_url ? (
-                  <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-body-sm font-medium px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface transition-colors" onClick={e => e.stopPropagation()}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    Reservations
-                  </a>
-                ) : (
-                  <span className="text-body-sm text-on-surface-disabled italic">+ Reservations link</span>
-                )}
-              </EditableField>
-              <EditableField value={listing?.menu_url || ''} field="menu_url" isGuardian placeholder="Add menu link...">
-                {listing?.menu_url ? (
-                  <a href={listing.menu_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-body-sm font-medium px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface transition-colors" onClick={e => e.stopPropagation()}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                    Menu
-                  </a>
-                ) : (
-                  <span className="text-body-sm text-on-surface-disabled italic">+ Menu link</span>
-                )}
-              </EditableField>
-            </>
-          ) : (
-            <>
-              {listing?.reservation_url && (
-                <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-body-sm font-medium px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface transition-colors">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  Reservations
-                </a>
-              )}
-              {listing?.menu_url && (
-                <a href={listing.menu_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-body-sm font-medium px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface transition-colors">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                  Menu
-                </a>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Cary action */}
-      <div className="mt-3">
-        <CaryButton
-          placeName={listing?.name || building?.name || 'Unknown'}
-          placeId={building?.id || listing?.id}
-          buildingPosition={building?.position}
-          isResidential={isResidential}
-        />
-      </div>
     </div>
   )
 }
@@ -1035,14 +1091,14 @@ function ReviewsTab({ listingId, isGuardian }) {
           return (
             <div key={review.id || idx} className="border-b border-outline-variant pb-4 last:border-0">
               <div className="flex items-start gap-3">
-                <AvatarCircle emoji={review.avatar} vignette={review.vignette} size={7} fallback={review.handle ? review.handle[0].toUpperCase() : 'L'} />
+                <AvatarCircle emoji={review.avatar} vignette={review.vignette} size={9} fallback={review.handle ? review.handle[0].toUpperCase() : 'L'} />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-baseline gap-2">
                     <span className="text-body font-medium text-on-surface">{displayName}</span>
-                    <span className="text-body-sm text-on-surface-disabled">{relativeTime(review.created_at || review.timestamp)}</span>
+                    <span className="text-caption text-on-surface-disabled">{relativeTime(review.created_at || review.timestamp)}</span>
                   </div>
                   {review.rating && (
-                    <div className="mt-0.5"><StarRating rating={review.rating} size="sm" /></div>
+                    <div className="mt-1"><StarRating rating={review.rating} size="sm" /></div>
                   )}
                   <p className="text-body text-on-surface-medium leading-relaxed mt-1.5">{review.text}</p>
                 </div>
@@ -1050,13 +1106,19 @@ function ReviewsTab({ listingId, isGuardian }) {
 
               {/* Guardian replies */}
               {replies.map((reply, ri) => (
-                <div key={reply.id || ri} className="flex items-start gap-2 mt-2 ml-10 pl-3 border-l-2 border-emerald-500/20">
-                  <svg className="w-4 h-4 text-emerald-400/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
+                <div key={reply.id || ri} className="flex items-start gap-2.5 mt-3 ml-10 pl-3 border-l-2 border-emerald-500/30">
+                  <div className="flex-shrink-0 relative">
+                    <AvatarCircle emoji={reply.avatar} vignette={reply.vignette} size={5} fallback={reply.handle ? reply.handle[0].toUpperCase() : 'G'} />
+                    {/* Guardian badge */}
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-surface flex items-center justify-center">
+                      <svg className="w-1.5 h-1.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium text-emerald-400/80">{reply.handle ? `@${reply.handle}` : 'Guardian'}</span>
+                      <span className="text-body-sm font-medium text-emerald-400/90">{reply.handle ? `@${reply.handle}` : 'Guardian'}</span>
                       <span className="text-caption text-on-surface-disabled">{relativeTime(reply.created_at)}</span>
                     </div>
                     <p className="text-body-sm text-on-surface-medium mt-0.5 leading-relaxed">{reply.text}</p>
@@ -2163,58 +2225,492 @@ function ResidentialAboutTab({ listing, building, isGuardian, history, descripti
 function PlaceAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
   const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
   const hasHistory = !!(history?.length || description)
-  const sections = [{ id: 'about-overview', label: 'Overview' }]
-  if (hasPhotos) sections.push({ id: 'about-photos', label: 'Photos' })
-  if (hasHistory) sections.push({ id: 'about-history', label: 'History' })
-  if (hasArchitecture) sections.push({ id: 'about-details', label: 'Details' })
-
-  const scrollTo = (id) => {
-    const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
 
   return (
     <div className="space-y-5">
-      {sections.length > 1 && (
-        <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#141414] border-b border-outline-variant">
-          <div className="flex gap-1.5 overflow-x-auto">
-            {sections.map(s => (
-              <button
-                key={s.id}
-                onClick={() => scrollTo(s.id)}
-                className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div id="about-overview">
-        <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={false} />
-      </div>
+      <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={false} />
 
       {hasPhotos && (
-        <div id="about-photos" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+        <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
           <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Photos</h3>
           <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
         </div>
       )}
 
       {hasHistory && (
-        <div id="about-history" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+        <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
           <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">History</h3>
           <HistoryTab history={history} description={description} />
         </div>
       )}
 
       {hasArchitecture && (
-        <div id="about-details" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+        <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
           <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Building Details</h3>
           <ArchitectureTab building={building} />
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Menu Tab ─────────────────────────────────────────────────────────
+
+const MENU_LABELS = {
+  dinner: 'Dinner', lunch: 'Lunch', brunch: 'Brunch', drinks: 'Drinks',
+  dessert: 'Dessert', all_day: 'All Day', specials: 'Specials',
+}
+const MENU_ORDER = ['all_day', 'lunch', 'dinner', 'brunch', 'drinks', 'dessert', 'specials']
+
+function MenuTab({ listing, building, isGuardian }) {
+  const menu = listing?.menu || null
+  const sections = menu?.sections || []
+  const editCtx = useContext(EditContext)
+  const [editingMenu, setEditingMenu] = useState(false)
+  const hasDelivery = (listing?.tags || []).includes('delivery')
+  const courierAvailable = useCourierAvailable()
+  const canOrder = hasDelivery && courierAvailable
+
+  // Group sections by menu type
+  const menus = useMemo(() => {
+    const groups = {}
+    sections.forEach(s => {
+      const key = s.menu || 'all_day'
+      if (!groups[key]) groups[key] = []
+      groups[key].push(s)
+    })
+    return MENU_ORDER.filter(k => groups[k]).map(k => ({ key: k, label: MENU_LABELS[k] || k, sections: groups[k] }))
+  }, [sections])
+
+  const [activeMenu, setActiveMenu] = useState(menus[0]?.key || null)
+
+  // Reset active menu when data changes
+  useEffect(() => {
+    if (menus.length > 0 && !menus.find(m => m.key === activeMenu)) {
+      setActiveMenu(menus[0].key)
+    }
+  }, [menus, activeMenu])
+
+  const currentMenu = menus.find(m => m.key === activeMenu)
+
+  // Ordering state
+  const [ordering, setOrdering] = useState(false)
+  const [cart, setCart] = useState({}) // { "itemName|sectionIdx|itemIdx": qty }
+  const [orderPlaced, setOrderPlaced] = useState(false)
+
+  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0)
+  const cartTotal = useMemo(() => {
+    let total = 0
+    sections.forEach((section, si) => {
+      (section.items || []).forEach((item, ii) => {
+        const key = `${si}-${ii}`
+        const qty = cart[key] || 0
+        if (qty > 0 && item.price != null) total += item.price * qty
+      })
+    })
+    return total
+  }, [cart, sections])
+
+  const MIN_ORDER = 2500 // $25 minimum order for delivery
+  const caryFee = Math.round(cartTotal * 0.20) // 20% Cary fee — courier keeps 85%, platform keeps 15%
+  const processingFee = cartTotal > 0 ? Math.round((cartTotal + caryFee) * 0.029) + 30 : 0 // Stripe 2.9% + $0.30
+  const orderTotal = cartTotal + caryFee + processingFee
+  const belowMinimum = cartTotal > 0 && cartTotal < MIN_ORDER
+
+  const setQty = (sectionIdx, itemIdx, delta) => {
+    const key = `${sectionIdx}-${itemIdx}`
+    setCart(prev => {
+      const cur = prev[key] || 0
+      const next = Math.max(0, cur + delta)
+      if (next === 0) {
+        const { [key]: _, ...rest } = prev
+        return rest
+      }
+      return { ...prev, [key]: next }
+    })
+  }
+
+  const getQty = (sectionIdx, itemIdx) => cart[`${sectionIdx}-${itemIdx}`] || 0
+
+  if (!sections.length && !isGuardian) return <p className="text-on-surface-disabled text-body-sm">No menu available yet.</p>
+
+  return (
+    <div className="space-y-4">
+      {/* Delivery CTA / ordering header */}
+      {hasDelivery && sections.length > 0 && !ordering && (
+        canOrder ? (
+          <button
+            onClick={() => setOrdering(true)}
+            className="w-full py-3 px-4 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] transition-all duration-200"
+            style={{ fontFamily: 'ui-monospace, monospace' }}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
+              Order delivery from {listing?.name}
+            </span>
+          </button>
+        ) : (
+          <div
+            className="w-full py-3 px-4 rounded-xl text-sm text-center bg-surface-container-high border border-outline-variant text-on-surface-disabled"
+            style={{ fontFamily: 'ui-monospace, monospace' }}
+          >
+            Delivery unavailable — no couriers online
+          </div>
+        )
+      )}
+
+      {ordering && (
+        <div className="flex items-center justify-between">
+          <span className="text-body-sm font-medium text-emerald-400" style={{ fontFamily: 'ui-monospace, monospace' }}>
+            Ordering from {listing?.name}
+          </span>
+          <button
+            onClick={() => { setOrdering(false); setCart({}); setOrderPlaced(false) }}
+            className="text-caption text-on-surface-disabled hover:text-on-surface-variant transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Menu type pills */}
+      {menus.length > 1 && (
+        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1">
+          {menus.map(m => (
+            <button
+              key={m.key}
+              onClick={() => setActiveMenu(m.key)}
+              className={`flex-shrink-0 px-3 py-1 rounded-full text-body-sm font-medium transition-colors ${
+                activeMenu === m.key
+                  ? 'bg-on-surface text-surface'
+                  : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Sections for active menu — collapsible */}
+      {currentMenu?.sections.map((section, si) => {
+        const absSi = sections.indexOf(section)
+        // Count cart items in this section
+        const sectionCartCount = (section.items || []).reduce((acc, _, ii) => acc + getQty(absSi, ii), 0)
+        return (
+          <MenuSection
+            key={si}
+            section={section}
+            absSi={absSi}
+            ordering={ordering}
+            sectionCartCount={sectionCartCount}
+            getQty={getQty}
+            setQty={setQty}
+            defaultOpen={si === 0}
+          />
+        )
+      })}
+
+      {/* Order summary */}
+      {ordering && cartCount > 0 && (
+        <div className="rounded-xl bg-surface-container border border-outline-variant p-4 space-y-2" style={{ fontFamily: 'ui-monospace, monospace' }}>
+          <div className="flex justify-between text-body-sm text-on-surface-variant">
+            <span>Subtotal ({cartCount} item{cartCount !== 1 ? 's' : ''})</span>
+            <span className="tabular-nums">${(cartTotal / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-body-sm text-on-surface-subtle">
+            <span>Cary fee (20%)</span>
+            <span className="tabular-nums">${(caryFee / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-body-sm text-on-surface-subtle">
+            <span>Processing</span>
+            <span className="tabular-nums">${(processingFee / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-body font-medium text-on-surface pt-2 border-t border-outline-variant">
+            <span>Total</span>
+            <span className="tabular-nums">${(orderTotal / 100).toFixed(2)}</span>
+          </div>
+
+          {belowMinimum && (
+            <p className="text-caption text-amber-400/80 mt-1">
+              ${((MIN_ORDER - cartTotal) / 100).toFixed(2)} more to meet the $25 minimum
+            </p>
+          )}
+
+          {!orderPlaced ? (
+            <button
+              onClick={() => setOrderPlaced(true)}
+              disabled={belowMinimum}
+              className={`w-full mt-2 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
+                belowMinimum
+                  ? 'bg-surface-container-high border border-outline-variant text-on-surface-disabled cursor-not-allowed'
+                  : 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]'
+              }`}
+            >
+              {belowMinimum ? `$25 minimum order` : `Place order — $${(orderTotal / 100).toFixed(2)}`}
+            </button>
+          ) : (
+            <div className="text-center py-3 rounded-xl bg-surface-container-high border border-outline-variant">
+              <p className="text-body-sm text-on-surface-variant font-medium">Coming soon</p>
+              <p className="text-caption text-on-surface-disabled mt-0.5">Cary delivery is launching this spring</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty state for active menu */}
+      {!currentMenu && sections.length === 0 && isGuardian && (
+        <p className="text-on-surface-disabled text-body-sm">Tap "Edit Menu" to add your menu.</p>
+      )}
+
+      {/* Guardian: edit menu button */}
+      {isGuardian && (
+        <div className="pt-2 border-t border-outline-variant">
+          {!editingMenu ? (
+            <button
+              onClick={() => setEditingMenu(true)}
+              className="w-full text-center py-2 rounded-lg bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest transition-colors"
+            >
+              Edit Menu
+            </button>
+          ) : (
+            <MenuEditor
+              menu={menu}
+              onSave={(newMenu) => {
+                editCtx?.setField('menu', newMenu)
+                setEditingMenu(false)
+              }}
+              onCancel={() => setEditingMenu(false)}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MenuSection({ section, absSi, ordering, sectionCartCount, getQty, setQty, defaultOpen }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const itemCount = section.items?.length || 0
+
+  // Auto-open if cart has items in this section
+  useEffect(() => {
+    if (sectionCartCount > 0 && !open) setOpen(true)
+  }, [sectionCartCount])
+
+  return (
+    <div className="border border-outline-variant/50 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-surface-container/50 transition-colors"
+      >
+        <svg
+          className={`w-3 h-3 text-on-surface-disabled transition-transform duration-200 flex-shrink-0 ${open ? 'rotate-90' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        <span className="text-body-sm font-semibold text-on-surface-variant uppercase tracking-wider flex-1">{section.name}</span>
+        {sectionCartCount > 0 && (
+          <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-caption font-medium tabular-nums">
+            {sectionCartCount}
+          </span>
+        )}
+        {!sectionCartCount && (
+          <span className="text-caption text-on-surface-disabled">{itemCount}</span>
+        )}
+      </button>
+      {open && (
+        <div className="px-3 pb-2">
+          {section.items?.map((item, ii) => (
+            <MenuItemRow
+              key={ii}
+              item={item}
+              ordering={ordering}
+              qty={getQty(absSi, ii)}
+              onAdd={() => setQty(absSi, ii, 1)}
+              onRemove={() => setQty(absSi, ii, -1)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MenuItemRow({ item, ordering, qty, onAdd, onRemove }) {
+  const [expanded, setExpanded] = useState(false)
+  const hasMods = item.modifiers?.length > 0
+  const tags = item.tags || []
+  const hasPrice = item.price != null
+  const hasDesc = !!item.description
+  const longDesc = hasDesc && item.description.length > 60
+  return (
+    <div className={`flex gap-2 py-1.5 border-b border-outline-variant/30 last:border-0 transition-colors ${qty > 0 ? 'bg-emerald-500/5 -mx-1 px-1 rounded' : ''}`}>
+      <div className="flex-1 min-w-0" onClick={hasDesc ? () => setExpanded(e => !e) : undefined} style={hasDesc ? { cursor: 'pointer' } : undefined}>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-body-sm font-medium text-on-surface">{item.name}</span>
+          {tags.length > 0 && (
+            <span className="text-caption text-on-surface-disabled/60 flex-shrink-0">
+              {tags.map(t => t === 'gf' ? 'GF' : t === 'v' ? 'V' : t === 'vg' ? 'VG' : t.toUpperCase()).join(' · ')}
+            </span>
+          )}
+        </div>
+        {hasDesc && (
+          <p className={`text-caption text-on-surface-subtle/70 mt-0.5 leading-snug ${!expanded && longDesc ? 'line-clamp-1' : ''}`}>
+            {item.description}
+          </p>
+        )}
+        {hasMods && expanded && (
+          <div className="flex flex-wrap gap-x-2 mt-0.5">
+            {item.modifiers.map((mod, mi) => (
+              <span key={mi} className="text-caption text-on-surface-disabled">
+                {mod.name} {mod.price != null ? `+$${(mod.price / 100).toFixed(2)}` : ''}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {hasPrice && (
+          <span className={`text-body-sm tabular-nums ${qty > 0 ? 'text-emerald-400 font-medium' : 'text-on-surface-subtle'}`}>
+            {(item.price / 100).toFixed(0)}
+          </span>
+        )}
+        {ordering && hasPrice && (
+          <div className="flex items-center gap-0.5">
+            {qty > 0 && (
+              <>
+                <button
+                  onClick={onRemove}
+                  className="w-5 h-5 rounded-full bg-surface-container-high border border-outline-variant text-on-surface-variant hover:bg-surface-container-highest flex items-center justify-center text-xs leading-none transition-colors"
+                >
+                  &minus;
+                </button>
+                <span className="w-4 text-center text-caption font-medium text-on-surface tabular-nums">{qty}</span>
+              </>
+            )}
+            <button
+              onClick={onAdd}
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-xs leading-none transition-colors ${
+                qty > 0
+                  ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30'
+                  : 'bg-surface-container-high border border-outline-variant text-on-surface-disabled hover:text-on-surface-variant hover:bg-surface-container-highest'
+              }`}
+            >
+              +
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Guardian Menu Editor ──────────────────────────────────────────────
+function MenuEditor({ menu, onSave, onCancel }) {
+  const [sections, setSections] = useState(() => {
+    const s = menu?.sections || []
+    return s.length ? JSON.parse(JSON.stringify(s)) : [{ name: '', menu: 'all_day', items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }]
+  })
+
+  const addSection = () => setSections(prev => [...prev, { name: '', menu: 'all_day', items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }])
+  const removeSection = (si) => setSections(prev => prev.filter((_, i) => i !== si))
+  const updateSection = (si, field, val) => setSections(prev => prev.map((s, i) => i === si ? { ...s, [field]: val } : s))
+
+  const addItem = (si) => setSections(prev => prev.map((s, i) => i === si ? { ...s, items: [...s.items, { name: '', description: '', price: null, tags: [], modifiers: [] }] } : s))
+  const removeItem = (si, ii) => setSections(prev => prev.map((s, i) => i === si ? { ...s, items: s.items.filter((_, j) => j !== ii) } : s))
+  const updateItem = (si, ii, field, val) => setSections(prev => prev.map((s, i) => i === si ? { ...s, items: s.items.map((item, j) => j === ii ? { ...item, [field]: val } : item) } : s))
+
+  const handleSave = () => {
+    // Clean up: remove empty items and sections
+    const cleaned = sections
+      .map(s => ({ ...s, items: s.items.filter(item => item.name.trim()) }))
+      .filter(s => s.name.trim() && s.items.length > 0)
+    onSave({ sections: cleaned })
+  }
+
+  return (
+    <div className="space-y-4">
+      {sections.map((section, si) => (
+        <div key={si} className="rounded-lg bg-surface-container p-3 space-y-3">
+          <div className="flex gap-2">
+            <input
+              value={section.name}
+              onChange={e => updateSection(si, 'name', e.target.value)}
+              placeholder="Section name (e.g. Appetizers)"
+              className="flex-1 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1.5 border border-outline-variant focus:border-on-surface-subtle outline-none"
+            />
+            <select
+              value={section.menu || 'all_day'}
+              onChange={e => updateSection(si, 'menu', e.target.value)}
+              className="bg-surface-container-high text-on-surface-variant text-body-sm rounded px-2 py-1.5 border border-outline-variant outline-none"
+            >
+              {MENU_ORDER.map(k => <option key={k} value={k}>{MENU_LABELS[k]}</option>)}
+            </select>
+            <button onClick={() => removeSection(si)} className="text-on-surface-disabled hover:text-rose-400 p-1" title="Remove section">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+          </div>
+
+          {section.items.map((item, ii) => (
+            <div key={ii} className="flex gap-2 items-start">
+              <div className="flex-1 space-y-1">
+                <input
+                  value={item.name}
+                  onChange={e => updateItem(si, ii, 'name', e.target.value)}
+                  placeholder="Item name"
+                  className="w-full bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none"
+                />
+                <input
+                  value={item.description || ''}
+                  onChange={e => updateItem(si, ii, 'description', e.target.value)}
+                  placeholder="Description (optional)"
+                  className="w-full bg-surface-container-high text-on-surface-subtle text-caption rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none"
+                />
+              </div>
+              <input
+                value={item.price != null ? (item.price / 100).toFixed(2) : ''}
+                onChange={e => {
+                  const v = e.target.value.replace(/[^0-9.]/g, '')
+                  updateItem(si, ii, 'price', v ? Math.round(parseFloat(v) * 100) : null)
+                }}
+                placeholder="$"
+                className="w-16 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none text-right tabular-nums"
+              />
+              <button onClick={() => removeItem(si, ii)} className="text-on-surface-disabled hover:text-rose-400 p-0.5 mt-1" title="Remove item">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          ))}
+
+          <button
+            onClick={() => addItem(si)}
+            className="text-on-surface-disabled hover:text-on-surface-variant text-caption flex items-center gap-1"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Add item
+          </button>
+        </div>
+      ))}
+
+      <button
+        onClick={addSection}
+        className="w-full py-2 rounded-lg border border-dashed border-outline-variant text-on-surface-variant text-body-sm hover:bg-surface-container transition-colors"
+      >
+        + Add Section
+      </button>
+
+      <div className="flex gap-2">
+        <button onClick={handleSave} className="flex-1 py-2 rounded-lg bg-on-surface text-surface text-body-sm font-medium hover:bg-on-surface/90 transition-colors">
+          Save Menu
+        </button>
+        <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest transition-colors">
+          Cancel
+        </button>
+      </div>
     </div>
   )
 }
@@ -2316,8 +2812,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         if (isResidentHere || isAdmin) t.push({ id: 'qr', label: 'QR' })
         return t
       }
-      // ── Non-residential listing path: About + Community + QR ──
+      // ── Non-residential listing path: About + Menu + Community + QR ──
       const t = [{ id: 'about', label: 'About' }]
+      if (activeListing?.menu?.sections?.length || isGuardian) t.push({ id: 'menu', label: 'Menu' })
       t.push({ id: 'community', label: 'Community' })
       if (isGuardian || isAdmin) t.push({ id: 'qr', label: 'QR' })
       return t
@@ -2328,7 +2825,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
     if (hasHistory) t.push({ id: 'history', label: 'History' })
     t.push({ id: 'photos', label: 'Photos' })
     return t
-  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, isGuardian, isAdmin, isResidential, isResidentHere])
+  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, isGuardian, isAdmin, isResidential, isResidentHere, activeListing?.menu])
 
   // Default tab: first available
   const defaultTab = tabs[0]?.id || 'photos'
@@ -2603,6 +3100,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               />
             )
           )}
+          {/* Menu tab */}
+          {currentTab === 'menu' && <MenuTab listing={activeListing} building={building} isGuardian={isGuardian} />}
           {/* Community tab: reviews + events */}
           {currentTab === 'community' && <CommunityTab listingId={listingId} isGuardian={isGuardian} />}
           {/* Lobby tab: residential only */}

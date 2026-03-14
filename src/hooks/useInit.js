@@ -5,6 +5,12 @@ import useHandle from './useHandle'
 import useEvents from './useEvents'
 import useResidence from './useResidence'
 import staticData from '../data/landmarks.json'
+import menuData from '../data/menus.json'
+
+// Static landmarks enriched with bundled menu data
+const landmarksWithMenus = staticData.landmarks.map(lm =>
+  menuData[lm.id] ? { ...lm, menu: menuData[lm.id] } : lm
+)
 
 let _ran = false
 
@@ -26,7 +32,7 @@ export async function runInit() {
     const apiListings = Array.isArray(data.listings) ? data.listings : []
     if (apiListings.length > 0) {
       const staticLookup = new Map()
-      staticData.landmarks.forEach(lm => staticLookup.set(lm.id, lm))
+      landmarksWithMenus.forEach(lm => staticLookup.set(lm.id, lm))
 
       const merged = apiListings.map(api => {
         const lm = staticLookup.get(api.id)
@@ -34,6 +40,8 @@ export async function runInit() {
         const out = { ...lm }
         for (const [k, v] of Object.entries(api)) {
           if (v != null && !(Array.isArray(v) && v.length === 0)) {
+            // Keep bundled menu unless API has real menu data
+            if (k === 'menu' && lm.menu?.sections?.length && !v?.sections?.length) continue
             if (k === 'photos' && Array.isArray(v) && Array.isArray(lm.photos)) {
               const apiHasCredits = v.some(p => typeof p === 'object' && p?.credit)
               const staticHasCredits = lm.photos.some(p => typeof p === 'object' && p?.credit)
@@ -50,7 +58,7 @@ export async function runInit() {
       })
 
       const apiIds = new Set(apiListings.map(l => l.id))
-      staticData.landmarks.forEach(lm => {
+      landmarksWithMenus.forEach(lm => {
         if (!apiIds.has(lm.id)) merged.push(lm)
       })
 
