@@ -303,10 +303,14 @@ export default function CourierDashboard() {
     }
   }, [open, courierProfile?.status, subscribeAsCourier, unsubscribeAll])
 
+  // Preview mode: ?preview=true skips auth to show the onboarding wizard
+  const isPreview = new URLSearchParams(window.location.search).has('preview')
+
   if (!open) return null
 
   // Determine subtitle based on state
-  const subtitle = !user ? 'Apply to become a courier'
+  const subtitle = isPreview ? 'Courier onboarding (preview)'
+    : !user ? 'Apply to become a courier'
     : !profile ? 'Create your profile'
     : !courierProfile ? 'Courier application'
     : courierProfile.status === 'active' ? 'Courier dashboard'
@@ -334,11 +338,14 @@ export default function CourierDashboard() {
           </button>
         </div>
 
+        {/* Preview mode: show onboarding wizard without auth */}
+        {isPreview && <CourierOnboarding />}
+
         {/* Auth: not signed in yet */}
-        {!user && <CaryAuth />}
+        {!isPreview && !user && <CaryAuth />}
 
         {/* Onboarding: signed in but not yet active */}
-        {user && profile && (!courierProfile || courierProfile.status !== 'active') && (
+        {!isPreview && user && profile && (!courierProfile || courierProfile.status !== 'active') && (
           <CourierOnboarding />
         )}
 
