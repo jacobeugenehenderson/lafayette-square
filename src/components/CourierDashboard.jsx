@@ -339,7 +339,7 @@ export default function CourierDashboard() {
         </div>
 
         {/* Preview mode: show onboarding wizard without auth */}
-        {isPreview && <CourierOnboarding />}
+        {isPreview && <CourierOnboarding preview />}
 
         {/* Auth: not signed in yet */}
         {!isPreview && !user && <CaryAuth />}

@@ -71,17 +71,17 @@ function ProgressBar({ currentStep }) {
 
 // ── Step: Identity ──────────────────────────────────────────
 
-function IdentityStep({ onNext }) {
+function IdentityStep({ onNext, preview }) {
   const { onboardingAction, loading, error } = useCary()
 
   const handleStart = useCallback(async () => {
+    if (preview) { onNext(); return }
     const result = await onboardingAction('start_identity')
     if (result?.verification_url) {
-      // Open Stripe Identity in a new tab — they'll return when done
       window.open(result.verification_url, '_blank')
       onNext()
     }
-  }, [onboardingAction, onNext])
+  }, [onboardingAction, onNext, preview])
 
   return (
     <div className="space-y-4">
@@ -115,19 +115,20 @@ function IdentityStep({ onNext }) {
 
 // ── Step: License ───────────────────────────────────────────
 
-function LicenseStep({ onNext }) {
+function LicenseStep({ onNext, preview }) {
   const { onboardingAction, loading, error } = useCary()
   const [state, setState] = useState('MO')
   const [expiry, setExpiry] = useState('')
 
   const handleSubmit = useCallback(async () => {
+    if (preview) { onNext(); return }
     if (!expiry) return
     const result = await onboardingAction('submit_license', {
       license_state: state,
       license_expiry: expiry,
     })
     if (result) onNext()
-  }, [state, expiry, onboardingAction, onNext])
+  }, [state, expiry, onboardingAction, onNext, preview])
 
   return (
     <div className="space-y-4">
@@ -174,16 +175,17 @@ function LicenseStep({ onNext }) {
 
 // ── Step: Background ────────────────────────────────────────
 
-function BackgroundStep({ onNext }) {
+function BackgroundStep({ onNext, preview }) {
   const { onboardingAction, loading, error } = useCary()
 
   const handleStart = useCallback(async () => {
+    if (preview) { onNext(); return }
     const result = await onboardingAction('start_background')
     if (result?.invitation_url) {
       window.open(result.invitation_url, '_blank')
     }
     if (result) onNext()
-  }, [onboardingAction, onNext])
+  }, [onboardingAction, onNext, preview])
 
   return (
     <div className="space-y-4">
@@ -224,7 +226,7 @@ function BackgroundStep({ onNext }) {
 
 // ── Step: Insurance ─────────────────────────────────────────
 
-function InsuranceStep({ onNext, vehicleType }) {
+function InsuranceStep({ onNext, vehicleType, preview }) {
   const { onboardingAction, loading, error } = useCary()
   const [expiry, setExpiry] = useState('')
 
@@ -232,12 +234,13 @@ function InsuranceStep({ onNext, vehicleType }) {
   const skipInsurance = vehicleType === 'bike' || vehicleType === 'on_foot'
 
   const handleSubmit = useCallback(async () => {
+    if (preview) { onNext(); return }
     if (!expiry && !skipInsurance) return
     const result = await onboardingAction('submit_insurance', {
       insurance_expiry: skipInsurance ? '2099-12-31' : expiry,
     })
     if (result) onNext()
-  }, [expiry, skipInsurance, onboardingAction, onNext])
+  }, [expiry, skipInsurance, onboardingAction, onNext, preview])
 
   if (skipInsurance) {
     return (
@@ -294,7 +297,7 @@ function InsuranceStep({ onNext, vehicleType }) {
 
 // ── Step: Vehicle ───────────────────────────────────────────
 
-function VehicleStep({ onNext, vehicleType }) {
+function VehicleStep({ onNext, vehicleType, preview }) {
   const { onboardingAction, loading, error } = useCary()
   const [make, setMake] = useState('')
   const [model, setModel] = useState('')
@@ -305,6 +308,7 @@ function VehicleStep({ onNext, vehicleType }) {
   const isMotorVehicle = vehicleType === 'car' || vehicleType === 'scooter'
 
   const handleSubmit = useCallback(async () => {
+    if (preview) { onNext(); return }
     if (!make.trim() || !model.trim() || !year) return
     const result = await onboardingAction('submit_vehicle', {
       vehicle_make: make.trim(),
@@ -314,7 +318,7 @@ function VehicleStep({ onNext, vehicleType }) {
       registration_expiry: regExpiry || null,
     })
     if (result) onNext()
-  }, [make, model, year, plate, regExpiry, onboardingAction, onNext])
+  }, [make, model, year, plate, regExpiry, onboardingAction, onNext, preview])
 
   return (
     <div className="space-y-4">
@@ -399,15 +403,16 @@ function VehicleStep({ onNext, vehicleType }) {
 
 // ── Step: Agreement ─────────────────────────────────────────
 
-function AgreementStep({ onNext }) {
+function AgreementStep({ onNext, preview }) {
   const { onboardingAction, loading, error } = useCary()
   const [agreed, setAgreed] = useState(false)
 
   const handleAccept = useCallback(async () => {
+    if (preview) { onNext(); return }
     if (!agreed) return
     const result = await onboardingAction('accept_agreement')
     if (result) onNext()
-  }, [agreed, onboardingAction, onNext])
+  }, [agreed, onboardingAction, onNext, preview])
 
   return (
     <div className="space-y-4">
@@ -544,10 +549,78 @@ function VehicleTypeStep({ onSelect }) {
   )
 }
 
+// ── Preview Mode (local state, no Supabase) ────────────────
+
+const STEP_ORDER = ['identity', 'license', 'background', 'insurance', 'vehicle', 'agreement', 'pending_activation']
+
+function PreviewOnboarding() {
+  const [step, setStep] = useState(null) // null = vehicle type selector
+  const [vehicleType, setVehicleType] = useState('car')
+
+  const advanceStep = () => {
+    if (!step) {
+      setStep('identity')
+      return
+    }
+    const idx = STEP_ORDER.indexOf(step)
+    if (idx < STEP_ORDER.length - 1) {
+      setStep(STEP_ORDER[idx + 1])
+    }
+  }
+
+  // Vehicle type selector
+  if (!step) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-body font-medium text-on-surface">How will you deliver?</h3>
+          <p className="text-body-sm text-on-surface-variant mt-1">
+            Select your primary mode of transport.
+          </p>
+        </div>
+        <div className="space-y-2">
+          {VEHICLE_TYPES.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => { setVehicleType(v.id); advanceStep() }}
+              className="w-full text-left px-4 py-3 rounded-xl border border-outline-variant bg-surface-container text-on-surface text-body hover:border-on-surface-subtle hover:bg-surface-container-high transition-colors"
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // In preview, wrap onNext so buttons always advance (no Supabase calls)
+  const previewNext = advanceStep
+  const stepComponent = {
+    identity: <IdentityStep onNext={previewNext} preview />,
+    license: <LicenseStep onNext={previewNext} preview />,
+    background: <BackgroundStep onNext={previewNext} preview />,
+    insurance: <InsuranceStep onNext={previewNext} vehicleType={vehicleType} preview />,
+    vehicle: <VehicleStep onNext={previewNext} vehicleType={vehicleType} preview />,
+    agreement: <AgreementStep onNext={previewNext} preview />,
+    pending_activation: <PendingStep />,
+  }
+
+  return (
+    <>
+      <ProgressBar currentStep={step} />
+      {stepComponent[step] || <PendingStep />}
+    </>
+  )
+}
+
 // ── Main Onboarding Component ───────────────────────────────
 
-export default function CourierOnboarding() {
+export default function CourierOnboarding({ preview = false }) {
   const { courierProfile, refreshOnboardingStatus } = useCary()
+
+  // Preview mode: self-contained with local state
+  if (preview) return <PreviewOnboarding />
+
   const step = courierProfile?.onboarding_step
   const vehicleType = courierProfile?.vehicle_type
 
