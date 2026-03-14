@@ -2262,7 +2262,7 @@ const MENU_LABELS = {
 }
 const MENU_ORDER = ['all_day', 'lunch', 'dinner', 'brunch', 'drinks', 'dessert', 'specials']
 
-function MenuTab({ listing, building, isGuardian }) {
+function MenuTab({ listing, building, isGuardian, isAdmin }) {
   const menu = listing?.menu || null
   const sections = menu?.sections || []
   const editCtx = useContext(EditContext)
@@ -2312,9 +2312,11 @@ function MenuTab({ listing, building, isGuardian }) {
   }, [cart, sections])
 
   const MIN_ORDER = 2500 // $25 minimum order for delivery
+  const STL_TAX_RATE = 0.08725 // Missouri 4.225% + St. Louis city 4.5%
+  const salesTax = Math.round(cartTotal * STL_TAX_RATE) // tax on food only, not delivery
   const caryFee = Math.round(cartTotal * 0.20) // 20% Cary fee — courier keeps 85%, platform keeps 15%
-  const processingFee = cartTotal > 0 ? Math.round((cartTotal + caryFee) * 0.029) + 30 : 0 // Stripe 2.9% + $0.30
-  const orderTotal = cartTotal + caryFee + processingFee
+  const processingFee = cartTotal > 0 ? Math.round((cartTotal + salesTax + caryFee) * 0.029) + 30 : 0 // Stripe 2.9% + $0.30
+  const orderTotal = cartTotal + salesTax + caryFee + processingFee
   const belowMinimum = cartTotal > 0 && cartTotal < MIN_ORDER
 
   const setQty = (sectionIdx, itemIdx, delta) => {
@@ -2336,9 +2338,10 @@ function MenuTab({ listing, building, isGuardian }) {
 
   return (
     <div className="space-y-4">
-      {/* Delivery CTA / ordering header */}
+      {/* Delivery CTA — teaser for public, functional for admin (demo/sales).
+          To go live for everyone: remove the isAdmin gate. */}
       {hasDelivery && sections.length > 0 && !ordering && (
-        canOrder ? (
+        isAdmin ? (
           <button
             onClick={() => setOrdering(true)}
             className="w-full py-3 px-4 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] transition-all duration-200"
@@ -2353,10 +2356,15 @@ function MenuTab({ listing, building, isGuardian }) {
           </button>
         ) : (
           <div
-            className="w-full py-3 px-4 rounded-xl text-sm text-center bg-surface-container-high border border-outline-variant text-on-surface-disabled"
+            className="w-full py-3 px-4 rounded-xl text-sm text-center border border-emerald-500/20 bg-emerald-500/5"
             style={{ fontFamily: 'ui-monospace, monospace' }}
           >
-            Delivery unavailable — no couriers online
+            <span className="flex items-center justify-center gap-2 text-emerald-400/90">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
+              Cary delivery — coming soon
+            </span>
           </div>
         )
       )}
@@ -2419,6 +2427,10 @@ function MenuTab({ listing, building, isGuardian }) {
           <div className="flex justify-between text-body-sm text-on-surface-variant">
             <span>Subtotal ({cartCount} item{cartCount !== 1 ? 's' : ''})</span>
             <span className="tabular-nums">${(cartTotal / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-body-sm text-on-surface-subtle">
+            <span>Tax (8.725%)</span>
+            <span className="tabular-nums">${(salesTax / 100).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-body-sm text-on-surface-subtle">
             <span>Cary fee (20%)</span>
@@ -3101,7 +3113,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             )
           )}
           {/* Menu tab */}
-          {currentTab === 'menu' && <MenuTab listing={activeListing} building={building} isGuardian={isGuardian} />}
+          {currentTab === 'menu' && <MenuTab listing={activeListing} building={building} isGuardian={isGuardian} isAdmin={isAdmin} />}
           {/* Community tab: reviews + events */}
           {currentTab === 'community' && <CommunityTab listingId={listingId} isGuardian={isGuardian} />}
           {/* Lobby tab: residential only */}
