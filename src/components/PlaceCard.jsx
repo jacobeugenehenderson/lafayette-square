@@ -2142,9 +2142,35 @@ function AboutChips({ sections, scrollContainerRef }) {
 function ResidentialAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
   const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
   const hasHistory = !!(history?.length || description)
+  const sections = [{ id: 'about-overview', label: 'Overview' }]
+  if (hasPhotos) sections.push({ id: 'about-photos', label: 'Photos' })
+  if (hasHistory) sections.push({ id: 'about-history', label: 'History' })
+  if (hasArchitecture) sections.push({ id: 'about-details', label: 'Details' })
+
+  const scrollTo = (id) => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <div className="space-y-5">
+      {/* Anchor chips */}
+      {sections.length > 1 && (
+        <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#141414] border-b border-outline-variant">
+          <div className="flex gap-1.5 overflow-x-auto">
+            {sections.map(s => (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Overview */}
       <div id="about-overview">
         <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={true} />
@@ -2380,8 +2406,6 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
       <EditProvider listingId={listingId}>
       <div ref={scrollRef} className="overflow-y-auto flex-1">
-        {/* Sticky header: title + tabs + section chips */}
-        <div data-sticky-header className="sticky top-0 z-10 bg-[#141414]">
         {hasListingInfo ? (
           <>
             {/* ── Listing path ── */}
@@ -2514,12 +2538,6 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             </button>
           ))}
         </nav>
-
-        {/* About section chips (inside sticky header) */}
-        {currentTab === 'about' && (
-          <AboutChips sections={aboutSections} scrollContainerRef={scrollRef} />
-        )}
-        </div>{/* end sticky header */}
 
         {/* Tab content */}
         <div className="p-4">
