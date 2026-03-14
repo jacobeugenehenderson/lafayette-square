@@ -343,7 +343,7 @@ export default function CourierDashboard() {
         )}
 
         {/* Active courier */}
-        {courierProfile.status === 'active' && (
+        {courierProfile?.status === 'active' && (
           <>
             <OnlineToggle />
 
