@@ -2159,6 +2159,83 @@ function ResidentialAboutTab({ listing, building, isGuardian, history, descripti
   )
 }
 
+// ─── Non-Residential About Tab (consolidated single-scroll) ──────────
+function PlaceAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
+  const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
+  const hasHistory = !!(history?.length || description)
+  const sections = [{ id: 'about-overview', label: 'Overview' }]
+  if (hasPhotos) sections.push({ id: 'about-photos', label: 'Photos' })
+  if (hasHistory) sections.push({ id: 'about-history', label: 'History' })
+  if (hasArchitecture) sections.push({ id: 'about-details', label: 'Details' })
+
+  const scrollTo = (id) => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <div className="space-y-5">
+      {sections.length > 1 && (
+        <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#141414] border-b border-outline-variant">
+          <div className="flex gap-1.5 overflow-x-auto">
+            {sections.map(s => (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div id="about-overview">
+        <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={false} />
+      </div>
+
+      {hasPhotos && (
+        <div id="about-photos" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Photos</h3>
+          <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
+        </div>
+      )}
+
+      {hasHistory && (
+        <div id="about-history" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">History</h3>
+          <HistoryTab history={history} description={description} />
+        </div>
+      )}
+
+      {hasArchitecture && (
+        <div id="about-details" className="rounded-xl bg-surface-container border border-outline-variant p-4">
+          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Building Details</h3>
+          <ArchitectureTab building={building} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Community Tab (Reviews + Events) ────────────────────────────────
+function CommunityTab({ listingId, isGuardian }) {
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
+        <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Reviews</h3>
+        <ReviewsTab listingId={listingId} isGuardian={isGuardian} />
+      </div>
+
+      <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
+        <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Events</h3>
+        <EventsTab listingId={listingId} isGuardian={isGuardian} />
+      </div>
+    </div>
+  )
+}
+
 // ═════════════════════════════════════════════════════════════════════
 // Main PlaceCard
 // ═════════════════════════════════════════════════════════════════════
@@ -2239,13 +2316,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         if (isResidentHere || isAdmin) t.push({ id: 'qr', label: 'QR' })
         return t
       }
-      // ── Non-residential listing path ──
-      const t = [{ id: 'overview', label: 'Overview' }]
-      t.push({ id: 'reviews', label: 'Reviews' })
-      t.push({ id: 'events', label: 'Events' })
-      if (hasHistory) t.push({ id: 'history', label: 'History' })
-      if (hasArchitecture) t.push({ id: 'architecture', label: 'Details' })
-      t.push({ id: 'photos', label: 'Photos' })
+      // ── Non-residential listing path: About + Community + QR ──
+      const t = [{ id: 'about', label: 'About' }]
+      t.push({ id: 'community', label: 'Community' })
       if (isGuardian || isAdmin) t.push({ id: 'qr', label: 'QR' })
       return t
     }
@@ -2262,9 +2335,11 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const currentTab = activeTab && tabs.some(t => t.id === activeTab) ? activeTab : defaultTab
 
   // Consume initialTab from store (e.g. EventTicker → Events tab)
+  // Map legacy tab IDs to new consolidated tabs
   useEffect(() => {
-    if (initialTab && tabs.some(t => t.id === initialTab)) {
-      setActiveTab(initialTab)
+    const mapped = (initialTab === 'events' || initialTab === 'reviews') ? 'community' : initialTab
+    if (mapped && tabs.some(t => t.id === mapped)) {
+      setActiveTab(mapped)
       useSelectedBuilding.getState().clearInitialTab()
     }
   }, [initialTab, tabs])
@@ -2496,32 +2571,43 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
         {/* Tab content */}
         <div className="p-4">
-          {/* Residential: consolidated About tab */}
+          {/* About tab: residential or non-residential */}
           {currentTab === 'about' && (
-            <ResidentialAboutTab
-              listing={activeListing}
-              building={building}
-              isGuardian={isGuardian}
-              history={history}
-              description={description}
-              hasArchitecture={hasArchitecture}
-              photos={photos}
-              facadeImage={facadeImage}
-              facadeInfo={facadeInfo}
-              name={name}
-              listingId={listingId}
-            />
+            isResidential ? (
+              <ResidentialAboutTab
+                listing={activeListing}
+                building={building}
+                isGuardian={isGuardian}
+                history={history}
+                description={description}
+                hasArchitecture={hasArchitecture}
+                photos={photos}
+                facadeImage={facadeImage}
+                facadeInfo={facadeInfo}
+                name={name}
+                listingId={listingId}
+              />
+            ) : (
+              <PlaceAboutTab
+                listing={activeListing}
+                building={building}
+                isGuardian={isGuardian}
+                history={history}
+                description={description}
+                hasArchitecture={hasArchitecture}
+                photos={photos}
+                facadeImage={facadeImage}
+                facadeInfo={facadeInfo}
+                name={name}
+                listingId={listingId}
+              />
+            )
           )}
-          {/* Non-residential listing tabs */}
-          {currentTab === 'overview' && (
-            <OverviewTab listing={activeListing} building={building} isGuardian={isGuardian} isResidential={isResidential} />
-          )}
-          {currentTab === 'reviews' && <ReviewsTab listingId={listingId} isGuardian={isGuardian} />}
-          {currentTab === 'events' && <EventsTab listingId={listingId} isGuardian={isGuardian} />}
+          {/* Community tab: reviews + events */}
+          {currentTab === 'community' && <CommunityTab listingId={listingId} isGuardian={isGuardian} />}
+          {/* Lobby tab: residential only */}
           {currentTab === 'lobby' && <LobbyTab buildingId={building?.id} />}
-          {currentTab === 'architecture' && <ArchitectureTab building={building} />}
-          {currentTab === 'history' && <HistoryTab history={history} description={description} />}
-          {currentTab === 'photos' && <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />}
+          {/* QR tab */}
           {currentTab === 'qr' && <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />}
           {/* Property card tabs */}
           {currentTab === 'property' && (
