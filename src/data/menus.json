@@ -1,4 +1,163 @@
 {
+  "lmk-003": {
+    "sections": [
+      {
+        "name": "Raw",
+        "menu": "dinner",
+        "items": [
+          { "name": "Oysters", "description": "Pink peppercorn, mignonette", "price": 2400, "modifiers": [{ "name": "6 pc", "price": 0 }, { "name": "12 pc", "price": 4200 }] },
+          { "name": "Scallop Crudo", "description": "Habanero garlic confit, orange zest, almond praline", "price": 1800 },
+          { "name": "Shrimp Cocktail", "description": "Lightly poached shrimp, cocktail sauce", "price": 1800 },
+          { "name": "Hamachi Crudo", "description": "Melon, whole lemon vin, paddlefish caviar, radish, fig leaf oil", "price": 2000 }
+        ]
+      },
+      {
+        "name": "Garden",
+        "menu": "dinner",
+        "items": [
+          { "name": "Panzanella", "description": "Local tomato, red onion, fennel, arugula, bread", "price": 1400 },
+          { "name": "Cacio e Pepe Veg", "description": "Red cabbage, parsnip, cauliflower, black pepper, breadcrumbs", "price": 1400 },
+          { "name": "Mushroom Toast", "description": "Ozark forest mushrooms, pesto, arugula, pickled cranberries", "price": 1500 },
+          { "name": "Whipped Ricotta", "description": "Seasonal fruit, grilled bread, serrano ham, balsamic", "price": 1600 }
+        ]
+      },
+      {
+        "name": "First Wave",
+        "menu": "dinner",
+        "items": [
+          { "name": "Sourdough Focaccia", "description": "Tomesco butter", "price": 800 },
+          { "name": "Salt & Vinegar Fries", "description": "House cut fries, calabrian honey aioli", "price": 1000 },
+          { "name": "Baked Oysters", "description": "Four oysters, hot honey butter, herb breadcrumbs", "price": 1600 },
+          { "name": "Fried Polenta", "description": "Pickled zucchini, pecorino, currant-pepper jam", "price": 1400 },
+          { "name": "Lamb Meatballs", "description": "Ricotta, guanciale, red sauce, toast", "price": 1800 },
+          { "name": "Pork Belly Skewers", "description": "Pomegranate glaze, dukkah", "price": 1800 },
+          { "name": "Chicken Thigh Skewers", "description": "Garlic herb sauce, pickled mushrooms", "price": 1400 }
+        ]
+      },
+      {
+        "name": "Sandwiches",
+        "menu": "dinner",
+        "items": [
+          { "name": "Lobster Donut", "description": "Lobster salad, spiced aioli, balsamic tomato, savory crunchy donut", "price": 2400, "modifiers": [{ "name": "Add 1/2 French fries", "price": 600 }] },
+          { "name": "Classic Burger", "description": "Smashed beef, American cheese, dijonnaise, LTO", "price": 1500 },
+          { "name": "Wavy Burger", "description": "Smashed beef, manchego, pickles, sofrito aioli, crispy guanciale", "price": 1600 },
+          { "name": "Lamb Burger", "description": "Grilled lamb, blue tzatziki, zucchini pickles, LTO", "price": 1700 },
+          { "name": "Broccolini \"Cheesesteak\"", "description": "Romesco, cheese sauce, mushrooms, house ciabatta", "price": 1500 }
+        ]
+      },
+      {
+        "name": "Large Plates",
+        "menu": "dinner",
+        "items": [
+          { "name": "Fish & Chips", "description": "8 oz battered cod, vinny fries, remoulade", "price": 2600 },
+          { "name": "Grilled Salmon", "description": "Roasted vegetables, tomato, tahini, beurre blanc, almond", "price": 3400 },
+          { "name": "Stuffed Pasta", "description": "House ravioli, local squash, broccolini, pesto, brown butter, marcona almond, pecorino", "price": 2800 },
+          { "name": "Crab Pasta", "description": "Creste di gallo, lump crab, white sauce, sun dried tomato, zesty breadcrumb", "price": 2800 },
+          { "name": "Shrimp Puttanesca", "description": "Spaghetti, tomato & cognac sauce, smoked sardine, spicy olive tapenade", "price": 2500 },
+          { "name": "Braised Beef Short Rib", "description": "Veal demi glace, parsnip purée, local chestnut mushrooms, sautéed bok choi", "price": 4500 }
+        ]
+      },
+      {
+        "name": "Cocktails",
+        "menu": "drinks",
+        "items": [
+          { "name": "Plot Twist", "description": "Super cherry margarita with aromatic foam — reposado tequila, sour cherry, maraschino, walnut, lime, pistachio foam", "price": 1400 },
+          { "name": "Sun Hands", "description": "Refreshing whiskey sour with a butterscotch finish — old bardstown bourbon, burnt honey, honey-quince liqueur, lemon, amaro nonino, contains egg", "price": 1400 },
+          { "name": "Golden Coast", "description": "Bright yet deep old fashioned style sipper — bourbon + rye whiskey, plum brandy, plum cordial, dry sherry, amaro", "price": 1400 },
+          { "name": "Skinny Dipper", "description": "Italian soda meets painkiller — white rum, aperol, amalfi mandarino, coconut cream, lemon, soda water", "price": 1400 },
+          { "name": "Chin Music", "description": "Slightly dangerous crusher with a soft fizz — raspberry gin, Lillet Blanc, pineapple, sales, lemon, sparkling wine, mint", "price": 1400 },
+          { "name": "Hot Take", "description": "A zingy mezcal marg with lingering heat — mezcal, Montenegro, ancho chile, pomegranate, lime, calabrian chile bitters", "price": 1400 },
+          { "name": "Harmony Circus", "description": "A complex and crisp salted strawberry negroni — London dry gin, Cynar, laicilla, salted strawberry, Yzaguirre rojo vermouth, acid", "price": 1400 }
+        ]
+      },
+      {
+        "name": "Martinis",
+        "menu": "drinks",
+        "items": [
+          { "name": "Perfect Martini", "description": "Gin or vodka, vermouth, dry and blanc vermouth, olive, lemon twist", "price": 1500 },
+          { "name": "Lemon Drop", "description": "Gin, limoncello, bergamot, pine, lemon cordial", "price": 1500 },
+          { "name": "Espresso Martini", "description": "Vodka, sump espresso, coffee liqueur, fig leaf", "price": 1500 },
+          { "name": "Cosmopolitan", "description": "Vodka, orange shrub, pomegranate, lime", "price": 1500 },
+          { "name": "Dream Weaver", "description": "Bittersweet crusher — non-alc aperitif, coconut cream, lemon, soda water", "price": 900 },
+          { "name": "Alternate Ending", "description": "High class white cherry icee — sour cherry, almond, soda, pistachio foam, contains egg", "price": 900 }
+        ]
+      },
+      {
+        "name": "Mar-Tinys",
+        "menu": "drinks",
+        "items": [
+          { "name": "Mar-Tiny", "description": "Half-size martini", "price": 800 }
+        ]
+      },
+      {
+        "name": "After Dinner",
+        "menu": "dessert",
+        "items": [
+          { "name": "Grandma's Chocolate Cake", "description": "Single origin manjari chocolate cake, malt crunch, chocolate mousseline", "price": 1500 },
+          { "name": "Sticky Toffee Pudding à la Mode", "description": "Spiced cake, warm caramel, amaretto, house vanilla ice cream, orange zest", "price": 1500 },
+          { "name": "XW Ice Cream Scoop", "description": "Pistachio praline, vanilla, vegan café au lait", "price": 600 },
+          { "name": "XW Macarons", "description": "Wild cherry, lemon curd, manjari chocolate, white chocolate, faux-reo", "price": 300 },
+          { "name": "Affogato", "description": "House ice cream, sump espresso", "price": 1200 },
+          { "name": "Affogato Martini", "description": "Mini espresso martini, vanilla ice cream", "price": 1400 },
+          { "name": "Lemon Drop Float", "description": "Mini lemon drop martini, vanilla ice cream", "price": 1400 }
+        ]
+      },
+      {
+        "name": "After Dinner Beverages",
+        "menu": "dessert",
+        "items": [
+          { "name": "Espresso", "price": 600 },
+          { "name": "Cappuccino +1", "description": "Milk or oat milk", "price": 600 }
+        ]
+      },
+      {
+        "name": "Beer",
+        "menu": "drinks",
+        "items": [
+          { "name": "Side Project Lager", "price": 800 },
+          { "name": "Second Shift IPA", "price": 800 },
+          { "name": "N/A Best Day Kölsch", "price": 600 }
+        ]
+      },
+      {
+        "name": "Floating Wines",
+        "menu": "drinks",
+        "items": [
+          { "name": "White", "description": "Rotating favorites chosen by our sommelier", "price": 1600, "modifiers": [{ "name": "Up to", "price": 2000 }] },
+          { "name": "Red", "description": "Rotating favorites chosen by our sommelier", "price": 1600, "modifiers": [{ "name": "Up to", "price": 2000 }] },
+          { "name": "Rosé Leitz Sparkling", "price": 1100 }
+        ]
+      },
+      {
+        "name": "Wine by the Glass",
+        "menu": "drinks",
+        "items": [
+          { "name": "Langhe Arneis", "description": "Tintero, Piedmont, IT 2024", "price": 1200 },
+          { "name": "Assyrtiko", "description": "Domaine Skouras, Peloponnese, GR 2024", "price": 1400 },
+          { "name": "Cave des Vignerons de Buxy Chardonnay", "description": "Burgundy, FR 2022", "price": 1400 },
+          { "name": "Rosé Note Drunk", "description": "Willamette Valley, OR 2024", "price": 1500 },
+          { "name": "Montepulciano", "description": "Bacone di Valforte, Abruzzo, IT 2023", "price": 1300 },
+          { "name": "Dolcetto d'Alba", "description": "Paolo Scavino, Piedmont, IT 2023", "price": 1400 },
+          { "name": "Grenache Syrah", "description": "Domaine La Florane, Côtes du Rhône, FR 2023", "price": 1400 }
+        ]
+      },
+      {
+        "name": "Bubbles",
+        "menu": "drinks",
+        "items": [
+          { "name": "Vento Frizzante Prosecco", "description": "Maneto, IT NV", "price": 1200 },
+          { "name": "Sparkling Rosé", "description": "Kir-Yianni, Amyndeon, GR 2023", "price": 1500 },
+          { "name": "Lambrusco Amabile", "description": "Cleto Chiarli, Emilia-Romagna, IT NV", "price": 1200 },
+          { "name": "Moscato d'Asti", "description": "Vietti, Piedmont, IT 2024", "price": 1300 },
+          { "name": "Sparkling Albariño", "description": "Carboniste, California NV", "price": 6500 },
+          { "name": "Pet Nat (Red)", "description": "TerraVox Winery, Kansas City, MO 2020", "price": 3800 },
+          { "name": "Sparkling Gamay", "description": "La Cuverie-Bugey Cerdon, Jura, FR NV", "price": 7000 },
+          { "name": "Blanc de Blancs", "description": "Nommé Renard, Champagne, FR NV", "price": 12000 },
+          { "name": "Champagne Brut Nature", "description": "Clandestin Les Semblables, Champagne, FR NV", "price": 20000 }
+        ]
+      }
+    ]
+  },
   "lmk-010": {
     "sections": [
       {
