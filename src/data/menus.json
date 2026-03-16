@@ -635,19 +635,116 @@
   "lmk-001": {
     "sections": [
       {
+        "name": "Appetizers",
+        "menu": "all_day",
+        "items": [
+          { "name": "Beer Pretzels", "description": "Two warm buttery soft pretzels with Pale Ale mustard & jalapeño topped cheese sauce", "price": 800, "tags": ["v"] },
+          { "name": "Scotch Egg", "description": "Hard-boiled egg wrapped in house-made bratwurst, deep fried, served with Pale Ale mustard", "price": 800 },
+          { "name": "Chicken Tenders", "description": "Hand dredged, served with honey mustard", "price": 1200 },
+          { "name": "Black & Tan Nachos", "description": "Flank steak with corn salsa, fresh jalapeños, Cheddar & Jack, tomatoes, salsa, beer cheese sauce, sour cream", "price": 1600 },
+          { "name": "Wings (6)", "description": "Buffalo, Chili Lime, Honey Sriracha or BBQ. Ranch or Gorgonzola dipping sauce", "price": 1400, "modifiers": [{ "name": "12 pack", "price": 2100 }] },
+          { "name": "Pub Chips", "description": "Thin sliced Idaho potato chips with house-made smoked onion dip", "price": 600, "tags": ["v"] },
+          { "name": "South City Nachos", "description": "Pub chips loaded with shredded Cheddar, bacon bits & green onion with chipotle mayo", "price": 900 },
+          { "name": "Crab Cakes", "description": "Jumbo lump crab, pan seared, topped with rémoulade", "price": 1600 },
+          { "name": "Goat Cheese Artichoke Spinach Dip", "description": "Served warm with tortilla chips & flatbread", "price": 1200, "tags": ["v"] },
+          { "name": "Vegetarian Drummies", "description": "Fried cauliflower drizzled with Buffalo sauce, Ranch or Gorgonzola dipping sauce", "price": 1200, "tags": ["v"] },
+          { "name": "Hummus", "description": "Roasted garlic hummus topped with feta, served with flatbread & tortilla chips", "price": 1200 }
+        ]
+      },
+      {
+        "name": "Soups",
+        "menu": "all_day",
+        "items": [
+          { "name": "Beer Cheese Soup", "description": "With Park Avenue Pale Ale", "price": 600, "modifiers": [{ "name": "Bowl", "price": 800 }] },
+          { "name": "Soup du Jour", "description": "Ask about today's selection", "price": 600, "modifiers": [{ "name": "Bowl", "price": 800 }] },
+          { "name": "Chili du Jour", "description": "Ask about today's selection", "price": 600, "modifiers": [{ "name": "Bowl", "price": 800 }] }
+        ]
+      },
+      {
+        "name": "Salads",
+        "menu": "all_day",
+        "items": [
+          { "name": "SQ1 House Salad", "description": "Mixed greens, tomatoes, croutons, Tabasco straw onions, Parmesan", "price": 600, "tags": ["v"], "modifiers": [{ "name": "Large", "price": 800 }] },
+          { "name": "Southwest Salad", "description": "Grilled chicken or flank steak, corn salsa, tomatoes, red onion, Cheddar & Jack, avocado, crispy tortilla strips, chipotle Ranch", "price": 1500 },
+          { "name": "Cobb", "description": "Cheddar & Gorgonzola, artichoke hearts, grilled chicken, bacon, hard boiled egg, tomato, avocado", "price": 1600 },
+          { "name": "Caesar", "description": "Romaine tossed in Caesar dressing with croutons and Parmesan", "price": 1300 },
+          { "name": "BLT Caesar", "description": "Caesar with bacon & tomato", "price": 1500 },
+          { "name": "Tarragon Chicken Salad", "description": "Grilled chicken in creamy tarragon mayonnaise, toasted almonds, served on a bed of lettuce with toast points", "price": 1300 },
+          { "name": "Distillery Greens", "description": "Spinach, toasted almonds, apples, red onions & Gorgonzola, tossed with apple-whiskey vinaigrette", "price": 1300, "tags": ["v"] }
+        ]
+      },
+      {
+        "name": "Pub Sandwiches",
+        "menu": "all_day",
+        "items": [
+          { "name": "Pub Burger", "description": "Fresh Angus beef, chargrilled. Lettuce, tomato, onion, pickles available", "price": 1500, "modifiers": [{ "name": "Add cheese", "price": 150 }, { "name": "Add bacon", "price": 200 }] },
+          { "name": "Black Bean Burger", "description": "House-made with spices, pan seared, topped with pico de gallo & cheese", "price": 1400, "tags": ["v"] },
+          { "name": "Bacon Brat Smash Burger", "description": "Bratwurst and Angus beef smash burgers, 4 oz each, topped with Cheddar, bacon & Pale Ale mustard", "price": 1600 },
+          { "name": "Crab Cake Sliders", "description": "Pan seared jumbo lump crab cakes with mixed greens, tomatoes, rémoulade", "price": 1800 },
+          { "name": "Lafayette Square Philly", "description": "Thin sliced flank steak Philly style with Cheddar, Jack & caramelized onions", "price": 1600 },
+          { "name": "The Reuben", "description": "Thin sliced corned beef, braised sauerkraut, melted Swiss & 1000 Island on rye. Make it a Rachel & sub turkey!", "price": 1500 },
+          { "name": "Pot Roast Sandwich", "description": "House-made pot roast with stout demi-glace, topped with Swiss", "price": 1600 },
+          { "name": "Grilled Chicken Breast", "description": "Swiss, scallions, bacon and honey mustard", "price": 1500 },
+          { "name": "Fried Chicken Sandwich", "description": "Honey Sriracha glaze, lettuce, pickle, onion & Pepper Jack", "price": 1500 },
+          { "name": "Caprese Grilled Cheese", "description": "Mozzarella & tomato topped with pesto and balsamic reduction on country white", "price": 1400, "tags": ["v"] },
+          { "name": "French Dip", "description": "Thinly sliced roast beef on roasted garlic French bread with herbaceous au jus", "price": 1600 },
+          { "name": "Grilled Turkey Melt", "description": "Smoked turkey, bacon, Swiss, chipotle mayo & pickled red onion on country white", "price": 1500 },
+          { "name": "Tarragon Chicken Salad Sandwich", "description": "Grilled chicken in creamy tarragon mayonnaise, toasted almonds on country white", "price": 1500 },
+          { "name": "Vegetarian Philly", "description": "Local mushrooms sautéed with caramelized onions & garlic, melted Cheddar on a hoagie", "price": 1500, "tags": ["v"] }
+        ]
+      },
+      {
+        "name": "Entrées",
+        "menu": "dinner",
+        "items": [
+          { "name": "Shrimp & Grits", "description": "Shrimp & andouille sausage, Cajun cream sauce & creamy jalapeño Cheddar grits", "price": 2000 },
+          { "name": "Stout Braised Pot Roast", "description": "Chuck roast slow-roasted in rich stout demi-glace, garlic-herb mashed potatoes & vegetables", "price": 2200 },
+          { "name": "Fish & Chips", "description": "Beer battered fresh cod with rémoulade, served with house-cut fries", "price": 1600 },
+          { "name": "Steak & Frites", "description": "Grilled 14 oz ribeye topped with roasted garlic butter, house cut fries & garlic aioli", "price": 2800 },
+          { "name": "Hummus DeLuxe", "description": "Roasted garlic hummus topped with feta, marinated artichoke hearts & balsamic drizzle, flatbread and tortilla chips", "price": 1400, "modifiers": [{ "name": "Add chicken", "price": 500 }] },
+          { "name": "Pan Seared Salmon", "description": "Lime and parsley butter, garlic-herb mashed potatoes & veggies", "price": 2000 }
+        ]
+      },
+      {
+        "name": "Brunch",
+        "menu": "brunch",
+        "items": [
+          { "name": "Bacon Benedict", "description": "Poached eggs & bacon on English muffin, hollandaise, country potatoes", "price": 1500 },
+          { "name": "Seafood Omelet", "description": "Gulf shrimp and crab meat, Cheddar & Cheddar-Jack, hollandaise", "price": 2100 },
+          { "name": "Crab Cakes Benedict", "description": "Poached eggs & crab cakes on English muffin, hollandaise, country potatoes", "price": 2100 },
+          { "name": "Southern Breakfast", "description": "Two eggs, creamy jalapeño Cheddar grits, biscuit with gravy, andouille sausage", "price": 1600 },
+          { "name": "Lox Bruschetta", "description": "Smoked Atlantic salmon on toasted French bread with smoked tomato goat cheese, pickled red onion & greens", "price": 1500 },
+          { "name": "Bacon & Avocado Omelet", "description": "Bacon, avocado, Cheddar-Jack, country potatoes, English muffin", "price": 1600 },
+          { "name": "Chicken & Waffle", "description": "Classic waffle topped with hand-dredged chicken breast, maple-Sriracha syrup", "price": 1600 },
+          { "name": "Sausage Omelet", "description": "House-made sausage, Cheddar-Jack, country potatoes, English muffin", "price": 1600 },
+          { "name": "Eggs Your Way", "description": "Two eggs, country potatoes, choice of meat, English muffin", "price": 1400 },
+          { "name": "Irish Skillet", "description": "Two eggs over house-made corned beef hash with house-made biscuit", "price": 1600 },
+          { "name": "Park Avenue Breakfast Sandwich", "description": "Two eggs, bacon & cheese covered in sausage gravy on a biscuit with country potatoes", "price": 1600 },
+          { "name": "Steak & Eggs", "description": "Grilled 14 oz ribeye, 2 eggs your way, country potatoes, English muffin", "price": 2800 },
+          { "name": "Florentine Omelet", "description": "Wilted spinach, Swiss, diced tomatoes, country potatoes, English muffin", "price": 1500, "tags": ["v"] },
+          { "name": "Black Bean Breakfast", "description": "House-made black bean burger, avocado, pico de gallo, Cheddar-Jack & 2 eggs, with tortillas", "price": 1500, "tags": ["v"] },
+          { "name": "Nashville Breakfast Sandwich", "description": "Hand-dredged chicken, Nashville hot sauce, pickles, egg on English muffin, country potatoes", "price": 1500 },
+          { "name": "Cajun Breakfast", "description": "Shrimp & andouille in Cajun cream sauce, two eggs over creamy jalapeño Cheddar grits", "price": 2200 },
+          { "name": "Buttermilk Pancakes", "price": 1000, "tags": ["v"] },
+          { "name": "Blueberry Pancakes", "description": "Fresh blueberries in buttermilk pancakes", "price": 1200, "tags": ["v"] },
+          { "name": "Classic Waffle", "description": "Berry compote, powdered sugar", "price": 1000, "tags": ["v"] },
+          { "name": "Biscuits & Gravy", "description": "Country sausage gravy over house-made biscuits", "price": 800, "modifiers": [{ "name": "2 biscuits", "price": 1000 }] }
+        ]
+      },
+      {
         "name": "House Beers",
         "menu": "drinks",
         "items": [
-          { "name": "Bavarian Weizen", "description": "Traditional Southern German unfiltered wheat beer with banana fruitiness and clove spiciness. 4.69% ABV" },
-          { "name": "Easy Like Dry Hopped Session IPA", "description": "Crisp, tropical, citrus, easy drinking, bold flavor, light body. 4.5% ABV" },
-          { "name": "Light Squared", "description": "Golden ale, great bridge beer with malt and hop complexity. 4.25% ABV" },
-          { "name": "Single Malt Scotch Ale", "description": "Smooth, rich, full bodied malty beer made with Munich Dark malt. 5.75% ABV" },
+          { "name": "Bavarian Weizen", "description": "Traditional Southern German unfiltered wheat beer. 4.69% ABV" },
+          { "name": "Easy Like Dry Hopped Session IPA", "description": "Crisp, tropical, citrus, easy drinking. 4.5% ABV" },
+          { "name": "Light Squared", "description": "Golden ale with malt and hop complexity. 4.25% ABV" },
+          { "name": "Single Malt Scotch Ale", "description": "Smooth, rich, full bodied. Munich Dark malt. 5.75% ABV" },
           { "name": "Irish Stout", "description": "Traditional dry stout. Dark and drinkable. 5.2% ABV" },
-          { "name": "Park Avenue Pale Ale", "description": "Copper-colored ale using Cascade hops. 5.5% ABV" },
-          { "name": "Disco Clam", "description": "Hop forward, caramel, toasty, medium bodied, aromatic hops. 5.6% ABV" },
-          { "name": "West Coast IPA", "description": "Classic reboot featuring Columbus, Summit & Amarillo hops. 6.25% ABV" },
-          { "name": "South City Eclipse Black IPA", "description": "Cascadian-style IPA with subtle roast notes and dank hop profile. 6.5% ABV" },
-          { "name": "Nilla Gorilla Imperial Vanilla Bourbon Porter", "description": "Imperial porter aged with JJ Neukomm oak barrels and vanilla beans. 11% ABV" }
+          { "name": "Park Avenue Pale Ale", "description": "Copper-colored ale, Cascade hops. 5.5% ABV" },
+          { "name": "Disco Clam", "description": "Hop forward, caramel, toasty, aromatic. 5.6% ABV" },
+          { "name": "West Coast IPA", "description": "Columbus, Summit & Amarillo hops. 6.25% ABV" },
+          { "name": "South City Eclipse Black IPA", "description": "Cascadian-style, subtle roast, dank hop profile. 6.5% ABV" },
+          { "name": "Nilla Gorilla Imperial Vanilla Bourbon Porter", "description": "Aged in JJ Neukomm oak barrels with vanilla beans. 11% ABV" }
         ]
       },
       {
