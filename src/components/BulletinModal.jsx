@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { safeUrl } from '../lib/markdown'
 import useBulletin from '../hooks/useBulletin'
 import useHandle from '../hooks/useHandle'
 import useLocalStatus from '../hooks/useLocalStatus'
@@ -196,14 +197,16 @@ function renderInline(text) {
     { re: /\{small\}(.*?)\{\/small\}/, render: (m) => (
       <span key={key++} className="text-caption">{renderInline(m[1])}</span>
     )},
-    // Markdown image: ![alt](url)
-    { re: /!\[([^\]]*)\]\(([^)]+)\)/, render: (m) => (
-      <img key={key++} src={m[2]} alt={m[1]} className="max-w-full rounded my-1 inline-block" loading="lazy" />
-    )},
-    // Markdown link: [text](url)
-    { re: /\[([^\]]+)\]\(([^)]+)\)/, render: (m) => (
-      <a key={key++} href={m[2]} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">{m[1]}</a>
-    )},
+    // Markdown image: ![alt](url) — validated to http(s) only
+    { re: /!\[([^\]]*)\]\(([^)]+)\)/, render: (m) => {
+      const href = safeUrl(m[2])
+      return href ? <img key={key++} src={href} alt={m[1]} className="max-w-full rounded my-1 inline-block" loading="lazy" /> : <span key={key++}>{m[0]}</span>
+    }},
+    // Markdown link: [text](url) — validated to http(s) only
+    { re: /\[([^\]]+)\]\(([^)]+)\)/, render: (m) => {
+      const href = safeUrl(m[2])
+      return href ? <a key={key++} href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">{m[1]}</a> : <span key={key++}>{m[0]}</span>
+    }},
     // Bold: **text**
     { re: /\*\*(.+?)\*\*/, render: (m) => <strong key={key++} className="font-semibold text-on-surface">{m[1]}</strong> },
     // Italic: *text*
@@ -1141,9 +1144,8 @@ export default function BulletinModal() {
     <div
       role="dialog"
       aria-modal="true"
-      className="absolute top-3 left-3 right-3 bg-surface-glass backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50"
+      className="absolute top-3 left-3 right-3 bg-surface-glass backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50 font-mono"
       style={{
-        fontFamily: 'ui-monospace, monospace',
         bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : `${(panelCollapsedPx || 76) + 18}px`,
       }}
     >

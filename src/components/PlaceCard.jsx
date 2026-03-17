@@ -1954,9 +1954,8 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
                 <img
                   src={guardianQr}
                   alt="Guardian QR"
-                  className={`w-48 rounded-lg pointer-events-none select-none transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`}
+                  className={`w-48 rounded-lg pointer-events-none no-select transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`}
                   draggable={false}
-                  style={{ WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                 />
               </div>
             )}
@@ -2344,8 +2343,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
         isAdmin ? (
           <button
             onClick={() => setOrdering(true)}
-            className="w-full py-3 px-4 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] transition-all duration-200"
-            style={{ fontFamily: 'ui-monospace, monospace' }}
+            className="w-full py-3 px-4 rounded-xl font-mono font-medium text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] transition-all duration-200"
           >
             <span className="flex items-center justify-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -2356,8 +2354,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
           </button>
         ) : (
           <div
-            className="w-full py-3 px-4 rounded-xl text-sm text-center border border-emerald-500/20 bg-emerald-500/5"
-            style={{ fontFamily: 'ui-monospace, monospace' }}
+            className="w-full py-3 px-4 rounded-xl font-mono text-sm text-center border border-emerald-500/20 bg-emerald-500/5"
           >
             <span className="flex items-center justify-center gap-2 text-emerald-400/90">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -2371,7 +2368,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
 
       {ordering && (
         <div className="flex items-center justify-between">
-          <span className="text-body-sm font-medium text-emerald-400" style={{ fontFamily: 'ui-monospace, monospace' }}>
+          <span className="text-body-sm font-mono font-medium text-emerald-400">
             Ordering from {listing?.name}
           </span>
           <button
@@ -2423,7 +2420,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
 
       {/* Order summary */}
       {ordering && cartCount > 0 && (
-        <div className="rounded-xl bg-surface-container border border-outline-variant p-4 space-y-2" style={{ fontFamily: 'ui-monospace, monospace' }}>
+        <div className="rounded-xl bg-surface-container border border-outline-variant p-4 space-y-2 font-mono">
           <div className="flex justify-between text-body-sm text-on-surface-variant">
             <span>Subtotal ({cartCount} item{cartCount !== 1 ? 's' : ''})</span>
             <span className="tabular-nums">${(cartTotal / 100).toFixed(2)}</span>

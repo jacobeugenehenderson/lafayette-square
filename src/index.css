@@ -146,5 +146,12 @@ body {
   .pinned-post-cta:hover {
     background: #10b981;
   }
+
+  /* ── Interaction utilities ────────────────────────────────── */
+  .no-select {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
 }
 

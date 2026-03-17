@@ -183,8 +183,7 @@ export default function GlassSearch() {
           onBlur={() => setTimeout(() => setFocused(false), 200)}
           onKeyDown={handleKeyDown}
           placeholder="Search places, menus, tags..."
-          className="flex-1 bg-transparent text-sm glass-text placeholder:glass-text-dim outline-none"
-          style={{ fontFamily: 'ui-monospace, monospace' }}
+          className="flex-1 bg-transparent text-sm glass-text placeholder:glass-text-dim outline-none font-mono"
         />
         {query && (
           <button
@@ -222,7 +221,7 @@ export default function GlassSearch() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm glass-text truncate" style={{ fontFamily: 'ui-monospace, monospace' }}>{item.name}</div>
+                    <div className="text-sm glass-text truncate font-mono">{item.name}</div>
                     <div className="text-xs glass-text-muted truncate">
                       {listing.name}
                       {result.section?.menu && <span className="ml-1.5 glass-text-dim">· {MENU_LABELS[result.section.menu] || result.section.menu}</span>}
@@ -249,7 +248,7 @@ export default function GlassSearch() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm glass-text truncate" style={{ fontFamily: 'ui-monospace, monospace' }}>{listing.name}</div>
+                  <div className="text-sm glass-text truncate font-mono">{listing.name}</div>
                   <div className="text-xs glass-text-muted truncate">{sub}</div>
                 </div>
               </button>

@@ -29,7 +29,6 @@ const useUserLocation = create((set, get) => ({
         const x = (lon - CENTER_LON) * LON_TO_METERS
         const z = (CENTER_LAT - lat) * LAT_TO_METERS
         const dist = Math.sqrt(x * x + z * z)
-        console.log(`[UserLocation] lat=${lat.toFixed(5)} lon=${lon.toFixed(5)} → x=${x.toFixed(1)} z=${z.toFixed(1)} dist=${dist.toFixed(1)}m acc=${pos.coords.accuracy.toFixed(1)}m inBounds=${dist <= BOUNDS_RADIUS}`)
         set({
           x,
           z,

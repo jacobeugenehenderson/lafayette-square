@@ -43,6 +43,18 @@ export default {
         'status-info-dim':    'var(--info-dim)',
         'status-warning':     'var(--warning)',
         'status-warning-dim': 'var(--warning-dim)',
+        // Victorian palette
+        'vic-brick':    'var(--vic-brick)',
+        'vic-sage':     'var(--vic-sage)',
+        'vic-gold':     'var(--vic-gold)',
+        'vic-sky':      'var(--vic-sky)',
+        'vic-coral':    'var(--vic-coral)',
+        'vic-lavender': 'var(--vic-lavender)',
+        'vic-cream':    'var(--vic-cream)',
+        'vic-slate':    'var(--vic-slate)',
+      },
+      fontFamily: {
+        'mono': 'var(--font-mono)',
       },
       fontSize: {
         'display':  'var(--type-display)',

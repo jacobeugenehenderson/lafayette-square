@@ -100,7 +100,8 @@ function _lsqFetchClaimSecret(bizId) {
     _lsqApplySecret(_lsqSecretCache[bizId]);
     return;
   }
-  fetch(window.LSQ_API_URL + '?action=claim-secret&lid=' + encodeURIComponent(bizId) + '&admin=lafayette1850')
+  var adminToken = sessionStorage.getItem('lsq_admin_token') || '';
+  fetch(window.LSQ_API_URL + '?action=claim-secret&lid=' + encodeURIComponent(bizId) + '&admin=' + encodeURIComponent(adminToken))
     .then(function(res) { return res.json(); })
     .then(function(data) {
       var secret = data && data.data && data.data.claim_secret;

@@ -32,6 +32,23 @@ const TIMEZONE = 'America/Chicago' // Central Time for date calculations
 var PHOTO_FOLDER_ID = PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') || ''
 const MAX_PHOTOS_PER_LISTING = 10
 
+// ─── Admin auth ─────────────────────────────────────────────────────────────
+// The passphrase is stored as a Script Property (not in code).
+// Set it once via: PropertiesService.getScriptProperties().setProperty('ADMIN_PASSPHRASE', 'your-secret')
+
+function adminAuth(passphrase) {
+  var stored = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSPHRASE')
+  if (!stored || passphrase !== stored) return errorResponse('Invalid passphrase', 'unauthorized')
+  var token = Utilities.getUuid()
+  CacheService.getScriptCache().put('admin_' + token, 'valid', 21600) // 6 hours
+  return jsonResponse({ admin_token: token })
+}
+
+function isValidAdminToken(token) {
+  if (!token) return false
+  return CacheService.getScriptCache().get('admin_' + token) === 'valid'
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function getSheet(name) {
@@ -176,7 +193,9 @@ function doGet(e) {
       case 'residence-status': return getResidenceStatus(e.parameter.dh)
       case 'resident-count':   return getResidentCount(e.parameter.bid)
       case 'lobby-posts':      return getLobbyPosts(e.parameter.dh, e.parameter.bid)
-      case 'setup-photo-folder': if (e.parameter.admin === 'lafayette1850') { setupPhotoFolder(); return jsonResponse({ folder_id: PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') }) } return errorResponse('Unauthorized')
+      case 'admin-auth':     return adminAuth(e.parameter.p)
+      case 'admin-verify':   return jsonResponse({ valid: isValidAdminToken(e.parameter.t) })
+      case 'setup-photo-folder': if (isValidAdminToken(e.parameter.t)) { setupPhotoFolder(); return jsonResponse({ folder_id: PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') }) } return errorResponse('Unauthorized')
       default:                return errorResponse('Unknown action: ' + action, 'bad_request')
     }
   } catch (err) {
@@ -696,7 +715,7 @@ function getClaimSecret(listingId, deviceHash, adminKey) {
   const listing = findRow(sheet, 'id', listingId)
   if (!listing) {
     // Admin auto-provision: create a minimal listing row so Guardian QR works
-    if (adminKey !== 'lafayette1850') return errorResponse('Not found', 'not_found')
+    if (!isValidAdminToken(adminKey)) return errorResponse('Not found', 'not_found')
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
     var secret = Utilities.getUuid().split('-')[0]
     var now = nowISO()
@@ -711,7 +730,7 @@ function getClaimSecret(listingId, deviceHash, adminKey) {
     return jsonResponse({ claim_secret: secret })
   }
 
-  const isAdmin = adminKey === 'lafayette1850'
+  const isAdmin = isValidAdminToken(adminKey)
   const isGuardian = deviceHash && isGuardianOf(listingId, deviceHash)
   if (!isGuardian && !isAdmin) return errorResponse('Not authorized', 'unauthorized')
 
@@ -1366,7 +1385,7 @@ function postClaimResidence(body) {
   var bid = body.building_id
   if (!dh || !bid) return errorResponse('Missing device_hash or building_id', 'bad_request')
 
-  var isAdmin = body.admin === 'lafayette1850'
+  var isAdmin = isValidAdminToken(body.admin_token)
   var sheet = getSheet('Residents')
   var rows = sheetToObjects(sheet)
 

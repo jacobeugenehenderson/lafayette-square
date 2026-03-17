@@ -391,7 +391,7 @@ function AlmanacTab({ showAdmin = false }) {
             <svg className="w-4 h-4 text-amber-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
             </svg>
-            <span className="text-label-sm uppercase font-semibold text-amber-300/80" style={{ letterSpacing: '0.25em' }}>Bulletin Board</span>
+            <span className="text-label-sm uppercase font-semibold text-amber-300/80 tracking-[0.25em]">Bulletin Board</span>
           </div>
           <svg className="w-3.5 h-3.5 text-amber-400/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
@@ -820,9 +820,8 @@ function SidePanel() {
   return (
     <div
       ref={panelRef}
-      className="absolute bottom-3 left-3 right-3 flex flex-col select-none rounded-2xl overflow-hidden z-50 transition-all duration-300 ease-out"
+      className="absolute bottom-3 left-3 right-3 flex flex-col select-none rounded-2xl overflow-hidden z-50 transition-all duration-300 ease-out font-mono"
       style={{
-        fontFamily: 'ui-monospace, monospace',
         height: collapsed ? 'auto' : 'calc(35dvh - 1.5rem)',
         ...glassStyle,
       }}

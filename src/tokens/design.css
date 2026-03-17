@@ -60,6 +60,19 @@
   --blur-md: 12px;
   --blur-lg: 24px;
   --blur-xl: 40px;
+
+  /* Victorian palette — the neighborhood's signature colors */
+  --vic-brick:    rgb(183, 110, 97);
+  --vic-sage:     rgb(138, 170, 132);
+  --vic-gold:     rgb(212, 175, 85);
+  --vic-sky:      rgb(120, 170, 210);
+  --vic-coral:    rgb(210, 120, 120);
+  --vic-lavender: rgb(168, 140, 196);
+  --vic-cream:    rgb(225, 215, 195);
+  --vic-slate:    rgb(140, 150, 165);
+
+  /* Fonts */
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 /* ---------- Mobile floor (≤640px) ---------- */

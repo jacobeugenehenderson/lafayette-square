@@ -36,7 +36,9 @@ React Three Fiber, Three.js, Zustand, Tailwind CSS, Vite, Supabase (Cary courier
 
 ## Admin access
 
-Append `?admin=lafayette1850` to activate admin features (persists to localStorage).
+Append `?admin` to any URL to trigger the admin login prompt. The passphrase is validated server-side and a session token is issued (valid 6 hours, stored in sessionStorage). Use `?logout` to end the session.
+
+Set the passphrase in Apps Script: `PropertiesService.getScriptProperties().setProperty('ADMIN_PASSPHRASE', 'your-secret')`
 
 ## Publishing
 

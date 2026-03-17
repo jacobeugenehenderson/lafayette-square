@@ -268,7 +268,6 @@ function ParkGround() {
         tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
         tex.minFilter = THREE.LinearFilter
         setClipTexture(tex)
-        console.log('[ParkGround] clip mask loaded, dAttrs:', dAttrs.length, 'total chars:', dAttrs.reduce((s, d) => s + d.length, 0))
       })
       .catch(err => console.warn('[ParkGround] SVG fetch failed:', err))
   }, [])
@@ -515,7 +514,6 @@ function ParkPaths() {
         tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
         tex.minFilter = THREE.LinearFilter
         setPathMask(tex)
-        console.log('[ParkPaths] mask loaded, paths:', dAttrs.length, 'clipped to boundary:', boundaryDs.length > 0)
       })
       .catch(err => console.warn('[ParkPaths] SVG fetch failed:', err))
   }, [])

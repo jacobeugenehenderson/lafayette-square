@@ -48,7 +48,6 @@ function loadModel(url) {
           mats.forEach(m => { if (m.name && !matNames.includes(m.name)) matNames.push(m.name) })
         }
       })
-      console.log(`[Facade] Loaded ${name}: bbox ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)}, materials: [${matNames.join(', ')}]`)
       _modelCache.set(url, { scene, bbox, error: false })
       _loadingSet.delete(url)
     },
@@ -259,8 +258,6 @@ function FacadeElement({ entry, modelsReady }) {
     const sz = rawSize.z > 0.001 ? td / rawSize.z : 1
     const mul = catEntry.scale || 1
     clone.scale.set(sx * mul, sy * mul, sz * mul)
-
-    console.log(`[Facade] ${entry.model}: raw ${rawSize.x.toFixed(1)}x${rawSize.y.toFixed(1)}x${rawSize.z.toFixed(1)} → ${tw}x${th}x${td}m (sx=${sx.toFixed(4)} sy=${sy.toFixed(4)} sz=${sz.toFixed(4)})`)
 
     // Center horizontally, bottom at y=0
     const oX = -rawCenter.x * sx * mul

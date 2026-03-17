@@ -139,9 +139,8 @@ function CodeDeskModalInner() {
   return (
     <div
       role="dialog" aria-modal="true" aria-label="QR Generator"
-      className="absolute top-3 left-3 right-3 bg-surface-glass backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50"
+      className="absolute top-3 left-3 right-3 bg-surface-glass backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50 font-mono"
       style={{
-        fontFamily: 'ui-monospace, monospace',
         bottom: panelOpen ? 'calc(35dvh - 1.5rem + 18px)' : `${(panelCollapsedPx || 76) + 18}px`,
       }}
     >
@@ -158,8 +157,7 @@ function CodeDeskModalInner() {
           <select
             value={qrType}
             onChange={(e) => setQrType(e.target.value)}
-            className="h-8 bg-surface-container-high text-on-surface text-body-sm rounded-lg border border-outline px-2 outline-none hover:bg-surface-container-highest transition-colors"
-            style={{ fontFamily: 'ui-monospace, monospace' }}
+            className="h-8 bg-surface-container-high text-on-surface text-body-sm rounded-lg border border-outline px-2 outline-none hover:bg-surface-container-highest transition-colors font-mono"
           >
             <option value="Townie" className="bg-neutral-800 text-on-surface">Townie</option>
             <option value="Resident" className="bg-neutral-800 text-on-surface">Resident</option>
@@ -192,12 +190,11 @@ function CodeDeskModalInner() {
       <div className="px-4 py-2.5 border-t border-outline-variant flex-shrink-0">
           <button
             onClick={handleSave}
-            className={`w-full py-2.5 px-4 rounded-lg text-body font-medium transition-all duration-200 ${
+            className={`w-full py-2.5 px-4 rounded-lg text-body font-medium transition-all duration-200 font-mono ${
               saved
                 ? 'bg-emerald-500/20 border border-emerald-400/40 text-emerald-300'
                 : 'bg-surface-container-high border border-outline text-on-surface hover:bg-surface-container-highest'
             }`}
-            style={{ fontFamily: 'ui-monospace, monospace' }}
           >
             {saved ? 'Saved' : 'Save'}
           </button>
@@ -212,15 +209,13 @@ function CodeDeskModalInner() {
             <div className="flex gap-2">
               <button
                 onClick={() => setConfirmClose(false)}
-                className="flex-1 py-2 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body transition-colors"
-                style={{ fontFamily: 'ui-monospace, monospace' }}
+                className="flex-1 py-2 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body transition-colors font-mono"
               >
                 Keep editing
               </button>
               <button
                 onClick={confirmDiscard}
-                className="flex-1 py-2 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-300 text-body transition-colors"
-                style={{ fontFamily: 'ui-monospace, monospace' }}
+                className="flex-1 py-2 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-300 text-body transition-colors font-mono"
               >
                 Discard
               </button>

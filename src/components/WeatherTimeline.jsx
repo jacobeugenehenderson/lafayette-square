@@ -153,8 +153,7 @@ export default function WeatherTimeline({ currentTime, isLive, useCelsius, use24
         aria-valuemax={100}
         aria-valuenow={Math.round(scrubFraction * 100)}
         tabIndex={0}
-        className="relative h-8 flex items-center mx-4 cursor-pointer select-none"
-        style={{ touchAction: 'none' }}
+        className="relative h-8 flex items-center mx-4 cursor-pointer select-none touch-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

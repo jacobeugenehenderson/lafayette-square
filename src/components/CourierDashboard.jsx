@@ -361,8 +361,7 @@ export default function CourierDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h2
-              className="text-headline text-on-surface font-medium"
-              style={{ fontFamily: 'ui-monospace, monospace' }}
+              className="text-headline text-on-surface font-medium font-mono"
             >
               Cary
             </h2>

@@ -100,10 +100,8 @@ export default function EventTicker() {
   return (
     <div className="absolute top-0 left-0 right-0 z-50 select-none">
       <div
-        className="flex items-center px-5 relative"
+        className="flex items-center px-5 relative h-[72px] font-mono"
         style={{
-          height: '72px',
-          fontFamily: 'ui-monospace, monospace',
           background: 'linear-gradient(180deg, var(--surface-glass) 0%, transparent 100%)',
         }}
       >
@@ -121,7 +119,7 @@ export default function EventTicker() {
         >
           <div className="flex-1 min-w-0 relative h-5 overflow-hidden">
             <div
-              key={index}
+              key={`${current?.id || current?.listing_id || ''}-${index}`}
               className="absolute inset-0 flex items-center gap-2 animate-ticker-in"
             >
               <span className="text-label tracking-wide truncate text-on-surface">

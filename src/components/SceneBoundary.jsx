@@ -35,6 +35,7 @@ export default class SceneBoundary extends Component {
         >
           <button
             onClick={this.handleRetry}
+            className="font-mono"
             style={{
               padding: '12px 24px',
               borderRadius: '8px',
@@ -43,7 +44,6 @@ export default class SceneBoundary extends Component {
               color: 'rgba(255,255,255,0.7)',
               fontSize: '14px',
               cursor: 'pointer',
-              fontFamily: 'ui-monospace, monospace',
             }}
           >
             Retry

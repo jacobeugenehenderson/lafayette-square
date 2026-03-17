@@ -19,10 +19,7 @@ export default function CaryAuth() {
     // Format phone — add +1 if no country code
     let formatted = phone.replace(/[^\d+]/g, '')
     if (!formatted.startsWith('+')) formatted = '+1' + formatted
-    console.log('[CaryAuth] sending OTP to:', formatted, 'digits:', phone.replace(/\D/g, '').length)
-    console.log('[CaryAuth] SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL || 'NOT SET')
     const ok = await sendOtp(formatted)
-    console.log('[CaryAuth] sendOtp result:', ok)
     if (ok) {
       setPhone(formatted)
       setStep('verify')

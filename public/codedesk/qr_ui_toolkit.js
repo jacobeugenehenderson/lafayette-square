@@ -1,5 +1,3 @@
-console.log('[qr_ui_toolkit.js] SCRIPT LOADING... (v2024-DEBUG)');
-
 // =====================================================
 //  Render-plane invariant: buildText() must always exist
 //  - Prevents render() structural block if earlier UI wiring throws.
@@ -25,8 +23,6 @@ if (typeof window.buildText !== 'function') {
     return window.location.origin;
   };
 }
-
-console.log('[PROBE ui_toolkit]', { href: String(location && location.href || ''), topEqSelf: (window === window.top), selfName: String(window.name || ''), hasWinBuildText: (typeof window.buildText === 'function'), hasLexBuildText: (typeof buildText === 'function') });
 
 /* =====================================================
  *  Preview Authority Guard — block legacy QRCode.js from
@@ -60,10 +56,6 @@ console.log('[PROBE ui_toolkit]', { href: String(location && location.href || ''
 
     function WrappedQRCode(el, opts){
       if (isQrMountTarget(el)) {
-        try {
-          console.warn('🛑 Blocked legacy QRCode() write into #qrMount (custom SVG owns this mount).');
-          console.warn(new Error('QRCode clobber attempt').stack);
-        } catch (e) {}
         // Return a harmless shim (some callers call .makeCode())
         return { makeCode: function(){}, clear: function(){} };
       }
@@ -535,14 +527,10 @@ function wireCaptionInputs(){
 // Also: default-link top/bottom (alpha + color), and prevent 0% → 100% snapback
 let _bg_knobs_wired = false;
 function wireBackgroundKnobsOnce() {
-  console.log('[wireBackgroundKnobsOnce] starting...');
-
   if (_bg_knobs_wired) {
-    console.log('[wireBackgroundKnobsOnce] already wired (local flag)');
     return;
   }
   if (window.__CODEDESK_BG_KNOBS_WIRED__) {
-    console.log('[wireBackgroundKnobsOnce] already wired (global flag)');
     return;
   }
   window.__CODEDESK_BG_KNOBS_WIRED__ = true;
@@ -558,17 +546,6 @@ function wireBackgroundKnobsOnce() {
   // Numeric alpha inputs are not adjacent anymore (layout moved).
   const topANum = document.getElementById('bgTopAlphaNum');
   const botANum = document.getElementById('bgBottomAlphaNum');
-
-  console.log('[wireBackgroundKnobsOnce] elements found:', {
-    topColor: !!topColor,
-    botColor: !!botColor,
-    topHex: !!topHex,
-    botHex: !!botHex,
-    topA: !!topA,
-    botA: !!botA,
-    topANum: !!topANum,
-    botANum: !!botANum
-  });
 
   const LINK_KEY = 'codedesk_bg_link_v1';
 
@@ -609,30 +586,20 @@ function wireBackgroundKnobsOnce() {
   }
 
   function repaint(){
-    console.log('[repaint] called');
-
     // IMPORTANT: do not trigger preset application during import/template apply
     if (window.__CODEDESK_IMPORTING_STATE__) {
-      console.log('[repaint] blocked by IMPORTING_STATE');
       return;
     }
     if (window.__CODEDESK_APPLYING_TEMPLATE__) {
-      console.log('[repaint] blocked by APPLYING_TEMPLATE');
       return;
     }
 
     if (typeof window.refreshBackground === 'function') {
-      console.log('[repaint] calling refreshBackground');
       window.refreshBackground();
-    } else {
-      console.warn('[repaint] refreshBackground not found!');
     }
 
     if (typeof window.render === 'function') {
-      console.log('[repaint] calling render');
       window.render();
-    } else {
-      console.warn('[repaint] render not found!');
     }
   }
 
@@ -662,7 +629,6 @@ function wireBackgroundKnobsOnce() {
     if (!el) return;
 
     el.addEventListener('input', function(e){
-      console.log('[bindAlpha] slider input event:', el.id, el.value);
       try { e.stopImmediatePropagation(); } catch (e) {}
       try { e.stopPropagation(); } catch (e) {}
 
@@ -703,7 +669,6 @@ function wireBackgroundKnobsOnce() {
   function bindColor(colorEl, hexEl, otherColorEl, otherHexEl){
     if (colorEl){
       colorEl.addEventListener('input', function(e){
-        console.log('[bindColor] color input event:', colorEl.id, colorEl.value);
         try { e.stopImmediatePropagation(); } catch (e) {}
         try { e.stopPropagation(); } catch (e) {}
         syncHexAndColor(colorEl, hexEl);
@@ -715,7 +680,6 @@ function wireBackgroundKnobsOnce() {
 
     if (hexEl){
       hexEl.addEventListener('input', function(e){
-        console.log('[bindColor] hex input event:', hexEl.id, hexEl.value);
         try { e.stopImmediatePropagation(); } catch (e) {}
         try { e.stopPropagation(); } catch (e) {}
         syncHexAndColor(hexEl, colorEl);
@@ -769,27 +733,22 @@ function wireBackgroundKnobsOnce() {
   // (qr_render_engine.js loads after this file)
   function deferredInitialPaint() {
     if (typeof window.refreshBackground === 'function') {
-      console.log('[deferredInitialPaint] refreshBackground found, calling repaint');
       repaint();
     } else {
       // Retry until render engine loads
-      console.log('[deferredInitialPaint] refreshBackground not ready, retrying...');
       setTimeout(deferredInitialPaint, 50);
     }
   }
   setTimeout(deferredInitialPaint, 0);
 
   _bg_knobs_wired = true;
-  console.log('[wireBackgroundKnobsOnce] completed successfully');
 }
 
-console.log('[qr_ui_toolkit.js] About to call wireBackgroundKnobsOnce...');
 try {
   wireBackgroundKnobsOnce();
 } catch (e) {
   console.error('[wireBackgroundKnobsOnce] error:', e);
 }
-console.log('[qr_ui_toolkit.js] After wireBackgroundKnobsOnce call');
 
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -1284,8 +1243,6 @@ function applyClickThroughForMobile() {
   const pass  = window.matchMedia('(max-width: 1279px)').matches;
   const stage = document.querySelector('.preview-stage');
 
-  console.log('[PROBE render]', { href: String(location && location.href || ''), topEqSelf: (window === window.top), selfName: String(window.name || ''), hasWinBuildText: (typeof window.buildText === 'function'), hasLexBuildText: (typeof buildText === 'function') });
-  
   if (!stage) return;
 
   const wrap   = stage.querySelector('.absolute'); // inner absolute inset wrapper

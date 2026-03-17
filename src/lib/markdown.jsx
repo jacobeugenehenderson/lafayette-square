@@ -1,16 +1,18 @@
 import React, { useState, useRef, useCallback } from 'react'
 
-// Legacy named palette (for rendering old posts)
+// Victorian palette — resolved from design tokens (design.css)
 const COLOR_PALETTE = {
-  brick:    'rgb(183, 110, 97)',
-  sage:     'rgb(138, 170, 132)',
-  gold:     'rgb(212, 175, 85)',
-  sky:      'rgb(120, 170, 210)',
-  coral:    'rgb(210, 120, 120)',
-  lavender: 'rgb(168, 140, 196)',
-  cream:    'rgb(225, 215, 195)',
-  slate:    'rgb(140, 150, 165)',
+  brick:    'var(--vic-brick)',
+  sage:     'var(--vic-sage)',
+  gold:     'var(--vic-gold)',
+  sky:      'var(--vic-sky)',
+  coral:    'var(--vic-coral)',
+  lavender: 'var(--vic-lavender)',
+  cream:    'var(--vic-cream)',
+  slate:    'var(--vic-slate)',
 }
+
+export { safeUrl }
 
 export function relativeTime(iso) {
   if (!iso) return ''
@@ -32,6 +34,15 @@ function resolveColor(val) {
   return COLOR_PALETTE[val] || null
 }
 
+/** Reject anything that isn't http/https — blocks javascript:, data:, vbscript:, etc. */
+function safeUrl(raw) {
+  try {
+    const url = new URL(raw, window.location.origin)
+    if (url.protocol === 'http:' || url.protocol === 'https:') return url.href
+  } catch { /* malformed */ }
+  return null
+}
+
 function renderInline(text) {
   const parts = []
   let remaining = text
@@ -49,12 +60,14 @@ function renderInline(text) {
     { re: /\{small\}(.*?)\{\/small\}/, render: (m) => (
       <span key={key++} className="text-caption">{renderInline(m[1])}</span>
     )},
-    { re: /!\[([^\]]*)\]\(([^)]+)\)/, render: (m) => (
-      <img key={key++} src={m[2]} alt={m[1]} className="max-w-full rounded my-1 inline-block" loading="lazy" />
-    )},
-    { re: /\[([^\]]+)\]\(([^)]+)\)/, render: (m) => (
-      <a key={key++} href={m[2]} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">{m[1]}</a>
-    )},
+    { re: /!\[([^\]]*)\]\(([^)]+)\)/, render: (m) => {
+      const href = safeUrl(m[2])
+      return href ? <img key={key++} src={href} alt={m[1]} className="max-w-full rounded my-1 inline-block" loading="lazy" /> : <span key={key++}>{m[0]}</span>
+    }},
+    { re: /\[([^\]]+)\]\(([^)]+)\)/, render: (m) => {
+      const href = safeUrl(m[2])
+      return href ? <a key={key++} href={href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">{m[1]}</a> : <span key={key++}>{m[0]}</span>
+    }},
     { re: /\*\*(.+?)\*\*/, render: (m) => <strong key={key++} className="font-semibold text-on-surface">{m[1]}</strong> },
     { re: /\*(.+?)\*/, render: (m) => <em key={key++}>{m[1]}</em> },
     { re: /~~(.+?)~~/, render: (m) => <del key={key++} className="text-on-surface-disabled">{m[1]}</del> },

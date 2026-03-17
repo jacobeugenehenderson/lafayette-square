@@ -45,5 +45,8 @@ public/photos/lafayette-square/
 # Raw data cache (regenerable via scripts/)
 scripts/raw/
 
+# Archived/defunct scripts
+_archive/
+
 # Claude Code local settings
 .claude/

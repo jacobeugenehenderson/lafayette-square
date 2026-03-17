@@ -231,7 +231,8 @@ export async function getClaimSecret(listingId, deviceHash) {
 }
 
 export async function getClaimSecretAdmin(listingId) {
-  return get('claim-secret', { lid: listingId, admin: 'lafayette1850' })
+  const token = sessionStorage.getItem('lsq_admin_token') || ''
+  return get('claim-secret', { lid: listingId, admin: token })
 }
 
 // ── Listings ────────────────────────────────────────────────────────────
@@ -358,7 +359,7 @@ export async function getResidentCount(buildingId) {
 
 export async function claimResidence(deviceHash, buildingId, autoVerify = false, admin = false) {
   const body = { device_hash: deviceHash, building_id: buildingId, auto_verify: autoVerify }
-  if (admin) body.admin = 'lafayette1850'
+  if (admin) body.admin_token = sessionStorage.getItem('lsq_admin_token') || ''
   return post('claim-residence', body)
 }
 
@@ -382,4 +383,14 @@ export async function removeLobbyPost(deviceHash, postId) {
 
 export async function leaveResidence(deviceHash) {
   return post('leave-residence', { device_hash: deviceHash })
+}
+
+// ── Admin auth ─────────────────────────────────────────────────────────
+
+export async function adminAuth(passphrase) {
+  return get('admin-auth', { p: passphrase })
+}
+
+export async function adminVerify(token) {
+  return get('admin-verify', { t: token })
 }

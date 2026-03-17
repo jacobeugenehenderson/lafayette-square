@@ -56,9 +56,7 @@ const useCary = create((set, get) => ({
   // ── Courier: Phone OTP ────────────────────────────────────
   sendOtp: async (phone) => {
     set({ error: null })
-    console.log('[useCary] calling signInWithOtp for:', phone)
     const result = await supabase.auth.signInWithOtp({ phone })
-    console.log('[useCary] signInWithOtp full result:', JSON.stringify(result))
     if (result.error) {
       set({ error: result.error.message })
       return false

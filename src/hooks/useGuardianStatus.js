@@ -1,35 +1,60 @@
 import { create } from 'zustand'
 import { getDeviceHash } from '../lib/device'
-import { postClaim } from '../lib/api'
+import { postClaim, adminAuth, adminVerify } from '../lib/api'
 
 const GUARDIAN_KEY = 'lsq_guardian_listings'
 const ADMIN_KEY = 'lsq_admin'
-const ADMIN_SECRET = 'lafayette1850'
+const TOKEN_KEY = 'lsq_admin_token'
 
-// Check for ?admin= or ?logout param on load, persist to localStorage
-function checkAdminParam() {
+// On load: if ?admin is in URL, prompt for passphrase and validate server-side.
+// If ?logout is in URL, drop admin + guardian status.
+// Otherwise, check if we have a valid session token from a previous login.
+async function checkAdminStatus() {
   try {
     const params = new URLSearchParams(window.location.search)
 
-    // ?logout — drop admin + guardian status, clean URL
+    // ?logout — drop everything, clean URL
     if (params.has('logout')) {
       localStorage.removeItem(ADMIN_KEY)
       localStorage.removeItem(GUARDIAN_KEY)
+      sessionStorage.removeItem(TOKEN_KEY)
       params.delete('logout')
       const clean = params.toString()
       window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
       return false
     }
 
-    const secret = params.get('admin')
-    if (secret === ADMIN_SECRET) {
-      localStorage.setItem(ADMIN_KEY, 'true')
+    // ?admin — prompt for passphrase, validate server-side
+    if (params.has('admin')) {
       params.delete('admin')
       const clean = params.toString()
       window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
-      return true
+
+      const passphrase = window.prompt('Admin passphrase:')
+      if (!passphrase) return localStorage.getItem(ADMIN_KEY) === 'true'
+
+      const res = await adminAuth(passphrase)
+      if (res?.data?.admin_token) {
+        sessionStorage.setItem(TOKEN_KEY, res.data.admin_token)
+        localStorage.setItem(ADMIN_KEY, 'true')
+        return true
+      }
+      return false
     }
-    return localStorage.getItem(ADMIN_KEY) === 'true'
+
+    // Returning session — check if stored token is still valid
+    if (localStorage.getItem(ADMIN_KEY) === 'true') {
+      const token = sessionStorage.getItem(TOKEN_KEY)
+      if (token) {
+        const res = await adminVerify(token)
+        if (res?.data?.valid) return true
+      }
+      // Token expired or missing — drop admin flag
+      localStorage.removeItem(ADMIN_KEY)
+      sessionStorage.removeItem(TOKEN_KEY)
+    }
+
+    return false
   } catch { return false }
 }
 
@@ -47,7 +72,7 @@ function loadGuardianList() {
 
 const useGuardianStatus = create((set, get) => ({
   guardianOf: loadGuardianList(),
-  isAdmin: checkAdminParam(),
+  isAdmin: false, // set asynchronously after server check
   loading: false,
   error: null,
 
@@ -76,5 +101,10 @@ const useGuardianStatus = create((set, get) => ({
     }
   },
 }))
+
+// Async init — check admin status server-side
+checkAdminStatus().then(isAdmin => {
+  useGuardianStatus.setState({ isAdmin })
+})
 
 export default useGuardianStatus
