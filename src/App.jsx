@@ -10,6 +10,7 @@ import ContactModal, { useContact } from './components/ContactModal'
 import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import EventTicker from './components/EventTicker'
 import GlassSearch from './components/GlassSearch'
+import BrowseHeader from './components/BrowseHeader'
 import useCamera from './hooks/useCamera'
 import useTimeOfDay from './hooks/useTimeOfDay'
 import useSelectedBuilding from './hooks/useSelectedBuilding'
@@ -31,7 +32,7 @@ function LiveButton() {
   return (
     <button
       onClick={() => useTimeOfDay.getState().returnToLive()}
-      className="absolute top-[18px] right-[18px] z-50 w-9 h-9 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
+      className="absolute top-5 right-5 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
       aria-label="Return to live time"
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -131,7 +132,7 @@ function AccountButton() {
   }
 
   return (
-    <div className="absolute top-[18px] right-[18px] z-50" ref={popoverRef}>
+    <div className="absolute top-5 right-5 z-50" ref={popoverRef}>
       <button
         onClick={() => setOpen(!open)}
         className={`w-9 h-9 rounded-full transition-all duration-200 flex items-center justify-center ${
@@ -282,7 +283,10 @@ function ModeOverlay() {
   // Close buttons now live inside each modal's own header
   if (codeDeskOpen || showCard || bulletinOpen || contactOpen || infoOpen) return null
 
-  // Live button takes over the top-right slot when not live — any mode, including hero
+  // Browse mode: BrowseHeader handles both live and home buttons
+  if (viewMode === 'browse') return null
+
+  // Live button takes over the top-right slot when not live (hero + planetarium)
   if (!isLive) return <LiveButton />
 
   // When live + hero: show account button as default idle state
@@ -292,7 +296,7 @@ function ModeOverlay() {
     return (
       <button
         onClick={() => useCamera.getState().exitPlanetarium()}
-        className="absolute top-[18px] right-[18px] z-50 w-9 h-9 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
+        className="absolute top-5 right-5 z-50 w-9 h-9 rounded-full backdrop-blur-md bg-amber-500/20 border border-amber-400/40 text-amber-300 transition-all duration-200 flex items-center justify-center hover:bg-amber-500/30"
         aria-label="Exit street view"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -305,17 +309,8 @@ function ModeOverlay() {
     )
   }
 
-  return (
-    <button
-      onClick={() => useCamera.getState().goHero()}
-      className="absolute top-[18px] right-[18px] z-50 w-9 h-9 rounded-full backdrop-blur-md bg-surface-container-high border border-outline text-on-surface-variant transition-all duration-200 flex items-center justify-center hover:bg-surface-container-highest hover:text-on-surface"
-      aria-label="Return to hero view"
-    >
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-      </svg>
-    </button>
-  )
+  // Browse mode home button is in BrowseHeader now
+  return null
 }
 
 function PlaceOpener({ listingId }) {
@@ -503,6 +498,7 @@ function App() {
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.2s' }}><Controls /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><CompassRose /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.6s' }}><GlassSearch /></div>}
+      {!isGround && <div className="fade-in" style={{ animationDelay: '0.6s' }}><BrowseHeader /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.8s' }}><EventTicker /></div>}
       {!isGround && <BulletinModal />}

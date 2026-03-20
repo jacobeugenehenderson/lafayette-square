@@ -157,7 +157,7 @@ function CodeDeskModalInner() {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-outline-variant flex-shrink-0">
+      <div className="flex items-center justify-between px-2 py-2 border-b border-outline-variant flex-shrink-0">
         {isGuardianMode ? (
           <div className="flex items-center gap-2 min-w-0">
             <h2 className="text-body font-medium text-on-surface truncate">{placeName || 'QR Designer'}</h2>

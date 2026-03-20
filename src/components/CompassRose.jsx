@@ -7,7 +7,8 @@ function CompassRose() {
   const showCard = useSelectedBuilding((state) => state.showCard)
   const rotationDeg = (azimuth * 180) / Math.PI
 
-  if (viewMode === 'hero' || showCard) return null
+  // Only show floating compass in planetarium; browse uses BrowseHeader
+  if (viewMode !== 'planetarium' || showCard) return null
 
   return (
     <div className="absolute top-4 left-4 select-none z-50" role="img" aria-label="Compass rose">
