@@ -46,11 +46,18 @@ function CodeDeskModalInner() {
   const isGuardianMode = mode === 'guardian'
 
   // Merge landmarks + non-landmark buildings as residential
+  // Dedup by building_id AND by address to catch any edge cases
   const allPlaces = useMemo(() => {
     const landmarkBuildingIds = new Set(listings.map(l => l.building_id).filter(Boolean))
+    const landmarkAddresses = new Set(listings.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
     const residential = buildingsData.buildings
-      .filter(b => b.address && !landmarkBuildingIds.has(b.id))
-      .map(b => ({ id: b.id, name: b.address, category: 'residential' }))
+      .filter(b => {
+        if (!b.address) return false
+        if (landmarkBuildingIds.has(b.id)) return false
+        if (landmarkAddresses.has(b.address.toLowerCase().replace(/\s+/g, ' ').trim())) return false
+        return true
+      })
+      .map(b => ({ id: b.id, name: b.address, address: b.address, category: 'residential' }))
     return [...listings, ...residential]
   }, [listings])
 
@@ -106,25 +113,30 @@ function CodeDeskModalInner() {
   const handleIframeLoad = useCallback(() => {
     const iframe = iframeRef.current
     if (!iframe) return
+    const win = iframe.contentWindow
+
     // Send cached QR image as instant preview while interactive version loads
     if (storeListingId) {
       try {
         const preview = localStorage.getItem(`lsq-qr-image-${storeListingId}-${qrType}`)
-        if (preview) {
-          iframe.contentWindow?.postMessage({ type: 'lsq-set-preview', value: preview }, '*')
-        }
+        if (preview) win?.postMessage({ type: 'lsq-set-preview', value: preview }, '*')
       } catch { /* silent */ }
     }
+
+    // Send initial data immediately
+    if (!isGuardianMode) win?.postMessage({ type: 'lsq-set-businesses', value: allPlaces }, '*')
+    if (storeListingId) win?.postMessage({ type: 'lsq-set-listing', value: storeListingId }, '*')
+    if (storeClaimSecret) win?.postMessage({ type: 'lsq-set-claim-secret', value: storeClaimSecret }, '*')
+    win?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
+
+    // Re-send businesses after a delay to catch the bootstrapper's async manifest load.
+    // The bootstrapper fetches its manifest via fetch(), so the form might not exist yet.
+    // This ensures businesses arrive after renderTypeForm creates the listbox.
     if (!isGuardianMode) {
-      iframe.contentWindow?.postMessage({ type: 'lsq-set-businesses', value: allPlaces }, '*')
+      setTimeout(() => {
+        win?.postMessage({ type: 'lsq-set-businesses', value: allPlaces }, '*')
+      }, 500)
     }
-    if (storeListingId) {
-      iframe.contentWindow?.postMessage({ type: 'lsq-set-listing', value: storeListingId }, '*')
-    }
-    if (storeClaimSecret) {
-      iframe.contentWindow?.postMessage({ type: 'lsq-set-claim-secret', value: storeClaimSecret }, '*')
-    }
-    iframe.contentWindow?.postMessage({ type: 'lsq-set-qr-type', value: qrType }, '*')
   }, [isGuardianMode, allPlaces, qrType, storeListingId, storeClaimSecret])
 
   // Save button flash

@@ -2060,12 +2060,67 @@ textarea.fldInp {
   white-space: nowrap;
 }
 
+.biz-item-address {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--lsq-text-muted);
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .biz-item-cat {
   flex-shrink: 0;
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--lsq-text-muted);
   white-space: nowrap;
+}
+
+/* =========================
+   BUSINESS SELECTED LABEL
+========================= */
+.biz-selected-label {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  color: var(--lsq-text);
+  background: color-mix(in oklab, var(--ui-surface) 80%, var(--step-color-primary) 20%);
+  border-bottom: 1px solid var(--ui-stroke);
+  letter-spacing: 0.02em;
+}
+
+/* =========================
+   BUSINESS SEARCH
+========================= */
+.biz-search-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.5rem;
+  background: var(--ui-surface);
+  border-bottom: 1px solid var(--ui-stroke);
+}
+.biz-search-input {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+  font-family: var(--font-mono, monospace);
+  color: var(--lsq-text);
+  background: color-mix(in oklab, var(--ui-surface) 70%, transparent);
+  border: 1px solid var(--ui-stroke);
+  border-radius: 0.5rem;
+  outline: none;
+}
+.biz-search-input:focus {
+  border-color: var(--lsq-text-muted);
+}
+.biz-search-input::placeholder {
+  color: var(--lsq-text-muted);
+  opacity: 0.5;
 }
 
 /* =========================

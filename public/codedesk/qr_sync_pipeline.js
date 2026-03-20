@@ -234,8 +234,18 @@ function _lsqLoadDesign(bizId, type) {
     window.codedeskImportState(local);
     _lsqSnapshotClean();
   } else if (typeof window.codedeskImportState === 'function') {
-    // No saved design — reset to defaults
-    window.codedeskImportState(_LSQ_DEFAULT_STATE);
+    // No saved design — inherit current design instead of resetting.
+    // This lets the user carry their design across types and places
+    // without starting over each time.
+    var current = (typeof window.codedeskExportState === 'function') ? window.codedeskExportState() : null;
+    if (current && current.style && Object.keys(current.style).length > 0) {
+      // Carry forward the design but clear type-specific fields (caption text stays)
+      delete current.type;
+      delete current.at;
+      window.codedeskImportState(current);
+    } else {
+      window.codedeskImportState(_LSQ_DEFAULT_STATE);
+    }
     _lsqSnapshotClean();
   }
 

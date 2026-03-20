@@ -50,19 +50,51 @@ var CATEGORY_LABELS = {
   recreation: 'Recreation', residential: 'Residential',
 };
 
+function _updateSelectedLabel(name, address) {
+  // Update the inline label in the listbox
+  var label = document.getElementById('bizSelectedLabel');
+  if (label) {
+    if (name) {
+      var text = name;
+      if (address && address !== name) text += ' — ' + address;
+      label.textContent = text;
+      label.style.display = '';
+    } else {
+      label.textContent = '';
+      label.style.display = 'none';
+    }
+  }
+  // Update the accordion header to show selection
+  var stepLabel = document.getElementById('bizStepLabel');
+  if (stepLabel) {
+    stepLabel.textContent = name || 'Places';
+  }
+}
+
 function _makeBizItem(biz, current, hiddenInput, listbox) {
   var id = biz.id || biz.building_id || '';
   var name = biz.name || biz.id || 'Unknown';
+  var address = biz.address || '';
 
   var item = document.createElement('button');
   item.type = 'button';
   item.className = 'biz-item' + (id === current ? ' is-active' : '');
   item.dataset.bizId = id;
+  item.dataset.bizName = name;
+  item.dataset.bizAddress = address;
 
   var nameSpan = document.createElement('span');
   nameSpan.className = 'biz-item-name';
   nameSpan.textContent = name;
   item.appendChild(nameSpan);
+
+  // Show address below name if they differ
+  if (address && address !== name) {
+    var addrSpan = document.createElement('span');
+    addrSpan.className = 'biz-item-address';
+    addrSpan.textContent = address;
+    item.appendChild(addrSpan);
+  }
 
   item.addEventListener('click', function() {
     var prev = listbox.querySelector('.biz-item.is-active');
@@ -70,7 +102,11 @@ function _makeBizItem(biz, current, hiddenInput, listbox) {
     item.classList.add('is-active');
     hiddenInput.value = id;
     hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+    _updateSelectedLabel(name, address);
   });
+
+  // Update label if this is the pre-selected item
+  if (id === current) _updateSelectedLabel(name, address);
 
   return item;
 }
@@ -110,47 +146,76 @@ function populateBizSelect(businesses) {
     var current = hiddenInput.value || window.__lsq_cached_biz_id || '';
     listbox.innerHTML = '';
 
+    // Selected place label
+    var selectedLabel = document.createElement('div');
+    selectedLabel.id = 'bizSelectedLabel';
+    selectedLabel.className = 'biz-selected-label';
+    selectedLabel.style.display = 'none';
+    listbox.appendChild(selectedLabel);
+
+    // Search input at top of listbox
+    var searchWrap = document.createElement('div');
+    searchWrap.className = 'biz-search-wrap';
+    var searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search by name or address...';
+    searchInput.className = 'biz-search-input';
+    searchWrap.appendChild(searchInput);
+    listbox.appendChild(searchWrap);
+
+    var groupContainer = document.createElement('div');
+    groupContainer.className = 'biz-group-container';
+    listbox.appendChild(groupContainer);
+
     var groups = _groupByCategory(businesses);
 
-    groups.forEach(function(group) {
-      if (!group.items.length) return;
+    function renderGroups(query) {
+      groupContainer.innerHTML = '';
+      var q = (query || '').toLowerCase().trim();
 
-      var folder = document.createElement('div');
-      folder.className = 'biz-group';
+      groups.forEach(function(group) {
+        var filtered = q
+          ? group.items.filter(function(b) {
+              return (b.name || '').toLowerCase().indexOf(q) !== -1
+                || (b.address || '').toLowerCase().indexOf(q) !== -1;
+            })
+          : group.items;
+        if (!filtered.length) return;
 
-      var header = document.createElement('button');
-      header.type = 'button';
-      header.className = 'biz-group-header';
-      header.innerHTML = '<span class="biz-group-label">' + group.label +
-        '</span><span class="biz-group-count">' + group.items.length + '</span>';
+        var folder = document.createElement('div');
+        folder.className = 'biz-group';
 
-      var content = document.createElement('div');
-      content.className = 'biz-group-content';
-      content.style.display = 'none';
+        var header = document.createElement('button');
+        header.type = 'button';
+        header.className = 'biz-group-header';
+        header.innerHTML = '<span class="biz-group-label">' + group.label +
+          '</span><span class="biz-group-count">' + filtered.length + '</span>';
 
-      header.addEventListener('click', function() {
-        var isOpen = content.style.display !== 'none';
-        content.style.display = isOpen ? 'none' : '';
-        folder.classList.toggle('is-open', !isOpen);
+        var content = document.createElement('div');
+        content.className = 'biz-group-content';
+        // Auto-open when searching or when active selection is in this group
+        var hasActive = filtered.some(function(b) { return (b.id || b.building_id || '') === current; });
+        content.style.display = (q || hasActive) ? '' : 'none';
+        if (q || hasActive) folder.classList.add('is-open');
+
+        header.addEventListener('click', function() {
+          var isOpen = content.style.display !== 'none';
+          content.style.display = isOpen ? 'none' : '';
+          folder.classList.toggle('is-open', !isOpen);
+        });
+
+        filtered.forEach(function(biz) {
+          content.appendChild(_makeBizItem(biz, current, hiddenInput, listbox));
+        });
+
+        folder.appendChild(header);
+        folder.appendChild(content);
+        groupContainer.appendChild(folder);
       });
+    }
 
-      group.items.forEach(function(biz) {
-        content.appendChild(_makeBizItem(biz, current, hiddenInput, listbox));
-      });
-
-      // Auto-open if current selection is in this group
-      var hasActive = group.items.some(function(b) {
-        return (b.id || b.building_id || '') === current;
-      });
-      if (hasActive) {
-        content.style.display = '';
-        folder.classList.add('is-open');
-      }
-
-      folder.appendChild(header);
-      folder.appendChild(content);
-      listbox.appendChild(folder);
-    });
+    searchInput.addEventListener('input', function() { renderGroups(searchInput.value); });
+    renderGroups('');
 
     // Restore hidden input value after rebuilding (renderTypeForm clears it)
     if (current) hiddenInput.value = current;
@@ -281,6 +346,11 @@ window.populateBizSelect = populateBizSelect;
       window.renderTypeForm(typeSel.value || 'Townie');
     }
   } catch (e) {}
+
+  // Populate businesses if they arrived before bootstrapper ran
+  if (window.LSQ_BUSINESSES && window.LSQ_BUSINESSES.length) {
+    try { populateBizSelect(window.LSQ_BUSINESSES); } catch (e) {}
+  }
 
   // Force initial render
   try { if (typeof render === 'function') render(); } catch (e) {}

@@ -109,6 +109,10 @@
           sel.value = e.data.value;
           sel.dispatchEvent(new Event('change', { bubbles: true }));
         }
+        // Re-populate business list after type change rebuilds the form
+        if (window.LSQ_BUSINESSES && typeof window.populateBizSelect === 'function') {
+          setTimeout(function() { window.populateBizSelect(window.LSQ_BUSINESSES); }, 0);
+        }
       }
       if (e.data.type === 'lsq-set-listing') {
         // Prime the sync pipeline's bizId cache (survives form rebuilds)
@@ -201,6 +205,19 @@
 <!-- RIGHT: Stepper (controls) -->
 <section id="stepper"
   class="stage-stick space-y-4 w-full max-w-[560px] mx-auto justify-self-center">
+
+<!-- Business / Places (first — key selection) -->
+<div class="step-card"
+     data-step="business">
+  <div class="step-header-wrap flex items-center gap-3">
+    <button id="bizStepLabel" class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
+      Places
+    </button>
+  </div>
+  <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
+    <div id="detailsPanel" class="space-y-4"></div>
+  </div>
+</div>
 
 <!-- Design -->
 <div class="step-card"
@@ -414,18 +431,6 @@
     </div>
   </div>
 
-<!-- Business -->
-<div class="step-card"
-     data-step="business">
-  <div class="step-header-wrap flex items-center gap-3">
-    <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Places
-    </button>
-  </div>
-  <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
-    <div id="detailsPanel" class="space-y-4"></div>
-  </div>
-</div>
 
 <!-- Save + Download -->
 <div class="step-card"
