@@ -12,6 +12,7 @@ import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
 import useHandle from '../hooks/useHandle'
 import useEvents from '../hooks/useEvents'
+import useTimeOfDay from '../hooks/useTimeOfDay'
 import AvatarCircle from './AvatarCircle'
 import QRCode from 'qrcode'
 import { useCourierAvailable } from './CourierDots'
@@ -318,6 +319,87 @@ function EditableField({ value, field, isGuardian, placeholder, multiline, child
     >
       {displayValue || <em className="text-on-surface-disabled">{placeholder || `Add ${field}...`}</em>}
     </span>
+  )
+}
+
+// ─── Listing logo (with initials fallback + guardian upload) ──────────
+function getInitials(name) {
+  if (!name) return '?'
+  const words = name.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/)
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return (words[0][0] + words[1][0]).toUpperCase()
+}
+
+function nameToColor(name) {
+  let hash = 0
+  for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  const hue = Math.abs(hash) % 360
+  return `hsl(${hue}, 35%, 30%)`
+}
+
+function ListingLogo({ listing, isGuardian }) {
+  const ctx = useContext(EditContext)
+  const fileRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const logo = listing?.logo
+  const name = listing?.name || ''
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !listing?.id) return
+    setUploading(true)
+    try {
+      const compressed = await compressImage(file)
+      if (!compressed) { setUploading(false); return }
+      const dh = await getDeviceHash()
+      const res = await apiUploadPhoto(dh, listing.id, compressed.base64)
+      if (res.data?.success && res.data?.url) {
+        ctx?.setField('logo', res.data.url)
+      }
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const content = logo ? (
+    <img
+      src={assetUrl(logo)}
+      alt=""
+      className="w-full max-h-16 object-contain object-left"
+    />
+  ) : (
+    <div
+      className="w-12 h-12 rounded-full flex items-center justify-center text-white/80 font-semibold text-sm select-none"
+      style={{ backgroundColor: nameToColor(name) }}
+    >
+      {getInitials(name)}
+    </div>
+  )
+
+  if (!isGuardian || !ctx) return <div className="flex-shrink-0 mt-0.5">{content}</div>
+
+  return (
+    <div className="flex-shrink-0 mt-0.5 relative">
+      <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+      <button
+        onClick={() => fileRef.current?.click()}
+        className="relative group"
+        title="Change logo"
+        disabled={uploading}
+      >
+        {content}
+        <div className="absolute inset-0 rounded-lg bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          {uploading ? (
+            <span className="text-white text-caption">...</span>
+          ) : (
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+            </svg>
+          )}
+        </div>
+      </button>
+    </div>
   )
 }
 
@@ -1639,7 +1721,7 @@ function EventForm({ listingId, onSubmitted }) {
       <input
         value={title}
         onChange={e => setTitle(e.target.value)}
-        placeholder="Event title"
+        placeholder="What's happening? (e.g. Live jazz tonight)"
         className="input w-full"
       />
       <textarea
@@ -1670,13 +1752,13 @@ function EventForm({ listingId, onSubmitted }) {
         disabled={submitting || !title.trim() || !startDate}
         className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
-        {submitting ? 'Posting...' : 'Post Event'}
+        {submitting ? 'Posting...' : 'Post to Ticker'}
       </button>
     </form>
   )
 }
 
-// ─── Tab: Events ─────────────────────────────────────────────────────
+// ─── Tab: Ticker ─────────────────────────────────────────────────────
 function EventsTab({ listingId, isGuardian }) {
   // Read from shared events store (populated by init) instead of separate fetch
   const events = useEvents((s) => s.getForListing(listingId))
@@ -1736,8 +1818,8 @@ function EventsTab({ listingId, isGuardian }) {
 
       {events.length === 0 && loaded && (
         <div className="text-center py-6">
-          <p className="text-on-surface-subtle text-body">No upcoming events</p>
-          {isGuardian && <p className="text-on-surface-disabled text-body-sm mt-1">Post your first event above!</p>}
+          <p className="text-on-surface-subtle text-body">Nothing posted yet</p>
+          {isGuardian && <p className="text-on-surface-disabled text-body-sm mt-1">Post to the ticker above!</p>}
         </div>
       )}
 
@@ -2300,6 +2382,11 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
   const courierAvailable = useCourierAvailable()
   const canOrder = hasDelivery && courierAvailable
 
+  // Admin can scrub time to demo menu availability; regular users always see real time.
+  const simTime = useTimeOfDay((s) => s.currentTime)
+  const isLiveTime = useTimeOfDay((s) => s.isLive)
+  const menuTime = isAdmin && !isLiveTime ? simTime : new Date()
+
   // Group sections by menu type — known types appear in MENU_ORDER,
   // custom types (e.g. "bridal_brunch") appear after them.
   const menus = useMemo(() => {
@@ -2320,17 +2407,18 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
     if (!menus.length) return null
     const available = new Set(menus.map(m => m.key))
     const sched = menu?.schedule || {}
-    const now = new Date()
+    const now = menuTime
     const dayAbbrev = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()]
     const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
 
     // Find all menu types active right now, pick the one with latest start time
     let best = null
     let bestStart = ''
-    for (const [menuKey, s] of Object.entries(sched)) {
-      if (!available.has(menuKey) || !s.days || !s.start || !s.end) continue
-      if (s.days.includes(dayAbbrev) && timeStr >= s.start && timeStr < s.end) {
-        if (s.start > bestStart) { best = menuKey; bestStart = s.start }
+    for (const [menuKey, daySched] of Object.entries(sched)) {
+      if (!available.has(menuKey)) continue
+      const todaySlot = daySched[dayAbbrev]
+      if (todaySlot && todaySlot.start && todaySlot.end && timeStr >= todaySlot.start && timeStr < todaySlot.end) {
+        if (todaySlot.start > bestStart) { best = menuKey; bestStart = todaySlot.start }
       }
     }
     if (best) return best
@@ -2353,24 +2441,22 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
   const [orderPlaced, setOrderPlaced] = useState(false)
 
   // A menu type is orderable when the menu schedule says it's active right now.
-  // Schedule lives on the menu itself — not in events.
   const schedule = menu?.schedule || {}
   const DAY_ABBREVS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
   const orderableMenus = useMemo(() => {
-    const now = new Date()
-    const dayAbbrev = DAY_ABBREVS[now.getDay()]
-    const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+    const dayAbbrev = DAY_ABBREVS[menuTime.getDay()]
+    const timeStr = String(menuTime.getHours()).padStart(2, '0') + ':' + String(menuTime.getMinutes()).padStart(2, '0')
 
     const available = new Set()
-    for (const [menuKey, sched] of Object.entries(schedule)) {
-      if (!sched.days || !sched.start || !sched.end) continue
-      if (sched.days.includes(dayAbbrev) && timeStr >= sched.start && timeStr < sched.end) {
+    for (const [menuKey, daySched] of Object.entries(schedule)) {
+      const todaySlot = daySched[dayAbbrev]
+      if (todaySlot && todaySlot.start && todaySlot.end && timeStr >= todaySlot.start && timeStr < todaySlot.end) {
         available.add(menuKey)
       }
     }
     return available
-  }, [schedule])
+  }, [schedule, menuTime])
 
   // Only count cart items from currently orderable menus
   const orderableSections = useMemo(() => {
@@ -2428,33 +2514,33 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
 
   return (
     <div className="space-y-4">
-      {/* Delivery CTA — teaser for public, functional for admin (demo/sales).
+      {/* Delivery CTA — only show when menus are actually orderable right now.
           To go live for everyone: remove the isAdmin gate. */}
       {hasDelivery && sections.length > 0 && !ordering && (
-        isAdmin ? (
-          <button
-            onClick={() => setOrdering(true)}
-            className="w-full py-3 px-4 rounded-xl font-mono font-medium text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] transition-all duration-200"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
-              Order delivery from {listing?.name}
-            </span>
-          </button>
-        ) : (
-          <div
-            className="w-full py-3 px-4 rounded-xl font-mono text-sm text-center border border-emerald-500/20 bg-emerald-500/5"
-          >
-            <span className="flex items-center justify-center gap-2 text-emerald-400/90">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
-              Cary delivery — coming soon
-            </span>
-          </div>
-        )
+        orderableMenus.size > 0 ? (
+          isAdmin ? (
+            <button
+              onClick={() => setOrdering(true)}
+              className="w-full py-3 px-4 rounded-xl font-mono font-medium text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] transition-all duration-200"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+                Order delivery from {listing?.name}
+              </span>
+            </button>
+          ) : (
+            <div className="w-full py-3 px-4 rounded-xl font-mono text-sm text-center border border-emerald-500/20 bg-emerald-500/5">
+              <span className="flex items-center justify-center gap-2 text-emerald-400/90">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+                Cary delivery — coming soon
+              </span>
+            </div>
+          )
+        ) : null
       )}
 
       {ordering && (
@@ -2559,7 +2645,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
       {isGuardian && activeMenu && hasDelivery && !schedule[activeMenu] && (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
           <p className="text-body-sm text-amber-400/90 leading-snug">
-            This menu won't be available for delivery until you set its hours. Tap "Edit Schedule" below to add the days and times you serve it.
+            This menu won't be available for delivery until you set its hours. Tap "Edit Menu" and set the days and times you serve it.
           </p>
         </div>
       )}
@@ -2675,6 +2761,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
           ) : (
             <MenuEditor
               menu={menu}
+              activeMenuType={activeMenu}
               onSave={(newMenu) => {
                 editCtx?.setField('menu', newMenu)
                 setEditingMenu(false)
@@ -2807,94 +2894,168 @@ function MenuItemRow({ item, ordering, qty, onAdd, onRemove }) {
 }
 
 // ── Guardian Menu Editor ──────────────────────────────────────────────
-function MenuEditor({ menu, onSave, onCancel }) {
-  const [sections, setSections] = useState(() => {
+const ALL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+const DAY_LABEL = { mon: 'M', tue: 'T', wed: 'W', thu: 'Th', fri: 'F', sat: 'Sa', sun: 'Su' }
+
+function MenuEditor({ menu, activeMenuType, onSave, onCancel }) {
+  // Work on a deep copy of the full menu
+  const [allSections, setAllSections] = useState(() => {
     const s = menu?.sections || []
-    return s.length ? JSON.parse(JSON.stringify(s)) : [{ name: '', menu: 'all_day', items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }]
+    return s.length ? JSON.parse(JSON.stringify(s)) : []
   })
+  const [scheduleData, setScheduleData] = useState(() => JSON.parse(JSON.stringify(menu?.schedule || {})))
 
-  const addSection = () => setSections(prev => [...prev, { name: '', menu: 'all_day', items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }])
-  const removeSection = (si) => setSections(prev => prev.filter((_, i) => i !== si))
-  const updateSection = (si, field, val) => setSections(prev => prev.map((s, i) => i === si ? { ...s, [field]: val } : s))
+  // Only show sections for the active menu type
+  const editType = activeMenuType || 'all_day'
+  const filteredIndices = allSections.map((s, i) => s.menu === editType ? i : -1).filter(i => i >= 0)
 
-  const addItem = (si) => setSections(prev => prev.map((s, i) => i === si ? { ...s, items: [...s.items, { name: '', description: '', price: null, tags: [], modifiers: [] }] } : s))
-  const removeItem = (si, ii) => setSections(prev => prev.map((s, i) => i === si ? { ...s, items: s.items.filter((_, j) => j !== ii) } : s))
-  const updateItem = (si, ii, field, val) => setSections(prev => prev.map((s, i) => i === si ? { ...s, items: s.items.map((item, j) => j === ii ? { ...item, [field]: val } : item) } : s))
+  // Schedule for this menu type — per-day format: { mon: { start, end }, tue: { start, end }, ... }
+  const daySched = scheduleData[editType] || {}
+  const toggleDay = (day) => {
+    setScheduleData(prev => {
+      const typeSched = { ...(prev[editType] || {}) }
+      if (typeSched[day]) {
+        delete typeSched[day]
+      } else {
+        // Default new day to the times of an existing day, or empty
+        const existing = Object.values(typeSched)[0]
+        typeSched[day] = existing ? { ...existing } : { start: '', end: '' }
+      }
+      return { ...prev, [editType]: typeSched }
+    })
+  }
+  const updateDayTime = (day, field, val) => {
+    setScheduleData(prev => ({
+      ...prev,
+      [editType]: { ...(prev[editType] || {}), [day]: { ...(prev[editType]?.[day] || { start: '', end: '' }), [field]: val } }
+    }))
+  }
+
+  const addSection = () => setAllSections(prev => [...prev, { name: '', menu: editType, items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }])
+  const removeSection = (absIdx) => setAllSections(prev => prev.filter((_, i) => i !== absIdx))
+  const updateSection = (absIdx, field, val) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, [field]: val } : s))
+
+  const addItem = (absIdx) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, items: [...s.items, { name: '', description: '', price: null, tags: [], modifiers: [] }] } : s))
+  const removeItem = (absIdx, ii) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, items: s.items.filter((_, j) => j !== ii) } : s))
+  const updateItem = (absIdx, ii, field, val) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, items: s.items.map((item, j) => j === ii ? { ...item, [field]: val } : item) } : s))
 
   const handleSave = () => {
-    // Clean up: remove empty items and sections
-    const cleaned = sections
+    const cleaned = allSections
       .map(s => ({ ...s, items: s.items.filter(item => item.name.trim()) }))
       .filter(s => s.name.trim() && s.items.length > 0)
-    onSave({ sections: cleaned })
+    // Clean empty schedules — remove days with no times, remove empty menu types
+    const cleanSched = {}
+    for (const [menuType, days] of Object.entries(scheduleData)) {
+      const cleanDays = {}
+      for (const [day, slot] of Object.entries(days)) {
+        if (slot.start && slot.end) cleanDays[day] = slot
+      }
+      if (Object.keys(cleanDays).length > 0) cleanSched[menuType] = cleanDays
+    }
+    onSave({ sections: cleaned, schedule: cleanSched })
   }
+
+  const menuLabel = MENU_LABELS[editType] || editType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
   return (
     <div className="space-y-4">
-      {sections.map((section, si) => (
-        <div key={si} className="rounded-lg bg-surface-container p-3 space-y-3">
-          <div className="flex gap-2">
-            <input
-              value={section.name}
-              onChange={e => updateSection(si, 'name', e.target.value)}
-              placeholder="Section name (e.g. Appetizers)"
-              className="flex-1 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1.5 border border-outline-variant focus:border-on-surface-subtle outline-none"
-            />
-            <select
-              value={section.menu || 'all_day'}
-              onChange={e => updateSection(si, 'menu', e.target.value)}
-              className="bg-surface-container-high text-on-surface-variant text-body-sm rounded px-2 py-1.5 border border-outline-variant outline-none"
+      {/* Schedule controls for this menu type */}
+      <div className="rounded-lg bg-surface-container p-3 space-y-2">
+        <p className="text-caption font-semibold text-on-surface-variant uppercase tracking-wider">When is {menuLabel} served?</p>
+        <div className="flex gap-1">
+          {ALL_DAYS.map(d => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => toggleDay(d)}
+              className={`w-8 h-8 rounded-full text-caption font-medium transition-colors ${
+                daySched[d]
+                  ? 'bg-on-surface text-surface'
+                  : 'bg-surface-container-high text-on-surface-disabled hover:text-on-surface-variant'
+              }`}
             >
-              {MENU_ORDER.map(k => <option key={k} value={k}>{MENU_LABELS[k]}</option>)}
-              {sections.filter(s => s.menu && !MENU_ORDER.includes(s.menu)).map(s => s.menu).filter((v, i, a) => a.indexOf(v) === i).map(k => (
-                <option key={k} value={k}>{k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
-              ))}
-            </select>
-            <button onClick={() => removeSection(si)} className="text-on-surface-disabled hover:text-rose-400 p-1" title="Remove section">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              {DAY_LABEL[d]}
             </button>
+          ))}
+        </div>
+        {ALL_DAYS.filter(d => daySched[d]).map(d => (
+          <div key={d} className="flex gap-2 items-center">
+            <span className="text-caption text-on-surface-variant w-6 flex-shrink-0">{DAY_LABEL[d]}</span>
+            <input
+              type="time"
+              value={daySched[d]?.start || ''}
+              onChange={e => updateDayTime(d, 'start', e.target.value)}
+              className="flex-1 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1.5 border border-outline-variant outline-none [color-scheme:dark]"
+            />
+            <span className="text-on-surface-disabled text-caption">to</span>
+            <input
+              type="time"
+              value={daySched[d]?.end || ''}
+              onChange={e => updateDayTime(d, 'end', e.target.value)}
+              className="flex-1 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1.5 border border-outline-variant outline-none [color-scheme:dark]"
+            />
           </div>
+        ))}
+      </div>
 
-          {section.items.map((item, ii) => (
-            <div key={ii} className="flex gap-2 items-start">
-              <div className="flex-1 space-y-1">
-                <input
-                  value={item.name}
-                  onChange={e => updateItem(si, ii, 'name', e.target.value)}
-                  placeholder="Item name"
-                  className="w-full bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none"
-                />
-                <input
-                  value={item.description || ''}
-                  onChange={e => updateItem(si, ii, 'description', e.target.value)}
-                  placeholder="Description (optional)"
-                  className="w-full bg-surface-container-high text-on-surface-subtle text-caption rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none"
-                />
-              </div>
+      {/* Sections for this menu type only */}
+      {filteredIndices.map(absIdx => {
+        const section = allSections[absIdx]
+        return (
+          <div key={absIdx} className="rounded-lg bg-surface-container p-3 space-y-3">
+            <div className="flex gap-2">
               <input
-                value={item.price != null ? (item.price / 100).toFixed(2) : ''}
-                onChange={e => {
-                  const v = e.target.value.replace(/[^0-9.]/g, '')
-                  updateItem(si, ii, 'price', v ? Math.round(parseFloat(v) * 100) : null)
-                }}
-                placeholder="$"
-                className="w-16 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none text-right tabular-nums"
+                value={section.name}
+                onChange={e => updateSection(absIdx, 'name', e.target.value)}
+                placeholder="Section name (e.g. Appetizers)"
+                className="flex-1 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1.5 border border-outline-variant focus:border-on-surface-subtle outline-none"
               />
-              <button onClick={() => removeItem(si, ii)} className="text-on-surface-disabled hover:text-rose-400 p-0.5 mt-1" title="Remove item">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <button onClick={() => removeSection(absIdx)} className="text-on-surface-disabled hover:text-rose-400 p-1" title="Remove section">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
-          ))}
 
-          <button
-            onClick={() => addItem(si)}
-            className="text-on-surface-disabled hover:text-on-surface-variant text-caption flex items-center gap-1"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            Add item
-          </button>
-        </div>
-      ))}
+            {section.items.map((item, ii) => (
+              <div key={ii} className="flex gap-2 items-start">
+                <div className="flex-1 space-y-1">
+                  <input
+                    value={item.name}
+                    onChange={e => updateItem(absIdx, ii, 'name', e.target.value)}
+                    placeholder="Item name"
+                    className="w-full bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none"
+                  />
+                  <input
+                    value={item.description || ''}
+                    onChange={e => updateItem(absIdx, ii, 'description', e.target.value)}
+                    placeholder="Description (optional)"
+                    className="w-full bg-surface-container-high text-on-surface-subtle text-caption rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none"
+                  />
+                </div>
+                <input
+                  value={item.price != null ? (item.price / 100).toFixed(2) : ''}
+                  onChange={e => {
+                    const v = e.target.value.replace(/[^0-9.]/g, '')
+                    updateItem(absIdx, ii, 'price', v ? Math.round(parseFloat(v) * 100) : null)
+                  }}
+                  placeholder="$"
+                  className="w-16 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none text-right tabular-nums"
+                />
+                <button onClick={() => removeItem(absIdx, ii)} className="text-on-surface-disabled hover:text-rose-400 p-0.5 mt-1" title="Remove item">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ))}
+
+            <button
+              onClick={() => addItem(absIdx)}
+              className="text-on-surface-disabled hover:text-on-surface-variant text-caption flex items-center gap-1"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              Add item
+            </button>
+          </div>
+        )
+      })}
 
       <button
         onClick={addSection}
@@ -2905,7 +3066,7 @@ function MenuEditor({ menu, onSave, onCancel }) {
 
       <div className="flex gap-2">
         <button onClick={handleSave} className="flex-1 py-2 rounded-lg bg-on-surface text-surface text-body-sm font-medium hover:bg-on-surface/90 transition-colors">
-          Save Menu
+          Save
         </button>
         <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest transition-colors">
           Cancel
@@ -2915,7 +3076,7 @@ function MenuEditor({ menu, onSave, onCancel }) {
   )
 }
 
-// ─── Community Tab (Reviews + Events) ────────────────────────────────
+// ─── Community Tab (Reviews + Ticker) ────────────────────────────────
 function CommunityTab({ listingId, isGuardian }) {
   return (
     <div className="space-y-5">
@@ -2925,7 +3086,7 @@ function CommunityTab({ listingId, isGuardian }) {
       </div>
 
       <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
-        <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Events</h3>
+        <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Ticker</h3>
         <EventsTab listingId={listingId} isGuardian={isGuardian} />
       </div>
     </div>
@@ -3031,10 +3192,10 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const defaultTab = tabs[0]?.id || 'photos'
   const currentTab = activeTab && tabs.some(t => t.id === activeTab) ? activeTab : defaultTab
 
-  // Consume initialTab from store (e.g. EventTicker → Events tab)
+  // Consume initialTab from store (e.g. EventTicker → Ticker tab)
   // Map legacy tab IDs to new consolidated tabs
   useEffect(() => {
-    const mapped = (initialTab === 'events' || initialTab === 'reviews') ? 'community' : initialTab
+    const mapped = (initialTab === 'ticker' || initialTab === 'events' || initialTab === 'reviews') ? 'community' : initialTab
     if (mapped && tabs.some(t => t.id === mapped)) {
       setActiveTab(mapped)
       useSelectedBuilding.getState().clearInitialTab()
@@ -3160,9 +3321,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             {/* Title block */}
             <div className="p-4 pb-3">
               <div className="flex items-start gap-3">
-                {activeListing?.logo && (
-                  <img src={assetUrl(activeListing.logo)} alt="" className="w-10 h-10 rounded-lg object-contain bg-surface-container-high flex-shrink-0 mt-0.5" />
-                )}
+                <ListingLogo listing={activeListing} isGuardian={isGuardian} />
                 <div className="min-w-0 flex-1">
                   <h2 className="text-headline font-semibold text-on-surface leading-tight">
                     {isGuardian ? (

@@ -115,7 +115,7 @@ export default function EventTicker() {
     if (!event.listing_id) return
     const listing = useListings.getState().getById(event.listing_id)
     const buildingId = listing?.building_id || event._buildingId
-    useSelectedBuilding.getState().select(event.listing_id, buildingId, 'events')
+    useSelectedBuilding.getState().select(event.listing_id, buildingId, 'ticker')
   }, [])
 
   const courierOpen = useCourierDash(s => s.open)
