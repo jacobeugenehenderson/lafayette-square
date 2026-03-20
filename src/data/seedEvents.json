@@ -16,14 +16,6 @@
     "end_date": "2026-12-31"
   },
   {
-    "id": "seed-003",
-    "listing_id": "lmk-027",
-    "type": "event",
-    "title": "SqWires — seasonal fare in a converted 1900s wire factory",
-    "start_date": "2026-01-01",
-    "end_date": "2026-12-31"
-  },
-  {
     "id": "seed-004",
     "listing_id": "lmk-011",
     "type": "event",
@@ -76,6 +68,58 @@
     "listing_id": "lmk-006",
     "type": "event",
     "title": "Planter's House — craft cocktails in a historic mansion on Mississippi Ave",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
+  },
+  {
+    "id": "seed-012",
+    "listing_id": "lmk-027",
+    "type": "recurring",
+    "recurrence": "weekly",
+    "day_of_week": "tuesday",
+    "title": "Square Plates Tuesday — shareables & small plates",
+    "description": "SqWires' weekly share-ables night",
+    "start_time": "16:00",
+    "end_time": "21:00",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
+  },
+  {
+    "id": "seed-013",
+    "listing_id": "lmk-027",
+    "type": "recurring",
+    "recurrence": "weekly",
+    "day_of_week": "wednesday",
+    "title": "Wine Down Wednesday — half-price bottles",
+    "description": "Half-price bottles of wine every Wednesday at SqWires",
+    "start_time": "16:00",
+    "end_time": "21:00",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
+  },
+  {
+    "id": "seed-014",
+    "listing_id": "lmk-027",
+    "type": "recurring",
+    "recurrence": "weekly",
+    "day_of_week": "thursday",
+    "title": "Fried Chicken Thursday + Live Music",
+    "description": "SqWires' famous fried chicken dinner with live music on the patio",
+    "start_time": "16:00",
+    "end_time": "21:00",
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31"
+  },
+  {
+    "id": "seed-015",
+    "listing_id": "lmk-027",
+    "type": "recurring",
+    "recurrence": "weekly",
+    "day_of_week": "friday",
+    "title": "Friday Fish Fry",
+    "description": "Beer battered white fish or gulf popcorn shrimp — 4:30pm or until we run out",
+    "start_time": "16:30",
+    "end_time": "21:00",
     "start_date": "2026-01-01",
     "end_date": "2026-12-31"
   }

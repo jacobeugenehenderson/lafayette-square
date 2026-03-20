@@ -347,44 +347,68 @@
     ]
   },
   "lmk-027": {
+    "schedule": {
+      "dinner": { "days": ["tue","wed","thu","fri","sat"], "start": "16:00", "end": "21:00" },
+      "lunch": { "days": ["tue","wed","thu","fri"], "start": "11:00", "end": "15:00" },
+      "brunch": { "days": ["sat","sun"], "start": "09:00", "end": "14:00" },
+      "happy_hour": { "days": ["tue","wed","thu","fri"], "start": "15:00", "end": "18:00" },
+      "specials": { "days": ["thu","fri"], "start": "16:00", "end": "21:00" }
+    },
     "sections": [
       {
         "name": "Soups & Salads",
         "menu": "dinner",
         "items": [
+          { "name": "Bread & Butter", "description": "Companion French, rosemary parmesan butter", "price": 624, "tags": ["v"] },
           { "name": "Baked Onion Soup", "price": 1040 },
-          { "name": "Caesar", "description": "Mayfair, asiago, rosemary parm croutons, skewered lemon", "price": 1248, "modifiers": [{ "name": "Add Chicken", "price": 520 }, { "name": "Add Shrimp (4)", "price": 728 }, { "name": "Add Salmon", "price": 832 }] },
-          { "name": "Spinach Salad", "description": "Goat cheese fritter, craisins, hearts of palm, red onion, spiced walnuts, strawberry poppyseed vinaigrette", "price": 1353, "tags": ["v"] },
-          { "name": "Greek Salad", "description": "Oregano vinaigrette, feta, olive tapenade, tomatoes, cucumber, red onion, artichokes, stuffed grape leaves, hummus & warm pita", "price": 1664, "tags": ["v"] }
+          { "name": "Caesar", "description": "Mayfair, romano, rosemary croutons, lemon", "price": 1248, "modifiers": [{ "name": "Add grilled chicken", "price": 520 }, { "name": "Add four grilled shrimp", "price": 728 }, { "name": "Add grilled salmon", "price": 832 }] },
+          { "name": "Spinach Salad", "description": "Goat cheese fritter, craisins, hearts of palm, red onion, sweet/spicy pecans, strawberry poppyseed vinaigrette", "price": 1353, "tags": ["v"] },
+          { "name": "Greek Salad", "description": "Oregano vinaigrette, feta, olive tapenade, tomatoes, cucumber, red onion, artichokes, stuffed grape leaf, hummus & warm pita", "price": 1716, "tags": ["v"] }
         ]
       },
       {
-        "name": "Small Plates",
+        "name": "Share-Ables",
         "menu": "dinner",
         "items": [
           { "name": "Baked Brie", "description": "Dried fruits, pecans & maple, mini French baguette", "price": 1456, "tags": ["v"] },
-          { "name": "Wild Mushrooms & Broiled Goat Cheese", "description": "Herb griddled flatbread", "price": 1560, "tags": ["v"] },
-          { "name": "Crispy Cauliflower", "description": "Tempura, agave buffalo sauce", "price": 1352, "tags": ["vg"] },
-          { "name": "Calamari", "description": "Fried spinach & parmesan, house-made marinara", "price": 1664 },
-          { "name": "Roasted Wings", "description": "1 lb., agave buffalo sauce, house-made ranch or hoisin agave & ginger, cucumber yogurt", "price": 1560 },
-          { "name": "French Fries", "description": "Truffle oil, parmesan, fresh herbs, lemon sage aioli", "price": 1248, "tags": ["v"] },
-          { "name": "Gouda Fondue", "description": "Apple bacon jam & warm companion pub pretzels", "price": 1456, "tags": ["v"] },
+          { "name": "Wild Mushroom & Goat Cheese", "description": "Herb griddled flatbread", "price": 1560, "tags": ["v"] },
+          { "name": "Gouda Fondue", "description": "Apple bacon jam & warm pub pretzels", "price": 1456 },
+          { "name": "Crispy Cauliflower", "description": "Tempura, agave buffalo sauce", "price": 1352, "tags": ["v"] },
+          { "name": "House-Made Hummus", "description": "Olive tapenade, artichoke hearts, stuffed grape leaf, warm pita", "price": 1352, "tags": ["v"] },
+          { "name": "Calamari", "description": "Crispy spinach & romano, house-made marinara", "price": 1664 },
+          { "name": "Sesame Seed Seared Tuna", "description": "Sticky rice, avocado, arugula, cucumber, soy ginger drizzle, crispy wontons, lemon & lime", "price": 1664 },
+          { "name": "Roasted Wings", "description": "1 lb., agave buffalo sauce, house-made ranch OR hoisin, agave & ginger, cucumber yogurt", "price": 1560 },
           { "name": "Crab & Shrimp Cake", "description": "Napa slaw & citrus aioli", "price": 1664 },
-          { "name": "Sesame Seed Seared Tuna", "description": "Sticky rice, avocado, arugula, cucumber soy ginger drizzle, crispy wontons", "price": 1664 }
+          { "name": "French Fries", "description": "Truffle oil, parmesan, fresh herbs, lemon sage mayo", "price": 1248, "tags": ["v"] },
+          { "name": "Hand Dipped Onion Rings", "description": "Spicy ketchup", "price": 1248, "tags": ["v"] }
         ]
       },
       {
-        "name": "Large Plates",
+        "name": "Dinner Plates",
         "menu": "dinner",
         "items": [
-          { "name": "Chicken Pot Pie", "description": "Pulled chicken, new potatoes, fresh herbs & veggies, topped with puff pastry", "price": 2392 },
-          { "name": "Pasta Pillows", "description": "Ricotta stuffed fresh jumbo ravioli, house-made basil pesto, parmesan cream, roasted tomato bruschetta", "price": 2392 },
-          { "name": "Center Cut Strip Steak", "description": "Iron seared & sliced, truffle romano mac n cheese, steakhouse butter, crispy Brussels, hand dipped onion ring", "price": 3952 },
+          { "name": "Chicken Pot Pie", "description": "New potatoes, fresh herbs, sweet peas, corn, carrot & onion", "price": 2392 },
+          { "name": "Pasta Pillows", "description": "Ricotta stuffed fresh jumbo ravioli, house-made basil pesto, parmesan cream & roasted tomato bruschetta", "price": 2392, "tags": ["v"], "modifiers": [{ "name": "Add balsamic strip & crispy spinach", "price": 520 }, { "name": "Add grilled chicken", "price": 520 }, { "name": "Add four grilled shrimp", "price": 728 }] },
+          { "name": "Crispy Parmesan Eggplant Stack", "description": "Spinach, roasted tomato sauce, fresh mozzarella", "price": 2184, "tags": ["v"] },
+          { "name": "Veggie Lasagna (No Noodles)", "description": "Zucchini, eggplant, carrots, red onion, yellow squash, goat cheese & grated parmesan, spinach, roasted tomato sauce, fresh mozzarella", "price": 2184, "tags": ["v", "gf"] },
+          { "name": "Soy-Ginger Stir Fry", "description": "Roasted veggies & crispy tofu, edamame, soy-ginger reduction, jasmine rice", "price": 2184, "tags": ["v"], "modifiers": [{ "name": "Add grilled shrimp tuna", "price": 936 }, { "name": "Add grilled chicken", "price": 520 }] },
+          { "name": "Center Cut Strip Steak", "description": "Iron seared & sliced, truffle romano mac & cheese, steakhouse butter, hand dipped onion ring", "price": 3952, "modifiers": [{ "name": "Add crumbled blue cheese", "price": 156 }] },
           { "name": "Meatloaf", "description": "Au jus, whipped potatoes, green beans, yellow onion & bacon", "price": 2496 },
-          { "name": "Grilled Scottish Salmon", "description": "Savory wild mushroom goat cheese, sun-dried tomato pesto glaze, goat cheese crumble & crushed roasted walnuts", "price": 3224 },
-          { "name": "SqWires Burger", "description": "Two 4oz smash patties, white cheddar, bacon, thyme mayo, parmesan fries & mixed greens", "price": 1768 },
+          { "name": "Herb Encrusted Stuffed Pork Tenderloin", "description": "Prosciutto & fresh mozzarella, savory wild mushroom goat cheese bread pudding, bacon jam, fig reduction", "price": 2808 },
+          { "name": "Grilled Greek Salmon", "description": "Dusted with Greek spices, whipped potatoes, spinach, marmalade goat cheese butter", "price": 3224, "tags": ["gf"] },
+          { "name": "Mussels & Shrimp", "description": "Roasted tomato, garlic, white wine & crispy pork belly, griddled rosemary focaccia", "price": 2392 },
           { "name": "Fish & Chips", "description": "Beer battered wild caught white fish, house tartar, pickled red onion, house cut chips", "price": 2288 },
-          { "name": "Herb Encrusted Pork Tenderloin", "description": "Savory wild mushroom goat cheese bread pudding, bacon jam, fig reduction", "price": 2808 }
+          { "name": "SqWires Steak Burger", "description": "Two 4oz smash patties, white cheddar, bacon, fresh thyme mayo, parmesan & side of mixed greens", "price": 1872 }
+        ]
+      },
+      {
+        "name": "Sides",
+        "menu": "dinner",
+        "items": [
+          { "name": "Truffle Mac-N-Cheese", "description": "White & mild cheddar, ricotta, caramelized onion, broiled bread crumbs", "price": 841, "tags": ["v"] },
+          { "name": "Brussels Sprout", "description": "Rosemary butter, shredded cheddar, sour cream & bacon", "price": 728, "tags": ["gf"] },
+          { "name": "Loaded Baked Potato", "description": "Parmesan, butter, shredded cheddar, sour cream & bacon", "price": 717, "tags": ["gf"] },
+          { "name": "Corn Pudding", "price": 686, "tags": ["v"] }
         ]
       },
       {
@@ -411,6 +435,50 @@
           { "name": "SqWires Club Wrap", "description": "House-smoked turkey, bacon, tomato, lettuce, avocado, sun-dried tomato aioli, cheddar", "price": 1500 },
           { "name": "SqWires Burger", "description": "Two quarter-pound griddled patties, cheese, mushrooms, caramelized onions, pico available", "price": 1600 },
           { "name": "Gourmet Grilled Cheese", "description": "Texas toast, parmesan & rosemary butter, gouda, caramelized onions, spinach", "price": 1400, "tags": ["v"] }
+        ]
+      },
+      {
+        "name": "Happy Hour — Bar Specials",
+        "menu": "happy_hour",
+        "items": [
+          { "name": "All Local Craft Drafts", "price": 520 },
+          { "name": "Domestic Bottles", "price": 312 },
+          { "name": "Glass Wine (bar's choice)", "price": 520 },
+          { "name": "House Mixed Drinks", "price": 520 },
+          { "name": "Specialty Cocktails", "description": "$2.00 off", "price": 0 }
+        ]
+      },
+      {
+        "name": "Happy Hour — Appetizer Specials",
+        "menu": "happy_hour",
+        "items": [
+          { "name": "Roasted Wings", "description": "1 lb., agave buffalo sauce, house-made ranch", "price": 1144 },
+          { "name": "Baked Brie", "description": "Dried fruits, pecan & maple, mini French baguette", "price": 1144 },
+          { "name": "Wild Mushroom & Broiled Goat Cheese", "description": "Herb griddled flatbread", "price": 1248 },
+          { "name": "House-Made Hummus", "description": "Olive tapenade, artichokes, stuffed grape leaf, crispy pita", "price": 936 },
+          { "name": "Calamari", "description": "Fried spinach & parmesan, house-made marinara", "price": 1248 },
+          { "name": "Crispy Cauliflower", "description": "Tempura fried, agave buffalo sauce", "price": 1040 },
+          { "name": "French Fries", "description": "Truffle oil, parmesan, fresh herbs, lemon sage aioli", "price": 936 }
+        ]
+      },
+      {
+        "name": "Thursday Fried Chicken",
+        "menu": "specials",
+        "items": [
+          { "name": "Early Bird Fried Chicken", "description": "Dine in only, 4pm–5pm", "price": 1872 },
+          { "name": "Fried Chicken Dinner", "description": "Dredged and fried (breast, leg, thigh & wing), skin on mashed potatoes & gravy, green bean casserole with caramelized onions, buttermilk biscuit & whipped butter. Served family style if more than 1 person.", "price": 2288 },
+          { "name": "Fried Okra", "description": "Cajun aioli", "price": 624, "tags": ["v"] },
+          { "name": "Loaded Crinkle Cut Fries", "description": "Cheddar cheese, bacon & chives", "price": 624 },
+          { "name": "4 Cheese Mac", "description": "Cheddar, American, parmesan & ricotta", "price": 624, "tags": ["v"] },
+          { "name": "Carrot Cake", "description": "Whipped cream & caramel sauce", "price": 1144 }
+        ]
+      },
+      {
+        "name": "Friday Fish Fry",
+        "menu": "specials",
+        "items": [
+          { "name": "Fish Fry — Large Plate", "description": "Beer battered white fish or gulf popcorn shrimp, sweet braised onions, whipped potatoes, green beans, creamy slaw, dinner roll", "price": 2100 },
+          { "name": "Fish Fry — Small Plate", "description": "Beer battered white fish or gulf popcorn shrimp, sweet braised onions, whipped potatoes, green beans, creamy slaw, dinner roll", "price": 1600 }
         ]
       }
     ]
@@ -619,6 +687,63 @@
   "lmk-028": {
     "sections": [
       {
+        "name": "Starters",
+        "menu": "dinner",
+        "items": [
+          { "name": "Oak Oven Roasted Mussels", "description": "Neuske's bacon, tomatoes, shallots, garlic, cilantro pesto & mascarpone", "price": 2000, "tags": ["gf"] },
+          { "name": "Wild Boar Ravioli", "description": "Tomato-vodka cream sauce", "price": 1600 },
+          { "name": "Stuffed Mushrooms", "description": "Roasted red peppers, fontina, cream cheese, breadcrumbs & balsamic glaze", "price": 1400, "tags": ["v"] },
+          { "name": "Buttermilk Fried Calamari", "description": "Remoulade", "price": 1600 },
+          { "name": "Poached Pear & Fig Flatbread", "description": "Crème fraîche, caramelized onions, fresh basil & gorgonzola", "price": 1800, "tags": ["v"] },
+          { "name": "Calabrian Pepper Meatballs", "description": "Tomato-basil sauce & grated parmesan", "price": 1400 },
+          { "name": "Antipasti Board", "description": "Assorted cheeses, cured meats, house-made fruit jam, spiced walnuts, pickled vegetables & crostini", "price": 2400 }
+        ]
+      },
+      {
+        "name": "Soups & Salad",
+        "menu": "dinner",
+        "items": [
+          { "name": "Shrimp & Corn Bisque", "price": 900, "tags": ["gf"] },
+          { "name": "Butternut Squash", "price": 900, "tags": ["v", "gf"] },
+          { "name": "Hamilton Farms Mixed Green", "description": "Red onions, toasted pumpkin seeds, tomatoes, pecorino & strawberry-champagne vinaigrette", "price": 1200, "tags": ["v", "gf"] },
+          { "name": "Caesar", "description": "Parmesan crisp, croutons & house-made caesar dressing", "price": 1200 },
+          { "name": "Blood Orange Fennel", "description": "Greenhouse crisp lettuce & arugula, blood orange, shaved fennel, toasted almond, goat cheese & espresso vinaigrette", "price": 1500, "tags": ["v", "gf"] },
+          { "name": "Spinach", "description": "Dried cranberries, toasted pecan, mandarin orange, herb goat cheese & caramelized shallot vinaigrette", "price": 1400, "tags": ["v", "gf"] }
+        ]
+      },
+      {
+        "name": "Entrées",
+        "menu": "dinner",
+        "items": [
+          { "name": "Char Crust Ribeye", "description": "12 oz / 16 oz, tillamook cheddar potato gratin & gorgonzola butter", "price": 4500 },
+          { "name": "Grilled Salmon", "description": "Lima bean, corn, roasted red pepper, winter squash & lemon-herb beurre blanc", "price": 3300, "tags": ["gf"] },
+          { "name": "Braised Pork Shank", "description": "Carrot purée, cherry-marsala reduction & flash-fried leeks", "price": 3400 },
+          { "name": "Pan Seared Swordfish", "description": "Creamed cous cous, shaved carrots, tomatoes, chimichurri", "price": 3900 },
+          { "name": "Grilled 8oz Filet", "description": "Yukon gold mashed potatoes, green beans & red wine-mushroom demi glace", "price": 5500, "tags": ["gf"] },
+          { "name": "Assorted Wild Mushrooms & Pecorino Polenta", "description": "Spinach, artichokes, shallots, roasted red pepper & parmesan", "price": 2300, "tags": ["v", "gf"], "modifiers": [{ "name": "Add grilled chicken", "price": 900 }, { "name": "Add shrimp", "price": 1000 }, { "name": "Add steak", "price": 1100 }, { "name": "Add salmon", "price": 1100 }] }
+        ]
+      },
+      {
+        "name": "House-Made Pastas",
+        "menu": "dinner",
+        "items": [
+          { "name": "Shrimp Herbs d'Amore", "description": "House-made linguine, tomatoes, garlic & shallot white wine sauce", "price": 2900 },
+          { "name": "Eggplant Parmesan", "description": "Pappardelle, wilted spinach, fresh mozzarella & tomato-basil sauce", "price": 2600, "tags": ["v"] },
+          { "name": "Chicken Fettucine", "description": "Neuske bacon, broccolini & parmesan cream", "price": 2600 },
+          { "name": "Pistachio Pesto Pappardelle", "description": "House-made pappardelle, oven roasted cauliflower & pistachio pesto", "price": 2500, "tags": ["v"], "modifiers": [{ "name": "Add grilled chicken", "price": 900 }, { "name": "Add shrimp", "price": 1000 }, { "name": "Add salmon", "price": 1100 }] }
+        ]
+      },
+      {
+        "name": "Sides",
+        "menu": "dinner",
+        "items": [
+          { "name": "Chef's Choice Risotto", "price": 900, "tags": ["gf"] },
+          { "name": "Yukon Gold Mashed Potatoes", "price": 800, "tags": ["gf"] },
+          { "name": "Caramelized Brussels Sprouts", "price": 1100, "tags": ["gf"] },
+          { "name": "Pecorino Polenta", "price": 800, "tags": ["gf"] }
+        ]
+      },
+      {
         "name": "Desserts",
         "menu": "dessert",
         "items": [
@@ -628,6 +753,92 @@
           { "name": "Eleven Eleven Gooey Butter Cake", "price": 799 },
           { "name": "Dessert Sampling", "description": "Flourless chocolate torta, crème custard napoleon & gooey butter cake", "price": 1999 },
           { "name": "Ice Cream or Sorbet", "price": 499 }
+        ]
+      },
+      {
+        "name": "Cocktails",
+        "menu": "drinks",
+        "items": [
+          { "name": "Oak-Aged Old Fashioned", "description": "Cherry-orange infused whiskey & angostura bitters barrel-aged in Missouri white oak", "price": 1300 },
+          { "name": "Blackberry Mule", "description": "Blackberry infused vodka, lemon juice & ginger beer", "price": 1300 },
+          { "name": "Maple Butter Bourbon", "description": "Brown butter-infused bourbon, pure maple syrup, lemon juice & black walnut bitters", "price": 1400 },
+          { "name": "Italian Espresso Martini", "description": "Coffee liqueur & espresso", "price": 1400 },
+          { "name": "Sicilian Manhattan", "description": "Rye whiskey, Sicilian blood orange amaro & bing cherry syrup", "price": 1500 },
+          { "name": "The \"Pearfig\" Martini", "description": "Gorgonzola-washed vodka, pear liqueur, fig syrup & lime juice", "price": 1400 },
+          { "name": "Tito's White Cran Cosmo", "description": "Tito's Handmade Vodka, white cranberry juice, St. Germain & lemon juice", "price": 1300 },
+          { "name": "Jalapeño Pineapple Margarita", "description": "Jalapeño-pineapple infused tequila, house-made sour & pineapple juice", "price": 1200 },
+          { "name": "Harvest Apple Sangria", "description": "Sweet white wine, green apple purée, brandy, bourbon, Martinelli apple cider, sparkling wine & cinnamon", "price": 1200 },
+          { "name": "Lucas & Clark", "description": "Hamilton's Reserve single barrel bourbon, brown sugar syrup, Bittercub's Aztec chocolate bitters, amaro di angostura rinse", "price": 1600 }
+        ]
+      },
+      {
+        "name": "Wines by the Glass — White",
+        "menu": "drinks",
+        "items": [
+          { "name": "Lamarca", "description": "N.V. Prosecco, Italy", "price": 1200 },
+          { "name": "Blengio \"La Morosa\"", "description": "N.V. Moscato d'Asti DOCG", "price": 1200 },
+          { "name": "Moët & Chandon", "description": "N.V. Champagne, France (187ml)", "price": 2800 },
+          { "name": "Bex", "description": "Riesling, 2024, Nahe, Germany", "price": 1100 },
+          { "name": "Pine Ridge", "description": "Chenin Blanc/Viognier, 2024, Clarksburg, CA", "price": 1100 },
+          { "name": "Rapido", "description": "Pinot Grigio, 2024, Delle Venezie", "price": 1100 },
+          { "name": "Hayes Ranch", "description": "Chardonnay, 2024, CA", "price": 1100 },
+          { "name": "Raeburn", "description": "Chardonnay, 2024, Sonoma County, CA", "price": 1400 },
+          { "name": "Kim Crawford", "description": "Sauvignon Blanc, 2024, Marlborough, NZ", "price": 1300 },
+          { "name": "Charles & Charles", "description": "Rosé, 2024, Columbia Valley, WA", "price": 1200 }
+        ]
+      },
+      {
+        "name": "Wines by the Glass — Red",
+        "menu": "drinks",
+        "items": [
+          { "name": "Eloze", "description": "Barbera del Monferrato DOC, 2023", "price": 1200 },
+          { "name": "Fattoria Il Muro \"Spigallo\"", "description": "Sangiovese, 2023, Chianti DOCG", "price": 1300 },
+          { "name": "Banshee", "description": "Pinot Noir, 2022, Santa Barbara County, CA", "price": 1300 },
+          { "name": "A to Z", "description": "Pinot Noir, 2022, Oregon", "price": 1400 },
+          { "name": "Perano Estate \"Six Clones\"", "description": "Merlot, 2021, Lodi, CA", "price": 1200 },
+          { "name": "Gen5 \"Old Vines\"", "description": "2023, Lodi, CA", "price": 1000 },
+          { "name": "Seven Falls Cellars", "description": "Cabernet, 2020, Wahluke Slope, Columbia Valley, WA", "price": 1200 },
+          { "name": "Sanctuary", "description": "Cabernet Sauvignon, 2021, Napa Valley, CA", "price": 1800 },
+          { "name": "The Sauce", "description": "Merlot/Syrah, 2021, Columbia Valley, WA", "price": 1200 },
+          { "name": "Catena", "description": "Malbec, 2023, Mendoza, Argentina", "price": 1200 },
+          { "name": "Gundlach Bundschu \"Mountain Cuvée\"", "description": "Merlot/Cabernet, 2023, Sonoma County, CA", "price": 1500 }
+        ]
+      },
+      {
+        "name": "Non-Alcoholic",
+        "menu": "drinks",
+        "items": [
+          { "name": "Hibi-Spritz", "description": "Hibiscus syrup, N/A prosecco, Nozeco & fresh mint", "price": 1200 },
+          { "name": "Amalfi Spritz", "description": "Bittersweet non-alcoholic amaro & sparkling water", "price": 1200 },
+          { "name": "The Elixir", "description": "Grapefruit juice, honey syrup, ginger beer & lemon", "price": 800 },
+          { "name": "Cranberry Mule", "description": "Cranberry juice, lime juice & ginger beer", "price": 700 }
+        ]
+      },
+      {
+        "name": "Draft",
+        "menu": "drinks",
+        "items": [
+          { "name": "Stella Artois", "price": 800 },
+          { "name": "4hands City Wide APA", "price": 800 },
+          { "name": "Urban Chestnut Zwickel", "price": 800 },
+          { "name": "Sierra Nevada Trail Pass IPA", "price": 700 },
+          { "name": "Guinness", "price": 800 },
+          { "name": "Hoegaarden Belgian Witbier", "price": 800 },
+          { "name": "Grüvi Bubbly Rosé", "description": "275ml", "price": 1200 }
+        ]
+      },
+      {
+        "name": "Bottles & Cans",
+        "menu": "drinks",
+        "items": [
+          { "name": "Golden Road Mango Cart", "price": 700 },
+          { "name": "Budweiser", "price": 600 },
+          { "name": "Bud Light", "price": 600 },
+          { "name": "Bud Select", "price": 600 },
+          { "name": "Michelob Ultra", "price": 600 },
+          { "name": "The Modern Brewery Citropolis IPA", "price": 800 },
+          { "name": "Civil Life Brewing Co. American Brown", "price": 800 },
+          { "name": "Brick River Cider Honey Crisp Apple", "price": 800 }
         ]
       }
     ]

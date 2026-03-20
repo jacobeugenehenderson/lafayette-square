@@ -1625,7 +1625,7 @@ function EventForm({ listingId, onSubmitted }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
       <div className="flex gap-2">
-        {['event', 'special', 'sale', 'partnership'].map(t => (
+        {['event', 'recurring', 'special', 'sale', 'partnership'].map(t => (
           <button
             key={t}
             type="button"
@@ -1692,16 +1692,39 @@ function EventsTab({ listingId, isGuardian }) {
     } catch { /* silent */ }
   }, [])
 
-  function formatDateRange(start, end) {
+  function formatTime12(t) {
+    if (!t) return ''
+    const [h, m] = t.split(':').map(Number)
+    const suffix = h >= 12 ? 'pm' : 'am'
+    const hr = h === 0 ? 12 : h > 12 ? h - 12 : h
+    return m === 0 ? `${hr}${suffix}` : `${hr}:${String(m).padStart(2, '0')}${suffix}`
+  }
+
+  const DOW_LABELS = { sunday: 'Sun', monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat' }
+
+  function formatEventSchedule(event) {
+    // Recurring events: show schedule (e.g. "Thu 4–9pm" or "Daily 3–6pm")
+    if (event.type === 'recurring') {
+      const dayLabel = event.recurrence === 'daily' ? 'Daily' : (DOW_LABELS[event.day_of_week] || '')
+      if (event.start_time && event.end_time) {
+        return `${dayLabel} ${formatTime12(event.start_time)}\u2013${formatTime12(event.end_time)}`
+      }
+      return dayLabel
+    }
+    // One-off events: show date range
     const opts = { month: 'short', day: 'numeric' }
-    const s = new Date(start + 'T12:00:00').toLocaleDateString('en-US', opts)
-    if (!end || end === start) return s
-    const e = new Date(end + 'T12:00:00').toLocaleDateString('en-US', opts)
+    const s = new Date(event.start_date + 'T12:00:00').toLocaleDateString('en-US', opts)
+    if (!event.end_date || event.end_date === event.start_date) {
+      if (event.start_time && event.end_time) return `${s} ${formatTime12(event.start_time)}\u2013${formatTime12(event.end_time)}`
+      return s
+    }
+    const e = new Date(event.end_date + 'T12:00:00').toLocaleDateString('en-US', opts)
     return `${s} \u2013 ${e}`
   }
 
   const TYPE_COLORS = {
     event: 'bg-blue-500/15 text-blue-400',
+    recurring: 'bg-teal-500/15 text-teal-400',
     special: 'bg-amber-500/15 text-amber-400',
     sale: 'bg-emerald-500/15 text-emerald-400',
     partnership: 'bg-purple-500/15 text-purple-400',
@@ -1731,11 +1754,17 @@ function EventsTab({ listingId, isGuardian }) {
                 )}
               </div>
               <span className="text-caption text-on-surface-subtle whitespace-nowrap flex-shrink-0">
-                {formatDateRange(event.start_date, event.end_date)}
+                {formatEventSchedule(event)}
               </span>
             </div>
             {event.description && (
-              <p className="text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">{event.description}</p>
+              <p className="text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">
+                {event.description.split(/(https?:\/\/\S+)/g).map((part, i) =>
+                  /^https?:\/\//.test(part)
+                    ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all">{part}</a>
+                    : part
+                )}
+              </p>
             )}
           </div>
         ))}
@@ -2257,20 +2286,22 @@ function PlaceAboutTab({ listing, building, isGuardian, history, description, ha
 
 const MENU_LABELS = {
   dinner: 'Dinner', lunch: 'Lunch', brunch: 'Brunch', drinks: 'Drinks',
-  dessert: 'Dessert', all_day: 'All Day', specials: 'Specials',
+  dessert: 'Dessert', all_day: 'All Day', happy_hour: 'Happy Hour', specials: 'Specials', market: 'Market',
 }
-const MENU_ORDER = ['all_day', 'lunch', 'dinner', 'brunch', 'drinks', 'dessert', 'specials']
+const MENU_ORDER = ['all_day', 'lunch', 'dinner', 'brunch', 'drinks', 'dessert', 'happy_hour', 'specials', 'market']
 
 function MenuTab({ listing, building, isGuardian, isAdmin }) {
   const menu = listing?.menu || null
   const sections = menu?.sections || []
   const editCtx = useContext(EditContext)
   const [editingMenu, setEditingMenu] = useState(false)
+  const [addingMenu, setAddingMenu] = useState(false)
   const hasDelivery = (listing?.tags || []).includes('delivery')
   const courierAvailable = useCourierAvailable()
   const canOrder = hasDelivery && courierAvailable
 
-  // Group sections by menu type
+  // Group sections by menu type — known types appear in MENU_ORDER,
+  // custom types (e.g. "bridal_brunch") appear after them.
   const menus = useMemo(() => {
     const groups = {}
     sections.forEach(s => {
@@ -2278,12 +2309,35 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
       if (!groups[key]) groups[key] = []
       groups[key].push(s)
     })
-    return MENU_ORDER.filter(k => groups[k]).map(k => ({ key: k, label: MENU_LABELS[k] || k, sections: groups[k] }))
+    const known = MENU_ORDER.filter(k => groups[k]).map(k => ({ key: k, label: MENU_LABELS[k] || k, sections: groups[k] }))
+    const custom = Object.keys(groups).filter(k => !MENU_ORDER.includes(k)).map(k => ({ key: k, label: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), sections: groups[k] }))
+    return [...known, ...custom]
   }, [sections])
 
-  const [activeMenu, setActiveMenu] = useState(menus[0]?.key || null)
+  // Pick the default pill based on the menu schedule — latest start time wins.
+  const listingId = listing?.id
+  const [activeMenu, setActiveMenu] = useState(() => {
+    if (!menus.length) return null
+    const available = new Set(menus.map(m => m.key))
+    const sched = menu?.schedule || {}
+    const now = new Date()
+    const dayAbbrev = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()]
+    const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
 
-  // Reset active menu when data changes
+    // Find all menu types active right now, pick the one with latest start time
+    let best = null
+    let bestStart = ''
+    for (const [menuKey, s] of Object.entries(sched)) {
+      if (!available.has(menuKey) || !s.days || !s.start || !s.end) continue
+      if (s.days.includes(dayAbbrev) && timeStr >= s.start && timeStr < s.end) {
+        if (s.start > bestStart) { best = menuKey; bestStart = s.start }
+      }
+    }
+    if (best) return best
+    return menus[0].key
+  })
+
+  // Reset active menu when data changes (e.g. new sections added)
   useEffect(() => {
     if (menus.length > 0 && !menus.find(m => m.key === activeMenu)) {
       setActiveMenu(menus[0].key)
@@ -2294,21 +2348,58 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
 
   // Ordering state
   const [ordering, setOrdering] = useState(false)
-  const [cart, setCart] = useState({}) // { "itemName|sectionIdx|itemIdx": qty }
+  const [cart, setCart] = useState({}) // { "sectionIdx-itemIdx": qty }
+  const [orderNote, setOrderNote] = useState('')
   const [orderPlaced, setOrderPlaced] = useState(false)
 
-  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0)
+  // A menu type is orderable when the menu schedule says it's active right now.
+  // Schedule lives on the menu itself — not in events.
+  const schedule = menu?.schedule || {}
+  const DAY_ABBREVS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+
+  const orderableMenus = useMemo(() => {
+    const now = new Date()
+    const dayAbbrev = DAY_ABBREVS[now.getDay()]
+    const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+
+    const available = new Set()
+    for (const [menuKey, sched] of Object.entries(schedule)) {
+      if (!sched.days || !sched.start || !sched.end) continue
+      if (sched.days.includes(dayAbbrev) && timeStr >= sched.start && timeStr < sched.end) {
+        available.add(menuKey)
+      }
+    }
+    return available
+  }, [schedule])
+
+  // Only count cart items from currently orderable menus
+  const orderableSections = useMemo(() => {
+    const set = new Set()
+    menus.forEach(m => {
+      if (orderableMenus.has(m.key)) {
+        m.sections.forEach(s => set.add(sections.indexOf(s)))
+      }
+    })
+    return set
+  }, [menus, orderableMenus, sections])
+
+  const cartCount = Object.entries(cart).reduce((acc, [key, qty]) => {
+    const si = parseInt(key.split('-')[0], 10)
+    return acc + (orderableSections.has(si) ? qty : 0)
+  }, 0)
+
   const cartTotal = useMemo(() => {
     let total = 0
     sections.forEach((section, si) => {
-      (section.items || []).forEach((item, ii) => {
+      if (!orderableSections.has(si)) return
+      ;(section.items || []).forEach((item, ii) => {
         const key = `${si}-${ii}`
         const qty = cart[key] || 0
         if (qty > 0 && item.price != null) total += item.price * qty
       })
     })
     return total
-  }, [cart, sections])
+  }, [cart, sections, orderableSections])
 
   const MIN_ORDER = 3500 // $35 minimum order for delivery
   const STL_TAX_RATE = 0.08725 // Missouri 4.225% + St. Louis city 4.5%
@@ -2372,7 +2463,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
             Ordering from {listing?.name}
           </span>
           <button
-            onClick={() => { setOrdering(false); setCart({}); setOrderPlaced(false) }}
+            onClick={() => { setOrdering(false); setCart({}); setOrderNote(''); setOrderPlaced(false) }}
             className="text-caption text-on-surface-disabled hover:text-on-surface-variant transition-colors"
           >
             Cancel
@@ -2381,8 +2472,8 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
       )}
 
       {/* Menu type pills */}
-      {menus.length > 1 && (
-        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1">
+      {(menus.length > 1 || isGuardian) && (
+        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 items-center">
           {menus.map(m => (
             <button
               key={m.key}
@@ -2396,12 +2487,87 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
               {m.label}
             </button>
           ))}
+          {isGuardian && !addingMenu && (
+            <button
+              onClick={() => setAddingMenu(true)}
+              className="flex-shrink-0 w-7 h-7 rounded-full border border-dashed border-outline-variant text-on-surface-variant hover:border-on-surface-subtle hover:text-on-surface transition-colors flex items-center justify-center"
+              title="Add menu"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Add menu picker — guardian only */}
+      {isGuardian && addingMenu && (
+        <div className="rounded-lg bg-surface-container border border-outline-variant p-3 space-y-2">
+          <p className="text-body-sm text-on-surface-variant font-medium">Add a new menu</p>
+          <div className="flex flex-wrap gap-1.5">
+            {MENU_ORDER.filter(k => !menus.find(m => m.key === k)).map(k => (
+              <button
+                key={k}
+                onClick={() => {
+                  const newSection = { name: '', menu: k, items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }
+                  const newMenu = { sections: [...sections, newSection] }
+                  editCtx?.setField('menu', newMenu)
+                  setActiveMenu(k)
+                  setAddingMenu(false)
+                  setEditingMenu(true)
+                }}
+                className="px-3 py-1.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors"
+              >
+                {MENU_LABELS[k]}
+              </button>
+            ))}
+          </div>
+          <form className="flex gap-2 pt-1" onSubmit={e => {
+            e.preventDefault()
+            const input = e.target.elements.customMenu
+            const raw = (input.value || '').trim()
+            if (!raw) return
+            const key = raw.toLowerCase().replace(/\s+/g, '_')
+            if (menus.find(m => m.key === key)) return
+            const newSection = { name: '', menu: key, items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }
+            const newMenu = { sections: [...sections, newSection] }
+            editCtx?.setField('menu', newMenu)
+            setActiveMenu(key)
+            setAddingMenu(false)
+            setEditingMenu(true)
+          }}>
+            <input
+              name="customMenu"
+              placeholder="Custom (e.g. Bridal Brunch)"
+              className="flex-1 bg-surface-container-high text-on-surface text-body-sm rounded-full px-3 py-1.5 border border-outline-variant focus:border-on-surface-subtle outline-none"
+            />
+            <button type="submit" className="px-3 py-1.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface transition-colors">
+              Add
+            </button>
+          </form>
+          <button
+            onClick={() => setAddingMenu(false)}
+            className="text-caption text-on-surface-disabled hover:text-on-surface-variant transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Guardian nudge: menu has no schedule yet → not deliverable */}
+      {isGuardian && activeMenu && hasDelivery && !schedule[activeMenu] && (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+          <p className="text-body-sm text-amber-400/90 leading-snug">
+            This menu won't be available for delivery until you set its hours. Tap "Edit Schedule" below to add the days and times you serve it.
+          </p>
         </div>
       )}
 
       {/* Sections for active menu — collapsible */}
       {currentMenu?.sections.map((section, si) => {
         const absSi = sections.indexOf(section)
+        const canOrderSection = ordering && orderableSections.has(absSi)
         // Count cart items in this section
         const sectionCartCount = (section.items || []).reduce((acc, _, ii) => acc + getQty(absSi, ii), 0)
         return (
@@ -2409,7 +2575,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
             key={si}
             section={section}
             absSi={absSi}
-            ordering={ordering}
+            ordering={canOrderSection}
             sectionCartCount={sectionCartCount}
             getQty={getQty}
             setQty={setQty}
@@ -2448,6 +2614,21 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
             </p>
           )}
 
+          {/* Order notes — special requests for the kitchen */}
+          <div className="pt-2 border-t border-outline-variant space-y-1.5">
+            <textarea
+              value={orderNote}
+              onChange={e => setOrderNote(e.target.value)}
+              placeholder="Special requests for the kitchen (allergies, substitutions, etc.)"
+              rows={2}
+              maxLength={500}
+              className="w-full bg-surface-container-high text-on-surface text-body-sm rounded-lg px-3 py-2 border border-outline-variant focus:border-on-surface-subtle outline-none resize-none font-sans placeholder:text-on-surface-disabled"
+            />
+            <p className="text-caption text-on-surface-disabled leading-snug">
+              Your note goes directly to the kitchen. They'll do their best to accommodate.
+            </p>
+          </div>
+
           {!orderPlaced ? (
             <button
               onClick={() => setOrderPlaced(true)}
@@ -2469,21 +2650,28 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
         </div>
       )}
 
-      {/* Empty state for active menu */}
-      {!currentMenu && sections.length === 0 && isGuardian && (
-        <p className="text-on-surface-disabled text-body-sm">Tap "Edit Menu" to add your menu.</p>
-      )}
-
       {/* Guardian: edit menu button */}
       {isGuardian && (
-        <div className="pt-2 border-t border-outline-variant">
+        <div className={sections.length > 0 ? 'pt-2 border-t border-outline-variant' : ''}>
           {!editingMenu ? (
-            <button
-              onClick={() => setEditingMenu(true)}
-              className="w-full text-center py-2 rounded-lg bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest transition-colors"
-            >
-              Edit Menu
-            </button>
+            sections.length === 0 ? (
+              <button
+                onClick={() => setEditingMenu(true)}
+                className="w-full py-6 rounded-xl border-2 border-dashed border-outline-variant text-on-surface-variant text-body-sm hover:border-on-surface-subtle hover:text-on-surface transition-colors flex flex-col items-center justify-center gap-1.5"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add Menu
+              </button>
+            ) : (
+              <button
+                onClick={() => setEditingMenu(true)}
+                className="w-full text-center py-2 rounded-lg bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest transition-colors"
+              >
+                Edit Menu
+              </button>
+            )
           ) : (
             <MenuEditor
               menu={menu}
@@ -2658,6 +2846,9 @@ function MenuEditor({ menu, onSave, onCancel }) {
               className="bg-surface-container-high text-on-surface-variant text-body-sm rounded px-2 py-1.5 border border-outline-variant outline-none"
             >
               {MENU_ORDER.map(k => <option key={k} value={k}>{MENU_LABELS[k]}</option>)}
+              {sections.filter(s => s.menu && !MENU_ORDER.includes(s.menu)).map(s => s.menu).filter((v, i, a) => a.indexOf(v) === i).map(k => (
+                <option key={k} value={k}>{k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+              ))}
             </select>
             <button onClick={() => removeSection(si)} className="text-on-surface-disabled hover:text-rose-400 p-1" title="Remove section">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -2709,7 +2900,7 @@ function MenuEditor({ menu, onSave, onCancel }) {
         onClick={addSection}
         className="w-full py-2 rounded-lg border border-dashed border-outline-variant text-on-surface-variant text-body-sm hover:bg-surface-container transition-colors"
       >
-        + Add Section
+        + Add Section (e.g. Appetizers, Entrées)
       </button>
 
       <div className="flex gap-2">

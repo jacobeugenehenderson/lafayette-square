@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getEvents } from '../lib/api'
 import useListings from '../hooks/useListings'
-import useEvents from '../hooks/useEvents'
+import useEvents, { isActiveEvent } from '../hooks/useEvents'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
 import useBulletin from '../hooks/useBulletin'
@@ -12,29 +12,52 @@ import { useInfo } from './InfoModal'
 
 const ROTATE_INTERVAL = 5000
 const POLL_INTERVAL = 300000 // 5 minutes
+const REFILTER_INTERVAL = 60000 // re-check clock every minute
 
-function getTodayStr() {
+function getNow() {
   const d = new Date()
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+  const date = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+  const time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+  return { date, time }
 }
 
-function filterTodayEvents(allEvents) {
-  const today = getTodayStr()
-  const filtered = allEvents.filter(e => {
-    if (!e.start_date) return false
-    const start = e.start_date
-    const end = e.end_date || e.start_date
-    return start <= today && today <= end
-  })
-  filtered.forEach(e => {
+/**
+ * Filter events to what's active right now, then deduplicate by listing.
+ * When multiple events match for the same listing, latest start_time wins
+ * (the most recently started thing is the most current).
+ * Events without start_time are treated as all-day fallbacks.
+ */
+function filterCurrentEvents(allEvents) {
+  const { date, time } = getNow()
+
+  // 1. Filter to events active right now (date + time aware)
+  const active = allEvents.filter(e => isActiveEvent(e, date, time))
+
+  // 2. Attach venue info
+  active.forEach(e => {
     const listing = useListings.getState().getById(e.listing_id)
     if (listing) {
       e._venueName = listing.name
       e._buildingId = listing.building_id
     }
   })
-  filtered.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
-  return filtered
+
+  // 3. Deduplicate: one entry per listing, latest start_time wins
+  const byListing = new Map()
+  for (const e of active) {
+    const lid = e.listing_id
+    const existing = byListing.get(lid)
+    if (!existing) {
+      byListing.set(lid, e)
+    } else {
+      // Latest start_time wins; timed events always beat untimed
+      const eTime = e.start_time || ''
+      const exTime = existing.start_time || ''
+      if (eTime > exTime) byListing.set(lid, e)
+    }
+  }
+
+  return Array.from(byListing.values())
 }
 
 export default function EventTicker() {
@@ -49,12 +72,21 @@ export default function EventTicker() {
   const storeEvents = useEvents((s) => s.events)
   const storeFetched = useEvents((s) => s.fetched)
 
-  // When the shared store updates, refilter for today
+  // When the shared store updates, refilter for right now
   useEffect(() => {
     if (storeFetched && storeEvents.length > 0) {
-      setEvents(filterTodayEvents(storeEvents))
+      setEvents(filterCurrentEvents(storeEvents))
     }
   }, [storeEvents, storeFetched])
+
+  // Re-check the clock every minute so events rotate in/out on time
+  useEffect(() => {
+    const id = setInterval(() => {
+      const all = useEvents.getState().events
+      if (all.length > 0) setEvents(filterCurrentEvents(all))
+    }, REFILTER_INTERVAL)
+    return () => clearInterval(id)
+  }, [])
 
   // Poll for fresh events at a much lower frequency (5 min)
   useEffect(() => {
