@@ -134,6 +134,40 @@ function formatHoursDisplay(hours) {
   return formatted
 }
 
+// ── Fleur-de-lis rating (townie reviews) ─────────────────────────────
+const FLEUR_BG = '#0055A4' // St. Louis flag blue
+const FLEUR_EMPTY_BG = '#2a2a35'
+
+function FleurRating({ rating, size = 'sm', count }) {
+  const full = Math.floor(rating)
+  const hasHalf = rating % 1 >= 0.25
+  const fleurSize = size === 'sm' ? 'text-base' : 'text-xl'
+
+  return (
+    <div className="flex items-center gap-1.5" role="img" aria-label={`${rating} out of 5`}>
+      <div className="flex gap-0.5">
+        {[0, 1, 2, 3, 4].map(i => {
+          const isFull = i < full
+          const isHalf = i === full && hasHalf
+          const active = isFull || isHalf
+          return (
+            <span
+              key={i}
+              className={`${fleurSize} leading-none`}
+              style={{
+                opacity: isHalf ? 0.5 : active ? 1 : 0.2,
+                filter: active ? 'none' : 'grayscale(1)',
+              }}
+            >⚜️</span>
+          )
+        })}
+      </div>
+      {count != null && <span className="text-caption text-on-surface-subtle">({count})</span>}
+    </div>
+  )
+}
+
+// ── Google star rating (static, imported) ────────────────────────────
 function StarRating({ rating, size = 'sm' }) {
   const stars = []
   const fullStars = Math.floor(rating)
@@ -151,12 +185,12 @@ function StarRating({ rating, size = 'sm' }) {
       stars.push(
         <svg key={i} className={`${sizeClass} text-yellow-400`} viewBox="0 0 20 20">
           <defs>
-            <linearGradient id="half">
+            <linearGradient id={`half-star-${i}`}>
               <stop offset="50%" stopColor="currentColor" />
               <stop offset="50%" stopColor="#4a4a4a" />
             </linearGradient>
           </defs>
-          <path fill="url(#half)" d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+          <path fill={`url(#half-star-${i})`} d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
         </svg>
       )
     } else {
@@ -918,30 +952,43 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
 }
 
 // ─── Interactive star picker ─────────────────────────────────────────
-const STAR_LABELS = ['', 'Terrible', 'Poor', 'Okay', 'Great', 'Amazing']
+const FLEUR_LABELS = { 0.5: 'Poor', 1: 'Poor', 1.5: 'Fair', 2: 'Fair', 2.5: 'Okay', 3: 'Okay', 3.5: 'Good', 4: 'Great', 4.5: 'Amazing', 5: 'Amazing' }
 
-function StarPicker({ value, onChange }) {
+function FleurPicker({ value, onChange }) {
   const [hover, setHover] = useState(0)
   const active = hover || value
+
   return (
     <div className="flex items-center gap-2">
-      <div className="flex gap-1">
+      <div className="flex">
         {[1, 2, 3, 4, 5].map(i => (
-          <button
-            key={i} type="button"
-            onMouseEnter={() => setHover(i)}
-            onMouseLeave={() => setHover(0)}
-            onClick={() => onChange(i)}
-            className="p-0"
-          >
-            <svg className={`w-7 h-7 ${active >= i ? 'text-yellow-400' : 'text-on-surface-disabled'} fill-current transition-colors`} viewBox="0 0 20 20">
-              <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-            </svg>
-          </button>
+          <div key={i} className="relative cursor-pointer select-none">
+            {/* Left half = half rating */}
+            <div
+              className="absolute inset-y-0 left-0 w-1/2 z-10"
+              onMouseEnter={() => setHover(i - 0.5)}
+              onMouseLeave={() => setHover(0)}
+              onClick={() => onChange(i - 0.5)}
+            />
+            {/* Right half = full rating */}
+            <div
+              className="absolute inset-y-0 right-0 w-1/2 z-10"
+              onMouseEnter={() => setHover(i)}
+              onMouseLeave={() => setHover(0)}
+              onClick={() => onChange(i)}
+            />
+            <span
+              className="text-2xl leading-none transition-all"
+              style={{
+                opacity: active >= i ? 1 : (active >= i - 0.5) ? 0.5 : 0.2,
+                filter: (active >= i || active >= i - 0.5) ? 'none' : 'grayscale(1)',
+              }}
+            >⚜️</span>
+          </div>
         ))}
       </div>
-      <span className="text-body-sm text-on-surface-subtle min-w-[4rem]">
-        {active ? STAR_LABELS[active] : 'Tap to rate'}
+      <span className="text-body-sm text-on-surface-subtle min-w-[3.5rem]">
+        {active ? FLEUR_LABELS[active] || '' : 'Tap to rate'}
       </span>
     </div>
   )
@@ -955,7 +1002,7 @@ function RatingSummary({ rating, reviewCount, distribution }) {
     <div className="flex gap-4 mb-4 pb-4 border-b border-outline-variant">
       <div className="flex flex-col items-center justify-center min-w-[4.5rem]">
         <span className="text-3xl font-semibold text-on-surface leading-none">{rating.toFixed(1)}</span>
-        <StarRating rating={rating} size="sm" />
+        <FleurRating rating={rating} size="sm" />
         <span className="text-caption text-on-surface-subtle mt-1">{reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}</span>
       </div>
       <div className="flex-1 flex flex-col justify-center gap-0.5">
@@ -966,7 +1013,7 @@ function RatingSummary({ rating, reviewCount, distribution }) {
             <div key={star} className="flex items-center gap-2">
               <span className="text-caption text-on-surface-subtle w-2 text-right">{star}</span>
               <div className="flex-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
-                <div className="h-full rounded-full bg-yellow-400 transition-all" style={{ width: `${pct}%` }} />
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: FLEUR_COLOR }} />
               </div>
             </div>
           )
@@ -1023,7 +1070,7 @@ function ReviewForm({ listingId, onSubmitted }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
       <p className="text-on-surface-medium text-body-sm font-medium">Write a review</p>
-      <StarPicker value={rating} onChange={setRating} />
+      <FleurPicker value={rating} onChange={setRating} />
       <div className="relative">
         <textarea
           value={text}
@@ -1157,9 +1204,7 @@ function ReviewsTab({ listingId, isGuardian }) {
 
       {reviews.length === 0 && loaded && (
         <div className="text-center py-8">
-          <svg className="w-8 h-8 mx-auto text-on-surface-disabled/40 mb-2" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-          </svg>
+          <span className="text-3xl block mb-2" style={{ color: FLEUR_EMPTY }}>⚜️</span>
           <p className="text-on-surface-subtle text-body">Be the first to share what makes this place special</p>
         </div>
       )}
@@ -1178,7 +1223,7 @@ function ReviewsTab({ listingId, isGuardian }) {
                     <span className="text-caption text-on-surface-disabled">{relativeTime(review.created_at || review.timestamp)}</span>
                   </div>
                   {review.rating && (
-                    <div className="mt-1"><StarRating rating={review.rating} size="sm" /></div>
+                    <div className="mt-1"><FleurRating rating={review.rating} size="sm" /></div>
                   )}
                   <p className="text-body text-on-surface-medium leading-relaxed mt-1.5">{review.text}</p>
                 </div>
@@ -3355,19 +3400,21 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                   </h2>
 
                   {hasListingInfo && !isResidential && (
-                    <div className="flex items-center gap-2 mt-1">
-                      {rating ? (
-                        <>
-                          <span className="text-on-surface font-medium text-body">{Number(rating).toFixed(1)}</span>
+                    <div className="mt-1.5 space-y-0.5">
+                      {/* Google stars — from imported data */}
+                      {rating && (
+                        <div className="flex items-center">
+                          <span className="text-on-surface font-medium text-body w-8">{Number(rating).toFixed(1)}</span>
                           <StarRating rating={Number(rating)} />
-                          {reviewCount && <span className="text-on-surface-subtle text-body-sm">({reviewCount})</span>}
-                        </>
-                      ) : (
-                        <>
-                          <StarRating rating={0} />
-                          <span className="text-on-surface-disabled text-body-sm">No local reviews yet</span>
-                        </>
+                          {reviewCount && <span className="text-on-surface-subtle text-caption ml-2">({reviewCount}) google</span>}
+                        </div>
                       )}
+                      {/* Townie fleur-de-lis — community rating */}
+                      <div className="flex items-center">
+                        <span className="text-on-surface-disabled font-medium text-body w-8">—</span>
+                        <FleurRating rating={0} count={0} />
+                        <span className="text-on-surface-disabled text-caption ml-2">townie</span>
+                      </div>
                     </div>
                   )}
                 </div>

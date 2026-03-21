@@ -24,7 +24,7 @@ export default function BrowseHeader() {
 
   return (
     <div className="absolute top-0 left-0 right-0 z-50 select-none">
-      <div className="relative flex items-center gap-4 pl-5 pr-16 pb-5 bg-[rgba(0,0,0,0.75)] border-b border-white/10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 20px)' }}>
+      <div className="relative flex items-center gap-4 pl-5 pr-16 backdrop-blur-md" style={{ height: 'calc(env(safe-area-inset-top, 0px) + 82px)', paddingTop: 'env(safe-area-inset-top, 0px)', background: 'linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.15) 60%, rgba(0,0,0,0.75) 100%)', WebkitBackdropFilter: 'blur(12px)' }}>
         {/* Mini compass rose */}
         <div className="flex-shrink-0">
           <svg

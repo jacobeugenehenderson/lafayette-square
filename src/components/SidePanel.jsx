@@ -98,11 +98,11 @@ function computeZoomToFit(buildings) {
   }
 }
 
-// Center on a single building at a comfortable contextual distance
+// Center on a single building — featured in viewport, not zoomed in too close
 function computeCenterOn(building) {
   const x = building.position[0]
   const z = building.position[2]
-  const height = 450
+  const height = 250
   const zOff = panelOffset(height)
   return {
     position: [x, height, z + zOff + 1],

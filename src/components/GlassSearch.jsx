@@ -15,12 +15,12 @@ buildingsData.buildings.forEach(b => { _buildingMap[b.id] = b })
 
 function computeCenterOn(building) {
   const fp = building.footprint || []
-  if (!fp.length) return { position: [0, 20, 0], lookAt: [0, 0, 0] }
+  if (!fp.length) return { position: [0, 250, 0], lookAt: [0, 0, 0] }
   let cx = 0, cz = 0
   fp.forEach(([x, z]) => { cx += x; cz += z })
   cx /= fp.length; cz /= fp.length
   return {
-    position: [cx + 15, 25, cz + 15],
+    position: [cx, 250, cz + 1],
     lookAt: [cx, 0, cz],
   }
 }
@@ -217,7 +217,7 @@ export function BrowseSearchInput() {
 
   return (
     <div className="relative flex-1 min-w-0">
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 border border-white/15 backdrop-blur-sm">
         <svg className="w-3.5 h-3.5 text-white/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <circle cx="11" cy="11" r="8" />
           <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
