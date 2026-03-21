@@ -141,7 +141,7 @@ const FLEUR_EMPTY_BG = '#2a2a35'
 function FleurRating({ rating, size = 'sm', count }) {
   const full = Math.floor(rating)
   const hasHalf = rating % 1 >= 0.25
-  const fleurSize = size === 'sm' ? 'text-base' : 'text-xl'
+  const fleurSize = size === 'sm' ? 'text-base' : size === 'lg' ? 'text-4xl' : 'text-xl'
 
   return (
     <div className="flex items-center gap-1.5" role="img" aria-label={`${rating} out of 5`}>
@@ -1203,9 +1203,8 @@ function ReviewsTab({ listingId, isGuardian }) {
       {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} />}
 
       {reviews.length === 0 && loaded && (
-        <div className="text-center py-8">
-          <span className="text-3xl block mb-2" style={{ color: FLEUR_EMPTY_BG }}>⚜️</span>
-          <p className="text-on-surface-subtle text-body">Be the first to share what makes this place special</p>
+        <div className="flex justify-center py-8">
+          <FleurRating rating={0} size="lg" />
         </div>
       )}
 
