@@ -457,7 +457,7 @@ function HoursEditor({ hours, listingId }) {
               <span className={openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400' : ''}>
                 {openStatus.text}
               </span>
-              <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-3 h-3 transform group-open:rotate-180 transition-transform ml-1 ${openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400' : 'text-on-surface-disabled'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
               <button
@@ -787,6 +787,41 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
 
   return (
     <div className="space-y-2.5">
+      {/* Tags — at top */}
+      {isGuardian ? (
+        <TagPicker listing={listing} isGuardian={isGuardian} />
+      ) : displayTags.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {displayTags.map(t => (
+            <span key={t.id} className="px-2 py-0.5 rounded text-caption bg-surface-container-high text-on-surface-subtle">
+              {t.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {/* Reservation link — at top */}
+      {!isResidential && listing?.reservation_url && !isGuardian && (
+        <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-body-sm text-on-surface-variant hover:text-on-surface transition-colors">
+          <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+          </svg>
+          Make a reservation
+        </a>
+      )}
+      {isGuardian && !isResidential && (
+        <div className="space-y-1">
+          <EditableField value={listing?.reservation_url || ''} field="reservation_url" isGuardian placeholder="Add reservations link...">
+            <div className="flex items-center gap-2 text-body-sm text-on-surface-subtle">
+              <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              {listing?.reservation_url ? 'Reservations' : <span className="italic text-on-surface-disabled">+ Reservations link</span>}
+            </div>
+          </EditableField>
+        </div>
+      )}
+
       {/* Compact contact rows — icon + value */}
       <div className="space-y-1">
         {(address || (isGuardian)) && (
@@ -848,7 +883,7 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
             <span className={openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400/80' : 'text-on-surface-variant'}>
               {openStatus.text}
             </span>
-            <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform ml-auto text-on-surface-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-3 h-3 transform group-open:rotate-180 transition-transform ml-1 ${openStatus.isOpen ? 'text-green-400' : openStatus.isOpen === false ? 'text-red-400/80' : 'text-on-surface-disabled'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </summary>
@@ -876,43 +911,6 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
         ) : listing?.description ? (
           <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
         ) : null
-      )}
-
-      {/* Tags — public: subtle pills; guardian: full tag picker */}
-      {isGuardian ? (
-        <TagPicker listing={listing} isGuardian={isGuardian} />
-      ) : displayTags.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
-          {displayTags.map(t => (
-            <span key={t.id} className="px-2 py-0.5 rounded text-caption bg-surface-container-high text-on-surface-subtle">
-              {t.label}
-            </span>
-          ))}
-        </div>
-      ) : null}
-
-      {/* Reservation link — compact, only if exists */}
-      {!isResidential && listing?.reservation_url && !isGuardian && (
-        <a href={listing.reservation_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-body-sm text-on-surface-variant hover:text-on-surface transition-colors">
-          <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-          </svg>
-          Make a reservation
-        </a>
-      )}
-
-      {/* Guardian: editable reservation/menu links — compact */}
-      {isGuardian && !isResidential && (
-        <div className="space-y-1">
-          <EditableField value={listing?.reservation_url || ''} field="reservation_url" isGuardian placeholder="Add reservations link...">
-            <div className="flex items-center gap-2 text-body-sm text-on-surface-subtle">
-              <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-              </svg>
-              {listing?.reservation_url ? 'Reservations' : <span className="italic text-on-surface-disabled">+ Reservations link</span>}
-            </div>
-          </EditableField>
-        </div>
       )}
 
     </div>
@@ -1217,26 +1215,20 @@ function ReviewsTab({ listingId, isGuardian }) {
   )
 }
 
-// ─── Tab: History ────────────────────────────────────────────────────
-function HistoryTab({ history, description }) {
+// ─── History timeline (no description — that lives in Overview) ─────
+function HistoryTimeline({ history }) {
+  if (!history || !history.length) return null
   return (
-    <div className="space-y-3">
-      {description && (
-        <p className="text-body-sm text-on-surface-variant leading-relaxed">{description}</p>
-      )}
-      {history && history.length > 0 && (
-        <div className="relative ml-3 border-l border-outline pl-4 space-y-4 mt-3">
-          {history.map((item, i) => (
-            <div key={i} className="relative">
-              <div className="absolute -left-[21px] top-0.5 w-2.5 h-2.5 rounded-full bg-amber-500/70 border border-amber-400/50" />
-              <div className="text-body-sm">
-                <span className="text-amber-400/80 font-medium">{item.year}</span>
-                <p className="text-on-surface-variant mt-0.5 leading-relaxed">{item.event}</p>
-              </div>
-            </div>
-          ))}
+    <div className="relative ml-3 border-l border-outline pl-4 space-y-4">
+      {history.map((item, i) => (
+        <div key={i} className="relative">
+          <div className="absolute -left-[21px] top-0.5 w-2.5 h-2.5 rounded-full bg-amber-500/70 border border-amber-400/50" />
+          <div className="text-body-sm">
+            <span className="text-amber-400/80 font-medium">{item.year}</span>
+            <p className="text-on-surface-variant mt-0.5 leading-relaxed">{item.event}</p>
+          </div>
         </div>
-      )}
+      ))}
     </div>
   )
 }
@@ -2312,20 +2304,25 @@ function ResidentialAboutTab({ listing, building, isGuardian, history, descripti
         </div>
       )}
 
-      {/* History */}
-      {hasHistory && (
-        <div id="about-history" className="rounded-xl bg-surface-container border border-outline-variant p-4">
-          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">History</h3>
-          <HistoryTab history={history} description={description} />
-        </div>
-      )}
-
-      {/* Building Details */}
-      {hasArchitecture && (
-        <div id="about-details" className="rounded-xl bg-surface-container border border-outline-variant p-4">
-          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Building Details</h3>
-          <ArchitectureTab building={building} />
-        </div>
+      {/* More rolldown — history + building details */}
+      {(hasHistory || hasArchitecture) && (
+        <details className="group">
+          <summary className="cursor-pointer text-body-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1.5">
+            <span>More</span>
+            <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform text-on-surface-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div className="mt-3 space-y-4">
+            {history?.length > 0 && <HistoryTimeline history={history} />}
+            {hasArchitecture && (
+              <div className="pt-3 border-t border-outline-variant">
+                <h4 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Building Details</h4>
+                <ArchitectureTab building={building} />
+              </div>
+            )}
+          </div>
+        </details>
       )}
     </div>
   )
@@ -2334,30 +2331,44 @@ function ResidentialAboutTab({ listing, building, isGuardian, history, descripti
 // ─── Non-Residential About Tab (consolidated single-scroll) ──────────
 function PlaceAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
   const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
-  const hasHistory = !!(history?.length || description)
+  const hasMore = !!(history?.length || hasArchitecture)
 
   return (
     <div className="space-y-5">
-      <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={false} />
+      {/* About card — overview + history inside */}
+      <div className="rounded-xl bg-surface-container border border-outline-variant p-4 space-y-3">
+        <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={false} />
 
+        {history?.length > 0 && (
+          <details className="group">
+            <summary className="cursor-pointer flex items-center gap-1.5 text-body-sm text-amber-400/80 hover:text-amber-300 transition-colors [&::-webkit-details-marker]:hidden list-none">
+              <span className="group-open:hidden">More</span>
+              <span className="hidden group-open:inline">Less</span>
+              <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="mt-3 pt-3 border-t border-outline-variant space-y-3">
+              <h4 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">History</h4>
+              <HistoryTimeline history={history} />
+              {hasArchitecture && (<>
+                <div className="h-2" />
+                <div className="rounded-lg border border-outline p-3">
+                  <h4 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Building Details</h4>
+                  <ArchitectureTab building={building} />
+                </div>
+              </>)}
+            </div>
+          </details>
+        )}
+      </div>
+
+
+      {/* Photos */}
       {hasPhotos && (
         <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
           <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Photos</h3>
           <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
-        </div>
-      )}
-
-      {hasHistory && (
-        <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
-          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">History</h3>
-          <HistoryTab history={history} description={description} />
-        </div>
-      )}
-
-      {hasArchitecture && (
-        <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
-          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Building Details</h3>
-          <ArchitectureTab building={building} />
         </div>
       )}
     </div>
