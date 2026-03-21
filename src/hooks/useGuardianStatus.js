@@ -80,48 +80,47 @@ const useGuardianStatus = create((set, get) => ({
   },
 }))
 
-// Async init — check for ?admin, ?logout, or existing session
-;(async function initAdmin() {
-  try {
-    const params = new URLSearchParams(window.location.search)
+// Sync init — check URL params immediately (before React mounts)
+const _initParams = new URLSearchParams(window.location.search)
 
-    // ?logout — drop everything
-    if (params.has('logout')) {
-      localStorage.removeItem(ADMIN_KEY)
-      localStorage.removeItem(GUARDIAN_KEY)
-      sessionStorage.removeItem(TOKEN_KEY)
-      params.delete('logout')
-      const clean = params.toString()
-      window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
-      return
-    }
+if (_initParams.has('logout')) {
+  localStorage.removeItem(ADMIN_KEY)
+  localStorage.removeItem(GUARDIAN_KEY)
+  sessionStorage.removeItem(TOKEN_KEY)
+  _initParams.delete('logout')
+  const clean = _initParams.toString()
+  window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
+}
 
-    // ?admin — open the passphrase modal (don't use window.prompt)
-    if (params.has('admin')) {
-      params.delete('admin')
-      const clean = params.toString()
-      window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
-      // Delay slightly so React has mounted
-      setTimeout(() => useGuardianStatus.getState().openAdminPrompt(), 300)
-      return
-    }
+// Flag for ?admin — will open modal once React mounts
+const _wantsAdmin = _initParams.has('admin')
+if (_wantsAdmin) {
+  _initParams.delete('admin')
+  const clean = _initParams.toString()
+  window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
+  // Set immediately on the store (before any component reads it)
+  useGuardianStatus.setState({ adminPromptOpen: true })
+}
 
-    // Returning session — verify stored token
-    if (localStorage.getItem(ADMIN_KEY) === 'true') {
-      const token = sessionStorage.getItem(TOKEN_KEY)
-      if (token) {
-        const res = await adminVerify(token)
-        if (res?.data?.valid) {
-          useGuardianStatus.setState({ isAdmin: true })
-          return
-        }
+// Async: verify existing session token (doesn't affect mounting)
+if (!_wantsAdmin && localStorage.getItem(ADMIN_KEY) === 'true') {
+  const _token = sessionStorage.getItem(TOKEN_KEY)
+  if (_token) {
+    adminVerify(_token).then(res => {
+      if (res?.data?.valid) {
+        useGuardianStatus.setState({ isAdmin: true })
+      } else {
+        localStorage.removeItem(ADMIN_KEY)
+        sessionStorage.removeItem(TOKEN_KEY)
       }
+    }).catch(() => {
       localStorage.removeItem(ADMIN_KEY)
       sessionStorage.removeItem(TOKEN_KEY)
-    }
-  } catch (err) {
-    console.error('[Admin init]', err)
+    })
+  } else {
+    localStorage.removeItem(ADMIN_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
   }
-})()
+}
 
 export default useGuardianStatus
