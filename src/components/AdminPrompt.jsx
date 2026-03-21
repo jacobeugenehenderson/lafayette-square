@@ -24,7 +24,7 @@ export default function AdminPrompt() {
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <form
         onSubmit={handleSubmit}
         className="bg-neutral-900 border border-outline rounded-2xl p-6 w-[min(320px,calc(100vw-3rem))] space-y-4 font-mono"

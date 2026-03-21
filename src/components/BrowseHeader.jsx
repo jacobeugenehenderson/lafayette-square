@@ -24,7 +24,7 @@ export default function BrowseHeader() {
 
   return (
     <div className="absolute top-0 left-0 right-0 z-50 select-none">
-      <div className="relative flex items-center gap-4 pl-5 pr-16 pt-5 pb-5 bg-[rgba(0,0,0,0.75)] border-b border-white/10">
+      <div className="relative flex items-center gap-4 pl-5 pr-16 pb-5 bg-[rgba(0,0,0,0.75)] border-b border-white/10" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 20px)' }}>
         {/* Mini compass rose */}
         <div className="flex-shrink-0">
           <svg
@@ -47,7 +47,7 @@ export default function BrowseHeader() {
         {!isLive ? (
           <button
             onClick={() => useTimeOfDay.getState().returnToLive()}
-            className="absolute top-5 right-5 w-9 h-9 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 20px)' }} className="absolute right-5 w-9 h-9 rounded-full backdrop-blur-md bg-green-500/20 border border-green-400/40 text-green-400 transition-all duration-200 flex items-center justify-center hover:bg-green-500/30"
             aria-label="Return to live time"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -61,7 +61,7 @@ export default function BrowseHeader() {
         ) : (
           <button
             onClick={() => useCamera.getState().goHero()}
-            className="absolute top-5 right-5 w-9 h-9 rounded-full backdrop-blur-md bg-surface-container-high border border-outline text-on-surface-variant transition-all duration-200 flex items-center justify-center hover:bg-surface-container-highest hover:text-on-surface"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 20px)' }} className="absolute right-5 w-9 h-9 rounded-full backdrop-blur-md bg-surface-container-high border border-outline text-on-surface-variant transition-all duration-200 flex items-center justify-center hover:bg-surface-container-highest hover:text-on-surface"
             aria-label="Return to hero view"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
