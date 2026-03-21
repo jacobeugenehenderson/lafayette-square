@@ -203,9 +203,32 @@ function SearchDropdown({ results, selectPlace }) {
   )
 }
 
-// Hero search — always visible, centered, floating
+// Hero search — fades out after 10s idle, reappears on tap/interaction
+const IDLE_MS = 10000
+
 export function HeroSearch() {
   const { query, setQuery, focused, setFocused, inputRef, results, selectPlace, handleKeyDown } = useGlassSearch()
+  const [visible, setVisible] = useState(true)
+  const idleTimer = useRef(null)
+
+  const resetIdle = useCallback(() => {
+    setVisible(true)
+    clearTimeout(idleTimer.current)
+    idleTimer.current = setTimeout(() => setVisible(false), IDLE_MS)
+  }, [])
+
+  useEffect(() => {
+    resetIdle()
+    const events = ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'wheel']
+    events.forEach(e => window.addEventListener(e, resetIdle, { passive: true }))
+    return () => {
+      clearTimeout(idleTimer.current)
+      events.forEach(e => window.removeEventListener(e, resetIdle))
+    }
+  }, [resetIdle])
+
+  // Stay visible while focused or has query
+  const forceVisible = focused || query.length > 0
 
   const showCard = useSelectedBuilding(s => s.showCard)
   const bulletinOpen = useBulletin(s => s.modalOpen)
@@ -224,7 +247,9 @@ export function HeroSearch() {
       className="absolute left-1/2 -translate-x-1/2 z-40 w-[min(420px,calc(100vw-4rem))]"
       style={{
         top: showDropdown ? '12%' : '35%',
-        transition: 'top 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+        opacity: (visible || forceVisible) ? 1 : 0,
+        pointerEvents: (visible || forceVisible) ? 'auto' : 'none',
+        transition: 'top 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease',
       }}
     >
       <div className="glass-panel flex items-center gap-2.5 px-4 py-2.5 rounded-2xl">

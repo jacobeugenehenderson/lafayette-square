@@ -1026,7 +1026,7 @@ function RatingSummary({ rating, reviewCount, distribution }) {
 // ─── Review form (shown to all non-guardians) ──────────────────────────────
 const MAX_REVIEW_CHARS = 500
 
-function ReviewForm({ listingId, onSubmitted, hasExisting }) {
+function ReviewForm({ listingId, onSubmitted, hasExisting, anonymous }) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [rating, setRating] = useState(0)
@@ -1079,9 +1079,9 @@ function ReviewForm({ listingId, onSubmitted, hasExisting }) {
           onClick={() => setOpen(true)}
           className="flex items-center gap-2.5 w-full text-left py-2 group"
         >
-          <AvatarCircle emoji={avatar} vignette={vignette} size={9} fallback={handle ? handle[0].toUpperCase() : '?'} />
+          <AvatarCircle emoji={anonymous ? null : avatar} vignette={anonymous ? null : vignette} size={9} fallback={anonymous ? 'R' : (handle ? handle[0].toUpperCase() : '?')} />
           <span className="text-body-sm text-on-surface-subtle group-hover:text-on-surface transition-colors">
-            {hasExisting ? 'Update Review' : 'Add Review'}
+            {hasExisting ? 'Update Post' : 'Add Post'}
           </span>
         </button>
         <p className="text-caption text-on-surface-disabled leading-relaxed mt-1">
@@ -1094,9 +1094,9 @@ function ReviewForm({ listingId, onSubmitted, hasExisting }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
       <div className="flex items-center gap-2.5">
-        <AvatarCircle emoji={avatar} vignette={vignette} size={9} fallback={handle ? handle[0].toUpperCase() : '?'} />
+        <AvatarCircle emoji={anonymous ? null : avatar} vignette={anonymous ? null : vignette} size={9} fallback={anonymous ? 'R' : (handle ? handle[0].toUpperCase() : '?')} />
         <div>
-          <p className="text-on-surface-medium text-body-sm font-medium">{handle ? `@${handle}` : 'Anonymous'}</p>
+          <p className="text-on-surface-medium text-body-sm font-medium">{anonymous ? 'Resident' : (handle ? `@${handle}` : 'Anonymous')}</p>
         </div>
       </div>
       <FleurPicker value={rating} onChange={setRating} />
@@ -1194,7 +1194,7 @@ function ReplyForm({ reviewId, listingId, onSubmitted }) {
 }
 
 // ─── Tab: Reviews ────────────────────────────────────────────────────
-function ReviewsTab({ listingId, isGuardian }) {
+function ReviewsTab({ listingId, isGuardian, anonymous }) {
   const [reviews, setReviews] = useState([])
   const [stats, setStats] = useState(null)
   const [loaded, setLoaded] = useState(false)
@@ -1237,11 +1237,17 @@ function ReviewsTab({ listingId, isGuardian }) {
 
   return (
     <div>
-      {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} hasExisting={hasExisting} />}
+      {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} hasExisting={hasExisting} anonymous={anonymous} />}
+
+      {reviews.length === 0 && loaded && (
+        <div className="text-center py-6">
+          <p className="text-on-surface-disabled text-body-sm">No posts yet. Be the first to share.</p>
+        </div>
+      )}
 
       <div className="space-y-3">
         {reviews.map((review, idx) => {
-          const displayName = review.handle ? `@${review.handle}` : 'Local'
+          const displayName = anonymous ? 'Resident' : (review.handle ? `@${review.handle}` : 'Local')
           const replies = review.replies || []
           const hasText = review.text && review.text.trim()
 
@@ -1250,7 +1256,7 @@ function ReviewsTab({ listingId, isGuardian }) {
             return (
               <div key={review.id || idx} className="border-b border-outline-variant pb-3 last:border-0">
                 <div className="flex items-center gap-2.5">
-                  <AvatarCircle emoji={review.avatar} vignette={review.vignette} size={7} fallback={review.handle ? review.handle[0].toUpperCase() : 'L'} />
+                  <AvatarCircle emoji={anonymous ? null : review.avatar} vignette={anonymous ? null : review.vignette} size={7} fallback={anonymous ? 'R' : (review.handle ? review.handle[0].toUpperCase() : 'L')} />
                   <span className="text-body-sm font-medium text-on-surface">{displayName}</span>
                   {review.rating && <FleurRating rating={review.rating} size="sm" />}
                   <span className="text-caption text-on-surface-disabled ml-auto">{relativeTime(review.created_at || review.timestamp)}</span>
@@ -1263,7 +1269,7 @@ function ReviewsTab({ listingId, isGuardian }) {
           return (
             <div key={review.id || idx} className="border-b border-outline-variant pb-4 last:border-0">
               <div className="flex items-start gap-3">
-                <AvatarCircle emoji={review.avatar} vignette={review.vignette} size={9} fallback={review.handle ? review.handle[0].toUpperCase() : 'L'} />
+                <AvatarCircle emoji={anonymous ? null : review.avatar} vignette={anonymous ? null : review.vignette} size={9} fallback={anonymous ? 'R' : (review.handle ? review.handle[0].toUpperCase() : 'L')} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span className="text-body font-medium text-on-surface">{displayName}</span>
@@ -1280,7 +1286,7 @@ function ReviewsTab({ listingId, isGuardian }) {
               {replies.map((reply, ri) => (
                 <div key={reply.id || ri} className="flex items-start gap-2.5 mt-3 ml-10 pl-3 border-l-2 border-emerald-500/30">
                   <div className="flex-shrink-0 relative">
-                    <AvatarCircle emoji={reply.avatar} vignette={reply.vignette} size={5} fallback={reply.handle ? reply.handle[0].toUpperCase() : 'G'} />
+                    <AvatarCircle emoji={anonymous ? null : reply.avatar} vignette={anonymous ? null : reply.vignette} size={5} fallback="G" />
                     {/* Guardian badge */}
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-surface flex items-center justify-center">
                       <svg className="w-1.5 h-1.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
@@ -1290,7 +1296,7 @@ function ReviewsTab({ listingId, isGuardian }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-body-sm font-medium text-emerald-400/90">{reply.handle ? `@${reply.handle}` : 'Guardian'}</span>
+                      <span className="text-body-sm font-medium text-emerald-400/90">{anonymous ? 'Guardian' : (reply.handle ? `@${reply.handle}` : 'Guardian')}</span>
                       <span className="text-caption text-on-surface-disabled">{relativeTime(reply.created_at)}</span>
                     </div>
                     <p className="text-body-sm text-on-surface-medium mt-0.5 leading-relaxed">{reply.text}</p>
@@ -2350,71 +2356,46 @@ function LobbyTab({ buildingId }) {
   )
 }
 
-// ─── Residential About Tab (consolidated single-scroll) ──────────────
+// ─── Residential About Tab (mirrors restaurant layout) ──────────────
 function ResidentialAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
   const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
-  const hasHistory = !!(history?.length || description)
-  const sections = [{ id: 'about-overview', label: 'Overview' }]
-  if (hasPhotos) sections.push({ id: 'about-photos', label: 'Photos' })
-  if (hasHistory) sections.push({ id: 'about-history', label: 'History' })
-  if (hasArchitecture) sections.push({ id: 'about-details', label: 'Details' })
-
-  const scrollTo = (id) => {
-    const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
 
   return (
     <div className="space-y-5">
-      {/* Anchor chips */}
-      {sections.length > 1 && (
-        <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#141414] border-b border-outline-variant">
-          <div className="flex gap-1.5 overflow-x-auto">
-            {sections.map(s => (
-              <button
-                key={s.id}
-                onClick={() => scrollTo(s.id)}
-                className="flex-shrink-0 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm hover:bg-surface-container-highest hover:text-on-surface transition-colors"
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Overview */}
-      <div id="about-overview">
+      {/* About card — overview + history inside (same as restaurant) */}
+      <div className="card space-y-3">
         <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={true} />
+
+        {history?.length > 0 && (
+          <details className="group">
+            <summary className="history-toggle">
+              <span className="group-open:hidden">{history[0]?.year || ''} – Present</span>
+              <span className="hidden group-open:inline">Less</span>
+              <svg className="w-3.5 h-3.5 transform group-open:rotate-180 transition-transform duration-300 ease-out" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="mt-3 pt-3 border-t border-outline-variant space-y-3">
+              <h4 className="section-heading">History</h4>
+              <HistoryTimeline history={history} />
+              {hasArchitecture && (<>
+                <div className="h-2" />
+                <div className="rounded-lg border border-outline p-3">
+                  <h4 className="section-heading mb-2">Building Details</h4>
+                  <ArchitectureTab building={building} />
+                </div>
+              </>)}
+            </div>
+          </details>
+        )}
       </div>
 
       {/* Photos */}
       {hasPhotos && (
-        <div id="about-photos" className="rounded-xl bg-surface-container border border-outline-variant p-4">
-          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Photos</h3>
+        <div className="card">
+          <h3 className="section-heading mb-3">Photos</h3>
           <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
         </div>
-      )}
-
-      {/* More rolldown — history + building details */}
-      {(hasHistory || hasArchitecture) && (
-        <details className="group">
-          <summary className="cursor-pointer text-body-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1.5">
-            <span>More</span>
-            <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform text-on-surface-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </summary>
-          <div className="mt-3 space-y-4">
-            {history?.length > 0 && <HistoryTimeline history={history} />}
-            {hasArchitecture && (
-              <div className="pt-3 border-t border-outline-variant">
-                <h4 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Building Details</h4>
-                <ArchitectureTab building={building} />
-              </div>
-            )}
-          </div>
-        </details>
       )}
     </div>
   )
@@ -2428,12 +2409,12 @@ function PlaceAboutTab({ listing, building, isGuardian, history, description, ha
   return (
     <div className="space-y-5">
       {/* About card — overview + history inside */}
-      <div className="rounded-xl bg-surface-container border border-outline-variant p-4 space-y-3">
+      <div className="card space-y-3">
         <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={false} />
 
         {history?.length > 0 && (
           <details className="group">
-            <summary className="cursor-pointer flex items-center justify-center gap-2 py-2 rounded-lg border border-amber-400/25 bg-amber-400/5 text-body-sm font-medium text-amber-400/90 hover:bg-amber-400/10 hover:border-amber-400/40 transition-colors [&::-webkit-details-marker]:hidden list-none">
+            <summary className="history-toggle">
               <span className="group-open:hidden">{history[0]?.year || ''} – Present</span>
               <span className="hidden group-open:inline">Less</span>
               <svg className="w-3.5 h-3.5 transform group-open:rotate-180 transition-transform duration-300 ease-out" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2441,12 +2422,12 @@ function PlaceAboutTab({ listing, building, isGuardian, history, description, ha
               </svg>
             </summary>
             <div className="mt-3 pt-3 border-t border-outline-variant space-y-3">
-              <h4 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">History</h4>
+              <h4 className="section-heading">History</h4>
               <HistoryTimeline history={history} />
               {hasArchitecture && (<>
                 <div className="h-2" />
                 <div className="rounded-lg border border-outline p-3">
-                  <h4 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Building Details</h4>
+                  <h4 className="section-heading mb-2">Building Details</h4>
                   <ArchitectureTab building={building} />
                 </div>
               </>)}
@@ -2458,8 +2439,8 @@ function PlaceAboutTab({ listing, building, isGuardian, history, description, ha
 
       {/* Photos */}
       {hasPhotos && (
-        <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
-          <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Photos</h3>
+        <div className="card">
+          <h3 className="section-heading mb-3">Photos</h3>
           <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
         </div>
       )}
@@ -2775,7 +2756,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
 
       {/* Order summary */}
       {ordering && cartCount > 0 && (
-        <div className="rounded-xl bg-surface-container border border-outline-variant p-4 space-y-2 font-mono">
+        <div className="card space-y-2 font-mono">
           <div className="flex justify-between text-body-sm text-on-surface-variant">
             <span>Subtotal ({cartCount} item{cartCount !== 1 ? 's' : ''})</span>
             <span className="tabular-nums">${(cartTotal / 100).toFixed(2)}</span>
@@ -3195,13 +3176,13 @@ function MenuEditor({ menu, activeMenuType, onSave, onCancel }) {
 function CommunityTab({ listingId, isGuardian }) {
   return (
     <div className="space-y-5">
-      <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
-        <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Reviews</h3>
+      <div className="card">
+        <h3 className="section-heading mb-3">Reviews</h3>
         <ReviewsTab listingId={listingId} isGuardian={isGuardian} />
       </div>
 
-      <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
-        <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Ticker</h3>
+      <div className="card">
+        <h3 className="section-heading mb-3">Ticker</h3>
         <EventsTab listingId={listingId} isGuardian={isGuardian} />
       </div>
     </div>
@@ -3282,10 +3263,10 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const tabs = useMemo(() => {
     if (hasListingInfo) {
       if (isResidential) {
-        // ── Residential: consolidated tabs ──
+        // ── Residential: About + Community (public) + Lobby (residents only) ──
         const t = [{ id: 'about', label: 'About' }]
-        if (isResidentHere) t.push({ id: 'lobby', label: 'Lobby' })
-        if (isResidentHere || isAdmin) t.push({ id: 'guardians', label: 'QR' })
+        t.push({ id: 'community', label: 'Community' })
+        if (isResidentHere || isAdmin) t.push({ id: 'lobby', label: 'Lobby' })
         return t
       }
       // ── Non-residential listing path: About + Menu + Reviews + Guardians ──
@@ -3582,25 +3563,39 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           {currentTab === 'menu' && <MenuTab listing={activeListing} building={building} isGuardian={isGuardian} isAdmin={isAdmin} />}
           {/* Reviews tab: ratings + reviews (public) */}
           {currentTab === 'reviews' && (
-            <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
+            <div className="card">
               <ReviewsTab listingId={listingId} isGuardian={isGuardian} />
             </div>
           )}
           {/* Guardians tab: ticker posts + QR codes (guardian/admin only) */}
           {currentTab === 'guardians' && (
             <div className="space-y-5">
-              <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
-                <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Ticker</h3>
+              <div className="card">
+                <h3 className="section-heading mb-3">Ticker</h3>
                 <EventsTab listingId={listingId} isGuardian={isGuardian} />
               </div>
-              <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
-                <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">QR Codes</h3>
+              <div className="card">
+                <h3 className="section-heading mb-3">QR Codes</h3>
                 <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />
               </div>
             </div>
           )}
-          {/* Lobby tab: residential only */}
-          {currentTab === 'lobby' && <LobbyTab buildingId={building?.id} />}
+          {/* Community tab: residential public reviews */}
+          {currentTab === 'community' && (
+            <div className="card">
+              <ReviewsTab listingId={listingId} isGuardian={isGuardian} anonymous />
+            </div>
+          )}
+          {/* Lobby tab: private resident posts + QR */}
+          {currentTab === 'lobby' && (
+            <div className="space-y-5">
+              <LobbyTab buildingId={building?.id} />
+              <div className="card">
+                <h3 className="section-heading mb-3">Resident QR</h3>
+                <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />
+              </div>
+            </div>
+          )}
           {/* Property card tabs */}
           {currentTab === 'property' && (
             <>

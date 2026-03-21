@@ -157,6 +157,48 @@ input, textarea, select {
     background: #10b981;
   }
 
+  /* ── PlaceCard reusable patterns ─────────────────────────── */
+
+  /* Card container — rounded section with border */
+  .card {
+    border-radius: var(--radius-xl, 0.75rem);
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    padding: 1rem;
+  }
+
+  /* Section heading — uppercase label */
+  .section-heading {
+    font-size: var(--type-label-sm);
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* History collapse trigger */
+  .history-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: var(--radius-lg, 0.5rem);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    background: rgba(251, 191, 36, 0.05);
+    font-size: var(--type-body-sm);
+    font-weight: 500;
+    color: rgba(251, 191, 36, 0.9);
+    transition: background 0.15s, border-color 0.15s;
+    list-style: none;
+  }
+  .history-toggle::-webkit-details-marker { display: none; }
+  .history-toggle:hover {
+    background: rgba(251, 191, 36, 0.1);
+    border-color: rgba(251, 191, 36, 0.4);
+  }
+
   /* ── Interaction utilities ────────────────────────────────── */
   .no-select {
     -webkit-user-select: none;
