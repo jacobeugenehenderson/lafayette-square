@@ -2341,10 +2341,10 @@ function PlaceAboutTab({ listing, building, isGuardian, history, description, ha
 
         {history?.length > 0 && (
           <details className="group">
-            <summary className="cursor-pointer flex items-center gap-1.5 text-body-sm text-amber-400/80 hover:text-amber-300 transition-colors [&::-webkit-details-marker]:hidden list-none">
-              <span className="group-open:hidden">More</span>
+            <summary className="cursor-pointer flex items-center justify-center gap-2 py-2 rounded-lg border border-amber-400/25 bg-amber-400/5 text-body-sm font-medium text-amber-400/90 hover:bg-amber-400/10 hover:border-amber-400/40 transition-colors [&::-webkit-details-marker]:hidden list-none">
+              <span className="group-open:hidden">{history[0]?.year || ''} – Present</span>
               <span className="hidden group-open:inline">Less</span>
-              <svg className="w-3 h-3 transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 transform group-open:rotate-180 transition-transform duration-300 ease-out" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </summary>
