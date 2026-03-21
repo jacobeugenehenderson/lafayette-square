@@ -2019,8 +2019,9 @@ textarea.fldInp {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 52vh;
+  max-height: min(52vh, 320px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--ui-stroke-hover) transparent;
