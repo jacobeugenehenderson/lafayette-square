@@ -168,7 +168,7 @@ export default function EventTicker() {
     if (!item.listing_id) return
     const listing = useListings.getState().getById(item.listing_id)
     const buildingId = listing?.building_id || item._buildingId
-    useSelectedBuilding.getState().select(item.listing_id, buildingId, 'ticker')
+    useSelectedBuilding.getState().select(item.listing_id, buildingId, item._source === 'event' ? 'ticker' : 'menu')
   }, [])
 
   const courierOpen = useCourierDash(s => s.open)
@@ -190,7 +190,7 @@ export default function EventTicker() {
         style={{
           height: 'calc(env(safe-area-inset-top, 0px) + 82px)',
           paddingTop: 'env(safe-area-inset-top, 0px)',
-          background: 'linear-gradient(90deg, rgba(0,0,0,0.6) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.6) 100%)',
+          background: 'linear-gradient(90deg, rgba(0,0,0,0.45) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.45) 100%)',
         }}
       >
         {/* Spectral bottom-edge highlight */}
