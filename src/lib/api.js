@@ -184,8 +184,8 @@ export async function postClaim(deviceHash, listingId, secret) {
 
 // ── Reviews (local-only) ────────────────────────────────────────────────
 
-export async function postReview(deviceHash, listingId, text, rating, handle) {
-  return post('review', { device_hash: deviceHash, listing_id: listingId, business_id: listingId, text, rating, handle: handle || '' })
+export async function postReview(deviceHash, listingId, text, rating, handle, avatar, vignette) {
+  return post('review', { device_hash: deviceHash, listing_id: listingId, business_id: listingId, text, rating, handle: handle || '', avatar: avatar || '', vignette: vignette || '' })
 }
 
 export async function getReviews(listingId) {

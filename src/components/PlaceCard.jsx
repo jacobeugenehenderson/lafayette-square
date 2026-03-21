@@ -149,16 +149,15 @@ function FleurRating({ rating, size = 'sm', count }) {
         {[0, 1, 2, 3, 4].map(i => {
           const isFull = i < full
           const isHalf = i === full && hasHalf
-          const active = isFull || isHalf
           return (
-            <span
-              key={i}
-              className={`${fleurSize} leading-none`}
-              style={{
-                opacity: isHalf ? 0.5 : active ? 1 : 0.2,
-                filter: active ? 'none' : 'grayscale(1)',
-              }}
-            >⚜️</span>
+            <span key={i} className={`${fleurSize} leading-none relative inline-block`}>
+              {/* Base: silver/inactive fleur */}
+              <span style={{ filter: 'grayscale(1)', opacity: isFull ? 0 : 0.2 }}>⚜️</span>
+              {/* Overlay: full-color fleur, clipped for half */}
+              {(isFull || isHalf) && (
+                <span className="absolute inset-0" style={{ clipPath: isHalf ? 'inset(0 50% 0 0)' : undefined }}>⚜️</span>
+              )}
+            </span>
           )
         })}
       </div>
@@ -977,13 +976,14 @@ function FleurPicker({ value, onChange }) {
               onMouseLeave={() => setHover(0)}
               onClick={() => onChange(i)}
             />
-            <span
-              className="text-2xl leading-none transition-all"
-              style={{
-                opacity: active >= i ? 1 : (active >= i - 0.5) ? 0.5 : 0.2,
-                filter: (active >= i || active >= i - 0.5) ? 'none' : 'grayscale(1)',
-              }}
-            >⚜️</span>
+            <span className="text-2xl leading-none transition-all relative inline-block">
+              {/* Base: silver/inactive fleur */}
+              <span style={{ filter: 'grayscale(1)', opacity: active >= i ? 0 : 0.2 }}>⚜️</span>
+              {/* Overlay: full-color, clipped to left half for half-ratings */}
+              {(active >= i - 0.5) && (
+                <span className="absolute inset-0" style={{ clipPath: active >= i ? undefined : 'inset(0 50% 0 0)' }}>⚜️</span>
+              )}
+            </span>
           </div>
         ))}
       </div>
@@ -1013,7 +1013,7 @@ function RatingSummary({ rating, reviewCount, distribution }) {
             <div key={star} className="flex items-center gap-2">
               <span className="text-caption text-on-surface-subtle w-2 text-right">{star}</span>
               <div className="flex-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: FLEUR_COLOR }} />
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: FLEUR_BG }} />
               </div>
             </div>
           )
@@ -1033,6 +1033,8 @@ function ReviewForm({ listingId, onSubmitted }) {
   const [gateMessage, setGateMessage] = useState(null)
   const [success, setSuccess] = useState(false)
   const handle = useHandle(s => s.handle)
+  const avatar = useHandle(s => s.avatar)
+  const vignette = useHandle(s => s.vignette)
 
   const charPct = text.length / MAX_REVIEW_CHARS
 
@@ -1043,7 +1045,7 @@ function ReviewForm({ listingId, onSubmitted }) {
     setGateMessage(null)
     try {
       const dh = await getDeviceHash()
-      const res = await postReview(dh, listingId, text.trim().slice(0, MAX_REVIEW_CHARS), rating, handle)
+      const res = await postReview(dh, listingId, text.trim().slice(0, MAX_REVIEW_CHARS), rating, handle, avatar, vignette)
       if (res?.data?.status === 'not_townie' || res?.status === 'not_townie') {
         setGateMessage(res?.data?.message || 'Become a Townie to post reviews \u2014 visit 3 local spots within 14 days by scanning their QR codes.')
       } else {
@@ -1069,7 +1071,13 @@ function ReviewForm({ listingId, onSubmitted }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
-      <p className="text-on-surface-medium text-body-sm font-medium">Write a review</p>
+      <div className="flex items-center gap-2.5">
+        <AvatarCircle emoji={avatar} vignette={vignette} size={12} fallback={handle ? handle[0].toUpperCase() : '?'} />
+        <div>
+          <p className="text-on-surface-medium text-body-sm font-medium">{handle ? `@${handle}` : 'Write a review'}</p>
+          {handle && <p className="text-on-surface-disabled text-caption">Write a review</p>}
+        </div>
+      </div>
       <FleurPicker value={rating} onChange={setRating} />
       <div className="relative">
         <textarea
@@ -1097,6 +1105,9 @@ function ReviewForm({ listingId, onSubmitted }) {
       >
         {submitting ? 'Posting...' : 'Post Review'}
       </button>
+      <p className="text-caption text-on-surface-disabled leading-relaxed">
+        Become a Townie to post reviews — visit 3 local spots within 14 days by scanning their QR codes.
+      </p>
     </form>
   )
 }
@@ -1196,17 +1207,7 @@ function ReviewsTab({ listingId, isGuardian }) {
 
   return (
     <div>
-      {stats && stats.review_count > 0 && (
-        <RatingSummary rating={stats.rating} reviewCount={stats.review_count} distribution={stats.distribution} />
-      )}
-
       {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} />}
-
-      {reviews.length === 0 && loaded && (
-        <div className="flex justify-center py-8">
-          <FleurRating rating={0} size="lg" />
-        </div>
-      )}
 
       <div className="space-y-4">
         {reviews.map((review, idx) => {
@@ -3210,7 +3211,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const description = activeListing?.description || null
   const hasListingInfo = !!activeListing
   const listingId = activeListing?.id || null
-  const isAdmin = import.meta.env.DEV || isStoreAdmin
+  const isAdmin = isStoreAdmin
   const isGuardian = isAdmin || (listingId ? isGuardianOf(listingId) : false)
 
   const placeholderPhotos = getPlaceholderPhotos(category)
