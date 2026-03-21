@@ -2079,7 +2079,7 @@
       "phone": "(314) 858-6100",
       "website": "https://www.clementinescreamery.com",
       "category": "dining",
-      "subcategory": "restaurants",
+      "subcategory": "cafes",
       "building_id": "bldg-1132",
       "hours": {
         "monday": {
@@ -2155,12 +2155,12 @@
       ],
       "description": "St. Louis's first microcreamery, churning small-batch ice cream in \"naughty\" (boozy) and \"nice\" varieties. The gooey butter cake flavor is the #1 seller. Named Missouri's most popular ice cream shop by Buzzfeed and Yelp.",
       "tags": [
+        "cafes",
         "desserts",
         "vegan",
         "pet-friendly",
         "catering",
-        "delivery",
-        "restaurants"
+        "delivery"
       ]
     },
     {
