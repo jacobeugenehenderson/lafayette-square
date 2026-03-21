@@ -1027,17 +1027,29 @@ function RatingSummary({ rating, reviewCount, distribution }) {
 const MAX_REVIEW_CHARS = 500
 
 function ReviewForm({ listingId, onSubmitted, hasExisting, anonymous }) {
-  const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [rating, setRating] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [gateMessage, setGateMessage] = useState(null)
   const [success, setSuccess] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photoData, setPhotoData] = useState(null)
+  const fileRef = useRef(null)
   const handle = useHandle(s => s.handle)
   const avatar = useHandle(s => s.avatar)
   const vignette = useHandle(s => s.vignette)
 
   const charPct = text.length / MAX_REVIEW_CHARS
+
+  const handlePhoto = useCallback(async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const result = await compressImage(file)
+    if (result) { setPhotoPreview(result.base64); setPhotoData(result.base64) }
+    if (fileRef.current) fileRef.current.value = ''
+  }, [])
+
+  const clearPhoto = useCallback(() => { setPhotoPreview(null); setPhotoData(null) }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -1046,13 +1058,13 @@ function ReviewForm({ listingId, onSubmitted, hasExisting, anonymous }) {
     setGateMessage(null)
     try {
       const dh = await getDeviceHash()
-      const res = await postReview(dh, listingId, text.trim().slice(0, MAX_REVIEW_CHARS), rating, handle, avatar, vignette)
+      const res = await postReview(dh, listingId, text.trim().slice(0, MAX_REVIEW_CHARS), rating || null, handle, avatar, vignette, photoData)
       if (res?.data?.status === 'not_townie' || res?.status === 'not_townie') {
         setGateMessage(res?.data?.message || 'Become a Townie to post reviews \u2014 visit 3 local spots within 14 days by scanning their QR codes.')
       } else {
         setText('')
         setRating(0)
-        setOpen(false)
+        clearPhoto()
         setSuccess(true)
         onSubmitted()
         setTimeout(() => setSuccess(false), 3000)
@@ -1066,27 +1078,7 @@ function ReviewForm({ listingId, onSubmitted, hasExisting, anonymous }) {
     return (
       <div className="border-b border-outline-variant pb-4 mb-4 text-center py-4">
         <span className="text-lg">&#10024;</span>
-        <p className="text-on-surface-medium text-body font-medium mt-1">Thanks for your review!</p>
-      </div>
-    )
-  }
-
-  if (!open) {
-    return (
-      <div className="border-b border-outline-variant pb-3 mb-4">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-2.5 w-full text-left py-2 group"
-        >
-          <AvatarCircle emoji={anonymous ? null : avatar} vignette={anonymous ? null : vignette} size={9} fallback={anonymous ? 'R' : (handle ? handle[0].toUpperCase() : '?')} />
-          <span className="text-body-sm text-on-surface-subtle group-hover:text-on-surface transition-colors">
-            {hasExisting ? 'Update Post' : 'Add Post'}
-          </span>
-        </button>
-        <p className="text-caption text-on-surface-disabled leading-relaxed mt-1">
-          Become a Townie to rate and review — visit 3 local spots within 14 days by scanning their QR codes.
-        </p>
+        <p className="text-on-surface-medium text-body font-medium mt-1">{anonymous ? 'Posted!' : 'Thanks for your review!'}</p>
       </div>
     )
   }
@@ -1094,9 +1086,10 @@ function ReviewForm({ listingId, onSubmitted, hasExisting, anonymous }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
       <div className="flex items-center gap-2.5">
-        <AvatarCircle emoji={anonymous ? null : avatar} vignette={anonymous ? null : vignette} size={9} fallback={anonymous ? 'R' : (handle ? handle[0].toUpperCase() : '?')} />
+        <AvatarCircle emoji={avatar} vignette={vignette} size={9} fallback={handle ? handle[0].toUpperCase() : '?'} />
         <div>
-          <p className="text-on-surface-medium text-body-sm font-medium">{anonymous ? 'Resident' : (handle ? `@${handle}` : 'Anonymous')}</p>
+          <p className="text-on-surface-medium text-body-sm font-medium">{handle ? `@${handle}` : 'Anonymous'}</p>
+          {anonymous && <p className="text-caption text-on-surface-disabled">Visible to others as Resident</p>}
         </div>
       </div>
       <FleurPicker value={rating} onChange={setRating} />
@@ -1104,7 +1097,7 @@ function ReviewForm({ listingId, onSubmitted, hasExisting, anonymous }) {
         <textarea
           value={text}
           onChange={e => { if (e.target.value.length <= MAX_REVIEW_CHARS) setText(e.target.value) }}
-          placeholder="Add a written review (optional)"
+          placeholder={anonymous ? 'Post to the community...' : 'Write a review...'}
           rows={3}
           className="input w-full resize-none"
         />
@@ -1114,27 +1107,42 @@ function ReviewForm({ listingId, onSubmitted, hasExisting, anonymous }) {
           </span>
         )}
       </div>
+      {photoPreview && (
+        <div className="relative inline-block">
+          <img src={photoPreview} alt="Upload preview" className="rounded-lg max-h-32" />
+          <button type="button" onClick={clearPhoto} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-surface-container border border-outline-variant text-on-surface-disabled hover:text-on-surface-variant text-xs flex items-center justify-center">&times;</button>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="px-2 py-1 rounded-lg text-on-surface-disabled hover:text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          title="Add photo"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v13.5A1.5 1.5 0 003.75 21zM8.25 8.625a1.125 1.125 0 11-2.25 0 1.125 1.125 0 012.25 0z" />
+          </svg>
+        </button>
+      </div>
       {gateMessage && (
         <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
           <p className="text-amber-300/90 text-xs leading-relaxed">{gateMessage}</p>
         </div>
       )}
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={submitting || rating === 0}
-          className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          {submitting ? 'Posting...' : 'Post'}
-        </button>
-        <button
-          type="button"
-          onClick={() => { setOpen(false); setText(''); setRating(0); setGateMessage(null) }}
-          className="px-4 py-2 rounded-lg text-on-surface-subtle text-body-sm transition-colors hover:text-on-surface"
-        >
-          Cancel
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={submitting || rating === 0}
+        className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        {submitting ? 'Posting...' : 'Post'}
+      </button>
+      {!anonymous && (
+        <p className="text-caption text-on-surface-disabled leading-relaxed">
+          Become a Townie to rate and review — visit 3 local spots within 14 days by scanning their QR codes.
+        </p>
+      )}
     </form>
   )
 }
@@ -1199,6 +1207,7 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
   const [stats, setStats] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const updateListing = useListings(s => s.updateListing)
+  const listing = useListings(s => s.listings.find(l => l.id === listingId))
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -1237,7 +1246,7 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
 
   return (
     <div>
-      {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} hasExisting={hasExisting} anonymous={anonymous} />}
+      {(!isGuardian || anonymous) && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} hasExisting={hasExisting} anonymous={anonymous} />}
 
       {reviews.length === 0 && loaded && (
         <div className="text-center py-6">
@@ -1247,7 +1256,9 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
 
       <div className="space-y-3">
         {reviews.map((review, idx) => {
-          const displayName = anonymous ? 'Resident' : (review.handle ? `@${review.handle}` : 'Local')
+          const isMine = anonymous && handle && review.handle === handle
+          const hideIdentity = anonymous && !isMine
+          const displayName = hideIdentity ? 'Resident' : (review.handle ? `@${review.handle}` : 'Local')
           const replies = review.replies || []
           const hasText = review.text && review.text.trim()
 
@@ -1256,7 +1267,7 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
             return (
               <div key={review.id || idx} className="border-b border-outline-variant pb-3 last:border-0">
                 <div className="flex items-center gap-2.5">
-                  <AvatarCircle emoji={anonymous ? null : review.avatar} vignette={anonymous ? null : review.vignette} size={7} fallback={anonymous ? 'R' : (review.handle ? review.handle[0].toUpperCase() : 'L')} />
+                  <AvatarCircle emoji={hideIdentity ? null : review.avatar} vignette={hideIdentity ? null : review.vignette} size={7} fallback={hideIdentity ? 'R' : (review.handle ? review.handle[0].toUpperCase() : 'L')} />
                   <span className="text-body-sm font-medium text-on-surface">{displayName}</span>
                   {review.rating && <FleurRating rating={review.rating} size="sm" />}
                   <span className="text-caption text-on-surface-disabled ml-auto">{relativeTime(review.created_at || review.timestamp)}</span>
@@ -1269,7 +1280,7 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
           return (
             <div key={review.id || idx} className="border-b border-outline-variant pb-4 last:border-0">
               <div className="flex items-start gap-3">
-                <AvatarCircle emoji={anonymous ? null : review.avatar} vignette={anonymous ? null : review.vignette} size={9} fallback={anonymous ? 'R' : (review.handle ? review.handle[0].toUpperCase() : 'L')} />
+                <AvatarCircle emoji={hideIdentity ? null : review.avatar} vignette={hideIdentity ? null : review.vignette} size={9} fallback={hideIdentity ? 'R' : (review.handle ? review.handle[0].toUpperCase() : 'L')} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span className="text-body font-medium text-on-surface">{displayName}</span>
@@ -1283,10 +1294,20 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
               </div>
 
               {/* Guardian replies */}
-              {replies.map((reply, ri) => (
+              {replies.map((reply, ri) => {
+                const isMyReply = handle && reply.handle === handle
+                const hideReplyIdentity = anonymous && !isMyReply
+                const guardianLogo = listing?.logo
+                  ? (listing.logo.startsWith('http') ? listing.logo : `${BASE}${listing.logo.replace(/^\//, '')}`)
+                  : null
+                return (
                 <div key={reply.id || ri} className="flex items-start gap-2.5 mt-3 ml-10 pl-3 border-l-2 border-emerald-500/30">
                   <div className="flex-shrink-0 relative">
-                    <AvatarCircle emoji={anonymous ? null : reply.avatar} vignette={anonymous ? null : reply.vignette} size={5} fallback="G" />
+                    {hideReplyIdentity && guardianLogo ? (
+                      <img src={guardianLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white/5" />
+                    ) : (
+                      <AvatarCircle emoji={hideReplyIdentity ? null : reply.avatar} vignette={hideReplyIdentity ? null : reply.vignette} size={5} fallback="G" />
+                    )}
                     {/* Guardian badge */}
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-surface flex items-center justify-center">
                       <svg className="w-1.5 h-1.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
@@ -1296,13 +1317,13 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-body-sm font-medium text-emerald-400/90">{anonymous ? 'Guardian' : (reply.handle ? `@${reply.handle}` : 'Guardian')}</span>
+                      <span className="text-body-sm font-medium text-emerald-400/90">{hideReplyIdentity ? (listing?.name || 'Guardian') : (reply.handle ? `@${reply.handle}` : 'Guardian')}</span>
                       <span className="text-caption text-on-surface-disabled">{relativeTime(reply.created_at)}</span>
                     </div>
                     <p className="text-body-sm text-on-surface-medium mt-0.5 leading-relaxed">{reply.text}</p>
                   </div>
                 </div>
-              ))}
+              )})}
 
               {isGuardian && <ReplyForm reviewId={review.id} listingId={listingId} onSubmitted={fetchReviews} />}
             </div>
