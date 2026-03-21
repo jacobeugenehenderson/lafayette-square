@@ -1204,7 +1204,7 @@ function ReviewsTab({ listingId, isGuardian }) {
 
       {reviews.length === 0 && loaded && (
         <div className="text-center py-8">
-          <span className="text-3xl block mb-2" style={{ color: FLEUR_EMPTY }}>⚜️</span>
+          <span className="text-3xl block mb-2" style={{ color: FLEUR_EMPTY_BG }}>⚜️</span>
           <p className="text-on-surface-subtle text-body">Be the first to share what makes this place special</p>
         </div>
       )}
