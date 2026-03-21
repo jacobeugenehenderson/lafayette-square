@@ -24,11 +24,14 @@ body {
   background: #1a1a2e;
 }
 
-/* Prevent iOS Safari auto-zoom on input focus */
-@supports (-webkit-touch-callout: none) {
-  input, textarea, select {
-    font-size: 16px !important;
-  }
+/* Prevent iOS Safari auto-zoom on input focus and double-tap zoom */
+html {
+  touch-action: manipulation;
+  -ms-touch-action: manipulation;
+}
+input, textarea, select {
+  font-size: 16px !important;
+  touch-action: manipulation;
 }
 
 @layer components {
