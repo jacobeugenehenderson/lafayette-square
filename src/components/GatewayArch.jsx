@@ -163,7 +163,10 @@ export default function GatewayArch() {
          float seam = smoothstep(0.0, 0.012, panel) * (1.0 - smoothstep(0.988, 1.0, panel));
          float panelId = floor(vCurveParam * panelCount);
          float panelHash = fract(sin(panelId * 127.1) * 43758.5453);
-         diffuseColor.rgb *= mix(0.3, 1.0, seam);
+         // Seams visible in daylight, fade at night
+         float seamStrength = mix(0.3, 1.0, seam);
+         seamStrength = mix(1.0, seamStrength, uDayFactor); // no seams at night
+         diffuseColor.rgb *= seamStrength;
          float warmShift = (fract(sin(panelId * 311.7) * 43758.5453) - 0.5) * 0.04;
          diffuseColor.rgb += vec3(warmShift, warmShift * 0.3, -warmShift * 0.5);`
       )
@@ -212,7 +215,7 @@ export default function GatewayArch() {
          // Tight bright highlight on corners
          float hotCorner = cornerIntensity * hotSpot;
          vec3 hotColor = vec3(1.0, 0.98, 0.94);
-         gl_FragColor.rgb += hotColor * hotCorner * 0.7 * (0.5 + uDayFactor * 0.5);
+         gl_FragColor.rgb += hotColor * hotCorner * 0.5 * uDayFactor;
 
          // ── 4. Sun/moon glint: narrow traveling band on edges ──
          float edgeMask = smoothstep(0.85, 1.0, vEdge);

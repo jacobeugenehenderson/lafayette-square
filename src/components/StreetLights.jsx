@@ -82,8 +82,11 @@ function StreetLights() {
     blending: THREE.AdditiveBlending,
   }), [])
 
-  // Dark contact shadow — soft radial blur at lamp base
+  // Dark contact shadow — soft radial blur at lamp base, time-of-day aware
   const baseMat = useMemo(() => new THREE.ShaderMaterial({
+    uniforms: {
+      uSunAlt: { value: 0.5 },
+    },
     vertexShader: `
       varying vec2 vUv;
       void main() {
@@ -91,14 +94,22 @@ function StreetLights() {
         gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
       }`,
     fragmentShader: `
+      uniform float uSunAlt;
       varying vec2 vUv;
       void main() {
         float dist = length(vUv - 0.5) * 2.0;
-        // AO-style: dense dark core with soft gaussian blur outward
-        float ao = exp(-dist * dist * 4.0);        // tight gaussian core
-        float soft = exp(-dist * dist * 1.2) * 0.4; // wider soft penumbra
-        float shadow = ao * 0.9 + soft;              // combine
-        gl_FragColor = vec4(0.0, 0.0, 0.0, shadow);
+        // Soft radial falloff — no hard core
+        float shadow = exp(-dist * dist * 2.0);
+        shadow *= smoothstep(1.0, 0.3, dist); // fade to zero at edge
+
+        // Time-of-day:
+        // Day (sun > 0.3): subtle contact shadow (0.25)
+        // Twilight: fading
+        // Night (sun < -0.1): near invisible (0.05)
+        float dayT = smoothstep(-0.1, 0.3, uSunAlt);
+        float intensity = mix(0.05, 0.25, dayT);
+
+        gl_FragColor = vec4(0.0, 0.0, 0.0, shadow * intensity);
       }`,
     transparent: true,
     depthWrite: false,
@@ -269,6 +280,8 @@ function StreetLights() {
     if (glowMatRef.current) glowMatRef.current.opacity = t * (_IS_MOBILE ? 0.7 : 0.4)
     // Ground pools — lower per-pool alpha, rely on overlap for fill
     poolMat.uniforms.uIntensity.value = Math.min(_IS_MOBILE ? 0.6 : 0.4, t * (_IS_MOBILE ? 0.8 : 0.5))
+    // AO contact shadow — driven by sun altitude
+    baseMat.uniforms.uSunAlt.value = sunAltitude
 
     // Show/hide pool + glow layers
     if (poolRef.current) poolRef.current.visible = isActive

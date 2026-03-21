@@ -1003,8 +1003,14 @@ function ParkTrees() {
   // Tree base AO discs — dark contact shadow at trunk-ground junction
   const aoGeo = useMemo(() => new THREE.CircleGeometry(1, 16), [])
   const aoMat = useMemo(() => new THREE.ShaderMaterial({
+    uniforms: {
+      uSunAlt: { value: 0.5 },
+    },
     transparent: true,
     depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
     vertexShader: `
       varying vec2 vUv;
       void main() {
@@ -1013,12 +1019,19 @@ function ParkTrees() {
       }
     `,
     fragmentShader: `
+      uniform float uSunAlt;
       varying vec2 vUv;
       void main() {
         float dist = length(vUv - 0.5) * 2.0;
-        float alpha = 1.0 - smoothstep(0.0, 1.0, dist);
-        alpha = alpha * alpha * 0.4;
-        gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+        // Soft gaussian falloff — no hard edge
+        float alpha = exp(-dist * dist * 2.5);
+        alpha *= smoothstep(1.0, 0.4, dist);
+
+        // Time-of-day: subtle during day, near invisible at night
+        float dayT = smoothstep(-0.1, 0.3, uSunAlt);
+        float intensity = mix(0.05, 0.4, dayT);
+
+        gl_FragColor = vec4(0.0, 0.0, 0.0, alpha * intensity);
       }
     `,
   }), [])
@@ -1027,7 +1040,7 @@ function ParkTrees() {
     if (!aoRef.current || treeRoots.length === 0) return
     const dummy = new THREE.Object3D()
     treeRoots.forEach((root, i) => {
-      dummy.position.set(root.x, 0.02, root.z)
+      dummy.position.set(root.x, 0.12, root.z)
       dummy.rotation.set(-Math.PI / 2, 0, 0)
       dummy.scale.set(root.r, root.r, 1)
       dummy.updateMatrix()
@@ -1176,9 +1189,15 @@ function ParkTrees() {
            vec3 translucentColor = pow(vec3(0.45, 0.75, 0.2), vec3(2.2)); // linearized warm green
            diffuseColor.rgb += translucentColor * backlit * 0.6;
 
+           // Fake SSS: ambient sky bounce lifts the shadow side of foliage
+           // Normals facing down/away get a green-blue fill from sky light
+           float shadowFill = 1.0 - max(0.0, dot(vFoliageNormal, vec3(0.0, 1.0, 0.0)));
+           vec3 skyBounce = pow(vec3(0.3, 0.5, 0.25), vec3(2.2));
+           diffuseColor.rgb += skyBounce * shadowFill * dayBF * 0.4;
+
            // Daytime emissive boost: foliage self-glows in sunlight
-           vec3 emGlow = pow(vec3(0.25, 0.45, 0.15), vec3(2.2)); // linearized leaf green
-           diffuseColor.rgb += emGlow * dayBF * 0.25;
+           vec3 emGlow = pow(vec3(0.25, 0.45, 0.15), vec3(2.2));
+           diffuseColor.rgb += emGlow * dayBF * 0.35;
 
            // Day/night brightness
            float brightF = mix(0.75, 1.15, dayBF);
@@ -1204,6 +1223,7 @@ function ParkTrees() {
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
     const sunDir = useSkyState.getState().sunDirection
     if (shaderRef.current) shaderRef.current.uniforms.uSunAltitude.value = sunAltitude
+    aoMat.uniforms.uSunAlt.value = sunAltitude
     Object.values(foliageShaderRefs.current).forEach(s => {
       if (!s) return
       s.uniforms.uSunAltitude.value = sunAltitude

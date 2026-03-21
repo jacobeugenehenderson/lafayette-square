@@ -20,40 +20,79 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import R3FErrorBoundary from './R3FErrorBoundary'
 
-// ── Film grade (lift blacks, darken midtones) ────────────────────────────────
+// ── Film grade — naturalistic tone mapping with time-of-day color ─────────────
 
 class FilmGradeEffect extends Effect {
   constructor() {
     super('FilmGrade', /* glsl */`
+      uniform float uSunAlt;
+
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec3 c = inputColor.rgb;
         float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
+
         // S-curve contrast
         vec3 curved = c * c * (3.0 - 2.0 * c);
-        c = mix(c, curved, 0.42);
-        // Toe — cinematic blacks with readable shadow detail
+        c = mix(c, curved, 0.40);
+
+        // Toe — lift blacks during day, let them crush at night
         float toe = smoothstep(0.0, 0.25, lum);
-        c *= mix(0.28, 1.0, toe);
-        // Shadow saturation boost — keeps color in the lowlights instead of mud
-        float shadowSat = 1.0 + (1.0 - toe) * 0.3;
+        float dayLift = smoothstep(-0.1, 0.3, uSunAlt);
+        c = max(c * mix(0.30, 1.0, toe), vec3(0.012 * dayLift));
+
+        // Shadow saturation — keep color in the lowlights
+        float shadowSat = 1.0 + (1.0 - toe) * 0.25;
         vec3 gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
         c = mix(gray, c, shadowSat);
+
         // Midtone lift
         float midBell = 4.0 * lum * (1.0 - lum);
-        c *= 1.0 + midBell * 0.15;
-        // Overall saturation
+        c *= 1.0 + midBell * 0.12;
+
+        // Split-tone: warm shadows, cool highlights
+        // Shadows → warm amber push
+        vec3 warmTint = vec3(1.04, 0.98, 0.92);
+        // Highlights → cool blue push
+        vec3 coolTint = vec3(0.96, 0.98, 1.04);
+        vec3 splitTone = mix(warmTint, coolTint, smoothstep(0.3, 0.7, lum));
+        c *= splitTone;
+
+        // Time-of-day color temperature
+        // Golden hour (sun near horizon): warm amber wash
+        // Twilight (sun below): cool blue wash
+        // Midday: neutral
+        float goldenT = exp(-pow((uSunAlt - 0.08) / 0.12, 2.0)); // peaks near sunset
+        float nightT = smoothstep(0.05, -0.15, uSunAlt);
+        vec3 goldenWash = vec3(1.06, 1.0, 0.88);
+        vec3 twilightWash = vec3(0.88, 0.92, 1.08);
+        c *= mix(vec3(1.0), goldenWash, goldenT * 0.5);
+        c *= mix(vec3(1.0), twilightWash, nightT * 0.4);
+
+        // Overall saturation — slight boost
         gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
-        c = mix(gray, c, 1.1);
-        // Protect bright areas
-        c = mix(c, inputColor.rgb, smoothstep(0.7, 1.0, lum));
+        c = mix(gray, c, 1.08);
+
+        // Protect bright areas from over-grading
+        c = mix(c, inputColor.rgb, smoothstep(0.75, 1.0, lum));
+
         // Gentle vignette
         vec2 center = uv - 0.5;
-        float vignette = 1.0 - dot(center, center) * 1.0;
+        float vignette = 1.0 - dot(center, center) * 0.8;
         vignette = smoothstep(0.0, 1.0, clamp(vignette, 0.0, 1.0));
         c *= vignette;
+
         outputColor = vec4(c, inputColor.a);
       }
-    `)
+    `, {
+      uniforms: new Map([
+        ['uSunAlt', new THREE.Uniform(0.5)],
+      ])
+    })
+  }
+
+  update() {
+    const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
+    this.uniforms.get('uSunAlt').value = sunAltitude
   }
 }
 
@@ -108,42 +147,37 @@ const FilmGrain = forwardRef((props, ref) => {
   return <primitive ref={ref} object={effect} dispose={null} />
 })
 
-// ── Lens softness — subtle blur for hero cinematic feel ──────────────────────
-// Single-pass 9-tap gaussian. uStrength=0 is a no-op; hero sets ~0.5–1.0.
+// ── Lens character — very subtle hexagonal iris blur across the whole scene ───
+// 7-tap hex kernel simulates a real lens without depth-based falloff.
+// uStrength controls blur radius; 0 = no-op.
 
 class LensSoftnessEffect extends Effect {
   constructor() {
     super('LensSoftness', /* glsl */`
       uniform float uStrength;
       uniform vec2 uResolution;
-      uniform float uFocusY;
-      uniform float uFocusRange;
 
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         if (uStrength < 0.01) { outputColor = inputColor; return; }
-        // Blur ramps up with distance from focus band
-        float dist = abs(uv.y - uFocusY);
-        float blur = smoothstep(0.0, uFocusRange, dist) * uStrength;
-        if (blur < 0.05) { outputColor = inputColor; return; }
-        vec2 texel = blur / uResolution;
-        vec3 sum = vec3(0.0);
-        sum += texture2D(inputBuffer, uv + vec2(-texel.x, 0.0)).rgb * 0.12;
-        sum += texture2D(inputBuffer, uv + vec2( texel.x, 0.0)).rgb * 0.12;
-        sum += texture2D(inputBuffer, uv + vec2(0.0, -texel.y)).rgb * 0.12;
-        sum += texture2D(inputBuffer, uv + vec2(0.0,  texel.y)).rgb * 0.12;
-        sum += texture2D(inputBuffer, uv + vec2(-texel.x, -texel.y)).rgb * 0.08;
-        sum += texture2D(inputBuffer, uv + vec2( texel.x, -texel.y)).rgb * 0.08;
-        sum += texture2D(inputBuffer, uv + vec2(-texel.x,  texel.y)).rgb * 0.08;
-        sum += texture2D(inputBuffer, uv + vec2( texel.x,  texel.y)).rgb * 0.08;
-        sum += inputColor.rgb * 0.20;
+
+        vec2 texel = uStrength / uResolution;
+
+        // Hexagonal kernel — 6 points at 60° intervals + center
+        // Mimics a 6-blade iris aperture
+        vec3 sum = inputColor.rgb * 0.28; // center weight
+        float a60 = 1.0472; // 60 degrees in radians
+        for (int i = 0; i < 6; i++) {
+          float angle = float(i) * a60;
+          vec2 offset = vec2(cos(angle), sin(angle)) * texel;
+          sum += texture2D(inputBuffer, uv + offset).rgb * 0.12;
+        }
+
         outputColor = vec4(sum, inputColor.a);
       }
     `, {
       uniforms: new Map([
         ['uStrength', new THREE.Uniform(0)],
         ['uResolution', new THREE.Uniform(new THREE.Vector2(1920, 1080))],
-        ['uFocusY', new THREE.Uniform(0.45)],
-        ['uFocusRange', new THREE.Uniform(0.35)],
       ])
     })
   }
@@ -174,9 +208,11 @@ function useAdaptiveBloom(bloomRef, viewMode) {
         : sunAltitude < -0.15
           ? 1
           : 1 - (sunAltitude + 0.15) / 0.25
-      intensity = 0.3 + darkness * 0.6
-      threshold = 0.75 - darkness * 0.45
-      smoothing = 0.5 + darkness * 0.3
+      // Day: higher intensity but high threshold — only genuinely bright surfaces bloom
+      // Night: lower threshold lets point sources glow
+      intensity = 0.5 + darkness * 0.5
+      threshold = 0.85 - darkness * 0.5
+      smoothing = 0.4 + darkness * 0.4
     }
 
     bloom.intensity = intensity
@@ -239,14 +275,17 @@ const AerialPerspective = forwardRef((props, ref) => {
 
     e.uniforms.get('uHazeStrength').value = dayFactor * 0.12
 
-    // Haze color shifts: blue-white during day, warm amber at twilight
-    const warmth = sunAltitude < 0.08 && sunAltitude > -0.05
-      ? 1 - (sunAltitude + 0.05) / 0.13
-      : 0
-    const r = 0.7 + warmth * 0.15
-    const g = 0.75 - warmth * 0.05
-    const b = 0.82 - warmth * 0.15
-    e.uniforms.get('uHazeColor').value.set(r, g, b)
+    // Haze color from actual sky horizon — matches whatever the sky is doing
+    const hc = useSkyState.getState().horizonColor
+    if (hc) {
+      // Slightly desaturated and lifted version of the horizon
+      const avg = (hc.r + hc.g + hc.b) / 3
+      e.uniforms.get('uHazeColor').value.set(
+        hc.r * 0.7 + avg * 0.3,
+        hc.g * 0.7 + avg * 0.3,
+        hc.b * 0.7 + avg * 0.3
+      )
+    }
   })
 
   return <primitive ref={internalRef} object={effect} dispose={null} />
@@ -815,11 +854,9 @@ function PostProcessing({ viewMode }) {
   useFrame(() => {
     const fx = softnessRef.current
     if (!fx) return
-    fx.uniforms.get('uStrength').value = viewMode === 'hero' ? 1.05 : 0
+    // Very subtle lens character — uniform across scene, no depth falloff
+    fx.uniforms.get('uStrength').value = 0
     fx.uniforms.get('uResolution').value.set(size.width, size.height)
-    // Focus band at arch height (~45% from top), blur ramps toward bottom and top
-    fx.uniforms.get('uFocusY').value = 0.55
-    fx.uniforms.get('uFocusRange').value = 0.35
   })
 
   return (
