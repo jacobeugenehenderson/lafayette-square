@@ -32,11 +32,17 @@ export default function AdminPrompt() {
         <h2 className="text-on-surface text-body font-medium">Admin</h2>
         <input
           ref={inputRef}
-          type="password"
+          type="text"
+          inputMode="text"
           value={value}
           onChange={e => setValue(e.target.value)}
           placeholder="Passphrase"
-          autoComplete="off"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          data-1p-ignore
+          data-lpignore="true"
           className="w-full bg-surface-container-high text-on-surface text-body rounded-lg px-3 py-2.5 border border-outline-variant focus:border-on-surface-subtle outline-none"
         />
         {error && (

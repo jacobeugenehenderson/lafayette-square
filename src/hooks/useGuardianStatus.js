@@ -92,14 +92,19 @@ if (_initParams.has('logout')) {
   window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
 }
 
-// Flag for ?admin — will open modal once React mounts
+// Flag for ?admin — defer opening modal until app is fully mounted
 const _wantsAdmin = _initParams.has('admin')
 if (_wantsAdmin) {
   _initParams.delete('admin')
   const clean = _initParams.toString()
   window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
-  // Set immediately on the store (before any component reads it)
-  useGuardianStatus.setState({ adminPromptOpen: true })
+  // Wait for app to fully mount before showing prompt — prevents
+  // mobile autofill from crashing a mid-render DOM
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      useGuardianStatus.setState({ adminPromptOpen: true })
+    })
+  })
 }
 
 // Async: verify existing session token (doesn't affect mounting)
