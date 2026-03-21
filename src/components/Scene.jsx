@@ -33,21 +33,20 @@ class FilmGradeEffect extends Effect {
 
         // S-curve contrast
         vec3 curved = c * c * (3.0 - 2.0 * c);
-        c = mix(c, curved, 0.40);
+        c = mix(c, curved, 0.42);
 
-        // Toe — lift blacks during day, let them crush at night
+        // Toe — cinematic blacks with readable shadow detail
         float toe = smoothstep(0.0, 0.25, lum);
-        float dayLift = smoothstep(-0.1, 0.3, uSunAlt);
-        c = max(c * mix(0.30, 1.0, toe), vec3(0.012 * dayLift));
+        c *= mix(0.28, 1.0, toe);
 
-        // Shadow saturation — keep color in the lowlights
-        float shadowSat = 1.0 + (1.0 - toe) * 0.25;
+        // Shadow saturation boost — keeps color in the lowlights instead of mud
+        float shadowSat = 1.0 + (1.0 - toe) * 0.3;
         vec3 gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
         c = mix(gray, c, shadowSat);
 
         // Midtone lift
         float midBell = 4.0 * lum * (1.0 - lum);
-        c *= 1.0 + midBell * 0.12;
+        c *= 1.0 + midBell * 0.15;
 
         // Split-tone: warm shadows, cool highlights
         // Shadows → warm amber push
@@ -70,14 +69,14 @@ class FilmGradeEffect extends Effect {
 
         // Overall saturation — slight boost
         gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
-        c = mix(gray, c, 1.08);
+        c = mix(gray, c, 1.1);
 
-        // Protect bright areas from over-grading
-        c = mix(c, inputColor.rgb, smoothstep(0.75, 1.0, lum));
+        // Protect bright areas
+        c = mix(c, inputColor.rgb, smoothstep(0.7, 1.0, lum));
 
         // Gentle vignette
         vec2 center = uv - 0.5;
-        float vignette = 1.0 - dot(center, center) * 0.8;
+        float vignette = 1.0 - dot(center, center) * 1.0;
         vignette = smoothstep(0.0, 1.0, clamp(vignette, 0.0, 1.0));
         c *= vignette;
 
@@ -136,9 +135,10 @@ class FilmGrainEffect extends Effect {
   update() {
     this.uniforms.get('uSeed').value = Math.random() * 1000
     const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
-    // Day = full grain, night = 40% grain
     const dayFactor = sunAltitude > 0.1 ? 1 : sunAltitude < -0.15 ? 0 : (sunAltitude + 0.15) / 0.25
-    this.uniforms.get('uScale').value = 0.4 + dayFactor * 0.6
+    const viewMode = useCamera.getState().viewMode
+    const modeScale = viewMode === 'hero' ? 1.0 : 0.25
+    this.uniforms.get('uScale').value = (0.4 + dayFactor * 0.6) * modeScale
   }
 }
 
