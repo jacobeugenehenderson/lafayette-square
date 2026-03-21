@@ -188,7 +188,7 @@ export default function EventTicker() {
   return (
     <div className="absolute top-0 left-0 right-0 z-50 select-none">
       <div
-        className="flex items-center px-5 relative font-mono"
+        className="flex items-center pl-5 pr-16 relative font-mono"
         style={{
           height: 'calc(env(safe-area-inset-top, 0px) + 72px)',
           paddingTop: 'env(safe-area-inset-top, 0px)',
