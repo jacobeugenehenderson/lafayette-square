@@ -2904,6 +2904,7 @@ function MenuEditor({ menu, activeMenuType, onSave, onCancel }) {
     return s.length ? JSON.parse(JSON.stringify(s)) : []
   })
   const [scheduleData, setScheduleData] = useState(() => JSON.parse(JSON.stringify(menu?.schedule || {})))
+  const [taglines, setTaglines] = useState(() => JSON.parse(JSON.stringify(menu?.taglines || {})))
 
   // Only show sections for the active menu type
   const editType = activeMenuType || 'all_day'
@@ -2952,7 +2953,12 @@ function MenuEditor({ menu, activeMenuType, onSave, onCancel }) {
       }
       if (Object.keys(cleanDays).length > 0) cleanSched[menuType] = cleanDays
     }
-    onSave({ sections: cleaned, schedule: cleanSched })
+    // Clean empty taglines
+    const cleanTaglines = {}
+    for (const [k, v] of Object.entries(taglines)) {
+      if (v && v.trim()) cleanTaglines[k] = v.trim()
+    }
+    onSave({ sections: cleaned, schedule: cleanSched, taglines: cleanTaglines })
   }
 
   const menuLabel = MENU_LABELS[editType] || editType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -2996,6 +3002,12 @@ function MenuEditor({ menu, activeMenuType, onSave, onCancel }) {
             />
           </div>
         ))}
+        <input
+          value={taglines[editType] || ''}
+          onChange={e => setTaglines(prev => ({ ...prev, [editType]: e.target.value }))}
+          placeholder="Ticker tagline (e.g. rooftop cocktails in the old power plant)"
+          className="w-full bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1.5 border border-outline-variant focus:border-on-surface-subtle outline-none"
+        />
       </div>
 
       {/* Sections for this menu type only */}

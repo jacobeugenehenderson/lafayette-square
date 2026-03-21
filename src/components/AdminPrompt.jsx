@@ -8,11 +8,27 @@ export default function AdminPrompt() {
   const cancel = useGuardianStatus(s => s.cancelAdminPrompt)
   const [value, setValue] = useState('')
   const inputRef = useRef(null)
+  const checkedRef = useRef(false)
 
+  // On first mount, check if ?admin was in the URL and open the prompt.
+  // This runs after React has fully mounted — no race with DOM rendering.
+  useEffect(() => {
+    if (checkedRef.current) return
+    checkedRef.current = true
+    if (useGuardianStatus._wantsAdmin) {
+      useGuardianStatus._wantsAdmin = false
+      // Small delay to let the splash/scene finish initial render
+      setTimeout(() => {
+        useGuardianStatus.getState().openAdminPrompt()
+      }, 1000)
+    }
+  }, [])
+
+  // Focus input when modal opens (delayed to avoid mobile keyboard issues)
   useEffect(() => {
     if (open) {
       setValue('')
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => inputRef.current?.focus(), 300)
     }
   }, [open])
 
@@ -37,12 +53,13 @@ export default function AdminPrompt() {
           value={value}
           onChange={e => setValue(e.target.value)}
           placeholder="Passphrase"
-          autoComplete="new-password"
+          autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck="false"
-          data-1p-ignore
+          data-1p-ignore="true"
           data-lpignore="true"
+          data-form-type="other"
           className="w-full bg-surface-container-high text-on-surface text-body rounded-lg px-3 py-2.5 border border-outline-variant focus:border-on-surface-subtle outline-none"
         />
         {error && (

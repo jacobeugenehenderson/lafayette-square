@@ -759,6 +759,13 @@
         ]
       }
     ],
+    "taglines": {
+      "dinner": "rooftop dining in the 1937 City Hospital power plant",
+      "brunch": "farm-to-table brunch on the rooftop",
+      "happy_hour": "rooftop cocktails and small plates",
+      "drinks": "literary cocktails and an extensive spirits program",
+      "dessert": "handmade desserts by Whisk Bakery STL"
+    },
     "schedule": {
       "brunch": {
         "sat": { "start": "10:00", "end": "14:00" },
@@ -773,6 +780,13 @@
     }
   },
   "lmk-027": {
+    "taglines": {
+      "dinner": "seasonal fare in a converted 1900s wire factory",
+      "lunch": "lunch in the historic wire factory",
+      "brunch": "weekend brunch on the patio",
+      "happy_hour": "discounted drafts, wine, and appetizers",
+      "specials": "weekly specials — fried chicken, fish fry, and more"
+    },
     "schedule": {
       "dinner": {
         "tue": { "start": "16:00", "end": "21:00" },

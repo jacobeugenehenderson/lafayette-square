@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { getEvents } from '../lib/api'
 import useListings from '../hooks/useListings'
 import useEvents, { isActiveEvent } from '../hooks/useEvents'
@@ -14,81 +14,137 @@ const ROTATE_INTERVAL = 5000
 const POLL_INTERVAL = 300000 // 5 minutes
 const REFILTER_INTERVAL = 60000 // re-check clock every minute
 
-function getNow() {
-  const d = new Date()
-  const date = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
-  const time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
-  return { date, time }
+const DAY_ABBREVS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+
+const MENU_DISPLAY = {
+  dinner: 'Dinner',
+  lunch: 'Lunch',
+  brunch: 'Brunch',
+  happy_hour: 'Happy Hour',
+  specials: 'Specials',
+  drinks: 'Drinks',
+  dessert: 'Dessert',
+  market: 'Market',
 }
 
 /**
- * Filter events to what's active right now, then deduplicate by listing.
- * When multiple events match for the same listing, latest start_time wins
- * (the most recently started thing is the most current).
- * Events without start_time are treated as all-day fallbacks.
+ * Build ticker entries from two sources:
+ * 1. Menu schedules — auto-generated, white text ("The Bellwether — Happy Hour")
+ * 2. Manual events — guardian-posted, yellow text ("Kyle is bartending tonight")
+ *
+ * One entry per listing. Manual events override schedule entries.
+ * Latest start_time wins when multiple things overlap.
  */
-function filterCurrentEvents(allEvents) {
-  const { date, time } = getNow()
+function buildTickerEntries(allListings, allEvents) {
+  const now = new Date()
+  const dayAbbrev = DAY_ABBREVS[now.getDay()]
+  const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+  const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
 
-  // 1. Filter to events active right now (date + time aware)
-  const active = allEvents.filter(e => isActiveEvent(e, date, time))
+  const entries = new Map() // listing_id -> ticker entry
 
-  // 2. Attach venue info
-  active.forEach(e => {
-    const listing = useListings.getState().getById(e.listing_id)
-    if (listing) {
-      e._venueName = listing.name
-      e._buildingId = listing.building_id
+  // 1. Schedule-derived entries (white text)
+  allListings.forEach(listing => {
+    const schedule = listing.menu?.schedule
+    if (!schedule) return
+
+    // Find the active menu with the latest start time
+    let bestMenu = null
+    let bestStart = ''
+    for (const [menuKey, daySched] of Object.entries(schedule)) {
+      const todaySlot = daySched[dayAbbrev]
+      if (todaySlot && todaySlot.start && todaySlot.end && timeStr >= todaySlot.start && timeStr < todaySlot.end) {
+        if (todaySlot.start > bestStart) {
+          bestMenu = menuKey
+          bestStart = todaySlot.start
+        }
+      }
+    }
+
+    if (bestMenu) {
+      const label = MENU_DISPLAY[bestMenu] || bestMenu.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      const slot = schedule[bestMenu][dayAbbrev]
+      const endTime = slot.end
+      // Format end time for display: "17:00" → "5pm", "14:00" → "2pm"
+      const [eh, em] = endTime.split(':').map(Number)
+      const endSuffix = eh >= 12 ? 'pm' : 'am'
+      const endHr = eh === 0 ? 12 : eh > 12 ? eh - 12 : eh
+      const endDisplay = em === 0 ? `${endHr}${endSuffix}` : `${endHr}:${String(em).padStart(2, '0')}${endSuffix}`
+
+      const tagline = listing.menu?.taglines?.[bestMenu] || ''
+      const title = tagline
+        ? `Serving ${label.toLowerCase()} until ${endDisplay} — ${tagline}`
+        : `Serving ${label.toLowerCase()} until ${endDisplay}`
+      entries.set(listing.id, {
+        listing_id: listing.id,
+        title,
+        _venueName: listing.name,
+        _buildingId: listing.building_id,
+        _source: 'schedule',
+        _startTime: bestStart,
+      })
     }
   })
 
-  // 3. Deduplicate: one entry per listing, latest start_time wins
-  const byListing = new Map()
-  for (const e of active) {
-    const lid = e.listing_id
-    const existing = byListing.get(lid)
-    if (!existing) {
-      byListing.set(lid, e)
-    } else {
-      // Latest start_time wins; timed events always beat untimed
-      const eTime = e.start_time || ''
-      const exTime = existing.start_time || ''
-      if (eTime > exTime) byListing.set(lid, e)
-    }
-  }
+  // 2. Manual events (yellow text) — override schedule entries
+  allEvents.forEach(e => {
+    if (!isActiveEvent(e, dateStr, timeStr)) return
+    const listing = useListings.getState().getById(e.listing_id)
+    const existing = entries.get(e.listing_id)
 
-  return Array.from(byListing.values())
+    const entry = {
+      listing_id: e.listing_id,
+      title: e.title,
+      description: e.description,
+      _venueName: listing?.name || '',
+      _buildingId: listing?.building_id || e._buildingId,
+      _source: 'event',
+      _startTime: e.start_time || '',
+    }
+
+    if (!existing) {
+      entries.set(e.listing_id, entry)
+    } else if (existing._source === 'schedule') {
+      // Manual event always overrides schedule
+      entries.set(e.listing_id, entry)
+    } else {
+      // Two manual events — latest start_time wins
+      if ((e.start_time || '') > (existing._startTime || '')) {
+        entries.set(e.listing_id, entry)
+      }
+    }
+  })
+
+  return Array.from(entries.values())
 }
 
 export default function EventTicker() {
-  const [events, setEvents] = useState([])
+  const [tickerItems, setTickerItems] = useState([])
   const [index, setIndex] = useState(0)
 
   const showCard = useSelectedBuilding((s) => s.showCard)
   const viewMode = useCamera((s) => s.viewMode)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
 
-  // Read from shared events store (populated by init)
   const storeEvents = useEvents((s) => s.events)
   const storeFetched = useEvents((s) => s.fetched)
+  const listings = useListings((s) => s.listings)
 
-  // When the shared store updates, refilter for right now
-  useEffect(() => {
-    if (storeFetched && storeEvents.length > 0) {
-      setEvents(filterCurrentEvents(storeEvents))
-    }
-  }, [storeEvents, storeFetched])
+  // Build ticker entries from schedules + events
+  const rebuild = useCallback(() => {
+    if (!listings.length) return
+    setTickerItems(buildTickerEntries(listings, storeEvents))
+  }, [listings, storeEvents])
 
-  // Re-check the clock every minute so events rotate in/out on time
+  useEffect(() => { rebuild() }, [rebuild])
+
+  // Re-check the clock every minute
   useEffect(() => {
-    const id = setInterval(() => {
-      const all = useEvents.getState().events
-      if (all.length > 0) setEvents(filterCurrentEvents(all))
-    }, REFILTER_INTERVAL)
+    const id = setInterval(rebuild, REFILTER_INTERVAL)
     return () => clearInterval(id)
-  }, [])
+  }, [rebuild])
 
-  // Poll for fresh events at a much lower frequency (5 min)
+  // Poll for fresh events
   useEffect(() => {
     const poll = async () => {
       try {
@@ -101,21 +157,20 @@ export default function EventTicker() {
     return () => clearInterval(id)
   }, [])
 
-  // Simple rotation — advance index every ROTATE_INTERVAL
+  // Rotate
   useEffect(() => {
-    if (events.length < 2) return
+    if (tickerItems.length < 2) return
     const id = setInterval(() => {
-      setIndex(i => (i + 1) % events.length)
+      setIndex(i => (i + 1) % tickerItems.length)
     }, ROTATE_INTERVAL)
     return () => clearInterval(id)
-  }, [events.length])
+  }, [tickerItems.length])
 
-  // Open a place card for an event
-  const openEvent = useCallback((event) => {
-    if (!event.listing_id) return
-    const listing = useListings.getState().getById(event.listing_id)
-    const buildingId = listing?.building_id || event._buildingId
-    useSelectedBuilding.getState().select(event.listing_id, buildingId, 'ticker')
+  const openEvent = useCallback((item) => {
+    if (!item.listing_id) return
+    const listing = useListings.getState().getById(item.listing_id)
+    const buildingId = listing?.building_id || item._buildingId
+    useSelectedBuilding.getState().select(item.listing_id, buildingId, 'ticker')
   }, [])
 
   const courierOpen = useCourierDash(s => s.open)
@@ -125,15 +180,18 @@ export default function EventTicker() {
 
   if (viewMode !== 'hero') return null
   if (showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen) return null
-  if (events.length === 0) return null
+  if (tickerItems.length === 0) return null
 
-  const current = events[index % events.length]
+  const current = tickerItems[index % tickerItems.length]
+  const isEvent = current?._source === 'event'
 
   return (
     <div className="absolute top-0 left-0 right-0 z-50 select-none">
       <div
-        className="flex items-center px-5 relative h-[72px] font-mono"
+        className="flex items-center px-5 relative font-mono"
         style={{
+          height: 'calc(env(safe-area-inset-top, 0px) + 72px)',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
           background: 'linear-gradient(180deg, var(--surface-glass) 0%, transparent 100%)',
         }}
       >
@@ -151,17 +209,18 @@ export default function EventTicker() {
         >
           <div className="flex-1 min-w-0 relative h-5 overflow-hidden">
             <div
-              key={`${current?.id || current?.listing_id || ''}-${index}`}
+              key={`${current?.listing_id || ''}-${index}`}
               className="absolute inset-0 flex items-center gap-2 animate-ticker-in"
             >
-              <span className="text-label tracking-wide truncate text-on-surface">
-                {current?.title}
-              </span>
               {current?._venueName && (
-                <span className="text-label-sm text-on-surface-variant truncate flex-shrink-0">
+                <span className={`text-label tracking-wide truncate flex-shrink-0 ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
                   {current._venueName}
                 </span>
               )}
+              <span className="text-on-surface-variant">·</span>
+              <span className={`text-label-sm truncate ${isEvent ? 'text-amber-300/80' : 'text-on-surface-variant'}`}>
+                {current?.title}
+              </span>
             </div>
           </div>
         </button>

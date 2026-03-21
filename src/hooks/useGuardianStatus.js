@@ -92,20 +92,15 @@ if (_initParams.has('logout')) {
   window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
 }
 
-// Flag for ?admin — defer opening modal until app is fully mounted
+// Flag for ?admin — stash it, AdminPrompt component will read it on mount
 const _wantsAdmin = _initParams.has('admin')
 if (_wantsAdmin) {
   _initParams.delete('admin')
   const clean = _initParams.toString()
   window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
-  // Wait for app to fully mount before showing prompt — prevents
-  // mobile autofill from crashing a mid-render DOM
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      useGuardianStatus.setState({ adminPromptOpen: true })
-    })
-  })
 }
+// Expose for AdminPrompt to check on mount
+useGuardianStatus._wantsAdmin = _wantsAdmin
 
 // Async: verify existing session token (doesn't affect mounting)
 if (!_wantsAdmin && localStorage.getItem(ADMIN_KEY) === 'true') {
