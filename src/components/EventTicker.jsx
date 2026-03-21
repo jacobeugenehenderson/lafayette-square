@@ -9,6 +9,8 @@ import { useCourierDash } from './CourierDashboard'
 import { useContact } from './ContactModal'
 import { useCodeDesk } from './CodeDeskModal'
 import { useInfo } from './InfoModal'
+import useTimeOfDay from '../hooks/useTimeOfDay'
+import useGuardianStatus from '../hooks/useGuardianStatus'
 
 const ROTATE_INTERVAL = 5000
 const POLL_INTERVAL = 300000 // 5 minutes
@@ -35,8 +37,8 @@ const MENU_DISPLAY = {
  * One entry per listing. Manual events override schedule entries.
  * Latest start_time wins when multiple things overlap.
  */
-function buildTickerEntries(allListings, allEvents) {
-  const now = new Date()
+function buildTickerEntries(allListings, allEvents, clockTime) {
+  const now = clockTime || new Date()
   const dayAbbrev = DAY_ABBREVS[now.getDay()]
   const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
   const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
@@ -127,20 +129,27 @@ export default function EventTicker() {
   const storeEvents = useEvents((s) => s.events)
   const storeFetched = useEvents((s) => s.fetched)
   const listings = useListings((s) => s.listings)
+  const isAdmin = useGuardianStatus((s) => s.isAdmin)
+  const simTime = useTimeOfDay((s) => s.currentTime)
+  const isLive = useTimeOfDay((s) => s.isLive)
+
+  // Admin scrubbing time → use simulated time; everyone else → real time
+  const clockTime = isAdmin && !isLive ? simTime : null
 
   // Build ticker entries from schedules + events
   const rebuild = useCallback(() => {
     if (!listings.length) return
-    setTickerItems(buildTickerEntries(listings, storeEvents))
-  }, [listings, storeEvents])
+    setTickerItems(buildTickerEntries(listings, storeEvents, clockTime))
+  }, [listings, storeEvents, clockTime])
 
   useEffect(() => { rebuild() }, [rebuild])
 
-  // Re-check the clock every minute
+  // Re-check the clock every minute (only matters when live)
   useEffect(() => {
+    if (clockTime) return // admin is scrubbing — rebuild is driven by simTime changes
     const id = setInterval(rebuild, REFILTER_INTERVAL)
     return () => clearInterval(id)
-  }, [rebuild])
+  }, [rebuild, clockTime])
 
   // Poll for fresh events
   useEffect(() => {
