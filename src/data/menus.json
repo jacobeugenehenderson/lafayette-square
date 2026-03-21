@@ -1,5 +1,26 @@
 {
   "lmk-003": {
+    "taglines": {
+      "dinner": "coastal flavors on Mississippi Ave",
+      "drinks": "craft cocktails and natural wine",
+      "dessert": "house-made desserts"
+    },
+    "schedule": {
+      "dinner": {
+        "tue": { "start": "17:00", "end": "22:00" },
+        "wed": { "start": "17:00", "end": "22:00" },
+        "thu": { "start": "17:00", "end": "22:00" },
+        "fri": { "start": "17:00", "end": "22:00" },
+        "sat": { "start": "17:00", "end": "22:00" }
+      },
+      "drinks": {
+        "tue": { "start": "17:00", "end": "22:00" },
+        "wed": { "start": "17:00", "end": "22:00" },
+        "thu": { "start": "17:00", "end": "22:00" },
+        "fri": { "start": "17:00", "end": "22:00" },
+        "sat": { "start": "17:00", "end": "22:00" }
+      }
+    },
     "sections": [
       {
         "name": "Raw",
@@ -159,6 +180,35 @@
     ]
   },
   "lmk-010": {
+    "taglines": {
+      "dinner": "contemporary American in the heart of the Square",
+      "brunch": "weekend brunch on Park Avenue",
+      "drinks": "handcrafted cocktails"
+    },
+    "schedule": {
+      "dinner": {
+        "mon": { "start": "17:00", "end": "21:00" },
+        "tue": { "start": "17:00", "end": "21:00" },
+        "wed": { "start": "17:00", "end": "21:00" },
+        "thu": { "start": "17:00", "end": "21:00" },
+        "fri": { "start": "17:00", "end": "21:00" },
+        "sat": { "start": "17:00", "end": "21:00" },
+        "sun": { "start": "17:00", "end": "21:00" }
+      },
+      "brunch": {
+        "sat": { "start": "10:00", "end": "15:00" },
+        "sun": { "start": "09:00", "end": "15:00" }
+      },
+      "drinks": {
+        "mon": { "start": "17:00", "end": "21:00" },
+        "tue": { "start": "17:00", "end": "21:00" },
+        "wed": { "start": "17:00", "end": "21:00" },
+        "thu": { "start": "17:00", "end": "21:00" },
+        "fri": { "start": "17:00", "end": "21:00" },
+        "sat": { "start": "10:00", "end": "21:00" },
+        "sun": { "start": "09:00", "end": "21:00" }
+      }
+    },
     "sections": [
       {
         "name": "Appetizers & Small Plates",
@@ -946,6 +996,27 @@
     ]
   },
   "lmk-011": {
+    "taglines": {
+      "drinks": "dessert martinis on Park Avenue",
+      "dessert": "chocolate and sweets since 2003",
+      "all_day": "chocolate bar classics"
+    },
+    "schedule": {
+      "drinks": {
+        "wed": { "start": "17:00", "end": "22:00" },
+        "thu": { "start": "17:00", "end": "22:00" },
+        "fri": { "start": "17:00", "end": "23:00" },
+        "sat": { "start": "17:00", "end": "23:00" },
+        "sun": { "start": "17:00", "end": "22:00" }
+      },
+      "dessert": {
+        "wed": { "start": "17:00", "end": "22:00" },
+        "thu": { "start": "17:00", "end": "22:00" },
+        "fri": { "start": "17:00", "end": "23:00" },
+        "sat": { "start": "17:00", "end": "23:00" },
+        "sun": { "start": "17:00", "end": "22:00" }
+      }
+    },
     "sections": [
       {
         "name": "Signature Martinis",
@@ -1053,6 +1124,20 @@
     ]
   },
   "lmk-040": {
+    "taglines": {
+      "all_day": "small-batch ice cream on 18th Street"
+    },
+    "schedule": {
+      "all_day": {
+        "mon": { "start": "12:00", "end": "22:00" },
+        "tue": { "start": "12:00", "end": "22:00" },
+        "wed": { "start": "12:00", "end": "22:00" },
+        "thu": { "start": "12:00", "end": "22:00" },
+        "fri": { "start": "12:00", "end": "23:00" },
+        "sat": { "start": "12:00", "end": "23:00" },
+        "sun": { "start": "12:00", "end": "22:00" }
+      }
+    },
     "sections": [
       {
         "name": "Signature — Naughty",
@@ -1100,6 +1185,27 @@
     ]
   },
   "lmk-021": {
+    "taglines": {
+      "all_day": "wines, small plates, and cocktails on Chouteau",
+      "drinks": "curated wines and craft cocktails",
+      "dessert": "house desserts"
+    },
+    "schedule": {
+      "all_day": {
+        "tue": { "start": "15:00", "end": "21:00" },
+        "wed": { "start": "15:00", "end": "21:00" },
+        "thu": { "start": "15:00", "end": "21:00" },
+        "fri": { "start": "15:00", "end": "22:00" },
+        "sat": { "start": "15:00", "end": "22:00" }
+      },
+      "drinks": {
+        "tue": { "start": "15:00", "end": "21:00" },
+        "wed": { "start": "15:00", "end": "21:00" },
+        "thu": { "start": "15:00", "end": "21:00" },
+        "fri": { "start": "15:00", "end": "22:00" },
+        "sat": { "start": "15:00", "end": "22:00" }
+      }
+    },
     "sections": [
       {
         "name": "Small Plates",
@@ -1147,6 +1253,27 @@
     ]
   },
   "lmk-028": {
+    "taglines": {
+      "dinner": "farm-to-table fine dining since 2001",
+      "drinks": "oak-aged cocktails and 20+ wines by the glass",
+      "dessert": "house-made desserts"
+    },
+    "schedule": {
+      "dinner": {
+        "tue": { "start": "17:00", "end": "21:00" },
+        "wed": { "start": "17:00", "end": "21:00" },
+        "thu": { "start": "17:00", "end": "21:00" },
+        "fri": { "start": "17:00", "end": "22:00" },
+        "sat": { "start": "17:00", "end": "22:00" }
+      },
+      "drinks": {
+        "tue": { "start": "17:00", "end": "21:00" },
+        "wed": { "start": "17:00", "end": "21:00" },
+        "thu": { "start": "17:00", "end": "21:00" },
+        "fri": { "start": "17:00", "end": "22:00" },
+        "sat": { "start": "17:00", "end": "22:00" }
+      }
+    },
     "sections": [
       {
         "name": "Starters",
@@ -1306,6 +1433,27 @@
     ]
   },
   "lmk-001": {
+    "taglines": {
+      "all_day": "house-brewed beer and house-distilled spirits",
+      "dinner": "pub fare and brewery classics",
+      "brunch": "weekend brunch at the brewery",
+      "drinks": "craft beer brewed on-site"
+    },
+    "schedule": {
+      "all_day": {
+        "mon": { "start": "11:00", "end": "21:00" },
+        "tue": { "start": "11:00", "end": "21:00" },
+        "wed": { "start": "11:00", "end": "21:00" },
+        "thu": { "start": "11:00", "end": "21:00" },
+        "fri": { "start": "11:00", "end": "22:00" },
+        "sat": { "start": "10:00", "end": "22:00" },
+        "sun": { "start": "10:00", "end": "20:00" }
+      },
+      "brunch": {
+        "sat": { "start": "10:00", "end": "14:00" },
+        "sun": { "start": "10:00", "end": "14:00" }
+      }
+    },
     "sections": [
       {
         "name": "Appetizers",
