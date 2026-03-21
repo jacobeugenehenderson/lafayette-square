@@ -1026,7 +1026,8 @@ function RatingSummary({ rating, reviewCount, distribution }) {
 // ─── Review form (shown to all non-guardians) ──────────────────────────────
 const MAX_REVIEW_CHARS = 500
 
-function ReviewForm({ listingId, onSubmitted }) {
+function ReviewForm({ listingId, onSubmitted, hasExisting }) {
+  const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [rating, setRating] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -1040,7 +1041,7 @@ function ReviewForm({ listingId, onSubmitted }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!text.trim() || rating === 0) return
+    if (rating === 0) return
     setSubmitting(true)
     setGateMessage(null)
     try {
@@ -1051,6 +1052,7 @@ function ReviewForm({ listingId, onSubmitted }) {
       } else {
         setText('')
         setRating(0)
+        setOpen(false)
         setSuccess(true)
         onSubmitted()
         setTimeout(() => setSuccess(false), 3000)
@@ -1069,13 +1071,32 @@ function ReviewForm({ listingId, onSubmitted }) {
     )
   }
 
+  if (!open) {
+    return (
+      <div className="border-b border-outline-variant pb-3 mb-4">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2.5 w-full text-left py-2 group"
+        >
+          <AvatarCircle emoji={avatar} vignette={vignette} size={9} fallback={handle ? handle[0].toUpperCase() : '?'} />
+          <span className="text-body-sm text-on-surface-subtle group-hover:text-on-surface transition-colors">
+            {hasExisting ? 'Update Review' : 'Add Review'}
+          </span>
+        </button>
+        <p className="text-caption text-on-surface-disabled leading-relaxed mt-1">
+          Become a Townie to rate and review — visit 3 local spots within 14 days by scanning their QR codes.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-2 border-b border-outline-variant pb-4 mb-4">
       <div className="flex items-center gap-2.5">
-        <AvatarCircle emoji={avatar} vignette={vignette} size={12} fallback={handle ? handle[0].toUpperCase() : '?'} />
+        <AvatarCircle emoji={avatar} vignette={vignette} size={9} fallback={handle ? handle[0].toUpperCase() : '?'} />
         <div>
-          <p className="text-on-surface-medium text-body-sm font-medium">{handle ? `@${handle}` : 'Write a review'}</p>
-          {handle && <p className="text-on-surface-disabled text-caption">Write a review</p>}
+          <p className="text-on-surface-medium text-body-sm font-medium">{handle ? `@${handle}` : 'Anonymous'}</p>
         </div>
       </div>
       <FleurPicker value={rating} onChange={setRating} />
@@ -1083,7 +1104,7 @@ function ReviewForm({ listingId, onSubmitted }) {
         <textarea
           value={text}
           onChange={e => { if (e.target.value.length <= MAX_REVIEW_CHARS) setText(e.target.value) }}
-          placeholder="Share your experience..."
+          placeholder="Add a written review (optional)"
           rows={3}
           className="input w-full resize-none"
         />
@@ -1098,16 +1119,22 @@ function ReviewForm({ listingId, onSubmitted }) {
           <p className="text-amber-300/90 text-xs leading-relaxed">{gateMessage}</p>
         </div>
       )}
-      <button
-        type="submit"
-        disabled={submitting || !text.trim() || rating === 0}
-        className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-      >
-        {submitting ? 'Posting...' : 'Post Review'}
-      </button>
-      <p className="text-caption text-on-surface-disabled leading-relaxed">
-        Become a Townie to post reviews — visit 3 local spots within 14 days by scanning their QR codes.
-      </p>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={submitting || rating === 0}
+          className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          {submitting ? 'Posting...' : 'Post'}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setOpen(false); setText(''); setRating(0); setGateMessage(null) }}
+          className="px-4 py-2 rounded-lg text-on-surface-subtle text-body-sm transition-colors hover:text-on-surface"
+        >
+          Cancel
+        </button>
+      </div>
     </form>
   )
 }
@@ -1183,7 +1210,7 @@ function ReviewsTab({ listingId, isGuardian }) {
         setReviews(data?.reviews || [])
         if (data?.review_count != null) {
           setStats({ rating: data.rating, review_count: data.review_count, distribution: data.distribution })
-          updateListing(listingId, { rating: data.rating, review_count: data.review_count })
+          updateListing(listingId, { townie_rating: data.rating, townie_review_count: data.review_count })
         }
       }
     } catch { /* silent */ }
@@ -1205,14 +1232,34 @@ function ReviewsTab({ listingId, isGuardian }) {
     return `${Math.floor(days / 7)}w ago`
   }
 
+  const handle = useHandle(s => s.handle)
+  const hasExisting = reviews.some(r => r.handle && r.handle === handle)
+
   return (
     <div>
-      {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} />}
+      {!isGuardian && <ReviewForm listingId={listingId} onSubmitted={fetchReviews} hasExisting={hasExisting} />}
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {reviews.map((review, idx) => {
           const displayName = review.handle ? `@${review.handle}` : 'Local'
           const replies = review.replies || []
+          const hasText = review.text && review.text.trim()
+
+          // Rating-only: compact single row
+          if (!hasText) {
+            return (
+              <div key={review.id || idx} className="border-b border-outline-variant pb-3 last:border-0">
+                <div className="flex items-center gap-2.5">
+                  <AvatarCircle emoji={review.avatar} vignette={review.vignette} size={7} fallback={review.handle ? review.handle[0].toUpperCase() : 'L'} />
+                  <span className="text-body-sm font-medium text-on-surface">{displayName}</span>
+                  {review.rating && <FleurRating rating={review.rating} size="sm" />}
+                  <span className="text-caption text-on-surface-disabled ml-auto">{relativeTime(review.created_at || review.timestamp)}</span>
+                </div>
+              </div>
+            )
+          }
+
+          // Full review with text
           return (
             <div key={review.id || idx} className="border-b border-outline-variant pb-4 last:border-0">
               <div className="flex items-start gap-3">
@@ -3363,7 +3410,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
       </div>
 
       <EditProvider listingId={listingId}>
-      <div ref={scrollRef} className="overflow-y-auto flex-1">
+      <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden flex-1">
         {hasListingInfo ? (
           <>
             {/* ── Listing path ── */}

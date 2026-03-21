@@ -25,6 +25,15 @@ function computeCenterOn(building) {
   }
 }
 
+const MENU_TYPE_LABELS = {
+  dinner: 'Dinner', lunch: 'Lunch', brunch: 'Brunch', drinks: 'Drinks',
+  dessert: 'Dessert', all_day: 'All Day', happy_hour: 'Happy Hour', specials: 'Specials', market: 'Market',
+}
+
+function menuTypeLabel(key) {
+  return MENU_TYPE_LABELS[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
 function buildSearchIndex(listings) {
   const idx = []
   listings.forEach(listing => {
@@ -33,9 +42,18 @@ function buildSearchIndex(listings) {
     idx.push({ text: name + ' ' + addr, type: 'place', listing })
 
     const sections = listing.menu?.sections || []
+    // Index menu types (e.g. "brunch", "happy hour", "bridal")
+    const seenTypes = new Set()
     sections.forEach(section => {
+      const menuKey = section.menu || ''
+      if (menuKey && !seenTypes.has(menuKey)) {
+        seenTypes.add(menuKey)
+        const label = menuTypeLabel(menuKey)
+        idx.push({ text: (label + ' ' + menuKey.replace(/_/g, ' ')).toUpperCase(), type: 'menu-type', listing, menuType: menuKey, menuLabel: label })
+      }
       (section.items || []).forEach(item => {
-        const itemText = ((item.name || '') + ' ' + (item.description || '')).toUpperCase()
+        const menuLabel = menuKey ? menuTypeLabel(menuKey) : ''
+        const itemText = ((item.name || '') + ' ' + (item.description || '') + ' ' + menuLabel).toUpperCase()
         idx.push({ text: itemText, type: 'menu-item', listing, item, section: section.name })
       })
     })
@@ -60,7 +78,16 @@ export function useGlassSearch() {
     const terms = q.split(/\s+/)
     const matches = searchIndex.filter(entry => terms.every(t => entry.text.includes(t)))
     const places = matches.filter(m => m.type === 'place')
+    const menuTypes = matches.filter(m => m.type === 'menu-type')
     const items = matches.filter(m => m.type === 'menu-item')
+    // Dedupe menu types by listing
+    const seenMenuListings = new Set()
+    const uniqueMenuTypes = menuTypes.filter(m => {
+      const k = m.listing.id + ':' + m.menuType
+      if (seenMenuListings.has(k)) return false
+      seenMenuListings.add(k)
+      return true
+    })
     const itemsByPlace = {}
     items.forEach(m => {
       const pid = m.listing.id
@@ -68,8 +95,9 @@ export function useGlassSearch() {
       if (itemsByPlace[pid].length < 2) itemsByPlace[pid].push(m)
     })
     const placeResults = places.slice(0, 4)
+    const menuTypeResults = uniqueMenuTypes.slice(0, 4)
     const itemResults = Object.values(itemsByPlace).flat().slice(0, 6)
-    return [...placeResults, ...itemResults].slice(0, 8)
+    return [...placeResults, ...menuTypeResults, ...itemResults].slice(0, 10)
   }, [query, searchIndex])
 
   const selectPlace = useCallback((listing) => {
@@ -108,6 +136,26 @@ function SearchDropdown({ results, selectPlace }) {
         const logo = listing.logo
           ? (listing.logo.startsWith('http') ? listing.logo : `${import.meta.env.BASE_URL}${listing.logo.replace(/^\//, '')}`)
           : null
+
+        if (result.type === 'menu-type') {
+          return (
+            <button
+              key={`mtype-${listing.id}-${result.menuType}-${i}`}
+              onClick={() => selectPlace(listing)}
+              className="w-full px-4 py-2 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
+            >
+              {logo ? (
+                <img src={logo} alt="" className="w-7 h-7 rounded-md object-contain bg-white/5 flex-shrink-0" />
+              ) : (
+                <div className="w-7 h-7 rounded-md bg-white/5 flex-shrink-0" />
+              )}
+              <div className="min-w-0 flex-1">
+                <span className="text-xs glass-text-dim block truncate">{listing.name}</span>
+                <span className="text-sm glass-text block truncate">{result.menuLabel}</span>
+              </div>
+            </button>
+          )
+        }
 
         if (result.type === 'menu-item') {
           const { item } = result
