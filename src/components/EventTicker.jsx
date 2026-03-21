@@ -71,13 +71,11 @@ function buildTickerEntries(allListings, allEvents) {
       const endHr = eh === 0 ? 12 : eh > 12 ? eh - 12 : eh
       const endDisplay = em === 0 ? `${endHr}${endSuffix}` : `${endHr}:${String(em).padStart(2, '0')}${endSuffix}`
 
-      const tagline = listing.menu?.taglines?.[bestMenu] || ''
-      const title = tagline
-        ? `Serving ${label.toLowerCase()} until ${endDisplay} — ${tagline}`
-        : `Serving ${label.toLowerCase()} until ${endDisplay}`
+      const tagline = listing.menu?.taglines?.[bestMenu] || `Serving ${label.toLowerCase()}`
       entries.set(listing.id, {
         listing_id: listing.id,
-        title,
+        title: tagline,
+        _time: `until ${endDisplay}`,
         _venueName: listing.name,
         _buildingId: listing.building_id,
         _source: 'schedule',
@@ -190,9 +188,9 @@ export default function EventTicker() {
       <div
         className="flex items-center pl-5 pr-16 relative font-mono"
         style={{
-          height: 'calc(env(safe-area-inset-top, 0px) + 72px)',
+          height: 'calc(env(safe-area-inset-top, 0px) + 82px)',
           paddingTop: 'env(safe-area-inset-top, 0px)',
-          background: 'linear-gradient(180deg, var(--surface-glass) 0%, transparent 100%)',
+          background: 'linear-gradient(90deg, rgba(0,0,0,0.6) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.6) 100%)',
         }}
       >
         {/* Spectral bottom-edge highlight */}
@@ -209,7 +207,7 @@ export default function EventTicker() {
         >
           <div
             key={`${current?.listing_id || ''}-${index}`}
-            className="flex-1 min-w-0 animate-ticker-in"
+            className="flex-1 min-w-0 animate-ticker-in space-y-0.5"
           >
             {current?._venueName && (
               <p className={`text-label tracking-wide truncate ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
@@ -219,6 +217,11 @@ export default function EventTicker() {
             <p className={`text-label-sm truncate ${isEvent ? 'text-amber-300/70' : 'text-on-surface-variant'}`}>
               {current?.title}
             </p>
+            {current?._time && (
+              <p className="text-caption text-on-surface-subtle truncate">
+                {current._time}
+              </p>
+            )}
           </div>
         </button>
       </div>
