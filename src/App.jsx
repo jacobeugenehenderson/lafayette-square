@@ -11,6 +11,7 @@ import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import EventTicker from './components/EventTicker'
 import GlassSearch from './components/GlassSearch'
 import BrowseHeader from './components/BrowseHeader'
+import AdminPrompt from './components/AdminPrompt'
 import useCamera from './hooks/useCamera'
 import useTimeOfDay from './hooks/useTimeOfDay'
 import useSelectedBuilding from './hooks/useSelectedBuilding'
@@ -507,6 +508,7 @@ function App() {
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}
       {!isGround && <InfoModal />}
       <CourierDashboard />
+      <AdminPrompt />
       <Splash />
     </div>
   )

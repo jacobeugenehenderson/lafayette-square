@@ -6,61 +6,8 @@ const GUARDIAN_KEY = 'lsq_guardian_listings'
 const ADMIN_KEY = 'lsq_admin'
 const TOKEN_KEY = 'lsq_admin_token'
 
-// On load: if ?admin is in URL, prompt for passphrase and validate server-side.
-// If ?logout is in URL, drop admin + guardian status.
-// Otherwise, check if we have a valid session token from a previous login.
-async function checkAdminStatus() {
-  try {
-    const params = new URLSearchParams(window.location.search)
-
-    // ?logout — drop everything, clean URL
-    if (params.has('logout')) {
-      localStorage.removeItem(ADMIN_KEY)
-      localStorage.removeItem(GUARDIAN_KEY)
-      sessionStorage.removeItem(TOKEN_KEY)
-      params.delete('logout')
-      const clean = params.toString()
-      window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
-      return false
-    }
-
-    // ?admin — prompt for passphrase, validate server-side
-    if (params.has('admin')) {
-      params.delete('admin')
-      const clean = params.toString()
-      window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
-
-      const passphrase = window.prompt('Admin passphrase:')
-      if (!passphrase) return localStorage.getItem(ADMIN_KEY) === 'true'
-
-      const res = await adminAuth(passphrase)
-      if (res?.data?.admin_token) {
-        sessionStorage.setItem(TOKEN_KEY, res.data.admin_token)
-        localStorage.setItem(ADMIN_KEY, 'true')
-        return true
-      }
-      return false
-    }
-
-    // Returning session — check if stored token is still valid
-    if (localStorage.getItem(ADMIN_KEY) === 'true') {
-      const token = sessionStorage.getItem(TOKEN_KEY)
-      if (token) {
-        const res = await adminVerify(token)
-        if (res?.data?.valid) return true
-      }
-      // Token expired or missing — drop admin flag
-      localStorage.removeItem(ADMIN_KEY)
-      sessionStorage.removeItem(TOKEN_KEY)
-    }
-
-    return false
-  } catch { return false }
-}
-
 function loadGuardianList() {
   try {
-    // Migrate old key if present
     const old = localStorage.getItem('lsq_guardian_businesses')
     if (old && !localStorage.getItem(GUARDIAN_KEY)) {
       localStorage.setItem(GUARDIAN_KEY, old)
@@ -72,13 +19,44 @@ function loadGuardianList() {
 
 const useGuardianStatus = create((set, get) => ({
   guardianOf: loadGuardianList(),
-  isAdmin: false, // set asynchronously after server check
+  isAdmin: false,
   loading: false,
   error: null,
+
+  // Admin passphrase modal state
+  adminPromptOpen: false,
+  adminPromptError: null,
 
   isGuardianOf(listingId) {
     return get().guardianOf.includes(listingId)
   },
+
+  /** Open the admin passphrase modal */
+  openAdminPrompt: () => set({ adminPromptOpen: true, adminPromptError: null }),
+
+  /** Submit passphrase from the modal */
+  submitAdminPassphrase: async (passphrase) => {
+    if (!passphrase) {
+      set({ adminPromptOpen: false })
+      return
+    }
+    try {
+      const res = await adminAuth(passphrase)
+      if (res?.data?.admin_token) {
+        sessionStorage.setItem(TOKEN_KEY, res.data.admin_token)
+        localStorage.setItem(ADMIN_KEY, 'true')
+        set({ isAdmin: true, adminPromptOpen: false, adminPromptError: null })
+      } else {
+        set({ adminPromptError: 'Invalid passphrase' })
+      }
+    } catch (err) {
+      console.error('[Admin auth]', err)
+      set({ adminPromptError: 'Connection failed' })
+    }
+  },
+
+  /** Cancel the admin prompt */
+  cancelAdminPrompt: () => set({ adminPromptOpen: false, adminPromptError: null }),
 
   /** Claim guardian ownership of a listing via secret QR code */
   claim: async (listingId, secret) => {
@@ -102,9 +80,48 @@ const useGuardianStatus = create((set, get) => ({
   },
 }))
 
-// Async init — check admin status server-side
-checkAdminStatus().then(isAdmin => {
-  useGuardianStatus.setState({ isAdmin })
-})
+// Async init — check for ?admin, ?logout, or existing session
+;(async function initAdmin() {
+  try {
+    const params = new URLSearchParams(window.location.search)
+
+    // ?logout — drop everything
+    if (params.has('logout')) {
+      localStorage.removeItem(ADMIN_KEY)
+      localStorage.removeItem(GUARDIAN_KEY)
+      sessionStorage.removeItem(TOKEN_KEY)
+      params.delete('logout')
+      const clean = params.toString()
+      window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
+      return
+    }
+
+    // ?admin — open the passphrase modal (don't use window.prompt)
+    if (params.has('admin')) {
+      params.delete('admin')
+      const clean = params.toString()
+      window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
+      // Delay slightly so React has mounted
+      setTimeout(() => useGuardianStatus.getState().openAdminPrompt(), 300)
+      return
+    }
+
+    // Returning session — verify stored token
+    if (localStorage.getItem(ADMIN_KEY) === 'true') {
+      const token = sessionStorage.getItem(TOKEN_KEY)
+      if (token) {
+        const res = await adminVerify(token)
+        if (res?.data?.valid) {
+          useGuardianStatus.setState({ isAdmin: true })
+          return
+        }
+      }
+      localStorage.removeItem(ADMIN_KEY)
+      sessionStorage.removeItem(TOKEN_KEY)
+    }
+  } catch (err) {
+    console.error('[Admin init]', err)
+  }
+})()
 
 export default useGuardianStatus
