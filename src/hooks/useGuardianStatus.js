@@ -92,15 +92,16 @@ if (_initParams.has('logout')) {
   window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
 }
 
-// Flag for ?admin — stash it, AdminPrompt component will read it on mount
+// ?admin — set adminPromptOpen synchronously so Scene never mounts.
+// The AdminPrompt component handles the input after React renders.
 const _wantsAdmin = _initParams.has('admin')
 if (_wantsAdmin) {
   _initParams.delete('admin')
   const clean = _initParams.toString()
   window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))
+  // Set directly on store — Scene reads this before mounting
+  useGuardianStatus.setState({ adminPromptOpen: true })
 }
-// Expose for AdminPrompt to check on mount
-useGuardianStatus._wantsAdmin = _wantsAdmin
 
 // Async: verify existing session token (doesn't affect mounting)
 if (!_wantsAdmin && localStorage.getItem(ADMIN_KEY) === 'true') {

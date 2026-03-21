@@ -12,6 +12,7 @@ import EventTicker from './components/EventTicker'
 import GlassSearch from './components/GlassSearch'
 import BrowseHeader from './components/BrowseHeader'
 import AdminPrompt from './components/AdminPrompt'
+import useGuardianStatus from './hooks/useGuardianStatus'
 import useCamera from './hooks/useCamera'
 import useTimeOfDay from './hooks/useTimeOfDay'
 import useSelectedBuilding from './hooks/useSelectedBuilding'
@@ -433,12 +434,15 @@ const _splashStars = (() => {
 function Splash() {
   const [visible, setVisible] = useState(true)
   const [fading, setFading] = useState(false)
+  const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
 
   useEffect(() => {
+    // Hold splash while admin prompt is open — don't load 3D scene
+    if (adminPromptOpen) return
     const t1 = setTimeout(() => setFading(true), 2500)
     const t2 = setTimeout(() => setVisible(false), 3300)
     return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [])
+  }, [adminPromptOpen])
 
   if (!visible) return null
 
@@ -489,10 +493,11 @@ function App() {
   }
 
   const isGround = window.location.search.includes('ground')
+  const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
 
   return (
     <div className="w-full h-full relative">
-      <SceneBoundary><Scene /></SceneBoundary>
+      {!adminPromptOpen && <SceneBoundary><Scene /></SceneBoundary>}
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && <BulletinOpener />}
       {route.page === 'cary' && <CaryOpener tier={route.tier} />}
