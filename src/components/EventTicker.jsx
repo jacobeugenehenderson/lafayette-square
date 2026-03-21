@@ -205,23 +205,20 @@ export default function EventTicker() {
 
         <button
           onClick={() => openEvent(current)}
-          className="flex-1 min-w-0 flex items-center gap-2 text-left h-full"
+          className="flex-1 min-w-0 flex items-center text-left h-full"
         >
-          <div className="flex-1 min-w-0 relative h-5 overflow-hidden">
-            <div
-              key={`${current?.listing_id || ''}-${index}`}
-              className="absolute inset-0 flex items-center gap-2 animate-ticker-in"
-            >
-              {current?._venueName && (
-                <span className={`text-label tracking-wide truncate flex-shrink-0 ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
-                  {current._venueName}
-                </span>
-              )}
-              <span className="text-on-surface-variant">·</span>
-              <span className={`text-label-sm truncate ${isEvent ? 'text-amber-300/80' : 'text-on-surface-variant'}`}>
-                {current?.title}
-              </span>
-            </div>
+          <div
+            key={`${current?.listing_id || ''}-${index}`}
+            className="flex-1 min-w-0 animate-ticker-in"
+          >
+            {current?._venueName && (
+              <p className={`text-label tracking-wide truncate ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
+                {current._venueName}
+              </p>
+            )}
+            <p className={`text-label-sm truncate ${isEvent ? 'text-amber-300/70' : 'text-on-surface-variant'}`}>
+              {current?.title}
+            </p>
           </div>
         </button>
       </div>
