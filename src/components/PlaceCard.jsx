@@ -3237,14 +3237,14 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         // ── Residential: consolidated tabs ──
         const t = [{ id: 'about', label: 'About' }]
         if (isResidentHere) t.push({ id: 'lobby', label: 'Lobby' })
-        if (isResidentHere || isAdmin) t.push({ id: 'qr', label: 'QR' })
+        if (isResidentHere || isAdmin) t.push({ id: 'guardians', label: 'QR' })
         return t
       }
-      // ── Non-residential listing path: About + Menu + Community + QR ──
+      // ── Non-residential listing path: About + Menu + Reviews + Guardians ──
       const t = [{ id: 'about', label: 'About' }]
       if (activeListing?.menu?.sections?.length || isGuardian) t.push({ id: 'menu', label: 'Menu' })
-      t.push({ id: 'community', label: 'Community' })
-      if (isGuardian || isAdmin) t.push({ id: 'qr', label: 'QR' })
+      t.push({ id: 'reviews', label: 'Reviews' })
+      if (isGuardian || isAdmin) t.push({ id: 'guardians', label: 'Guardians' })
       return t
     }
     // ── Property card path: bare buildings ──
@@ -3259,10 +3259,12 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const defaultTab = tabs[0]?.id || 'photos'
   const currentTab = activeTab && tabs.some(t => t.id === activeTab) ? activeTab : defaultTab
 
-  // Consume initialTab from store (e.g. EventTicker → Ticker tab)
-  // Map legacy tab IDs to new consolidated tabs
+  // Consume initialTab from store
   useEffect(() => {
-    const mapped = (initialTab === 'ticker' || initialTab === 'events' || initialTab === 'reviews') ? 'community' : initialTab
+    const mapped = (initialTab === 'ticker' || initialTab === 'events') ? 'guardians'
+      : initialTab === 'community' ? 'reviews'
+      : initialTab === 'qr' ? 'guardians'
+      : initialTab
     if (mapped && tabs.some(t => t.id === mapped)) {
       setActiveTab(mapped)
       useSelectedBuilding.getState().clearInitialTab()
@@ -3530,12 +3532,27 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           )}
           {/* Menu tab */}
           {currentTab === 'menu' && <MenuTab listing={activeListing} building={building} isGuardian={isGuardian} isAdmin={isAdmin} />}
-          {/* Community tab: reviews + events */}
-          {currentTab === 'community' && <CommunityTab listingId={listingId} isGuardian={isGuardian} />}
+          {/* Reviews tab: ratings + reviews (public) */}
+          {currentTab === 'reviews' && (
+            <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
+              <ReviewsTab listingId={listingId} isGuardian={isGuardian} />
+            </div>
+          )}
+          {/* Guardians tab: ticker posts + QR codes (guardian/admin only) */}
+          {currentTab === 'guardians' && (
+            <div className="space-y-5">
+              <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
+                <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Ticker</h3>
+                <EventsTab listingId={listingId} isGuardian={isGuardian} />
+              </div>
+              <div className="rounded-xl bg-surface-container border border-outline-variant p-4">
+                <h3 className="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-3">QR Codes</h3>
+                <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />
+              </div>
+            </div>
+          )}
           {/* Lobby tab: residential only */}
           {currentTab === 'lobby' && <LobbyTab buildingId={building?.id} />}
-          {/* QR tab */}
-          {currentTab === 'qr' && <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />}
           {/* Property card tabs */}
           {currentTab === 'property' && (
             <>
