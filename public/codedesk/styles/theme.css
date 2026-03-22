@@ -2171,14 +2171,17 @@ textarea.fldInp {
    Hides chrome, transparent bg for iframe use inside the main app.
    QR preview is always visible on top; stepper scrolls behind it.
 ========================= */
-html.embed, html.embed body {
+html.embed {
   height: 100% !important;
   max-height: 100% !important;
   min-height: 0 !important;
   overflow: hidden !important;
-  touch-action: pan-y !important;
 }
 html.embed body {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
   background: transparent !important;
   background-image: none !important;
 }
@@ -2196,15 +2199,15 @@ html.embed {
   --header-h: 0px;
 }
 
-/* Single-column layout, no side-by-side */
+/* Single-column layout — use relative positioning so stepper can be absolute */
 html.embed main {
   display: flex !important;
   flex-direction: column !important;
   padding: 0 !important;
   gap: 0 !important;
-  height: 100%;
+  height: 100% !important;
   overflow: hidden !important;
-  touch-action: pan-y !important;
+  position: relative !important;
 }
 
 /* QR preview: fixed at top, never scrolls */
@@ -2227,14 +2230,15 @@ html.embed #lsqUrlDisplay {
   font-size: 0.65rem;
 }
 
-/* Stepper: takes remaining space, scrolls independently */
+/* Stepper: takes remaining space, scrolls independently.
+   Height is set by JS (embedStepperResize) because iOS Safari
+   in iframes does not respect flex constraints for overflow. */
 html.embed #stepper {
-  flex: 1 1 0 !important;
+  flex: none !important;
   min-height: 0 !important;
-  overflow-y: scroll !important;
+  overflow-y: auto !important;
   overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch;
   margin-top: 0 !important;
   padding: 0.5rem 0.75rem 2rem !important;
   scroll-padding-top: 0 !important;

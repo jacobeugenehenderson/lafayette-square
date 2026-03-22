@@ -155,35 +155,29 @@ if (typeof window.buildText !== 'function') {
     }
   }, { passive: false });
 
-  // Touch scroll for iOS in embed mode (iframe)
-  // The body/html overflow:hidden prevents native scroll, so we handle it manually.
-  if (document.documentElement.classList.contains('embed')) {
-    var _touchY = null;
-    document.addEventListener('touchstart', function(e) {
-      if (e.touches.length === 1) _touchY = e.touches[0].clientY;
-    }, { passive: true });
+  // Touch scroll for embed mode (iframe on iOS)
+  // Always wire — the handler checks stepper existence at runtime.
+  var _touchY = null;
+  document.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) _touchY = e.touches[0].clientY;
+  }, { passive: true });
 
-    document.addEventListener('touchmove', function(e) {
-      if (_touchY === null || e.touches.length !== 1) return;
-      var dy = _touchY - e.touches[0].clientY;
-      _touchY = e.touches[0].clientY;
+  document.addEventListener('touchmove', function(e) {
+    if (_touchY === null || e.touches.length !== 1) return;
+    var dy = _touchY - e.touches[0].clientY;
+    _touchY = e.touches[0].clientY;
+    if (Math.abs(dy) < 1) return;
 
-      var scroller = nearestScrollable(e.target);
-      // Fall back to stepper
-      if (!scroller) scroller = document.getElementById('stepper');
-      if (!scroller) return;
+    var stepper = document.getElementById('stepper');
+    if (!stepper) return;
+    // Only intervene if stepper has overflow content
+    if (stepper.scrollHeight <= stepper.clientHeight + 1) return;
 
-      var atTop = scroller.scrollTop <= 0;
-      var atBot = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+    e.preventDefault();
+    stepper.scrollTop += dy;
+  }, { passive: false });
 
-      if ((dy < 0 && !atTop) || (dy > 0 && !atBot)) {
-        e.preventDefault();
-        scroller.scrollTop += dy;
-      }
-    }, { passive: false });
-
-    document.addEventListener('touchend', function() { _touchY = null; }, { passive: true });
-  }
+  document.addEventListener('touchend', function() { _touchY = null; }, { passive: true });
 })();
 
   /* === ECC (add-only, session-persistent) ========================== */
