@@ -25,19 +25,46 @@ const landmarksWithMenus = staticData.landmarks.map(lm =>
 // Generate synthetic listings for bare buildings using zoning codes
 const ZONING_CAT = { A: 'residential', B: 'residential', C: 'residential', D: 'commercial', E: 'residential', F: 'commercial', G: 'commercial', H: 'residential', J: 'industrial' }
 const ZONING_SUB = { A: 'unnamed', B: 'unnamed', C: 'unnamed', D: 'storefronts', E: 'unnamed', F: 'storefronts', G: 'retail', H: 'unnamed', J: 'warehouses' }
+const ZONING_LABELS = {
+  A: 'Single-Family Residential', B: 'Two-Family Residential', C: 'Multi-Family Residential',
+  D: 'Commercial / Mixed Use', E: 'Residential', F: 'Neighborhood Commercial',
+  G: 'Local Commercial / Retail', H: 'Residential', J: 'Industrial',
+}
 const _landmarkBids = new Set(landmarksWithMenus.map(l => l.building_id).filter(Boolean))
 const _landmarkAddrs = new Set(landmarksWithMenus.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
 const bareBuildingListings = buildingsData.buildings
   .filter(b => b.address && !_landmarkBids.has(b.id) && !_landmarkAddrs.has(b.address.toLowerCase().replace(/\s+/g, ' ').trim()))
   .map(b => {
     const z = (b.zoning || '').replace(/[^A-Z]/g, '').charAt(0)
+    const arch = b.architecture || {}
+    const style = arch.style || null
+    const yearBuilt = b.year_built || arch.year_built || null
+    const stories = b.stories || null
+    const historicStatus = b.historic_status || null
+    const sqft = b.building_sqft || null
+    const zoningLabel = ZONING_LABELS[z] || null
     return {
       id: b.id,
       name: b.name || b.address,
       address: b.address,
       building_id: b.id,
       category: ZONING_CAT[z] || 'residential',
-      subcategory: ZONING_SUB[z] || 'houses',
+      subcategory: ZONING_SUB[z] || 'unnamed',
+      zoning: z,
+      zoning_label: zoningLabel,
+      year_built: yearBuilt,
+      stories,
+      style,
+      historic_status: historicStatus,
+      building_sqft: sqft,
+      description: [
+        yearBuilt ? `Built ${yearBuilt}.` : null,
+        stories ? `${stories}-story` : null,
+        style ? `${style} style.` : null,
+        zoningLabel ? `Zoned ${zoningLabel}.` : null,
+        historicStatus === 'contributing' ? 'Contributing structure in the Lafayette Square Historic District.' : null,
+        sqft ? `${sqft.toLocaleString()} sq ft.` : null,
+      ].filter(Boolean).join(' '),
       _bare: true,
     }
   })
