@@ -220,6 +220,7 @@ const CATEGORIES = {
       townhouses:     { label: 'Townhouses & Duplexes', emoji: '\ud83c\udfe0' },
       houses:         { label: 'Single-Family Homes', emoji: '\ud83c\udfe1' },
       'historic-homes': { label: 'Historic Homes', emoji: '\ud83c\udfdb\ufe0f' },
+      unnamed:        { label: 'Unnamed Buildings', emoji: '\ud83c\udfe2' },
     },
   },
   commercial: {
