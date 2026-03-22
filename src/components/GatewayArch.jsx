@@ -83,9 +83,7 @@ function createArchGeometry(curveSegs = 120) {
 const ARCH_POSITION = [1470, 0, -490]
 const ARCH_SCALE = 2.66
 const ARCH_Y_OFFSET = -165
-
-// Real arch faces roughly north-south (legs N/S, curve arches E-W).
-const ARCH_FIXED_ROTATION = 1.36 // radians
+const ARCH_FIXED_ROTATION = 1.36
 
 export default function GatewayArch() {
   const geometry = useMemo(() => createArchGeometry(), [])
@@ -104,17 +102,15 @@ export default function GatewayArch() {
     })
 
     mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uGlintPos = { value: 0.5 }
-      shader.uniforms.uGlintBright = { value: 1.0 }
-      shader.uniforms.uFlash = { value: 0.0 }
-      shader.uniforms.uFlashPos = { value: 0.5 }
-      shader.uniforms.uCameraPos = { value: new THREE.Vector3() }
       shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
       shader.uniforms.uDayFactor = { value: 1.0 }
+      shader.uniforms.uGlintPos = { value: 0.5 }
+      shader.uniforms.uGlintBright = { value: 1.0 }
+      shader.uniforms.uSkyBright = { value: 0.5 }
       shader.uniforms.uHorizonColor = { value: new THREE.Color('#9dc5e0') }
       shader.uniforms.uGroundColor = { value: new THREE.Color('#3a4a3a') }
 
-      // Vertex: pass curve param, edge param, world position, world normal
+      // Vertex
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
         `#include <common>
@@ -135,17 +131,15 @@ export default function GatewayArch() {
          vArchNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
       )
 
-      // Fragment: declare uniforms and varyings
+      // Fragment: declare
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <common>',
         `#include <common>
-         uniform float uGlintPos;
-         uniform float uGlintBright;
-         uniform float uFlash;
-         uniform float uFlashPos;
-         uniform vec3 uCameraPos;
          uniform vec3 uSunDir;
          uniform float uDayFactor;
+         uniform float uGlintPos;
+         uniform float uGlintBright;
+         uniform float uSkyBright;
          uniform vec3 uHorizonColor;
          uniform vec3 uGroundColor;
          varying float vCurveParam;
@@ -158,102 +152,89 @@ export default function GatewayArch() {
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <color_fragment>',
         `#include <color_fragment>
-         float panelCount = 284.0;
-         float panel = fract(vCurveParam * panelCount);
-         float seam = smoothstep(0.0, 0.012, panel) * (1.0 - smoothstep(0.988, 1.0, panel));
-         float panelId = floor(vCurveParam * panelCount);
+         // Horizontal seams along the curve (~142 bands)
+         float hPanelCount = 142.0;
+         float hPanel = fract(vCurveParam * hPanelCount);
+         float hSeam = smoothstep(0.0, 0.025, hPanel) * (1.0 - smoothstep(0.975, 1.0, hPanel));
+
+         // Vertical seams: darken at triangle edges (where vEdge → 1.0)
+         // This creates 3 visible vertical stripes running the length of the arch
+         float vSeam = 1.0 - smoothstep(0.88, 0.96, vEdge) * 0.5;
+
+         // Combined seam: multiply horizontal and vertical
+         float seam = hSeam * vSeam;
+
+         // Face index (0, 1, or 2) — each triangular face is a distinct surface
+         float faceId = floor(vEdge * 2.99);
+         // Panel ID combines horizontal position + face
+         float panelId = floor(vCurveParam * hPanelCount) * 3.0 + faceId;
          float panelHash = fract(sin(panelId * 127.1) * 43758.5453);
-         // Seams visible in daylight, fade at night
-         float seamStrength = mix(0.3, 1.0, seam);
-         seamStrength = mix(1.0, seamStrength, uDayFactor); // no seams at night
-         diffuseColor.rgb *= seamStrength;
-         float warmShift = (fract(sin(panelId * 311.7) * 43758.5453) - 0.5) * 0.04;
-         diffuseColor.rgb += vec3(warmShift, warmShift * 0.3, -warmShift * 0.5);`
+         float panelHash2 = fract(sin(panelId * 311.7) * 43758.5453);
+         float panelHash3 = fract(sin(panelId * 541.3) * 43758.5453);
+
+         // Seams always visible
+         float seamVis = 0.5 + 0.5 * uDayFactor;
+         diffuseColor.rgb *= mix(1.0, mix(0.4, 1.0, seam), seamVis);
+
+         // Per-panel color — brightness + warm/cool tint
+         float panelBright = (panelHash - 0.5) * 0.35;
+         vec3 panelTint = vec3(
+           (panelHash2 - 0.5) * 0.18,
+           (panelHash3 - 0.5) * 0.10,
+           (panelHash - 0.5) * 0.14
+         );
+         float colorStrength = 0.6 + 0.4 * uDayFactor;
+         diffuseColor.rgb += panelBright * colorStrength;
+         diffuseColor.rgb += panelTint * colorStrength;
+         diffuseColor.rgb = max(diffuseColor.rgb, vec3(0.05));`
       )
 
-      // Per-panel roughness variation
+      // Uniform roughness — no per-panel variation
+      // All panel detail comes through color, not reflectivity
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
-         roughnessFactor = mix(0.5, roughnessFactor, seam);
-         roughnessFactor *= 0.85 + 0.3 * panelHash;`
+         // Slightly rougher at seams, otherwise uniform
+         roughnessFactor += (1.0 - seam) * 0.06 * seamVis;
+         roughnessFactor = clamp(roughnessFactor, 0.03, 0.15);`
       )
 
-      // Post-lighting: add camera-responsive specular highlights
+      // Post-lighting: environment-aware tinting + glint + foot blend
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <dithering_fragment>',
         `#include <dithering_fragment>
 
-         vec3 viewDir = normalize(uCameraPos - vArchWorld);
          vec3 N = normalize(vArchNormal);
 
-         // ── 1. Fresnel sheen: bright at grazing angles (edge-on to camera) ──
-         float NdotV = max(0.0, dot(N, viewDir));
-         float fresnel = pow(1.0 - NdotV, 4.0);
-         // Sky-tinted reflection at edges
-         vec3 fresnelColor = mix(vec3(0.6, 0.65, 0.75), vec3(0.9, 0.92, 0.95), fresnel);
-         gl_FragColor.rgb += fresnelColor * fresnel * (0.1 + uDayFactor * 0.3);
+         // ── Sky/ground reflection tint ──
+         // Simulate environment reflection based on normal direction
+         // Up-facing normals reflect sky, down-facing reflect ground
+         float upness = dot(N, vec3(0.0, 1.0, 0.0)) * 0.5 + 0.5;
+         vec3 envTint = mix(uGroundColor, uHorizonColor, upness);
+         // Blend with the PBR output — stronger when metallic surface is bright
+         float envStrength = uSkyBright * 0.4;
+         gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb + envTint, envStrength);
 
-         // ── 2. Broad camera-driven specular band ──
-         vec3 reflDir = reflect(-viewDir, N);
-         vec3 envDir = mix(vec3(0.0, 1.0, 0.0), uSunDir, uDayFactor);
-         float specDot = max(0.0, dot(reflDir, normalize(envDir)));
-         float specBroad = pow(specDot, 8.0) * 0.5;
-         float specTight = pow(specDot, 64.0) * 0.6;
-         vec3 specColor = mix(vec3(0.7, 0.75, 0.85), vec3(1.0, 0.98, 0.92), uDayFactor);
-         gl_FragColor.rgb += specColor * (specBroad + specTight);
+         // ── Broad directional light wash ──
+         // Gentle gradient, not a hard face divide
+         float sunFacing = max(0.0, dot(N, uSunDir));
+         float wash = sunFacing * 0.7; // linear, not squared — softer falloff
+         vec3 washColor = mix(vec3(0.4, 0.42, 0.5), vec3(0.9, 0.87, 0.8), uDayFactor);
+         gl_FragColor.rgb += washColor * wash * uSkyBright * 0.2;
 
-         // ── 3. Hot corner highlight: tight specular running along triangle edges ──
-         // vEdge measures distance to the nearest triangle corner edge (0=face center, 1=edge)
-         // The highlight rides the edge and shifts position based on view angle
-         float cornerIntensity = smoothstep(0.88, 1.0, vEdge);
-         // View-dependent position along curve — the hot spot slides up/down
-         float viewSlide = dot(viewDir, vec3(0.0, 1.0, 0.0)) * 0.5 + 0.5;
-         // Concentrate the hot spot: peaks where curveParam aligns with viewSlide
-         float hotDist = vCurveParam - viewSlide;
-         float hotSpot = exp(-hotDist * hotDist * 80.0);
-         // Tight bright highlight on corners
-         float hotCorner = cornerIntensity * hotSpot;
-         vec3 hotColor = vec3(1.0, 0.98, 0.94);
-         gl_FragColor.rgb += hotColor * hotCorner * 0.5 * uDayFactor;
-
-         // ── 4. Sun/moon glint: narrow traveling band on edges ──
-         float edgeMask = smoothstep(0.85, 1.0, vEdge);
+         // ── Sun/moon glint on edges — sharp and bright ──
+         float edgeMask = smoothstep(0.78, 1.0, vEdge);
          float glintD = vCurveParam - uGlintPos;
-         float glint = exp(-glintD * glintD * 3000.0) * edgeMask;
-         gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glint * uGlintBright * 0.5;
+         // Sharp core + softer halo
+         float glintCore = exp(-glintD * glintD * 2000.0) * edgeMask;
+         float glintHalo = exp(-glintD * glintD * 200.0) * edgeMask;
+         gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glintCore * uGlintBright * 1.2;
+         gl_FragColor.rgb += vec3(0.8, 0.82, 0.9) * glintHalo * uGlintBright * 0.3;
 
-         // ── 5. Major flash: once per camera transit, bloom catches it ──
-         if (uFlash > 0.01) {
-           float flashEdge = smoothstep(0.82, 1.0, vEdge);
-           float flashD = vCurveParam - uFlashPos;
-           // Tight core — very bright, narrow
-           float flashCore = exp(-flashD * flashD * 6000.0) * flashEdge;
-           // Wider bloom-feeding glow around the core
-           float flashGlow = exp(-flashD * flashD * 400.0) * flashEdge;
-           // Diffuse wash across nearby panels
-           float flashWash = exp(-flashD * flashD * 40.0);
-           // White-hot core (HDR values >> 1.0 for bloom to catch)
-           vec3 flashColor = vec3(1.0, 0.98, 0.94);
-           gl_FragColor.rgb += flashColor * flashCore * uFlash * 8.0;
-           gl_FragColor.rgb += flashColor * flashGlow * uFlash * 2.0;
-           gl_FragColor.rgb += vec3(0.8, 0.82, 0.9) * flashWash * uFlash * 0.3;
-         }
-
-         // ── 6. Daytime ambient boost: arch glows brighter in midday sun ──
-         gl_FragColor.rgb += vec3(0.35, 0.36, 0.42) * uDayFactor * 0.25;
-
-         // ── 7. Constant base shimmer ──
-         float shimmer = fresnel * 0.12 + 0.02;
-         gl_FragColor.rgb += vec3(0.5, 0.52, 0.6) * shimmer * (0.1 + uDayFactor * 0.6);
-
-         // ── 8. Blend feet into ground→sky gradient ──
-         // Paint the leg tips with a vertical gradient: ground color at
-         // the base, horizon/sky color higher up — matches what's behind.
+         // ── Foot blending ──
          float footDist = min(vCurveParam, 1.0 - vCurveParam);
          float footBlend = smoothstep(0.0, 0.10, footDist);
          float paintStrength = (1.0 - footBlend) * 0.50;
-         // Height-based gradient: ground at Y≈0, sky by Y≈120
          float heightFrac = smoothstep(-20.0, 120.0, vArchWorld.y);
          vec3 paintColor = mix(uGroundColor, uHorizonColor, heightFrac);
          gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);`
@@ -273,67 +254,59 @@ export default function GatewayArch() {
     const t = Math.max(0, Math.min(1, (sunAltitude + 0.12) / 0.42))
     const day = t * t * (3 - 2 * t)
 
-    material.emissiveIntensity = 0.1 * (1 - day)
+    // Emissive: subtle glow at night so arch is visible against dark sky
+    material.emissiveIntensity = 0.08 * (1 - day)
 
-    // Fixed rotation — the real arch doesn't spin
+    // Dynamic color: warmer in golden hour, cooler at night
+    const r = 0.78 + day * 0.1
+    const g = 0.78 + day * 0.1
+    const b = 0.82 + day * 0.05
+    material.color.setRGB(r, g, b)
+
     meshRef.current.rotation.y = ARCH_FIXED_ROTATION
 
     if (shaderRef.current) {
-      // Push camera position for view-dependent specular
-      shaderRef.current.uniforms.uCameraPos.value.copy(camera.position)
       shaderRef.current.uniforms.uDayFactor.value = day
+
       const hc = useSkyState.getState().horizonColor
       shaderRef.current.uniforms.uHorizonColor.value.copy(hc)
-      // Ground color: darkened horizon with a warm/green shift
       const gc = shaderRef.current.uniforms.uGroundColor.value
       gc.set(hc.r * 0.35 + 0.02, hc.g * 0.35 + 0.03, hc.b * 0.30)
 
-      // Sun direction for specular reflection
-      let azimuth, altitude
-      if (isNight) {
-        const moonPos = SunCalc.getMoonPosition(currentTime, LATITUDE, LONGITUDE)
-        azimuth = moonPos.azimuth + Math.PI
-        altitude = moonPos.altitude
-      } else {
-        const sunPos = SunCalc.getPosition(currentTime, LATITUDE, LONGITUDE)
-        azimuth = sunPos.azimuth + Math.PI
-        altitude = sunPos.altitude
-      }
+      // Sky brightness — drives how bright the arch appears (never fully dark)
+      shaderRef.current.uniforms.uSkyBright.value = 0.25 + day * 0.75
 
-      // Sun direction as unit vector
+      // Always compute both sun and moon — blend smoothly through twilight
+      const sunPos = SunCalc.getPosition(currentTime, LATITUDE, LONGITUDE)
+      const moonPos = SunCalc.getMoonPosition(currentTime, LATITUDE, LONGITUDE)
+      const sunAz = sunPos.azimuth + Math.PI
+      const sunAlt = sunPos.altitude
+      const moonAz = moonPos.azimuth + Math.PI
+      const moonAlt = Math.max(0.05, moonPos.altitude) // moon never fully below horizon for light
+
+      // Smooth crossfade over a wide range to prevent any dead zone
+      const blend = Math.max(0, Math.min(1, (sunAltitude + 0.2) / 0.4)) // 1=sun, 0=moon
+      const azimuth = sunAz * blend + moonAz * (1 - blend)
+      const altitude = sunAlt * blend + moonAlt * (1 - blend)
+
       shaderRef.current.uniforms.uSunDir.value.set(
         Math.cos(altitude) * Math.sin(azimuth),
         Math.sin(altitude),
         -Math.cos(altitude) * Math.cos(azimuth)
       )
 
-      // Sun-driven glint position along curve
+      // Glint position along curve (light-source-driven + camera parallax)
       const relAngle = azimuth - ARCH_FIXED_ROTATION
       const glintFromSun = 0.5 + Math.sin(relAngle) * 0.48
-
-      // Camera parallax shifts glint subtly
       const dx = camera.position.x - (-400)
       const dz = camera.position.z - 230
       const lateral = (dx * 0.358 + dz * 0.934) / 140
       const cameraShift = Math.max(-0.15, Math.min(0.15, lateral * 0.15))
+      shaderRef.current.uniforms.uGlintPos.value = Math.max(0.02, Math.min(0.98, glintFromSun + cameraShift))
 
-      const glintPos = Math.max(0.02, Math.min(0.98, glintFromSun + cameraShift))
-      shaderRef.current.uniforms.uGlintPos.value = glintPos
-
-      // Glint brightness: strongest at low sun angles
-      const altFade = isNight ? 0.8 : Math.max(0.4, 1.0 - sunAltitude * 1.5)
+      // Glint brightness: strong at all times — this is the drama
+      const altFade = Math.max(0.5, 1.0 - Math.abs(sunAltitude) * 1.2)
       shaderRef.current.uniforms.uGlintBright.value = altFade
-
-      // Major flash: fires twice per transit at different lateral positions
-      const flash1 = Math.exp(-(lateral - 0.35) * (lateral - 0.35) * 60)
-      const flash2 = Math.exp(-(lateral + 0.25) * (lateral + 0.25) * 60)
-      const flashTrigger = Math.max(flash1, flash2)
-      shaderRef.current.uniforms.uFlash.value = flashTrigger
-      // Flash position shifts: first flash near apex, second flash slightly off-center
-      const flashPos = flash1 > flash2
-        ? 0.5 + cameraShift * 0.5
-        : 0.38 + cameraShift * 0.5
-      shaderRef.current.uniforms.uFlashPos.value = flashPos
     }
   })
 
@@ -344,6 +317,7 @@ export default function GatewayArch() {
       material={material}
       position={[ARCH_POSITION[0], ARCH_Y_OFFSET, ARCH_POSITION[2]]}
       scale={ARCH_SCALE}
+      renderOrder={-1}
     />
   )
 }

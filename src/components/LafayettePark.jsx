@@ -1023,9 +1023,10 @@ function ParkTrees() {
       varying vec2 vUv;
       void main() {
         float dist = length(vUv - 0.5) * 2.0;
-        // Soft gaussian falloff — no hard edge
-        float alpha = exp(-dist * dist * 2.5);
-        alpha *= smoothstep(1.0, 0.4, dist);
+        // Tighter gaussian + hard-to-zero outer edge — no visible ring
+        float alpha = exp(-dist * dist * 4.0);
+        alpha *= smoothstep(1.0, 0.3, dist);
+        alpha *= alpha; // square for steeper falloff at edges
 
         // Time-of-day: subtle during day, near invisible at night
         float dayT = smoothstep(-0.1, 0.3, uSunAlt);
@@ -1042,7 +1043,7 @@ function ParkTrees() {
     treeRoots.forEach((root, i) => {
       dummy.position.set(root.x, 0.12, root.z)
       dummy.rotation.set(-Math.PI / 2, 0, 0)
-      dummy.scale.set(root.r, root.r, 1)
+      dummy.scale.set(root.r * 1.15, root.r * 1.15, 1)
       dummy.updateMatrix()
       aoRef.current.setMatrixAt(i, dummy.matrix)
     })

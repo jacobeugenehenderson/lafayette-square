@@ -311,24 +311,14 @@ const PANEL_FRACTION = 0.02
 // Direction to arch in XZ: [3116, -1196], perpendicular: [0.358, 0.934]
 const PAN_HALF_LENGTH = 140 // ±140m from center
 const PAN_PERP = [0.358, 0.934]
-const PAN_PERIOD = 300 // seconds for one full back-and-forth
+const PAN_PERIOD = 360 // seconds for one full back-and-forth (slower = smoother)
 const HERO_PHASE = Math.random() // randomized start position each visit
 
-// Smoothed triangle wave: linear motion with smooth turnarounds at extremes.
-// Uses smoothstep at the endpoints (within `r` of each end) to avoid abrupt direction change.
+// Pure cosine wave: perfectly smooth at all points — no linear segments,
+// no easing discontinuities. Slowest at turnarounds, fastest in middle,
+// but the acceleration is always continuous and gentle.
 function heroPanSwing(t) {
-  const r = 0.20 // fraction of half-cycle spent easing at each end
-  let p = ((t % 1) + 1) % 1 // 0→1 sawtooth
-  let tri = p < 0.5 ? p * 2 : 2 - p * 2 // 0→1→0 triangle
-  // Smoothstep the bottom and top edges
-  if (tri < r) {
-    const x = tri / r
-    tri = x * x * (3 - 2 * x) * r
-  } else if (tri > 1 - r) {
-    const x = (1 - tri) / r
-    tri = 1 - x * x * (3 - 2 * x) * r
-  }
-  return tri * 2 - 1 // map 0–1 to -1–+1
+  return -Math.cos(((t % 1) + 1) % 1 * Math.PI * 2) // -1 → +1 → -1, smooth everywhere
 }
 
 // ── Camera presets ───────────────────────────────────────────────────────────
