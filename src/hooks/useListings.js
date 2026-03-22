@@ -98,7 +98,7 @@ const useListings = create((set, get) => ({
           if (!apiIds.has(lm.id)) merged.push(lm)
         })
 
-        set({ listings: merged, fetched: true, loading: false })
+        set({ listings: [...merged, ...bareBuildingListings], fetched: true, loading: false })
       } else {
         set({ fetched: true, loading: false })
       }
