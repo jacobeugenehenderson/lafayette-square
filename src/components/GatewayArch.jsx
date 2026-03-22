@@ -99,7 +99,6 @@ export default function GatewayArch() {
       emissiveIntensity: 0,
       transparent: false,
       depthWrite: true,
-      alphaTest: 0.01,
     })
 
     mat.onBeforeCompile = (shader) => {
@@ -184,9 +183,7 @@ export default function GatewayArch() {
            (panelHash3 - 0.5) * 0.10,
            (panelHash - 0.5) * 0.14
          );
-         // Panels subtle during twilight, stronger in full day/night
-         float twilightDip = 1.0 - smoothstep(0.1, 0.4, uDayFactor) * (1.0 - smoothstep(0.6, 0.9, uDayFactor));
-         float colorStrength = (0.4 + 0.6 * uDayFactor) * mix(0.4, 1.0, twilightDip);
+         float colorStrength = 0.6 + 0.4 * uDayFactor;
          diffuseColor.rgb += panelBright * colorStrength;
          diffuseColor.rgb += panelTint * colorStrength;
          diffuseColor.rgb = max(diffuseColor.rgb, vec3(0.05));`
@@ -242,13 +239,14 @@ export default function GatewayArch() {
          float heightFrac = smoothstep(-20.0, 120.0, vArchWorld.y);
          vec3 paintColor = mix(uGroundColor, uHorizonColor, heightFrac);
          gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);
-         // Alpha fade: legs fade out approaching ground level
-         float legFade = smoothstep(-40.0, 30.0, vArchWorld.y);
-         gl_FragColor.a = legFade;
-         if (legFade < 0.01) discard;
+         // Hard clip below rooftop level — legs hidden behind skyline
+         if (vArchWorld.y < 20.0) discard;
+         // Blend toward ground color near clip line
+         float clipBlend = smoothstep(20.0, 60.0, vArchWorld.y);
+         gl_FragColor.rgb = mix(paintColor, gl_FragColor.rgb, clipBlend);
 
          // ── Clamp output to prevent HDR blowout from bloom ──
-`
+         gl_FragColor.rgb = min(gl_FragColor.rgb, vec3(1.2));`
       )
 
       shaderRef.current = shader
