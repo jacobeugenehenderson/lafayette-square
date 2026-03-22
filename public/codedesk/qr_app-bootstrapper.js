@@ -143,6 +143,11 @@ function populateBizSelect(businesses) {
 
   // Listbox mode: render clickable items grouped into category folders
   if (listbox && hiddenInput) {
+    // Skip rebuild if data hasn't changed and list is already populated
+    var bizKey = businesses.length + ':' + (businesses[0]?.id || '') + ':' + (businesses[businesses.length-1]?.id || '');
+    if (listbox._bizKey === bizKey && listbox.querySelector('.biz-search-input')) return;
+    listbox._bizKey = bizKey;
+
     var current = hiddenInput.value || window.__lsq_cached_biz_id || '';
 
     // Preserve existing search input value across re-populations
