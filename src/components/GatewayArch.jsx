@@ -97,7 +97,7 @@ export default function GatewayArch() {
       roughness: 0.04,
       emissive: '#8888aa',
       emissiveIntensity: 0,
-      transparent: true,
+      transparent: false,
       depthWrite: true,
     })
 
@@ -231,17 +231,22 @@ export default function GatewayArch() {
          gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glintCore * uGlintBright * 1.2;
          gl_FragColor.rgb += vec3(0.8, 0.82, 0.9) * glintHalo * uGlintBright * 0.3;
 
-         // ── Foot blending: fade legs to transparent near ground ──
+         // ── Foot blending + hard clip ──
          float footDist = min(vCurveParam, 1.0 - vCurveParam);
-         // Color blend: paint with ground/sky gradient
+         // Color blend near feet
          float footBlend = smoothstep(0.0, 0.12, footDist);
          float paintStrength = (1.0 - footBlend) * 0.70;
          float heightFrac = smoothstep(-20.0, 120.0, vArchWorld.y);
          vec3 paintColor = mix(uGroundColor, uHorizonColor, heightFrac);
          gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);
-         // Alpha fade: legs go fully transparent at the very bottom
-         float alphaFade = smoothstep(0.0, 0.06, footDist);
-         gl_FragColor.a *= alphaFade;`
+         // Hard clip below rooftop level — legs hidden behind skyline
+         if (vArchWorld.y < 20.0) discard;
+         // Blend toward ground color near clip line
+         float clipBlend = smoothstep(20.0, 60.0, vArchWorld.y);
+         gl_FragColor.rgb = mix(paintColor, gl_FragColor.rgb, clipBlend);
+
+         // ── Clamp output to prevent HDR blowout from bloom ──
+         gl_FragColor.rgb = min(gl_FragColor.rgb, vec3(1.2));`
       )
 
       shaderRef.current = shader
@@ -332,7 +337,7 @@ export default function GatewayArch() {
       material={material}
       position={[ARCH_POSITION[0], ARCH_Y_OFFSET, ARCH_POSITION[2]]}
       scale={ARCH_SCALE}
-      renderOrder={-1}
+      frustumCulled={false}
     />
   )
 }
