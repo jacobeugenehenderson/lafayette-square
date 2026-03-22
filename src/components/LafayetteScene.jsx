@@ -988,7 +988,7 @@ function LandmarkMarkers() {
 
   const filteredLandmarks = useMemo(() => {
     return listings.filter(l =>
-      activeTags.has(l.subcategory) || activeTags.has(l.category) || l.id === selectedListingId
+      !l._bare && (activeTags.has(l.subcategory) || activeTags.has(l.category) || l.id === selectedListingId)
     )
   }, [activeTags, listings, selectedListingId])
 
