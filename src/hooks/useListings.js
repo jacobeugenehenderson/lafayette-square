@@ -23,8 +23,8 @@ const landmarksWithMenus = staticData.landmarks.map(lm =>
 )
 
 // Generate synthetic listings for bare buildings using zoning codes
-const ZONING_CAT = { A: 'residential', B: 'residential', C: 'residential', D: 'services', E: 'residential', F: 'services', G: 'shopping', H: 'residential', J: 'services' }
-const ZONING_SUB = { A: 'houses', B: 'townhouses', C: 'lofts', D: 'industrial', E: 'houses', F: 'commercial', G: 'commercial', H: 'houses', J: 'industrial' }
+const ZONING_CAT = { A: 'residential', B: 'residential', C: 'residential', D: 'residential', E: 'residential', F: 'residential', G: 'residential', H: 'residential', J: 'residential' }
+const ZONING_SUB = { A: 'houses', B: 'townhouses', C: 'lofts', D: 'commercial', E: 'houses', F: 'commercial', G: 'commercial', H: 'houses', J: 'commercial' }
 const _landmarkBids = new Set(landmarksWithMenus.map(l => l.building_id).filter(Boolean))
 const _landmarkAddrs = new Set(landmarksWithMenus.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
 const bareBuildingListings = buildingsData.buildings

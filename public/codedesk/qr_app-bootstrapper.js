@@ -42,12 +42,12 @@ window.getLsqBaseUrl = getLsqBaseUrl;
 // Populate all bizSelect elements with business data
 // Supports both <select> and listbox (.fldListbox) rendering
 // Groups into category folders (Dining, Shopping, Residential, etc.)
-var CATEGORY_ORDER = ['dining', 'arts', 'shopping', 'services', 'hospitality', 'community', 'parks', 'historic', 'residential', 'commercial', 'industrial'];
+var CATEGORY_ORDER = ['dining', 'arts', 'shopping', 'services', 'hospitality', 'community', 'parks', 'historic', 'residential'];
 var CATEGORY_LABELS = {
   dining: 'Dining & Drinks', shopping: 'Shopping', services: 'Services',
   arts: 'Arts & Culture', community: 'Community', historic: 'Historic Sites',
   hospitality: 'Hospitality', parks: 'Parks & Recreation',
-  residential: 'Residential', commercial: 'Commercial', industrial: 'Industrial',
+  residential: 'Residential',
 };
 
 function _updateSelectedLabel(name, address) {
