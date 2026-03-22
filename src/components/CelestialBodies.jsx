@@ -985,7 +985,7 @@ function CelestialBodies() {
     }
 
     // Compute moon light position for night/twilight blending
-    const moonBrightness = 2.0 + moonIllum.fraction * 1.5
+    const moonBrightness = 0.8 + moonIllum.fraction * 0.6
     // Always compute moon light position from actual moon coordinates.
     // When moon is below horizon, use its last direction but keep light low.
     // This prevents a snap when the moon sets.
