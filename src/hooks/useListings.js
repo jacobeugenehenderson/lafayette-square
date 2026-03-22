@@ -44,6 +44,8 @@ const bareBuildingListings = buildingsData.buildings
 
 const allListings = [...landmarksWithMenus, ...bareBuildingListings]
 
+export { bareBuildingListings }
+
 const useListings = create((set, get) => ({
   listings: allListings,
   loading: false,

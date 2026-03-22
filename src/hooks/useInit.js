@@ -1,6 +1,6 @@
 import { getInit } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
-import useListings from './useListings'
+import useListings, { bareBuildingListings } from './useListings'
 import useHandle from './useHandle'
 import useEvents from './useEvents'
 import useResidence from './useResidence'
@@ -62,7 +62,7 @@ export async function runInit() {
         if (!apiIds.has(lm.id)) merged.push(lm)
       })
 
-      useListings.setState({ listings: merged, fetched: true, loading: false })
+      useListings.setState({ listings: [...merged, ...bareBuildingListings], fetched: true, loading: false })
     } else {
       useListings.setState({ fetched: true, loading: false })
     }
