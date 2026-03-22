@@ -216,11 +216,11 @@ export default function GatewayArch() {
          gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb + envTint, envStrength);
 
          // ── Broad directional light wash ──
-         // Gentle gradient, not a hard face divide
+         // Strong in day, very subtle at night (moon isn't a spotlight)
          float sunFacing = max(0.0, dot(N, uSunDir));
-         float wash = sunFacing * 0.7; // linear, not squared — softer falloff
+         float wash = sunFacing * 0.7;
          vec3 washColor = mix(vec3(0.4, 0.42, 0.5), vec3(0.9, 0.87, 0.8), uDayFactor);
-         gl_FragColor.rgb += washColor * wash * uSkyBright * 0.2;
+         gl_FragColor.rgb += washColor * wash * uDayFactor * 0.25;
 
          // ── Sun/moon glint on edges — sharp and bright ──
          float edgeMask = smoothstep(0.78, 1.0, vEdge);
@@ -231,13 +231,17 @@ export default function GatewayArch() {
          gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glintCore * uGlintBright * 1.2;
          gl_FragColor.rgb += vec3(0.8, 0.82, 0.9) * glintHalo * uGlintBright * 0.3;
 
-         // ── Foot blending ──
+         // ── Foot blending: fade legs to transparent near ground ──
          float footDist = min(vCurveParam, 1.0 - vCurveParam);
-         float footBlend = smoothstep(0.0, 0.10, footDist);
-         float paintStrength = (1.0 - footBlend) * 0.50;
+         // Color blend: paint with ground/sky gradient
+         float footBlend = smoothstep(0.0, 0.12, footDist);
+         float paintStrength = (1.0 - footBlend) * 0.70;
          float heightFrac = smoothstep(-20.0, 120.0, vArchWorld.y);
          vec3 paintColor = mix(uGroundColor, uHorizonColor, heightFrac);
-         gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);`
+         gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);
+         // Alpha fade: legs go fully transparent at the very bottom
+         float alphaFade = smoothstep(0.0, 0.06, footDist);
+         gl_FragColor.a *= alphaFade;`
       )
 
       shaderRef.current = shader
@@ -255,12 +259,16 @@ export default function GatewayArch() {
     const day = t * t * (3 - 2 * t)
 
     // Emissive: subtle glow at night so arch is visible against dark sky
-    material.emissiveIntensity = 0.08 * (1 - day)
+    material.emissiveIntensity = 0.06 * (1 - day)
 
-    // Dynamic color: warmer in golden hour, cooler at night
-    const r = 0.78 + day * 0.1
-    const g = 0.78 + day * 0.1
-    const b = 0.82 + day * 0.05
+    // At night: reduce metalness so PBR doesn't amplify moonlight into a spotlight
+    material.metalness = 0.5 + day * 0.42 // 0.5 at night, 0.92 in day
+    material.roughness = 0.04 + (1 - day) * 0.15 // rougher at night, less specular catch
+
+    // Dynamic color: warmer in golden hour, darker/cooler at night
+    const r = 0.55 + day * 0.33
+    const g = 0.55 + day * 0.33
+    const b = 0.60 + day * 0.27
     material.color.setRGB(r, g, b)
 
     meshRef.current.rotation.y = ARCH_FIXED_ROTATION

@@ -986,34 +986,43 @@ function CelestialBodies() {
 
     // Compute moon light position for night/twilight blending
     const moonBrightness = 2.0 + moonIllum.fraction * 1.5
-    if (moonAlt > 0) {
-      celestialToPosition(moonPos.azimuth + Math.PI, moonPos.altitude, LIGHT_RADIUS, _nightLP)
-    } else {
-      _nightLP.set(200, 150, 200)
-    }
+    // Always compute moon light position from actual moon coordinates.
+    // When moon is below horizon, use its last direction but keep light low.
+    // This prevents a snap when the moon sets.
+    const moonLightAlt = Math.max(-0.05, moonAlt) // clamp slightly below horizon
+    celestialToPosition(moonPos.azimuth + Math.PI, moonLightAlt, LIGHT_RADIUS, _nightLP)
 
     if (isNight) {
-      // Smooth transition at the night/twilight boundary:
-      // Blend light position from sun toward moon over sunAlt range -0.12 to -0.20
-      const nightBlend = Math.max(0, Math.min(1, (-0.12 - sunAlt) / 0.08)) // 0 at -0.12, 1 at -0.20
+      // Smooth blend over sunAlt -0.12 to -0.25 — no hard boundary
+      const nightBlend = Math.max(0, Math.min(1, (-0.12 - sunAlt) / 0.13))
       const blendedLP = _sunLP.clone().lerp(_nightLP, nightBlend)
+
+      // Twilight-end values (what twilight produces at t=0 / sunAlt=-0.12)
+      const twiIntensity = 0.4
+      const twiSecIntensity = 0.2
 
       primary = {
         lightPosition: blendedLP,
         visualPosition: blendedLP,
-        color: nightBlend > 0.5 ? '#9ab8e0' : lerpColor('#ff6644', '#9ab8e0', nightBlend * 2),
-        intensity: (0.4 * (1 - nightBlend)) + (moonBrightness * nightBlend),
-        showOrb: nightBlend < 0.5,
+        color: lerpColor('#ff6644', '#9ab8e0', nightBlend),
+        intensity: twiIntensity + (moonBrightness - twiIntensity) * nightBlend,
+        showOrb: nightBlend < 0.3,
         orbColor: '#e8e8f0',
         orbSize: 12,
       }
       secondary = {
-        position: _secP.set(-150, 100, -150),
-        color: '#4466aa',
-        intensity: 0.8,
+        position: _secP.set(-150, 100, -150).lerp(new THREE.Vector3(-_sunLP.x * 0.5, 80, -_sunLP.z * 0.5), 1 - nightBlend),
+        color: lerpColor('#8877aa', '#4466aa', nightBlend),
+        intensity: twiSecIntensity + (0.8 - twiSecIntensity) * nightBlend,
       }
-      sky = { top: '#0a1020', bottom: '#1a2545' }
-      ambient = { color: '#3a4a70', intensity: 1.0 }
+      sky = {
+        top: lerpColor('#1a1535', '#0a1020', nightBlend),
+        bottom: lerpColor('#553333', '#1a2545', nightBlend),
+      }
+      ambient = {
+        color: lerpColor('#443355', '#3a4a70', nightBlend),
+        intensity: 0.35 + nightBlend * 0.65,
+      }
     } else if (isTwilight) {
       const t = (sunAlt + 0.12) / 0.17
       primary = {
@@ -1101,7 +1110,11 @@ function CelestialBodies() {
     const solarNoon = SunCalc.getTimes(currentTime, LATITUDE, LONGITUDE).solarNoon
     const isDawn = currentTime < solarNoon
 
-    return { primary, secondary, sky, ambient, isNight, moon, sunAlt, sunDir: _sunD, moonGlow, isDawn }
+    // Smooth night factor: 0 = full day, 1 = full night
+    // Transitions over sunAlt range 0.05 to -0.15 (no hard boundary)
+    const nightFactor = Math.max(0, Math.min(1, (0.05 - sunAlt) / 0.20))
+
+    return { primary, secondary, sky, ambient, isNight, nightFactor, moon, sunAlt, sunDir: _sunD, moonGlow, isDawn }
   }, [currentTime])
 
   // Weather-coupled lighting multipliers (use selectors to avoid per-frame re-renders)
@@ -1118,26 +1131,24 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={(lighting.isNight ? 0.30 : 0.45) * (1 + cc * 0.4)} />
+      <ambientLight color="#ffffff" intensity={(0.45 - lighting.nightFactor * 0.15) * (1 + cc * 0.4)} />
       <ambientLight
         color={lighting.ambient.color}
         intensity={lighting.ambient.intensity * (1 + cc * 0.4)}
       />
-      {/* Warm street-light scatter — simulates aggregate lamp glow in the atmosphere */}
-      {lighting.isNight && (
-        <ambientLight color="#8a7060" intensity={0.15} />
-      )}
+      {/* Warm street-light scatter — fades in smoothly at night */}
+      <ambientLight color="#8a7060" intensity={0.15 * lighting.nightFactor} />
       <hemisphereLight
-        color={lighting.isNight ? '#556688' : '#ffeedd'}
-        groundColor={lighting.isNight ? '#443322' : '#443333'}
-        intensity={(lighting.isNight ? 0.6 : 0.35) * (1 + cc * 0.5)}
+        color={lerpColor('#ffeedd', '#556688', lighting.nightFactor)}
+        groundColor={lerpColor('#443333', '#443322', lighting.nightFactor)}
+        intensity={(0.35 + lighting.nightFactor * 0.25) * (1 + cc * 0.5)}
       />
       <PrimaryOrb {...primaryWeathered} />
       <SecondaryOrb {...lighting.secondary} />
       <directionalLight
         position={[0, 100, -400]}
-        intensity={lighting.isNight ? 0.5 : 0.12}
-        color={lighting.isNight ? '#5577aa' : '#ffeedd'}
+        intensity={0.12 + lighting.nightFactor * 0.38}
+        color={lerpColor('#ffeedd', '#5577aa', lighting.nightFactor)}
       />
     </>
   )
