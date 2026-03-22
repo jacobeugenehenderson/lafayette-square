@@ -2245,6 +2245,12 @@ html.embed .step-card .step-header {
 /* Hide download button in embed mode (parent handles export) */
 html.embed .step-card[data-step="download"] { display: none !important; }
 
+/* Embed: flatten listbox scroll — let #stepper be the single scroll owner */
+html.embed .fldListbox {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
 /* Guardian embed: hide Places accordion (place is pre-selected by parent) */
 html.embed-guardian .step-card[data-step="business"] { display: none !important; }
 
