@@ -1,7 +1,7 @@
 /**
  * Category taxonomy — single source of truth.
  *
- * Consumed by: SidePanel, PlaceCard, useLandmarkFilter, neon bands (V2), QR styling (Q4).
+ * Consumed by: SidePanel, PlaceCard, useLandmarkFilter, neon bands, QR styling, CodeDesk.
  * Each category defines: label, subtitle, emoji, Tailwind color key, hex for Three.js,
  * Tailwind class set, and subcategories.
  *
@@ -22,7 +22,7 @@
 const CATEGORIES = {
   dining: {
     label: 'Dining & Drinks',
-    subtitle: 'Restaurants, bars, cafes',
+    subtitle: 'Restaurants, bars, cafes, dessert',
     emoji: '\ud83c\udf7d\ufe0f',
     tw: 'claret',
     hex: '#C2185B',
@@ -36,8 +36,9 @@ const CATEGORIES = {
     },
     subcategories: {
       restaurants: { label: 'Restaurants', emoji: '\ud83c\udf7d\ufe0f' },
-      bars:        { label: 'Bars & Nightlife', emoji: '\ud83c\udf78' },
+      bars:        { label: 'Bars & Wine', emoji: '\ud83c\udf78' },
       cafes:       { label: 'Cafes & Coffee', emoji: '\u2615' },
+      desserts:    { label: 'Dessert & Treats', emoji: '\ud83c\udf70' },
     },
   },
   historic: {
@@ -62,7 +63,7 @@ const CATEGORIES = {
   },
   arts: {
     label: 'Arts & Culture',
-    subtitle: 'Galleries, studios, venues, tattoo',
+    subtitle: 'Galleries, studios, tattoo, venues',
     emoji: '\ud83c\udfad',
     tw: 'aubergine',
     hex: '#8E4585',
@@ -83,7 +84,7 @@ const CATEGORIES = {
   },
   parks: {
     label: 'Parks & Recreation',
-    subtitle: 'Lafayette Park, gardens, playgrounds',
+    subtitle: 'Lafayette Park, gardens, pool, playgrounds',
     emoji: '\ud83c\udf33',
     tw: 'verdigris',
     hex: '#3DAF8A',
@@ -98,7 +99,7 @@ const CATEGORIES = {
     subcategories: {
       parks:       { label: 'Parks', emoji: '\ud83c\udf33' },
       gardens:     { label: 'Gardens', emoji: '\ud83c\udf3a' },
-      playgrounds: { label: 'Playgrounds', emoji: '\ud83c\udfaa' },
+      recreation:  { label: 'Pool & Recreation', emoji: '\ud83c\udfca' },
     },
   },
   shopping: {
@@ -130,7 +131,7 @@ const CATEGORIES = {
   },
   services: {
     label: 'Services',
-    subtitle: 'Health, beauty, professional, hospitality',
+    subtitle: 'Beauty, cleaners, professional, health',
     emoji: '\ud83d\udd27',
     tw: 'prussian',
     hex: '#3674A5',
@@ -155,14 +156,31 @@ const CATEGORIES = {
       advertising:          { label: 'Advertising & Media', emoji: '\ud83d\udcf0' },
       industrial:           { label: 'Industrial', emoji: '\ud83c\udfed' },
       coworking:            { label: 'Coworking', emoji: '\ud83d\udcbb' },
+      cleaners:             { label: 'Cleaners', emoji: '\ud83e\uddf9' },
+    },
+  },
+  hospitality: {
+    label: 'Hospitality',
+    subtitle: 'Bed & breakfasts, inns',
+    emoji: '\ud83d\udecf\ufe0f',
+    tw: 'prussian',
+    hex: '#3674A5',
+    classes: {
+      bg: 'bg-[#3674A5]/10',
+      border: 'border-[#3674A5]/20',
+      text: 'text-[#3674A5]',
+      hover: 'hover:bg-[#3674A5]/15',
+      dot: 'bg-[#3674A5]',
+      activeBg: 'bg-[#3674A5]/20',
+    },
+    subcategories: {
       'bed-and-breakfast':  { label: 'Bed & Breakfast', emoji: '\ud83d\udecf\ufe0f' },
       hotels:               { label: 'Hotels', emoji: '\ud83c\udfe8' },
-      cleaners:             { label: 'Cleaners', emoji: '\ud83e\uddf9' },
     },
   },
   community: {
     label: 'Community',
-    subtitle: 'Churches, schools, organizations, events',
+    subtitle: 'Churches, schools, organizations',
     emoji: '\u26ea',
     tw: 'terracotta',
     hex: '#B86B4A',
@@ -184,7 +202,7 @@ const CATEGORIES = {
   },
   residential: {
     label: 'Residential',
-    subtitle: 'Homes, neighbors, historic residences',
+    subtitle: 'Lofts, apartments, townhouses, homes',
     emoji: '\ud83c\udfe0',
     tw: 'sage',
     hex: '#7A8B6F',
@@ -197,9 +215,11 @@ const CATEGORIES = {
       activeBg: 'bg-[#7A8B6F]/20',
     },
     subcategories: {
+      lofts:          { label: 'Lofts & Apartments', emoji: '\ud83c\udfd9\ufe0f' },
+      condos:         { label: 'Condominiums', emoji: '\ud83c\udfe2' },
+      townhouses:     { label: 'Townhouses & Duplexes', emoji: '\ud83c\udfe0' },
+      houses:         { label: 'Single-Family Homes', emoji: '\ud83c\udfe1' },
       'historic-homes': { label: 'Historic Homes', emoji: '\ud83c\udfdb\ufe0f' },
-      lofts:            { label: 'Lofts & Apartments', emoji: '\ud83c\udfd9\ufe0f' },
-      neighbors:        { label: 'Neighbors', emoji: '\ud83d\udc4b' },
     },
   },
 }
@@ -211,7 +231,7 @@ export const CATEGORY_LABELS = Object.fromEntries(
   Object.entries(CATEGORIES).map(([id, c]) => [id, c.label])
 )
 
-/** { restaurants: 'Restaurants', bars: 'Bars & Nightlife', ... } */
+/** { restaurants: 'Restaurants', bars: 'Bars & Wine', ... } */
 export const SUBCATEGORY_LABELS = Object.fromEntries(
   Object.entries(CATEGORIES).flatMap(([, c]) =>
     Object.entries(c.subcategories).map(([id, s]) => [id, s.label])
@@ -235,7 +255,7 @@ export const COLOR_CLASSES = Object.fromEntries(
   Object.entries(CATEGORIES).map(([, c]) => [c.tw, c.classes])
 )
 
-/** { dining: '#f97316', ... } — hex colors for Three.js neon bands + QR codes */
+/** { dining: '#C2185B', ... } — hex colors for Three.js neon bands + QR codes */
 export const CATEGORY_HEX = Object.fromEntries(
   Object.entries(CATEGORIES).map(([id, c]) => [id, c.hex])
 )
@@ -251,5 +271,16 @@ export const CATEGORY_LIST = Object.entries(CATEGORIES).map(([id, c]) => ({
     name: s.label,
   })),
 }))
+
+/** Map zoning codes to residential subcategories for bare buildings */
+export const ZONING_TO_SUBCATEGORY = {
+  A: 'houses',
+  B: 'townhouses',
+  C: 'lofts',
+  D: 'commercial',
+  F: 'commercial',
+  G: 'commercial',
+  J: 'industrial',
+}
 
 export default CATEGORIES

@@ -545,7 +545,7 @@
       "website": "https://www.baileyschocolatebar.com/",
       "logo": "/logos/baileys.png",
       "category": "dining",
-      "subcategory": "restaurants",
+      "subcategory": "desserts",
       "building_id": "bldg-0387",
       "hours": {
         "wednesday": {
@@ -2100,7 +2100,7 @@
       "phone": "(314) 858-6100",
       "website": "https://www.clementinescreamery.com",
       "category": "dining",
-      "subcategory": "cafes",
+      "subcategory": "desserts",
       "building_id": "bldg-1132",
       "hours": {
         "monday": {
@@ -3730,7 +3730,7 @@
       "phone": "(808) 728-0264",
       "website": "https://onyxdaggerstl.com",
       "reservation_url": "https://onyxdaggerstl.com",
-      "category": "services",
+      "category": "arts",
       "subcategory": "tattoo",
       "building_id": "bldg-0387",
       "hours": {
@@ -3809,7 +3809,7 @@
       "address": "10 Benton Place",
       "phone": "(314) 422-1483",
       "website": "https://www.lehmannhouse.com",
-      "category": "services",
+      "category": "hospitality",
       "subcategory": "bed-and-breakfast",
       "building_id": null,
       "hours": {},
@@ -3855,7 +3855,7 @@
       "name": "Napoleon's Retreat",
       "address": "1815 Lafayette Avenue",
       "website": "https://napoleonsretreatinn.com",
-      "category": "services",
+      "category": "hospitality",
       "subcategory": "bed-and-breakfast",
       "building_id": "bldg-0833",
       "description": "Second Empire mansion built circa 1880, painted a sunny yellow and known as one of Lafayette Square's finest 'Painted Ladies.' Operated as a gay-owned bed and breakfast from 1991, winning Riverfront Times Best B&B in 2003. Three guest rooms with private baths in the main house, plus a carriage house loft. Features 14-foot ceilings with plaster molding, seven fireplaces, a three-story flying staircase of Missouri walnut, and original oversized wood pocket doors. The building survived the Great Cyclone of 1896, losing most of its third floor which was subsequently rebuilt. Closed circa 2025.",
@@ -4094,7 +4094,7 @@
       "name": "Lafayette Park Bed and Breakfast",
       "address": "1415 Missouri Avenue",
       "phone": "(314) 771-7700",
-      "category": "services",
+      "category": "hospitality",
       "subcategory": "bed-and-breakfast",
       "building_id": null,
       "hours": {},
@@ -4718,6 +4718,85 @@
         "pet-friendly",
         "parking",
         "residential"
+      ]
+    },
+    {
+      "id": "lmk-121",
+      "name": "Lafayette Park",
+      "address": "Lafayette Avenue & Mississippi Avenue",
+      "website": "https://www.lafayettepark.org",
+      "category": "parks",
+      "subcategory": "parks",
+      "building_id": null,
+      "description": "The oldest public park west of the Mississippi River, established in 1836. Thirty acres of mature trees, winding paths, a central lake, and the restored 1869 bandstand. Devastated by the Great Cyclone of 1896 and lovingly restored by neighborhood residents over the following decades.",
+      "amenities": [
+        "30 acres",
+        "Restored 1869 bandstand",
+        "Central lake",
+        "Walking paths",
+        "Picnic areas",
+        "Dog-friendly",
+        "Historic monuments",
+        "Mature tree canopy"
+      ],
+      "history": [
+        {
+          "year": 1836,
+          "event": "Established as a public commons, making it the oldest public park west of the Mississippi River."
+        },
+        {
+          "year": 1851,
+          "event": "Officially designated as a park and named Lafayette Park in honor of the Marquis de Lafayette."
+        },
+        {
+          "year": 1869,
+          "event": "Victorian bandstand constructed, becoming the centerpiece of the park."
+        },
+        {
+          "year": 1896,
+          "event": "The Great Cyclone devastates the park, destroying hundreds of trees and severely damaging the bandstand and surrounding mansions."
+        },
+        {
+          "year": 1972,
+          "event": "Lafayette Square designated as the first historic district in St. Louis."
+        }
+      ],
+      "tags": [
+        "historic",
+        "dog-friendly",
+        "kid-friendly"
+      ]
+    },
+    {
+      "id": "lmk-122",
+      "name": "Lafayette Square Community Garden",
+      "address": "Dolman Street at Park Avenue",
+      "category": "parks",
+      "subcategory": "gardens",
+      "building_id": null,
+      "description": "Neighborhood community garden at the corner of Dolman and Park Avenue, maintained by Lafayette Square residents. Individual plots available for growing vegetables, herbs, and flowers.",
+      "tags": [
+        "community",
+        "volunteer"
+      ]
+    },
+    {
+      "id": "lmk-123",
+      "name": "Lafayette Square Pool & Tennis Club",
+      "address": "2224 Rutger Street",
+      "category": "parks",
+      "subcategory": "recreation",
+      "building_id": null,
+      "description": "Neighborhood pool and tennis facility serving Lafayette Square residents. Seasonal outdoor pool with tennis courts.",
+      "amenities": [
+        "Outdoor swimming pool",
+        "Tennis courts",
+        "Seasonal membership",
+        "Family-friendly"
+      ],
+      "tags": [
+        "fitness",
+        "kid-friendly"
       ]
     }
   ]
