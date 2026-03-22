@@ -2230,11 +2230,12 @@ html.embed #lsqUrlDisplay {
   font-size: 0.65rem;
 }
 
-/* Stepper: takes remaining space, scrolls independently.
-   Height is set by JS (embedStepperResize) because iOS Safari
-   in iframes does not respect flex constraints for overflow. */
+/* Stepper: explicit max-height using viewport units.
+   100dvh inside an iframe = iframe element height.
+   Preview + URL ~ 180px, so stepper gets the rest. */
 html.embed #stepper {
   flex: none !important;
+  max-height: calc(100dvh - 180px) !important;
   min-height: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
