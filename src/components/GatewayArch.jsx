@@ -276,26 +276,33 @@ export default function GatewayArch() {
       // Sky brightness — drives how bright the arch appears (never fully dark)
       shaderRef.current.uniforms.uSkyBright.value = 0.25 + day * 0.75
 
-      // Always compute both sun and moon — blend smoothly through twilight
+      // Compute sun and moon as direction vectors, then blend the vectors
+      // (blending angles causes jumps when they're far apart)
       const sunPos = SunCalc.getPosition(currentTime, LATITUDE, LONGITUDE)
       const moonPos = SunCalc.getMoonPosition(currentTime, LATITUDE, LONGITUDE)
       const sunAz = sunPos.azimuth + Math.PI
       const sunAlt = sunPos.altitude
       const moonAz = moonPos.azimuth + Math.PI
-      const moonAlt = Math.max(0.05, moonPos.altitude) // moon never fully below horizon for light
+      const moonAlt = Math.max(0.05, moonPos.altitude)
 
-      // Smooth crossfade over a wide range to prevent any dead zone
-      const blend = Math.max(0, Math.min(1, (sunAltitude + 0.2) / 0.4)) // 1=sun, 0=moon
-      const azimuth = sunAz * blend + moonAz * (1 - blend)
-      const altitude = sunAlt * blend + moonAlt * (1 - blend)
+      const sunDirX = Math.cos(sunAlt) * Math.sin(sunAz)
+      const sunDirY = Math.sin(sunAlt)
+      const sunDirZ = -Math.cos(sunAlt) * Math.cos(sunAz)
+      const moonDirX = Math.cos(moonAlt) * Math.sin(moonAz)
+      const moonDirY = Math.sin(moonAlt)
+      const moonDirZ = -Math.cos(moonAlt) * Math.cos(moonAz)
 
-      shaderRef.current.uniforms.uSunDir.value.set(
-        Math.cos(altitude) * Math.sin(azimuth),
-        Math.sin(altitude),
-        -Math.cos(altitude) * Math.cos(azimuth)
-      )
+      const blend = Math.max(0, Math.min(1, (sunAltitude + 0.2) / 0.4))
+      let lx = sunDirX * blend + moonDirX * (1 - blend)
+      let ly = sunDirY * blend + moonDirY * (1 - blend)
+      let lz = sunDirZ * blend + moonDirZ * (1 - blend)
+      const ll = Math.sqrt(lx * lx + ly * ly + lz * lz) || 1
+      lx /= ll; ly /= ll; lz /= ll
 
-      // Glint position along curve (light-source-driven + camera parallax)
+      shaderRef.current.uniforms.uSunDir.value.set(lx, ly, lz)
+
+      // Glint position — use the blended direction
+      const azimuth = Math.atan2(lx, -lz)
       const relAngle = azimuth - ARCH_FIXED_ROTATION
       const glintFromSun = 0.5 + Math.sin(relAngle) * 0.48
       const dx = camera.position.x - (-400)

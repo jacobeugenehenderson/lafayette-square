@@ -984,19 +984,26 @@ function CelestialBodies() {
       visible: moonAlt > -0.05,  // Show slightly below horizon so it rises/sets behind buildings
     }
 
+    // Compute moon light position for night/twilight blending
+    const moonBrightness = 2.0 + moonIllum.fraction * 1.5
+    if (moonAlt > 0) {
+      celestialToPosition(moonPos.azimuth + Math.PI, moonPos.altitude, LIGHT_RADIUS, _nightLP)
+    } else {
+      _nightLP.set(200, 150, 200)
+    }
+
     if (isNight) {
-      const moonBrightness = 2.0 + moonIllum.fraction * 1.5
-      if (moonAlt > 0) {
-        celestialToPosition(moonPos.azimuth + Math.PI, moonPos.altitude, LIGHT_RADIUS, _nightLP)
-      } else {
-        _nightLP.set(200, 150, 200)
-      }
+      // Smooth transition at the night/twilight boundary:
+      // Blend light position from sun toward moon over sunAlt range -0.12 to -0.20
+      const nightBlend = Math.max(0, Math.min(1, (-0.12 - sunAlt) / 0.08)) // 0 at -0.12, 1 at -0.20
+      const blendedLP = _sunLP.clone().lerp(_nightLP, nightBlend)
+
       primary = {
-        lightPosition: _nightLP,
-        visualPosition: _nightLP,
-        color: '#9ab8e0',
-        intensity: moonBrightness,
-        showOrb: false,
+        lightPosition: blendedLP,
+        visualPosition: blendedLP,
+        color: nightBlend > 0.5 ? '#9ab8e0' : lerpColor('#ff6644', '#9ab8e0', nightBlend * 2),
+        intensity: (0.4 * (1 - nightBlend)) + (moonBrightness * nightBlend),
+        showOrb: nightBlend < 0.5,
         orbColor: '#e8e8f0',
         orbSize: 12,
       }
