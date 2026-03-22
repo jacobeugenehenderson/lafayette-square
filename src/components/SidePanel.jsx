@@ -600,7 +600,7 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
         </div>
       </button>
 
-      <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+      <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-2 pb-3">
           {category.sections.map((section) => (
             <LafayetteSubsection

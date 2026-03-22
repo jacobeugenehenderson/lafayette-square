@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { getListings } from '../lib/api'
 import staticData from '../data/landmarks.json'
 import menuData from '../data/menus.json'
+import buildingsData from '../data/buildings.json'
 
 /**
  * Listing data store.
@@ -11,6 +12,9 @@ import menuData from '../data/menus.json'
  * silently refreshes in the background — API data wins over static
  * so guardian edits are reflected.
  *
+ * Bare buildings (no landmark listing) are included as synthetic
+ * listings, categorized by St. Louis zoning code.
+ *
  * Consumers access `listings` (the array) or use the lookup helpers.
  */
 // Merge bundled menu data into static landmarks
@@ -18,8 +22,30 @@ const landmarksWithMenus = staticData.landmarks.map(lm =>
   menuData[lm.id] ? { ...lm, menu: menuData[lm.id] } : lm
 )
 
+// Generate synthetic listings for bare buildings using zoning codes
+const ZONING_CAT = { A: 'residential', B: 'residential', C: 'residential', D: 'services', E: 'residential', F: 'services', G: 'shopping', H: 'residential', J: 'services' }
+const ZONING_SUB = { A: 'houses', B: 'townhouses', C: 'lofts', D: 'industrial', E: 'houses', F: 'commercial', G: 'commercial', H: 'houses', J: 'industrial' }
+const _landmarkBids = new Set(landmarksWithMenus.map(l => l.building_id).filter(Boolean))
+const _landmarkAddrs = new Set(landmarksWithMenus.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
+const bareBuildingListings = buildingsData.buildings
+  .filter(b => b.address && !_landmarkBids.has(b.id) && !_landmarkAddrs.has(b.address.toLowerCase().replace(/\s+/g, ' ').trim()))
+  .map(b => {
+    const z = (b.zoning || '').replace(/[^A-Z]/g, '').charAt(0)
+    return {
+      id: b.id,
+      name: b.name || b.address,
+      address: b.address,
+      building_id: b.id,
+      category: ZONING_CAT[z] || 'residential',
+      subcategory: ZONING_SUB[z] || 'houses',
+      _bare: true,
+    }
+  })
+
+const allListings = [...landmarksWithMenus, ...bareBuildingListings]
+
 const useListings = create((set, get) => ({
-  listings: landmarksWithMenus,
+  listings: allListings,
   loading: false,
   fetched: false,
 

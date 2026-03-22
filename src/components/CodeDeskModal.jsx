@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { create } from 'zustand'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
-import buildingsData from '../data/buildings.json'
 
 export const useCodeDesk = create((set) => ({
   open: false,
@@ -42,27 +41,8 @@ function CodeDeskModalInner() {
   const [saved, setSaved] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
   const iframeRef = useRef(null)
-  const listings = useListings((s) => s.listings)
+  const allPlaces = useListings((s) => s.listings)
   const isGuardianMode = mode === 'guardian'
-
-  // Merge landmarks + non-landmark buildings, categorized by zoning
-  const allPlaces = useMemo(() => {
-    const landmarkBuildingIds = new Set(listings.map(l => l.building_id).filter(Boolean))
-    const landmarkAddresses = new Set(listings.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
-    const ZONING_CATEGORY = { A: 'residential', B: 'residential', C: 'residential', D: 'commercial', E: 'residential', F: 'commercial', G: 'commercial', H: 'residential', J: 'industrial' }
-    const bare = buildingsData.buildings
-      .filter(b => {
-        if (!b.address) return false
-        if (landmarkBuildingIds.has(b.id)) return false
-        if (landmarkAddresses.has(b.address.toLowerCase().replace(/\s+/g, ' ').trim())) return false
-        return true
-      })
-      .map(b => {
-        const z = (b.zoning || '').replace(/[^A-Z]/g, '').charAt(0)
-        return { id: b.id, name: b.name || b.address, address: b.address, category: ZONING_CATEGORY[z] || 'residential' }
-      })
-    return [...listings, ...bare]
-  }, [listings])
 
   // Auto-collapse SidePanel when modal opens
   useEffect(() => {
