@@ -78,18 +78,6 @@ function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, 
 
   return (
     <group>
-      {showOrb && (
-        <group position={visualPosition.toArray()}>
-          <mesh>
-            <sphereGeometry args={[orbSize, 32, 32]} />
-            <meshBasicMaterial color={orbColor} />
-          </mesh>
-          <mesh scale={1.8}>
-            <sphereGeometry args={[orbSize, 32, 32]} />
-            <meshBasicMaterial color={orbColor} transparent opacity={0.3} />
-          </mesh>
-        </group>
-      )}
       <directionalLight
         ref={lightRef}
         position={lightPosition.toArray()}

@@ -239,8 +239,9 @@ export default function GatewayArch() {
          float heightFrac = smoothstep(-20.0, 120.0, vArchWorld.y);
          vec3 paintColor = mix(uGroundColor, uHorizonColor, heightFrac);
          gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);
-         // Blend toward ground color near base
-         float clipBlend = smoothstep(-80.0, 60.0, vArchWorld.y);
+         // Clip legs below roofline but above street level
+         if (vArchWorld.y < -40.0) discard;
+         float clipBlend = smoothstep(-40.0, 20.0, vArchWorld.y);
          gl_FragColor.rgb = mix(paintColor, gl_FragColor.rgb, clipBlend);
 
          // ── Clamp output to prevent HDR blowout from bloom ──
