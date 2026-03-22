@@ -400,8 +400,7 @@ function AlmanacTab({ showAdmin = false }) {
       </div>
 
       {showAdmin && (
-        <CollapsibleSection title="Admin" defaultOpen={false} bg="bg-surface-container">
-          <div className="px-4 pb-3 space-y-3">
+        <div className="px-4 pb-3 pt-2 space-y-3 border-t border-outline-variant">
             <button
               onClick={() => openCodeDesk(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container-highest text-caption text-on-surface-variant hover:text-on-surface transition-colors"
@@ -467,8 +466,7 @@ function AlmanacTab({ showAdmin = false }) {
                 </button>
               </div>
             </div>
-          </div>
-        </CollapsibleSection>
+        </div>
       )}
       </div>
 
