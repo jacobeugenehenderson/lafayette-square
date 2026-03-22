@@ -2498,8 +2498,9 @@
       "dinner": "seasonal fare in the converted wire factory",
       "lunch": "lunch in the historic wire factory",
       "brunch": "weekend brunch on the patio",
-      "happy_hour": "discounted drafts, wine, and appetizers",
-      "specials": "weekly specials at the wire factory"
+      "happy_hour": "happy hour just got better — 2pm till 6pm",
+      "thursday_fried_chicken": "fried chicken Thursday + live music",
+      "friday_seafood": "Friday seafood & sours — until we run out"
     },
     "schedule": {
       "dinner": {
@@ -2570,11 +2571,13 @@
           "end": "18:00"
         }
       },
-      "specials": {
+      "thursday_fried_chicken": {
         "thu": {
           "start": "16:00",
           "end": "21:00"
-        },
+        }
+      },
+      "friday_seafood": {
         "fri": {
           "start": "16:30",
           "end": "21:00"
@@ -3018,7 +3021,7 @@
       },
       {
         "name": "Thursday Fried Chicken",
-        "menu": "specials",
+        "menu": "thursday_fried_chicken",
         "items": [
           {
             "name": "Early Bird Fried Chicken",
@@ -3059,8 +3062,8 @@
         ]
       },
       {
-        "name": "Friday Fish Fry",
-        "menu": "specials",
+        "name": "Friday Seafood & Sours",
+        "menu": "friday_seafood",
         "items": [
           {
             "name": "Fish Fry — Large Plate",
