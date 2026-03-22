@@ -2174,6 +2174,8 @@ textarea.fldInp {
 html.embed body {
   background: transparent !important;
   background-image: none !important;
+  overflow: hidden !important;
+  touch-action: pan-y !important;
 }
 
 html.embed .header-bar {
@@ -2197,6 +2199,7 @@ html.embed main {
   gap: 0 !important;
   height: 100%;
   overflow: hidden !important;
+  touch-action: pan-y !important;
 }
 
 /* QR preview: fixed at top, never scrolls */
@@ -2223,8 +2226,10 @@ html.embed #lsqUrlDisplay {
 html.embed #stepper {
   flex: 1 1 0 !important;
   min-height: 0 !important;
-  overflow-y: auto !important;
+  overflow-y: scroll !important;
   overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
   margin-top: 0 !important;
   padding: 0.5rem 0.75rem 2rem !important;
   scroll-padding-top: 0 !important;
@@ -2303,6 +2308,6 @@ html.embed textarea {
 }
 
 /* Compact step headers + panel padding */
-html.embed .step-header { min-height: 2.6rem; font-size: 0.8rem; }
-html.embed .step-header-wrap { min-height: 2.6rem; }
+html.embed .step-header { min-height: 2.6rem; font-size: 0.8rem; padding-top: 0 !important; padding-bottom: 0 !important; display: flex; align-items: center; }
+html.embed .step-header-wrap { min-height: 2.6rem; display: flex !important; align-items: center !important; }
 html.embed .step-card [data-step-panel] { padding: 0.5rem 0.75rem; }

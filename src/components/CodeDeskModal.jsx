@@ -194,7 +194,7 @@ function CodeDeskModalInner() {
         src={`${import.meta.env.BASE_URL}codedesk/?embed${isGuardianMode ? '&guardian' : ''}`}
         onLoad={handleIframeLoad}
         className="flex-1 min-h-0 w-full border-0"
-        style={{ background: 'transparent' }}
+        style={{ background: 'transparent', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
         title="QR Generator"
         allow="clipboard-write"
       />
