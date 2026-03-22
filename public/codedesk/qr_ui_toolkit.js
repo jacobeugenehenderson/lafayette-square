@@ -154,6 +154,36 @@ if (typeof window.buildText !== 'function') {
       scroller.scrollTop += dy;
     }
   }, { passive: false });
+
+  // Touch scroll for iOS in embed mode (iframe)
+  // The body/html overflow:hidden prevents native scroll, so we handle it manually.
+  if (document.documentElement.classList.contains('embed')) {
+    var _touchY = null;
+    document.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) _touchY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function(e) {
+      if (_touchY === null || e.touches.length !== 1) return;
+      var dy = _touchY - e.touches[0].clientY;
+      _touchY = e.touches[0].clientY;
+
+      var scroller = nearestScrollable(e.target);
+      // Fall back to stepper
+      if (!scroller) scroller = document.getElementById('stepper');
+      if (!scroller) return;
+
+      var atTop = scroller.scrollTop <= 0;
+      var atBot = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+
+      if ((dy < 0 && !atTop) || (dy > 0 && !atBot)) {
+        e.preventDefault();
+        scroller.scrollTop += dy;
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchend', function() { _touchY = null; }, { passive: true });
+  }
 })();
 
   /* === ECC (add-only, session-persistent) ========================== */
