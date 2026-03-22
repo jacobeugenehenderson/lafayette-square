@@ -153,26 +153,6 @@
       }
     });
 
-    // Explicit stepper sizing — iOS Safari ignores flex constraints in iframes
-    function embedStepperResize() {
-      var stepper = document.getElementById('stepper');
-      var main = document.querySelector('main');
-      if (!stepper || !main) return;
-      // Measure everything above the stepper
-      var above = 0;
-      for (var i = 0; i < main.children.length; i++) {
-        var child = main.children[i];
-        if (child === stepper || child.contains(stepper)) break;
-        above += child.getBoundingClientRect().height;
-      }
-      var available = main.getBoundingClientRect().height - above;
-      stepper.style.height = Math.max(100, available) + 'px';
-    }
-    window.addEventListener('load', function() { setTimeout(embedStepperResize, 100); });
-    window.addEventListener('resize', embedStepperResize);
-    // Re-size when step cards open/close
-    new MutationObserver(function() { setTimeout(embedStepperResize, 50); })
-      .observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
   }
 </script>
 

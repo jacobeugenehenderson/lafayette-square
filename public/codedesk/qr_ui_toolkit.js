@@ -155,29 +155,6 @@ if (typeof window.buildText !== 'function') {
     }
   }, { passive: false });
 
-  // Touch scroll for embed mode (iframe on iOS)
-  // Always wire — the handler checks stepper existence at runtime.
-  var _touchY = null;
-  document.addEventListener('touchstart', function(e) {
-    if (e.touches.length === 1) _touchY = e.touches[0].clientY;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', function(e) {
-    if (_touchY === null || e.touches.length !== 1) return;
-    var dy = _touchY - e.touches[0].clientY;
-    _touchY = e.touches[0].clientY;
-    if (Math.abs(dy) < 1) return;
-
-    var stepper = document.getElementById('stepper');
-    if (!stepper) return;
-    // Only intervene if stepper has overflow content
-    if (stepper.scrollHeight <= stepper.clientHeight + 1) return;
-
-    e.preventDefault();
-    stepper.scrollTop += dy;
-  }, { passive: false });
-
-  document.addEventListener('touchend', function() { _touchY = null; }, { passive: true });
 })();
 
   /* === ECC (add-only, session-persistent) ========================== */
