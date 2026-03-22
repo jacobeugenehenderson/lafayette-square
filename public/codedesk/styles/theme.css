@@ -2171,11 +2171,16 @@ textarea.fldInp {
    Hides chrome, transparent bg for iframe use inside the main app.
    QR preview is always visible on top; stepper scrolls behind it.
 ========================= */
+html.embed, html.embed body {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  touch-action: pan-y !important;
+}
 html.embed body {
   background: transparent !important;
   background-image: none !important;
-  overflow: hidden !important;
-  touch-action: pan-y !important;
 }
 
 html.embed .header-bar {
