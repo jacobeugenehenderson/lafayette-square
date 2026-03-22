@@ -49,7 +49,7 @@ function Controls() {
         </div>
       )}
 
-      {showCard && selectedId && buildingInfo && (
+      {showCard && selectedId && (buildingInfo || listing) && (
         <PlaceCard
           listing={listing}
           building={buildingInfo}

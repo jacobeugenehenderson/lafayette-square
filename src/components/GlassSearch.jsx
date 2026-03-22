@@ -36,6 +36,15 @@ function menuTypeLabel(key) {
 
 function buildSearchIndex(listings) {
   const idx = []
+  // Index bare buildings by address (skip those covered by listings)
+  const listingBuildingIds = new Set(listings.map(l => l.building_id).filter(Boolean))
+  buildingsData.buildings.forEach(b => {
+    if (listingBuildingIds.has(b.id) || !b.address) return
+    const addr = b.address.toUpperCase()
+    const name = (b.name || '').toUpperCase()
+    idx.push({ text: addr + ' ' + name, type: 'building', building: b })
+  })
+
   listings.forEach(listing => {
     const name = (listing.name || '').toUpperCase()
     const addr = (listing.address || '').toUpperCase()
@@ -68,7 +77,7 @@ export function useGlassSearch() {
   const inputRef = useRef(null)
   const listings = useListings(s => s.listings)
   const flyTo = useCamera(s => s.flyTo)
-  const highlight = useSelectedBuilding(s => s.highlight)
+  const selectBuilding = useSelectedBuilding(s => s.select)
 
   const searchIndex = useMemo(() => buildSearchIndex(listings), [listings])
 
@@ -78,6 +87,7 @@ export function useGlassSearch() {
     const terms = q.split(/\s+/)
     const matches = searchIndex.filter(entry => terms.every(t => entry.text.includes(t)))
     const places = matches.filter(m => m.type === 'place')
+    const buildings = matches.filter(m => m.type === 'building')
     const menuTypes = matches.filter(m => m.type === 'menu-type')
     const items = matches.filter(m => m.type === 'menu-item')
     // Dedupe menu types by listing
@@ -95,29 +105,33 @@ export function useGlassSearch() {
       if (itemsByPlace[pid].length < 2) itemsByPlace[pid].push(m)
     })
     const placeResults = places.slice(0, 4)
+    const buildingResults = buildings.slice(0, 4)
     const menuTypeResults = uniqueMenuTypes.slice(0, 4)
     const itemResults = Object.values(itemsByPlace).flat().slice(0, 6)
-    return [...placeResults, ...menuTypeResults, ...itemResults].slice(0, 10)
+    return [...placeResults, ...buildingResults, ...menuTypeResults, ...itemResults].slice(0, 10)
   }, [query, searchIndex])
 
-  const selectPlace = useCallback((listing) => {
-    const building = _buildingMap[listing.building_id]
-    if (building) {
+  const selectPlace = useCallback((listing, building) => {
+    const bldg = building || _buildingMap[listing?.building_id]
+    if (bldg) {
       const cam = useCamera.getState()
       if (cam.viewMode !== 'browse') cam.setMode('browse')
-      const target = computeCenterOn(building)
+      const target = computeCenterOn(bldg)
       flyTo(target.position, target.lookAt)
+      selectBuilding(listing?.id || bldg.id, listing?.building_id || bldg.id)
+    } else if (listing) {
+      // No building mapped — open card without flying
+      selectBuilding(listing.id, listing.building_id)
     }
-    highlight(listing.id, listing.building_id)
     setQuery('')
     setFocused(false)
     inputRef.current?.blur()
-  }, [flyTo, highlight])
+  }, [flyTo, selectBuilding])
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && results.length > 0) {
       e.preventDefault()
-      selectPlace(results[0].listing)
+      selectPlace(results[0].listing, results[0].building)
     } else if (e.key === 'Escape') {
       setQuery('')
       inputRef.current?.blur()
@@ -133,7 +147,29 @@ function SearchDropdown({ results, selectPlace }) {
     <div className="glass-dropdown mt-1.5 rounded-xl overflow-y-auto" style={{ maxHeight: 'min(50vh, 400px)' }}>
       {results.map((result, i) => {
         const { listing } = result
-        const logo = listing.logo
+
+        if (result.type === 'building') {
+          const b = result.building
+          return (
+            <button
+              key={`bldg-${b.id}`}
+              onClick={() => selectPlace(null, b)}
+              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white/5 flex-shrink-0 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-sm glass-text font-medium block truncate">{b.name || b.address}</span>
+                {b.name && b.address && <span className="text-xs glass-text-dim block truncate">{b.address}</span>}
+              </div>
+            </button>
+          )
+        }
+
+        const logo = listing?.logo
           ? (listing.logo.startsWith('http') ? listing.logo : `${import.meta.env.BASE_URL}${listing.logo.replace(/^\//, '')}`)
           : null
 
