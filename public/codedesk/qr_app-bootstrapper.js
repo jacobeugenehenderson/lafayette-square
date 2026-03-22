@@ -144,6 +144,11 @@ function populateBizSelect(businesses) {
   // Listbox mode: render clickable items grouped into category folders
   if (listbox && hiddenInput) {
     var current = hiddenInput.value || window.__lsq_cached_biz_id || '';
+
+    // Preserve existing search input value across re-populations
+    var existingSearch = listbox.querySelector('.biz-search-input');
+    var savedQuery = existingSearch ? existingSearch.value : '';
+
     listbox.innerHTML = '';
 
     // Selected place label
@@ -160,6 +165,7 @@ function populateBizSelect(businesses) {
     searchInput.type = 'text';
     searchInput.placeholder = 'Search by name or address...';
     searchInput.className = 'biz-search-input';
+    searchInput.value = savedQuery;
     searchWrap.appendChild(searchInput);
     listbox.appendChild(searchWrap);
 
@@ -215,7 +221,7 @@ function populateBizSelect(businesses) {
     }
 
     searchInput.addEventListener('input', function() { renderGroups(searchInput.value); });
-    renderGroups('');
+    renderGroups(savedQuery);
 
     // Restore hidden input value after rebuilding (renderTypeForm clears it)
     if (current) hiddenInput.value = current;

@@ -2979,7 +2979,7 @@
       "website": "https://shopcbdkratom.com/pages/lafayette-square",
       "category": "shopping",
       "subcategory": "wellness",
-      "building_id": null,
+      "building_id": "bldg-0387",
       "hours": {
         "monday": {
           "open": "10:00",
@@ -3732,7 +3732,7 @@
       "reservation_url": "https://onyxdaggerstl.com",
       "category": "services",
       "subcategory": "tattoo",
-      "building_id": null,
+      "building_id": "bldg-0387",
       "hours": {
         "monday": {
           "open": "12:00",
