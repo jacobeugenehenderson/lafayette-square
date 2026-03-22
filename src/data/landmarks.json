@@ -2961,48 +2961,61 @@
       "building_id": null,
       "hours": {
         "monday": {
-          "open": "08:00",
-          "close": "22:00"
+          "open": "10:00",
+          "close": "21:00"
         },
         "tuesday": {
-          "open": "08:00",
-          "close": "22:00"
+          "open": "10:00",
+          "close": "21:00"
         },
         "wednesday": {
-          "open": "08:00",
-          "close": "22:00"
+          "open": "10:00",
+          "close": "21:00"
         },
         "thursday": {
-          "open": "08:00",
-          "close": "22:00"
+          "open": "10:00",
+          "close": "21:00"
         },
         "friday": {
-          "open": "08:00",
-          "close": "22:00"
+          "open": "10:00",
+          "close": "21:00"
         },
         "saturday": {
-          "open": "08:00",
-          "close": "22:00"
+          "open": "10:00",
+          "close": "21:00"
         },
         "sunday": {
-          "open": "08:00",
-          "close": "22:00"
+          "open": "11:00",
+          "close": "18:00"
         }
       },
       "photos": [],
       "amenities": [
-        "300+ products",
+        "600+ cannabis & kratom products",
         "20+ kratom strains",
+        "Delta-8 & Delta-9 THC",
+        "CBD capsules, edibles & tinctures",
+        "Topicals & pet CBD",
+        "All products 3rd-party lab tested",
         "Same-day local delivery",
-        "Buy online, pickup in store"
+        "Buy online, pickup in store",
+        "No appointment needed"
       ],
       "history": [
         {
+          "year": 1880,
+          "event": "Victorian-era commercial building constructed on Park Avenue during the height of Lafayette Square's development, part of the neighborhood's original commercial fabric."
+        },
+        {
           "year": 2016,
-          "event": "David Palatnik and Dafna Revah open the first dedicated CBD Kratom store in Chicago's Bucktown — the first shop of its kind in the country."
+          "event": "CBD Kratom founded in Chicago's Bucktown by David Palatnik and Dafna Revah — the first dedicated CBD and kratom retail shop of its kind in the country."
+        },
+        {
+          "year": 2020,
+          "event": "CBD Kratom opens Lafayette Square location at 1917 Park Avenue, joining the neighborhood's Park Avenue commercial corridor next to Park Avenue Coffee."
         }
       ],
-      "description": "CBD, kratom, and cannabis dispensary with over 300 products including edibles, beverages, topicals, and smokables. Part of the largest privately owned cannabis and kratom retailer in the US with 55+ locations.",
+      "description": "Lafayette Square outpost of the nation's largest privately owned cannabis and kratom retailer, with 55+ locations across six cities. Over 600 products including CBD capsules, edibles, tinctures, topicals, Delta-8 and Delta-9 THC, beverages, and 20+ kratom strains — all third-party lab tested. Walk-in friendly with same-day delivery available.",
       "tags": [
         "delivery",
         "wellness"
@@ -3693,8 +3706,9 @@
       "id": "lmk-068",
       "name": "Onyx Dagger Tattoo & Gallery",
       "address": "1917 Park Avenue",
-      "phone": "(314) 745-8641",
+      "phone": "(808) 728-0264",
       "website": "https://onyxdaggerstl.com",
+      "reservation_url": "https://onyxdaggerstl.com",
       "category": "services",
       "subcategory": "tattoo",
       "building_id": null,
@@ -3730,26 +3744,42 @@
       },
       "photos": [],
       "amenities": [
-        "Rotating fine art gallery featuring local and national artists",
-        "Custom tattoo design by appointment only",
-        "Private, relaxed studio atmosphere",
-        "Art available for purchase on site"
+        "Custom tattoo by appointment",
+        "Rotating fine art gallery",
+        "Art available for purchase",
+        "Full-color organic florals",
+        "Black-and-grey portraiture",
+        "Large-scale custom work",
+        "Private studio atmosphere",
+        "Art shows & paint nights",
+        "Private tattoo events available"
       ],
       "history": [
         {
-          "year": 2018,
-          "event": "Valencia Miller, known as 'Miss V,' founds Onyx Dagger Tattoo, becoming the first Black woman in Missouri to own and operate a custom tattoo shop."
+          "year": 1880,
+          "event": "Commercial building constructed on Park Avenue as part of Lafayette Square's Victorian-era commercial corridor."
+        },
+        {
+          "year": 2015,
+          "event": "Valencia Miller, a Saint Louis University fine arts graduate, opens Ink Gallery in Benton Park — the first custom tattoo shop owned by a Black woman in Missouri. Inducted into the National Tattoo Association."
+        },
+        {
+          "year": 2016,
+          "event": "Miller closes Ink Gallery to study abroad in Beijing, continuing her fine arts education and Mandarin studies."
         },
         {
           "year": 2022,
-          "event": "Onyx Dagger reopens at 1917 Park Avenue in Lafayette Square as a combined tattoo studio and fine art gallery, featuring rotating exhibitions alongside custom tattoo work."
+          "event": "Onyx Dagger Tattoo & Gallery opens at 1917 Park Avenue in Lafayette Square, combining Valencia's custom tattoo practice with a curated fine art gallery featuring rotating exhibitions by local and national artists."
         }
       ],
-      "description": "Female-owned custom tattoo studio and fine art gallery in the heart of Lafayette Square. Owner Valencia Miller, the first Black woman in Missouri to own a custom tattoo shop, combines over 16 years of tattooing expertise with a curated gallery showcasing local and nationally renowned artists.",
+      "description": "Custom tattoo studio and fine art gallery owned by Valencia Miller — known as 'Miss V' — the first Black woman in Missouri to own and operate a custom tattoo shop. A Saint Louis University painting graduate with over 17 years of experience, Miller trained at Skin Deep Tattoos in Hawaii and has guest-tattooed aboard Virgin Voyages' Scarlet Lady. The front gallery rotates work by local artists including SLU and Wash U faculty, with art available for purchase. Specializes in full-color organic florals, black-and-grey portraiture, and large-scale custom pieces. By appointment only.",
       "tags": [
         "exhibitions",
         "appointments",
-        "tattoo"
+        "tattoo",
+        "black-owned",
+        "woman-owned",
+        "gallery"
       ]
     },
     {
