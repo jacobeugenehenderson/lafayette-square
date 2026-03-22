@@ -498,6 +498,7 @@ function Building({ building, neonInfo }) {
   const isSimOpen = usePlaceState((s) => s.openBuildings.has(building.id))
   const categoryHex = neonInfo?.hex
   const listingHours = neonInfo?.hours
+  const neonForceOn = neonInfo?.forceOn || false
   const showNeon = !!categoryHex || isSimOpen
   const effectiveHex = categoryHex || simColor(building.id)
 
@@ -780,7 +781,7 @@ function Building({ building, neonInfo }) {
         onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
         onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(building.id) }}
       />
-      {showNeon && <NeonBand building={building} categoryHex={effectiveHex} hours={listingHours} forceOn={isSimOpen} />}
+      {showNeon && <NeonBand building={building} categoryHex={effectiveHex} hours={listingHours} forceOn={isSimOpen || neonForceOn} />}
     </group>
   )
 }
@@ -1106,18 +1107,25 @@ function LafayetteScene() {
     return () => clearInterval(id)
   }, [])
 
+  const activeTags = useLandmarkFilter((s) => s.activeTags)
+
   const neonLookup = useMemo(() => {
     const map = {}
     const time = useTimeOfDay.getState().currentTime
     listings.forEach(l => {
       const bid = l.building_id || l.id
       const hex = CATEGORY_HEX[l.category]
+      // Hours-based glow (always-on for open businesses)
       if (bid && hex && _isWithinHours(l.hours, time)) {
         map[bid] = { hex, hours: l.hours }
       }
+      // Filter-based glow (Society Pages category selection)
+      if (bid && hex && activeTags.size > 0 && (activeTags.has(l.subcategory) || activeTags.has(l.category))) {
+        if (!map[bid]) map[bid] = { hex, hours: null, forceOn: true }
+      }
     })
     return map
-  }, [listings, neonTick])
+  }, [listings, neonTick, activeTags])
 
   // Frustum-cull neon: only mount NeonBand for buildings the camera can actually see.
   // Checks every 30 frames (~0.5s) to avoid per-frame churn.
