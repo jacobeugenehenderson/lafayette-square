@@ -183,7 +183,7 @@ export default function GatewayArch() {
            (panelHash3 - 0.5) * 0.10,
            (panelHash - 0.5) * 0.14
          );
-         float colorStrength = 0.6 + 0.4 * uDayFactor;
+         float colorStrength = 0.2 + 0.8 * uDayFactor;
          diffuseColor.rgb += panelBright * colorStrength;
          diffuseColor.rgb += panelTint * colorStrength;
          diffuseColor.rgb = max(diffuseColor.rgb, vec3(0.05));`
@@ -229,9 +229,7 @@ export default function GatewayArch() {
          float glintD = vCurveParam - uGlintPos;
          // Sharp core + softer halo
          float glintCore = exp(-glintD * glintD * 5000.0) * edgeMask * topMask;
-         float glintHalo = exp(-glintD * glintD * 500.0) * edgeMask * topMask;
          gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glintCore * uGlintBright * 0.7;
-         gl_FragColor.rgb += vec3(0.8, 0.82, 0.9) * glintHalo * uGlintBright * 0.15;
 
          // ── Foot blending + hard clip ──
          float footDist = min(vCurveParam, 1.0 - vCurveParam);
@@ -251,7 +249,9 @@ export default function GatewayArch() {
          float footFade = smoothstep(-20.0, 60.0, vArchWorld.y);
          float dayShadow = mix(0.92, 1.0, footFade);
          float nightShadow = mix(0.35, 1.0, footFade);
-         gl_FragColor.rgb *= mix(nightShadow, dayShadow, uDayFactor);`
+         gl_FragColor.rgb *= mix(nightShadow, dayShadow, uDayFactor);
+
+`
       )
 
       shaderRef.current = shader
@@ -268,12 +268,12 @@ export default function GatewayArch() {
     const t = Math.max(0, Math.min(1, (sunAltitude + 0.12) / 0.42))
     const day = t * t * (3 - 2 * t)
 
-    // At night: reduce metalness, increase roughness — softer moonlight response
-    material.metalness = 0.15 + day * 0.77 // 0.15 at night, 0.92 in day
-    material.roughness = 0.04 + (1 - day) * 0.60 // 0.64 at night, 0.04 in day
-
     // Emissive: subtle glow at night so arch is visible against dark sky
     material.emissiveIntensity = 0.06 * (1 - day)
+
+    // At night: softer moonlight response
+    material.metalness = 0.5 + day * 0.42 // 0.5 at night, 0.92 in day
+    material.roughness = 0.04 + (1 - day) * 0.15 // 0.19 at night, 0.04 in day
 
     // Dynamic color: warmer in golden hour, darker/cooler at night
     const r = 0.55 + day * 0.33
@@ -329,9 +329,11 @@ export default function GatewayArch() {
       const cameraShift = Math.max(-0.15, Math.min(0.15, lateral * 0.15))
       shaderRef.current.uniforms.uGlintPos.value = Math.max(0.20, Math.min(0.80, glintFromSun + cameraShift))
 
-      // Glint brightness: strong at all times — this is the drama
-      const altFade = Math.max(0.5, 1.0 - Math.abs(sunAltitude) * 1.2)
-      shaderRef.current.uniforms.uGlintBright.value = altFade
+      // Glint brightness: fades smoothly as moon/sun approach horizon
+      const moonFade = Math.max(0, Math.min(1, moonPos.altitude / 0.15))
+      const sunFade = Math.max(0, Math.min(1, (sunAltitude + 0.1) / 0.3))
+      const lightFade = Math.max(moonFade, sunFade)
+      shaderRef.current.uniforms.uGlintBright.value = lightFade * 0.7
     }
   })
 
