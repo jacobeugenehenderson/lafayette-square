@@ -224,12 +224,14 @@ export default function GatewayArch() {
 
          // ── Sun/moon glint on edges — sharp and bright ──
          float edgeMask = smoothstep(0.78, 1.0, vEdge);
+         // Kill glint on lower legs — only allow on upper arch
+         float topMask = smoothstep(0.0, 0.35, min(vCurveParam, 1.0 - vCurveParam));
          float glintD = vCurveParam - uGlintPos;
          // Sharp core + softer halo
-         float glintCore = exp(-glintD * glintD * 2000.0) * edgeMask;
-         float glintHalo = exp(-glintD * glintD * 200.0) * edgeMask;
-         gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glintCore * uGlintBright * 1.2;
-         gl_FragColor.rgb += vec3(0.8, 0.82, 0.9) * glintHalo * uGlintBright * 0.3;
+         float glintCore = exp(-glintD * glintD * 5000.0) * edgeMask * topMask;
+         float glintHalo = exp(-glintD * glintD * 500.0) * edgeMask * topMask;
+         gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glintCore * uGlintBright * 0.7;
+         gl_FragColor.rgb += vec3(0.8, 0.82, 0.9) * glintHalo * uGlintBright * 0.15;
 
          // ── Foot blending + hard clip ──
          float footDist = min(vCurveParam, 1.0 - vCurveParam);
@@ -244,8 +246,12 @@ export default function GatewayArch() {
          float clipBlend = smoothstep(-40.0, 20.0, vArchWorld.y);
          gl_FragColor.rgb = mix(paintColor, gl_FragColor.rgb, clipBlend);
 
-         // ── Clamp output to prevent HDR blowout from bloom ──
-         gl_FragColor.rgb = min(gl_FragColor.rgb, vec3(1.2));`
+         // ── Ground shadow on lower legs ──
+         // Day: subtle depth darkening. Night: strong shadow (no uplight effect)
+         float footFade = smoothstep(-20.0, 60.0, vArchWorld.y);
+         float dayShadow = mix(0.92, 1.0, footFade);
+         float nightShadow = mix(0.35, 1.0, footFade);
+         gl_FragColor.rgb *= mix(nightShadow, dayShadow, uDayFactor);`
       )
 
       shaderRef.current = shader
@@ -262,12 +268,12 @@ export default function GatewayArch() {
     const t = Math.max(0, Math.min(1, (sunAltitude + 0.12) / 0.42))
     const day = t * t * (3 - 2 * t)
 
+    // At night: reduce metalness, increase roughness — softer moonlight response
+    material.metalness = 0.15 + day * 0.77 // 0.15 at night, 0.92 in day
+    material.roughness = 0.04 + (1 - day) * 0.60 // 0.64 at night, 0.04 in day
+
     // Emissive: subtle glow at night so arch is visible against dark sky
     material.emissiveIntensity = 0.06 * (1 - day)
-
-    // At night: reduce metalness so PBR doesn't amplify moonlight into a spotlight
-    material.metalness = 0.5 + day * 0.42 // 0.5 at night, 0.92 in day
-    material.roughness = 0.04 + (1 - day) * 0.15 // rougher at night, less specular catch
 
     // Dynamic color: warmer in golden hour, darker/cooler at night
     const r = 0.55 + day * 0.33
@@ -321,7 +327,7 @@ export default function GatewayArch() {
       const dz = camera.position.z - 230
       const lateral = (dx * 0.358 + dz * 0.934) / 140
       const cameraShift = Math.max(-0.15, Math.min(0.15, lateral * 0.15))
-      shaderRef.current.uniforms.uGlintPos.value = Math.max(0.02, Math.min(0.98, glintFromSun + cameraShift))
+      shaderRef.current.uniforms.uGlintPos.value = Math.max(0.20, Math.min(0.80, glintFromSun + cameraShift))
 
       // Glint brightness: strong at all times — this is the drama
       const altFade = Math.max(0.5, 1.0 - Math.abs(sunAltitude) * 1.2)
