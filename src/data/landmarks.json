@@ -1582,7 +1582,7 @@
       "category": "community",
       "subcategory": "churches",
       "building_id": "bldg-0604",
-      "description": "English Gothic Revival church built in 1871 as St. John's Episcopal Church, later serving Lithuanian and Ukrainian Catholic communities. Since 1997, home to a Society of St. Pius X (SSPX) traditionalist Catholic chapel offering the Latin Mass. Features a truncated Gothic tower, engaged buttresses, and a restored pipe organ.",
+      "description": "English Gothic Revival church built in 1871 as St. John's Episcopal Church, this building at 1120 Dolman has served four distinct congregations across 150 years. After decades as a Ukrainian Greek Catholic parish, it became home to the Metropolitan Community Church of Greater St. Louis from 1984 to 1996 — one of the most significant LGBTQ institutions in Lafayette Square during the AIDS crisis. Since 1997, the Society of St. Pius X has operated a traditionalist Catholic chapel offering the Latin Mass. Features a truncated Gothic tower, engaged buttresses, and a restored pipe organ.",
       "photos": [
         "/photos/st-marys-assumption/01.jpg",
         "/photos/st-marys-assumption/02.jpg",
@@ -1593,7 +1593,10 @@
         "Sunday High Mass at 10:00 AM",
         "Traditional Latin Mass (Tridentine Rite)",
         "Confessions 30 min before Mass",
-        "Restored pipe organ"
+        "Restored pipe organ",
+        "English Gothic Revival architecture",
+        "Truncated Gothic tower",
+        "Engaged buttresses"
       ],
       "history": [
         {
@@ -1602,11 +1605,27 @@
         },
         {
           "year": 1907,
-          "event": "Acquired by the Ruthenian Catholic community and renamed St. Mary's Assumption. First Liturgy celebrated on the Feast of the Assumption."
+          "event": "Acquired by the Ruthenian (Ukrainian Greek Catholic) community and renamed St. Mary's Assumption. The parish served as many as 150 families through the 1950s."
+        },
+        {
+          "year": 1973,
+          "event": "Rev. Carol Cureton founds the Metropolitan Community Church of Greater St. Louis — an LGBTQ-affirming church — holding services first at Berea Presbyterian on Olive Street, then at 5108 Waterman Blvd."
         },
         {
           "year": 1984,
-          "event": "Purchased by the Metropolitan Community Church of Greater St. Louis, serving a congregation of approximately 130 members."
+          "event": "MCCGSL purchases the Dolman Street church after the Ukrainian Catholic parish relocates to south St. Louis County. The congregation of approximately 130 members makes this one of the most significant LGBTQ community spaces in Lafayette Square."
+        },
+        {
+          "year": 1985,
+          "event": "St. Louis Effort for AIDS established. MCCGSL becomes a center of support and activism during the AIDS crisis, providing community, memorial services, and advocacy."
+        },
+        {
+          "year": 1989,
+          "event": "Rev. Brad Wishon called as Senior Pastor. The congregation grows under his leadership."
+        },
+        {
+          "year": 1996,
+          "event": "MCCGSL sells the Dolman church and relocates, eventually building a LEED-certified facility at 1919 S. Broadway in 2009."
         },
         {
           "year": 1997,
@@ -1614,7 +1633,9 @@
         }
       ],
       "tags": [
-        "churches"
+        "churches",
+        "historic",
+        "lgbtq-history"
       ]
     },
     {
@@ -3827,6 +3848,59 @@
         "wifi",
         "parking",
         "bed-and-breakfast"
+      ]
+    },
+    {
+      "id": "lmk-120",
+      "name": "Napoleon's Retreat",
+      "address": "1815 Lafayette Avenue",
+      "website": "https://napoleonsretreatinn.com",
+      "category": "services",
+      "subcategory": "bed-and-breakfast",
+      "building_id": "bldg-0833",
+      "description": "Second Empire mansion built circa 1880, painted a sunny yellow and known as one of Lafayette Square's finest 'Painted Ladies.' Operated as a gay-owned bed and breakfast from 1991, winning Riverfront Times Best B&B in 2003. Three guest rooms with private baths in the main house, plus a carriage house loft. Features 14-foot ceilings with plaster molding, seven fireplaces, a three-story flying staircase of Missouri walnut, and original oversized wood pocket doors. The building survived the Great Cyclone of 1896, losing most of its third floor which was subsequently rebuilt. Closed circa 2025.",
+      "photos": [],
+      "amenities": [
+        "3 guest rooms with private baths",
+        "Carriage house loft",
+        "14-foot ceilings with plaster molding",
+        "Seven fireplaces",
+        "Three-story Missouri walnut staircase",
+        "Original oversized pocket doors",
+        "Homemade breakfast included",
+        "Backyard garden courtyard"
+      ],
+      "history": [
+        {
+          "year": 1880,
+          "event": "Second Empire mansion constructed on Lafayette Avenue. Three stories with a mansard roof, the house features 14-foot ceilings, seven fireplaces, and a flying staircase of Missouri walnut."
+        },
+        {
+          "year": 1896,
+          "event": "The Great Cyclone devastates Lafayette Square. The mansion survives but loses most of its third floor, which is rebuilt in the aftermath."
+        },
+        {
+          "year": 1991,
+          "event": "Napoleon's Retreat opens as a bed and breakfast, becoming one of Lafayette Square's first hospitality establishments during the neighborhood's revival."
+        },
+        {
+          "year": 2003,
+          "event": "Named Best Bed & Breakfast by the Riverfront Times under innkeepers Michael Lance and Jeff Archuleta, Bay Area transplants praised for their 'mi casa es su casa' hospitality and meticulous period furnishings."
+        },
+        {
+          "year": 2011,
+          "event": "Brian and Stacy Kistler purchase the property and continue operating as innkeepers, expanding to four units including the carriage house loft."
+        },
+        {
+          "year": 2025,
+          "event": "Napoleon's Retreat closes after over three decades. The property is listed for sale as a 4-unit compound."
+        }
+      ],
+      "tags": [
+        "bed-and-breakfast",
+        "historic",
+        "lgbtq-history",
+        "adaptive-reuse"
       ]
     },
     {
