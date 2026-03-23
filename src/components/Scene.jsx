@@ -311,14 +311,14 @@ const PANEL_FRACTION = 0.02
 // Direction to arch in XZ: [3116, -1196], perpendicular: [0.358, 0.934]
 const PAN_HALF_LENGTH = 140 // ±140m from center
 const PAN_PERP = [0.358, 0.934]
-const PAN_PERIOD = 360 // seconds for one full back-and-forth (slower = smoother)
+const PAN_PERIOD = 720 // seconds for one full back-and-forth (12 min — savor it)
 const HERO_PHASE = Math.random() // randomized start position each visit
 
 // Pure cosine wave: perfectly smooth at all points — no linear segments,
 // no easing discontinuities. Slowest at turnarounds, fastest in middle,
-// but the acceleration is always continuous and gentle.
+// but with 12-min period the max velocity is gentle.
 function heroPanSwing(t) {
-  return -Math.cos(((t % 1) + 1) % 1 * Math.PI * 2) // -1 → +1 → -1, smooth everywhere
+  return -Math.cos(((t % 1) + 1) % 1 * Math.PI * 2)
 }
 
 // ── Camera presets ───────────────────────────────────────────────────────────

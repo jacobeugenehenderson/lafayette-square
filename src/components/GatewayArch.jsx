@@ -91,16 +91,13 @@ export default function GatewayArch() {
   const shaderRef = useRef(null)
 
   const material = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshBasicMaterial({
       color: '#c8c8d0',
-      metalness: 0.92,
-      roughness: 0.04,
-      emissive: '#8888aa',
-      emissiveIntensity: 0,
       transparent: false,
       depthWrite: true,
     })
 
+    mat.customProgramCacheKey = () => 'gateway-arch'
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
       shader.uniforms.uDayFactor = { value: 1.0 }
@@ -189,68 +186,52 @@ export default function GatewayArch() {
          diffuseColor.rgb = max(diffuseColor.rgb, vec3(0.05));`
       )
 
-      // Uniform roughness — no per-panel variation
-      // All panel detail comes through color, not reflectivity
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <roughnessmap_fragment>',
-        `#include <roughnessmap_fragment>
-         // Slightly rougher at seams, otherwise uniform
-         roughnessFactor += (1.0 - seam) * 0.06 * seamVis;
-         roughnessFactor = clamp(roughnessFactor, 0.03, 0.15);`
-      )
-
-      // Post-lighting: environment-aware tinting + glint + foot blend
+      // Post-base-color: our own lighting (no scene lights)
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <dithering_fragment>',
         `#include <dithering_fragment>
 
          vec3 N = normalize(vArchNormal);
 
-         // ── Sky/ground reflection tint ──
-         // Simulate environment reflection based on normal direction
-         // Up-facing normals reflect sky, down-facing reflect ground
-         float upness = dot(N, vec3(0.0, 1.0, 0.0)) * 0.5 + 0.5;
-         vec3 envTint = mix(uGroundColor, uHorizonColor, upness);
-         // Blend with the PBR output — stronger when metallic surface is bright
-         float envStrength = uSkyBright * 0.4;
-         gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb + envTint, envStrength);
-
-         // ── Broad directional light wash ──
-         // Strong in day, very subtle at night (moon isn't a spotlight)
+         // ── Directional light (replaces scene directional) ──
          float sunFacing = max(0.0, dot(N, uSunDir));
-         float wash = sunFacing * 0.7;
-         vec3 washColor = mix(vec3(0.4, 0.42, 0.5), vec3(0.9, 0.87, 0.8), uDayFactor);
-         gl_FragColor.rgb += washColor * wash * uDayFactor * 0.25;
+         // Day: warm directional. Night: very subtle cool fill
+         float dayLight = sunFacing * 0.5 * uDayFactor;
+         float nightLight = sunFacing * 0.06 * (1.0 - uDayFactor);
+         vec3 dayColor = vec3(0.95, 0.90, 0.82);
+         vec3 nightColor = vec3(0.5, 0.55, 0.7);
 
-         // ── Sun/moon glint on edges — sharp and bright ──
+         // Ambient: tinted by sky color so arch blends into environment
+         float ambientLevel = mix(0.12, 0.35, uDayFactor);
+         float upness = dot(N, vec3(0.0, 1.0, 0.0)) * 0.5 + 0.5;
+         vec3 skyTint = mix(uGroundColor, uHorizonColor, upness);
+         vec3 ambient = mix(skyTint, vec3(1.0), 0.3) * ambientLevel;
+
+         // ── Combine: multiply base color by lighting ──
+         vec3 lighting = ambient + dayColor * dayLight + nightColor * nightLight;
+         gl_FragColor.rgb *= lighting;
+
+         // ── Edge glint — sharp, upper arch only ──
          float edgeMask = smoothstep(0.78, 1.0, vEdge);
-         // Kill glint on lower legs — only allow on upper arch
          float topMask = smoothstep(0.0, 0.35, min(vCurveParam, 1.0 - vCurveParam));
          float glintD = vCurveParam - uGlintPos;
-         // Sharp core + softer halo
          float glintCore = exp(-glintD * glintD * 5000.0) * edgeMask * topMask;
          gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glintCore * uGlintBright * 0.7;
 
-         // ── Foot blending + hard clip ──
+         // ── Foot blending + clip ──
          float footDist = min(vCurveParam, 1.0 - vCurveParam);
-         // Color blend near feet
          float footBlend = smoothstep(0.0, 0.12, footDist);
          float paintStrength = (1.0 - footBlend) * 0.70;
          float heightFrac = smoothstep(-20.0, 120.0, vArchWorld.y);
          vec3 paintColor = mix(uGroundColor, uHorizonColor, heightFrac);
          gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);
-         // Clip legs below roofline but above street level
          if (vArchWorld.y < -40.0) discard;
          float clipBlend = smoothstep(-40.0, 20.0, vArchWorld.y);
          gl_FragColor.rgb = mix(paintColor, gl_FragColor.rgb, clipBlend);
 
-         // ── Ground shadow on lower legs ──
-         // Day: subtle depth darkening. Night: strong shadow (no uplight effect)
-         float footFade = smoothstep(-20.0, 60.0, vArchWorld.y);
-         float dayShadow = mix(0.92, 1.0, footFade);
-         float nightShadow = mix(0.35, 1.0, footFade);
-         gl_FragColor.rgb *= mix(nightShadow, dayShadow, uDayFactor);
-
+         // ── Subtle depth on lower legs ──
+         float footFade = smoothstep(-20.0, 80.0, vArchWorld.y);
+         gl_FragColor.rgb *= mix(0.85, 1.0, footFade);
 `
       )
 
@@ -267,19 +248,6 @@ export default function GatewayArch() {
     const isNight = sunAltitude < -0.12
     const t = Math.max(0, Math.min(1, (sunAltitude + 0.12) / 0.42))
     const day = t * t * (3 - 2 * t)
-
-    // Emissive: subtle glow at night so arch is visible against dark sky
-    material.emissiveIntensity = 0.06 * (1 - day)
-
-    // At night: softer moonlight response
-    material.metalness = 0.5 + day * 0.42 // 0.5 at night, 0.92 in day
-    material.roughness = 0.04 + (1 - day) * 0.15 // 0.19 at night, 0.04 in day
-
-    // Dynamic color: warmer in golden hour, darker/cooler at night
-    const r = 0.55 + day * 0.33
-    const g = 0.55 + day * 0.33
-    const b = 0.60 + day * 0.27
-    material.color.setRGB(r, g, b)
 
     meshRef.current.rotation.y = ARCH_FIXED_ROTATION
 

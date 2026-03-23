@@ -973,7 +973,11 @@ function CelestialBodies() {
     }
 
     // Compute moon light position for night/twilight blending
-    const moonBrightness = 2.0 + moonIllum.fraction * 1.5
+    // Atmospheric extinction: moon is dimmer near the horizon (real phenomenon)
+    // Also fixes specular hotspots on the arch — worst at grazing angles
+    // Smooth single ramp: 0 when moon is below -0.05, full at 0.25 altitude
+    const moonAltFade = Math.max(0, Math.min(1, (moonAlt + 0.05) / 0.30))
+    const moonBrightness = (2.0 + moonIllum.fraction * 1.5) * moonAltFade
     // Always compute moon light position from actual moon coordinates.
     // When moon is below horizon, use its last direction but keep light low.
     // This prevents a snap when the moon sets.
@@ -1001,7 +1005,7 @@ function CelestialBodies() {
       secondary = {
         position: _secP.set(-150, 100, -150).lerp(new THREE.Vector3(-_sunLP.x * 0.5, 80, -_sunLP.z * 0.5), 1 - nightBlend),
         color: lerpColor('#8877aa', '#4466aa', nightBlend),
-        intensity: twiSecIntensity + (0.8 - twiSecIntensity) * nightBlend,
+        intensity: (twiSecIntensity + (0.8 - twiSecIntensity) * nightBlend) * Math.max(0.1, moonAltFade),
       }
       sky = {
         top: lerpColor('#1a1535', '#0a1020', nightBlend),
