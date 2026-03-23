@@ -1207,4 +1207,4 @@ export default function BulletinModal() {
   )
 }
 
-export { SECTIONS, SECTION_MAP }
+export { SECTIONS, SECTION_MAP, BrowseView, NewPostView, ThreadListView, ThreadDetailView }

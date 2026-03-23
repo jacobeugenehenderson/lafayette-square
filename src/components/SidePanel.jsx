@@ -11,13 +11,13 @@ import buildingsData from '../data/buildings.json'
 import streetsData from '../data/streets.json'
 import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
+import { BrowseView, NewPostView, ThreadListView, ThreadDetailView } from './BulletinModal'
 import useGuardianStatus from '../hooks/useGuardianStatus'
 import { useCodeDesk } from './CodeDeskModal'
 import useSkyState from '../hooks/useSkyState'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { interpolateForecast } from '../lib/dawnTimeline'
 import WeatherTimeline from './WeatherTimeline'
-import { useContact } from './ContactModal'
 
 // ── Camera helpers ──────────────────────────────────────────────────
 const _buildingMap = {}
@@ -156,8 +156,6 @@ function _isWithinHours(hours, time) {
 const _buildingsWithHours = buildingsData.buildings.filter(b => b.hours)
 const TOTAL_BUILDINGS = buildingsData.buildings.length
 const _namedStreetCount = new Set(streetsData.streets.map(s => s.name).filter(Boolean)).size
-
-// ============ BULLETIN BOARD BUTTON ============
 
 // ============ COLLAPSIBLE SECTION ============
 
@@ -381,23 +379,6 @@ function AlmanacTab({ showAdmin = false }) {
         </div>
       </div>
 
-      {/* ── Section 4: Bulletin Board ── */}
-      <div>
-        <button
-          onClick={() => useBulletin.getState().setModalOpen(true)}
-          className="w-full flex items-center justify-between px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-amber-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-            </svg>
-            <span className="text-label-sm uppercase font-semibold text-amber-300/80 tracking-[0.25em]">Bulletin Board</span>
-          </div>
-          <svg className="w-3.5 h-3.5 text-amber-400/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
-      </div>
 
       {showAdmin && (
         <div className="px-4 pb-3 pt-2 space-y-3 border-t border-outline-variant">
@@ -642,95 +623,64 @@ function LafayettePagesTab() {
   )
 }
 
-// ============ ADDRESS SEARCH ============
+// ============ BULLETIN TAB ============
 
-// Pre-build search index: address + id for each building
-const _searchIndex = buildingsData.buildings.map(b => ({
-  id: b.id,
-  address: (b.address || '').toUpperCase(),
-  text: `${(b.address || '')} ${b.id}`.toUpperCase(),
-}))
+function BulletinTab() {
+  const refresh = useBulletin(s => s.refresh)
+  const openThread = useBulletin(s => s.openThread)
+  const activeThread = useBulletin(s => s.activeThread)
+  const [view, setView] = useState('browse')
 
-function AddressSearch() {
-  const [query, setQuery] = useState('')
-  const [focused, setFocused] = useState(false)
-  const inputRef = useRef(null)
-  const flyTo = useCamera((s) => s.flyTo)
-  const highlight = useSelectedBuilding((s) => s.highlight)
+  useEffect(() => {
+    refresh()
+    setView('browse')
+  }, [refresh])
 
-  const results = useMemo(() => {
-    if (query.length < 2) return []
-    const q = query.toUpperCase()
-    const terms = q.split(/\s+/)
-    return _searchIndex
-      .filter(entry => terms.every(t => entry.text.includes(t)))
-      .slice(0, 5)
-  }, [query])
-
-  const selectBuilding = useCallback((entry) => {
-    const building = _buildingMap[entry.id]
-    if (!building) return
-    const cam = useCamera.getState()
-    if (cam.viewMode !== 'browse') cam.setMode('browse')
-    if (cam.panelState === 'full') cam.setPanelState('half')
-    const target = computeCenterOn(building)
-    flyTo(target.position, target.lookAt)
-    highlight(null, entry.id)
-    setQuery('')
-    inputRef.current?.blur()
-  }, [flyTo, highlight])
-
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter' && results.length > 0) {
-      e.preventDefault()
-      selectBuilding(results[0])
-    } else if (e.key === 'Escape') {
-      setQuery('')
-      inputRef.current?.blur()
-    }
-  }, [results, selectBuilding])
-
-  const showDropdown = focused && results.length > 0
+  useEffect(() => {
+    if (activeThread) setView('thread-detail')
+  }, [activeThread])
 
   return (
-    <div className="relative">
-      <div className="flex items-center gap-2 px-3 py-2 mx-2 mt-2 mb-1 rounded-xl bg-surface-container-high backdrop-blur-md border border-outline">
-        <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-        </svg>
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setTimeout(() => setFocused(false), 150)}
-          onKeyDown={handleKeyDown}
-          placeholder="Search address or building ID..."
-          className="flex-1 bg-transparent text-label-sm text-on-surface placeholder-on-surface-disabled outline-none"
-        />
-        {query && (
-          <button onClick={() => setQuery('')} className="text-on-surface-disabled hover:text-on-surface-variant text-body-sm">
-            &times;
-          </button>
+    <div className="flex flex-col h-full min-h-0">
+      {/* Demographics masthead */}
+      <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant">
+        <div className="flex items-center gap-3 text-on-surface-variant">
+          <div className="flex-1">
+            <div className="text-display font-light text-on-surface tracking-wide">2,164</div>
+            <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Residents</div>
+          </div>
+          <div className="flex-1">
+            <div className="text-display font-light text-on-surface tracking-wide">{buildingsData.buildings.length.toLocaleString()}</div>
+            <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Buildings</div>
+          </div>
+          <div className="flex-1">
+            <div className="text-display font-light text-on-surface tracking-wide">{_namedStreetCount}</div>
+            <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Streets</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bulletin content */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {view === 'browse' && (
+          <BrowseView
+            onNewPost={() => setView('new-post')}
+            onOpenThreads={() => setView('threads')}
+          />
+        )}
+        {view === 'new-post' && (
+          <NewPostView onBack={() => setView('browse')} />
+        )}
+        {view === 'threads' && (
+          <ThreadListView
+            onBack={() => setView('browse')}
+            onOpenThread={(id) => { openThread(id); setView('thread-detail') }}
+          />
+        )}
+        {view === 'thread-detail' && (
+          <ThreadDetailView onBack={() => { setView('threads'); useBulletin.setState({ activeThread: null }) }} />
         )}
       </div>
-      {showDropdown && (
-        <div className="absolute left-0 right-0 bottom-full mb-px bg-surface backdrop-blur-xl rounded-t-lg border border-outline overflow-hidden z-50">
-          {results.map((entry) => (
-            <button
-              key={entry.id}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => selectBuilding(entry)}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-left hover:bg-surface-container-high transition-colors"
-            >
-              <span className="text-label-sm text-on-surface-variant truncate">{entry.address || entry.id}</span>
-              <span className="text-caption text-on-surface-disabled flex-shrink-0 ml-2">{entry.id}</span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
@@ -739,7 +689,8 @@ function AddressSearch() {
 
 const TABS = [
   { id: 'almanac', label: 'Almanac', icon: '\u25D0' },
-  { id: 'lafayettepages', label: 'Society Pages', icon: '\u25C8' },
+  { id: 'bulletin', label: 'Bulletin', icon: '\u25A6' },
+  { id: 'lafayettepages', label: 'Society', icon: '\u25C8' },
 ]
 
 const PANEL_HEIGHTS = {
@@ -922,29 +873,11 @@ function SidePanel() {
       {!collapsed && (
         <div className="flex-1 min-h-0 overflow-hidden bg-surface-dim">
           {activeTab === 'almanac' && <AlmanacTab showAdmin={showAdmin} />}
+          {activeTab === 'bulletin' && <BulletinTab />}
           {activeTab === 'lafayettepages' && <LafayettePagesTab />}
         </div>
       )}
 
-      {/* ── Demographics footer — always visible, always dark ── */}
-      <div className="flex-shrink-0 px-4 py-1.5 text-caption tracking-wide flex items-center justify-between bg-surface border-t border-outline-variant">
-        <div className="flex items-center gap-x-1 text-on-surface-disabled min-w-0 overflow-hidden">
-          <span>2,164 residents</span>
-          <span>&middot;</span>
-          <span>{buildingsData.buildings.length.toLocaleString()} buildings</span>
-          <span>&middot;</span>
-          <span>{_namedStreetCount} streets</span>
-        </div>
-        <button
-          onClick={() => useContact.getState().setOpen(true)}
-          className="text-yellow-300 hover:text-yellow-200 transition-colors flex items-center gap-1"
-        >
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
-          </svg>
-          Contact
-        </button>
-      </div>
     </div>
   )
 }

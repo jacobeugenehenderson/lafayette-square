@@ -7,6 +7,7 @@ import { useCourierDash } from './CourierDashboard'
 import { useContact } from './ContactModal'
 import { useCodeDesk } from './CodeDeskModal'
 import { useInfo } from './InfoModal'
+import CATEGORIES from '../tokens/categories'
 
 // Precompute a map of building_id -> building for fast lookup
 import buildingsData from '../data/buildings.json'
@@ -23,6 +24,79 @@ function computeCenterOn(building) {
     position: [cx, 250, cz + 1],
     lookAt: [cx, 0, cz],
   }
+}
+
+// ── Category icon SVG paths (Heroicons outline, 24x24 viewBox) ───────────
+const CATEGORY_ICONS = {
+  dining: (
+    // fork-knife (utensils)
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v7.2c0 1 .8 1.8 1.8 1.8H6v9m0-18v18m6-18v4.5m0 0V12m0-4.5C12 5 14 3 15 3s3 2 3 4.5V12m-6 0h6m-6 0v6m6-6v6m-6 0h6" />
+  ),
+  historic: (
+    // columns / landmark
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+  ),
+  arts: (
+    // paint brush / palette
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+  ),
+  parks: (
+    // tree / leaf
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21V11.25m0 0c1.5-2.25 4.5-5.25 4.5-7.5a4.5 4.5 0 10-9 0c0 2.25 3 5.25 4.5 7.5zm-3 3.75h6" />
+  ),
+  shopping: (
+    // shopping bag
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
+  ),
+  services: (
+    // wrench-screwdriver
+    <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.1 5.1a2.121 2.121 0 01-3-3l5.1-5.1m0 0L3.34 7.09a2.121 2.121 0 013-3l5.08 5.08m0 3l3.75-3.75m0 0l5.1 5.1a2.121 2.121 0 01-3 3l-5.1-5.1m0 0l5.08-5.08a2.121 2.121 0 00-3-3l-5.08 5.08" />
+  ),
+  hospitality: (
+    // bed / key
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+  ),
+  community: (
+    // users / people
+    <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+  ),
+  residential: (
+    // home
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+  ),
+  commercial: (
+    // building-office
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
+  ),
+  industrial: (
+    // factory / cog
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21m-1.5 0H12m-8.457 3.077l1.41-.513m14.095-5.13l1.41-.513M5.106 17.785l1.15-.964m11.49-9.642l1.149-.964M7.501 19.795l.75-1.3m7.5-12.99l.75-1.3m-6.063 16.658l.26-1.477m2.605-14.772l.26-1.477m0 17.726l-.26-1.477M10.698 4.614l-.26-1.477M16.5 19.794l-.75-1.299M7.5 4.205L12 12m6.894 5.785l-1.149-.964M6.256 7.178l-1.15-.964m15.352 8.864l-1.41-.513M4.954 9.435l-1.41-.514M12.002 12l-3.75 6.495" />
+  ),
+  // Fallback for menu items
+  menu: (
+    // book-open
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+  ),
+  // Fallback for bare buildings
+  building: (
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
+  ),
+}
+
+// Resolve a search result to { hex, icon } for the row cap
+function getResultStyle(result) {
+  const { type, listing } = result
+  if (type === 'building') {
+    return { hex: '#7A8B6F', icon: CATEGORY_ICONS.building } // sage for bare buildings
+  }
+  if (type === 'menu-type' || type === 'menu-item') {
+    const cat = listing?.category && CATEGORIES[listing.category]
+    return { hex: cat?.hex || '#C2185B', icon: CATEGORY_ICONS.menu }
+  }
+  // place — use listing's category
+  const cat = listing?.category && CATEGORIES[listing.category]
+  const icon = CATEGORY_ICONS[listing?.category] || CATEGORY_ICONS.building
+  return { hex: cat?.hex || '#7A8B6F', icon }
 }
 
 const MENU_TYPE_LABELS = {
@@ -142,11 +216,46 @@ export function useGlassSearch() {
   return { query, setQuery, focused, setFocused, inputRef, results, selectPlace, handleKeyDown }
 }
 
+function CategoryIcon({ hex, icon, logo }) {
+  return (
+    <div
+      className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden"
+      style={{ backgroundColor: hex + '90' }}
+    >
+      {logo ? (
+        <img src={logo} alt="" className="w-6 h-6 object-contain" />
+      ) : (
+        <svg
+          className="w-4 h-4"
+          style={{ color: hex }}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
+          {icon}
+        </svg>
+      )}
+    </div>
+  )
+}
+
+function resolveLogoUrl(listing) {
+  if (!listing?.logo) return null
+  return listing.logo.startsWith('http')
+    ? listing.logo
+    : `${import.meta.env.BASE_URL}${listing.logo.replace(/^\//, '')}`
+}
+
 function SearchDropdown({ results, selectPlace }) {
   return (
     <div className="glass-dropdown mt-1.5 rounded-xl overflow-y-auto" style={{ maxHeight: 'min(50vh, 400px)' }}>
       {results.map((result, i) => {
         const { listing } = result
+        const style = getResultStyle(result)
+
+        // Logo only for direct place results, not menu hits
+        const logo = result.type === 'place' ? resolveLogoUrl(listing) : null
 
         if (result.type === 'building') {
           const b = result.building
@@ -156,11 +265,7 @@ function SearchDropdown({ results, selectPlace }) {
               onClick={() => selectPlace(null, b)}
               className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
             >
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex-shrink-0 flex items-center justify-center">
-                <svg className="w-4 h-4 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" />
-                </svg>
-              </div>
+              <CategoryIcon hex={style.hex} icon={style.icon} />
               <div className="min-w-0 flex-1">
                 <span className="text-sm glass-text font-medium block truncate">{b.name || b.address}</span>
                 {b.name && b.address && <span className="text-xs glass-text-dim block truncate">{b.address}</span>}
@@ -169,10 +274,6 @@ function SearchDropdown({ results, selectPlace }) {
           )
         }
 
-        const logo = listing?.logo
-          ? (listing.logo.startsWith('http') ? listing.logo : `${import.meta.env.BASE_URL}${listing.logo.replace(/^\//, '')}`)
-          : null
-
         if (result.type === 'menu-type') {
           return (
             <button
@@ -180,11 +281,7 @@ function SearchDropdown({ results, selectPlace }) {
               onClick={() => selectPlace(listing)}
               className="w-full px-4 py-2 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
             >
-              {logo ? (
-                <img src={logo} alt="" className="w-7 h-7 rounded-md object-contain bg-white/5 flex-shrink-0" />
-              ) : (
-                <div className="w-7 h-7 rounded-md bg-white/5 flex-shrink-0" />
-              )}
+              <CategoryIcon hex={style.hex} icon={style.icon} logo={logo} />
               <div className="min-w-0 flex-1">
                 <span className="text-xs glass-text-dim block truncate">{listing.name}</span>
                 <span className="text-sm glass-text block truncate">{result.menuLabel}</span>
@@ -201,11 +298,7 @@ function SearchDropdown({ results, selectPlace }) {
               onClick={() => selectPlace(listing)}
               className="w-full px-4 py-2 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
             >
-              {logo ? (
-                <img src={logo} alt="" className="w-7 h-7 rounded-md object-contain bg-white/5 flex-shrink-0" />
-              ) : (
-                <div className="w-7 h-7 rounded-md bg-white/5 flex-shrink-0" />
-              )}
+              <CategoryIcon hex={style.hex} icon={style.icon} logo={logo} />
               <div className="min-w-0 flex-1">
                 <span className="text-xs glass-text-dim block truncate">{listing.name} · {result.section}</span>
                 <span className="text-sm glass-text block truncate">{item.name}</span>
@@ -217,17 +310,14 @@ function SearchDropdown({ results, selectPlace }) {
           )
         }
 
+        // Place result
         return (
           <button
             key={`place-${listing.id}`}
             onClick={() => selectPlace(listing)}
             className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
           >
-            {logo ? (
-              <img src={logo} alt="" className="w-8 h-8 rounded-lg object-contain bg-white/5 flex-shrink-0" />
-            ) : (
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex-shrink-0" />
-            )}
+            <CategoryIcon hex={style.hex} icon={style.icon} logo={logo} />
             <div className="min-w-0 flex-1">
               <span className="text-sm glass-text font-medium block truncate">{listing.name}</span>
               {listing.address && <span className="text-xs glass-text-dim block truncate">{listing.address}</span>}
