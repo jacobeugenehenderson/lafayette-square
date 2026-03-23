@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import usePlaceState from '../hooks/usePlaceState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
@@ -12,12 +11,12 @@ import streetsData from '../data/streets.json'
 import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
 import { BrowseView, NewPostView, ThreadListView, ThreadDetailView } from './BulletinModal'
-import useGuardianStatus from '../hooks/useGuardianStatus'
-import { useCodeDesk } from './CodeDeskModal'
+import { SocietySearch } from './GlassSearch'
 import useSkyState from '../hooks/useSkyState'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { interpolateForecast } from '../lib/dawnTimeline'
 import WeatherTimeline from './WeatherTimeline'
+import useCommunityStats from '../hooks/useCommunityStats'
 
 // ── Camera helpers ──────────────────────────────────────────────────
 const _buildingMap = {}
@@ -154,7 +153,6 @@ function _isWithinHours(hours, time) {
 
 // Pre-compute which buildings have real hours data
 const _buildingsWithHours = buildingsData.buildings.filter(b => b.hours)
-const TOTAL_BUILDINGS = buildingsData.buildings.length
 const _namedStreetCount = new Set(streetsData.streets.map(s => s.name).filter(Boolean)).size
 
 // ============ COLLAPSIBLE SECTION ============
@@ -186,25 +184,10 @@ function CollapsibleSection({ title, defaultOpen = false, bg = '', highlight = f
 
 // ============ ALMANAC TAB ============
 
-function AlmanacTab({ showAdmin = false }) {
+function AlmanacTab() {
   const { currentTime, setTime, isLive } = useTimeOfDay()
   const [use24Hour, setUse24Hour] = useState(false)
   const [useCelsius, setUseCelsius] = useState(false)
-  const openCodeDesk = useCodeDesk((s) => s.setOpen)
-  const { randomize, openAll, closeAll } = usePlaceState()
-  const buildingIds = useRef(buildingsData.buildings.map(b => b.id))
-
-  // Count real places currently open based on their hours
-  const realOpenCount = useMemo(() => {
-    return _buildingsWithHours.filter(b => _isWithinHours(b.hours, currentTime)).length
-  }, [currentTime])
-
-  const [sliderValue, setSliderValue] = useState(realOpenCount)
-
-  // Keep slider >= realOpenCount when real places open/close
-  useEffect(() => {
-    setSliderValue(v => Math.max(v, realOpenCount))
-  }, [realOpenCount])
 
   useEffect(() => {
     if (!isLive) return
@@ -380,75 +363,6 @@ function AlmanacTab({ showAdmin = false }) {
       </div>
 
 
-      {showAdmin && (
-        <div className="px-4 pb-3 pt-2 space-y-3 border-t border-outline-variant">
-            <button
-              onClick={() => openCodeDesk(true)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-caption text-on-surface-variant hover:text-on-surface transition-colors"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-              </svg>
-              QR Generator
-            </button>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-caption text-on-surface-subtle">
-                  Storefront Simulation — Open: {sliderValue.toLocaleString()} of {TOTAL_BUILDINGS.toLocaleString()}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={realOpenCount}
-                max={TOTAL_BUILDINGS}
-                step="1"
-                value={sliderValue}
-                onChange={(e) => setSliderValue(parseInt(e.target.value))}
-                onMouseUp={() => {
-                  const simExtra = sliderValue - realOpenCount
-                  const simPct = TOTAL_BUILDINGS > realOpenCount
-                    ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
-                    : 0
-                  randomize(buildingIds.current, simPct)
-                }}
-                onTouchEnd={() => {
-                  const simExtra = sliderValue - realOpenCount
-                  const simPct = TOTAL_BUILDINGS > realOpenCount
-                    ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
-                    : 0
-                  randomize(buildingIds.current, simPct)
-                }}
-                className="w-full h-1 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-cyan-500"
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => {
-                    const simExtra = sliderValue - realOpenCount
-                    const simPct = TOTAL_BUILDINGS > realOpenCount
-                      ? (simExtra / (TOTAL_BUILDINGS - realOpenCount)) * 100
-                      : 0
-                    randomize(buildingIds.current, simPct)
-                  }}
-                  className="flex-1 text-caption px-2 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors"
-                >
-                  Randomize
-                </button>
-                <button
-                  onClick={() => { openAll(buildingIds.current); setSliderValue(TOTAL_BUILDINGS) }}
-                  className="text-caption px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => { closeAll(); setSliderValue(realOpenCount) }}
-                  className="text-caption px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
-                >
-                  Actual
-                </button>
-              </div>
-            </div>
-        </div>
-      )}
       </div>
 
     </div>
@@ -598,34 +512,98 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
   )
 }
 
-function LafayettePagesTab() {
+// ── Society masthead ─────────────────────────────────────────────────
+function SocietyMasthead() {
+  const { currentTime } = useTimeOfDay()
+  const { townies, residents, guardians } = useCommunityStats()
+
+  const openNow = useMemo(() => {
+    return _buildingsWithHours.filter(b => _isWithinHours(b.hours, currentTime)).length
+  }, [currentTime])
+
+  return (
+    <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant">
+      <div className="flex items-center gap-3 text-on-surface-variant">
+        <div className="flex-1">
+          <div className="text-display font-light text-on-surface tracking-wide">{openNow}</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Open Now</div>
+        </div>
+        <div className="flex-1">
+          <div className="text-display font-light text-on-surface tracking-wide">{townies}</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Townies</div>
+        </div>
+        <div className="flex-1">
+          <div className="text-display font-light text-on-surface tracking-wide">{residents}</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Residents</div>
+        </div>
+        <div className="flex-1">
+          <div className="text-display font-light text-on-surface tracking-wide">{guardians}</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Guardians</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LafayettePagesTab({ isFull }) {
   const [expandedId, setExpandedId] = useState(null)
   const listings = useListings((s) => s.listings)
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-2 space-y-2">
-          {CATEGORY_LIST.map((category) => (
-            <LafayetteCategoryAccordion
-              key={category.id}
-              category={category}
-              isExpanded={expandedId === category.id}
-              onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
-            />
-          ))}
-        </div>
-      </div>
-      <div className="px-4 py-2 border-t border-outline-variant">
-        <span className="text-caption text-on-surface-disabled">{listings.length} verified listings</span>
-      </div>
+      {/* Society masthead — always visible */}
+      <SocietyMasthead />
+
+      {/* Directory content — only at full height */}
+      {isFull && (
+        <>
+          <SocietySearch />
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-2 space-y-2">
+              {CATEGORY_LIST.map((category) => (
+                <LafayetteCategoryAccordion
+                  key={category.id}
+                  category={category}
+                  isExpanded={expandedId === category.id}
+                  onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="px-4 py-2 border-t border-outline-variant">
+            <span className="text-caption text-on-surface-disabled">{listings.length} verified listings</span>
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
 // ============ BULLETIN TAB ============
 
-function BulletinTab() {
+// ── Demographics masthead (shared) ──────────────────────────────────
+function DemographicsMasthead() {
+  return (
+    <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant">
+      <div className="flex items-center gap-3 text-on-surface-variant">
+        <div className="flex-1">
+          <div className="text-display font-light text-on-surface tracking-wide">2,164</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Residents</div>
+        </div>
+        <div className="flex-1">
+          <div className="text-display font-light text-on-surface tracking-wide">{buildingsData.buildings.length.toLocaleString()}</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Buildings</div>
+        </div>
+        <div className="flex-1">
+          <div className="text-display font-light text-on-surface tracking-wide">{_namedStreetCount}</div>
+          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Streets</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BulletinTab({ isFull }) {
   const refresh = useBulletin(s => s.refresh)
   const openThread = useBulletin(s => s.openThread)
   const activeThread = useBulletin(s => s.activeThread)
@@ -642,45 +620,32 @@ function BulletinTab() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Demographics masthead */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant">
-        <div className="flex items-center gap-3 text-on-surface-variant">
-          <div className="flex-1">
-            <div className="text-display font-light text-on-surface tracking-wide">2,164</div>
-            <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Residents</div>
-          </div>
-          <div className="flex-1">
-            <div className="text-display font-light text-on-surface tracking-wide">{buildingsData.buildings.length.toLocaleString()}</div>
-            <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Buildings</div>
-          </div>
-          <div className="flex-1">
-            <div className="text-display font-light text-on-surface tracking-wide">{_namedStreetCount}</div>
-            <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Streets</div>
-          </div>
-        </div>
-      </div>
+      {/* Demographics masthead — always visible */}
+      <DemographicsMasthead />
 
-      {/* Bulletin content */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {view === 'browse' && (
-          <BrowseView
-            onNewPost={() => setView('new-post')}
-            onOpenThreads={() => setView('threads')}
-          />
-        )}
-        {view === 'new-post' && (
-          <NewPostView onBack={() => setView('browse')} />
-        )}
-        {view === 'threads' && (
-          <ThreadListView
-            onBack={() => setView('browse')}
-            onOpenThread={(id) => { openThread(id); setView('thread-detail') }}
-          />
-        )}
-        {view === 'thread-detail' && (
-          <ThreadDetailView onBack={() => { setView('threads'); useBulletin.setState({ activeThread: null }) }} />
-        )}
-      </div>
+      {/* Bulletin content — only at full height */}
+      {isFull && (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {view === 'browse' && (
+            <BrowseView
+              onNewPost={() => setView('new-post')}
+              onOpenThreads={() => setView('threads')}
+            />
+          )}
+          {view === 'new-post' && (
+            <NewPostView onBack={() => setView('browse')} />
+          )}
+          {view === 'threads' && (
+            <ThreadListView
+              onBack={() => setView('browse')}
+              onOpenThread={(id) => { openThread(id); setView('thread-detail') }}
+            />
+          )}
+          {view === 'thread-detail' && (
+            <ThreadDetailView onBack={() => { setView('threads'); useBulletin.setState({ activeThread: null }) }} />
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -695,14 +660,16 @@ const TABS = [
 
 const PANEL_HEIGHTS = {
   collapsed: 'auto',
-  half: 'calc(35dvh - 1.5rem)',
+  half: 'auto',             // half = masthead, sized to fit content
   full: 'calc(100dvh - 4rem)', // below header
 }
 
+// Almanac never goes full — it is a masthead-only tab
+const ALMANAC_ONLY_TABS = new Set(['almanac'])
+
 function SidePanel() {
-  const [activeTab, setActiveTab] = useState('almanac')
-  const { isAdmin: isStoreAdmin } = useGuardianStatus()
-  const showAdmin = import.meta.env.DEV || isStoreAdmin
+  const activeTab = useCamera((s) => s.activeTab)
+  const setActiveTab = useCallback((tab) => useCamera.setState({ activeTab: tab }), [])
   const panelState = useCamera((s) => s.panelState)
   const setPanelState = useCamera((s) => s.setPanelState)
   const collapsed = panelState === 'collapsed'
@@ -722,12 +689,17 @@ function SidePanel() {
     const dy = e.changedTouches[0].clientY - dragRef.current.startY
     dragRef.current = null
     if (Math.abs(dy) < 30) return
+    const almanacCapped = ALMANAC_ONLY_TABS.has(activeTab)
     if (dy > 0) {
       // Drag down: full → half → collapsed
       setPanelState(isFull ? 'half' : 'collapsed')
     } else {
-      // Drag up: collapsed → half → full
-      setPanelState(collapsed ? 'half' : 'full')
+      // Drag up: collapsed → half → full (almanac caps at half)
+      if (collapsed) {
+        setPanelState('half')
+      } else if (!almanacCapped) {
+        setPanelState('full')
+      }
     }
     if (collapsed) useUserLocation.getState().start()
   }
@@ -736,12 +708,17 @@ function SidePanel() {
   const handleHandleMouseDown = (e) => {
     e.preventDefault()
     const startY = e.clientY
+    const almanacCapped = ALMANAC_ONLY_TABS.has(activeTab)
     const onMove = (me) => {
       const dy = me.clientY - startY
       if (Math.abs(dy) > 30) {
         if (dy > 0) setPanelState(isFull ? 'half' : 'collapsed')
         else {
-          setPanelState(collapsed ? 'half' : 'full')
+          if (collapsed) {
+            setPanelState('half')
+          } else if (!almanacCapped) {
+            setPanelState('full')
+          }
           if (collapsed) useUserLocation.getState().start()
         }
         document.removeEventListener('mousemove', onMove)
@@ -844,9 +821,19 @@ function SidePanel() {
                 setPanelState('half')
                 useUserLocation.getState().start()
               } else if (tab.id === activeTab) {
-                setPanelState('collapsed')
+                // Re-tap active tab: cycle half → full → collapsed
+                // Almanac caps at half
+                if (isHalf && !ALMANAC_ONLY_TABS.has(tab.id)) {
+                  setPanelState('full')
+                } else {
+                  setPanelState('collapsed')
+                }
               } else {
                 setActiveTab(tab.id)
+                // Switching to almanac from full → drop to half
+                if (ALMANAC_ONLY_TABS.has(tab.id) && isFull) {
+                  setPanelState('half')
+                }
               }
             }}
             className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-body-sm transition-all duration-200 ${
@@ -872,9 +859,9 @@ function SidePanel() {
       {/* ── Content body — hidden when collapsed ── */}
       {!collapsed && (
         <div className="flex-1 min-h-0 overflow-hidden bg-surface-dim">
-          {activeTab === 'almanac' && <AlmanacTab showAdmin={showAdmin} />}
-          {activeTab === 'bulletin' && <BulletinTab />}
-          {activeTab === 'lafayettepages' && <LafayettePagesTab />}
+          {activeTab === 'almanac' && <AlmanacTab />}
+          {activeTab === 'bulletin' && <BulletinTab isFull={isFull} />}
+          {activeTab === 'lafayettepages' && <LafayettePagesTab isFull={isFull} />}
         </div>
       )}
 

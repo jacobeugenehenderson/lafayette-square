@@ -262,7 +262,43 @@ function getInit(deviceHash) {
     events: fetchEventsData(),
     handle: fetchHandleData(deviceHash),
     residence: fetchResidenceData(deviceHash),
+    counts: fetchCommunityCounts(),
   })
+}
+
+function fetchCommunityCounts() {
+  // Townies: distinct devices with 3+ check-in days in the rolling window
+  var checkins = sheetToObjects(getSheet('Checkins'))
+  var cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
+  var cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  var deviceDays = {}
+  checkins.forEach(function(r) {
+    var d = toDateStr(r.date)
+    if (d >= cutoffStr) {
+      if (!deviceDays[r.device_hash]) deviceDays[r.device_hash] = new Set()
+      deviceDays[r.device_hash].add(d)
+    }
+  })
+  var townies = 0
+  Object.keys(deviceDays).forEach(function(dh) {
+    if (deviceDays[dh].size >= LOCAL_THRESHOLD) townies++
+  })
+
+  // Verified residents
+  var residents = sheetToObjects(getSheet('Residents'))
+  var verifiedResidents = residents.filter(function(r) { return r.status === 'verified' }).length
+
+  // Guardians: distinct listings with at least one guardian
+  var guardians = sheetToObjects(getSheet('Guardians'))
+  var guardianListings = new Set()
+  guardians.forEach(function(r) { if (r.listing_id) guardianListings.add(r.listing_id) })
+
+  return {
+    townies: townies,
+    residents: verifiedResidents,
+    guardians: guardianListings.size,
+  }
 }
 
 // ─── GET: Listings ──────────────────────────────────────────────────────────

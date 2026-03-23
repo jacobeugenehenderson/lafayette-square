@@ -4,6 +4,7 @@ import useListings, { bareBuildingListings } from './useListings'
 import useHandle from './useHandle'
 import useEvents from './useEvents'
 import useResidence from './useResidence'
+import useCommunityStats from './useCommunityStats'
 import staticData from '../data/landmarks.json'
 import menuData from '../data/menus.json'
 
@@ -87,6 +88,16 @@ export async function runInit() {
     const r = data.residence
     if (r && r.building_id) {
       useResidence.setState({ buildingId: r.building_id, status: r.status })
+    }
+
+    // Hydrate community stats
+    const counts = data.counts
+    if (counts) {
+      useCommunityStats.setState({
+        townies: counts.townies || 0,
+        residents: counts.residents || 0,
+        guardians: counts.guardians || 0,
+      })
     }
   } catch (err) {
     // Init failed — stores keep their static/localStorage fallbacks

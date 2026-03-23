@@ -362,7 +362,8 @@ export function HeroSearch() {
   const contactOpen = useContact(s => s.open)
   const codeDeskOpen = useCodeDesk(s => s.open)
   const infoOpen = useInfo(s => s.open)
-  const suppressed = showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen
+  const societyFull = useCamera(s => s.panelState === 'full' && s.activeTab === 'lafayettepages')
+  const suppressed = showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen || societyFull
 
   if (suppressed) return null
 
@@ -411,6 +412,9 @@ export function HeroSearch() {
 // Browse header search — inline in the header bar
 export function BrowseSearchInput() {
   const { query, setQuery, focused, setFocused, inputRef, results, selectPlace, handleKeyDown } = useGlassSearch()
+  const societyFull = useCamera(s => s.panelState === 'full' && s.activeTab === 'lafayettepages')
+
+  if (societyFull) return null
 
   const showDropdown = focused && results.length > 0
 
@@ -443,6 +447,48 @@ export function BrowseSearchInput() {
       </div>
       {showDropdown && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1">
+          <SearchDropdown results={results} selectPlace={selectPlace} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Society tab search — inline at top of Society tab when full
+export function SocietySearch() {
+  const { query, setQuery, focused, setFocused, inputRef, results, selectPlace, handleKeyDown } = useGlassSearch()
+
+  const showDropdown = focused && results.length > 0
+
+  return (
+    <div className="relative flex-shrink-0 border-b border-outline-variant">
+      <div className="flex items-center gap-2 px-3 py-2 mx-2 my-1.5 rounded-xl bg-surface-container-high border border-outline">
+        <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+        </svg>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 200)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search places, menus..."
+          className="flex-1 bg-transparent text-label-sm text-on-surface placeholder-on-surface-disabled outline-none font-mono"
+        />
+        {query && (
+          <button
+            onClick={() => { setQuery(''); inputRef.current?.focus() }}
+            className="text-on-surface-disabled hover:text-on-surface-variant text-sm leading-none"
+          >
+            &times;
+          </button>
+        )}
+      </div>
+      {showDropdown && (
+        <div className="absolute left-0 right-0 top-full z-50">
           <SearchDropdown results={results} selectPlace={selectPlace} />
         </div>
       )}

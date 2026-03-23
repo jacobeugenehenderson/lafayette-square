@@ -8,6 +8,7 @@ const useCamera = create((set, get) => ({
   panelState: 'collapsed', // 'collapsed' | 'half' | 'full'
   panelOpen: false,         // derived compat — true when half or full
   panelCollapsedPx: 0,
+  activeTab: 'almanac',     // 'almanac' | 'bulletin' | 'lafayettepages'
   azimuth: 0,
   flyTarget: null,
   planetariumOrigin: null,  // [x, z] ground position for street-level sky view
