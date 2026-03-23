@@ -97,7 +97,7 @@ export default function GatewayArch() {
       depthWrite: true,
     })
 
-    mat.customProgramCacheKey = () => 'gateway-arch'
+    mat.customProgramCacheKey = () => 'gateway-arch-v2'
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
       shader.uniforms.uDayFactor = { value: 1.0 }
@@ -156,7 +156,7 @@ export default function GatewayArch() {
 
          // Vertical seams: darken at triangle edges (where vEdge → 1.0)
          // This creates 3 visible vertical stripes running the length of the arch
-         float vSeam = 1.0 - smoothstep(0.88, 0.96, vEdge) * 0.5;
+         float vSeam = 1.0 - smoothstep(0.88, 0.96, vEdge) * 0.2;
 
          // Combined seam: multiply horizontal and vertical
          float seam = hSeam * vSeam;
@@ -171,16 +171,16 @@ export default function GatewayArch() {
 
          // Seams always visible
          float seamVis = 0.5 + 0.5 * uDayFactor;
-         diffuseColor.rgb *= mix(1.0, mix(0.4, 1.0, seam), seamVis);
+         diffuseColor.rgb *= mix(1.0, mix(0.75, 1.0, seam), seamVis);
 
          // Per-panel color — brightness + warm/cool tint
-         float panelBright = (panelHash - 0.5) * 0.35;
+         float panelBright = (panelHash - 0.5) * 0.08;
          vec3 panelTint = vec3(
-           (panelHash2 - 0.5) * 0.18,
-           (panelHash3 - 0.5) * 0.10,
-           (panelHash - 0.5) * 0.14
+           (panelHash2 - 0.5) * 0.04,
+           (panelHash3 - 0.5) * 0.02,
+           (panelHash - 0.5) * 0.03
          );
-         float colorStrength = 0.2 + 0.8 * uDayFactor;
+         float colorStrength = 1.2;
          diffuseColor.rgb += panelBright * colorStrength;
          diffuseColor.rgb += panelTint * colorStrength;
          diffuseColor.rgb = max(diffuseColor.rgb, vec3(0.05));`
