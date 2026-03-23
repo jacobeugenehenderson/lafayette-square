@@ -123,7 +123,6 @@ export default function EventTicker() {
   const [index, setIndex] = useState(0)
 
   const showCard = useSelectedBuilding((s) => s.showCard)
-  const viewMode = useCamera((s) => s.viewMode)
   const bulletinOpen = useBulletin((s) => s.modalOpen)
 
   const storeEvents = useEvents((s) => s.events)
@@ -185,7 +184,10 @@ export default function EventTicker() {
   const codeDeskOpen = useCodeDesk(s => s.open)
   const infoOpen = useInfo(s => s.open)
 
-  if (viewMode !== 'hero') return null
+  const viewMode = useCamera(s => s.viewMode)
+  const isBrowse = viewMode === 'browse'
+
+  if (viewMode === 'planetarium') return null
   if (showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen) return null
   if (tickerItems.length === 0) return null
 
@@ -199,7 +201,9 @@ export default function EventTicker() {
         style={{
           height: 'calc(env(safe-area-inset-top, 0px) + 82px)',
           paddingTop: 'env(safe-area-inset-top, 0px)',
-          background: 'linear-gradient(90deg, rgba(0,0,0,0.45) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.45) 100%)',
+          background: isBrowse
+            ? 'linear-gradient(90deg, rgba(20,14,10,0.98) 0%, rgba(20,14,10,0.7) 40%, rgba(20,14,10,0.7) 60%, rgba(20,14,10,0.98) 100%)'
+            : 'linear-gradient(90deg, rgba(0,0,0,0.45) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.45) 100%)',
         }}
       >
         {/* Spectral bottom-edge highlight */}

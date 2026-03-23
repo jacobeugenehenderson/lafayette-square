@@ -87,6 +87,7 @@ if (_initParams.has('logout')) {
   localStorage.removeItem(ADMIN_KEY)
   localStorage.removeItem(GUARDIAN_KEY)
   sessionStorage.removeItem(TOKEN_KEY)
+  useGuardianStatus.setState({ isAdmin: false, guardianOf: [] })
   _initParams.delete('logout')
   const clean = _initParams.toString()
   window.history.replaceState({}, '', window.location.pathname + (clean ? '?' + clean : ''))

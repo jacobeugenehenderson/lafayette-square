@@ -151,6 +151,7 @@ export function useGlassSearch() {
   const inputRef = useRef(null)
   const listings = useListings(s => s.listings)
   const flyTo = useCamera(s => s.flyTo)
+  const highlight = useSelectedBuilding(s => s.highlight)
   const selectBuilding = useSelectedBuilding(s => s.select)
 
   const searchIndex = useMemo(() => buildSearchIndex(listings), [listings])
@@ -185,27 +186,32 @@ export function useGlassSearch() {
     return [...placeResults, ...buildingResults, ...menuTypeResults, ...itemResults].slice(0, 10)
   }, [query, searchIndex])
 
-  const selectPlace = useCallback((listing, building) => {
+  const selectPlace = useCallback((listing, building, resultType) => {
+    const isMenuResult = resultType === 'menu-type' || resultType === 'menu-item'
     const bldg = building || _buildingMap[listing?.building_id]
+    const cam = useCamera.getState()
+    if (cam.viewMode !== 'browse') cam.setMode('browse')
+    if (cam.panelState === 'full') cam.setPanelState('half')
     if (bldg) {
-      const cam = useCamera.getState()
-      if (cam.viewMode !== 'browse') cam.setMode('browse')
       const target = computeCenterOn(bldg)
       flyTo(target.position, target.lookAt)
-      selectBuilding(listing?.id || bldg.id, listing?.building_id || bldg.id)
-    } else if (listing) {
-      // No building mapped — open card without flying
+    }
+    if (isMenuResult && listing) {
+      // Menu results open the PlaceCard directly
       selectBuilding(listing.id, listing.building_id)
+    } else {
+      // Place/building results highlight neon — user clicks building to open card
+      highlight(listing?.id || null, listing?.building_id || bldg?.id)
     }
     setQuery('')
     setFocused(false)
     inputRef.current?.blur()
-  }, [flyTo, selectBuilding])
+  }, [flyTo, highlight, selectBuilding])
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && results.length > 0) {
       e.preventDefault()
-      selectPlace(results[0].listing, results[0].building)
+      selectPlace(results[0].listing, results[0].building, results[0].type)
     } else if (e.key === 'Escape') {
       setQuery('')
       inputRef.current?.blur()
@@ -249,7 +255,7 @@ function resolveLogoUrl(listing) {
 
 function SearchDropdown({ results, selectPlace }) {
   return (
-    <div className="glass-dropdown mt-1.5 rounded-xl overflow-y-auto" style={{ maxHeight: 'min(50vh, 400px)' }}>
+    <div className="glass-dropdown mt-1.5 rounded-xl">
       {results.map((result, i) => {
         const { listing } = result
         const style = getResultStyle(result)
@@ -262,7 +268,7 @@ function SearchDropdown({ results, selectPlace }) {
           return (
             <button
               key={`bldg-${b.id}`}
-              onClick={() => selectPlace(null, b)}
+              onClick={() => selectPlace(null, b, 'building')}
               className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
             >
               <CategoryIcon hex={style.hex} icon={style.icon} />
@@ -278,7 +284,7 @@ function SearchDropdown({ results, selectPlace }) {
           return (
             <button
               key={`mtype-${listing.id}-${result.menuType}-${i}`}
-              onClick={() => selectPlace(listing)}
+              onClick={() => selectPlace(listing, null, 'menu-type')}
               className="w-full px-4 py-2 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
             >
               <CategoryIcon hex={style.hex} icon={style.icon} logo={logo} />
@@ -295,7 +301,7 @@ function SearchDropdown({ results, selectPlace }) {
           return (
             <button
               key={`menu-${listing.id}-${item.name}-${i}`}
-              onClick={() => selectPlace(listing)}
+              onClick={() => selectPlace(listing, null, 'menu-item')}
               className="w-full px-4 py-2 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
             >
               <CategoryIcon hex={style.hex} icon={style.icon} logo={logo} />
@@ -314,7 +320,7 @@ function SearchDropdown({ results, selectPlace }) {
         return (
           <button
             key={`place-${listing.id}`}
-            onClick={() => selectPlace(listing)}
+            onClick={() => selectPlace(listing, null, 'place')}
             className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/5 transition-colors text-left"
           >
             <CategoryIcon hex={style.hex} icon={style.icon} logo={logo} />
@@ -454,52 +460,57 @@ export function BrowseSearchInput() {
   )
 }
 
-// Society tab search — inline at top of Society tab when full
-export function SocietySearch() {
+// Society tab search — the single search bar for the app
+export function SocietySearch({ onSearchActive }) {
   const { query, setQuery, focused, setFocused, inputRef, results, selectPlace, handleKeyDown } = useGlassSearch()
 
-  const showDropdown = focused && results.length > 0
+  const hasQuery = query.length >= 2
+
+  useEffect(() => {
+    if (onSearchActive) onSearchActive(hasQuery)
+  }, [hasQuery, onSearchActive])
 
   return (
-    <div className="relative flex-shrink-0 border-b border-outline-variant">
-      <div className="flex items-center gap-2 px-3 py-2 mx-2 my-1.5 rounded-xl bg-surface-container-high border border-outline">
-        <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-        </svg>
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setTimeout(() => setFocused(false), 200)}
-          onKeyDown={handleKeyDown}
-          placeholder="Search places, menus..."
-          className="flex-1 bg-transparent text-label-sm text-on-surface placeholder-on-surface-disabled outline-none font-mono"
-        />
-        {query && (
-          <button
-            onClick={() => { setQuery(''); inputRef.current?.focus() }}
-            className="text-on-surface-disabled hover:text-on-surface-variant text-sm leading-none"
-          >
-            &times;
-          </button>
-        )}
-      </div>
-      {showDropdown && (
-        <div className="absolute left-0 right-0 top-full z-50">
-          <SearchDropdown results={results} selectPlace={selectPlace} />
+    <>
+      <div className="flex-shrink-0">
+        <div className="glass-panel flex items-center gap-2.5 px-4 py-2.5 mx-2 mt-2 mb-1 rounded-2xl">
+          <svg className="w-4 h-4 glass-text-dim flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setTimeout(() => setFocused(false), 200)}
+            onKeyDown={handleKeyDown}
+            placeholder=""
+            className="flex-1 bg-transparent text-sm glass-text placeholder:glass-text-dim outline-none font-mono"
+          />
+          {query && (
+            <button
+              onClick={() => { setQuery(''); inputRef.current?.focus() }}
+              className="glass-text-dim glass-text-link text-sm leading-none"
+            >
+              &times;
+            </button>
+          )}
         </div>
+      </div>
+      {hasQuery && (
+        results.length > 0 ? (
+          <SearchDropdown results={results} selectPlace={selectPlace} />
+        ) : (
+          <div className="text-center py-6 text-on-surface-disabled text-body-sm">No results</div>
+        )
       )}
-    </div>
+    </>
   )
 }
 
-// Legacy default export — used by App.jsx, now just renders HeroSearch
+// Legacy default export — kept for App.jsx import, search now lives in Society tab
 export default function GlassSearch() {
-  const viewMode = useCamera(s => s.viewMode)
-  const panelFull = useCamera(s => s.panelState) === 'full'
-  if (viewMode !== 'hero' || panelFull) return null
-  return <HeroSearch />
+  return null
 }

@@ -16,6 +16,7 @@ import useSkyState from '../hooks/useSkyState'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { interpolateForecast } from '../lib/dawnTimeline'
 import WeatherTimeline from './WeatherTimeline'
+import { useContact } from './ContactModal'
 import useCommunityStats from '../hooks/useCommunityStats'
 
 // ── Camera helpers ──────────────────────────────────────────────────
@@ -384,7 +385,7 @@ const ChevronIcon = ({ expanded }) => (
   </svg>
 )
 
-function LafayetteSubsection({ section, color }) {
+function LafayetteSubsection({ section, color, scrollToSelected }) {
   const { activeTags, toggleTag } = useLandmarkFilter()
   const deselect = useSelectedBuilding((s) => s.deselect)
   const highlight = useSelectedBuilding((s) => s.highlight)
@@ -410,6 +411,7 @@ function LafayetteSubsection({ section, color }) {
     if (!isActive) {
       const cam = useCamera.getState()
       if (cam.viewMode !== 'browse') cam.setMode('browse')
+      if (cam.panelState === 'full') cam.setPanelState('half')
       const target = getNeighborhoodTarget()
       flyTo(target.position, target.lookAt)
     } else {
@@ -455,6 +457,7 @@ function LafayetteSubsection({ section, color }) {
             return (
               <button
                 key={biz.id}
+                ref={isFocused && scrollToSelected ? (el) => { if (el) requestAnimationFrame(() => el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })) } : undefined}
                 onClick={() => handleSelectPlace(biz)}
                 className={`w-full flex items-center gap-2 px-3 py-1 text-left transition-colors duration-150 rounded ${
                   isFocused ? 'bg-surface-container-highest text-on-surface' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
@@ -471,7 +474,7 @@ function LafayetteSubsection({ section, color }) {
   )
 }
 
-function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
+function LafayetteCategoryAccordion({ category, isExpanded, onToggle, scrollToSelected }) {
   const listings = useListings((s) => s.listings)
   const colors = COLOR_CLASSES[category.color]
 
@@ -504,6 +507,7 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
               key={section.id}
               section={section}
               color={category.color}
+              scrollToSelected={scrollToSelected}
             />
           ))}
         </div>
@@ -516,30 +520,32 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
 function SocietyMasthead() {
   const { currentTime } = useTimeOfDay()
   const { townies, residents, guardians } = useCommunityStats()
+  const listings = useListings((s) => s.listings)
 
   const openNow = useMemo(() => {
-    return _buildingsWithHours.filter(b => _isWithinHours(b.hours, currentTime)).length
-  }, [currentTime])
+    return listings.filter(l => l.hours && _isWithinHours(l.hours, currentTime)).length
+  }, [listings, currentTime])
+
+  const stats = [
+    { value: openNow, label: 'Open Now', color: 'rgba(61,175,138,0.12)' },   // verdigris
+    { value: townies, label: 'Townies', color: 'rgba(194,24,91,0.12)' },      // claret
+    { value: residents, label: 'Residents', color: 'rgba(122,139,111,0.12)' }, // sage
+    { value: guardians, label: 'Guardians', color: 'rgba(212,163,55,0.12)' }, // gold
+  ]
 
   return (
-    <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant">
-      <div className="flex items-center gap-3 text-on-surface-variant">
-        <div className="flex-1">
-          <div className="text-display font-light text-on-surface tracking-wide">{openNow}</div>
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Open Now</div>
-        </div>
-        <div className="flex-1">
-          <div className="text-display font-light text-on-surface tracking-wide">{townies}</div>
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Townies</div>
-        </div>
-        <div className="flex-1">
-          <div className="text-display font-light text-on-surface tracking-wide">{residents}</div>
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Residents</div>
-        </div>
-        <div className="flex-1">
-          <div className="text-display font-light text-on-surface tracking-wide">{guardians}</div>
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Guardians</div>
-        </div>
+    <div className="flex-shrink-0 px-3 py-3 border-b border-outline-variant">
+      <div className="flex gap-2">
+        {stats.map(({ value, label, color }) => (
+          <div
+            key={label}
+            className="flex-1 rounded-xl px-2.5 py-2 text-center"
+            style={{ backgroundColor: color }}
+          >
+            <div className="text-display font-light text-on-surface tracking-wide">{value}</div>
+            <div className="text-caption text-on-surface-disabled uppercase tracking-[0.15em] mt-0.5">{label}</div>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -547,33 +553,71 @@ function SocietyMasthead() {
 
 function LafayettePagesTab({ isFull }) {
   const [expandedId, setExpandedId] = useState(null)
+  const [searchActive, setSearchActive] = useState(false)
+  const [scrollToSelected, setScrollToSelected] = useState(false)
   const listings = useListings((s) => s.listings)
+  const activeTags = useLandmarkFilter((s) => s.activeTags)
+  const selectedListingId = useSelectedBuilding((s) => s.selectedListingId)
+  const wasFull = useRef(false)
+
+  // Detect full → half transition
+  useEffect(() => {
+    if (!isFull && wasFull.current) {
+      setScrollToSelected(true)
+      // Clear after the scroll fires
+      const t = setTimeout(() => setScrollToSelected(false), 500)
+      return () => clearTimeout(t)
+    }
+    wasFull.current = isFull
+  }, [isFull])
+
+  // Auto-expand the accordion containing the active tag or selected listing
+  useEffect(() => {
+    // Check active subcategory tags
+    for (const tag of activeTags) {
+      const parent = CATEGORY_LIST.find(c => c.sections.some(s => s.id === tag))
+      if (parent) { setExpandedId(parent.id); return }
+    }
+    // Check selected listing
+    if (selectedListingId) {
+      const listing = listings.find(l => l.id === selectedListingId)
+      if (listing) {
+        const parent = CATEGORY_LIST.find(c => c.sections.some(s => s.id === listing.subcategory))
+        if (parent) { setExpandedId(parent.id); return }
+      }
+    }
+  }, [activeTags, selectedListingId, listings])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Society masthead — always visible */}
+      {/* Society masthead — pinned */}
       <SocietyMasthead />
 
-      {/* Directory content — only at full height */}
-      {isFull && (
-        <>
-          <SocietySearch />
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-2 space-y-2">
-              {CATEGORY_LIST.map((category) => (
-                <LafayetteCategoryAccordion
-                  key={category.id}
-                  category={category}
-                  isExpanded={expandedId === category.id}
-                  onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
-                />
-              ))}
-            </div>
+      {/* Scrollable area: search bar + results or directory */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Search scrolls with content */}
+        <SocietySearch onSearchActive={setSearchActive} />
+
+        {/* Directory — hidden when search is active */}
+        {!searchActive && (
+          <div className="p-2 space-y-2">
+            {CATEGORY_LIST.map((category) => (
+              <LafayetteCategoryAccordion
+                key={category.id}
+                category={category}
+                isExpanded={expandedId === category.id}
+                onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
+                scrollToSelected={scrollToSelected}
+              />
+            ))}
           </div>
-          <div className="px-4 py-2 border-t border-outline-variant">
-            <span className="text-caption text-on-surface-disabled">{listings.length} verified listings</span>
-          </div>
-        </>
+        )}
+      </div>
+
+      {isFull && !searchActive && (
+        <div className="flex-shrink-0 px-4 py-2 border-t border-outline-variant">
+          <span className="text-caption text-on-surface-disabled">{listings.length} verified listings</span>
+        </div>
       )}
     </div>
   )
@@ -660,8 +704,8 @@ const TABS = [
 
 const PANEL_HEIGHTS = {
   collapsed: 'auto',
-  half: 'auto',             // half = masthead, sized to fit content
-  full: 'calc(100dvh - 4rem)', // below header
+  half: 'calc(30dvh - 1rem)',   // conservative: fits almanac content, mastheads have room
+  full: 'calc(100dvh - 4rem)',  // below header
 }
 
 // Almanac never goes full — it is a masthead-only tab
@@ -675,77 +719,18 @@ function SidePanel() {
   const collapsed = panelState === 'collapsed'
   const isHalf = panelState === 'half'
   const isFull = panelState === 'full'
-  const handleRef = useRef(null)
-  const dragRef = useRef(null)
 
-  // Handle drag on the grab bar — cycles between states
-  const handleHandleTouchStart = (e) => {
-    e.stopPropagation()
-    dragRef.current = { startY: e.touches[0].clientY }
-  }
-
-  const handleHandleTouchEnd = (e) => {
-    if (!dragRef.current) return
-    const dy = e.changedTouches[0].clientY - dragRef.current.startY
-    dragRef.current = null
-    if (Math.abs(dy) < 30) return
-    const almanacCapped = ALMANAC_ONLY_TABS.has(activeTab)
-    if (dy > 0) {
-      // Drag down: full → half → collapsed
-      setPanelState(isFull ? 'half' : 'collapsed')
-    } else {
-      // Drag up: collapsed → half → full (almanac caps at half)
-      if (collapsed) {
-        setPanelState('half')
-      } else if (!almanacCapped) {
-        setPanelState('full')
-      }
-    }
-    if (collapsed) useUserLocation.getState().start()
-  }
-
-  // Mouse drag on handle (desktop)
-  const handleHandleMouseDown = (e) => {
-    e.preventDefault()
-    const startY = e.clientY
-    const almanacCapped = ALMANAC_ONLY_TABS.has(activeTab)
-    const onMove = (me) => {
-      const dy = me.clientY - startY
-      if (Math.abs(dy) > 30) {
-        if (dy > 0) setPanelState(isFull ? 'half' : 'collapsed')
-        else {
-          if (collapsed) {
-            setPanelState('half')
-          } else if (!almanacCapped) {
-            setPanelState('full')
-          }
-          if (collapsed) useUserLocation.getState().start()
-        }
-        document.removeEventListener('mousemove', onMove)
-        document.removeEventListener('mouseup', onUp)
-      }
-    }
-    const onUp = () => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-    }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }
-
-  // Glass styles: collapsed = liquid glass, half/full = frosted
+  // Glass styles: collapsed = heavy frosted glass, half/full = frosted
   const glassStyle = collapsed ? {
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)',
-    backdropFilter: 'blur(2px) saturate(200%) brightness(125%) contrast(110%)',
-    WebkitBackdropFilter: 'blur(2px) saturate(200%) brightness(125%) contrast(110%)',
+    background: 'rgba(10,8,6,0.65)',
+    backdropFilter: 'blur(40px) saturate(120%) brightness(60%)',
+    WebkitBackdropFilter: 'blur(40px) saturate(120%) brightness(60%)',
     boxShadow: [
-      'inset 0 1px 0 rgba(255,255,255,0.45)',
-      'inset 0 -1px 0 rgba(255,255,255,0.08)',
-      'inset 0 0 20px -5px rgba(255,255,255,0.06)',
+      'inset 0 1px 0 rgba(255,255,255,0.10)',
       '0 8px 40px rgba(0,0,0,0.5)',
       '0 2px 4px rgba(0,0,0,0.3)',
     ].join(', '),
-    border: '1px solid rgba(255,255,255,0.30)',
+    border: '1px solid rgba(255,255,255,0.08)',
   } : {
     background: 'var(--surface-glass)',
     backdropFilter: 'blur(40px) saturate(180%) brightness(110%)',
@@ -790,19 +775,6 @@ function SidePanel() {
             background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 75%, transparent 100%)',
           }}
         />
-      )}
-
-      {/* ── Drag handle — visible when half or full ── */}
-      {!collapsed && (
-        <div
-          ref={handleRef}
-          className="flex-shrink-0 flex justify-center py-1.5 cursor-grab active:cursor-grabbing"
-          onTouchStart={handleHandleTouchStart}
-          onTouchEnd={handleHandleTouchEnd}
-          onMouseDown={handleHandleMouseDown}
-        >
-          <div className="w-10 h-1 rounded-full bg-on-surface-disabled/40" />
-        </div>
       )}
 
       {/* ── Glass tab bar ── */}
@@ -862,6 +834,21 @@ function SidePanel() {
           {activeTab === 'almanac' && <AlmanacTab />}
           {activeTab === 'bulletin' && <BulletinTab isFull={isFull} />}
           {activeTab === 'lafayettepages' && <LafayettePagesTab isFull={isFull} />}
+        </div>
+      )}
+
+      {/* ── Persistent footer — Contact icon, visible when not collapsed ── */}
+      {!collapsed && (
+        <div className="flex-shrink-0 flex items-center justify-end px-4 py-1.5 bg-surface border-t border-outline-variant">
+          <button
+            onClick={() => useContact.getState().setOpen(true)}
+            className="text-yellow-300 hover:text-yellow-200 transition-colors flex items-center gap-1 text-caption"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+            </svg>
+            Contact
+          </button>
         </div>
       )}
 

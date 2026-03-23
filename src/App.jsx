@@ -57,6 +57,8 @@ function AccountButton() {
   const avatar = useHandle((s) => s.avatar)
   const vignette = useHandle((s) => s.vignette)
   const { updateAvatar, adoptIdentity } = useHandle()
+  const { isAdmin: isStoreAdmin } = useGuardianStatus()
+  const showAdmin = isStoreAdmin
   const [open, setOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
   const [accessible, setAccessible] = useState(() => {
@@ -259,6 +261,21 @@ function AccountButton() {
               </div>
             </div>
           )}
+          {showAdmin && (
+            <div className="border-t border-outline-variant pt-2 space-y-1">
+              <p className="text-caption text-on-surface-disabled uppercase tracking-widest px-3 pb-1">Admin</p>
+              <button
+                onClick={() => { setOpen(false); useCodeDesk.getState().setOpen(true) }}
+                className="w-full py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-3 flex items-center gap-2"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" />
+                </svg>
+                QR Generator
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -337,7 +354,7 @@ function BulletinOpener() {
 }
 
 function CaryOpener({ tier }) {
-  const isAdmin = import.meta.env.DEV || useGuardianStatus.getState().isAdmin
+  const isAdmin = useGuardianStatus.getState().isAdmin
   useEffect(() => {
     // Only admin can access Cary onboarding until launch
     if (!isAdmin) return
