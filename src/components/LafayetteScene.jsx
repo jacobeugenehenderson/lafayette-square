@@ -486,6 +486,81 @@ function simColor(id) {
 // Shared temp color to avoid per-frame allocations
 const _tmpColor = new THREE.Color()
 
+// ── Selection ring: neon outline around highlighted building ─────────────────
+const _RING_COLOR = new THREE.Color('#ff6644')
+const _RING_RADIUS = 0.045
+
+function SelectionRing({ building }) {
+  const ringRef = useRef()
+  const phaseRef = useRef(0)
+  const foundationY = getFoundationHeight(building)
+
+  const ringGeometry = useMemo(() => {
+    const height = building.size[1] + 0.15
+    const footprint = building.footprint
+
+    let points = []
+    if (!footprint || footprint.length < 3) {
+      const [w, , d] = building.size
+      const hw = w / 2 + 0.15, hd = d / 2 + 0.15
+      points = [
+        new THREE.Vector3(-hw, height, -hd),
+        new THREE.Vector3(hw, height, -hd),
+        new THREE.Vector3(hw, height, hd),
+        new THREE.Vector3(-hw, height, hd),
+        new THREE.Vector3(-hw, height, -hd),
+      ]
+    } else {
+      const cx = building.position[0], cz = building.position[2]
+      points = footprint.map(([x, z]) => {
+        const lx = x - cx, lz = z - cz
+        const len = Math.sqrt(lx * lx + lz * lz) || 1
+        return new THREE.Vector3(lx + (lx / len) * 0.15, height, lz + (lz / len) * 0.15)
+      })
+      points.push(points[0].clone())
+    }
+
+    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0)
+    return new THREE.TubeGeometry(curve, points.length * 8, _RING_RADIUS, 6, false)
+  }, [building])
+
+  const ringMaterial = useMemo(() => new THREE.MeshBasicMaterial({
+    color: _RING_COLOR,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false,
+  }), [])
+
+  useFrame((_, delta) => {
+    if (!ringRef.current) return
+    const mat = ringRef.current.material
+    const phase = phaseRef.current
+
+    if (phase < 1) {
+      phaseRef.current = Math.min(1, phase + delta * 2.5)
+      const t = phaseRef.current
+      const pulse = t < 0.5
+        ? t * 2 * 1.4
+        : 1.4 - (t - 0.5) * 2 * 0.4
+      mat.opacity = Math.min(1, pulse * 0.85)
+    } else {
+      mat.opacity = 0.75 + Math.sin(Date.now() * 0.003) * 0.08
+    }
+  })
+
+  return (
+    <mesh
+      ref={ringRef}
+      position={[building.position[0], foundationY, building.position[2]]}
+      geometry={ringGeometry}
+      material={ringMaterial}
+      renderOrder={999}
+    />
+  )
+}
+
 function Building({ building, neonInfo }) {
   const meshRef = useRef()
   const prevStateRef = useRef({ darkStep: -1, emissiveHex: 0 })
@@ -782,6 +857,7 @@ function Building({ building, neonInfo }) {
         onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(building.id) }}
       />
       {showNeon && <NeonBand building={building} categoryHex={effectiveHex} hours={listingHours} forceOn={isSimOpen || neonForceOn} />}
+      {isSelected && <SelectionRing building={building} />}
     </group>
   )
 }

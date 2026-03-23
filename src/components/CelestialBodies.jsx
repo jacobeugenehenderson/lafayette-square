@@ -667,7 +667,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
 
       // Size from magnitude: brighter = bigger point
       const magNorm = (6.0 - star.mag) / 7.5 // 0..1
-      starSizes[i] = (0.8 + magNorm * magNorm * 5.0) * 20.0
+      starSizes[i] = (0.6 + magNorm * magNorm * 4.0) * 12.0
     }
 
     // Build constellation membership flag: mark catalog stars near any constellation vertex
@@ -705,7 +705,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
         varying float vBright;
         void main() {
           vCol = aColor;
-          vBright = aSize / 120.0;
+          vBright = aSize / 60.0;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           // Use distance (not -mv.z) — all sky-dome stars are equidistant,
           // so depth-based scaling blows up at the camera side plane.
@@ -721,17 +721,21 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
         varying float vBright;
         void main() {
           float d = length(gl_PointCoord - 0.5);
-          float a = 1.0 - smoothstep(0.0, 0.5, d);
-          a *= a;
+          // Soft circular falloff — fade to zero well within sprite bounds
+          float edge = 1.0 - smoothstep(0.3, 0.5, d);
+          float core = 1.0 - smoothstep(0.0, 0.35, d);
+          float a = (core + exp(-d * 8.0) * 0.4) * edge;
           if (a * uOpacity < 0.01) discard;
-          // Chromatic aberration: R shifts outward, B inward — stronger for bright stars
-          float spread = 0.08 + vBright * 0.12;
+          // Chromatic aberration: subtle — R shifts outward, B inward
+          float spread = 0.04 + vBright * 0.06;
           float dR = length((gl_PointCoord - 0.5) * (1.0 + spread));
           float dB = length((gl_PointCoord - 0.5) * (1.0 - spread));
-          float aR = 1.0 - smoothstep(0.0, 0.5, dR); aR *= aR;
-          float aB = 1.0 - smoothstep(0.0, 0.5, dB); aB *= aB;
+          float edgeR = 1.0 - smoothstep(0.3, 0.5, dR);
+          float edgeB = 1.0 - smoothstep(0.3, 0.5, dB);
+          float aR = ((1.0 - smoothstep(0.0, 0.35, dR)) + exp(-dR * 8.0) * 0.4) * edgeR;
+          float aB = ((1.0 - smoothstep(0.0, 0.35, dB)) + exp(-dB * 8.0) * 0.4) * edgeB;
           vec3 col = vec3(aR * vCol.r, a * vCol.g, aB * vCol.b);
-          col *= 3.5; // brightness boost
+          col *= 3.0;
           gl_FragColor = vec4(col * uOpacity, max(col.r, max(col.g, col.b)) * uOpacity);
         }
       `,
