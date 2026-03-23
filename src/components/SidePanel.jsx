@@ -530,6 +530,8 @@ function LafayetteSubsection({ section, color }) {
     // Switch to browse if in hero so flyTo is honored
     const cam = useCamera.getState()
     if (cam.viewMode !== 'browse') cam.setMode('browse')
+    // Drop panel to half if full — reveal the map
+    if (cam.panelState === 'full') cam.setPanelState('half')
     // Center camera on this building
     const building = _buildingMap[biz.building_id]
     if (building) {
@@ -680,6 +682,7 @@ function AddressSearch() {
     if (!building) return
     const cam = useCamera.getState()
     if (cam.viewMode !== 'browse') cam.setMode('browse')
+    if (cam.panelState === 'full') cam.setPanelState('half')
     const target = computeCenterOn(building)
     flyTo(target.position, target.lookAt)
     highlight(null, entry.id)
@@ -749,52 +752,80 @@ const TABS = [
   { id: 'lafayettepages', label: 'Society Pages', icon: '\u25C8' },
 ]
 
+const PANEL_HEIGHTS = {
+  collapsed: 'auto',
+  half: 'calc(35dvh - 1.5rem)',
+  full: 'calc(100dvh - 4rem)', // below header
+}
+
 function SidePanel() {
   const [activeTab, setActiveTab] = useState('almanac')
   const { isAdmin: isStoreAdmin } = useGuardianStatus()
   const showAdmin = import.meta.env.DEV || isStoreAdmin
-  const panelOpen = useCamera((s) => s.panelOpen)
-  const setPanelOpen = useCamera((s) => s.setPanelOpen)
-  const collapsed = !panelOpen
-  const setCollapsed = (val) => {
-    if (!val) useUserLocation.getState().start()
-    setPanelOpen(!val)
-  }
+  const panelState = useCamera((s) => s.panelState)
+  const setPanelState = useCamera((s) => s.setPanelState)
+  const collapsed = panelState === 'collapsed'
+  const isHalf = panelState === 'half'
+  const isFull = panelState === 'full'
+  const handleRef = useRef(null)
   const dragRef = useRef(null)
 
-  // Touch drag to collapse/expand
-  const handleTouchStart = (e) => {
-    dragRef.current = { startY: e.touches[0].clientY, moved: false }
+  // Handle drag on the grab bar — cycles between states
+  const handleHandleTouchStart = (e) => {
+    e.stopPropagation()
+    dragRef.current = { startY: e.touches[0].clientY }
   }
 
-  const handleTouchMove = (e) => {
-    if (!dragRef.current) return
-    const dy = e.touches[0].clientY - dragRef.current.startY
-    if (Math.abs(dy) > 30) dragRef.current.moved = true
-  }
-
-  const handleTouchEnd = (e) => {
+  const handleHandleTouchEnd = (e) => {
     if (!dragRef.current) return
     const dy = e.changedTouches[0].clientY - dragRef.current.startY
-    if (Math.abs(dy) > 40) {
-      // Drag down = collapse, drag up = expand
-      setCollapsed(dy > 0)
-    }
     dragRef.current = null
+    if (Math.abs(dy) < 30) return
+    if (dy > 0) {
+      // Drag down: full → half → collapsed
+      setPanelState(isFull ? 'half' : 'collapsed')
+    } else {
+      // Drag up: collapsed → half → full
+      setPanelState(collapsed ? 'half' : 'full')
+    }
+    if (collapsed) useUserLocation.getState().start()
   }
 
-  // Two glass styles: stowed = liquid glass (low blur, high clarity), open = frosted/readable
-  // Apple's liquid glass: very low blur + high saturation/brightness + sharp spectral highlights
+  // Mouse drag on handle (desktop)
+  const handleHandleMouseDown = (e) => {
+    e.preventDefault()
+    const startY = e.clientY
+    const onMove = (me) => {
+      const dy = me.clientY - startY
+      if (Math.abs(dy) > 30) {
+        if (dy > 0) setPanelState(isFull ? 'half' : 'collapsed')
+        else {
+          setPanelState(collapsed ? 'half' : 'full')
+          if (collapsed) useUserLocation.getState().start()
+        }
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+      }
+    }
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  // Glass styles: collapsed = liquid glass, half/full = frosted
   const glassStyle = collapsed ? {
     background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)',
     backdropFilter: 'blur(2px) saturate(200%) brightness(125%) contrast(110%)',
     WebkitBackdropFilter: 'blur(2px) saturate(200%) brightness(125%) contrast(110%)',
     boxShadow: [
-      'inset 0 1px 0 rgba(255,255,255,0.45)',       // sharp top edge highlight
-      'inset 0 -1px 0 rgba(255,255,255,0.08)',       // subtle bottom edge
-      'inset 0 0 20px -5px rgba(255,255,255,0.06)',   // inner glow
-      '0 8px 40px rgba(0,0,0,0.5)',                   // outer shadow for float
-      '0 2px 4px rgba(0,0,0,0.3)',                    // tight shadow
+      'inset 0 1px 0 rgba(255,255,255,0.45)',
+      'inset 0 -1px 0 rgba(255,255,255,0.08)',
+      'inset 0 0 20px -5px rgba(255,255,255,0.06)',
+      '0 8px 40px rgba(0,0,0,0.5)',
+      '0 2px 4px rgba(0,0,0,0.3)',
     ].join(', '),
     border: '1px solid rgba(255,255,255,0.30)',
   } : {
@@ -818,9 +849,10 @@ function SidePanel() {
   return (
     <div
       ref={panelRef}
-      className="absolute bottom-3 left-3 right-3 flex flex-col select-none rounded-2xl overflow-hidden z-50 transition-all duration-300 ease-out font-mono"
+      className="absolute left-3 right-3 bottom-3 flex flex-col select-none overflow-hidden z-50 transition-all duration-300 ease-out font-mono rounded-2xl"
       style={{
-        height: collapsed ? 'auto' : 'calc(35dvh - 1.5rem)',
+        height: isFull ? undefined : PANEL_HEIGHTS[panelState],
+        ...(isFull ? { top: 'calc(env(safe-area-inset-top, 0px) + 94px)' } : {}),
         ...glassStyle,
       }}
     >
@@ -833,7 +865,6 @@ function SidePanel() {
             : 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 20%, rgba(200,220,255,0.3) 40%, rgba(255,255,255,0.25) 60%, rgba(255,220,200,0.25) 80%, transparent 100%)',
         }}
       />
-      {/* Secondary specular band for stowed state */}
       {collapsed && (
         <div
           className="absolute inset-x-4 top-[1px] h-[1px] pointer-events-none z-10 rounded-full"
@@ -843,13 +874,23 @@ function SidePanel() {
         />
       )}
 
+      {/* ── Drag handle — visible when half or full ── */}
+      {!collapsed && (
+        <div
+          ref={handleRef}
+          className="flex-shrink-0 flex justify-center py-1.5 cursor-grab active:cursor-grabbing"
+          onTouchStart={handleHandleTouchStart}
+          onTouchEnd={handleHandleTouchEnd}
+          onMouseDown={handleHandleMouseDown}
+        >
+          <div className="w-10 h-1 rounded-full bg-on-surface-disabled/40" />
+        </div>
+      )}
+
       {/* ── Glass tab bar ── */}
       <nav
         aria-label="Side panel tabs"
-        className="relative flex flex-shrink-0 cursor-grab active:cursor-grabbing"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        className="relative flex flex-shrink-0"
       >
         {TABS.map((tab) => (
           <button
@@ -859,9 +900,10 @@ function SidePanel() {
             onClick={() => {
               if (collapsed) {
                 setActiveTab(tab.id)
-                setCollapsed(false)
+                setPanelState('half')
+                useUserLocation.getState().start()
               } else if (tab.id === activeTab) {
-                setCollapsed(true)
+                setPanelState('collapsed')
               } else {
                 setActiveTab(tab.id)
               }
@@ -879,7 +921,6 @@ function SidePanel() {
           >
             <span className="text-body">{tab.icon}</span>
             <span className="font-medium tracking-wide">{tab.label}</span>
-            {/* Sharp active indicator line */}
             {activeTab === tab.id && (
               <div className="absolute bottom-0 inset-x-0 h-[2px] bg-on-surface-variant" />
             )}

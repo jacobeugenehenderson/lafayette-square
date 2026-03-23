@@ -22,6 +22,13 @@ function Controls() {
   const getByBuildingId = useListings((s) => s.getByBuildingId)
   const getListingsForBuilding = useListings((s) => s.getListingsForBuilding)
 
+  // Collapse panel when PlaceCard opens
+  useEffect(() => {
+    if (showCard) {
+      useCamera.getState().setPanelState('collapsed')
+    }
+  }, [showCard])
+
   useEffect(() => {
     if (selectedId) {
       const building = buildingsData.buildings.find((b) => b.id === selectedId)

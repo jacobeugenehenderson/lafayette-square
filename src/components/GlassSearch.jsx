@@ -363,6 +363,7 @@ export function BrowseSearchInput() {
 // Legacy default export — used by App.jsx, now just renders HeroSearch
 export default function GlassSearch() {
   const viewMode = useCamera(s => s.viewMode)
-  if (viewMode !== 'hero') return null
+  const panelFull = useCamera(s => s.panelState) === 'full'
+  if (viewMode !== 'hero' || panelFull) return null
   return <HeroSearch />
 }

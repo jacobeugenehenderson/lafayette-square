@@ -17,7 +17,10 @@ export default function BrowseHeader() {
   const contactOpen = useContact(s => s.open)
   const infoOpen = useInfo(s => s.open)
 
-  if (viewMode !== 'browse') return null
+  const panelState = useCamera(s => s.panelState)
+  const panelFull = panelState === 'full'
+
+  if (viewMode !== 'browse' && !panelFull) return null
   if (showCard || bulletinOpen || codeDeskOpen || contactOpen || infoOpen) return null
 
   const rotationDeg = (azimuth * 180) / Math.PI
