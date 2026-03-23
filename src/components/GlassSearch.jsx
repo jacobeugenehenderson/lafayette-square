@@ -198,7 +198,7 @@ export function useGlassSearch() {
     }
     if (isMenuResult && listing) {
       // Menu results open the PlaceCard directly
-      selectBuilding(listing.id, listing.building_id)
+      selectBuilding(listing.id, listing.building_id, 'menu')
     } else {
       // Place/building results highlight neon — user clicks building to open card
       highlight(listing?.id || null, listing?.building_id || bldg?.id)
