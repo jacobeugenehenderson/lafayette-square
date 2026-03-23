@@ -354,6 +354,9 @@ function VectorStreets({ svgPortal }) {
     },
     transparent: true,
     depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: 4,
+    polygonOffsetUnits: 4,
     vertexShader: `
       varying vec3 vWorldPos;
       void main() {
@@ -419,7 +422,7 @@ function VectorStreets({ svgPortal }) {
         }}
       >
         <circleGeometry args={[8000, 64]} />
-        <shadowMaterial opacity={0.4} depthWrite={false} />
+        <shadowMaterial opacity={0.4} depthWrite={false} polygonOffset polygonOffsetFactor={4} polygonOffsetUnits={4} />
       </mesh>
 
       {/* Night lamp glow overlay — warm pools near park lamps on the ground */}

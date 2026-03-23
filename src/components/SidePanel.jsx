@@ -619,9 +619,7 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle }) {
 
 function LafayettePagesTab() {
   const [expandedId, setExpandedId] = useState(null)
-  const { activeTags, clearTags } = useLandmarkFilter()
   const listings = useListings((s) => s.listings)
-  const hasActiveTags = activeTags.size > 0
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -637,16 +635,8 @@ function LafayettePagesTab() {
           ))}
         </div>
       </div>
-      <div className="px-4 py-2 border-t border-outline-variant flex items-center justify-between">
+      <div className="px-4 py-2 border-t border-outline-variant">
         <span className="text-caption text-on-surface-disabled">{listings.length} verified listings</span>
-        {hasActiveTags && (
-          <button
-            onClick={clearTags}
-            className="text-caption px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
-          >
-            Clear
-          </button>
-        )}
       </div>
     </div>
   )
