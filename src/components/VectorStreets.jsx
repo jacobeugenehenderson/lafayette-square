@@ -163,6 +163,12 @@ function VectorStreets({ svgPortal }) {
         const horizon = svg.querySelector('#horizon')
         if (horizon) horizon.remove()
 
+        // ── Strip park paths from SVG — WebGL ParkPaths replaces them ────
+        // The #paths-compound fill (#ccc) bleeds through the transparent
+        // WebGL canvas wherever the park grass clip mask has sub-pixel gaps.
+        const pathsCompound = svg.querySelector('#paths-compound')
+        if (pathsCompound) pathsCompound.remove()
+
         // ── Compute tight content bounds ───────────────────────────────────
         // getBBox() requires the SVG to be in the DOM.
         const probe = document.createElement('div')
