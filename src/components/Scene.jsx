@@ -303,11 +303,6 @@ function easeInOutCubic(t) {
 
 const HERO_CENTER = [-400, 40, 230]
 const HERO_TARGET = [400, 40, -100]
-// Projection vertical offset when panel is open.
-// Shifts the frustum center so the arch stays centered in the visible area above the panel.
-// panelFraction = portion of screen covered by panel (0.5 = bottom half).
-// To center content in the top (1-p) of screen, shift up by p/2 in viewport coords = p in NDC.
-const PANEL_FRACTION = 0.02
 // Direction to arch in XZ: [3116, -1196], perpendicular: [0.358, 0.934]
 const PAN_HALF_LENGTH = 140 // ±140m from center
 const PAN_PERP = [0.358, 0.934]
@@ -463,7 +458,6 @@ function CameraRig() {
   const initialized = useRef(false)
 
   // Projection vertical offset (lens shift) for panel-aware reframe
-  const projOffsetY = useRef(0)
 
   // Cinematic multi-segment queue
   const cinematicQueue = useRef([])
@@ -782,25 +776,7 @@ function CameraRig() {
       ctl.update()
       ctl.enableDamping = true
 
-      // Panel-aware projection offset (lens shift)
-      // Slides the rendered image up so the arch is centered in the visible area above the panel.
-      const panelOpen = useCamera.getState().panelOpen
-      const goalOffset = panelOpen ? -PANEL_FRACTION : 0
-      projOffsetY.current += (goalOffset - projOffsetY.current) * 0.04
-      if (Math.abs(projOffsetY.current) > 0.001) {
-        // Rebuild projection matrix then apply vertical lens shift
-        camera.updateProjectionMatrix()
-        camera.projectionMatrix.elements[9] += projOffsetY.current
-      }
     } else {
-      // Reset projection offset when leaving hero
-      if (Math.abs(projOffsetY.current) > 0.001) {
-        projOffsetY.current *= 0.9
-        camera.updateProjectionMatrix()
-        camera.projectionMatrix.elements[9] += projOffsetY.current
-      } else {
-        projOffsetY.current = 0
-      }
     }
 
     // ── Idle → hero ──

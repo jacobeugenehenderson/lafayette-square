@@ -1441,35 +1441,59 @@ function ArchitectureTab({ building }) {
 }
 
 // ─── Tab: Property (bare buildings only) ─────────────────────────────
-function PropertyTab({ building }) {
+function PropertyTab({ building, facadeInfo }) {
   if (!building) return null
   const arch = building.architecture || {}
 
   return (
-    <div className="space-y-2">
-      {arch.nps_context && (
+    <div className="space-y-3">
+      {/* Wikimedia architectural description — richest text we have */}
+      {facadeInfo?.description && (
+        <p className="text-on-surface text-body-sm leading-relaxed">
+          {facadeInfo.description}
+          <span className="text-on-surface-disabled text-caption ml-1">— Wikimedia Commons</span>
+        </p>
+      )}
+
+      {/* NPS nomination context */}
+      {arch.nps_context && !facadeInfo?.description && (
         <p className="text-on-surface-variant text-body-sm italic leading-relaxed">
           &ldquo;{arch.nps_context.trim()}&rdquo;
           <span className="text-on-surface-disabled ml-1 not-italic">&mdash; NPS Nomination</span>
         </p>
       )}
 
-      <div className="space-y-1.5">
+      {/* Key facts grid */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
         {arch.architect && <DetailRow label="Architect">{arch.architect}</DetailRow>}
         {arch.original_owner && <DetailRow label="Built For">{arch.original_owner}</DetailRow>}
         {arch.historic_name && <DetailRow label="Historic Name">{arch.historic_name}</DetailRow>}
         {building.stories && (
-          <DetailRow label="Stories">{building.stories} {building.stories === 1 ? 'story' : 'stories'}</DetailRow>
+          <DetailRow label="Stories">{building.stories}</DetailRow>
+        )}
+        {arch.nps_style_period && <DetailRow label="Era">{arch.nps_style_period}</DetailRow>}
+        {building.building_sqft && (
+          <DetailRow label="Size">{building.building_sqft.toLocaleString()} sq ft</DetailRow>
+        )}
+        {building.assessed_value && (
+          <DetailRow label="Assessed">${building.assessed_value.toLocaleString()}</DetailRow>
         )}
         {building.year_built && building.year_renovated && (
           <DetailRow label="Renovated">{building.year_renovated}</DetailRow>
         )}
-        {arch.nps_style_period && <DetailRow label="Style Period">{arch.nps_style_period}</DetailRow>}
-        {arch.renovation_cost && <DetailRow label="Renovation Cost">{arch.renovation_cost}</DetailRow>}
+        {arch.renovation_cost && <DetailRow label="Renovation">{arch.renovation_cost}</DetailRow>}
       </div>
 
+      {/* NPS context shown below facts if we already showed Wikimedia above */}
+      {arch.nps_context && facadeInfo?.description && (
+        <p className="text-on-surface-variant text-body-sm italic leading-relaxed mt-1">
+          &ldquo;{arch.nps_context.trim()}&rdquo;
+          <span className="text-on-surface-disabled ml-1 not-italic">&mdash; NPS Nomination</span>
+        </p>
+      )}
+
       {arch.materials && (
-        <div className="mt-2">
+        <div>
           <span className="text-on-surface-subtle text-body-sm">Materials</span>
           <div className="flex flex-wrap gap-1.5 mt-1">
             {arch.materials.map((m, i) => (
@@ -1479,7 +1503,7 @@ function PropertyTab({ building }) {
         </div>
       )}
       {arch.features && (
-        <div className="mt-2">
+        <div>
           <span className="text-on-surface-subtle text-body-sm">Features</span>
           <div className="flex flex-wrap gap-1.5 mt-1">
             {arch.features.map((f, i) => (
@@ -3498,20 +3522,23 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
             {/* Property headline */}
             <div className="px-4 pt-3 pb-2">
-              {(yearBuilt || styleName) ? (
-                <h2 className="text-headline font-medium text-on-surface leading-tight">
-                  {yearBuilt && <span>{yearBuilt}</span>}
-                  {yearBuilt && styleName && <span> </span>}
-                  {styleName && <span>{styleName}</span>}
-                </h2>
+              {styleName ? (
+                <>
+                  <h2 className="text-headline font-medium text-on-surface leading-tight">{styleName}</h2>
+                  {yearBuilt && (
+                    <p className="text-body text-on-surface-variant mt-0.5">Built {yearBuilt}</p>
+                  )}
+                </>
+              ) : yearBuilt ? (
+                <h2 className="text-headline font-medium text-on-surface leading-tight">Built {yearBuilt}</h2>
               ) : (
                 <h2 className="text-headline font-medium text-on-surface-variant leading-tight">
                   {cleanAddress(building?.address) || 'Unknown Building'}
                 </h2>
               )}
 
-              {/* Address (below headline when we have year/style) */}
-              {(yearBuilt || styleName) && building?.address && (
+              {/* Address */}
+              {building?.address && (
                 <p className="text-body-sm text-on-surface-subtle mt-0.5">{cleanAddress(building.address)}</p>
               )}
 
@@ -3620,7 +3647,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           {/* Property card tabs */}
           {currentTab === 'property' && (
             <>
-              <PropertyTab building={building} />
+              <PropertyTab building={building} facadeInfo={facadeInfo} />
               <div className="mt-3">
                 <CaryButton
                   placeName={name}
@@ -3630,6 +3657,30 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 />
               </div>
             </>
+          )}
+          {currentTab === 'history' && (
+            <div className="space-y-3">
+              {activeListing?.history?.length > 0 ? (
+                <div className="space-y-2">
+                  {activeListing.history.map((entry, i) => (
+                    <div key={i} className="flex gap-3">
+                      <span className="text-on-surface-subtle text-body-sm font-medium w-12 flex-shrink-0">{entry.year}</span>
+                      <p className="text-on-surface-variant text-body-sm leading-relaxed">{entry.event}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-on-surface-disabled text-body-sm italic">No history recorded yet.</p>
+              )}
+              {building?.architecture?.district && (
+                <p className="text-on-surface-variant text-body-sm leading-relaxed">
+                  This building is a {building.architecture.contributing ? 'contributing' : 'non-contributing'} structure in the {building.architecture.district}{building.architecture.nps_listed ? ', listed on the National Register of Historic Places' : ''}.
+                </p>
+              )}
+            </div>
+          )}
+          {currentTab === 'photos' && (
+            <PhotosTab photos={null} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={false} listingId={null} />
           )}
         </div>
       </div>
