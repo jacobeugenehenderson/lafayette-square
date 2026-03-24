@@ -255,114 +255,126 @@ function AlmanacTab() {
   const dayH = Math.floor(dayLengthMin / 60)
   const dayM = dayLengthMin % 60
 
+  const [almanacView, setAlmanacView] = useState('weather')
+
+  // Toggle is driven by re-tapping the Almanac tab — no subtab buttons needed
+  const toggleView = useCallback(() => {
+    setAlmanacView(v => v === 'weather' ? 'celestial' : 'weather')
+  }, [])
+
+  // Expose toggle so the tab bar can call it
+  AlmanacTab.toggle = toggleView
+
   return (
     <div className="flex flex-col h-full min-h-0">
+
       <div className="flex-1 overflow-y-auto min-h-0">
 
-      {/* ── Section 1: Time + Weather + Temp ── */}
-      <div className="px-4 py-3 border-b border-outline-variant">
-        <div className="flex items-center justify-between">
-          {/* Left: Clock + time */}
-          <div
-            className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
-            onClick={() => setUse24Hour(!use24Hour)}
-            title="Click to toggle 12/24 hour format"
-          >
-            <svg className="w-4 h-4 text-on-surface-subtle flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 6v6l4 2" strokeLinecap="round" />
-            </svg>
-            <span className="text-display font-light text-on-surface tracking-wider">
-              {timeString}
-            </span>
-          </div>
-
-          {/* Center: Weather icon + condition */}
-          <div className="flex items-center gap-1.5">
-            <WeatherIcon
-              code={displayWeather.weatherCode}
-              isNight={isNight}
-              size={36}
-            />
-            <span className="text-body-sm text-on-surface-subtle">{condition.label}</span>
-          </div>
-
-          {/* Right: Thermometer + temp */}
-          <div
-            className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
-            onClick={() => setUseCelsius(!useCelsius)}
-            title="Click to toggle °F / °C"
-          >
-            <svg className="w-4 h-4 text-on-surface-subtle flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path d="M14 14.76V3.5a2 2 0 0 0-4 0v11.26a4.5 4.5 0 1 0 4 0Z" strokeLinecap="round" />
-            </svg>
-            <span className={`text-display font-light tracking-wide ${headerTempColor}`}>
-              {headerTemp}&deg;{useCelsius ? 'C' : 'F'}
-            </span>
-          </div>
-        </div>
-        <div className="text-body-sm text-on-surface-subtle mt-1 tracking-wide">
-          {dateString} &middot; Day {dayOfYear}
-        </div>
-      </div>
-
-      {/* ── Section 2: Timeline slider ── */}
-      <div className="bg-surface-container border-b border-outline-variant">
-        <WeatherTimeline
-          currentTime={currentTime}
-          isLive={isLive}
-          useCelsius={useCelsius}
-          use24Hour={use24Hour}
-          onScrub={(date) => setTime(date)}
-        />
-      </div>
-
-      {/* ── Section 3: Sun / Moon / Day ── */}
-      <div className="px-4 py-3 flex gap-4 border-b border-outline-variant">
-        <div className="flex-1">
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Sun</div>
-          <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
-            <span className="text-amber-400">&uarr;</span>
-            <span>{formatTimeShort(sunTimes.sunrise)}</span>
-          </div>
-          <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
-            <span className="text-orange-400">&darr;</span>
-            <span>{formatTimeShort(sunTimes.sunset)}</span>
-          </div>
-        </div>
-
-        <div className="flex-1">
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Moon</div>
-          <div className="flex items-center gap-2">
-            <span className="text-display leading-none">{moonPhase.icon}</span>
-            <div>
-              <div className="text-body-sm text-on-surface-variant">{moonPhase.name}</div>
-              <div className="text-caption text-on-surface-subtle">{Math.round(moonIllum.fraction * 100)}%</div>
+      {almanacView === 'weather' && (
+        <>
+        {/* ── Time + Weather + Temp ── */}
+        <div className="px-4 py-3 border-b border-outline-variant">
+          <div className="flex items-center justify-between">
+            <div
+              className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+              onClick={() => setUse24Hour(!use24Hour)}
+              title="Click to toggle 12/24 hour format"
+            >
+              <svg className="w-4 h-4 text-on-surface-subtle flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" strokeLinecap="round" />
+              </svg>
+              <span className="text-display font-light text-on-surface tracking-wider">
+                {timeString}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <WeatherIcon
+                code={displayWeather.weatherCode}
+                isNight={isNight}
+                size={36}
+              />
+              <span className="text-body-sm text-on-surface-subtle">{condition.label}</span>
+            </div>
+            <div
+              className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"
+              onClick={() => setUseCelsius(!useCelsius)}
+              title="Click to toggle °F / °C"
+            >
+              <svg className="w-4 h-4 text-on-surface-subtle flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <path d="M14 14.76V3.5a2 2 0 0 0-4 0v11.26a4.5 4.5 0 1 0 4 0Z" strokeLinecap="round" />
+              </svg>
+              <span className={`text-display font-light tracking-wide ${headerTempColor}`}>
+                {headerTemp}&deg;{useCelsius ? 'C' : 'F'}
+              </span>
             </div>
           </div>
         </div>
-
-        <div className="flex-1">
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Day</div>
-          <div className="text-body-sm text-on-surface-variant">{dayH}h {dayM}m</div>
-          {/* Day/night bar: midnight → dawn → dusk → midnight */}
-          {(() => {
-            const dawnMin = sunTimes.dawn.getHours() * 60 + sunTimes.dawn.getMinutes()
-            const duskMin = sunTimes.dusk.getHours() * 60 + sunTimes.dusk.getMinutes()
-            const dawnPct = (dawnMin / 1440) * 100
-            const dayPct = ((duskMin - dawnMin) / 1440) * 100
-            const nightPct = 100 - dawnPct - dayPct
-            return (
-              <div className="flex h-[6px] rounded-full overflow-hidden mt-1.5" title={`${dayH}h ${dayM}m daylight`}>
-                <div className="bg-indigo-400/30" style={{ width: `${dawnPct}%` }} />
-                <div className="bg-amber-400/60" style={{ width: `${dayPct}%` }} />
-                <div className="bg-indigo-400/30" style={{ width: `${nightPct}%` }} />
-              </div>
-            )
-          })()}
+        {/* ── Timeline slider ── */}
+        <div className="bg-surface-container border-b border-outline-variant">
+          <WeatherTimeline
+            currentTime={currentTime}
+            isLive={isLive}
+            useCelsius={useCelsius}
+            use24Hour={use24Hour}
+            onScrub={(date) => setTime(date)}
+          />
         </div>
-      </div>
+        </>
+      )}
 
+      {almanacView === 'celestial' && (
+        <>
+          <div className="px-4 py-2 border-b border-outline-variant">
+            <div className="text-body-sm text-on-surface-subtle tracking-wide">
+              {dateString} &middot; Day {dayOfYear}
+            </div>
+          </div>
+
+          <div className="px-4 py-3 flex gap-4 border-b border-outline-variant">
+            <div className="flex-1">
+              <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Sun</div>
+              <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
+                <span className="text-amber-400">&uarr;</span>
+                <span>{formatTimeShort(sunTimes.sunrise)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
+                <span className="text-orange-400">&darr;</span>
+                <span>{formatTimeShort(sunTimes.sunset)}</span>
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Moon</div>
+              <div className="flex items-center gap-2">
+                <span className="text-display leading-none">{moonPhase.icon}</span>
+                <div>
+                  <div className="text-body-sm text-on-surface-variant">{moonPhase.name}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Day</div>
+              <div className="text-body-sm text-on-surface-variant">{dayH}h {dayM}m</div>
+              {(() => {
+                const dawnMin = sunTimes.dawn.getHours() * 60 + sunTimes.dawn.getMinutes()
+                const duskMin = sunTimes.dusk.getHours() * 60 + sunTimes.dusk.getMinutes()
+                const dawnPct = (dawnMin / 1440) * 100
+                const dayPct = ((duskMin - dawnMin) / 1440) * 100
+                const nightPct = 100 - dawnPct - dayPct
+                return (
+                  <div className="flex h-[6px] rounded-full overflow-hidden mt-1.5" title={`${dayH}h ${dayM}m daylight`}>
+                    <div className="bg-indigo-400/30" style={{ width: `${dawnPct}%` }} />
+                    <div className="bg-amber-400/60" style={{ width: `${dayPct}%` }} />
+                    <div className="bg-indigo-400/30" style={{ width: `${nightPct}%` }} />
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        </>
+      )}
 
       </div>
 
@@ -516,6 +528,33 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle, scrollToSe
   )
 }
 
+// ── Shared masthead renderer ─────────────────────────────────────────
+function StatsMasthead({ stats, tagline }) {
+  return (
+    <div className="flex-shrink-0">
+      <div className="px-3 py-3 border-b border-outline-variant">
+        <div className="flex gap-2">
+          {stats.map(({ value, label, color }) => (
+            <div
+              key={label}
+              className="flex-1 rounded-xl px-2.5 py-2 text-center"
+              style={{ backgroundColor: color }}
+            >
+              <div className="text-display font-light text-on-surface tracking-wide">{value}</div>
+              <div className="text-caption text-on-surface-disabled uppercase tracking-[0.15em] mt-0.5">{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {tagline && (
+        <div className="px-4 pt-3.5 pb-0">
+          <p className="text-caption text-on-surface-disabled text-center italic">{tagline}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Society masthead ─────────────────────────────────────────────────
 function SocietyMasthead() {
   const { townies, residents, guardians, couriers } = useCommunityStats()
@@ -527,22 +566,7 @@ function SocietyMasthead() {
     { value: couriers, label: 'Couriers', color: 'rgba(61,175,138,0.12)' },   // verdigris
   ]
 
-  return (
-    <div className="flex-shrink-0 px-3 py-3 border-b border-outline-variant">
-      <div className="flex gap-2">
-        {stats.map(({ value, label, color }) => (
-          <div
-            key={label}
-            className="flex-1 rounded-xl px-2.5 py-2 text-center"
-            style={{ backgroundColor: color }}
-          >
-            <div className="text-display font-light text-on-surface tracking-wide">{value}</div>
-            <div className="text-caption text-on-surface-disabled uppercase tracking-[0.15em] mt-0.5">{label}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  return <StatsMasthead stats={stats} tagline="Neighborhood Directory" />
 }
 
 function LafayettePagesTab({ isFull }) {
@@ -619,26 +643,19 @@ function LafayettePagesTab({ isFull }) {
 
 // ============ BULLETIN TAB ============
 
-// ── Demographics masthead (shared) ──────────────────────────────────
-function DemographicsMasthead() {
-  return (
-    <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant">
-      <div className="flex items-center gap-3 text-on-surface-variant">
-        <div className="flex-1">
-          <div className="text-display font-light text-on-surface tracking-wide">2,164</div>
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Residents</div>
-        </div>
-        <div className="flex-1">
-          <div className="text-display font-light text-on-surface tracking-wide">{buildingsData.buildings.length.toLocaleString()}</div>
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Buildings</div>
-        </div>
-        <div className="flex-1">
-          <div className="text-display font-light text-on-surface tracking-wide">{_namedStreetCount}</div>
-          <div className="text-caption text-on-surface-disabled uppercase tracking-widest">Streets</div>
-        </div>
-      </div>
-    </div>
-  )
+// ── Bulletin masthead — neighborhood stats, matches Society box style ──
+function BulletinMasthead() {
+  const listings = useListings((s) => s.listings)
+  const places = listings.filter(l => l.category !== 'residential').length
+
+  const stats = [
+    { value: '2,164', label: 'Residents', color: 'rgba(180,160,140,0.12)' },      // warm taupe
+    { value: buildingsData.buildings.length.toLocaleString(), label: 'Buildings', color: 'rgba(160,130,100,0.12)' }, // sandstone
+    { value: places, label: 'Places', color: 'rgba(61,175,138,0.12)' },          // verdigris
+    { value: _namedStreetCount, label: 'Streets', color: 'rgba(140,150,170,0.12)' }, // slate blue
+  ]
+
+  return <StatsMasthead stats={stats} tagline="Community Board" />
 }
 
 function BulletinTab({ isFull }) {
@@ -659,7 +676,7 @@ function BulletinTab({ isFull }) {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Demographics masthead — always visible */}
-      <DemographicsMasthead />
+      <BulletinMasthead />
 
       {/* Bulletin content — only at full height */}
       {isFull && (
@@ -698,9 +715,9 @@ const TABS = [
 
 const PANEL_HEIGHTS = {
   collapsed: 'auto',
-  half: 'calc(30dvh - 1rem)',   // conservative: fits almanac content, mastheads have room
   full: 'calc(100dvh - 4rem)',  // below header
 }
+// half height is measured from the Almanac weather view and stored in useCamera
 
 // Almanac never goes full — it is a masthead-only tab
 const ALMANAC_ONLY_TABS = new Set(['almanac'])
@@ -713,6 +730,7 @@ function SidePanel() {
   const collapsed = panelState === 'collapsed'
   const isHalf = panelState === 'half'
   const isFull = panelState === 'full'
+  const [panelMiniPx, setPanelMiniPx] = useState(0)
 
   // Glass styles: collapsed = heavy frosted glass, half/full = frosted
   const glassStyle = collapsed ? {
@@ -733,22 +751,26 @@ function SidePanel() {
     border: '1px solid var(--outline)',
   }
 
-  // Measure collapsed height so modals can position above us
+  // Measure mini height from the Almanac weather view on first render
   const panelRef = useRef(null)
   useEffect(() => {
-    if (!collapsed || !panelRef.current) return
-    const h = panelRef.current.offsetHeight
-    if (h > 0 && h !== useCamera.getState().panelCollapsedPx) {
-      useCamera.setState({ panelCollapsedPx: h })
-    }
-  }, [collapsed])
+    if (!panelRef.current || panelMiniPx > 0 || isFull) return
+    // Wait a frame for content to lay out
+    requestAnimationFrame(() => {
+      const h = panelRef.current?.offsetHeight
+      if (h > 0) {
+        setPanelMiniPx(h)
+        useCamera.setState({ panelCollapsedPx: h })
+      }
+    })
+  }, [panelMiniPx, isFull])
 
   return (
     <div
       ref={panelRef}
       className="absolute left-3 right-3 bottom-3 flex flex-col select-none overflow-hidden z-50 transition-all duration-300 ease-out font-mono rounded-2xl"
       style={{
-        height: isFull ? undefined : PANEL_HEIGHTS[panelState],
+        height: isFull ? undefined : (panelMiniPx ? `${panelMiniPx}px` : 'auto'),
         ...(isFull ? { top: 'calc(env(safe-area-inset-top, 0px) + 94px)' } : {}),
         ...glassStyle,
       }}
@@ -782,24 +804,25 @@ function SidePanel() {
             role="tab"
             aria-selected={activeTab === tab.id}
             onClick={() => {
-              if (collapsed) {
-                setActiveTab(tab.id)
-                setPanelState('half')
-                useUserLocation.getState().start()
-              } else if (tab.id === activeTab) {
-                // Re-tap active tab: cycle half → full → collapsed
-                // Almanac caps at half
-                if (isHalf && !ALMANAC_ONLY_TABS.has(tab.id)) {
-                  setPanelState('full')
+              if (tab.id === activeTab) {
+                // Re-tap active tab
+                if (ALMANAC_ONLY_TABS.has(tab.id)) {
+                  // Almanac: toggle weather ↔ celestial
+                  AlmanacTab.toggle?.()
                 } else {
-                  setPanelState('collapsed')
+                  // Society/Bulletin: toggle mini ↔ full
+                  setPanelState(isFull ? 'half' : 'full')
                 }
               } else {
+                // Switch to new tab
                 setActiveTab(tab.id)
-                // Switching to almanac from full → drop to half
-                if (ALMANAC_ONLY_TABS.has(tab.id) && isFull) {
+                if (ALMANAC_ONLY_TABS.has(tab.id)) {
+                  setPanelState('half')
+                } else if (!isFull) {
+                  // Stay mini when switching between non-almanac tabs
                   setPanelState('half')
                 }
+                useUserLocation.getState().start()
               }
             }}
             className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-body-sm transition-all duration-200 ${

@@ -30,13 +30,29 @@ const MENU_DISPLAY = {
 }
 
 /**
- * Build ticker entries from two sources:
+ * Build ticker entries from three sources:
  * 1. Menu schedules — auto-generated, white text ("The Bellwether — Happy Hour")
- * 2. Manual events — guardian-posted, yellow text ("Kyle is bartending tonight")
+ * 2. Open-now taglines — first sentence of description for open listings without menus
+ * 3. Manual events — guardian-posted, yellow text ("Kyle is bartending tonight")
  *
- * One entry per listing. Manual events override schedule entries.
- * Latest start_time wins when multiple things overlap.
+ * One entry per listing. Manual events override all; schedules override taglines.
  */
+const _DAYS_FULL = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+function _isOpenNow(hours, now) {
+  if (!hours) return false
+  const day = _DAYS_FULL[now.getDay()]
+  const slot = hours[day]
+  if (!slot || !slot.open || !slot.close) return false
+  const mins = now.getHours() * 60 + now.getMinutes()
+  const [oh, om] = slot.open.split(':').map(Number)
+  const [ch, cm] = slot.close.split(':').map(Number)
+  return mins >= oh * 60 + om && mins < ch * 60 + cm
+}
+function _firstSentence(text) {
+  if (!text) return null
+  const match = text.match(/^[^.!?]+[.!?]/)
+  return match ? match[0].trim() : null
+}
 function buildTickerEntries(allListings, allEvents, clockTime) {
   const now = clockTime || new Date()
   const dayAbbrev = DAY_ABBREVS[now.getDay()]
@@ -86,7 +102,30 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
     }
   })
 
-  // 2. Manual events (yellow text) — override schedule entries
+  // 2. Open-now taglines — first sentence of description, lowest priority
+  allListings.forEach(listing => {
+    if (entries.has(listing.id)) return // already has a schedule entry
+    if (!listing.hours || listing.category === 'residential') return
+    if (!_isOpenNow(listing.hours, now)) return
+    const tagline = listing.tagline || _firstSentence(listing.description)
+    if (!tagline) return
+    const slot = listing.hours[_DAYS_FULL[now.getDay()]]
+    const [eh, em] = slot.close.split(':').map(Number)
+    const endSuffix = eh >= 12 ? 'pm' : 'am'
+    const endHr = eh === 0 ? 12 : eh > 12 ? eh - 12 : eh
+    const endDisplay = em === 0 ? `${endHr}${endSuffix}` : `${endHr}:${String(em).padStart(2, '0')}${endSuffix}`
+    entries.set(listing.id, {
+      listing_id: listing.id,
+      title: tagline,
+      _time: `until ${endDisplay}`,
+      _venueName: listing.name,
+      _buildingId: listing.building_id,
+      _source: 'tagline',
+      _startTime: slot.open,
+    })
+  })
+
+  // 3. Manual events (yellow text) — override all other entries
   allEvents.forEach(e => {
     if (!isActiveEvent(e, dateStr, timeStr)) return
     const listing = useListings.getState().getById(e.listing_id)
@@ -104,8 +143,8 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
 
     if (!existing) {
       entries.set(e.listing_id, entry)
-    } else if (existing._source === 'schedule') {
-      // Manual event always overrides schedule
+    } else if (existing._source !== 'event') {
+      // Manual event overrides schedule and tagline entries
       entries.set(e.listing_id, entry)
     } else {
       // Two manual events — latest start_time wins
