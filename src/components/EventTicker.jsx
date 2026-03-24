@@ -48,10 +48,14 @@ function _isOpenNow(hours, now) {
   const [ch, cm] = slot.close.split(':').map(Number)
   return mins >= oh * 60 + om && mins < ch * 60 + cm
 }
+const TAGLINE_MAX = 80
 function _firstSentence(text) {
   if (!text) return null
   const match = text.match(/^[^.!?]+[.!?]/)
-  return match ? match[0].trim() : null
+  if (!match) return null
+  const sentence = match[0].trim()
+  if (sentence.length <= TAGLINE_MAX) return sentence
+  return sentence.slice(0, TAGLINE_MAX).replace(/\s+\S*$/, '') + '\u2026'
 }
 function buildTickerEntries(allListings, allEvents, clockTime) {
   const now = clockTime || new Date()
