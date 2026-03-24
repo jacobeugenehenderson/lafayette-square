@@ -557,11 +557,11 @@ function StatsMasthead({ stats, tagline, minHeight }) {
           {stats.map(({ value, label, color }) => (
             <div
               key={label}
-              className="flex-1 rounded-xl px-2.5 py-2 text-center"
+              className="flex-1 min-w-0 rounded-xl px-1.5 py-2 text-center"
               style={{ backgroundColor: color }}
             >
-              <div className="text-display font-light text-on-surface tracking-wide">{value}</div>
-              <div className="text-caption text-on-surface-disabled uppercase tracking-[0.15em] mt-0.5">{label}</div>
+              <div className="text-title font-light text-on-surface tracking-wide truncate">{value}</div>
+              <div className="text-caption text-on-surface-disabled uppercase tracking-[0.1em] mt-0.5 truncate">{label}</div>
             </div>
           ))}
         </div>
