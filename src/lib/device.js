@@ -1,26 +1,15 @@
 /**
- * Anonymous device fingerprint for check-in and guardian systems.
- * Generates a consistent hash per device, stored in localStorage.
- * Not personally identifiable — many devices can share the same fingerprint.
+ * Anonymous device identity for check-in and guardian systems.
+ * Each browser gets a unique random ID on first visit, persisted in localStorage.
  */
 
 const STORAGE_KEY = 'lsq_device_hash'
 
-async function generateFingerprint() {
-  const raw = [
-    screen.width,
-    screen.height,
-    screen.colorDepth,
-    Intl.DateTimeFormat().resolvedOptions().timeZone,
-    navigator.language,
-    navigator.platform,
-    navigator.hardwareConcurrency || 0,
-  ].join('|')
-
-  const encoded = new TextEncoder().encode(raw)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoded)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16)
+function generateDeviceId() {
+  if (crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+  const bytes = new Uint8Array(8)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
 }
 
 let cached = null
@@ -38,7 +27,7 @@ export async function getDeviceHash() {
     return stored
   }
 
-  const hash = await generateFingerprint()
+  const hash = generateDeviceId()
   localStorage.setItem(STORAGE_KEY, hash)
   cached = hash
   return hash

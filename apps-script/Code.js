@@ -896,7 +896,7 @@ function postSetHandle(body) {
     return errorResponse('Handle already taken', 'conflict')
   }
 
-  sheet.appendRow([device_hash, handle, nowISO(), cleanAvatar, cleanVignette])
+  sheet.appendRow([device_hash, handle, cleanAvatar, nowISO(), cleanVignette])
   return jsonResponse({ success: true, handle: handle, avatar: cleanAvatar || null, vignette: cleanVignette || null })
 }
 
@@ -1667,7 +1667,7 @@ function setupSheets() {
     'Checkins':  ['device_hash', 'location_id', 'timestamp', 'date'],
     'Reviews':   ['id', 'listing_id', 'device_hash', 'handle', 'text', 'rating', 'timestamp'],
     'Events':    ['id', 'listing_id', 'device_hash', 'type', 'title', 'description', 'start_date', 'end_date', 'created_at'],
-    'Handles':   ['device_hash', 'handle', 'avatar', 'created_at'],
+    'Handles':   ['device_hash', 'handle', 'avatar', 'created_at', 'vignette'],
     'Bulletins': ['id', 'device_hash', 'handle', 'section', 'text', 'anonymous', 'created_at', 'expires_at', 'status'],
     'Threads':   ['id', 'bulletin_id', 'party_a_hash', 'party_b_hash', 'a_handle', 'b_handle', 'status', 'created_at', 'expires_at'],
     'Messages':  ['id', 'thread_id', 'sender_hash', 'text', 'created_at'],
