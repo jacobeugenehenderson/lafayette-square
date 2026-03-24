@@ -48,7 +48,7 @@ export default function ContactModal() {
           </a>
           {/* Text */}
           <a
-            href={`sms:+13143334444${message ? `&body=${encodedBody}` : ''}`}
+            href={`sms:+18773351917${message ? `&body=${encodedBody}` : ''}`}
             className="w-9 h-9 rounded-full backdrop-blur-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 transition-all duration-200 flex items-center justify-center hover:bg-emerald-500/30"
             title="Send via text"
             aria-label="Send via text"

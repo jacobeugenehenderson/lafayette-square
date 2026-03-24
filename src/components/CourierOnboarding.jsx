@@ -98,9 +98,11 @@ function IdentityStep({ onNext, preview }) {
           <li>A well-lit space for a selfie</li>
         </ul>
       </div>
-      <p className="text-caption text-on-surface-subtle">
-        Verification is handled by Stripe. Your ID is not stored by Cary.
-      </p>
+      <div className="rounded-lg bg-surface-container border border-outline-variant px-3 py-2.5 text-[12px] leading-relaxed text-on-surface-subtle space-y-1.5">
+        <p className="text-on-surface-variant font-medium">How we handle your data</p>
+        <p>Verification is performed by Stripe Identity, not by Cary. Your ID image is processed by Stripe and never stored on our servers. Cary receives only a pass/fail result and your verified age.</p>
+        <p>This credential belongs to you. If you ever leave the platform, your verification history is yours — we don't hold it hostage.</p>
+      </div>
       <button
         onClick={handleStart}
         disabled={loading}
@@ -403,9 +405,101 @@ function VehicleStep({ onNext, vehicleType, preview }) {
 
 // ── Step: Agreement ─────────────────────────────────────────
 
+export const AGREEMENT_SECTIONS = [
+  {
+    title: '1. Independent Contractor Status',
+    body: 'Couriers are independent contractors. Nothing in this Agreement creates employment, partnership, agency, or joint venture. Couriers control when they work, whether they accept deliveries, and how they perform deliveries. The Platform provides technology services only and does not control the manner or method of courier transportation.',
+    subsections: [
+      { title: '1.1 Freedom to Work Elsewhere', body: 'Couriers are free to perform delivery services for any other business or platform.' },
+      { title: '1.2 Marketplace Role', body: 'The Platform operates as a digital marketplace that allows restaurants to request delivery services and allows independent couriers to view and claim available delivery opportunities. The Platform does not assign deliveries to couriers, require couriers to accept any delivery, or control how a courier performs a delivery.' },
+    ],
+  },
+  {
+    title: '2. Courier Eligibility',
+    body: 'Couriers must be at least 16 years old, complete identity verification, provide valid government identification, and complete onboarding requirements. Additional verification may be required for expanded services.',
+  },
+  {
+    title: '3. Transportation',
+    body: 'Couriers may use bicycle, walking, scooter, car, or other lawful transportation. Couriers are responsible for maintaining their transportation and must comply with all applicable laws and traffic regulations while performing deliveries.',
+  },
+  {
+    title: '4. Insurance',
+    body: 'Couriers operating motor vehicles must maintain any legally required insurance. Couriers assume all risks associated with transportation.',
+  },
+  {
+    title: '5. Delivery Claiming',
+    body: 'Restaurants submit delivery requests through the Platform. Couriers may independently choose to claim available delivery opportunities. When a courier claims a delivery, the courier agrees to make a good-faith effort to complete it or, if the delivery cannot be completed, to return the order to the restaurant.',
+    subsections: [
+      { title: '5.1 Pickup Confirmation', body: 'After claiming a delivery request, the Courier is expected to confirm pickup promptly. If pickup is not confirmed within a reasonable time, the Platform may return the delivery request to the queue for reassignment.' },
+      { title: '5.2 Order Handling', body: 'Couriers agree to transport orders with reasonable care and to deliver orders in the condition received from the restaurant. Couriers must not open, tamper with, or alter any order.' },
+    ],
+  },
+  {
+    title: '6. Cancellation',
+    body: 'A Courier may cancel a claimed delivery if the Courier cannot complete it. Repeated acceptance and cancellation of deliveries that materially disrupt service may result in warnings, temporary restrictions, or removal from the Platform.',
+  },
+  {
+    title: '7. Compensation',
+    body: 'A 22% service charge is collected from the customer on each order. The Courier receives 75% of the service charge. The Platform retains 25%. Any customer tips belong entirely to the Courier. Payments are typically distributed through automated nightly payouts through the Platform\u2019s payment system.',
+  },
+  {
+    title: '8. Alcohol Deliveries',
+    body: 'Couriers performing alcohol deliveries must verify government-issued identification and refuse delivery if the recipient is underage or intoxicated. If delivery is refused, the Courier must return the alcohol to the restaurant. Failure to comply may result in removal from the Platform.',
+  },
+  {
+    title: '9. Conduct',
+    body: 'Couriers must act respectfully toward customers, restaurants, and other couriers. The Platform may remove couriers for conduct that harms the service.',
+  },
+  {
+    title: '10. Theft or Misconduct',
+    body: 'Intentional interference with deliveries may result in immediate removal from the Platform. The Platform may investigate incidents before determining outcomes.',
+  },
+  {
+    title: '11. Privacy',
+    body: 'The Platform minimizes the collection of customer data. Couriers agree not to store, retain, disclose, or misuse customer information except as necessary to complete a delivery.',
+  },
+  {
+    title: '12. Assumption of Risk',
+    body: 'Couriers perform deliveries at their own risk and are responsible for their transportation choices and compliance with law. The Platform is not responsible for injuries, accidents, property damage, or other incidents arising from courier transportation activities, nor for food preparation, food safety, or restaurant order accuracy.',
+  },
+  {
+    title: '13. Indemnification',
+    body: 'The Courier agrees to defend, indemnify, and hold harmless the Platform and its owners, officers, employees, and agents from and against any claims, damages, losses, liabilities, costs, or expenses arising out of or related to the Courier\u2019s transportation activities, accidents or injuries during delivery, violations of law, failure to verify identification for alcohol deliveries, theft or mishandling of orders, or breach of this Agreement.',
+  },
+  {
+    title: '14. Platform Authority',
+    body: 'The Platform may suspend, restrict, or remove access to the service at its discretion to protect the safety, reliability, and integrity of the Lafayette Square Deliveries system.',
+  },
+  {
+    title: '15. Service Availability',
+    body: 'The Platform is not liable for delays or failures caused by circumstances beyond its control, including weather, technical outages, restaurant closures, or courier availability.',
+  },
+  {
+    title: '16. Dispute Resolution',
+    body: 'The parties agree to attempt to resolve disputes informally. If a dispute cannot be resolved informally, either party may bring a claim in a court of competent jurisdiction in the State of Missouri, including small claims court where applicable.',
+  },
+  {
+    title: '17. Acceptance',
+    body: 'This Agreement becomes effective when the Courier accepts the Agreement through the Platform onboarding process.',
+  },
+  {
+    title: '18. Governing Law',
+    body: 'This Agreement is governed by the laws of the State of Missouri.',
+  },
+  {
+    title: '19. Severability',
+    body: 'If any provision of this Agreement is held invalid or unenforceable, the remaining provisions remain in full force and effect.',
+  },
+  {
+    title: '20. Amendments',
+    body: 'The Platform may modify this Agreement from time to time by providing notice through the Platform or by email. Unless otherwise required for safety or legal compliance, changes will become effective no earlier than thirty (30) days after notice.',
+  },
+]
+
 function AgreementStep({ onNext, preview }) {
   const { onboardingAction, loading, error } = useCary()
   const [agreed, setAgreed] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   const handleAccept = useCallback(async () => {
     if (preview) { onNext(); return }
@@ -417,29 +511,64 @@ function AgreementStep({ onNext, preview }) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-body font-medium text-on-surface">Courier agreement</h3>
+        <h3 className="text-body font-medium text-on-surface">Courier Independent Contractor Agreement</h3>
         <p className="text-body-sm text-on-surface-variant mt-1">
-          Review and accept the terms of operating as a Cary courier.
+          Between Jacob Henderson LLC, DBA Lafayette Square Deliveries (&ldquo;Platform&rdquo;) and you (&ldquo;Courier&rdquo;).
         </p>
       </div>
+
+      {/* Summary */}
       <div className="rounded-lg bg-surface-container border border-outline-variant px-3 py-3 space-y-3 text-body-sm text-on-surface-variant">
         <div>
           <p className="text-on-surface font-medium mb-0.5">Independent contractor</p>
-          <p>You operate as an independent contractor, not an employee of Cary or Lafayette Square.</p>
+          <p>You are not an employee. You control when, whether, and how you deliver.</p>
         </div>
         <div>
-          <p className="text-on-surface font-medium mb-0.5">Community conduct</p>
-          <p>Treat every guest with respect. You represent the neighborhood.</p>
+          <p className="text-on-surface font-medium mb-0.5">Eligibility</p>
+          <p>Must be 16+ with valid ID. 21+ required for alcohol deliveries.</p>
         </div>
         <div>
-          <p className="text-on-surface font-medium mb-0.5">Safety first</p>
-          <p>Follow all traffic laws. Either party may end a service immediately if they feel unsafe.</p>
+          <p className="text-on-surface font-medium mb-0.5">Compensation</p>
+          <p>You earn 75% of the 22% service charge on every order — 16.5% of the food total. Tips are 100% yours. Nightly payouts.</p>
         </div>
         <div>
-          <p className="text-on-surface font-medium mb-0.5">Zero tolerance</p>
-          <p>Violence, harassment, discrimination, or impaired driving result in immediate and permanent removal.</p>
+          <p className="text-on-surface font-medium mb-0.5">Conduct & safety</p>
+          <p>Respect everyone. Follow traffic laws. Handle orders with care. Zero tolerance for theft, harassment, or impairment.</p>
+        </div>
+        <div>
+          <p className="text-on-surface font-medium mb-0.5">Alcohol deliveries</p>
+          <p>Verify government ID on every alcohol delivery. Refuse if underage or intoxicated. Return refused orders to the restaurant.</p>
         </div>
       </div>
+
+      {/* Full agreement toggle */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full text-left text-body-sm text-on-surface-subtle hover:text-on-surface-variant transition-colors flex items-center gap-2"
+      >
+        <svg className={`w-3 h-3 transition-transform ${expanded ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        {expanded ? 'Hide full agreement' : 'Read full agreement (20 sections)'}
+      </button>
+
+      {expanded && (
+        <div className="rounded-lg bg-surface-container border border-outline-variant px-3 py-3 space-y-4 text-[12px] leading-relaxed text-on-surface-variant max-h-[40vh] overflow-y-auto">
+          {AGREEMENT_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <p className="text-on-surface font-medium mb-1">{section.title}</p>
+              <p>{section.body}</p>
+              {section.subsections?.map((sub) => (
+                <div key={sub.title} className="mt-2 ml-3">
+                  <p className="text-on-surface-medium font-medium mb-0.5">{sub.title}</p>
+                  <p>{sub.body}</p>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
       <label className="flex items-start gap-3 cursor-pointer">
         <input
           type="checkbox"
@@ -448,7 +577,7 @@ function AgreementStep({ onNext, preview }) {
           className="mt-0.5 w-4 h-4 rounded border-outline-variant accent-emerald-400"
         />
         <span className="text-body-sm text-on-surface-variant">
-          I have read and agree to the Courier Agreement, including the independent contractor status, community conduct rules, and zero-tolerance policy.
+          I have read and agree to the Courier Independent Contractor Agreement, including the independent contractor status, eligibility requirements, compensation terms, conduct standards, alcohol delivery protocol, assumption of risk, and indemnification obligations.
         </span>
       </label>
       <button

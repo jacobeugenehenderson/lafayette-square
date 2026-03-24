@@ -23,6 +23,7 @@ import './hooks/useInit' // batch init — fires on import
 import CheckinPage from './pages/CheckinPage'
 import ClaimPage from './pages/ClaimPage'
 import LinkPage from './pages/LinkPage'
+import { PrivacyPage, CourierTermsPage, RestaurantTermsPage } from './pages/LegalPage'
 import QRCode from 'qrcode'
 import { createLinkToken, checkLinkToken } from './lib/api'
 import CourierDashboard, { useCourierDash } from './components/CourierDashboard'
@@ -354,14 +355,11 @@ function BulletinOpener() {
 }
 
 function CaryOpener({ tier }) {
-  const isAdmin = useGuardianStatus.getState().isAdmin
   useEffect(() => {
-    // Only admin can access Cary onboarding until launch
-    if (!isAdmin) return
     const state = useCourierDash.getState()
     if (tier) state.setTier(tier)
     state.setOpen(true)
-  }, [tier, isAdmin])
+  }, [tier])
   return null
 }
 
@@ -508,6 +506,9 @@ function App() {
   if (route.page === 'link') {
     return <LinkPage token={route.token} />
   }
+  if (route.page === 'privacy') return <PrivacyPage />
+  if (route.page === 'terms-courier') return <CourierTermsPage />
+  if (route.page === 'terms-restaurant') return <RestaurantTermsPage />
 
   const isGround = window.location.search.includes('ground')
   const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
@@ -549,6 +550,9 @@ function parseRoute() {
   const placeMatch = path.match(/^\/place\/([^/]+)$/)
   if (placeMatch) return { page: 'place', listingId: placeMatch[1] }
   if (path === '/bulletin') return { page: 'bulletin' }
+  if (path === '/privacy') return { page: 'privacy' }
+  if (path === '/terms/courier') return { page: 'terms-courier' }
+  if (path === '/terms/restaurant') return { page: 'terms-restaurant' }
   if (path === '/cary/deliver') return { page: 'cary', tier: 'deliver' }
   if (path === '/cary/drive') return { page: 'cary', tier: 'drive' }
   if (path === '/cary/apply' || path === '/cary') return { page: 'cary' }

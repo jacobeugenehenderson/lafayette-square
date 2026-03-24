@@ -2616,10 +2616,10 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
     return total
   }, [cart, sections, orderableSections])
 
-  const MIN_ORDER = 3500 // $35 minimum order for delivery
+  const MIN_ORDER = 4000 // $40 minimum order for delivery
   const STL_TAX_RATE = 0.08725 // Missouri 4.225% + St. Louis city 4.5%
   const salesTax = Math.round(cartTotal * STL_TAX_RATE) // tax on food only, not delivery
-  const caryFee = Math.round(cartTotal * 0.20) // 20% Cary fee — courier keeps 85%, platform keeps 15%
+  const caryFee = Math.round(cartTotal * 0.22) // 22% service charge — courier keeps 75%, platform keeps 25%
   const processingFee = cartTotal > 0 ? Math.round((cartTotal + salesTax + caryFee) * 0.029) + 30 : 0 // Stripe 2.9% + $0.30
   const orderTotal = cartTotal + salesTax + caryFee + processingFee
   const belowMinimum = cartTotal > 0 && cartTotal < MIN_ORDER
@@ -2811,7 +2811,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
             <span className="tabular-nums">${(salesTax / 100).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-body-sm text-on-surface-subtle">
-            <span>Cary fee (20%)</span>
+            <span>Service charge (22%)</span>
             <span className="tabular-nums">${(caryFee / 100).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-body-sm text-on-surface-subtle">
@@ -2825,7 +2825,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
 
           {belowMinimum && (
             <p className="text-caption text-amber-400/80 mt-1">
-              ${((MIN_ORDER - cartTotal) / 100).toFixed(2)} more to meet the $35 minimum
+              ${((MIN_ORDER - cartTotal) / 100).toFixed(2)} more to meet the $40 minimum
             </p>
           )}
 
@@ -2854,7 +2854,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
                   : 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98]'
               }`}
             >
-              {belowMinimum ? `$35 minimum order` : `Place order — $${(orderTotal / 100).toFixed(2)}`}
+              {belowMinimum ? `$40 minimum order` : `Place order — $${(orderTotal / 100).toFixed(2)}`}
             </button>
           ) : (
             <div className="text-center py-3 rounded-xl bg-surface-container-high border border-outline-variant">

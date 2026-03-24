@@ -733,13 +733,16 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                 </div>
                 <div className="text-label-sm leading-relaxed space-y-1.5">
                   <p className="pinned-post-body">Lafayette Square's neighborhood delivery service is looking for couriers.</p>
-                  <p className="pinned-post-detail">How it works: a resident orders from a local restaurant through the map. You pick it up and deliver it within the neighborhood. You keep <span className="pinned-post-highlight">85% of the delivery fee</span>.</p>
-                  <p className="pinned-post-detail">Minimum payout: <span className="pinned-post-body font-medium">$5.95 per delivery</span> ($35 minimum order). Walk, bike, or drive. Set your own schedule.</p>
-                  <p className="pinned-post-detail">14+ for Deliver tier (free to join) · 18+ for Drive tier (~$42 background check)</p>
+                  <p className="pinned-post-detail">How it works: a resident orders from a local restaurant through the map. You pick it up and deliver it within the neighborhood. You earn <span className="pinned-post-highlight">75% of a 22% service charge</span> on every order — that's 16.5% of the food total, plus 100% of tips.</p>
+                  <p className="pinned-post-detail">On a $40 minimum order, you earn at least <span className="pinned-post-body font-medium">$6.60 before tips</span>. Walk, bike, or drive. Set your own schedule.</p>
+                  <p className="pinned-post-detail">16+ for Deliver tier (free to join) · 18+ for Drive tier (~$42 background check) · 21+ for alcohol deliveries</p>
                 </div>
-                <div className="mt-2 px-4 py-2 rounded-lg text-body-sm text-center pinned-post-badge">
-                  Applications opening soon
-                </div>
+                <a
+                  href="/cary/apply"
+                  className="mt-2 px-4 py-2 rounded-lg text-body-sm text-center pinned-post-badge block hover:brightness-125 transition-all"
+                >
+                  Apply now — early access
+                </a>
               </div>
             </div>
           </div>

@@ -70,7 +70,7 @@ export default function CaryAuth() {
       <div className="space-y-3">
         <div className="text-center mb-2">
           <p className="text-body text-on-surface font-medium">Sign in to call Cary</p>
-          <p className="text-body-sm text-on-surface-subtle mt-0.5">We'll text you a code</p>
+          <p className="text-body-sm text-on-surface-subtle mt-0.5">Enter your phone number to get started</p>
         </div>
         <input
           type="tel"
@@ -79,6 +79,9 @@ export default function CaryAuth() {
           placeholder="(314) 555-1234"
           className="w-full rounded-lg bg-surface-container border border-outline-variant px-3 py-2 text-body text-on-surface placeholder:text-on-surface-disabled focus:outline-none focus:border-on-surface-subtle text-center tracking-wider"
         />
+        <p className="text-[11px] leading-snug text-on-surface-disabled text-center px-2">
+          By tapping "Send code," you consent to receive SMS messages from Cary at Lafayette Square, including a one-time verification code and occasional account notifications. Message frequency varies. Message & data rates may apply. Reply STOP to opt out at any time. Reply HELP for support.
+        </p>
         <button
           onClick={handleSendOtp}
           disabled={loading || phone.replace(/\D/g, '').length < 10}

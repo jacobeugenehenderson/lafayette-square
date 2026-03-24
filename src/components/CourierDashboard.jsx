@@ -287,6 +287,14 @@ function LiveMeter() {
 function TierChooser({ onSelect }) {
   return (
     <div className="space-y-4">
+      {/* Pre-launch context */}
+      <div className="rounded-lg bg-amber-500/10 border border-amber-400/25 px-3 py-3 space-y-2">
+        <p className="text-body-sm text-amber-200/90 font-medium">Early access — not yet live</p>
+        <p className="text-[12px] leading-relaxed text-amber-200/60">
+          Cary is Lafayette Square's neighborhood delivery service. We're onboarding couriers now so you're credentialed and ready when we launch. Completing the process gets you independently verified — your credentials belong to you, not the platform. When we go live, you'll be first in the network.
+        </p>
+      </div>
+
       <div className="text-center mb-2">
         <p className="text-body text-on-surface font-medium">How do you want to earn?</p>
       </div>
@@ -296,7 +304,7 @@ function TierChooser({ onSelect }) {
       >
         <p className="text-body font-medium text-on-surface">Deliver</p>
         <p className="text-body-sm text-on-surface-variant mt-1">
-          Packages, food, errands. Walk, bike, or drive. Ages 14+.
+          Packages, food, errands. Walk, bike, or drive. Ages 16+.
         </p>
         <p className="text-caption text-emerald-400 mt-2">Free — active in minutes</p>
       </button>

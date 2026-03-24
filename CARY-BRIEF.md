@@ -3,7 +3,7 @@
 ## What's done
 
 ### Onboarding pipeline (complete)
-- Two-tier system: **Deliver** (identity + agreement, free, 14+) and **Drive** (full TNC pipeline, ~$42, 18+)
+- Two-tier system: **Deliver** (identity + agreement, free, 16+) and **Drive** (full TNC pipeline, ~$42, 18+)
 - URLs: `/cary/deliver`, `/cary/drive`, `/cary/apply` (tier chooser)
 - Multi-step wizard with progress bar, preview mode (`?preview=true`)
 - Supabase schema: profiles, courier_profiles, verification_checks, onboarding_step state machine
@@ -89,9 +89,10 @@ What to build:
 
 | | Delivery | Ride |
 |---|---|---|
-| Customer pays | Restaurant (food + 20% service) | Cary (metered fare) |
-| Platform fee | $1 + 5% of delivery fee | 5% of fare |
-| Courier keeps | ~85% of delivery fee | ~95% of fare |
-| Settlement | Nightly Venmo | Real-time Stripe Connect |
+| Customer pays | Food + tax + 22% service charge + processing | Cary (metered fare) |
+| Service charge split | 75% courier / 25% platform | 75% driver / 25% platform |
+| Restaurant gets | 100% of food + tax | N/A |
+| Settlement | Nightly automated payout | Real-time Stripe Connect |
 | Onboarding cost | Free | ~$42 (Checkr + Stripe Identity) |
-| Min age | 14 | 18 |
+| Min order | $40 | N/A |
+| Min age | 16 | 18 |
