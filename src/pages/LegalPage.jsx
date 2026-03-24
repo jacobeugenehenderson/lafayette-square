@@ -104,7 +104,7 @@ const RESTAURANT_SECTIONS = [
 
 function LegalShell({ title, subtitle, children }) {
   return (
-    <div className="min-h-dvh bg-[#0a0a0f] text-[#e0ddd8] font-mono">
+    <div className="fixed inset-0 bg-[#0a0a0f] text-[#e0ddd8] font-mono overflow-y-auto">
       <div className="max-w-2xl mx-auto px-5 py-10">
         <header className="mb-10">
           <a href="/" className="text-[13px] text-[#e0ddd8]/40 hover:text-[#e0ddd8]/60 transition-colors">&larr; lafayette-square.com</a>

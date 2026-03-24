@@ -1,7 +1,3 @@
-[project]
-id = "ngbvgjzrpnfrqmzkqvch"
-name = "cary"
-
 [api]
 port = 54321
 schemas = ["public"]
@@ -17,10 +13,10 @@ enabled = true
 site_url = "https://lafayette-square.com"
 
 [auth.sms]
-enabled = true  # Phone verification for profiles
+max_frequency = "60s"
 
 [auth.external.apple]
-enabled = false  # Enable when ready
+enabled = false
 
 [auth.external.google]
-enabled = false  # Enable when ready
+enabled = false
