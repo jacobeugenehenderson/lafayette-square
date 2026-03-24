@@ -22,10 +22,14 @@ function Controls() {
   const getByBuildingId = useListings((s) => s.getByBuildingId)
   const getListingsForBuilding = useListings((s) => s.getListingsForBuilding)
 
-  // Collapse panel when PlaceCard opens
+  // Drop panel to browse when PlaceCard opens, restore to mini when it closes
   useEffect(() => {
     if (showCard) {
-      useCamera.getState().setPanelState('collapsed')
+      const state = useCamera.getState().panelState
+      if (state === 'full') useCamera.getState().setPanelState('browse')
+    } else {
+      const state = useCamera.getState().panelState
+      if (state === 'browse') useCamera.getState().setPanelState('half')
     }
   }, [showCard])
 

@@ -3244,7 +3244,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const residenceBuildingId = useResidence(s => s.buildingId)
   const residenceStatus = useResidence(s => s.status)
   const handle = useHandle(s => s.handle)
-  const panelOpen = useCamera(s => s.panelOpen)
+  const panelState = useCamera(s => s.panelState)
   const panelCollapsedPx = useCamera(s => s.panelCollapsedPx)
   const initialTab = useSelectedBuilding(s => s.initialTab)
   const [residentCount, setResidentCount] = useState(null)
@@ -3385,7 +3385,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={name} className="absolute left-3 right-3 bg-surface sm:bg-surface-glass sm:backdrop-blur-2xl sm:backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)', bottom: panelOpen ? 'calc(30dvh - 1rem + 18px)' : `${(panelCollapsedPx || 76) + 18}px` }}>
+    <div role="dialog" aria-modal="true" aria-label={name} className="absolute left-3 right-3 bg-surface sm:bg-surface-glass sm:backdrop-blur-2xl sm:backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)', bottom: panelState === 'browse' ? 'calc(30dvh - 1rem + 18px)' : `${(panelCollapsedPx || 76) + 18}px` }}>
       {/* Hero Photo Area */}
       <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
         {heroPhoto ? (

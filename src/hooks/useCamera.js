@@ -5,8 +5,8 @@ import useSelectedBuilding from './useSelectedBuilding'
 const useCamera = create((set, get) => ({
   viewMode: 'hero',       // 'hero' | 'browse' | 'planetarium'
   previousMode: 'hero',
-  panelState: 'half',       // 'half' (mini) | 'full'
-  panelOpen: true,          // derived compat — always true now (no collapsed state)
+  panelState: 'half',       // 'collapsed' | 'half' (mini) | 'browse' | 'full'
+  panelOpen: true,          // derived compat — false only when collapsed
   panelCollapsedPx: 0,
   activeTab: 'almanac',     // 'almanac' | 'bulletin' | 'lafayettepages'
   azimuth: 0,
@@ -14,11 +14,11 @@ const useCamera = create((set, get) => ({
   planetariumOrigin: null,  // [x, z] ground position for street-level sky view
   lastInteraction: Date.now(),
 
-  setPanelState: (state) => set({ panelState: state, panelOpen: true }),
-  // Compat: old code calls setPanelOpen(true/false) — always stays at least half
+  setPanelState: (state) => set({ panelState: state, panelOpen: state !== 'collapsed' }),
+  // Compat: old code calls setPanelOpen(true/false)
   setPanelOpen: (open) => set({
-    panelState: open ? 'half' : 'half',
-    panelOpen: true,
+    panelState: open ? 'half' : 'collapsed',
+    panelOpen: open,
   }),
 
   setMode: (mode) => {

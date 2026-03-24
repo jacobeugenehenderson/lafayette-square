@@ -256,6 +256,22 @@ function AlmanacTab() {
   const dayM = dayLengthMin % 60
 
   const [almanacView, setAlmanacView] = useState('weather')
+  const weatherRef = useRef(null)
+
+  // Measure weather content height — shared via AlmanacTab._weatherHeight
+  useEffect(() => {
+    if (almanacView !== 'weather' || !weatherRef.current) return
+    const el = weatherRef.current
+    const ro = new ResizeObserver(() => {
+      const h = el.offsetHeight
+      if (h > 0) {
+        AlmanacTab._weatherHeight = h
+        useCamera.setState({ almanacMiniPx: h })
+      }
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [almanacView])
 
   // Toggle is driven by re-tapping the Almanac tab — no subtab buttons needed
   const toggleView = useCallback(() => {
@@ -271,7 +287,7 @@ function AlmanacTab() {
       <div className="flex-1 overflow-y-auto min-h-0">
 
       {almanacView === 'weather' && (
-        <>
+        <div ref={weatherRef}>
         {/* ── Time + Weather + Temp ── */}
         <div className="px-4 py-3 border-b border-outline-variant">
           <div className="flex items-center justify-between">
@@ -320,11 +336,11 @@ function AlmanacTab() {
             onScrub={(date) => setTime(date)}
           />
         </div>
-        </>
+        </div>
       )}
 
       {almanacView === 'celestial' && (
-        <>
+        <div style={AlmanacTab._weatherHeight ? { minHeight: `${AlmanacTab._weatherHeight}px` } : undefined}>
           <div className="px-4 py-2 border-b border-outline-variant">
             <div className="text-body-sm text-on-surface-subtle tracking-wide">
               {dateString} &middot; Day {dayOfYear}
@@ -373,7 +389,7 @@ function AlmanacTab() {
               })()}
             </div>
           </div>
-        </>
+        </div>
       )}
 
       </div>
@@ -423,7 +439,7 @@ function LafayetteSubsection({ section, color, scrollToSelected }) {
     if (!isActive) {
       const cam = useCamera.getState()
       if (cam.viewMode !== 'browse') cam.setMode('browse')
-      if (cam.panelState === 'full') cam.setPanelState('half')
+      if (cam.panelState === 'full') cam.setPanelState('browse')
       const target = getNeighborhoodTarget()
       flyTo(target.position, target.lookAt)
     } else {
@@ -432,15 +448,14 @@ function LafayetteSubsection({ section, color, scrollToSelected }) {
   }
 
   const handleSelectPlace = (biz) => {
-    // Clear category tags — single place mode
-    useLandmarkFilter.getState().clearTags()
-    // Highlight the place (shows pin, card opens on building click)
+    // Highlight the place (shows pin, card opens when clicked in 3D)
+    // Don't clear tags — keep the category list intact
     highlight(biz.id, biz.building_id)
     // Switch to browse if in hero so flyTo is honored
     const cam = useCamera.getState()
     if (cam.viewMode !== 'browse') cam.setMode('browse')
-    // Drop panel to half if full — reveal the map
-    if (cam.panelState === 'full') cam.setPanelState('half')
+    // Drop panel to browse — reveal the map, keep directory visible
+    if (cam.panelState === 'full') cam.setPanelState('browse')
     // Center camera on this building
     const building = _buildingMap[biz.building_id]
     if (building) {
@@ -529,9 +544,9 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle, scrollToSe
 }
 
 // ── Shared masthead renderer ─────────────────────────────────────────
-function StatsMasthead({ stats, tagline }) {
+function StatsMasthead({ stats, tagline, minHeight }) {
   return (
-    <div className="flex-shrink-0">
+    <div className="flex-shrink-0" style={minHeight ? { minHeight: `${minHeight}px` } : undefined}>
       <div className="px-3 py-3 border-b border-outline-variant">
         <div className="flex gap-2">
           {stats.map(({ value, label, color }) => (
@@ -566,10 +581,11 @@ function SocietyMasthead() {
     { value: couriers, label: 'Couriers', color: 'rgba(61,175,138,0.12)' },   // verdigris
   ]
 
-  return <StatsMasthead stats={stats} tagline="Neighborhood Directory" />
+  const miniPx = useCamera(s => s.almanacMiniPx)
+  return <StatsMasthead stats={stats} tagline="Neighborhood Directory" minHeight={miniPx} />
 }
 
-function LafayettePagesTab({ isFull }) {
+function LafayettePagesTab({ isFull, isBrowse }) {
   const [expandedId, setExpandedId] = useState(null)
   const [searchActive, setSearchActive] = useState(false)
   const [scrollToSelected, setScrollToSelected] = useState(false)
@@ -606,17 +622,18 @@ function LafayettePagesTab({ isFull }) {
     }
   }, [activeTags, selectedListingId, listings])
 
+  const showDirectory = isFull || isBrowse
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Society masthead — pinned */}
-      <SocietyMasthead />
+      {/* Society masthead — hidden in browse mode */}
+      {!isBrowse && <SocietyMasthead />}
 
-      {/* Scrollable area: search bar + results or directory */}
+      {/* Scrollable area: search bar + directory — only in full/browse */}
+      {showDirectory && (
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {/* Search scrolls with content */}
         <SocietySearch onSearchActive={setSearchActive} />
 
-        {/* Directory — hidden when search is active */}
         {!searchActive && (
           <div className="p-2 space-y-2">
             {CATEGORY_LIST.map((category) => (
@@ -631,8 +648,9 @@ function LafayettePagesTab({ isFull }) {
           </div>
         )}
       </div>
+      )}
 
-      {isFull && !searchActive && (
+      {(isFull || isBrowse) && !searchActive && (
         <div className="flex-shrink-0 px-4 py-2 border-t border-outline-variant">
           <span className="text-caption text-on-surface-disabled">{listings.length} verified listings</span>
         </div>
@@ -655,7 +673,8 @@ function BulletinMasthead() {
     { value: _namedStreetCount, label: 'Streets', color: 'rgba(140,150,170,0.12)' }, // slate blue
   ]
 
-  return <StatsMasthead stats={stats} tagline="Community Board" />
+  const miniPx = useCamera(s => s.almanacMiniPx)
+  return <StatsMasthead stats={stats} tagline="Community Board" minHeight={miniPx} />
 }
 
 function BulletinTab({ isFull }) {
@@ -729,8 +748,13 @@ function SidePanel() {
   const setPanelState = useCamera((s) => s.setPanelState)
   const collapsed = panelState === 'collapsed'
   const isHalf = panelState === 'half'
+  const isBrowse = panelState === 'browse'
   const isFull = panelState === 'full'
-  const [panelMiniPx, setPanelMiniPx] = useState(0)
+  const showCard = useSelectedBuilding((s) => s.showCard)
+  const bulletinModalOpen = useBulletin((s) => s.modalOpen)
+  const overlayOpen = showCard || bulletinModalOpen
+
+  // No auto-collapse — panel state is always the user's choice
 
   // Glass styles: collapsed = heavy frosted glass, half/full = frosted
   const glassStyle = collapsed ? {
@@ -751,26 +775,27 @@ function SidePanel() {
     border: '1px solid var(--outline)',
   }
 
-  // Measure mini height from the Almanac weather view on first render
+  // Track actual panel height for card/modal positioning
   const panelRef = useRef(null)
   useEffect(() => {
-    if (!panelRef.current || panelMiniPx > 0 || isFull) return
-    // Wait a frame for content to lay out
-    requestAnimationFrame(() => {
-      const h = panelRef.current?.offsetHeight
-      if (h > 0) {
-        setPanelMiniPx(h)
-        useCamera.setState({ panelCollapsedPx: h })
-      }
+    if (!panelRef.current) return
+    const el = panelRef.current
+    const ro = new ResizeObserver(() => {
+      const h = el.offsetHeight
+      if (h > 0) useCamera.setState({ panelCollapsedPx: h })
     })
-  }, [panelMiniPx, isFull])
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   return (
     <div
       ref={panelRef}
       className="absolute left-3 right-3 bottom-3 flex flex-col select-none overflow-hidden z-50 transition-all duration-300 ease-out font-mono rounded-2xl"
       style={{
-        height: isFull ? undefined : (panelMiniPx ? `${panelMiniPx}px` : 'auto'),
+        height: isFull ? undefined
+          : isBrowse ? 'calc(30dvh - 1rem)'
+          : 'auto',
         ...(isFull ? { top: 'calc(env(safe-area-inset-top, 0px) + 94px)' } : {}),
         ...glassStyle,
       }}
@@ -804,22 +829,37 @@ function SidePanel() {
             role="tab"
             aria-selected={activeTab === tab.id}
             onClick={() => {
-              if (tab.id === activeTab) {
-                // Re-tap active tab
+              if (collapsed) {
+                // Collapsed → mini for any tab
+                setActiveTab(tab.id)
+                setPanelState('half')
+                useUserLocation.getState().start()
+              } else if (tab.id === activeTab) {
+                // Re-tap same tab — cycle through states
                 if (ALMANAC_ONLY_TABS.has(tab.id)) {
-                  // Almanac: toggle weather ↔ celestial
-                  AlmanacTab.toggle?.()
+                  // Almanac: single tap toggles view, double-tap collapses
+                  const now = Date.now()
+                  const last = AlmanacTab._lastTap || 0
+                  AlmanacTab._lastTap = now
+                  if (now - last < 350) {
+                    // Double-tap → collapse
+                    setPanelState('collapsed')
+                    AlmanacTab._lastTap = 0
+                  } else if (isHalf) {
+                    AlmanacTab.toggle?.()  // single tap: toggle weather ↔ celestial
+                  } else {
+                    setPanelState('half')  // any other state → mini
+                  }
                 } else {
-                  // Society/Bulletin: toggle mini ↔ full
-                  setPanelState(isFull ? 'half' : 'full')
+                  // Society/Bulletin
+                  if (isFull) setPanelState('collapsed')
+                  else if (overlayOpen) setPanelState('collapsed')
+                  else setPanelState('full')
                 }
               } else {
-                // Switch to new tab
+                // Switch to different tab — stay at current height, cap Almanac
                 setActiveTab(tab.id)
-                if (ALMANAC_ONLY_TABS.has(tab.id)) {
-                  setPanelState('half')
-                } else if (!isFull) {
-                  // Stay mini when switching between non-almanac tabs
+                if (ALMANAC_ONLY_TABS.has(tab.id) && (isFull || isBrowse)) {
                   setPanelState('half')
                 }
                 useUserLocation.getState().start()
@@ -850,7 +890,7 @@ function SidePanel() {
         <div className="flex-1 min-h-0 overflow-hidden bg-surface-dim">
           {activeTab === 'almanac' && <AlmanacTab />}
           {activeTab === 'bulletin' && <BulletinTab isFull={isFull} />}
-          {activeTab === 'lafayettepages' && <LafayettePagesTab isFull={isFull} />}
+          {activeTab === 'lafayettepages' && <LafayettePagesTab isFull={isFull} isBrowse={isBrowse} />}
         </div>
       )}
 
