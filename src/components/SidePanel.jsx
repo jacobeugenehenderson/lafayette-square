@@ -552,7 +552,7 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle, scrollToSe
 function StatsMasthead({ stats, tagline, minHeight }) {
   return (
     <div className="flex-shrink-0" style={minHeight ? { minHeight: `${minHeight}px` } : undefined}>
-      <div className="px-3 py-3 border-b border-outline-variant">
+      <div className="px-3 pt-3.5 pb-3.5 border-b border-outline-variant">
         <div className="flex gap-2">
           {stats.map(({ value, label, color }) => (
             <div
@@ -567,7 +567,7 @@ function StatsMasthead({ stats, tagline, minHeight }) {
         </div>
       </div>
       {tagline && (
-        <div className="px-4 pt-3.5 pb-0">
+        <div className="px-4 py-3.5">
           <p className="text-caption text-on-surface-disabled text-center italic">{tagline}</p>
         </div>
       )}
