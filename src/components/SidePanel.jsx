@@ -340,14 +340,19 @@ function AlmanacTab() {
       )}
 
       {almanacView === 'celestial' && (
-        <div style={AlmanacTab._weatherHeight ? { minHeight: `${AlmanacTab._weatherHeight}px` } : undefined}>
-          <div className="px-4 py-2 border-b border-outline-variant">
-            <div className="text-body-sm text-on-surface-subtle tracking-wide">
-              {dateString} &middot; Day {dayOfYear}
+        <div style={AlmanacTab._weatherHeight ? { height: `${AlmanacTab._weatherHeight}px`, overflow: 'hidden' } : undefined}>
+          <div className="px-4 py-3 border-b border-outline-variant">
+            <div className="flex items-center justify-between">
+              <span className="text-display font-light text-on-surface tracking-wider">
+                {dateString}
+              </span>
+              <span className="text-display font-light text-on-surface-variant tracking-wider tabular-nums">
+                Day {dayOfYear}
+              </span>
             </div>
           </div>
 
-          <div className="px-4 py-3 flex gap-4 border-b border-outline-variant">
+          <div className="px-4 py-3 flex gap-4">
             <div className="flex-1">
               <div className="text-caption text-on-surface-disabled uppercase tracking-widest mb-1">Sun</div>
               <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
