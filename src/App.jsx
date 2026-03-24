@@ -364,11 +364,12 @@ function CaryOpener({ tier }) {
 }
 
 function CaryStandalone({ tier }) {
-  useEffect(() => {
+  // Set open synchronously before first render to avoid flash
+  useState(() => {
     const state = useCourierDash.getState()
     if (tier) state.setTier(tier)
     state.setOpen(true)
-  }, [tier])
+  })
 
   return (
     <div className="w-full h-full bg-[#0a0a0f]">
