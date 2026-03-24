@@ -518,19 +518,13 @@ function LafayetteCategoryAccordion({ category, isExpanded, onToggle, scrollToSe
 
 // ── Society masthead ─────────────────────────────────────────────────
 function SocietyMasthead() {
-  const { currentTime } = useTimeOfDay()
-  const { townies, residents, guardians } = useCommunityStats()
-  const listings = useListings((s) => s.listings)
-
-  const openNow = useMemo(() => {
-    return listings.filter(l => l.hours && _isWithinHours(l.hours, currentTime)).length
-  }, [listings, currentTime])
+  const { townies, residents, guardians, couriers } = useCommunityStats()
 
   const stats = [
-    { value: openNow, label: 'Open Now', color: 'rgba(61,175,138,0.12)' },   // verdigris
     { value: townies, label: 'Townies', color: 'rgba(194,24,91,0.12)' },      // claret
     { value: residents, label: 'Residents', color: 'rgba(122,139,111,0.12)' }, // sage
     { value: guardians, label: 'Guardians', color: 'rgba(212,163,55,0.12)' }, // gold
+    { value: couriers, label: 'Couriers', color: 'rgba(61,175,138,0.12)' },   // verdigris
   ]
 
   return (

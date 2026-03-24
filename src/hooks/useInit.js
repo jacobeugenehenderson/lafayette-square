@@ -97,6 +97,7 @@ export async function runInit() {
         townies: counts.townies || 0,
         residents: counts.residents || 0,
         guardians: counts.guardians || 0,
+        couriers: counts.couriers || 0,
       })
     }
   } catch (err) {
