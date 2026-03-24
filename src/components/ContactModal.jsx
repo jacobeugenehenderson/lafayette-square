@@ -9,7 +9,6 @@ export const useContact = create((set) => ({
 
 export default function ContactModal() {
   const open = useContact((s) => s.open)
-  const panelOpen = useCamera((s) => s.panelOpen)
   const panelCollapsedPx = useCamera((s) => s.panelCollapsedPx)
   const [message, setMessage] = useState('')
 
@@ -28,7 +27,7 @@ export default function ContactModal() {
       aria-modal="true"
       className="absolute top-3 left-3 right-3 bg-surface-glass backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50 font-mono"
       style={{
-        bottom: panelOpen ? 'calc(30dvh - 1rem + 18px)' : `${(panelCollapsedPx || 76) + 18}px`,
+        bottom: `${(panelCollapsedPx || 76) + 18}px`,
       }}
     >
       {/* Header */}

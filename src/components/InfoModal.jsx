@@ -20,7 +20,6 @@ export default function InfoModal() {
   const open = useInfo((s) => s.open)
   const section = useInfo((s) => s.section)
   const close = useInfo((s) => s.close)
-  const panelOpen = useCamera((s) => s.panelOpen)
   const panelCollapsedPx = useCamera((s) => s.panelCollapsedPx)
   const scrollRef = useRef(null)
   const sectionRefs = useRef({})
@@ -115,7 +114,7 @@ export default function InfoModal() {
       aria-modal="true"
       className="absolute top-3 left-3 right-3 bg-surface-glass backdrop-blur-2xl backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50 font-mono"
       style={{
-        bottom: panelOpen ? 'calc(30dvh - 1rem + 18px)' : `${(panelCollapsedPx || 76) + 18}px`,
+        bottom: `${(panelCollapsedPx || 76) + 18}px`,
       }}
     >
       {/* ── Header ── */}
