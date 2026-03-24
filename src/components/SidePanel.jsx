@@ -881,6 +881,9 @@ function SidePanel() {
             {activeTab === tab.id && (
               <div className="absolute bottom-0 inset-x-0 h-[2px] bg-on-surface-variant" />
             )}
+            {activeTab === tab.id && !ALMANAC_ONLY_TABS.has(tab.id) && (
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 w-6 h-[2px] rounded-full bg-white/30" />
+            )}
           </button>
         ))}
       </nav>
