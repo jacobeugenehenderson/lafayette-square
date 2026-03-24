@@ -376,7 +376,11 @@ export default function CourierDashboard() {
             <p className="text-body-sm text-on-surface-subtle">{subtitle}</p>
           </div>
           <button
-            onClick={() => { setOpen(false); setTier(null) }}
+            onClick={() => {
+              setOpen(false); setTier(null)
+              // If on a standalone /cary route, navigate home
+              if (window.location.pathname.startsWith('/cary')) window.location.href = '/'
+            }}
             className="w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 hover:bg-rose-500/30 flex items-center justify-center text-body-sm"
           >
             &times;

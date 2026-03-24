@@ -363,6 +363,20 @@ function CaryOpener({ tier }) {
   return null
 }
 
+function CaryStandalone({ tier }) {
+  useEffect(() => {
+    const state = useCourierDash.getState()
+    if (tier) state.setTier(tier)
+    state.setOpen(true)
+  }, [tier])
+
+  return (
+    <div className="w-full h-full bg-[#0a0a0f]">
+      <CourierDashboard />
+    </div>
+  )
+}
+
 // ── Splash: time-pegged sky gradient + arch mark ─────────────────────
 const SPLASH_LAT = 38.6160, SPLASH_LON = -90.2161
 
@@ -509,6 +523,7 @@ function App() {
   if (route.page === 'privacy') return <PrivacyPage />
   if (route.page === 'terms-courier') return <CourierTermsPage />
   if (route.page === 'terms-restaurant') return <RestaurantTermsPage />
+  if (route.page === 'cary') return <CaryStandalone tier={route.tier} />
 
   const isGround = window.location.search.includes('ground')
   const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
@@ -518,7 +533,7 @@ function App() {
       {!adminPromptOpen && <SceneBoundary><Scene /></SceneBoundary>}
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && <BulletinOpener />}
-      {route.page === 'cary' && <CaryOpener tier={route.tier} />}
+      {/* cary routes now render standalone — see CaryStandalone above */}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.2s' }}><Controls /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><CompassRose /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.6s' }}><GlassSearch /></div>}
