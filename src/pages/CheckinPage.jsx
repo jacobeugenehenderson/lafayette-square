@@ -264,15 +264,15 @@ export default function CheckinPage({ locationId }) {
             ) : result.alreadyResident ? (
               <div className="rounded-xl p-4 border border-[#7A8B6F]/30 bg-[#7A8B6F]/10">
                 <div className="text-2xl mb-1">{emoji}</div>
-                <p className="text-[#7A8B6F] font-medium">Welcome back, neighbor</p>
-                <p className="text-on-surface-subtle text-xs mt-2">You're already a verified resident.</p>
+                <p className="text-[#7A8B6F] font-medium">Welcome back{handle ? `, @${handle}` : ', neighbor'}</p>
+                <p className="text-on-surface-subtle text-xs mt-2">You're a verified resident and Townie.</p>
               </div>
             ) : (
               <div className="rounded-xl p-4 border border-[#7A8B6F]/30 bg-[#7A8B6F]/10">
                 <div className="text-2xl mb-1">{emoji}</div>
-                <p className="text-[#7A8B6F] font-medium">Welcome home</p>
+                <p className="text-[#7A8B6F] font-medium">Welcome home{handle ? `, @${handle}` : ''}</p>
                 <p className="text-on-surface-variant text-sm mt-2">
-                  You're now a verified resident of {resolvedName}.
+                  You're now a verified resident of {resolvedName} — and a Townie.
                 </p>
                 <p className="text-on-surface-subtle text-xs mt-3">
                   Open the map, tap your building, and visit the Lobby to connect with neighbors.
