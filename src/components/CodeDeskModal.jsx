@@ -97,14 +97,6 @@ function CodeDeskModalInner() {
     if (!iframe) return
     const win = iframe.contentWindow
 
-    // Send cached QR image as instant preview while interactive version loads
-    if (storeListingId) {
-      try {
-        const preview = localStorage.getItem(`lsq-qr-image-${storeListingId}-${qrType}`)
-        if (preview) win?.postMessage({ type: 'lsq-set-preview', value: preview }, '*')
-      } catch { /* silent */ }
-    }
-
     // Send initial data immediately
     if (!isGuardianMode) win?.postMessage({ type: 'lsq-set-businesses', value: allPlaces }, '*')
     if (storeListingId) win?.postMessage({ type: 'lsq-set-listing', value: storeListingId }, '*')

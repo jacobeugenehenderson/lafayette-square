@@ -1281,7 +1281,6 @@ function getDesign(bizId) {
   if (!result) return jsonResponse({ design: null })
   return jsonResponse({
     design: parseJsonField(result.rowData.design_json),
-    image: result.rowData.image_dataurl || null,
   })
 }
 
@@ -1290,43 +1289,30 @@ function getDesign(bizId) {
 function saveDesign(body) {
   var bizId = body.bizId
   var design = body.design
-  var image = body.image || null  // PNG data URL from rendered QR
   if (!bizId) return errorResponse('Missing bizId', 'bad_request')
   if (!design || typeof design !== 'object') return errorResponse('Missing design', 'bad_request')
 
   var sheet = getSheet('Designs')
   if (!sheet) {
-    // Auto-create Designs sheet if it doesn't exist
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID)
     sheet = ss.insertSheet('Designs')
-    sheet.getRange(1, 1, 1, 4).setValues([['biz_id', 'design_json', 'image_dataurl', 'updated_at']])
-    sheet.getRange(1, 1, 1, 4).setFontWeight('bold')
+    sheet.getRange(1, 1, 1, 3).setValues([['biz_id', 'design_json', 'updated_at']])
+    sheet.getRange(1, 1, 1, 3).setFontWeight('bold')
   }
 
-  // Ensure image_dataurl column exists (migration for existing sheets)
   var headerMap = getHeaderMap(sheet)
-  if (!headerMap['image_dataurl']) {
-    var lastCol = sheet.getLastColumn()
-    sheet.getRange(1, lastCol + 1).setValue('image_dataurl')
-    headerMap = getHeaderMap(sheet)
-  }
-
   var designJson = JSON.stringify(design)
   var now = nowISO()
   var existing = findRow(sheet, 'biz_id', bizId)
 
   if (existing) {
-    // Update existing row
     updateCell(sheet, existing.rowIndex, headerMap, 'design_json', designJson)
-    if (image) updateCell(sheet, existing.rowIndex, headerMap, 'image_dataurl', image)
     updateCell(sheet, existing.rowIndex, headerMap, 'updated_at', now)
   } else {
-    // Append new row, then set values by column name (avoids column-order bugs)
     var newRow = sheet.getLastRow() + 1
     sheet.getRange(newRow, 1).setValue('_placeholder')
     updateCell(sheet, newRow, headerMap, 'biz_id', bizId)
     updateCell(sheet, newRow, headerMap, 'design_json', designJson)
-    if (image) updateCell(sheet, newRow, headerMap, 'image_dataurl', image)
     updateCell(sheet, newRow, headerMap, 'updated_at', now)
   }
 

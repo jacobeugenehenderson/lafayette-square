@@ -6,7 +6,7 @@ import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useResidence from '../hooks/useResidence'
-import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, getQrDesign, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, getResidentCount, getLobbyPosts, postLobbyPost, removeLobbyPost, leaveResidence, claimResidence } from '../lib/api'
+import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, getResidentCount, getLobbyPosts, postLobbyPost, removeLobbyPost, leaveResidence, claimResidence } from '../lib/api'
 import { FormattedTextarea, renderMarkdown, relativeTime as lobbyRelativeTime } from '../lib/markdown'
 import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
@@ -2034,24 +2034,6 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
   const [refreshKey, setRefreshKey] = useState(0)
   const [guardianRevealed, setGuardianRevealed] = useState(false)
 
-  // Read styled QR image: localStorage first, then API fallback
-  const readStyledImage = useCallback(async (type) => {
-    try {
-      const local = localStorage.getItem(`lsq-qr-image-${qrId}-${type}`)
-      if (local) return local
-    } catch { /* silent */ }
-    // Fallback: fetch from API (works across all devices)
-    try {
-      const res = await getQrDesign(qrId, type)
-      const image = res?.data?.image
-      if (image) {
-        // Cache locally for next time
-        try { localStorage.setItem(`lsq-qr-image-${qrId}-${type}`, image) } catch { /* silent */ }
-        return image
-      }
-    } catch { /* silent */ }
-    return null
-  }, [qrId])
 
   // Listen for lsq-saved from QR Studio iframe to refresh QR codes
   useEffect(() => {
@@ -2095,24 +2077,12 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
         } catch { /* silent */ }
       }
 
-      // 3. Upgrade to styled versions in background
-      try {
-        const styledType = isResidential ? 'Resident' : 'Townie'
-        const styledTownie = await readStyledImage(styledType)
-        if (styledTownie && !cancelled) setTownieQr(styledTownie)
-      } catch { /* silent */ }
-      if (!isResidential) {
-        try {
-          const styledGuardian = await readStyledImage('Guardian')
-          if (styledGuardian && !cancelled) setGuardianQr(prev => prev ? styledGuardian : prev)
-        } catch { /* silent */ }
-      }
       if (!cancelled) setStyledLoading(false)
     }
 
     loadQrs()
     return () => { cancelled = true }
-  }, [qrId, isAdmin, isResidential, refreshKey, readStyledImage])
+  }, [qrId, isAdmin, isResidential, refreshKey])
 
   const shareUrl = async (url, title) => {
     if (navigator.share) {
