@@ -461,6 +461,18 @@ const _splashStars = (() => {
   return stars
 })()
 
+// Signal that splash hold period is over and Scene can mount
+let _splashReady = false
+const _splashListeners = new Set()
+function onSplashReady(fn) { if (_splashReady) fn(); else _splashListeners.add(fn) }
+function _fireSplashReady() { _splashReady = true; _splashListeners.forEach(fn => fn()); _splashListeners.clear() }
+
+function useSplashReady() {
+  const [ready, setReady] = useState(_splashReady)
+  useEffect(() => { if (!ready) onSplashReady(() => setReady(true)) }, [ready])
+  return ready
+}
+
 function Splash() {
   const [visible, setVisible] = useState(true)
   const [fading, setFading] = useState(false)
@@ -469,9 +481,11 @@ function Splash() {
   useEffect(() => {
     // Hold splash while admin prompt is open — don't load 3D scene
     if (adminPromptOpen) return
+    // Allow Scene to mount after hold period, before fade begins
+    const t0 = setTimeout(() => _fireSplashReady(), 1500)
     const t1 = setTimeout(() => setFading(true), 2500)
     const t2 = setTimeout(() => setVisible(false), 3300)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2) }
   }, [adminPromptOpen])
 
   if (!visible) return null
@@ -528,10 +542,11 @@ function App() {
 
   const isGround = window.location.search.includes('ground')
   const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
+  const splashReady = useSplashReady()
 
   return (
     <div className="w-full h-full relative">
-      {!adminPromptOpen && <SceneBoundary><Scene /></SceneBoundary>}
+      {!adminPromptOpen && splashReady && <SceneBoundary><Scene /></SceneBoundary>}
       {route.page === 'place' && <PlaceOpener listingId={route.listingId} />}
       {route.page === 'bulletin' && <BulletinOpener />}
       {/* cary routes now render standalone — see CaryStandalone above */}

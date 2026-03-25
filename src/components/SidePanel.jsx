@@ -774,23 +774,28 @@ function SidePanel() {
     border: '1px solid rgba(255,255,255,0.08)',
   } : {
     background: 'var(--surface-glass)',
-    backdropFilter: 'blur(40px) saturate(180%) brightness(110%)',
-    WebkitBackdropFilter: 'blur(40px) saturate(180%) brightness(110%)',
+    backdropFilter: 'blur(20px) saturate(180%) brightness(110%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(180%) brightness(110%)',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 32px rgba(0,0,0,0.35)',
     border: '1px solid var(--outline)',
   }
 
   // Track actual panel height for card/modal positioning
+  // Debounced to avoid per-frame setState during CSS transitions
   const panelRef = useRef(null)
   useEffect(() => {
     if (!panelRef.current) return
     const el = panelRef.current
+    let raf = null
     const ro = new ResizeObserver(() => {
-      const h = el.offsetHeight
-      if (h > 0) useCamera.setState({ panelCollapsedPx: h })
+      if (raf) cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const h = el.offsetHeight
+        if (h > 0) useCamera.setState({ panelCollapsedPx: h })
+      })
     })
     ro.observe(el)
-    return () => ro.disconnect()
+    return () => { ro.disconnect(); if (raf) cancelAnimationFrame(raf) }
   }, [])
 
   return (
@@ -802,6 +807,7 @@ function SidePanel() {
           : isBrowse ? 'calc(30dvh - 1rem)'
           : 'auto',
         ...(isFull ? { top: 'calc(env(safe-area-inset-top, 0px) + 94px)' } : {}),
+        willChange: 'transform, height',
         ...glassStyle,
       }}
     >
