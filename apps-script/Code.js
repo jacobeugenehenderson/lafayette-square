@@ -294,18 +294,11 @@ function fetchCommunityCounts() {
   var guardianListings = new Set()
   guardians.forEach(function(r) { if (r.listing_id) guardianListings.add(r.listing_id) })
 
-  // Couriers: count from Couriers sheet if it exists (placeholder until Supabase integration)
-  var courierCount = 0
-  try {
-    var courierSheet = getSheet('Couriers')
-    if (courierSheet) courierCount = Math.max(0, courierSheet.getLastRow() - 1)
-  } catch (e) {}
-
   return {
     townies: townies,
     residents: verifiedResidents,
     guardians: guardianListings.size,
-    couriers: courierCount,
+    couriers: 0, // TODO: wire to Supabase courier count
   }
 }
 
