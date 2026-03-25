@@ -11,7 +11,7 @@ import { claimResidence } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 import buildingsData from '../data/buildings.json'
 
-function HandlePicker({ accentHex, onDone }) {
+function HandlePicker({ accentHex, onDone, required }) {
   const { setHandle, checkAvailability, loading: saving } = useHandle()
   const [input, setInput] = useState('')
   const [avatar, setAvatar] = useState(() => randomAvatar())
@@ -53,9 +53,13 @@ function HandlePicker({ accentHex, onDone }) {
   return (
     <div className="space-y-4">
       <div className="rounded-xl p-4 border border-outline bg-surface-container">
-        <h3 className="text-on-surface font-medium text-sm mb-3">Pick a handle</h3>
+        <h3 className="text-on-surface font-medium text-sm mb-3">
+          {required ? 'Claim your Townie handle' : 'Pick a handle'}
+        </h3>
         <p className="text-on-surface-subtle text-xs mb-3">
-          Your handle is how neighbors will know you on the bulletin board and in threads.
+          {required
+            ? 'You\'re in — just pick a handle to complete your identity.'
+            : 'Your handle is how neighbors will know you on the bulletin board and in threads.'}
         </p>
 
         <div className="relative">
@@ -82,7 +86,7 @@ function HandlePicker({ accentHex, onDone }) {
             </span>
           )}
         </div>
-        <p className="text-on-surface-disabled text-[10px] mt-1">3-20 characters. Letters, numbers, and underscores.</p>
+        <p className="text-on-surface-disabled text-[10px] mt-1">3-20 characters. Letters, numbers, and underscores. Don't use your real name.</p>
       </div>
 
       {/* Avatar picker */}
@@ -143,12 +147,14 @@ function HandlePicker({ accentHex, onDone }) {
         {saving ? 'Saving...' : 'Claim handle'}
       </button>
 
-      <button
-        onClick={onDone}
-        className="w-full text-on-surface-disabled text-xs hover:text-on-surface-subtle transition-colors"
-      >
-        Skip for now
-      </button>
+      {!required && (
+        <button
+          onClick={onDone}
+          className="w-full text-on-surface-disabled text-xs hover:text-on-surface-subtle transition-colors"
+        >
+          Skip for now
+        </button>
+      )}
 
       <AvatarEditor
         open={editorOpen}
@@ -214,12 +220,14 @@ export default function CheckinPage({ locationId }) {
     }
   }, [locationId, fired, checkin, isResidential, resolvedBuildingId])
 
-  // Show handle picker after successful check-in if no handle set (non-residential only)
+  // Graduated handle prompt: scan 1 = nothing, scan 2 = soft nudge, scan 3+ = required
+  const days = distinctDays
+  const needsHandle = !handle && !isResidential && result && result.logged !== false && !loading
+  const handleTier = needsHandle ? (days >= 3 ? 'required' : days >= 2 ? 'nudge' : 'silent') : 'silent'
+
   useEffect(() => {
-    if (!isResidential && result && result.logged !== false && !handle && !loading) {
-      setShowHandlePicker(true)
-    }
-  }, [result, handle, loading, isResidential])
+    if (handleTier === 'required') setShowHandlePicker(true)
+  }, [handleTier])
 
   const accentHex = isResidential ? '#7A8B6F' : (cat?.hex || '#8b5cf6')
   const emoji = isResidential ? '\ud83c\udfe0' : (cat?.emoji || '\ud83d\udccd')
@@ -329,6 +337,24 @@ export default function CheckinPage({ locationId }) {
                     </p>
                   </div>
                 )}
+
+                {/* Identity prompt — available on all scans, escalates in tone */}
+                {handleTier === 'nudge' ? (
+                  <button
+                    onClick={() => setShowHandlePicker(true)}
+                    className="w-full rounded-xl p-4 border border-outline-variant bg-surface-container-high text-left transition-colors hover:bg-surface-container-highest"
+                  >
+                    <p className="text-on-surface font-medium text-sm">Want to set up your identity?</p>
+                    <p className="text-on-surface-subtle text-xs mt-1">Pick a handle and emoji so neighbors can recognize you. One more check-in and you're a Townie.</p>
+                  </button>
+                ) : handleTier === 'silent' && needsHandle ? (
+                  <button
+                    onClick={() => setShowHandlePicker(true)}
+                    className="text-on-surface-disabled text-xs hover:text-on-surface-subtle transition-colors"
+                  >
+                    Pick a handle
+                  </button>
+                ) : null}
               </>
             )}
           </div>
@@ -336,7 +362,7 @@ export default function CheckinPage({ locationId }) {
 
         {/* Handle picker (after successful check-in, no handle yet) */}
         {showHandlePicker && (
-          <HandlePicker accentHex={accentHex} onDone={() => setShowHandlePicker(false)} />
+          <HandlePicker accentHex={accentHex} onDone={() => setShowHandlePicker(false)} required={handleTier === 'required'} />
         )}
 
         {/* Link back to map */}

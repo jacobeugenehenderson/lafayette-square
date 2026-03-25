@@ -132,7 +132,7 @@ function HandleStep({ accentHex }) {
   return (
     <form onSubmit={handleSubmit} className="rounded-xl p-4 border border-outline-variant bg-surface-container-high space-y-3">
       <p className="text-on-surface font-medium text-sm">Choose your handle</p>
-      <p className="text-on-surface-subtle text-xs">This is how you'll appear in the neighborhood.</p>
+      <p className="text-on-surface-subtle text-xs">This is how you'll appear in the neighborhood. Don't use your real name.</p>
 
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-disabled text-sm">@</span>
