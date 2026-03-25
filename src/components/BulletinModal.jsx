@@ -681,6 +681,7 @@ function BrowseView({ onNewPost, onOpenThreads }) {
           {GROUPS.map(g => {
             const isActive = activeGroup === g.id
             const hasFilterInGroup = filter && g.sections.some(s => s.id === filter)
+            const isCary = g.id === 'cary'
             return (
               <button
                 key={g.id}
@@ -689,10 +690,16 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                   else { setActiveGroup(g.id); setFilter(null) }
                 }}
                 className={`flex-shrink-0 px-2.5 py-1 rounded-full text-caption transition-colors whitespace-nowrap ${
-                  isActive || hasFilterInGroup ? 'bg-surface-container-highest text-on-surface' : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
+                  isCary
+                    ? isActive || hasFilterInGroup
+                      ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/40'
+                      : 'bg-emerald-500/10 text-emerald-400/80 border border-emerald-400/20 hover:bg-emerald-500/15'
+                    : isActive || hasFilterInGroup
+                      ? 'bg-surface-container-highest text-on-surface'
+                      : 'bg-surface-container text-on-surface-subtle hover:text-on-surface-variant'
                 }`}
               >
-                {g.title}
+                {isCary ? '✦ Cary' : g.title}
               </button>
             )
           })}
@@ -717,8 +724,8 @@ function BrowseView({ onNewPost, onOpenThreads }) {
 
       {/* Posts list */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        {/* Pinned: Cary courier recruitment — visible in Cary group or Courier Board */}
-        {(activeGroup === 'cary' || filter === 'courier-board') && (
+        {/* Pinned: Cary courier recruitment — always visible unless filtering another group */}
+        {(!activeGroup || activeGroup === 'cary' || filter === 'courier-board') && (
           <div className="pinned-post px-3 py-3">
             <div className="flex items-start gap-2">
               <div className="w-5 h-5 rounded-full bg-success-dim flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -748,7 +755,7 @@ function BrowseView({ onNewPost, onOpenThreads }) {
           </div>
         )}
 
-        {filtered.length === 0 && !(activeGroup === 'cary' || filter === 'courier-board') && (
+        {filtered.length === 0 && activeGroup && activeGroup !== 'cary' && filter !== 'courier-board' && (
           <div className="text-center py-10">
             <p className="text-on-surface-subtle text-body">No posts yet</p>
             <p className="text-on-surface-disabled text-body-sm mt-1">Be the first to post!</p>

@@ -24,7 +24,7 @@ const RESTAURANT_SECTIONS = [
   },
   {
     title: '4. Ordering and Payment',
-    body: 'Customers place orders through the Platform. At checkout, customers pay the food subtotal, applicable sales tax, a payment processing fee (if applicable), and a service charge equal to 22% of the food subtotal. The Restaurant receives 100% of the food subtotal and applicable sales tax. The Platform does not deduct a commission from restaurant food sales.',
+    body: 'Customers place orders through the Platform. At checkout, customers pay the food subtotal, applicable sales tax, a payment processing fee (if applicable), and a service charge as described in the current fee schedule. The Restaurant receives 100% of the food subtotal and applicable sales tax. The Platform does not deduct a commission from restaurant food sales.',
     subsections: [
       { title: '4.1 Minimum Order', body: 'The Platform requires a minimum order amount, currently $40 before tax and fees, to ensure fair compensation for participating couriers.' },
       { title: '4.2 Payment Processing and Limited Agency', body: 'The Platform acts as the Restaurant\u2019s limited payment agent solely for the purpose of collecting customer payments through the checkout system and distributing those funds to the Restaurant and courier as described in this Agreement. Customer payments collected through the Platform are considered payments made directly to the Restaurant for amounts owed to the Restaurant. Payment processing is performed by a third-party payment processor. Any disclosed payment processing fee is charged to the customer at checkout and is used solely to cover payment processing costs.' },
@@ -32,7 +32,11 @@ const RESTAURANT_SECTIONS = [
   },
   {
     title: '5. Service Charge Distribution',
-    body: 'The service charge supports delivery operations. Of the 22% service charge collected from the customer, 75% is paid to the courier performing the delivery and 25% is retained by the Platform. The service charge is separate from the Restaurant\u2019s food sale. Customer tips, if provided, belong entirely to the courier.',
+    body: 'The service charge supports delivery operations. The service charge is separate from the Restaurant\u2019s food sale. Customer tips, if provided, belong entirely to the courier.',
+    subsections: [
+      { title: '5.1 Current Fee Schedule', body: 'As of the effective date, the service charge is 22% of the food subtotal. Of this, 75% is paid to the courier performing the delivery and 25% is retained by the Platform. The minimum order amount is $40 before tax and fees.' },
+      { title: '5.2 Right to Modify Fees', body: 'The Platform reserves the right to modify the service charge percentage, the courier/platform split, the minimum order amount, or to introduce, adjust, or remove fees applicable to Restaurants, Couriers, or customers at any time. Changes to the fee schedule will be communicated to the Restaurant through the Platform before taking effect.' },
+    ],
   },
   {
     title: '6. Restaurant Menu Control',

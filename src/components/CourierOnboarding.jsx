@@ -440,7 +440,11 @@ export const AGREEMENT_SECTIONS = [
   },
   {
     title: '7. Compensation',
-    body: 'A 22% service charge is collected from the customer on each order. The Courier receives 75% of the service charge. The Platform retains 25%. Any customer tips belong entirely to the Courier. Payments are typically distributed through automated nightly payouts through the Platform\u2019s payment system.',
+    body: 'A service charge is collected from the customer on each order. The Courier receives a percentage of the service charge as described in the current fee schedule. Any customer tips belong entirely to the Courier. Payments are typically distributed through automated nightly payouts through the Platform\u2019s payment system.',
+    subsections: [
+      { title: '7.1 Current Fee Schedule', body: 'As of the effective date, the service charge is 22% of the food subtotal. The Courier receives 75% of the service charge and the Platform retains 25%. The minimum order amount is $40 before tax and fees.' },
+      { title: '7.2 Right to Modify Fees', body: 'The Platform reserves the right to modify the service charge percentage, the courier/platform split, the minimum order amount, or any other fee or rate at any time. Changes to the fee schedule will be communicated to Couriers through the Platform before taking effect.' },
+    ],
   },
   {
     title: '8. Alcohol Deliveries',
@@ -529,7 +533,7 @@ function AgreementStep({ onNext, preview }) {
         </div>
         <div>
           <p className="text-on-surface font-medium mb-0.5">Compensation</p>
-          <p>You earn 75% of the 22% service charge on every order — 16.5% of the food total. Tips are 100% yours. Nightly payouts.</p>
+          <p>You earn 75% of the service charge on every order (currently 22% of the food total). Tips are 100% yours. Nightly payouts. Rates may change.</p>
         </div>
         <div>
           <p className="text-on-surface font-medium mb-0.5">Conduct & safety</p>
