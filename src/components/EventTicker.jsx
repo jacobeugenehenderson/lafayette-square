@@ -240,46 +240,63 @@ export default function EventTicker() {
   return (
     <div className="absolute top-0 left-0 right-0 z-50 select-none">
       <div
-        className="flex items-center pl-5 pr-16 relative font-mono"
+        className="flex items-stretch relative font-mono"
         style={{
           height: 'calc(env(safe-area-inset-top, 0px) + 82px)',
           paddingTop: 'env(safe-area-inset-top, 0px)',
-          background: isBrowse
-            ? 'linear-gradient(90deg, rgba(20,14,10,0.98) 0%, rgba(20,14,10,0.7) 40%, rgba(20,14,10,0.7) 60%, rgba(20,14,10,0.98) 100%)'
-            : 'linear-gradient(90deg, rgba(0,0,0,0.45) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.45) 100%)',
         }}
       >
-        {/* Spectral bottom-edge highlight */}
+        {/* Left zone — ticker (dark glass) */}
+        <div
+          className="flex-1 min-w-0 flex items-center pl-5 pr-4"
+          style={{
+            background: isBrowse
+              ? 'rgba(20,14,10,0.85)'
+              : 'rgba(0,0,0,0.45)',
+          }}
+        >
+          <button
+            onClick={() => openEvent(current)}
+            className="flex-1 min-w-0 flex items-center text-left h-full"
+          >
+            <div
+              key={`${current?.listing_id || ''}-${index}`}
+              className="flex-1 min-w-0 animate-ticker-in space-y-0.5"
+            >
+              {current?._venueName && (
+                <p className={`text-label tracking-wide truncate ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
+                  {current._venueName}
+                </p>
+              )}
+              <p className={`text-label-sm truncate ${isEvent ? 'text-amber-300/70' : 'text-on-surface-variant'}`}>
+                {current?.title}
+              </p>
+              {current?._time && (
+                <p className="text-caption text-on-surface-subtle truncate">
+                  {current._time}
+                </p>
+              )}
+            </div>
+          </button>
+        </div>
+        {/* Hard divider */}
+        <div className="w-[1px] self-stretch" style={{ background: 'rgba(255,255,255,0.1)' }} />
+        {/* Right zone — button area (light glass, sky visible) */}
+        <div
+          style={{
+            width: '80px',
+            background: isBrowse
+              ? 'rgba(20,14,10,0.5)'
+              : 'rgba(0,0,0,0.15)',
+          }}
+        />
+        {/* Bottom edge highlight */}
         <div
           className="absolute inset-x-0 bottom-0 h-[1px] pointer-events-none"
           style={{
             background: 'linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 80%, transparent 95%)',
           }}
         />
-
-        <button
-          onClick={() => openEvent(current)}
-          className="flex-1 min-w-0 flex items-center text-left h-full"
-        >
-          <div
-            key={`${current?.listing_id || ''}-${index}`}
-            className="flex-1 min-w-0 animate-ticker-in space-y-0.5"
-          >
-            {current?._venueName && (
-              <p className={`text-label tracking-wide truncate ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
-                {current._venueName}
-              </p>
-            )}
-            <p className={`text-label-sm truncate ${isEvent ? 'text-amber-300/70' : 'text-on-surface-variant'}`}>
-              {current?.title}
-            </p>
-            {current?._time && (
-              <p className="text-caption text-on-surface-subtle truncate">
-                {current._time}
-              </p>
-            )}
-          </div>
-        </button>
       </div>
     </div>
   )

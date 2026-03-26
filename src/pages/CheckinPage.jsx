@@ -190,7 +190,7 @@ export default function CheckinPage({ locationId }) {
     setFired(true)
 
     if (isResidential && resolvedBuildingId) {
-      // Residential: claim + auto-verify residence via QR invite
+      // Residential: claim + auto-verify residence via neighbor QR invite
       ;(async () => {
         try {
           const dh = await getDeviceHash()
@@ -203,13 +203,9 @@ export default function CheckinPage({ locationId }) {
               buildingId: d.building_id || resolvedBuildingId,
               status: 'verified',
             })
-            setResult({ success: true, status: 'verified' })
+            setResult({ success: true, status: 'verified', alreadyResident: !!d.already_resident })
           } else {
-            useResidence.setState({
-              buildingId: d?.building_id || resolvedBuildingId,
-              status: d?.status || 'pending',
-            })
-            setResult({ success: true, status: d?.status || 'pending' })
+            setResult({ error: 'Could not verify residence. Ask your neighbor to share their QR code again.' })
           }
         } catch {
           setResult({ error: 'Could not reach server' })
@@ -220,10 +216,13 @@ export default function CheckinPage({ locationId }) {
     }
   }, [locationId, fired, checkin, isResidential, resolvedBuildingId])
 
-  // Graduated handle prompt: scan 1 = nothing, scan 2 = soft nudge, scan 3+ = required
+  // Handle prompt: residents must pick a handle immediately; places use graduated flow
   const days = distinctDays
-  const needsHandle = !handle && !isResidential && result && result.logged !== false && !loading
-  const handleTier = needsHandle ? (days >= 3 ? 'required' : days >= 2 ? 'nudge' : 'silent') : 'silent'
+  const needsHandlePlace = !handle && !isResidential && result && result.logged !== false && !loading
+  const needsHandleResident = !handle && isResidential && result?.success && !result.alreadyResident
+  const handleTier = needsHandleResident ? 'required'
+    : needsHandlePlace ? (days >= 3 ? 'required' : days >= 2 ? 'nudge' : 'silent')
+    : 'silent'
 
   useEffect(() => {
     if (handleTier === 'required') setShowHandlePicker(true)
@@ -255,7 +254,7 @@ export default function CheckinPage({ locationId }) {
         )}
 
         {/* ── Residential result ── */}
-        {isResidential && result && (
+        {isResidential && result && !showHandlePicker && (
           <div className="space-y-4">
             {result.error ? (
               <div className="rounded-xl p-4 border border-red-500/30 bg-red-500/10">
@@ -272,11 +271,19 @@ export default function CheckinPage({ locationId }) {
                 <div className="text-2xl mb-1">{emoji}</div>
                 <p className="text-[#7A8B6F] font-medium">Welcome home{handle ? `, @${handle}` : ''}</p>
                 <p className="text-on-surface-variant text-sm mt-2">
-                  You're now a verified resident of {resolvedName} — and a Townie.
+                  A neighbor vouched for you. You're now a verified resident of {resolvedName} and a Townie.
                 </p>
-                <p className="text-on-surface-subtle text-xs mt-3">
-                  Open the map, tap your building, and visit the Lobby to connect with neighbors.
-                  You can also invite others from the QR tab.
+                <p className="text-on-surface-subtle text-xs mt-3 leading-relaxed">
+                  Here's what that means:
+                </p>
+                <ul className="text-on-surface-subtle text-xs mt-1 space-y-1 text-left pl-4 list-disc">
+                  <li>Post in your building's private <strong>Lobby</strong></li>
+                  <li>Write on the neighborhood <strong>Bulletin Board</strong></li>
+                  <li>Rate and review businesses in the Square</li>
+                  <li>Order deliveries from <strong>Cary</strong></li>
+                </ul>
+                <p className="text-on-surface-disabled text-[10px] mt-3">
+                  This QR code is a gesture of trust between neighbors — please don't share it outside your building.
                 </p>
               </div>
             )}

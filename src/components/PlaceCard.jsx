@@ -14,6 +14,7 @@ import useHandle from '../hooks/useHandle'
 import useEvents from '../hooks/useEvents'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import AvatarCircle from './AvatarCircle'
+import RoleBadge from './RoleBadge'
 import QRCode from 'qrcode'
 import { useCourierAvailable } from './CourierDots'
 import { useCodeDesk } from './CodeDeskModal'
@@ -1181,7 +1182,12 @@ function ReplyForm({ reviewId, listingId, onSubmitted }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 mt-2 ml-10 pl-3 border-l-2 border-emerald-500/20">
+    <form onSubmit={handleSubmit} className="mt-2 ml-10 pl-3 border-l-2 border-emerald-500/20 space-y-2">
+      <div className="flex items-center gap-2">
+        <RoleBadge role="guardian" size={5} />
+        <span className="text-label-sm text-on-surface-variant font-medium">Guardian</span>
+      </div>
+      <div className="flex gap-2">
       <input
         autoFocus
         value={text}
@@ -1197,6 +1203,7 @@ function ReplyForm({ reviewId, listingId, onSubmitted }) {
       >
         {submitting ? '...' : 'Reply'}
       </button>
+      </div>
     </form>
   )
 }
@@ -2213,7 +2220,10 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
 }
 
 // ─── Tab: Lobby (verified residents only) ─────────────────────────
-function LobbyTab({ buildingId }) {
+function LobbyTab({ buildingId, isGuardian }) {
+  const handle = useHandle(s => s.handle)
+  const avatar = useHandle(s => s.avatar)
+  const vignette = useHandle(s => s.vignette)
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
@@ -2280,6 +2290,15 @@ function LobbyTab({ buildingId }) {
 
   return (
     <div className="space-y-4">
+      {/* Compose identity preview */}
+      <div className="flex items-center gap-2.5 mb-1">
+        <AvatarCircle emoji={avatar} vignette={vignette} size={7} fallback={handle ? handle[0].toUpperCase() : '?'} />
+        <div className="flex-1 min-w-0">
+          <p className="text-label-sm text-on-surface-variant font-medium">@{handle}</p>
+          <p className="text-caption text-on-surface-disabled">Your post will appear as <RoleBadge role={isGuardian ? 'guardian' : 'resident'} size={5} className="inline-flex align-middle mx-0.5" />{isGuardian ? 'Guardian' : 'Resident'}</p>
+        </div>
+      </div>
+
       {/* Compose */}
       <div className="space-y-2">
         <FormattedTextarea
@@ -2337,14 +2356,10 @@ function LobbyTab({ buildingId }) {
               <div className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    {p.handle ? (
-                      <span className="text-label-sm text-on-surface-variant font-medium inline-flex items-center gap-1">
-                        <AvatarCircle emoji={p.avatar} size={5} />
-                        @{p.handle}
-                      </span>
-                    ) : (
-                      <span className="px-1.5 py-0.5 rounded bg-[#7A8B6F]/20 text-[#7A8B6F] text-caption font-medium">Resident</span>
-                    )}
+                    <span className="text-label-sm text-on-surface-variant font-medium inline-flex items-center gap-1">
+                      <RoleBadge role="resident" size={5} />
+                      Resident
+                    </span>
                     <span className="text-caption text-on-surface-disabled">{lobbyRelativeTime(p.created_at)}</span>
                   </div>
                   <div className="text-label-sm text-on-surface-variant leading-relaxed break-words">
@@ -3607,7 +3622,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           {/* Lobby tab: private resident posts + QR */}
           {currentTab === 'lobby' && (
             <div className="space-y-5">
-              <LobbyTab buildingId={building?.id} />
+              <LobbyTab buildingId={building?.id} isGuardian={isGuardian} />
               <div className="card">
                 <h3 className="section-heading mb-3">Resident QR</h3>
                 <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />

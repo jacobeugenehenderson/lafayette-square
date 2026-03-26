@@ -1377,25 +1377,20 @@ function getLobbyPosts(deviceHash, buildingId) {
     return errorResponse('Not a verified resident', 'forbidden')
   }
 
-  // Build handle lookup for identity on posts
-  var handles = sheetToObjects(getSheet('Handles'))
-  var handleMap = {}
-  handles.forEach(function(h) { if (h.device_hash && h.handle) handleMap[h.device_hash] = h })
-
+  // Lobby posts are anonymous — all posters display as "Resident"
   var posts = sheetToObjects(getSheet('LobbyPosts'))
   var buildingPosts = posts
     .filter(function(p) { return p.building_id === buildingId })
     .sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at) })
     .slice(0, 50)
     .map(function(p) {
-      var h = handleMap[p.device_hash]
       return {
         id: p.id,
         text: p.text,
         photo_url: p.photo_url || null,
         created_at: p.created_at,
-        handle: h ? h.handle : null,
-        avatar: h ? h.avatar : null,
+        handle: null,
+        avatar: null,
         is_mine: p.device_hash === deviceHash,
       }
     })

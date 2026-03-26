@@ -862,6 +862,8 @@ function BrowseView({ onNewPost, onOpenThreads }) {
 function NewPostView({ onBack }) {
   const postBulletin = useBulletin(s => s.post)
   const handle = useHandle(s => s.handle)
+  const avatar = useHandle(s => s.avatar)
+  const vignette = useHandle(s => s.vignette)
   const [section, setSection] = useState('')
   const [text, setText] = useState('')
   const [posting, setPosting] = useState(false)
@@ -928,6 +930,14 @@ function NewPostView({ onBack }) {
           ))}
         </div>
       </div>
+
+      {/* Posting identity */}
+      {handle && (
+        <div className="flex items-center gap-2.5">
+          <AvatarCircle emoji={avatar} vignette={vignette} size={7} fallback={handle[0].toUpperCase()} />
+          <p className="text-label-sm text-on-surface-variant font-medium">@{handle}</p>
+        </div>
+      )}
 
       <div>
         <div className="flex items-center justify-between mb-1">

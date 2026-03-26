@@ -5,6 +5,7 @@
  * Border and shadow scale proportionally with avatar size.
  */
 import { getVignetteStyle } from '../lib/vignettePresets'
+import RoleBadge from './RoleBadge'
 
 const SIZES = {
   5:  { box: 'w-5 h-5',   emoji: 'text-[10px]', letterSize: '8px',  scale: 0.35 },
@@ -31,15 +32,9 @@ export default function AvatarCircle({ emoji, vignette, size = 9, fallback, clas
   const s = SIZES[size] || SIZES[9]
   const display = emoji || fallback || null
 
-  // No emoji and no fallback → generic user icon
+  // No emoji and no fallback → visitor Arch badge
   if (!display) {
-    return (
-      <div className={`${s.box} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 ring-1 ring-outline ${className}`}>
-        <svg className="w-1/2 h-1/2 text-on-surface-medium" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
-        </svg>
-      </div>
-    )
+    return <RoleBadge role="visitor" size={size} className={className} />
   }
 
   // Letter fallback (no emoji) → gradient background
