@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { getEvents } from '../lib/api'
 import useListings from '../hooks/useListings'
 import useEvents, { isActiveEvent } from '../hooks/useEvents'
@@ -12,7 +12,42 @@ import { useInfo } from './InfoModal'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useGuardianStatus from '../hooks/useGuardianStatus'
 
-const ROTATE_INTERVAL = 5000
+const ROTATE_INTERVAL = 8000
+
+/** Text line that scrolls horizontally to reveal overflow, then holds. */
+function ScrollLine({ children, className, tickKey }) {
+  const outerRef = useRef(null)
+  const innerRef = useRef(null)
+  const [overflow, setOverflow] = useState(0)
+
+  useEffect(() => {
+    // Brief delay so layout has settled after the ticker-in animation starts
+    const t = setTimeout(() => {
+      const outer = outerRef.current
+      const inner = innerRef.current
+      if (!outer || !inner) return
+      const diff = inner.scrollWidth - outer.clientWidth
+      setOverflow(diff > 2 ? diff + 8 : 0)
+    }, 50)
+    return () => clearTimeout(t)
+  }, [tickKey])
+
+  return (
+    <div ref={outerRef} className="overflow-hidden whitespace-nowrap">
+      <span
+        key={tickKey}
+        ref={innerRef}
+        className={`inline-block ${className}`}
+        style={overflow ? {
+          animation: `ticker-scroll ${ROTATE_INTERVAL}ms ease-in-out`,
+          '--scroll-x': `${-overflow}px`,
+        } : undefined}
+      >
+        {children}
+      </span>
+    </div>
+  )
+}
 const POLL_INTERVAL = 300000 // 5 minutes
 const REFILTER_INTERVAL = 60000 // re-check clock every minute
 
@@ -264,23 +299,21 @@ export default function EventTicker() {
               className="flex-1 min-w-0 animate-ticker-in space-y-0.5"
             >
               {current?._venueName && (
-                <p className={`text-label tracking-wide truncate ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
+                <ScrollLine tickKey={`v-${index}`} className={`text-label tracking-wide ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
                   {current._venueName}
-                </p>
+                </ScrollLine>
               )}
-              <p className={`text-label-sm truncate ${isEvent ? 'text-amber-300/70' : 'text-on-surface-variant'}`}>
+              <ScrollLine tickKey={`t-${index}`} className={`text-label-sm ${isEvent ? 'text-amber-300/70' : 'text-on-surface-variant'}`}>
                 {current?.title}
-              </p>
+              </ScrollLine>
               {current?._time && (
-                <p className="text-caption text-on-surface-subtle truncate">
+                <p className="text-caption text-on-surface-subtle">
                   {current._time}
                 </p>
               )}
             </div>
           </button>
         </div>
-        {/* Hard divider */}
-        <div className="w-[1px] self-stretch" style={{ background: 'rgba(255,255,255,0.1)' }} />
         {/* Right zone — button area (light glass, sky visible) */}
         <div
           style={{

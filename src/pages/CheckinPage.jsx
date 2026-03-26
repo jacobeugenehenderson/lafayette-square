@@ -283,7 +283,7 @@ export default function CheckinPage({ locationId }) {
                   <li>Order deliveries from <strong>Cary</strong></li>
                 </ul>
                 <p className="text-on-surface-disabled text-[10px] mt-3">
-                  This QR code is a gesture of trust between neighbors — please don't share it outside your building.
+                  This QR code is a gesture of trust between neighbors, please don't share it outside your building.
                 </p>
               </div>
             )}

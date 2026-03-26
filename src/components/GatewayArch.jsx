@@ -82,7 +82,7 @@ function createArchGeometry(curveSegs = 120) {
 
 const ARCH_POSITION = [1470, 0, -490]
 const ARCH_SCALE = 2.66
-const ARCH_Y_OFFSET = -165
+const ARCH_Y_OFFSET = -185
 const ARCH_FIXED_ROTATION = 1.36
 
 export default function GatewayArch() {

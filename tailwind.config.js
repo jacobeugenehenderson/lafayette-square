@@ -78,12 +78,14 @@ export default {
       },
       keyframes: {
         'ticker-in': {
-          '0%':   { opacity: '0', transform: 'translateY(100%)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          '0%':   { opacity: '0', transform: 'translateY(40%)' },
+          '8%':   { opacity: '1', transform: 'translateY(0)' },
+          '88%':  { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '0', transform: 'translateY(-20%)' },
         },
       },
       animation: {
-        'ticker-in': 'ticker-in 400ms ease-out',
+        'ticker-in': 'ticker-in 8s ease-in-out',
       },
     },
   },

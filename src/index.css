@@ -207,3 +207,11 @@ input, textarea, select {
   }
 }
 
+/* Ticker text scroll — reveals overflow then holds */
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(0); }
+  75%  { transform: translateX(var(--scroll-x, 0px)); }
+  100% { transform: translateX(var(--scroll-x, 0px)); }
+}
+
