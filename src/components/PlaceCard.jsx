@@ -2063,7 +2063,7 @@ function StaffSetupPrompt({ listingId }) {
     setError(null)
     const ok = await setHandle(input)
     if (!ok) {
-      setError('Could not save. Try another.')
+      setError('That handle is taken. Try another.')
       setSaving(false)
     }
   }, [input, valid, available, setHandle])
@@ -3808,8 +3808,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </>
         )}
 
-        {/* Staff setup prompt — shown when staff/guardian has no handle */}
-        {isStaff && !handle && (
+        {/* Staff setup prompt — only for actual staff/guardians (not admin passthrough) with no handle */}
+        {listingId && isGuardianOf(listingId) && !handle && (
           <StaffSetupPrompt listingId={listingId} />
         )}
 
