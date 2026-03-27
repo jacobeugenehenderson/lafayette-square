@@ -53,24 +53,40 @@ const _prevShadowPos = new THREE.Vector3()
 function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, orbColor, orbSize }) {
   const lightRef = useRef()
 
-  // Disable automatic shadow updates — we'll trigger manually
+  // Disable automatic shadow updates — we'll trigger manually.
+  // Delay disabling autoUpdate by a few frames so the shadow map renders
+  // at least once with all buildings in the scene graph. The initial
+  // useEffect can fire before LafayetteScene's 1,729 meshes commit,
+  // leaving the shadow map empty and buildings fully lit by the
+  // directional light until the next manual shadow update.
+  const _framesSinceMountRef = useRef(0)
   useEffect(() => {
-    if (lightRef.current) {
-      lightRef.current.shadow.autoUpdate = false
-      lightRef.current.shadow.needsUpdate = true
-      _prevShadowPos.copy(lightPosition)
-    }
+    _framesSinceMountRef.current = 0
   }, [])
 
   // Re-render shadow map only when light position shifts enough (~2° of sky movement)
   useFrame(() => {
     if (!lightRef.current) return
+
+    // Let autoUpdate run for a few frames so the shadow map captures
+    // the full scene, then switch to manual updates.
+    if (_framesSinceMountRef.current < 4) {
+      _framesSinceMountRef.current++
+      if (_framesSinceMountRef.current === 4) {
+        lightRef.current.shadow.autoUpdate = false
+        lightRef.current.shadow.needsUpdate = true
+        _prevShadowPos.copy(lightPosition)
+      }
+      return
+    }
+
     const dx = lightPosition.x - _prevShadowPos.x
     const dy = lightPosition.y - _prevShadowPos.y
     const dz = lightPosition.z - _prevShadowPos.z
     const dist2 = dx * dx + dy * dy + dz * dz
-    // ~20m movement on a 600m radius ≈ 2° arc
-    if (dist2 > 400) {
+    // ~10m movement on a 600m radius ≈ 1° arc — tighter than before
+    // so nighttime moon shadows stay accurate (moon moves slowly)
+    if (dist2 > 100) {
       lightRef.current.shadow.needsUpdate = true
       _prevShadowPos.copy(lightPosition)
     }

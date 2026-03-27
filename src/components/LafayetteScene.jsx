@@ -823,6 +823,13 @@ function Building({ building, neonInfo }) {
     const darkFactor = Math.min(1, Math.max(0, (0.2 - sunAltitude) / 0.35))
     const darkStep = Math.round(darkFactor * 20) / 20 // quantize to avoid per-frame thrash
 
+    // Shader uniform must be written every frame — onBeforeCompile initializes
+    // uDarkFactor to 0.0, but the shader may compile after the first darkStep
+    // comparison has already cached the current value, leaving roofs bright at night.
+    if (shaderRef.current) {
+      shaderRef.current.uniforms.uDarkFactor.value = darkFactor
+    }
+
     // Emissive for selection/hover
     const emissiveHex = isSelected ? 0x333333 : isHovered ? 0x222222 : 0x000000
 
@@ -835,11 +842,6 @@ function Building({ building, neonInfo }) {
       mat.color.copy(_tmpColor)
       mat.emissive.setHex(emissiveHex)
       mat.needsUpdate = true
-
-      // Sync roof darkness with day/night cycle
-      if (shaderRef.current) {
-        shaderRef.current.uniforms.uDarkFactor.value = darkFactor
-      }
     }
   })
 
