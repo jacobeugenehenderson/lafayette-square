@@ -14,6 +14,7 @@ import useHandle from '../hooks/useHandle'
 import useEvents from '../hooks/useEvents'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import AvatarCircle from './AvatarCircle'
+import AvatarEditor from './AvatarEditor'
 import RoleBadge from './RoleBadge'
 import QRCode from 'qrcode'
 import { useCourierAvailable } from './CourierDots'
@@ -2027,6 +2028,120 @@ function CaryButton({ placeName, placeId, buildingPosition, isResidential }) {
   )
 }
 
+// ─── Staff Setup Prompt (incomplete onboarding) ─────────────────────
+function StaffSetupPrompt({ listingId }) {
+  const { setHandle, checkAvailability } = useHandle()
+  const avatar = useHandle(s => s.avatar)
+  const updateAvatar = useHandle(s => s.updateAvatar)
+  const handle = useHandle(s => s.handle)
+  const { roleFor } = useGuardianStatus()
+  const role = roleFor(listingId)
+  const [input, setInput] = useState('')
+  const [available, setAvailable] = useState(null)
+  const [checking, setChecking] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [avatarOpen, setAvatarOpen] = useState(false)
+
+  const valid = /^[a-zA-Z0-9_]{3,20}$/.test(input)
+
+  useEffect(() => {
+    if (!valid) { setAvailable(null); return }
+    setChecking(true)
+    const t = setTimeout(async () => {
+      const ok = await checkAvailability(input)
+      setAvailable(ok)
+      setChecking(false)
+    }, 400)
+    return () => { clearTimeout(t); setChecking(false) }
+  }, [input, valid, checkAvailability])
+
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault()
+    if (!valid || !available) return
+    setSaving(true)
+    setError(null)
+    const ok = await setHandle(input)
+    if (!ok) {
+      setError('Could not save. Try another.')
+      setSaving(false)
+    }
+  }, [input, valid, available, setHandle])
+
+  // Once handle is set, prompt for avatar if missing
+  if (handle && !avatar) {
+    return (
+      <div className="mx-4 mb-2 mt-1 rounded-xl p-3 border border-sky-500/30 bg-sky-500/10 space-y-2">
+        <p className="text-body-sm text-on-surface font-medium">
+          Almost there — pick an avatar
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setAvatarOpen(true)}
+            className="flex-1 py-1.5 rounded-lg text-caption font-medium bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 transition-colors"
+          >
+            Choose emoji
+          </button>
+          <button
+            onClick={() => updateAvatar('\ud83d\udc64', 'v0')}
+            className="py-1.5 px-3 rounded-lg text-caption text-on-surface-subtle hover:text-on-surface-variant transition-colors"
+          >
+            Skip
+          </button>
+        </div>
+        <AvatarEditor
+          open={avatarOpen}
+          onClose={() => setAvatarOpen(false)}
+          currentEmoji={avatar}
+          currentVignette={null}
+          onSave={(emoji, vig) => updateAvatar(emoji, vig)}
+        />
+      </div>
+    )
+  }
+
+  // Handle not set yet
+  if (handle) return null
+
+  return (
+    <div className="mx-4 mb-2 mt-1 rounded-xl p-3 border border-amber-500/30 bg-amber-500/10 space-y-2">
+      <p className="text-body-sm text-on-surface font-medium">
+        Finish setting up your {role === 'guardian' ? 'guardian' : 'staff'} profile
+      </p>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <div className="relative">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-disabled text-caption">@</span>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20))}
+            placeholder="your_handle"
+            className="w-full pl-6 pr-8 py-1.5 rounded-lg bg-surface-dim border border-outline text-on-surface text-body-sm placeholder:text-on-surface-disabled outline-none focus:border-on-surface-subtle transition-colors"
+          />
+          {valid && !checking && available !== null && (
+            <span className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-caption ${available ? 'text-green-400' : 'text-red-400'}`}>
+              {available ? '\u2713' : '\u2717'}
+            </span>
+          )}
+          {checking && (
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+              <span className="w-3 h-3 border-2 border-on-surface-disabled border-t-on-surface rounded-full animate-spin inline-block" />
+            </span>
+          )}
+        </div>
+        {error && <p className="text-red-400 text-caption">{error}</p>}
+        <button
+          type="submit"
+          disabled={!valid || !available || saving}
+          className="w-full py-1.5 rounded-lg text-caption font-medium bg-amber-500/20 text-amber-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-amber-500/30"
+        >
+          {saving ? 'Saving...' : 'Set handle'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 // ─── Staff Section (guardian manage tab) ─────────────────────────────
 const PERM_LABELS = { menu: 'Menu', events: 'Events', replies: 'Replies', photos: 'Photos', hours: 'Hours' }
 const ALL_PERMS = ['menu', 'events', 'replies', 'photos', 'hours']
@@ -3691,6 +3806,11 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               </div>
             </div>
           </>
+        )}
+
+        {/* Staff setup prompt — shown when staff/guardian has no handle */}
+        {isStaff && !handle && (
+          <StaffSetupPrompt listingId={listingId} />
         )}
 
         {/* Tab bar */}
