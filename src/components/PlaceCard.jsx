@@ -3995,12 +3995,15 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             </button>
           ) : (
             <div className="flex-1 space-y-1.5">
-              <div className="flex items-center gap-2 text-on-surface-subtle text-body-sm">
+              <a
+                href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on Lafayette Square.`)}`}
+                className="flex items-center gap-2 text-on-surface-subtle text-body-sm hover:text-on-surface-variant transition-colors"
+              >
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
                 </svg>
-                <span>Live here? Ask a neighbor for their Resident code.</span>
-              </div>
+                Live here?
+              </a>
               <a
                 href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, I manage ${name}. I'd love to get set up on Lafayette Square.`)}`}
                 className="flex items-center gap-2 text-on-surface-disabled text-caption hover:text-on-surface-subtle transition-colors"
