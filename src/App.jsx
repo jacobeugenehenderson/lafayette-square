@@ -211,7 +211,7 @@ function AccountButton() {
                   }}
                   className="w-full py-1.5 rounded-lg text-caption text-on-surface-disabled hover:text-red-400 hover:bg-red-500/10 transition-colors text-left px-3"
                 >
-                  Dis-associate
+                  End session
                 </button>
               </div>
             </>
