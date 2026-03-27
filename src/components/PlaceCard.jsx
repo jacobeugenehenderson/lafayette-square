@@ -4006,7 +4006,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Residential: verified resident — manage link */}
         {isResidential && isResidentHere && (
           <a
-            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi Cary, I live at ${name} and I'd like to connect so you can log me in and show me how it all works.`)}`}
+            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on Lafayette Square.`)}`}
             className="text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
           >
             Manage?
@@ -4036,7 +4036,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Non-residential: claim CTA */}
         {!isResidential && hasListingInfo && !isStaff && (
           <a
-            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi Cary, this is my place at ${name} and I'd like to connect so you can log me in and show me how it all works.`)}`}
+            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, this is my place \u2014 ${name}. I'd love to get set up on Lafayette Square.`)}`}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4049,7 +4049,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Bare building: house CTA */}
         {!hasListingInfo && (
           <a
-            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi Cary, I wanted to tell you this is my building at ${cleanAddress(building?.address) || 'Unknown'} and I'd like to connect so you can log me in and show me how it all works.`)}`}
+            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, this is my building \u2014 ${cleanAddress(building?.address) || 'Unknown'}. I'd love to get set up on Lafayette Square.`)}`}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
