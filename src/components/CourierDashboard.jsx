@@ -7,22 +7,43 @@
  * - Go online/offline toggle
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { create } from 'zustand'
 import useCary from '../hooks/useCary'
 import { computeFare, computeBreakdown } from '../../cary/lib/meter.js'
 import { filterPoint } from '../../cary/lib/geo.js'
 import SafetyReport from './SafetyReport'
-import CourierOnboarding from './CourierOnboarding'
+import CourierOnboarding, { PipelineTracker, PIPELINE } from './CourierOnboarding'
 import CaryAuth from './CaryAuth'
 
 // ── Store ─────────────────────────────────────────────────────
 export const useCourierDash = create((set) => ({
   open: false,
-  tier: null, // 'deliver' | 'drive' | null (null = show chooser)
   setOpen: (open) => set({ open }),
-  setTier: (tier) => set({ tier }),
 }))
+
+// ── Derive pipeline state from auth/profile/courier ───────────
+function deriveCurrentStep(user, profile, courierProfile) {
+  if (!user || !profile) return 'account'
+  if (!courierProfile) return 'identity' // about to create courier profile
+  if (courierProfile.status === 'active') return null // done
+  return courierProfile.onboarding_step || 'identity'
+}
+
+function deriveCompletedSteps(user, profile, courierProfile, onboardingStatus) {
+  const completed = new Set()
+  if (user && profile) completed.add('account')
+  if (!onboardingStatus?.steps) return completed
+
+  const steps = onboardingStatus.steps
+  if (steps.identity?.complete) completed.add('identity')
+  if (steps.agreement?.complete) completed.add('agreement')
+  if (steps.license?.complete) completed.add('license')
+  if (steps.background?.complete) completed.add('background')
+  if (steps.insurance?.complete) completed.add('insurance')
+  if (steps.vehicle?.complete) completed.add('vehicle')
+  return completed
+}
 
 // ── Online/Offline Toggle ─────────────────────────────────────
 function OnlineToggle() {
@@ -283,42 +304,80 @@ function LiveMeter() {
   )
 }
 
-// ── Tier Chooser ─────────────────────────────────────────────
-function TierChooser({ onSelect }) {
-  return (
-    <div className="space-y-4">
-      {/* Pre-launch context */}
-      <div className="rounded-lg bg-amber-500/10 border border-amber-400/25 px-3 py-3 space-y-2">
-        <p className="text-body-sm text-amber-200/90 font-medium">Early access — not yet live</p>
-        <p className="text-[12px] leading-relaxed text-amber-200/60">
-          Cary is Lafayette Square's neighborhood delivery service. We're onboarding couriers now so you're credentialed and ready when we launch. Completing the process gets you independently verified — your credentials belong to you, not the platform. When we go live, you'll be first in the network.
-        </p>
-      </div>
+// ── Onboarding Flow (accordion + step content) ──────────────
+function OnboardingFlow({ user, profile, courierProfile, onboardingStatus, currentStep, completedSteps, effectiveTier }) {
+  const [expandedStep, setExpandedStep] = useState(currentStep)
+  const { refreshOnboardingStatus } = useCary()
 
-      <div className="text-center mb-2">
-        <p className="text-body text-on-surface font-medium">How do you want to earn?</p>
-      </div>
-      <button
-        onClick={() => onSelect('deliver')}
-        className="glass-card w-full text-left rounded-xl p-4 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
-      >
-        <p className="text-body font-medium text-on-surface">Deliver</p>
-        <p className="text-body-sm text-on-surface-variant mt-1">
-          Packages, food, errands. Walk, bike, or drive. Ages 16+.
-        </p>
-        <p className="text-caption text-emerald-400 mt-2">Free — active in minutes</p>
-      </button>
-      <button
-        onClick={() => onSelect('drive')}
-        className="glass-card w-full text-left rounded-xl p-4 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
-      >
-        <p className="text-body font-medium text-on-surface">Carry passengers</p>
-        <p className="text-body-sm text-on-surface-variant mt-1">
-          Rides starting in the Square, servicing the entire county. Must be 18+.
-        </p>
-        <p className="text-caption text-on-surface-subtle mt-2">~$42 — active in 1-3 days</p>
-      </button>
-    </div>
+  // Auto-expand current step when it changes
+  useEffect(() => {
+    setExpandedStep(currentStep)
+  }, [currentStep])
+
+  const advanceStep = useCallback(() => refreshOnboardingStatus(), [refreshOnboardingStatus])
+  const vehicleType = courierProfile?.vehicle_type
+
+  // Build the step content that renders inside the expanded accordion item
+  const stepContent = useMemo(() => {
+    if (expandedStep !== currentStep) return null // only show forms for the active step
+    switch (currentStep) {
+      case 'account': return <CaryAuth />
+      case 'identity':
+        if (!courierProfile) return <CourierOnboarding tier={effectiveTier} /> // VehicleTypeStep
+        return <CourierOnboarding tier={effectiveTier} />
+      case 'agreement':
+      case 'license':
+      case 'background':
+      case 'insurance':
+      case 'vehicle':
+      case 'pending_activation':
+        return <CourierOnboarding tier={effectiveTier} />
+      default:
+        return null
+    }
+  }, [expandedStep, currentStep, courierProfile, effectiveTier])
+
+  return (
+    <>
+      {/* Early access banner — shown before sign-in */}
+      {!user && (
+        <div className="rounded-lg bg-amber-500/10 border border-amber-400/25 px-3 py-3 space-y-2">
+          <p className="text-body-sm text-amber-200/90 font-medium">Early access — not yet live</p>
+          <p className="text-[12px] leading-relaxed text-amber-200/60">
+            Cary is Lafayette Square's neighborhood delivery service. We're onboarding couriers now so you're credentialed and ready when we launch. Completing the process gets you independently verified — your credentials belong to you, not the platform. When we go live, you'll be first in the network.
+          </p>
+        </div>
+      )}
+
+      {/* Vertical accordion tracker with embedded step content */}
+      <PipelineTracker
+        currentStep={currentStep}
+        tier={effectiveTier}
+        completedSteps={completedSteps}
+        expandedStep={expandedStep}
+        onToggle={setExpandedStep}
+        stepContent={expandedStep === currentStep ? stepContent : null}
+      />
+    </>
+  )
+}
+
+// ── Drive Upgrade Card ───────────────────────────────────────
+function DriveUpgradeCard() {
+  const { upgradeToDrive, loading } = useCary()
+
+  return (
+    <button
+      onClick={upgradeToDrive}
+      disabled={loading}
+      className="glass-card w-full text-left rounded-xl p-4 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
+    >
+      <p className="text-body font-medium text-on-surface">Level up to Drive</p>
+      <p className="text-body-sm text-on-surface-variant mt-1">
+        Carry passengers starting in the Square, servicing the entire county. Must be 18+.
+      </p>
+      <p className="text-caption text-on-surface-subtle mt-2">~$42 background check — active in 1-3 days</p>
+    </button>
   )
 }
 
@@ -326,12 +385,11 @@ function TierChooser({ onSelect }) {
 export default function CourierDashboard() {
   const open = useCourierDash((s) => s.open)
   const setOpen = useCourierDash((s) => s.setOpen)
-  const tier = useCourierDash((s) => s.tier)
-  const setTier = useCourierDash((s) => s.setTier)
   const {
     user,
     profile,
     courierProfile,
+    onboardingStatus,
     activeSession,
     courierRequests,
     acceptRequest,
@@ -351,15 +409,20 @@ export default function CourierDashboard() {
 
   if (!open) return null
 
-  // Determine subtitle based on state
-  const subtitle = isPreview ? `Courier onboarding — ${tier || 'preview'}`
-    : !tier ? 'Join the network'
-    : tier === 'deliver' ? 'Deliver in the Square'
-    : tier === 'drive' ? 'Drive for Cary'
-    : !user ? 'Apply to become a courier'
-    : !profile ? 'Create your profile'
-    : !courierProfile ? 'Courier application'
-    : courierProfile.status === 'active' ? 'Courier dashboard'
+  const currentStep = deriveCurrentStep(user, profile, courierProfile)
+  const completedSteps = deriveCompletedSteps(user, profile, courierProfile, onboardingStatus)
+  const effectiveTier = courierProfile?.tier || 'deliver'
+  const isActive = courierProfile?.status === 'active'
+
+  // Determine subtitle based on pipeline state
+  const subtitle = isPreview ? 'Courier onboarding preview'
+    : isActive ? 'Courier dashboard'
+    : currentStep === 'account' ? 'Create your account'
+    : currentStep === 'identity' && !courierProfile ? 'How will you deliver?'
+    : currentStep === 'identity' ? 'Verify your identity'
+    : currentStep === 'agreement' ? 'Review the agreement'
+    : currentStep === 'pending_activation' ? 'Almost there'
+    : effectiveTier === 'drive' ? 'Drive for Cary'
     : 'Courier onboarding'
 
   return (
@@ -368,17 +431,14 @@ export default function CourierDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2
-              className="text-headline text-on-surface font-medium font-mono"
-            >
+            <h2 className="text-headline text-on-surface font-medium font-mono">
               Cary
             </h2>
             <p className="text-body-sm text-on-surface-subtle">{subtitle}</p>
           </div>
           <button
             onClick={() => {
-              setOpen(false); setTier(null)
-              // If on a standalone /cary route, navigate home
+              setOpen(false)
               if (window.location.pathname.startsWith('/cary')) window.location.href = '/'
             }}
             className="w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 hover:bg-rose-500/30 flex items-center justify-center text-body-sm"
@@ -387,26 +447,29 @@ export default function CourierDashboard() {
           </button>
         </div>
 
-        {/* Tier chooser: no tier selected yet */}
-        {!tier && !isPreview && !courierProfile?.status && (
-          <TierChooser onSelect={setTier} />
-        )}
+        {/* Preview mode */}
+        {isPreview && <CourierOnboarding preview tier="drive" />}
 
-        {/* Preview mode: show onboarding wizard without auth */}
-        {isPreview && <CourierOnboarding preview tier={tier || 'drive'} />}
-
-        {/* Auth + Profile creation: not signed in, or signed in but no profile */}
-        {!isPreview && tier && (!user || (user && !profile)) && <CaryAuth />}
-
-        {/* Onboarding: signed in with profile but not yet active */}
-        {!isPreview && tier && user && profile && (!courierProfile || courierProfile.status !== 'active') && (
-          <CourierOnboarding tier={tier} />
+        {/* Onboarding flow (not active, not preview) */}
+        {!isPreview && !isActive && (
+          <OnboardingFlow
+            user={user}
+            profile={profile}
+            courierProfile={courierProfile}
+            onboardingStatus={onboardingStatus}
+            currentStep={currentStep}
+            completedSteps={completedSteps}
+            effectiveTier={effectiveTier}
+          />
         )}
 
         {/* Active courier */}
-        {courierProfile?.status === 'active' && (
+        {!isPreview && isActive && (
           <>
             <OnlineToggle />
+
+            {/* Drive upgrade for Deliver-only couriers */}
+            {effectiveTier === 'deliver' && <DriveUpgradeCard />}
 
             {/* Active session */}
             {activeSession && <LiveMeter />}

@@ -4,15 +4,11 @@
  * Multi-step pipeline rendered inside CourierDashboard for non-active couriers.
  * Each step calls the onboarding edge function and advances on success.
  *
- * Steps:
- *   1. Account (handled by CaryAuth before this renders)
- *   2. Identity — Stripe Identity (redirect)
- *   3. License — DL state + expiry
- *   4. Background — Checkr invitation (redirect)
- *   5. Insurance — policy expiry
- *   6. Vehicle — make/model/year/plate
- *   7. Agreement — terms acceptance
- *   8. Pending activation / credential issued
+ * Unified pipeline (Domino's-style):
+ *   Deliver zone: Account → Identity → Agreement
+ *   Drive zone:   License → Background → Insurance → Vehicle
+ *
+ * Everyone starts on Deliver. Drive is a graduation, not a separate product.
  */
 
 import { useState, useCallback } from 'react'
@@ -33,38 +29,109 @@ const VEHICLE_TYPES = [
   { id: 'on_foot', label: 'On foot' },
 ]
 
-// ── Progress indicator ────────────────────────────────────────
+// ── Unified Pipeline ──────────────────────────────────────────
 
-const DEFAULT_LABELS = ['Identity', 'License', 'Background', 'Insurance', 'Vehicle', 'Agreement']
+export const PIPELINE = [
+  {
+    key: 'account',
+    label: 'Account',
+    zone: 'deliver',
+    summary: 'Phone verification and profile. We use your number for sign-in and delivery notifications only.',
+  },
+  {
+    key: 'identity',
+    label: 'Identity',
+    zone: 'deliver',
+    summary: 'Verified by Stripe, not by Cary. We receive pass/fail and your age. Your ID image never touches our servers.',
+  },
+  {
+    key: 'agreement',
+    label: 'Agreement',
+    zone: 'deliver',
+    summary: 'Independent contractor terms. You keep your credentials. 75% of the 22% service charge is yours, plus 100% of tips.',
+  },
+  {
+    key: 'license',
+    label: 'License',
+    zone: 'drive',
+    summary: 'We verify your driving record but never store your license number. Only the state and expiration are recorded.',
+  },
+  {
+    key: 'background',
+    label: 'Background',
+    zone: 'drive',
+    summary: 'Performed by Checkr — criminal history, sex offender registry, and driving record. ~$40 at cost, 1-3 business days.',
+  },
+  {
+    key: 'insurance',
+    label: 'Insurance',
+    zone: 'drive',
+    summary: 'Required for motor vehicles. We store only the verification status and expiry date — the document stays with you.',
+  },
+  {
+    key: 'vehicle',
+    label: 'Vehicle',
+    zone: 'drive',
+    summary: 'Basic registration info. Make, model, year, and plate for motor vehicles.',
+  },
+]
 
-function ProgressBar({ currentStep, labels = DEFAULT_LABELS }) {
-  const stepIndex = labels.findIndex(
-    (s) => s.toLowerCase() === currentStep?.replace('pending_activation', 'done')
-  )
-  const activeIndex = currentStep === 'pending_activation' ? labels.length : Math.max(0, stepIndex)
+// ── Pipeline Tracker (vertical accordion) ─────────────────────
 
+export function PipelineTracker({ currentStep, tier, completedSteps, expandedStep, onToggle, stepContent }) {
   return (
-    <div className="flex items-center gap-1 mb-6">
-      {labels.map((label, i) => (
-        <div key={label} className="flex-1 flex flex-col items-center gap-1">
-          <div
-            className={`w-full h-1 rounded-full transition-colors ${
-              i < activeIndex
-                ? 'bg-emerald-400/60'
-                : i === activeIndex
-                ? 'bg-on-surface/40'
-                : 'bg-outline-variant/40'
-            }`}
-          />
-          <span
-            className={`text-[10px] tracking-wide transition-colors ${
-              i <= activeIndex ? 'text-on-surface-variant' : 'text-on-surface-disabled'
-            }`}
-          >
-            {label}
-          </span>
-        </div>
-      ))}
+    <div className="relative ml-3 border-l border-outline pl-4">
+      {PIPELINE.map((step, i) => {
+        const done = completedSteps.has(step.key)
+        const active = step.key === currentStep
+        const locked = step.zone === 'drive' && tier !== 'drive'
+        const expanded = step.key === expandedStep
+        const isLast = i === PIPELINE.length - 1
+
+        return (
+          <div key={step.key} className={`relative ${isLast ? '' : 'pb-4'}`}>
+            {/* Timeline dot — centered on the border-l line */}
+            <div className={`absolute -left-[21px] top-0.5 w-2.5 h-2.5 rounded-full ${
+              done ? 'bg-emerald-400'
+                : active ? 'bg-on-surface'
+                : locked ? 'bg-neutral-700'
+                : 'bg-neutral-600'
+            }`} />
+
+            {/* Step header */}
+            <button
+              onClick={() => onToggle(expanded ? null : step.key)}
+              className="w-full flex items-center gap-2 text-left -mt-0.5"
+            >
+              <span className={`text-body flex-1 transition-colors ${
+                done ? 'text-emerald-400 font-medium'
+                  : active ? 'text-on-surface font-medium'
+                  : locked ? 'text-neutral-600'
+                  : 'text-on-surface-disabled'
+              }`}>
+                {step.label}
+              </span>
+
+              <svg
+                className={`w-3 h-3 transition-transform text-on-surface-subtle ${expanded ? 'rotate-90' : ''}`}
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Expanded content */}
+            {expanded && (
+              <div className="mt-2 space-y-3">
+                <p className="text-[12px] leading-relaxed text-on-surface-subtle">
+                  {step.summary}
+                </p>
+                {active && stepContent}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -684,96 +751,62 @@ function VehicleTypeStep({ onSelect }) {
 
 // ── Preview Mode (local state, no Supabase) ────────────────
 
-const DRIVE_STEPS = ['identity', 'license', 'background', 'insurance', 'vehicle', 'agreement', 'pending_activation']
-const DELIVER_STEPS = ['identity', 'agreement', 'pending_activation']
-
-const DRIVE_LABELS = ['Identity', 'License', 'Background', 'Insurance', 'Vehicle', 'Agreement']
-const DELIVER_LABELS = ['Identity', 'Agreement']
+const PREVIEW_STEPS = ['identity', 'agreement', 'license', 'background', 'insurance', 'vehicle']
 
 function PreviewOnboarding({ tier = 'drive' }) {
-  const steps = tier === 'deliver' ? DELIVER_STEPS : DRIVE_STEPS
-  const [step, setStep] = useState(null) // null = vehicle type selector
-  const [vehicleType, setVehicleType] = useState('car')
+  const [stepIdx, setStepIdx] = useState(0)
+  const [expandedStep, setExpandedStep] = useState(PREVIEW_STEPS[0])
+  const [vehicleType] = useState('car')
+  const step = PREVIEW_STEPS[stepIdx]
 
+  const completed = new Set(['account', ...PREVIEW_STEPS.slice(0, stepIdx)])
   const advanceStep = () => {
-    if (!step) {
-      setStep(steps[0])
-      return
-    }
-    const idx = steps.indexOf(step)
-    if (idx < steps.length - 1) {
-      setStep(steps[idx + 1])
+    if (stepIdx < PREVIEW_STEPS.length - 1) {
+      const next = PREVIEW_STEPS[stepIdx + 1]
+      setStepIdx(stepIdx + 1)
+      setExpandedStep(next)
     }
   }
 
-  // Vehicle type selector
-  if (!step) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-body font-medium text-on-surface">
-            {tier === 'deliver' ? 'How will you deliver?' : 'Select your vehicle'}
-          </h3>
-          <p className="text-body-sm text-on-surface-variant mt-1">
-            Select your primary mode of transport.
-          </p>
-        </div>
-        <div className="space-y-2">
-          {VEHICLE_TYPES.map((v) => (
-            <button
-              key={v.id}
-              onClick={() => { setVehicleType(v.id); advanceStep() }}
-              className="w-full text-left px-4 py-3 rounded-xl border border-outline-variant bg-surface-container text-on-surface text-body hover:border-on-surface-subtle hover:bg-surface-container-high transition-colors"
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  const previewNext = advanceStep
   const stepComponent = {
-    identity: <IdentityStep onNext={previewNext} preview />,
-    license: <LicenseStep onNext={previewNext} preview />,
-    background: <BackgroundStep onNext={previewNext} preview />,
-    insurance: <InsuranceStep onNext={previewNext} vehicleType={vehicleType} preview />,
-    vehicle: <VehicleStep onNext={previewNext} vehicleType={vehicleType} preview />,
-    agreement: <AgreementStep onNext={previewNext} preview />,
-    pending_activation: <PendingStep />,
+    identity: <IdentityStep onNext={advanceStep} preview />,
+    license: <LicenseStep onNext={advanceStep} preview />,
+    background: <BackgroundStep onNext={advanceStep} preview />,
+    insurance: <InsuranceStep onNext={advanceStep} vehicleType={vehicleType} preview />,
+    vehicle: <VehicleStep onNext={advanceStep} vehicleType={vehicleType} preview />,
+    agreement: <AgreementStep onNext={advanceStep} preview />,
   }
-
-  const labels = tier === 'deliver' ? DELIVER_LABELS : DRIVE_LABELS
 
   return (
-    <>
-      <ProgressBar currentStep={step} labels={labels} />
-      {stepComponent[step] || <PendingStep />}
-    </>
+    <PipelineTracker
+      currentStep={step}
+      tier={tier}
+      completedSteps={completed}
+      expandedStep={expandedStep}
+      onToggle={setExpandedStep}
+      stepContent={expandedStep === step ? stepComponent[step] : null}
+    />
   )
 }
 
 // ── Main Onboarding Component ───────────────────────────────
 
-export default function CourierOnboarding({ preview = false, tier = 'drive' }) {
+export { VehicleTypeStep, VEHICLE_TYPES }
+
+export default function CourierOnboarding({ preview = false, tier = 'deliver' }) {
   const { courierProfile, refreshOnboardingStatus } = useCary()
-  const isDeliver = tier === 'deliver'
-  const labels = isDeliver ? DELIVER_LABELS : DRIVE_LABELS
 
   // Preview mode: self-contained with local state
   if (preview) return <PreviewOnboarding tier={tier} />
 
   const step = courierProfile?.onboarding_step
   const vehicleType = courierProfile?.vehicle_type
+  const effectiveTier = courierProfile?.tier || tier
 
-  // No courier profile yet — Deliver skips vehicle selection, Drive shows it
+  // No courier profile yet — show vehicle type selector to create it
   if (!courierProfile) {
     return (
-      <VehicleTypeStep
-        onSelect={() => refreshOnboardingStatus()}
-        deliverOnly={isDeliver}
-      />
+      <VehicleTypeStep onSelect={() => refreshOnboardingStatus()} />
     )
   }
 
@@ -782,68 +815,23 @@ export default function CourierOnboarding({ preview = false, tier = 'drive' }) {
 
   const advanceStep = () => refreshOnboardingStatus()
 
-  // Deliver tier: only identity → agreement → done
-  // Drive tier: full pipeline
+  // Render the current step content (tracker is rendered by the parent)
   switch (step) {
     case 'identity':
-      return (
-        <>
-          <ProgressBar currentStep={step} labels={labels} />
-          <IdentityStep onNext={advanceStep} />
-        </>
-      )
+      return <IdentityStep onNext={advanceStep} />
     case 'license':
-      if (isDeliver) { advanceStep(); return null } // skip for Deliver
-      return (
-        <>
-          <ProgressBar currentStep={step} labels={labels} />
-          <LicenseStep onNext={advanceStep} />
-        </>
-      )
+      return <LicenseStep onNext={advanceStep} />
     case 'background':
-      if (isDeliver) { advanceStep(); return null }
-      return (
-        <>
-          <ProgressBar currentStep={step} labels={labels} />
-          <BackgroundStep onNext={advanceStep} />
-        </>
-      )
+      return <BackgroundStep onNext={advanceStep} />
     case 'insurance':
-      if (isDeliver) { advanceStep(); return null }
-      return (
-        <>
-          <ProgressBar currentStep={step} labels={labels} />
-          <InsuranceStep onNext={advanceStep} vehicleType={vehicleType} />
-        </>
-      )
+      return <InsuranceStep onNext={advanceStep} vehicleType={vehicleType} />
     case 'vehicle':
-      if (isDeliver) { advanceStep(); return null }
-      return (
-        <>
-          <ProgressBar currentStep={step} labels={labels} />
-          <VehicleStep onNext={advanceStep} vehicleType={vehicleType} />
-        </>
-      )
+      return <VehicleStep onNext={advanceStep} vehicleType={vehicleType} />
     case 'agreement':
-      return (
-        <>
-          <ProgressBar currentStep={step} labels={labels} />
-          <AgreementStep onNext={advanceStep} />
-        </>
-      )
+      return <AgreementStep onNext={advanceStep} />
     case 'pending_activation':
-      return (
-        <>
-          <ProgressBar currentStep={step} labels={labels} />
-          <PendingStep />
-        </>
-      )
+      return <PendingStep />
     default:
-      return (
-        <>
-          <ProgressBar currentStep={step} labels={labels} />
-          <PendingStep />
-        </>
-      )
+      return <PendingStep />
   }
 }

@@ -69,8 +69,7 @@ export default function CaryAuth() {
     return (
       <div className="space-y-3">
         <div className="text-center mb-2">
-          <p className="text-body text-on-surface font-medium">Sign in to call Cary</p>
-          <p className="text-body-sm text-on-surface-subtle mt-0.5">Enter your phone number to get started</p>
+          <p className="text-body-sm text-on-surface-subtle">Enter your phone number to get started</p>
         </div>
         <input
           type="tel"

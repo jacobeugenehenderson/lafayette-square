@@ -55,12 +55,11 @@ export default function ContactModal() {
           className="w-full flex-1 min-h-[120px] resize-none bg-surface-container rounded-xl p-3 text-body-sm text-on-surface placeholder:text-on-surface-disabled border border-outline-variant focus:border-outline focus:outline-none"
         />
         <a
-          href={`sms:+18773351917${message ? `&body=${encodedBody}` : ''}`}
+          href={`sms:+18773351917${message ? `?&body=${encodedBody}` : ''}`}
           className="w-full py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-medium text-body text-center transition-all duration-200 hover:bg-emerald-500/30 block"
         >
           Send text
         </a>
-        <p className="text-[11px] text-on-surface-disabled text-center">(877) 335-1917</p>
       </div>
     </div>
   )

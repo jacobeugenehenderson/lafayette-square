@@ -109,7 +109,7 @@ const useCary = create((set, get) => ({
   },
 
   // ── Courier: application ──────────────────────────────────
-  applyCourier: async (vehicleType, vehicleDescription) => {
+  applyCourier: async (vehicleType, vehicleDescription, tier = 'deliver') => {
     const user = get().user
     if (!user) return false
     set({ loading: true, error: null })
@@ -120,6 +120,7 @@ const useCary = create((set, get) => ({
         id: user.id,
         vehicle_type: vehicleType,
         vehicle_description: vehicleDescription,
+        tier,
       })
       .select()
       .single()
@@ -129,6 +130,25 @@ const useCary = create((set, get) => ({
       return false
     }
     set({ courierProfile: data, loading: false })
+    return true
+  },
+
+  // ── Courier: upgrade Deliver → Drive ──────────────────────
+  upgradeToDrive: async () => {
+    const courier = get().courierProfile
+    if (!courier) return false
+    set({ loading: true, error: null })
+
+    const { data, error } = await supabase.functions.invoke('onboarding', {
+      body: { action: 'upgrade_to_drive', courier_id: courier.id },
+    })
+
+    if (error) {
+      set({ error: error.message, loading: false })
+      return false
+    }
+    await get().refreshOnboardingStatus()
+    set({ loading: false })
     return true
   },
 

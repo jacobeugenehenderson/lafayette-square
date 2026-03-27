@@ -72,6 +72,7 @@ async function handleAction(req) {
     accept_agreement: acceptAgreement,
     complete_orientation: completeOrientation,
     check_activation: checkActivation,
+    upgrade_to_drive: upgradeToDrive,
   };
 
   const handler = actions[action];
@@ -116,10 +117,18 @@ async function startIdentityVerification(courierId) {
     cost_cents: 150, // $1.50
   });
 
-  // Advance onboarding step
+  // Advance onboarding step — Deliver skips to agreement, Drive goes to license
+  const { data: courier } = await supabase
+    .from('courier_profiles')
+    .select('tier')
+    .eq('id', courierId)
+    .single();
+
+  const nextStep = courier?.tier === 'deliver' ? 'agreement' : 'license';
+
   await supabase
     .from('courier_profiles')
-    .update({ onboarding_step: 'license' })
+    .update({ onboarding_step: nextStep })
     .eq('id', courierId);
 
   return json({
@@ -300,13 +309,27 @@ async function acceptAgreement(courierId) {
     })
     .eq('id', courierId);
 
-  // Try to activate immediately if all async checks are already done
+  // Try to activate immediately — tier-aware (Deliver needs less)
   const { data: activated } = await supabase.rpc('try_activate_courier', {
     p_courier_id: courierId,
   });
 
   if (activated) {
     return json({ step: 'active', message: 'All requirements met. Courier credential issued.' });
+  }
+
+  // For Deliver tier, if activation failed it means identity check is still pending
+  const { data: courier } = await supabase
+    .from('courier_profiles')
+    .select('tier')
+    .eq('id', courierId)
+    .single();
+
+  if (courier?.tier === 'deliver') {
+    return json({
+      step: 'pending_activation',
+      message: 'Agreement accepted. Waiting for identity verification to complete.',
+    });
   }
 
   return json({
@@ -343,6 +366,42 @@ async function checkActivation(courierId) {
   });
 
   return json({ status: 'pending', onboarding: status });
+}
+
+// ── Upgrade to Drive tier ────────────────────────────────────
+
+async function upgradeToDrive(courierId) {
+  // Verify courier is currently an active Deliver courier
+  const { data: courier, error: fetchErr } = await supabase
+    .from('courier_profiles')
+    .select('tier, status')
+    .eq('id', courierId)
+    .single();
+
+  if (fetchErr || !courier) return json({ error: 'Courier not found' }, 404);
+
+  if (courier.tier !== 'deliver') {
+    return json({ error: 'Already on Drive tier' }, 400);
+  }
+
+  if (courier.status !== 'active') {
+    return json({ error: 'Must complete Deliver onboarding first' }, 400);
+  }
+
+  // Upgrade: set tier to drive, re-enter onboarding at license step
+  await supabase
+    .from('courier_profiles')
+    .update({
+      tier: 'drive',
+      onboarding_step: 'license',
+      status: 'applying',
+    })
+    .eq('id', courierId);
+
+  return json({
+    step: 'license',
+    message: 'Upgraded to Drive tier. Complete the remaining steps to unlock passenger rides.',
+  });
 }
 
 // ── Helpers ─────────────────────────────────────────────────

@@ -354,21 +354,17 @@ function BulletinOpener() {
   return null
 }
 
-function CaryOpener({ tier }) {
+function CaryOpener() {
   useEffect(() => {
-    const state = useCourierDash.getState()
-    if (tier) state.setTier(tier)
-    state.setOpen(true)
-  }, [tier])
+    useCourierDash.getState().setOpen(true)
+  }, [])
   return null
 }
 
-function CaryStandalone({ tier }) {
+function CaryStandalone() {
   // Set open synchronously before first render to avoid flash
   useState(() => {
-    const state = useCourierDash.getState()
-    if (tier) state.setTier(tier)
-    state.setOpen(true)
+    useCourierDash.getState().setOpen(true)
   })
 
   return (
@@ -538,7 +534,7 @@ function App() {
   if (route.page === 'privacy') return <PrivacyPage />
   if (route.page === 'terms-courier') return <CourierTermsPage />
   if (route.page === 'terms-restaurant') return <RestaurantTermsPage />
-  if (route.page === 'cary') return <CaryStandalone tier={route.tier} />
+  if (route.page === 'cary') return <CaryStandalone />
 
   const isGround = window.location.search.includes('ground')
   const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
