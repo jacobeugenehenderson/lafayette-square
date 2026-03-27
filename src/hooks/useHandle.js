@@ -93,6 +93,18 @@ const useHandle = create((set, get) => ({
     }
   },
 
+  /** Dis-associate: clear all borrowed identity from this device */
+  disassociate: () => {
+    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(AVATAR_KEY)
+    localStorage.removeItem(VIGNETTE_KEY)
+    localStorage.removeItem(DEVICE_KEY)
+    localStorage.removeItem('lsq_guardian_listings')
+    localStorage.removeItem('lsq_local_token')
+    clearCachedHash()
+    set({ handle: null, avatar: null, vignette: null, loading: false, error: null })
+  },
+
   /** Adopt identity from another device (link flow) */
   adoptIdentity: (deviceHash, handle, avatar, vignette) => {
     localStorage.setItem(DEVICE_KEY, deviceHash)

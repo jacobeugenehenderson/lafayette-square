@@ -202,6 +202,18 @@ function AccountButton() {
                   Privacy
                 </button>
               </div>
+              <div className="border-t border-outline-variant pt-2">
+                <button
+                  onClick={() => {
+                    useHandle.getState().disassociate()
+                    useGuardianStatus.setState({ guardianOf: [] })
+                    setOpen(false)
+                  }}
+                  className="w-full py-1.5 rounded-lg text-caption text-on-surface-disabled hover:text-red-400 hover:bg-red-500/10 transition-colors text-left px-3"
+                >
+                  Dis-associate
+                </button>
+              </div>
             </>
           ) : (
             <div className="text-center py-2 space-y-2">
