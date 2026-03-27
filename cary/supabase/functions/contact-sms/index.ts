@@ -1,15 +1,15 @@
 /**
  * Cary — Contact SMS
  *
- * Sends a text message from the website contact modal directly via Twilio,
- * so desktop users don't need a native Messages app.
- *
- * Also forwards the message to email (same as the inbound webhook) so
- * nothing falls through the cracks.
+ * Receives a message from the website contact modal and:
+ * 1. Sends it as an SMS to the owner's phone via Twilio
+ * 2. Forwards to email via SendGrid (backup)
+ * 3. Logs to Supabase contact_messages table (if it exists)
  *
  * Required Supabase secrets:
  *   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
- *   SENDGRID_API_KEY (optional — enables email forwarding)
+ *   CONTACT_PHONE (the phone number to receive the text, e.g. +13145551234)
+ *   SENDGRID_API_KEY (optional — enables email backup)
  *   FORWARD_EMAIL (optional, defaults to hello@lafayette-square.com)
  */
 
@@ -38,21 +38,44 @@ Deno.serve(async (req) => {
   if (!message) return json({ error: 'Message is empty' }, 400)
   if (message.length > 1600) return json({ error: 'Message too long (1600 char max)' }, 400)
 
+  // ── Send SMS to owner via Twilio ────────────────────────────────
   const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID')
   const twilioAuth = Deno.env.get('TWILIO_AUTH_TOKEN')
   const twilioFrom = Deno.env.get('TWILIO_PHONE_NUMBER')
+  const contactPhone = Deno.env.get('CONTACT_PHONE')
+  let smsSent = false
 
-  if (!twilioSid || !twilioAuth || !twilioFrom) {
-    return json({ error: 'SMS not configured' }, 503)
+  if (twilioSid && twilioAuth && twilioFrom && contactPhone) {
+    try {
+      const smsBody = `Lafayette Square web:\n${message}`
+      const res = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${btoa(twilioSid + ':' + twilioAuth)}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            To: contactPhone,
+            From: twilioFrom,
+            Body: smsBody,
+          }),
+        }
+      )
+      smsSent = res.ok
+      if (!res.ok) {
+        const err = await res.text()
+        console.error('[contact-sms] Twilio error:', err)
+      }
+    } catch (err) {
+      console.error('[contact-sms] Twilio send failed:', err.message)
+    }
+  } else {
+    console.warn('[contact-sms] Twilio not configured — skipping SMS')
   }
 
-  // Send the message TO the Lafayette Square number (it's a visitor contacting Cary,
-  // not the other way around). Twilio accepts From = the toll-free number, To = same
-  // number, but that's a loopback. Instead, we forward to email and log it.
-  // The user's message is delivered as an email + stored, and Cary can reply via
-  // the normal SMS flow or Twilio console.
-
-  // ── Forward to email ──────────────────────────────────────────
+  // ── Forward to email (backup) ───────────────────────────────────
   const sendgridKey = Deno.env.get('SENDGRID_API_KEY')
   const forwardEmail = Deno.env.get('FORWARD_EMAIL') || 'hello@lafayette-square.com'
   let emailSent = false
@@ -71,7 +94,7 @@ Deno.serve(async (req) => {
           subject: 'New message from lafayette-square.com',
           content: [{
             type: 'text/plain',
-            value: `Message from website contact form:\n\n${message}\n\n---\nSent from the Lafayette Square contact modal (desktop).`,
+            value: `Message from website contact form:\n\n${message}\n\n---\nSent from the Lafayette Square contact modal.`,
           }],
         }),
       })
@@ -93,10 +116,15 @@ Deno.serve(async (req) => {
       source: 'web',
     })
   } catch {
-    // Table doesn't exist yet — that's fine, email is the primary channel
+    // Table doesn't exist yet — that's fine
   }
 
-  return json({ sent: true, email_forwarded: emailSent }, 200)
+  // Succeed if either channel delivered
+  if (smsSent || emailSent) {
+    return json({ sent: true, sms: smsSent, email: emailSent }, 200)
+  }
+
+  return json({ error: 'Delivery failed — neither SMS nor email configured' }, 503)
 })
 
 function json(data, status = 200) {

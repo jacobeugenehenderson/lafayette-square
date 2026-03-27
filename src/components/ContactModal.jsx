@@ -49,10 +49,13 @@ export default function ContactModal() {
     setSending(true)
     setError(null)
     try {
-      const { error: fnError } = await supabase.functions.invoke('contact-sms', {
+      const { data, error: fnError } = await supabase.functions.invoke('contact-sms', {
         body: { message: message.trim() },
       })
-      if (fnError) throw fnError
+      console.log('[ContactModal] response:', { data, fnError })
+      // supabase-js may wrap non-2xx as an error, but also check the data
+      if (fnError && !data?.sent) throw fnError
+      if (data?.error) throw new Error(data.error)
       setSent(true)
       setMessage('')
     } catch (err) {
