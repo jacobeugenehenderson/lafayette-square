@@ -18,7 +18,7 @@
  *   POST /onboarding { action, ... }      → step-specific handlers
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL'),
