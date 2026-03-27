@@ -78,8 +78,9 @@
 /* ---------- Mobile floor (≤640px) ---------- */
 @media (max-width: 640px) {
   :root {
-    --type-body-sm:  13px;
-    --type-label:    13px;
+    --type-body:     15px;
+    --type-body-sm:  14px;
+    --type-label:    14px;
     --type-label-sm: 13px;
     --type-caption:  12px;
   }
@@ -107,47 +108,60 @@
 
 /* ---------- Accessible (high-contrast) mode ---------- */
 .accessible {
-  /* Surfaces — gentle darkening, keep the glass feel */
-  --surface-glass:             rgba(0, 0, 0, 0.52);
-  --surface-container-highest: rgba(255, 255, 255, 0.20);
+  /* Surfaces — darken more for real contrast */
+  --surface-glass:             rgba(0, 0, 0, 0.58);
+  --surface-container-highest: rgba(255, 255, 255, 0.22);
 
-  /* Text — push hard toward full white for real contrast */
+  /* Text — full white/near-full for real contrast */
   --on-surface:          rgba(255, 255, 255, 1.0);
-  --on-surface-medium:   rgba(255, 255, 255, 0.95);
-  --on-surface-variant:  rgba(255, 255, 255, 0.85);
-  --on-surface-subtle:   rgba(255, 255, 255, 0.70);
-  --on-surface-disabled: rgba(255, 255, 255, 0.50);
+  --on-surface-medium:   rgba(255, 255, 255, 0.96);
+  --on-surface-variant:  rgba(255, 255, 255, 0.88);
+  --on-surface-subtle:   rgba(255, 255, 255, 0.74);
+  --on-surface-disabled: rgba(255, 255, 255, 0.55);
 
-  /* Outlines */
-  --outline:             rgba(255, 255, 255, 0.30);
-  --outline-variant:     rgba(255, 255, 255, 0.18);
+  /* Outlines — more visible */
+  --outline:             rgba(255, 255, 255, 0.35);
+  --outline-variant:     rgba(255, 255, 255, 0.20);
+
+  /* Type scale — desktop accessible bump */
+  --type-display:  28px;
+  --type-headline: 24px;
+  --type-title:    16px;
+  --type-body:     16px;
+  --type-body-sm:  14px;
+  --type-label:    14px;
+  --type-label-sm: 13px;
+  --type-caption:  12px;
 }
 
-/* Accessible mobile — bump type sizes for readability */
+/* Accessible mobile — larger type for readability */
 @media (max-width: 640px) {
   .accessible {
-    --type-body:     15px;
-    --type-body-sm:  14px;
-    --type-label:    14px;
-    --type-label-sm: 13px;
-    --type-caption:  12px;
+    --type-display:  30px;
+    --type-headline: 26px;
+    --type-title:    18px;
+    --type-body:     18px;
+    --type-body-sm:  16px;
+    --type-label:    16px;
+    --type-label-sm: 15px;
+    --type-caption:  14px;
   }
 }
 
 .accessible.light {
-  --surface-glass:             rgba(255, 255, 255, 0.75);
-  --surface-container-highest: rgba(0, 0, 0, 0.16);
+  --surface-glass:             rgba(255, 255, 255, 0.78);
+  --surface-container-highest: rgba(0, 0, 0, 0.18);
 
   /* Text */
   --on-surface:          rgba(0, 0, 0, 1.0);
-  --on-surface-medium:   rgba(0, 0, 0, 0.92);
-  --on-surface-variant:  rgba(0, 0, 0, 0.78);
-  --on-surface-subtle:   rgba(0, 0, 0, 0.62);
-  --on-surface-disabled: rgba(0, 0, 0, 0.45);
+  --on-surface-medium:   rgba(0, 0, 0, 0.94);
+  --on-surface-variant:  rgba(0, 0, 0, 0.82);
+  --on-surface-subtle:   rgba(0, 0, 0, 0.66);
+  --on-surface-disabled: rgba(0, 0, 0, 0.48);
 
   /* Outlines */
-  --outline:             rgba(0, 0, 0, 0.32);
-  --outline-variant:     rgba(0, 0, 0, 0.20);
+  --outline:             rgba(0, 0, 0, 0.38);
+  --outline-variant:     rgba(0, 0, 0, 0.22);
 }
 
 /* ---------- OS-level accessibility ---------- */

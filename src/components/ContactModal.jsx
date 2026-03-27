@@ -131,8 +131,8 @@ export default function ContactModal() {
           background: 'rgba(20, 20, 30, 0.92)',
           backdropFilter: 'blur(40px) saturate(1.5)',
           WebkitBackdropFilter: 'blur(40px) saturate(1.5)',
-          color: 'rgba(255,255,255,0.87)',
-          border: '1px solid rgba(255,255,255,0.18)',
+          color: 'var(--on-surface)',
+          border: '1px solid var(--outline)',
           borderRadius: IS_MOBILE ? '16px 16px 0 0' : 16,
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
           display: 'flex',
@@ -143,7 +143,7 @@ export default function ContactModal() {
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
-          <span style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>Text Cary</span>
+          <span style={{ flex: 1, fontSize: 'var(--type-body)', fontWeight: 500 }}>Text Cary</span>
           <button
             onClick={close}
             style={{
@@ -167,10 +167,10 @@ export default function ContactModal() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>Message sent. Cary will get back to you soon.</p>
+              <p style={{ fontSize: 'var(--type-body)', color: 'var(--on-surface-variant)' }}>Message sent. Cary will get back to you soon.</p>
               <button
                 onClick={() => { setSent(false); setError(null) }}
-                style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer' }}
+                style={{ fontSize: 'var(--type-body-sm)', color: 'var(--on-surface-disabled)', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Send another
               </button>
@@ -191,9 +191,9 @@ export default function ContactModal() {
                   placeholder={IS_MOBILE ? 'Write a message...' : 'Write a message... (Enter to send)'}
                   style={{
                     width: '100%', minHeight: 100, maxHeight: 200, resize: 'none', boxSizing: 'border-box',
-                    background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 40px 12px 12px',
-                    color: 'rgba(255,255,255,0.87)', border: '1px solid rgba(255,255,255,0.08)', outline: 'none',
-                    fontFamily: 'inherit', fontSize: 13,
+                    background: 'var(--surface-container)', borderRadius: 12, padding: '12px 40px 12px 12px',
+                    color: 'var(--on-surface)', border: '1px solid var(--outline-variant)', outline: 'none',
+                    fontFamily: 'inherit', fontSize: 'var(--type-body-sm)',
                   }}
                   maxLength={1600}
                   disabled={sending}
@@ -247,7 +247,7 @@ export default function ContactModal() {
               )}
 
               {error && (
-                <p style={{ fontSize: 12, color: '#f87171' }}>{error}</p>
+                <p style={{ fontSize: 'var(--type-body-sm)', color: '#f87171' }}>{error}</p>
               )}
 
               {/* Send button */}
@@ -257,7 +257,7 @@ export default function ContactModal() {
                   style={{
                     display: 'block', width: '100%', padding: '10px 0', borderRadius: 12, boxSizing: 'border-box',
                     background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)',
-                    color: '#6ee7b7', fontWeight: 500, textAlign: 'center', textDecoration: 'none', fontSize: 14,
+                    color: '#6ee7b7', fontWeight: 500, textAlign: 'center', textDecoration: 'none', fontSize: 'var(--type-body)',
                   }}
                 >
                   Send
@@ -269,7 +269,7 @@ export default function ContactModal() {
                   style={{
                     width: '100%', padding: '10px 0', borderRadius: 12,
                     background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)',
-                    color: '#6ee7b7', fontWeight: 500, textAlign: 'center', fontSize: 14,
+                    color: '#6ee7b7', fontWeight: 500, textAlign: 'center', fontSize: 'var(--type-body)',
                     cursor: (!message.trim() || sending) ? 'not-allowed' : 'pointer',
                     opacity: (!message.trim() || sending) ? 0.4 : 1,
                   }}

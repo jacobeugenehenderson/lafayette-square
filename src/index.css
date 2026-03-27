@@ -82,29 +82,29 @@ input, textarea, select {
      Adjust --on-surface tokens in design.css for global changes. */
 
   .glass-text {
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--on-surface);
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
   .glass-text-secondary {
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--on-surface-medium);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
   .glass-text-muted {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--on-surface-variant);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
   .glass-text-dim {
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--on-surface-subtle);
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   }
 
   .glass-text-link {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--on-surface-variant);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     transition: color 0.15s;
   }
   .glass-text-link:hover {
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--on-surface);
   }
 
   /* ── Full-screen glass overlay (onboarding, dashboards) ────── */
