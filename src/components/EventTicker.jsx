@@ -142,9 +142,11 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
   })
 
   // 2. Open-now taglines — first sentence of description, lowest priority
+  //    Excluded: residential, community, parks, historic (not useful ticker content)
+  const TICKER_EXCLUDED = new Set(['residential', 'community', 'parks', 'historic'])
   allListings.forEach(listing => {
     if (entries.has(listing.id)) return // already has a schedule entry
-    if (!listing.hours || listing.category === 'residential') return
+    if (!listing.hours || TICKER_EXCLUDED.has(listing.category)) return
     if (!_isOpenNow(listing.hours, now)) return
     const tagline = listing.tagline || _firstSentence(listing.description)
     if (!tagline) return

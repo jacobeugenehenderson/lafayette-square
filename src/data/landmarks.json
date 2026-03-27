@@ -356,7 +356,28 @@
       "subcategory": "beauty",
       "building_id": "bldg-1594",
       "description": "Neighborhood hair salon specializing in natural hair care with unique and fun styles for every occasion. Services include blowouts, sew-in weaves, braids, retwists, relaxer & style, press & curl, and protective styling. Book via Booksy.",
-      "hours": {},
+      "hours": {
+        "tuesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "saturday": {
+          "open": "09:00",
+          "close": "18:00"
+        }
+      },
       "photos": [],
       "amenities": [
         "Natural hair care specialist",
@@ -848,7 +869,14 @@
       "tags": [
         "appointments",
         "galleries"
-      ]
+      ],
+      "hours": {
+        "monday": { "open": "09:00", "close": "17:00" },
+        "tuesday": { "open": "09:00", "close": "17:00" },
+        "wednesday": { "open": "09:00", "close": "17:00" },
+        "thursday": { "open": "09:00", "close": "17:00" },
+        "friday": { "open": "09:00", "close": "17:00" }
+      }
     },
     {
       "id": "lmk-016",
@@ -1828,7 +1856,28 @@
       "subcategory": "bars",
       "building_id": "bldg-0083",
       "status": "private_events_only",
-      "hours": {},
+      "hours": {
+        "wednesday": {
+          "open": "17:00",
+          "close": "01:00"
+        },
+        "thursday": {
+          "open": "17:00",
+          "close": "01:00"
+        },
+        "friday": {
+          "open": "17:00",
+          "close": "01:00"
+        },
+        "saturday": {
+          "open": "17:00",
+          "close": "01:00"
+        },
+        "sunday": {
+          "open": "12:00",
+          "close": "20:00"
+        }
+      },
       "amenities": [
         "101+ rums from 20+ ports of origin",
         "Caribbean-inspired small plates",
@@ -1963,7 +2012,37 @@
       "category": "dining",
       "subcategory": "restaurants",
       "opening_hours_raw": "09:00-22:00",
-      "building_id": "bldg-1580"
+      "building_id": "bldg-1580",
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "21:00"
+        }
+      }
     },
     {
       "id": "lmk-008",
@@ -2505,6 +2584,28 @@
       "category": "services",
       "subcategory": "real-estate",
       "building_id": null,
+      "hours": {
+        "monday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "17:00"
+        }
+      },
       "photos": [],
       "amenities": [
         "Commercial and residential sales",
@@ -2530,6 +2631,28 @@
       "category": "services",
       "subcategory": "architecture",
       "building_id": "bldg-1139",
+      "hours": {
+        "monday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "17:00"
+        }
+      },
       "photos": [
         "/photos/incite-design/01.jpg",
         "/photos/incite-design/02.jpg",
@@ -2567,6 +2690,28 @@
       "subcategory": "advertising",
       "building_id": "bldg-0048",
       "logo": "/logos/kuhl-swaine.png",
+      "hours": {
+        "monday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "17:00"
+        }
+      },
       "photos": [
         "/photos/kuhl-swaine/01.jpg",
         "/photos/kuhl-swaine/02.jpg",
@@ -2880,6 +3025,28 @@
       "category": "services",
       "subcategory": "health",
       "building_id": "bldg-0723",
+      "hours": {
+        "monday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "17:00"
+        }
+      },
       "photos": [],
       "amenities": [
         "Individual counseling",
@@ -3303,7 +3470,36 @@
       "category": "services",
       "subcategory": "hotels",
       "building_id": null,
-      "hours": {},
+      "hours": {
+        "monday": {
+          "open": "00:00",
+          "close": "23:59"
+        },
+        "tuesday": {
+          "open": "00:00",
+          "close": "23:59"
+        },
+        "wednesday": {
+          "open": "00:00",
+          "close": "23:59"
+        },
+        "thursday": {
+          "open": "00:00",
+          "close": "23:59"
+        },
+        "friday": {
+          "open": "00:00",
+          "close": "23:59"
+        },
+        "saturday": {
+          "open": "00:00",
+          "close": "23:59"
+        },
+        "sunday": {
+          "open": "00:00",
+          "close": "23:59"
+        }
+      },
       "photos": [],
       "amenities": [
         "Complimentary hot breakfast buffet",
@@ -3812,7 +4008,36 @@
       "category": "hospitality",
       "subcategory": "bed-and-breakfast",
       "building_id": null,
-      "hours": {},
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "22:00"
+        }
+      },
       "photos": [
         "/photos/lehmann-house/01.jpg",
         "/photos/lehmann-house/02.jpg",
@@ -3858,6 +4083,36 @@
       "category": "hospitality",
       "subcategory": "bed-and-breakfast",
       "building_id": "bldg-0833",
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "20:00"
+        }
+      },
       "description": "Second Empire mansion built circa 1880, painted a sunny yellow and known as one of Lafayette Square's finest 'Painted Ladies.' Operated as a gay-owned bed and breakfast from 1991, winning Riverfront Times Best B&B in 2003. Three guest rooms with private baths in the main house, plus a carriage house loft. Features 14-foot ceilings with plaster molding, seven fireplaces, a three-story flying staircase of Missouri walnut, and original oversized wood pocket doors. The building survived the Great Cyclone of 1896, losing most of its third floor which was subsequently rebuilt. Closed circa 2025.",
       "photos": [],
       "amenities": [
@@ -4097,7 +4352,36 @@
       "category": "hospitality",
       "subcategory": "bed-and-breakfast",
       "building_id": null,
-      "hours": {},
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "20:00"
+        }
+      },
       "photos": [],
       "amenities": [
         "Complimentary breakfast",
@@ -4127,7 +4411,28 @@
       "category": "services",
       "subcategory": "beauty",
       "building_id": null,
-      "hours": {},
+      "hours": {
+        "tuesday": {
+          "open": "10:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "12:00",
+          "close": "20:00"
+        },
+        "thursday": {
+          "open": "12:00",
+          "close": "20:00"
+        },
+        "friday": {
+          "open": "10:00",
+          "close": "18:00"
+        },
+        "saturday": {
+          "open": "11:00",
+          "close": "17:00"
+        }
+      },
       "photos": [
         "/photos/j3-studio/01.jpg",
         "/photos/j3-studio/02.jpg",
