@@ -273,6 +273,7 @@ function getInit(deviceHash) {
 
 function fetchCommunityCounts() {
   // Townies: distinct devices with 3+ check-in days in the rolling window
+  // PLUS all verified residents and all guardians/keyholders (they're auto-Townies)
   var checkins = sheetToObjects(getSheet('Checkins'))
   var cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
@@ -285,25 +286,29 @@ function fetchCommunityCounts() {
       deviceDays[r.device_hash].add(d)
     }
   })
-  var townies = 0
+  var townieDevices = new Set()
   Object.keys(deviceDays).forEach(function(dh) {
-    if (deviceDays[dh].size >= LOCAL_THRESHOLD) townies++
+    if (deviceDays[dh].size >= LOCAL_THRESHOLD) townieDevices.add(dh)
   })
 
-  // Verified residents
+  // Verified residents are always townies
   var residents = sheetToObjects(getSheet('Residents'))
-  var verifiedResidents = residents.filter(function(r) { return r.status === 'verified' }).length
+  var verifiedResidents = residents.filter(function(r) { return r.status === 'verified' })
+  verifiedResidents.forEach(function(r) { townieDevices.add(r.device_hash) })
 
-  // Guardians: distinct listings with at least one guardian
+  // Guardians/keyholders are always townies
   var guardians = sheetToObjects(getSheet('Guardians'))
+  guardians.forEach(function(r) { if (r.device_hash) townieDevices.add(r.device_hash) })
+
+  // Guardian count: distinct listings with at least one staff member
   var guardianListings = new Set()
   guardians.forEach(function(r) { if (r.listing_id) guardianListings.add(r.listing_id) })
 
   return {
-    townies: townies,
-    residents: verifiedResidents,
+    townies: townieDevices.size,
+    residents: verifiedResidents.length,
     guardians: guardianListings.size,
-    couriers: 0, // TODO: wire to Supabase courier count
+    couriers: 0, // fetched from Supabase on frontend
   }
 }
 

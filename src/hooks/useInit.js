@@ -1,5 +1,6 @@
 import { getInit } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
+import { supabase } from '../lib/supabase'
 import useListings, { bareBuildingListings } from './useListings'
 import useHandle from './useHandle'
 import useEvents from './useEvents'
@@ -93,11 +94,21 @@ export async function runInit() {
     // Hydrate community stats
     const counts = data.counts
     if (counts) {
+      // Fetch active courier count from Supabase in parallel
+      let courierCount = 0
+      try {
+        const { count } = await supabase
+          .from('courier_profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active')
+        courierCount = count || 0
+      } catch {}
+
       useCommunityStats.setState({
         townies: counts.townies || 0,
         residents: counts.residents || 0,
         guardians: counts.guardians || 0,
-        couriers: counts.couriers || 0,
+        couriers: courierCount,
       })
     }
   } catch (err) {
