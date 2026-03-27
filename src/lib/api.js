@@ -235,6 +235,28 @@ export async function getClaimSecretAdmin(listingId) {
   return get('claim-secret', { lid: listingId, admin: token })
 }
 
+// ── Staff management ──────────────────────────────────────────────────
+
+export async function getListingStaff(deviceHash, listingId) {
+  return get('listing-staff', { dh: deviceHash, lid: listingId })
+}
+
+export async function updateStaffPermissions(deviceHash, listingId, targetHash, permissions) {
+  return post('update-staff-perms', { device_hash: deviceHash, listing_id: listingId, target_hash: targetHash, permissions })
+}
+
+export async function promoteStaff(deviceHash, listingId, targetHash) {
+  return post('promote-staff', { device_hash: deviceHash, listing_id: listingId, target_hash: targetHash })
+}
+
+export async function demoteStaff(deviceHash, listingId, targetHash) {
+  return post('demote-staff', { device_hash: deviceHash, listing_id: listingId, target_hash: targetHash })
+}
+
+export async function revokeStaff(deviceHash, listingId, targetHash) {
+  return post('revoke-staff', { device_hash: deviceHash, listing_id: listingId, target_hash: targetHash })
+}
+
 // ── Listings ────────────────────────────────────────────────────────────
 
 export async function getListings() {

@@ -6,7 +6,7 @@ import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useResidence from '../hooks/useResidence'
-import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, getResidentCount, getLobbyPosts, postLobbyPost, removeLobbyPost, leaveResidence, claimResidence } from '../lib/api'
+import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, getResidentCount, getLobbyPosts, postLobbyPost, removeLobbyPost, leaveResidence, claimResidence, getListingStaff, updateStaffPermissions, promoteStaff, demoteStaff, revokeStaff } from '../lib/api'
 import { FormattedTextarea, renderMarkdown, relativeTime as lobbyRelativeTime } from '../lib/markdown'
 import compressImage from '../lib/compressImage'
 import { getDeviceHash } from '../lib/device'
@@ -804,7 +804,7 @@ function DetailRow({ label, children }) {
 }
 
 // ─── Tab: Overview ───────────────────────────────────────────────────
-function OverviewTab({ listing, building, isGuardian, isResidential }) {
+function OverviewTab({ listing, building, isGuardian, isResidential, canEditHours }) {
   const address = listing?.address || building?.address || null
   const phone = listing?.phone || null
   const website = listing?.website || null
@@ -906,7 +906,7 @@ function OverviewTab({ listing, building, isGuardian, isResidential }) {
       </div>
 
       {/* Hours — compact inline with expandable detail */}
-      {!isResidential && (isGuardian ? (
+      {!isResidential && ((isGuardian || canEditHours) ? (
         <HoursEditor hours={hours} listingId={listingId} />
       ) : formattedHours ? (
         <details className="group">
@@ -1332,7 +1332,7 @@ function ReviewsTab({ listingId, isGuardian, anonymous }) {
                 </div>
               )})}
 
-              {isGuardian && <ReplyForm reviewId={review.id} listingId={listingId} onSubmitted={fetchReviews} />}
+              {canDo('replies') && <ReplyForm reviewId={review.id} listingId={listingId} onSubmitted={fetchReviews} />}
             </div>
           )
         })}
@@ -2027,6 +2027,152 @@ function CaryButton({ placeName, placeId, buildingPosition, isResidential }) {
   )
 }
 
+// ─── Staff Section (guardian manage tab) ─────────────────────────────
+const PERM_LABELS = { menu: 'Menu', events: 'Events', replies: 'Replies', photos: 'Photos', hours: 'Hours' }
+const ALL_PERMS = ['menu', 'events', 'replies', 'photos', 'hours']
+
+function StaffSection({ listingId }) {
+  const [staff, setStaff] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [myHash, setMyHash] = useState(null)
+
+  const fetchStaff = useCallback(async () => {
+    const dh = await getDeviceHash()
+    setMyHash(dh)
+    try {
+      const res = await getListingStaff(dh, listingId)
+      setStaff(res?.data?.staff || [])
+    } catch (err) {
+      console.error('[StaffSection]', err)
+    }
+    setLoading(false)
+  }, [listingId])
+
+  useEffect(() => { fetchStaff() }, [fetchStaff])
+
+  const togglePerm = async (targetHash, currentPerms, perm) => {
+    const has = currentPerms.includes(perm)
+    const next = has ? currentPerms.filter(p => p !== perm) : [...currentPerms, perm]
+    const dh = await getDeviceHash()
+    // Optimistic update
+    setStaff(prev => prev.map(s => s.device_hash === targetHash ? { ...s, permissions: next } : s))
+    await updateStaffPermissions(dh, listingId, targetHash, next.join(','))
+  }
+
+  const handlePromote = async (targetHash) => {
+    const dh = await getDeviceHash()
+    await promoteStaff(dh, listingId, targetHash)
+    fetchStaff()
+  }
+
+  const handleDemote = async (targetHash) => {
+    const dh = await getDeviceHash()
+    await demoteStaff(dh, listingId, targetHash)
+    fetchStaff()
+  }
+
+  const handleRevoke = async (targetHash) => {
+    const dh = await getDeviceHash()
+    await revokeStaff(dh, listingId, targetHash)
+    fetchStaff()
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-4 text-on-surface-disabled text-body-sm">
+        <div className="w-3.5 h-3.5 border-2 border-on-surface-disabled border-t-on-surface rounded-full animate-spin mr-2" />
+        Loading staff...
+      </div>
+    )
+  }
+
+  if (staff.length === 0) {
+    return <p className="text-on-surface-subtle text-body-sm py-2">No staff yet. Share the Guardian QR to invite.</p>
+  }
+
+  const guardianCount = staff.filter(s => s.role === 'guardian').length
+
+  return (
+    <div className="space-y-3">
+      {staff.map(s => {
+        const isMe = s.device_hash === myHash
+        const isGuardianRole = s.role === 'guardian'
+        return (
+          <div key={s.device_hash} className="rounded-lg border border-outline-variant p-3 space-y-2">
+            {/* Identity row */}
+            <div className="flex items-center gap-2">
+              {s.avatar ? (
+                <span className="text-lg">{s.avatar}</span>
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-disabled text-caption">?</div>
+              )}
+              <span className="text-body text-on-surface font-medium flex-1">
+                {s.handle ? `@${s.handle}` : s.device_hash.slice(0, 8) + '...'}
+                {isMe && <span className="text-on-surface-subtle text-caption ml-1.5">(you)</span>}
+              </span>
+              <span className={`text-caption font-medium px-2 py-0.5 rounded-full ${
+                isGuardianRole ? 'bg-emerald-500/15 text-emerald-400' : 'bg-sky-500/15 text-sky-400'
+              }`}>
+                {isGuardianRole ? 'Guardian' : 'Staff'}
+              </span>
+            </div>
+
+            {/* Permission toggles — only for keyholders */}
+            {!isGuardianRole && (
+              <div className="flex flex-wrap gap-1.5">
+                {ALL_PERMS.map(perm => {
+                  const has = s.permissions.includes(perm)
+                  return (
+                    <button
+                      key={perm}
+                      onClick={() => togglePerm(s.device_hash, s.permissions, perm)}
+                      className={`text-caption px-2 py-0.5 rounded-md border transition-colors ${
+                        has
+                          ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
+                          : 'border-outline-variant bg-transparent text-on-surface-disabled hover:text-on-surface-subtle'
+                      }`}
+                    >
+                      {PERM_LABELS[perm]}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Actions — not on self */}
+            {!isMe && (
+              <div className="flex gap-2 pt-1">
+                {isGuardianRole ? (
+                  <button
+                    onClick={() => handleDemote(s.device_hash)}
+                    disabled={guardianCount <= 1}
+                    className="text-caption text-on-surface-subtle hover:text-amber-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Demote
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handlePromote(s.device_hash)}
+                    className="text-caption text-on-surface-subtle hover:text-emerald-400 transition-colors"
+                  >
+                    Promote
+                  </button>
+                )}
+                <button
+                  onClick={() => handleRevoke(s.device_hash)}
+                  className="text-caption text-on-surface-subtle hover:text-red-400 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Tab: QR Codes (guardian / admin) ─────────────────────────────
 function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
   // For residential buildings, the QR encodes the building ID (not the listing ID)
@@ -2387,14 +2533,14 @@ function LobbyTab({ buildingId, isGuardian }) {
 }
 
 // ─── Residential About Tab (mirrors restaurant layout) ──────────────
-function ResidentialAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
+function ResidentialAboutTab({ listing, building, isGuardian, canEditPhotos, canEditHours, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
   const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
 
   return (
     <div className="space-y-5">
       {/* About card — overview + history inside (same as restaurant) */}
       <div className="card space-y-3">
-        <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={true} />
+        <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={true} canEditHours={canEditHours} />
 
         {history?.length > 0 && (
           <details className="group">
@@ -2424,7 +2570,7 @@ function ResidentialAboutTab({ listing, building, isGuardian, history, descripti
       {hasPhotos && (
         <div className="card">
           <h3 className="section-heading mb-3">Photos</h3>
-          <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
+          <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={canEditPhotos || isGuardian} listingId={listingId} />
         </div>
       )}
     </div>
@@ -2432,7 +2578,7 @@ function ResidentialAboutTab({ listing, building, isGuardian, history, descripti
 }
 
 // ─── Non-Residential About Tab (consolidated single-scroll) ──────────
-function PlaceAboutTab({ listing, building, isGuardian, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
+function PlaceAboutTab({ listing, building, isGuardian, canEditPhotos, canEditHours, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
   const hasPhotos = !!(photos?.length || facadeImage || facadeInfo)
   const hasMore = !!(history?.length || hasArchitecture)
 
@@ -2440,7 +2586,7 @@ function PlaceAboutTab({ listing, building, isGuardian, history, description, ha
     <div className="space-y-5">
       {/* About card — overview + history inside */}
       <div className="card space-y-3">
-        <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={false} />
+        <OverviewTab listing={listing} building={building} isGuardian={isGuardian} isResidential={false} canEditHours={canEditHours} />
 
         {history?.length > 0 && (
           <details className="group">
@@ -2471,7 +2617,7 @@ function PlaceAboutTab({ listing, building, isGuardian, history, description, ha
       {hasPhotos && (
         <div className="card">
           <h3 className="section-heading mb-3">Photos</h3>
-          <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={isGuardian} listingId={listingId} />
+          <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={canEditPhotos || isGuardian} listingId={listingId} />
         </div>
       )}
     </div>
@@ -3225,7 +3371,7 @@ function CommunityTab({ listingId, isGuardian }) {
 function PlaceCard({ listing: listingProp, building, onClose, allListings: allListingsProp }) {
   const [activeTab, setActiveTab] = useState(null)
   const [activeListingIdx, setActiveListingIdx] = useState(0)
-  const { isGuardianOf, isAdmin: isStoreAdmin } = useGuardianStatus()
+  const { isGuardianOf, isFullGuardianOf, hasPermission, isAdmin: isStoreAdmin } = useGuardianStatus()
   const residenceBuildingId = useResidence(s => s.buildingId)
   const residenceStatus = useResidence(s => s.status)
   const handle = useHandle(s => s.handle)
@@ -3270,7 +3416,11 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const hasListingInfo = !!activeListing
   const listingId = activeListing?.id || null
   const isAdmin = isStoreAdmin
-  const isGuardian = isAdmin || (listingId ? isGuardianOf(listingId) : false)
+  const isStaff = isAdmin || (listingId ? isGuardianOf(listingId) : false)
+  const isFullGuardian = isAdmin || (listingId ? isFullGuardianOf(listingId) : false)
+  const canDo = (perm) => isAdmin || (listingId && hasPermission(listingId, perm))
+  // Backward compat: most sub-components receive isGuardian prop — we pass the right level
+  const isGuardian = isFullGuardian
 
   const placeholderPhotos = getPlaceholderPhotos(category)
   const scrollRef = useRef(null)
@@ -3299,11 +3449,11 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         if (isResidentHere || isAdmin) t.push({ id: 'lobby', label: 'Lobby' })
         return t
       }
-      // ── Non-residential listing path: About + Menu + Reviews + Guardians ──
+      // ── Non-residential listing path: About + Menu + Reviews + Manage ──
       const t = [{ id: 'about', label: 'About' }]
-      if (activeListing?.menu?.sections?.length || isGuardian) t.push({ id: 'menu', label: 'Menu' })
+      if (activeListing?.menu?.sections?.length || canDo('menu')) t.push({ id: 'menu', label: 'Menu' })
       t.push({ id: 'reviews', label: 'Reviews' })
-      if (isGuardian || isAdmin) t.push({ id: 'guardians', label: 'Guardians' })
+      if (isStaff || isAdmin) t.push({ id: 'guardians', label: 'Manage' })
       return t
     }
     // ── Property card path: bare buildings ──
@@ -3312,7 +3462,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
     if (hasHistory) t.push({ id: 'history', label: 'History' })
     t.push({ id: 'photos', label: 'Photos' })
     return t
-  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, isGuardian, isAdmin, isResidential, isResidentHere, activeListing?.menu])
+  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, isGuardian, isStaff, isAdmin, isResidential, isResidentHere, activeListing?.menu])
 
   // Default tab: first available
   const defaultTab = tabs[0]?.id || 'photos'
@@ -3567,6 +3717,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 listing={activeListing}
                 building={building}
                 isGuardian={isGuardian}
+                canEditPhotos={canDo('photos')}
+                canEditHours={canDo('hours')}
                 history={history}
                 description={description}
                 hasArchitecture={hasArchitecture}
@@ -3581,6 +3733,8 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 listing={activeListing}
                 building={building}
                 isGuardian={isGuardian}
+                canEditPhotos={canDo('photos')}
+                canEditHours={canDo('hours')}
                 history={history}
                 description={description}
                 hasArchitecture={hasArchitecture}
@@ -3593,24 +3747,34 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
             )
           )}
           {/* Menu tab */}
-          {currentTab === 'menu' && <MenuTab listing={activeListing} building={building} isGuardian={isGuardian} isAdmin={isAdmin} />}
+          {currentTab === 'menu' && <MenuTab listing={activeListing} building={building} isGuardian={canDo('menu')} isAdmin={isAdmin} />}
           {/* Reviews tab: ratings + reviews (public) */}
           {currentTab === 'reviews' && (
             <div className="card">
-              <ReviewsTab listingId={listingId} isGuardian={isGuardian} />
+              <ReviewsTab listingId={listingId} isGuardian={canDo('replies')} />
             </div>
           )}
-          {/* Guardians tab: ticker posts + QR codes (guardian/admin only) */}
+          {/* Manage tab: ticker, QR codes, staff (guardian/admin only) */}
           {currentTab === 'guardians' && (
             <div className="space-y-5">
-              <div className="card">
-                <h3 className="section-heading mb-3">Ticker</h3>
-                <EventsTab listingId={listingId} isGuardian={isGuardian} />
-              </div>
-              <div className="card">
-                <h3 className="section-heading mb-3">QR Codes</h3>
-                <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />
-              </div>
+              {canDo('events') && (
+                <div className="card">
+                  <h3 className="section-heading mb-3">Ticker</h3>
+                  <EventsTab listingId={listingId} isGuardian={canDo('events')} />
+                </div>
+              )}
+              {isFullGuardian && (
+                <div className="card">
+                  <h3 className="section-heading mb-3">QR Codes</h3>
+                  <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />
+                </div>
+              )}
+              {isFullGuardian && (
+                <div className="card">
+                  <h3 className="section-heading mb-3">Staff</h3>
+                  <StaffSection listingId={listingId} />
+                </div>
+              )}
             </div>
           )}
           {/* Community tab: residential public reviews */}
@@ -3730,7 +3894,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         )}
 
         {/* Non-residential: guardian badge */}
-        {!isResidential && hasListingInfo && isGuardian && (
+        {!isResidential && hasListingInfo && isFullGuardian && (
           <div className="flex-1 flex items-center gap-2 text-emerald-400/70 text-body-sm">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -3739,8 +3903,18 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </div>
         )}
 
+        {/* Non-residential: staff badge */}
+        {!isResidential && hasListingInfo && isStaff && !isFullGuardian && (
+          <div className="flex-1 flex items-center gap-2 text-sky-400/70 text-body-sm">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+            </svg>
+            You are staff at this place
+          </div>
+        )}
+
         {/* Non-residential: claim CTA */}
-        {!isResidential && hasListingInfo && !isGuardian && (
+        {!isResidential && hasListingInfo && !isStaff && (
           <a
             href={`mailto:hello@lafayette-square.com?subject=${encodeURIComponent('My place: ' + name)}`}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"

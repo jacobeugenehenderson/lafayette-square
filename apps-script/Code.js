@@ -187,6 +187,7 @@ function doGet(e) {
       case 'thread-messages': return getThreadMessages(e.parameter.tid, e.parameter.dh)
       case 'comments':        return getComments(e.parameter.bid, e.parameter.dh)
       case 'claim-secret':   return getClaimSecret(e.parameter.lid, e.parameter.dh, e.parameter.admin)
+      case 'listing-staff':  return getListingStaff(e.parameter.lid, e.parameter.dh)
       case 'create-link-token':  return createLinkToken()
       case 'check-link-token':   return checkLinkToken(e.parameter.token)
       case 'getdesign':      return getDesign(e.parameter.bizId)
@@ -237,6 +238,10 @@ function doPost(e) {
       case 'claim-link-token': return postClaimLinkToken(body)
       case 'upload-photo':     return postUploadPhoto(body)
       case 'remove-photo':     return postRemovePhoto(body)
+      case 'update-staff-perms': return postUpdateStaffPermissions(body)
+      case 'promote-staff':    return postPromoteStaff(body)
+      case 'demote-staff':     return postDemoteStaff(body)
+      case 'revoke-staff':     return postRevokeStaff(body)
       case 'savedesign':       return saveDesign(body)
       case 'claim-residence':   return postClaimResidence(body)
       case 'verify-resident':   return postVerifyResident(body)
@@ -547,9 +552,9 @@ function postReply(body) {
     return errorResponse('Missing required fields', 'bad_request')
   }
 
-  // Must be a guardian of the listing
-  if (!isGuardianOf(listing_id, device_hash)) {
-    return errorResponse('Not a guardian for this listing', 'unauthorized')
+  // Must be staff with replies permission
+  if (!staffHasPermission(listing_id, device_hash, 'replies')) {
+    return errorResponse('Not authorized to reply', 'unauthorized')
   }
 
   // Look up handle
@@ -570,9 +575,9 @@ function postEvent(body) {
     return errorResponse('Missing required fields', 'bad_request')
   }
 
-  // Verify device is a guardian for this listing
-  if (!isGuardianOf(listing_id, device_hash)) {
-    return errorResponse('Not a guardian for this listing', 'unauthorized')
+  // Must be staff with events permission
+  if (!staffHasPermission(listing_id, device_hash, 'events')) {
+    return errorResponse('Not authorized to post events', 'unauthorized')
   }
 
   const sheet = getSheet('Events')
@@ -604,16 +609,28 @@ function postClaim(body) {
     return errorResponse('Invalid claim secret', 'unauthorized')
   }
 
-  // Check if already a guardian
-  if (isGuardianOf(listing_id, device_hash)) {
-    return jsonResponse({ success: true, already_claimed: true })
+  // Check if already staff
+  if (isStaffOf(listing_id, device_hash)) {
+    var existingRole = getStaffRole(listing_id, device_hash)
+    var existingPerms = getStaffPermissions(listing_id, device_hash)
+    return jsonResponse({ success: true, already_claimed: true, role: existingRole, permissions: existingPerms })
   }
 
-  // Add to Guardians sheet
-  getSheet('Guardians').appendRow([listing_id, device_hash, nowISO()])
+  // Determine role: first claimant = guardian, subsequent = keyholder
+  var guardianSheet = getSheet('Guardians')
+  var allStaff = sheetToObjects(guardianSheet)
+  var existingForListing = allStaff.filter(function(r) { return r.listing_id === listing_id })
+  var role = existingForListing.length === 0 ? 'guardian' : 'keyholder'
+  var permissions = role === 'guardian' ? 'menu,events,replies,photos,hours' : ''
+
+  // Add to Guardians sheet: [listing_id, device_hash, role, permissions, created_at]
+  guardianSheet.appendRow([listing_id, device_hash, role, permissions, nowISO()])
+
+  // Grant townie status (backfill check-ins)
+  grantTownieStatus(device_hash)
 
   // Also set legacy guardian_hash if not yet set (first guardian)
-  if (!result.rowData.guardian_hash) {
+  if (role === 'guardian' && !result.rowData.guardian_hash) {
     const headerMap = getHeaderMap(sheet)
     const token = 'grd-' + Utilities.getUuid().replace(/-/g, '').substring(0, 16)
     updateCell(sheet, result.rowIndex, headerMap, 'guardian_hash', device_hash)
@@ -621,7 +638,8 @@ function postClaim(body) {
     updateCell(sheet, result.rowIndex, headerMap, 'updated_at', nowISO())
   }
 
-  return jsonResponse({ success: true, claimed: true })
+  var permsArray = permissions ? permissions.split(',') : []
+  return jsonResponse({ success: true, claimed: true, role: role, permissions: permsArray })
 }
 
 // ─── POST: Update Listing (Guardian edits) ──────────────────────────────────
@@ -638,8 +656,10 @@ function postUpdateListing(body) {
     return errorResponse('Listing not found', 'not_found')
   }
 
-  // Auth: must be a guardian of this listing
-  if (!isGuardianOf(listing_id, device_hash)) {
+  // Auth: full guardian for identity fields, permission-based for menu/hours/photos
+  const isFullGuardian = isFullGuardianOf(listing_id, device_hash)
+  const isStaff = isStaffOf(listing_id, device_hash)
+  if (!isFullGuardian && !isStaff) {
     return errorResponse('Not authorized', 'unauthorized')
   }
 
@@ -661,15 +681,32 @@ function postUpdateListing(body) {
     menu: 'menu_json',
   }
 
+  // Fields keyholders can edit with the right permission
+  const STAFF_PERM_MAP = {
+    hours_json: 'hours',
+    menu_json: 'menu',
+    menu_url: 'menu',
+    photos_json: 'photos',
+  }
+
   const headerMap = getHeaderMap(sheet)
   const updated = []
   for (const [key, value] of Object.entries(fields)) {
     const colName = JSON_FIELD_MAP[key] || key
-    if (EDITABLE.includes(colName)) {
-      const cellValue = JSON_FIELD_MAP[key] ? JSON.stringify(value) : value
-      updateCell(sheet, result.rowIndex, headerMap, colName, cellValue)
-      updated.push(key)
+    if (!EDITABLE.includes(colName)) continue
+
+    // If not a full guardian, check per-field staff permission
+    if (!isFullGuardian) {
+      const neededPerm = STAFF_PERM_MAP[colName]
+      if (!neededPerm || !staffHasPermission(listing_id, device_hash, neededPerm)) continue
     }
+
+    const cellValue = JSON_FIELD_MAP[key] ? JSON.stringify(value) : value
+    updateCell(sheet, result.rowIndex, headerMap, colName, cellValue)
+    updated.push(key)
+  }
+  if (updated.length === 0) {
+    return errorResponse('No authorized fields to update', 'unauthorized')
   }
   updateCell(sheet, result.rowIndex, headerMap, 'updated_at', nowISO())
 
@@ -690,7 +727,7 @@ function postAcceptListing(body) {
     return errorResponse('Listing not found', 'not_found')
   }
 
-  if (!isGuardianOf(listing_id, device_hash)) {
+  if (!isFullGuardianOf(listing_id, device_hash)) {
     return errorResponse('Not authorized', 'unauthorized')
   }
 
@@ -717,7 +754,7 @@ function postRemoveListing(body) {
     return errorResponse('Listing not found', 'not_found')
   }
 
-  if (!isGuardianOf(listing_id, device_hash)) {
+  if (!isFullGuardianOf(listing_id, device_hash)) {
     return errorResponse('Not authorized', 'unauthorized')
   }
 
@@ -768,7 +805,7 @@ function getClaimSecret(listingId, deviceHash, adminKey) {
   }
 
   const isAdmin = isValidAdminToken(adminKey)
-  const isGuardian = deviceHash && isGuardianOf(listingId, deviceHash)
+  const isGuardian = deviceHash && isFullGuardianOf(listingId, deviceHash)
   if (!isGuardian && !isAdmin) return errorResponse('Not authorized', 'unauthorized')
 
   // Auto-generate and persist a claim secret if none exists
@@ -785,12 +822,183 @@ function getClaimSecret(listingId, deviceHash, adminKey) {
   return jsonResponse({ claim_secret: secret })
 }
 
-// ─── Helper: check if device is a guardian for a listing ─────────────────
+// ─── Staff / Guardian helpers ────────────────────────────────────────────
 
-function isGuardianOf(listingId, deviceHash) {
+/** Any role (guardian or keyholder) on the listing */
+function isStaffOf(listingId, deviceHash) {
   if (!listingId || !deviceHash) return false
   const rows = sheetToObjects(getSheet('Guardians'))
   return rows.some(r => r.listing_id === listingId && r.device_hash === deviceHash)
+}
+
+/** Full guardian only (empty role = legacy guardian for backcompat) */
+function isFullGuardianOf(listingId, deviceHash) {
+  if (!listingId || !deviceHash) return false
+  const rows = sheetToObjects(getSheet('Guardians'))
+  return rows.some(r => r.listing_id === listingId && r.device_hash === deviceHash && (!r.role || r.role === 'guardian'))
+}
+
+/** Returns 'guardian', 'keyholder', or null */
+function getStaffRole(listingId, deviceHash) {
+  if (!listingId || !deviceHash) return null
+  const rows = sheetToObjects(getSheet('Guardians'))
+  const row = rows.find(r => r.listing_id === listingId && r.device_hash === deviceHash)
+  if (!row) return null
+  return (!row.role || row.role === 'guardian') ? 'guardian' : row.role
+}
+
+/** Returns parsed permissions array for a staff member */
+function getStaffPermissions(listingId, deviceHash) {
+  const rows = sheetToObjects(getSheet('Guardians'))
+  const row = rows.find(r => r.listing_id === listingId && r.device_hash === deviceHash)
+  if (!row) return []
+  if (!row.role || row.role === 'guardian') return ['menu', 'events', 'replies', 'photos', 'hours']
+  return row.permissions ? row.permissions.split(',').map(s => s.trim()).filter(Boolean) : []
+}
+
+/** Check if a staff member has a specific permission (guardians always true) */
+function staffHasPermission(listingId, deviceHash, perm) {
+  return getStaffPermissions(listingId, deviceHash).includes(perm)
+}
+
+/** Backward-compat alias — used where "any role" is sufficient */
+var isGuardianOf = isStaffOf
+
+// ─── Staff Management ───────────────────────────────────────────────────────
+
+function getListingStaff(listingId, deviceHash) {
+  if (!listingId || !deviceHash) return errorResponse('Missing fields', 'bad_request')
+  if (!isFullGuardianOf(listingId, deviceHash)) return errorResponse('Not authorized', 'unauthorized')
+
+  var staff = sheetToObjects(getSheet('Guardians')).filter(function(r) { return r.listing_id === listingId })
+  var handles = sheetToObjects(getSheet('Handles'))
+  var handleMap = {}
+  handles.forEach(function(h) { handleMap[h.device_hash] = h })
+
+  var result = staff.map(function(s) {
+    var h = handleMap[s.device_hash] || {}
+    var role = (!s.role || s.role === 'guardian') ? 'guardian' : s.role
+    var perms = role === 'guardian' ? ['menu','events','replies','photos','hours'] : (s.permissions ? s.permissions.split(',').map(function(p) { return p.trim() }).filter(Boolean) : [])
+    return {
+      device_hash: s.device_hash,
+      handle: h.handle || '',
+      avatar: h.avatar || '',
+      vignette: h.vignette || '',
+      role: role,
+      permissions: perms,
+      created_at: s.created_at
+    }
+  })
+
+  return jsonResponse({ staff: result })
+}
+
+function postUpdateStaffPermissions(body) {
+  var caller = body.device_hash
+  var lid = body.listing_id
+  var target = body.target_hash
+  var perms = body.permissions || ''  // comma-separated string
+  if (!caller || !lid || !target) return errorResponse('Missing fields', 'bad_request')
+  if (!isFullGuardianOf(lid, caller)) return errorResponse('Not authorized', 'unauthorized')
+
+  var sheet = getSheet('Guardians')
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var lidCol = headers.indexOf('listing_id')
+  var dhCol = headers.indexOf('device_hash')
+  var permCol = headers.indexOf('permissions')
+  var roleCol = headers.indexOf('role')
+
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][lidCol] === lid && data[i][dhCol] === target) {
+      var role = data[i][roleCol]
+      if (role === 'guardian' || (!role && role !== 'keyholder')) {
+        return errorResponse('Cannot set permissions on a guardian', 'bad_request')
+      }
+      if (permCol >= 0) sheet.getRange(i + 1, permCol + 1).setValue(perms)
+      return jsonResponse({ success: true })
+    }
+  }
+  return errorResponse('Staff member not found', 'not_found')
+}
+
+function postPromoteStaff(body) {
+  var caller = body.device_hash
+  var lid = body.listing_id
+  var target = body.target_hash
+  if (!caller || !lid || !target) return errorResponse('Missing fields', 'bad_request')
+  if (!isFullGuardianOf(lid, caller)) return errorResponse('Not authorized', 'unauthorized')
+
+  var sheet = getSheet('Guardians')
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var lidCol = headers.indexOf('listing_id')
+  var dhCol = headers.indexOf('device_hash')
+  var roleCol = headers.indexOf('role')
+  var permCol = headers.indexOf('permissions')
+
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][lidCol] === lid && data[i][dhCol] === target) {
+      if (roleCol >= 0) sheet.getRange(i + 1, roleCol + 1).setValue('guardian')
+      if (permCol >= 0) sheet.getRange(i + 1, permCol + 1).setValue('menu,events,replies,photos,hours')
+      return jsonResponse({ success: true })
+    }
+  }
+  return errorResponse('Staff member not found', 'not_found')
+}
+
+function postDemoteStaff(body) {
+  var caller = body.device_hash
+  var lid = body.listing_id
+  var target = body.target_hash
+  if (!caller || !lid || !target) return errorResponse('Missing fields', 'bad_request')
+  if (!isFullGuardianOf(lid, caller)) return errorResponse('Not authorized', 'unauthorized')
+  if (caller === target) return errorResponse('Cannot demote yourself', 'bad_request')
+
+  // Ensure at least one guardian remains
+  var allStaff = sheetToObjects(getSheet('Guardians')).filter(function(r) { return r.listing_id === lid })
+  var guardianCount = allStaff.filter(function(r) { return !r.role || r.role === 'guardian' }).length
+  if (guardianCount <= 1) return errorResponse('Cannot demote the last guardian', 'bad_request')
+
+  var sheet = getSheet('Guardians')
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var lidCol = headers.indexOf('listing_id')
+  var dhCol = headers.indexOf('device_hash')
+  var roleCol = headers.indexOf('role')
+  var permCol = headers.indexOf('permissions')
+
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][lidCol] === lid && data[i][dhCol] === target) {
+      if (roleCol >= 0) sheet.getRange(i + 1, roleCol + 1).setValue('keyholder')
+      if (permCol >= 0) sheet.getRange(i + 1, permCol + 1).setValue('')
+      return jsonResponse({ success: true })
+    }
+  }
+  return errorResponse('Staff member not found', 'not_found')
+}
+
+function postRevokeStaff(body) {
+  var caller = body.device_hash
+  var lid = body.listing_id
+  var target = body.target_hash
+  if (!caller || !lid || !target) return errorResponse('Missing fields', 'bad_request')
+  if (!isFullGuardianOf(lid, caller)) return errorResponse('Not authorized', 'unauthorized')
+  if (caller === target) return errorResponse('Cannot revoke yourself', 'bad_request')
+
+  var sheet = getSheet('Guardians')
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var lidCol = headers.indexOf('listing_id')
+  var dhCol = headers.indexOf('device_hash')
+
+  for (var i = data.length - 1; i >= 1; i--) {
+    if (data[i][lidCol] === lid && data[i][dhCol] === target) {
+      sheet.deleteRow(i + 1)
+      return jsonResponse({ success: true })
+    }
+  }
+  return errorResponse('Staff member not found', 'not_found')
 }
 
 // ─── Link Device (cross-device identity via token) ──────────────────────────
@@ -1655,7 +1863,7 @@ function setupSheets() {
     'Messages':  ['id', 'thread_id', 'sender_hash', 'text', 'created_at'],
     'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
     'Replies':   ['id', 'review_id', 'listing_id', 'device_hash', 'handle', 'text', 'created_at'],
-    'Guardians': ['listing_id', 'device_hash', 'created_at'],
+    'Guardians': ['listing_id', 'device_hash', 'role', 'permissions', 'created_at'],
     'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at'],
     'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
     'Designs':   ['biz_id', 'design_json', 'updated_at'],
@@ -1685,8 +1893,8 @@ function postUploadPhoto(body) {
   if (!device_hash || !listing_id || !image_data) {
     return errorResponse('Missing required fields', 'bad_request')
   }
-  if (!isGuardianOf(listing_id, device_hash)) {
-    return errorResponse('Not a guardian for this listing', 'unauthorized')
+  if (!staffHasPermission(listing_id, device_hash, 'photos')) {
+    return errorResponse('Not authorized to manage photos', 'unauthorized')
   }
   if (!PHOTO_FOLDER_ID) {
     return errorResponse('Photo uploads not configured — run setupPhotoFolder()', 'server_error')
@@ -1733,8 +1941,8 @@ function postRemovePhoto(body) {
   if (!device_hash || !listing_id || !photo_url) {
     return errorResponse('Missing required fields', 'bad_request')
   }
-  if (!isGuardianOf(listing_id, device_hash)) {
-    return errorResponse('Not a guardian for this listing', 'unauthorized')
+  if (!staffHasPermission(listing_id, device_hash, 'photos')) {
+    return errorResponse('Not authorized to manage photos', 'unauthorized')
   }
 
   var sheet = getSheet('Listings')

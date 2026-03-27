@@ -6,6 +6,8 @@ const GUARDIAN_KEY = 'lsq_guardian_listings'
 const ADMIN_KEY = 'lsq_admin'
 const TOKEN_KEY = 'lsq_admin_token'
 
+const ALL_PERMS = ['menu', 'events', 'replies', 'photos', 'hours']
+
 function loadGuardianList() {
   try {
     const old = localStorage.getItem('lsq_guardian_businesses')
@@ -13,8 +15,19 @@ function loadGuardianList() {
       localStorage.setItem(GUARDIAN_KEY, old)
       localStorage.removeItem('lsq_guardian_businesses')
     }
-    return JSON.parse(localStorage.getItem(GUARDIAN_KEY) || '[]')
+    const raw = JSON.parse(localStorage.getItem(GUARDIAN_KEY) || '[]')
+    // Migrate: old format was string[], new format is { id, role, permissions }[]
+    if (raw.length > 0 && typeof raw[0] === 'string') {
+      const migrated = raw.map(id => ({ id, role: 'guardian', permissions: ALL_PERMS }))
+      localStorage.setItem(GUARDIAN_KEY, JSON.stringify(migrated))
+      return migrated
+    }
+    return raw
   } catch { return [] }
+}
+
+function saveList(list) {
+  localStorage.setItem(GUARDIAN_KEY, JSON.stringify(list))
 }
 
 const useGuardianStatus = create((set, get) => ({
@@ -27,8 +40,33 @@ const useGuardianStatus = create((set, get) => ({
   adminPromptOpen: false,
   adminPromptError: null,
 
+  /** Any role (guardian or keyholder) on this listing */
   isGuardianOf(listingId) {
-    return get().guardianOf.includes(listingId)
+    return get().guardianOf.some(e => e.id === listingId)
+  },
+
+  /** Full guardian only */
+  isFullGuardianOf(listingId) {
+    return get().guardianOf.some(e => e.id === listingId && e.role === 'guardian')
+  },
+
+  /** Returns 'guardian', 'keyholder', or null */
+  roleFor(listingId) {
+    const entry = get().guardianOf.find(e => e.id === listingId)
+    return entry ? entry.role : null
+  },
+
+  /** Returns permissions array for listing */
+  permissionsFor(listingId) {
+    const entry = get().guardianOf.find(e => e.id === listingId)
+    if (!entry) return []
+    if (entry.role === 'guardian') return ALL_PERMS
+    return entry.permissions || []
+  },
+
+  /** Check a specific permission (guardians always true) */
+  hasPermission(listingId, perm) {
+    return get().permissionsFor(listingId).includes(perm)
   },
 
   /** Open the admin passphrase modal */
@@ -58,7 +96,7 @@ const useGuardianStatus = create((set, get) => ({
   /** Cancel the admin prompt */
   cancelAdminPrompt: () => set({ adminPromptOpen: false, adminPromptError: null }),
 
-  /** Claim guardian ownership of a listing via secret QR code */
+  /** Claim guardian/keyholder status via secret QR code */
   claim: async (listingId, secret) => {
     set({ loading: true, error: null })
     try {
@@ -66,10 +104,13 @@ const useGuardianStatus = create((set, get) => ({
       const res = await postClaim(dh, listingId, secret)
       const d = res.data
       if (d.success || d.claimed || d.already_claimed) {
-        const list = [...new Set([...get().guardianOf, listingId])]
-        localStorage.setItem(GUARDIAN_KEY, JSON.stringify(list))
+        const role = d.role || 'guardian'
+        const permissions = d.permissions || (role === 'guardian' ? ALL_PERMS : [])
+        const existing = get().guardianOf.filter(e => e.id !== listingId)
+        const list = [...existing, { id: listingId, role, permissions }]
+        saveList(list)
         set({ guardianOf: list, loading: false })
-        return { success: true }
+        return { success: true, role, permissions }
       }
       set({ loading: false, error: d.error || 'Claim failed' })
       return { success: false, error: d.error }
