@@ -753,91 +753,8 @@ const BULLETIN_STATES = ['neutral', 'full']
 const DRAG_THRESHOLD = 40 // px — minimum drag to trigger state change
 const DRAG_CLAMP = 150    // px — maximum visual displacement during drag
 
-function DragHandle({ panelRef, activeTab, panelState, setPanelState }) {
-  const dragRef = useRef(null)
-
-  const onPointerDown = useCallback((e) => {
-    e.preventDefault()
-    const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
-    dragRef.current = { startY: e.clientY, startState: panelState, moved: false }
-  }, [panelState])
-
-  const onPointerMove = useCallback((e) => {
-    if (!dragRef.current) return
-    const deltaY = e.clientY - dragRef.current.startY
-    dragRef.current.moved = true
-    // Visual feedback: translate panel, clamped
-    if (panelRef.current) {
-      const clamped = Math.max(-DRAG_CLAMP, Math.min(DRAG_CLAMP, deltaY))
-      panelRef.current.style.transform = `translateY(${clamped}px)`
-      panelRef.current.style.transition = 'none'
-    }
-  }, [panelRef])
-
-  const onPointerUp = useCallback((e) => {
-    if (!dragRef.current) return
-    const { startY, startState, moved } = dragRef.current
-    dragRef.current = null
-
-    // Reset visual transform
-    if (panelRef.current) {
-      panelRef.current.style.transform = ''
-      panelRef.current.style.transition = ''
-    }
-
-    if (!moved) return
-
-    const deltaY = e.clientY - startY
-    const isAlmanac = ALMANAC_ONLY_TABS.has(activeTab)
-
-    if (Math.abs(deltaY) < DRAG_THRESHOLD) return // bounce back — no state change
-
-    if (isAlmanac) {
-      // Almanac: swipe up → toggle panes, swipe down → collapse
-      if (deltaY < -DRAG_THRESHOLD) {
-        AlmanacTab.toggle?.()
-      } else if (deltaY > DRAG_THRESHOLD) {
-        setPanelState('collapsed')
-      }
-      return
-    }
-
-    // Society / Bulletin: navigate state ordering
-    const states = activeTab === 'bulletin' ? BULLETIN_STATES : SOCIETY_STATES
-    const currentIdx = states.indexOf(startState)
-    if (currentIdx === -1) return
-
-    if (deltaY < -DRAG_THRESHOLD && currentIdx < states.length - 1) {
-      // Dragged up → next higher state
-      setPanelState(states[currentIdx + 1])
-    } else if (deltaY > DRAG_THRESHOLD && currentIdx > 0) {
-      // Dragged down → next lower state
-      setPanelState(states[currentIdx - 1])
-    }
-  }, [activeTab, panelRef, setPanelState])
-
-  const onPointerCancel = useCallback(() => {
-    dragRef.current = null
-    if (panelRef.current) {
-      panelRef.current.style.transform = ''
-      panelRef.current.style.transition = ''
-    }
-  }, [panelRef])
-
-  return (
-    <div
-      className="touch-none cursor-grab active:cursor-grabbing flex-shrink-0 flex items-center justify-center"
-      style={{ height: 16 }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-    >
-      <div className="w-8 h-1 rounded-full bg-on-surface-disabled opacity-50" />
-    </div>
-  )
-}
+// Shared drag state across all tab buttons (only one can drag at a time)
+const _tabDrag = { startY: 0, dragging: false, pointerId: null }
 
 function SidePanel() {
   const activeTab = useCamera((s) => s.activeTab)
@@ -923,9 +840,6 @@ function SidePanel() {
         />
       )}
 
-      {/* ── Drag handle ── */}
-      <DragHandle panelRef={panelRef} activeTab={activeTab} panelState={panelState} setPanelState={setPanelState} />
-
       {/* ── Glass tab bar ── */}
       <nav
         aria-label="Side panel tabs"
@@ -936,9 +850,60 @@ function SidePanel() {
             key={tab.id}
             role="tab"
             aria-selected={activeTab === tab.id}
-            onClick={() => {
+            onPointerDown={(e) => {
+              _tabDrag.startY = e.clientY
+              _tabDrag.dragging = false
+              _tabDrag.pointerId = e.pointerId
+              e.currentTarget.setPointerCapture(e.pointerId)
+            }}
+            onPointerMove={(e) => {
+              if (_tabDrag.pointerId !== e.pointerId) return
+              const deltaY = e.clientY - _tabDrag.startY
+              if (Math.abs(deltaY) > 8) _tabDrag.dragging = true
+              if (_tabDrag.dragging && panelRef.current) {
+                const clamped = Math.max(-DRAG_CLAMP, Math.min(DRAG_CLAMP, deltaY))
+                panelRef.current.style.transform = `translateY(${clamped}px)`
+                panelRef.current.style.transition = 'none'
+              }
+            }}
+            onPointerUp={(e) => {
+              if (_tabDrag.pointerId !== e.pointerId) return
+              const deltaY = e.clientY - _tabDrag.startY
+              const wasDrag = _tabDrag.dragging
+              _tabDrag.pointerId = null
+              _tabDrag.dragging = false
+              // Reset visual transform
+              if (panelRef.current) {
+                panelRef.current.style.transform = ''
+                panelRef.current.style.transition = ''
+              }
+              if (!wasDrag) return // let onClick handle taps
+              // Determine snap from drag
+              if (Math.abs(deltaY) < DRAG_THRESHOLD) return // bounce back
+              const tabId = activeTab // use current active tab for state logic
+              if (ALMANAC_ONLY_TABS.has(tabId)) {
+                if (deltaY < -DRAG_THRESHOLD) AlmanacTab.toggle?.()
+                else if (deltaY > DRAG_THRESHOLD) setPanelState('collapsed')
+                return
+              }
+              const states = tabId === 'bulletin' ? BULLETIN_STATES : SOCIETY_STATES
+              const idx = states.indexOf(panelState)
+              if (idx === -1) return
+              if (deltaY < -DRAG_THRESHOLD && idx < states.length - 1) setPanelState(states[idx + 1])
+              else if (deltaY > DRAG_THRESHOLD && idx > 0) setPanelState(states[idx - 1])
+            }}
+            onPointerCancel={() => {
+              _tabDrag.pointerId = null
+              _tabDrag.dragging = false
+              if (panelRef.current) {
+                panelRef.current.style.transform = ''
+                panelRef.current.style.transition = ''
+              }
+            }}
+            onClick={(e) => {
+              if (_tabDrag.dragging) { e.preventDefault(); return } // suppress click during drag
               if (collapsed) {
-                // Collapsed → mini for any tab
+                // Collapsed → neutral for any tab
                 setActiveTab(tab.id)
                 setPanelState('neutral')
                 useUserLocation.getState().start()
@@ -956,7 +921,7 @@ function SidePanel() {
                   } else if (isNeutral) {
                     AlmanacTab.toggle?.()  // single tap: toggle weather ↔ celestial
                   } else {
-                    setPanelState('neutral')  // any other state → mini
+                    setPanelState('neutral')  // any other state → neutral
                   }
                 } else {
                   // Society/Bulletin
@@ -973,7 +938,7 @@ function SidePanel() {
                 useUserLocation.getState().start()
               }
             }}
-            className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-body-sm transition-all duration-200 ${
+            className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-body-sm touch-none transition-all duration-200 ${
               activeTab === tab.id
                 ? 'text-on-surface'
                 : 'text-on-surface-disabled hover:text-on-surface-subtle'
