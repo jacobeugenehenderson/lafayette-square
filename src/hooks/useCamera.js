@@ -5,7 +5,7 @@ import useSelectedBuilding from './useSelectedBuilding'
 const useCamera = create((set, get) => ({
   viewMode: 'hero',       // 'hero' | 'browse' | 'planetarium'
   previousMode: 'hero',
-  panelState: 'half',       // 'collapsed' | 'half' (mini) | 'browse' | 'full'
+  panelState: 'neutral',       // 'collapsed' | 'neutral' | 'browse' | 'full'
   panelOpen: true,          // derived compat — false only when collapsed
   panelCollapsedPx: 0,
   activeTab: 'almanac',     // 'almanac' | 'bulletin' | 'lafayettepages'
@@ -17,7 +17,7 @@ const useCamera = create((set, get) => ({
   setPanelState: (state) => set({ panelState: state, panelOpen: state !== 'collapsed' }),
   // Compat: old code calls setPanelOpen(true/false)
   setPanelOpen: (open) => set({
-    panelState: open ? 'half' : 'collapsed',
+    panelState: open ? 'neutral' : 'collapsed',
     panelOpen: open,
   }),
 
@@ -60,7 +60,7 @@ const useCamera = create((set, get) => ({
       previousMode: from,
       viewMode: 'hero',
       flyTarget: null,
-      panelState: 'half',
+      panelState: 'neutral',
       panelOpen: true,
     })
   },

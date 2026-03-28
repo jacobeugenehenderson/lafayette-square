@@ -741,10 +741,103 @@ const PANEL_HEIGHTS = {
   collapsed: 'auto',
   full: 'calc(100dvh - 4rem)',  // below header
 }
-// half height is measured from the Almanac weather view and stored in useCamera
+// neutral height is auto (content-dependent); browse height uses --panel-browse token
 
 // Almanac never goes full — it is a masthead-only tab
 const ALMANAC_ONLY_TABS = new Set(['almanac'])
+
+// State ordering for drag snapping (per tab type)
+const SOCIETY_STATES = ['neutral', 'browse', 'full']
+const BULLETIN_STATES = ['neutral', 'full']
+
+const DRAG_THRESHOLD = 40 // px — minimum drag to trigger state change
+const DRAG_CLAMP = 150    // px — maximum visual displacement during drag
+
+function DragHandle({ panelRef, activeTab, panelState, setPanelState }) {
+  const dragRef = useRef(null)
+
+  const onPointerDown = useCallback((e) => {
+    e.preventDefault()
+    const el = e.currentTarget
+    el.setPointerCapture(e.pointerId)
+    dragRef.current = { startY: e.clientY, startState: panelState, moved: false }
+  }, [panelState])
+
+  const onPointerMove = useCallback((e) => {
+    if (!dragRef.current) return
+    const deltaY = e.clientY - dragRef.current.startY
+    dragRef.current.moved = true
+    // Visual feedback: translate panel, clamped
+    if (panelRef.current) {
+      const clamped = Math.max(-DRAG_CLAMP, Math.min(DRAG_CLAMP, deltaY))
+      panelRef.current.style.transform = `translateY(${clamped}px)`
+      panelRef.current.style.transition = 'none'
+    }
+  }, [panelRef])
+
+  const onPointerUp = useCallback((e) => {
+    if (!dragRef.current) return
+    const { startY, startState, moved } = dragRef.current
+    dragRef.current = null
+
+    // Reset visual transform
+    if (panelRef.current) {
+      panelRef.current.style.transform = ''
+      panelRef.current.style.transition = ''
+    }
+
+    if (!moved) return
+
+    const deltaY = e.clientY - startY
+    const isAlmanac = ALMANAC_ONLY_TABS.has(activeTab)
+
+    if (Math.abs(deltaY) < DRAG_THRESHOLD) return // bounce back — no state change
+
+    if (isAlmanac) {
+      // Almanac: swipe up → toggle panes, swipe down → collapse
+      if (deltaY < -DRAG_THRESHOLD) {
+        AlmanacTab.toggle?.()
+      } else if (deltaY > DRAG_THRESHOLD) {
+        setPanelState('collapsed')
+      }
+      return
+    }
+
+    // Society / Bulletin: navigate state ordering
+    const states = activeTab === 'bulletin' ? BULLETIN_STATES : SOCIETY_STATES
+    const currentIdx = states.indexOf(startState)
+    if (currentIdx === -1) return
+
+    if (deltaY < -DRAG_THRESHOLD && currentIdx < states.length - 1) {
+      // Dragged up → next higher state
+      setPanelState(states[currentIdx + 1])
+    } else if (deltaY > DRAG_THRESHOLD && currentIdx > 0) {
+      // Dragged down → next lower state
+      setPanelState(states[currentIdx - 1])
+    }
+  }, [activeTab, panelRef, setPanelState])
+
+  const onPointerCancel = useCallback(() => {
+    dragRef.current = null
+    if (panelRef.current) {
+      panelRef.current.style.transform = ''
+      panelRef.current.style.transition = ''
+    }
+  }, [panelRef])
+
+  return (
+    <div
+      className="touch-none cursor-grab active:cursor-grabbing flex-shrink-0 flex items-center justify-center"
+      style={{ height: 16 }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+    >
+      <div className="w-8 h-1 rounded-full bg-on-surface-disabled opacity-50" />
+    </div>
+  )
+}
 
 function SidePanel() {
   const activeTab = useCamera((s) => s.activeTab)
@@ -752,7 +845,7 @@ function SidePanel() {
   const panelState = useCamera((s) => s.panelState)
   const setPanelState = useCamera((s) => s.setPanelState)
   const collapsed = panelState === 'collapsed'
-  const isHalf = panelState === 'half'
+  const isNeutral = panelState === 'neutral'
   const isBrowse = panelState === 'browse'
   const isFull = panelState === 'full'
   const showCard = useSelectedBuilding((s) => s.showCard)
@@ -801,12 +894,13 @@ function SidePanel() {
   return (
     <div
       ref={panelRef}
-      className="absolute left-3 right-3 bottom-3 flex flex-col select-none overflow-hidden z-50 transition-all duration-300 ease-out font-mono rounded-2xl"
+      className="absolute left-3 right-3 bottom-3 flex flex-col select-none overflow-hidden z-50 font-mono rounded-2xl"
       style={{
         height: isFull ? undefined
-          : isBrowse ? 'calc(30dvh - 1rem)'
+          : isBrowse ? 'var(--panel-browse)'
           : 'auto',
-        ...(isFull ? { top: 'calc(env(safe-area-inset-top, 0px) + 94px)' } : {}),
+        ...(isFull ? { top: 'var(--panel-full-top)' } : {}),
+        transition: 'height var(--panel-transition), top var(--panel-transition)',
         willChange: 'transform, height',
         ...glassStyle,
       }}
@@ -829,6 +923,9 @@ function SidePanel() {
         />
       )}
 
+      {/* ── Drag handle ── */}
+      <DragHandle panelRef={panelRef} activeTab={activeTab} panelState={panelState} setPanelState={setPanelState} />
+
       {/* ── Glass tab bar ── */}
       <nav
         aria-label="Side panel tabs"
@@ -843,7 +940,7 @@ function SidePanel() {
               if (collapsed) {
                 // Collapsed → mini for any tab
                 setActiveTab(tab.id)
-                setPanelState('half')
+                setPanelState('neutral')
                 useUserLocation.getState().start()
               } else if (tab.id === activeTab) {
                 // Re-tap same tab — cycle through states
@@ -856,10 +953,10 @@ function SidePanel() {
                     // Double-tap → collapse
                     setPanelState('collapsed')
                     AlmanacTab._lastTap = 0
-                  } else if (isHalf) {
+                  } else if (isNeutral) {
                     AlmanacTab.toggle?.()  // single tap: toggle weather ↔ celestial
                   } else {
-                    setPanelState('half')  // any other state → mini
+                    setPanelState('neutral')  // any other state → mini
                   }
                 } else {
                   // Society/Bulletin
@@ -871,7 +968,7 @@ function SidePanel() {
                 // Switch to different tab — stay at current height, cap Almanac
                 setActiveTab(tab.id)
                 if (ALMANAC_ONLY_TABS.has(tab.id) && (isFull || isBrowse)) {
-                  setPanelState('half')
+                  setPanelState('neutral')
                 }
                 useUserLocation.getState().start()
               }

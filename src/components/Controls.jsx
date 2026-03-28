@@ -29,7 +29,7 @@ function Controls() {
       if (state === 'full') useCamera.getState().setPanelState('browse')
     } else {
       const state = useCamera.getState().panelState
-      if (state === 'browse') useCamera.getState().setPanelState('half')
+      if (state === 'browse') useCamera.getState().setPanelState('neutral')
     }
   }, [showCard])
 

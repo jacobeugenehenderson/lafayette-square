@@ -191,7 +191,7 @@ export function useGlassSearch() {
     const bldg = building || _buildingMap[listing?.building_id]
     const cam = useCamera.getState()
     if (cam.viewMode !== 'browse') cam.setMode('browse')
-    if (cam.panelState === 'full') cam.setPanelState('half')
+    if (cam.panelState === 'full') cam.setPanelState('neutral')
     if (bldg) {
       const target = computeCenterOn(bldg)
       flyTo(target.position, target.lookAt)
