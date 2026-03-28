@@ -141,21 +141,24 @@ export default function ContactModal() {
           paddingBottom: IS_MOBILE ? 'env(safe-area-inset-bottom, 0px)' : undefined,
         }}
       >
+        {/* Close button — top right corner */}
+        <button
+          onClick={close}
+          style={{
+            position: 'absolute', top: 8, right: 8, zIndex: 2,
+            width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer',
+          }}
+          aria-label="Close"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
-          <span style={{ flex: 1, fontSize: 'var(--type-body)', fontWeight: 500 }}>Text Cary</span>
-          <button
-            onClick={close}
-            style={{
-              width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer',
-            }}
-            aria-label="Close"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+        <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+          <span style={{ fontSize: 'var(--type-body)', fontWeight: 500 }}>Text Cary</span>
         </div>
 
         {/* Body */}
