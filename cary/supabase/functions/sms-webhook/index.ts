@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
 
   let replyBody = null
   if (isOffHours) {
-    replyBody = "Thanks for reaching out! We'll get back to you first thing in the morning."
+    replyBody = "Thanks for reaching out! Someone will get back to you during business hours."
   }
 
   // Respond with TwiML
