@@ -250,33 +250,21 @@ export default function ContactModal() {
                 <p style={{ fontSize: 'var(--type-body-sm)', color: '#f87171' }}>{error}</p>
               )}
 
-              {/* Send button */}
-              {IS_MOBILE ? (
-                <a
-                  href={`sms:+18773351917${message ? `?&body=${encodedBody}` : ''}`}
-                  style={{
-                    display: 'block', width: '100%', padding: '10px 0', borderRadius: 12, boxSizing: 'border-box',
-                    background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)',
-                    color: '#6ee7b7', fontWeight: 500, textAlign: 'center', textDecoration: 'none', fontSize: 'var(--type-body)',
-                  }}
-                >
-                  Send
-                </a>
-              ) : (
-                <button
-                  onClick={sendDirect}
-                  disabled={!message.trim() || sending}
-                  style={{
-                    width: '100%', padding: '10px 0', borderRadius: 12,
-                    background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)',
-                    color: '#6ee7b7', fontWeight: 500, textAlign: 'center', fontSize: 'var(--type-body)',
-                    cursor: (!message.trim() || sending) ? 'not-allowed' : 'pointer',
-                    opacity: (!message.trim() || sending) ? 0.4 : 1,
-                  }}
-                >
-                  {sending ? 'Sending...' : 'Send'}
-                </button>
-              )}
+              {/* Send button — one-click on all platforms */}
+              <button
+                onClick={sendDirect}
+                disabled={!message.trim() || sending}
+                style={{
+                  width: '100%', padding: '10px 0', borderRadius: 12,
+                  background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(52,211,153,0.3)',
+                  color: '#6ee7b7', fontWeight: 500, textAlign: 'center', fontSize: 'var(--type-body)',
+                  cursor: (!message.trim() || sending) ? 'not-allowed' : 'pointer',
+                  opacity: (!message.trim() || sending) ? 0.4 : 1,
+                  border: 'none',
+                }}
+              >
+                {sending ? 'Sending...' : 'Send'}
+              </button>
             </>
           )}
         </div>
