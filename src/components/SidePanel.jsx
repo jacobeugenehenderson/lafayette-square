@@ -911,15 +911,15 @@ function SidePanel() {
       {/* ── Persistent footer — Contact icon, visible when not collapsed ── */}
       {!collapsed && (
         <div className="flex-shrink-0 flex items-center justify-end px-4 py-1.5 bg-surface border-t border-outline-variant">
-          <button
-            onClick={() => useContact.getState().setOpen(true)}
+          <a
+            href="sms:+18773351917"
             className="text-yellow-300 hover:text-yellow-200 transition-colors flex items-center gap-1 text-caption"
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
             </svg>
-            Contact
-          </button>
+            Text Cary
+          </a>
         </div>
       )}
 

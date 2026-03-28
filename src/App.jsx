@@ -565,7 +565,7 @@ function App() {
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.8s' }}><EventTicker /></div>}
       {!isGround && <BulletinModal />}
-      {!isGround && <ContactModal />}
+      {/* ContactModal removed — "Text Cary" now opens native SMS directly */}
       {!isGround && <CodeDeskModal />}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}
       {!isGround && <InfoModal />}
