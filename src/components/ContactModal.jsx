@@ -158,7 +158,7 @@ export default function ContactModal() {
 
         {/* Header */}
         <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
-          <span style={{ fontSize: 'var(--type-body)', fontWeight: 500 }}>Text Cary</span>
+          <span style={{ fontSize: 'var(--type-body)', fontWeight: 500 }}>Text us</span>
         </div>
 
         {/* Body */}
@@ -170,7 +170,7 @@ export default function ContactModal() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p style={{ fontSize: 'var(--type-body)', color: 'var(--on-surface-variant)' }}>Message sent. Cary will get back to you soon.</p>
+              <p style={{ fontSize: 'var(--type-body)', color: 'var(--on-surface-variant)' }}>Message sent. We'll get back to you soon.</p>
               <button
                 onClick={() => { setSent(false); setError(null) }}
                 style={{ fontSize: 'var(--type-body-sm)', color: 'var(--on-surface-disabled)', background: 'none', border: 'none', cursor: 'pointer' }}
