@@ -205,6 +205,55 @@ input, textarea, select {
     -webkit-touch-callout: none;
     user-select: none;
   }
+
+  /* ── Search drawer (pulldown from ticker) ──────────────────── */
+  .search-drawer-rail {
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    touch-action: none;
+  }
+  .search-drawer-rail:active { cursor: grabbing; }
+
+  .search-drawer-pill {
+    width: 24px;
+    height: 3px;
+    border-radius: var(--radius-full);
+    background: var(--on-surface-subtle);
+    transition: background 0.15s;
+  }
+  .search-drawer-rail:hover .search-drawer-pill {
+    background: var(--on-surface-variant);
+  }
+
+  .search-drawer {
+    overflow: hidden;
+    transition: max-height var(--drawer-transition), opacity var(--drawer-transition);
+  }
+
+  .search-drawer-input {
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-2xl);
+    padding: 0.625rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+  .search-drawer-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--on-surface);
+    font-size: var(--type-body-sm);
+    font-family: var(--font-mono);
+  }
+  .search-drawer-input input::placeholder {
+    color: var(--on-surface-disabled);
+  }
 }
 
 /* Ticker text scroll — reveals overflow then holds */

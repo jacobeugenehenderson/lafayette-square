@@ -11,7 +11,6 @@ import streetsData from '../data/streets.json'
 import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
 import { BrowseView, NewPostView, ThreadListView, ThreadDetailView } from './BulletinModal'
-import { SocietySearch } from './GlassSearch'
 import useSkyState from '../hooks/useSkyState'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { interpolateForecast } from '../lib/dawnTimeline'
@@ -593,7 +592,6 @@ function SocietyMasthead() {
 
 function LafayettePagesTab({ isFull, isBrowse }) {
   const [expandedId, setExpandedId] = useState(null)
-  const [searchActive, setSearchActive] = useState(false)
   const [scrollToSelected, setScrollToSelected] = useState(false)
   const listings = useListings((s) => s.listings)
   const activeTags = useLandmarkFilter((s) => s.activeTags)
@@ -635,28 +633,24 @@ function LafayettePagesTab({ isFull, isBrowse }) {
       {/* Society masthead — hidden in browse mode */}
       {!isBrowse && <SocietyMasthead />}
 
-      {/* Scrollable area: search bar + directory — only in full/browse */}
+      {/* Scrollable area: directory — only in full/browse */}
       {showDirectory && (
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <SocietySearch onSearchActive={setSearchActive} />
-
-        {!searchActive && (
-          <div className="p-2 space-y-2">
-            {CATEGORY_LIST.map((category) => (
-              <LafayetteCategoryAccordion
-                key={category.id}
-                category={category}
-                isExpanded={expandedId === category.id}
-                onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
-                scrollToSelected={scrollToSelected}
-              />
-            ))}
-          </div>
-        )}
+        <div className="p-2 space-y-2">
+          {CATEGORY_LIST.map((category) => (
+            <LafayetteCategoryAccordion
+              key={category.id}
+              category={category}
+              isExpanded={expandedId === category.id}
+              onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
+              scrollToSelected={scrollToSelected}
+            />
+          ))}
+        </div>
       </div>
       )}
 
-      {(isFull || isBrowse) && !searchActive && (
+      {(isFull || isBrowse) && (
         <div className="flex-shrink-0 px-4 py-2 border-t border-outline-variant">
           <span className="text-caption text-on-surface-disabled">{listings.length} verified listings</span>
         </div>

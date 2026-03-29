@@ -66,6 +66,7 @@
   --panel-full-top:   calc(env(safe-area-inset-top, 0px) + 94px);
   --panel-transition: 300ms cubic-bezier(0.2, 0.9, 0.3, 1);
   --panel-bounce:     200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --drawer-transition: 300ms cubic-bezier(0.2, 0.9, 0.3, 1);
 
   /* Victorian palette — the neighborhood's signature colors */
   --vic-brick:    rgb(183, 110, 97);

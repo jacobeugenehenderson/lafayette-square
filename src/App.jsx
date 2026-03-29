@@ -9,7 +9,6 @@ import BulletinModal from './components/BulletinModal'
 import ContactModal, { useContact } from './components/ContactModal'
 import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import EventTicker from './components/EventTicker'
-import GlassSearch from './components/GlassSearch'
 import BrowseHeader from './components/BrowseHeader'
 import AdminPrompt from './components/AdminPrompt'
 import useGuardianStatus from './hooks/useGuardianStatus'
@@ -560,7 +559,7 @@ function App() {
       {/* cary routes now render standalone — see CaryStandalone above */}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.2s' }}><Controls /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><CompassRose /></div>}
-      {!isGround && <div className="fade-in" style={{ animationDelay: '0.6s' }}><GlassSearch /></div>}
+      {/* Search moved to ticker pulldown drawer */}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.6s' }}><BrowseHeader /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.8s' }}><EventTicker /></div>}

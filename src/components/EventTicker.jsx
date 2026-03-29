@@ -11,6 +11,7 @@ import { useCodeDesk } from './CodeDeskModal'
 import { useInfo } from './InfoModal'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useGuardianStatus from '../hooks/useGuardianStatus'
+import { useGlassSearch, SearchDropdown } from './GlassSearch'
 
 const ROTATE_INTERVAL = 8000
 
@@ -332,6 +333,172 @@ export default function EventTicker() {
             background: 'linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 80%, transparent 95%)',
           }}
         />
+      </div>
+
+      {/* ── Search drawer — pulldown from ticker ── */}
+      <SearchDrawer />
+    </div>
+  )
+}
+
+// ── Search Drawer (pulldown behind ticker) ────────────────────────────
+const DRAG_THRESHOLD = 40
+const DRAG_CLAMP = 200
+
+function SearchDrawer() {
+  const [open, setOpen] = useState(false)
+  const { query, setQuery, focused, setFocused, inputRef, results, selectPlace, handleKeyDown } = useGlassSearch()
+  const drawerRef = useRef(null)
+  const dragState = useRef({ startY: 0, isDragging: false, pointerId: null })
+
+  // Close drawer and clear on result selection
+  const handleSelect = useCallback((...args) => {
+    selectPlace(...args)
+    setOpen(false)
+  }, [selectPlace])
+
+  // Extended key handler: Escape closes drawer when query is empty
+  const onKeyDown = useCallback((e) => {
+    if (e.key === 'Escape' && !query) {
+      setOpen(false)
+      return
+    }
+    handleKeyDown(e)
+  }, [query, handleKeyDown])
+
+  // Auto-focus input when drawer opens
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
+  }, [open, inputRef])
+
+  const onPointerDown = useCallback((e) => {
+    dragState.current = { startY: e.clientY, isDragging: false, pointerId: e.pointerId }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }, [])
+
+  const onPointerMove = useCallback((e) => {
+    const ds = dragState.current
+    if (ds.pointerId !== e.pointerId) return
+    const delta = e.clientY - ds.startY
+    if (Math.abs(delta) > 5) ds.isDragging = true
+    if (ds.isDragging && drawerRef.current) {
+      const clamped = open
+        ? Math.max(-DRAG_CLAMP, Math.min(0, delta))
+        : Math.max(0, Math.min(DRAG_CLAMP, delta))
+      drawerRef.current.style.maxHeight = open
+        ? `${Math.max(0, 400 + clamped)}px`
+        : `${Math.max(0, clamped)}px`
+      drawerRef.current.style.opacity = open
+        ? Math.max(0, 1 + clamped / DRAG_CLAMP)
+        : Math.min(1, clamped / DRAG_THRESHOLD)
+      drawerRef.current.style.transition = 'none'
+    }
+  }, [open])
+
+  const onPointerUp = useCallback((e) => {
+    const ds = dragState.current
+    if (ds.pointerId !== e.pointerId) return
+    const delta = e.clientY - ds.startY
+    const wasDrag = ds.isDragging
+    ds.pointerId = null
+    ds.isDragging = false
+
+    // Reset inline styles — let CSS transition handle snap
+    if (drawerRef.current) {
+      drawerRef.current.style.transition = ''
+      drawerRef.current.style.maxHeight = ''
+      drawerRef.current.style.opacity = ''
+    }
+
+    if (!wasDrag) {
+      // Tap — toggle
+      setOpen(prev => {
+        if (!prev) requestAnimationFrame(() => inputRef.current?.focus())
+        return !prev
+      })
+      return
+    }
+
+    if (Math.abs(delta) < DRAG_THRESHOLD) return // bounce back
+
+    if (!open && delta > DRAG_THRESHOLD) {
+      setOpen(true)
+    } else if (open && delta < -DRAG_THRESHOLD) {
+      setOpen(false)
+      setQuery('')
+      setFocused(false)
+    }
+  }, [open, inputRef, setQuery, setFocused])
+
+  const onPointerCancel = useCallback(() => {
+    dragState.current.pointerId = null
+    dragState.current.isDragging = false
+    if (drawerRef.current) {
+      drawerRef.current.style.transition = ''
+      drawerRef.current.style.maxHeight = ''
+      drawerRef.current.style.opacity = ''
+    }
+  }, [])
+
+  return (
+    <div className="relative">
+      {/* Drag rail with pill */}
+      <div
+        className="search-drawer-rail"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      >
+        <div className="search-drawer-pill" />
+      </div>
+
+      {/* Drawer content */}
+      <div
+        ref={drawerRef}
+        className="search-drawer"
+        style={{
+          maxHeight: open ? '400px' : '0px',
+          opacity: open ? 1 : 0,
+        }}
+      >
+        <div className="search-drawer-input mx-3 mt-2 mb-1">
+          <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--on-surface-disabled)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setTimeout(() => setFocused(false), 200)}
+            onKeyDown={onKeyDown}
+            placeholder="Search places, menus..."
+          />
+          {query && (
+            <button
+              onClick={() => { setQuery(''); inputRef.current?.focus() }}
+              className="text-body-sm leading-none"
+              style={{ color: 'var(--on-surface-subtle)' }}
+            >
+              &times;
+            </button>
+          )}
+        </div>
+
+        {results.length > 0 && (
+          <div className="mx-3 mb-2">
+            <SearchDropdown results={results} selectPlace={handleSelect} />
+          </div>
+        )}
+
+        {query.length >= 2 && results.length === 0 && (
+          <p className="text-center py-4 mx-3 mb-2 text-on-surface-disabled text-body-sm">No results</p>
+        )}
       </div>
     </div>
   )
