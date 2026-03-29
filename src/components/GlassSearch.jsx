@@ -509,5 +509,8 @@ export function SocietySearch({ onSearchActive }) {
 
 // Legacy default export — kept for App.jsx import, search now lives in Society tab
 export default function GlassSearch() {
+  const viewMode = useCamera(s => s.viewMode)
+  const panelState = useCamera(s => s.panelState)
+  if (viewMode === 'hero' && panelState === 'neutral') return <HeroSearch />
   return null
 }
