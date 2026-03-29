@@ -263,7 +263,6 @@ export default function ContactModal() {
                   color: '#6ee7b7', fontWeight: 500, textAlign: 'center', fontSize: 'var(--type-body)',
                   cursor: (!message.trim() || sending) ? 'not-allowed' : 'pointer',
                   opacity: (!message.trim() || sending) ? 0.4 : 1,
-                  border: 'none',
                 }}
               >
                 {sending ? 'Sending...' : 'Send'}

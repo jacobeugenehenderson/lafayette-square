@@ -472,6 +472,8 @@ function CameraRig() {
   // Mode / flyTo tracking
   const prevMode = useRef('hero')
   const prevFlyTarget = useRef(null)
+  const prevPanelState = useRef('neutral')
+  const _panelCameraOffset = useRef(0)
   const transToHero = useRef(false)
   const modeChangedAt = useRef(Date.now())
 
@@ -631,6 +633,30 @@ function CameraRig() {
     const state = useCamera.getState()
     const vm = state.viewMode
     const ft = state.flyTarget
+
+    // ── Panel-aware camera offset: shift target when panel covers lower screen ──
+    const ps = state.panelState
+    if (ps !== prevPanelState.current && vm === 'browse') {
+      prevPanelState.current = ps
+      // When panel is at browse height (~50dvh), shift camera target to center
+      // the neighborhood in the visible strip above the panel
+      const targetZ = ctl.target.z
+      const offsetZ = ps === 'browse' ? 80 : ps === 'full' ? 150 : 0
+      const currentOffset = _panelCameraOffset.current || 0
+      if (offsetZ !== currentOffset) {
+        // Smooth transition: adjust target Z
+        const baseZ = targetZ - currentOffset
+        beginTransition(
+          [camera.position.x, camera.position.y, camera.position.z],
+          [ctl.target.x, 0, baseZ + offsetZ],
+          camera.fov,
+          600
+        )
+        _panelCameraOffset.current = offsetZ
+      }
+    } else if (ps !== prevPanelState.current) {
+      prevPanelState.current = ps
+    }
 
     // ── Detect mode changes ──
     if (vm !== prevMode.current) {
