@@ -479,6 +479,7 @@ function CameraRig() {
   const prevFlyTarget = useRef(null)
   const prevPanelState = useRef('neutral')
   const _panelCameraOffset = useRef(0)
+  const heroPanAccum = useRef({ t: HERO_PHASE, started: false })
   const transToHero = useRef(false)
   const modeChangedAt = useRef(Date.now())
 
@@ -787,9 +788,18 @@ function CameraRig() {
 
     // ── Hero lateral pan — slow tracking shot across neighborhood ──
     if (vm === 'hero') {
-      // Hold still for first 3 seconds to let GPU warm up (shader compile, texture upload)
-      const elapsed = Math.max(0, clock.elapsedTime - 3)
-      const t = elapsed / PAN_PERIOD + HERO_PHASE
+      // Fixed-step accumulator: advance at a constant rate regardless of framerate.
+      // If a frame is slow, we advance less (not more), so the camera never jumps.
+      const MAX_DELTA = 1 / 30 // cap at 30fps worth of movement per frame
+      const dt = Math.min(clock.getDelta(), MAX_DELTA)
+      // Hold still for first 3 seconds to let GPU warm up
+      if (!heroPanAccum.current.started && clock.elapsedTime < 3) {
+        heroPanAccum.current.t = HERO_PHASE
+      } else {
+        heroPanAccum.current.started = true
+        heroPanAccum.current.t += dt / PAN_PERIOD
+      }
+      const t = heroPanAccum.current.t
       const swing = heroPanSwing(t)
       const offset = swing * PAN_HALF_LENGTH
       camera.position.set(
