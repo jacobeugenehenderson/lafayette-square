@@ -442,30 +442,41 @@ function SearchDrawer() {
     }
   }, [])
 
-  return (
-    <div className="relative">
-      {/* Drag rail with pill */}
-      <div
-        className="search-drawer-rail"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
-      >
-        <div className="search-drawer-pill" />
-      </div>
+  // Close when clicking outside — delayed to avoid race with open gesture
+  useEffect(() => {
+    if (!open) return
+    let armed = false
+    const armTimer = setTimeout(() => { armed = true }, 300)
+    const handler = (e) => {
+      if (!armed) return
+      if (e.target.closest('.search-drawer-rail')) return
+      if (e.target.closest('.search-drawer')) return
+      setOpen(false)
+      setQuery('')
+      setFocused(false)
+    }
+    document.addEventListener('pointerdown', handler)
+    return () => {
+      clearTimeout(armTimer)
+      document.removeEventListener('pointerdown', handler)
+    }
+  }, [open, setQuery, setFocused])
 
-      {/* Drawer content */}
+  return (
+    <div className="relative" style={{ zIndex: 60 }}>
+      {/* Drawer — extends the ticker strip */}
       <div
         ref={drawerRef}
         className="search-drawer"
         style={{
-          maxHeight: open ? '400px' : '0px',
+          maxHeight: open ? '70vh' : '0px',
           opacity: open ? 1 : 0,
+          background: 'rgba(0,0,0,0.75)',
         }}
       >
-        <div className="search-drawer-input mx-3 mt-2 mb-1">
-          <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--on-surface-disabled)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        {/* Compact search input — same strip as ticker */}
+        <div className="search-drawer-input px-5">
+          <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--on-surface)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <circle cx="11" cy="11" r="8" />
             <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
           </svg>
@@ -477,9 +488,9 @@ function SearchDrawer() {
             onFocus={() => setFocused(true)}
             onBlur={() => setTimeout(() => setFocused(false), 200)}
             onKeyDown={onKeyDown}
-            placeholder="Search places, menus..."
+            placeholder=""
           />
-          {query && (
+          {query ? (
             <button
               onClick={() => { setQuery(''); inputRef.current?.focus() }}
               className="text-body-sm leading-none"
@@ -487,18 +498,38 @@ function SearchDrawer() {
             >
               &times;
             </button>
+          ) : (
+            <button
+              onClick={() => { setOpen(false); setQuery(''); setFocused(false) }}
+              className="text-caption leading-none"
+              style={{ color: 'var(--on-surface-disabled)' }}
+            >
+              &times;
+            </button>
           )}
         </div>
 
+        {/* Results */}
         {results.length > 0 && (
-          <div className="mx-3 mb-2">
+          <div className="px-3 pb-2">
             <SearchDropdown results={results} selectPlace={handleSelect} />
           </div>
         )}
 
         {query.length >= 2 && results.length === 0 && (
-          <p className="text-center py-4 mx-3 mb-2 text-on-surface-disabled text-body-sm">No results</p>
+          <p className="text-center py-3 text-on-surface-disabled text-caption">No results</p>
         )}
+      </div>
+
+      {/* Drag rail — always outside the drawer, no background */}
+      <div
+        className="search-drawer-rail"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      >
+        <div className="search-drawer-pill" />
       </div>
     </div>
   )

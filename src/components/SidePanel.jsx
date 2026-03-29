@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useGlassSearch, SearchDropdown } from './GlassSearch'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
@@ -590,6 +591,43 @@ function SocietyMasthead() {
   return <StatsMasthead stats={stats} tagline="Neighborhood Directory" minHeight={miniPx} />
 }
 
+// ── Inline search for Society tab (full/browse panel states) ─────────
+function SocietyInlineSearch() {
+  const { query, setQuery, focused, setFocused, inputRef, results, selectPlace, handleKeyDown } = useGlassSearch()
+  const hasResults = query.length >= 2
+
+  return (
+    <div className="px-2 pt-2 pb-1">
+      <div className="search-drawer-input" style={{ background: 'var(--surface-container)', border: '1px solid var(--outline-variant)', borderRadius: 'var(--radius-2xl)' }}>
+        <svg className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--on-surface)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+        </svg>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 200)}
+          onKeyDown={handleKeyDown}
+          placeholder=""
+        />
+        {query && (
+          <button onClick={() => { setQuery(''); inputRef.current?.focus() }} className="text-body-sm leading-none" style={{ color: 'var(--on-surface-subtle)' }}>
+            &times;
+          </button>
+        )}
+      </div>
+      {hasResults && (
+        results.length > 0
+          ? <SearchDropdown results={results} selectPlace={selectPlace} />
+          : <p className="text-center py-3 text-on-surface-disabled text-caption">No results</p>
+      )}
+    </div>
+  )
+}
+
 function LafayettePagesTab({ isFull, isBrowse }) {
   const [expandedId, setExpandedId] = useState(null)
   const [scrollToSelected, setScrollToSelected] = useState(false)
@@ -633,9 +671,10 @@ function LafayettePagesTab({ isFull, isBrowse }) {
       {/* Society masthead — hidden in browse mode */}
       {!isBrowse && <SocietyMasthead />}
 
-      {/* Scrollable area: directory — only in full/browse */}
+      {/* Scrollable area: search + directory — only in full/browse */}
       {showDirectory && (
       <div className="flex-1 min-h-0 overflow-y-auto">
+        <SocietyInlineSearch />
         <div className="p-2 space-y-2">
           {CATEGORY_LIST.map((category) => (
             <LafayetteCategoryAccordion
@@ -741,15 +780,6 @@ const PANEL_HEIGHTS = {
 // Almanac never goes full — it is a masthead-only tab
 const ALMANAC_ONLY_TABS = new Set(['almanac'])
 
-// State ordering for drag snapping (per tab type)
-const SOCIETY_STATES = ['neutral', 'browse', 'full']
-const BULLETIN_STATES = ['neutral', 'full']
-
-const DRAG_THRESHOLD = 40 // px — minimum drag to trigger state change
-const DRAG_CLAMP = 150    // px — maximum visual displacement during drag
-
-// Shared drag state across all tab buttons (only one can drag at a time)
-const _tabDrag = { startY: 0, dragging: false, pointerId: null }
 
 function SidePanel() {
   const activeTab = useCamera((s) => s.activeTab)
@@ -845,58 +875,7 @@ function SidePanel() {
             key={tab.id}
             role="tab"
             aria-selected={activeTab === tab.id}
-            onPointerDown={(e) => {
-              _tabDrag.startY = e.clientY
-              _tabDrag.dragging = false
-              _tabDrag.pointerId = e.pointerId
-              e.currentTarget.setPointerCapture(e.pointerId)
-            }}
-            onPointerMove={(e) => {
-              if (_tabDrag.pointerId !== e.pointerId) return
-              const deltaY = e.clientY - _tabDrag.startY
-              if (Math.abs(deltaY) > 8) _tabDrag.dragging = true
-              if (_tabDrag.dragging && panelRef.current) {
-                const clamped = Math.max(-DRAG_CLAMP, Math.min(DRAG_CLAMP, deltaY))
-                panelRef.current.style.transform = `translateY(${clamped}px)`
-                panelRef.current.style.transition = 'none'
-              }
-            }}
-            onPointerUp={(e) => {
-              if (_tabDrag.pointerId !== e.pointerId) return
-              const deltaY = e.clientY - _tabDrag.startY
-              const wasDrag = _tabDrag.dragging
-              _tabDrag.pointerId = null
-              _tabDrag.dragging = false
-              // Reset visual transform
-              if (panelRef.current) {
-                panelRef.current.style.transform = ''
-                panelRef.current.style.transition = ''
-              }
-              if (!wasDrag) return // let onClick handle taps
-              // Determine snap from drag
-              if (Math.abs(deltaY) < DRAG_THRESHOLD) return // bounce back
-              const tabId = activeTab // use current active tab for state logic
-              if (ALMANAC_ONLY_TABS.has(tabId)) {
-                if (deltaY < -DRAG_THRESHOLD) AlmanacTab.toggle?.()
-                else if (deltaY > DRAG_THRESHOLD) setPanelState('collapsed')
-                return
-              }
-              const states = tabId === 'bulletin' ? BULLETIN_STATES : SOCIETY_STATES
-              const idx = states.indexOf(panelState)
-              if (idx === -1) return
-              if (deltaY < -DRAG_THRESHOLD && idx < states.length - 1) setPanelState(states[idx + 1])
-              else if (deltaY > DRAG_THRESHOLD && idx > 0) setPanelState(states[idx - 1])
-            }}
-            onPointerCancel={() => {
-              _tabDrag.pointerId = null
-              _tabDrag.dragging = false
-              if (panelRef.current) {
-                panelRef.current.style.transform = ''
-                panelRef.current.style.transition = ''
-              }
-            }}
-            onClick={(e) => {
-              if (_tabDrag.dragging) { e.preventDefault(); return } // suppress click during drag
+            onClick={() => {
               if (collapsed) {
                 // Collapsed → neutral for any tab
                 setActiveTab(tab.id)
@@ -933,7 +912,7 @@ function SidePanel() {
                 useUserLocation.getState().start()
               }
             }}
-            className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-body-sm touch-none transition-all duration-200 ${
+            className={`relative flex-1 flex items-center justify-center gap-2 px-4 py-3 text-body-sm transition-all duration-200 ${
               activeTab === tab.id
                 ? 'text-on-surface'
                 : 'text-on-surface-disabled hover:text-on-surface-subtle'
@@ -948,9 +927,6 @@ function SidePanel() {
             <span className="font-medium tracking-wide">{tab.label}</span>
             {activeTab === tab.id && (
               <div className="absolute bottom-0 inset-x-0 h-[2px] bg-on-surface-variant" />
-            )}
-            {activeTab === tab.id && !ALMANAC_ONLY_TABS.has(tab.id) && (
-              <div className="absolute top-1 left-1/2 -translate-x-1/2 w-6 h-[2px] rounded-full bg-white/30" />
             )}
           </button>
         ))}
