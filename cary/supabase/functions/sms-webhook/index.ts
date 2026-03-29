@@ -49,6 +49,31 @@ Deno.serve(async (req) => {
     }
   }
 
+  // ── Forward to personal phone via SMS ────────────────────
+  const forwardPhone = Deno.env.get('FORWARD_PHONE')
+  const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID')
+  const twilioToken = Deno.env.get('TWILIO_AUTH_TOKEN')
+  const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER')
+
+  if (forwardPhone && twilioSid && twilioToken && twilioNumber && from !== forwardPhone) {
+    try {
+      await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + btoa(`${twilioSid}:${twilioToken}`),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          To: forwardPhone,
+          From: twilioNumber,
+          Body: `[${from}] ${body}`,
+        }),
+      })
+    } catch (err) {
+      console.error('[sms-webhook] SMS forward failed:', err.message)
+    }
+  }
+
   // ── Auto-reply if outside hours ───────────────────────────
   // Business hours: 9 AM - 9 PM Central
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }))
