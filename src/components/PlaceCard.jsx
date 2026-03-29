@@ -296,7 +296,7 @@ function EditProvider({ listingId, children }) {
     <EditContext.Provider value={{ edits, setField, clearField, saveAll, cancelAll, saving, hasEdits }}>
       {children}
       {(hasEdits || error) && (
-        <div className="sticky bottom-0 bg-surface-dim backdrop-blur-sm border-t border-outline-variant px-4 py-2 flex items-center justify-end gap-3 z-10">
+        <div className="sticky bottom-0 bg-surface-dim  border-t border-outline-variant px-4 py-2 flex items-center justify-end gap-3 z-10">
           {error && <span className="text-red-400 text-body-sm mr-auto">{error}</span>}
           <button onClick={cancelAll} disabled={saving} className="text-body-sm text-on-surface-subtle hover:text-on-surface-variant">
             Cancel
@@ -1739,12 +1739,12 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
             onClick={(e) => e.stopPropagation()}
           />
           {/* Counter */}
-          <span className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-surface-dim text-on-surface-variant text-body-sm backdrop-blur-sm">
+          <span className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-surface-dim text-on-surface-variant text-body-sm ">
             {lightbox + 1} / {lightboxEntries.length}
           </span>
           {/* Credit at bottom */}
           {editingCredit && editingCredit.idx === lightbox ? (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-72 max-w-[90vw] p-3 rounded-xl bg-surface backdrop-blur-sm border border-outline space-y-2" onClick={e => e.stopPropagation()}>
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-72 max-w-[90vw] p-3 rounded-xl bg-surface  border border-outline space-y-2" onClick={e => e.stopPropagation()}>
               <input
                 type="text" value={editingCredit.credit} placeholder="Credit (e.g. photographer name)"
                 onChange={e => setEditingCredit({ ...editingCredit, credit: e.target.value })}
@@ -1768,7 +1768,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
           ) : (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2" onClick={e => e.stopPropagation()}>
               {lightboxEntries[lightbox]?.credit ? (
-                <div className="px-3 py-1.5 rounded-full bg-surface-dim text-body-sm backdrop-blur-sm flex items-center gap-2">
+                <div className="px-3 py-1.5 rounded-full bg-surface-dim text-body-sm  flex items-center gap-2">
                   <PhotoCredit credit={lightboxEntries[lightbox].credit} credit_url={lightboxEntries[lightbox].credit_url} />
                   {isGuardian && lightbox < allPhotos.length && (
                     <button
@@ -1783,7 +1783,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
               ) : isGuardian && lightbox < allPhotos.length ? (
                 <button
                   onClick={() => setEditingCredit({ idx: lightbox, credit: '', credit_url: '' })}
-                  className="px-3 py-1.5 rounded-full bg-surface-dim text-on-surface-disabled text-body-sm hover:text-on-surface-subtle backdrop-blur-sm transition-colors"
+                  className="px-3 py-1.5 rounded-full bg-surface-dim text-on-surface-disabled text-body-sm hover:text-on-surface-subtle  transition-colors"
                 >
                   + Add credit
                 </button>
@@ -1798,7 +1798,7 @@ function PhotosTab({ photos, facadeImage, facadeInfo, name, isGuardian, listingI
           {isGuardian && lightbox < allPhotos.length && (
             <button
               onClick={(e) => { e.stopPropagation(); handleRemove(lightboxEntries[lightbox]?.url) }}
-              className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-red-500/20 text-red-300 text-xs hover:bg-red-500/30 transition-colors backdrop-blur-sm"
+              className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-red-500/20 text-red-300 text-xs hover:bg-red-500/30 transition-colors "
             >
               Remove photo
             </button>
@@ -3670,7 +3670,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 w-9 h-9 rounded-full backdrop-blur-md bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
+          className="absolute top-2 right-2 w-9 h-9 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
           aria-label="Close"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -3679,7 +3679,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         </button>
 
         {photos && photos.length > 1 && (
-          <div className="absolute bottom-2 right-3 bg-surface-dim backdrop-blur-sm px-2 py-0.5 rounded text-caption text-on-surface-variant">
+          <div className="absolute bottom-2 right-3 bg-surface-dim  px-2 py-0.5 rounded text-caption text-on-surface-variant">
             {photos.length} photos
           </div>
         )}
