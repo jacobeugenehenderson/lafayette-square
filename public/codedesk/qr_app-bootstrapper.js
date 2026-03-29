@@ -309,32 +309,29 @@ window.populateBizSelect = populateBizSelect;
     return [];
   });
 
-  var bizP = (apiUrl
+  // Load API listings + local landmarks, merge so all places appear
+  var base = getLsqBaseUrl();
+  var apiP = apiUrl
     ? fetch(apiUrl + '?action=listings', { cache: 'no-store' }).then(function(r) {
-        if (!r.ok) return null;
-        return r.json().then(function(d) {
-          var b = Array.isArray(d.data) ? d.data : [];
-          return b.length > 0 ? b : null;
-        });
-      }).catch(function() { return null; })
-    : Promise.resolve(null)
-  ).then(function(biz) {
-    if (biz) return biz;
-    // Fallback: try local files
-    var base = getLsqBaseUrl();
-    var paths = [base + '/data/landmarks.json', base + '/codedesk/businesses.json'];
-    return paths.reduce(function(chain, path) {
-      return chain.then(function(found) {
-        if (found) return found;
-        return fetch(path, { cache: 'no-store' }).then(function(r) {
-          if (!r.ok) return null;
-          return r.json().then(function(d) {
-            var lm = d.landmarks || d.businesses || d;
-            return Array.isArray(lm) && lm.length > 0 ? lm : null;
-          });
-        }).catch(function() { return null; });
-      });
-    }, Promise.resolve(null));
+        if (!r.ok) return [];
+        return r.json().then(function(d) { return Array.isArray(d.data) ? d.data : []; });
+      }).catch(function() { return []; })
+    : Promise.resolve([]);
+
+  var localP = fetch(base + '/data/landmarks.json', { cache: 'no-store' }).then(function(r) {
+    if (!r.ok) return [];
+    return r.json().then(function(d) { return d.landmarks || []; });
+  }).catch(function() { return []; });
+
+  var bizP = Promise.all([apiP, localP]).then(function(results) {
+    var apiList = results[0];
+    var localList = results[1];
+    // Merge: API data wins per ID, local fills gaps
+    var byId = {};
+    localList.forEach(function(l) { if (l.id) byId[l.id] = l; });
+    apiList.forEach(function(l) { if (l.id) byId[l.id] = Object.assign(byId[l.id] || {}, l); });
+    var merged = Object.values(byId);
+    return merged.length > 0 ? merged : null;
   });
 
   var results = await Promise.all([manifestP, templatesP, bizP]);
