@@ -402,8 +402,13 @@ function FrameLimiter() {
     let skip = false
     let id
     const loop = () => {
-      const isHero = !IS_MOBILE && useCamera.getState().viewMode === 'hero'
-      if (isHero || !skip) invalidate()
+      // Pause rendering when full-screen overlays are open — free the GPU
+      const cam = useCamera.getState()
+      const paused = document.querySelector('[data-scene-pause]')
+      if (!paused) {
+        const isHero = !IS_MOBILE && cam.viewMode === 'hero'
+        if (isHero || !skip) invalidate()
+      }
       skip = !skip
       id = requestAnimationFrame(loop)
     }

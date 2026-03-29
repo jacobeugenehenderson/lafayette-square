@@ -140,7 +140,10 @@ function _lsqSnapshotClean() {
 window._lsqIsDirty = function() {
   if (!_lsqCleanStateJson) return false;
   if (typeof window.codedeskExportState !== 'function') return false;
-  return _lsqStripTimestamp(JSON.stringify(window.codedeskExportState())) !== _lsqCleanStateJson;
+  var current = window.codedeskExportState();
+  // Not dirty if no business is selected (nothing to save)
+  if (!current || !current.bizSelect) return false;
+  return _lsqStripTimestamp(JSON.stringify(current)) !== _lsqCleanStateJson;
 };
 
 // =====================================================
