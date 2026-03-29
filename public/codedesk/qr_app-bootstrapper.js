@@ -319,9 +319,15 @@ window.populateBizSelect = populateBizSelect;
     : Promise.resolve([]);
 
   var localP = fetch(base + '/data/landmarks.json', { cache: 'no-store' }).then(function(r) {
-    if (!r.ok) return [];
+    if (!r.ok) throw new Error('not found');
     return r.json().then(function(d) { return d.landmarks || []; });
-  }).catch(function() { return []; });
+  }).catch(function() {
+    // Fallback: try relative path (works in iframe or dev server)
+    return fetch('./landmarks.json', { cache: 'no-store' }).then(function(r) {
+      if (!r.ok) return [];
+      return r.json().then(function(d) { return d.landmarks || []; });
+    }).catch(function() { return []; });
+  });
 
   var bizP = Promise.all([apiP, localP]).then(function(results) {
     var apiList = results[0];
