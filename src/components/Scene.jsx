@@ -403,10 +403,9 @@ function FrameLimiter() {
     let id
     const loop = () => {
       // Pause rendering when full-screen overlays are open — free the GPU
-      const cam = useCamera.getState()
       const paused = document.querySelector('[data-scene-pause]')
       if (!paused) {
-        const isHero = !IS_MOBILE && cam.viewMode === 'hero'
+        const isHero = !IS_MOBILE && useCamera.getState().viewMode === 'hero'
         if (isHero || !skip) invalidate()
       }
       skip = !skip
@@ -479,7 +478,7 @@ function CameraRig() {
   const prevFlyTarget = useRef(null)
   const prevPanelState = useRef('neutral')
   const _panelCameraOffset = useRef(0)
-  const heroPanAccum = useRef({ t: HERO_PHASE, lastTime: 0 })
+  const heroPanAccum = useRef({ t: HERO_PHASE, frames: 0 })
   const transToHero = useRef(false)
   const modeChangedAt = useRef(Date.now())
 
@@ -790,18 +789,9 @@ function CameraRig() {
     if (vm === 'hero') {
       // Fixed-step accumulator: advance at a constant rate regardless of framerate.
       // If a frame is slow, we advance less (not more), so the camera never jumps.
-      const MAX_DELTA = 1 / 30 // cap at 30fps worth of movement per frame
-      const now = performance.now() / 1000
-      const rawDt = heroPanAccum.current.lastTime ? now - heroPanAccum.current.lastTime : 1 / 60
-      heroPanAccum.current.lastTime = now
-      const dt = Math.min(rawDt, MAX_DELTA)
-      // Hold still for first 3 seconds
-      if (clock.elapsedTime < 3) {
-        heroPanAccum.current.t = HERO_PHASE
-      } else {
-        heroPanAccum.current.t += dt / PAN_PERIOD
-      }
-      const t = heroPanAccum.current.t
+      // Wall-clock positioning — smooth cosine, hold for first 3s
+      const elapsed = Math.max(0, clock.elapsedTime - 3)
+      const t = elapsed / PAN_PERIOD + HERO_PHASE
       const swing = heroPanSwing(t)
       const offset = swing * PAN_HALF_LENGTH
       camera.position.set(
