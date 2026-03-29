@@ -109,6 +109,10 @@
           sel.value = e.data.value;
           sel.dispatchEvent(new Event('change', { bubbles: true }));
         }
+        // Re-populate business list after type change rebuilds the form
+        if (window.LSQ_BUSINESSES && typeof window.populateBizSelect === 'function') {
+          setTimeout(function() { window.populateBizSelect(window.LSQ_BUSINESSES); }, 0);
+        }
       }
       if (e.data.type === 'lsq-set-listing') {
         // Prime the sync pipeline's bizId cache (survives form rebuilds)
@@ -127,6 +131,17 @@
           secretInput.dispatchEvent(new Event('change', { bubbles: true }));
         }
       }
+      if (e.data.type === 'lsq-set-preview') {
+        // Instant preview image from parent while interactive version loads
+        var img = e.data.value;
+        if (img && !window.__lsq_preview_replaced) {
+          window.__lsq_preview_image = img;
+          var mt = document.getElementById('qrMount');
+          if (mt) {
+            mt.innerHTML = '<img src="' + img + '" style="max-width:100%;border-radius:12px;opacity:0.7" />';
+          }
+        }
+      }
       if (e.data.type === 'lsq-save') {
         // Trigger render then immediate save + PNG export
         if (typeof window.render === 'function') window.render();
@@ -137,6 +152,7 @@
         }
       }
     });
+
   }
 </script>
 
@@ -154,6 +170,7 @@
           <span class="sr-only">Type</span>
           <select id="qrType" aria-label="Type">
             <option value="Townie" selected>Townie</option>
+            <option value="Resident">Resident</option>
             <option value="Guardian">Guardian</option>
           </select>
         </label>
@@ -189,6 +206,19 @@
 <!-- RIGHT: Stepper (controls) -->
 <section id="stepper"
   class="stage-stick space-y-4 w-full max-w-[560px] mx-auto justify-self-center">
+
+<!-- Business / Places (first — key selection) -->
+<div class="step-card"
+     data-step="business">
+  <div class="step-header-wrap flex items-center gap-3">
+    <button id="bizStepLabel" class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
+      Places
+    </button>
+  </div>
+  <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
+    <div id="detailsPanel" class="space-y-4"></div>
+  </div>
+</div>
 
 <!-- Design -->
 <div class="step-card"
@@ -402,18 +432,6 @@
     </div>
   </div>
 
-<!-- Business -->
-<div class="step-card"
-     data-step="business">
-  <div class="step-header-wrap flex items-center gap-3">
-    <button class="flex-1 step-header px-4 py-3 text-left font-medium" data-step-toggle>
-      Places
-    </button>
-  </div>
-  <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
-    <div id="detailsPanel" class="space-y-4"></div>
-  </div>
-</div>
 
 <!-- Save + Download -->
 <div class="step-card"
@@ -458,7 +476,7 @@
   // Lafayette Square — API configuration
   // Set this to your Google Apps Script deployment URL
   window.LSQ_API_URL =
-    'https://script.google.com/macros/s/AKfycbwt3WFfB2v2jOf7VLXM-ssGABBf0TA9HkgXpiPo2bnTyAqC3ci4UG5FGoD0hV4hSgRFFQ/exec';
+    'https://script.google.com/macros/s/AKfycbxv3JihCx0U7JfGqle6ZpsLamkRS5PAEGRn6_NaM0Nc7r5zdY7kyctDioScGy8nVcAqWQ/exec';
 </script>
 
 <!-- CodeDesk split modules (ordered, deterministic) -->

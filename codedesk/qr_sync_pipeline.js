@@ -16,7 +16,6 @@ window.__CODEDESK_SETUP_DONE__ = true;
 //  LOCAL STORAGE LAYER (persistent, written only on Save)
 // =====================================================
 var LSQ_DESIGN_PREFIX = 'lsq-qr-design-';
-var LSQ_IMAGE_PREFIX = 'lsq-qr-image-';
 
 function _lsqGetCurrentType() {
   var sel = document.getElementById('qrType');
@@ -39,10 +38,6 @@ function _lsqGetCurrentBizId() {
 function _lsqDesignKey(bizId, type) {
   return LSQ_DESIGN_PREFIX + bizId + '-' + type;
 }
-function _lsqImageKey(bizId, type) {
-  return LSQ_IMAGE_PREFIX + bizId + '-' + type;
-}
-
 function _lsqSaveLocal(bizId, state, type) {
   if (!bizId || !type) return;
   try { localStorage.setItem(_lsqDesignKey(bizId, type), JSON.stringify(state)); } catch (e) {}
@@ -56,18 +51,12 @@ function _lsqLoadLocal(bizId, type) {
   } catch (e) { return null; }
 }
 
-function _lsqSaveImage(bizId, dataUrl, type) {
-  if (!bizId || !dataUrl || !type) return;
-  try { localStorage.setItem(_lsqImageKey(bizId, type), dataUrl); } catch (e) {}
-}
-
 // =====================================================
 //  API LAYER (background, non-blocking)
 // =====================================================
-function _lsqSaveRemote(bizId, state, type, image) {
+function _lsqSaveRemote(bizId, state, type) {
   if (!bizId || !type || !window.LSQ_API_URL) return;
   var payload = { action: 'saveDesign', bizId: bizId + '-' + type, design: state };
-  if (image) payload.image = image;
   try {
     fetch(window.LSQ_API_URL, {
       method: 'POST',
@@ -100,7 +89,8 @@ function _lsqFetchClaimSecret(bizId) {
     _lsqApplySecret(_lsqSecretCache[bizId]);
     return;
   }
-  fetch(window.LSQ_API_URL + '?action=claim-secret&lid=' + encodeURIComponent(bizId) + '&admin=lafayette1850')
+  var adminToken = sessionStorage.getItem('lsq_admin_token') || '';
+  fetch(window.LSQ_API_URL + '?action=claim-secret&lid=' + encodeURIComponent(bizId) + '&admin=' + encodeURIComponent(adminToken))
     .then(function(res) { return res.json(); })
     .then(function(data) {
       var secret = data && data.data && data.data.claim_secret;
@@ -150,7 +140,10 @@ function _lsqSnapshotClean() {
 window._lsqIsDirty = function() {
   if (!_lsqCleanStateJson) return false;
   if (typeof window.codedeskExportState !== 'function') return false;
-  return _lsqStripTimestamp(JSON.stringify(window.codedeskExportState())) !== _lsqCleanStateJson;
+  var current = window.codedeskExportState();
+  // Not dirty if no business is selected (nothing to save)
+  if (!current || !current.bizSelect) return false;
+  return _lsqStripTimestamp(JSON.stringify(current)) !== _lsqCleanStateJson;
 };
 
 // =====================================================
@@ -173,27 +166,9 @@ window._lsqSaveNow = function _lsqSaveNow() {
   // Snapshot clean state after save
   _lsqSnapshotClean();
 
-  // Export rendered PNG and store it locally + remotely
-  if (typeof window.codedeskExportPngDataUrl === 'function') {
-    // Scale 2 for localStorage (high-res), scale 1 for API (fits in Sheets cell)
-    window.codedeskExportPngDataUrl(2).then(function(hiRes) {
-      if (hiRes) _lsqSaveImage(bizId, hiRes, type);
-      // For API: use scale 1 to stay under Sheets 50K cell limit
-      return window.codedeskExportPngDataUrl(1).then(function(loRes) {
-        var apiImage = loRes || hiRes || '';
-        if (state) _lsqSaveRemote(bizId, state, type, apiImage);
-        window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type, image: hiRes || '' }, '*');
-      });
-    }).catch(function(err) {
-      console.warn('QR PNG export failed', err);
-      // PNG export failed — save design without image
-      if (state) _lsqSaveRemote(bizId, state, type);
-      window.parent.postMessage({ type: 'lsq-saved' }, '*');
-    });
-  } else {
-    if (state) _lsqSaveRemote(bizId, state, type);
-    window.parent.postMessage({ type: 'lsq-saved' }, '*');
-  }
+  // Save design to API (no image — QR is rendered client-side from design_json)
+  if (state) _lsqSaveRemote(bizId, state, type);
+  window.parent.postMessage({ type: 'lsq-saved', bizId: bizId, qrType: type }, '*');
 };
 
 // (No render hook — dirty check is on-demand via _lsqIsDirty)
@@ -233,8 +208,18 @@ function _lsqLoadDesign(bizId, type) {
     window.codedeskImportState(local);
     _lsqSnapshotClean();
   } else if (typeof window.codedeskImportState === 'function') {
-    // No saved design — reset to defaults
-    window.codedeskImportState(_LSQ_DEFAULT_STATE);
+    // No saved design — inherit current design instead of resetting.
+    // This lets the user carry their design across types and places
+    // without starting over each time.
+    var current = (typeof window.codedeskExportState === 'function') ? window.codedeskExportState() : null;
+    if (current && current.style && Object.keys(current.style).length > 0) {
+      // Carry forward the design but clear type-specific fields (caption text stays)
+      delete current.type;
+      delete current.at;
+      window.codedeskImportState(current);
+    } else {
+      window.codedeskImportState(_LSQ_DEFAULT_STATE);
+    }
     _lsqSnapshotClean();
   }
 

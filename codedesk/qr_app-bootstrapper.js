@@ -42,27 +42,59 @@ window.getLsqBaseUrl = getLsqBaseUrl;
 // Populate all bizSelect elements with business data
 // Supports both <select> and listbox (.fldListbox) rendering
 // Groups into category folders (Dining, Shopping, Residential, etc.)
-var CATEGORY_ORDER = ['dining', 'shopping', 'services', 'arts', 'community', 'historic', 'hospitality', 'professional', 'recreation', 'residential'];
+var CATEGORY_ORDER = ['dining', 'arts', 'shopping', 'services', 'hospitality', 'community', 'parks', 'historic', 'residential', 'commercial', 'industrial'];
 var CATEGORY_LABELS = {
-  dining: 'Dining', shopping: 'Shopping', services: 'Services',
-  arts: 'Arts', community: 'Community', historic: 'Historic',
-  hospitality: 'Hospitality', professional: 'Professional',
-  recreation: 'Recreation', residential: 'Residential',
+  dining: 'Dining & Drinks', shopping: 'Shopping', services: 'Services',
+  arts: 'Arts & Culture', community: 'Community', historic: 'Historic Sites',
+  hospitality: 'Hospitality', parks: 'Parks & Recreation',
+  residential: 'Residential', commercial: 'Commercial', industrial: 'Industrial',
 };
+
+function _updateSelectedLabel(name, address) {
+  // Update the inline label in the listbox
+  var label = document.getElementById('bizSelectedLabel');
+  if (label) {
+    if (name) {
+      var text = name;
+      if (address && address !== name) text += ' — ' + address;
+      label.textContent = text;
+      label.style.display = '';
+    } else {
+      label.textContent = '';
+      label.style.display = 'none';
+    }
+  }
+  // Update the accordion header to show selection
+  var stepLabel = document.getElementById('bizStepLabel');
+  if (stepLabel) {
+    stepLabel.textContent = name || 'Places';
+  }
+}
 
 function _makeBizItem(biz, current, hiddenInput, listbox) {
   var id = biz.id || biz.building_id || '';
   var name = biz.name || biz.id || 'Unknown';
+  var address = biz.address || '';
 
   var item = document.createElement('button');
   item.type = 'button';
   item.className = 'biz-item' + (id === current ? ' is-active' : '');
   item.dataset.bizId = id;
+  item.dataset.bizName = name;
+  item.dataset.bizAddress = address;
 
   var nameSpan = document.createElement('span');
   nameSpan.className = 'biz-item-name';
   nameSpan.textContent = name;
   item.appendChild(nameSpan);
+
+  // Show address below name if they differ
+  if (address && address !== name) {
+    var addrSpan = document.createElement('span');
+    addrSpan.className = 'biz-item-address';
+    addrSpan.textContent = address;
+    item.appendChild(addrSpan);
+  }
 
   item.addEventListener('click', function() {
     var prev = listbox.querySelector('.biz-item.is-active');
@@ -70,7 +102,11 @@ function _makeBizItem(biz, current, hiddenInput, listbox) {
     item.classList.add('is-active');
     hiddenInput.value = id;
     hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+    _updateSelectedLabel(name, address);
   });
+
+  // Update label if this is the pre-selected item
+  if (id === current) _updateSelectedLabel(name, address);
 
   return item;
 }
@@ -107,50 +143,90 @@ function populateBizSelect(businesses) {
 
   // Listbox mode: render clickable items grouped into category folders
   if (listbox && hiddenInput) {
+    // Skip rebuild if data hasn't changed and list is already populated
+    var bizKey = businesses.length + ':' + (businesses[0]?.id || '') + ':' + (businesses[businesses.length-1]?.id || '');
+    if (listbox._bizKey === bizKey && listbox.querySelector('.biz-search-input')) return;
+    listbox._bizKey = bizKey;
+
     var current = hiddenInput.value || window.__lsq_cached_biz_id || '';
+
+    // Preserve existing search input value across re-populations
+    var existingSearch = listbox.querySelector('.biz-search-input');
+    var savedQuery = existingSearch ? existingSearch.value : '';
+
     listbox.innerHTML = '';
+
+    // Selected place label
+    var selectedLabel = document.createElement('div');
+    selectedLabel.id = 'bizSelectedLabel';
+    selectedLabel.className = 'biz-selected-label';
+    selectedLabel.style.display = 'none';
+    listbox.appendChild(selectedLabel);
+
+    // Search input at top of listbox
+    var searchWrap = document.createElement('div');
+    searchWrap.className = 'biz-search-wrap';
+    var searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search by name or address...';
+    searchInput.className = 'biz-search-input';
+    searchInput.value = savedQuery;
+    searchWrap.appendChild(searchInput);
+    listbox.appendChild(searchWrap);
+
+    var groupContainer = document.createElement('div');
+    groupContainer.className = 'biz-group-container';
+    listbox.appendChild(groupContainer);
 
     var groups = _groupByCategory(businesses);
 
-    groups.forEach(function(group) {
-      if (!group.items.length) return;
+    function renderGroups(query) {
+      groupContainer.innerHTML = '';
+      var q = (query || '').toLowerCase().trim();
 
-      var folder = document.createElement('div');
-      folder.className = 'biz-group';
+      groups.forEach(function(group) {
+        var filtered = q
+          ? group.items.filter(function(b) {
+              return (b.name || '').toLowerCase().indexOf(q) !== -1
+                || (b.address || '').toLowerCase().indexOf(q) !== -1;
+            })
+          : group.items;
+        if (!filtered.length) return;
 
-      var header = document.createElement('button');
-      header.type = 'button';
-      header.className = 'biz-group-header';
-      header.innerHTML = '<span class="biz-group-label">' + group.label +
-        '</span><span class="biz-group-count">' + group.items.length + '</span>';
+        var folder = document.createElement('div');
+        folder.className = 'biz-group';
 
-      var content = document.createElement('div');
-      content.className = 'biz-group-content';
-      content.style.display = 'none';
+        var header = document.createElement('button');
+        header.type = 'button';
+        header.className = 'biz-group-header';
+        header.innerHTML = '<span class="biz-group-label">' + group.label +
+          '</span><span class="biz-group-count">' + filtered.length + '</span>';
 
-      header.addEventListener('click', function() {
-        var isOpen = content.style.display !== 'none';
-        content.style.display = isOpen ? 'none' : '';
-        folder.classList.toggle('is-open', !isOpen);
+        var content = document.createElement('div');
+        content.className = 'biz-group-content';
+        // Auto-open when searching or when active selection is in this group
+        var hasActive = filtered.some(function(b) { return (b.id || b.building_id || '') === current; });
+        content.style.display = (q || hasActive) ? '' : 'none';
+        if (q || hasActive) folder.classList.add('is-open');
+
+        header.addEventListener('click', function() {
+          var isOpen = content.style.display !== 'none';
+          content.style.display = isOpen ? 'none' : '';
+          folder.classList.toggle('is-open', !isOpen);
+        });
+
+        filtered.forEach(function(biz) {
+          content.appendChild(_makeBizItem(biz, current, hiddenInput, listbox));
+        });
+
+        folder.appendChild(header);
+        folder.appendChild(content);
+        groupContainer.appendChild(folder);
       });
+    }
 
-      group.items.forEach(function(biz) {
-        content.appendChild(_makeBizItem(biz, current, hiddenInput, listbox));
-      });
-
-      // Auto-open if current selection is in this group
-      var hasActive = group.items.some(function(b) {
-        return (b.id || b.building_id || '') === current;
-      });
-      if (hasActive) {
-        content.style.display = '';
-        folder.classList.add('is-open');
-      }
-
-      folder.appendChild(header);
-      folder.appendChild(content);
-      listbox.appendChild(folder);
-    });
+    searchInput.addEventListener('input', function() { renderGroups(searchInput.value); });
+    renderGroups(savedQuery);
 
     // Restore hidden input value after rebuilding (renderTypeForm clears it)
     if (current) hiddenInput.value = current;
@@ -209,37 +285,73 @@ window.populateBizSelect = populateBizSelect;
     return window.location.origin + p;
   })();
 
-  // --- Load manifest ---
-  var manifest;
-  try {
-    var manifestUrl = new URL("qr_type_manifest.json", __CODEDESK_BASE_URL__).toString();
-    var res = await fetch(manifestUrl, { cache: "no-store" });
-    if (!res.ok) throw new Error("manifest not found: " + res.status);
-    manifest = await res.json();
-  } catch (e) {
+  // --- Load manifest + templates + businesses in parallel ---
+  var manifestUrl = new URL("qr_type_manifest.json", __CODEDESK_BASE_URL__).toString();
+  var templatesUrl = new URL("qr_templates.json", __CODEDESK_BASE_URL__).toString();
+  var apiUrl = window.LSQ_API_URL || '';
+
+  var manifestP = fetch(manifestUrl, { cache: "no-store" }).then(function(r) {
+    if (!r.ok) throw new Error("manifest not found: " + r.status);
+    return r.json();
+  }).catch(function(e) {
     console.warn("Manifest load failed, using inline fallback", e);
-    manifest = { types: {} };
-  }
+    return { types: {} };
+  });
+
+  var templatesP = fetch(templatesUrl, { cache: "no-store" }).then(function(r) {
+    if (!r.ok) return [];
+    return r.json().then(function(j) {
+      var t = Array.isArray(j.templates) ? j.templates : [];
+      return t.filter(function(tpl) { return tpl && typeof tpl === 'object' && tpl.id && tpl.state; });
+    });
+  }).catch(function(e) {
+    console.warn("Template load failed", e);
+    return [];
+  });
+
+  // Load API listings + local landmarks, merge so all places appear
+  var base = getLsqBaseUrl();
+  var apiP = apiUrl
+    ? fetch(apiUrl + '?action=listings', { cache: 'no-store' }).then(function(r) {
+        if (!r.ok) return [];
+        return r.json().then(function(d) { return Array.isArray(d.data) ? d.data : []; });
+      }).catch(function() { return []; })
+    : Promise.resolve([]);
+
+  var localP = fetch(base + '/data/landmarks.json', { cache: 'no-store' }).then(function(r) {
+    if (!r.ok) throw new Error('not found');
+    return r.json().then(function(d) { return d.landmarks || []; });
+  }).catch(function() {
+    // Fallback: try relative path (works in iframe or dev server)
+    return fetch('./landmarks.json', { cache: 'no-store' }).then(function(r) {
+      if (!r.ok) return [];
+      return r.json().then(function(d) { return d.landmarks || []; });
+    }).catch(function() { return []; });
+  });
+
+  var bizP = Promise.all([apiP, localP]).then(function(results) {
+    var apiList = results[0];
+    var localList = results[1];
+    // Merge: API data wins per ID, local fills gaps
+    var byId = {};
+    localList.forEach(function(l) { if (l.id) byId[l.id] = l; });
+    apiList.forEach(function(l) { if (l.id) byId[l.id] = Object.assign(byId[l.id] || {}, l); });
+    var merged = Object.values(byId);
+    return merged.length > 0 ? merged : null;
+  });
+
+  var results = await Promise.all([manifestP, templatesP, bizP]);
+  var manifest = results[0];
+  var templates = results[1];
+  var businesses = results[2];
 
   window.manifest = window.manifest || {};
   try { Object.assign(window.manifest, manifest); } catch(_e) { window.manifest = manifest; }
-
-  // --- Load templates (separate from type manifest) ---
-  var templates = [];
-  try {
-    var templatesUrl = new URL("qr_templates.json", __CODEDESK_BASE_URL__).toString();
-    var tRes = await fetch(templatesUrl, { cache: "no-store" });
-    if (tRes.ok) {
-      var tJson = await tRes.json();
-      templates = Array.isArray(tJson.templates) ? tJson.templates : [];
-      templates = templates.filter(function(tpl) {
-        return tpl && typeof tpl === 'object' && tpl.id && tpl.state;
-      });
-    }
-  } catch (e) {
-    console.warn("Template load failed", e);
-  }
   window.CODEDESK_TEMPLATES = templates;
+  if (businesses) {
+    window.LSQ_BUSINESSES = businesses;
+    populateBizSelect(businesses);
+  }
 
   // --- Build the type-specific form (now that manifest is loaded) ---
   try {
@@ -249,51 +361,13 @@ window.populateBizSelect = populateBizSelect;
     }
   } catch (e) {}
 
+  // Populate businesses if they arrived before bootstrapper ran
+  if (window.LSQ_BUSINESSES && window.LSQ_BUSINESSES.length) {
+    try { populateBizSelect(window.LSQ_BUSINESSES); } catch (e) {}
+  }
+
   // Force initial render
   try { if (typeof render === 'function') render(); } catch (e) {}
-
-  // --- Fetch businesses from Lafayette Square API ---
-  var apiUrl = window.LSQ_API_URL || '';
-  if (apiUrl) {
-    try {
-      var bizRes = await fetch(apiUrl + '?action=listings', { cache: 'no-store' });
-      if (bizRes.ok) {
-        var bizData = await bizRes.json();
-        var businesses = Array.isArray(bizData.data) ? bizData.data : [];
-        if (businesses.length > 0) {
-          window.LSQ_BUSINESSES = businesses;
-          populateBizSelect(businesses);
-        }
-      }
-    } catch (e) {
-      console.warn("Business fetch from API failed", e);
-    }
-  }
-
-  // Fallback: try to load from local landmarks.json (dev environment)
-  if (!window.LSQ_BUSINESSES || !window.LSQ_BUSINESSES.length) {
-    try {
-      var base = getLsqBaseUrl();
-      var paths = [
-        base + '/codedesk/businesses.json',
-        base + '/data/landmarks.json'
-      ];
-      for (var i = 0; i < paths.length; i++) {
-        try {
-          var fallbackRes = await fetch(paths[i], { cache: 'no-store' });
-          if (fallbackRes.ok) {
-            var fbData = await fallbackRes.json();
-            var landmarks = fbData.landmarks || fbData.businesses || fbData;
-            if (Array.isArray(landmarks) && landmarks.length > 0) {
-              window.LSQ_BUSINESSES = landmarks;
-              populateBizSelect(landmarks);
-              break;
-            }
-          }
-        } catch(e2) {}
-      }
-    } catch (e) {}
-  }
 
   // --- Wire type change to re-populate bizSelect ---
   var typeSelect = document.getElementById('qrType');

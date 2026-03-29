@@ -7,11 +7,10 @@
 //  - Export helpers (PNG/SVG)
 // =====================================================
 "use strict";
-console.log('[qr_render_engine.js] LOADING (v2024-DEBUG)');
 
 // Guard against duplicate loading
 if (window.__CODEDESK_RENDER_ENGINE_LOADED__) {
-  console.warn('[qr_render_engine] Already loaded, skipping.');
+  // already loaded, skip
 } else {
   window.__CODEDESK_RENDER_ENGINE_LOADED__ = true;
 
@@ -58,7 +57,6 @@ function updatePreviewBackground() {
     return;
   }
   const g = _bgGradientFromKnobs();
-  console.log('[updatePreviewBackground] gradient:', g);
 
   // Paint BOTH vars: some skins use --bg-paint, some older code uses --frame-bg.
   card.style.setProperty('--bg-paint', g);
@@ -68,9 +66,6 @@ function updatePreviewBackground() {
   const bgEl = document.getElementById('qrBgPaint');
   if (bgEl) {
     bgEl.style.background = g;
-    console.log('[updatePreviewBackground] set bgEl.style.background');
-  } else {
-    console.warn('[updatePreviewBackground] qrBgPaint not found!');
   }
 }
 
@@ -78,7 +73,6 @@ function updatePreviewBackground() {
 window.updatePreviewBackground = updatePreviewBackground;
 
 window.refreshBackground = function refreshBackground() {
-  console.log('[refreshBackground] called');
   const card = document.getElementById('qrPreview');
   if (!card) {
     console.warn('[refreshBackground] qrPreview not found!');
@@ -711,7 +705,7 @@ function composeCardSvg({
   const CAP_SIDE = Math.round(cardWidth * 0.08);
   const CAP_TOPPAD = Math.round(cardWidth * 0.05);
   const CAP_BOTPAD = Math.round(cardWidth * 0.06);
-  const QR_FRACTION = 0.75;
+  const QR_FRACTION = 0.85;
 
   // Corner radius
   let RADIUS = Math.round(cardWidth * 0.07);
@@ -921,13 +915,15 @@ function render() {
 
   if (!preview || !mount) return;
 
-  // QRCode lib loads async; retry if not ready
+  // QRCode lib loads async; retry if not ready (keep preview image visible)
   if (!window.QRCode || !window.QRCode.CorrectLevel) {
-    try { mount.innerHTML = ''; } catch (e) {}
     clearTimeout(render._qrRetry);
     render._qrRetry = setTimeout(render, 60);
     return;
   }
+
+  // Mark preview placeholder as replaced so postMessage won't overwrite
+  window.__lsq_preview_replaced = true;
 
   // Helpers
   const toHex = (v) => {
