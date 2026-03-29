@@ -322,7 +322,7 @@ window.populateBizSelect = populateBizSelect;
     if (biz) return biz;
     // Fallback: try local files
     var base = getLsqBaseUrl();
-    var paths = [base + '/codedesk/businesses.json', base + '/data/landmarks.json'];
+    var paths = [base + '/data/landmarks.json', base + '/codedesk/businesses.json'];
     return paths.reduce(function(chain, path) {
       return chain.then(function(found) {
         if (found) return found;
