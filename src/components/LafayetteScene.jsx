@@ -2,7 +2,7 @@ import { useRef, useState, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text, Html } from '@react-three/drei'
 import * as THREE from 'three'
-import buildingsData from '../data/buildings.json'
+import { buildings as _allBuildings, buildingMap as _buildingMap } from '../data/buildings'
 import streetsData from '../data/streets.json'
 import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
@@ -301,7 +301,7 @@ function Foundations() {
   const geometry = useMemo(() => {
     const geos = []
 
-    buildingsData.buildings.forEach(building => {
+    _allBuildings.forEach(building => {
       const fh = getFoundationHeight(building)
       if (fh <= 0) return
 
@@ -1073,7 +1073,7 @@ function LandmarkMarkers() {
 
   const buildingMap = useMemo(() => {
     const map = {}
-    buildingsData.buildings.forEach(b => { map[b.id] = b })
+    _allBuildings.forEach(b => { map[b.id] = b })
     return map
   }, [])
 
@@ -1214,7 +1214,7 @@ function LafayetteScene() {
   const _frameCount = useRef(0)
   const _bldgPosMap = useMemo(() => {
     const m = {}
-    buildingsData.buildings.forEach(b => { m[b.id] = b })
+    _allBuildings.forEach(b => { m[b.id] = b })
     return m
   }, [])
 
@@ -1290,7 +1290,7 @@ function LafayetteScene() {
       <Foundations />
 
       {/* Buildings — neon only mounts for open places in camera frustum */}
-      {buildingsData.buildings.map(b => (
+      {_allBuildings.map(b => (
         <Building key={b.id} building={b} neonInfo={visibleNeonIds.has(b.id) ? neonLookup[b.id] : undefined} />
       ))}
 

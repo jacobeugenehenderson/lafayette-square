@@ -3,16 +3,12 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
-import buildingsData from '../data/buildings.json'
+import { buildingMap as _buildingMap } from '../data/buildings'
 import facadeElementsData from '../data/facadeElements.json'
 
 const BASE = import.meta.env.BASE_URL
 const LOAD_DISTANCE = 60
 const UNLOAD_DISTANCE = 80
-
-// ── Building lookup ──
-const _buildingMap = {}
-buildingsData.buildings.forEach(b => { _buildingMap[b.id] = b })
 
 // ── Model loading (supports GLB/glTF and FBX) ──
 const _gltfLoader = new GLTFLoader()

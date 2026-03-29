@@ -2,7 +2,7 @@ import { useRef, useState, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import facadeData from '../data/facade_mapping.json'
-import buildingsData from '../data/buildings.json'
+import { buildingMap as buildingLookup, ready as _buildingsReady } from '../data/buildings'
 
 const BASE = import.meta.env.BASE_URL
 const LOAD_DISTANCE = 100    // meters — load textures within this range
@@ -11,48 +11,43 @@ const OFFSET = 0.15          // meters — offset from wall surface
 const MAX_LOADED = 40        // max simultaneous textures
 
 // Pre-compute facade entries with world positions for distance checks
-const facades = []
-const buildingLookup = {}
-buildingsData.buildings.forEach(b => { buildingLookup[b.id] = b })
+let facades = []
 
-for (const [bid, data] of Object.entries(facadeData)) {
-  const bldg = buildingLookup[bid]
-  if (!bldg) continue
-  const edge = data.front_edge
-  if (!edge) continue
+function _buildFacades() {
+  if (facades.length > 0) return
+  const result = []
 
-  // Foundation height (same logic as LafayetteScene)
-  const year = bldg.year_built
-  let foundationY = 0
-  if (year && year < 1900) foundationY = 1.2
-  else if (year && year < 1920) foundationY = 0.8
+  for (const [bid, data] of Object.entries(facadeData)) {
+    const bldg = buildingLookup[bid]
+    if (!bldg) continue
+    const edge = data.front_edge
+    if (!edge) continue
 
-  // Facade plane position: front edge midpoint, offset outward
-  const px = edge.mid_x + edge.nx * OFFSET
-  const pz = edge.mid_z + edge.nz * OFFSET
-  const py = foundationY + data.wall_height / 2
+    const year = bldg.year_built
+    let foundationY = 0
+    if (year && year < 1900) foundationY = 1.2
+    else if (year && year < 1920) foundationY = 0.8
 
-  // Rotation: plane faces along normal direction
-  // PlaneGeometry faces +Z by default, so we rotate to face the normal direction
-  const rotY = edge.angle
+    const px = edge.mid_x + edge.nx * OFFSET
+    const pz = edge.mid_z + edge.nz * OFFSET
+    const py = foundationY + data.wall_height / 2
+    const rotY = edge.angle
+    const imagePath = `${BASE}${data.image.replace(/^\/public\//, '').replace(/^\//, '')}`
+    const facadeWidth = Math.min(edge.width, 18)
 
-  // Image path — strip leading /public/ since Vite serves public/ at root
-  const imagePath = `${BASE}${data.image.replace(/^\/public\//, '').replace(/^\//, '')}`
-
-  // Cap facade width — photos are of individual buildings (~5-15m wide)
-  // Stretching across 40m+ industrial buildings would look wrong
-  const facadeWidth = Math.min(edge.width, 18)
-
-  facades.push({
-    id: bid,
-    px, py, pz,
-    rotY,
-    width: facadeWidth,
-    height: data.wall_height,
-    imagePath,
-    confidence: data.confidence,
-  })
+    result.push({
+      id: bid,
+      px, py, pz,
+      rotY,
+      width: facadeWidth,
+      height: data.wall_height,
+      imagePath,
+      confidence: data.confidence,
+    })
+  }
+  facades = result
 }
+_buildingsReady.then(_buildFacades)
 
 // Texture cache
 const textureLoader = new THREE.TextureLoader()

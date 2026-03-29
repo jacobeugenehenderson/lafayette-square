@@ -6,7 +6,7 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
 import useUserLocation from '../hooks/useUserLocation'
 import { CATEGORY_LIST, COLOR_CLASSES } from '../tokens/categories'
-import buildingsData from '../data/buildings.json'
+import { buildings as _buildings, buildingMap as _buildingMap, buildingCount as _buildingCount, ready as _buildingsReady } from '../data/buildings'
 import streetsData from '../data/streets.json'
 import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
@@ -20,20 +20,20 @@ import { useContact } from './ContactModal'
 import useCommunityStats from '../hooks/useCommunityStats'
 
 // ── Camera helpers ──────────────────────────────────────────────────
-const _buildingMap = {}
-buildingsData.buildings.forEach(b => { _buildingMap[b.id] = b })
+// _buildingMap imported from shared buildings module
 
-// Neighborhood bounding box (precomputed once)
-const _neighborhoodBounds = (() => {
+// Neighborhood bounding box (computed lazily after buildings load)
+let _neighborhoodBounds = { minX: -200, maxX: 200, minZ: -200, maxZ: 200 }
+_buildingsReady.then(({ buildings }) => {
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
-  for (const b of buildingsData.buildings) {
+  for (const b of buildings) {
     minX = Math.min(minX, b.position[0])
     maxX = Math.max(maxX, b.position[0])
     minZ = Math.min(minZ, b.position[2])
     maxZ = Math.max(maxZ, b.position[2])
   }
-  return { minX, maxX, minZ, maxZ }
-})()
+  _neighborhoodBounds = { minX, maxX, minZ, maxZ }
+})
 
 // Compute neighborhood framing using actual viewport dimensions
 function getNeighborhoodTarget() {
@@ -152,8 +152,9 @@ function _isWithinHours(hours, time) {
   return mins >= oh * 60 + om && mins < ch * 60 + cm
 }
 
-// Pre-compute which buildings have real hours data
-const _buildingsWithHours = buildingsData.buildings.filter(b => b.hours)
+// Buildings with hours — computed lazily
+let _buildingsWithHours = []
+_buildingsReady.then(({ buildings }) => { _buildingsWithHours = buildings.filter(b => b.hours) })
 const _namedStreetCount = new Set(streetsData.streets.map(s => s.name).filter(Boolean)).size
 
 // ============ COLLAPSIBLE SECTION ============
@@ -673,7 +674,7 @@ function BulletinMasthead() {
 
   const stats = [
     { value: '2,164', label: 'Residents', color: 'rgba(180,160,140,0.12)' },      // warm taupe
-    { value: buildingsData.buildings.length.toLocaleString(), label: 'Buildings', color: 'rgba(160,130,100,0.12)' }, // sandstone
+    { value: (_buildingCount || _buildings.length).toLocaleString(), label: 'Buildings', color: 'rgba(160,130,100,0.12)' }, // sandstone
     { value: places, label: 'Places', color: 'rgba(61,175,138,0.12)' },          // verdigris
     { value: _namedStreetCount, label: 'Streets', color: 'rgba(140,150,170,0.12)' }, // slate blue
   ]

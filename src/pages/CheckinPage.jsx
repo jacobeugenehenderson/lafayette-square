@@ -9,7 +9,7 @@ import AvatarCircle from '../components/AvatarCircle'
 import AvatarEditor from '../components/AvatarEditor'
 import { claimResidence } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
-import buildingsData from '../data/buildings.json'
+import { buildings as _allBuildings } from '../data/buildings'
 
 function HandlePicker({ accentHex, onDone, required }) {
   const { setHandle, checkAvailability, loading: saving } = useHandle()
@@ -179,7 +179,7 @@ export default function CheckinPage({ locationId }) {
   const [showHandlePicker, setShowHandlePicker] = useState(false)
   const landmark = getById(locationId)
   // If no listing found, check if locationId is a building ID (residential QR codes encode building IDs)
-  const building = !landmark ? buildingsData.buildings?.find(b => b.id === locationId) : null
+  const building = !landmark ? _allBuildings?.find(b => b.id === locationId) : null
   const resolvedName = landmark?.name || building?.address || 'this building'
   const resolvedBuildingId = landmark?.building_id || (building ? locationId : null)
   const cat = landmark ? CATEGORIES[landmark.category] : null

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { getListings } from '../lib/api'
 import staticData from '../data/landmarks.json'
 import menuData from '../data/menus.json'
-import buildingsData from '../data/buildings.json'
+import { buildings as _allBuildings, ready as _buildingsReady } from '../data/buildings'
 
 /**
  * Listing data store.
@@ -32,44 +32,58 @@ const ZONING_LABELS = {
 }
 const _landmarkBids = new Set(landmarksWithMenus.map(l => l.building_id).filter(Boolean))
 const _landmarkAddrs = new Set(landmarksWithMenus.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
-const bareBuildingListings = buildingsData.buildings
-  .filter(b => b.address && !_landmarkBids.has(b.id) && !_landmarkAddrs.has(b.address.toLowerCase().replace(/\s+/g, ' ').trim()))
-  .map(b => {
-    const z = (b.zoning || '').replace(/[^A-Z]/g, '').charAt(0)
-    const arch = b.architecture || {}
-    const style = arch.style || null
-    const yearBuilt = b.year_built || arch.year_built || null
-    const stories = b.stories || null
-    const historicStatus = b.historic_status || null
-    const sqft = b.building_sqft || null
-    const zoningLabel = ZONING_LABELS[z] || null
-    return {
-      id: b.id,
-      name: b.name || b.address,
-      address: b.address,
-      building_id: b.id,
-      category: ZONING_CAT[z] || 'residential',
-      subcategory: ZONING_SUB[z] || 'unnamed',
-      zoning: z,
-      zoning_label: zoningLabel,
-      year_built: yearBuilt,
-      stories,
-      style,
-      historic_status: historicStatus,
-      building_sqft: sqft,
-      description: [
-        yearBuilt ? `Built ${yearBuilt}.` : null,
-        stories ? `${stories}-story` : null,
-        style ? `${style} style.` : null,
-        zoningLabel ? `Zoned ${zoningLabel}.` : null,
-        historicStatus === 'contributing' ? 'Contributing structure in the Lafayette Square Historic District.' : null,
-        sqft ? `${sqft.toLocaleString()} sq ft.` : null,
-      ].filter(Boolean).join(' '),
-      _bare: true,
-    }
-  })
+function _buildBareBuildingListings(buildings) {
+  return buildings
+    .filter(b => b.address && !_landmarkBids.has(b.id) && !_landmarkAddrs.has(b.address.toLowerCase().replace(/\s+/g, ' ').trim()))
+    .map(b => {
+      const z = (b.zoning || '').replace(/[^A-Z]/g, '').charAt(0)
+      const arch = b.architecture || {}
+      const style = arch.style || null
+      const yearBuilt = b.year_built || arch.year_built || null
+      const stories = b.stories || null
+      const historicStatus = b.historic_status || null
+      const sqft = b.building_sqft || null
+      const zoningLabel = ZONING_LABELS[z] || null
+      return {
+        id: b.id,
+        name: b.name || b.address,
+        address: b.address,
+        building_id: b.id,
+        category: ZONING_CAT[z] || 'residential',
+        subcategory: ZONING_SUB[z] || 'unnamed',
+        zoning: z,
+        zoning_label: zoningLabel,
+        year_built: yearBuilt,
+        stories,
+        style,
+        historic_status: historicStatus,
+        building_sqft: sqft,
+        description: [
+          yearBuilt ? `Built ${yearBuilt}.` : null,
+          stories ? `${stories}-story` : null,
+          style ? `${style} style.` : null,
+          zoningLabel ? `Zoned ${zoningLabel}.` : null,
+          historicStatus === 'contributing' ? 'Contributing structure in the Lafayette Square Historic District.' : null,
+          sqft ? `${sqft.toLocaleString()} sq ft.` : null,
+        ].filter(Boolean).join(' '),
+        _bare: true,
+      }
+    })
+}
 
-const allListings = [...landmarksWithMenus, ...bareBuildingListings]
+// Initially empty — populated once buildings.json loads
+let bareBuildingListings = []
+_buildingsReady.then(({ buildings }) => {
+  bareBuildingListings = _buildBareBuildingListings(buildings)
+  // Merge into store if init already ran
+  const state = useListings.getState()
+  if (state.fetched) {
+    const current = state.listings.filter(l => !l._bare)
+    useListings.setState({ listings: [...current, ...bareBuildingListings] })
+  }
+})
+
+const allListings = [...landmarksWithMenus]
 
 export { bareBuildingListings }
 

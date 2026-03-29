@@ -9,10 +9,7 @@ import { useCodeDesk } from './CodeDeskModal'
 import { useInfo } from './InfoModal'
 import CATEGORIES from '../tokens/categories'
 
-// Precompute a map of building_id -> building for fast lookup
-import buildingsData from '../data/buildings.json'
-const _buildingMap = {}
-buildingsData.buildings.forEach(b => { _buildingMap[b.id] = b })
+import { buildings, buildingMap as _buildingMap } from '../data/buildings'
 
 function computeCenterOn(building) {
   const fp = building.footprint || []
@@ -112,7 +109,7 @@ function buildSearchIndex(listings) {
   const idx = []
   // Index bare buildings by address (skip those covered by listings)
   const listingBuildingIds = new Set(listings.map(l => l.building_id).filter(Boolean))
-  buildingsData.buildings.forEach(b => {
+  buildings.forEach(b => {
     if (listingBuildingIds.has(b.id) || !b.address) return
     const addr = b.address.toUpperCase()
     const name = (b.name || '').toUpperCase()

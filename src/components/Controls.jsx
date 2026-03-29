@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
-import buildingsData from '../data/buildings.json'
+import { buildings as _allBuildings } from '../data/buildings'
 import PlaceCard from './PlaceCard'
 
 const INSTRUCTIONS = {
@@ -35,7 +35,7 @@ function Controls() {
 
   useEffect(() => {
     if (selectedId) {
-      const building = buildingsData.buildings.find((b) => b.id === selectedId)
+      const building = _allBuildings.find((b) => b.id === selectedId)
       if (building) {
         setBuildingInfo(building)
       }
