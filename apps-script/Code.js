@@ -300,14 +300,14 @@ function fetchCommunityCounts() {
   var guardians = sheetToObjects(getSheet('Guardians'))
   guardians.forEach(function(r) { if (r.device_hash) townieDevices.add(r.device_hash) })
 
-  // Guardian count: distinct listings with at least one staff member
-  var guardianListings = new Set()
-  guardians.forEach(function(r) { if (r.listing_id) guardianListings.add(r.listing_id) })
+  // Guardian count: distinct people (device hashes) who are guardians or keyholders
+  var guardianDevices = new Set()
+  guardians.forEach(function(r) { if (r.device_hash) guardianDevices.add(r.device_hash) })
 
   return {
     townies: townieDevices.size,
     residents: verifiedResidents.length,
-    guardians: guardianListings.size,
+    guardians: guardianDevices.size,
     couriers: 0, // fetched from Supabase on frontend
   }
 }
