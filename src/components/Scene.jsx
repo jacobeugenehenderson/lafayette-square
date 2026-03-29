@@ -299,19 +299,14 @@ function easeInOutCubic(t) {
 
 // ── Hero pan path ────────────────────────────────────────────────────────────
 // Slow lateral tracking shot perpendicular to arch sight line.
-// Camera moves along this path; arch stays centered, foreground parallaxes.
 
 const HERO_CENTER = [-400, 40, 230]
 const HERO_TARGET = [400, 40, -100]
-// Direction to arch in XZ: [3116, -1196], perpendicular: [0.358, 0.934]
-const PAN_HALF_LENGTH = 140 // ±140m from center
+const PAN_HALF_LENGTH = 140
 const PAN_PERP = [0.358, 0.934]
-const PAN_PERIOD = 720 // seconds for one full back-and-forth (12 min — savor it)
-const HERO_PHASE = Math.random() // randomized start position each visit
+const PAN_PERIOD = 720
+const HERO_PHASE = Math.random()
 
-// Pure cosine wave: perfectly smooth at all points — no linear segments,
-// no easing discontinuities. Slowest at turnarounds, fastest in middle,
-// but with 12-min period the max velocity is gentle.
 function heroPanSwing(t) {
   return -Math.cos(((t % 1) + 1) % 1 * Math.PI * 2)
 }
@@ -322,7 +317,7 @@ const PRESETS = {
   hero: {
     position: HERO_CENTER,
     target: HERO_TARGET,
-    fov: 22,                      // moderate telephoto — neighborhood fills frame
+    fov: 22,
   },
   browse: {
     position: [0, 600, 1],        // top-down (Z=1 avoids gimbal lock)
@@ -789,7 +784,6 @@ function CameraRig() {
     if (vm === 'hero') {
       // Fixed-step accumulator: advance at a constant rate regardless of framerate.
       // If a frame is slow, we advance less (not more), so the camera never jumps.
-      // Wall-clock positioning — smooth cosine, hold for first 3s
       const elapsed = Math.max(0, clock.elapsedTime - 3)
       const t = elapsed / PAN_PERIOD + HERO_PHASE
       const swing = heroPanSwing(t)
