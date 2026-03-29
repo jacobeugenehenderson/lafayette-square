@@ -479,7 +479,7 @@ function CameraRig() {
   const prevFlyTarget = useRef(null)
   const prevPanelState = useRef('neutral')
   const _panelCameraOffset = useRef(0)
-  const heroPanAccum = useRef({ t: HERO_PHASE, started: false })
+  const heroPanAccum = useRef({ t: HERO_PHASE, lastTime: 0 })
   const transToHero = useRef(false)
   const modeChangedAt = useRef(Date.now())
 
@@ -791,12 +791,14 @@ function CameraRig() {
       // Fixed-step accumulator: advance at a constant rate regardless of framerate.
       // If a frame is slow, we advance less (not more), so the camera never jumps.
       const MAX_DELTA = 1 / 30 // cap at 30fps worth of movement per frame
-      const dt = Math.min(clock.getDelta(), MAX_DELTA)
-      // Hold still for first 3 seconds to let GPU warm up
-      if (!heroPanAccum.current.started && clock.elapsedTime < 3) {
+      const now = performance.now() / 1000
+      const rawDt = heroPanAccum.current.lastTime ? now - heroPanAccum.current.lastTime : 1 / 60
+      heroPanAccum.current.lastTime = now
+      const dt = Math.min(rawDt, MAX_DELTA)
+      // Hold still for first 3 seconds
+      if (clock.elapsedTime < 3) {
         heroPanAccum.current.t = HERO_PHASE
       } else {
-        heroPanAccum.current.started = true
         heroPanAccum.current.t += dt / PAN_PERIOD
       }
       const t = heroPanAccum.current.t
