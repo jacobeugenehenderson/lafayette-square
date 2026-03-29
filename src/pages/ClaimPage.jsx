@@ -66,32 +66,11 @@ export default function ClaimPage({ listingId, secret }) {
           </div>
         )}
 
-        {/* Claimed — either just now or returning */}
-        {claimed && !loading && (
-          <div
-            className="rounded-xl p-5 border"
-            style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
-          >
-            <p className="text-on-surface font-medium text-lg mb-2">
-              {alreadyClaimed && !result ? 'Welcome back' : 'You\'re in'}
-            </p>
-            <p className="text-on-surface-variant text-sm leading-relaxed">
-              {alreadyClaimed && !result
-                ? isGuardianRole
-                  ? `You're the guardian of ${placeName}. Manage it from the map.`
-                  : `You're staff at ${placeName}.`
-                : isGuardianRole
-                  ? `This device is now the guardian of ${placeName}. You can post events, respond to reviews, and customize your QR codes from the map.`
-                  : `You're now staff at ${placeName}. You're a recognized local in the neighborhood. Your guardian will set your permissions.`
-              }
-            </p>
-          </div>
-        )}
-
-        {/* Handle selection — shown after successful claim if no handle set */}
+        {/* Gated flow: handle → avatar → success message */}
+        {/* Step 1: Handle — blocks everything until done */}
         {needsHandle && <HandleStep accentHex={accentHex} />}
 
-        {/* Avatar selection — shown after handle is set if no avatar */}
+        {/* Step 2: Avatar — blocks success until done */}
         {needsAvatar && !needsHandle && (
           <div className="rounded-xl p-4 border border-outline-variant bg-surface-container-high space-y-3">
             <p className="text-on-surface font-medium text-sm">Choose your avatar</p>
@@ -134,14 +113,29 @@ export default function ClaimPage({ listingId, secret }) {
           </div>
         )}
 
-        {/* Link back — only show after setup is complete */}
-        {claimed && !needsHandle && !needsAvatar && (
-          <div className="space-y-3">
-            {avatar && (
-              <div className="flex justify-center">
-                <AvatarCircle emoji={avatar} vignette={vignette} size={12} />
-              </div>
-            )}
+        {/* Success + link — only after handle and avatar are done */}
+        {claimed && !loading && !needsHandle && !needsAvatar && (
+          <div className="space-y-4">
+            <div
+              className="rounded-xl p-5 border"
+              style={{ borderColor: accentHex + '40', backgroundColor: accentHex + '15' }}
+            >
+              {avatar && (
+                <div className="flex justify-center mb-3">
+                  <AvatarCircle emoji={avatar} vignette={vignette} size={12} />
+                </div>
+              )}
+              <p className="text-on-surface font-medium text-lg mb-2">
+                {alreadyClaimed && !result ? 'Welcome back' : 'You\'re in'}
+                {handle ? `, @${handle}` : ''}
+              </p>
+              <p className="text-on-surface-variant text-sm leading-relaxed">
+                {isGuardianRole
+                  ? `You're the guardian of ${placeName}. Manage it from the map.`
+                  : `You're staff at ${placeName}. You're a recognized local in the neighborhood.`
+                }
+              </p>
+            </div>
             <a
               href={`${import.meta.env.BASE_URL}place/${listingId}`}
               className="inline-block text-sm px-4 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
