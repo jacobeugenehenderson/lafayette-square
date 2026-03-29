@@ -1143,7 +1143,7 @@ function CelestialBodies() {
       <Suspense fallback={null}>
         <Moon {...lighting.moon} />
       </Suspense>
-      <ambientLight color="#ffffff" intensity={(0.45 - lighting.nightFactor * 0.15) * (1 + cc * 0.4)} />
+      <ambientLight color="#ffffff" intensity={(0.45 - lighting.nightFactor * 0.38) * (1 + cc * 0.4)} />
       <ambientLight
         color={lighting.ambient.color}
         intensity={lighting.ambient.intensity * (1 + cc * 0.4)}
@@ -1153,13 +1153,13 @@ function CelestialBodies() {
       <hemisphereLight
         color={lerpColor('#ffeedd', '#556688', lighting.nightFactor)}
         groundColor={lerpColor('#443333', '#443322', lighting.nightFactor)}
-        intensity={(0.35 + lighting.nightFactor * 0.25) * (1 + cc * 0.5)}
+        intensity={(0.35 - lighting.nightFactor * 0.15) * (1 + cc * 0.5)}
       />
       <PrimaryOrb {...primaryWeathered} />
       <SecondaryOrb {...lighting.secondary} />
       <directionalLight
         position={[0, 100, -400]}
-        intensity={0.12 + lighting.nightFactor * 0.38}
+        intensity={0.12 - lighting.nightFactor * 0.06}
         color={lerpColor('#ffeedd', '#5577aa', lighting.nightFactor)}
       />
     </>
