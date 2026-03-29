@@ -347,6 +347,8 @@ const DRAG_CLAMP = 200
 
 function SearchDrawer() {
   const [open, setOpen] = useState(false)
+  const panelState = useCamera(s => s.panelState)
+  const panelCoversSearch = panelState === 'full' || panelState === 'browse'
   const { query, setQuery, focused, setFocused, inputRef, results, selectPlace, handleKeyDown } = useGlassSearch()
   const drawerRef = useRef(null)
   const dragState = useRef({ startY: 0, isDragging: false, pointerId: null })
@@ -463,7 +465,7 @@ function SearchDrawer() {
   }, [open, setQuery, setFocused])
 
   return (
-    <div className="relative" style={{ zIndex: 60 }}>
+    <div className="relative" style={{ zIndex: 60, display: panelCoversSearch ? 'none' : undefined }}>
       {/* Drawer — extends the ticker strip */}
       <div
         ref={drawerRef}
