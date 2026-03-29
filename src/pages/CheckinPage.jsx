@@ -219,7 +219,7 @@ export default function CheckinPage({ locationId }) {
   // Handle prompt: residents must pick a handle immediately; places use graduated flow
   const days = distinctDays
   const needsHandlePlace = !handle && !isResidential && result && result.logged !== false && !loading
-  const needsHandleResident = !handle && isResidential && result?.success && !result.alreadyResident
+  const needsHandleResident = !handle && isResidential && result?.success
   const handleTier = needsHandleResident ? 'required'
     : needsHandlePlace ? (days >= 3 ? 'required' : days >= 2 ? 'nudge' : 'silent')
     : 'silent'
