@@ -85,10 +85,12 @@ Deno.serve(async (req) => {
     replyBody = "Thanks for reaching out! Someone will get back to you during business hours."
   }
 
-  // Respond with TwiML
-  const twiml = replyBody
-    ? `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${replyBody}</Message></Response>`
-    : `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`
+  // Respond with TwiML — forward + optional auto-reply
+  const fwdPhone = Deno.env.get('FORWARD_PHONE')
+  let twiml = `<?xml version="1.0" encoding="UTF-8"?><Response>`
+  if (replyBody) twiml += `<Message>${replyBody}</Message>`
+  if (fwdPhone && from !== fwdPhone) twiml += `<Message to="${fwdPhone}">[${from}] ${body}</Message>`
+  twiml += `</Response>`
 
   return new Response(twiml, {
     headers: { 'Content-Type': 'text/xml' },
