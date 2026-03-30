@@ -16,6 +16,7 @@ export default function ContactModal() {
   const initialMessage = useContact((s) => s.initialMessage)
   const [message, setMessage] = useState('')
   const [seeded, setSeeded] = useState(false)
+  const [sendCount] = useState(() => parseInt(localStorage.getItem('lsq_contact_count') || '0', 10))
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(null)
@@ -52,6 +53,7 @@ export default function ContactModal() {
       if (data?.error) throw new Error(data.error)
       setSent(true)
       setMessage('')
+      localStorage.setItem('lsq_contact_count', String(sendCount + 1))
     } catch (err) {
       setError('Could not send — try texting (877) 335-1917 directly.')
       console.error('[ContactModal] send failed:', err)
@@ -119,16 +121,11 @@ export default function ContactModal() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-body text-on-surface-variant">{
-                (() => {
-                  const key = 'lsq_contact_count'
-                  const count = parseInt(localStorage.getItem(key) || '0', 10)
-                  localStorage.setItem(key, String(count + 1))
-                  if (count === 0) return "Sent. We'll get back to you here on the site — no personal info needed."
-                  if (count === 1) return "Sent. We'll get back to you here on the site."
-                  return 'Sent.'
-                })()
-              }</p>
+              <p className="text-body text-on-surface-variant">
+                {sendCount === 0 ? "Sent. We'll get back to you here on the site — no personal info needed."
+                  : sendCount === 1 ? "Sent. We'll get back to you here on the site."
+                  : 'Sent.'}
+              </p>
               <button
                 onClick={() => { setSent(false); setError(null) }}
                 className="text-body-sm text-on-surface-disabled"
