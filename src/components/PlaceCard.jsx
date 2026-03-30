@@ -1420,14 +1420,11 @@ function ArchitectureTab({ building }) {
         <DetailRow label="Renovation Cost">{arch.renovation_cost}</DetailRow>
       )}
 
-      {(building.assessed_value || building.building_sqft || building.lot_acres || building.zoning) && (
+      {(building.building_sqft || building.lot_acres || building.zoning) && (
         <>
           <div className="border-t border-outline-variant mt-3 pt-2">
             <span className="text-on-surface-disabled text-caption uppercase tracking-wider">Assessment</span>
           </div>
-          {building.assessed_value && (
-            <DetailRow label="Assessed Value">${building.assessed_value.toLocaleString()}</DetailRow>
-          )}
           {building.building_sqft && (
             <DetailRow label="Building Area">{building.building_sqft.toLocaleString()} sq ft</DetailRow>
           )}
@@ -1483,9 +1480,6 @@ function PropertyTab({ building, facadeInfo }) {
         {arch.nps_style_period && <DetailRow label="Era">{arch.nps_style_period}</DetailRow>}
         {building.building_sqft && (
           <DetailRow label="Size">{building.building_sqft.toLocaleString()} sq ft</DetailRow>
-        )}
-        {building.assessed_value && (
-          <DetailRow label="Assessed">${building.assessed_value.toLocaleString()}</DetailRow>
         )}
         {building.year_built && building.year_renovated && (
           <DetailRow label="Renovated">{building.year_renovated}</DetailRow>
