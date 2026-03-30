@@ -2284,9 +2284,10 @@ function StaffSection({ listingId }) {
 }
 
 // ─── Tab: QR Codes (guardian / admin) ─────────────────────────────
-function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
+function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential, isHouse }) {
   // For residential buildings, the QR encodes the building ID (not the listing ID)
-  const qrId = isResidential ? (buildingId || listingId) : listingId
+  // Houses use listing ID (they're single-family, not multi-unit)
+  const qrId = (isResidential && !isHouse) ? (buildingId || listingId) : listingId
   const [townieQr, setTownieQr] = useState(null)
   const [guardianQr, setGuardianQr] = useState(null)
   const [townieUrl, setTownieUrl] = useState('')
@@ -2322,8 +2323,8 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
         setLoading(false) // Plain QRs ready — show UI immediately
       }
 
-      // 2. Fetch guardian secret + generate plain Guardian QR (non-residential only)
-      if (!isResidential) {
+      // 2. Fetch guardian secret + generate plain Guardian QR (non-residential + houses)
+      if (!isResidential || isHouse) {
         try {
           const dh = await getDeviceHash()
           const res = isAdmin
@@ -2363,8 +2364,8 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
     <div className="space-y-4">
       {/* Townie / Resident QR */}
       <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
-        <div className="text-body font-medium text-on-surface mb-0.5">{isResidential ? 'Resident' : 'Townie'}</div>
-        <div className="text-caption text-on-surface-subtle mb-3">{isResidential ? 'Show to a neighbor to invite them' : 'For customers to check in'}</div>
+        <div className="text-body font-medium text-on-surface mb-0.5">{isHouse ? 'Household' : isResidential ? 'Resident' : 'Townie'}</div>
+        <div className="text-caption text-on-surface-subtle mb-3">{isHouse ? 'Scan a family member or roommate in' : isResidential ? 'Show to a neighbor to invite them' : 'For customers to check in'}</div>
         {townieQr && (
           <div className="flex justify-center mb-3">
             <img src={townieQr} alt={isResidential ? 'Resident QR' : 'Townie QR'} className={`w-48 rounded-lg transition-opacity duration-300${styledLoading ? ' opacity-60 animate-pulse' : ''}`} />
@@ -2401,8 +2402,8 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
         )}
       </div>
 
-      {/* Guardian QR — hidden behind reveal toggle (non-residential only) */}
-      {!isResidential && (
+      {/* Guardian QR — hidden behind reveal toggle (non-residential + houses) */}
+      {(!isResidential || isHouse) && (
         (loading || (styledLoading && !guardianQr)) ? (
           <div className="rounded-lg bg-surface-container border border-outline-variant p-4">
             <div className="text-body font-medium text-on-surface mb-0.5">Guardian</div>
@@ -2442,8 +2443,8 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
         )
       )}
 
-      {/* Residential: how-it-works note */}
-      {isResidential && (
+      {/* Residential (non-house): how-it-works note */}
+      {isResidential && !isHouse && (
         <div className="rounded-lg bg-surface-container border border-outline-variant p-4 space-y-2">
           <div className="text-body-sm font-medium text-on-surface flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5 text-[#7A8B6F]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -2460,7 +2461,7 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential }) {
       )}
 
       {/* Design button */}
-      {!isResidential && (
+      {(!isResidential || isHouse) && (
         <button
           onClick={openQrStudio}
           className="w-full py-2.5 px-4 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface hover:text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
@@ -2636,6 +2637,77 @@ function LobbyTab({ buildingId, isGuardian }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── House About Tab (private homes — name, description, photos, history) ──
+function HouseAboutTab({ listing, building, isGuardian, canEditPhotos, history, description, hasArchitecture, photos, facadeImage, facadeInfo, name, listingId }) {
+  const hasPhotos = !!(photos?.length || facadeImage || facadeInfo || isGuardian)
+  const address = listing?.address || building?.address || null
+
+  return (
+    <div className="space-y-5">
+      {/* About card */}
+      <div className="card space-y-3">
+        {/* Address */}
+        {address && (
+          <div className="flex items-center gap-2 text-body-sm">
+            <svg className="w-3.5 h-3.5 text-on-surface-disabled flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+            <span className="text-on-surface-variant">{address}</span>
+          </div>
+        )}
+
+        {/* Description — editable for guardian */}
+        {(listing?.description || isGuardian) && (
+          isGuardian ? (
+            <EditableField value={listing?.description || ''} field="description" isGuardian placeholder="Tell the story of your home..." multiline>
+              {listing?.description ? (
+                <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
+              ) : (
+                <p className="text-body-sm text-on-surface-disabled italic">Tell the story of your home...</p>
+              )}
+            </EditableField>
+          ) : listing?.description ? (
+            <p className="text-body-sm text-on-surface-variant leading-relaxed">{listing.description}</p>
+          ) : null
+        )}
+
+        {/* History — collapsible */}
+        {history?.length > 0 && (
+          <details className="group">
+            <summary className="history-toggle">
+              <span className="group-open:hidden">{history[0]?.year || ''} – Present</span>
+              <span className="hidden group-open:inline">Less</span>
+              <svg className="w-3.5 h-3.5 transform group-open:rotate-180 transition-transform duration-300 ease-out" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="mt-3 pt-3 border-t border-outline-variant space-y-3">
+              <h4 className="section-heading">History</h4>
+              <HistoryTimeline history={history} />
+              {hasArchitecture && (<>
+                <div className="h-2" />
+                <div className="rounded-lg border border-outline p-3">
+                  <h4 className="section-heading mb-2">Building Details</h4>
+                  <ArchitectureTab building={building} />
+                </div>
+              </>)}
+            </div>
+          </details>
+        )}
+      </div>
+
+      {/* Photos */}
+      {hasPhotos && (
+        <div className="card">
+          <h3 className="section-heading mb-3">Photos</h3>
+          <PhotosTab photos={photos} facadeImage={facadeImage} facadeInfo={facadeInfo} name={name} isGuardian={canEditPhotos || isGuardian} listingId={listingId} />
         </div>
       )}
     </div>
@@ -3547,13 +3619,20 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
   const hasArchitecture = !!(building && (building.year_built || building.style || building.architect || building.historic_status || building.architecture))
 
   const isResidential = activeListing?.category === 'residential'
+  const isHouse = isResidential && new Set(['houses', 'historic-homes', 'townhouses']).has(activeListing?.subcategory)
   const isResidentHere = isResidential && residenceBuildingId === building?.id && residenceStatus === 'verified'
 
 
   const tabs = useMemo(() => {
     if (hasListingInfo) {
+      if (isHouse) {
+        // ── House: About + Manage (guardian only, like businesses) ──
+        const t = [{ id: 'about', label: 'About' }]
+        if (isStaff || isAdmin) t.push({ id: 'guardians', label: 'Manage' })
+        return t
+      }
       if (isResidential) {
-        // ── Residential: About + Community (public) + Lobby (residents only) ──
+        // ── Multi-unit residential: About + Community + Lobby ──
         const t = [{ id: 'about', label: 'About' }]
         t.push({ id: 'community', label: 'Community' })
         if (isResidentHere || isAdmin) t.push({ id: 'lobby', label: 'Lobby' })
@@ -3572,7 +3651,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
     if (hasHistory) t.push({ id: 'history', label: 'History' })
     t.push({ id: 'photos', label: 'Photos' })
     return t
-  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, isGuardian, isStaff, isAdmin, isResidential, isResidentHere, activeListing?.menu])
+  }, [hasListingInfo, hasHistory, hasArchitecture, hasPropertyData, isGuardian, isStaff, isAdmin, isResidential, isHouse, isResidentHere, activeListing?.menu])
 
   // Default tab: first available
   const defaultTab = tabs[0]?.id || 'photos'
@@ -3825,9 +3904,24 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
         {/* Tab content */}
         <div className="p-4">
-          {/* About tab: residential or non-residential */}
+          {/* About tab: house, residential, or non-residential */}
           {currentTab === 'about' && (
-            isResidential ? (
+            isHouse ? (
+              <HouseAboutTab
+                listing={activeListing}
+                building={building}
+                isGuardian={isGuardian}
+                canEditPhotos={canDo('photos')}
+                history={history}
+                description={description}
+                hasArchitecture={hasArchitecture}
+                photos={photos}
+                facadeImage={facadeImage}
+                facadeInfo={facadeInfo}
+                name={name}
+                listingId={listingId}
+              />
+            ) : isResidential ? (
               <ResidentialAboutTab
                 listing={activeListing}
                 building={building}
@@ -3881,7 +3975,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               {isFullGuardian && (
                 <div className="card">
                   <h3 className="section-heading mb-3">QR Codes</h3>
-                  <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />
+                  <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} isHouse={isHouse} />
                 </div>
               )}
               {isFullGuardian && (
@@ -3904,7 +3998,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
               <LobbyTab buildingId={building?.id} isGuardian={isGuardian} />
               <div className="card">
                 <h3 className="section-heading mb-3">Resident QR</h3>
-                <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} />
+                <QrTab listingId={listingId} buildingId={building?.id} listingName={name} isAdmin={isAdmin} isResidential={isResidential} isHouse={isHouse} />
               </div>
             </div>
           )}
@@ -4022,28 +4116,28 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           </a>
         )}
 
-        {/* Non-residential: guardian badge */}
-        {!isResidential && hasListingInfo && isFullGuardian && (
+        {/* Non-residential or house: guardian badge */}
+        {(!isResidential || isHouse) && hasListingInfo && isFullGuardian && (
           <div className="flex-1 flex items-center gap-2 text-emerald-400/70 text-body-sm">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            You are the guardian of this place
+            {isHouse ? 'You are the guardian of this home' : 'You are the guardian of this place'}
           </div>
         )}
 
-        {/* Non-residential: staff badge */}
-        {!isResidential && hasListingInfo && isStaff && !isFullGuardian && (
+        {/* Non-residential or house: staff badge */}
+        {(!isResidential || isHouse) && hasListingInfo && isStaff && !isFullGuardian && (
           <div className="flex-1 flex items-center gap-2 text-sky-400/70 text-body-sm">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
             </svg>
-            You are staff at this place
+            {isHouse ? 'You are a keyholder of this home' : 'You are staff at this place'}
           </div>
         )}
 
         {/* Non-residential: claim CTA */}
-        {!isResidential && hasListingInfo && !isStaff && (
+        {(!isResidential || isHouse) && hasListingInfo && !isStaff && (
           <button
             onClick={() => useContact.getState().setOpen(true, `Hi, this is my place \u2014 ${name}. I'd love to get set up on Lafayette Square.`)}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
