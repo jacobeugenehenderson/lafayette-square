@@ -225,14 +225,14 @@ function AccountButton() {
               <div className="border-t border-outline-variant pt-2">
                 <button
                   onClick={() => {
-                    if (!window.confirm('Sign out of this browser?\n\nIf this is your only signed-in device, you will lose your handle, guardian status, and everything associated with your account. Make sure you are signed in on another device first.')) return
+                    if (!window.confirm('Remove your identity from this browser?\n\nIf this is your only signed-in browser, your handle, guardian status, and everything you\'ve built will be gone permanently. There is no recovery.\n\nMake sure you\'re linked to another device first.')) return
                     useHandle.getState().disassociate()
                     useGuardianStatus.setState({ guardianOf: [] })
                     setOpen(false)
                   }}
-                  className="w-full py-1.5 rounded-lg text-caption text-on-surface-disabled hover:text-red-400 hover:bg-red-500/10 transition-colors text-left px-3"
+                  className="w-full py-1.5 rounded-lg text-caption text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors text-left px-3"
                 >
-                  Sign out of this browser
+                  Remove identity from this browser
                 </button>
               </div>
             </>
