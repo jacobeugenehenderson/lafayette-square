@@ -79,7 +79,7 @@ function SmsInboxInner() {
   const inputRef = useRef(null)
 
   const close = () => useSmsInbox.getState().setOpen(false)
-  const adminToken = sessionStorage.getItem('lsq_admin_token') || ''
+  const adminToken = localStorage.getItem('lsq_admin_token') || ''
 
   const fetchMessages = async () => {
     try {

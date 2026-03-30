@@ -81,7 +81,7 @@ const useGuardianStatus = create((set, get) => ({
     try {
       const res = await adminAuth(passphrase)
       if (res?.data?.admin_token) {
-        sessionStorage.setItem(TOKEN_KEY, res.data.admin_token)
+        localStorage.setItem(TOKEN_KEY, res.data.admin_token)
         localStorage.setItem(ADMIN_KEY, 'true')
         set({ isAdmin: true, adminPromptOpen: false, adminPromptError: null })
       } else {
@@ -127,7 +127,7 @@ const _initParams = new URLSearchParams(window.location.search)
 if (_initParams.has('logout')) {
   localStorage.removeItem(ADMIN_KEY)
   localStorage.removeItem(GUARDIAN_KEY)
-  sessionStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(TOKEN_KEY)
   useGuardianStatus.setState({ isAdmin: false, guardianOf: [] })
   _initParams.delete('logout')
   const clean = _initParams.toString()
@@ -147,22 +147,22 @@ if (_wantsAdmin) {
 
 // Async: verify existing session token (doesn't affect mounting)
 if (!_wantsAdmin && localStorage.getItem(ADMIN_KEY) === 'true') {
-  const _token = sessionStorage.getItem(TOKEN_KEY)
+  const _token = localStorage.getItem(TOKEN_KEY)
   if (_token) {
     adminVerify(_token).then(res => {
       if (res?.data?.valid) {
         useGuardianStatus.setState({ isAdmin: true })
       } else {
         localStorage.removeItem(ADMIN_KEY)
-        sessionStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem(TOKEN_KEY)
       }
     }).catch(() => {
       localStorage.removeItem(ADMIN_KEY)
-      sessionStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(TOKEN_KEY)
     })
   } else {
     localStorage.removeItem(ADMIN_KEY)
-    sessionStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(TOKEN_KEY)
   }
 }
 

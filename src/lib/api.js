@@ -231,7 +231,7 @@ export async function getClaimSecret(listingId, deviceHash) {
 }
 
 export async function getClaimSecretAdmin(listingId) {
-  const token = sessionStorage.getItem('lsq_admin_token') || ''
+  const token = localStorage.getItem('lsq_admin_token') || ''
   return get('claim-secret', { lid: listingId, admin: token })
 }
 
@@ -381,7 +381,7 @@ export async function getResidentCount(buildingId) {
 
 export async function claimResidence(deviceHash, buildingId, autoVerify = false, admin = false) {
   const body = { device_hash: deviceHash, building_id: buildingId, auto_verify: autoVerify }
-  if (admin) body.admin_token = sessionStorage.getItem('lsq_admin_token') || ''
+  if (admin) body.admin_token = localStorage.getItem('lsq_admin_token') || ''
   return post('claim-residence', body)
 }
 
