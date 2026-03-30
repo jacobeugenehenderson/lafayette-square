@@ -26,7 +26,7 @@ import ClaimPage from './pages/ClaimPage'
 import LinkPage from './pages/LinkPage'
 import { PrivacyPage, CourierTermsPage, RestaurantTermsPage } from './pages/LegalPage'
 import QRCode from 'qrcode'
-import { createLinkToken, checkLinkToken } from './lib/api'
+import { createLinkToken, checkLinkToken, getLinkedDeviceCount } from './lib/api'
 import { getDeviceHash } from './lib/device'
 import CourierDashboard, { useCourierDash } from './components/CourierDashboard'
 
@@ -212,15 +212,21 @@ function AccountButton() {
               )}
               <div className="border-t border-outline-variant pt-2">
                 <button
-                  onClick={() => {
-                    if (!window.confirm('Remove your identity from this browser?\n\nIf this is your only signed-in browser, your handle, guardian status, and everything you\'ve built will be gone permanently. There is no recovery.\n\nMake sure you\'re linked to another device first.')) return
+                  onClick={async () => {
+                    const dh = await getDeviceHash()
+                    const res = await getLinkedDeviceCount(dh).catch(() => null)
+                    const count = res?.data?.count || 0
+                    const msg = count > 1
+                      ? 'Sign out of this browser? Your identity is safe on your other linked device.'
+                      : 'Remove your identity from this browser?\n\nThis is your only signed-in device. Your handle, guardian status, and everything you\'ve built will be gone permanently. There is no recovery.\n\nLink another device first.'
+                    if (!window.confirm(msg)) return
                     useHandle.getState().disassociate()
                     useGuardianStatus.setState({ guardianOf: [] })
                     setOpen(false)
                   }}
                   className="w-full py-1.5 rounded-lg text-caption text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors text-left px-3"
                 >
-                  Remove identity from this browser
+                  Sign out of this browser
                 </button>
               </div>
             </>

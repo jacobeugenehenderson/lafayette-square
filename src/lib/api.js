@@ -369,6 +369,10 @@ export async function checkLinkToken(token) {
   return get('check-link-token', { token })
 }
 
+export async function getLinkedDeviceCount(deviceHash) {
+  return get('linked-devices', { dh: deviceHash })
+}
+
 // ── Residents ──────────────────────────────────────────────────────────
 
 export async function getResidenceStatus(deviceHash) {

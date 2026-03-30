@@ -190,6 +190,7 @@ function doGet(e) {
       case 'listing-staff':  return getListingStaff(e.parameter.lid, e.parameter.dh)
       case 'create-link-token':  return createLinkToken(e.parameter.dh)
       case 'check-link-token':   return checkLinkToken(e.parameter.token)
+      case 'linked-devices':     return getLinkedDeviceCount(e.parameter.dh)
       case 'getdesign':      return getDesign(e.parameter.bizId)
       case 'residence-status': return getResidenceStatus(e.parameter.dh)
       case 'resident-count':   return getResidentCount(e.parameter.bid)
@@ -1097,6 +1098,12 @@ function postClaimLinkToken(body) {
   })
   cache.put('link_' + token, payload, 300)
   return jsonResponse({ success: true, handle: result.rowData.handle })
+}
+
+function getLinkedDeviceCount(deviceHash) {
+  if (!deviceHash) return jsonResponse({ count: 0 })
+  var hashes = getLinkedHashes(deviceHash)
+  return jsonResponse({ count: hashes.length })
 }
 
 function checkLinkToken(token) {
