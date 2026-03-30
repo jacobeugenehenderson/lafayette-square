@@ -2125,6 +2125,11 @@ function StaffSetupPrompt({ listingId }) {
           )}
         </div>
         {error && <p className="text-red-400 text-caption">{error}</p>}
+        {valid && !checking && available === false && (
+          <p className="text-caption text-on-surface-subtle">
+            Already yours? Open your account on the other browser and use <strong>Link Device</strong> to connect this one.
+          </p>
+        )}
         <button
           type="submit"
           disabled={!valid || !available || saving}
