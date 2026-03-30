@@ -29,9 +29,43 @@ async function checkUnread() {
   }
 }
 
+// Listen for new admin replies in real time
+let _subscribed = false
+async function subscribeRealtime() {
+  if (_subscribed) return
+  _subscribed = true
+  try {
+    const dh = await getDeviceHash()
+    supabase
+      .channel('chat-replies')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'sms_messages',
+          filter: `device_hash=eq.${dh}`,
+        },
+        (payload) => {
+          const msg = payload.new
+          if (msg.direction === 'outbound') {
+            // Admin replied — open modal if closed, notify store
+            useChat.getState().setUnreadCount(useChat.getState().unreadCount + 1)
+            if (!useChat.getState().open) useChat.getState().setOpen(true)
+            // Dispatch a custom event so ChatModalInner can append the message
+            window.dispatchEvent(new CustomEvent('lsq-chat-message', { detail: msg }))
+          }
+        }
+      )
+      .subscribe()
+  } catch (err) {
+    console.error('[ChatModal] realtime subscribe failed:', err)
+  }
+}
+
 // Thin gate
 export default function ChatModal() {
-  useEffect(() => { checkUnread() }, [])
+  useEffect(() => { checkUnread(); subscribeRealtime() }, [])
   const open = useChat((s) => s.open)
   if (!open) return null
   return <ChatModalInner />
@@ -49,6 +83,19 @@ function ChatModalInner() {
     useChat.getState().setOpen(false)
     useChat.getState().setUnreadCount(0)
   }
+
+  // Listen for real-time admin replies
+  useEffect(() => {
+    const handler = (e) => {
+      const msg = e.detail
+      setMessages(prev => {
+        if (prev.some(m => m.id === msg.id)) return prev
+        return [...prev, msg]
+      })
+    }
+    window.addEventListener('lsq-chat-message', handler)
+    return () => window.removeEventListener('lsq-chat-message', handler)
+  }, [])
 
   const fetchThread = async () => {
     try {
