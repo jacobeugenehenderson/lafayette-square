@@ -34,31 +34,39 @@ function timeAgo(dateStr) {
 
 const ROLE_LABELS = { resident: 'Resident', worker: 'Worker', visitor: 'Visitor' }
 
-function ContactLabel({ phone, profiles, messages }) {
-  if (phone === 'web') {
-    // Count unique senders by handle
-    const handles = [...new Set((messages || []).filter(m => m.handle).map(m => m.handle))]
-    if (handles.length === 1) {
-      const msg = messages.find(m => m.handle)
+function parseClaimContext(messages) {
+  // Extract place/address from the first inbound message's pre-filled text
+  const first = (messages || []).find(m => m.direction === 'inbound')
+  if (!first) return null
+  const placeMatch = first.body.match(/this is my (?:place|building) — (.+?)\./)
+  if (placeMatch) return placeMatch[1]
+  const houseMatch = first.body.match(/this is my house/)
+  if (houseMatch) return 'House claim'
+  return null
+}
+
+function ContactLabel({ threadKey, profiles, messages }) {
+  if (threadKey.startsWith('device:')) {
+    // Device-hash thread — show handle+avatar or fall back to place/address
+    const inbound = (messages || []).find(m => m.handle && m.direction === 'inbound')
+    const claimContext = parseClaimContext(messages)
+    if (inbound?.handle) {
       return (
         <span className="flex items-center gap-1.5">
-          {msg.avatar && <span>{msg.avatar}</span>}
-          <span className="text-white/90">@{msg.handle}</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/40 border border-white/6">Web</span>
+          {inbound.avatar && <span>{inbound.avatar}</span>}
+          <span className="text-white/90">@{inbound.handle}</span>
         </span>
       )
     }
     return (
-      <span className="flex items-center gap-1.5">
-        <span className="text-white/50 italic">Web contacts</span>
-        {handles.length > 0 && <span className="text-caption text-white/30">({handles.length})</span>}
-      </span>
+      <span className="text-white/70">{claimContext || 'Anonymous'}</span>
     )
   }
-  const p = profiles[phone]
+  // Phone thread
+  const p = profiles[threadKey]
   return (
     <span className="flex items-center gap-1.5">
-      <span className="text-white/90">{p?.display_name || formatPhone(phone)}</span>
+      <span className="text-white/90">{p?.display_name || formatPhone(threadKey)}</span>
       {p?.neighborhood_relationship && (
         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/40 border border-white/6">
           {ROLE_LABELS[p.neighborhood_relationship] || p.neighborhood_relationship}
@@ -72,7 +80,7 @@ function SmsInboxInner() {
   const [messages, setMessages] = useState([])
   const [profiles, setProfiles] = useState({})  // phone → { display_name, neighborhood_relationship }
   const [loading, setLoading] = useState(true)
-  const [selectedPhone, setSelectedPhone] = useState(null)
+  const [selectedThread, setSelectedPhone] = useState(null)
   const [replyText, setReplyText] = useState('')
   const [sending, setSending] = useState(false)
   const scrollRef = useRef(null)
@@ -100,24 +108,27 @@ function SmsInboxInner() {
 
   // Auto-scroll thread to bottom
   useEffect(() => {
-    if (selectedPhone && scrollRef.current) {
+    if (selectedThread && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [selectedPhone, messages])
+  }, [selectedThread, messages])
 
   // Focus input when thread opens
   useEffect(() => {
-    if (selectedPhone) {
+    if (selectedThread) {
       const t = setTimeout(() => inputRef.current?.focus(), 300)
       return () => clearTimeout(t)
     }
-  }, [selectedPhone])
+  }, [selectedThread])
 
-  // Group messages into conversations by phone
+  // Group messages into conversations — by device_hash for web, by phone for SMS
   const conversations = {}
   for (const msg of messages) {
-    if (!conversations[msg.phone]) conversations[msg.phone] = []
-    conversations[msg.phone].push(msg)
+    const key = msg.phone === 'web' && msg.device_hash
+      ? `device:${msg.device_hash}`
+      : msg.phone
+    if (!conversations[key]) conversations[key] = []
+    conversations[key].push(msg)
   }
 
   // Sort conversations by most recent message
@@ -128,18 +139,21 @@ function SmsInboxInner() {
   })
 
   const sendReply = async () => {
-    if (!replyText.trim() || sending) return
+    if (!replyText.trim() || sending || !selectedThread) return
     setSending(true)
+    // For device threads, send the device_hash; for phone threads, send the phone
+    const isDevice = selectedThread.startsWith('device:')
+    const to = isDevice ? selectedThread.slice(7) : selectedThread
     try {
       const { data, error } = await supabase.functions.invoke('sms-reply', {
-        body: { to: selectedPhone, body: replyText.trim(), admin_token: adminToken },
+        body: { to, body: replyText.trim(), admin_token: adminToken },
       })
       if (data?.sent) {
         setReplyText('')
-        // Optimistically add message
         setMessages(prev => [...prev, {
           id: crypto.randomUUID(),
-          phone: selectedPhone,
+          phone: isDevice ? 'web' : selectedThread,
+          device_hash: isDevice ? to : null,
           direction: 'outbound',
           body: replyText.trim(),
           created_at: new Date().toISOString(),
@@ -153,7 +167,7 @@ function SmsInboxInner() {
     }
   }
 
-  const thread = selectedPhone ? conversations[selectedPhone] || [] : []
+  const thread = selectedThread ? conversations[selectedThread] || [] : []
 
   return (
     <div
@@ -185,7 +199,7 @@ function SmsInboxInner() {
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 flex-shrink-0">
-          {selectedPhone ? (
+          {selectedThread ? (
             <>
               <button
                 onClick={() => setSelectedPhone(null)}
@@ -195,7 +209,7 @@ function SmsInboxInner() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
-              <span className="text-body font-medium flex-1"><ContactLabel phone={selectedPhone} profiles={profiles} messages={thread} /></span>
+              <span className="text-body font-medium flex-1"><ContactLabel threadKey={selectedThread} profiles={profiles} messages={thread} /></span>
             </>
           ) : (
             <span className="text-body font-medium flex-1">SMS Inbox</span>
@@ -224,7 +238,7 @@ function SmsInboxInner() {
           <div className="flex-1 flex items-center justify-center text-white/30 text-body-sm">
             Loading...
           </div>
-        ) : !selectedPhone ? (
+        ) : !selectedThread ? (
           /* ── Conversation list ── */
           <div className="flex-1 overflow-y-auto min-h-0">
             {sorted.length === 0 ? (
@@ -242,7 +256,7 @@ function SmsInboxInner() {
                     className="w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-body-sm font-medium"><ContactLabel phone={phone} profiles={profiles} messages={msgs} /></span>
+                      <span className="text-body-sm font-medium"><ContactLabel threadKey={phone} profiles={profiles} messages={msgs} /></span>
                       <span className="text-caption text-white/30">{timeAgo(last.created_at)}</span>
                     </div>
                     <p className="text-body-sm text-white/50 truncate mt-0.5">
@@ -274,12 +288,6 @@ function SmsInboxInner() {
                         : '1px solid rgba(255,255,255,0.06)',
                     }}
                   >
-                    {selectedPhone === 'web' && msg.direction === 'inbound' && msg.handle && (
-                      <p className="text-caption text-white/40 mb-1">
-                        {msg.avatar && <span className="mr-1">{msg.avatar}</span>}
-                        @{msg.handle}
-                      </p>
-                    )}
                     <p className="text-body-sm text-white/90 whitespace-pre-wrap break-words">{msg.body}</p>
                     <p className="text-caption text-white/25 mt-1">
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
@@ -289,12 +297,7 @@ function SmsInboxInner() {
               ))}
             </div>
 
-            {/* Reply input — hidden for web contacts (no phone to reply to) */}
-            {selectedPhone === 'web' ? (
-              <div className="flex-shrink-0 px-3 py-2 border-t border-white/10">
-                <p className="text-caption text-white/25 text-center">Web contact — no phone number to reply to</p>
-              </div>
-            ) : (
+            {/* Reply input */}
             <div className="flex-shrink-0 px-3 py-2 border-t border-white/10">
               <div className="flex gap-2">
                 <input
@@ -324,7 +327,6 @@ function SmsInboxInner() {
                 </button>
               </div>
             </div>
-            )}
           </>
         )}
       </div>

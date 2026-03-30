@@ -41,51 +41,63 @@ Deno.serve(async (req) => {
     return json({ error: 'Unauthorized' }, 401)
   }
 
-  // Send via Twilio
-  const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID')!
-  const twilioAuth = Deno.env.get('TWILIO_AUTH_TOKEN')!
-  const twilioFrom = Deno.env.get('TWILIO_PHONE_NUMBER')!
+  const isPhone = to.startsWith('+')
 
-  const res = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(twilioSid + ':' + twilioAuth)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({ To: to, From: twilioFrom, Body: body.trim() }),
-    }
+  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
+  const sb = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
 
-  let twilioSidOut = null
-  try {
-    const data = await res.json()
-    twilioSidOut = data.sid || null
-    if (!res.ok) {
-      console.error('[sms-reply] Twilio error:', JSON.stringify(data))
+  if (isPhone) {
+    // ── SMS reply to phone number ─────────────────────────────
+    const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID')!
+    const twilioAuth = Deno.env.get('TWILIO_AUTH_TOKEN')!
+    const twilioFrom = Deno.env.get('TWILIO_PHONE_NUMBER')!
+
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${btoa(twilioSid + ':' + twilioAuth)}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ To: to, From: twilioFrom, Body: body.trim() }),
+      }
+    )
+
+    let twilioSidOut = null
+    try {
+      const data = await res.json()
+      twilioSidOut = data.sid || null
+      if (!res.ok) {
+        console.error('[sms-reply] Twilio error:', JSON.stringify(data))
+        return json({ error: 'Twilio send failed' }, 502)
+      }
+    } catch (err) {
+      console.error('[sms-reply] Twilio parse error:', err.message)
       return json({ error: 'Twilio send failed' }, 502)
     }
-  } catch (err) {
-    console.error('[sms-reply] Twilio parse error:', err.message)
-    return json({ error: 'Twilio send failed' }, 502)
-  }
 
-  // Log outbound message
-  try {
-    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
-    const sb = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
     await sb.from('sms_messages').insert({
       phone: to,
       direction: 'outbound',
       body: body.trim(),
       twilio_sid: twilioSidOut,
     })
-  } catch (err) {
-    console.error('[sms-reply] DB log failed:', err.message)
+  } else {
+    // ── In-app reply to device_hash ───────────────────────────
+    const { error } = await sb.from('sms_messages').insert({
+      phone: 'web',
+      direction: 'outbound',
+      body: body.trim(),
+      device_hash: to,
+    })
+    if (error) {
+      console.error('[sms-reply] DB insert failed:', error.message)
+      return json({ error: 'Failed to save reply' }, 500)
+    }
   }
 
   return json({ sent: true })

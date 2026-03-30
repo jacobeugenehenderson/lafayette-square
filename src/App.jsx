@@ -9,6 +9,7 @@ import BulletinModal from './components/BulletinModal'
 import ContactModal, { useContact } from './components/ContactModal'
 import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import SmsInbox, { useSmsInbox } from './components/SmsInbox'
+import ChatModal from './components/ChatModal'
 import EventTicker from './components/EventTicker'
 import BrowseHeader from './components/BrowseHeader'
 import AdminPrompt from './components/AdminPrompt'
@@ -577,6 +578,7 @@ function App() {
       {!isGround && <ContactModal />}
       {!isGround && <CodeDeskModal />}
       {!isGround && <SmsInbox />}
+      {!isGround && <ChatModal />}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}
       {!isGround && <InfoModal />}
       <CourierDashboard />
