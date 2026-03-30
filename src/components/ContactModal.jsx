@@ -119,7 +119,16 @@ export default function ContactModal() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-body text-on-surface-variant">Sent. We'll get back to you here on the site — no personal info needed.</p>
+              <p className="text-body text-on-surface-variant">{
+                (() => {
+                  const key = 'lsq_contact_count'
+                  const count = parseInt(localStorage.getItem(key) || '0', 10)
+                  localStorage.setItem(key, String(count + 1))
+                  if (count === 0) return "Sent. We'll get back to you here on the site — no personal info needed."
+                  if (count === 1) return "Sent. We'll get back to you here on the site."
+                  return 'Sent.'
+                })()
+              }</p>
               <button
                 onClick={() => { setSent(false); setError(null) }}
                 className="text-body-sm text-on-surface-disabled"
