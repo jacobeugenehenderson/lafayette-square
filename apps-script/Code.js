@@ -802,6 +802,8 @@ function getClaimSecret(listingId, deviceHash, adminKey) {
       if (h === 'id') return listingId
       if (h === 'claim_secret') return secret
       if (h === 'status') return 'pending'
+      if (h === 'category') return 'residential'
+      if (h === 'subcategory') return 'houses'
       if (h === 'created_at' || h === 'updated_at') return now
       return ''
     })
