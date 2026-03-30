@@ -832,24 +832,44 @@ function getClaimSecret(listingId, deviceHash, adminKey) {
 // ─── Staff / Guardian helpers ────────────────────────────────────────────
 
 /** Any role (guardian or keyholder) on the listing */
+/**
+ * Resolve all device hashes linked to a given device (via shared handle).
+ * Returns an array that always includes the original hash.
+ */
+function getLinkedHashes(deviceHash) {
+  if (!deviceHash) return []
+  var handleRow = findRow(getSheet('Handles'), 'device_hash', deviceHash)
+  if (!handleRow || !handleRow.rowData.handle) return [deviceHash]
+  var handle = handleRow.rowData.handle
+  var allHandles = sheetToObjects(getSheet('Handles'))
+  var linked = allHandles
+    .filter(function(h) { return h.handle && h.handle.toLowerCase() === handle.toLowerCase() })
+    .map(function(h) { return h.device_hash })
+  if (linked.indexOf(deviceHash) === -1) linked.push(deviceHash)
+  return linked
+}
+
 function isStaffOf(listingId, deviceHash) {
   if (!listingId || !deviceHash) return false
   const rows = sheetToObjects(getSheet('Guardians'))
-  return rows.some(r => r.listing_id === listingId && r.device_hash === deviceHash)
+  const hashes = getLinkedHashes(deviceHash)
+  return rows.some(r => r.listing_id === listingId && hashes.indexOf(r.device_hash) !== -1)
 }
 
 /** Full guardian only (empty role = legacy guardian for backcompat) */
 function isFullGuardianOf(listingId, deviceHash) {
   if (!listingId || !deviceHash) return false
   const rows = sheetToObjects(getSheet('Guardians'))
-  return rows.some(r => r.listing_id === listingId && r.device_hash === deviceHash && (!r.role || r.role === 'guardian'))
+  const hashes = getLinkedHashes(deviceHash)
+  return rows.some(r => r.listing_id === listingId && hashes.indexOf(r.device_hash) !== -1 && (!r.role || r.role === 'guardian'))
 }
 
 /** Returns 'guardian', 'keyholder', or null */
 function getStaffRole(listingId, deviceHash) {
   if (!listingId || !deviceHash) return null
   const rows = sheetToObjects(getSheet('Guardians'))
-  const row = rows.find(r => r.listing_id === listingId && r.device_hash === deviceHash)
+  const hashes = getLinkedHashes(deviceHash)
+  const row = rows.find(r => r.listing_id === listingId && hashes.indexOf(r.device_hash) !== -1)
   if (!row) return null
   return (!row.role || row.role === 'guardian') ? 'guardian' : row.role
 }
@@ -857,7 +877,8 @@ function getStaffRole(listingId, deviceHash) {
 /** Returns parsed permissions array for a staff member */
 function getStaffPermissions(listingId, deviceHash) {
   const rows = sheetToObjects(getSheet('Guardians'))
-  const row = rows.find(r => r.listing_id === listingId && r.device_hash === deviceHash)
+  const hashes = getLinkedHashes(deviceHash)
+  const row = rows.find(r => r.listing_id === listingId && hashes.indexOf(r.device_hash) !== -1)
   if (!row) return []
   if (!row.role || row.role === 'guardian') return ['menu', 'events', 'replies', 'photos', 'hours']
   return row.permissions ? row.permissions.split(',').map(s => s.trim()).filter(Boolean) : []
