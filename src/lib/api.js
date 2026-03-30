@@ -357,8 +357,8 @@ export async function closeThread(deviceHash, threadId) {
 
 // ── Link Device ──────────────────────────────────────────────────────
 
-export async function createLinkToken() {
-  return get('create-link-token')
+export async function createLinkToken(deviceHash) {
+  return get('create-link-token', deviceHash ? { dh: deviceHash } : {})
 }
 
 export async function claimLinkToken(token, deviceHash) {

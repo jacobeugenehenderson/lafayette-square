@@ -27,6 +27,7 @@ import LinkPage from './pages/LinkPage'
 import { PrivacyPage, CourierTermsPage, RestaurantTermsPage } from './pages/LegalPage'
 import QRCode from 'qrcode'
 import { createLinkToken, checkLinkToken } from './lib/api'
+import { getDeviceHash } from './lib/device'
 import CourierDashboard, { useCourierDash } from './components/CourierDashboard'
 
 function LiveButton() {
@@ -78,21 +79,22 @@ function AccountButton() {
   const [linkRefresh, setLinkRefresh] = useState(0)
   const pollRef = useRef(null)
 
-  // Fetch link token when popover opens and no handle
+  // Fetch link token when popover opens — always available for linking devices
   useEffect(() => {
-    if (!open || handle) return
+    if (!open) return
     let cancelled = false
     async function fetchToken() {
       setLinkStatus(null)
       setLinkToken(null)
       setLinkQr(null)
       try {
-        const res = await createLinkToken()
+        const dh = await getDeviceHash()
+        const res = await createLinkToken(dh)
         if (cancelled) return
         const token = res.data?.token
         if (!token) return
         setLinkToken(token)
-        setLinkStatus('pending')
+        setLinkStatus(res.data?.mode === 'push' ? 'push' : 'pending')
         const base = window.location.origin + (import.meta.env.BASE_URL || '/')
         const url = base.replace(/\/$/, '') + '/link/' + token
         const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2, color: { dark: '#ffffff', light: '#00000000' } })
@@ -101,7 +103,7 @@ function AccountButton() {
     }
     fetchToken()
     return () => { cancelled = true }
-  }, [open, handle, linkRefresh])
+  }, [open, linkRefresh])
 
   // Poll for link token claim
   useEffect(() => {
@@ -203,6 +205,23 @@ function AccountButton() {
                   Privacy
                 </button>
               </div>
+              {/* Link Device — always available */}
+              {linkQr && (
+                <div className="border-t border-outline-variant pt-2">
+                  <details className="group">
+                    <summary className="cursor-pointer text-body-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-2 px-3 py-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.54a4.5 4.5 0 00-1.242-7.244l4.5-4.5a4.5 4.5 0 016.364 6.364l-1.757 1.757" />
+                      </svg>
+                      Link another device
+                    </summary>
+                    <div className="text-center py-2 mt-1">
+                      <p className="text-on-surface-subtle text-caption mb-2">Scan to sign in on another browser</p>
+                      <img src={linkQr} alt="Link QR" className="w-32 h-32 mx-auto rounded-lg" />
+                    </div>
+                  </details>
+                </div>
+              )}
               <div className="border-t border-outline-variant pt-2">
                 <button
                   onClick={() => {

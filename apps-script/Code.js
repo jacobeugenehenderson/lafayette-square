@@ -188,7 +188,7 @@ function doGet(e) {
       case 'comments':        return getComments(e.parameter.bid, e.parameter.dh)
       case 'claim-secret':   return getClaimSecret(e.parameter.lid, e.parameter.dh, e.parameter.admin)
       case 'listing-staff':  return getListingStaff(e.parameter.lid, e.parameter.dh)
-      case 'create-link-token':  return createLinkToken()
+      case 'create-link-token':  return createLinkToken(e.parameter.dh)
       case 'check-link-token':   return checkLinkToken(e.parameter.token)
       case 'getdesign':      return getDesign(e.parameter.bizId)
       case 'residence-status': return getResidenceStatus(e.parameter.dh)
@@ -1031,11 +1031,28 @@ function postRevokeStaff(body) {
 
 // ─── Link Device (cross-device identity via token) ──────────────────────────
 
-function createLinkToken() {
+function createLinkToken(deviceHash) {
   var token = Utilities.getUuid().slice(0, 6).toUpperCase()
   var cache = CacheService.getScriptCache()
+
+  // If the creating device has a handle, embed identity in the token
+  // so the scanning device can receive it directly
+  if (deviceHash) {
+    var handleRow = findRow(getSheet('Handles'), 'device_hash', deviceHash)
+    if (handleRow && handleRow.rowData.handle) {
+      var payload = JSON.stringify({
+        device_hash: deviceHash,
+        handle: handleRow.rowData.handle,
+        avatar: handleRow.rowData.avatar || null,
+        vignette: handleRow.rowData.vignette || null
+      })
+      cache.put('link_' + token, payload, 300)
+      return jsonResponse({ token: token, mode: 'push' })
+    }
+  }
+
   cache.put('link_' + token, 'pending', 300)
-  return jsonResponse({ token: token })
+  return jsonResponse({ token: token, mode: 'pull' })
 }
 
 function postClaimLinkToken(body) {
@@ -1045,9 +1062,28 @@ function postClaimLinkToken(body) {
 
   var cache = CacheService.getScriptCache()
   var val = cache.get('link_' + token)
-  if (!val || val !== 'pending') return errorResponse('Invalid or expired token', 'bad_request')
+  if (!val) return errorResponse('Invalid or expired token', 'bad_request')
 
-  // Look up handle/avatar from Handles sheet
+  // ── Push mode: token already contains identity from creating device ──
+  // Scanning device receives the identity and registers itself
+  if (val !== 'pending') {
+    try {
+      var source = JSON.parse(val)
+      if (source.handle) {
+        // Register this device with the same handle/avatar
+        var sheet = getSheet('Handles')
+        var existing = findRow(sheet, 'device_hash', deviceHash)
+        if (!existing) {
+          sheet.appendRow([deviceHash, source.handle, source.avatar || '', nowISO(), source.vignette || ''])
+        }
+        cache.remove('link_' + token)
+        return jsonResponse({ success: true, handle: source.handle, avatar: source.avatar, vignette: source.vignette })
+      }
+    } catch (e) { /* fall through */ }
+    return errorResponse('Invalid token data', 'bad_request')
+  }
+
+  // ── Pull mode: scanning device has the handle, pushes it into token ──
   var result = findRow(getSheet('Handles'), 'device_hash', deviceHash)
   if (!result || !result.rowData.handle) {
     return jsonResponse({ error: 'No handle on this device' })
