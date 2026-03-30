@@ -8,6 +8,7 @@ import SidePanel from './components/SidePanel'
 import BulletinModal from './components/BulletinModal'
 import ContactModal, { useContact } from './components/ContactModal'
 import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
+import SmsInbox, { useSmsInbox } from './components/SmsInbox'
 import EventTicker from './components/EventTicker'
 import BrowseHeader from './components/BrowseHeader'
 import AdminPrompt from './components/AdminPrompt'
@@ -285,6 +286,15 @@ function AccountButton() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z" />
                 </svg>
                 QR Generator
+              </button>
+              <button
+                onClick={() => { setOpen(false); useSmsInbox.getState().setOpen(true) }}
+                className="w-full py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors text-left px-3 flex items-center gap-2"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                </svg>
+                SMS Inbox
               </button>
             </div>
           )}
@@ -564,8 +574,9 @@ function App() {
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.0s' }}><SidePanel /></div>}
       {!isGround && <div className="fade-in" style={{ animationDelay: '0.8s' }}><EventTicker /></div>}
       {!isGround && <BulletinModal />}
-      {/* ContactModal removed — "Text us" opens native SMS directly */}
+      {!isGround && <ContactModal />}
       {!isGround && <CodeDeskModal />}
+      {!isGround && <SmsInbox />}
       {!isGround && <div className="fade-in" style={{ animationDelay: '1.4s' }}><ModeOverlay /></div>}
       {!isGround && <InfoModal />}
       <CourierDashboard />

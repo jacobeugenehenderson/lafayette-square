@@ -49,29 +49,21 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ── Forward to personal phone via SMS ────────────────────
-  const forwardPhone = Deno.env.get('FORWARD_PHONE')
-  const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID')
-  const twilioToken = Deno.env.get('TWILIO_AUTH_TOKEN')
-  const twilioNumber = Deno.env.get('TWILIO_PHONE_NUMBER')
-
-  if (forwardPhone && twilioSid && twilioToken && twilioNumber && from !== forwardPhone) {
-    try {
-      await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Basic ' + btoa(`${twilioSid}:${twilioToken}`),
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: forwardPhone,
-          From: twilioNumber,
-          Body: `[${from}] ${body}`,
-        }),
-      })
-    } catch (err) {
-      console.error('[sms-webhook] SMS forward failed:', err.message)
-    }
+  // ── Log to sms_messages ────────────────────────────────────
+  try {
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
+    const sb = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
+    await sb.from('sms_messages').insert({
+      phone: from,
+      direction: 'inbound',
+      body: body,
+      twilio_sid: messageSid,
+    })
+  } catch (err) {
+    console.error('[sms-webhook] DB log failed:', err.message)
   }
 
   // ── Auto-reply if outside hours ───────────────────────────

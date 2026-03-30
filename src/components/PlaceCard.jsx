@@ -6,6 +6,7 @@ import useListings from '../hooks/useListings'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useResidence from '../hooks/useResidence'
+import { useContact } from './ContactModal'
 import { getReviews, postReview, postReply, postEvent, updateListing as apiUpdateListing, getClaimSecret, getClaimSecretAdmin, uploadPhoto as apiUploadPhoto, removePhoto as apiRemovePhoto, getResidentCount, getLobbyPosts, postLobbyPost, removeLobbyPost, leaveResidence, claimResidence, getListingStaff, updateStaffPermissions, promoteStaff, demoteStaff, revokeStaff } from '../lib/api'
 import { FormattedTextarea, renderMarkdown, relativeTime as lobbyRelativeTime } from '../lib/markdown'
 import compressImage from '../lib/compressImage'
@@ -4049,28 +4050,28 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
         {/* Non-residential: claim CTA */}
         {!isResidential && hasListingInfo && !isStaff && (
-          <a
-            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, this is my place \u2014 ${name}. I'd love to get set up on Lafayette Square.`)}`}
+          <button
+            onClick={() => useContact.getState().setOpen(true, `Hi, this is my place \u2014 ${name}. I'd love to get set up on Lafayette Square.`)}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             Is this your place?
-          </a>
+          </button>
         )}
 
         {/* Bare building: house CTA */}
         {!hasListingInfo && (
-          <a
-            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, this is my building \u2014 ${cleanAddress(building?.address) || 'Unknown'}. I'd love to get set up on Lafayette Square.`)}`}
+          <button
+            onClick={() => useContact.getState().setOpen(true, `Hi, this is my building \u2014 ${cleanAddress(building?.address) || 'Unknown'}. I'd love to get set up on Lafayette Square.`)}
             className="flex-1 py-1.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-body font-medium transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
             </svg>
             This is my house
-          </a>
+          </button>
         )}
 
         {/* Right: share icon */}

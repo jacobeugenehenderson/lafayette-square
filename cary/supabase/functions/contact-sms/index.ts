@@ -35,6 +35,9 @@ Deno.serve(async (req) => {
   }
 
   const message = (body.message || '').trim()
+  const deviceHash = body.device_hash || null
+  const handle = body.handle || null
+  const avatar = body.avatar || null
   if (!message) return json({ error: 'Message is empty' }, 400)
   if (message.length > 1600) return json({ error: 'Message too long (1600 char max)' }, 400)
 
@@ -47,7 +50,8 @@ Deno.serve(async (req) => {
 
   if (twilioSid && twilioAuth && twilioFrom && contactPhone) {
     try {
-      const smsBody = `Lafayette Square web:\n${message}`
+      const who = handle ? `${avatar || ''} @${handle}`.trim() : 'Anonymous'
+      const smsBody = `Lafayette Square [${who}]:\n${message}`
       const res = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
         {
@@ -104,19 +108,23 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ── Log to Supabase (optional — table may not exist yet) ──────
+  // ── Log to sms_messages ────────────────────────────────────────
   try {
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
     const sb = createClient(
       Deno.env.get('SUPABASE_URL'),
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     )
-    await sb.from('contact_messages').insert({
-      message,
-      source: 'web',
+    await sb.from('sms_messages').insert({
+      phone: 'web',
+      direction: 'inbound',
+      body: message,
+      device_hash: deviceHash,
+      handle,
+      avatar,
     })
-  } catch {
-    // Table doesn't exist yet — that's fine
+  } catch (err) {
+    console.error('[contact-sms] DB log failed:', err.message)
   }
 
   // Succeed if either channel delivered

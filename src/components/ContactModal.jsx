@@ -2,10 +2,12 @@ import { useState, useRef, useCallback } from 'react'
 import { create } from 'zustand'
 import useCamera from '../hooks/useCamera'
 import { supabase } from '../lib/supabase'
+import { getDeviceHash } from '../lib/device'
 
 export const useContact = create((set) => ({
   open: false,
-  setOpen: (open) => set({ open }),
+  initialMessage: '',
+  setOpen: (open, initialMessage = '') => set({ open, initialMessage }),
 }))
 
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
@@ -24,13 +26,22 @@ function loadEmojiPicker() {
 
 export default function ContactModal() {
   const open = useContact((s) => s.open)
+  const initialMessage = useContact((s) => s.initialMessage)
   const [message, setMessage] = useState('')
+  const [seeded, setSeeded] = useState(false)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(null)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [EmojiKit, setEmojiKit] = useState(null) // { Picker, data }
   const textareaRef = useRef(null)
+
+  // Seed textarea with initial message when modal opens
+  if (open && !seeded && initialMessage) {
+    setMessage(initialMessage)
+    setSeeded(true)
+  }
+  if (!open && seeded) setSeeded(false)
 
   if (!open) return null
 
@@ -49,8 +60,11 @@ export default function ContactModal() {
     setSending(true)
     setError(null)
     try {
+      const deviceHash = await getDeviceHash()
+      const handle = localStorage.getItem('lsq_handle') || null
+      const avatar = localStorage.getItem('lsq_avatar') || null
       const { data, error: fnError } = await supabase.functions.invoke('contact-sms', {
-        body: { message: message.trim() },
+        body: { message: message.trim(), device_hash: deviceHash, handle, avatar },
       })
       console.log('[ContactModal] response:', { data, fnError })
       // supabase-js may wrap non-2xx as an error, but also check the data
