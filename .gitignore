@@ -48,5 +48,8 @@ scripts/raw/
 # Archived/defunct scripts
 _archive/
 
+# Cartograph pipeline (proprietary)
+cartograph/
+
 # Claude Code local settings
 .claude/

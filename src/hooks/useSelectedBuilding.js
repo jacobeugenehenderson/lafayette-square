@@ -23,6 +23,10 @@ const useSelectedBuilding = create((set) => ({
     initialTab: initialTab || null,
   }),
 
+  // Hide card but keep selection visible on map (pin + highlight persist)
+  hideCard: () => set({ showCard: false, initialTab: null }),
+
+  // Full deselect — clears everything
   deselect: () => set({ selectedId: null, selectedListingId: null, showCard: false, initialTab: null }),
 
   clearInitialTab: () => set({ initialTab: null }),

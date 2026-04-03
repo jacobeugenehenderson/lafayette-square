@@ -48,7 +48,7 @@ export const PIPELINE = [
     key: 'agreement',
     label: 'Agreement',
     zone: 'deliver',
-    summary: 'Independent contractor terms. You keep your credentials. 75% of the 22% service charge is yours, plus 100% of tips.',
+    summary: 'Independent contractor terms. You keep your credentials. The majority of the service charge is yours, plus 100% of tips.',
   },
   {
     key: 'license',
@@ -600,7 +600,7 @@ function AgreementStep({ onNext, preview }) {
         </div>
         <div>
           <p className="text-on-surface font-medium mb-0.5">Compensation</p>
-          <p>You earn 75% of the service charge on every order (currently 22% of the food total). Tips are 100% yours. Nightly payouts. Rates may change.</p>
+          <p>You earn the majority of the service charge on every order. Tips are 100% yours. Nightly payouts. Rates are detailed in the agreement.</p>
         </div>
         <div>
           <p className="text-on-surface font-medium mb-0.5">Conduct & safety</p>

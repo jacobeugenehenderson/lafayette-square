@@ -401,11 +401,11 @@ function ListingLogo({ listing, isGuardian }) {
     <img
       src={assetUrl(logo)}
       alt=""
-      className="w-full max-h-16 object-contain object-left"
+      className="max-w-[3rem] max-h-10 object-contain object-left"
     />
   ) : (
     <div
-      className="w-12 h-12 rounded-full flex items-center justify-center text-white/80 font-semibold text-sm select-none"
+      className="w-10 h-10 rounded-full flex items-center justify-center text-white/80 font-semibold text-sm select-none flex-shrink-0"
       style={{ backgroundColor: nameToColor(name) }}
     >
       {getInitials(name)}

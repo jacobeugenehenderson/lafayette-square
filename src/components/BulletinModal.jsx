@@ -740,9 +740,9 @@ function BrowseView({ onNewPost, onOpenThreads }) {
                 </div>
                 <div className="text-label-sm leading-relaxed space-y-1.5">
                   <p className="pinned-post-body">Lafayette Square's neighborhood delivery service is looking for couriers.</p>
-                  <p className="pinned-post-detail">How it works: a resident orders from a local restaurant through the map. You pick it up and deliver it within the neighborhood. You earn <span className="pinned-post-highlight">75% of a 22% service charge</span> on every order — that's 16.5% of the food total, plus 100% of tips.</p>
-                  <p className="pinned-post-detail">On a $40 minimum order, you earn at least <span className="pinned-post-body font-medium">$6.60 before tips</span>. Walk, bike, or drive. Set your own schedule.</p>
-                  <p className="pinned-post-detail">16+ for Deliver tier (free to join) · 18+ for Drive tier (~$42 background check) · 21+ for alcohol deliveries</p>
+                  <p className="pinned-post-detail">How it works: a resident orders from a local restaurant through the map. You pick it up and deliver it within the neighborhood. You earn <span className="pinned-post-highlight">the majority of the service charge</span> on every order, plus 100% of tips.</p>
+                  <p className="pinned-post-detail">Walk, bike, or drive. Set your own schedule. Nightly payouts.</p>
+                  <p className="pinned-post-detail">16+ for Deliver tier (free to join) · 18+ for Drive tier · 21+ for alcohol deliveries</p>
                 </div>
                 <a
                   href="/cary/apply"

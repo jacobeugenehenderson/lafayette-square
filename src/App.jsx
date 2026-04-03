@@ -336,8 +336,9 @@ function ModeOverlay() {
   const infoOpen = useInfo((s) => s.open)
   const isLive = useTimeOfDay((s) => s.isLive)
 
-  // Close buttons now live inside each modal's own header
-  if (codeDeskOpen || showCard || bulletinOpen || contactOpen || infoOpen) return null
+  const panelFull = useCamera((s) => s.panelState) === 'full'
+  // Full-height panels cover everything — hide overlay buttons
+  if (codeDeskOpen || showCard || bulletinOpen || contactOpen || infoOpen || panelFull) return null
 
   // Browse mode: BrowseHeader handles both live and home buttons
   if (viewMode === 'browse') return null

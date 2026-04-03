@@ -1189,17 +1189,18 @@ function LafayetteScene() {
 
   const neonLookup = useMemo(() => {
     const map = {}
-    const time = useTimeOfDay.getState().currentTime
     listings.forEach(l => {
       const bid = l.building_id || l.id
       const hex = CATEGORY_HEX[l.category]
-      // Hours-based glow (always-on for open businesses)
-      if (bid && hex && _isWithinHours(l.hours, time)) {
+      if (!bid || !hex) return
+      // Mount neon for any listing with hours — on/off checked per-frame inside NeonBand
+      if (l.hours) {
         map[bid] = { hex, hours: l.hours }
       }
       // Filter-based glow (Society Pages category selection)
-      if (bid && hex && activeTags.size > 0 && (activeTags.has(l.subcategory) || activeTags.has(l.category))) {
+      if (activeTags.size > 0 && (activeTags.has(l.subcategory) || activeTags.has(l.category))) {
         if (!map[bid]) map[bid] = { hex, hours: null, forceOn: true }
+        else map[bid] = { ...map[bid], forceOn: true }
       }
     })
     return map

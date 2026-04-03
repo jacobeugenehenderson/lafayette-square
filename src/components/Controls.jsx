@@ -15,23 +15,14 @@ function Controls() {
   const selectedId = useSelectedBuilding((state) => state.selectedId)
   const selectedListingId = useSelectedBuilding((state) => state.selectedListingId)
   const showCard = useSelectedBuilding((state) => state.showCard)
-  const deselect = useSelectedBuilding((state) => state.deselect)
+  const hideCard = useSelectedBuilding((state) => state.hideCard)
   const viewMode = useCamera((state) => state.viewMode)
   const [buildingInfo, setBuildingInfo] = useState(null)
   const getById = useListings((s) => s.getById)
   const getByBuildingId = useListings((s) => s.getByBuildingId)
   const getListingsForBuilding = useListings((s) => s.getListingsForBuilding)
 
-  // Drop panel to browse when PlaceCard opens, restore to mini when it closes
-  useEffect(() => {
-    if (showCard) {
-      const state = useCamera.getState().panelState
-      if (state === 'full') useCamera.getState().setPanelState('browse')
-    } else {
-      const state = useCamera.getState().panelState
-      if (state === 'browse') useCamera.getState().setPanelState('neutral')
-    }
-  }, [showCard])
+  // Panel state managed in SidePanel via showCard effect
 
   useEffect(() => {
     if (selectedId) {
@@ -65,7 +56,7 @@ function Controls() {
           listing={listing}
           building={buildingInfo}
           allListings={allListings}
-          onClose={deselect}
+          onClose={hideCard}
         />
       )}
     </>

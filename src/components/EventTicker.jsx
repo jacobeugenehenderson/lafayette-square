@@ -269,7 +269,8 @@ export default function EventTicker() {
   const isBrowse = viewMode === 'browse'
 
   if (viewMode === 'planetarium') return null
-  if (showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen) return null
+  const panelFull = useCamera(s => s.panelState) === 'full'
+  if (showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen || panelFull) return null
   if (tickerItems.length === 0) return null
 
   const current = tickerItems[index % tickerItems.length]

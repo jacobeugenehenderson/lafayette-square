@@ -93,9 +93,16 @@ function buildSearchIndex(listings) {
   })
 
   listings.forEach(listing => {
-    const name = (listing.name || '').toUpperCase()
-    const addr = (listing.address || '').toUpperCase()
-    idx.push({ text: name + ' ' + addr, type: 'place', listing })
+    const parts = [
+      listing.name,
+      listing.address,
+      listing.category,
+      listing.subcategory?.replace(/-/g, ' '),
+      listing.description,
+      ...(listing.tags || []),
+      ...(listing.amenities || []),
+    ].filter(Boolean).join(' ').toUpperCase()
+    idx.push({ text: parts, type: 'place', listing })
 
     const sections = listing.menu?.sections || []
     const seenTypes = new Set()

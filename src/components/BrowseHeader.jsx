@@ -17,7 +17,7 @@ export default function BrowseHeader() {
 
   const panelFull = useCamera(s => s.panelState) === 'full'
   if (viewMode !== 'browse' && !panelFull) return null
-  if (showCard || bulletinOpen || codeDeskOpen || contactOpen || infoOpen) return null
+  if (showCard || bulletinOpen || codeDeskOpen || contactOpen || infoOpen || panelFull) return null
 
   return (
     <div className="fixed right-5 z-[60]" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 20px)' }}>

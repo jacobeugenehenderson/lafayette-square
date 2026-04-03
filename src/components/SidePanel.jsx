@@ -62,13 +62,16 @@ const V_TAN = Math.tan((45 / 2) * Math.PI / 180) // 0.414
 const PORTRAIT_ASPECT = 0.46
 const H_TAN = V_TAN * PORTRAIT_ASPECT // 0.191
 
-// Panel covers bottom 35%. Visible vertical fraction = 65%.
-const PANEL_FRAC = 0.35
-const VIS_V = 1 - PANEL_FRAC
+// Panel covers bottom 50% (--panel-browse: 50dvh). Ticker/header covers ~10% at top.
+// Visible map area ≈ 40% of viewport height, centered between ticker and panel.
+const PANEL_FRAC = 0.50
+const TICKER_FRAC = 0.10
+const VIS_V = 1 - PANEL_FRAC - TICKER_FRAC
 
-// Shift lookAt south so content centers in visible area above panel.
+// Shift lookAt south so content centers in visible area between ticker and panel.
+// Net shift = (panel fraction - ticker fraction) / 2 — positive moves south.
 function panelOffset(height) {
-  return (PANEL_FRAC / 2) * 2 * height * V_TAN
+  return ((PANEL_FRAC - TICKER_FRAC) / 2) * 2 * height * V_TAN
 }
 
 // Compute camera to contain all buildings. Fits both X (horizontal)
@@ -445,7 +448,7 @@ function LafayetteSubsection({ section, color, scrollToSelected }) {
     if (!isActive) {
       const cam = useCamera.getState()
       if (cam.viewMode !== 'browse') cam.setMode('browse')
-      if (cam.panelState === 'full') cam.setPanelState('browse')
+      cam.setPanelState('browse')
       const target = getNeighborhoodTarget()
       flyTo(target.position, target.lookAt)
     } else {
@@ -454,19 +457,18 @@ function LafayetteSubsection({ section, color, scrollToSelected }) {
   }
 
   const handleSelectPlace = (biz) => {
-    // Highlight the place (shows pin, card opens when clicked in 3D)
-    // Don't clear tags — keep the category list intact
-    highlight(biz.id, biz.building_id)
-    // Switch to browse if in hero so flyTo is honored
-    const cam = useCamera.getState()
-    if (cam.viewMode !== 'browse') cam.setMode('browse')
-    // Drop panel to browse — reveal the map, keep directory visible
-    if (cam.panelState === 'full') cam.setPanelState('browse')
-    // Center camera on this building
     const building = _buildingMap[biz.building_id]
     if (building) {
+      // Has geometry → highlight on map, fly to it, drop panel to browse
+      highlight(biz.id, biz.building_id)
+      const cam = useCamera.getState()
+      if (cam.viewMode !== 'browse') cam.setMode('browse')
+      cam.setPanelState('browse')
       const target = computeCenterOn(building)
       flyTo(target.position, target.lookAt)
+    } else {
+      // No geometry → open PlaceCard directly so user sees listing info
+      useSelectedBuilding.getState().select(biz.id, biz.building_id)
     }
   }
 
@@ -629,42 +631,55 @@ function SocietyInlineSearch() {
 }
 
 function LafayettePagesTab({ isFull, isBrowse }) {
-  const [expandedId, setExpandedId] = useState(null)
+  const [expandedIds, setExpandedIds] = useState(() => new Set())
   const [scrollToSelected, setScrollToSelected] = useState(false)
   const listings = useListings((s) => s.listings)
   const activeTags = useLandmarkFilter((s) => s.activeTags)
   const selectedListingId = useSelectedBuilding((s) => s.selectedListingId)
-  const wasFull = useRef(false)
 
-  // Detect full → half transition
+  const toggleExpanded = useCallback((id) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  // Scroll to selected listing when directory becomes visible or shrinks from full
+  const showDirectory = isFull || isBrowse
+  const wasVisible = useRef(showDirectory)
+  const wasFull = useRef(isFull)
   useEffect(() => {
-    if (!isFull && wasFull.current) {
+    const justAppeared = showDirectory && !wasVisible.current
+    const justShrunk = !isFull && wasFull.current
+    if ((justAppeared || justShrunk) && selectedListingId) {
       setScrollToSelected(true)
-      // Clear after the scroll fires
       const t = setTimeout(() => setScrollToSelected(false), 500)
+      wasVisible.current = showDirectory
+      wasFull.current = isFull
       return () => clearTimeout(t)
     }
+    wasVisible.current = showDirectory
     wasFull.current = isFull
-  }, [isFull])
+  }, [isFull, isBrowse, showDirectory, selectedListingId])
 
   // Auto-expand the accordion containing the active tag or selected listing
   useEffect(() => {
     // Check active subcategory tags
     for (const tag of activeTags) {
       const parent = CATEGORY_LIST.find(c => c.sections.some(s => s.id === tag))
-      if (parent) { setExpandedId(parent.id); return }
+      if (parent) { setExpandedIds(prev => new Set(prev).add(parent.id)); return }
     }
     // Check selected listing
     if (selectedListingId) {
       const listing = listings.find(l => l.id === selectedListingId)
       if (listing) {
         const parent = CATEGORY_LIST.find(c => c.sections.some(s => s.id === listing.subcategory))
-        if (parent) { setExpandedId(parent.id); return }
+        if (parent) { setExpandedIds(prev => new Set(prev).add(parent.id)); return }
       }
     }
   }, [activeTags, selectedListingId, listings])
-
-  const showDirectory = isFull || isBrowse
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -680,8 +695,8 @@ function LafayettePagesTab({ isFull, isBrowse }) {
             <LafayetteCategoryAccordion
               key={category.id}
               category={category}
-              isExpanded={expandedId === category.id}
-              onToggle={() => setExpandedId(expandedId === category.id ? null : category.id)}
+              isExpanded={expandedIds.has(category.id)}
+              onToggle={() => toggleExpanded(category.id)}
               scrollToSelected={scrollToSelected}
             />
           ))}
@@ -794,7 +809,32 @@ function SidePanel() {
   const bulletinModalOpen = useBulletin((s) => s.modalOpen)
   const overlayOpen = showCard || bulletinModalOpen
 
-  // No auto-collapse — panel state is always the user's choice
+  // Auto-collapse panel when PlaceCard opens; restore previous state when it closes
+  const prevShowCard = useRef(showCard)
+  const preCardPanelState = useRef('neutral')
+  useEffect(() => {
+    if (showCard && !prevShowCard.current) {
+      // PlaceCard just opened → remember state, collapse, map → browse
+      preCardPanelState.current = panelState
+      setPanelState('collapsed')
+      const cam = useCamera.getState()
+      if (cam.viewMode !== 'browse') cam.setMode('browse')
+    } else if (!showCard && prevShowCard.current) {
+      // PlaceCard closed → restore to pre-card state (browse if they were browsing)
+      const restoreTo = preCardPanelState.current === 'collapsed' ? 'neutral' : preCardPanelState.current
+      setPanelState(restoreTo)
+      // Re-center camera on the still-selected building
+      const sel = useSelectedBuilding.getState()
+      if (sel.selectedId) {
+        const building = _buildingMap[sel.selectedId]
+        if (building) {
+          const target = computeCenterOn(building)
+          useCamera.getState().flyTo(target.position, target.lookAt)
+        }
+      }
+    }
+    prevShowCard.current = showCard
+  }, [showCard])
 
   // Glass styles: collapsed = heavy frosted glass, half/full = frosted
   const glassStyle = collapsed ? {
@@ -884,23 +924,13 @@ function SidePanel() {
               } else if (tab.id === activeTab) {
                 // Re-tap same tab — cycle through states
                 if (ALMANAC_ONLY_TABS.has(tab.id)) {
-                  // Almanac: single tap toggles view, double-tap collapses
-                  const now = Date.now()
-                  const last = AlmanacTab._lastTap || 0
-                  AlmanacTab._lastTap = now
-                  if (now - last < 350) {
-                    // Double-tap → collapse
-                    setPanelState('collapsed')
-                    AlmanacTab._lastTap = 0
-                  } else if (isNeutral) {
-                    AlmanacTab.toggle?.()  // single tap: toggle weather ↔ celestial
-                  } else {
-                    setPanelState('neutral')  // any other state → neutral
-                  }
+                  // Almanac: single tap toggles weather ↔ celestial (never goes full)
+                  if (isNeutral) AlmanacTab.toggle?.()
+                  else setPanelState('neutral')
                 } else {
-                  // Society/Bulletin
-                  if (isFull) setPanelState('collapsed')
-                  else if (overlayOpen) setPanelState('collapsed')
+                  // Society / Bulletin: neutral ↔ full
+                  // Browse is reached only by engaging listings, not tab cycling
+                  if (isFull || isBrowse) setPanelState('neutral')
                   else setPanelState('full')
                 }
               } else {

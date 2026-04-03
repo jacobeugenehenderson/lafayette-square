@@ -33,17 +33,19 @@
 <div id="map"></div>
 <div class="layer-controls">
   <h3>Layers</h3>
-  <label><input type="checkbox" id="tog-blocks"><span class="swatch" style="background:#0af"></span> Block lots</label>
-  <label><input type="checkbox" id="tog-sidewalks"><span class="swatch" style="background:#f80"></span> Sidewalks</label>
+  <label><input type="checkbox" id="tog-blockoutline" checked><span class="swatch" style="background:#0f8"></span> Block outline (curb)</label>
+  <label><input type="checkbox" id="tog-blocks" checked><span class="swatch" style="background:#0af"></span> Block lots</label>
+  <label><input type="checkbox" id="tog-sidewalks" checked><span class="swatch" style="background:#f80"></span> Sidewalks</label>
   <label><input type="checkbox" id="tog-streets" checked><span class="swatch" style="background:#ff0"></span> Street centerlines</label>
-  <label><input type="checkbox" id="tog-buildings"><span class="swatch" style="background:#f44"></span> Building footprints</label>
-  <label><input type="checkbox" id="tog-orphans"><span class="swatch" style="background:#f0f"></span> Orphan buildings</label>
-  <label><input type="checkbox" id="tog-lamps"><span class="swatch-dot" style="background:#ff0"></span> Street lamps</label>
-  <label><input type="checkbox" id="tog-border"><span class="swatch" style="background:#0f0"></span> Neighborhood border</label>
-  <label><input type="checkbox" id="tog-park"><span class="swatch" style="background:#8f8"></span> Park rectangle</label>
+  <label><input type="checkbox" id="tog-buildings" checked><span class="swatch" style="background:#f44"></span> Building footprints</label>
+  <label><input type="checkbox" id="tog-orphans" checked><span class="swatch" style="background:#f0f"></span> Orphan buildings</label>
+  <label><input type="checkbox" id="tog-lamps" checked><span class="swatch-dot" style="background:#ff0"></span> Street lamps</label>
+  <label><input type="checkbox" id="tog-border" checked><span class="swatch" style="background:#0f0"></span> Neighborhood border</label>
+  <label><input type="checkbox" id="tog-park" checked><span class="swatch" style="background:#8f8"></span> Park rectangle</label>
   <label><input type="checkbox" id="tog-parkpaths" checked><span class="swatch" style="background:#6d6"></span> Park paths</label>
   <label><input type="checkbox" id="tog-alleys" checked><span class="swatch" style="background:#c8f"></span> Alleys</label>
-  <label><input type="checkbox" id="tog-alleyfills"><span class="swatch" style="background:#0ff"></span> Alley fills</label>
+  <label><input type="checkbox" id="tog-alleyfills" checked><span class="swatch" style="background:#0ff"></span> Alley fills</label>
+  <label><input type="checkbox" id="tog-parcels" checked><span class="swatch" style="background:#0f0"></span> Parcels (assessor)</label>
   <hr>
   <label><input type="checkbox" id="tog-sat"> Satellite tiles</label>
   <button id="btn-export-svg" style="margin-top:8px;width:100%;padding:6px 0;background:#5af;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:600;font-size:13px;">Export SVG</button>
@@ -107,17 +109,19 @@ const satTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/servic
 
 // ── Layer groups ─────────────────────────────────────────────────────────────
 const layers = {
-  blocks: L.layerGroup(),
-  sidewalks: L.layerGroup(),
+  blockoutline: L.layerGroup().addTo(map),
+  blocks: L.layerGroup().addTo(map),
+  sidewalks: L.layerGroup().addTo(map),
   streets: L.layerGroup().addTo(map),
-  buildings: L.layerGroup(),
-  orphans: L.layerGroup(),
-  lamps: L.layerGroup(),
-  border: L.layerGroup(),
-  park: L.layerGroup(),
+  buildings: L.layerGroup().addTo(map),
+  orphans: L.layerGroup().addTo(map),
+  lamps: L.layerGroup().addTo(map),
+  border: L.layerGroup().addTo(map),
+  park: L.layerGroup().addTo(map),
   parkpaths: L.layerGroup().addTo(map),
   alleys: L.layerGroup().addTo(map),
-  alleyfills: L.layerGroup(),
+  alleyfills: L.layerGroup().addTo(map),
+  parcels: L.layerGroup().addTo(map),
 };
 
 const ALLEY_NAMES = new Set(['Mississippi Alley', 'Hickory Lane', 'Rutger Lane']);
@@ -129,14 +133,25 @@ async function loadJSON(path) {
 }
 
 async function init() {
-  const [blockData, buildingData, streetData, lampData] = await Promise.all([
+  const [blockData, buildingData, streetData, lampData, parcelData] = await Promise.all([
     loadJSON('src/data/block_shapes.json'),
     loadJSON('src/data/buildings.json'),
     loadJSON('src/data/streets.json'),
     loadJSON('src/data/street_lamps.json'),
+    loadJSON('scripts/raw/stl_parcels.json'),
   ]);
 
   let statText = '';
+
+  // Block outline — full curb-to-curb polygon (the unified block)
+  for (const block of blockData.blocks) {
+    if (block.isPark) continue;
+    const outline = block.sidewalk || block.lot;
+    const latlngs = polyToLatLngs(outline);
+    L.polygon(latlngs, {
+      color: '#0f8', weight: 2.5, fillColor: '#0f8', fillOpacity: 0.06,
+    }).bindTooltip(block.id + ' (block outline)').addTo(layers.blockoutline);
+  }
 
   // Block lots (skip park block)
   for (const block of blockData.blocks) {
@@ -226,6 +241,20 @@ async function init() {
     }).bindTooltip(bldg.id + (bldg.address ? ' – ' + bldg.address : '')).addTo(layers.buildings);
   }
 
+  // Parcels (assessor polygons)
+  let parcelCount = 0;
+  for (const parcel of parcelData.parcels) {
+    if (!parcel.rings || !parcel.rings.length) continue;
+    for (const ring of parcel.rings) {
+      if (ring.length < 3) continue;
+      const latlngs = polyToLatLngs(ring);
+      L.polygon(latlngs, {
+        color: '#0f0', weight: 1.5, fillColor: '#0f0', fillOpacity: 0.05,
+      }).bindTooltip(parcel.address.trim() + (parcel.vacant ? ' [VACANT]' : '')).addTo(layers.parcels);
+      parcelCount++;
+    }
+  }
+
   // Street lamps
   let lampsInPark = 0, lampsInBlocks = 0, lampsOnStreets = 0;
   for (const lamp of lampData.lamps) {
@@ -300,6 +329,7 @@ async function init() {
   statText += orphanCount + ' orphan bldgs, ' + inBlockCount + ' in-block\n';
   statText += 'Lamps: ' + lampsOnStreets + ' street, ' + lampsInBlocks + ' in-block, ' + lampsInPark + ' park';
   if (blockData.alleyFills) statText += '\n' + blockData.alleyFills.length + ' alley fills';
+  statText += '\n' + parcelCount + ' parcels';
   document.getElementById('stats').innerText = statText;
 }
 
@@ -307,6 +337,7 @@ init();
 
 // ── Toggle controls ──────────────────────────────────────────────────────────
 const toggleMap = {
+  'tog-blockoutline': 'blockoutline',
   'tog-blocks': 'blocks',
   'tog-sidewalks': 'sidewalks',
   'tog-streets': 'streets',
@@ -318,6 +349,7 @@ const toggleMap = {
   'tog-parkpaths': 'parkpaths',
   'tog-alleys': 'alleys',
   'tog-alleyfills': 'alleyfills',
+  'tog-parcels': 'parcels',
 };
 
 for (const [id, key] of Object.entries(toggleMap)) {
