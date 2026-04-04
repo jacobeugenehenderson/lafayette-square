@@ -48,8 +48,9 @@ scripts/raw/
 # Archived/defunct scripts
 _archive/
 
-# Cartograph pipeline (proprietary)
-cartograph/
+# Cartograph generated output
+cartograph/data/
+cartograph/node_modules/
 
 # Claude Code local settings
 .claude/

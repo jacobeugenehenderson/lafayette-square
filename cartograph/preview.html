@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartograph — Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Map viewport ──────────────────────────────────────────────── */
+  #map-container {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+  }
+  #map-container:active { cursor: grabbing; }
+  #map-container svg {
+    position: absolute;
+    transform-origin: 0 0;
+  }
+
+  /* ── Control panel ─────────────────────────────────────────────── */
+  #controls {
+    width: 320px;
+    background: #222;
+    border-left: 1px solid #333;
+    overflow-y: auto;
+    padding: 16px;
+    flex-shrink: 0;
+  }
+  #controls h1 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #888;
+    margin-bottom: 16px;
+  }
+
+  .control-group {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 16px;
+  }
+  .control-group h2 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #ccc;
+  }
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .control-row label {
+    font-size: 11px;
+    color: #999;
+    width: 60px;
+    flex-shrink: 0;
+  }
+  .control-row input[type="color"] {
+    width: 32px;
+    height: 24px;
+    border: 1px solid #444;
+    border-radius: 3px;
+    background: none;
+    cursor: pointer;
+  }
+  .control-row input[type="range"] {
+    flex: 1;
+    accent-color: #888;
+  }
+  .control-row .value {
+    font-size: 10px;
+    color: #666;
+    width: 36px;
+    text-align: right;
+  }
+
+  .layer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .layer-toggle input { accent-color: #888; }
+  .layer-toggle label { font-size: 12px; color: #aaa; cursor: pointer; }
+  .layer-toggle .count { font-size: 10px; color: #555; margin-left: auto; }
+
+  #zoom-display {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    font-size: 11px;
+    color: #666;
+    background: rgba(0,0,0,0.6);
+    padding: 4px 8px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div id="map-container">
+  <div id="zoom-display">1.0x</div>
+</div>
+
+<div id="controls">
+  <h1>Cartograph</h1>
+  <div id="layers-section" class="control-group">
+    <h2>Layers</h2>
+  </div>
+  <div id="colors-section">
+    <!-- Generated dynamically -->
+  </div>
+</div>
+
+<script>
+const LAYERS = [
+  { id: 'block',    label: 'Blocks',     fill: '#e8e0d4' },
+  { id: 'park',     label: 'Park',       fill: '#b8d4a0' },
+  { id: 'parking',  label: 'Parking',    fill: '#d4d0c8' },
+  { id: 'water',    label: 'Water',      fill: '#a0c8e0' },
+  { id: 'island',   label: 'Islands',    fill: '#c8c0b4' },
+  { id: 'fragment', label: 'Fragments',  fill: '#d0ccc4' },
+  { id: 'buildings', label: 'Buildings', fill: '#8b6b4a' },
+]
+
+// ── Load SVG ──────────────────────────────────────────────────────────
+const container = document.getElementById('map-container')
+
+fetch('data/clean/map.svg')
+  .then(r => r.text())
+  .then(svgText => {
+    container.insertAdjacentHTML('afterbegin', svgText)
+    const svg = container.querySelector('svg')
+    if (!svg) return console.error('No SVG found')
+
+    initControls(svg)
+    initPanZoom(svg)
+  })
+  .catch(err => {
+    container.innerHTML = `<div style="padding:40px;color:#888">
+      <p>No map yet. Run the pipeline first:</p>
+      <pre style="margin-top:12px;color:#aaa">cd cartograph
+node fetch.js
+node pipeline.js
+node render.js</pre>
+    </div>`
+  })
+
+// ── Pan & Zoom ────────────────────────────────────────────────────────
+function initPanZoom(svg) {
+  let scale = 1, panX = 0, panZ = 0
+  let dragging = false, startX, startZ, startPanX, startPanZ
+
+  function updateTransform() {
+    svg.style.transform = `translate(${panX}px, ${panZ}px) scale(${scale})`
+    document.getElementById('zoom-display').textContent = `${scale.toFixed(1)}x`
+  }
+
+  // Fit to viewport initially
+  const rect = container.getBoundingClientRect()
+  const vb = svg.viewBox.baseVal
+  const fitScale = Math.min(rect.width / vb.width, rect.height / vb.height) * 0.9
+  scale = fitScale
+  panX = (rect.width - vb.width * scale) / 2 - vb.x * scale
+  panZ = (rect.height - vb.height * scale) / 2 - vb.y * scale
+  updateTransform()
+
+  container.addEventListener('wheel', e => {
+    e.preventDefault()
+    const factor = e.deltaY > 0 ? 0.9 : 1.1
+    const br = container.getBoundingClientRect()
+    const mx = e.clientX - br.left
+    const mz = e.clientY - br.top
+
+    panX = mx - (mx - panX) * factor
+    panZ = mz - (mz - panZ) * factor
+    scale *= factor
+    updateTransform()
+  }, { passive: false })
+
+  container.addEventListener('mousedown', e => {
+    dragging = true
+    startX = e.clientX; startZ = e.clientY
+    startPanX = panX; startPanZ = panZ
+  })
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return
+    panX = startPanX + (e.clientX - startX)
+    panZ = startPanZ + (e.clientY - startZ)
+    updateTransform()
+  })
+  window.addEventListener('mouseup', () => dragging = false)
+}
+
+// ── Controls ──────────────────────────────────────────────────────────
+function initControls(svg) {
+  const layersSection = document.getElementById('layers-section')
+  const colorsSection = document.getElementById('colors-section')
+
+  // Layer toggles
+  for (const layer of LAYERS) {
+    const g = svg.querySelector(`#layer-${layer.id}`)
+    const count = g ? g.querySelectorAll('path').length : 0
+
+    const div = document.createElement('div')
+    div.className = 'layer-toggle'
+    div.innerHTML = `
+      <input type="checkbox" id="toggle-${layer.id}" checked>
+      <label for="toggle-${layer.id}">${layer.label}</label>
+      <span class="count">${count}</span>
+    `
+    div.querySelector('input').addEventListener('change', e => {
+      if (g) g.style.display = e.target.checked ? '' : 'none'
+    })
+    layersSection.appendChild(div)
+  }
+
+  // Color controls per layer
+  for (const layer of LAYERS) {
+    const group = document.createElement('div')
+    group.className = 'control-group'
+    group.innerHTML = `<h2>${layer.label}</h2>`
+
+    // Fill color
+    const fillRow = document.createElement('div')
+    fillRow.className = 'control-row'
+    fillRow.innerHTML = `
+      <label>Fill</label>
+      <input type="color" value="${layer.fill}" data-prop="--${layer.id}-fill">
+    `
+    fillRow.querySelector('input').addEventListener('input', e => {
+      svg.style.setProperty(e.target.dataset.prop, e.target.value)
+    })
+    group.appendChild(fillRow)
+
+    // Opacity slider
+    const opRow = document.createElement('div')
+    opRow.className = 'control-row'
+    opRow.innerHTML = `
+      <label>Opacity</label>
+      <input type="range" min="0" max="1" step="0.05" value="1" data-layer="${layer.id}">
+      <span class="value">1.0</span>
+    `
+    const opSlider = opRow.querySelector('input')
+    const opValue = opRow.querySelector('.value')
+    opSlider.addEventListener('input', e => {
+      const g = svg.querySelector(`#layer-${e.target.dataset.layer}`)
+      if (g) g.style.opacity = e.target.value
+      opValue.textContent = parseFloat(e.target.value).toFixed(1)
+    })
+    group.appendChild(opRow)
+
+    colorsSection.appendChild(group)
+  }
+
+  // Background color
+  const bgGroup = document.createElement('div')
+  bgGroup.className = 'control-group'
+  bgGroup.innerHTML = `<h2>Background</h2>`
+  const bgRow = document.createElement('div')
+  bgRow.className = 'control-row'
+  bgRow.innerHTML = `
+    <label>Color</label>
+    <input type="color" value="#f4f0e8">
+  `
+  bgRow.querySelector('input').addEventListener('input', e => {
+    svg.style.background = e.target.value
+  })
+  bgGroup.appendChild(bgRow)
+  colorsSection.appendChild(bgGroup)
+}
+</script>
+</body>
+</html>
