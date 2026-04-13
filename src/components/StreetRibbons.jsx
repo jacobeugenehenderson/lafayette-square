@@ -174,16 +174,31 @@ export default function StreetRibbons() {
     const perpA = perpsA[RUTGER.ix]
     const perpB = perpsB[MISSOURI.ix]
 
-    // Tangent directions at IX
-    const dxA = RUTGER.points[RUTGER.ix + 1][0] - RUTGER.points[RUTGER.ix - 1][0]
-    const dzA = RUTGER.points[RUTGER.ix + 1][1] - RUTGER.points[RUTGER.ix - 1][1]
-    const lnA = Math.hypot(dxA, dzA)
-    const dA = [dxA / lnA, dzA / lnA]
+    // Per-half-arm segment directions at IX (not averaged across both halves)
+    const ixA = RUTGER.ix, ixB = MISSOURI.ix
+    const dxAL = RUTGER.points[ixA][0] - RUTGER.points[ixA-1][0]
+    const dzAL = RUTGER.points[ixA][1] - RUTGER.points[ixA-1][1]
+    const lAL = Math.hypot(dxAL, dzAL)
+    const dA_left = [dxAL/lAL, dzAL/lAL]
+    const dxAR = RUTGER.points[ixA+1][0] - RUTGER.points[ixA][0]
+    const dzAR = RUTGER.points[ixA+1][1] - RUTGER.points[ixA][1]
+    const lAR = Math.hypot(dxAR, dzAR)
+    const dA_right = [dxAR/lAR, dzAR/lAR]
 
-    const dxB = MISSOURI.points[MISSOURI.ix + 1][0] - MISSOURI.points[MISSOURI.ix - 1][0]
-    const dzB = MISSOURI.points[MISSOURI.ix + 1][1] - MISSOURI.points[MISSOURI.ix - 1][1]
-    const lnB = Math.hypot(dxB, dzB)
-    const dB = [dxB / lnB, dzB / lnB]
+    const dxBL = MISSOURI.points[ixB][0] - MISSOURI.points[ixB-1][0]
+    const dzBL = MISSOURI.points[ixB][1] - MISSOURI.points[ixB-1][1]
+    const lBL = Math.hypot(dxBL, dzBL)
+    const dB_left = [dxBL/lBL, dzBL/lBL]
+    const dxBR = MISSOURI.points[ixB+1][0] - MISSOURI.points[ixB][0]
+    const dzBR = MISSOURI.points[ixB+1][1] - MISSOURI.points[ixB][1]
+    const lBR = Math.hypot(dxBR, dzBR)
+    const dB_right = [dxBR/lBR, dzBR/lBR]
+
+    // Averaged tangents (still used for perpA/perpB consistency check)
+    const dA = [(dA_left[0]+dA_right[0])/2, (dA_left[1]+dA_right[1])/2]
+    const lA2 = Math.hypot(dA[0],dA[1]); dA[0]/=lA2; dA[1]/=lA2
+    const dB = [(dB_left[0]+dB_right[0])/2, (dB_left[1]+dB_right[1])/2]
+    const lB2 = Math.hypot(dB[0],dB[1]); dB[0]/=lB2; dB[1]/=lB2
 
     const lbA = layerBounds(RUTGER)
     const lbB = layerBounds(MISSOURI)
@@ -200,33 +215,39 @@ export default function StreetRibbons() {
         const P0o = [IX[0] + sA * perpA[0] * swOuterA, IX[1] + sA * perpA[1] * swOuterA]
         const P1o = [IX[0] + sB * perpB[0] * swOuterB, IX[1] + sB * perpB[1] * swOuterB]
 
-        // Block corner = intersection of outer edge lines
-        const oo = lineX(P0o, dA, P1o, dB)
+        // Determine which half-arm borders this corner
+        // Use averaged dA/dB just for the dot test to pick left vs right
+        const testOo = lineX(P0o, dA, P1o, dB)
+        if (!testOo) continue
+        const dotA = (testOo[0]-IX[0])*dA[0] + (testOo[1]-IX[1])*dA[1]
+        const dotB = (testOo[0]-IX[0])*dB[0] + (testOo[1]-IX[1])*dB[1]
+        const edA = dotA < 0 ? dA_left : dA_right
+        const edB = dotB < 0 ? dB_left : dB_right
+
+        // Block corner using actual half-arm edge directions
+        const oo = lineX(P0o, edA, P1o, edB)
         if (!oo) continue
 
-        // Unit vectors from oo toward IX along each sw outer line
-        const u2 = [P0o[0] - oo[0], P0o[1] - oo[1]]
-        const l2 = Math.hypot(u2[0], u2[1]); u2[0] /= l2; u2[1] /= l2
-        const u4 = [P1o[0] - oo[0], P1o[1] - oo[1]]
-        const l4 = Math.hypot(u4[0], u4[1]); u4[0] /= l4; u4[1] /= l4
-
-        // R = shorter sidewalk width (arc radius for sidewalk boundary)
-        const R = Math.min(swOuterA - curbOuterA, swOuterB - curbOuterB)
-
-        // Sidewalk bezier endpoints: R from oo toward IX
-        const swA = [oo[0] + R * u2[0], oo[1] + R * u2[1]]
-        const swB = [oo[0] + R * u4[0], oo[1] + R * u4[1]]
-        const swCtrl = [swA[0] + swB[0] - oo[0], swA[1] + swB[1] - oo[1]]
-
-        // Curb outer endpoints: R + CURB_WIDTH from oo (includes curb thickness)
-        const coA = [oo[0] + (R + CURB_WIDTH) * u2[0], oo[1] + (R + CURB_WIDTH) * u2[1]]
-        const coB = [oo[0] + (R + CURB_WIDTH) * u4[0], oo[1] + (R + CURB_WIDTH) * u4[1]]
-        const coCtrl = [coA[0] + coB[0] - oo[0], coA[1] + coB[1] - oo[1]]
-
-        // Asphalt outer intersection — deep enough to cover all existing arm geometry
+        // All plug points computed as exact line intersections from measured arm edges
+        const P0c = [IX[0] + sA * perpA[0] * curbOuterA, IX[1] + sA * perpA[1] * curbOuterA]
+        const P1c = [IX[0] + sB * perpB[0] * curbOuterB, IX[1] + sB * perpB[1] * curbOuterB]
         const P0a = [IX[0] + sA * perpA[0] * asphOuterA, IX[1] + sA * perpA[1] * asphOuterA]
         const P1a = [IX[0] + sB * perpB[0] * asphOuterB, IX[1] + sB * perpB[1] * asphOuterB]
-        const pt1 = lineX(P0a, dA, P1a, dB)
+
+        // Sidewalk bezier: arm A swOuter × arm B curbOuter, and vice versa
+        const swA = lineX(P0o, edA, P1c, edB)
+        const swB = lineX(P1o, edB, P0c, edA)
+        if (!swA || !swB) continue
+        const swCtrl = [swA[0] + swB[0] - oo[0], swA[1] + swB[1] - oo[1]]
+
+        // Curb outer: arm A swOuter × arm B asphOuter, and vice versa
+        const coA = lineX(P0o, edA, P1a, edB)
+        const coB = lineX(P1o, edB, P0a, edA)
+        if (!coA || !coB) continue
+        const coCtrl = [coA[0] + coB[0] - oo[0], coA[1] + coB[1] - oo[1]]
+
+        // Asphalt apex: asphOuter intersection
+        const pt1 = lineX(P0a, edA, P1a, edB)
         if (!pt1) continue
 
         // 1. Sidewalk (gray): pie wedge from oo to sidewalk bezier
@@ -237,12 +258,9 @@ export default function StreetRibbons() {
         ensure('corner_curb')
         groups['corner_curb'].push(bezierBandRaw(coA, coB, coCtrl, swA, swB, swCtrl, 16))
 
-        // 3. Asphalt (black): from curb outer bezier to V through pt1 (nudged toward IX)
-        const toIX = [IX[0] - pt1[0], IX[1] - pt1[1]]
-        const toIXlen = Math.hypot(toIX[0], toIX[1])
-        const pt1b = [pt1[0] + toIX[0] / toIXlen * 0.5, pt1[1] + toIX[1] / toIXlen * 0.5]
+        // 3. Asphalt (black): from curb outer bezier to V through pt1
         ensure('corner_asph')
-        groups['corner_asph'].push(cornerBandRaw(coA, pt1b, coB, coA, coB, coCtrl, 16))
+        groups['corner_asph'].push(cornerBandRaw(coA, pt1, coB, coA, coB, coCtrl, 16))
       }
     }
 
