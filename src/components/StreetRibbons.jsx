@@ -31,7 +31,18 @@ const MISSOURI = {
   ix: 3,
 }
 
-const COLORS = { asphalt: '#2e2e2c', treelawn: '#4a6a3a', sidewalk: '#7a756a', curb: '#aa8866', corner_sw: '#7a756a', corner_curb: '#aa8866', corner_asph: '#2e2e2c' }
+// Material tokens — single source of truth for colors
+const MAT = {
+  asphalt:  '#2e2e2c',
+  sidewalk: '#7a756a',
+  curb:     '#aa8866',
+  treelawn: '#4a6a3a',
+}
+
+const COLORS = {
+  asphalt: MAT.asphalt, treelawn: MAT.treelawn, sidewalk: MAT.sidewalk, curb: MAT.curb,
+  corner_sw: MAT.sidewalk, corner_curb: MAT.curb, corner_asph: MAT.asphalt,
+}
 const PRIORITY = { treelawn: 3, sidewalk: 5, curb: 6, corner_sw: 7, asphalt: 8, corner_curb: 9, corner_asph: 10 }
 const CURB_WIDTH = 0.3
 
@@ -250,15 +261,15 @@ export default function StreetRibbons() {
         const pt1 = lineX(P0a, edA, P1a, edB)
         if (!pt1) continue
 
-        // 1. Sidewalk (gray): pie wedge from oo to sidewalk bezier
+        // 1. Sidewalk fill
         ensure('corner_sw')
         groups['corner_sw'].push(cornerBandRaw(swA, oo, swB, swA, swB, swCtrl, 16))
 
-        // 2. Curb (brown): strip from sidewalk bezier to curb outer bezier
+        // 2. Curb strip
         ensure('corner_curb')
         groups['corner_curb'].push(bezierBandRaw(coA, coB, coCtrl, swA, swB, swCtrl, 16))
 
-        // 3. Asphalt (black): from curb outer bezier to V through pt1
+        // 3. Asphalt cap
         ensure('corner_asph')
         groups['corner_asph'].push(cornerBandRaw(coA, pt1, coB, coA, coB, coCtrl, 16))
       }
@@ -269,16 +280,36 @@ export default function StreetRibbons() {
     })).filter(m => m.geo)
   }, [])
 
+  // Custom material: flat base color + shadow reception, no position-dependent shading
+  const makeMaterial = useMemo(() => (color, pri) => {
+    const mat = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 1,
+      metalness: 0,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -pri * 4,
+      polygonOffsetUnits: -pri * 50,
+    })
+    mat.onBeforeCompile = (shader) => {
+      // Replace lighting with flat base color — no position-dependent shading
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <lights_fragment_maps>',
+        `#include <lights_fragment_maps>
+        reflectedLight.directDiffuse = vec3(0.0);
+        reflectedLight.directSpecular = vec3(0.0);
+        reflectedLight.indirectSpecular = vec3(0.0);
+        reflectedLight.indirectDiffuse = diffuseColor.rgb;`
+      )
+    }
+    return mat
+  }, [])
+
   return (
     <group position={[0, 0.15, 0]}>
       {meshes.map((m, i) => m.geo && (
-        <mesh key={i} geometry={m.geo} renderOrder={m.pri} receiveShadow>
-          <meshStandardMaterial
-            color={m.color} roughness={0.85} side={THREE.DoubleSide}
-            polygonOffset polygonOffsetFactor={-m.pri * 4}
-            polygonOffsetUnits={-m.pri * 50}
-          />
-        </mesh>
+        <mesh key={i} geometry={m.geo} renderOrder={m.pri} receiveShadow
+          material={makeMaterial(m.color, m.pri)} />
       ))}
     </group>
   )
