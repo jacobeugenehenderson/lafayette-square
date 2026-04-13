@@ -1,35 +1,6 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
-
-const IX = [-134.2, -325.6]
-
-const RUTGER = {
-  points: [
-    [-316.1,-373.6],[-305.6,-370.8],[-303.2,-370.2],[-296.9,-368.5],
-    [-215.4,-346.8],[-212.1,-345.9],[-167.7,-333.8],
-    [-134.2,-325.6],
-    [-102.6,-318.2],[-87.3,-314.1],
-  ],
-  rings: [
-    { inner: 0,   outer: 6.1, id: 'asphalt' },
-    { inner: 6.1, outer: 7.4, id: 'treelawn' },
-    { inner: 7.4, outer: 8.9, id: 'sidewalk' },
-  ],
-  ix: 7,
-}
-
-const MISSOURI = {
-  points: [
-    [-99.1,-431.6],[-101.3,-425.0],[-132.0,-332.1],
-    [-134.2,-325.6],
-    [-136.2,-319.5],[-142.8,-299.6],[-149.9,-278.3],
-  ],
-  rings: [
-    { inner: 0,    outer: 4.75, id: 'asphalt' },
-    { inner: 4.75, outer: 7.5,  id: 'sidewalk' },
-  ],
-  ix: 3,
-}
+import ribbonsData from '../data/ribbons.json'
 
 // Material tokens — single source of truth for colors
 const MAT = {
@@ -45,6 +16,8 @@ const COLORS = {
 }
 const PRIORITY = { treelawn: 3, sidewalk: 5, curb: 6, corner_sw: 7, asphalt: 8, corner_curb: 9, corner_asph: 10 }
 const CURB_WIDTH = 0.3
+
+// ── Geometry helpers (unchanged from POC) ────────────────────────
 
 function lineX(p1, d1, p2, d2) {
   const det = d1[0]*d2[1] - d1[1]*d2[0]
@@ -105,11 +78,9 @@ function cornerBandRaw(P0o, oo, P1o, P0i, P1i, ctrlI, segments = 16) {
   const V = (x, z) => { positions.push(x, 0, z); normals.push(0, 1, 0); return vi++ }
   for (let j = 0; j <= segments; j++) {
     const t = j / segments, u = 1 - t
-    // Outer: piecewise linear P0o → oo → P1o
     const s = t <= 0.5 ? t * 2 : (t - 0.5) * 2
     const ox = t <= 0.5 ? P0o[0] * (1 - s) + oo[0] * s : oo[0] * (1 - s) + P1o[0] * s
     const oz = t <= 0.5 ? P0o[1] * (1 - s) + oo[1] * s : oo[1] * (1 - s) + P1o[1] * s
-    // Inner: quadratic bezier
     const bx = u * u * P0i[0] + 2 * u * t * ctrlI[0] + t * t * P1i[0]
     const bz = u * u * P0i[1] + 2 * u * t * ctrlI[1] + t * t * P1i[1]
     V(ox, oz); V(bx, bz)
@@ -138,140 +109,170 @@ function bezierBandRaw(P0o, P1o, ctrlO, P0i, P1i, ctrlI, segments = 16) {
   return { positions, normals, indices }
 }
 
-function layerBounds(street) {
-  const asph = street.rings.find(r => r.id === 'asphalt')
-  const tl = street.rings.find(r => r.id === 'treelawn')
-  const sw = street.rings.find(r => r.id === 'sidewalk')
+// ── Convert ribbons profile to ring bounds ───────────────────────
+
+function profileToBounds(profile) {
+  const hasTreelawn = profile.treelawn > profile.curb + 0.1
   return {
-    asphalt:  { i: 0, o: asph.outer },
-    curb:     { i: asph.outer, o: asph.outer + CURB_WIDTH },
-    treelawn: tl ? { i: tl.inner, o: tl.outer } : null,
-    sidewalk: { i: sw.inner, o: sw.outer },
+    asphalt:  { i: 0, o: profile.asphalt },
+    curb:     { i: profile.asphalt, o: profile.asphalt + CURB_WIDTH },
+    treelawn: hasTreelawn ? { i: profile.asphalt + CURB_WIDTH, o: profile.treelawn } : null,
+    sidewalk: { i: hasTreelawn ? profile.treelawn : profile.asphalt + CURB_WIDTH, o: profile.sidewalk },
   }
 }
+
+// ── Segment direction helper ─────────────────────────────────────
+
+function segDir(pts, i0, i1) {
+  const dx = pts[i1][0] - pts[i0][0], dz = pts[i1][1] - pts[i0][1]
+  const l = Math.hypot(dx, dz)
+  return l > 1e-6 ? [dx / l, dz / l] : [1, 0]
+}
+
+// ── Main component ───────────────────────────────────────────────
 
 export default function StreetRibbons() {
   const meshes = useMemo(() => {
     const groups = {}
     const ensure = (id) => { if (!groups[id]) groups[id] = [] }
 
-    for (const street of [RUTGER, MISSOURI]) {
-      const perps = computePerps(street.points)
-      const leftPts = street.points.slice(0, street.ix + 1)
-      const leftPp = perps.slice(0, street.ix + 1)
-      const rightPts = street.points.slice(street.ix)
-      const rightPp = perps.slice(street.ix)
-      const lb = layerBounds(street)
+    // Index streets by name for intersection lookups
+    const streetsByName = new Map()
+    for (const st of ribbonsData.streets) {
+      if (!streetsByName.has(st.name)) streetsByName.set(st.name, [])
+      streetsByName.get(st.name).push(st)
+    }
 
-      for (const id of ['asphalt', 'curb', 'treelawn', 'sidewalk']) {
-        const b = lb[id]
-        if (!b) continue
-        ensure(id)
-        if (id === 'asphalt') {
-          groups[id].push(halfRingRaw(street.points, b.i, b.o, perps, +1))
-          groups[id].push(halfRingRaw(street.points, b.i, b.o, perps, -1))
-        } else {
-          for (const [pts, pp] of [[leftPts,leftPp],[rightPts,rightPp]]) {
-            groups[id].push(halfRingRaw(pts, b.i, b.o, pp, +1))
-            groups[id].push(halfRingRaw(pts, b.i, b.o, pp, -1))
+    // ── Arm ribbons ──────────────────────────────────────────────
+    for (const street of ribbonsData.streets) {
+      const pts = street.points
+      if (pts.length < 2) continue
+      const perps = computePerps(pts)
+      const lb = profileToBounds(street.profile)
+
+      // Collect intersection indices for this street
+      const ixIndices = new Set(street.intersections.map(ix => ix.ix))
+
+      // Split at each intersection index
+      const splits = [0, ...street.intersections.map(ix => ix.ix).sort((a, b) => a - b), pts.length - 1]
+      const uniqueSplits = [...new Set(splits)].sort((a, b) => a - b)
+
+      for (let si = 0; si < uniqueSplits.length - 1; si++) {
+        const from = uniqueSplits[si], to = uniqueSplits[si + 1]
+        const segPts = pts.slice(from, to + 1)
+        const segPp = perps.slice(from, to + 1)
+        if (segPts.length < 2) continue
+
+        for (const id of ['asphalt', 'curb', 'treelawn', 'sidewalk']) {
+          const b = lb[id]
+          if (!b) continue
+          ensure(id)
+          if (id === 'asphalt') {
+            // Asphalt runs full length (not split at IX)
+            if (si === 0) {
+              groups[id].push(halfRingRaw(pts, b.i, b.o, perps, +1))
+              groups[id].push(halfRingRaw(pts, b.i, b.o, perps, -1))
+            }
+          } else {
+            groups[id].push(halfRingRaw(segPts, b.i, b.o, segPp, +1))
+            groups[id].push(halfRingRaw(segPts, b.i, b.o, segPp, -1))
           }
         }
       }
     }
 
-    // --- Corner bands ---
-    const perpsA = computePerps(RUTGER.points)
-    const perpsB = computePerps(MISSOURI.points)
-    const perpA = perpsA[RUTGER.ix]
-    const perpB = perpsB[MISSOURI.ix]
+    // ── Corner plugs ─────────────────────────────────────────────
+    for (const ix of ribbonsData.intersections) {
+      if (ix.streets.length < 2) continue
+      const IX = ix.point
 
-    // Per-half-arm segment directions at IX (not averaged across both halves)
-    const ixA = RUTGER.ix, ixB = MISSOURI.ix
-    const dxAL = RUTGER.points[ixA][0] - RUTGER.points[ixA-1][0]
-    const dzAL = RUTGER.points[ixA][1] - RUTGER.points[ixA-1][1]
-    const lAL = Math.hypot(dxAL, dzAL)
-    const dA_left = [dxAL/lAL, dzAL/lAL]
-    const dxAR = RUTGER.points[ixA+1][0] - RUTGER.points[ixA][0]
-    const dzAR = RUTGER.points[ixA+1][1] - RUTGER.points[ixA][1]
-    const lAR = Math.hypot(dxAR, dzAR)
-    const dA_right = [dxAR/lAR, dzAR/lAR]
+      // Process each pair of streets at this intersection
+      for (let ai = 0; ai < ix.streets.length; ai++) {
+        for (let bi = ai + 1; bi < ix.streets.length; bi++) {
+          const stA_ref = ix.streets[ai]
+          const stB_ref = ix.streets[bi]
 
-    const dxBL = MISSOURI.points[ixB][0] - MISSOURI.points[ixB-1][0]
-    const dzBL = MISSOURI.points[ixB][1] - MISSOURI.points[ixB-1][1]
-    const lBL = Math.hypot(dxBL, dzBL)
-    const dB_left = [dxBL/lBL, dzBL/lBL]
-    const dxBR = MISSOURI.points[ixB+1][0] - MISSOURI.points[ixB][0]
-    const dzBR = MISSOURI.points[ixB+1][1] - MISSOURI.points[ixB][1]
-    const lBR = Math.hypot(dxBR, dzBR)
-    const dB_right = [dxBR/lBR, dzBR/lBR]
+          // Find the street data
+          const stA_data = ribbonsData.streets.find(s =>
+            s.name === stA_ref.name && s.intersections.some(i =>
+              i.ix === stA_ref.ix && i.withStreets.includes(stB_ref.name)))
+          const stB_data = ribbonsData.streets.find(s =>
+            s.name === stB_ref.name && s.intersections.some(i =>
+              i.ix === stB_ref.ix && i.withStreets.includes(stA_ref.name)))
+          if (!stA_data || !stB_data) continue
 
-    // Averaged tangents (still used for perpA/perpB consistency check)
-    const dA = [(dA_left[0]+dA_right[0])/2, (dA_left[1]+dA_right[1])/2]
-    const lA2 = Math.hypot(dA[0],dA[1]); dA[0]/=lA2; dA[1]/=lA2
-    const dB = [(dB_left[0]+dB_right[0])/2, (dB_left[1]+dB_right[1])/2]
-    const lB2 = Math.hypot(dB[0],dB[1]); dB[0]/=lB2; dB[1]/=lB2
+          const ptsA = stA_data.points, ixA = stA_ref.ix
+          const ptsB = stB_data.points, ixB = stB_ref.ix
+          if (ixA < 1 || ixA >= ptsA.length - 1) continue
+          if (ixB < 1 || ixB >= ptsB.length - 1) continue
 
-    const lbA = layerBounds(RUTGER)
-    const lbB = layerBounds(MISSOURI)
-    const swOuterA = lbA.sidewalk.o
-    const swOuterB = lbB.sidewalk.o
-    const curbOuterA = lbA.curb.o
-    const curbOuterB = lbB.curb.o
-    const asphOuterA = lbA.asphalt.o
-    const asphOuterB = lbB.asphalt.o
+          const perpsA = computePerps(ptsA)
+          const perpsB = computePerps(ptsB)
+          const perpA = perpsA[ixA]
+          const perpB = perpsB[ixB]
 
-    for (const sA of [1, -1]) {
-      for (const sB of [1, -1]) {
-        // Sidewalk outer edge points at IX
-        const P0o = [IX[0] + sA * perpA[0] * swOuterA, IX[1] + sA * perpA[1] * swOuterA]
-        const P1o = [IX[0] + sB * perpB[0] * swOuterB, IX[1] + sB * perpB[1] * swOuterB]
+          // Per-half-arm segment directions
+          const dA_left = segDir(ptsA, ixA - 1, ixA)
+          const dA_right = segDir(ptsA, ixA, ixA + 1)
+          const dB_left = segDir(ptsB, ixB - 1, ixB)
+          const dB_right = segDir(ptsB, ixB, ixB + 1)
+          const dA_avg = [(dA_left[0]+dA_right[0])/2, (dA_left[1]+dA_right[1])/2]
+          const lA = Math.hypot(dA_avg[0], dA_avg[1]); dA_avg[0]/=lA; dA_avg[1]/=lA
+          const dB_avg = [(dB_left[0]+dB_right[0])/2, (dB_left[1]+dB_right[1])/2]
+          const lB = Math.hypot(dB_avg[0], dB_avg[1]); dB_avg[0]/=lB; dB_avg[1]/=lB
 
-        // Determine which half-arm borders this corner
-        // Use averaged dA/dB just for the dot test to pick left vs right
-        const testOo = lineX(P0o, dA, P1o, dB)
-        if (!testOo) continue
-        const dotA = (testOo[0]-IX[0])*dA[0] + (testOo[1]-IX[1])*dA[1]
-        const dotB = (testOo[0]-IX[0])*dB[0] + (testOo[1]-IX[1])*dB[1]
-        const edA = dotA < 0 ? dA_left : dA_right
-        const edB = dotB < 0 ? dB_left : dB_right
+          const lbA = profileToBounds(stA_data.profile)
+          const lbB = profileToBounds(stB_data.profile)
+          const swOuterA = lbA.sidewalk.o
+          const swOuterB = lbB.sidewalk.o
+          const curbOuterA = lbA.curb.o
+          const curbOuterB = lbB.curb.o
+          const asphOuterA = lbA.asphalt.o
+          const asphOuterB = lbB.asphalt.o
 
-        // Block corner using actual half-arm edge directions
-        const oo = lineX(P0o, edA, P1o, edB)
-        if (!oo) continue
+          for (const sA of [1, -1]) {
+            for (const sB of [1, -1]) {
+              const P0o = [IX[0] + sA * perpA[0] * swOuterA, IX[1] + sA * perpA[1] * swOuterA]
+              const P1o = [IX[0] + sB * perpB[0] * swOuterB, IX[1] + sB * perpB[1] * swOuterB]
 
-        // All plug points computed as exact line intersections from measured arm edges
-        const P0c = [IX[0] + sA * perpA[0] * curbOuterA, IX[1] + sA * perpA[1] * curbOuterA]
-        const P1c = [IX[0] + sB * perpB[0] * curbOuterB, IX[1] + sB * perpB[1] * curbOuterB]
-        const P0a = [IX[0] + sA * perpA[0] * asphOuterA, IX[1] + sA * perpA[1] * asphOuterA]
-        const P1a = [IX[0] + sB * perpB[0] * asphOuterB, IX[1] + sB * perpB[1] * asphOuterB]
+              // Pick half-arm direction for this corner
+              const testOo = lineX(P0o, dA_avg, P1o, dB_avg)
+              if (!testOo) continue
+              const dotA = (testOo[0]-IX[0])*dA_avg[0] + (testOo[1]-IX[1])*dA_avg[1]
+              const dotB = (testOo[0]-IX[0])*dB_avg[0] + (testOo[1]-IX[1])*dB_avg[1]
+              const edA = dotA < 0 ? dA_left : dA_right
+              const edB = dotB < 0 ? dB_left : dB_right
 
-        // Sidewalk bezier: arm A swOuter × arm B curbOuter, and vice versa
-        const swA = lineX(P0o, edA, P1c, edB)
-        const swB = lineX(P1o, edB, P0c, edA)
-        if (!swA || !swB) continue
-        const swCtrl = [swA[0] + swB[0] - oo[0], swA[1] + swB[1] - oo[1]]
+              const oo = lineX(P0o, edA, P1o, edB)
+              if (!oo) continue
 
-        // Curb outer: arm A swOuter × arm B asphOuter, and vice versa
-        const coA = lineX(P0o, edA, P1a, edB)
-        const coB = lineX(P1o, edB, P0a, edA)
-        if (!coA || !coB) continue
-        const coCtrl = [coA[0] + coB[0] - oo[0], coA[1] + coB[1] - oo[1]]
+              const P0c = [IX[0] + sA * perpA[0] * curbOuterA, IX[1] + sA * perpA[1] * curbOuterA]
+              const P1c = [IX[0] + sB * perpB[0] * curbOuterB, IX[1] + sB * perpB[1] * curbOuterB]
+              const P0a = [IX[0] + sA * perpA[0] * asphOuterA, IX[1] + sA * perpA[1] * asphOuterA]
+              const P1a = [IX[0] + sB * perpB[0] * asphOuterB, IX[1] + sB * perpB[1] * asphOuterB]
 
-        // Asphalt apex: asphOuter intersection
-        const pt1 = lineX(P0a, edA, P1a, edB)
-        if (!pt1) continue
+              const swA = lineX(P0o, edA, P1c, edB)
+              const swB = lineX(P1o, edB, P0c, edA)
+              if (!swA || !swB) continue
+              const swCtrl = [swA[0] + swB[0] - oo[0], swA[1] + swB[1] - oo[1]]
 
-        // 1. Sidewalk fill
-        ensure('corner_sw')
-        groups['corner_sw'].push(cornerBandRaw(swA, oo, swB, swA, swB, swCtrl, 16))
+              const coA = lineX(P0o, edA, P1a, edB)
+              const coB = lineX(P1o, edB, P0a, edA)
+              if (!coA || !coB) continue
+              const coCtrl = [coA[0] + coB[0] - oo[0], coA[1] + coB[1] - oo[1]]
 
-        // 2. Curb strip
-        ensure('corner_curb')
-        groups['corner_curb'].push(bezierBandRaw(coA, coB, coCtrl, swA, swB, swCtrl, 16))
+              const pt1 = lineX(P0a, edA, P1a, edB)
+              if (!pt1) continue
 
-        // 3. Asphalt cap
-        ensure('corner_asph')
-        groups['corner_asph'].push(cornerBandRaw(coA, pt1, coB, coA, coB, coCtrl, 16))
+              ensure('corner_sw')
+              groups['corner_sw'].push(cornerBandRaw(swA, oo, swB, swA, swB, swCtrl, 16))
+              ensure('corner_curb')
+              groups['corner_curb'].push(bezierBandRaw(coA, coB, coCtrl, swA, swB, swCtrl, 16))
+              ensure('corner_asph')
+              groups['corner_asph'].push(cornerBandRaw(coA, pt1, coB, coA, coB, coCtrl, 16))
+            }
+          }
+        }
       }
     }
 
@@ -280,19 +281,13 @@ export default function StreetRibbons() {
     })).filter(m => m.geo)
   }, [])
 
-  // Custom material: flat base color + shadow reception, no position-dependent shading
+  // Custom material: flat base color, no position-dependent shading
   const makeMaterial = useMemo(() => (color, pri) => {
     const mat = new THREE.MeshStandardMaterial({
-      color,
-      roughness: 1,
-      metalness: 0,
-      side: THREE.DoubleSide,
-      polygonOffset: true,
-      polygonOffsetFactor: -pri * 4,
-      polygonOffsetUnits: -pri * 50,
+      color, roughness: 1, metalness: 0, side: THREE.DoubleSide,
+      polygonOffset: true, polygonOffsetFactor: -pri * 4, polygonOffsetUnits: -pri * 50,
     })
     mat.onBeforeCompile = (shader) => {
-      // Replace lighting with flat base color — no position-dependent shading
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <lights_fragment_maps>',
         `#include <lights_fragment_maps>

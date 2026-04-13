@@ -447,7 +447,68 @@ centerlines aren't clean enough, the next investment is in cleaning street data
 
 ---
 
-## 11. Build commands cheat sheet
+## 11. Cartograph application modes
+
+The cartograph is the authoring tool for the map. Three modes:
+
+### 11.1 Marker mode
+Freehand strokes on the aerial for deep debugging. Human→operator communication
+channel. The marker tool draws on the SVG overlay; strokes persist to
+`data/clean/marker_strokes.json`. The `/analyze` endpoint reports which
+blocks/parcels overlap the marker bbox.
+
+Use for: "Something's wrong here, investigate."
+
+### 11.2 Measure mode
+Aerial imagery + computed centerlines. The operator drags measurement bands
+outward from each centerline to define the cross-section: asphalt → curb →
+treelawn (optional) → sidewalk. Each band snaps to the real aerial imagery.
+
+This is where ALL geometry gets defined. The system auto-computes corner plugs
+from the measurements on each arm. Future: snap similar widths to nearest
+code-standard value.
+
+Data: `data/raw/measurements.json` (per-street cross-section overrides)
+
+### 11.3 Design mode
+The composed 2D map preview. Controls for:
+- Material colors (asphalt, sidewalk, curb, treelawn, land-use fills)
+- Stroke weights and curb widths
+- Font and text treatments for street labels
+- **Launch button** → opens the main app (localhost:5175) to see the map in
+  3D with lighting, shadows, terrain, and the full post-processing stack
+
+### 11.4 Corner plug system
+Every intersection corner gets a universal three-layer plug:
+1. **Sidewalk fill** (gray): pie wedge from oo to bezier, covers treelawn gaps
+2. **Curb strip** (brown): thin band outside the bezier, decorative
+3. **Asphalt cap** (black): covers existing sharp corner underneath
+
+The plug is computed from exact line-line intersections of measured arm edges.
+It works for all arrangements:
+- Sidewalk meets sidewalk
+- Sidewalk+treelawn meets sidewalk
+- Sidewalk+treelawn meets sidewalk+treelawn (both treelawns dead-end, ADA plug)
+
+The bezier boundary always uses curbOuter, so the plug covers whatever gap
+exists regardless of treelawn presence. Arms butt up to it. Treelawn dead-ends.
+
+### 11.5 Data flow
+```
+Measure mode → measurements.json
+                    ↓
+survey.json + standards.js + osm.json
+                    ↓
+Pipeline (derive.js) → map.json (ribbons layer)
+                    ↓
+Design mode (render.js SVG)     Main app (StreetRibbons.jsx, 3D)
+                    ↓                        ↑
+              Launch button ─────────────────┘
+```
+
+---
+
+## 12. Build commands cheat sheet
 
 ```bash
 cd cartograph
@@ -467,7 +528,7 @@ cat data/clean/marker_strokes.json | jq 'length'
 
 ---
 
-## 12. Three.js ground plane (StreetRibbons POC)
+## 13. Three.js ground plane (StreetRibbons)
 
 The ground plane is being migrated from CSS3DRenderer (inline SVG) to native Three.js
 ribbon meshes. The POC lives in `src/components/StreetRibbons.jsx` and renders
@@ -615,7 +676,7 @@ DO NOT change the bezier formula. It works.
 
 ---
 
-## 13. Glossary
+## 14. Glossary
 
 - **Face**: a closed polygon produced by polygonizing the street network (DCEL output)
 - **Block**: the rendered land between streets — derived from a face via parcel union or face inset

@@ -2110,48 +2110,62 @@ export function deriveLayers(highways) {
     ribbonsByName.get(name).segments.push(f.coords.map(c => [c.x, c.z]))
   }
 
-  // Chain segments into continuous polylines per street
-  function chainSegments(segments) {
+  // Chain segments into continuous polylines, producing MULTIPLE chains
+  // for disconnected segments of the same street name
+  function chainAllSegments(segments) {
     if (segments.length === 0) return []
-    if (segments.length === 1) return segments[0]
+    if (segments.length === 1) return [segments[0]]
 
     const used = new Set()
-    const result = [...segments[0]]
-    used.add(0)
+    const chains = []
+    const EPS = 0.5
 
-    let changed = true
-    while (changed) {
-      changed = false
+    while (used.size < segments.length) {
+      // Start a new chain from the first unused segment
+      let startIdx = -1
       for (let i = 0; i < segments.length; i++) {
-        if (used.has(i)) continue
-        const seg = segments[i]
-        const rFirst = result[0], rLast = result[result.length - 1]
-        const sFirst = seg[0], sLast = seg[seg.length - 1]
-        const EPS = 0.5
+        if (!used.has(i)) { startIdx = i; break }
+      }
+      if (startIdx === -1) break
 
-        if (Math.hypot(rLast[0] - sFirst[0], rLast[1] - sFirst[1]) < EPS) {
-          result.push(...seg.slice(1)); used.add(i); changed = true
-        } else if (Math.hypot(rLast[0] - sLast[0], rLast[1] - sLast[1]) < EPS) {
-          result.push(...[...seg].reverse().slice(1)); used.add(i); changed = true
-        } else if (Math.hypot(rFirst[0] - sLast[0], rFirst[1] - sLast[1]) < EPS) {
-          result.unshift(...seg.slice(0, -1)); used.add(i); changed = true
-        } else if (Math.hypot(rFirst[0] - sFirst[0], rFirst[1] - sFirst[1]) < EPS) {
-          result.unshift(...[...seg].reverse().slice(0, -1)); used.add(i); changed = true
+      const result = [...segments[startIdx]]
+      used.add(startIdx)
+
+      let changed = true
+      while (changed) {
+        changed = false
+        for (let i = 0; i < segments.length; i++) {
+          if (used.has(i)) continue
+          const seg = segments[i]
+          const rFirst = result[0], rLast = result[result.length - 1]
+          const sFirst = seg[0], sLast = seg[seg.length - 1]
+
+          if (Math.hypot(rLast[0] - sFirst[0], rLast[1] - sFirst[1]) < EPS) {
+            result.push(...seg.slice(1)); used.add(i); changed = true
+          } else if (Math.hypot(rLast[0] - sLast[0], rLast[1] - sLast[1]) < EPS) {
+            result.push(...[...seg].reverse().slice(1)); used.add(i); changed = true
+          } else if (Math.hypot(rFirst[0] - sLast[0], rFirst[1] - sLast[1]) < EPS) {
+            result.unshift(...seg.slice(0, -1)); used.add(i); changed = true
+          } else if (Math.hypot(rFirst[0] - sFirst[0], rFirst[1] - sFirst[1]) < EPS) {
+            result.unshift(...[...seg].reverse().slice(0, -1)); used.add(i); changed = true
+          }
         }
       }
+      chains.push(result)
     }
-    return result
+    return chains
   }
 
-  // Detect intersections: find shared vertices between different streets' polylines
+  // Build ribbon entries: each connected chain of a named street becomes one ribbon
   const ribbonStreets = []
   const intersections = []
-  const ixMap = new Map() // key → { point, streets }
 
   for (const [name, data] of ribbonsByName) {
-    const points = chainSegments(data.segments)
+    const chains = chainAllSegments(data.segments)
     const profile = computeStreetProfile(name, data.tags)
-    ribbonStreets.push({ name, points, profile, intersections: [] })
+    for (const points of chains) {
+      ribbonStreets.push({ name, points, profile, intersections: [] })
+    }
   }
 
   // Find intersection points: use noded segments (which have shared vertices
