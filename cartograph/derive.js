@@ -874,24 +874,27 @@ function findStreetForPoint(px, pz, index) {
  * Get the pavementHalfWidth for each edge of a face polygon,
  * by matching edges to original streets and looking up survey data.
  */
-function getEdgeWidths(ring, streetIndex, survey, defaultWidth) {
+function getEdgeWidths(ring, sourceStreets, survey, defaultWidth) {
   const n = ring.length
   const widths = []
 
   for (let i = 0; i < n; i++) {
-    const a = ring[i]
-    const b = ring[(i + 1) % n]
-    const mx = (a.x + b.x) / 2
-    const mz = (a.z + b.z) / 2
-
-    const match = findStreetForPoint(mx, mz, streetIndex)
-
-    if (match?.name && survey[match.name]?.pavementHalfWidth) {
-      widths.push(survey[match.name].pavementHalfWidth)
-    } else if (match?.tags) {
-      const spec = getStreetSpec(match.tags)
-      const section = crossSection(spec)
-      widths.push(section.pavement)
+    const vertex = ring[i]
+    // Each vertex carries a source index from the noded segment
+    // that produced this face edge — the street it came from.
+    const src = vertex.source
+    if (src >= 0 && src < sourceStreets.length) {
+      const street = sourceStreets[src]
+      const name = street.tags?.name
+      if (name && survey[name]?.pavementHalfWidth) {
+        widths.push(survey[name].pavementHalfWidth)
+      } else if (street.tags) {
+        const spec = getStreetSpec(street.tags)
+        const section = crossSection(spec)
+        widths.push(section.pavement)
+      } else {
+        widths.push(defaultWidth)
+      }
     } else {
       widths.push(defaultWidth)
     }
@@ -922,8 +925,8 @@ function correctStreetWidths(streets, lamps, survey) {
   for (const street of streets) {
     const name = street.tags?.name
     if (!name || !corrected[name]?.pavementHalfWidth) continue
-    // Trust assessor-surveyed ROW — lamps only correct where survey is missing
-    if (corrected[name].source === 'assessor') continue
+    // Trust direct measurements and assessor ROW — lamps only correct computed values
+    if (corrected[name].source === 'assessor' || corrected[name].source === 'measured') continue
 
     const coords = street.coords
     if (coords.length < 2) continue
@@ -1712,7 +1715,7 @@ export function deriveLayers(highways) {
     // don't align. TODO: wire up marker-stroke trigger for other areas.
     if (useStreetOffset && face.ring.length >= 3 && closed.length > 0) {
       const swZone = STANDARDS.sidewalk.width + STANDARDS.treeLawn.width
-      const edgeWidths = getEdgeWidths(face.ring, streetIndex, correctedSurvey, 6.0)
+      const edgeWidths = getEdgeWidths(face.ring, vehicularStreets, correctedSurvey, 6.0)
       const streetBufs = new Paths()
       for (let ei = 0; ei < face.ring.length; ei++) {
         const a = face.ring[ei]
@@ -1799,6 +1802,87 @@ export function deriveLayers(highways) {
 
 
   console.log(`    ${allBlockPaths.length} blocks (${parcelBlocks} from parcels, ${faceBlocks} from face polygons, medians included)`)
+
+  // ── SPIKE: street-offset blocks for comparison ──────────────
+  // Build blocks from face − street buffers (pavementHalfWidth only,
+  // block edge = curb). Run for ALL block faces so we can compare
+  // the full street-offset model against the parcel-union model.
+  const SPIKE = true
+  const spikeBlockPaths = new Paths()
+  if (SPIKE) {
+    console.log('  [SPIKE] Building street-offset blocks (block edge = curb)...')
+    let spikeDeadEndHits = 0
+    for (let fi = 0; fi < blockFaces.length; fi++) {
+      const face = blockFaces[fi]
+      if (face.ring.length < 3) continue
+
+      // Buffer each face edge by its street's pavementHalfWidth
+      const edgeWidths = getEdgeWidths(face.ring, vehicularStreets, correctedSurvey, 6.0)
+      const streetBufs = new Paths()
+      for (let ei = 0; ei < face.ring.length; ei++) {
+        const a = face.ring[ei]
+        const b = face.ring[(ei + 1) % face.ring.length]
+        const hw = edgeWidths[ei]
+        const buf = bufferPolyline([a, b], hw)
+        for (let bi = 0; bi < buf.length; bi++) streetBufs.push(buf[bi])
+      }
+
+      // Dead-end tip caps: the face has a slit going to the dead-end
+      // vertex and back. The edge buffers along the slit leave a small
+      // uncovered triangle at the very tip. Add a circle at the dead-end
+      // point (radius = pavementHalfWidth) to close it.
+      for (const f of vehicularStreets) {
+        if (LOOP_STREET_NAMES.has(f.tags?.name)) continue
+        const c = f.coords
+        if (c.length < 2) continue
+        for (const ep of [c[0], c[c.length - 1]]) {
+          let onFace = false
+          for (const p of face.ring) {
+            if (Math.hypot(p.x - ep.x, p.z - ep.z) < 2) { onFace = true; break }
+          }
+          if (!onFace) continue
+          const key = `${Math.round(ep.x*10)},${Math.round(ep.z*10)}`
+          if (!deadEndNodes.has(key)) continue
+          const hw = (correctedSurvey[f.tags?.name]?.pavementHalfWidth) || defaultHalfWidth
+          // Approximate circle at the dead-end point
+          const N = 24
+          const circle = []
+          for (let i = 0; i < N; i++) {
+            const angle = (2 * Math.PI * i) / N
+            circle.push(toClipper(ep.x + hw * Math.cos(angle), ep.z + hw * Math.sin(angle)))
+          }
+          streetBufs.push(circle)
+          spikeDeadEndHits++
+          break
+        }
+      }
+
+      // Block = face minus street buffers
+      const facePath = face.ring.map(p => toClipper(p.x, p.z))
+      const fp = new Paths(); fp.push(facePath)
+      const maskClipper = new Clipper()
+      maskClipper.AddPaths(fp, PolyType.ptSubject, true)
+      maskClipper.AddPaths(streetBufs, PolyType.ptClip, true)
+      const mask = new Paths()
+      maskClipper.Execute(ClipType.ctDifference, mask, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+
+      // Round corners same as regular blocks
+      for (let i = 0; i < mask.length; i++) {
+        const area = Math.abs(Clipper.Area(mask[i]))
+        if (area < 50 * SCALE * SCALE) continue
+        const single = new Paths(); single.push(mask[i])
+        const smoothed = roundCorners(single, 1.0)
+        for (let j = 0; j < smoothed.length; j++) {
+          const s2 = new Paths(); s2.push(smoothed[j])
+          const rounded = roundCorners(s2, radius)
+          for (let k = 0; k < rounded.length; k++) {
+            spikeBlockPaths.push(rounded[k])
+          }
+        }
+      }
+    }
+    console.log(`    [SPIKE] ${spikeBlockPaths.length} street-offset blocks, ${spikeDeadEndHits} dead-end buffers applied, ${[...new Set(blockFaces.flatMap((f,fi) => { const dvs = []; for (let ri = 0; ri < f.ring.length; ri++) { const p = f.ring[ri]; const key = Math.round(p.x*10)+","+Math.round(p.z*10); if (deadEndNodes.has(key)) dvs.push(key); } return dvs; }))].length} dead-end vertices on face rings`)
+  }
 
   // (block_patches reserved for future gap-fill work)
 
@@ -1965,8 +2049,189 @@ export function deriveLayers(highways) {
   const pavementFeats = toCompoundFeatures(clippedStreets)
   console.log(`    ${pavementFeats.length} street pavement polygons (clipped to exclude blocks)`)
 
+  // ── Compute ribbons layer (3D street cross-section data) ───
+  console.log('  [8/8] Computing ribbons layer...')
+
+  // Load measurements (user overrides from the measure tool)
+  let measurements = []
+  try {
+    const mPath = join(RAW_DIR, 'measurements.json')
+    if (existsSync(mPath)) {
+      measurements = JSON.parse(readFileSync(mPath, 'utf-8')).measurements || []
+    }
+  } catch { /* no measurements */ }
+
+  /**
+   * Resolve the cross-section profile for a street.
+   * Authority: measurements.json → survey.json → standards.js defaults.
+   * Returns distances from centerline: { asphalt, curb, treelawn, sidewalk, source }
+   */
+  function computeStreetProfile(name, tags) {
+    const spec = getStreetSpec(tags || {})
+    const defaults = crossSection(spec)
+
+    // Start with standards defaults
+    let asphalt = defaults.pavement
+    let curb = defaults.curb
+    let treelawn = defaults.treeLawnOuter
+    let sidewalk = defaults.sidewalkOuter
+    let source = 'standards'
+
+    // Override with survey data if available
+    const sv = correctedSurvey[name]
+    if (sv?.pavementHalfWidth) {
+      asphalt = sv.pavementHalfWidth
+      curb = asphalt + STANDARDS.curb.width
+      treelawn = curb + STANDARDS.treeLawn.width
+      sidewalk = treelawn + STANDARDS.sidewalk.width
+      source = sv.source || 'survey'
+    }
+
+    // Override with measurement tool data if available
+    const meas = measurements.find(m => m.street === name)
+    if (meas?.profile) {
+      if (meas.profile.asphalt) asphalt = meas.profile.asphalt
+      if (meas.profile.curb) curb = meas.profile.curb
+      if (meas.profile.treelawn) treelawn = meas.profile.treelawn
+      if (meas.profile.sidewalk) sidewalk = meas.profile.sidewalk
+      source = 'measured'
+    }
+
+    return { asphalt, curb, treelawn, sidewalk, source }
+  }
+
+  // Build per-street ribbon data: chain same-name segments into polylines,
+  // compute profiles, detect intersection points
+  const ribbonsByName = new Map()
+  for (const f of vehicularStreets) {
+    const name = f.tags?.name
+    if (!name) continue
+    if (!ribbonsByName.has(name)) ribbonsByName.set(name, { segments: [], tags: f.tags })
+    ribbonsByName.get(name).segments.push(f.coords.map(c => [c.x, c.z]))
+  }
+
+  // Chain segments into continuous polylines per street
+  function chainSegments(segments) {
+    if (segments.length === 0) return []
+    if (segments.length === 1) return segments[0]
+
+    const used = new Set()
+    const result = [...segments[0]]
+    used.add(0)
+
+    let changed = true
+    while (changed) {
+      changed = false
+      for (let i = 0; i < segments.length; i++) {
+        if (used.has(i)) continue
+        const seg = segments[i]
+        const rFirst = result[0], rLast = result[result.length - 1]
+        const sFirst = seg[0], sLast = seg[seg.length - 1]
+        const EPS = 0.5
+
+        if (Math.hypot(rLast[0] - sFirst[0], rLast[1] - sFirst[1]) < EPS) {
+          result.push(...seg.slice(1)); used.add(i); changed = true
+        } else if (Math.hypot(rLast[0] - sLast[0], rLast[1] - sLast[1]) < EPS) {
+          result.push(...[...seg].reverse().slice(1)); used.add(i); changed = true
+        } else if (Math.hypot(rFirst[0] - sLast[0], rFirst[1] - sLast[1]) < EPS) {
+          result.unshift(...seg.slice(0, -1)); used.add(i); changed = true
+        } else if (Math.hypot(rFirst[0] - sFirst[0], rFirst[1] - sFirst[1]) < EPS) {
+          result.unshift(...[...seg].reverse().slice(0, -1)); used.add(i); changed = true
+        }
+      }
+    }
+    return result
+  }
+
+  // Detect intersections: find shared vertices between different streets' polylines
+  const ribbonStreets = []
+  const intersections = []
+  const ixMap = new Map() // key → { point, streets }
+
+  for (const [name, data] of ribbonsByName) {
+    const points = chainSegments(data.segments)
+    const profile = computeStreetProfile(name, data.tags)
+    ribbonStreets.push({ name, points, profile, intersections: [] })
+  }
+
+  // Find intersection points: use noded segments (which have shared vertices
+  // at crossings) to detect where different streets' polylines meet.
+  // For each noded vertex, find the closest point on each street's polyline.
+  const IX_SNAP = 1.0 // meters — tolerance for matching noded vertices to polylines
+
+  // Collect all noded intersection vertices (degree >= 3 in the noded graph)
+  const nodedVertexDeg = new Map()
+  for (const seg of nodedSegments) {
+    for (const pt of [seg[0], seg[1]]) {
+      const key = `${Math.round(pt.x * 10)},${Math.round(pt.z * 10)}`
+      nodedVertexDeg.set(key, (nodedVertexDeg.get(key) || 0) + 1)
+    }
+  }
+
+  // Intersection vertices have degree >= 3 (two streets crossing = 4 segments meeting)
+  const nodedIxPts = []
+  for (const seg of nodedSegments) {
+    for (const pt of [seg[0], seg[1]]) {
+      const key = `${Math.round(pt.x * 10)},${Math.round(pt.z * 10)}`
+      if (nodedVertexDeg.get(key) >= 3) {
+        if (!nodedIxPts.find(p => Math.hypot(p.x - pt.x, p.z - pt.z) < 0.1)) {
+          nodedIxPts.push(pt)
+        }
+      }
+    }
+  }
+
+  // For each noded intersection, find matching points on ribbon polylines
+  for (const npt of nodedIxPts) {
+    const matches = []
+    for (let si = 0; si < ribbonStreets.length; si++) {
+      const st = ribbonStreets[si]
+      let bestDist = Infinity, bestIdx = -1
+      for (let pi = 0; pi < st.points.length; pi++) {
+        const d = Math.hypot(st.points[pi][0] - npt.x, st.points[pi][1] - npt.z)
+        if (d < bestDist) { bestDist = d; bestIdx = pi }
+      }
+      if (bestDist < IX_SNAP) matches.push({ streetIdx: si, pointIdx: bestIdx, dist: bestDist })
+    }
+    if (matches.length < 2) continue
+
+    const pt = [npt.x, npt.z]
+    const ixData = { point: pt, streets: [] }
+    for (const m of matches) {
+      const st = ribbonStreets[m.streetIdx]
+      // Snap the polyline point to the exact intersection coordinate
+      st.points[m.pointIdx] = pt
+      st.intersections.push({ ix: m.pointIdx, with: ixData })
+      ixData.streets.push({ name: st.name, ix: m.pointIdx })
+    }
+    intersections.push(ixData)
+  }
+
+  // Serialize (remove circular refs)
+  const ribbonsLayer = {
+    streets: ribbonStreets.map(st => ({
+      name: st.name,
+      points: st.points,
+      profile: st.profile,
+      intersections: st.intersections.map(ix => ({
+        ix: ix.ix,
+        withStreets: ix.with.streets.filter(s => s.name !== st.name).map(s => s.name),
+      })),
+    })),
+    intersections: intersections.map(ix => ({
+      point: ix.point,
+      streets: ix.streets.map(s => ({ name: s.name, ix: s.ix })),
+    })),
+  }
+
+  console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)
+  for (const st of ribbonsLayer.streets) {
+    const tag = st.profile.source === 'standards' ? ' [DEFAULT]' : ''
+    console.log(`      ${st.name}: asph=${st.profile.asphalt.toFixed(2)} sw=${st.profile.sidewalk.toFixed(2)}${tag}`)
+  }
+
   // ── Assemble layers ─────────────────────────────────────────
-  console.log('  [8/8] Assembling layers...')
+  console.log('  [9/9] Assembling layers...')
 
   const layers = {
     pavement:       pavementFeats,                                     // streets from standards (independent)
@@ -1986,6 +2251,8 @@ export function deriveLayers(highways) {
     path:           bufferEach(paths, STANDARDS.path.width / 2),
     streetlamp:     streetlamps,
     contour:        contours,
+    spike:          toFeats(spikeBlockPaths),
+    ribbons:        ribbonsLayer,
   }
 
   // Store block polygons for building clipping
@@ -2034,18 +2301,36 @@ function toCompoundFeatures(clipperPaths) {
 }
 
 /**
- * Compute building footprints from assessor sqft + stories.
+ * Compute building footprints.
  *
- * For each building:
- *   1. Compute foundation area = building_sqft / stories (sqft → sqm)
- *   2. Compute current footprint area from the OSM/Overture trace
- *   3. Scale the trace shape to match the computed area
- *   4. Keep the centroid and proportions, just resize
+ * For OSM-sourced buildings we *used to* scale by sqft/stories because
+ * OSM footprints were unreliable. MSBF footprints are ML-derived from
+ * recent aerial imagery and are already accurate — scaling them based
+ * on gross-sqft-per-story is actively wrong (gross sqft includes wall
+ * thickness, stairwells, etc., so the target area is not the real
+ * footprint area). So we pass MSBF through untouched.
  *
- * This gives us dimensions from legally authoritative tax assessor
- * data rather than aerial imagery roofline traces.
+ * The `source` argument is 'microsoft' or 'osm' (from pipeline.js).
  */
-export function deriveBuildings(buildings) {
+export function deriveBuildings(buildings, source = 'osm') {
+  // Curated project data / MSBF: pass through, no scaling.
+  if (source === 'project' || source === 'microsoft') {
+    const result = buildings.map(b => ({
+      ring: b.coords.map(c => ({ x: c.x, z: c.z })),
+      projectId: b.projectId,
+      msbfId: b.msbfId,
+      tags: b.tags,
+      elev: b.elev || null,
+    })).filter(b => b.ring.length >= 3)
+    console.log(`  Buildings: ${result.length} ${source} footprints kept as-is (no scaling)`)
+    return result
+  }
+
+  // OSM path: the original fix-up logic, unchanged.
+  return _deriveBuildingsOSM(buildings)
+}
+
+function _deriveBuildingsOSM(buildings) {
   // Load enriched buildings with sqft data, indexed by position for matching
   let enrichedList = []
   try {
