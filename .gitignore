@@ -43,13 +43,23 @@ public/models/
 public/photos/lafayette-square/
 
 # Raw data cache (regenerable via scripts/)
-scripts/raw/
+scripts/raw/*
+!scripts/raw/stl_parcels.json
+!scripts/raw/osm_street_lamps.json
 
 # Archived/defunct scripts
 _archive/
 
 # Cartograph generated output
-cartograph/data/
+cartograph/data/*
+!cartograph/data/raw/
+cartograph/data/raw/*
+!cartograph/data/raw/osm.json
+!cartograph/data/raw/survey.json
+!cartograph/data/raw/elevation.json
+!cartograph/data/clean/
+cartograph/data/clean/*
+!cartograph/data/clean/map.json
 cartograph/node_modules/
 
 # Claude Code local settings

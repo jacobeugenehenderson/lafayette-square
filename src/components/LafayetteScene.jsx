@@ -15,6 +15,8 @@ import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
 // import FacadeBillboards from './FacadeBillboards'  // shelved — future street-level facade rendering
 import FacadeElements from './FacadeElements'
+import { patchTerrain } from '../utils/terrainShader'
+import { getElevation } from '../utils/elevation'
 
 // ============ BUILDING TEXTURES ============
 // Tileable PBR textures for walls and roofs (CC0, Poly Haven)
@@ -68,6 +70,18 @@ function getOverride(buildingId, key) {
 
 // ============ FOUNDATION & ROOF HELPERS ============
 
+// Average terrain elevation at building footprint corners
+function getGroundElevation(building) {
+  if (!building.footprint || building.footprint.length === 0) {
+    return getElevation(building.position[0], building.position[2])
+  }
+  let sum = 0
+  for (const [x, z] of building.footprint) {
+    sum += getElevation(x, z)
+  }
+  return sum / building.footprint.length
+}
+
 function getFoundationHeight(building) {
   const override = getOverride(building.id, 'foundation_height')
   if (override !== undefined) return override
@@ -77,6 +91,11 @@ function getFoundationHeight(building) {
   if (year < 1900) return 1.2
   if (year < 1920) return 0.8
   return 0
+}
+
+// Building Y = foundation height only. Terrain displacement handled by patchTerrain on GPU.
+function getBuildingY(building) {
+  return getFoundationHeight(building)
 }
 
 function classifyRoof(building) {
@@ -303,15 +322,18 @@ function Foundations() {
 
     _allBuildings.forEach(building => {
       const fh = getFoundationHeight(building)
-      if (fh <= 0) return
-
       const footprint = building.footprint
-      const depth = fh + 0.05 // slight overlap to prevent seam
+      // Bake terrain elevation at building centroid (matches rigid patchTerrain on building)
+      const groundY = getElevation(building.position[0], building.position[2])
+      // Every building gets a pedestal from (groundY + fh) down to Y=0
+      const top = groundY + fh
+      if (top <= 0.01) return
+      const depth = top + 0.05  // extends slightly below Y=0
 
       if (!footprint || footprint.length < 3) {
         const [w, , d] = building.size
         const geo = new THREE.BoxGeometry(w, depth, d)
-        geo.translate(building.position[0], depth / 2, building.position[2])
+        geo.translate(building.position[0], top - depth / 2, building.position[2])
         geos.push(geo)
       } else {
         try {
@@ -330,13 +352,13 @@ function Foundations() {
 
           const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false })
           geo.rotateX(-Math.PI / 2)
-          geo.translate(building.position[0], 0, building.position[2])
+          // Bottom at ~0, top at (groundY + fh)
+          geo.translate(building.position[0], top - depth, building.position[2])
           geos.push(geo)
         } catch (e) {
-          // fallback box
           const [w, , d] = building.size
           const geo = new THREE.BoxGeometry(w, depth, d)
-          geo.translate(building.position[0], depth / 2, building.position[2])
+          geo.translate(building.position[0], top - depth / 2, building.position[2])
           geos.push(geo)
         }
       }
@@ -365,12 +387,16 @@ function Foundations() {
     }
   })
 
+  const foundationMat = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({ color: '#B8A88A', roughness: 0.95 })
+    // No GPU terrain displacement — elevation baked into geometry per-building
+    return mat
+  }, [])
+
   if (!geometry) return null
 
   return (
-    <mesh ref={meshRef} geometry={geometry} receiveShadow castShadow>
-      <meshStandardMaterial color="#B8A88A" roughness={0.95} />
-    </mesh>
+    <mesh ref={meshRef} geometry={geometry} receiveShadow castShadow material={foundationMat} />
   )
 }
 
@@ -394,7 +420,7 @@ function NeonBand({ building, categoryHex, hours, forceOn = false }) {
   const prevStateRef = useRef({ glowFactor: -1, isOpen: null })
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
   const baseColor = useMemo(() => new THREE.Color(categoryHex), [categoryHex])
-  const foundationY = getFoundationHeight(building)
+  const foundationY = getBuildingY(building)
 
   const bandGeometry = useMemo(() => {
     const height = building.size[1]
@@ -423,15 +449,19 @@ function NeonBand({ building, categoryHex, hours, forceOn = false }) {
     return new THREE.TubeGeometry(curve, points.length * 8, bandRadius, 8, false)
   }, [building])
 
-  const bandMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: baseColor,
-    emissive: baseColor,
-    emissiveIntensity: 0,
-    roughness: 0.3,
-    metalness: 0.1,
-    transparent: true,
-    opacity: 0,
-  }), [baseColor])
+  const bandMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: baseColor,
+      emissive: baseColor,
+      emissiveIntensity: 0,
+      roughness: 0.3,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0,
+    })
+    patchTerrain(mat)
+    return mat
+  }, [baseColor])
 
   useFrame(() => {
     if (!bandRef.current) return
@@ -493,7 +523,7 @@ const _RING_RADIUS = 0.045
 function SelectionRing({ building }) {
   const ringRef = useRef()
   const phaseRef = useRef(0)
-  const foundationY = getFoundationHeight(building)
+  const foundationY = getBuildingY(building)
 
   const ringGeometry = useMemo(() => {
     const height = building.size[1] + 0.15
@@ -566,7 +596,7 @@ function Building({ building, neonInfo }) {
   const prevStateRef = useRef({ darkStep: -1, emissiveHex: 0 })
   const { selectedId, hoveredId, select, setHovered, clearHovered } = useSelectedBuilding()
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
-  const foundationY = getFoundationHeight(building)
+  const foundationY = getBuildingY(building)
 
   // Neon band: real listings always mount (hours checked inside NeonBand),
   // simulated listings mount only when the storefront sim slider marks them open
@@ -810,6 +840,7 @@ function Building({ building, neonInfo }) {
       )
     }
 
+    patchTerrain(mat)
     return mat
   }, [baseColor, wallTex, roofTex, roofTintColor, hasTextures, foundationY, building])
 

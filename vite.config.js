@@ -3,6 +3,35 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
 
+// Serve /cartograph and /stage as separate entry points
+function serveCartograph() {
+  return {
+    name: 'serve-cartograph',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || '').split('?')[0]
+        if (url === '/cartograph' || url === '/cartograph/') {
+          const filePath = path.resolve('cartograph.html')
+          if (fs.existsSync(filePath)) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8')
+            res.end(fs.readFileSync(filePath, 'utf-8'))
+            return
+          }
+        }
+        if (url === '/stage' || url === '/stage/') {
+          const filePath = path.resolve('stage.html')
+          if (fs.existsSync(filePath)) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8')
+            res.end(fs.readFileSync(filePath, 'utf-8'))
+            return
+          }
+        }
+        next()
+      })
+    }
+  }
+}
+
 // Serve public/codedesk/*.html directly (bypass SPA history fallback)
 function serveCodedesk() {
   return {
@@ -34,7 +63,7 @@ function serveCodedesk() {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [serveCodedesk(), react()],
+  plugins: [serveCartograph(), serveCodedesk(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
   },
@@ -43,9 +72,20 @@ export default defineConfig(({ command }) => ({
     watch: {
       ignored: ['**/public/models/**', '**/public/photos/**'],
     },
+    proxy: {
+      '/api/cartograph': {
+        target: 'http://localhost:3333',
+        rewrite: (path) => path.replace(/^\/api\/cartograph/, ''),
+      },
+    },
   },
   build: {
     rollupOptions: {
+      input: {
+        main: 'index.html',
+        cartograph: 'cartograph.html',
+        stage: 'stage.html',
+      },
       output: {
         manualChunks: {
           // Split Three.js ecosystem into a cacheable vendor chunk (~1.8MB)

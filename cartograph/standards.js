@@ -157,7 +157,14 @@ export function getStreetSpec(tags) {
     spec.cyclewayWidth = 0
   }
 
-  // One-way streets: parking might only be on one side, fewer travel lanes needed
+  // Parking orientation — perpendicular/diagonal stalls are much wider than parallel
+  const pLeft  = tags['parking:left:orientation']
+  const pRight = tags['parking:right:orientation']
+  if (pLeft === 'perpendicular' || pLeft === 'diagonal' ||
+      pRight === 'perpendicular' || pRight === 'diagonal') {
+    spec.parkingWidth = 18 * FT   // 18 ft nose-in stall
+  }
+
   spec.oneway = tags.oneway === 'yes'
 
   return spec

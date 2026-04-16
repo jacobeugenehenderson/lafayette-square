@@ -37,7 +37,9 @@ export function polygonize(segments) {
   // Half-edges: each segment produces two (one in each direction)
   const halfEdges = []
 
-  for (const [a, b] of segments) {
+  for (const seg of segments) {
+    const a = seg[0], b = seg[1]
+    const src = seg[2] !== undefined ? seg[2] : -1  // source polyline index
     const ka = vKey(a.x, a.z)
     const kb = vKey(b.x, b.z)
     if (ka === kb) continue // degenerate
@@ -48,12 +50,12 @@ export function polygonize(segments) {
     halfEdges.push({
       origin: ka, target: kb,
       ox: a.x, oz: a.z, tx: b.x, tz: b.z,
-      twin: iBA, next: -1, visited: false,
+      twin: iBA, next: -1, visited: false, source: src,
     })
     halfEdges.push({
       origin: kb, target: ka,
       ox: b.x, oz: b.z, tx: a.x, tz: a.z,
-      twin: iAB, next: -1, visited: false,
+      twin: iAB, next: -1, visited: false, source: src,
     })
 
     if (!adj[ka]) adj[ka] = []
@@ -121,7 +123,7 @@ export function polygonize(segments) {
 
     while (!halfEdges[cur].visited && safe < maxSteps) {
       halfEdges[cur].visited = true
-      cycle.push({ x: halfEdges[cur].ox, z: halfEdges[cur].oz })
+      cycle.push({ x: halfEdges[cur].ox, z: halfEdges[cur].oz, source: halfEdges[cur].source })
       cur = halfEdges[cur].next
       safe++
 

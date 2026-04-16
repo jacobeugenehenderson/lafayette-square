@@ -1,21 +1,17 @@
 #!/usr/bin/env node
 /**
- * Cartograph — Survey: generate per-neighborhood variance data
+ * Cartograph — Survey: measure street widths from sidewalk positions
  *
- * Fetches real street widths from local data sources and writes
- * survey.json — the override layer that sits between universal
- * standards and the rendering pipeline.
+ * The sidewalk distance from the street centerline tells us where
+ * the block edge should go. The street pavement width is a separate
+ * concern (rendered from lane/parking/bike tags at render time).
+ * The tree lawn is the natural gap between them — not computed,
+ * just whatever space exists between asphalt and concrete.
  *
- * Data sources (in priority order):
- *   1. City assessor parcel data (ROW widths from frontage records)
- *   2. OSM tags (lanes, width, if present)
- *   3. Falls back to standards.js defaults
- *
- * For Lafayette Square, source is STL City Assessor via
- * the existing blocks_clean.json (fetched by 03-fetch-stl-parcels.py).
- *
- * For a new city, replace the fetchLocalData() function with
- * that city's open data API. The output schema stays the same.
+ * Width source priority:
+ *   1. OSM sidewalk distance (centerline to nearest sidewalk, both sides)
+ *   2. Assessor ROW / 2 as fallback
+ *   3. Default residential width as last resort
  *
  * Usage:    node survey.js
  * Output:   data/raw/survey.json
@@ -24,183 +20,205 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CARTOGRAPH_DIR } from './config.js'
-import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
+import { STANDARDS } from './standards.js'
 
 const PROJECT_DIR = join(CARTOGRAPH_DIR, '..')
-
-// ══════════════════════════════════════════════════════════════════════
-// Source 1: City assessor parcel data
-// ══════════════════════════════════════════════════════════════════════
-
-function fetchAssessorData() {
-  // For STL: read the already-fetched parcel data
-  const path = join(PROJECT_DIR, 'src', 'data', 'blocks_clean.json')
-  if (!existsSync(path)) {
-    console.log('  No parcel data found at src/data/blocks_clean.json')
-    return {}
-  }
-
-  const data = JSON.parse(readFileSync(path, 'utf-8'))
-  const widths = data.street_widths || {}
-
-  console.log(`  Assessor: ${Object.keys(widths).length} streets with ROW widths`)
-  return widths
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// Source 2: OSM tags on street segments
-// ══════════════════════════════════════════════════════════════════════
-
-function extractOsmWidths() {
-  const osmPath = join(RAW_DIR, 'osm.json')
-  if (!existsSync(osmPath)) {
-    console.log('  No OSM data found — run fetch.js first')
-    return {}
-  }
-
-  const osm = JSON.parse(readFileSync(osmPath, 'utf-8'))
-  const highways = osm.ground?.highway || []
-
-  // Group by street name, collect lane counts and any width tags
-  const byName = {}
-  for (const f of highways) {
-    const name = f.tags?.name
-    if (!name) continue
-    const t = f.tags.highway
-    if (!['residential', 'primary', 'primary_link', 'secondary', 'secondary_link',
-          'tertiary', 'tertiary_link', 'unclassified'].includes(t)) continue
-
-    if (!byName[name]) byName[name] = { tags: [], type: t }
-    byName[name].tags.push(f.tags)
-  }
-
-  // For each street, compute a width from OSM tags
-  const widths = {}
-  for (const [name, info] of Object.entries(byName)) {
-    // If any segment has an explicit width tag, use it
-    for (const tags of info.tags) {
-      if (tags.width) {
-        widths[name] = { osmWidth: parseFloat(tags.width) }
-        break
-      }
-    }
-
-    // Otherwise compute from lanes + type
-    if (!widths[name]) {
-      // Use the most common lane count across segments
-      const laneCounts = info.tags.map(t => parseInt(t.lanes, 10)).filter(n => n > 0)
-      const lanes = laneCounts.length > 0
-        ? laneCounts.sort((a, b) => a - b)[Math.floor(laneCounts.length / 2)] // median
-        : null
-
-      const hasCycleway = info.tags.some(t =>
-        (t.cycleway && t.cycleway !== 'no') ||
-        (t['cycleway:left'] && t['cycleway:left'] !== 'no') ||
-        (t['cycleway:right'] && t['cycleway:right'] !== 'no'))
-
-      const isOneway = info.tags.some(t => t.oneway === 'yes')
-
-      widths[name] = {
-        osmLanes: lanes,
-        osmCycleway: hasCycleway,
-        osmOneway: isOneway,
-        type: info.type,
-      }
-    }
-  }
-
-  console.log(`  OSM: ${Object.keys(widths).length} named streets with tag data`)
-  return widths
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// Merge into survey.json
-// ══════════════════════════════════════════════════════════════════════
+const DEFAULT_HW = 5.0
 
 function main() {
   console.log('='.repeat(60))
-  console.log('cartograph/survey.js — Generate variance data')
+  console.log('cartograph/survey.js — Measure from sidewalks')
   console.log('='.repeat(60))
 
-  const assessor = fetchAssessorData()
-  const osm = extractOsmWidths()
+  // ── Load OSM data ──────────────────────────────────────────────
+  const osmPath = join(RAW_DIR, 'osm.json')
+  if (!existsSync(osmPath)) {
+    console.log('  No OSM data — run fetch.js first')
+    return
+  }
+  const osm = JSON.parse(readFileSync(osmPath, 'utf-8'))
+  const highways = osm.ground?.highway || []
 
-  // Merge: assessor ROW widths take priority, OSM fills gaps
+  // ── Load assessor ROW (fallback) ───────────────────────────────
+  const assessorPath = join(PROJECT_DIR, 'src', 'data', 'blocks_clean.json')
+  const assessorROW = {}
+  if (existsSync(assessorPath)) {
+    const data = JSON.parse(readFileSync(assessorPath, 'utf-8'))
+    for (const [name, row] of Object.entries(data.street_widths || {}))
+      assessorROW[name] = row
+    console.log(`  Assessor: ${Object.keys(assessorROW).length} streets`)
+  }
+
+  // ── Collect sidewalks ──────────────────────────────────────────
+  const sidewalks = highways.filter(f => f.tags?.footway === 'sidewalk')
+  console.log(`  Sidewalks: ${sidewalks.length} segments`)
+
+  // ── Collect vehicular streets ──────────────────────────────────
+  const vehTypes = new Set(['residential', 'primary', 'primary_link', 'secondary',
+    'secondary_link', 'tertiary', 'tertiary_link', 'unclassified'])
+  const byName = {}
+  for (const f of highways) {
+    const name = f.tags?.name
+    if (!name || !vehTypes.has(f.tags?.highway)) continue
+    if (!byName[name]) byName[name] = { segs: [], tags: [] }
+    byName[name].segs.push(f)
+    byName[name].tags.push(f.tags)
+  }
+
+  // ── Measure sidewalk distances per street ──────────────────────
+  console.log('\n  Measuring sidewalk distances...')
+
   const streets = {}
-
-  // All unique street names
-  const allNames = new Set([...Object.keys(assessor), ...Object.keys(osm)])
-
-  for (const name of allNames) {
+  for (const [name, info] of Object.entries(byName).sort(([a], [b]) => a.localeCompare(b))) {
     const entry = { name }
 
-    // Assessor data: real surveyed ROW width
-    if (assessor[name]) {
-      entry.rowWidth = assessor[name]  // meters, full width
+    // OSM tags (for markings, not width)
+    const laneCounts = info.tags.map(t => parseInt(t.lanes, 10)).filter(n => n > 0)
+    if (laneCounts.length > 0) entry.lanes = Math.max(...laneCounts)
+
+    entry.cycleway = info.tags.some(t =>
+      (t.cycleway === 'lane' || t.cycleway === 'track') ||
+      (t['cycleway:left'] === 'lane' || t['cycleway:left'] === 'track') ||
+      (t['cycleway:right'] === 'lane' || t['cycleway:right'] === 'track')) || undefined
+
+    entry.sharrows = (!entry.cycleway && info.tags.some(t =>
+      t.cycleway === 'shared_lane')) || undefined
+
+    entry.oneway = info.tags.some(t => t.oneway === 'yes') || undefined
+
+    entry.diagonalParking = info.tags.some(t =>
+      t['parking:left:orientation'] === 'perpendicular' ||
+      t['parking:left:orientation'] === 'diagonal' ||
+      t['parking:right:orientation'] === 'perpendicular' ||
+      t['parking:right:orientation'] === 'diagonal') || undefined
+
+    // Detect divided roads: opposing one-way carriageways
+    const owSegs = info.segs.filter(f => f.tags?.oneway === 'yes')
+    let divided = false
+    if (owSegs.length >= 2) {
+      for (let i = 0; i < owSegs.length && !divided; i++) {
+        const c0 = owSegs[i].coords
+        if (!c0 || c0.length < 2) continue
+        const dx0 = c0[c0.length - 1].x - c0[0].x, dz0 = c0[c0.length - 1].z - c0[0].z
+        const len0 = Math.sqrt(dx0 * dx0 + dz0 * dz0)
+        if (len0 < 5) continue
+        for (let j = i + 1; j < owSegs.length; j++) {
+          const c1 = owSegs[j].coords
+          if (!c1 || c1.length < 2) continue
+          const dx1 = c1[c1.length - 1].x - c1[0].x, dz1 = c1[c1.length - 1].z - c1[0].z
+          const len1 = Math.sqrt(dx1 * dx1 + dz1 * dz1)
+          if (len1 < 5) continue
+          let ad = Math.abs(Math.atan2(dz0, dx0) - Math.atan2(dz1, dx1))
+          if (ad > Math.PI) ad = 2 * Math.PI - ad
+          if (ad < 2.3) continue
+          const nx = -dz0 / len0, nz = dx0 / len0
+          const gap = Math.abs(
+            ((c1[0].x + c1[c1.length - 1].x) / 2 - (c0[0].x + c0[c0.length - 1].x) / 2) * nx +
+            ((c1[0].z + c1[c1.length - 1].z) / 2 - (c0[0].z + c0[c0.length - 1].z) / 2) * nz)
+          if (gap > 1.5 && gap < 15) { divided = true; break }
+        }
+      }
+    }
+    if (!divided && entry.oneway && (assessorROW[name] || 0) > 20) divided = true
+    if (divided) entry.divided = true
+
+    entry.type = info.tags[0]?.highway
+
+    // Assessor ROW
+    if (assessorROW[name]) {
+      entry.rowWidth = assessorROW[name]
       entry.source = 'assessor'
     }
 
-    // OSM data: lane counts, cycleway, oneway
-    if (osm[name]) {
-      const o = osm[name]
-      if (o.osmWidth) {
-        // Explicit width tag — use it if no assessor data
-        if (!entry.rowWidth) {
-          entry.rowWidth = o.osmWidth
-          entry.source = 'osm:width'
+    // ── Measure: distance from centerline to nearest sidewalk ────
+    // For each street segment, find sidewalks on each side and
+    // take the minimum perpendicular distance. Average across
+    // segments for the street-level measurement.
+    const allLeftDists = [], allRightDists = []
+    for (const seg of info.segs) {
+      const c = seg.coords
+      if (c.length < 2) continue
+      const dx = c[c.length - 1].x - c[0].x, dz = c[c.length - 1].z - c[0].z
+      const len = Math.sqrt(dx * dx + dz * dz)
+      if (len < 10) continue
+
+      const nx = -dz / len, nz = dx / len
+      const mx = (c[0].x + c[c.length - 1].x) / 2
+      const mz = (c[0].z + c[c.length - 1].z) / 2
+
+      for (const sw of sidewalks) {
+        const sc = sw.coords
+        if (sc.length < 2) continue
+
+        // Only consider sidewalks that run roughly parallel to
+        // this street (within ~30°). Cross-street sidewalks at
+        // intersections would give falsely small distances.
+        const sdx = sc[sc.length - 1].x - sc[0].x
+        const sdz = sc[sc.length - 1].z - sc[0].z
+        const slen = Math.sqrt(sdx * sdx + sdz * sdz)
+        if (slen < 3) continue
+        const dot = Math.abs(dx * sdx + dz * sdz) / (len * slen)
+        if (dot < 0.85) continue  // cos(30°) ≈ 0.87
+
+        const smx = (sc[0].x + sc[sc.length - 1].x) / 2
+        const smz = (sc[0].z + sc[sc.length - 1].z) / 2
+
+        const along = (smx - mx) * dx / len + (smz - mz) * dz / len
+        const perp = (smx - mx) * nx + (smz - mz) * nz
+
+        if (Math.abs(along) < len / 2 + 10 && Math.abs(perp) > 2 && Math.abs(perp) < 20) {
+          if (perp > 0) allRightDists.push(perp)
+          else allLeftDists.push(-perp)
         }
       }
-      if (o.osmLanes) entry.lanes = o.osmLanes
-      if (o.osmCycleway) entry.cycleway = true
-      if (o.osmOneway) entry.oneway = true
-      if (o.type) entry.type = o.type
     }
 
-    // Compute effective half-width for the pipeline.
-    // Prefer lane-based geometry (lanes + parking + gutters) over ROW-based,
-    // because OSM centerlines are often off-center in the ROW and the
-    // ROW-based formula (ROW/2 - sidewalk) can make streets too wide,
-    // covering the sidewalks on the tighter side.
-    const sidewalkZone = STANDARDS.sidewalk.width + STANDARDS.treeLawn.width + STANDARDS.curb.width
-    if (entry.lanes) {
-      // Compute from lane count + standards (curb-to-curb geometry)
-      const spec = getStreetSpec({
-        highway: entry.type || 'residential',
-        lanes: String(entry.lanes),
-        cycleway: entry.cycleway ? 'lane' : undefined,
-        oneway: entry.oneway ? 'yes' : undefined,
-      })
-      const section = crossSection(spec)
-      entry.pavementHalfWidth = section.pavement
-      if (!entry.source) entry.source = entry.rowWidth ? 'assessor' : 'osm:lanes'
-      // Cap to ROW if available (street can't exceed ROW minus sidewalks)
-      if (entry.rowWidth) {
-        const maxHW = Math.max(2, (entry.rowWidth / 2) - sidewalkZone)
-        if (entry.pavementHalfWidth > maxHW) entry.pavementHalfWidth = maxHW
-      }
+    // Sidewalk half-width: use the closer side's minimum distance.
+    // For divided roads, sidewalks on the far side (across the
+    // median) will be much further — use the near side only.
+    const hasLeft = allLeftDists.length > 0
+    const hasRight = allRightDists.length > 0
+    const minLeft = hasLeft ? Math.min(...allLeftDists) : null
+    const minRight = hasRight ? Math.min(...allRightDists) : null
+
+    if (hasLeft && hasRight) {
+      // Both sides: average of the two closest sidewalks
+      entry.pavementHalfWidth = (minLeft + minRight) / 2
+      entry.source = 'sidewalk'
+      entry.sidewalkLeft = +minLeft.toFixed(2)
+      entry.sidewalkRight = +minRight.toFixed(2)
+    } else if (hasLeft || hasRight) {
+      // One side only: use what we have
+      entry.pavementHalfWidth = hasLeft ? minLeft : minRight
+      entry.source = 'sidewalk-1side'
+      if (hasLeft) entry.sidewalkLeft = +minLeft.toFixed(2)
+      if (hasRight) entry.sidewalkRight = +minRight.toFixed(2)
     } else if (entry.rowWidth) {
-      // Fallback: derive from ROW when lane count is unknown
-      entry.pavementHalfWidth = Math.max(2, (entry.rowWidth / 2) - sidewalkZone)
+      // No sidewalks: fall back to assessor ROW
+      entry.pavementHalfWidth = entry.rowWidth / 2
+      entry.source = 'assessor'
+    } else {
+      entry.pavementHalfWidth = DEFAULT_HW
+      entry.source = 'default'
     }
 
     streets[name] = entry
   }
 
-  // Summary
-  const withWidth = Object.values(streets).filter(s => s.pavementHalfWidth)
-  const fromAssessor = Object.values(streets).filter(s => s.source === 'assessor')
-  const fromOsm = Object.values(streets).filter(s => s.source?.startsWith('osm'))
-
+  // ── Summary ────────────────────────────────────────────────────
+  const bySrc = {}
+  for (const s of Object.values(streets)) {
+    bySrc[s.source] = (bySrc[s.source] || 0) + 1
+  }
   console.log(`\n  Total: ${Object.keys(streets).length} streets`)
-  console.log(`  With computed width: ${withWidth.length}`)
-  console.log(`    From assessor: ${fromAssessor.length}`)
-  console.log(`    From OSM tags: ${fromOsm.length}`)
+  for (const [src, n] of Object.entries(bySrc).sort())
+    console.log(`    ${src}: ${n}`)
 
-  // Write
+  // ── Write ──────────────────────────────────────────────────────
   const survey = {
-    source: 'STL City Assessor parcel data + OpenStreetMap tags',
+    source: 'OSM sidewalk distance measurements + assessor ROW fallback',
     date: new Date().toISOString().split('T')[0],
-    notes: 'rowWidth = full ROW in meters (assessor). pavementHalfWidth = centerline to curb face.',
+    notes: 'pavementHalfWidth = centerline to sidewalk centerline. Block edge goes here. Street pavement is rendered independently from lane/parking tags. Tree lawn is the natural gap.',
     streets,
   }
 
@@ -208,19 +226,25 @@ function main() {
   writeFileSync(outPath, JSON.stringify(survey, null, 2))
   console.log(`\n  Saved ${outPath}`)
 
-  // Print the variance table
-  console.log('\n  Street widths (assessor overrides):')
+  // ── Table ──────────────────────────────────────────────────────
+  console.log('\n  Street widths (centerline → sidewalk):')
   for (const s of Object.values(streets).sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!s.pavementHalfWidth) continue
     const hw = s.pavementHalfWidth
     const full = (hw * 2 / 0.3048).toFixed(0)
-    const src = (s.source || '').padEnd(10)
+    const src = (s.source || '').padEnd(14)
     const flags = [
+      s.divided ? 'DIV' : '',
       s.lanes ? `${s.lanes}L` : '',
       s.oneway ? 'OW' : '',
       s.cycleway ? 'BK' : '',
+      s.diagonalParking ? 'DIAG' : '',
     ].filter(Boolean).join(' ')
-    console.log(`    ${s.name.padEnd(30)} ${hw.toFixed(1)}m hw  (${full}ft c2c)  ${src} ${flags}`)
+    const lr = s.sidewalkLeft && s.sidewalkRight
+      ? `  (L:${s.sidewalkLeft.toFixed(1)} R:${s.sidewalkRight.toFixed(1)})`
+      : s.sidewalkLeft ? `  (L:${s.sidewalkLeft.toFixed(1)})`
+      : s.sidewalkRight ? `  (R:${s.sidewalkRight.toFixed(1)})`
+      : ''
+    console.log(`    ${s.name.padEnd(30)} ${hw.toFixed(1)}m  (${full}ft)  ${src} ${flags}${lr}`)
   }
 
   console.log('='.repeat(60))

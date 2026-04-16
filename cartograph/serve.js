@@ -2,9 +2,13 @@
 import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join, extname } from 'path'
+import { execSync } from 'child_process'
 
 const DIR = join(import.meta.dirname, 'data', 'clean')
+const RAW = join(import.meta.dirname, 'data', 'raw')
 const MARKERS = join(DIR, 'marker_strokes.json')
+const MEASUREMENTS = join(RAW, 'measurements.json')
+const CENTERLINES = join(RAW, 'centerlines.json')
 const PARCEL_FILE = join(import.meta.dirname, '..', 'scripts', 'raw', 'stl_parcels.json')
 const PORT = 3333
 
@@ -18,6 +22,8 @@ const MIME = {
 }
 
 if (!existsSync(MARKERS)) writeFileSync(MARKERS, '[]')
+if (!existsSync(MEASUREMENTS)) writeFileSync(MEASUREMENTS, '{"measurements":[]}')
+if (!existsSync(CENTERLINES)) writeFileSync(CENTERLINES, '{"streets":[]}')
 
 function pointInRing(px, pz, ring) {
   let inside = false
@@ -121,6 +127,69 @@ createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/analyze') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(analyzeMarkers(), null, 2))
+    return
+  }
+
+  // GET /measurements — read measurements
+  if (req.method === 'GET' && req.url === '/measurements') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(readFileSync(MEASUREMENTS))
+    return
+  }
+
+  // POST /measurements — write measurements
+  if (req.method === 'POST' && req.url === '/measurements') {
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body)
+        writeFileSync(MEASUREMENTS, JSON.stringify(parsed, null, 2))
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('{"ok":true}')
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
+  // GET /centerlines — read centerline data
+  if (req.method === 'GET' && req.url === '/centerlines') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(readFileSync(CENTERLINES))
+    return
+  }
+
+  // POST /centerlines — write centerline data
+  if (req.method === 'POST' && req.url === '/centerlines') {
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body)
+        writeFileSync(CENTERLINES, JSON.stringify(parsed, null, 2))
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('{"ok":true}')
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
+  // POST /rebuild — re-run render.js and reload preview
+  if (req.method === 'POST' && req.url === '/rebuild') {
+    try {
+      execSync('node render.js', { cwd: import.meta.dirname, timeout: 30000 })
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end('{"ok":true}')
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
     return
   }
 

@@ -2221,6 +2221,42 @@ export function deriveLayers(highways) {
     intersections.push(ixData)
   }
 
+  // ── Face fills (land-use classification per polygonized face) ──
+  // Each polygonized face gets a single land-use color. Block faces use
+  // parcel majority vote; park/parking faces use their classified type.
+  const faceFills = []
+  for (let fi = 0; fi < classifiedFaces.length; fi++) {
+    const face = classifiedFaces[fi]
+    if (face.type === 'fragment') continue  // tiny artifacts, skip
+
+    let use = face.type  // park, parking, island, water
+    if (face.type === 'block') {
+      // Find this face's index in blockFaces to look up parcels
+      const bfi = blockFaces.indexOf(face)
+      if (bfi >= 0) {
+        const faceParcels = faceParcelMap.get(bfi) || []
+        if (faceParcels.length > 0) {
+          const useCounts = {}
+          for (const p of faceParcels) {
+            const u = classifyLandUse(p.land_use_code)
+            useCounts[u] = (useCounts[u] || 0) + 1
+          }
+          let maxCount = 0
+          for (const [u, count] of Object.entries(useCounts)) {
+            if (count > maxCount) { maxCount = count; use = u }
+          }
+        } else {
+          use = 'residential'  // default for blocks without parcels
+        }
+      }
+    }
+    faceFills.push({
+      ring: face.ring.map(p => [p.x, p.z]),
+      use,
+    })
+  }
+  console.log(`    ${faceFills.length} face fills`)
+
   // Serialize (remove circular refs)
   const ribbonsLayer = {
     streets: ribbonStreets.map(st => ({
@@ -2236,6 +2272,7 @@ export function deriveLayers(highways) {
       point: ix.point,
       streets: ix.streets.map(s => ({ name: s.name, ix: s.ix })),
     })),
+    faces: faceFills,
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)

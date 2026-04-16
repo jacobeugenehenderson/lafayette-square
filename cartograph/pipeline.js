@@ -23,10 +23,50 @@ async function main() {
   console.log('='.repeat(60))
 
   // ── Load ────────────────────────────────────────────────────────────
-  console.log('\n[1/4] Loading raw OSM data...')
+  console.log('\n[1/4] Loading raw data...')
   const raw = JSON.parse(readFileSync(join(RAW_DIR, 'osm.json'), 'utf-8'))
   const hwCount = (raw.ground.highway || []).length
-  console.log(`  ${hwCount} highway features, ${raw.buildings.length} buildings`)
+  console.log(`  ${hwCount} highway features, ${raw.buildings.length} OSM buildings`)
+
+  // Building source priority:
+  //   1. src/data/buildings.json — curated project data (detailed footprints
+  //      with materials, stories, sqft, addresses). Built for the 3D app.
+  //   2. data/raw/msbf.json       — Microsoft Building Footprints (fallback)
+  //   3. osm.buildings            — OSM (lowest quality, historical fallback)
+  const PROJECT_ROOT = join(RAW_DIR, '..', '..', '..')
+  const projectBldgPath = join(PROJECT_ROOT, 'src', 'data', 'buildings.json')
+  const msbfPath = join(RAW_DIR, 'msbf.json')
+  if (existsSync(projectBldgPath)) {
+    const proj = JSON.parse(readFileSync(projectBldgPath, 'utf-8'))
+    const list = proj.buildings || []
+    raw.buildings = list
+      .filter(b => b.footprint && b.footprint.length >= 3)
+      .map(b => ({
+        projectId: b.id,
+        tags: {
+          building: 'yes',
+          source: 'project',
+          ...(b.address && { address: b.address.trim() }),
+          ...(b.stories && { stories: b.stories }),
+          ...(b.building_sqft && { sqft: b.building_sqft }),
+          ...(b.wall_material && { wall_material: b.wall_material }),
+          ...(b.roof_material && { roof_material: b.roof_material }),
+          ...(b.historic_status && { historic_status: b.historic_status }),
+          ...(b.zoning && { zoning: b.zoning }),
+        },
+        isClosed: true,
+        coords: b.footprint.map(([x, z]) => ({ x, z })),
+      }))
+    console.log(`  Using src/data/buildings.json: ${raw.buildings.length} curated buildings`)
+    raw.buildingSource = 'project'
+  } else if (existsSync(msbfPath)) {
+    const msbf = JSON.parse(readFileSync(msbfPath, 'utf-8'))
+    console.log(`  Using Microsoft Building Footprints: ${msbf.buildings.length} buildings`)
+    raw.buildings = msbf.buildings
+    raw.buildingSource = 'microsoft'
+  } else {
+    raw.buildingSource = 'osm'
+  }
 
   // ── Snap ────────────────────────────────────────────────────────────
   console.log('\n[2/4] Snapping coordinates to grid...')
@@ -35,7 +75,7 @@ async function main() {
   // ── Derive ──────────────────────────────────────────────────────────
   console.log('\n[3/5] Deriving layers from centerlines + standards...')
   const layers = deriveLayers(snapped.ground.highway || [])
-  const buildings = deriveBuildings(snapped.buildings)
+  const buildings = deriveBuildings(snapped.buildings, raw.buildingSource)
 
   // ── Elevation ───────────────────────────────────────────────────────
   console.log('\n[4/4] Elevation...')

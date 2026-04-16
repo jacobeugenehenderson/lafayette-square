@@ -1,0 +1,342 @@
+/* ============================================================
+   Cartograph — Operator Tool Styles
+   Layers on top of the app's design.css token system.
+   Cartograph-specific tokens live under .cartograph scope.
+   ============================================================ */
+
+/* ---------- Cartograph tokens ---------- */
+.cartograph {
+  /* Surfaces */
+  --carto-bg:              #1a1a18;
+  --carto-panel:           #1a1a1a;
+  --carto-surface:         #222;
+  --carto-surface-active:  #0a2a2a;
+
+  /* Text */
+  --carto-text:            #ddd;
+  --carto-text-dim:        #999;
+  --carto-text-muted:      #888;
+  --carto-text-faint:      #666;
+  --carto-text-ghost:      #555;
+  --carto-text-invisible:  #444;
+
+  /* Borders */
+  --carto-border:          #333;
+  --carto-border-subtle:   #282828;
+  --carto-border-faint:    #242424;
+
+  /* Mode accents */
+  --carto-marker:          #b44;
+  --carto-marker-border:   #e66;
+  --carto-surveyor:        #286;
+  --carto-surveyor-border: #4a8;
+  --carto-measure:         #088;
+  --carto-measure-border:  #0ee;
+
+  /* Shared values */
+  --carto-accent-color:    #666;
+  --carto-radius:          4px;
+  --carto-radius-sm:       2px;
+  --carto-font:            -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ---------- Layout ---------- */
+.cartograph {
+  position: fixed;
+  inset: 0;
+  background: var(--carto-bg);
+  display: flex;
+  font-family: var(--carto-font);
+}
+
+.carto-canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---------- Panel ---------- */
+.carto-panel {
+  width: 250px;
+  background: var(--carto-panel);
+  border-left: 1px solid var(--carto-border);
+  overflow-y: auto;
+  padding: 12px;
+  flex-shrink: 0;
+  font-family: var(--carto-font);
+  color: var(--carto-text);
+  font-size: 12px;
+}
+
+.carto-panel h1 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--carto-text-ghost);
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+/* ---------- Sections ---------- */
+.carto-section {
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--carto-border-subtle);
+  padding-bottom: 8px;
+}
+
+.carto-section h2 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--carto-text-muted);
+  margin: 0 0 6px 0;
+}
+
+.carto-section h2 .count {
+  color: var(--carto-text-invisible);
+  font-weight: 400;
+}
+
+/* ---------- Layer rows ---------- */
+.carto-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  height: 22px;
+}
+
+.carto-label {
+  font-size: 10px;
+  color: var(--carto-text-dim);
+  cursor: pointer;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.carto-label-fixed {
+  font-size: 10px;
+  color: var(--carto-text-faint);
+  width: 40px;
+}
+
+.carto-count {
+  font-size: 9px;
+  color: var(--carto-text-invisible);
+  width: 24px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ---------- Inputs ---------- */
+.carto-input {
+  flex: 1;
+  background: var(--carto-surface);
+  border: 1px solid var(--carto-border);
+  color: #bbb;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: var(--carto-radius-sm);
+  min-width: 0;
+}
+
+.carto-select {
+  flex: 1;
+  background: var(--carto-surface);
+  border: 1px solid var(--carto-border);
+  color: #bbb;
+  font-size: 10px;
+  padding: 1px 3px;
+  border-radius: var(--carto-radius-sm);
+  min-width: 0;
+}
+
+.carto-checkbox {
+  accent-color: var(--carto-accent-color);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.carto-color {
+  width: 20px;
+  height: 16px;
+  border: 1px solid var(--carto-text-invisible);
+  border-radius: var(--carto-radius-sm);
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.carto-range {
+  flex: 1;
+  accent-color: #88f;
+}
+
+/* ---------- Buttons ---------- */
+.carto-btn {
+  background: rgba(0, 0, 0, .8);
+  color: #aaa;
+  border: 1px solid var(--carto-text-invisible);
+  border-radius: var(--carto-radius);
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.carto-btn:hover {
+  border-color: var(--carto-text-faint);
+}
+
+.carto-btn.active-marker {
+  background: var(--carto-marker);
+  color: #fff;
+  border-color: var(--carto-marker-border);
+}
+
+.carto-btn.active-surveyor {
+  background: var(--carto-surveyor);
+  color: #fff;
+  border-color: var(--carto-surveyor-border);
+}
+
+.carto-btn.active-measure {
+  background: var(--carto-measure);
+  color: #fff;
+  border-color: var(--carto-measure-border);
+}
+
+.carto-btn-sm {
+  font-size: 9px;
+  color: #777;
+  background: none;
+  border: 1px solid var(--carto-border);
+  border-radius: var(--carto-radius-sm);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.carto-btn-sm.danger { color: #c66; }
+.carto-btn-sm.accent { color: #88f; }
+
+.carto-btn-reset {
+  font-size: 8px;
+  color: var(--carto-text-ghost);
+  background: none;
+  border: 1px solid var(--carto-border);
+  border-radius: var(--carto-radius-sm);
+  cursor: pointer;
+  padding: 0 3px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.carto-btn-launch {
+  width: 100%;
+  padding: 8px 0;
+  background: var(--carto-surveyor);
+  color: #fff;
+  border: 1px solid var(--carto-surveyor-border);
+  border-radius: var(--carto-radius);
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: .05em;
+}
+
+/* ---------- Status bar ---------- */
+.carto-status {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-size: 11px;
+  color: var(--carto-text-muted);
+  background: rgba(0, 0, 0, .7);
+  padding: 4px 8px;
+  border-radius: 3px;
+  z-index: 10;
+}
+
+/* ---------- Toolbar ---------- */
+.carto-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 4px;
+  z-index: 10;
+  flex-wrap: wrap;
+  max-width: 420px;
+}
+
+/* ---------- Measurement segments ---------- */
+.carto-seg-tree {
+  margin: 2px 0 6px 8px;
+  border-left: 1px solid var(--carto-border-faint);
+  padding-left: 6px;
+}
+
+.carto-seg-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 1px 0;
+}
+
+.carto-seg-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--carto-radius-sm);
+  border: 1px solid var(--carto-border);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.carto-seg-idx {
+  color: var(--carto-text-ghost);
+  width: 18px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.carto-seg-len {
+  color: #8aa;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ---------- Measurement main row ---------- */
+.carto-measure-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--carto-border-faint);
+}
+
+.carto-measure-row.selected {
+  background: var(--carto-surface-active);
+}
+
+.carto-measure-total {
+  color: #0cc;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- Utility ---------- */
+.carto-hint {
+  font-size: 10px;
+  color: var(--carto-text-ghost);
+  padding: 4px 0;
+}
+
+.carto-meta {
+  font-size: 9px;
+  color: var(--carto-text-ghost);
+  margin-top: 4px;
+}

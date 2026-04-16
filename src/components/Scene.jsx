@@ -19,6 +19,8 @@ import useUserLocation from '../hooks/useUserLocation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import R3FErrorBoundary from './R3FErrorBoundary'
+import StreetRibbons from './StreetRibbons'
+import Terrain from './Terrain'
 
 // ── Film grade — naturalistic tone mapping with time-of-day color ─────────────
 
@@ -300,8 +302,8 @@ function easeInOutCubic(t) {
 // ── Hero pan path ────────────────────────────────────────────────────────────
 // Slow lateral tracking shot perpendicular to arch sight line.
 
-const HERO_CENTER = [-400, 40, 230]
-const HERO_TARGET = [400, 40, -100]
+const HERO_CENTER = [-400, 55, 230]
+const HERO_TARGET = [400, 45, -100]
 const PAN_HALF_LENGTH = 140
 const PAN_PERP = [0.358, 0.934]
 const PAN_PERIOD = 720
@@ -920,7 +922,7 @@ function Scene() {
         far: 60000,
       }}
       gl={{
-        alpha: true,
+        alpha: false,
         antialias: !IS_MOBILE,
         stencil: true,
         powerPreference: 'high-performance',
@@ -928,7 +930,7 @@ function Scene() {
         toneMappingExposure: 0.95,
       }}
       onCreated={({ gl }) => {
-        gl.setClearColor(0x000000, 0)
+        gl.setClearColor(0x1a1a18, 1)
         const canvas = gl.domElement
         canvas.addEventListener('webglcontextlost', (e) => {
           e.preventDefault()
@@ -948,7 +950,9 @@ function Scene() {
       <WeatherPoller />
       <CelestialBodies />
       <CloudDome />
+      <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
       <R3FErrorBoundary name="VectorStreets"><VectorStreets svgPortal={svgPortalEl} /></R3FErrorBoundary>
+      <R3FErrorBoundary name="StreetRibbons"><StreetRibbons /></R3FErrorBoundary>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <CourierDots />}

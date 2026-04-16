@@ -8,17 +8,26 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ## 1. What the map is
 
-A vector neighborhood map of Lafayette Square (St. Louis, MO) rendered as an SVG with a
-live HTML preview. The map shows:
+A vector neighborhood map of Lafayette Square (St. Louis, MO) rendered as a Three.js
+scene. The cartograph is the authoring tool — it shows the same 3D scene as the main
+app but viewed from a flat, top-down orthographic camera. One renderer, two viewports.
 
-- **Streets** (vehicular pavement, with curbs, center stripes, edge lines, bike lanes,
-  parking stripes, and labels)
-- **Blocks** (the land between streets — rendered in two layers: an outer ring in
-  sidewalk color and an inner "lot" filled by dominant land use)
+The ground plane is built from **ribbon geometry**: each street is a set of
+non-overlapping annular ring strips (asphalt, curb, treelawn, sidewalk) generated
+from measured centerlines and cross-section profiles. Corner plugs merge sidewalks
+at intersections using proven quadratic bezier curves. Block interiors are filled
+with a single color per polygonized face based on dominant land-use classification.
+
+**What renders:**
+- **Streets** as ribbon rings (asphalt fill + curb edge, sidewalk/treelawn only where measured)
+- **Land-use fills** (one color per block face: residential, commercial, park, etc.)
 - **Buildings** (footprints positioned to assessor centroids)
-- **Alleys, footways, parking aisles, paths**
-- **Streetlamps, contour lines, the Lafayette Park polygon**
-- **Loop-street medians** (the green centers of Benton Place and Mackay Place)
+- **Corner plugs** (sidewalk merge at intersections)
+
+**Key constraint:** the system does NOT guess at sidewalks or treelawns. An unmeasured
+street renders as pavement + curb only. Sidewalks appear only where the operator has
+explicitly placed measurement bands. This prevents the map from showing inaccurate
+geometry that the user would have to audit and undo.
 
 The pipeline is intended to be reusable — it should not be Lafayette-Square-specific.
 Avoid hardcoded coordinates, bespoke fixes, or one-off carve-outs unless truly
@@ -30,12 +39,15 @@ unavoidable. Generalizable always wins.
 
 | File | Source | Contents |
 |------|--------|----------|
-| `cartograph/data/raw/osm.json` | OpenStreetMap (one-time fetch) | All highway features (streets, alleys, footways, sidewalks, crossings), building footprints, landuse polygons, leisure polygons (park), amenity polygons (parking) |
-| `cartograph/data/raw/survey.json` | City Assessor + manual measurement | Per-street `rowWidth`, `pavementHalfWidth`, lane count, oneway, cycleway, type. The variable difference between rowWidth/2 and pavementHalfWidth IS the sidewalk + tree-lawn zone |
+| `cartograph/data/raw/centerlines.json` | Surveyor mode (seeded from block_shapes + OSM) | **PRIMARY**: 451 street centerlines with metadata (type, oneway, dead-end, loop, smooth). Each street has `_original` for revert. Editable in Surveyor mode. |
+| `cartograph/data/raw/measurements.json` | Measure mode | Per-street cross-section overrides. Measurement bands define asymmetric left/right profiles. |
+| `cartograph/data/raw/osm.json` | OpenStreetMap (one-time fetch) | All highway features, building footprints, landuse/leisure/amenity polygons. **Fallback** — centerlines.json takes priority. |
+| `cartograph/data/raw/survey.json` | City Assessor + OSM sidewalk distance | Per-street `pavementHalfWidth`, lane count, oneway, cycleway. **Fallback** — measurements.json takes priority. |
 | `cartograph/data/raw/elevation.json` | USGS National Map (cached) | Sparse elevation samples for building elevations and contour generation |
-| `scripts/raw/stl_parcels.json` | St. Louis City Assessor (one-time fetch) | Parcel polygons with handle, owner, land_use_code, zoning, units, building_sqft, centroid, and rings |
-| `cartograph/data/neighborhood_boundary.json` | Hand-curated | Polygon defining what's "in the neighborhood" — render filters blocks/buildings/streets by this |
-| `cartograph/data/clean/marker_strokes.json` | Live drawing in preview | Freehand strokes from the marker tool — used as a feedback channel from human → operator |
+| `scripts/raw/stl_parcels.json` | St. Louis City Assessor (one-time fetch) | Parcel polygons with land_use_code, zoning, building_sqft, centroid, rings |
+| `cartograph/data/neighborhood_boundary.json` | Hand-curated | Polygon defining what's "in the neighborhood" |
+| `cartograph/data/clean/marker_strokes.json` | Marker mode | Freehand strokes for debugging — human → operator communication |
+| `src/data/ribbons.json` | Pipeline output | Street ribbon geometry for Three.js rendering (streets, profiles, intersections, face fills) |
 
 ### CRITICAL: data file safety
 
@@ -449,62 +461,76 @@ centerlines aren't clean enough, the next investment is in cleaning street data
 
 ## 11. Cartograph application modes
 
-The cartograph is the authoring tool for the map. Three modes:
+The cartograph is a Three.js app with an orthographic top-down camera. It renders
+the same scene as the main app (StreetRibbons.jsx) viewed flat. Four modes:
 
 ### 11.1 Marker mode
-Freehand strokes on the aerial for deep debugging. Human→operator communication
-channel. The marker tool draws on the SVG overlay; strokes persist to
-`data/clean/marker_strokes.json`. The `/analyze` endpoint reports which
-blocks/parcels overlap the marker bbox.
+Freehand strokes for debugging. Human→operator communication channel.
+Strokes persist to `data/clean/marker_strokes.json`. The `/analyze` endpoint
+reports which blocks/parcels overlap the marker bbox.
 
-Use for: "Something's wrong here, investigate."
+### 11.2 Surveyor mode
+Centerline editor. The operator cleans up street geometry and sets metadata.
 
-### 11.2 Measure mode
-Aerial imagery + computed centerlines. The operator drags measurement bands
-outward from each centerline to define the cross-section: asphalt → curb →
-treelawn (optional) → sidewalk. Each band snaps to the real aerial imagery.
+- Click a street to select → shows editable centerline with draggable nodes
+- Metadata panel: name, type, one-way, dead-end, loop
+- Smooth slider (0–100): Catmull-Rom tension for curved streets
+- Toggle Node (hide/show individual points), Toggle Street (disable/enable)
+- Revert to Original (restores `_original` from seed data)
+- Arrow key nudging (0.15m, shift = 1.0m)
+- Exit surveyor → saves centerlines.json → rebuilds pipeline → reloads
 
-This is where ALL geometry gets defined. The system auto-computes corner plugs
-from the measurements on each arm. Future: snap similar widths to nearest
-code-standard value.
+Data: `data/raw/centerlines.json` (451 streets, seeded by `seed-centerlines.js`)
+
+**Surveyor defines WHAT and WHERE.** Type, direction, topology, geometry.
+
+### 11.3 Measure mode
+Cross-section editor. The operator defines per-side widths from aerial imagery.
+
+- Click-click line placement with waypoints
+- Per-segment material assignment (asphalt, concrete, brick, etc.)
+- Drag endpoints and waypoints, arrow-key nudging
+- Aerial overlay with centerlines as reference
 
 Data: `data/raw/measurements.json` (per-street cross-section overrides)
 
-### 11.3 Design mode
-The composed 2D map preview. Controls for:
-- Material colors (asphalt, sidewalk, curb, treelawn, land-use fills)
-- Stroke weights and curb widths
+**Measure defines HOW WIDE.** Asymmetric left/right profiles supported.
+Only measured cross-sections render — no default sidewalks or treelawns.
+
+### 11.4 Design mode (planned)
+Styling controls for the composed map:
+- Material colors (asphalt, curb, land-use fills)
+- Per-layer strokes (color + width, like Photoshop layer effects)
 - Font and text treatments for street labels
-- **Launch button** → opens the main app (localhost:5175) to see the map in
-  3D with lighting, shadows, terrain, and the full post-processing stack
-
-### 11.4 Corner plug system
-Every intersection corner gets a universal three-layer plug:
-1. **Sidewalk fill** (gray): pie wedge from oo to bezier, covers treelawn gaps
-2. **Curb strip** (brown): thin band outside the bezier, decorative
-3. **Asphalt cap** (black): covers existing sharp corner underneath
-
-The plug is computed from exact line-line intersections of measured arm edges.
-It works for all arrangements:
-- Sidewalk meets sidewalk
-- Sidewalk+treelawn meets sidewalk
-- Sidewalk+treelawn meets sidewalk+treelawn (both treelawns dead-end, ADA plug)
-
-The bezier boundary always uses curbOuter, so the plug covers whatever gap
-exists regardless of treelawn presence. Arms butt up to it. Treelawn dead-ends.
+- **Launch button** → opens the main app (localhost:5175) with same scene +
+  lighting, shadows, terrain, post-processing
 
 ### 11.5 Data flow
 ```
-Measure mode → measurements.json
-                    ↓
-survey.json + standards.js + osm.json
-                    ↓
-Pipeline (derive.js) → map.json (ribbons layer)
-                    ↓
-Design mode (render.js SVG)     Main app (StreetRibbons.jsx, 3D)
-                    ↓                        ↑
-              Launch button ─────────────────┘
+Surveyor → centerlines.json (geometry + metadata)
+                ↓
+Measure  → measurements.json (per-side cross-section overrides)
+                ↓
+         survey.json + standards.js (fallbacks)
+                ↓
+         Pipeline (derive.js) → ribbons.json (ribbon geometry + face fills)
+                ↓
+         StreetRibbons.jsx ← ONE RENDERER
+            ↓                    ↓
+   Cartograph (flat)      Main app (3D)
+   orthographic cam       perspective cam
+   surveyor/measure       lighting/terrain
 ```
+
+### 11.6 Authority stack for cross-section profiles
+```
+1. measurements.json  (operator-measured, per-side)     ← highest
+2. survey.json        (OSM sidewalk distance + assessor ROW)
+3. standards.js       (generic defaults by street type)  ← lowest
+```
+
+Only measured data produces sidewalk/treelawn rings. Survey and standards
+provide pavement width only.
 
 ---
 
@@ -513,45 +539,60 @@ Design mode (render.js SVG)     Main app (StreetRibbons.jsx, 3D)
 ```bash
 cd cartograph
 
-# Full rebuild
-node pipeline.js --skip-elevation && node render.js && open data/clean/preview.html
+# Seed centerlines (one-time, or delete centerlines.json to re-seed)
+node seed-centerlines.js
 
-# Live dev with marker tool
-node serve.js  # http://localhost:3333
+# Full pipeline rebuild
+node pipeline.js --skip-elevation
 
-# Inspect block data
-node -e 'const m = require("./data/clean/map.json"); console.log("blocks:", m.layers.block.length, "lots:", m.layers.lot.length)'
+# Legacy SVG preview (being replaced by Three.js cartograph)
+node render.js && node serve.js  # http://localhost:3333
 
-# Check marker strokes
-cat data/clean/marker_strokes.json | jq 'length'
+# Copy ribbons to app data
+node -e 'const m=require("./data/clean/map.json"); require("fs").writeFileSync("../src/data/ribbons.json", JSON.stringify(m.layers.ribbons,null,2))'
+
+# Inspect data
+node -e 'const r=require("../src/data/ribbons.json"); console.log("streets:", r.streets.length, "ix:", r.intersections.length, "faces:", r.faces?.length)'
+node -e 'const c=require("./data/raw/centerlines.json"); console.log("centerlines:", c.streets.length)'
 ```
+
+### serve.js endpoints
+| Method | URL | Purpose |
+|--------|-----|---------|
+| GET/POST | `/markers` | Marker strokes |
+| GET/POST | `/measurements` | Measurement data |
+| GET/POST | `/centerlines` | Surveyor centerline data |
+| GET | `/analyze` | Report parcels/blocks under markers |
+| POST | `/rebuild` | Run render.js, return when done |
 
 ---
 
 ## 13. Three.js ground plane (StreetRibbons)
 
-The ground plane is being migrated from CSS3DRenderer (inline SVG) to native Three.js
-ribbon meshes. The POC lives in `src/components/StreetRibbons.jsx` and renders
-Rutger Street × Missouri Avenue as a proof of concept alongside the existing SVG ground.
+The ground plane is native Three.js ribbon meshes rendered by `StreetRibbons.jsx`.
+This component renders the ENTIRE neighborhood from `src/data/ribbons.json` — 122
+streets, 180 intersections, 99 face fills. It is used by both the cartograph
+(orthographic top-down) and the main app (3D perspective).
 
-### Current state (2026-04-13)
-
-**Ring model for straight arms (WORKING):**
+### Ring model (WORKING for all 122 streets)
 
 Each street material is a non-overlapping **ring** (annular strip, inner→outer HW),
 split at IX into left/right halves. Materials don't overlap on the same street, so
-there are NO priority conflicts between same-street layers. This was validated after
-extensively testing and rejecting the filled-ribbon model (which overlaps and requires
-priority resolution that polygonOffset can't reliably provide).
-
-- Asphalt ring: 0→6.1m (Rutger), 0→4.75m (Missouri) — runs FULL LENGTH through IX
-- Treelawn ring: 6.1→7.4m (Rutger only) — split at IX, dead-ends at corner
-- Sidewalk ring: 7.4→8.9m / 4.75→7.5m — split at IX
+there are NO priority conflicts between same-street layers.
 
 Priority (only matters at crossings where streets overlap):
-asphalt(8) > sidewalk(5) > treelawn(3)
+face_fill(1) < treelawn(3) < sidewalk(5) < curb(6) < asphalt(8)
 
-**Corner geometry (NOT YET WORKING — see conceptual model below):**
+**Default rendering:** pavement + curb only. Sidewalk and treelawn rings only appear
+where the operator has explicitly measured them. The system does not guess.
+
+### Face fills (WORKING)
+
+Each polygonized block face gets a single flat color from its dominant land-use
+classification (residential, commercial, park, etc.). 99 faces, rendered at
+priority 1 (lowest). Streets render on top.
+
+### Corner plugs (WORKING on Rutger × Missouri, not yet all intersections)
 
 ### Conceptual model (established 2026-04-13)
 
@@ -659,20 +700,14 @@ DO NOT change the bezier formula. It works.
 
 | File | Purpose |
 |------|---------|
-| `src/components/StreetRibbons.jsx` | POC component (ring arms working, corner bands TODO) |
-| `src/components/Scene.jsx` | Mounts StreetRibbons next to VectorStreets |
-| `src/data/block_shapes.json` | Centerline polylines + ROW widths |
-| `cartograph/data/raw/survey.json` | Pavement/sidewalk measurements |
-
-### Data reference for the POC streets
-
-**Rutger Street** (has treelawn):
-- Sidewalk: 7.4→8.9m, Treelawn: 6.1→7.4m, Asphalt: 0→6.1m
-
-**Missouri Avenue** (no treelawn):
-- Sidewalk: 4.75→7.5m, Asphalt: 0→4.75m
-
-**Intersection point**: [-134.2, -325.6] (shared by both centerlines)
+| `src/components/StreetRibbons.jsx` | Three.js ribbon renderer (arms + corner plugs + face fills) |
+| `src/components/Scene.jsx` | Mounts StreetRibbons in the main app scene |
+| `src/data/ribbons.json` | Pipeline output: streets, profiles, intersections, face fills |
+| `cartograph/data/raw/centerlines.json` | Surveyor-edited street centerlines (canonical) |
+| `cartograph/data/raw/survey.json` | Per-street pavement widths (fallback) |
+| `cartograph/data/raw/measurements.json` | Per-street cross-section overrides (highest authority) |
+| `cartograph/seed-centerlines.js` | One-time script to generate centerlines.json from curated + OSM |
+| `cartograph/serve.js` | Dev server with endpoints for markers, measurements, centerlines, rebuild |
 
 ---
 
