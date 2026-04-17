@@ -54,7 +54,9 @@ function TimeTicker() {
 }
 
 function SkyStateTicker() {
-  useFrame(() => useSkyState.getState().tick())
+  // dt is required — otherwise cloudCover/storminess/turbidity go NaN in tick()
+  // and the sky shader outputs black. /stage's version passes d; we were missing it.
+  useFrame((_, d) => useSkyState.getState().tick(Math.min(d, 0.1)))
   return null
 }
 
@@ -65,7 +67,9 @@ export default function StageCanvas({ shot }) {
       <FrameLimiter />
       <TimeTicker />
       <SkyStateTicker />
-      <R3FErrorBoundary name="CelestialBodies"><CelestialBodies skipSkyDome debugLevel={0} /></R3FErrorBoundary>
+      {/* Sky dome re-enabled 2026-04-16. Was suppressed via skipSkyDome as a
+          workaround for an earlier blackout — revisit if blackout returns. */}
+      <R3FErrorBoundary name="CelestialBodies"><CelestialBodies debugLevel={0} /></R3FErrorBoundary>
       <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>
 
       <R3FErrorBoundary name="StreetRibbons"><StreetRibbons /></R3FErrorBoundary>

@@ -630,6 +630,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
     `,
     side: THREE.BackSide,
     depthWrite: false,
+    depthTest: false,  // 2026-04-16: needed for cartograph Stage embed; harmless at /stage
     transparent: false,
   }), [])
 
@@ -914,7 +915,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
 
   return (
     <>
-      <mesh>
+      <mesh renderOrder={-1000}>
         <sphereGeometry args={[SKY_RADIUS, 64, 64]} />
         <primitive object={skyMaterial} ref={materialRef} />
       </mesh>
