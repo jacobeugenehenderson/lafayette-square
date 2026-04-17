@@ -62,7 +62,7 @@ function TileMesh({ tile }) {
   }, [tile.url])
 
   return (
-    <mesh position={[tile.x + tile.w / 2, 0.01, tile.z + tile.h / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh position={[tile.x + tile.w / 2, -0.05, tile.z + tile.h / 2]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[tile.w, tile.h]} />
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>

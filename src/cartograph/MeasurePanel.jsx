@@ -88,34 +88,22 @@ export default function MeasurePanel() {
       </h2>
 
       {/* Band stack — ordered list */}
-      <div style={{ marginTop: 4 }}>
+      <div className="carto-band-list">
         {bands.map((band, i) => (
           <div key={i} className="carto-row">
-            {/* Color swatch */}
-            <span style={{
-              width: 10, height: 10, borderRadius: 2,
-              background: BAND_COLORS[band.material] || '#888',
-              flexShrink: 0,
-            }} />
-            {/* Label */}
-            <label className="carto-label" style={{ flex: 1 }}>
+            <span className="carto-band-swatch"
+              style={{ background: BAND_COLORS[band.material] || '#888' }} />
+            <label className="carto-label">
               {BAND_LABELS[band.material] || band.material}
             </label>
-            {/* Width */}
-            <span style={{
-              fontSize: 10, color: '#0cc', fontVariantNumeric: 'tabular-nums',
-              whiteSpace: 'nowrap', minWidth: 55, textAlign: 'right',
-            }}>
-              {fmtDim(band.width)}
-            </span>
-            {/* Reorder + remove */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginLeft: 2 }}>
+            <span className="carto-band-width">{fmtDim(band.width)}</span>
+            <div className="carto-reorder-stack">
               {i > 0 && (
-                <button className="carto-btn-reset" style={{ fontSize: 7, height: 10, lineHeight: '10px' }}
+                <button className="carto-btn-micro"
                   onClick={() => moveBand(i, i - 1)} title="Move inward">&#x25B2;</button>
               )}
               {i < bands.length - 1 && (
-                <button className="carto-btn-reset" style={{ fontSize: 7, height: 10, lineHeight: '10px' }}
+                <button className="carto-btn-micro"
                   onClick={() => moveBand(i, i + 1)} title="Move outward">&#x25BC;</button>
               )}
             </div>
@@ -125,17 +113,15 @@ export default function MeasurePanel() {
       </div>
 
       {/* Total */}
-      <div className="carto-row" style={{ marginTop: 4, borderTop: '1px solid var(--carto-border-subtle)', paddingTop: 4 }}>
-        <label className="carto-label" style={{ fontWeight: 600 }}>Total half-width</label>
-        <span style={{ fontSize: 10, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
-          {fmtDim(totalR)}
-        </span>
+      <div className="carto-row carto-row--total">
+        <label className="carto-label">Total half-width</label>
+        <span className="carto-band-total">{fmtDim(totalR)}</span>
       </div>
 
       {/* Add band */}
       {addable.length > 0 && (
-        <div style={{ marginTop: 6 }}>
-          <select className="carto-select" style={{ width: '100%' }}
+        <div className="carto-add-band">
+          <select className="carto-select"
             value=""
             onChange={e => { if (e.target.value) addBand(e.target.value) }}>
             <option value="">+ Add band...</option>
@@ -147,7 +133,7 @@ export default function MeasurePanel() {
       )}
 
       {/* Actions */}
-      <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+      <div className="carto-actions">
         {hasMeasured && (
           <button className="carto-btn-sm" onClick={() => {
             delete st._bands
@@ -169,7 +155,7 @@ export default function MeasurePanel() {
         )}
       </div>
 
-      <div className="carto-meta" style={{ marginTop: 6 }}>
+      <div className="carto-meta">
         {hasMeasured ? 'Measured' : 'Default'} · {bands.length} bands · {st.points.length} nodes
       </div>
     </div>

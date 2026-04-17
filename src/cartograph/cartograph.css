@@ -32,6 +32,8 @@
   --carto-surveyor-border: #4a8;
   --carto-measure:         #088;
   --carto-measure-border:  #0ee;
+  --carto-stage:           #75b;
+  --carto-stage-border:    #a7d;
 
   /* Shared values */
   --carto-accent-color:    #666;
@@ -40,55 +42,70 @@
   --carto-font:            -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* ---------- Layout ---------- */
+/* ---------- Layout ----------
+   Canvas is full-viewport; floating UI (toolbar, panel, status) overlays it
+   with glass cards so the map shows through — matches the Stage layout. */
 .cartograph {
   position: fixed;
   inset: 0;
   background: var(--carto-bg);
-  display: flex;
   font-family: var(--carto-font);
 }
 
 .carto-canvas-wrap {
-  flex: 1;
-  position: relative;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
 }
 
-/* ---------- Panel ---------- */
+/* ---------- Panel (overlays the right edge of the canvas) ---------- */
 .carto-panel {
-  width: 250px;
-  background: var(--carto-panel);
-  border-left: 1px solid var(--carto-border);
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 340px;
+  background: transparent;
+  border-left: none;
   overflow-y: auto;
-  padding: 12px;
-  flex-shrink: 0;
+  padding: 14px;
+  z-index: 10;
   font-family: var(--carto-font);
   color: var(--carto-text);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .carto-panel h1 {
-  font-size: 12px;
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: .1em;
+  letter-spacing: .15em;
   color: var(--carto-text-ghost);
-  margin: 0 0 12px 0;
+  margin: 0 0 14px 4px;
   font-weight: 600;
 }
 
-/* ---------- Sections ---------- */
+/* ---------- Sections (each one is its own glass card) ---------- */
 .carto-section {
   margin-bottom: 10px;
-  border-bottom: 1px solid var(--carto-border-subtle);
-  padding-bottom: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  /* glass — matches .carto-glass / .glass-panel */
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .carto-section h2 {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--carto-text-muted);
-  margin: 0 0 6px 0;
+  color: var(--carto-text);
+  margin: 0 0 10px 0;
+  letter-spacing: .02em;
 }
 
 .carto-section h2 .count {
@@ -100,13 +117,13 @@
 .carto-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 2px;
-  height: 22px;
+  gap: 8px;
+  margin-bottom: 6px;
+  min-height: 28px;
 }
 
 .carto-label {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--carto-text-dim);
   cursor: pointer;
   flex: 1;
@@ -116,16 +133,9 @@
 }
 
 .carto-label-fixed {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--carto-text-faint);
-  width: 40px;
-}
-
-.carto-count {
-  font-size: 9px;
-  color: var(--carto-text-invisible);
-  width: 24px;
-  text-align: right;
+  width: 72px;
   flex-shrink: 0;
 }
 
@@ -134,10 +144,10 @@
   flex: 1;
   background: var(--carto-surface);
   border: 1px solid var(--carto-border);
-  color: #bbb;
-  font-size: 10px;
-  padding: 2px 4px;
-  border-radius: var(--carto-radius-sm);
+  color: var(--carto-text);
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: var(--carto-radius);
   min-width: 0;
 }
 
@@ -145,10 +155,10 @@
   flex: 1;
   background: var(--carto-surface);
   border: 1px solid var(--carto-border);
-  color: #bbb;
-  font-size: 10px;
-  padding: 1px 3px;
-  border-radius: var(--carto-radius-sm);
+  color: var(--carto-text);
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: var(--carto-radius);
   min-width: 0;
 }
 
@@ -175,18 +185,24 @@
 }
 
 /* ---------- Buttons ---------- */
+/* Inside a glass toolbar, buttons are translucent chips that pop on hover
+   or when active (mode accent). Inside a solid panel they still work. */
 .carto-btn {
-  background: rgba(0, 0, 0, .8);
-  color: #aaa;
-  border: 1px solid var(--carto-text-invisible);
-  border-radius: var(--carto-radius);
-  padding: 4px 10px;
-  font-size: 11px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--carto-text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
 
 .carto-btn:hover {
-  border-color: var(--carto-text-faint);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--carto-text);
 }
 
 .carto-btn.active-marker {
@@ -205,6 +221,17 @@
   background: var(--carto-measure);
   color: #fff;
   border-color: var(--carto-measure-border);
+}
+
+.carto-btn.active-stage {
+  background: var(--carto-stage);
+  color: #fff;
+  border-color: var(--carto-stage-border);
+}
+
+.carto-btn-muted {
+  opacity: 0.55;
+  font-style: italic;
 }
 
 .carto-btn-sm {
@@ -247,96 +274,235 @@
 /* ---------- Status bar ---------- */
 .carto-status {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
-  font-size: 11px;
-  color: var(--carto-text-muted);
-  background: rgba(0, 0, 0, .7);
-  padding: 4px 8px;
-  border-radius: 3px;
+  bottom: 14px;
+  left: 14px;
+  font-size: 12px;
+  color: var(--carto-text);
+  padding: 8px 14px;
+  border-radius: 10px;
   z-index: 10;
+}
+
+/* ---------- Glass card (matches .glass-panel from src/index.css) ----------
+   Shared by toolbar, status bar, and other floating cartograph UI so Stage
+   and cartograph read identically. Edit these values ONCE here. */
+.carto-glass {
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* ---------- Toolbar ---------- */
 .carto-toolbar {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 14px;
+  left: 14px;
   display: flex;
-  gap: 4px;
+  gap: 6px;
   z-index: 10;
   flex-wrap: wrap;
   max-width: 420px;
+  padding: 6px;
+  border-radius: 12px;
 }
 
-/* ---------- Measurement segments ---------- */
-.carto-seg-tree {
-  margin: 2px 0 6px 8px;
-  border-left: 1px solid var(--carto-border-faint);
-  padding-left: 6px;
-}
-
-.carto-seg-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  padding: 1px 0;
-}
-
-.carto-seg-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--carto-radius-sm);
-  border: 1px solid var(--carto-border);
+.carto-toolbar-sep {
+  width: 12px;
   flex-shrink: 0;
+}
+
+/* ---------- Measure panel band rows ---------- */
+.carto-band-list {
+  margin-top: 6px;
+}
+
+.carto-band-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.carto-band-width {
+  font-size: 11px;
+  color: var(--carto-measure-border);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 58px;
+  text-align: right;
+}
+
+.carto-row--total {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--carto-border-subtle);
+}
+
+.carto-row--total .carto-label {
+  font-weight: 600;
+  color: var(--carto-text);
+}
+
+.carto-band-total {
+  font-size: 11px;
+  color: var(--carto-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.carto-reorder-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-left: 2px;
+}
+
+.carto-btn-micro {
+  font-size: 8px;
+  height: 11px;
+  line-height: 11px;
+  padding: 0 3px;
+  color: var(--carto-text-dim);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
   cursor: pointer;
 }
 
-.carto-seg-idx {
-  color: var(--carto-text-ghost);
-  width: 18px;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+.carto-btn-micro:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--carto-text);
 }
 
-.carto-seg-len {
-  color: #8aa;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  min-width: 50px;
-  text-align: right;
+.carto-add-band {
+  margin-top: 8px;
 }
 
-/* ---------- Measurement main row ---------- */
-.carto-measure-row {
+.carto-add-band .carto-select {
+  width: 100%;
+}
+
+/* ---------- Marker FAB ---------- */
+.carto-fab-wrap {
+  position: absolute;
+  right: 20px;
+  bottom: 44px;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.carto-fab-wrap > * { pointer-events: auto; }
+
+.carto-fab {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .78);
+  color: #ddd;
+  border: 1px solid var(--carto-border);
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  padding: 2px 0;
-  border-bottom: 1px solid var(--carto-border-faint);
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
 }
 
-.carto-measure-row.selected {
-  background: var(--carto-surface-active);
+.carto-fab:hover {
+  border-color: var(--carto-text-faint);
+  transform: translateY(-1px);
 }
 
-.carto-measure-total {
-  color: #0cc;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+.carto-fab.active {
+  background: var(--carto-marker);
+  border-color: var(--carto-marker-border);
+  color: #fff;
+}
+
+.carto-fab-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.carto-fab-mini {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .78);
+  color: var(--carto-text-dim);
+  border: 1px solid var(--carto-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+  transition: border-color .12s ease, color .12s ease, background .12s ease;
+}
+
+.carto-fab-mini:hover:not(:disabled) {
+  border-color: var(--carto-text-faint);
+  color: var(--carto-text);
+}
+
+.carto-fab-mini:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.carto-fab-mini.active {
+  background: var(--carto-marker);
+  color: #fff;
+  border-color: var(--carto-marker-border);
+}
+
+.carto-fab-mini.danger:hover:not(:disabled) {
+  color: #e77;
+  border-color: #844;
 }
 
 /* ---------- Utility ---------- */
 .carto-hint {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--carto-text-ghost);
   padding: 4px 0;
+  line-height: 1.5;
 }
 
 .carto-meta {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--carto-text-ghost);
-  margin-top: 4px;
+  margin-top: 8px;
+}
+
+.carto-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.carto-slider-value {
+  font-size: 10px;
+  color: var(--carto-text-ghost);
+  width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.carto-landuse-indent {
+  padding-left: 22px;
+}
+
+.carto-launch-wrap {
+  margin-top: 18px;
 }

@@ -10,9 +10,11 @@ export default function MarkerOverlay({ cameraRef }) {
   const [strokeW, setStrokeW] = useState('1')
 
   const markerActive = useCartographStore(s => s.markerActive)
+  const eraserActive = useCartographStore(s => s.markerEraserActive)
   const spaceDown = useCartographStore(s => s.spaceDown)
   const markerStrokes = useCartographStore(s => s.markerStrokes)
   const addMarkerStroke = useCartographStore(s => s.addMarkerStroke)
+  const deleteMarkerStroke = useCartographStore(s => s.deleteMarkerStroke)
 
   const active = markerActive
 
@@ -65,6 +67,43 @@ export default function MarkerOverlay({ cameraRef }) {
     return 'M' + pts.map(p => p.x.toFixed(1) + ',' + p.z.toFixed(1)).join('L')
   }
 
+  function pointSegDist2(p, a, b) {
+    const abx = b.x - a.x, abz = b.z - a.z
+    const len2 = abx * abx + abz * abz
+    if (len2 < 1e-6) {
+      const dx = p.x - a.x, dz = p.z - a.z
+      return dx * dx + dz * dz
+    }
+    let t = ((p.x - a.x) * abx + (p.z - a.z) * abz) / len2
+    t = Math.max(0, Math.min(1, t))
+    const cx = a.x + t * abx, cz = a.z + t * abz
+    const dx = p.x - cx, dz = p.z - cz
+    return dx * dx + dz * dz
+  }
+
+  function hitTestStroke(worldP) {
+    // Find the stroke whose nearest segment is within tolerance of worldP.
+    // Tolerance scales with view: current stroke width (world units) × a fudge.
+    const vb = computeViewBox()
+    if (!vb) return -1
+    const tol = Math.max(parseFloat(strokeW) * 2.5, vb.w / 120)
+    const tol2 = tol * tol
+    const strokes = useCartographStore.getState().markerStrokes
+    let bestIdx = -1, bestD2 = Infinity
+    for (let i = 0; i < strokes.length; i++) {
+      const pts = strokes[i]
+      for (let j = 0; j < pts.length - 1; j++) {
+        const d2 = pointSegDist2(worldP, pts[j], pts[j + 1])
+        if (d2 < bestD2) { bestD2 = d2; bestIdx = i }
+      }
+      if (pts.length === 1) {
+        const d2 = (worldP.x - pts[0].x) ** 2 + (worldP.z - pts[0].z) ** 2
+        if (d2 < bestD2) { bestD2 = d2; bestIdx = i }
+      }
+    }
+    return bestD2 <= tol2 ? bestIdx : -1
+  }
+
   // Window-level pointer handlers — SVG stays pointer-events:none so
   // wheel events always reach the Three.js canvas for zoom
   useEffect(() => {
@@ -80,6 +119,17 @@ export default function MarkerOverlay({ cameraRef }) {
 
       const p = screenToWorld(e.clientX, e.clientY)
       if (!p) return
+
+      // Eraser mode: click a stroke to delete it
+      if (useCartographStore.getState().markerEraserActive) {
+        const idx = hitTestStroke(p)
+        if (idx >= 0) {
+          e.preventDefault()
+          deleteMarkerStroke(idx)
+        }
+        return
+      }
+
       e.preventDefault()
       drawingRef.current = true
       currentStroke.current = [p]
@@ -114,7 +164,7 @@ export default function MarkerOverlay({ cameraRef }) {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
     }
-  }, [addMarkerStroke])
+  }, [addMarkerStroke, deleteMarkerStroke])
 
   return (
     <svg

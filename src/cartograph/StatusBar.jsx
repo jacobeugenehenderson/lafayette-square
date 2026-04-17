@@ -4,5 +4,5 @@ export default function StatusBar() {
   const status = useCartographStore(s => s.status)
   if (!status) return null
 
-  return <div className="carto-status">{status}</div>
+  return <div className="carto-status carto-glass">{status}</div>
 }

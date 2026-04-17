@@ -5,6 +5,7 @@ import ribbonsData from '../data/ribbons.json'
 import parkTreeData from '../data/park_trees.json'
 import lampData from '../data/street_lamps.json'
 import { pointInBoundary, boundaryPolygon } from './boundary.js'
+import useCartographStore from './stores/useCartographStore.js'
 
 // ── Colors (matching render.js defaults) ────────────────────
 const C = {
@@ -23,10 +24,12 @@ const C = {
 const PRI = {
   ground: 0,
   park: 2,
+  alley: 10,
+  footway: 11,
   building: 12,
-  stripe: 14,
   edgeline: 13,
   bikelane: 13,
+  stripe: 14,
   centerline: 15,
   labels: 16,
 }
@@ -122,6 +125,7 @@ function offsetLine(coords, offset, side) {
 
 export default function MapLayers({ hiddenLayers }) {
   const hide = hiddenLayers || {}
+  const layerColors = useCartographStore(s => s.layerColors) || {}
 
   // ── Ground plane ────────────────────────────────────────
   const groundGeo = useMemo(() => {
@@ -261,36 +265,36 @@ export default function MapLayers({ hiddenLayers }) {
     }))
   }, [])
 
-  // ── Alleys (boundary-clipped) ───────────────────────────────
-  const alleyLines = useMemo(() => {
-    const lines = []
+  // ── Alleys (filled rings, boundary-clipped) ─────────────────
+  const alleyGeo = useMemo(() => {
+    const geos = []
     for (const a of (mapData.layers?.alley || [])) {
-      const coords = a.coords || a.points
-      if (!coords || coords.length < 2) continue
-      const mid = coords[Math.floor(coords.length / 2)]
-      if (!pointInBoundary(mid.x ?? mid[0], mid.z ?? mid[1])) continue
-      if (a.coords) {
-        lines.push(lineGeoFromCoords(a.coords))
-      } else {
-        lines.push(lineGeoFromCoords(a.points.map(p => ({ x: p[0] ?? p.x, z: p[1] ?? p.z }))))
-      }
+      const ring = a.ring
+      if (!ring || ring.length < 3) continue
+      let sx = 0, sz = 0
+      for (const p of ring) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
+      if (!pointInBoundary(sx / ring.length, sz / ring.length)) continue
+      const g = triangulateRing(ring)
+      if (g) geos.push(g)
     }
-    return lines.filter(Boolean)
+    return mergeGeos(geos)
   }, [])
 
-  // ── Footways / paths / walkways (boundary-clipped) ──────────
-  const footwayLines = useMemo(() => {
-    const lines = []
+  // ── Footways / paths / walkways (filled rings, boundary-clipped) ─
+  const footwayGeo = useMemo(() => {
+    const geos = []
     for (const layer of ['footway', 'path', 'steps', 'cycleway']) {
       for (const item of (mapData.layers?.[layer] || [])) {
-        const coords = item.coords || item.points
-        if (!coords || coords.length < 2) continue
-        const mid = coords[Math.floor(coords.length / 2)]
-        if (!pointInBoundary(mid.x ?? mid[0], mid.z ?? mid[1])) continue
-        lines.push(lineGeoFromCoords(coords.map(p => ({ x: p.x ?? p[0], z: p.z ?? p[1] }))))
+        const ring = item.ring
+        if (!ring || ring.length < 3) continue
+        let sx = 0, sz = 0
+        for (const p of ring) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
+        if (!pointInBoundary(sx / ring.length, sz / ring.length)) continue
+        const g = triangulateRing(ring)
+        if (g) geos.push(g)
       }
     }
-    return lines.filter(Boolean)
+    return mergeGeos(geos)
   }, [])
 
   // ── Materials (memoized) ──────────────────────────────
@@ -305,8 +309,8 @@ export default function MapLayers({ hiddenLayers }) {
     centerlineOutline: makeLineMat(C.centerlineOutline, 0.5),
     lamp: new THREE.MeshBasicMaterial({ color: '#ffdd44', depthTest: false }),
     tree: makeFlatMat('#2a5528', PRI.park + 1),
-    alley: makeLineMat('#353532'),
-    footway: makeLineMat('#666655', 0.6),
+    alley: makeFlatMat('#353532', PRI.alley),
+    footway: makeFlatMat('#7a756a', PRI.footway),
   }), [])
 
   // ── Boundary outline ────────────────────────────────────
@@ -328,14 +332,16 @@ export default function MapLayers({ hiddenLayers }) {
         <primitive object={new THREE.Line(boundaryGeo, boundaryMat)} />
       )}
 
-      {/* Ground */}
+      {/* Ground — below ribbons so face fills show on top */}
       {!hide.ground && groundGeo && (
-        <mesh geometry={groundGeo} material={mats.ground} renderOrder={PRI.ground} receiveShadow />
+        <mesh geometry={groundGeo} material={mats.ground} renderOrder={PRI.ground}
+          receiveShadow position={[0, -0.2, 0]} />
       )}
 
-      {/* Park */}
+      {/* Park — below ribbons, above ground */}
       {!hide.park && parkGeo && (
-        <mesh geometry={parkGeo} material={mats.park} renderOrder={PRI.park} receiveShadow />
+        <mesh geometry={parkGeo} material={mats.park} renderOrder={PRI.park}
+          receiveShadow position={[0, -0.18, 0]} />
       )}
 
       {/* Buildings — above StreetRibbons (which sits at y=0.15) */}
@@ -364,15 +370,15 @@ export default function MapLayers({ hiddenLayers }) {
         <primitive key={`cl-${i}`} object={new THREE.Line(geo, mats.centerline)} />
       ))}
 
-      {/* Alleys */}
-      {!hide.alley && alleyLines.map((geo, i) => (
-        <primitive key={`alley-${i}`} object={new THREE.Line(geo, mats.alley)} />
-      ))}
+      {/* Alleys — filled ring polygons */}
+      {!hide.alley && alleyGeo && (
+        <mesh geometry={alleyGeo} material={mats.alley} renderOrder={PRI.alley} receiveShadow />
+      )}
 
-      {/* Footways / paths / walkways */}
-      {!hide.footway && footwayLines.map((geo, i) => (
-        <primitive key={`fw-${i}`} object={new THREE.Line(geo, mats.footway)} />
-      ))}
+      {/* Footways / paths / walkways — filled ring polygons */}
+      {!hide.footway && footwayGeo && (
+        <mesh geometry={footwayGeo} material={mats.footway} renderOrder={PRI.footway} receiveShadow />
+      )}
 
       {/* Streetlamps */}
       {!hide.lamp && lampPositions.map((l, i) => (

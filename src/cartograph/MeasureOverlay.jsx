@@ -48,13 +48,19 @@ function getStreetBands(st) {
   return st._bands || getDefaultBands(st.type || 'residential')
 }
 
+// Snap-always on manual measurement: at typical zoom 1 px ≈ 3 inches,
+// sub-foot precision is noise. Band widths live on code-compliant standards only.
+// See NOTES.md + BACKLOG Phase 13.5. Exception: if the operator drags below half
+// the smallest target, preserve raw — they're shrinking/removing the band.
 function snapIncrement(material, rawIncrement) {
   const targets = SNAP_TARGETS[material]
-  if (!targets) return rawIncrement
-  let best = rawIncrement, bestDist = Infinity
+  if (!targets || !targets.length) return rawIncrement
+  const minTarget = targets[0]
+  if (rawIncrement < minTarget * 0.5) return rawIncrement
+  let best = targets[0], bestDist = Math.abs(rawIncrement - targets[0])
   for (const t of targets) {
     const d = Math.abs(rawIncrement - t)
-    if (d < SNAP_RADIUS && d < bestDist) { bestDist = d; best = t }
+    if (d < bestDist) { bestDist = d; best = t }
   }
   return best
 }
@@ -104,67 +110,25 @@ export default function MeasureOverlay() {
     for (const { idx, st, cum, isSelected } of streetData) {
       const group = { idx, meshes: [], lines: [] }
 
-      // Centerline
+      // Centerline — lets the operator click anywhere to select. Subtle when
+      // unselected, bold yellow when selected.
       const clPts = st.points.map(p => new THREE.Vector3(p[0], 0.05, p[1]))
       const clGeo = new THREE.BufferGeometry().setFromPoints(clPts)
       group.lines.push({ geo: clGeo, mat: isSelected ? mats.centerSel : mats.center })
 
-      // Edge strokes + ribbon fills for each band
-      for (const c of cum) {
-        const color = MAP_COLORS[c.material] || '#444'
-        const edgeColor = BAND_COLORS[c.material] || '#888'
-
-        for (const side of [1, -1]) {
-          // Along-street edge stroke — always visible, bolder when selected
-          const edge = offsetPolyline(st.points, c.outerR, side)
-          const edgePts = edge.map(p => new THREE.Vector3(p[0], 0.08, p[1]))
-          const edgeGeo = new THREE.BufferGeometry().setFromPoints(edgePts)
-          const edgeMat = new THREE.LineBasicMaterial({
-            color: edgeColor,
-            transparent: !isSelected, opacity: isSelected ? 1 : 0.7,
-            depthTest: false,
-          })
-          group.lines.push({ geo: edgeGeo, mat: edgeMat })
-
-          // Ribbon fill (semi-transparent)
-          const inner = offsetPolyline(st.points, c.innerR, side)
-          const outer = offsetPolyline(st.points, c.outerR, side)
-          const n = inner.length
-          if (n < 2) continue
-
-          const positions = new Float32Array(n * 2 * 3)
-          const normals = new Float32Array(n * 2 * 3)
-          const indices = []
-          for (let j = 0; j < n; j++) {
-            positions[j*6]   = inner[j][0]; positions[j*6+1] = 0; positions[j*6+2] = inner[j][1]
-            positions[j*6+3] = outer[j][0]; positions[j*6+4] = 0; positions[j*6+5] = outer[j][1]
-            normals[j*6+1] = 1; normals[j*6+4] = 1
-          }
-          for (let j = 0; j < n - 1; j++) {
-            const a = j*2, b = j*2+1, c2 = (j+1)*2, d = (j+1)*2+1
-            indices.push(a, c2, b, b, c2, d)
-          }
-          const fillGeo = new THREE.BufferGeometry()
-          fillGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-          fillGeo.setAttribute('normal', new THREE.BufferAttribute(normals, 3))
-          fillGeo.setIndex(indices)
-          const fillMat = new THREE.MeshBasicMaterial({
-            color, transparent: true, opacity: isSelected ? 0.7 : 0.5,
-            side: THREE.DoubleSide, depthTest: false,
-          })
-          group.meshes.push({ geo: fillGeo, mat: fillMat })
-        }
-      }
-
-      // Caustic perpendicular (selected only)
+      // Caustic RULER — perpendicular cross-section at the street midpoint,
+      // rendered only for the selected street. Operator clicks ON the ruler
+      // at a radius to insert a new band boundary (handled in onPointerDown).
+      // Band boundaries are dots. No along-street strips — StreetRibbons already
+      // shows the bands extruded along the street; the ruler is the measurement
+      // instrument.
       if (isSelected) {
-        const t = 0.5 // midpoint for now
-        // Find position and perp at midpoint
         let totalLen = 0
         for (let j = 1; j < st.points.length; j++) {
           totalLen += Math.hypot(st.points[j][0]-st.points[j-1][0], st.points[j][1]-st.points[j-1][1])
         }
-        let target = t * totalLen, acc = 0, segI = 0, segT = 0
+        const target = 0.5 * totalLen
+        let acc = 0, segI = 0, segT = 0
         for (let j = 0; j < st.points.length - 1; j++) {
           const sl = Math.hypot(st.points[j+1][0]-st.points[j][0], st.points[j+1][1]-st.points[j][1])
           if (acc + sl >= target) { segI = j; segT = (target - acc) / sl; break }
@@ -177,9 +141,14 @@ export default function MeasureOverlay() {
         const len = Math.sqrt(dx*dx + dz*dz) || 1
         const nx = -dz/len, nz = dx/len
 
-        // Perpendicular line segments per band, both sides
-        for (const c of cum) {
-          for (const side of [1, -1]) {
+        const totalR = cum.length ? cum[cum.length - 1].outerR : 0
+
+        // Cache origin + perp so the pointer handler can project clicks back to radius
+        group.rulerOrigin = { x: cx, z: cz, nx, nz, maxR: totalR }
+
+        // Colored ruler: one short segment per band, inner → outer; both sides
+        for (const side of [1, -1]) {
+          for (const c of cum) {
             const fromX = cx + side*nx*c.innerR, fromZ = cz + side*nz*c.innerR
             const toX = cx + side*nx*c.outerR, toZ = cz + side*nz*c.outerR
             const segGeo = new THREE.BufferGeometry().setFromPoints([
@@ -188,11 +157,22 @@ export default function MeasureOverlay() {
             ])
             group.lines.push({
               geo: segGeo,
-              mat: new THREE.LineBasicMaterial({ color: BAND_COLORS[c.material] || '#888', depthTest: false }),
+              mat: new THREE.LineBasicMaterial({
+                color: BAND_COLORS[c.material] || '#888',
+                depthTest: false,
+                linewidth: 2,
+              }),
             })
-            // Node at outer tip
-            group.nodePos = group.nodePos || []
-            group.nodePos.push({ x: toX, z: toZ, color: BAND_COLORS[c.material] || '#888', bandIdx: cum.indexOf(c) })
+          }
+          // Boundary dots at every band's outerR on this side (operator can drag these)
+          group.nodePos = group.nodePos || []
+          for (const c of cum) {
+            const tipX = cx + side*nx*c.outerR, tipZ = cz + side*nz*c.outerR
+            group.nodePos.push({
+              x: tipX, z: tipZ,
+              color: BAND_COLORS[c.material] || '#888',
+              bandIdx: cum.indexOf(c),
+            })
           }
         }
       }
@@ -209,7 +189,7 @@ export default function MeasureOverlay() {
     const thresh = 4 / (camera.zoom || 1)
     const lineThresh = 6 / (camera.zoom || 1)
 
-    // Check caustic nodes on selected street
+    // Priority 1: existing band-boundary node on selected street → drag
     if (selectedStreet !== null && sceneObjects) {
       const selObj = sceneObjects.find(o => o.idx === selectedStreet)
       if (selObj?.nodePos) {
@@ -221,9 +201,49 @@ export default function MeasureOverlay() {
           }
         }
       }
+      // Priority 2: click on the ruler line → insert a new band boundary at click radius
+      if (selObj?.rulerOrigin) {
+        const origin = selObj.rulerOrigin
+        const dx = p.x - origin.x, dz = p.z - origin.z
+        const r = dx * origin.nx + dz * origin.nz                  // signed along-ruler
+        const perpDist = Math.abs(dz * origin.nx - dx * origin.nz) // perp-to-ruler
+        const rulerTol = 2.5 / (camera.zoom || 1)
+        if (perpDist < rulerTol && Math.abs(r) > 0.2 && Math.abs(r) <= origin.maxR) {
+          const st = centerlineData.streets[selectedStreet]
+          if (st) {
+            if (!st._bands) {
+              st._bands = getDefaultBands(st.type || 'residential').map(b => ({ ...b }))
+            }
+            const absR = Math.abs(r)
+            // Find the band containing absR and split it. New band inherits the
+            // material of the split band; operator can relabel via the panel.
+            let cumR = 0
+            for (let i = 0; i < st._bands.length; i++) {
+              const outerR = cumR + st._bands[i].width
+              if (absR > cumR && absR < outerR) {
+                const innerW = absR - cumR
+                const outerW = outerR - absR
+                st._bands[i].width = Math.round(innerW * 1000) / 1000
+                st._bands.splice(i + 1, 0, {
+                  material: st._bands[i].material,
+                  width: Math.round(outerW * 1000) / 1000,
+                })
+                useCartographStore.setState({
+                  centerlineData: { ...centerlineData },
+                  status: 'Inserted boundary at ' + (absR * 3.28084).toFixed(1) + 'ft',
+                })
+                useCartographStore.getState()._saveCenterlines()
+                e.stopPropagation()
+                return
+              }
+              cumR = outerR
+            }
+          }
+        }
+      }
     }
 
-    // Check all streets
+    // Priority 3: centerline click → select (or change selection)
     let bestDist = Infinity, bestIdx = -1
     for (const { idx, st } of streetData) {
       const d = distToPolyline(st.points, p.x, p.z)
@@ -231,7 +251,7 @@ export default function MeasureOverlay() {
     }
     if (bestIdx >= 0) { selectStreet(bestIdx); e.stopPropagation(); return }
     deselectStreet()
-  }, [active, spaceDown, camera, gl, selectedStreet, streetData, sceneObjects, selectStreet, deselectStreet])
+  }, [active, spaceDown, camera, gl, selectedStreet, streetData, sceneObjects, centerlineData, selectStreet, deselectStreet])
 
   const onPointerMove = useCallback((e) => {
     if (dragRef.current) {
@@ -312,10 +332,18 @@ export default function MeasureOverlay() {
   useEffect(() => {
     if (!active) return
     const dom = gl.domElement
-    dom.addEventListener('pointerdown', onPointerDown)
-    dom.addEventListener('pointermove', onPointerMove)
-    dom.addEventListener('pointerup', onPointerUp)
-    return () => { dom.removeEventListener('pointerdown', onPointerDown); dom.removeEventListener('pointermove', onPointerMove); dom.removeEventListener('pointerup', onPointerUp) }
+    // Capture phase — our handlers run BEFORE MapControls' bubble-phase pan
+    // handler, so a click on a street selects (and stops propagation) instead
+    // of being swallowed by pan.
+    const opts = { capture: true }
+    dom.addEventListener('pointerdown', onPointerDown, opts)
+    dom.addEventListener('pointermove', onPointerMove, opts)
+    dom.addEventListener('pointerup', onPointerUp, opts)
+    return () => {
+      dom.removeEventListener('pointerdown', onPointerDown, opts)
+      dom.removeEventListener('pointermove', onPointerMove, opts)
+      dom.removeEventListener('pointerup', onPointerUp, opts)
+    }
   }, [active, gl, onPointerDown, onPointerMove, onPointerUp])
 
   if (!active || !sceneObjects) return null
@@ -324,19 +352,21 @@ export default function MeasureOverlay() {
     <group position={[0, 0.15, 0]}>
       {sceneObjects.map(group => (
         <group key={group.idx}>
-          {group.lines.map((l, i) => (
-            <primitive key={`l-${i}`} object={new THREE.Line(l.geo, l.mat)} />
-          ))}
+          {group.lines.map((l, i) => {
+            const obj = new THREE.Line(l.geo, l.mat)
+            obj.renderOrder = 100
+            return <primitive key={`l-${i}`} object={obj} />
+          })}
           {group.meshes.map((m, i) => (
-            <mesh key={`m-${i}`} geometry={m.geo} material={m.mat} />
+            <mesh key={`m-${i}`} geometry={m.geo} material={m.mat} renderOrder={100} />
           ))}
           {group.nodePos?.map((node, i) => (
             <group key={`n-${i}`} position={[node.x, 0.2, node.z]}>
-              <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={101}>
                 <ringGeometry args={[1.8, 2.4, 16]} />
                 <meshBasicMaterial color="#000" side={THREE.DoubleSide} depthTest={false} />
               </mesh>
-              <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={102}>
                 <circleGeometry args={[1.8, 16]} />
                 <meshBasicMaterial color={node.color} side={THREE.DoubleSide} depthTest={false} />
               </mesh>

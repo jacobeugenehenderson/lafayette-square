@@ -8,6 +8,15 @@ const useCartographStore = create((set, get) => ({
   luColors: {},
   bgColor: '#1a1a18',
 
+  // ── Map visibility (global, crosses all modes) ────────────
+  // Both fills and aerial are orientation toggles, not styling — they live
+  // in the toolbar alongside each other, not in the design panel.
+  fillsVisible: true,
+  toggleFills: () => set(s => ({ fillsVisible: !s.fillsVisible })),
+
+  aerialVisible: true,
+  toggleAerial: () => set(s => ({ aerialVisible: !s.aerialVisible })),
+
   // ── Mode ──────────────────────────────────────────────────
   // mode = the workspace (null | 'surveyor' | 'measure' | 'stage')
   // markerActive = overlay toggle, independent of mode
@@ -39,7 +48,20 @@ const useCartographStore = create((set, get) => ({
   },
   toggleMarker: () => {
     const cur = get().markerActive
-    set({ markerActive: !cur, status: cur ? '' : 'Draw on the map to mark areas.' })
+    set({
+      markerActive: !cur,
+      markerEraserActive: cur ? false : get().markerEraserActive,
+      status: cur ? '' : 'Draw on the map to mark areas.',
+    })
+  },
+
+  markerEraserActive: false,
+  toggleMarkerEraser: () => {
+    const on = !get().markerEraserActive
+    set({
+      markerEraserActive: on,
+      status: on ? 'Click a stroke to erase it.' : 'Draw on the map to mark areas.',
+    })
   },
 
   // ── Status ────────────────────────────────────────────────
@@ -78,6 +100,13 @@ const useCartographStore = create((set, get) => ({
   clearMarkerStrokes: () => {
     set({ markerStrokes: [], status: 'Cleared.' })
     saveMarkers([])
+  },
+  deleteMarkerStroke: (idx) => {
+    const strokes = get().markerStrokes
+    if (idx < 0 || idx >= strokes.length) return
+    const next = strokes.slice(0, idx).concat(strokes.slice(idx + 1))
+    set({ markerStrokes: next, status: next.length ? next.length + ' stroke(s)' : '' })
+    saveMarkers(next)
   },
 
   // ── Surveyor ──────────────────────────────────────────────

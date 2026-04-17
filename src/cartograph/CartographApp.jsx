@@ -8,6 +8,7 @@ import MapLayers from './MapLayers.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
 import MeasureOverlay from './MeasureOverlay.jsx'
 import MarkerOverlay from './MarkerOverlay.jsx'
+import MarkerFAB from './MarkerFAB.jsx'
 import StageCanvas from './StageCanvas.jsx'
 import Toolbar from './Toolbar.jsx'
 import StatusBar from './StatusBar.jsx'
@@ -68,7 +69,12 @@ function Controls() {
   const hoverTarget = useCartographStore(s => s.hoverTarget)
   // Pan: on by default, disabled when hovering a target in tool modes (so drag goes to overlay)
   // Space always overrides to enable pan
-  const panEnabled = spaceDown || ((!mode && !markerActive) || (mode === 'measure' && !hoverTarget))
+  // Pan is enabled when the cursor is NOT over an editable target. Spacebar
+  // forces pan. Surveyor and Measure both track hoverTarget, so either mode
+  // allows pan over empty space.
+  const panEnabled = spaceDown
+    || (!mode && !markerActive)
+    || ((mode === 'surveyor' || mode === 'measure') && !hoverTarget)
 
   return (
     <MapControls
@@ -129,31 +135,32 @@ export default function CartographApp() {
     period: 720, tension: 0.5, easing: 'easeInOut', preview: false,
   })
   const markerActive = useCartographStore(s => s.markerActive)
+  const markerEraserActive = useCartographStore(s => s.markerEraserActive)
   const spaceDown = useCartographStore(s => s.spaceDown)
   const hoverTarget = useCartographStore(s => s.hoverTarget)
   const bgColor = useCartographStore(s => s.bgColor)
   const layerVis = useCartographStore(s => s.layerVis)
+  const luColors = useCartographStore(s => s.luColors)
+  const fillsVisible = useCartographStore(s => s.fillsVisible)
+  const aerialVisible = useCartographStore(s => s.aerialVisible)
+  // Live centerlines feed band/cap edits into StreetRibbons without a pipeline rebuild
+  const centerlineData = useCartographStore(s => s.centerlineData)
 
   useSpaceKey()
   useLoadData()
 
-  // Mode-specific workspace: override layer visibility per mode
-  const effectiveVis = { ...layerVis }
+  // Layer visibility is global (Panel-driven). Tool modes no longer override —
+  // the map renders the same way everywhere, with mode overlays on top.
   const hiddenLayers = {}
+  for (const k in layerVis) {
+    if (!layerVis[k]) hiddenLayers[k] = true
+  }
 
   const isToolMode = mode === 'surveyor' || mode === 'measure'
 
-  if (isToolMode) {
-    // Tool modes: hide everything — aerial + overlay rendered independently
-    for (const k in effectiveVis) effectiveVis[k] = false
-  }
-
-  for (const k in effectiveVis) {
-    if (!effectiveVis[k]) hiddenLayers[k] = true
-  }
-
   let cursor = 'grab'
-  if (markerActive && !spaceDown) cursor = 'crosshair'
+  if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'
+  else if (markerActive && !spaceDown) cursor = 'crosshair'
   else if ((mode || markerActive) && hoverTarget && !spaceDown) cursor = 'pointer'
 
   const isStage = mode === 'stage'
@@ -176,9 +183,17 @@ export default function CartographApp() {
           >
             <CameraSetup cameraRef={cameraRef} glRef={glRef} />
             <ambientLight intensity={1} />
-            <AerialTiles />
-            {!isToolMode && <StreetRibbons hiddenLayers={hiddenLayers} flat />}
-            {!isToolMode && <MapLayers hiddenLayers={hiddenLayers} />}
+            <AerialTiles visible={aerialVisible} />
+            {fillsVisible && <StreetRibbons hiddenLayers={hiddenLayers} luColors={luColors}
+              liveCenterlines={centerlineData.streets} flat />}
+            {/* MapLayers always renders. When fillsVisible=false, we mask out
+                fill layers (ground/park/building/alley/footway/etc.) so only
+                line strokes remain visible on top of the aerial. */}
+            <MapLayers hiddenLayers={fillsVisible ? hiddenLayers : {
+              ...hiddenLayers,
+              ground: true, park: true, building: true,
+              alley: true, footway: true, tree: true, lamp: true,
+            }} />
             <SurveyorOverlay />
             {mode === 'measure' && <MeasureOverlay />}
             <Controls />
@@ -209,6 +224,7 @@ export default function CartographApp() {
         )}
 
         {!isStage && <MarkerOverlay cameraRef={cameraRef} />}
+        {!isStage && <MarkerFAB />}
         <Toolbar />
         <StatusBar />
 

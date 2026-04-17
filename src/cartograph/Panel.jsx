@@ -6,7 +6,7 @@ import StagePanelReal, { defaultKeyframes } from './StagePanel.jsx'
 
 // ── Layer definitions (from render.js LD array) ─────────────
 const LAYERS = [
-  { id: 'aerial',     label: 'Aerial',       fill: '#446688', noColor: true },
+  // aerial moved to the toolbar (orientation aid, not a styling layer)
   { id: 'ground',     label: 'Ground',       fill: '#2a2a26' },
   { id: 'sidewalk',   label: 'Sidewalks',    fill: '#7a756a' },
   { id: 'lot',        label: 'Blocks',       fill: '#3a4a2a' },
@@ -15,7 +15,7 @@ const LAYERS = [
   { id: 'street',     label: 'Streets',      fill: '#3a3a38' },
   { id: 'alley',      label: 'Alleys',       fill: '#353532' },
   { id: 'building',   label: 'Buildings',    fill: '#2a2a28' },
-  { id: 'stripe',     label: 'Center Lines', fill: '#c8b430' },
+  { id: 'stripe',     label: 'Center Stripes', fill: '#c8b430' },
   { id: 'edgeline',   label: 'Edge Lines',   fill: '#888888' },
   { id: 'bikelane',   label: 'Bike Lanes',   fill: '#44aa88' },
   { id: 'centerline', label: 'Centerlines',  fill: '#ffffff' },
@@ -29,7 +29,7 @@ const LAND_USE = [
   { id: 'residential',  label: 'Residential',  fill: '#3a4a2a' },
   { id: 'commercial',   label: 'Commercial',   fill: '#4a4438' },
   { id: 'vacant',       label: 'Vacant',       fill: '#2a3020' },
-  { id: 'vacant-com',   label: 'Vacant Com.',  fill: '#3a3830' },
+  { id: 'vacant-commercial', label: 'Vacant Com.', fill: '#3a3830' },
   { id: 'parking',      label: 'Parking',      fill: '#3a3a38' },
   { id: 'institutional',label: 'Institutional', fill: '#3a3a4a' },
   { id: 'recreation',   label: 'Recreation',   fill: '#2a3a1a' },
@@ -43,7 +43,6 @@ export default function Panel() {
     const v = {}
     for (const L of LAYERS) v[L.id] = true
     v.centerline = false
-    v.aerial = false
     return v
   })
   const toggleVis = (id) => setLayerVis(prev => ({ ...prev, [id]: !prev[id] }))
@@ -70,7 +69,9 @@ export default function Panel() {
     if (def) setLuColors(prev => ({ ...prev, [id]: def.fill }))
   }
 
-  const [bgColor, setBgColor] = useState('#1a1a18')
+  // Ground color drives both the ground plane and the canvas background —
+  // so off-map area always reads as a single base color.
+  const bgColor = layerColors.ground
 
   useEffect(() => {
     useCartographStore.setState({ layerVis, layerColors, luColors, bgColor })
@@ -80,7 +81,7 @@ export default function Panel() {
 
   return (
     <div className="carto-panel">
-      <h1>{mode === 'surveyor' ? 'Surveyor' : mode === 'measure' ? 'Measure' : mode === 'stage' ? 'Stage' : 'Cartograph'}</h1>
+      <h1>{mode === 'surveyor' ? 'Survey' : mode === 'measure' ? 'Measure' : mode === 'stage' ? 'Stage' : 'Cartograph'}</h1>
 
       {/* ── Tool-specific panels ── */}
       {mode === 'surveyor' && <SurveyorPanel />}
@@ -115,7 +116,7 @@ export default function Panel() {
             <h2>Land Use</h2>
             {LAND_USE.map(L => (
               <div key={L.id} className="carto-row">
-                <label className="carto-label" style={{ paddingLeft: 20 }}>{L.label}</label>
+                <label className="carto-label carto-landuse-indent">{L.label}</label>
                 <input type="color" className="carto-color" value={luColors[L.id]}
                   onInput={e => setLuColor(L.id, e.target.value)} />
                 <button className="carto-btn-reset" title="Reset"
@@ -124,19 +125,8 @@ export default function Panel() {
             ))}
           </div>
 
-          {/* ── Background ─────────────────────────────────────── */}
-          <div className="carto-section">
-            <div className="carto-row">
-              <label className="carto-label">Background</label>
-              <input type="color" className="carto-color" value={bgColor}
-                onInput={e => setBgColor(e.target.value)} />
-              <button className="carto-btn-reset" title="Reset"
-                onClick={() => setBgColor('#1a1a18')}>&#x21BA;</button>
-            </div>
-          </div>
-
           {/* ── Launch ────────────────────────────────────────── */}
-          <div style={{ marginTop: 16 }}>
+          <div className="carto-launch-wrap">
             <button className="carto-btn-launch"
               onClick={() => window.open('/', '_blank')}>
               Launch Hero View
