@@ -6,6 +6,61 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-04-16 additions — read first
+
+**Dead-end caps are per-endpoint + operator-marked.** Each street in
+`centerlines.json` has `capStart: 'round'|'blunt'|null` and `capEnd` set by the
+operator in Survey mode (per-endpoint cap dropdown). The pipeline reads these
+directly and emits `capEnds: {start, end}` on each ribbon street.
+`StreetRibbons.jsx` renders them via `quarterCapRaw`. No auto-detection —
+operator is authority. Supersedes the earlier auto-detection attempt which
+produced too many false caps on divided-road inner endpoints.
+
+**Divided one-ways remain a distinct class** (Truman Parkway, Benton Place,
+Mackay Place loop streets, parts of Russell/Jefferson). The operator can now
+correctly leave their inner-facing endpoints uncapped via Survey mode, so caps
+are no longer blocked by them. Still want Phase 14 for median rendering and
+plug handling.
+
+**Manual measurement snapping.** On drag-release in Measure mode, band width
+rounds to the nearest `SNAP_TARGETS` entry (5/6/8/10 ft for sidewalk, 7 or 8 ft
+for parking, etc.). At typical map zoom 1 px ≈ 3 inches — sub-foot precision is
+fiction. Survey-derived widths stay raw. Enables reliable template duplication.
+
+**Measure caustic ruler (2026-04-16).** Clicking a centerline in Measure mode
+draws a perpendicular **ruler** from centerline to property line at the street's
+midpoint, colored per band with dots at each boundary. Operator clicks *on the
+ruler* at a radius to **insert a new band boundary** — the band being split
+keeps its material on both halves; the operator relabels via the panel
+dropdown. Drag the dots to tune widths (snap-always). No along-street band
+strips — those duplicated what `StreetRibbons` already shows.
+
+**Default band stack is deliberately minimal.** Generic street =
+`asphalt + curb`. Sidewalk-eligible (residential/secondary/primary) =
+`asphalt + curb + sidewalk`. **No default parking or treelawn** — the operator
+adds those via the ruler where reality shows them. This matches the "irregular
+geometry" reality of the neighborhood (wide plaza sidewalks at retail,
+missing sidewalks next to ramps, non-standard parking).
+
+**Live centerlines → StreetRibbons.** `StreetRibbons.jsx` accepts a
+`liveCenterlines` prop (the store's `centerlineData.streets`). For each street,
+live `_bands` / `capStart` / `capEnd` override `ribbons.json`'s static values.
+Measure / Survey edits show in the rendered map **instantly**, no pipeline
+rebuild needed. Intersections and face fills stay static from the pipeline.
+
+**Fills toggle = orientation mode.** Global toolbar button. Off = hide
+StreetRibbons + MapLayers fills, keep line features (center stripes, edge
+lines, bike lanes) + aerial visible. Operator uses this to visually align the
+rendered map against the real aerial imagery.
+
+**Glass-card styling.** Toolbar and each Panel section use the same glass
+treatment as Stage (`.glass-panel` values from `src/index.css`, mirrored in
+`.carto-glass` in `cartograph.css`): `rgba(0,0,0,0.25)` + blur(20px)
+saturate(160%) + subtle border/shadow. Floating over the canvas so the map
+shows through.
+
+---
+
 ## 1. What the map is
 
 A vector neighborhood map of Lafayette Square (St. Louis, MO) rendered as a Three.js

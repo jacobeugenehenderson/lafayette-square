@@ -27,6 +27,41 @@
         "sidewalk": 8.048,
         "source": "default"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -255,6 +290,49 @@
         "sidewalk": 7.99430261706773,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.048
+          },
+          {
+            "material": "gutter",
+            "width": 0.45720000000000005
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.801
+          },
+          {
+            "material": "curb",
+            "width": 6.381
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.048
+          },
+          {
+            "material": "gutter",
+            "width": 0.45720000000000005
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.801
+          },
+          {
+            "material": "curb",
+            "width": 6.381
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -355,6 +433,41 @@
         "sidewalk": 5.048,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": []
     },
     {
@@ -451,6 +564,41 @@
         "treelawn": 3.524,
         "sidewalk": 5.048,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -609,6 +757,41 @@
         "sidewalk": 5.048,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 9,
@@ -742,6 +925,41 @@
         "sidewalk": 5.048,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -794,6 +1012,41 @@
         "treelawn": 8.986568635487004,
         "sidewalk": 10.510568635487004,
         "source": "sidewalk-1side"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.548168635487002
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.548168635487002
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": []
     },
@@ -856,6 +1109,41 @@
         "sidewalk": 12.621064933347618,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.658664933347616
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.658664933347616
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -893,6 +1181,41 @@
         "treelawn": 11.097064933347617,
         "sidewalk": 12.621064933347618,
         "source": "sidewalk-1side"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.658664933347616
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.658664933347616
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -935,6 +1258,41 @@
         "treelawn": 11.097064933347617,
         "sidewalk": 12.621064933347618,
         "source": "sidewalk-1side"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.658664933347616
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.658664933347616
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -1003,6 +1361,41 @@
         "sidewalk": 5.69260464411919,
         "source": "default"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.73020464411919
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.73020464411919
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 8,
@@ -1051,6 +1444,41 @@
         "sidewalk": 8.621904108800795,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.659504108800794
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.659504108800794
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": "round"
+      },
       "intersections": [
         {
           "ix": 6,
@@ -1094,6 +1522,41 @@
         "treelawn": 6.714105979129703,
         "sidewalk": 8.238105979129703,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.275705979129702
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.275705979129702
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": "round",
+        "end": "round"
       },
       "intersections": [
         {
@@ -1167,6 +1630,41 @@
         "sidewalk": 9.863233443185418,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.9008334431854195
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.9008334431854195
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 6,
@@ -1221,6 +1719,41 @@
         "sidewalk": 10.97884582683725,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 7.016445826837252
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 7.016445826837252
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -1273,6 +1806,41 @@
         "treelawn": 8.132709656064646,
         "sidewalk": 9.656709656064645,
         "source": "sidewalk-1side"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.694309656064647
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.694309656064647
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": "round"
       },
       "intersections": [
         {
@@ -1376,6 +1944,41 @@
         "sidewalk": 8.834383102772469,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.871983102772468
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.871983102772468
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 13,
@@ -1454,6 +2057,41 @@
         "sidewalk": 8.834383102772469,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.871983102772468
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.871983102772468
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 3,
@@ -1499,6 +2137,41 @@
         "treelawn": 7.310383102772469,
         "sidewalk": 8.834383102772469,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.871983102772468
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.871983102772468
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -1610,6 +2283,41 @@
         "sidewalk": 8.834383102772469,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.871983102772468
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.871983102772468
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 7,
@@ -1672,6 +2380,41 @@
         "sidewalk": 10.121593851069644,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.159193851069642
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.159193851069642
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -1700,6 +2443,41 @@
         "sidewalk": 10.572676034486275,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.610276034486274
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.610276034486274
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -1727,6 +2505,41 @@
         "treelawn": 9.048676034486274,
         "sidewalk": 10.572676034486275,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.610276034486274
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.610276034486274
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -1820,6 +2633,49 @@
         "sidewalk": 7.6538083194128,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 2,
@@ -1880,6 +2736,49 @@
         "sidewalk": 7.6538083194128,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -1939,6 +2838,49 @@
         "treelawn": 6.1298083194128,
         "sidewalk": 7.6538083194128,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -2058,6 +3000,49 @@
         "sidewalk": 7.6538083194128,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 12,
@@ -2146,6 +3131,41 @@
         "sidewalk": 6.4174720900446784,
         "source": "default"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 2.4550720900446783
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 2.4550720900446783
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -2218,6 +3238,41 @@
         "sidewalk": 7.0311239025612275,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.0687239025612274
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.0687239025612274
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -2259,6 +3314,41 @@
         "treelawn": 6.822291753705734,
         "sidewalk": 8.346291753705735,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.3838917537057345
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.3838917537057345
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -2456,6 +3546,41 @@
         "sidewalk": 9.224041291628165,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.261641291628164
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.261641291628164
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 24,
@@ -2542,6 +3667,41 @@
         "sidewalk": 9.224041291628165,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.261641291628164
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.261641291628164
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 11,
@@ -2603,6 +3763,41 @@
         "treelawn": 8.073606750926627,
         "sidewalk": 9.597606750926627,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.635206750926626
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.635206750926626
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -2748,6 +3943,41 @@
         "sidewalk": 10.3288379117874,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.366437911787399
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.366437911787399
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 21,
@@ -2792,6 +4022,41 @@
         "sidewalk": 10.3288379117874,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.366437911787399
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.366437911787399
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -2823,6 +4088,41 @@
         "treelawn": 8.8048379117874,
         "sidewalk": 10.3288379117874,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.366437911787399
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.366437911787399
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -2893,6 +4193,41 @@
         "treelawn": 3.524,
         "sidewalk": 5.048,
         "source": "sidewalk-1side"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -2974,6 +4309,41 @@
         "sidewalk": 9.745854660386676,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.783454660386676
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.783454660386676
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 11,
@@ -3024,6 +4394,41 @@
         "sidewalk": 9.745854660386676,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.783454660386676
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.783454660386676
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -3062,6 +4467,41 @@
         "sidewalk": 6.398000000000001,
         "source": "assessor"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 2.4356
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 2.4356
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 3,
@@ -3097,6 +4537,41 @@
         "treelawn": 9.628483523047368,
         "sidewalk": 11.15248352304737,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 7.190083523047367
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 7.190083523047367
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -3169,6 +4644,41 @@
         "treelawn": 9.267289089225995,
         "sidewalk": 10.791289089225995,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.828889089225994
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.828889089225994
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -3263,6 +4773,41 @@
         "sidewalk": 8.571994407899366,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.609594407899365
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.609594407899365
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 9,
@@ -3338,6 +4883,41 @@
         "sidewalk": 8.571994407899366,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.609594407899365
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.609594407899365
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -3373,6 +4953,41 @@
         "treelawn": 7.047994407899366,
         "sidewalk": 8.571994407899366,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.609594407899365
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.609594407899365
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -3427,6 +5042,41 @@
         "treelawn": 10.774000000000001,
         "sidewalk": 12.298000000000002,
         "source": "assessor"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.3356
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.3356
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -3499,6 +5149,41 @@
         "sidewalk": 8.98169818360847,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.01929818360847
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.01929818360847
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 7,
@@ -3538,6 +5223,41 @@
         "treelawn": 7.198005503621602,
         "sidewalk": 8.722005503621602,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -3643,6 +5363,41 @@
         "sidewalk": 8.722005503621602,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 5,
@@ -3706,6 +5461,41 @@
         "treelawn": 7.198005503621602,
         "sidewalk": 8.722005503621602,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -3839,6 +5629,41 @@
         "sidewalk": 8.722005503621602,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 9,
@@ -3931,6 +5756,41 @@
         "sidewalk": 8.722005503621602,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.759605503621602
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 4,
@@ -4002,6 +5862,41 @@
         "treelawn": 6.524,
         "sidewalk": 8.048,
         "source": "default"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -4217,6 +6112,41 @@
         "sidewalk": 9.022943149341042,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.060543149341042
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.060543149341042
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 34,
@@ -4429,6 +6359,41 @@
         "sidewalk": 9.022943149341042,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.060543149341042
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.060543149341042
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 1,
@@ -4529,6 +6494,41 @@
         "sidewalk": 9.374772896585872,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.412372896585872
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.412372896585872
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 5,
@@ -4570,6 +6570,41 @@
         "treelawn": 7.850772896585872,
         "sidewalk": 9.374772896585872,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.412372896585872
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.412372896585872
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -4655,6 +6690,41 @@
         "sidewalk": 9.374772896585872,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.412372896585872
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.412372896585872
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 13,
@@ -4737,6 +6807,41 @@
         "sidewalk": 7.180460040692814,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.2180600406928135
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.2180600406928135
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 7,
@@ -4809,6 +6914,41 @@
         "sidewalk": 7.180460040692814,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.2180600406928135
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.2180600406928135
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 2,
@@ -4869,6 +7009,41 @@
         "sidewalk": 8.650597563739767,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.688197563739767
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.688197563739767
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -4926,6 +7101,49 @@
         "treelawn": 8.747397642832015,
         "sidewalk": 10.271397642832014,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -4988,6 +7206,49 @@
         "treelawn": 8.747397642832015,
         "sidewalk": 10.271397642832014,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -5059,6 +7320,41 @@
         "sidewalk": 10.974205566429085,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 7.011805566429082
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 7.011805566429082
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 10,
@@ -5125,6 +7421,57 @@
         "sidewalk": 8.962746117113385,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 9,
@@ -5176,6 +7523,57 @@
         "treelawn": 7.438746117113385,
         "sidewalk": 8.962746117113385,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -5267,6 +7665,57 @@
         "sidewalk": 8.962746117113385,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 15,
@@ -5337,6 +7786,57 @@
         "sidewalk": 8.962746117113385,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 2,
@@ -5384,6 +7884,57 @@
         "treelawn": 7.438746117113385,
         "sidewalk": 8.962746117113385,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.5052
+          },
+          {
+            "material": "parking-parallel",
+            "width": 2.1336
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -5485,6 +8036,41 @@
         "sidewalk": 10.311690755014602,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.3492907550146
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.3492907550146
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -5554,6 +8140,41 @@
         "treelawn": 9.375906663572122,
         "sidewalk": 10.899906663572121,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.937506663572121
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.937506663572121
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -5730,6 +8351,41 @@
         "treelawn": 3.524,
         "sidewalk": 5.048,
         "source": "assessor"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -5947,6 +8603,41 @@
         "sidewalk": 9.090522754626692,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.128122754626691
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.128122754626691
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 23,
@@ -6030,6 +8721,41 @@
         "treelawn": 8.94331231114906,
         "sidewalk": 10.467312311149058,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.504912311149058
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.504912311149058
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -6123,6 +8849,41 @@
         "sidewalk": 10.556469230567021,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.594069230567021
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.594069230567021
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -6169,6 +8930,41 @@
         "sidewalk": 8.048,
         "source": "default"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 1,
@@ -6204,6 +9000,41 @@
         "treelawn": 6.524,
         "sidewalk": 8.048,
         "source": "measured"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -6349,6 +9180,41 @@
         "sidewalk": 8.048,
         "source": "measured"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 8,
@@ -6430,6 +9296,41 @@
         "treelawn": 6.771379159036182,
         "sidewalk": 8.295379159036182,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.3329791590361815
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.3329791590361815
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -6537,6 +9438,41 @@
         "sidewalk": 8.295379159036182,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.3329791590361815
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.3329791590361815
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 8,
@@ -6617,6 +9553,41 @@
         "sidewalk": 18.172995802117555,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 14.210595802117552
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 14.210595802117552
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 7,
@@ -6665,6 +9636,41 @@
         "treelawn": 11.264738623473889,
         "sidewalk": 12.78873862347389,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.826338623473887
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.826338623473887
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -6851,6 +9857,41 @@
         "sidewalk": 10.794914576747608,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.832514576747608
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.832514576747608
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 9,
@@ -6961,6 +10002,41 @@
         "sidewalk": 10.794914576747608,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.832514576747608
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.832514576747608
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -7053,6 +10129,41 @@
         "sidewalk": 8.458827238332058,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.496427238332057
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.496427238332057
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 10,
@@ -7102,6 +10213,41 @@
         "treelawn": 7.921571175714624,
         "sidewalk": 9.445571175714624,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -7195,6 +10341,41 @@
         "sidewalk": 9.445571175714624,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -7285,6 +10466,41 @@
         "sidewalk": 9.445571175714624,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 4,
@@ -7370,6 +10586,41 @@
         "sidewalk": 9.445571175714624,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": []
     },
     {
@@ -7399,6 +10650,41 @@
         "sidewalk": 9.445571175714624,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -7426,6 +10712,41 @@
         "treelawn": 7.921571175714624,
         "sidewalk": 9.445571175714624,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -7456,6 +10777,41 @@
         "treelawn": 7.921571175714624,
         "sidewalk": 9.445571175714624,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.483171175714624
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -7494,6 +10850,41 @@
         "treelawn": 7.774,
         "sidewalk": 9.298,
         "source": "assessor"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 5.3355999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 5.3355999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -7577,6 +10968,41 @@
         "sidewalk": 8.030839668517055,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.068439668517055
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.068439668517055
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -7618,6 +11044,41 @@
         "treelawn": 6.506839668517055,
         "sidewalk": 8.030839668517055,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.068439668517055
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.068439668517055
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -7722,6 +11183,41 @@
         "treelawn": 8.983094891165681,
         "sidewalk": 10.507094891165682,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 6.5446948911656815
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 6.5446948911656815
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -8109,6 +11605,41 @@
         "sidewalk": 11.674597585052727,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 7.712197585052724
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 7.712197585052724
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 26,
@@ -8258,6 +11789,41 @@
         "sidewalk": 11.674597585052727,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 7.712197585052724
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 7.712197585052724
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 12,
@@ -8383,6 +11949,41 @@
         "treelawn": 3.524,
         "sidewalk": 5.048,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -8514,6 +12115,41 @@
         "treelawn": 3.524,
         "sidewalk": 5.048,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.0856
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -8757,6 +12393,41 @@
         "treelawn": 6.303587997802887,
         "sidewalk": 7.827587997802887,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.8651879978028862
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.8651879978028862
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -9025,6 +12696,41 @@
         "sidewalk": 7.827587997802887,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.8651879978028862
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.8651879978028862
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 42,
@@ -9129,6 +12835,41 @@
         "sidewalk": 7.827587997802887,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.8651879978028862
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.8651879978028862
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 11,
@@ -9208,6 +12949,41 @@
         "treelawn": 6.303587997802887,
         "sidewalk": 7.827587997802887,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.8651879978028862
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.8651879978028862
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -9369,6 +13145,41 @@
         "sidewalk": 8.394010234957403,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.431610234957402
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.431610234957402
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 4,
@@ -9507,6 +13318,41 @@
         "treelawn": 3.8892027541469254,
         "sidewalk": 5.413202754146925,
         "source": "sidewalk-1side"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 1.4508027541469253
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 1.4508027541469253
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -9699,6 +13545,65 @@
         "treelawn": 3.524,
         "sidewalk": 5.048,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.048
+          },
+          {
+            "material": "gutter",
+            "width": 0.45720000000000005
+          },
+          {
+            "material": "parking-parallel",
+            "width": 6.709
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.048
+          },
+          {
+            "material": "gutter",
+            "width": 0.45720000000000005
+          },
+          {
+            "material": "parking-parallel",
+            "width": 6.709
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -10003,6 +13908,65 @@
         "sidewalk": 5.048,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.048
+          },
+          {
+            "material": "gutter",
+            "width": 0.45720000000000005
+          },
+          {
+            "material": "parking-parallel",
+            "width": 6.709
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.048
+          },
+          {
+            "material": "gutter",
+            "width": 0.45720000000000005
+          },
+          {
+            "material": "parking-parallel",
+            "width": 6.709
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 13,
@@ -10156,6 +14120,65 @@
         "sidewalk": 5.048,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 3.048
+          },
+          {
+            "material": "gutter",
+            "width": 0.45720000000000005
+          },
+          {
+            "material": "parking-parallel",
+            "width": 6.709
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 3.048
+          },
+          {
+            "material": "gutter",
+            "width": 0.45720000000000005
+          },
+          {
+            "material": "parking-parallel",
+            "width": 6.709
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "treelawn",
+            "width": 1.3716000000000002
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "measured"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 0,
@@ -10242,6 +14265,41 @@
         "sidewalk": 6.501664112243246,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 2.5392641122432456
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 2.5392641122432456
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 14,
@@ -10285,6 +14343,41 @@
         "treelawn": 4.977664112243246,
         "sidewalk": 6.501664112243246,
         "source": "sidewalk-1side"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 2.5392641122432456
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 2.5392641122432456
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -10398,6 +14491,41 @@
         "sidewalk": 6.501664112243246,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 2.5392641122432456
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 2.5392641122432456
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 19,
@@ -10456,6 +14584,41 @@
         "sidewalk": 8.048,
         "source": "default"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 1,
@@ -10483,6 +14646,41 @@
         "treelawn": 6.524,
         "sidewalk": 8.048,
         "source": "default"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -10547,6 +14745,41 @@
         "treelawn": 6.625559890535292,
         "sidewalk": 8.149559890535292,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.187159890535291
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.187159890535291
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -10882,6 +15115,41 @@
         "sidewalk": 12.211045461963636,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.248645461963635
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.248645461963635
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 60,
@@ -11018,6 +15286,41 @@
         "sidewalk": 12.211045461963636,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.248645461963635
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.248645461963635
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 15,
@@ -11144,6 +15447,41 @@
         "sidewalk": 12.211045461963636,
         "source": "sidewalk"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.248645461963635
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.248645461963635
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 12,
@@ -11229,6 +15567,41 @@
         "treelawn": 10.687045461963637,
         "sidewalk": 12.211045461963636,
         "source": "sidewalk"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.248645461963635
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.248645461963635
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "survey-default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {
@@ -11398,6 +15771,41 @@
         "sidewalk": 18.664006187045548,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 14.701606187045545
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 14.701606187045545
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": []
     },
     {
@@ -11459,6 +15867,41 @@
         "sidewalk": 12.185754013793169,
         "source": "sidewalk-1side"
       },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 8.223354013793168
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 8.223354013793168
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
+      },
       "intersections": [
         {
           "ix": 3,
@@ -11511,6 +15954,41 @@
         "treelawn": 6.524,
         "sidewalk": 8.048,
         "source": "default"
+      },
+      "bands": {
+        "left": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "right": [
+          {
+            "material": "asphalt",
+            "width": 4.0855999999999995
+          },
+          {
+            "material": "curb",
+            "width": 0.15239999999999998
+          },
+          {
+            "material": "sidewalk",
+            "width": 1.524
+          }
+        ],
+        "source": "default"
+      },
+      "capEnds": {
+        "start": null,
+        "end": null
       },
       "intersections": [
         {

@@ -22,6 +22,7 @@ import { RAW_DIR, CARTOGRAPH_DIR, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
+import { getDefaultBandProfile } from '../src/cartograph/streetProfiles.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -2061,6 +2062,68 @@ export function deriveLayers(highways) {
     }
   } catch { /* no measurements */ }
 
+  // Load centerlines (surveyor-curated street metadata + optional _bands)
+  let centerlineByName = new Map()
+  try {
+    const cPath = join(RAW_DIR, 'centerlines.json')
+    if (existsSync(cPath)) {
+      const cd = JSON.parse(readFileSync(cPath, 'utf-8'))
+      for (const st of (cd.streets || [])) {
+        if (!st.name) continue
+        // First centerline per name wins; _bands can be on any segment of a
+        // named street. TODO: per-segment bands when schema supports it.
+        if (!centerlineByName.has(st.name)) {
+          centerlineByName.set(st.name, st)
+        } else if (st._bands && !centerlineByName.get(st.name)._bands) {
+          centerlineByName.set(st.name, st)
+        }
+      }
+    }
+  } catch { /* no centerlines */ }
+
+  // Map OSM highway tag → streetProfiles.js type vocabulary
+  function mapHighwayToStreetType(highway) {
+    switch (highway) {
+      case 'primary': case 'primary_link': return 'primary'
+      case 'secondary': case 'secondary_link':
+      case 'tertiary': case 'tertiary_link': return 'secondary'
+      case 'service':  return 'service'
+      case 'footway':  return 'footway'
+      case 'cycleway': return 'cycleway'
+      case 'pedestrian': return 'pedestrian'
+      case 'steps':    return 'steps'
+      default:         return 'residential'
+    }
+  }
+
+  /**
+   * Resolve the band stack for a street. Returns { left, right, source }
+   * where each side is an ordered array of { material, width }, inside → outside.
+   * Authority: centerlines._bands → survey-driven default → hardcoded default.
+   */
+  function computeStreetBands(name, tags) {
+    const type = mapHighwayToStreetType(tags?.highway)
+    const survey = correctedSurvey[name]
+
+    // Override from centerlines._bands (current schema: flat array = symmetric).
+    const centerline = centerlineByName.get(name)
+    if (centerline?._bands && Array.isArray(centerline._bands) && centerline._bands.length) {
+      const flat = centerline._bands.map(b => ({ ...b }))
+      return {
+        left: flat.map(b => ({ ...b })),
+        right: flat.map(b => ({ ...b })),
+        source: 'measured',
+      }
+    }
+
+    const profile = getDefaultBandProfile(type, survey)
+    return {
+      left: profile.left,
+      right: profile.right,
+      source: survey?.rowWidth ? 'survey-default' : 'default',
+    }
+  }
+
   /**
    * Resolve the cross-section profile for a street.
    * Authority: measurements.json → survey.json → standards.js defaults.
@@ -2163,8 +2226,9 @@ export function deriveLayers(highways) {
   for (const [name, data] of ribbonsByName) {
     const chains = chainAllSegments(data.segments)
     const profile = computeStreetProfile(name, data.tags)
+    const bands = computeStreetBands(name, data.tags)
     for (const points of chains) {
-      ribbonStreets.push({ name, points, profile, intersections: [] })
+      ribbonStreets.push({ name, points, profile, bands, intersections: [] })
     }
   }
 
@@ -2221,6 +2285,24 @@ export function deriveLayers(highways) {
     intersections.push(ixData)
   }
 
+  // ── Emit capEnds from operator-marked centerlines ──────────────
+  // `capStart` and `capEnd` are set per-endpoint by the operator in Survey mode.
+  // No auto-detection — operator is authority for what's a real cul-de-sac or
+  // blunt termination. Everything else is null ("connected"), which the renderer
+  // shows as a flat perpendicular termination at the IX (no cap geometry).
+  //
+  // Back-compat: if legacy `deadEnd + capStyle` flags are set, treat deadEnd
+  // as capEnd (conventional — "dead-end" meant the polyline's end endpoint).
+  for (const st of ribbonStreets) {
+    const centerline = centerlineByName.get(st.name)
+    let capStart = centerline?.capStart ?? null
+    let capEnd = centerline?.capEnd ?? null
+    if (capStart === null && capEnd === null && centerline?.deadEnd) {
+      capEnd = centerline.capStyle || 'round'
+    }
+    st.capEnds = { start: capStart, end: capEnd }
+  }
+
   // ── Face fills (land-use classification per polygonized face) ──
   // Each polygonized face gets a single land-use color. Block faces use
   // parcel majority vote; park/parking faces use their classified type.
@@ -2263,6 +2345,8 @@ export function deriveLayers(highways) {
       name: st.name,
       points: st.points,
       profile: st.profile,
+      bands: st.bands,
+      capEnds: st.capEnds,
       intersections: st.intersections.map(ix => ({
         ix: ix.ix,
         withStreets: ix.with.streets.filter(s => s.name !== st.name).map(s => s.name),

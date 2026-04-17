@@ -44,7 +44,7 @@ export default function SurveyorPanel() {
   if (selectedStreet === null) {
     return (
       <div className="carto-section">
-        <h2>Surveyor</h2>
+        <h2>Survey</h2>
         <div className="carto-hint">
           Click a street to select it. Drag nodes to edit.
         </div>
@@ -60,7 +60,7 @@ export default function SurveyorPanel() {
 
   return (
     <div className="carto-section">
-      <h2>Surveyor</h2>
+      <h2>Survey</h2>
 
       {/* Name */}
       <div className="carto-row">
@@ -86,19 +86,30 @@ export default function SurveyorPanel() {
           onChange={e => updateStreetField('oneway', e.target.checked)} />
         <label className="carto-label">One-way</label>
       </div>
+
+      {/* Per-endpoint cap: None = connected to other geometry, Round = cul-de-sac,
+          Blunt = flat termination. Operator sets these per-endpoint — no auto-detection. */}
       <div className="carto-row">
-        <input type="checkbox" className="carto-checkbox" checked={!!st.deadEnd}
-          onChange={e => updateStreetField('deadEnd', e.target.checked)} />
-        <label className="carto-label">Dead-end</label>
-        {!!st.deadEnd && (
-          <select className="carto-select" style={{ flex: 'none', width: 65 }}
-            value={st.capStyle || 'round'}
-            onChange={e => updateStreetField('capStyle', e.target.value)}>
-            <option value="round">Round</option>
-            <option value="blunt">Blunt</option>
-          </select>
-        )}
+        <label className="carto-label-fixed">Cap Start</label>
+        <select className="carto-select"
+          value={st.capStart || 'none'}
+          onChange={e => updateStreetField('capStart', e.target.value === 'none' ? null : e.target.value)}>
+          <option value="none">None (connected)</option>
+          <option value="round">Round (cul-de-sac)</option>
+          <option value="blunt">Blunt (flat end)</option>
+        </select>
       </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed">Cap End</label>
+        <select className="carto-select"
+          value={st.capEnd || 'none'}
+          onChange={e => updateStreetField('capEnd', e.target.value === 'none' ? null : e.target.value)}>
+          <option value="none">None (connected)</option>
+          <option value="round">Round (cul-de-sac)</option>
+          <option value="blunt">Blunt (flat end)</option>
+        </select>
+      </div>
+
       <div className="carto-row">
         <input type="checkbox" className="carto-checkbox" checked={!!st.loop}
           onChange={e => updateStreetField('loop', e.target.checked)} />
@@ -107,7 +118,7 @@ export default function SurveyorPanel() {
 
       {/* Smooth slider */}
       <div className="carto-row">
-        <label className="carto-label-fixed" style={{ width: 50 }}>Smooth</label>
+        <label className="carto-label-fixed">Smooth</label>
         <input type="range" className="carto-range" min="0" max="100"
           value={smoothVal}
           onInput={e => {
@@ -117,13 +128,11 @@ export default function SurveyorPanel() {
             useCartographStore.setState({ centerlineData: { ...centerlineData } })
           }}
           onChange={() => { useCartographStore.getState()._saveCenterlines() }} />
-        <span style={{ fontSize: 9, color: 'var(--carto-text-ghost)', width: 28, textAlign: 'right' }}>
-          {smoothVal}
-        </span>
+        <span className="carto-slider-value">{smoothVal}</span>
       </div>
 
       {/* Action buttons */}
-      <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+      <div className="carto-actions">
         <button className="carto-btn-sm" onClick={undoStreet}>
           Undo (⌘Z)
         </button>

@@ -29,114 +29,10 @@ function distToPolyline(pts, px, pz) {
   return best
 }
 
-// Build a ribbon mesh from a polyline and half-width, with optional endcaps
-// capStart/capEnd: 'round' | 'blunt' | null
-function buildRibbonGeo(pts, halfWidth, capStart = null, capEnd = null) {
-  if (pts.length < 2 || halfWidth < 0.1) return null
-  const n = pts.length
-  const CAP_SEGS = 8 // segments in a semicircle cap
-
-  // Count vertices: ribbon body + optional caps
-  const capStartVerts = capStart === 'round' ? CAP_SEGS + 1 : capStart === 'blunt' ? 2 : 0
-  const capEndVerts = capEnd === 'round' ? CAP_SEGS + 1 : capEnd === 'blunt' ? 2 : 0
-  const totalVerts = n * 2 + capStartVerts + capEndVerts
-
-  const positions = new Float32Array(totalVerts * 3)
-  const normals = new Float32Array(totalVerts * 3)
-  const indices = []
-
-  // Helper: write a vertex
-  let vIdx = 0
-  function addVert(x, z) {
-    const i = vIdx++
-    positions[i * 3] = x
-    positions[i * 3 + 1] = 0
-    positions[i * 3 + 2] = z
-    normals[i * 3 + 1] = 1
-    return i
-  }
-
-  // Compute perpendiculars
-  const perps = []
-  for (let i = 0; i < n; i++) {
-    const prev = pts[Math.max(0, i - 1)]
-    const next = pts[Math.min(n - 1, i + 1)]
-    const dx = next[0] - prev[0], dz = next[1] - prev[1]
-    const len = Math.sqrt(dx * dx + dz * dz) || 1
-    perps.push({ nx: -dz / len, nz: dx / len })
-  }
-
-  // Body vertices: left/right pairs
-  const bodyStart = vIdx
-  for (let i = 0; i < n; i++) {
-    const { nx, nz } = perps[i]
-    addVert(pts[i][0] + nx * halfWidth, pts[i][1] + nz * halfWidth)  // left
-    addVert(pts[i][0] - nx * halfWidth, pts[i][1] - nz * halfWidth)  // right
-  }
-
-  // Body triangles
-  for (let i = 0; i < n - 1; i++) {
-    const a = bodyStart + i * 2, b = bodyStart + i * 2 + 1
-    const c = bodyStart + (i + 1) * 2, d = bodyStart + (i + 1) * 2 + 1
-    indices.push(a, c, b, b, c, d)
-  }
-
-  // Endcap helper
-  function addCap(ptIdx, direction) {
-    // direction: -1 = start cap (faces backward), +1 = end cap (faces forward)
-    const p = pts[ptIdx]
-    const { nx, nz } = perps[ptIdx]
-    // Tangent direction (along the street)
-    const adj = direction === -1 ? pts[Math.min(n - 1, ptIdx + 1)] : pts[Math.max(0, ptIdx - 1)]
-    let tx = p[0] - adj[0], tz = p[1] - adj[1]
-    const tlen = Math.sqrt(tx * tx + tz * tz) || 1
-    tx /= tlen; tz /= tlen
-
-    const capType = direction === -1 ? capStart : capEnd
-    const leftV = bodyStart + ptIdx * 2
-    const rightV = bodyStart + ptIdx * 2 + 1
-
-    if (capType === 'blunt') {
-      // Blunt: two extra verts pushed out along tangent, forming a rectangle cap
-      const lx = p[0] + nx * halfWidth + tx * halfWidth
-      const lz = p[1] + nz * halfWidth + tz * halfWidth
-      const rx = p[0] - nx * halfWidth + tx * halfWidth
-      const rz = p[1] - nz * halfWidth + tz * halfWidth
-      const cl = addVert(lx, lz)
-      const cr = addVert(rx, rz)
-      indices.push(leftV, cl, rightV, rightV, cl, cr)
-    } else if (capType === 'round') {
-      // Round: semicircle fan from left edge to right edge
-      const center = addVert(p[0] + tx * 0, p[1] + tz * 0) // center at endpoint
-      // Arc from left edge around to right edge
-      const startAngle = Math.atan2(nz, nx)
-      for (let s = 0; s < CAP_SEGS; s++) {
-        const a0 = startAngle + (s / CAP_SEGS) * Math.PI * direction
-        const a1 = startAngle + ((s + 1) / CAP_SEGS) * Math.PI * direction
-        const v0 = s === 0 ? leftV : addVert(
-          p[0] + Math.cos(a0) * halfWidth,
-          p[1] + Math.sin(a0) * halfWidth
-        )
-        const v1 = s === CAP_SEGS - 1
-          ? rightV
-          : addVert(
-              p[0] + Math.cos(a1) * halfWidth,
-              p[1] + Math.sin(a1) * halfWidth
-            )
-        indices.push(center, v0, v1)
-      }
-    }
-  }
-
-  if (capStart) addCap(0, -1)
-  if (capEnd) addCap(n - 1, 1)
-
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.BufferAttribute(positions.slice(0, vIdx * 3), 3))
-  geo.setAttribute('normal', new THREE.BufferAttribute(normals.slice(0, vIdx * 3), 3))
-  geo.setIndex(indices)
-  return geo
-}
+// 2026-04-16: Private `buildRibbonGeo()` removed. StreetRibbons is now the single
+// renderer of street geometry (including dead-end caps via centerlines.capStyle,
+// propagated through the pipeline). This overlay emits only edit affordances:
+// centerlines, nodes, selection halos. Map-underneath comes from StreetRibbons.
 
 export default function SurveyorOverlay() {
   const mode = useCartographStore(s => s.mode)
@@ -152,28 +48,6 @@ export default function SurveyorOverlay() {
   const { camera, gl } = useThree()
   const dragRef = useRef(null)
   const active = mode === 'surveyor'
-
-  // ── All street width ribbons (shown when surveyor is active) ──
-  const allRibbons = useMemo(() => {
-    if (!active || !centerlineData.streets?.length) return null
-    const geos = []
-    const mats = []
-    for (let i = 0; i < centerlineData.streets.length; i++) {
-      const st = centerlineData.streets[i]
-      if (st.disabled || st.points.length < 2) continue
-
-      const hw = getHalfWidth(st.type || 'residential')
-
-      // Dead-end streets get endcaps — round by default, togglable to blunt
-      const capStyle = st.deadEnd ? (st.capStyle || 'round') : null
-      const geo = buildRibbonGeo(st.points, hw, null, capStyle)
-      if (!geo) continue
-
-      const isSelected = i === selectedStreet
-      geos.push({ geo, isSelected, idx: i })
-    }
-    return geos
-  }, [active, centerlineData, selectedStreet])
 
   // ── Selected street: editable nodes ──
   const { lineGeo, nodePositions, hiddenNodes } = useMemo(() => {
@@ -307,17 +181,20 @@ export default function SurveyorOverlay() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [active, deselectStreet, moveNode])
 
-  // ── Attach pointer events to canvas ──
+  // ── Attach pointer events to canvas (capture phase) ──
+  // Capture runs before MapControls' bubble-phase pan handler, so a click on
+  // a street selects instead of being eaten by pan.
   useEffect(() => {
     if (!active) return
     const dom = gl.domElement
-    dom.addEventListener('pointerdown', onPointerDown)
-    dom.addEventListener('pointermove', onPointerMove)
-    dom.addEventListener('pointerup', onPointerUp)
+    const opts = { capture: true }
+    dom.addEventListener('pointerdown', onPointerDown, opts)
+    dom.addEventListener('pointermove', onPointerMove, opts)
+    dom.addEventListener('pointerup', onPointerUp, opts)
     return () => {
-      dom.removeEventListener('pointerdown', onPointerDown)
-      dom.removeEventListener('pointermove', onPointerMove)
-      dom.removeEventListener('pointerup', onPointerUp)
+      dom.removeEventListener('pointerdown', onPointerDown, opts)
+      dom.removeEventListener('pointermove', onPointerMove, opts)
+      dom.removeEventListener('pointerup', onPointerUp, opts)
     }
   }, [active, gl, onPointerDown, onPointerMove, onPointerUp])
 
@@ -331,18 +208,9 @@ export default function SurveyorOverlay() {
     return { shadow, main }
   }, [lineGeo])
 
-  if (!active) return null
-
   // ── Materials ──
-  // Width ribbons: semi-transparent overlay showing computed pavement extent
-  const ribbonMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: '#0088aa', transparent: true, opacity: 0.2,
-    side: THREE.DoubleSide, depthTest: false,
-  }), [])
-  const ribbonSelectedMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: '#ffcc00', transparent: true, opacity: 0.3,
-    side: THREE.DoubleSide, depthTest: false,
-  }), [])
+  // All hooks must run on every render (React hook rules). Early return moved
+  // below all hook calls.
   // Unselected centerlines: visible white with enough contrast on aerial
   const centerlineMat = useMemo(() => new THREE.LineBasicMaterial({
     color: '#ffffff', transparent: true, opacity: 0.7, depthTest: false,
@@ -356,14 +224,11 @@ export default function SurveyorOverlay() {
     color: '#ff4444', transparent: true, opacity: 0.3, depthTest: false,
   }), [])
 
+  // Early return moved here — after all hooks (React hook rules).
+  if (!active) return null
+
   return (
     <group position={[0, 0.2, 0]}>
-      {/* All street width ribbons */}
-      {allRibbons && allRibbons.map(({ geo, isSelected, idx }) => (
-        <mesh key={`ribbon-${idx}`} geometry={geo}
-          material={isSelected ? ribbonSelectedMat : ribbonMat} />
-      ))}
-
       {/* All centerlines: active = white with shadow, disabled = ghosted red */}
       {centerlineData.streets?.map((st, i) => {
         if (st.points.length < 2) return null
@@ -390,6 +255,57 @@ export default function SurveyorOverlay() {
           <primitive object={lineObjects.main} />
         </>
       )}
+
+      {/* Cap previews at endpoints of selected street — show what the renderer
+          will produce for the current capStart / capEnd setting. */}
+      {selectedStreet !== null && (() => {
+        const st = centerlineData.streets[selectedStreet]
+        if (!st || st.points.length < 2) return null
+        const pts = st.points
+        const last = pts.length - 1
+        const hw = getHalfWidth(st.type || 'residential')
+        const previews = []
+        const mkPreview = (pt, neighborPt, cap, key) => {
+          if (!cap) return
+          // Tangent = direction AWAY from street body (from neighbor toward endpoint)
+          const tx = pt[0] - neighborPt[0], tz = pt[1] - neighborPt[1]
+          const tlen = Math.hypot(tx, tz) || 1
+          const tnx = tx / tlen, tnz = tz / tlen
+          const px = -tnz, pz = tnx  // perpendicular
+          if (cap === 'round') {
+            // Semicircle arc preview (radius = street half-width)
+            const segments = 24
+            const vecs = []
+            for (let j = 0; j <= segments; j++) {
+              const a = (j / segments) * Math.PI
+              const dx = Math.cos(a) * px + Math.sin(a) * tnx
+              const dz = Math.cos(a) * pz + Math.sin(a) * tnz
+              vecs.push(new THREE.Vector3(pt[0] + dx * hw, 0.35, pt[1] + dz * hw))
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(vecs)
+            previews.push(
+              <primitive key={key} object={new THREE.Line(geo, new THREE.LineBasicMaterial({
+                color: '#00ddff', transparent: true, opacity: 0.85, depthTest: false,
+              }))} />
+            )
+          } else if (cap === 'blunt') {
+            // Perpendicular bar across the street width, nudged slightly outward
+            const bar = [
+              new THREE.Vector3(pt[0] + px * hw, 0.35, pt[1] + pz * hw),
+              new THREE.Vector3(pt[0] - px * hw, 0.35, pt[1] - pz * hw),
+            ]
+            const geo = new THREE.BufferGeometry().setFromPoints(bar)
+            previews.push(
+              <primitive key={key} object={new THREE.Line(geo, new THREE.LineBasicMaterial({
+                color: '#00ddff', transparent: true, opacity: 0.85, depthTest: false, linewidth: 2,
+              }))} />
+            )
+          }
+        }
+        mkPreview(pts[0], pts[1], st.capStart, 'cap-start')
+        mkPreview(pts[last], pts[last - 1], st.capEnd, 'cap-end')
+        return previews
+      })()}
 
       {/* Nodes: large, high-contrast, easy to grab */}
       {selectedStreet !== null && nodePositions.map((pt, i) => {

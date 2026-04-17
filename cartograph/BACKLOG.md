@@ -1,10 +1,193 @@
 # Cartograph Backlog
 
-Last updated: 2026-04-15
+Last updated: 2026-04-16
 
 Architecture: The cartograph IS the 3D scene viewed flat (orthographic top-down).
 One renderer (StreetRibbons.jsx), two viewports (cartograph = flat, main app = 3D).
 No separate SVG renderer. What you see in the cartograph IS what renders in the app.
+
+## 2026-04-16 session — locked decisions
+
+Captured before any interruption. These supersede earlier conflicting items:
+
+1. **Defaults are Material-3 compliant until edited.** Every styleable property ships a
+   sober, neutral default; the Designer is where users override. Measure-tool caustics
+   stay loud but live in a separate palette (`CAUSTIC_BAND_COLORS`), never leaking into
+   the rendered map. See `feedback_material3_defaults.md` (memory).
+
+2. **Sidewalks are a default, not an operator-placed extra.** Every sidewalk-eligible
+   street (residential / secondary / primary) gets a default sidewalk band filling the
+   full curb-to-property-line gap. Tree lawns stay operator-placed; operator adds
+   them by biting into the default sidewalk width. This supersedes
+   `feedback_no_default_sidewalks.md`. **Not eligible:** service, footway, cycleway,
+   pedestrian, steps — they're walking surfaces themselves. Alleys are pavement-only.
+
+3. **Property line is survey-derivable.** `rowWidth/2 − pavementHalfWidth` from
+   `survey.json` gives the authoritative per-street curb-to-property-line distance.
+   Default band stacks are sized from this, not from a flat "5 ft" everywhere.
+
+4. **Cross-section is asymmetric.** Schema: `bands: { left: [...], right: [...] }`
+   on each street in ribbons.json. Up to 4 bands per half-width. Symmetric case =
+   `left === right`. L/R is defined by traversing the centerline from `points[0]`
+   onward; `side = +1` (matching existing `offsetPolyline`) is right.
+
+5. **Gutter collapses into curb.** Visually indistinguishable at map scale. If the
+   Designer wants to style it differently, it falls out as a stroke on the curb's
+   inner edge via the layer-effects UI.
+
+6. **Each mode has its own visual vernacular.** Subject matter (centerlines+nodes in
+   Surveyor, bands in Measure, strokes in Marker) is visually dominant; aerial is
+   context, not foreground. See `feedback_wysiwyg_authoring.md` (memory).
+
+7. **One renderer.** SurveyorOverlay's private translucent `buildRibbonGeo()` is
+   the two-renderer antipattern. Kill it; surveyor/measure overlays emit ONLY edit
+   affordances (nodes, handles, labels). StreetRibbons renders the map beneath.
+
+8. **Fills toggle.** Default: ribbons render at full opacity over aerial (the map is
+   the subject). User can toggle fills off for aerial-only orientation.
+
+---
+
+## Phase X ✓ COMPLETE — Fills toggle + single-renderer detour
+
+| # | Task | Status |
+|---|------|--------|
+| X.1 | Add `fillsVisible` store flag (default true) + toolbar toggle | done |
+| X.2 | Show StreetRibbons + MapLayers in tool modes too (gated by fillsVisible) | done |
+| X.3 | Delete SurveyorOverlay's private `buildRibbonGeo` + translucent ribbon meshes | done |
+| X.4 | MeasureOverlay similarly — keep caustic + selected-street drag UI only | deferred (works as-is) |
+
+---
+
+## Phase 8 ✓ COMPLETE — Full 8-material band pipeline
+
+Pipeline + renderer now consume `bands: {left, right}` per street. Corner bezier
+preserved. Regression: a stale WebGL context was producing a "parallelogram"
+render artifact after several crashes; a hard refresh / site-data clear resolved.
+
+| # | Task | Status |
+|---|------|--------|
+| 8.1 | `streetProfiles.js`: Material-3 `BAND_COLORS`; caustic palette renamed `CAUSTIC_BAND_COLORS` | done |
+| 8.2 | `getDefaultBandsFromSurvey(type, survey)` builds full stack incl. default sidewalk | done |
+| 8.3 | `derive.js`: emit `bands: {left, right}` per ribbon street; keep `profile` for back-compat | done |
+| 8.4 | Regenerate `ribbons.json` via pipeline | done |
+| 8.5 | `StreetRibbons.jsx`: `sideBandsToRings()` → one ring per band; `refEdgesForSide()` (curb-inner, curb-outer, property-line) | done |
+| 8.6 | Corner plug code: swap inputs to reference-edge helpers; bezier formula preserved verbatim | done |
+| 8.7 | SurveyorOverlay hook-count bug from strip (moved early-return below all hooks) | done |
+| 8.8 | Migrate existing `_bands` on Mississippi & Park Avenue from flat array to `{left, right}` symmetric in centerlines.json | pending — pipeline auto-symmetrizes for now |
+
+---
+
+## Phase 9 — Panel reorg + stroke feature + decoration split
+
+| # | Task | Status |
+|---|------|--------|
+| 9.1 | Reorganize Panel into three sections: **Street Materials / Block Fills / Map Decoration** | pending |
+| 9.2 | Wire `BAND_COLORS` overrides through store → StreetRibbons reads overrides | pending |
+| 9.3 | Split MapLayers decoration: `alley`, `footway`, `path`, `cycleway`, `steps` each independently toggled + colored (none get sidewalks) | pending |
+| 9.4 | Layer-effects collapsible row per layer (Photoshop-style): fill color + stroke color + stroke weight + revert; collapsed by default. **No fill-visibility toggle** — designers hide a layer by matching its neighbor's color (see `feedback_styling_vs_visibility.md`). | pending |
+| ~~9.5a~~ | ~~Move Fills button into Measure mode~~ — **CANCELLED**: operator wants Fills as a global orientation toggle regardless of mode (off = aerial + strokes for reality-alignment). Stays in toolbar permanently. | cancelled |
+| 9.5b | Replace the 3 flat toolbar buttons (Survey / Measure / Stage) with a **3-way segmented pill** — makes "one at a time" visually explicit. | pending |
+| 9.5 | Apply stroke to appropriate layers (curb, sidewalk edge, block outlines, building outlines) | pending |
+| 9.6 | Measure: L/R side picker with direction-of-travel arrow (**"Side A/Side B"** not Left/Right — user rejected L/R naming as "wrong 50% of the time") | pending |
+| 9.7 | Per-band material dropdown in Measure panel (so click-to-insert's auto-assigned material can be relabeled) | pending |
+| 9.8 | Parallel-vs-angled parking sub-selector in Measure panel band row | pending |
+
+---
+
+## Phase 11 — Fold park + water into the pipeline
+
+Retire `LafayettePark.jsx` as a separate geometry module. Park becomes just another
+polygonized face with grass material + existing footway/path rendering for the paths.
+Water becomes a new face type for the lagoon. Only true 3D landmarks (Arch, etc.)
+stay as bespoke components.
+
+| # | Task | Status |
+|---|------|--------|
+| 11.1 | Add `water` to land-use / face type vocabulary; fetch OSM `natural=water` polygons into the pipeline | pending |
+| 11.2 | Render water faces in StreetRibbons face-fill system with a water material color (Material-3 default: muted blue-grey) | pending |
+| 11.3 | Verify park paths from OSM `footway`/`path` already render faithfully (user-confirmed in Survey mode) — make sure decoration layers aren't hiding them | pending |
+| 11.4 | Retire `LafayettePark.jsx` path/grass/fence rendering from the cartograph path; keep GatewayArch and other true landmark components | pending |
+| 11.5 | Trees remain in `park_trees.json` (already decoration) — verify rendering parity | pending |
+
+---
+
+## Phase 12 — Material authoring: Design swatch → Stage editor
+
+Every material (asphalt, grass, water, brick, parking, curb, sidewalk, treelawn…)
+appears in the Design panel as a swatch with name + inline color picker. For deep
+edits (shader, noise, tint map, texture tiling, procedural variation) the swatch
+has an **"Edit in Stage →"** affordance that opens Stage pre-scoped to that material.
+
+| # | Task | Status |
+|---|------|--------|
+| 12.1 | Material swatch component: name + color picker + "Edit in Stage" link | pending |
+| 12.2 | Stage entry-point accepts a `?material=<id>` query param that jumps to that material in its gallery | pending |
+| 12.3 | Migrate Stage's surface gallery (already built, per BACKLOG 6B.1) to be driven by the same material registry as cartograph | pending |
+| 12.4 | Grass shader (already exists in LafayettePark) becomes the `grass` material's Stage view | pending |
+
+---
+
+## Phase 13 — Smart band populator + manual measurement snap + duplication
+
+Note 2026-04-16: populator scope **narrowed**. Generic default is now minimal
+(`asphalt + curb + sidewalk-for-eligible`, no default parking/treelawn) — the
+operator captures irregular real-world cross-sections via the caustic ruler
+(click-to-insert). 13.1–13.3 remain for optional smart augmentation but are
+less urgent now that defaults are deliberately minimal.
+
+| # | Task | Status |
+|---|------|--------|
+| 13.1 | `getDefaultBandsForStreet(tags, survey, parcels)` — consult OSM `sidewalk` tag first; fall back to street-class default | pending (optional) |
+| 13.2 | Emit asymmetric `bands.left` / `bands.right` when OSM says `sidewalk=left`/`right` | pending (optional) |
+| 13.3 | Parcel adjacency check — streets with no building/parcel frontage on a side (parks, rail, ramps) get no default sidewalk on that side | pending (optional) |
+| 13.4 | Boundary-aware dead-end detection — endpoints near `neighborhood_boundary.json` are map exits, not cul-de-sacs. Combines with Phase 14 (divided oneways). | pending |
+| 13.5 | **Snap-always on manual measurement drag-release.** | done |
+| 13.6 | **Template duplication.** Measure panel "Apply this profile to…" action: operator selects a measured street, tool offers candidates (same type, similar ROW, same class) as multi-select, one click applies the band stack to all selected. | pending |
+
+---
+
+## Phase 14 — Divided one-ways + medians
+
+Lafayette Square has divided one-way classes: Truman Parkway, the loop streets
+(Benton Place, Mackay Place), possibly Russell and parts of Jefferson. In OSM
+these are two separate `oneway=yes` ways sharing a `name`, running parallel with
+a median gap. They currently break cross-section modeling and plug counts.
+Update 2026-04-16: auto-detection of dead-ends was retired; caps are now
+per-endpoint and operator-marked in Survey mode, so divided-road halves can be
+correctly left uncapped by the operator. Phase 14 is still wanted for median
+rendering and plug handling, but is no longer blocking cap re-enablement.
+
+| # | Task | Status |
+|---|------|--------|
+| 14.1 | Detect divided pairs — same name + parallel + opposite `oneway` + within ~30m of each other over most of their length | pending |
+| 14.2 | Emit asymmetric bands per half: outer side (toward property) = full stack; inner side (toward median) = narrow curb only, no parking, no sidewalk | pending |
+| 14.3 | Median polygon emitted as its own face (`use: 'median'` or `'park'` for grass medians; `'paved'` for concrete) | pending |
+| 14.4 | Suppress caps on inner-facing endpoints of each half — they're "rejoin-with-the-other-half" boundaries, not cul-de-sacs | pending |
+| 14.5 | Plug logic at divided intersections: two halves meeting a cross-street = one logical intersection with 4 quadrants (not 8) | pending |
+| 14.6 | ~~Re-enable cap rendering~~ — **DONE** (2026-04-16): caps are now operator-marked per endpoint; `StreetRibbons` `CAP_ENABLED = true`. | done |
+
+---
+
+## Phase 10 — Corner rounding, endcaps, polish
+
+Corner plug *geometry* landed in 8.6 (proven bezier preserved, inputs rewired to
+band-stack reference edges). Endcap assignment + rendering landed 2026-04-16.
+Remaining work is visual validation + polish.
+
+| # | Task | Status |
+|---|------|--------|
+| 10.1 | Propagate per-endpoint `capStart`/`capEnd` from `centerlines.json` through `derive.js` into `ribbons.json` | done |
+| 10.2 | `StreetRibbons.jsx` renders round endcap geometry via `quarterCapRaw` per band per side. Blunt caps need no extra geometry. | done |
+| 10.3 | Validate corner plugs visually across all 180 intersections — find any that look wrong with the new band-stack reference edges | pending |
+| 10.4 | Verify the sidewalk×treelawn corner case: treelawn dead-ends, sidewalk fills through to form the corner curb ramp | pending |
+| 10.5 | Polish the aesthetic curb stripe (`corner_curb` band) — color + width tuning via the Design panel | pending |
+| 10.6 | Verify corners for streets with measured (asymmetric-capable) bands — Mississippi Avenue, Park Avenue — refs come from the correct side's band stack | pending |
+| 10.7 | Corner plugs at dead-end intersections (T-intersections where one arm terminates) — special case handling | pending |
+
+**Don't touch:** the bezier formula `ctrl = 2×mid(P0,P1) − oo`. It's proven across
+all 4 quadrants with the oo↔ii distance-check swap. Only adjust *inputs* to it,
+never the math itself. See `project_corner_rounding_progress.md`.
 
 ---
 
@@ -39,17 +222,11 @@ No separate SVG renderer. What you see in the cartograph IS what renders in the 
 
 ---
 
-## Phase 2 — Default rendering: pavement + curb only
+## Phase 2 — Default rendering: pavement + curb only (SUPERSEDED 2026-04-16)
 
-The system does NOT guess at sidewalks or treelawns. An unmeasured street renders
-as pavement fill + curb line only. Sidewalks and treelawns appear ONLY where the
-operator has explicitly measured them via the band stack in Measure mode.
-
-| # | Task | Status |
-|---|------|--------|
-| 2.1 | Strip default sidewalk/treelawn from computeStreetProfile() | not started |
-| 2.2 | Pipeline only emits sidewalk/treelawn rings when band stack data exists | not started |
-| 2.3 | Verify land-use fill covers to curb edge with no gaps | not started |
+~~The system does NOT guess at sidewalks or treelawns.~~ Superseded by the Material-3-
+defaults principle: sidewalks ARE a default (reality, every block has one). Tree lawns
+remain operator-placed. See the 2026-04-16 session notes above, and Phase 8.
 
 ---
 
