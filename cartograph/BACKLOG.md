@@ -1,10 +1,58 @@
 # Cartograph Backlog
 
-Last updated: 2026-04-16
+Last updated: 2026-04-17
 
 Architecture: The cartograph IS the 3D scene viewed flat (orthographic top-down).
-One renderer (StreetRibbons.jsx), two viewports (cartograph = flat, main app = 3D).
-No separate SVG renderer. What you see in the cartograph IS what renders in the app.
+**Stage is embedded in cartograph** (not a separate app) — the same Canvas hosts
+Designer (ortho) and Browse/Hero/Street shots (perspective) via a two-camera rig.
+
+## 2026-04-17 session — locked decisions
+
+Captured at end of day. Where these conflict with 2026-04-16, these win.
+
+1. **Cartograph hosts Stage.** One `<Canvas>`, two cameras (ortho for Designer,
+   perspective for shots). No more dual-Canvas architecture. `StageCanvas.jsx` is
+   deleted; its children live inside `CartographApp.jsx` via a
+   `<group visible={!inDesigner}>` wrapper for environment-only meshes. Fixes the
+   long-standing WebGL context-loss skew bug that appeared when flipping between
+   the two modes.
+
+2. **Tool and Shot are orthogonal axes.** `tool: null | 'surveyor' | 'measure'`
+   (null = neutral Design state, no `'design'` enum value). `shot: 'designer' |
+   'browse' | 'hero' | 'street'`. Toolbar morphs on shot. Shot selector always
+   visible. Supersedes the unified `mode` field. `Publish` button is a stub;
+   implement when we're ready to publish.
+
+3. **Stage is the scene authority, in progress.** `archState` in `StageApp.jsx`
+   is the first slice — arch distance / scale / rotation / Y offset, plus
+   horizon disc radius + fade live in one place and drive both Stage rendering
+   and the Designer plan-view silhouette (`DesignerArch`). Eventually persists
+   to `public/stage-config.json` and the main app reads from it. For now it's
+   in-memory. See `project_stage_is_scene_authority.md` (memory).
+
+4. **The palette is data, not constants.** `src/cartograph/m3Colors.js` is the
+   single source of truth for default layer + land-use colors and for the
+   `BAND_TO_LAYER` mapping between ribbon band materials and Designer-panel
+   picker ids. `MapLayers` and `StreetRibbons` resolve every material color via
+   `store.layerColors[id] || DEFAULT_LAYER_COLORS[id]`. Panel color pickers
+   now drive rendering live. Palette is currently "vibrant graphic map" —
+   muted M3 was too dark through ACES in shots.
+
+5. **Tree / Lamp / Labels pickers are hidden** until they have real authoring
+   sections. "Lamp color" isn't the right abstraction (light color + intensity
+   is); "Tree color" isn't either (foliage material is); Labels needs
+   typography + scale. A single color well was misleading.
+
+6. **Park is a ribbon-rendered surface.** `StreetRibbons` face fills render the
+   park face like any other block. The "Park" authored layer can later receive
+   a swappable material (grass today; snow / autumn / drought / illuminated
+   night are all Park-material variants, not separate layers). Paths + water
+   are still owned by `LafayettePark` (shots) / `DesignerPark` (Designer), but
+   their placement references the ribbon park face. See
+   `project_park_as_ribbon_surface.md` (memory).
+
+7. **Rotation is unlocked in shots** so the operator can orbit under the map
+   (diagnostic). `minPolarAngle: 0, maxPolarAngle: π`. Leave unlocked.
 
 ## 2026-04-16 session — locked decisions
 
@@ -95,20 +143,46 @@ render artifact after several crashes; a hard refresh / site-data clear resolved
 
 ---
 
-## Phase 11 — Fold park + water into the pipeline
+## Phase 11 — Fold park + water into the pipeline (ACTIVE — top of queue)
 
-Retire `LafayettePark.jsx` as a separate geometry module. Park becomes just another
-polygonized face with grass material + existing footway/path rendering for the paths.
-Water becomes a new face type for the lagoon. Only true 3D landmarks (Arch, etc.)
-stay as bespoke components.
+Park is authored as a **ribbon-rendered surface** (not a bespoke LafayettePark
+component). "Park" is the layer; the material attached to it is grass today,
+seasonally-swappable later. `LafayettePark`'s grass plane retires; its path
+and water rendering moves to a shared layer consumed by both Designer and
+shots. Only true 3D landmarks (GatewayArch etc.) stay as bespoke components.
+
+**Today's state (end of 2026-04-17):**
+
+- ✅ StreetRibbons face fills render park like any other block (filter removed).
+- ✅ `DesignerPark.jsx` shell created, renders paths + water only.
+- ❌ Paths + water still mis-placed (rotation unresolved — coords may be
+  world-aligned and no rotation is needed; empirically test with 0 first).
+- ❌ LafayettePark's grass plane still renders in shots, z-fighting with the
+  ribbon park face. By design during transition.
+- ❌ Grass shader not yet attached to the ribbon park face.
+
+**Tomorrow's work (this phase, in order):**
 
 | # | Task | Status |
 |---|------|--------|
-| 11.1 | Add `water` to land-use / face type vocabulary; fetch OSM `natural=water` polygons into the pipeline | pending |
-| 11.2 | Render water faces in StreetRibbons face-fill system with a water material color (Material-3 default: muted blue-grey) | pending |
-| 11.3 | Verify park paths from OSM `footway`/`path` already render faithfully (user-confirmed in Survey mode) — make sure decoration layers aren't hiding them | pending |
-| 11.4 | Retire `LafayettePark.jsx` path/grass/fence rendering from the cartograph path; keep GatewayArch and other true landmark components | pending |
-| 11.5 | Trees remain in `park_trees.json` (already decoration) — verify rendering parity | pending |
+| 11.0 | Fix path + water placement in DesignerPark — empirically test `rotation = 0`, then `-GRID_ROTATION`, then `+GRID_ROTATION` and pick what aligns; may need a translation too | **NEXT** |
+| 11.1 | Extract noise-based grass shader from `LafayettePark`'s `ParkGround` into a reusable material factory (`makeGrassMaterial`) | pending |
+| 11.2 | Apply that material to the ribbon park face **in shots only** (Designer keeps flat face fill) — detect park face in StreetRibbons' `makeMaterial` and branch on layer id | pending |
+| 11.3 | Remove LafayettePark's own grass plane (`ParkGround` component) — ribbon face owns that surface now | pending |
+| 11.4 | Promote LafayettePark's path + water rendering to run in both Designer and shots; retire `DesignerPark` when parity reached | pending |
+| 11.5 | Water polygons from `park_water.json` eventually become face-type entries in the ribbons pipeline (like `use: 'water'`); ribbons-time triangulation with outer/island holes | pending |
+| 11.6 | Trees remain in `park_trees.json` (already decoration) — verify rendering parity after LafayettePark's grass plane is gone | pending |
+
+**Future material variants for the Park layer (not in this phase):**
+
+- Grass (default, current)
+- Snow / frost (winter)
+- Autumn foliage on fallen-leaf carpet
+- Drought-brown
+- Illuminated night (grass + lamppost light interaction)
+
+These are Stage-authored material switches, selected per time/weather/season.
+See `project_park_as_ribbon_surface.md`.
 
 ---
 

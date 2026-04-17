@@ -5,6 +5,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
 import { LATITUDE, LONGITUDE } from './StageSky'
+import { archState, useArchState } from './StageApp.jsx'
 
 // NPS catenary equation converted to meters:
 const A = 211.5
@@ -80,10 +81,8 @@ function createArchGeometry(curveSegs = 120) {
   return geo
 }
 
-const ARCH_POSITION = [1470, 0, -490]
-const ARCH_SCALE = 1.0     // real scale — no fake enlargement
-const ARCH_Y_OFFSET = 0    // sits on ground — no burying
-const ARCH_FIXED_ROTATION = 1.36
+// Arch position/scale/rotation and the ground disc radius/fade all live in
+// archState (authored from StagePanel's Arch & Horizon section).
 
 export default function GatewayArch() {
   const geometry = useMemo(() => createArchGeometry(), [])
@@ -249,7 +248,13 @@ export default function GatewayArch() {
     const t = Math.max(0, Math.min(1, (sunAltitude + 0.12) / 0.42))
     const day = t * t * (3 - 2 * t)
 
-    meshRef.current.rotation.y = ARCH_FIXED_ROTATION
+    meshRef.current.rotation.y = archState.archRotation
+    meshRef.current.position.set(
+      archState.archDistance * archState.archBearingX,
+      archState.archYOffset,
+      archState.archDistance * archState.archBearingZ,
+    )
+    meshRef.current.scale.setScalar(archState.archScale)
 
     if (shaderRef.current) {
       shaderRef.current.uniforms.uDayFactor.value = day
@@ -289,7 +294,7 @@ export default function GatewayArch() {
 
       // Glint position — use the blended direction
       const azimuth = Math.atan2(lx, -lz)
-      const relAngle = azimuth - ARCH_FIXED_ROTATION
+      const relAngle = azimuth - archState.archRotation
       const glintFromSun = 0.5 + Math.sin(relAngle) * 0.48
       const dx = camera.position.x - (-400)
       const dz = camera.position.z - 230
@@ -306,13 +311,104 @@ export default function GatewayArch() {
   })
 
   return (
+    <>
+      <GroundDisc />
+      <mesh
+        ref={meshRef}
+        geometry={geometry}
+        material={material}
+        frustumCulled={false}
+      />
+    </>
+  )
+}
+
+// Flat-black plan-view silhouette for the Designer (cartograph non-Stage mode).
+// Shares the catenary geometry with the Stage arch so the 2D shadow reads as
+// "that's the arch from above" — matches the black-footprint language used by
+// buildings/park in plan view.
+export function DesignerArch() {
+  const a = useArchState()
+  const geometry = useMemo(() => createArchGeometry(), [])
+  const material = useMemo(() => new THREE.MeshBasicMaterial({ color: '#000' }), [])
+  return (
     <mesh
-      ref={meshRef}
       geometry={geometry}
       material={material}
-      position={[ARCH_POSITION[0], ARCH_Y_OFFSET, ARCH_POSITION[2]]}
-      scale={ARCH_SCALE}
+      position={[a.archDistance * a.archBearingX, 0, a.archDistance * a.archBearingZ]}
+      rotation={[0, a.archRotation, 0]}
+      scale={a.archScale}
       frustumCulled={false}
     />
+  )
+}
+
+function GroundDisc() {
+  const a = useArchState()
+  const matRef = useRef(null)
+  const meshRef = useRef(null)
+
+  const material = useMemo(() => {
+    const m = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      uniforms: {
+        uInner: { value: a.horizonFadeInner },
+        uOuter: { value: a.horizonFadeOuter },
+        uColor: { value: new THREE.Color('#3a4a3a') },
+      },
+      vertexShader: `
+        varying vec2 vLocal;
+        void main() {
+          vLocal = position.xy;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uInner;
+        uniform float uOuter;
+        uniform vec3 uColor;
+        varying vec2 vLocal;
+        void main() {
+          float r = length(vLocal);
+          float alpha = 1.0 - smoothstep(uInner, uOuter, r);
+          if (alpha <= 0.001) discard;
+          gl_FragColor = vec4(uColor, alpha);
+        }
+      `,
+    })
+    matRef.current = m
+    return m
+  }, [])
+
+  useFrame(() => {
+    if (matRef.current) {
+      const hc = useSkyState.getState().horizonColor
+      matRef.current.uniforms.uColor.value.set(
+        hc.r * 0.35 + 0.02,
+        hc.g * 0.35 + 0.03,
+        hc.b * 0.30,
+      )
+      matRef.current.uniforms.uInner.value = archState.horizonFadeInner
+      matRef.current.uniforms.uOuter.value = archState.horizonFadeOuter
+    }
+    if (meshRef.current) {
+      meshRef.current.position.set(
+        archState.archDistance * archState.archBearingX,
+        -0.05,
+        archState.archDistance * archState.archBearingZ,
+      )
+    }
+  })
+
+  return (
+    <mesh
+      ref={meshRef}
+      rotation={[-Math.PI / 2, 0, 0]}
+      material={material}
+      renderOrder={-100}
+    >
+      <circleGeometry args={[a.horizonRadius, 128]} />
+    </mesh>
   )
 }

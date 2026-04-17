@@ -17,34 +17,45 @@ const useCartographStore = create((set, get) => ({
   aerialVisible: true,
   toggleAerial: () => set(s => ({ aerialVisible: !s.aerialVisible })),
 
-  // ── Mode ──────────────────────────────────────────────────
-  // mode = the workspace (null | 'surveyor' | 'measure' | 'stage')
-  // markerActive = overlay toggle, independent of mode
-  mode: null,
+  // ── Tool + Shot ───────────────────────────────────────────
+  // Two orthogonal axes:
+  //   tool = authoring tool, only meaningful in the Designer (shot==='designer')
+  //          (null | 'surveyor' | 'measure').  null = neutral "Design" state.
+  //   shot = which camera/environment preset is active
+  //          ('designer' | 'browse' | 'hero' | 'street')
+  // markerActive = overlay toggle, independent of tool
+  tool: null,
+  shot: 'designer',
   markerActive: false,
-  setMode: (newMode) => {
-    const prev = get().mode
-    if (prev === newMode) {
-      // Toggle off → back to default view
-      set({ mode: null, status: '' })
+  setTool: (newTool) => {
+    const prev = get().tool
+    if (prev === newTool) {
+      set({ tool: null, status: '' })
       if (prev === 'surveyor') {
         get()._saveCenterlines()
         set({ selectedStreet: null, selectedNode: null })
       }
       return
     }
-    // Entering a mode — exit previous first
     if (prev === 'surveyor') {
       get()._saveCenterlines()
       set({ selectedStreet: null, selectedNode: null })
     }
-    if (newMode === 'surveyor') {
-      set({ mode: 'surveyor', status: 'Click a street to select. Drag nodes to edit. Space to pan.' })
-    } else if (newMode === 'measure') {
-      set({ mode: 'measure', status: 'Click a street to adjust its cross-section.' })
-    } else if (newMode === 'stage') {
-      set({ mode: 'stage', status: '' })
+    if (newTool === 'surveyor') {
+      set({ tool: 'surveyor', status: 'Click a street to select. Drag nodes to edit. Space to pan.' })
+    } else if (newTool === 'measure') {
+      set({ tool: 'measure', status: 'Click a street to adjust its cross-section.' })
+    } else {
+      set({ tool: null, status: '' })
     }
+  },
+  setShot: (shot) => {
+    // Leaving Designer → save any surveyor edits + drop tool
+    if (get().shot === 'designer' && shot !== 'designer') {
+      if (get().tool === 'surveyor') get()._saveCenterlines()
+      set({ tool: null, selectedStreet: null, selectedNode: null, markerActive: false, markerEraserActive: false })
+    }
+    set({ shot, status: '' })
   },
   toggleMarker: () => {
     const cur = get().markerActive
@@ -175,8 +186,13 @@ const useCartographStore = create((set, get) => ({
     const { selectedStreet, centerlineData } = get()
     if (selectedStreet === null) return
     get()._pushUndo(selectedStreet)
-    centerlineData.streets[selectedStreet][field] = value
-    set({ centerlineData: { ...centerlineData } })
+    // Replace the street and the streets array so StreetRibbons' useMemo
+    // (dep: liveCenterlines) actually re-runs. In-place mutation kept the
+    // array ref stable and ribbons wouldn't update.
+    const streets = centerlineData.streets.map((s, i) =>
+      i === selectedStreet ? { ...s, [field]: value } : s
+    )
+    set({ centerlineData: { ...centerlineData, streets } })
     get()._saveCenterlines()
   },
 

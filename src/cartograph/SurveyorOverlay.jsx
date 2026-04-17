@@ -35,7 +35,7 @@ function distToPolyline(pts, px, pz) {
 // centerlines, nodes, selection halos. Map-underneath comes from StreetRibbons.
 
 export default function SurveyorOverlay() {
-  const mode = useCartographStore(s => s.mode)
+  const tool = useCartographStore(s => s.tool)
   const spaceDown = useCartographStore(s => s.spaceDown)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const selectedNode = useCartographStore(s => s.selectedNode)
@@ -47,7 +47,7 @@ export default function SurveyorOverlay() {
 
   const { camera, gl } = useThree()
   const dragRef = useRef(null)
-  const active = mode === 'surveyor'
+  const active = tool === 'surveyor'
 
   // ── Selected street: editable nodes ──
   const { lineGeo, nodePositions, hiddenNodes } = useMemo(() => {

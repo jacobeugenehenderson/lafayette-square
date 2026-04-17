@@ -66,7 +66,7 @@ function snapIncrement(material, rawIncrement) {
 }
 
 export default function MeasureOverlay() {
-  const mode = useCartographStore(s => s.mode)
+  const tool = useCartographStore(s => s.tool)
   const spaceDown = useCartographStore(s => s.spaceDown)
   const centerlineData = useCartographStore(s => s.centerlineData)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
@@ -74,7 +74,7 @@ export default function MeasureOverlay() {
   const deselectStreet = useCartographStore(s => s.deselectStreet)
 
   const { camera, gl } = useThree()
-  const active = mode === 'measure'
+  const active = tool === 'measure'
   const dragRef = useRef(null)
 
   // ── Pre-compute all street data (no geometry objects here) ────

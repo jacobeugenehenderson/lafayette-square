@@ -6,6 +6,240 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-04-17 additions — read first
+
+### The big architectural move: Stage is embedded in Cartograph
+
+Previously cartograph had **two Canvases** — a flat ortho one for the
+Designer and a perspective one for Stage mode — switched by unmounting one
+and mounting the other. This caused a persistent **WebGL context-loss skew
+bug**: every time you flipped Designer ↔ Stage, the browser threw away one
+GL context and created another, and on return the view-projection matrix
+uniforms came back corrupted, producing a "parallelogram" tilt that only a
+hard refresh + cache purge could fix. It was the most-reported visual bug
+against the cartograph for weeks.
+
+The fix was architectural, not a polish pass: **collapse to a single
+Canvas** with two cameras (`OrthographicCamera` for Designer via the
+`<Canvas orthographic>` default; `<PerspectiveCamera makeDefault={!inDesigner}>`
+for shots). Both cameras always mounted; `makeDefault` swaps which one is
+active. `MapControls` is keyed on `inDesigner ? 'ortho' : 'persp'` so it
+remounts cleanly when the active camera changes. **No more context loss, no
+more skew.**
+
+### Tool vs. Shot: two orthogonal axes
+
+The old `mode` field conflated authoring intent (marker / surveyor / measure
+/ stage) with camera intent. These are different concerns. Replaced with:
+
+- **`tool: null | 'surveyor' | 'measure'`** — the authoring tool in use.
+  `null` is the default **Design** state (no tool selected). No `'design'`
+  enum value; absence is the meaning. Marker is controlled separately via
+  `markerActive` because it layers over any tool.
+- **`shot: 'designer' | 'browse' | 'hero' | 'street'`** — which camera +
+  environment preset is active. `'designer'` = the authoring workspace
+  (ortho plan view, aerial tiles, overlays). `'browse'` / `'hero'` /
+  `'street'` are the three Stage camera shots authored in `SHOTS` (in
+  `src/stage/StageApp.jsx`).
+
+**Toolbar morphs on `shot`:**
+- Designer shot → `Marker | Surveyor | Measure` + shot selector
+- Any other shot → `← Return to Designer | Publish` + shot selector
+
+Shot selector (`Browse | Hero | Street`) is always visible on the right
+side of the toolbar. `Publish` is a stub right now (logs a line) — wire
+it up when we're ready to publish.
+
+### Environment pipeline wired into Cartograph
+
+The Stage environment stack now runs inside Cartograph's unified Canvas
+whenever a non-Designer shot is active:
+
+- `<StageShadows />` (SoftShadows helper) — gated `{!inDesigner}`
+- `<PostProcessing />` (EffectComposer with AO, Bloom, AerialPerspective,
+  FilmGrade, FilmGrain) — gated `{!inDesigner}`
+- `TimeTicker` + `SkyStateTicker` — always running; ticker callbacks are
+  side-effect-only and cheap enough
+- `CelestialBodies` + `CloudDome` — wrapped in `<group visible={!inDesigner}>`
+
+All exported from `src/stage/StageApp.jsx`. `StageCanvas.jsx` is deleted —
+its entire contents now live inside `CartographApp.jsx` via the shot-only
+group.
+
+**Consequence: the Environment panel's sliders in Stage mode now drive live
+rendering.** Previously they wrote to `envState` but nothing in cartograph
+read that, so they were cosmetic. Now every slider (Exposure, AO, Bloom,
+Aerial Haze, Film Grade, Film Grain, Shadows) updates the composer per
+frame through refs.
+
+### Arch & Horizon controls + swappable ground disc
+
+Added `archState` to `src/stage/StageApp.jsx` alongside `envState`, exposed
+as `setArch` / `useArchState`. Defaults in `ARCH_DEFAULTS`: distance (from
+origin along a fixed bearing), scale, rotation, Y offset, and horizon
+disc radius + fade band.
+
+`GatewayArch` reads these every frame — no hardcoded constants. A new
+`GroundDisc` sibling component renders a soft-edged round plane beneath
+the arch, fading from opaque to transparent between `horizonFadeInner` and
+`horizonFadeOuter`, colored by the live sky `horizonColor`. Simulates the
+horizon so the arch reads as "heroic on the ground" from the shot camera.
+
+`StagePanel` gets a new **Arch & Horizon** collapsible section with sliders
+for every archState field. `DesignerArch` (exported from `StageArch.jsx`)
+renders a flat-black catenary silhouette in the Designer — the arch is a
+plan-view feature of the map, not just a Stage thing.
+
+**This is the first piece of the** `stage-config.json` **authority story**
+(see `project_stage_is_scene_authority.md`) — Arch & Horizon values live
+in a store that will eventually persist to disk and be consumed by the main
+app's scene. For now it's in-memory only.
+
+### Color pickers wired to rendering
+
+The Designer panel's color pickers used to write to `layerColors` in the
+store, but neither `MapLayers` nor `StreetRibbons` read that — they used
+hardcoded constants (`C.*` in MapLayers, `BAND_COLORS` in streetProfiles).
+**All pickers were cosmetic.**
+
+Now:
+
+- `src/cartograph/m3Colors.js` is the single source of truth for defaults.
+  It exports `DEFAULT_LAYER_COLORS` (per panel layer id),
+  `DEFAULT_LU_COLORS` (per land-use), and `BAND_TO_LAYER` (maps ribbon
+  band materials like `'asphalt'` → panel picker ids like `'street'`).
+- `MapLayers` subscribes to `store.layerColors` and resolves each material
+  via `layerColors[id] || DEFAULT_LAYER_COLORS[id]`. Re-memos on change.
+- `StreetRibbons` does the same for band colors, routed through
+  `BAND_TO_LAYER` so a single "Streets" picker paints asphalt + parking
+  bands, "Curb" paints curb + gutter, "Sidewalk" paints sidewalk + treelawn
+  + lawn. Face-fill colors still use `luColors` from the Panel + LU
+  defaults.
+
+**Palette direction shifted** from "M3 muted neutrals" → "vibrant graphic
+map" during the session. The muted palette was calibrated for flat
+pass-through viewing (Designer) but crushed to near-black under ACES tone
+mapping in shots. Bumped residential to grass-green (#5A8A3A), asphalt to
+#4A4A48, sidewalks to warm cream (#B8B2A4). This is still placeholder —
+we'll converge on final colors once the park/shader work lands.
+
+**Pickers currently hidden**: `tree`, `lamp`, `labels`. Each needs its own
+authoring section (light color + intensity for lamps, foliage material for
+trees, typography + scale for labels) — not a color well. Tree/lamp are
+mostly driven by `LafayettePark` / `StreetLights` internals right now;
+labels have no renderer.
+
+### Caps propagation bug fixed
+
+**Symptom:** operator set `capStart`/`capEnd` in Survey mode, edit saved to
+`centerlines.json`, but the ribbon map didn't update to show the cap.
+
+**Root cause, two parts:**
+
+1. `updateStreetField` in the store was mutating the street in place and
+   calling `set({ centerlineData: { ...centerlineData } })` — the outer
+   object identity changed but the `streets` array stayed the same
+   reference. `StreetRibbons`' `useMemo([liveCenterlines])` therefore
+   didn't re-run. Fix: rebuild the streets array in the setter.
+2. The merge loop in `StreetRibbons` was blanket-applying
+   `capEnds: { start, end }` to every ribbon segment matching the
+   centerline's name. For chain-split streets (one centerline → multiple
+   ribbon segments), this produced spurious caps at intersection joints.
+   Fix: apply `capStart` only when the ribbon segment's first point
+   matches the centerline's first point (within 0.5m); same for `capEnd`.
+
+### Park architecture (the unfinished piece)
+
+**Decision made today, work only partly executed.** The park should be a
+ribbon-rendered surface like any other block. "Park" is the authored layer;
+grass is its current material. Future material variants (snow, autumn,
+drought, illuminated night) are Park-surface treatments, not separate
+layers. The Park material is picked in Stage like any other surface.
+
+**Current state (end of 2026-04-17):**
+
+- `StreetRibbons` face fills now render every face including the park (the
+  earlier filter that skipped `use: 'park'` is removed).
+- `DesignerPark.jsx` exists but renders only paths + water (no boundary
+  polygon). Path + water **placement is still wrong** — the coords in
+  `park_paths.json` and `park_water.json` are in some park-local system;
+  neither `rotation = GRID_ROTATION` nor `-GRID_ROTATION` aligns them to
+  world, which implies they may already be world-aligned and my rotation
+  added the offset. Empirically test with `rotation = 0` first.
+- `LafayettePark` still renders its own SVG-backed grass plane in shots,
+  which z-fights with the ribbon park face. This is expected during the
+  transition.
+
+**Tomorrow's work, in order:**
+
+1. Place paths + water correctly (iterate rotation until they sit inside
+   the ribbon park face).
+2. Remove `LafayettePark`'s grass plane (its territory is the ribbon park
+   face now).
+3. Attach the noise-based grass shader (currently living in
+   `LafayettePark`'s `ParkGround` component) to the ribbon park face's
+   material **only in shots**. In Designer the face stays flat-colored.
+4. Once LafayettePark's path/water rendering is what shots use, Designer
+   can consume the same component. Then `DesignerPark` dies.
+
+### Ribbon lighting pipeline details
+
+- `SHADOW_TINTED_FLAT` is applied to ribbons in shots (not just Designer).
+  Math: extract luminance ratio from PBR output, undo BRDF's 1/π division
+  so palette tones land near their Designer values, clamp to `[0.25, 3.5]`
+  so shadows don't go to void and bright-lit surfaces have headroom.
+- `polygonOffset` on ribbons is `factor = -pri, units = -pri * 4` —
+  negative pulls ribbons toward the camera in depth to beat terrain (which
+  has zero offset), and `factor = -pri` preserves intra-ribbon priority
+  (higher pri = more negative = more forward). Asphalt pri=8 beats
+  terrain; sidewalk pri=5 sits behind corner plugs pri=10, etc.
+- Ribbon group is lifted to `y = 0.15` in shot mode so it clears the
+  terrain mesh (`y = -0.1` with uExag displacement on top). In Designer
+  (terrain hidden) the lift is zero so MapLayers' footway polygons at
+  `y = 0` aren't buried under ribbons.
+- **Terrain mesh is hidden in shots** via `<group visible={false}>` but
+  its shader uniforms stay live so ribbons and buildings still get the
+  terrain displacement. Good for now; we may bring it back once the park
+  is fully owned by ribbons.
+
+### Known issues carried into tomorrow
+
+- **Park paths + water mis-placed** (see Park architecture above)
+- **No cast shadows on ribbons at any time of day** (including /stage).
+  The shadow map renders, the ribbons have `receiveShadow: true`, the
+  shader reads `reflectedLight.directDiffuse` (which includes shadow
+  attenuation) — yet visible cast shadows don't appear on the street
+  surfaces. Investigate: shadow-camera frustum coverage, bias/normalBias,
+  or the SHADOW_TINTED_FLAT clamp swallowing the shadow delta.
+- **Ribbons in shots look darker than expected for midday** — palette
+  brightening helped significantly but the darker base colors (asphalt
+  especially) still crunch through ACES + PostProcessing. This is at
+  /stage parity now; diverging further would mean either further palette
+  brightening or a graphic-map emissive treatment.
+- **Designer sidewalks render too visibly** — the sidewalk tone
+  (`#B8B2A4`) is correct for the plan view but shows as prominent white
+  strips against dark asphalt. When LafayettePark eventually owns the park
+  surface and we refine the palette, revisit.
+- **Camera in shots can go underground** — I unlocked `minPolarAngle: 0,
+  maxPolarAngle: π` so the operator can diagnose underside rendering.
+  Leave unlocked; it's diagnostic-useful.
+
+### Files touched today
+
+- `src/cartograph/CartographApp.jsx` — unified Canvas + camera rig
+- `src/cartograph/StageCanvas.jsx` — **deleted**
+- `src/cartograph/stores/useCartographStore.js` — `tool` + `shot` replace `mode`
+- `src/cartograph/Toolbar.jsx` — morph on shot, shot selector
+- `src/cartograph/Panel.jsx` — reads tool, palette from `m3Colors.js`, hides unwired pickers
+- `src/cartograph/m3Colors.js` — **new**. Canonical palette + band→layer mapping
+- `src/cartograph/DesignerPark.jsx` — **new**. Paths + water (placement unfinished)
+- `src/stage/StageApp.jsx` — adds `archState`, exports `StageShadows`/`PostProcessing`, adds `ArchHorizonControls`
+- `src/stage/StageArch.jsx` — reads `archState`, adds `GroundDisc` + `DesignerArch`
+- `src/stage/StageSky.jsx` — sky-dome ticker fix (confirmed; no change today)
+- `src/components/StreetRibbons.jsx` — live `layerColors`, SHADOW_TINTED_FLAT π comp, polygon offset flip, no-face-filter for park, cap-match by terminal point
+
+---
+
 ## 2026-04-16 additions — read first
 
 **Dead-end caps are per-endpoint + operator-marked.** Each street in

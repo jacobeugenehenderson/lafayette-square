@@ -5,6 +5,8 @@ import ribbonsRaw from '../data/ribbons.json'
 import { streetInBoundary, faceInBoundary, pointInBoundary } from '../cartograph/boundary.js'
 import useCamera from '../hooks/useCamera'
 import { BAND_COLORS } from '../cartograph/streetProfiles.js'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { DEFAULT_LAYER_COLORS, BAND_TO_LAYER } from '../cartograph/m3Colors.js'
 import {
   terrainExag, assignTerrainUniforms,
   TERRAIN_DECL, TERRAIN_DISPLACE, TERRAIN_NORMAL,
@@ -134,7 +136,6 @@ const TERRAIN_CLIP_FRAG = `
   float _fadeB = smoothstep(uBMinZ, uBMinZ + 80.0, vWorldPos.z);
   float _fadeT = smoothstep(uBMinZ + uSpanZ, uBMinZ + uSpanZ - 80.0, vWorldPos.z);
   float _edgeFade = _fadeL * _fadeR * _fadeB * _fadeT;
-  if (_edgeFade < 0.01) discard;
   diffuseColor.a *= _edgeFade;
 }`
 
@@ -143,14 +144,23 @@ const TERRAIN_CLIP_FRAG = `
 // Extract a grayscale light factor from the result. Multiply curated colors
 // by that factor. Palette stays coherent — shadows darken, sun brightens.
 
+// Lets Three.js compute full PBR lighting, then extracts a grayscale light
+// factor and re-applies it to the curated palette color. Why the π factor:
+// three.js's BRDF_Lambert divides diffuse by π for energy conservation. For
+// a curated palette where the designer picked #RRGGBB *as the display-target
+// tone under sun*, we undo that division so the ribbon lands at its palette
+// color in full light and falls toward ~25% in deep shadow.
 const SHADOW_TINTED_FLAT = `
 #include <lights_fragment_maps>
 ${TERRAIN_CLIP_FRAG}
 {
   vec3 _totalLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
   float _baseLum = max(dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722)), 0.0005);
-  float _lightMul = dot(_totalLight, vec3(0.2126, 0.7152, 0.0722)) / _baseLum;
-  float _lightFactor = clamp(_lightMul, 0.15, 3.0);
+  // Multiply by PI to cancel BRDF_Lambert's 1/π — brings palette-tone back.
+  float _lightMul = dot(_totalLight, vec3(0.2126, 0.7152, 0.0722)) / _baseLum * 3.14159;
+  // Floor at 0.25 so shadowed asphalt still reads as "dark asphalt" not void.
+  // Ceiling at 1.6 lets bright-lit surfaces push slightly over palette tone.
+  float _lightFactor = clamp(_lightMul, 0.25, 1.6);
 
   reflectedLight.directDiffuse = vec3(0.0);
   reflectedLight.directSpecular = vec3(0.0);
@@ -367,11 +377,21 @@ function segDir(pts, i0, i1) {
 
 export default function StreetRibbons({ hiddenLayers, flat = false, luColors, liveCenterlines }) {
 
+  // Live Designer-panel layer colors (falls back to M3 defaults when a picker
+  // hasn't been touched yet, or to BAND_COLORS for bands not on the panel).
+  const layerColors = useCartographStore(s => s.layerColors) || {}
+
   // ── Drive shared terrain exaggeration from view mode ──────────
   useFrame(() => {
     if (flat) { terrainExag.value = 0; return }
     const vm = useCamera.getState().viewMode
-    const target = vm === 'hero' ? HERO_EXAG : vm === 'planetarium' ? 1 : 0
+    // Browse used to be 0 as a defensive flat-map fallback; now that ribbons
+    // render in shots we want the topography always visible. Browse ≈ Hero.
+    const target = vm === 'hero' ? HERO_EXAG : vm === 'planetarium' ? 1 : HERO_EXAG
+    if (!window.__exagLogged || window.__exagLogged !== vm) {
+      window.__exagLogged = vm
+      console.log('[exag]', 'viewMode:', vm, 'target:', target, 'current:', terrainExag.value)
+    }
     const cur = terrainExag.value
     if (Math.abs(cur - target) < 0.01) { terrainExag.value = target; return }
     terrainExag.value += (target - cur) * 0.06
@@ -396,6 +416,8 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     // Merge live band/cap overrides onto ribbons.json streets. Points,
     // intersections, and faces stay from ribbons.json (structural); bands and
     // caps come live from centerlineData when present.
+    const pointsNearlyEqual = (a, b, eps = 0.5) =>
+      a && b && Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps
     const mergedStreets = ribbonsRaw.streets.map(st => {
       const live = liveByName.get(st.name)
       if (!live) return st
@@ -405,9 +427,20 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
         merged.bands = { left: flat.map(b => ({ ...b })), right: flat.map(b => ({ ...b })) }
       }
       if (live.capStart !== undefined || live.capEnd !== undefined) {
-        merged.capEnds = {
-          start: live.capStart ?? st.capEnds?.start ?? null,
-          end: live.capEnd ?? st.capEnds?.end ?? null,
+        // Caps apply only to the ribbon segment whose terminal actually
+        // matches the centerline's terminal — prevents chain-split segments
+        // from each growing a spurious cap at their interior junctions.
+        const cLive = live.points
+        const stFirst = st.points[0], stLast = st.points[st.points.length - 1]
+        const cFirst = cLive && cLive[0]
+        const cLast = cLive && cLive[cLive.length - 1]
+        const applyStart = live.capStart !== undefined && pointsNearlyEqual(stFirst, cFirst)
+        const applyEnd = live.capEnd !== undefined && pointsNearlyEqual(stLast, cLast)
+        if (applyStart || applyEnd) {
+          merged.capEnds = {
+            start: applyStart ? (live.capStart ?? st.capEnds?.start ?? null) : (st.capEnds?.start ?? null),
+            end: applyEnd ? (live.capEnd ?? st.capEnds?.end ?? null) : (st.capEnds?.end ?? null),
+          }
         }
       }
       return merged
@@ -626,8 +659,22 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       const isCorner = id.startsWith('corner_')
       const pri = isCorner ? CORNER_PRIORITY[id] : (BAND_PRIORITY[id] ?? 5)
       const srcMat = isCorner ? CORNER_SRC[id] : id
-      const color = BAND_COLORS[srcMat] || LEGACY_COLORS[id] || LEGACY_COLORS.asphalt
-      return { id, geo: mergeRawGeo(parts), color, pri }
+      // Color resolution order: live panel picker → M3 default → BAND_COLORS
+      // fallback → LEGACY. BAND_TO_LAYER maps band materials ('asphalt',
+      // 'curb', 'sidewalk' …) onto the Panel's picker ids ('street', 'curb',
+      // 'sidewalk' …) so one picker can paint several related bands.
+      const layerId = BAND_TO_LAYER[srcMat]
+      const color =
+        (layerId && layerColors[layerId]) ||
+        (layerId && DEFAULT_LAYER_COLORS[layerId]) ||
+        BAND_COLORS[srcMat] ||
+        LEGACY_COLORS[id] ||
+        LEGACY_COLORS.asphalt
+      let geo = mergeRawGeo(parts)
+      // Subdivide so ribbons follow terrain in non-flat modes (per-vertex
+      // displacement needs enough vertices, or the ribbon cuts through hills).
+      if (geo) geo = subdivideGeo(geo, 30)
+      return { id, geo, color, pri }
     }).filter(m => m.geo)
 
     // Winding diagnostic — check first triangle of first geometry
@@ -651,10 +698,13 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     }
 
     return result
-  }, [liveCenterlines])
+  }, [liveCenterlines, layerColors])
 
   // ── Face fills (land-use color per block) ─────────────────────
   const faceMeshes = useMemo(() => {
+    // The park is a ribbon-rendered surface like any other block face; we
+    // don't filter it. Grass-shader treatment for shots happens downstream
+    // (tomorrow's work — replaces LafayettePark's own grass plane).
     const faces = (ribbonsRaw.faces || []).filter(f => faceInBoundary(f.ring))
     if (!faces.length) return []
 
@@ -704,7 +754,9 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     return (color, pri) => {
       const mat = new THREE.MeshStandardMaterial({
         color, roughness: 0.9, metalness: 0, side: THREE.FrontSide,
-        polygonOffset: true, polygonOffsetFactor: (11 - pri), polygonOffsetUnits: (11 - pri) * 4,
+        // Negative offset pulls ribbons toward the camera (beats terrain at 0).
+        // More-negative = closer; higher pri should win, so factor = -pri.
+        polygonOffset: true, polygonOffsetFactor: -pri, polygonOffsetUnits: -pri * 4,
       })
       mat.onBeforeCompile = (shader) => {
         assignTerrainUniforms(shader)
@@ -716,10 +768,13 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           shader.fragmentShader = shader.fragmentShader
             .replace('#include <lights_fragment_maps>', fragShader)
         } else {
+          // Non-flat (shots): SHADOW_TINTED_FLAT with π compensation — palette
+          // colors land near their Designer tone in full light, darken toward
+          // 25% in shadow. Terrain-edge alpha fade is baked into the shader.
           shader.fragmentShader = shader.fragmentShader
             .replace('#include <common>', '#include <common>\n' + TERRAIN_CLIP_VARYING_DECL + '\n' + TERRAIN_DECL)
           shader.fragmentShader = shader.fragmentShader
-            .replace('#include <output_fragment>', `#include <output_fragment>\n${TERRAIN_CLIP_FRAG}`)
+            .replace('#include <lights_fragment_maps>', fragShader)
         }
       }
       mat.customProgramCacheKey = () => flat ? 'sr-flat' : 'sr-pbr-v3'
@@ -739,8 +794,11 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     lawn: 'sidewalk',
   }
 
+  // Lift ribbons slightly above terrain in shot mode so they don't clip
+  // under the displaced ground. In flat/Designer mode MapLayers (footways,
+  // paths, etc.) sits at y=0 and the lift would bury those — keep y=0 there.
   return (
-    <group>
+    <group position={[0, flat ? 0 : 0.15, 0]}>
       {!hide.lot && faceMeshes.map((m, i) => (
         <mesh key={`face-${i}`} geometry={m.geo} renderOrder={FACE_FILL_PRIORITY} receiveShadow
           material={makeMaterial(m.color, FACE_FILL_PRIORITY)} />

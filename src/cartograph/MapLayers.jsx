@@ -6,18 +6,12 @@ import parkTreeData from '../data/park_trees.json'
 import lampData from '../data/street_lamps.json'
 import { pointInBoundary, boundaryPolygon } from './boundary.js'
 import useCartographStore from './stores/useCartographStore.js'
+import { DEFAULT_LAYER_COLORS } from './m3Colors.js'
 
-// ── Colors (matching render.js defaults) ────────────────────
-const C = {
-  ground:   '#2a2a26',
-  park:     '#2a4a1a',
-  building: '#2a2a28',
-  buildingStroke: '#1a1a18',
-  stripe:   '#c8b430',
-  edgeline: '#888888',
-  bikelane: '#44aa88',
-  centerline: '#ffffff',
-  centerlineOutline: '#000000',
+// Strokes (outlines) don't have a panel picker yet — keep local.
+const STROKE_COLORS = {
+  buildingStroke:     '#1a1a18',
+  centerlineOutline:  '#000000',
 }
 
 // ── Render priorities (higher = on top via polygonOffset) ────
@@ -297,21 +291,23 @@ export default function MapLayers({ hiddenLayers }) {
     return mergeGeos(geos)
   }, [])
 
-  // ── Materials (memoized) ──────────────────────────────
+  // ── Materials (re-memo when the panel changes any color) ──
+  const color = (id) => layerColors[id] || DEFAULT_LAYER_COLORS[id]
   const mats = useMemo(() => ({
-    ground: makeFlatMat(C.ground, PRI.ground),
-    park: makeFlatMat(C.park, PRI.park),
-    building: makeFlatMat(C.building, PRI.building),
-    stripe: makeLineMat(C.stripe),
-    edgeline: makeLineMat(C.edgeline, 0.7),
-    bikelane: makeLineMat(C.bikelane),
-    centerline: makeLineMat(C.centerline, 0.9),
-    centerlineOutline: makeLineMat(C.centerlineOutline, 0.5),
-    lamp: new THREE.MeshBasicMaterial({ color: '#ffdd44', depthTest: false }),
-    tree: makeFlatMat('#2a5528', PRI.park + 1),
-    alley: makeFlatMat('#353532', PRI.alley),
-    footway: makeFlatMat('#7a756a', PRI.footway),
-  }), [])
+    ground: makeFlatMat(color('ground'), PRI.ground),
+    park: makeFlatMat(color('park'), PRI.park),
+    building: makeFlatMat(color('building'), PRI.building),
+    stripe: makeLineMat(color('stripe')),
+    edgeline: makeLineMat(color('edgeline'), 0.7),
+    bikelane: makeLineMat(color('bikelane')),
+    centerline: makeLineMat(color('centerline'), 0.9),
+    centerlineOutline: makeLineMat(STROKE_COLORS.centerlineOutline, 0.5),
+    lamp: new THREE.MeshBasicMaterial({ color: color('lamp'), depthTest: false }),
+    tree: makeFlatMat(color('tree'), PRI.park + 1),
+    alley: makeFlatMat(color('alley'), PRI.alley),
+    footway: makeFlatMat(color('footway'), PRI.footway),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [layerColors])
 
   // ── Boundary outline ────────────────────────────────────
   const boundaryGeo = useMemo(() => {

@@ -223,10 +223,17 @@
   border-color: var(--carto-measure-border);
 }
 
-.carto-btn.active-stage {
+.carto-btn.active-stage,
+.carto-btn.active-shot {
   background: var(--carto-stage);
   color: #fff;
   border-color: var(--carto-stage-border);
+}
+
+.carto-shot-selector {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
 }
 
 .carto-btn-muted {
@@ -257,18 +264,6 @@
   padding: 0 3px;
   height: 16px;
   flex-shrink: 0;
-}
-
-.carto-btn-launch {
-  width: 100%;
-  padding: 8px 0;
-  background: var(--carto-surveyor);
-  color: #fff;
-  border: 1px solid var(--carto-surveyor-border);
-  border-radius: var(--carto-radius);
-  font-size: 11px;
-  cursor: pointer;
-  letter-spacing: .05em;
 }
 
 /* ---------- Status bar ---------- */
@@ -503,6 +498,3 @@
   padding-left: 22px;
 }
 
-.carto-launch-wrap {
-  margin-top: 18px;
-}

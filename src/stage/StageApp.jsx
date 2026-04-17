@@ -223,11 +223,42 @@ export function setEnv(updates) {
   notifyEnv()
 }
 
+// ── Arch & Horizon authoring state ─────────────────────────────────────────
+// The gateway arch is a landmark, not literal geography. Its distance,
+// scale, bearing and the round ground disc under it are all authored here.
+// Bearing is the unit vector [bx, bz] from origin; position = distance × bearing.
+export const ARCH_DEFAULTS = {
+  archDistance: 1050,
+  archBearingX: 0.9487,
+  archBearingZ: -0.3163,
+  archScale: 1.3,
+  archRotation: 1.36,
+  archYOffset: 0,
+  horizonRadius: 1000,
+  horizonFadeInner: 800,
+  horizonFadeOuter: 1000,
+}
+export const archState = { ...ARCH_DEFAULTS }
+let archListeners = new Set()
+function subscribeArch(fn) { archListeners.add(fn); return () => archListeners.delete(fn) }
+function notifyArch() { for (const fn of archListeners) fn() }
+
+export function useArchState() {
+  const [a, _setA] = useState({ ...archState })
+  useEffect(() => subscribeArch(() => _setA({ ...archState })), [])
+  return a
+}
+
+export function setArch(updates) {
+  Object.assign(archState, updates)
+  notifyArch()
+}
+
 // ── Post-processing ─────────────────────────────────────────────────────────
 // EffectComposer children are static — never re-render.
 // All env-driven params are set imperatively per-frame via refs.
 
-function PostProcessing() {
+export function PostProcessing() {
   const bloomRef = useRef()
   const aoRef = useRef()
   const { gl } = useThree()
@@ -380,7 +411,7 @@ function SceneDiag() {
 
 // ── Reactive soft shadows ───────────────────────────────────────────────────
 
-function StageShadows() {
+export function StageShadows() {
   const env = useEnvState()
   return <SoftShadows size={env.shadowSize} samples={env.shadowSamples} focus={0.35} />
 }
@@ -471,6 +502,8 @@ function EnvironmentControls() {
         </div>
       </Collapsible>
 
+      <ArchHorizonControls />
+
       <button
         className="w-full py-1 rounded-lg text-caption font-medium cursor-pointer transition-colors"
         style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)',
@@ -478,6 +511,31 @@ function EnvironmentControls() {
         onClick={() => setEnv({ ...ENV_DEFAULTS })}
       >Reset to defaults</button>
     </div>
+  )
+}
+
+function ArchHorizonControls() {
+  const a = useArchState()
+  return (
+    <Collapsible label="Arch & Horizon">
+      <div className="space-y-1">
+        <SliderRow label="Arch Distance" value={a.archDistance} min={400} max={2000} step={10}
+          onChange={(v) => setArch({ archDistance: v })} />
+        <SliderRow label="Arch Scale" value={a.archScale} min={0.5} max={2.5} step={0.05}
+          onChange={(v) => setArch({ archScale: v })} />
+        <SliderRow label="Arch Rotation" value={a.archRotation} min={0} max={Math.PI * 2} step={0.01}
+          onChange={(v) => setArch({ archRotation: v })} />
+        <SliderRow label="Arch Y Offset" value={a.archYOffset} min={-50} max={50} step={1}
+          onChange={(v) => setArch({ archYOffset: v })} />
+        <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
+        <SliderRow label="Horizon Radius" value={a.horizonRadius} min={400} max={2000} step={10}
+          onChange={(v) => setArch({ horizonRadius: v })} />
+        <SliderRow label="Fade Inner" value={a.horizonFadeInner} min={100} max={2000} step={10}
+          onChange={(v) => setArch({ horizonFadeInner: v })} />
+        <SliderRow label="Fade Outer" value={a.horizonFadeOuter} min={100} max={2000} step={10}
+          onChange={(v) => setArch({ horizonFadeOuter: v })} />
+      </div>
+    </Collapsible>
   )
 }
 
