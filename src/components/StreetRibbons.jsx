@@ -4,13 +4,16 @@ import * as THREE from 'three'
 import ribbonsRaw from '../data/ribbons.json'
 import { streetInBoundary, faceInBoundary, pointInBoundary } from '../cartograph/boundary.js'
 import useCamera from '../hooks/useCamera'
-import { BAND_COLORS } from '../cartograph/streetProfiles.js'
+import { BAND_COLORS, sideToStripes, refEdges, defaultMeasure } from '../cartograph/streetProfiles.js'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, BAND_TO_LAYER } from '../cartograph/m3Colors.js'
 import {
   terrainExag, assignTerrainUniforms,
-  TERRAIN_DECL, TERRAIN_DISPLACE, TERRAIN_NORMAL,
+  TERRAIN_DECL, TERRAIN_DISPLACE, TERRAIN_NORMAL, patchTerrain,
 } from '../utils/terrainShader'
+import { makeGrassMaterial } from './grassMaterial.js'
+import { getLampLightmap } from './lampLightmap.js'
+import useTimeOfDay from '../hooks/useTimeOfDay'
 
 // Hero mode terrain exaggeration — 10× makes terrain (0–29m) comparable
 // to building heights (3–15m) for dramatic but proportional landscape
@@ -66,60 +69,35 @@ const CORNER_PRIORITY = { corner_sw: 7, corner_curb: 9, corner_asph: 10 }
 const FACE_FILL_PRIORITY = 1  // lowest — underneath everything
 const CURB_WIDTH = 0.3
 
-// ── Band-stack helpers ─────────────────────────────────────────────
+// ── Radial edge fade (soft neighborhood boundary) ──────────────────
+// Faces fade on a short schedule; streets extend farther and fade slower,
+// so roads trail past the blocks' dissolved edge into empty space.
+// Center matches neighborhood_boundary.json.
+const FADE_CENTER = { x: 162, z: -127 }
+const FACE_FADE   = { inner: 758, outer: 892 }   // last 15% of R=892
+const STREET_FADE = { inner: 800, outer: 1000 }  // starts later, reaches past R
 
-// Convert one side's band stack ({material, width}, inside→outside) into rings
-// with cumulative radii: { material, innerR, outerR, pri, color }.
-function sideBandsToRings(sideBands) {
-  const rings = []
-  let r = 0
-  for (const b of (sideBands || [])) {
-    if (!b || !(b.width > 0)) continue
-    const innerR = r
-    r += b.width
-    rings.push({
-      material: b.material,
-      innerR,
-      outerR: r,
-      pri: BAND_PRIORITY[b.material] ?? 5,
-      color: BAND_COLORS[b.material] || LEGACY_COLORS.asphalt,
-    })
-  }
-  return rings
+// ── Measure-stack helpers ─────────────────────────────────────────
+// The pipeline emits `measure: {left, right}` per street. Each side is
+// {pavementHW, treelawn, sidewalk, terminal}. These helpers convert that
+// shape into rings (for geometry) and reference edges (for corner plugs).
+
+// Convert one side's measure into rings with cumulative radii + pri + color.
+function sideToRings(side) {
+  const stripes = sideToStripes(side)
+  return stripes.map(s => ({
+    ...s,
+    pri: BAND_PRIORITY[s.material] ?? 5,
+    color: BAND_COLORS[s.material] || LEGACY_COLORS.asphalt,
+  }))
 }
 
-// Extract corner-plug reference edges from one side of a band stack.
-// These three numbers are all the corner geometry needs — material names
-// don't matter, only the radii.
-function refEdgesForSide(sideBands) {
-  const rings = sideBandsToRings(sideBands)
-  const propertyLine = rings.length ? rings[rings.length - 1].outerR : 0
-  const curb = rings.find(r => r.material === 'curb')
-  return {
-    propertyLine,
-    curbInner: curb ? curb.innerR : propertyLine,
-    curbOuter: curb ? curb.outerR : propertyLine,
-  }
-}
-
-// Back-compat shim: if a street has no `bands` field, synthesize a symmetric
-// {left, right} from the old `profile` field so the new pipeline still renders
-// legacy ribbons.json files.
-function ensureBands(street) {
-  if (street.bands?.left?.length) return street.bands
-  const p = street.profile
-  if (!p) return { left: [], right: [] }
-  const asphaltWidth = p.asphalt || 0
-  const curbWidth = (p.curb || 0) - asphaltWidth
-  const treelawnOuter = p.treelawn || p.curb || 0
-  const treelawnWidth = treelawnOuter > p.curb + 0.1 ? treelawnOuter - (p.curb || 0) : 0
-  const sidewalkWidth = (p.sidewalk || p.curb || 0) - (treelawnWidth > 0 ? treelawnOuter : p.curb || 0)
-  const bands = []
-  if (asphaltWidth > 0) bands.push({ material: 'asphalt', width: asphaltWidth })
-  if (curbWidth > 0) bands.push({ material: 'curb', width: curbWidth })
-  if (treelawnWidth > 0) bands.push({ material: 'treelawn', width: treelawnWidth })
-  if (sidewalkWidth > 0) bands.push({ material: 'sidewalk', width: sidewalkWidth })
-  return { left: bands, right: bands.map(b => ({ ...b })) }
+// Ensure a street has a valid measure; synthesize a default residential one
+// when absent (back-compat safety for legacy ribbons.json).
+function ensureMeasure(street) {
+  if (street.measure?.left && street.measure?.right) return street.measure
+  const d = defaultMeasure('residential')
+  return d
 }
 
 // ── Terrain-bounds clip (fragment discard outside terrain coverage) ──
@@ -152,7 +130,9 @@ const TERRAIN_CLIP_FRAG = `
 // color in full light and falls toward ~25% in deep shadow.
 const SHADOW_TINTED_FLAT = `
 #include <lights_fragment_maps>
-${TERRAIN_CLIP_FRAG}
+// Terrain clip removed — radial fade (circle) is the authoritative silhouette
+// now. Keeping the clip made shots look cropped to the elevation grid rect.
+// ${/* TERRAIN_CLIP_FRAG — retired */ ''}
 {
   vec3 _totalLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
   float _baseLum = max(dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722)), 0.0005);
@@ -375,7 +355,10 @@ function segDir(pts, i0, i1) {
 
 // ── Main component ───────────────────────────────────────────────
 
-export default function StreetRibbons({ hiddenLayers, flat = false, luColors, liveCenterlines }) {
+export default function StreetRibbons({ hiddenLayers, flat = false, luColors, liveCenterlines, measureActive = false, surveyActive = false, ribbons = ribbonsRaw, useBoundary = true, hideFaceFills = false }) {
+  // Architectural blue — used for overlays in Measure/Survey contexts.
+  const ARCH_BLUE = '#2250E8'
+  const authoringActive = measureActive || surveyActive
 
   // Live Designer-panel layer colors (falls back to M3 defaults when a picker
   // hasn't been touched yet, or to BAND_COLORS for bands not on the panel).
@@ -404,27 +387,50 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     if (liveCenterlines) {
       for (const cl of liveCenterlines) {
         if (!cl || !cl.name || cl.disabled) continue
-        // First entry per name wins; prefer ones with _bands or cap flags set
+        // First entry per name wins; prefer ones with measure or cap overrides
         const prev = liveByName.get(cl.name)
-        const hasOverrides = cl._bands || cl.capStart || cl.capEnd
-        if (!prev || (hasOverrides && !(prev._bands || prev.capStart || prev.capEnd))) {
+        const hasOverrides = cl.measure || cl.capStart || cl.capEnd
+        if (!prev || (hasOverrides && !(prev.measure || prev.capStart || prev.capEnd))) {
           liveByName.set(cl.name, cl)
         }
       }
     }
 
-    // Merge live band/cap overrides onto ribbons.json streets. Points,
-    // intersections, and faces stay from ribbons.json (structural); bands and
-    // caps come live from centerlineData when present.
+    // Merge live measure/cap overrides onto ribbons.json streets. Points,
+    // intersections, and faces stay from ribbons.json (structural); measure
+    // and caps come live from centerlineData when present.
+    //
+    // Orientation guard: the pipeline (derive.js) splits centerlines at
+    // intersections and the resulting ribbon segments aren't guaranteed to
+    // share the live centerline's point order.  When a segment's tangent
+    // points opposite to the centerline's tangent, our perpendicular flips
+    // sign — and `measure.left` / `measure.right` end up rendered on the
+    // wrong physical side relative to the Measure-overlay handles (which
+    // anchor on centerline points).  Detect the reversal and swap sides.
     const pointsNearlyEqual = (a, b, eps = 0.5) =>
       a && b && Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps
-    const mergedStreets = ribbonsRaw.streets.map(st => {
+    const avgTangent = (pts) => {
+      let dx = 0, dz = 0
+      for (let i = 1; i < pts.length; i++) { dx += pts[i][0] - pts[i-1][0]; dz += pts[i][1] - pts[i-1][1] }
+      const l = Math.hypot(dx, dz) || 1
+      return [dx / l, dz / l]
+    }
+    const mergedStreets = ribbons.streets.map(st => {
       const live = liveByName.get(st.name)
       if (!live) return st
       const merged = { ...st }
-      if (live._bands && Array.isArray(live._bands) && live._bands.length) {
-        const flat = live._bands.map(b => ({ ...b }))
-        merged.bands = { left: flat.map(b => ({ ...b })), right: flat.map(b => ({ ...b })) }
+      let reversed = false
+      if (live.points && live.points.length >= 2 && st.points.length >= 2) {
+        const [rtx, rtz] = avgTangent(st.points)
+        const [ltx, ltz] = avgTangent(live.points)
+        reversed = (rtx * ltx + rtz * ltz) < 0
+      }
+      if (live.measure?.left && live.measure?.right) {
+        merged.measure = reversed
+          ? { left: { ...live.measure.right }, right: { ...live.measure.left },
+              symmetric: live.measure.symmetric }
+          : { left: { ...live.measure.left }, right: { ...live.measure.right },
+              symmetric: live.measure.symmetric }
       }
       if (live.capStart !== undefined || live.capEnd !== undefined) {
         // Caps apply only to the ribbon segment whose terminal actually
@@ -446,11 +452,11 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       return merged
     })
 
-    // Filter to neighborhood boundary
+    // Filter to neighborhood boundary (skipped for self-contained fixtures like the toy scene).
     const ribbonsData = {
-      streets: mergedStreets.filter(st => streetInBoundary(st.points)),
-      intersections: ribbonsRaw.intersections.filter(ix => pointInBoundary(ix.point[0], ix.point[1])),
-      faces: (ribbonsRaw.faces || []).filter(f => faceInBoundary(f.ring)),
+      streets: mergedStreets.filter(st => !useBoundary || streetInBoundary(st.points)),
+      intersections: ribbons.intersections.filter(ix => !useBoundary || pointInBoundary(ix.point[0], ix.point[1])),
+      faces: (ribbons.faces || []).filter(f => !useBoundary || faceInBoundary(f.ring)),
     }
 
     const groups = {}
@@ -472,14 +478,14 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       const pts = street.points
       if (pts.length < 2) continue
       const perps = computePerps(pts)
-      const bands = ensureBands(street)
+      const measure = ensureMeasure(street)
 
       // Split at each intersection index
       const splits = [0, ...street.intersections.map(ix => ix.ix).sort((a, b) => a - b), pts.length - 1]
       const uniqueSplits = [...new Set(splits)].sort((a, b) => a - b)
 
-      for (const [side, sideBands] of [[-1, bands.left], [+1, bands.right]]) {
-        const rings = sideBandsToRings(sideBands)
+      for (const [side, sideMeasure] of [[-1, measure.left], [+1, measure.right]]) {
+        const rings = sideToRings(sideMeasure)
         for (const ring of rings) {
           ensure(ring.material)
           if (FULL_LENGTH_BANDS.has(ring.material)) {
@@ -515,8 +521,8 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           const tlen = Math.hypot(tdx, tdz) || 1
           const tangent = [tdx / tlen, tdz / tlen]
           const perp = perps[e.idx]
-          for (const [side, sideBands] of [[-1, bands.left], [+1, bands.right]]) {
-            const rings = sideBandsToRings(sideBands)
+          for (const [side, sideMeasure] of [[-1, measure.left], [+1, measure.right]]) {
+            const rings = sideToRings(sideMeasure)
             for (const ring of rings) {
               ensure(ring.material)
               groups[ring.material].push(
@@ -580,24 +586,38 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           const dB_avg = [(dB_left[0]+dB_right[0])/2, (dB_left[1]+dB_right[1])/2]
           const lB = Math.hypot(dB_avg[0], dB_avg[1]); dB_avg[0]/=lB; dB_avg[1]/=lB
 
-          const bandsA = ensureBands(stA_data)
-          const bandsB = ensureBands(stB_data)
+          const measureA = ensureMeasure(stA_data)
+          const measureB = ensureMeasure(stB_data)
 
           for (const sA of [1, -1]) {
-            // Per-side refs: asymmetric bands may differ left vs right.
-            const refA = refEdgesForSide(sA > 0 ? bandsA.right : bandsA.left)
+            // Per-side refs: asymmetric measures may differ left vs right.
+            const refA = refEdges(sA > 0 ? measureA.right : measureA.left)
             for (const sB of [1, -1]) {
-              const refB = refEdgesForSide(sB > 0 ? bandsB.right : bandsB.left)
-              // Reference edges used by the corner plug math:
-              //   property line = outer of outermost band
-              //   curbOuter     = outer edge of curb band (or property line if no curb)
-              //   curbInner     = inner edge of curb band = outer edge of driving surface
-              const swOuterA = refA.propertyLine
-              const swOuterB = refB.propertyLine
+              const refB = refEdges(sB > 0 ? measureB.right : measureB.left)
+
+              // Corner plug: three materials (asphalt+curb+sidewalk) arc
+              // around the bend. Sized to the NARROWER sidewalk of the two
+              // meeting legs. See project_corner_plug_rules.md.
+              //   - Both legs have sidewalk → full plug (all three arcs)
+              //   - Either leg lacks sidewalk → skip corner_sw; keep
+              //     corner_curb + corner_asph (curb still needs to arc).
+              //   - Both legs lack sidewalk → still generate curb arc.
+              const hasSwA = refA.hasSidewalk
+              const hasSwB = refB.hasSidewalk
+              const swWidthA = hasSwA ? refA.sidewalkOuter - refA.sidewalkInner : 0
+              const swWidthB = hasSwB ? refB.sidewalkOuter - refB.sidewalkInner : 0
+              const plugSwWidth = (hasSwA && hasSwB)
+                ? Math.min(swWidthA, swWidthB)
+                : (hasSwA ? swWidthA : swWidthB)
+
               const curbOuterA = refA.curbOuter
               const curbOuterB = refB.curbOuter
-              const asphOuterA = refA.curbInner
+              const asphOuterA = refA.curbInner   // outer edge of asphalt
               const asphOuterB = refB.curbInner
+              // Effective sidewalk outer radii for the plug arc — narrower
+              // side wins; wider side butts against the plug.
+              const swOuterA = hasSwA ? curbOuterA + plugSwWidth : curbOuterA
+              const swOuterB = hasSwB ? curbOuterB + plugSwWidth : curbOuterB
 
               const P0o = [IX[0] + sA * perpA[0] * swOuterA, IX[1] + sA * perpA[1] * swOuterA]
               const P1o = [IX[0] + sB * perpB[0] * swOuterB, IX[1] + sB * perpB[1] * swOuterB]
@@ -640,8 +660,13 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
               const pt1 = lineX(P0a, edA, P1a, edB)
               if (!pt1) continue
 
-              ensure('corner_sw')
-              groups['corner_sw'].push(ensureCCW(cornerBandRaw(swA, oo, swB, swA, swB, swCtrl, 16)))
+              // corner_sw only when at least one leg has sidewalk. When both
+              // legs are lawn/none, sidewalk arc collapses — curb still arcs,
+              // asphalt still arcs, so corner_curb and corner_asph continue.
+              if (hasSwA || hasSwB) {
+                ensure('corner_sw')
+                groups['corner_sw'].push(ensureCCW(cornerBandRaw(swA, oo, swB, swA, swB, swCtrl, 16)))
+              }
               ensure('corner_curb')
               groups['corner_curb'].push(ensureCCW(bezierBandRaw(coA, coB, coCtrl, swA, swB, swCtrl, 16)))
               ensure('corner_asph')
@@ -698,22 +723,97 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     }
 
     return result
-  }, [liveCenterlines, layerColors])
+  }, [liveCenterlines, layerColors, ribbons, useBoundary])
+
+  // ── Edge strokes (measure mode only) ──────────────────────────
+  // When Measure is active, emit thin opaque half-rings at each stripe's
+  // outer edge. Combined with translucent ribbon fills this reads as
+  // "field + stroke" — aerial shows through the fills, boundaries stay crisp.
+  const edgeStrokes = useMemo(() => {
+    if (!authoringActive) return []
+    const liveByName = new Map()
+    if (liveCenterlines) {
+      for (const cl of liveCenterlines) {
+        if (!cl?.name || cl.disabled) continue
+        if (!liveByName.has(cl.name)) liveByName.set(cl.name, cl)
+      }
+    }
+    // Same orientation guard as the main meshes useMemo — ensures edge
+    // strokes adopt the live measure with sides matching the ribbon's
+    // physical direction.
+    const avgTangent2 = (pts) => {
+      let dx = 0, dz = 0
+      for (let i = 1; i < pts.length; i++) { dx += pts[i][0] - pts[i-1][0]; dz += pts[i][1] - pts[i-1][1] }
+      const l = Math.hypot(dx, dz) || 1
+      return [dx / l, dz / l]
+    }
+    const mergedStreets = ribbons.streets.map(st => {
+      const live = liveByName.get(st.name)
+      if (!live?.measure?.left) return st
+      let reversed = false
+      if (live.points && live.points.length >= 2 && st.points.length >= 2) {
+        const [rtx, rtz] = avgTangent2(st.points)
+        const [ltx, ltz] = avgTangent2(live.points)
+        reversed = (rtx * ltx + rtz * ltz) < 0
+      }
+      const measure = reversed
+        ? { left: { ...live.measure.right }, right: { ...live.measure.left }, symmetric: live.measure.symmetric }
+        : { left: { ...live.measure.left }, right: { ...live.measure.right }, symmetric: live.measure.symmetric }
+      return { ...st, measure }
+    })
+    const streets = mergedStreets.filter(st => !useBoundary || streetInBoundary(st.points))
+    const STROKE_W = 0.2
+    // Keyed by material+isOuter so we can render property-line strokes
+    // separately (used by Survey mode which only draws the outer ring).
+    const groups = {}
+    for (const street of streets) {
+      if (street.points.length < 2) continue
+      const perps = computePerps(street.points)
+      const measure = ensureMeasure(street)
+      for (const [side, sideMeasure] of [[-1, measure.left], [+1, measure.right]]) {
+        const rings = sideToRings(sideMeasure)
+        for (let ri = 0; ri < rings.length; ri++) {
+          const ring = rings[ri]
+          const isOuter = ri === rings.length - 1
+          const key = ring.material + (isOuter ? ':outer' : '')
+          if (!groups[key]) groups[key] = { material: ring.material, isOuter, parts: [] }
+          const inner = Math.max(0, ring.outerR - STROKE_W)
+          const outer = ring.outerR + STROKE_W
+          groups[key].parts.push(halfRingRaw(street.points, inner, outer, perps, side))
+        }
+      }
+    }
+    return Object.values(groups).map(({ material, isOuter, parts }) => {
+      const layerId = BAND_TO_LAYER[material]
+      const color =
+        (layerId && layerColors[layerId]) ||
+        (layerId && DEFAULT_LAYER_COLORS[layerId]) ||
+        BAND_COLORS[material] || LEGACY_COLORS.asphalt
+      const geo = mergeRawGeo(parts)
+      return { id: material, geo, color, isOuter }
+    }).filter(m => m.geo)
+  }, [authoringActive, liveCenterlines, layerColors, ribbons, useBoundary])
 
   // ── Face fills (land-use color per block) ─────────────────────
   const faceMeshes = useMemo(() => {
-    // The park is a ribbon-rendered surface like any other block face; we
-    // don't filter it. Grass-shader treatment for shots happens downstream
-    // (tomorrow's work — replaces LafayettePark's own grass plane).
-    const faces = (ribbonsRaw.faces || []).filter(f => faceInBoundary(f.ring))
+    const faces = (ribbons.faces || []).filter(f => !useBoundary || faceInBoundary(f.ring))
     if (!faces.length) return []
 
+    // Park + residential faces each get their own grass material (richer
+    // shaders for shot mode). Other faces group by color and use the flat
+    // material.
     const byColor = new Map()
+    const parkRings = []
+    const residentialRings = []
     for (const face of faces) {
+      if (face.use === 'park') { parkRings.push(face.ring); continue }
+      if (face.use === 'residential') { residentialRings.push(face.ring); continue }
       const color = (luColors && luColors[face.use]) || LAND_USE_COLORS[face.use] || LAND_USE_COLORS.unknown
       if (!byColor.has(color)) byColor.set(color, [])
       byColor.get(color).push(face.ring)
     }
+    if (parkRings.length) byColor.set('__park__', parkRings)
+    if (residentialRings.length) byColor.set('__residential__', residentialRings)
 
     const result = []
     for (const [color, rings] of byColor) {
@@ -742,18 +842,48 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       geo.setAttribute('normal', new THREE.Float32BufferAttribute(allNrm, 3))
       geo.setIndex(allIdx)
       geo = subdivideGeo(geo, 30)
-      result.push({ geo, color })
+      result.push({
+        geo, color,
+        isPark: color === '__park__',
+        isResidential: color === '__residential__',
+      })
     }
     return result
-  }, [luColors])
+  }, [luColors, ribbons, useBoundary])
+
+  // Grass material for park faces — shared by Designer (flat ambient) and
+  // shots (full lighting). Lamp lightmap wires in night glow. Sun altitude
+  // is updated per-frame below.
+  const parkGrass = useMemo(() => {
+    const g = makeGrassMaterial({ lampLightmap: getLampLightmap() })
+    if (!flat) patchTerrain(g.material, { perVertex: true })
+    return g
+  }, [flat])
+  // Residential grass — lighter/more suburban green. Base color can be
+  // overridden via the Designer lot/residential picker.
+  const residentialGrass = useMemo(() => {
+    const base = (luColors && luColors.residential) || LAND_USE_COLORS.residential
+    const g = makeGrassMaterial({ lampLightmap: getLampLightmap(), color: base })
+    if (!flat) patchTerrain(g.material, { perVertex: true })
+    return g
+  }, [flat, luColors])
+  useFrame(() => {
+    const sP = parkGrass.shaderRef.current
+    if (sP) sP.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
+    const sR = residentialGrass.shaderRef.current
+    if (sR) sR.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
+  })
 
   // ── Materials: terrain displacement + shadow-tinted flat ──────
   const makeMaterial = useMemo(() => {
     const fragShader = flat ? CARTOGRAPH_FLAT : SHADOW_TINTED_FLAT
     const cacheKey = flat ? 'sr-flat' : 'sr-shadow'
-    return (color, pri) => {
+    return (color, pri, fade = null, opts = {}) => {
       const mat = new THREE.MeshStandardMaterial({
-        color, roughness: 0.9, metalness: 0, side: THREE.FrontSide,
+        color: opts.surveyActive ? ARCH_BLUE : color,
+        roughness: 0.9, metalness: 0, side: THREE.FrontSide,
+        transparent: !!fade || !!opts.measureActive || !!opts.surveyActive,
+        opacity: opts.surveyActive ? 0.28 : (opts.measureActive ? 0.45 : 1),
         // Negative offset pulls ribbons toward the camera (beats terrain at 0).
         // More-negative = closer; higher pri should win, so factor = -pri.
         polygonOffset: true, polygonOffsetFactor: -pri, polygonOffsetUnits: -pri * 4,
@@ -776,8 +906,23 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           shader.fragmentShader = shader.fragmentShader
             .replace('#include <lights_fragment_maps>', fragShader)
         }
+        if (fade) {
+          shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade.center.x, fade.center.z) }
+          shader.uniforms.uFadeInner  = { value: fade.inner }
+          shader.uniforms.uFadeOuter  = { value: fade.outer }
+          shader.vertexShader = shader.vertexShader
+            .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;')
+            .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvFadeWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
+          shader.fragmentShader = shader.fragmentShader
+            .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;\nuniform vec2 uFadeCenter;\nuniform float uFadeInner;\nuniform float uFadeOuter;')
+            .replace('#include <opaque_fragment>',
+              '#include <opaque_fragment>\n' +
+              'float _fadeR = distance(vFadeWorldPos.xz, uFadeCenter);\n' +
+              'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _fadeR);')
+        }
       }
-      mat.customProgramCacheKey = () => flat ? 'sr-flat' : 'sr-pbr-v3'
+      const fadeKey = fade ? `-f${fade.inner}-${fade.outer}` : ''
+      mat.customProgramCacheKey = () => (flat ? 'sr-flat' : 'sr-pbr-v3') + fadeKey
       return mat
     }
   }, [flat])
@@ -790,8 +935,8 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     'parking-parallel': 'street', 'parking-angled': 'street',
     sidewalk: 'sidewalk', corner_sw: 'sidewalk',
     curb: 'curb', corner_curb: 'curb',
-    treelawn: 'sidewalk',
-    lawn: 'sidewalk',
+    treelawn: 'treelawn',
+    lawn: 'treelawn',
   }
 
   // Lift ribbons slightly above terrain in shot mode so they don't clip
@@ -799,16 +944,51 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
   // paths, etc.) sits at y=0 and the lift would bury those — keep y=0 there.
   return (
     <group position={[0, flat ? 0 : 0.15, 0]}>
-      {!hide.lot && faceMeshes.map((m, i) => (
-        <mesh key={`face-${i}`} geometry={m.geo} renderOrder={FACE_FILL_PRIORITY} receiveShadow
-          material={makeMaterial(m.color, FACE_FILL_PRIORITY)} />
-      ))}
+      {!hide.lot && !hideFaceFills && faceMeshes.map((m, i) => {
+        const faceFade = { center: FADE_CENTER, inner: FACE_FADE.inner, outer: FACE_FADE.outer }
+        // Face fills stay opaque in every tool. Translucency is reserved for
+        // the ribbon meshes (Survey blue tint, Measure per-stripe) — that's
+        // where the aerial-through-edit-subject affordance lives. Translucent
+        // face fills on top of aerial were too much noise on screen.
+        let mat
+        if (m.isPark) {
+          mat = flat
+            ? makeMaterial(layerColors.park || DEFAULT_LAYER_COLORS.park, FACE_FILL_PRIORITY)
+            : parkGrass.material
+        } else if (m.isResidential) {
+          mat = flat
+            ? makeMaterial((luColors && luColors.residential) || LAND_USE_COLORS.residential, FACE_FILL_PRIORITY, faceFade)
+            : residentialGrass.material
+        } else {
+          mat = makeMaterial(m.color, FACE_FILL_PRIORITY, faceFade)
+        }
+        return <mesh key={`face-${i}`} geometry={m.geo} renderOrder={FACE_FILL_PRIORITY} receiveShadow material={mat} />
+      })}
       {meshes.map((m, i) => {
         const layerId = LAYER_MAP[m.id]
         if (layerId && hide[layerId]) return null
+        const streetFade = { center: FADE_CENTER, inner: STREET_FADE.inner, outer: STREET_FADE.outer }
+        // Grass bands (treelawn + lawn) adopt the adjacent-block grass shader
+        // in shot mode so the strip flows into the block's grass seamlessly.
+        // Designer keeps the flat band color for plan-view legibility.
+        let mat
+        if (!flat && !measureActive && !surveyActive && (m.id === 'treelawn' || m.id === 'lawn')) {
+          mat = m.id === 'lawn' ? parkGrass.material : residentialGrass.material
+        } else {
+          mat = makeMaterial(m.color, m.pri, streetFade, { measureActive, surveyActive })
+        }
         return (
-          <mesh key={i} geometry={m.geo} renderOrder={m.pri} receiveShadow
-            material={makeMaterial(m.color, m.pri)} />
+          <mesh key={i} geometry={m.geo} renderOrder={m.pri} receiveShadow material={mat} />
+        )
+      })}
+      {authoringActive && edgeStrokes.map((m, i) => {
+        // In survey mode render only the outermost property-line stroke in blue.
+        // In measure mode render per-material strokes at every boundary.
+        if (surveyActive && !m.isOuter) return null
+        const strokeColor = surveyActive ? ARCH_BLUE : m.color
+        return (
+          <mesh key={`edge-${i}`} geometry={m.geo} renderOrder={20} receiveShadow
+            material={makeMaterial(strokeColor, 20, null)} />
         )
       })}
     </group>

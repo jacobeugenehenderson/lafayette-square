@@ -1,10 +1,12 @@
 import { create } from 'zustand'
 import { fetchMarkers, saveMarkers, fetchCenterlines, saveCenterlines, fetchMeasurements, saveMeasurements } from '../api.js'
+import { segmentRangesForCouplers } from '../streetProfiles.js'
 
 const useCartographStore = create((set, get) => ({
   // ── Layer visibility + colors (synced from Panel.jsx) ─────
   layerVis: {},
   layerColors: {},
+  layerStrokes: {},
   luColors: {},
   bgColor: '#1a1a18',
 
@@ -14,9 +16,6 @@ const useCartographStore = create((set, get) => ({
   fillsVisible: true,
   toggleFills: () => set(s => ({ fillsVisible: !s.fillsVisible })),
 
-  aerialVisible: true,
-  toggleAerial: () => set(s => ({ aerialVisible: !s.aerialVisible })),
-
   // ── Tool + Shot ───────────────────────────────────────────
   // Two orthogonal axes:
   //   tool = authoring tool, only meaningful in the Designer (shot==='designer')
@@ -25,7 +24,28 @@ const useCartographStore = create((set, get) => ({
   //          ('designer' | 'browse' | 'hero' | 'street')
   // markerActive = overlay toggle, independent of tool
   tool: null,
-  shot: 'designer',
+  shot: (() => {
+    try {
+      const saved = localStorage.getItem('cartograph-shot')
+      if (saved && ['designer', 'browse', 'hero', 'street'].includes(saved)) return saved
+    } catch { /* ignore */ }
+    return 'designer'
+  })(),
+  // Scene = what geometry we're looking at. Orthogonal to tool and shot.
+  // 'neighborhood' = real Lafayette Square data. 'toy' = compact test fixture
+  // (single 4-way corner, 4 blocks of houses) for shader + rendering R&D.
+  scene: (() => {
+    try {
+      const saved = localStorage.getItem('cartograph-scene')
+      if (saved === 'toy' || saved === 'neighborhood') return saved
+    } catch { /* ignore */ }
+    return 'neighborhood'
+  })(),
+  setScene: (scene) => {
+    if (scene !== 'neighborhood' && scene !== 'toy') return
+    try { localStorage.setItem('cartograph-scene', scene) } catch { /* ignore */ }
+    set({ scene })
+  },
   markerActive: false,
   setTool: (newTool) => {
     const prev = get().tool
@@ -55,6 +75,7 @@ const useCartographStore = create((set, get) => ({
       if (get().tool === 'surveyor') get()._saveCenterlines()
       set({ tool: null, selectedStreet: null, selectedNode: null, markerActive: false, markerEraserActive: false })
     }
+    try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
     set({ shot, status: '' })
   },
   toggleMarker: () => {
@@ -125,6 +146,9 @@ const useCartographStore = create((set, get) => ({
   svOriginals: new Map(),
   selectedStreet: null,
   selectedNode: null,
+  // Measure mode: where on the selected centerline the user clicked.
+  // Handles anchor to this point instead of the street midpoint.
+  selectedMeasurePoint: null,
 
   _loadCenterlines: async () => {
     try {
@@ -180,7 +204,8 @@ const useCartographStore = create((set, get) => ({
 
   selectStreet: (idx) => set({ selectedStreet: idx, selectedNode: null }),
   selectNode: (idx) => set({ selectedNode: idx }),
-  deselectStreet: () => set({ selectedStreet: null, selectedNode: null }),
+  deselectStreet: () => set({ selectedStreet: null, selectedNode: null, selectedMeasurePoint: null }),
+  setMeasurePoint: (pt) => set({ selectedMeasurePoint: pt }),
 
   updateStreetField: (field, value) => {
     const { selectedStreet, centerlineData } = get()
@@ -220,6 +245,48 @@ const useCartographStore = create((set, get) => ({
     get()._saveCenterlines()
   },
 
+  // Toggle a split coupler at a centerline node.  Couplers split the street
+  // into addressable segments — each can carry its own measure (in
+  // st.segmentMeasures, keyed by the inclusive index range like "3-7"). Zero
+  // couplers = single segment = whole street (default behavior).
+  toggleCoupler: (nodeIdx) => {
+    const { selectedStreet, centerlineData } = get()
+    if (selectedStreet === null) return
+    get()._pushUndo(selectedStreet)
+    const st = centerlineData.streets[selectedStreet]
+    if (!st.couplers) st.couplers = []
+    const cIdx = st.couplers.indexOf(nodeIdx)
+    if (cIdx >= 0) st.couplers.splice(cIdx, 1)
+    else st.couplers.push(nodeIdx)
+    st.couplers.sort((a, b) => a - b)
+    // Prune segmentMeasures keys that no longer correspond to a real segment.
+    if (st.segmentMeasures) {
+      const validKeys = new Set(segmentRangesForCouplers(st.points.length, st.couplers).map(r => `${r[0]}-${r[1]}`))
+      for (const k of Object.keys(st.segmentMeasures)) {
+        if (!validKeys.has(k)) delete st.segmentMeasures[k]
+      }
+    }
+    set({ centerlineData: { ...centerlineData } })
+    get()._saveCenterlines()
+  },
+
+  // Reset one segment to street/pipeline default. The segment is identified by
+  // the [startIdx, endIdx] range matching st.segmentMeasures keys.
+  resetSegment: (segmentRange) => {
+    const { selectedStreet, centerlineData } = get()
+    if (selectedStreet === null) return
+    get()._pushUndo(selectedStreet)
+    const st = centerlineData.streets[selectedStreet]
+    if (!st.segmentMeasures) return
+    const key = `${segmentRange[0]}-${segmentRange[1]}`
+    if (st.segmentMeasures[key]) {
+      delete st.segmentMeasures[key]
+      if (Object.keys(st.segmentMeasures).length === 0) delete st.segmentMeasures
+    }
+    set({ centerlineData: { ...centerlineData }, status: 'Segment reset' })
+    get()._saveCenterlines()
+  },
+
   toggleStreetDisabled: () => {
     const { selectedStreet, centerlineData } = get()
     if (selectedStreet === null) return
@@ -247,44 +314,10 @@ const useCartographStore = create((set, get) => ({
     get()._saveCenterlines()
   },
 
-  splitAtNode: () => {
-    const { selectedStreet, selectedNode, centerlineData } = get()
-    if (selectedStreet === null || selectedNode === null) return
-    const st = centerlineData.streets[selectedStreet]
-    if (selectedNode === 0 || selectedNode === st.points.length - 1) return // can't split at endpoints
-
-    // Two new segments, both keep the same street identity
-    const ptsA = st.points.slice(0, selectedNode + 1)
-    const ptsB = st.points.slice(selectedNode)
-
-    const baseId = st.id || st.name + '-' + selectedStreet
-    const segA = {
-      ...st,
-      id: baseId + '-a',
-      points: ptsA,
-      _original: ptsA.map(p => [p[0], p[1]]),
-      hiddenNodes: [],
-    }
-    const segB = {
-      ...st,
-      id: baseId + '-b',
-      points: ptsB,
-      _original: ptsB.map(p => [p[0], p[1]]),
-      hiddenNodes: [],
-    }
-
-    // Replace the original street with the two segments
-    const streets = [...centerlineData.streets]
-    streets.splice(selectedStreet, 1, segA, segB)
-
-    set({
-      centerlineData: { ...centerlineData, streets },
-      selectedStreet: null,
-      selectedNode: null,
-      status: 'Split ' + st.name + ' at node ' + selectedNode + ' → 2 segments',
-    })
-    get()._saveCenterlines()
-  },
+  // splitAtNode was a destructive split (turned one centerline into two
+  // separate entries with no way to rejoin). Replaced by toggleCoupler above
+  // which is a non-destructive marker on a node — segments share the same
+  // street identity and can be uncoupled by toggling the marker off.
 
   // ── Measurements ──────────────────────────────────────────
   measurements: [],

@@ -1,0 +1,644 @@
+{
+  "source": "OSM sidewalk distance measurements + assessor ROW fallback",
+  "date": "2026-04-11",
+  "notes": "pavementHalfWidth = centerline to sidewalk centerline. Block edge goes here. Street pavement is rendered independently from lane/parking tags. Tree lawn is the natural gap.",
+  "streets": {
+    "Accomac Street": {
+      "name": "Accomac Street",
+      "type": "residential",
+      "pavementHalfWidth": 5,
+      "source": "default"
+    },
+    "Albion Place": {
+      "name": "Albion Place",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 18.1,
+      "source": "sidewalk",
+      "pavementHalfWidth": 7.851906663572121,
+      "sidewalkLeft": 8,
+      "sidewalkRight": 7.71
+    },
+    "Allen Avenue": {
+      "name": "Allen Avenue",
+      "type": "residential",
+      "pavementHalfWidth": 5.523994407899366,
+      "source": "sidewalk",
+      "sidewalkLeft": 4.21,
+      "sidewalkRight": 6.84
+    },
+    "Ann Avenue": {
+      "name": "Ann Avenue",
+      "lanes": 2,
+      "oneway": true,
+      "type": "residential",
+      "pavementHalfWidth": 7.280837911787399,
+      "source": "sidewalk",
+      "sidewalkLeft": 6.36,
+      "sidewalkRight": 8.2
+    },
+    "Benton Place": {
+      "name": "Benton Place",
+      "lanes": 2,
+      "oneway": true,
+      "type": "residential",
+      "rowWidth": 4,
+      "source": "assessor",
+      "pavementHalfWidth": 2
+    },
+    "California Avenue": {
+      "name": "California Avenue",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 5.974943149341041,
+      "source": "sidewalk",
+      "sidewalkLeft": 5.06,
+      "sidewalkRight": 6.89
+    },
+    "Caroline Street": {
+      "name": "Caroline Street",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 4.132460040692814,
+      "source": "sidewalk",
+      "sidewalkLeft": 3.31,
+      "sidewalkRight": 4.95
+    },
+    "Carroll Street": {
+      "name": "Carroll Street",
+      "lanes": 2,
+      "type": "unclassified",
+      "rowWidth": 18,
+      "source": "sidewalk",
+      "pavementHalfWidth": 7.223397642832015,
+      "sidewalkLeft": 6.88,
+      "sidewalkRight": 7.57
+    },
+    "Chouteau Avenue": {
+      "name": "Chouteau Avenue",
+      "lanes": 5,
+      "cycleway": true,
+      "oneway": true,
+      "divided": true,
+      "type": "secondary",
+      "rowWidth": 24.5,
+      "source": "sidewalk",
+      "pavementHalfWidth": 10.017232371323068,
+      "sidewalkLeft": 10.02,
+      "sidewalkRight": 10.01
+    },
+    "Dillon Drive": {
+      "name": "Dillon Drive",
+      "type": "residential",
+      "rowWidth": 18.5,
+      "source": "assessor",
+      "pavementHalfWidth": 9.25
+    },
+    "Dillon Street": {
+      "name": "Dillon Street",
+      "type": "residential",
+      "rowWidth": 18,
+      "source": "sidewalk-1side",
+      "pavementHalfWidth": 7.930845826837252,
+      "sidewalkRight": 7.93
+    },
+    "Dolman Street": {
+      "name": "Dolman Street",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 18.1,
+      "source": "measured",
+      "pavementHalfWidth": 5,
+      "sidewalkLeft": 7.29,
+      "sidewalkRight": 4.67,
+      "notes": "32.85ft curb-to-curb via Google Maps"
+    },
+    "Eads Avenue": {
+      "name": "Eads Avenue",
+      "lanes": 1,
+      "oneway": true,
+      "type": "residential",
+      "pavementHalfWidth": 4.982839668517055,
+      "source": "sidewalk",
+      "sidewalkLeft": 3.23,
+      "sidewalkRight": 6.74
+    },
+    "Emmet Street": {
+      "name": "Emmet Street",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 5,
+      "source": "default"
+    },
+    "Geyer Avenue": {
+      "name": "Geyer Avenue",
+      "lanes": 2,
+      "oneway": true,
+      "divided": true,
+      "type": "residential",
+      "pavementHalfWidth": 6.397571175714624,
+      "source": "sidewalk",
+      "sidewalkLeft": 6.96,
+      "sidewalkRight": 5.83
+    },
+    "Gratiot Street": {
+      "name": "Gratiot Street",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 15.996705580772293,
+      "source": "sidewalk-1side",
+      "sidewalkRight": 16
+    },
+    "Grattan Street": {
+      "name": "Grattan Street",
+      "lanes": 1,
+      "oneway": true,
+      "type": "residential",
+      "rowWidth": 14.3,
+      "source": "sidewalk-1side",
+      "pavementHalfWidth": 9.941991558213438,
+      "sidewalkRight": 9.94
+    },
+    "Gravois Avenue": {
+      "name": "Gravois Avenue",
+      "lanes": 2,
+      "cycleway": true,
+      "oneway": true,
+      "divided": true,
+      "type": "primary",
+      "pavementHalfWidth": 15.052740223705193,
+      "source": "sidewalk-1side",
+      "sidewalkRight": 15.05
+    },
+    "Henrietta Place": {
+      "name": "Henrietta Place",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 7.462568635487003,
+      "source": "sidewalk-1side",
+      "sidewalkRight": 7.46
+    },
+    "Henrietta Street": {
+      "name": "Henrietta Street",
+      "type": "residential",
+      "pavementHalfWidth": 7.524676034486274,
+      "source": "sidewalk",
+      "sidewalkLeft": 6.85,
+      "sidewalkRight": 8.2
+    },
+    "Hickory Lane": {
+      "name": "Hickory Lane",
+      "type": "residential",
+      "rowWidth": 12.5,
+      "source": "assessor",
+      "pavementHalfWidth": 6.25
+    },
+    "Hickory Street": {
+      "name": "Hickory Street",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 16.5,
+      "source": "sidewalk",
+      "pavementHalfWidth": 5.786383102772469,
+      "sidewalkLeft": 5.74,
+      "sidewalkRight": 5.84
+    },
+    "Iowa Avenue": {
+      "name": "Iowa Avenue",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 7.073593851069642,
+      "source": "sidewalk",
+      "sidewalkLeft": 6.59,
+      "sidewalkRight": 7.55
+    },
+    "Kennett Place": {
+      "name": "Kennett Place",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 18.1,
+      "source": "sidewalk-1side",
+      "pavementHalfWidth": 5.602597563739767,
+      "sidewalkLeft": 5.6
+    },
+    "Lafayette Avenue": {
+      "name": "Lafayette Avenue",
+      "lanes": 6,
+      "cycleway": true,
+      "oneway": true,
+      "divided": true,
+      "type": "residential",
+      "rowWidth": 25.4,
+      "source": "sidewalk",
+      "pavementHalfWidth": 9.347645782772506,
+      "sidewalkLeft": 9.25,
+      "sidewalkRight": 9.45
+    },
+    "Lasalle Lane": {
+      "name": "Lasalle Lane",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 5,
+      "source": "default"
+    },
+    "Lasalle Street": {
+      "name": "Lasalle Street",
+      "lanes": 2,
+      "oneway": true,
+      "type": "residential",
+      "rowWidth": 16.2,
+      "source": "sidewalk",
+      "pavementHalfWidth": 6.326772896585872,
+      "sidewalkLeft": 6.34,
+      "sidewalkRight": 6.31
+    },
+    "Mackay Place": {
+      "name": "Mackay Place",
+      "lanes": 2,
+      "oneway": true,
+      "type": "residential",
+      "rowWidth": 15.1,
+      "source": "sidewalk",
+      "pavementHalfWidth": 6.5496067509266265,
+      "sidewalkLeft": 6.41,
+      "sidewalkRight": 6.69
+    },
+    "McNair Avenue": {
+      "name": "McNair Avenue",
+      "type": "residential",
+      "pavementHalfWidth": 7.7432890892259945,
+      "source": "sidewalk",
+      "sidewalkLeft": 6.71,
+      "sidewalkRight": 8.78
+    },
+    "Mississippi Avenue": {
+      "name": "Mississippi Avenue",
+      "lanes": 4,
+      "cycleway": true,
+      "diagonalParking": true,
+      "type": "residential",
+      "rowWidth": 15.2,
+      "source": "sidewalk",
+      "pavementHalfWidth": 4.94630261706773,
+      "sidewalkLeft": 4.24,
+      "sidewalkRight": 5.65
+    },
+    "Missouri Avenue": {
+      "name": "Missouri Avenue",
+      "lanes": 2,
+      "cycleway": true,
+      "oneway": true,
+      "type": "residential",
+      "rowWidth": 18.2,
+      "source": "sidewalk",
+      "pavementHalfWidth": 4.6058083194128,
+      "sidewalkLeft": 5.02,
+      "sidewalkRight": 4.19
+    },
+    "Montrose Avenue": {
+      "name": "Montrose Avenue",
+      "oneway": true,
+      "type": "residential",
+      "pavementHalfWidth": 7.263690755014601,
+      "source": "sidewalk",
+      "sidewalkLeft": 7.09,
+      "sidewalkRight": 7.44
+    },
+    "Nebraska Avenue": {
+      "name": "Nebraska Avenue",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 6.042522754626692,
+      "source": "sidewalk",
+      "sidewalkLeft": 5.7,
+      "sidewalkRight": 6.38
+    },
+    "Nicholson Place": {
+      "name": "Nicholson Place",
+      "type": "residential",
+      "rowWidth": 15.8,
+      "source": "sidewalk",
+      "pavementHalfWidth": 5.190105979129703,
+      "sidewalkLeft": 3.41,
+      "sidewalkRight": 6.97
+    },
+    "Ohio Avenue": {
+      "name": "Ohio Avenue",
+      "lanes": 2,
+      "sharrows": true,
+      "type": "residential",
+      "pavementHalfWidth": 5.674005503621602,
+      "source": "sidewalk",
+      "sidewalkLeft": 5.89,
+      "sidewalkRight": 5.46
+    },
+    "Oregon Avenue": {
+      "name": "Oregon Avenue",
+      "type": "residential",
+      "pavementHalfWidth": 5,
+      "source": "default"
+    },
+    "Oregon Place": {
+      "name": "Oregon Place",
+      "type": "residential",
+      "pavementHalfWidth": 5,
+      "source": "default"
+    },
+    "Papin Street": {
+      "name": "Papin Street",
+      "lanes": 3,
+      "type": "residential",
+      "pavementHalfWidth": 7.780441713779427,
+      "source": "sidewalk",
+      "sidewalkLeft": 11.61,
+      "sidewalkRight": 3.95
+    },
+    "Park Avenue": {
+      "name": "Park Avenue",
+      "lanes": 3,
+      "cycleway": true,
+      "oneway": true,
+      "divided": true,
+      "type": "residential",
+      "rowWidth": 24.3,
+      "source": "sidewalk",
+      "pavementHalfWidth": 4.45001452275307,
+      "sidewalkLeft": 2.99,
+      "sidewalkRight": 5.91
+    },
+    "Park Place": {
+      "name": "Park Place",
+      "lanes": 2,
+      "oneway": true,
+      "type": "unclassified",
+      "pavementHalfWidth": 3.4536641122432457,
+      "source": "sidewalk-1side",
+      "sidewalkLeft": 3.45
+    },
+    "Peabody Court": {
+      "name": "Peabody Court",
+      "type": "residential",
+      "pavementHalfWidth": 5,
+      "source": "default"
+    },
+    "Pennsylvania Avenue": {
+      "name": "Pennsylvania Avenue",
+      "type": "residential",
+      "pavementHalfWidth": 5.101559890535292,
+      "source": "sidewalk",
+      "sidewalkLeft": 4.25,
+      "sidewalkRight": 5.96
+    },
+    "Preston Place": {
+      "name": "Preston Place",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 14.8,
+      "source": "sidewalk-1side",
+      "pavementHalfWidth": 6.608709656064646,
+      "sidewalkLeft": 6.61
+    },
+    "Russell Boulevard": {
+      "name": "Russell Boulevard",
+      "lanes": 4,
+      "cycleway": true,
+      "oneway": true,
+      "divided": true,
+      "type": "secondary",
+      "pavementHalfWidth": 7.746914576747607,
+      "source": "sidewalk",
+      "sidewalkLeft": 8.74,
+      "sidewalkRight": 6.76
+    },
+    "Rutger Lane": {
+      "name": "Rutger Lane",
+      "type": "residential",
+      "rowWidth": 6.7,
+      "source": "assessor",
+      "pavementHalfWidth": 3.35
+    },
+    "Rutger Street": {
+      "name": "Rutger Street",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 17.8,
+      "source": "sidewalk",
+      "pavementHalfWidth": 5.914746117113385,
+      "sidewalkLeft": 5.85,
+      "sidewalkRight": 5.98
+    },
+    "Saint Vincent Avenue": {
+      "name": "Saint Vincent Avenue",
+      "lanes": 2,
+      "oneway": true,
+      "type": "residential",
+      "pavementHalfWidth": 6.176041291628165,
+      "source": "sidewalk",
+      "sidewalkLeft": 6.16,
+      "sidewalkRight": 6.2
+    },
+    "Serbian Drive": {
+      "name": "Serbian Drive",
+      "type": "residential",
+      "pavementHalfWidth": 7.419312311149058,
+      "source": "sidewalk",
+      "sidewalkLeft": 6.39,
+      "sidewalkRight": 8.44
+    },
+    "Simpson Place": {
+      "name": "Simpson Place",
+      "lanes": 1,
+      "type": "residential",
+      "rowWidth": 12.2,
+      "source": "sidewalk",
+      "pavementHalfWidth": 5.298291753705734,
+      "sidewalkLeft": 5.42,
+      "sidewalkRight": 5.17
+    },
+    "Singleton Street": {
+      "name": "Singleton Street",
+      "type": "residential",
+      "pavementHalfWidth": 5.93369818360847,
+      "source": "sidewalk-1side",
+      "sidewalkLeft": 5.93
+    },
+    "Soulard Street": {
+      "name": "Soulard Street",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 7.926205566429083,
+      "source": "sidewalk-1side",
+      "sidewalkRight": 7.93
+    },
+    "South 12th Street": {
+      "name": "South 12th Street",
+      "lanes": 1,
+      "oneway": true,
+      "divided": true,
+      "type": "tertiary_link",
+      "pavementHalfWidth": 15.124995802117553,
+      "source": "sidewalk",
+      "sidewalkLeft": 16.79,
+      "sidewalkRight": 13.46
+    },
+    "South 13th Street": {
+      "name": "South 13th Street",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 8.86562395673497,
+      "source": "sidewalk-1side",
+      "sidewalkLeft": 8.87
+    },
+    "South 14th Street": {
+      "name": "South 14th Street",
+      "oneway": true,
+      "divided": true,
+      "type": "residential",
+      "pavementHalfWidth": 7.351279833278065,
+      "source": "sidewalk",
+      "sidewalkLeft": 8.72,
+      "sidewalkRight": 5.98
+    },
+    "South 17th Street": {
+      "name": "South 17th Street",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 5,
+      "source": "default"
+    },
+    "South 18th Street": {
+      "name": "South 18th Street",
+      "lanes": 4,
+      "sharrows": true,
+      "oneway": true,
+      "type": "residential",
+      "rowWidth": 12.9,
+      "source": "sidewalk",
+      "pavementHalfWidth": 5.731935663108496,
+      "sidewalkLeft": 4.16,
+      "sidewalkRight": 7.3
+    },
+    "South 21st Street": {
+      "name": "South 21st Street",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 18.2,
+      "source": "sidewalk",
+      "pavementHalfWidth": 5.4108272383320575,
+      "sidewalkLeft": 2.48,
+      "sidewalkRight": 8.34
+    },
+    "South 22nd Street": {
+      "name": "South 22nd Street",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 18,
+      "source": "sidewalk",
+      "pavementHalfWidth": 6.815233443185419,
+      "sidewalkLeft": 5.68,
+      "sidewalkRight": 7.95
+    },
+    "South Cardinal Avenue": {
+      "name": "South Cardinal Avenue",
+      "oneway": true,
+      "type": "residential",
+      "pavementHalfWidth": 7.50846923056702,
+      "source": "sidewalk",
+      "sidewalkLeft": 7.87,
+      "sidewalkRight": 7.15
+    },
+    "South Ewing Avenue": {
+      "name": "South Ewing Avenue",
+      "lanes": 1,
+      "oneway": true,
+      "type": "residential",
+      "pavementHalfWidth": 7.459094891165681,
+      "source": "sidewalk",
+      "sidewalkLeft": 6.7,
+      "sidewalkRight": 8.22
+    },
+    "South Jefferson Avenue": {
+      "name": "South Jefferson Avenue",
+      "lanes": 7,
+      "sharrows": true,
+      "oneway": true,
+      "divided": true,
+      "type": "primary",
+      "rowWidth": 27.1,
+      "source": "sidewalk",
+      "pavementHalfWidth": 9.163045461963636,
+      "sidewalkLeft": 12.08,
+      "sidewalkRight": 6.25
+    },
+    "South Tucker Boulevard": {
+      "name": "South Tucker Boulevard",
+      "lanes": 6,
+      "cycleway": true,
+      "type": "primary",
+      "pavementHalfWidth": 12.342865867575602,
+      "source": "sidewalk",
+      "sidewalkLeft": 10.66,
+      "sidewalkRight": 14.03
+    },
+    "St. Vincent Court": {
+      "name": "St. Vincent Court",
+      "lanes": 2,
+      "oneway": true,
+      "type": "residential",
+      "pavementHalfWidth": 6.697854660386676,
+      "source": "sidewalk-1side",
+      "sidewalkLeft": 6.7
+    },
+    "Truman Parkway": {
+      "name": "Truman Parkway",
+      "lanes": 4,
+      "oneway": true,
+      "divided": true,
+      "type": "secondary",
+      "rowWidth": 10.1,
+      "source": "sidewalk",
+      "pavementHalfWidth": 10.368846451884664,
+      "sidewalkLeft": 15.69,
+      "sidewalkRight": 5.04
+    },
+    "Vail Place": {
+      "name": "Vail Place",
+      "lanes": 1,
+      "oneway": true,
+      "type": "residential",
+      "rowWidth": 14,
+      "source": "sidewalk",
+      "pavementHalfWidth": 5.573904108800795,
+      "sidewalkLeft": 5.5,
+      "sidewalkRight": 5.65
+    },
+    "Waverly Place": {
+      "name": "Waverly Place",
+      "lanes": 1,
+      "oneway": true,
+      "type": "residential",
+      "rowWidth": 2.7,
+      "source": "sidewalk-1side",
+      "pavementHalfWidth": 12.804841185842056,
+      "sidewalkRight": 12.8
+    },
+    "West 18th Street": {
+      "name": "West 18th Street",
+      "lanes": 2,
+      "type": "residential",
+      "pavementHalfWidth": 15.616006187045546,
+      "source": "sidewalk-1side",
+      "sidewalkLeft": 15.62
+    },
+    "Whittemore Place": {
+      "name": "Whittemore Place",
+      "lanes": 2,
+      "type": "residential",
+      "rowWidth": 18.2,
+      "source": "sidewalk",
+      "pavementHalfWidth": 8.104483523047367,
+      "sidewalkLeft": 8.28,
+      "sidewalkRight": 7.93
+    }
+  }
+}

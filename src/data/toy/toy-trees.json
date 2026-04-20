@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "source": "toy",
+    "count": 8,
+    "note": "Schema matches src/data/park_trees.json. Trees sit in front yards (just inside the property line at x=±10.5) so canopies overhang sidewalks but not pavement. 2 extra trees in back yards for depth."
+  },
+  "trees": [
+    { "x": -10.5, "z": -22, "species": "Maple, Sugar",      "shape": "broad",      "dbh": 10, "condition": "Good" },
+    { "x":  10.5, "z": -22, "species": "Oak, White",        "shape": "broad",      "dbh": 11, "condition": "Good" },
+    { "x": -10.5, "z":  22, "species": "Elm, American",     "shape": "broad",      "dbh": 12, "condition": "Fair" },
+    { "x":  10.5, "z":  22, "species": "Pine, White",       "shape": "conifer",    "dbh":  9, "condition": "Good" },
+    { "x": -10.5, "z": -10, "species": "Cherry, Yoshino",   "shape": "ornamental", "dbh":  8, "condition": "Good" },
+    { "x":  10.5, "z":  10, "species": "Linden, Littleleaf","shape": "broad",      "dbh": 10, "condition": "Good" },
+    { "x": -30,   "z": -32, "species": "Maple, Silver",     "shape": "broad",      "dbh": 14, "condition": "Good" },
+    { "x":  30,   "z":  32, "species": "Oak, Pin",          "shape": "broad",      "dbh": 13, "condition": "Fair" }
+  ]
+}

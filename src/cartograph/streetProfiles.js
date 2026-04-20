@@ -1,236 +1,235 @@
-// Street profile computation — shared between surveyor, measure, and pipeline
+// Street cross-section model — shared between Measure, pipeline, and renderer.
+//
+// One street, two sides (left/right of centerline walking from points[0] onward;
+// side=+1 is right, matching offsetPolyline convention).
+//
+// Per side:
+//   {
+//     pavementHW:  number  // meters, centerline → curb-inner edge
+//     treelawn:    number  // meters, optional, 0 = absent
+//     sidewalk:    number  // meters, optional, 0 = absent
+//     terminal:   'sidewalk' | 'lawn' | 'none'
+//   }
+//
+// Stripe order from centerline outward (always fixed):
+//   asphalt (pavementHW) → curb (const CURB_WIDTH) → [treelawn] → [sidewalk | lawn]
+//
+// The last stripe's material is named by `terminal`. When terminal='none' the
+// side stops at curb (alleys, footways).
+//
+// No per-stripe pulldowns: stripe position in the sequence determines material.
+// Parking is authored as a separate overlay layer — not represented here.
+
 const FT = 0.3048
 
-const PROFILES = {
-  residential: { lanes: 2, laneW: 10 * FT, parkW: 7 * FT, parkType: 'parallel', gutterW: 1.5 * FT },
-  secondary:   { lanes: 2, laneW: 11 * FT, parkW: 7 * FT, parkType: 'parallel', gutterW: 1.5 * FT },
-  primary:     { lanes: 4, laneW: 11 * FT, parkW: 8 * FT, parkType: 'parallel', gutterW: 1.5 * FT },
-  service:     { lanes: 2, laneW: 7.5 * FT, parkW: 0, parkType: null, gutterW: 0 },
-  footway:     { lanes: 1, laneW: 3 * FT, parkW: 0, parkType: null, gutterW: 0 },
-  cycleway:    { lanes: 1, laneW: 5 * FT, parkW: 0, parkType: null, gutterW: 0 },
-  pedestrian:  { lanes: 1, laneW: 5 * FT, parkW: 0, parkType: null, gutterW: 0 },
-  steps:       { lanes: 1, laneW: 4 * FT, parkW: 0, parkType: null, gutterW: 0 },
+export const CURB_WIDTH = 6 * 0.0254   // fixed constant — not editable
+export const SV_TREELAWN = 4.5 * FT
+export const SV_SIDEWALK = 5 * FT
+
+// Default pavement half-widths per street type (no parking rolled in —
+// parking is a separate overlay now).
+const TYPE_PAVEMENT_HW = {
+  residential: 2 * 10 * FT / 2 + 7 * FT,   // 2 lanes + 1 parking lane = half-width from curb
+  secondary:   2 * 11 * FT / 2 + 7 * FT,
+  primary:     4 * 11 * FT / 2 + 8 * FT,
+  service:     7.5 * FT,
+  footway:     3 * FT,
+  cycleway:    5 * FT,
+  pedestrian:  5 * FT,
+  steps:       4 * FT,
 }
 
-const SV_CURB = 6 * 0.0254
-const SV_TREELAWN = 4.5 * FT
-const SV_SIDEWALK = 5 * FT
-
-// Sidewalk-eligible street types: these get a default sidewalk band sized to
-// fill the curb-to-property-line gap (from survey.rowWidth) or a conservative
-// 5 ft default when no survey data is available. See feedback_no_default_sidewalks.md
-// (SUPERSEDED) and the 2026-04-16 session notes in BACKLOG.md.
+// Types that get a default sidewalk-zone (treelawn + sidewalk, terminal='sidewalk').
 const SIDEWALK_ELIGIBLE = new Set(['residential', 'secondary', 'primary'])
 
-// Snap targets for dragging (incremental widths, not cumulative)
-export const SNAP_TARGETS = {
-  'parking-parallel': [7 * FT, 8 * FT],
-  'parking-angled':   [16 * FT, 18 * FT, 20 * FT],
-  treelawn:           [3 * FT, 3.5 * FT, 4 * FT, 4.5 * FT, 5 * FT, 6 * FT],
-  sidewalk:           [4 * FT, 4.5 * FT, 5 * FT, 6 * FT, 8 * FT, 10 * FT],
-}
-export const SNAP_RADIUS = 0.25 // meters
-
-// ── Band palettes ───────────────────────────────────────────
-// BAND_COLORS = Material-3 compliant defaults, used by the rendered map.
-// CAUSTIC_BAND_COLORS = loud authoring colors, used by the Measure caustic overlay.
-// Keep these palettes distinct — caustic colors must never leak into the map.
-// See feedback_material3_defaults.md.
+// ── Palettes ───────────────────────────────────────────
+// BAND_COLORS = Material-3 defaults used by the rendered map. Design panel
+// overrides via store.layerColors — see m3Colors.js for the BAND_TO_LAYER map.
 export const BAND_COLORS = {
-  asphalt:            '#3e3e3c',  // dark neutral
-  'parking-parallel': '#464642',  // slightly distinguishable stripe
-  'parking-angled':   '#464642',
-  gutter:             '#6e6a62',  // transition between asphalt and curb
-  curb:               '#6b4a30',  // warm brown — high contrast against asphalt and sidewalk for visibility
-  treelawn:           '#5a6e42',  // muted green
-  sidewalk:           '#a89e8e',  // light warm concrete
-  lawn:               '#5a6e42',  // muted green (same as treelawn by default)
+  asphalt:  '#3e3e3c',
+  curb:     '#6b4a30',
+  treelawn: '#5a6e42',
+  sidewalk: '#a89e8e',
+  lawn:     '#5a6e42',
 }
 
+// Loud caustic palette for Measure overlay (translucent fills + opaque strokes).
+// MUST NOT leak into the map — render.js + StreetRibbons use BAND_COLORS.
 export const CAUSTIC_BAND_COLORS = {
-  asphalt:            '#ff8800',
-  'parking-parallel': '#cc6600',
-  'parking-angled':   '#cc4400',
-  curb:               '#ffcc00',
-  gutter:             '#998866',
-  treelawn:           '#44cc44',
-  sidewalk:           '#aaaacc',
-  lawn:               '#336622',
+  asphalt:  '#ff8800',
+  curb:     '#ffcc00',
+  treelawn: '#44cc44',
+  sidewalk: '#aaaacc',
+  lawn:     '#336622',
 }
 
 export const BAND_LABELS = {
-  asphalt:            'Travel Lanes',
-  'parking-parallel': 'Parallel Parking',
-  'parking-angled':   'Angled Parking',
-  curb:               'Curb',
-  gutter:             'Gutter',
-  treelawn:           'Treelawn',
-  sidewalk:           'Sidewalk',
-  lawn:               'Lawn',
+  asphalt:  'Asphalt',
+  curb:     'Curb',
+  treelawn: 'Treelawn',
+  sidewalk: 'Sidewalk',
+  lawn:     'Lawn',
 }
 
-// Combined half-width for surveyor ribbon preview (backwards compat)
-export function getHalfWidth(type) {
-  const p = PROFILES[type] || PROFILES.residential
-  return (p.lanes / 2) * p.laneW + p.parkW + p.gutterW
+// Snap targets for drag-release on the property-line handle. See Phase 13.5.
+export const SNAP_TARGETS = {
+  treelawn: [3 * FT, 3.5 * FT, 4 * FT, 4.5 * FT, 5 * FT, 6 * FT],
+  sidewalk: [4 * FT, 4.5 * FT, 5 * FT, 6 * FT, 8 * FT, 10 * FT, 12 * FT, 15 * FT],
 }
+export const SNAP_RADIUS = 0.25
 
-// Minimal default bands for a street type. The operator adds specific details
-// (parking, treelawn, wider sidewalk, etc.) via the caustic ruler — defaults
-// are deliberately the "certain" basics.
+// ── Default measure per side, using survey data when available.
 //
-// Generic street → asphalt + curb
-// Sidewalk-eligible → asphalt + curb + sidewalk
+// Survey fields (per street):
+//   pavementHalfWidth   — centerline → curb-inner, shared both sides
+//   sidewalkLeft/Right  — centerline → *sidewalk centerline* on that side
+//                         (OSM footway distance). Present only where
+//                         cartograph/survey.js found a sidewalk.
 //
-// `asphalt` width sums the full pavement half-width from survey (or type
-// default), so roadway + any implicit parking is all one `asphalt` band.
-// Operator re-classifies via Measure when they want to distinguish parking.
-function buildDefaultPavementBand(type, pavementHW) {
-  return [{ material: 'asphalt', width: pavementHW }]
+// Per-side derivation:
+//   - Sidewalk-ineligible type (alley/footway/etc.) → terminal='none', no stripes outside curb.
+//   - Survey has sidewalkX for this side → terminal='sidewalk',
+//     treelawn fills gap between curb-outer and (sidewalkDist − SV_SIDEWALK/2),
+//     sidewalk width = SV_SIDEWALK.
+//   - Sidewalk-eligible but no sidewalk data on this side:
+//     - If the other side has sidewalk (asymmetric street — e.g. park-edge) →
+//       terminal='lawn' with a modest grass strip (no measured data).
+//     - If neither side has sidewalk data → terminal='sidewalk' with a sane
+//       default so the default rendering still reads as a residential block.
+export function defaultSideMeasure(type, survey, sideKey = 'left') {
+  const hw = survey?.pavementHalfWidth || TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential
+  if (!SIDEWALK_ELIGIBLE.has(type)) {
+    return { pavementHW: hw, treelawn: 0, sidewalk: 0, terminal: 'none' }
+  }
+  const swDist = sideKey === 'right'
+    ? survey?.sidewalkRight
+    : survey?.sidewalkLeft
+  if (swDist && Number.isFinite(swDist)) {
+    const curbOuter = hw + CURB_WIDTH
+    const swInner = swDist - SV_SIDEWALK / 2
+    const treelawn = Math.max(0, swInner - curbOuter)
+    return {
+      pavementHW: hw,
+      treelawn,
+      sidewalk: SV_SIDEWALK,
+      terminal: 'sidewalk',
+    }
+  }
+  // No per-side sidewalk data.
+  const otherSw = sideKey === 'right' ? survey?.sidewalkLeft : survey?.sidewalkRight
+  if (otherSw && Number.isFinite(otherSw)) {
+    // Other side has a sidewalk; this side likely faces open space / park.
+    return { pavementHW: hw, treelawn: 0, sidewalk: 3 * FT, terminal: 'lawn' }
+  }
+  // Neither side surveyed — fall back to residential treelawn + sidewalk default.
+  return { pavementHW: hw, treelawn: SV_TREELAWN, sidewalk: SV_SIDEWALK, terminal: 'sidewalk' }
 }
 
-export function getDefaultBands(type) {
-  const p = PROFILES[type] || PROFILES.residential
-  // Full pavement half-width (travel + any expected parking + gutter)
-  const pavementHW = (p.lanes / 2) * p.laneW + (p.parkW || 0) + (p.gutterW || 0)
-  const bands = buildDefaultPavementBand(type, pavementHW)
-  bands.push({ material: 'curb', width: SV_CURB })
-  if (SIDEWALK_ELIGIBLE.has(type)) {
-    bands.push({ material: 'sidewalk', width: SV_SIDEWALK })
-  }
-  return bands
+// Per-street default measure: {left, right, symmetric}.
+// `symmetric: true` means dragging one side's handles mirrors to the other.
+// Operator unlocks via the panel "Asymmetrical" toggle. Most streets are
+// symmetric; park-edge streets typically need asymmetrical.
+export function defaultMeasure(type, survey) {
+  const left = defaultSideMeasure(type, survey, 'left')
+  const right = defaultSideMeasure(type, survey, 'right')
+  // If survey produced different terminals L vs R (park-edge case), start
+  // asymmetric so the operator doesn't accidentally overwrite one side.
+  const symmetric = left.terminal === right.terminal
+    && Math.abs(left.treelawn - right.treelawn) < 0.01
+    && Math.abs(left.sidewalk - right.sidewalk) < 0.01
+  return { left, right, symmetric }
 }
 
-// Survey-driven per-side builder.
-//
-// Per survey.json's own data model:
-//   `sidewalkLeft` / `sidewalkRight` = distance from street centerline to the
-//   CENTERLINE of the sidewalk on each side. Sidewalk is a standard 5 ft
-//   concrete strip centered on that measurement. This is the authoritative
-//   measurement for sidewalk position.
-//
-// The cross-section from centerline outward (per side):
-//   [asphalt + parking] → [curb 6"] → [treelawn if present] → [sidewalk 5ft]
-// Sidewalk outer edge = sidewalkDistance + SV_SIDEWALK/2.
-// Curb outer edge    = sidewalkDistance - SV_SIDEWALK/2 (no default treelawn).
-// Pavement half-width = curb outer - SV_CURB (asphalt/parking fills the rest).
-//
-// If sidewalkLeft/Right are absent (e.g. alleys, footways), fall back to
-// pavementHalfWidth or type-default pavement.
-export function getDefaultBandsFromSurvey(type, survey, side = 'left') {
-  const p = PROFILES[type] || PROFILES.residential
-  const isSidewalkEligible = SIDEWALK_ELIGIBLE.has(type)
-
-  // Measured sidewalk-centerline distance for this side, if present.
-  const swDist = side === 'right'
-    ? survey?.sidewalkRight ?? survey?.sidewalkLeft
-    : survey?.sidewalkLeft  ?? survey?.sidewalkRight
-
-  // Resolve pavement half-width (all driveable surface — roadway + any
-  // implicit parking + gutter, as one `asphalt` band; operator splits as needed)
-  let pavementHW
-  if (isSidewalkEligible && swDist) {
-    pavementHW = swDist - SV_SIDEWALK / 2 - SV_CURB
-  } else if (survey?.pavementHalfWidth && !isSidewalkEligible) {
-    pavementHW = survey.pavementHalfWidth
-  } else {
-    pavementHW = (p.lanes / 2) * p.laneW + (p.parkW || 0) + (p.gutterW || 0)
-  }
-  if (pavementHW < 0.5) pavementHW = 0.5
-
-  const bands = buildDefaultPavementBand(type, pavementHW)
-  bands.push({ material: 'curb', width: SV_CURB })
-  if (isSidewalkEligible) {
-    bands.push({ material: 'sidewalk', width: SV_SIDEWALK })
-  }
-  return bands
-}
-
-// Symmetric {left, right} band profile. Defaults stay symmetric even when
-// survey.sidewalkLeft ≠ sidewalkRight — those per-side differences are usually
-// measurement noise, and asymmetric defaults produce visibly asymmetric corner
-// plugs which the user has explicitly rejected ("adds unnecessary complexity,
-// rounded square at the end of the sidewalk"). Asymmetric bands are still
-// available for operator measurement or for Phase 14 divided-oneways — just
-// not as a default. We use pavementHalfWidth (the survey's average) as the
-// single sidewalk-centerline reference.
-export function getDefaultBandProfile(type, survey) {
-  // Build once using the average (pavementHalfWidth), then mirror to both sides.
-  const symmetricSurvey = survey
-    ? { ...survey, sidewalkLeft: survey.pavementHalfWidth, sidewalkRight: survey.pavementHalfWidth }
-    : survey
-  const bands = getDefaultBandsFromSurvey(type, symmetricSurvey, 'left')
-  return {
-    left: bands.map(b => ({ ...b })),
-    right: bands.map(b => ({ ...b })),
-  }
-}
-
-// (DEPRECATED — kept for any external callers) Symmetric-only version.
-export function getDefaultBandProfileSymmetric(type, survey) {
-  const bands = getDefaultBandsFromSurvey(type, survey, 'left')
-  return {
-    left: bands.map(b => ({ ...b })),
-    right: bands.map(b => ({ ...b })),
-  }
-}
-
-// Cumulative widths for a {left, right} band profile.
-// Useful for deriving reference edges (curb inner/outer, property line).
-export function bandProfileCumulative(bandProfile) {
-  return {
-    left: bandsToCumulative(bandProfile.left || []),
-    right: bandsToCumulative(bandProfile.right || []),
-  }
-}
-
-// Compute cumulative distances from a band stack (for caustic rendering)
-// Returns array of { material, innerR, outerR }
-export function bandsToCumulative(bands) {
+// Convert one side's measure into an ordered list of rings: one per stripe,
+// innerR → outerR from centerline outward. Materials are implied by position.
+export function sideToStripes(side) {
+  if (!side) return []
+  const out = []
   let r = 0
-  return bands.map(b => {
-    const inner = r
-    r += b.width
-    return { material: b.material, innerR: inner, outerR: r }
-  })
+  // asphalt
+  if (side.pavementHW > 0) {
+    out.push({ material: 'asphalt', innerR: r, outerR: r + side.pavementHW })
+    r += side.pavementHW
+  }
+  // curb — always present unless pavement is zero
+  if (side.pavementHW > 0 && side.terminal !== undefined) {
+    out.push({ material: 'curb', innerR: r, outerR: r + CURB_WIDTH })
+    r += CURB_WIDTH
+  }
+  if (side.terminal === 'none') return out
+  // treelawn (optional)
+  if (side.treelawn > 0) {
+    out.push({ material: 'treelawn', innerR: r, outerR: r + side.treelawn })
+    r += side.treelawn
+  }
+  // terminal stripe: sidewalk or lawn
+  if (side.terminal === 'sidewalk' && side.sidewalk > 0) {
+    out.push({ material: 'sidewalk', innerR: r, outerR: r + side.sidewalk })
+    r += side.sidewalk
+  } else if (side.terminal === 'lawn' && side.sidewalk > 0) {
+    out.push({ material: 'lawn', innerR: r, outerR: r + side.sidewalk })
+    r += side.sidewalk
+  }
+  return out
 }
 
-// Convert a band stack to the flat profile format StreetRibbons expects
-// (for pipeline compatibility)
-export function bandsToProfile(bands) {
-  const cum = bandsToCumulative(bands)
-  const last = cum[cum.length - 1]
-  const find = (mat) => {
-    const b = cum.find(c => c.material === mat)
-    return b ? b.outerR : 0
-  }
-  // Map to the existing profile format
-  const parkOuter = find('parking-parallel') || find('parking-angled')
-  const curbOuter = find('curb')
-  const treelawnOuter = find('treelawn')
-  const sidewalkOuter = find('sidewalk')
+// Reference edges for corner-plug logic. Everything the plug math needs.
+export function refEdges(side) {
+  const stripes = sideToStripes(side)
+  const find = (mat) => stripes.find(s => s.material === mat)
+  const asphalt = find('asphalt')
+  const curb = find('curb')
+  const sw = stripes.find(s => s.material === 'sidewalk' || s.material === 'lawn')
+  const outer = stripes.length ? stripes[stripes.length - 1].outerR : 0
   return {
-    asphalt: parkOuter || curbOuter || last.outerR,
-    curb: curbOuter || last.outerR,
-    treelawn: treelawnOuter,
-    sidewalk: sidewalkOuter || treelawnOuter || curbOuter || last.outerR,
-    source: 'measured',
+    propertyLine: outer,
+    asphaltOuter: asphalt ? asphalt.outerR : 0,
+    curbInner:  curb ? curb.innerR : outer,
+    curbOuter:  curb ? curb.outerR : outer,
+    sidewalkInner: sw ? sw.innerR : outer,
+    sidewalkOuter: sw ? sw.outerR : outer,
+    hasSidewalk: sw?.material === 'sidewalk',
+    terminal: side?.terminal || 'none',
   }
 }
 
-// Get the old-style full profile (for backwards compat with existing code)
-export function getFullProfile(type) {
-  const hw = getHalfWidth(type)
-  return {
-    asphalt: hw,
-    curb: hw + SV_CURB,
-    treelawn: 0,
-    sidewalk: 0,
-    symmetric: true,
+// Couplers split a street into addressable segments. With couplers at
+// indices [3, 7] on a 10-point street, segments are [0,3], [3,7], [7,9].
+// Each segment is half-open at the end (the coupler index is shared with
+// the next segment so the ribbon edges meet cleanly at the coupler point).
+export function segmentRangesForCouplers(pointCount, couplers = []) {
+  if (pointCount < 2) return []
+  const sorted = [...new Set(couplers)]
+    .filter(i => i > 0 && i < pointCount - 1)
+    .sort((a, b) => a - b)
+  const ranges = []
+  let start = 0
+  for (const c of sorted) {
+    ranges.push([start, c])
+    start = c
   }
+  ranges.push([start, pointCount - 1])
+  return ranges
 }
 
-// Offset a polyline left or right by a distance
+// Resolve the effective measure for a given segment range. Falls back to the
+// street's overall measure when no per-segment override exists. Returns null
+// if neither is set (caller should use defaults).
+export function measureForSegment(street, range) {
+  const key = `${range[0]}-${range[1]}`
+  if (street.segmentMeasures && street.segmentMeasures[key]) {
+    return street.segmentMeasures[key]
+  }
+  return street.measure || null
+}
+
+// Total half-width (for back-compat callers like surveyor ribbon preview).
+export function getHalfWidth(type) {
+  const side = defaultSideMeasure(type)
+  return side.pavementHW + (side.terminal !== 'none' ? CURB_WIDTH : 0) + side.treelawn + side.sidewalk
+}
+
+// Offset a polyline by `dist` along its normal; side=+1 right, -1 left.
 export function offsetPolyline(pts, dist, side) {
   const result = []
   const n = pts.length

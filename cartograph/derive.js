@@ -22,7 +22,7 @@ import { RAW_DIR, CARTOGRAPH_DIR, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
-import { getDefaultBandProfile } from '../src/cartograph/streetProfiles.js'
+import { defaultMeasure } from '../src/cartograph/streetProfiles.js'
 
 const { Clipper, ClipperOffset, Paths, IntPoint,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1124,6 +1124,24 @@ export function deriveLayers(highways) {
     f.coords.map(c => ({ x: c.x, z: c.z }))
   )
 
+  // Inject neighborhood boundary as closing edges (dense polyline so face
+  // rings step through many short segments rather than one long chord —
+  // avoids visible straight edges in the fade zone).
+  try {
+    const boundaryData = JSON.parse(readFileSync(
+      join(CARTOGRAPH_DIR, 'data', 'neighborhood_boundary.json'), 'utf-8'
+    ))
+    const boundaryRing = boundaryData.boundary.map(([x, z]) => ({ x, z }))
+    if (boundaryRing.length > 2) {
+      const first = boundaryRing[0], last = boundaryRing[boundaryRing.length - 1]
+      if (first.x !== last.x || first.z !== last.z) boundaryRing.push({ x: first.x, z: first.z })
+      streetPolylines.push(boundaryRing)
+      console.log(`    Injected neighborhood boundary (${boundaryRing.length} points)`)
+    }
+  } catch (e) {
+    console.log(`    (no neighborhood_boundary.json — skipping: ${e.message})`)
+  }
+
   const nodedSegments = nodeEdges(streetPolylines)
   const faces = polygonize(nodedSegments)
 
@@ -1449,6 +1467,22 @@ export function deriveLayers(highways) {
   for (const [key, deg] of Object.entries(vertexDegree)) {
     if (deg === 1) deadEndNodes.add(key)  // degree-1 = dead end
   }
+
+  // Which streets have operator-marked caps? Used below to skip the tip-cap
+  // circle-cut so the ribbon cap paints over the face without leaving
+  // uncovered half-circle artifacts.
+  const streetNamesWithOperatorCaps = new Set()
+  try {
+    const cPath = join(RAW_DIR, 'centerlines.json')
+    if (existsSync(cPath)) {
+      const cd = JSON.parse(readFileSync(cPath, 'utf-8'))
+      for (const cl of (cd.streets || [])) {
+        if (cl.name && (cl.capStart || cl.capEnd || cl.deadEnd)) {
+          streetNamesWithOperatorCaps.add(cl.name)
+        }
+      }
+    }
+  } catch { /* ignore */ }
 
   const deadEndPoints = []
   for (const f of vehicularStreets) {
@@ -1832,10 +1866,14 @@ export function deriveLayers(highways) {
       // vertex and back. The edge buffers along the slit leave a small
       // uncovered triangle at the very tip. Add a circle at the dead-end
       // point (radius = pavementHalfWidth) to close it.
+      // Skip when the operator has marked this street with a cap — the
+      // ribbon cap covers 180°, so a full 360° cut here leaves the other
+      // 180° exposed as a "green artifact." Let the cap render on top.
       for (const f of vehicularStreets) {
         if (LOOP_STREET_NAMES.has(f.tags?.name)) continue
         const c = f.coords
         if (c.length < 2) continue
+        if (streetNamesWithOperatorCaps.has(f.tags?.name)) continue
         for (const ep of [c[0], c[c.length - 1]]) {
           let onFace = false
           for (const p of face.ring) {
@@ -2050,6 +2088,36 @@ export function deriveLayers(highways) {
   const pavementFeats = toCompoundFeatures(clippedStreets)
   console.log(`    ${pavementFeats.length} street pavement polygons (clipped to exclude blocks)`)
 
+  // ── Curb-extended pavement union for path/alley clipping ───
+  // Paths/alleys/footways/cycleways/steps should never extend past the
+  // curb of an adjacent street. We grow the pavement union by CURB_WIDTH
+  // and subtract from each path-layer geometry just before emission below.
+  // One foolproof rule: nothing pedestrian crosses the curb line.
+  const CURB_WIDTH_M = 6 * 0.0254  // matches streetProfiles.js
+  const _curbCo = new ClipperOffset()
+  _curbCo.ArcTolerance = ARC_TOL
+  _curbCo.AddPaths(clippedStreets, JoinType.jtRound, EndType.etClosedPolygon)
+  const pavementWithCurb = new Paths()
+  _curbCo.Execute(pavementWithCurb, CURB_WIDTH_M * SCALE)
+  function clipFeaturesOutsideCurb(features) {
+    if (!features || features.length === 0 || pavementWithCurb.length === 0) return features
+    const out = []
+    for (const f of features) {
+      if (!f.ring || f.ring.length < 3) { out.push(f); continue }
+      const subj = new Paths()
+      subj.push(f.ring.map(p => toClipper(p.x, p.z)))
+      const c = new Clipper()
+      c.AddPaths(subj, PolyType.ptSubject, true)
+      c.AddPaths(pavementWithCurb, PolyType.ptClip, true)
+      const result = new Paths()
+      c.Execute(ClipType.ctDifference, result, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+      for (let i = 0; i < result.length; i++) {
+        if (result[i].length >= 3) out.push({ ...f, ring: pathFromClipper(result[i]) })
+      }
+    }
+    return out
+  }
+
   // ── Compute ribbons layer (3D street cross-section data) ───
   console.log('  [8/8] Computing ribbons layer...')
 
@@ -2062,7 +2130,8 @@ export function deriveLayers(highways) {
     }
   } catch { /* no measurements */ }
 
-  // Load centerlines (surveyor-curated street metadata + optional _bands)
+  // Load centerlines (surveyor-curated street metadata + optional measure).
+  // `measure: {left, right}` is the current schema; per-name first-segment wins.
   let centerlineByName = new Map()
   try {
     const cPath = join(RAW_DIR, 'centerlines.json')
@@ -2070,11 +2139,9 @@ export function deriveLayers(highways) {
       const cd = JSON.parse(readFileSync(cPath, 'utf-8'))
       for (const st of (cd.streets || [])) {
         if (!st.name) continue
-        // First centerline per name wins; _bands can be on any segment of a
-        // named street. TODO: per-segment bands when schema supports it.
         if (!centerlineByName.has(st.name)) {
           centerlineByName.set(st.name, st)
-        } else if (st._bands && !centerlineByName.get(st.name)._bands) {
+        } else if (st.measure && !centerlineByName.get(st.name).measure) {
           centerlineByName.set(st.name, st)
         }
       }
@@ -2097,74 +2164,33 @@ export function deriveLayers(highways) {
   }
 
   /**
-   * Resolve the band stack for a street. Returns { left, right, source }
-   * where each side is an ordered array of { material, width }, inside → outside.
-   * Authority: centerlines._bands → survey-driven default → hardcoded default.
+   * Resolve the cross-section measure for a street. Returns {left, right, source}
+   * where each side is {pavementHW, treelawn, sidewalk, terminal}.
+   * Authority: centerlines.measure → survey-driven default.
    */
-  function computeStreetBands(name, tags) {
+  function computeStreetMeasure(name, tags) {
     const type = mapHighwayToStreetType(tags?.highway)
     const survey = correctedSurvey[name]
-
-    // Override from centerlines._bands (current schema: flat array = symmetric).
     const centerline = centerlineByName.get(name)
-    if (centerline?._bands && Array.isArray(centerline._bands) && centerline._bands.length) {
-      const flat = centerline._bands.map(b => ({ ...b }))
+
+    if (centerline?.measure?.left && centerline?.measure?.right) {
       return {
-        left: flat.map(b => ({ ...b })),
-        right: flat.map(b => ({ ...b })),
+        left: { ...centerline.measure.left },
+        right: { ...centerline.measure.right },
         source: 'measured',
       }
     }
 
-    const profile = getDefaultBandProfile(type, survey)
+    const d = defaultMeasure(type, survey)
     return {
-      left: profile.left,
-      right: profile.right,
+      left: d.left,
+      right: d.right,
       source: survey?.rowWidth ? 'survey-default' : 'default',
     }
   }
 
-  /**
-   * Resolve the cross-section profile for a street.
-   * Authority: measurements.json → survey.json → standards.js defaults.
-   * Returns distances from centerline: { asphalt, curb, treelawn, sidewalk, source }
-   */
-  function computeStreetProfile(name, tags) {
-    const spec = getStreetSpec(tags || {})
-    const defaults = crossSection(spec)
-
-    // Start with standards defaults
-    let asphalt = defaults.pavement
-    let curb = defaults.curb
-    let treelawn = defaults.treeLawnOuter
-    let sidewalk = defaults.sidewalkOuter
-    let source = 'standards'
-
-    // Override with survey data if available
-    const sv = correctedSurvey[name]
-    if (sv?.pavementHalfWidth) {
-      asphalt = sv.pavementHalfWidth
-      curb = asphalt + STANDARDS.curb.width
-      treelawn = curb + STANDARDS.treeLawn.width
-      sidewalk = treelawn + STANDARDS.sidewalk.width
-      source = sv.source || 'survey'
-    }
-
-    // Override with measurement tool data if available
-    const meas = measurements.find(m => m.street === name)
-    if (meas?.profile) {
-      if (meas.profile.asphalt) asphalt = meas.profile.asphalt
-      if (meas.profile.curb) curb = meas.profile.curb
-      if (meas.profile.treelawn) treelawn = meas.profile.treelawn
-      if (meas.profile.sidewalk) sidewalk = meas.profile.sidewalk
-      source = 'measured'
-    }
-
-    return { asphalt, curb, treelawn, sidewalk, source }
-  }
-
   // Build per-street ribbon data: chain same-name segments into polylines,
-  // compute profiles, detect intersection points
+  // compute measures, detect intersection points
   const ribbonsByName = new Map()
   for (const f of vehicularStreets) {
     const name = f.tags?.name
@@ -2225,10 +2251,9 @@ export function deriveLayers(highways) {
 
   for (const [name, data] of ribbonsByName) {
     const chains = chainAllSegments(data.segments)
-    const profile = computeStreetProfile(name, data.tags)
-    const bands = computeStreetBands(name, data.tags)
+    const measure = computeStreetMeasure(name, data.tags)
     for (const points of chains) {
-      ribbonStreets.push({ name, points, profile, bands, intersections: [] })
+      ribbonStreets.push({ name, points, measure, intersections: [] })
     }
   }
 
@@ -2286,49 +2311,141 @@ export function deriveLayers(highways) {
   }
 
   // ── Emit capEnds from operator-marked centerlines ──────────────
-  // `capStart` and `capEnd` are set per-endpoint by the operator in Survey mode.
-  // No auto-detection — operator is authority for what's a real cul-de-sac or
-  // blunt termination. Everything else is null ("connected"), which the renderer
-  // shows as a flat perpendicular termination at the IX (no cap geometry).
-  //
-  // Back-compat: if legacy `deadEnd + capStyle` flags are set, treat deadEnd
-  // as capEnd (conventional — "dead-end" meant the polyline's end endpoint).
+  // Per-chain emission: for each ribbon chain, scan all centerlines of the
+  // same name and apply cap flags whose endpoint matches the chain's endpoint
+  // (handles reversed direction too). This fixes two bugs:
+  //   - caps lost when centerlineByName kept a different segment per name
+  //   - caps over-spread to every chain of a multi-chain street
+  const centerlinesByName = new Map()
+  try {
+    const cPath = join(RAW_DIR, 'centerlines.json')
+    if (existsSync(cPath)) {
+      const cd = JSON.parse(readFileSync(cPath, 'utf-8'))
+      for (const cl of (cd.streets || [])) {
+        if (!cl.name) continue
+        if (!centerlinesByName.has(cl.name)) centerlinesByName.set(cl.name, [])
+        centerlinesByName.get(cl.name).push(cl)
+      }
+    }
+  } catch { /* ignore */ }
+  const PTS_EQ_TOL = 2  // meters — endpoints within this are "the same"
+  function ptsNear(a, b) {
+    const ax = a[0] ?? a.x, az = a[1] ?? a.z
+    const bx = b[0] ?? b.x, bz = b[1] ?? b.z
+    return Math.hypot(ax - bx, az - bz) <= PTS_EQ_TOL
+  }
   for (const st of ribbonStreets) {
-    const centerline = centerlineByName.get(st.name)
-    let capStart = centerline?.capStart ?? null
-    let capEnd = centerline?.capEnd ?? null
-    if (capStart === null && capEnd === null && centerline?.deadEnd) {
-      capEnd = centerline.capStyle || 'round'
+    let capStart = null, capEnd = null
+    const chFirst = st.points[0], chLast = st.points[st.points.length - 1]
+    for (const cl of (centerlinesByName.get(st.name) || [])) {
+      let cStart = cl.capStart ?? null
+      let cEnd = cl.capEnd ?? null
+      if (cStart === null && cEnd === null && cl.deadEnd) cEnd = cl.capStyle || 'round'
+      if (!cStart && !cEnd) continue
+      if (!cl.points || cl.points.length < 2) continue
+      const clFirst = cl.points[0], clLast = cl.points[cl.points.length - 1]
+      // Match by endpoint. Handle reversed polyline: if chain's start == cl's end,
+      // then cl.capEnd belongs to chain's start.
+      if (cStart && ptsNear(chFirst, clFirst)) capStart = capStart || cStart
+      if (cStart && ptsNear(chLast,  clFirst)) capEnd   = capEnd   || cStart
+      if (cEnd   && ptsNear(chFirst, clLast))  capStart = capStart || cEnd
+      if (cEnd   && ptsNear(chLast,  clLast))  capEnd   = capEnd   || cEnd
     }
     st.capEnds = { start: capStart, end: capEnd }
   }
 
   // ── Face fills (land-use classification per polygonized face) ──
-  // Each polygonized face gets a single land-use color. Block faces use
-  // parcel majority vote; park/parking faces use their classified type.
+  // Each polygonized face gets a single land-use color. Block faces:
+  //   1. OSM landuse/leisure/natural/amenity polygons (authoritative) —
+  //      whichever LU category covers the most area of this face wins.
+  //   2. Parcel majority vote (fallback when no OSM polygon hits the face).
+  //   3. 'residential' default (when neither is available).
+  const OSM_TO_LU = {
+    'landuse:retail': 'commercial', 'landuse:commercial': 'commercial',
+    'landuse:residential': 'residential', 'landuse:industrial': 'industrial',
+    'landuse:religious': 'institutional',
+    'landuse:grass': 'recreation', 'landuse:recreation_ground': 'recreation',
+    'landuse:allotments': 'recreation', 'landuse:construction': 'vacant',
+    'leisure:garden': 'recreation', 'leisure:playground': 'recreation',
+    'leisure:swimming_pool': 'recreation', 'leisure:pitch': 'recreation',
+    'leisure:sports_centre': 'recreation',
+    'natural:wood': 'recreation', 'natural:scrub': 'recreation', 'natural:tree_row': 'recreation',
+    'amenity:school': 'institutional', 'amenity:place_of_worship': 'institutional',
+    'amenity:library': 'institutional', 'amenity:university': 'institutional',
+    'amenity:fire_station': 'institutional', 'amenity:crematorium': 'institutional',
+    'amenity:fuel': 'commercial', 'amenity:cafe': 'commercial',
+    'amenity:bar': 'commercial', 'amenity:restaurant': 'commercial',
+    'amenity:fast_food': 'commercial', 'amenity:veterinary': 'commercial',
+    'amenity:charging_station': 'commercial', 'amenity:parking': 'parking',
+    'amenity:waste_disposal': 'industrial',
+  }
+  // Collect every OSM polygon with an LU mapping, annotate with centroid + area.
+  function ringArea(coords) {
+    let a = 0
+    for (let i = 0; i < coords.length; i++) {
+      const p = coords[i], q = coords[(i + 1) % coords.length]
+      a += (p.x ?? p[0]) * (q.z ?? q[1]) - (q.x ?? q[0]) * (p.z ?? p[1])
+    }
+    return Math.abs(a / 2)
+  }
+  const osmLUPolys = []
+  for (const [cat, key] of [['landuse','landuse'],['leisure','leisure'],['natural','natural'],['amenity','amenity']]) {
+    for (const f of (osmData.ground?.[cat] || [])) {
+      const subtype = f.tags?.[key]
+      if (!subtype) continue
+      const lu = OSM_TO_LU[`${cat}:${subtype}`]
+      if (!lu) continue
+      if (!f.coords || f.coords.length < 3) continue
+      let sx = 0, sz = 0
+      for (const p of f.coords) { sx += p.x; sz += p.z }
+      osmLUPolys.push({
+        lu,
+        cx: sx / f.coords.length, cz: sz / f.coords.length,
+        area: ringArea(f.coords),
+      })
+    }
+  }
+  console.log(`    OSM LU-annotated polygons: ${osmLUPolys.length}`)
+
   const faceFills = []
+  let osmClassified = 0, parcelClassified = 0
   for (let fi = 0; fi < classifiedFaces.length; fi++) {
     const face = classifiedFaces[fi]
-    if (face.type === 'fragment') continue  // tiny artifacts, skip
+    if (face.type === 'fragment') continue
 
-    let use = face.type  // park, parking, island, water
+    let use = face.type
     if (face.type === 'block') {
-      // Find this face's index in blockFaces to look up parcels
-      const bfi = blockFaces.indexOf(face)
-      if (bfi >= 0) {
-        const faceParcels = faceParcelMap.get(bfi) || []
-        if (faceParcels.length > 0) {
-          const useCounts = {}
-          for (const p of faceParcels) {
-            const u = classifyLandUse(p.land_use_code)
-            useCounts[u] = (useCounts[u] || 0) + 1
+      // OSM vote by area: for each OSM polygon whose centroid is inside this
+      // face, add its area to the (face, lu) tally.
+      const osmAreas = {}
+      for (const o of osmLUPolys) {
+        if (!pointInRing(o.cx, o.cz, face.ring)) continue
+        osmAreas[o.lu] = (osmAreas[o.lu] || 0) + o.area
+      }
+      let bestLU = null, bestArea = 0
+      for (const [u, a] of Object.entries(osmAreas)) {
+        if (a > bestArea) { bestArea = a; bestLU = u }
+      }
+      if (bestLU) { use = bestLU; osmClassified++ }
+      else {
+        // Fall back to parcel majority vote.
+        const bfi = blockFaces.indexOf(face)
+        if (bfi >= 0) {
+          const faceParcels = faceParcelMap.get(bfi) || []
+          if (faceParcels.length > 0) {
+            const useCounts = {}
+            for (const p of faceParcels) {
+              const u = classifyLandUse(p.land_use_code)
+              useCounts[u] = (useCounts[u] || 0) + 1
+            }
+            let maxCount = 0
+            for (const [u, count] of Object.entries(useCounts)) {
+              if (count > maxCount) { maxCount = count; use = u }
+            }
+            parcelClassified++
+          } else {
+            use = 'residential'
           }
-          let maxCount = 0
-          for (const [u, count] of Object.entries(useCounts)) {
-            if (count > maxCount) { maxCount = count; use = u }
-          }
-        } else {
-          use = 'residential'  // default for blocks without parcels
         }
       }
     }
@@ -2337,15 +2454,14 @@ export function deriveLayers(highways) {
       use,
     })
   }
-  console.log(`    ${faceFills.length} face fills`)
+  console.log(`    ${faceFills.length} face fills (${osmClassified} via OSM, ${parcelClassified} via parcels)`)
 
   // Serialize (remove circular refs)
   const ribbonsLayer = {
     streets: ribbonStreets.map(st => ({
       name: st.name,
       points: st.points,
-      profile: st.profile,
-      bands: st.bands,
+      measure: st.measure,
       capEnds: st.capEnds,
       intersections: st.intersections.map(ix => ({
         ix: ix.ix,
@@ -2361,9 +2477,52 @@ export function deriveLayers(highways) {
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)
   for (const st of ribbonsLayer.streets) {
-    const tag = st.profile.source === 'standards' ? ' [DEFAULT]' : ''
-    console.log(`      ${st.name}: asph=${st.profile.asphalt.toFixed(2)} sw=${st.profile.sidewalk.toFixed(2)}${tag}`)
+    const m = st.measure
+    const tag = m.source === 'default' ? ' [DEFAULT]' : ''
+    const L = m.left, R = m.right
+    console.log(`      ${st.name}: L{pav=${L.pavementHW.toFixed(2)} tl=${L.treelawn.toFixed(2)} sw=${L.sidewalk.toFixed(2)} ${L.terminal}} R{pav=${R.pavementHW.toFixed(2)} tl=${R.treelawn.toFixed(2)} sw=${R.sidewalk.toFixed(2)} ${R.terminal}}${tag}`)
   }
+
+  // ── Surface overlays (sub-face features from OSM) ───────────
+  // These sit inside block faces as visual overlays above face fill, below
+  // buildings. They never replace ribbon-block geometry (use landuse=* for
+  // face classification, not rendering).
+  const _amenity = osmData.ground?.amenity || []
+  const _leisure = osmData.ground?.leisure || []
+  const _natural = osmData.ground?.natural || []
+  const _barrier = osmData.ground?.barrier || []
+
+  const parkingLots = []
+  const institutionOverlays = []
+  for (const f of _amenity) {
+    if (!f.coords || f.coords.length < 3) continue
+    const ring = f.coords.map(c => ({ x: c.x, z: c.z }))
+    if (f.tags?.amenity === 'parking') {
+      parkingLots.push({ ring, surface: f.tags.surface || 'asphalt', access: f.tags.access || null })
+    } else if (f.tags?.amenity) {
+      institutionOverlays.push({ ring, use: f.tags.amenity })
+    }
+  }
+  const leisureOverlays = []
+  for (const f of _leisure) {
+    if (!f.coords || f.coords.length < 3) continue
+    if (f.tags?.leisure === 'park') continue  // Lafayette Park rendered separately
+    leisureOverlays.push({ ring: f.coords.map(c => ({ x: c.x, z: c.z })), use: f.tags?.leisure })
+  }
+  const naturalOverlays = []
+  for (const f of _natural) {
+    if (!f.coords || f.coords.length < 3) continue
+    naturalOverlays.push({ ring: f.coords.map(c => ({ x: c.x, z: c.z })), use: f.tags?.natural })
+  }
+  // Barriers are linear. Emit as polylines (coords, not ring) keyed by kind.
+  const barrierLines = []
+  for (const f of _barrier) {
+    if (!f.coords || f.coords.length < 2) continue
+    if (!['fence', 'wall', 'hedge', 'retaining_wall'].includes(f.tags?.barrier)) continue
+    barrierLines.push({ coords: f.coords.map(c => ({ x: c.x, z: c.z })), kind: f.tags.barrier })
+  }
+  console.log(`    parking_lot: ${parkingLots.length}, institution: ${institutionOverlays.length}, leisure: ${leisureOverlays.length}, natural: ${naturalOverlays.length}, barrier: ${barrierLines.length}`)
+
 
   // ── Assemble layers ─────────────────────────────────────────
   console.log('  [9/9] Assembling layers...')
@@ -2376,17 +2535,22 @@ export function deriveLayers(highways) {
     parkSidewalk:   parkSidewalkFeats,
     park:           parkFeats,
     parcel:         clipParcelsToRoundedBlocks(parcels, parkParcelIds, allBlockPaths),
-    alley:          toFeats(alleyUnion),                                // internal to blocks
+    alley:          clipFeaturesOutsideCurb(toFeats(alleyUnion)),
     centerStripe:   stripeMeta,
     bikeLane:       bikeLanes,
     parkingLine:    parkingLines,
-    footway:        bufferEach(footways, STANDARDS.footway.width / 2),
-    cycleway:       bufferEach(cycleways, STANDARDS.cycleway.width / 2),
-    steps:          bufferEach(steps, STANDARDS.steps.width / 2),
-    path:           bufferEach(paths, STANDARDS.path.width / 2),
+    footway:        clipFeaturesOutsideCurb(bufferEach(footways, STANDARDS.footway.width / 2)),
+    cycleway:       clipFeaturesOutsideCurb(bufferEach(cycleways, STANDARDS.cycleway.width / 2)),
+    steps:          clipFeaturesOutsideCurb(bufferEach(steps, STANDARDS.steps.width / 2)),
+    path:           clipFeaturesOutsideCurb(bufferEach(paths, STANDARDS.path.width / 2)),
     streetlamp:     streetlamps,
     contour:        contours,
     spike:          toFeats(spikeBlockPaths),
+    parking_lot:    parkingLots,
+    institution:    institutionOverlays,
+    leisure:        leisureOverlays,
+    natural:        naturalOverlays,
+    barrier:        barrierLines,
     ribbons:        ribbonsLayer,
   }
 

@@ -69,6 +69,8 @@ function TileMesh({ tile }) {
   )
 }
 
+// z=19 caused some tiles to fail to load in some areas (dark screen);
+// reverted to 18. Bump back when we have a tile-fallback strategy.
 export default function AerialTiles({ zoom = 18, visible = true }) {
   const tiles = useMemo(() => buildTiles(zoom), [zoom])
 

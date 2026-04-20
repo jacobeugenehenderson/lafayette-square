@@ -9,6 +9,9 @@ import parkWaterData from '../data/park_water.json'
 import parkPathData from '../data/park_paths.json'
 import leafTypesData from '../data/leafTypes.json'
 import lampData from '../data/street_lamps.json'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { makeGrassMaterial } from './grassMaterial.js'
+import { getLampLightmap } from './lampLightmap.js'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin
 // Bounded by Park Ave (N), Lafayette Ave (S),
@@ -29,41 +32,7 @@ const FENCE_HEIGHT = 1.5
 const FENCE_POST_SPACING = 8
 const TAU = Math.PI * 2
 
-// ── Bake park lamp positions into a 256×256 lightmap DataTexture ─────
-// Each texel = accumulated Gaussian falloff from nearby lamps. σ=12m.
-// Covers ±200m from origin. Lazy singleton — computed on first use, not at import.
-let _lampLightmapCache = null
-function getLampLightmap() {
-  if (_lampLightmapCache) return _lampLightmapCache
-  const SIZE = 256
-  const EXTENT = 200
-  const SIGMA = 12
-  const SIGMA2 = 2 * SIGMA * SIGMA
-  const CUTOFF2 = (4 * SIGMA) * (4 * SIGMA)
-  const data = new Float32Array(SIZE * SIZE)
-  const lamps = lampData.lamps
-  for (let j = 0; j < SIZE; j++) {
-    const wz = (j / (SIZE - 1)) * 2 * EXTENT - EXTENT
-    for (let i = 0; i < SIZE; i++) {
-      const wx = (i / (SIZE - 1)) * 2 * EXTENT - EXTENT
-      let acc = 0
-      for (let l = 0; l < lamps.length; l++) {
-        const dx = wx - lamps[l].x
-        const dz = wz - lamps[l].z
-        const dist2 = dx * dx + dz * dz
-        if (dist2 > CUTOFF2) continue
-        acc += Math.exp(-dist2 / SIGMA2)
-      }
-      data[j * SIZE + i] = Math.min(acc, 1.5)
-    }
-  }
-  const tex = new THREE.DataTexture(data, SIZE, SIZE, THREE.RedFormat, THREE.FloatType)
-  tex.minFilter = THREE.LinearFilter
-  tex.magFilter = THREE.LinearFilter
-  tex.needsUpdate = true
-  _lampLightmapCache = tex
-  return tex
-}
+// Lamp lightmap moved to ./lampLightmap.js for sharing with StreetRibbons.
 
 // ── SVG clip mask for park boundary ──────────────────────────────────
 const svgUrl = `${import.meta.env.BASE_URL}lafayette-square.svg?v=${Date.now()}`
@@ -192,8 +161,14 @@ function mergeGeos(geos) {
 
 // ── Park Ground with procedural grass texture ──────────────────────────
 function ParkGround() {
-  const grassShaderRef = useRef()
   const [clipTexture, setClipTexture] = useState(null)
+  // shaderRef is owned by the grass material factory and populated on compile.
+  const grassMatObj = useMemo(() => makeGrassMaterial({
+    lampLightmap: getLampLightmap(),
+    clipMin: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z),
+    clipSize: new THREE.Vector2(SVG_VB_W, SVG_VB_H),
+  }), [])
+  const grassShaderRef = grassMatObj.shaderRef
 
   // Fetch SVG and rasterize park-boundary to a clip mask texture
   useEffect(() => {
@@ -280,114 +255,7 @@ function ParkGround() {
     }
   }, [clipTexture])
 
-  // GPU-computed grass: world-space FBM noise injected into MeshStandardMaterial.
-  // No tiling, infinite resolution, full PBR lighting + shadows preserved.
-  const grassMat = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({ roughness: 0.92, color: '#2d5a2d' })
-    mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uSunAltitude = { value: 0.5 }
-      // Clip mask uniforms — updated async when SVG loads
-      shader.uniforms.uClipMap = { value: null }
-      shader.uniforms.uClipMin = { value: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z) }
-      shader.uniforms.uClipSize = { value: new THREE.Vector2(SVG_VB_W, SVG_VB_H) }
-      shader.uniforms.uHasClip = { value: 0.0 }
-      shader.uniforms.uLampMap = { value: getLampLightmap() }
-      grassShaderRef.current = shader
-
-      // Vertex: pass world position to fragment
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <common>',
-        `#include <common>
-         varying vec3 vGrassPos;`
-      )
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-         vGrassPos = (modelMatrix * vec4(position, 1.0)).xyz;`
-      )
-
-      // Fragment: multi-octave noise-based grass coloring + park boundary clip
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <common>',
-        `#include <common>
-         uniform float uSunAltitude;
-         uniform sampler2D uClipMap;
-         uniform vec2 uClipMin;
-         uniform vec2 uClipSize;
-         uniform float uHasClip;
-         uniform sampler2D uLampMap;
-         varying vec3 vGrassPos;
-
-         float gHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-         float gNoise(vec2 p) {
-           vec2 i = floor(p), f = fract(p);
-           f = f * f * (3.0 - 2.0 * f);
-           return mix(
-             mix(gHash(i), gHash(i + vec2(1,0)), f.x),
-             mix(gHash(i + vec2(0,1)), gHash(i + vec2(1,1)), f.x), f.y);
-         }
-         float gFBM(vec2 p) {
-           float v = 0.0, a = 0.5;
-           for (int i = 0; i < 5; i++) { v += a * gNoise(p); p *= 2.03; a *= 0.49; }
-           return v;
-         }`
-      )
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <color_fragment>',
-        `#include <color_fragment>
-         vec2 gp = vGrassPos.xz;
-
-         // Large-scale terrain variation (meadow patches ~12-20m)
-         float gn1 = gFBM(gp * 0.06);
-         // Medium variation (clumps ~5-8m)
-         float gn2 = gFBM(gp * 0.15 + 42.0);
-         // Fine grain (individual grass tufts ~0.5-1m)
-         float gn3 = gFBM(gp * 0.8 + 100.0);
-         // Warm/cool drift across park (~40m)
-         float gn4 = gFBM(gp * 0.025 + 200.0);
-
-         vec3 gBase  = vec3(0.22, 0.40, 0.19);
-         vec3 gLight = vec3(0.30, 0.50, 0.27);
-         vec3 gDark  = vec3(0.15, 0.32, 0.13);
-         vec3 gWarm  = vec3(0.26, 0.44, 0.17);
-         vec3 gCool  = vec3(0.18, 0.38, 0.22);
-
-         vec3 grass = mix(gBase, gLight, smoothstep(0.35, 0.65, gn1));
-         grass = mix(grass, gDark, smoothstep(0.4, 0.7, gn2) * 0.35);
-         grass = mix(grass, gWarm, smoothstep(0.55, 0.8, gn4) * 0.25);
-         grass = mix(grass, gCool, smoothstep(0.2, 0.45, gn4) * 0.2);
-         grass += (gn3 - 0.5) * 0.018;
-
-         // Time-of-day: blue-shift at night, keep brightness for moonlight
-         float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
-         float brightness = mix(0.7, 1.0, dayBright);
-         vec3 nightTint = vec3(0.6, 0.7, 1.0);
-         grass = mix(grass * nightTint, grass, dayBright) * brightness;
-
-         // Park lamp glow (un-rotate from park frame to world for lightmap lookup)
-         vec2 grassWorld = vec2(vGrassPos.x * 0.9871 + vGrassPos.z * 0.1599,
-                               -vGrassPos.x * 0.1599 + vGrassPos.z * 0.9871);
-         vec2 grassLampUV = (grassWorld + 200.0) / 400.0;
-         float grassLampI = texture2D(uLampMap, grassLampUV).r;
-         float grassLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
-         grass += vec3(0.40, 0.50, 0.22) * grassLampI * grassLampOn * 0.4;
-
-         // sRGB values → linear space (shader operates in linear)
-         diffuseColor.rgb = pow(grass, vec3(2.2));`
-      )
-      // Clip grass to park boundary (discard fragments outside mask)
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <dithering_fragment>',
-        `#include <dithering_fragment>
-         if (uHasClip > 0.5) {
-           vec2 clipUV = (vGrassPos.xz - uClipMin) / uClipSize;
-           float mask = texture2D(uClipMap, clipUV).r;
-           if (mask < 0.5) discard;
-         }`
-      )
-    }
-    return mat
-  }, [])
+  const grassMat = grassMatObj.material
 
   useFrame(() => {
     if (grassShaderRef.current) {
@@ -408,130 +276,70 @@ function ParkGround() {
   )
 }
 
-// ── Park Paths (rasterized from SVG compound path) ────────────────────
-// The SVG #paths group contains hand-drawn compound paths.
-// Instead of tessellating Bezier curves (earcut artifacts), we rasterize
-// the SVG paths to a texture and use it as a discard mask on a flat plane.
-// The browser's native SVG renderer gives perfect anti-aliased curves.
-// Same proven technique as ParkGround's grass clip mask.
+// ── Park Paths (ribbon meshes from park_paths.json) ──────────────────
+// Canonical park paths live in park_paths.json (OSM-sourced, world-aligned).
+// Designer renders them as 2D strips; shots render them as shaded ribbons
+// using the same polylines — no more SVG rasterization. See
+// `feedback_designer_is_canonical.md`.
+const PATH_WIDTH_M = 2.8
+
+function buildPathRibbons(paths, width) {
+  const positions = [], indices = []
+  let vOff = 0
+  const half = width / 2
+  for (const p of paths) {
+    const pts = p.points || p
+    if (!pts || pts.length < 2) continue
+    for (let i = 0; i < pts.length; i++) {
+      const [x, z] = pts[i]
+      let nx = 0, nz = 0
+      if (i > 0) {
+        const [px, pz] = pts[i - 1]
+        const dx = x - px, dz = z - pz
+        const len = Math.hypot(dx, dz) || 1
+        nx += -dz / len; nz += dx / len
+      }
+      if (i < pts.length - 1) {
+        const [nxp, nzp] = pts[i + 1]
+        const dx = nxp - x, dz = nzp - z
+        const len = Math.hypot(dx, dz) || 1
+        nx += -dz / len; nz += dx / len
+      }
+      const nl = Math.hypot(nx, nz) || 1
+      nx /= nl; nz /= nl
+      positions.push(x + nx * half, 0, z + nz * half)
+      positions.push(x - nx * half, 0, z - nz * half)
+    }
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = vOff + i * 2
+      indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3)
+    }
+    vOff += pts.length * 2
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  g.setIndex(indices)
+  g.computeVertexNormals()
+  return g
+}
+
 function ParkPaths() {
-  const [pathMask, setPathMask] = useState(null)
   const pathShaderRef = useRef()
 
-  // Rasterize SVG #paths to a clip mask texture (white paths on black)
-  useEffect(() => {
-    fetch(svgUrl)
-      .then(r => r.text())
-      .then(svgText => {
-        const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
-        if (doc.querySelector('parsererror')) {
-          console.warn('[ParkPaths] SVG parse error:', doc.querySelector('parsererror').textContent)
-          return
-        }
-        // Look for the compound path directly (most reliable), then fall back
-        // to searching inside #paths1 or #paths groups. The user may rename/move
-        // these in Illustrator, so we try multiple strategies.
-        const dAttrs = []
-        const compound = doc.querySelector('[id="paths-compound"]')
-        if (compound) {
-          const d = compound.getAttribute('d')
-          if (d) dAttrs.push(d)
-        }
-        if (!dAttrs.length) {
-          // Fallback: search #paths1 then #paths for any filled path
-          const group = doc.querySelector('[id="paths1"]') || doc.querySelector('[id="paths"]')
-          if (group) {
-            for (const p of group.querySelectorAll('path')) {
-              const fill = p.getAttribute('fill')
-              if (fill === 'none') continue
-              const d = p.getAttribute('d')
-              if (d && d.length > 10) dAttrs.push(d)
-            }
-          }
-        }
-        if (!dAttrs.length) { console.warn('[ParkPaths] no compound path found (tried #paths-compound, #paths1, #paths)'); return }
+  const pathGeo = useMemo(
+    () => buildPathRibbons(parkPathData.paths || [], PATH_WIDTH_M),
+    []
+  )
 
-        // Rasterize to canvas
-        const RES = 4096
-        const canvas = document.createElement('canvas')
-        canvas.width = RES
-        canvas.height = Math.round(RES * (SVG_VB_H / SVG_VB_W))
-        const ctx = canvas.getContext('2d')
-
-        ctx.fillStyle = '#000'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        ctx.fillStyle = '#fff'
-        ctx.scale(canvas.width / SVG_VB_W, canvas.height / SVG_VB_H)
-
-        for (const d of dAttrs) {
-          ctx.fill(new Path2D(d))
-        }
-
-        // ── Clip paths to park boundary ────────────────────────────────
-        // Find park boundary polygon (same strategy as ParkGround)
-        let boundaryDs = []
-
-        // Strategy 1: clip-path from paths group (simple closed polygon)
-        const pathsGroup = doc.querySelector('[id="paths1"]')
-        if (pathsGroup) {
-          const clipped = pathsGroup.querySelector('[clip-path]') || pathsGroup
-          const clipRef = (clipped.getAttribute('clip-path') || '').match(/url\(#(.+?)\)/)
-          if (clipRef) {
-            const clipEl = doc.querySelector(`[id="${clipRef[1]}"]`)
-            if (clipEl) {
-              boundaryDs = [...clipEl.querySelectorAll('path')].map(p => p.getAttribute('d')).filter(Boolean)
-            }
-          }
-        }
-        // Strategy 2: #park-boundary element
-        if (!boundaryDs.length) {
-          const boundary = doc.querySelector('[id^="park-boundary"]')
-          if (boundary) {
-            const ln = (boundary.tagName || '').toLowerCase()
-            const paths = ln === 'path' ? [boundary] : [...boundary.querySelectorAll('path')]
-            for (const p of paths) {
-              const d = p.getAttribute('d')
-              if (d) {
-                for (const sub of d.split(/(?=M)/)) {
-                  if (sub.length > 10) boundaryDs.push(sub)
-                }
-              }
-            }
-          }
-        }
-
-        // Intersect: keep only path pixels inside the park boundary
-        if (boundaryDs.length) {
-          ctx.globalCompositeOperation = 'destination-in'
-          for (const d of boundaryDs) {
-            ctx.fill(new Path2D(d))
-          }
-          ctx.globalCompositeOperation = 'source-over'
-        }
-
-        const tex = new THREE.CanvasTexture(canvas)
-        tex.flipY = false
-        tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
-        tex.minFilter = THREE.LinearFilter
-        setPathMask(tex)
-      })
-      .catch(err => console.warn('[ParkPaths] SVG fetch failed:', err))
-  }, [])
-
-  // Gravel material with path mask — discard fragments outside path shapes
+  // Gravel material — same pebble/voronoi shader as before, minus the
+  // SVG-clip uniforms since the geometry IS the path shape now.
   const pathMat = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
       roughness: 0.95,
       color: '#928a7c',
-      transparent: true,
-      depthWrite: false,
     })
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunAltitude = { value: 0.5 }
-      shader.uniforms.uPathMask = { value: null }
-      shader.uniforms.uMaskMin = { value: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z) }
-      shader.uniforms.uMaskSize = { value: new THREE.Vector2(SVG_VB_W, SVG_VB_H) }
-      shader.uniforms.uHasMask = { value: 0.0 }
       shader.uniforms.uLampMap = { value: getLampLightmap() }
       pathShaderRef.current = shader
 
@@ -550,10 +358,6 @@ function ParkPaths() {
         '#include <common>',
         `#include <common>
          uniform float uSunAltitude;
-         uniform sampler2D uPathMask;
-         uniform vec2 uMaskMin;
-         uniform vec2 uMaskSize;
-         uniform float uHasMask;
          uniform sampler2D uLampMap;
          varying vec3 vPathPos;
 
@@ -595,33 +399,25 @@ function ParkPaths() {
         `#include <color_fragment>
          vec2 pp = vPathPos.xz;
 
-         // Pebble-scale voronoi
          vec3 vr = pVoronoi(pp * 3.0);
          float vDist = vr.x;
          float stoneId = pHash(vr.yz);
 
-         // Per-stone color: warm earth tones, crushed limestone
          vec3 stoneCol = mix(vec3(0.28, 0.26, 0.23), vec3(0.32, 0.28, 0.22), step(0.3, stoneId));
          stoneCol = mix(stoneCol, vec3(0.35, 0.30, 0.24), step(0.6, stoneId));
          stoneCol = mix(stoneCol, vec3(0.18, 0.16, 0.13), step(0.85, stoneId));
 
-         // Dark gaps between pebbles
          float gap = smoothstep(0.30, 0.38, vDist);
          vec3 gravelCol = mix(stoneCol, vec3(0.12, 0.10, 0.08), gap * 0.7);
 
-         // Surface grain
          gravelCol *= 0.9 + pNoise(pp * 12.0 + vr.yz * 7.0) * 0.2;
-
-         // Worn patches
          gravelCol = mix(gravelCol, gravelCol * 0.85, smoothstep(0.4, 0.65, pFBM(pp * 0.3)));
 
-         // Time-of-day
          float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
          float brightness = mix(0.7, 1.0, dayBright);
          vec3 nightTint = vec3(0.6, 0.7, 1.0);
          gravelCol = mix(gravelCol * nightTint, gravelCol, dayBright) * brightness;
 
-         // Park lamp glow
          vec2 pathLampUV = (pp + 200.0) / 400.0;
          float pathLampI = texture2D(uLampMap, pathLampUV).r;
          float pathLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
@@ -629,48 +425,21 @@ function ParkPaths() {
 
          diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
       )
-      // Soft-edge path mask — smoothstep alpha fade at gravel-grass boundary
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <dithering_fragment>',
-        `#include <dithering_fragment>
-         if (uHasMask > 0.5) {
-           vec2 maskUV = (vPathPos.xz - uMaskMin) / uMaskSize;
-           float pathMask = texture2D(uPathMask, maskUV).r;
-           if (pathMask < 0.05) discard;
-           gl_FragColor.a *= smoothstep(0.05, 0.55, pathMask);
-         }`
-      )
     }
     return mat
   }, [])
 
-  // Push mask texture into shader uniforms once loaded
-  useEffect(() => {
-    if (pathShaderRef.current && pathMask) {
-      pathShaderRef.current.uniforms.uPathMask.value = pathMask
-      pathShaderRef.current.uniforms.uHasMask.value = 1.0
-    }
-  }, [pathMask])
-
   useFrame(() => {
     if (pathShaderRef.current) {
-      const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
-      pathShaderRef.current.uniforms.uSunAltitude.value = sunAltitude
-      // Also push mask on every frame (handles HMR shader recompile)
-      if (pathMask) {
-        pathShaderRef.current.uniforms.uPathMask.value = pathMask
-        pathShaderRef.current.uniforms.uHasMask.value = 1.0
-      }
+      pathShaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     }
   })
 
-  // Large flat plane covering the SVG extent, clipped to path shapes by the mask.
-  // Counter-rotate: SVG coords are world-aligned, parent group has GRID_ROTATION.
+  // Counter-rotate: park_paths.json coords are world-aligned (OSM), parent
+  // LafayettePark group carries GRID_ROTATION.
   return (
-    <group rotation={[0, -GRID_ROTATION, 0]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.4, 0]} receiveShadow material={pathMat} frustumCulled={false}>
-        <planeGeometry args={[500, 500, 1, 1]} />
-      </mesh>
+    <group rotation={[0, -GRID_ROTATION, 0]} position={[0, 0.4, 0]}>
+      <mesh geometry={pathGeo} material={pathMat} receiveShadow frustumCulled={false} />
     </group>
   )
 }
@@ -678,7 +447,7 @@ function ParkPaths() {
 // ── Park Trees (branching + leaf-textured billboard cards at tips) ──
 // Branches: merged BufferGeometry with bark vertex colors (1 draw call).
 // Foliage: InstancedMesh per morphology type with leaf texture billboards (~14 draw calls).
-function ParkTrees() {
+function ParkTrees({ trees: treesProp } = {}) {
   const shaderRef = useRef()
   const foliageShaderRefs = useRef({})
   const canopyRefs = useRef({})
@@ -705,17 +474,22 @@ function ParkTrees() {
     const islandPoly = parkWaterData.lake.island
     const pathLines = parkPathData.paths.map(p => p.points)
 
-    const trees = parkTreeData.trees.filter(tree => {
-      const { x, z } = tree
-      if (pointInPoly(x, z, grottoPoly)) return false
-      if (pointInPoly(x, z, lakeOuterPoly) && !pointInPoly(x, z, islandPoly)) return false
-      if (distToPolyline(x, z, grottoPoly) < 3.0) return false
-      if (distToPolyline(x, z, lakeOuterPoly) < 3.0) return false
-      for (const pts of pathLines) {
-        if (distToPolyline(x, z, pts) < 3.0) return false
-      }
-      return true
-    })
+    // If caller supplies a `trees` prop (toy scene fixture), skip the park-
+    // polygon filtering — the toy's trees are hand-placed, not subject to
+    // Lafayette Park's water/path exclusions.
+    const trees = treesProp
+      ? treesProp
+      : parkTreeData.trees.filter(tree => {
+          const { x, z } = tree
+          if (pointInPoly(x, z, grottoPoly)) return false
+          if (pointInPoly(x, z, lakeOuterPoly) && !pointInPoly(x, z, islandPoly)) return false
+          if (distToPolyline(x, z, grottoPoly) < 3.0) return false
+          if (distToPolyline(x, z, lakeOuterPoly) < 3.0) return false
+          for (const pts of pathLines) {
+            if (distToPolyline(x, z, pts) < 3.0) return false
+          }
+          return true
+        })
 
     const woodGeos = []
     const tmpC = new THREE.Color()
@@ -981,7 +755,7 @@ function ParkTrees() {
     const woodGeo = mergeGeos(woodGeos)
     const crossedPlaneGeo = makeCrossedPlaneGeo()
     return { woodGeo, canopyByMorph, crossedPlaneGeo, treeRoots }
-  }, [])
+  }, [treesProp])
 
   // Set billboard instance transforms
   useEffect(() => {
@@ -1104,6 +878,11 @@ function ParkTrees() {
     return mat
   }, [])
 
+  // Panel-driven foliage tint. Wired but not troubleshot — pushing away from
+  // the calibrated '#c0e8b0' leaf tint may throw off backlit/SSS/emissive
+  // tuning. Tracked in memory.
+  const panelTreeColor = useCartographStore(s => s.layerColors?.tree)
+
   // Per-morphology foliage materials with leaf textures
   const foliageMats = useMemo(() => {
     const mats = {}
@@ -1116,7 +895,7 @@ function ParkTrees() {
         side: THREE.DoubleSide,
         shadowSide: THREE.DoubleSide,
         transparent: false,
-        color: '#c0e8b0',
+        color: panelTreeColor || '#c0e8b0',
         emissive: '#1a3a12',
         emissiveIntensity: 0.15,
       })
@@ -1217,6 +996,11 @@ function ParkTrees() {
     })
     return mats
   }, [leafTextures])
+
+  useEffect(() => {
+    if (!panelTreeColor) return
+    Object.values(foliageMats).forEach(m => { if (m?.color) m.color.set(panelTreeColor) })
+  }, [panelTreeColor, foliageMats])
 
   const windTimeRef = useRef(0)
   useFrame((_, delta) => {
@@ -1502,17 +1286,29 @@ function ParkWater() {
   const bankMat = useMemo(() =>
     new THREE.MeshStandardMaterial({ color: '#5a5040', roughness: 0.95 }), [])
 
+  // The lake + grotto water polygons were captured in a frame rotated +9.2°
+  // relative to the park grid. The island sits in the correct world
+  // position, so we rotate ONLY the water + bank meshes by -9.2° around
+  // the island centroid — this keeps the water's island-hole aligned with
+  // the island while the lake shape rotates into its correct orientation.
+  // Island centroid in local park coords: (33.96, 86.00); mesh world after
+  // negZ + rotateX(-PI/2) is (33.96, 0, 86.00).
+  const ISLAND_PIVOT = [33.96, 0, 86.00]
   return (
     <group>
-      {/* Shoreline banks (below water) */}
-      <mesh geometry={lakeBankGeo} position={[0, 0.2, 0]} receiveShadow material={bankMat} />
-      <mesh geometry={grottoBankGeo} position={[0, 0.2, 0]} receiveShadow material={bankMat} />
+      {/* Water + banks rotate around the island to correct the capture-frame tilt */}
+      <group position={ISLAND_PIVOT}>
+        <group rotation={[0, -GRID_ROTATION, 0]}>
+          <group position={[-ISLAND_PIVOT[0], 0, -ISLAND_PIVOT[2]]}>
+            <mesh geometry={lakeBankGeo} position={[0, 0.2, 0]} receiveShadow material={bankMat} />
+            <mesh geometry={grottoBankGeo} position={[0, 0.2, 0]} receiveShadow material={bankMat} />
+            <mesh geometry={lakeWaterGeo} position={[0, 0.35, 0]} receiveShadow material={waterMat} />
+            <mesh geometry={grottoWaterGeo} position={[0, 0.35, 0]} receiveShadow material={waterMat} />
+          </group>
+        </group>
+      </group>
 
-      {/* Water surfaces */}
-      <mesh geometry={lakeWaterGeo} position={[0, 0.35, 0]} receiveShadow material={waterMat} />
-      <mesh geometry={grottoWaterGeo} position={[0, 0.35, 0]} receiveShadow material={waterMat} />
-
-      {/* Lake island (grass) */}
+      {/* Island stays at its correct world position (not rotated) */}
       <mesh geometry={islandGeo} position={[0, 0.4, 0]} receiveShadow material={islandMat} />
     </group>
   )
@@ -1580,7 +1376,7 @@ function PerimeterFence() {
 function LafayettePark() {
   return (
     <group rotation={[0, GRID_ROTATION, 0]}>
-      <ParkGround />
+      {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
       <ParkWater />
       <ParkPaths />
       <ParkTrees />
@@ -1617,3 +1413,4 @@ function LafayettePark() {
 }
 
 export default LafayettePark
+export { ParkTrees }

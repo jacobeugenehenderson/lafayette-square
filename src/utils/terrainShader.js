@@ -41,7 +41,7 @@ export const terrainExag = { value: 0 }
 
 // ── Shared uniform objects ───────────────────────────────────────
 
-const UNIFORMS = {
+export const UNIFORMS = {
   uTerrainMap: { value: terrainTexture },
   uBMinX: { value: bounds.minX },
   uBMinZ: { value: bounds.minZ },
@@ -146,6 +146,41 @@ const TERRAIN_DISPLACE_PERVERTEX = `
  * @param {boolean} [opts.terrainNormals=false] — override normals with terrain gradient
  * @param {boolean} [opts.perVertex=false] — per-vertex sampling (for merged geometry like foundations)
  */
+/**
+ * Vertex displacement snippet for INSTANCED meshes — samples terrain at the
+ * instance's world origin (modelMatrix * instanceMatrix * (0,0,0)) and lifts
+ * every vertex of that instance uniformly. Preserves per-instance rotation
+ * and scale. Replaces #include <begin_vertex>.
+ */
+export const TERRAIN_DISPLACE_INSTANCED = `
+#include <begin_vertex>
+{
+  vec4 _iw = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+  vec2 _tuv = clamp(vec2(
+    (_iw.x - uBMinX) / uSpanX,
+    (_iw.z - uBMinZ) / uSpanZ
+  ), 0.0, 1.0);
+  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
+}`
+
+/**
+ * Patch a material for INSTANCED terrain displacement. Each instance is
+ * lifted uniformly to its terrain height. Chains safely with existing
+ * onBeforeCompile.
+ */
+export function patchTerrainInstanced(mat) {
+  const prev = mat.onBeforeCompile
+  mat.onBeforeCompile = (shader) => {
+    assignTerrainUniforms(shader)
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL)
+      .replace('#include <begin_vertex>', TERRAIN_DISPLACE_INSTANCED)
+    if (prev) prev(shader)
+  }
+  const prevKey = mat.customProgramCacheKey?.bind(mat)
+  mat.customProgramCacheKey = () => `terrain-inst-${prevKey ? prevKey() : 'std'}`
+}
+
 export function patchTerrain(mat, { terrainNormals = false, perVertex = false } = {}) {
   const displaceSnippet = perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
   const prev = mat.onBeforeCompile

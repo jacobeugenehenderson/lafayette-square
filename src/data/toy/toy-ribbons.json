@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "source": "toy",
+    "description": "One 4-way intersection at origin with stubs and 4 residential quadrant blocks. Hand-authored fixture for rendering/shader R&D."
+  },
+  "streets": [
+    {
+      "name": "toy_ns",
+      "points": [[0, -40], [0, 40]],
+      "measure": {
+        "left":  { "pavementHW": 5, "treelawn": 2, "sidewalk": 2, "terminal": "sidewalk" },
+        "right": { "pavementHW": 5, "treelawn": 2, "sidewalk": 2, "terminal": "sidewalk" },
+        "source": "toy"
+      },
+      "capEnds": { "start": "blunt", "end": "blunt" },
+      "intersections": [{ "ix": 0, "withStreets": ["toy_ew"] }]
+    },
+    {
+      "name": "toy_ew",
+      "points": [[-40, 0], [40, 0]],
+      "measure": {
+        "left":  { "pavementHW": 5, "treelawn": 0, "sidewalk": 2, "terminal": "sidewalk" },
+        "right": { "pavementHW": 5, "treelawn": 0, "sidewalk": 2, "terminal": "sidewalk" },
+        "source": "toy"
+      },
+      "capEnds": { "start": "blunt", "end": "blunt" },
+      "intersections": [{ "ix": 0, "withStreets": ["toy_ns"] }]
+    }
+  ],
+  "intersections": [
+    {
+      "point": [0, 0],
+      "streets": [
+        { "name": "toy_ns", "ix": 0 },
+        { "name": "toy_ew", "ix": 0 }
+      ]
+    }
+  ],
+  "faces": [
+    { "ring": [[-40, -40], [-9.2, -40], [-9.2, -7.2], [-40, -7.2]], "use": "residential" },
+    { "ring": [[9.2, -40], [40, -40], [40, -7.2], [9.2, -7.2]], "use": "residential" },
+    { "ring": [[-40, 7.2], [-9.2, 7.2], [-9.2, 40], [-40, 40]], "use": "residential" },
+    { "ring": [[9.2, 7.2], [40, 7.2], [40, 40], [9.2, 40]], "use": "residential" }
+  ]
+}

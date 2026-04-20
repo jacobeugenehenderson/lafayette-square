@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
 import { getHalfWidth } from './streetProfiles.js'
+import { polylineRibbon } from './overlayGeom.js'
 
 const raycaster = new THREE.Raycaster()
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
@@ -50,10 +51,10 @@ export default function SurveyorOverlay() {
   const active = tool === 'surveyor'
 
   // ── Selected street: editable nodes ──
-  const { lineGeo, nodePositions, hiddenNodes } = useMemo(() => {
-    if (!active || selectedStreet === null) return { lineGeo: null, nodePositions: [], hiddenNodes: new Set() }
+  const { lineGeo, nodePositions, hiddenNodes, couplers, segmentTangents } = useMemo(() => {
+    if (!active || selectedStreet === null) return { lineGeo: null, nodePositions: [], hiddenNodes: new Set(), couplers: new Set(), segmentTangents: {} }
     const st = centerlineData.streets[selectedStreet]
-    if (!st) return { lineGeo: null, nodePositions: [], hiddenNodes: new Set() }
+    if (!st) return { lineGeo: null, nodePositions: [], hiddenNodes: new Set(), couplers: new Set(), segmentTangents: {} }
 
     const hidden = new Set(st.hiddenNodes || [])
     const activePts = st.points.filter((_, i) => !hidden.has(i))
@@ -63,7 +64,19 @@ export default function SurveyorOverlay() {
       ? new THREE.BufferGeometry().setFromPoints(linePoints)
       : null
 
-    return { lineGeo, nodePositions: st.points, hiddenNodes: hidden }
+    // Per-coupler tangent (street direction at that node) — used to orient the
+    // semicircle pair so they face along the street.
+    const couplerSet = new Set(st.couplers || [])
+    const tangents = {}
+    for (const i of couplerSet) {
+      const prev = st.points[Math.max(0, i - 1)]
+      const next = st.points[Math.min(st.points.length - 1, i + 1)]
+      const dx = next[0] - prev[0], dz = next[1] - prev[1]
+      const len = Math.hypot(dx, dz) || 1
+      tangents[i] = Math.atan2(dx / len, dz / len)
+    }
+
+    return { lineGeo, nodePositions: st.points, hiddenNodes: hidden, couplers: couplerSet, segmentTangents: tangents }
   }, [active, selectedStreet, centerlineData])
 
   // ── Pointer handlers ──
@@ -181,6 +194,25 @@ export default function SurveyorOverlay() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [active, deselectStreet, moveNode])
 
+  // Right-click a node (selected street) → toggle split coupler at that node.
+  // No coupler at endpoints (0, n-1) — those are the natural ends already.
+  const onContextMenu = useCallback((e) => {
+    if (!active) return
+    if (selectedStreet === null) return
+    const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
+    const nodeThresh = 3 / (camera.zoom || 1)
+    const st = centerlineData.streets[selectedStreet]
+    if (!st) return
+    for (let i = 1; i < st.points.length - 1; i++) {
+      if (Math.hypot(p.x - st.points[i][0], p.z - st.points[i][1]) < nodeThresh) {
+        e.preventDefault()
+        e.stopPropagation()
+        useCartographStore.getState().toggleCoupler(i)
+        return
+      }
+    }
+  }, [active, selectedStreet, centerlineData, camera, gl])
+
   // ── Attach pointer events to canvas (capture phase) ──
   // Capture runs before MapControls' bubble-phase pan handler, so a click on
   // a street selects instead of being eaten by pan.
@@ -191,70 +223,50 @@ export default function SurveyorOverlay() {
     dom.addEventListener('pointerdown', onPointerDown, opts)
     dom.addEventListener('pointermove', onPointerMove, opts)
     dom.addEventListener('pointerup', onPointerUp, opts)
+    dom.addEventListener('contextmenu', onContextMenu, opts)
     return () => {
       dom.removeEventListener('pointerdown', onPointerDown, opts)
       dom.removeEventListener('pointermove', onPointerMove, opts)
       dom.removeEventListener('pointerup', onPointerUp, opts)
+      dom.removeEventListener('contextmenu', onContextMenu, opts)
     }
-  }, [active, gl, onPointerDown, onPointerMove, onPointerUp])
-
-  // ── Selected street line objects ──
-  const lineObjects = useMemo(() => {
-    if (!lineGeo) return null
-    const shadow = new THREE.Line(lineGeo,
-      new THREE.LineBasicMaterial({ color: '#000', transparent: true, opacity: 0.7, linewidth: 1 }))
-    const main = new THREE.Line(lineGeo,
-      new THREE.LineBasicMaterial({ color: '#ffcc00', depthTest: false }))
-    return { shadow, main }
-  }, [lineGeo])
+  }, [active, gl, onPointerDown, onPointerMove, onPointerUp, onContextMenu])
 
   // ── Materials ──
   // All hooks must run on every render (React hook rules). Early return moved
   // below all hook calls.
-  // Unselected centerlines: visible white with enough contrast on aerial
-  const centerlineMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: '#ffffff', transparent: true, opacity: 0.7, depthTest: false,
+  // Royal-blue thick centerlines — same affordance as Measure mode.
+  const centerlineMat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: '#2250E8', depthTest: false,
   }), [])
-  // Unselected centerlines shadow for readability on light aerial
-  const centerlineShadowMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: '#000000', transparent: true, opacity: 0.4, depthTest: false,
+  const disabledMat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: '#ff4444', transparent: true, opacity: 0.35, depthTest: false,
   }), [])
-  // Disabled streets: ghosted red so they're findable but clearly off
-  const disabledMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: '#ff4444', transparent: true, opacity: 0.3, depthTest: false,
+  const selectedMat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: '#ffcc00', depthTest: false,
   }), [])
 
   // Early return moved here — after all hooks (React hook rules).
   if (!active) return null
 
+  // Overlay must draw above ribbons/faces/etc. — ribbon materials have
+  // polygonOffset + priority that can let them overwrite depthTest:false lines
+  // with a default renderOrder of 0. Force overlay geometry to the top.
+  const OVERLAY_Z = 10000
   return (
     <group position={[0, 0.2, 0]}>
-      {/* All centerlines: active = white with shadow, disabled = ghosted red */}
+      {/* All centerlines: royal blue thick ribbons (disabled = red) */}
       {centerlineData.streets?.map((st, i) => {
         if (st.points.length < 2) return null
-        if (i === selectedStreet) return null // selected street drawn separately
-        const pts = st.points.map(p => new THREE.Vector3(p[0], 0.1, p[1]))
-        const geo = new THREE.BufferGeometry().setFromPoints(pts)
-        if (st.disabled) {
-          return (
-            <primitive key={`cl-${i}`} object={new THREE.Line(geo, disabledMat)} />
-          )
-        }
+        const isSel = i === selectedStreet
+        const geo = polylineRibbon(st.points, isSel ? 0.45 : 0.35, 0.1)
+        if (!geo) return null
+        const mat = st.disabled ? disabledMat : (isSel ? selectedMat : centerlineMat)
         return (
-          <group key={`cl-${i}`}>
-            <primitive object={new THREE.Line(geo.clone(), centerlineShadowMat)} position={[0.3, -0.05, 0.3]} />
-            <primitive object={new THREE.Line(geo, centerlineMat)} />
-          </group>
+          <mesh key={`cl-${i}`} geometry={geo} material={mat}
+            renderOrder={OVERLAY_Z + (isSel ? 3 : 1)} />
         )
       })}
-
-      {/* Selected street: bold yellow centerline */}
-      {lineObjects && (
-        <>
-          <primitive object={lineObjects.shadow} />
-          <primitive object={lineObjects.main} />
-        </>
-      )}
 
       {/* Cap previews at endpoints of selected street — show what the renderer
           will produce for the current capStart / capEnd setting. */}
@@ -286,7 +298,7 @@ export default function SurveyorOverlay() {
             previews.push(
               <primitive key={key} object={new THREE.Line(geo, new THREE.LineBasicMaterial({
                 color: '#00ddff', transparent: true, opacity: 0.85, depthTest: false,
-              }))} />
+              }))} renderOrder={OVERLAY_Z + 4} />
             )
           } else if (cap === 'blunt') {
             // Perpendicular bar across the street width, nudged slightly outward
@@ -298,7 +310,7 @@ export default function SurveyorOverlay() {
             previews.push(
               <primitive key={key} object={new THREE.Line(geo, new THREE.LineBasicMaterial({
                 color: '#00ddff', transparent: true, opacity: 0.85, depthTest: false, linewidth: 2,
-              }))} />
+              }))} renderOrder={OVERLAY_Z + 4} />
             )
           }
         }
@@ -307,24 +319,61 @@ export default function SurveyorOverlay() {
         return previews
       })()}
 
-      {/* Nodes: large, high-contrast, easy to grab */}
+      {/* Nodes: large, high-contrast, easy to grab.  Coupled nodes (st.couplers)
+          render as paired semicircles facing along the street — the "extension
+          cord" affordance — with a small gap between halves. Right-click any
+          interior node to toggle. */}
       {selectedStreet !== null && nodePositions.map((pt, i) => {
         const isSelected = i === selectedNode
         const isHidden = hiddenNodes.has(i)
+        const isCoupled = couplers.has(i)
         const radius = isSelected ? 2.5 : isHidden ? 1.2 : 1.8
         const color = isSelected ? '#ffcc00' : isHidden ? '#ff4444' : '#ffffff'
         const opacity = isHidden ? 0.5 : 1
 
+        if (isCoupled) {
+          // Two semicircle halves split perpendicular to the street tangent,
+          // separated by ~radius * 0.6m so the gap reads clearly.
+          const ang = segmentTangents[i] || 0
+          const gap = radius * 0.7
+          const half = (sign) => (
+            <mesh rotation={[-Math.PI / 2, 0, ang + (sign > 0 ? Math.PI : 0)]}
+              position={[Math.sin(ang) * gap * sign * 0.5, 0, Math.cos(ang) * gap * sign * 0.5]}
+              renderOrder={OVERLAY_Z + 6}>
+              <circleGeometry args={[radius, 20, 0, Math.PI]} />
+              <meshBasicMaterial color={color} transparent opacity={opacity}
+                side={THREE.DoubleSide} depthTest={false} />
+            </mesh>
+          )
+          return (
+            <group key={i} position={[pt[0], 0.4, pt[1]]}>
+              {/* Dark outline pair */}
+              <mesh rotation={[-Math.PI / 2, 0, ang]} renderOrder={OVERLAY_Z + 5}>
+                <ringGeometry args={[radius, radius + 0.6, 20, 1, 0, Math.PI]} />
+                <meshBasicMaterial color="#000" transparent opacity={opacity * 0.6}
+                  side={THREE.DoubleSide} depthTest={false} />
+              </mesh>
+              <mesh rotation={[-Math.PI / 2, 0, ang + Math.PI]} renderOrder={OVERLAY_Z + 5}>
+                <ringGeometry args={[radius, radius + 0.6, 20, 1, 0, Math.PI]} />
+                <meshBasicMaterial color="#000" transparent opacity={opacity * 0.6}
+                  side={THREE.DoubleSide} depthTest={false} />
+              </mesh>
+              {half(-1)}
+              {half(+1)}
+            </group>
+          )
+        }
+
         return (
           <group key={i} position={[pt[0], 0.4, pt[1]]}>
             {/* Dark outline ring for contrast */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={OVERLAY_Z + 5}>
               <ringGeometry args={[radius, radius + 0.6, 20]} />
               <meshBasicMaterial color="#000" transparent opacity={opacity * 0.6}
                 side={THREE.DoubleSide} depthTest={false} />
             </mesh>
             {/* Filled node */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={OVERLAY_Z + 6}>
               <circleGeometry args={[radius, 20]} />
               <meshBasicMaterial color={color} transparent opacity={opacity}
                 side={THREE.DoubleSide} depthTest={false} />

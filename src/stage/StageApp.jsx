@@ -543,7 +543,7 @@ function ArchHorizonControls() {
 
 export const SHOTS = {
   hero:   { position: [-400, 55, 230], target: [400, 45, -100], fov: 22, label: 'Hero' },
-  browse: { position: [0, 600, 1], target: [0, 0, 0], fov: 45, label: 'Browse' },
+  browse: { position: [0, 600, 0.001], target: [0, 0, 0], up: [0, 0, -1], fov: 45, label: 'Browse' },
   street: { position: [0, 1.73, -50], target: [0, 1.73, -50.5], fov: 75, label: 'Street' },
 }
 

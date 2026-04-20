@@ -39,7 +39,6 @@ export default function SurveyorPanel() {
   const toggleStreetDisabled = useCartographStore(s => s.toggleStreetDisabled)
   const revertStreet = useCartographStore(s => s.revertStreet)
   const undoStreet = useCartographStore(s => s.undoStreet)
-  const splitAtNode = useCartographStore(s => s.splitAtNode)
 
   if (selectedStreet === null) {
     return (
@@ -136,11 +135,6 @@ export default function SurveyorPanel() {
         <button className="carto-btn-sm" onClick={undoStreet}>
           Undo (⌘Z)
         </button>
-        {selectedNode !== null && selectedNode > 0 && selectedNode < st.points.length - 1 && (
-          <button className="carto-btn-sm accent" onClick={splitAtNode}>
-            Split Here
-          </button>
-        )}
         <button className="carto-btn-sm"
           onClick={() => { if (selectedNode !== null) toggleNodeHidden(selectedNode) }}>
           Toggle Node

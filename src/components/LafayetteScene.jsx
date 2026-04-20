@@ -316,11 +316,12 @@ function getRoofPeakHeight(building) {
 
 // ============ FOUNDATIONS (single merged mesh) ============
 
-function Foundations() {
+function Foundations({ buildings: buildingsProp } = {}) {
+  const source = buildingsProp || _allBuildings
   const geometry = useMemo(() => {
     const geos = []
 
-    _allBuildings.forEach(building => {
+    source.forEach(building => {
       const fh = getFoundationHeight(building)
       const footprint = building.footprint
       // Bake terrain elevation at building centroid (matches rigid patchTerrain on building)
@@ -368,7 +369,7 @@ function Foundations() {
     const merged = mergeBufferGeometries(geos)
     geos.forEach(g => g.dispose())
     return merged
-  }, [])
+  }, [source])
 
   const meshRef = useRef()
   const prevDarkRef = useRef(-1)
@@ -1344,3 +1345,4 @@ function LafayetteScene() {
 }
 
 export default LafayetteScene
+export { Building, Foundations, loadBuildingTextures }

@@ -5,6 +5,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import lampData from '../data/street_lamps.json'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { patchTerrainInstanced, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const LAMP_URL = `${import.meta.env.BASE_URL}models/lamp-posts/victorian-lamp.glb`
@@ -20,7 +22,7 @@ const POOL_RADIUS = _IS_MOBILE ? 15 : 24  // mobile: smaller to limit fill overd
 const POOL_Y = 0.3
 const SHADOW_RADIUS = 1.5 // AO contact shadow at lamp base
 
-function StreetLights() {
+function StreetLights({ lamps: lampsProp } = {}) {
   const lampRef = useRef()
   const glowRef = useRef()
   const poolRef = useRef()
@@ -29,8 +31,16 @@ function StreetLights() {
   const lampMatRef = useRef(null)
   const glowMatRef = useRef(null)
   const getLightingPhase = useTimeOfDay(s => s.getLightingPhase)
+  // Panel-driven lamp tint. Wired but not troubleshot — may clash with the
+  // warm-incandescent emission tuning when pushed away from #fff2e0.
+  // Applied via useEffect (not useFrame) — per-frame overwrite of the
+  // instanced material's emissive caused lamps to vanish at daytime.
+  const panelLampColor = useCartographStore(s => s.layerColors?.lamp)
 
-  const allLamps = lampData.lamps
+  // Effect that re-applies tint lives below the lampModel useState so the
+  // dep array can include it (re-runs when the GLB finishes loading).
+
+  const allLamps = lampsProp || lampData.lamps
 
   // ── Shared geometries ───────────────────────────────────────────────────────
   const glowGeo = useMemo(() => new THREE.SphereGeometry(1, 8, 6), [])
@@ -46,6 +56,7 @@ function StreetLights() {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     })
+    patchTerrainInstanced(mat)
     glowMatRef.current = mat
     return mat
   }, [])
@@ -55,12 +66,21 @@ function StreetLights() {
     uniforms: {
       uColor: { value: new THREE.Color('#fff2e0') },
       uIntensity: { value: 0.0 },
+      ...TERRAIN_UNIFORMS,
     },
     vertexShader: `
+      ${TERRAIN_DECL}
       varying vec2 vUv;
       void main() {
         vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+        vec4 _iw = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+        vec2 _tuv = clamp(vec2(
+          (_iw.x - uBMinX) / uSpanX,
+          (_iw.z - uBMinZ) / uSpanZ
+        ), 0.0, 1.0);
+        vec4 _localPos = vec4(position, 1.0);
+        _localPos.y += texture2D(uTerrainMap, _tuv).r * uExag;
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * _localPos;
       }`,
     fragmentShader: `
       uniform vec3 uColor;
@@ -86,12 +106,21 @@ function StreetLights() {
   const baseMat = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
       uSunAlt: { value: 0.5 },
+      ...TERRAIN_UNIFORMS,
     },
     vertexShader: `
+      ${TERRAIN_DECL}
       varying vec2 vUv;
       void main() {
         vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+        vec4 _iw = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+        vec2 _tuv = clamp(vec2(
+          (_iw.x - uBMinX) / uSpanX,
+          (_iw.z - uBMinZ) / uSpanZ
+        ), 0.0, 1.0);
+        vec4 _localPos = vec4(position, 1.0);
+        _localPos.y += texture2D(uTerrainMap, _tuv).r * uExag;
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * _localPos;
       }`,
     fragmentShader: `
       uniform float uSunAlt;
@@ -122,6 +151,15 @@ function StreetLights() {
   // Strip KHR_materials_transmission (incompatible with InstancedMesh).
   // Glass panels are cut out via alphaTest so glow orbs show through the cage.
   const [lampModel, setLampModel] = useState(null)
+
+  // Apply panel lamp tint once on mount + whenever the picker changes or the
+  // GLB finishes loading. Avoids the per-frame mutation that previously
+  // caused the iron material to vanish at daytime.
+  useEffect(() => {
+    if (!panelLampColor) return
+    if (glowMatRef.current) glowMatRef.current.color.set(panelLampColor)
+    if (lampMatRef.current?.emissive) lampMatRef.current.emissive.set(panelLampColor)
+  }, [panelLampColor, lampModel])
 
   useEffect(() => {
     const loader = new GLTFLoader()
@@ -192,6 +230,8 @@ function StreetLights() {
               }
             }
 
+            // Chain terrain displacement for instanced mesh lift.
+            patchTerrainInstanced(mat)
             lampMatRef.current = mat
 
             setLampModel({

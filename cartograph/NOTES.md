@@ -6,6 +6,285 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-04-20 additions — read first
+
+### Marker FAB → bottom-right of canvas (clear of Panel)
+
+The Marker tool's FAB lives at `right: calc(340px + 14px); bottom: 14px;`
+— the canvas's lower-right corner, just left of the 340px Panel. The main
+pencil button sits at the bottom of the column; eraser/undo/clear minis
+cascade *above* it when marker is active. Update the `340px` if Panel
+width ever changes.
+
+### Toolbar: four orthogonal axes, redesigned
+
+Toolbar is now a row of segmented pill controls plus two single-button
+toggles. Tool / shot / scene / Fills are truly orthogonal — pick any
+combination, the scene composes coherently. CSS tokens live in
+`cartograph.css` under the `.cartograph` scope (`--toolbar-*`).
+
+```
+Designer:  [Survey · Measure]  [Fills]  [Browse · Hero · Street]  [Toy]
+In a shot: [← Designer]  [Publish]  [Browse · Hero · Street]  [Toy]
+```
+
+- **Fills** is a single binary toggle (no longer paired with Aerial — that
+  was redundant; aerial is always on, and Fills off naturally exposes it).
+- **Toy** is a single binary toggle replacing the old Neighborhood/Toy
+  segmented pair.
+
+### Fills: comprehensive overlay shortcut
+
+**Fills ON** (default): full digital map, every layer at full opacity.
+Per-layer toggles in the Designer panel control individual layers granularly.
+
+**Fills OFF**: hide everything except aerial + roadway composites (ribbons +
+corner plugs + stripes + edge lines + bike lanes + paths + lamps). Per-layer
+state is preserved underneath — Fills back ON returns you to whatever
+per-layer state existed.
+
+Same gesture, same effect, regardless of tool. Per-layer state persists
+across tool changes. The Fills hide-list is in `CartographApp.jsx` as
+`decorationsHidden`.
+
+### Translucency belongs to ribbons (not the rest)
+
+Survey ribbons render translucent blue (#2250E8, opacity 0.28). Measure
+ribbons render translucent per-stripe (opacity 0.45) with handles + edge
+strokes on top. Face fills, buildings, paths — **opaque** in every tool.
+
+The aerial-through-ribbon affordance is the tool's edit surface; everything
+else stays clean. Earlier experiment with translucent face fills was
+reverted (too much visual noise at once).
+
+### Pipeline: paths/alleys clipped to curb
+
+`derive.js` now computes `pavementWithCurb = clippedStreets ⊕ CURB_WIDTH`
+and runs every footway / cycleway / steps / path / alley through
+`clipFeaturesOutsideCurb` before emission. Paths terminate at the curb,
+never punching into asphalt at intersections. One foolproof rule —
+no per-endpoint tuning needed.
+
+Z-fight fix: MapLayers' path-family meshes (alley, footway, stripes, edge
+lines, bike lanes) lifted by `+0.06m` so they clear StreetRibbons face fills
+(group y=0.15 in shot mode) under terrain displacement.
+
+### Toy scene fixture
+
+`src/toy/` is a permanent shader/shadow R&D fixture, accessed via the Toy
+toolbar toggle. One 4-way intersection at origin, 4 quadrant blocks, 12
+houses (1878-1930 era → mansard / hip / flat roof variation + foundation
+pedestals via the *real* `Building` and `Foundations` components), 8 trees
+(real `ParkTrees`), 8 lamps (real `StreetLights`).
+
+Imports shared components, exports nothing. To stand up another fixture,
+copy `src/toy/` and change the data files in `src/data/toy/`.
+
+Hill terrain attempted then flattened — the global `terrainShader` is
+wired to the neighborhood elevation map and isn't trivially swappable.
+See task #9 (backlog) for the proper integration.
+
+### No destructive operations
+
+The old `splitAtNode` (turned one centerline into two separate entries
+with no rejoin) is gone. Replaced by **opt-in split couplers** —
+non-destructive markers on existing centerline nodes, fully reversible
+by toggling the same marker off.
+
+**Right-click any interior node in Survey** → toggles a split coupler.
+Coupled nodes render as paired semicircles oriented along the street
+tangent (the "extension cord" affordance). Stored as
+`centerlines.streets[i].couplers: [pointIdx]`.
+
+Phase 1A (UI + data) is shipped. Phase 1B (per-segment measure storage,
+per-segment reset, pipeline split at coupler nodes) is queued — helpers
+`segmentRangesForCouplers` and `measureForSegment` already exist in
+`streetProfiles.js`, store actions `toggleCoupler` and `resetSegment`
+already exist.
+
+If you find legacy splits (e.g. `Lafayette Avenue` as `-a` / `-b`
+entries), run `node cartograph/rejoin-splits.js` — it merges adjacent
+same-name centerlines whose endpoints touch within 0.5m. Dry-run with
+`--dry-run`. Backs up the file before writing.
+
+### Measure tool fixes
+
+- **Asymmetric drag bug:** the pipeline reverses some ribbon segments
+  relative to centerline orientation, so `live.measure.left` would render
+  on the visually-right side. New orientation guard in StreetRibbons'
+  merge step swaps `left ↔ right` when ribbon tangent disagrees with
+  centerline tangent (dot product < 0). Diagnostics gated on
+  `window.__measureDebug` if anything regresses.
+- **Double-click to insert** now works (empty pointerdown was
+  deselecting the street before dblclick could fire).
+- **Min stripe width 1.0m** enforced in `applyDrag` so handles can't
+  visually collapse onto each other. Right/Ctrl-click is the explicit
+  "zero this stripe" gesture.
+- **Handles stagger along the street** when `r` values are within
+  `HANDLE_LONG + 0.5m` — keeps each independently clickable on tight
+  cross-sections (e.g. Park Avenue south-side with 8cm treelawn).
+
+### Stage convergence path locked
+
+After audit: the runtime (lafayette-square.com) is **not** a separate
+build target waiting for replacement. It already shares 90% of Stage's
+components. The remaining work for "publish" is:
+
+1. Define `public/stage-config.json` schema (arch, SHOTS, palette,
+   env defaults).
+2. De-fork `StageSky` ↔ `CelestialBodies` (~1150 lines) and `StageArch`
+   ↔ `GatewayArch` with a `source: 'runtime' | 'authored'` prop.
+3. Wire cartograph "Publish" button to write `stage-config.json`.
+4. Delete `VectorStreets` (CSS3D SVG hack); runtime sky goes opaque
+   (matching StageSky variant).
+
+Estimated 3-4 focused days. The cartograph map polish is the long pole;
+runtime flip is a short tail.
+
+---
+
+## 2026-04-19 additions — read first
+
+### Measure / Survey tool refactor (the big one)
+
+The old 8-band system (`_bands: [{material, width}]`) is gone. Replaced with a
+focused per-side model that matches physical reality and the operator's mental
+model:
+
+```js
+// Per street in centerlines.json (and ribbons.json output):
+measure: {
+  left:  { pavementHW, treelawn, sidewalk, terminal: 'sidewalk' | 'lawn' | 'none' },
+  right: { ...same fields... },
+  symmetric: true
+}
+```
+
+**Hardwired stripe sequence** (from centerline outward, positions imply material):
+`asphalt (pavementHW) → curb (fixed CURB_WIDTH) → [treelawn] → [sidewalk | lawn]`
+
+No per-stripe pulldowns — the material of each stripe is determined by its
+position in the sequence. Curb is constant-width, not editable. When `terminal`
+is `'none'` the side stops at curb (alleys, footways).
+
+**Why this shape:** Previous 8-material system was too much UI for too little
+signal. Parking is a separate overlay layer now. Per-side asymmetry is essential
+for park-edge streets. `terminal` lets the operator pick one of three real-world
+cases (sidewalk / lawn-only / nothing) with one control. See
+`src/cartograph/streetProfiles.js` for the helpers (`defaultMeasure`,
+`sideToStripes`, `refEdges`).
+
+**Corner plug rules** (see `project_corner_plug_rules.md` memory):
+- Every corner has a plug; it's the universal rounding primitive.
+- Shape: proven bezier, sized to the NARROWER sidewalk of the two meeting legs.
+- Wider sidewalks / treelawns / retail plazas on the other leg BUTT against the
+  plug — they do not expand it.
+- corner_sw is emitted only when at least one leg has sidewalk; curb + asphalt
+  corners emit always.
+
+### Measure tool UX (the new authoring loop)
+
+- **Royal blue centerlines** (architectural color `#2250E8`, 0.7m thick ribbons
+  via `polylineRibbon` in `src/cartograph/overlayGeom.js`) in both Measure and
+  Survey modes.
+- Click a centerline to select. Handles **anchor at the click point** (not the
+  midpoint) — store `selectedMeasurePoint` on the store, compute per-click
+  tangent frame via `frameAtPoint`.
+- Handles are **rectangular pills** (5m × 1.2m, white fill + black outline)
+  oriented along the street direction. One handle per real stripe boundary per
+  side: `pavementHW`, `treelawnOuter` (only when treelawn > 0), `propertyLine`.
+  Curb has no handle (fixed width is inferred).
+- **Drag** a handle to resize its boundary. In symmetric mode (default) the
+  drag mirrors to the other side. `measure.symmetric: false` unlocks sides.
+- **Right / Ctrl-click** a handle to remove that boundary (collapse the stripe).
+- **Double-click** anywhere in the sidewalk zone to insert a treelawn/sidewalk
+  split. If a side has `terminal: 'none'`, double-click reseeds the pedestrian
+  zone at that radius.
+- Map rendering when `measureActive`: ribbons render translucent (opacity 0.45)
+  with opaque per-material strokes at every stripe's outer boundary. Aerial
+  shows through fills; boundaries stay crisp.
+- Map rendering when `surveyActive`: ribbons render uniform blue tint
+  (#2250E8, opacity 0.28) with slim blue stroke at the outermost (property
+  line) boundary only. Per-stripe materials are suppressed.
+- Panel has an **Asymmetrical** checkbox that toggles `measure.symmetric`. Each
+  side shows its own terminal dropdown + read-only stripe widths.
+
+### Pipeline: survey-aware per-side defaults
+
+`defaultSideMeasure(type, survey, sideKey)` in `streetProfiles.js` now uses
+`survey.sidewalkLeft` / `sidewalkRight` per side:
+- If present for a sidewalk-eligible street → terminal=`sidewalk`, treelawn
+  width computed from the gap between curb-outer and `swDist − SV_SIDEWALK/2`.
+- If present on the OTHER side only (asymmetric, park-edge case) → this side
+  gets `terminal: 'lawn'` with a modest grass strip.
+- If absent on both sides → fallback residential treelawn + sidewalk default.
+
+19 streets came out asymmetric in the current data (park-edges: Park Place,
+Park Avenue, Gravois, Soulard, West 18th, Kennett, Singleton, Henrietta,
+Waverly, Dillon, Preston, St. Vincent Court, etc.).
+
+Symmetric flag is auto-set: `measure.symmetric = (L.terminal == R.terminal
+&& L.treelawn ≈ R.treelawn && L.sidewalk ≈ R.sidewalk)`. Park-edge streets
+start asymmetric.
+
+### Stage-view fixes (terrain + markings + alleys)
+
+- **Lamps + glow + pool + base** (4 instanced meshes in `StreetLights.jsx`)
+  now terrain-displaced. Added `patchTerrainInstanced` + `UNIFORMS` export in
+  `src/utils/terrainShader.js`. The shader samples terrain at each instance's
+  world origin (`modelMatrix * instanceMatrix * (0,0,0)`) and lifts all
+  vertices of that instance uniformly. No more lamps underground.
+- **Street markings** (centerStripe / parkingLine / bikeLane) rebuilt as
+  thin quad-strip ribbons (`stripeRibbonGeo` in `MapLayers.jsx`) with
+  `makeFlatMat` so they pick up terrain displacement. Previously they were
+  `THREE.Line` at fixed y=0.2 — buried under lifted terrain in shots.
+- **Alley z-fighting** fixed by reducing `makeFlatMat` polygonOffset from
+  `factor=-pri*4, units=-pri*50` to `factor=-pri, units=-pri*4` (matches
+  StreetRibbons). Old values were so aggressive they caused precision
+  collisions once terrain displaced everything simultaneously.
+
+### Grass shaders wired for residential + treelawn + lawn
+
+- **Residential faces** get a separate `residentialGrass` material
+  (`makeGrassMaterial({ color: luColors.residential })`) in shots; same noise
+  shader as park, slightly brighter green. Falls back to flat color in Designer.
+- **Park grass** already wired; now also `patchTerrain({ perVertex: true })`
+  so it displaces with terrain.
+- **Treelawn ribbons** use `residentialGrass.material` in shots so the strip
+  flows seamlessly into the adjacent block's grass.
+- **Lawn ribbons** (park-edge `terminal: 'lawn'`) use `parkGrass.material` in
+  shots so the strip reads as an extension of the park lawn.
+- Designer keeps flat band colors for plan-view legibility.
+
+### Park data coordinate systems — RECURRING CONFUSER
+
+The data files in `src/data/park_*.json` use different frames. Getting this
+wrong produces rotated/misplaced water, trees, or paths.
+
+- `park_trees.json` — **park-local, axis-aligned**. Raw x, z within ±175m
+  (matching the `PARK` constants). Must be rotated by `PARK_GRID_ROTATION`
+  (-9.2°) to land correctly in world, because the real Lafayette Park is
+  tilted 9° from world axes (the street grid is).
+- `park_water.json` — **park-local, axis-aligned** (same frame as trees).
+  Lake outer / island / grotto polygons are in the park's own frame. Must
+  also be rotated by `PARK_GRID_ROTATION`.
+- `park_paths.json` — **world-aligned**. Counter-rotates with `-GRID_ROTATION`
+  inside LafayettePark to cancel the parent wrapper.
+
+Because LafayettePark wraps its contents in `<group rotation={[0,
+GRID_ROTATION, 0]}>`, park-local data (trees, water) needs NO extra rotation
+inside LafayettePark, while world-aligned data (paths) counter-rotates.
+
+MapLayers is flat and has no parent rotation, so park-local data needs a
+`PARK_GRID_ROTATION` wrapper there to look the same.
+
+**The park face in `ribbons.json`** is already rotated in world (vertex
+coords encode the 9° tilt). That's the authority for park boundary — when in
+doubt, match what the park face looks like in Designer (which renders the
+ribbons face directly).
+
+---
+
 ## 2026-04-17 additions — read first
 
 ### The big architectural move: Stage is embedded in Cartograph

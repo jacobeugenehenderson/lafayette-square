@@ -40,6 +40,25 @@
   --carto-radius:          4px;
   --carto-radius-sm:       2px;
   --carto-font:            -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Toolbar */
+  --toolbar-gap:                10px;        /* between segmented groups */
+  --toolbar-pad:                6px;         /* glass card inner padding */
+  --toolbar-radius:             12px;        /* outer glass radius */
+  --toolbar-group-radius:       8px;         /* segmented-group radius */
+  --toolbar-btn-pad-y:          6px;
+  --toolbar-btn-pad-x:          12px;
+  --toolbar-btn-fs:             12px;
+  --toolbar-btn-fw:             500;
+  --toolbar-btn-idle:           rgba(255, 255, 255, 0.04);
+  --toolbar-btn-hover:          rgba(255, 255, 255, 0.08);
+  --toolbar-btn-active:         rgba(255, 255, 255, 0.14);
+  --toolbar-btn-border-idle:    rgba(255, 255, 255, 0.08);
+  --toolbar-btn-border-active:  rgba(255, 255, 255, 0.28);
+  --toolbar-divider:            rgba(255, 255, 255, 0.10);
+  --toolbar-text-idle:          var(--carto-text-dim);
+  --toolbar-text-hover:         var(--carto-text);
+  --toolbar-text-active:        #fff;
 }
 
 /* ---------- Layout ----------
@@ -205,37 +224,6 @@
   color: var(--carto-text);
 }
 
-.carto-btn.active-marker {
-  background: var(--carto-marker);
-  color: #fff;
-  border-color: var(--carto-marker-border);
-}
-
-.carto-btn.active-surveyor {
-  background: var(--carto-surveyor);
-  color: #fff;
-  border-color: var(--carto-surveyor-border);
-}
-
-.carto-btn.active-measure {
-  background: var(--carto-measure);
-  color: #fff;
-  border-color: var(--carto-measure-border);
-}
-
-.carto-btn.active-stage,
-.carto-btn.active-shot {
-  background: var(--carto-stage);
-  color: #fff;
-  border-color: var(--carto-stage-border);
-}
-
-.carto-shot-selector {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
-
 .carto-btn-muted {
   opacity: 0.55;
   font-style: italic;
@@ -291,23 +279,75 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* ---------- Toolbar ---------- */
+/* ---------- Toolbar ----------
+   Row of segmented "groups". Each group is a single pill with internal
+   dividers between its buttons (iOS-style segmented control). The toolbar
+   itself is a glass card holding the groups. */
 .carto-toolbar {
   position: absolute;
   top: 14px;
   left: 14px;
-  display: flex;
-  gap: 6px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--toolbar-gap);
+  padding: var(--toolbar-pad);
+  border-radius: var(--toolbar-radius);
   flex-wrap: wrap;
-  max-width: 420px;
-  padding: 6px;
-  border-radius: 12px;
 }
 
-.carto-toolbar-sep {
-  width: 12px;
-  flex-shrink: 0;
+.carto-toolgroup {
+  display: inline-flex;
+  align-items: stretch;
+  background: var(--toolbar-btn-idle);
+  border: 1px solid var(--toolbar-btn-border-idle);
+  border-radius: var(--toolbar-group-radius);
+}
+
+.carto-toolgroup > button {
+  background: transparent;
+  color: var(--toolbar-text-idle);
+  border: 0;
+  border-radius: 0;
+  padding: var(--toolbar-btn-pad-y) var(--toolbar-btn-pad-x);
+  font-size: var(--toolbar-btn-fs);
+  font-weight: var(--toolbar-btn-fw);
+  font-family: var(--carto-font);
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+  white-space: nowrap;
+}
+
+/* Outer corners follow the group's radius so hover/active fills don't
+   paint square rectangles inside a rounded pill. The group's 1px border
+   subtracts from the child radius slightly (group_radius − 1px) so the
+   child's corner sits cleanly inside the border. */
+.carto-toolgroup > button:first-child {
+  border-top-left-radius: calc(var(--toolbar-group-radius) - 1px);
+  border-bottom-left-radius: calc(var(--toolbar-group-radius) - 1px);
+}
+.carto-toolgroup > button:last-child {
+  border-top-right-radius: calc(var(--toolbar-group-radius) - 1px);
+  border-bottom-right-radius: calc(var(--toolbar-group-radius) - 1px);
+}
+
+.carto-toolgroup > button + button {
+  border-left: 1px solid var(--toolbar-divider);
+}
+
+.carto-toolgroup > button:hover {
+  background: var(--toolbar-btn-hover);
+  color: var(--toolbar-text-hover);
+}
+
+.carto-toolgroup > button.is-active {
+  background: var(--toolbar-btn-active);
+  color: var(--toolbar-text-active);
+}
+
+.carto-toolgroup > button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ---------- Measure panel band rows ---------- */
@@ -384,8 +424,9 @@
 /* ---------- Marker FAB ---------- */
 .carto-fab-wrap {
   position: absolute;
-  right: 20px;
-  bottom: 44px;
+  /* Panel is 340px wide on the right edge; sit clear of it with a 14px gap. */
+  right: calc(340px + 14px);
+  bottom: 14px;
   z-index: 12;
   display: flex;
   flex-direction: column;

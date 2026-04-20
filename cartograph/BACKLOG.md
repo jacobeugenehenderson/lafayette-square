@@ -1,6 +1,179 @@
 # Cartograph Backlog
 
-Last updated: 2026-04-17
+Last updated: 2026-04-20
+
+## 2026-04-20 session — locked decisions
+
+Big day. Authoring loop went from "rough" to "passable." Toy fixture stood up.
+Couplers Phase 1A (UI) shipped. Pipeline now clips paths to curb. Toolbar
+redesigned and Fills semantics finally make sense.
+
+### Architectural / strategic
+
+1. **Stage IS the runtime scene.** Confirmed (after deep audit) that we don't
+   need to "rebuild and copy over" — the runtime app already shares 90% of
+   Stage's components (StreetRibbons, LafayetteScene, LafayettePark, etc.).
+   The only forks are `StageSky` ↔ `CelestialBodies` (~1150 lines) and
+   `StageArch` ↔ `GatewayArch`. Convergence path is well-defined: write
+   `public/stage-config.json` schema → de-fork sky/arch with a `source` prop
+   → wire cartograph "Publish" button → delete VectorStreets. Estimated
+   ~3-4 focused days when ready.
+
+2. **Toolbar redesigned, four orthogonal axes.** `tool` × `shot` × `scene` ×
+   `Fills` are truly orthogonal — clicking through any combination lands in
+   a coherent state.
+   - Toolbar uses iOS-style segmented pills: `[Survey · Measure]`
+     `[Fills]` `[Browse · Hero · Street]` `[Toy]` in Designer; shot mode
+     swaps tools group for `[← Designer] [Publish]`.
+   - Fills + Toy collapsed from 2-segment groups into single binary
+     ToggleButtons. Aerial toggle dropped entirely (always on, redundant
+     with Fills). New CSS tokens for the toolbar in cartograph.css.
+
+3. **Toy scene operational.** Single 4-way intersection at origin with 4
+   quadrant blocks, 12 houses (1878-1930 era → mansard / hip / flat roof
+   variation + foundation pedestals via the real `Building` + `Foundations`
+   components), 8 trees (real `ParkTrees`), 8 lamps on sidewalks (real
+   `StreetLights`). Imports shared components, exports nothing. Lives in
+   `src/toy/`. Hill terrain attempted then flattened pending elevation
+   integration with `terrainShader` (task #9).
+
+4. **Path/alley clipping is a pipeline rule, not a manual edit.** New
+   `clipFeaturesOutsideCurb` helper in derive.js subtracts the union of
+   `clippedStreets + CURB_WIDTH` from every footway/cycleway/steps/path/alley
+   before emission. Paths now terminate at the curb everywhere. Z-fight
+   killed by lifting MapLayers' path-family meshes to y=+0.06 (clears
+   StreetRibbons face fills at y=+0.15 in shots).
+
+5. **No destructive operations.** The old `splitAtNode` (turned one
+   centerline into two separate entries with no rejoin) is gone. Replaced
+   by **opt-in split couplers** — non-destructive markers on existing
+   centerline nodes, fully reversible by toggling the same marker off. See
+   `feedback_no_destructive_ops.md` (memory) for the principle. Wrote
+   `cartograph/rejoin-splits.js` to remediate already-split centerlines (7
+   pairs merged). Saved as a one-shot recovery utility.
+
+6. **Couplers Phase 1A — UI + data only.** Right-click any interior node
+   in Survey → toggles a split coupler at that node (renders as paired
+   semicircles oriented along the street tangent — the "extension cord"
+   visual). Persists as `centerlines.streets[i].couplers: [pointIdx]`.
+   Pipeline doesn't yet split at coupler points — that's Phase 1B.
+
+7. **Measure tool: real fixes shipped.**
+   - Asymmetric drag bug fixed: pipeline reverses some ribbon segments
+     relative to centerline orientation, causing left/right side mapping to
+     flip. New orientation guard in StreetRibbons' merge step swaps
+     `live.measure.left ↔ right` when ribbon tangent disagrees with live
+     centerline tangent (dot product < 0).
+   - Double-click-to-insert was being eaten by empty-pointerdown deselect.
+     Removed the deselect; Esc remains the explicit deselect gesture.
+   - Per-side reset removed (proved buggy). Replaced with **per-segment
+     reset** (Phase 1B) — addressable once couplers split a street.
+   - Min stripe width 1.0m enforced in `applyDrag` so handles can't visually
+     collapse onto each other. Right/Ctrl-click remains the explicit "zero
+     this stripe" gesture.
+   - Handles **stagger along street tangent** when their `r` values are
+     within `HANDLE_LONG + 0.5m` of each other — keeps them independently
+     clickable on tight cross-sections (e.g. Park Avenue south side with
+     8cm treelawn).
+
+8. **Fills semantics finalized.** Fills is a comprehensive *overlay
+   shortcut* layered on top of per-layer panel state.
+   - **Fills ON** (default): full digital map renders. Per-layer toggles
+     in Designer panel control individual layers granularly.
+   - **Fills OFF**: hide everything except aerial photo + roadway
+     composites (ribbons + corner plugs + stripes/edges/bike lanes + paths
+     + lamps). Per-layer state preserved underneath — re-toggling Fills
+     ON returns you to whatever per-layer state existed.
+   - Same gesture, same effect, regardless of tool. Per-layer state
+     persists across tool changes.
+
+9. **Translucency belongs to the ribbons, not the rest.** Survey ribbons
+   render translucent blue (0.28 opacity); Measure ribbons render translucent
+   per-stripe (0.45 opacity). Face fills + buildings + paths stay **opaque**
+   in every tool. The aerial-through-ribbon affordance is the tool's edit
+   surface; everything else stays clean.
+
+10. **Aerial bumped to z=19, then reverted to z=18.** z=19 was hitting
+    tile-availability limits in some areas. Bump back when we have a
+    fallback strategy (try z=19, fall back to z=18 on 404).
+
+## 2026-04-20 — queued items
+
+| # | Task | Notes |
+|---|------|------|
+| C.1 | **Couplers Phase 1B.** Per-segment measure storage in store (`segmentMeasures: {"start-end": {...}}`). Measure tool selects segment-between-couplers. Per-segment reset button. Pipeline splits centerlines at coupler nodes when emitting ribbons. Helpers `segmentRangesForCouplers` + `measureForSegment` already exist in `streetProfiles.js`; store actions `toggleCoupler` + `resetSegment` already exist. Just need editor + pipeline wiring. | Foundation laid. |
+| C.2 | **Aerial z=19 with z=18 fallback.** TextureLoader can take an `onError` callback; on 404 retry the equivalent z=18 tile and stretch. | UX win — aerial detail at zoom-in. |
+| C.3 | **Survey shows measured silhouette stroke.** Once Measure has been used, the Survey ribbon outer-stroke should reflect the actual measured ROW, not the default. Closes the Survey↔Measure feedback loop the operator needs. | High value. |
+| C.4 | **Shadow post-pass (Approach D).** Per-frame post-processing effect that reads scene depth + shadow map, masks with material-ID stencil, multiplies onto flat-shaded ground pixels. Solves shadows on StreetRibbons without changing its flat shader. ~2-3 days. See `SHADOW_HANDOFF.md`. | Publishing polish blocker. |
+| C.5 | **Fix dead-end caps (again).** Endcaps regressed somewhere — round/blunt cap rendering inconsistent across streets that have `capStart`/`capEnd` set. Need to re-verify the cap-match-by-terminal logic in StreetRibbons (added 2026-04-17 to prevent chain-split spurious caps) is still working with the orientation guard from 2026-04-20. | Recurrence. |
+| C.6 | **Fix Survey "smooth" feature.** Catmull-Rom smoothing slider in SurveyorPanel — operator drags 0–100, expects centerline to interpolate through the same nodes with curve tension. Currently does not produce expected result; either slider not wired or smoothing not applied to displayed line. | Authoring tool bug. |
+| C.7 | **Audit non-residential land-use classification.** Walk the neighborhood face fills and verify non-residential blocks (commercial, institutional, parking, park) are correctly classified. Park Avenue commercial strip, churches, school on Park Ave, the park itself, off-street parking lots — each should land in its right `face.use` value, otherwise face-fill colors mislead. Pipeline reads from parcel `land_use_code` dominant per face; misclassifications usually trace to a face whose dominant parcel is misleading. | Map correctness. |
+| C.8 | **Path / face-fill z-fight unresolved.** Tried two passes of lift (+0.06m, then +0.15m) on alley/footway/stripe/edgeline/bikelane meshes. Operator still sees flicker at marked spots. Likely shot-mode-specific (terrain displacement amplifies coplanar issues) or the `polygonOffset` on these flat materials competing with face-fill's offset. Real fix probably requires either: (a) higher polygonOffsetFactor on path materials specifically, (b) a separate render pass with depthTest off, or (c) merging path geometry into the StreetRibbons face-fill mesh so they share the same draw. Investigate when shadow post-pass lands (related infrastructure). | Visual polish. |
+
+## 2026-04-19 session — locked decisions
+
+Captured end of day. Supersedes conflicting 2026-04-18 items.
+
+1. **Measure model rewrite landed.** `measure: {left, right, symmetric}` per
+   street; each side is `{pavementHW, treelawn, sidewalk, terminal}`. Hardwired
+   stripe sequence asphalt → curb(fixed) → [treelawn] → [sidewalk|lawn].
+   `_bands` removed from centerlines.json; pipeline + renderer + overlay +
+   panel all rewritten. Old 8-material band stack retired. Parking is out of
+   Measure entirely — becomes a separate overlay layer.
+
+2. **Corner plug is universal + narrower-sidewalk rule.** One primitive per
+   corner (bezier-rounded asphalt + curb + sidewalk arcs). Sized to the
+   narrower sidewalk of the two meeting legs; wider surfaces butt. Skip the
+   sidewalk arc only when neither leg has sidewalk. See memory
+   `project_corner_plug_rules.md`.
+
+3. **Royal blue = architectural color.** `#2250E8` for authoring overlays:
+   centerlines in both Survey + Measure, Survey ribbon tint, outer property
+   stroke. See memory `project_architectural_blue.md`. Reserved for tool
+   context; ribbons never get this blue in production rendering.
+
+4. **Measure UX: rectangular pills on strokes, anchored at click.** Handles
+   are 5m × 1.2m pills oriented along the street, positioned at the click
+   point's tangent frame (not midpoint). Drag to resize; right/ctrl-click
+   to remove; double-click the sidewalk zone to insert a treelawn split.
+   Symmetric by default; Asymmetrical unlock in panel.
+
+5. **Ribbons tint in Measure + Survey.** `measureActive` → per-stripe
+   translucent fills + per-material opaque strokes at every boundary.
+   `surveyActive` → uniform blue tint + blue stroke at outermost boundary
+   only. Aerial shows through fills in both modes.
+
+6. **Residential land use gets the grass shader** in shots. Factored via
+   `makeGrassMaterial({ color: luColors.residential })` — same noise shader
+   as park. Treelawn ribbons adopt the residential grass material, lawn
+   ribbons adopt the park grass material. Designer keeps flat face fills.
+
+7. **Stage terrain coverage complete** for the obvious layers:
+   - Lamps / glow / pool / base now instanced-terrain-displaced
+     (`patchTerrainInstanced` in `terrainShader.js`).
+   - Street markings (centerStripe / parkingLine / bikeLane) rebuilt as
+     quad-strip ribbons (`stripeRibbonGeo`) that pick up terrain from
+     `makeFlatMat`. No more 1-px lines buried under lifted ground.
+   - Alley z-fighting fixed by reducing `makeFlatMat` polygonOffset to
+     match StreetRibbons scale.
+
+8. **Park-data coordinate systems clarified.** `park_trees.json` +
+   `park_water.json` are park-local (axis-aligned in park frame), need
+   `PARK_GRID_ROTATION` wrapper to sit in world. `park_paths.json` is
+   world-aligned, counter-rotates inside LafayettePark. See NOTES.md's
+   "RECURRING CONFUSER" section.
+
+## 2026-04-18 — new items queued
+
+| # | Task | Notes |
+|---|------|------|
+| A.1 | **Uplighting at the base of the Gateway Arch.** Ground-level warm lights that kick on at night (match streetlamp night-gate). | Visual accent; arch is the neighborhood's visual anchor. |
+| A.2 | **Gradient editor for the skydome.** Operator-authored color gradient for the shot sky — enables branding looks (sports games, seasonal themes). | Future extension: fireworks particle system once the editor exists. |
+| A.3 | **Fix Surveyor + Measure tool interfaces.** Currently usable but rough; needs UX pass (selection feedback, band add/remove flow, cap-marking clarity, keyboard shortcuts). | Direction set; execution pending. |
+| A.4 | **Camera animations + controls for shots.** Browse/Hero/Street transitions, smooth tweens between shots, programmable camera paths. Current OrbitControls is serviceable but shot transitions are instant snaps. |
+| A.5 | **Thicker barrier lines.** 707 barriers emit correctly (598 fence / 56 wall / 45 retaining_wall / 8 hedge, mostly property-line fencing; ~15 around the park). `LineBasicMaterial.linewidth` is ignored in WebGL on most platforms — lines render at 1 px. Upgrade to extruded line meshes (e.g. `meshline` or a custom ribbon strip) so fences read on the map at Browse zoom. |
+
+
 
 Architecture: The cartograph IS the 3D scene viewed flat (orthographic top-down).
 **Stage is embedded in cartograph** (not a separate app) — the same Canvas hosts

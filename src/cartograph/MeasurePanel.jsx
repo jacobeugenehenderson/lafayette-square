@@ -1,23 +1,85 @@
 import useCartographStore from './stores/useCartographStore.js'
-import {
-  getDefaultBands, bandsToCumulative,
-  BAND_COLORS, BAND_LABELS,
-} from './streetProfiles.js'
+import { defaultMeasure, sideToStripes, CURB_WIDTH, BAND_COLORS, BAND_LABELS } from './streetProfiles.js'
+import ribbonsRaw from '../data/ribbons.json'
+
+function fmtFt(m) { return (m * 3.28084).toFixed(1) + 'ft' }
+
+const PIPELINE_MEASURE = (() => {
+  const m = new Map()
+  for (const st of (ribbonsRaw.streets || [])) {
+    if (st.name && st.measure) m.set(st.name, st.measure)
+  }
+  return m
+})()
+
+function getMeasure(st) {
+  if (st.measure) return st.measure
+  const fromPipeline = PIPELINE_MEASURE.get(st.name)
+  if (fromPipeline) {
+    return {
+      left: { ...fromPipeline.left },
+      right: { ...fromPipeline.right },
+      symmetric: fromPipeline.left.terminal === fromPipeline.right.terminal
+        && Math.abs(fromPipeline.left.treelawn - fromPipeline.right.treelawn) < 0.01
+        && Math.abs(fromPipeline.left.sidewalk - fromPipeline.right.sidewalk) < 0.01,
+    }
+  }
+  return defaultMeasure(st.type || 'residential')
+}
 
 const FT = 0.3048
 
-const AVAILABLE_BANDS = [
-  'asphalt', 'parking-parallel', 'parking-angled', 'curb', 'gutter',
-  'treelawn', 'sidewalk', 'lawn',
-]
+function SideBlock({ sideKey, side, onChange, onReset, canReset, editable }) {
+  const stripes = sideToStripes(side)
 
-function fmtDim(m) {
-  return (m * 3.28084).toFixed(1) + 'ft (' + m.toFixed(2) + 'm)'
-}
+  const setTerminal = (term) => {
+    const next = { ...side, terminal: term }
+    if (term === 'none') { next.treelawn = 0; next.sidewalk = 0 }
+    if (term === 'lawn' && side.treelawn > 0) {
+      next.sidewalk = side.sidewalk + side.treelawn
+      next.treelawn = 0
+    }
+    if ((term === 'sidewalk' || term === 'lawn') && next.sidewalk <= 0.05) {
+      next.sidewalk = 5 * FT
+    }
+    onChange(next)
+  }
 
-function getStreetBands(st) {
-  if (st._bands) return st._bands
-  return getDefaultBands(st.type || 'residential')
+  return (
+    <div className="carto-side-block">
+      <div className="carto-row">
+        <label className="carto-label-fixed">
+          {sideKey === 'left' ? 'Left' : 'Right'}
+        </label>
+        <select className="carto-select"
+          disabled={!editable}
+          value={side.terminal || 'none'}
+          onChange={e => setTerminal(e.target.value)}>
+          <option value="none">None (no pedestrian zone)</option>
+          <option value="sidewalk">Sidewalk</option>
+          <option value="lawn">Lawn</option>
+        </select>
+        {canReset && (
+          <button className="carto-btn-reset"
+            title="Reset this side to the pipeline default"
+            onClick={onReset}>↺</button>
+        )}
+      </div>
+      <div className="carto-band-list">
+        {stripes.map((s, i) => (
+          <div key={i} className="carto-row">
+            <span className="carto-band-swatch"
+              style={{ background: BAND_COLORS[s.material] || '#888' }} />
+            <label className="carto-label">{BAND_LABELS[s.material] || s.material}</label>
+            <span className="carto-band-width">
+              {fmtFt(s.outerR - s.innerR)}
+              {s.material === 'curb' ? ' (fixed)' : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function MeasurePanel() {
@@ -29,7 +91,7 @@ export default function MeasurePanel() {
       <div className="carto-section">
         <h2>Cross-Section</h2>
         <div className="carto-hint">
-          Click a street to select it. Drag caustic edges to adjust. Right-click to add treelawn/sidewalk.
+          Click a centerline to select a street. Handles appear at every stripe boundary — drag to resize. Double-click between handles to insert a boundary. Right-click a handle to remove. Default mode mirrors both sides; toggle Asymmetrical to edit independently.
         </div>
       </div>
     )
@@ -38,47 +100,71 @@ export default function MeasurePanel() {
   const st = centerlineData.streets[selectedStreet]
   if (!st) return null
 
-  const bands = getStreetBands(st)
-  const cum = bandsToCumulative(bands)
-  const totalR = cum.length ? cum[cum.length - 1].outerR : 0
-  const hasMeasured = !!st._bands
+  const measure = getMeasure(st)
+  const hasMeasured = !!st.measure
+  const symmetric = measure.symmetric !== false
 
-  function updateBands(newBands) {
-    st._bands = newBands
-    useCartographStore.setState({ centerlineData: { ...centerlineData } })
+  function updateMeasure(patch) {
+    if (!st.measure) st.measure = getMeasure(st)
+    Object.assign(st.measure, patch)
+    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] } })
     useCartographStore.getState()._saveCenterlines()
   }
 
-  function moveBand(fromIdx, toIdx) {
-    const b = [...bands]
-    const [item] = b.splice(fromIdx, 1)
-    b.splice(toIdx, 0, item)
-    updateBands(b)
-  }
-
-  function removeBand(idx) {
-    const b = [...bands]
-    b.splice(idx, 1)
-    updateBands(b)
-  }
-
-  function addBand(material) {
-    if (!st._bands) st._bands = [...getDefaultBands(st.type || 'residential')]
-    // Default widths
-    const defaults = {
-      'parking-parallel': 7 * FT, 'parking-angled': 18 * FT,
-      curb: 6 * 0.0254, gutter: 1.5 * FT,
-      treelawn: 4.5 * FT, sidewalk: 5 * FT, lawn: 3 * FT,
-      asphalt: 3.05,
+  function updateSide(sideKey, newSide) {
+    if (!st.measure) st.measure = getMeasure(st)
+    const patch = { [sideKey]: newSide }
+    if (symmetric) {
+      // Mirror to the other side
+      const other = sideKey === 'left' ? 'right' : 'left'
+      patch[other] = { ...newSide }
     }
-    st._bands.push({ material, width: defaults[material] || 1.5 })
-    useCartographStore.setState({ centerlineData: { ...centerlineData } })
+    Object.assign(st.measure, patch)
+    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] } })
     useCartographStore.getState()._saveCenterlines()
   }
 
-  // Bands not yet in the stack
-  const existing = new Set(bands.map(b => b.material))
-  const addable = AVAILABLE_BANDS.filter(m => !existing.has(m))
+  function toggleAsymmetric() {
+    updateMeasure({ symmetric: !symmetric })
+  }
+
+  function resetToDefault() {
+    delete st.measure
+    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] } })
+    useCartographStore.getState()._saveCenterlines()
+  }
+
+  // Per-side reset: restore one side to the pipeline default, leaving the
+  // other side untouched. Recovery affordance for handle collapses or any
+  // edit the operator wants to undo without losing the other side's work.
+  //
+  // Even when symmetric is on, this acts on one side only — that's the
+  // whole point of a per-side button. We also flip symmetric off so that
+  // future drags don't immediately mirror the reset away. The user can
+  // re-enable Asymmetrical → off to re-link if they want.
+  function resetSide(sideKey) {
+    const fromPipeline = PIPELINE_MEASURE.get(st.name)
+    const restored = fromPipeline ? { ...fromPipeline[sideKey] } : defaultMeasure(st.type || 'residential')[sideKey]
+    if (!st.measure) st.measure = getMeasure(st)
+    st.measure[sideKey] = restored
+    if (symmetric) st.measure.symmetric = false
+    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] } })
+    useCartographStore.getState()._saveCenterlines()
+  }
+
+  function copyMeasure() {
+    useCartographStore.setState({
+      _copiedProfile: JSON.parse(JSON.stringify(measure)),
+      status: 'Measure copied: ' + st.name,
+    })
+  }
+  function pasteMeasure() {
+    const copied = useCartographStore.getState()._copiedProfile
+    if (!copied) return
+    st.measure = JSON.parse(JSON.stringify(copied))
+    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] }, status: 'Measure pasted' })
+    useCartographStore.getState()._saveCenterlines()
+  }
 
   return (
     <div className="carto-section">
@@ -87,76 +173,30 @@ export default function MeasurePanel() {
         <span className="count">{st.type || 'residential'}</span>
       </h2>
 
-      {/* Band stack — ordered list */}
-      <div className="carto-band-list">
-        {bands.map((band, i) => (
-          <div key={i} className="carto-row">
-            <span className="carto-band-swatch"
-              style={{ background: BAND_COLORS[band.material] || '#888' }} />
-            <label className="carto-label">
-              {BAND_LABELS[band.material] || band.material}
-            </label>
-            <span className="carto-band-width">{fmtDim(band.width)}</span>
-            <div className="carto-reorder-stack">
-              {i > 0 && (
-                <button className="carto-btn-micro"
-                  onClick={() => moveBand(i, i - 1)} title="Move inward">&#x25B2;</button>
-              )}
-              {i < bands.length - 1 && (
-                <button className="carto-btn-micro"
-                  onClick={() => moveBand(i, i + 1)} title="Move outward">&#x25BC;</button>
-              )}
-            </div>
-            <button className="carto-btn-reset" onClick={() => removeBand(i)} title="Remove">&#x2715;</button>
-          </div>
-        ))}
+      <div className="carto-row">
+        <input type="checkbox" className="carto-checkbox"
+          checked={!symmetric}
+          onChange={toggleAsymmetric} />
+        <label className="carto-label">Asymmetrical (unlock sides)</label>
       </div>
 
-      {/* Total */}
-      <div className="carto-row carto-row--total">
-        <label className="carto-label">Total half-width</label>
-        <span className="carto-band-total">{fmtDim(totalR)}</span>
-      </div>
+      <SideBlock sideKey="left" side={measure.left} editable={!symmetric || true}
+        onChange={s => updateSide('left', s)}
+        onReset={() => resetSide('left')} canReset={hasMeasured} />
+      <SideBlock sideKey="right" side={measure.right} editable={!symmetric || true}
+        onChange={s => updateSide('right', s)}
+        onReset={() => resetSide('right')} canReset={hasMeasured} />
 
-      {/* Add band */}
-      {addable.length > 0 && (
-        <div className="carto-add-band">
-          <select className="carto-select"
-            value=""
-            onChange={e => { if (e.target.value) addBand(e.target.value) }}>
-            <option value="">+ Add band...</option>
-            {addable.map(m => (
-              <option key={m} value={m}>{BAND_LABELS[m] || m}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Actions */}
       <div className="carto-actions">
-        {hasMeasured && (
-          <button className="carto-btn-sm" onClick={() => {
-            delete st._bands
-            useCartographStore.setState({ centerlineData: { ...centerlineData } })
-            useCartographStore.getState()._saveCenterlines()
-          }}>Reset to Default</button>
-        )}
-        <button className="carto-btn-sm" onClick={() => {
-          const copy = bands.map(b => ({ ...b }))
-          useCartographStore.setState({ _copiedProfile: copy, status: 'Profile copied: ' + st.name })
-        }}>Copy</button>
+        {hasMeasured && <button className="carto-btn-sm" onClick={resetToDefault}>Reset</button>}
+        <button className="carto-btn-sm" onClick={copyMeasure}>Copy</button>
         {useCartographStore.getState()._copiedProfile && (
-          <button className="carto-btn-sm accent" onClick={() => {
-            const copied = useCartographStore.getState()._copiedProfile
-            st._bands = copied.map(b => ({ ...b }))
-            useCartographStore.setState({ centerlineData: { ...centerlineData }, status: 'Profile applied' })
-            useCartographStore.getState()._saveCenterlines()
-          }}>Paste</button>
+          <button className="carto-btn-sm accent" onClick={pasteMeasure}>Paste</button>
         )}
       </div>
 
       <div className="carto-meta">
-        {hasMeasured ? 'Measured' : 'Default'} · {bands.length} bands · {st.points.length} nodes
+        {hasMeasured ? 'Measured' : 'Default'} · {symmetric ? 'symmetric' : 'asymmetrical'} · curb={fmtFt(CURB_WIDTH)} (fixed)
       </div>
     </div>
   )

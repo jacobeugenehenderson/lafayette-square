@@ -777,31 +777,41 @@ function main() {
     const map = JSON.parse(readFileSync(join(CLEAN_DIR, 'map.json'), 'utf-8'))
     // Explicitly hidden blocks (marked with X in preview)
     const hiddenBlocks = new Set([34,42,56,58,79,86,110,111,114,127,136,174,182,208,212,221,242,243,244,246,249,271,293,314,316,321,325,328,334,346,370,385,386,389,399,401])
+    // Keep-list override: if non-empty, ONLY these block/lot indices render.
+    // Used during marker-driven curation to isolate confirmed-on blocks.
+    const keepBlocks = new Set([1, 23, 29, 38, 96])
 
     let blockAll = 0, lotAll = 0
     for (let bi = 0; bi < (map.layers?.block || []).length; bi++) {
       const b = map.layers.block[bi]
       if (b.ring?.length < 3) continue
       blockAll++
-      if (hiddenBlocks.has(bi)) continue
-      // Include block if ANY vertex touches the boundary
-      let touches = false
-      for (const p of b.ring) {
-        if (pointInPoly(p.x, p.z, hoodBoundary)) { touches = true; break }
+      if (keepBlocks.size > 0) {
+        if (!keepBlocks.has(bi)) continue
+      } else {
+        if (hiddenBlocks.has(bi)) continue
+        let touches = false
+        for (const p of b.ring) {
+          if (pointInPoly(p.x, p.z, hoodBoundary)) { touches = true; break }
+        }
+        if (!touches) continue
       }
-      if (!touches) continue
       blockRings.push(b.ring.map(p => [p.x, p.z]))
     }
     for (let li = 0; li < (map.layers?.lot || []).length; li++) {
       const l = map.layers.lot[li]
       if (l.ring?.length < 3) continue
       lotAll++
-      if (hiddenBlocks.has(li)) continue
-      let touches = false
-      for (const p of l.ring) {
-        if (pointInPoly(p.x, p.z, hoodBoundary)) { touches = true; break }
+      if (keepBlocks.size > 0) {
+        if (!keepBlocks.has(li)) continue
+      } else {
+        if (hiddenBlocks.has(li)) continue
+        let touches = false
+        for (const p of l.ring) {
+          if (pointInPoly(p.x, p.z, hoodBoundary)) { touches = true; break }
+        }
+        if (!touches) continue
       }
-      if (!touches) continue
       lotRings.push(l.ring.map(p => [p.x, p.z]))
     }
     console.log(`    ${blockRings.length}/${blockAll} blocks, ${lotRings.length}/${lotAll} lots`)

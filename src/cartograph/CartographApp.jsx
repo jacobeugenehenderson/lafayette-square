@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { MapControls, PerspectiveCamera } from '@react-three/drei'
+import { MapControls, OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 
 // Map geometry (rendered in every shot)
@@ -9,7 +9,6 @@ import MapLayers from './MapLayers.jsx'
 
 // Designer-only (aerial + authoring overlays)
 import AerialTiles from './AerialTiles.jsx'
-import DesignerPark from './DesignerPark.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
 import MeasureOverlay from './MeasureOverlay.jsx'
 import MarkerOverlay from './MarkerOverlay.jsx'
@@ -26,6 +25,13 @@ import CloudDome from '../components/CloudDome'
 import Terrain from '../components/Terrain'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { StageCamera, SHOTS, StageShadows, PostProcessing } from '../stage/StageApp.jsx'
+
+// Toy scene fixtures (single 4-way corner for shader/shadow R&D)
+import toyRibbons from '../data/toy/toy-ribbons.json'
+import toyLamps from '../data/toy/toy-lamps.json'
+import ToyBuildings from '../toy/ToyBuildings.jsx'
+import ToyTrees from '../toy/ToyTrees.jsx'
+import ToyTerrain from '../toy/ToyTerrain.jsx'
 
 // UI
 import Toolbar from './Toolbar.jsx'
@@ -101,7 +107,9 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         const s = SHOTS[shot]
         if (!cam || !s) return
         cam.position.set(...s.position)
+        cam.up.set(...(s.up || [0, 1, 0]))
         cam.fov = s.fov
+        cam.lookAt(...s.target)
         cam.updateProjectionMatrix()
         if (ctl) { ctl.target.set(...s.target); ctl.update() }
       }
@@ -147,22 +155,62 @@ function Controls({ controlsRef }) {
   // we only need basic orbit.
   const panEnabled = !inDesigner || spaceDown
     || (!tool && !markerActive)
-    || ((tool === 'surveyor' || tool === 'measure') && !hoverTarget)
+    || ((tool === 'surveyor' || tool === 'measure') && !hoverTarget && !markerActive)
 
+  // Designer uses MapControls (plan view, ortho). Shots use OrbitControls so
+  // the operator can freely inspect the 3D scene (full pan + orbit + zoom).
+  if (inDesigner) {
+    return (
+      <MapControls
+        key="ortho"
+        ref={controlsRef}
+        enableRotate={false}
+        enablePan={panEnabled}
+        enableZoom
+        screenSpacePanning
+        minZoom={0.5}
+        maxZoom={40}
+      />
+    )
+  }
   return (
-    <MapControls
-      key={inDesigner ? 'ortho' : 'persp'}
-      ref={controlsRef}
-      enableRotate={!inDesigner}
-      enablePan={panEnabled}
+    <OrbitControlsShot controlsRef={controlsRef} />
+  )
+}
+
+// Shot-mode controls. Left-drag rotates; Option/Alt+drag pans; wheel zooms.
+function OrbitControlsShot({ controlsRef }) {
+  const localRef = useRef(null)
+  useEffect(() => {
+    const setButtons = (altDown) => {
+      const c = localRef.current
+      if (!c) return
+      c.mouseButtons = {
+        LEFT: altDown ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.PAN,
+      }
+    }
+    const onKeyDown = (e) => { if (e.key === 'Alt') setButtons(true) }
+    const onKeyUp   = (e) => { if (e.key === 'Alt') setButtons(false) }
+    setButtons(false)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+    }
+  }, [])
+  return (
+    <OrbitControls
+      key="persp"
+      ref={(r) => { localRef.current = r; if (controlsRef) controlsRef.current = r }}
+      enablePan
+      enableRotate
       enableZoom
-      screenSpacePanning={inDesigner}
-      minZoom={0.5}
-      maxZoom={40}
-      minDistance={1}
+      screenSpacePanning={false}
+      minDistance={0.5}
       maxDistance={5000}
-      /* Unlock full 360° so the operator can orbit under the map and
-         verify underside lighting / normals / shadow behaviour. */
       minPolarAngle={0}
       maxPolarAngle={Math.PI}
     />
@@ -223,6 +271,7 @@ export default function CartographApp() {
   const controlsRef = useRef(null)
 
   const shot = useCartographStore(s => s.shot)
+  const scene = useCartographStore(s => s.scene)
   const tool = useCartographStore(s => s.tool)
   const markerActive = useCartographStore(s => s.markerActive)
   const markerEraserActive = useCartographStore(s => s.markerEraserActive)
@@ -232,7 +281,6 @@ export default function CartographApp() {
   const layerVis = useCartographStore(s => s.layerVis)
   const luColors = useCartographStore(s => s.luColors)
   const fillsVisible = useCartographStore(s => s.fillsVisible)
-  const aerialVisible = useCartographStore(s => s.aerialVisible)
   const centerlineData = useCartographStore(s => s.centerlineData)
 
   // StagePanel state — local, used when a non-Designer shot is active
@@ -244,17 +292,42 @@ export default function CartographApp() {
   useSpaceKey()
   useLoadData()
 
+  const inDesigner = shot === 'designer'
+
   const hiddenLayers = {}
   for (const k in layerVis) {
     if (!layerVis[k]) hiddenLayers[k] = true
   }
+  // "Fills" toggle: hide everything that's NOT road/pathway infrastructure
+  // so the operator can focus on the road network against the aerial.
+  //   - Hidden when Fills off: face fills (land use), buildings, parking
+  //     lots, landscape, barriers, trees.
+  //   - Always kept: ribbons, alleys, footways, cycleways, steps, lamps,
+  //     stripes / edge lines / bike lanes.
+  // Tool-specific overlays (blue tint in Survey, handles in Measure) layer
+  // on top independently. Shot mode keeps using stageHidden for its own
+  // 3D-vs-flat layer dance.
+  const decorationsHidden = (!fillsVisible && inDesigner) ? {
+    ...hiddenLayers,
+    // Land-use family — hidden together with StreetRibbons face fills so the
+    // aerial shows through, not MapLayers' dark ground plane.
+    ground: true, park: true,
+    // Decorations that sit on the land use.
+    building: true, parking_lot: true, tree: true,
+    // Landscape kinds (leisure + natural) — hide individually because the
+    // renderer maps Object.entries(landscapeByKind) to per-kind meshes,
+    // not a single "landscape" mesh.
+    garden: true, playground: true, swimming_pool: true, pitch: true,
+    sports_centre: true, outdoor_seating: true, fitness_station: true,
+    water: true, wood: true, scrub: true, cliff: true, bare_rock: true,
+    // Barrier kinds (per fence/wall/hedge/retaining_wall sub-rendering).
+    fence: true, wall: true, hedge: true, retaining_wall: true,
+  } : hiddenLayers
   const stageHidden = fillsVisible ? hiddenLayers : {
     ...hiddenLayers,
     ground: true, park: true, building: true,
     alley: true, footway: true, tree: true, lamp: true,
   }
-
-  const inDesigner = shot === 'designer'
 
   let cursor = 'grab'
   if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'
@@ -299,26 +372,29 @@ export default function CartographApp() {
           <R3FErrorBoundary name="StreetRibbons">
             <StreetRibbons hiddenLayers={inDesigner ? hiddenLayers : stageHidden}
               luColors={luColors}
-              liveCenterlines={centerlineData.streets}
-              flat={inDesigner} />
+              liveCenterlines={scene === 'toy' ? null : centerlineData.streets}
+              measureActive={tool === 'measure' && inDesigner && scene !== 'toy'}
+              surveyActive={tool === 'surveyor' && inDesigner && scene !== 'toy'}
+              flat={inDesigner}
+              ribbons={scene === 'toy' ? toyRibbons : undefined}
+              useBoundary={scene !== 'toy'}
+              hideFaceFills={inDesigner && !fillsVisible} />
           </R3FErrorBoundary>
 
-          {/* ── Designer-only ── */}
+          {/* ── Map layers (flat ground geometry — neighborhood only).
+              In shots, layers with 3D equivalents (park, buildings, trees,
+              lamps, water) are suppressed so the 3D components own them. */}
+          {scene === 'neighborhood' && (
+            <MapLayers hiddenLayers={inDesigner ? decorationsHidden : stageHidden} inShot={!inDesigner} />
+          )}
+
+          {/* ── Designer-only UI overlays (authoring tools only make sense
+              against the real neighborhood data) ── */}
           <group visible={inDesigner}>
-            <AerialTiles visible={aerialVisible && inDesigner} />
-            {/* DesignerPark owns park boundary/paths/water — suppress
-                MapLayers' old bounding-box park layer so they don't fight. */}
-            <MapLayers hiddenLayers={{
-              ...(fillsVisible ? hiddenLayers : stageHidden),
-              park: true,
-              // DesignerPark owns the hand-authored path network; OSM-derived
-              // footways drawing over the top produced duplicated trails.
-              footway: true,
-            }} />
-            <DesignerPark />
-            <DesignerArch />
-            <SurveyorOverlay />
-            {tool === 'measure' && <MeasureOverlay />}
+            {scene === 'neighborhood' && <AerialTiles visible={inDesigner} />}
+            {scene === 'neighborhood' && <DesignerArch />}
+            {scene === 'neighborhood' && <SurveyorOverlay />}
+            {tool === 'measure' && scene === 'neighborhood' && <MeasureOverlay />}
           </group>
 
           {/* ── Shot-only (environment paint — must exactly mirror runtime) ── */}
@@ -332,10 +408,18 @@ export default function CartographApp() {
             <group visible={false}>
               <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
             </group>
-            <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
-            <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
-            <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
-            <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
+            {scene === 'neighborhood' && <>
+              <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
+              <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
+              <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
+              <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
+            </>}
+            {scene === 'toy' && <>
+              <R3FErrorBoundary name="ToyTerrain"><ToyTerrain /></R3FErrorBoundary>
+              <R3FErrorBoundary name="ToyBuildings"><ToyBuildings /></R3FErrorBoundary>
+              <R3FErrorBoundary name="ToyTrees"><ToyTrees /></R3FErrorBoundary>
+              <R3FErrorBoundary name="ToyStreetLights"><StreetLights lamps={toyLamps.lamps} /></R3FErrorBoundary>
+            </>}
           </group>
           {!inDesigner && <PostProcessing />}
 
