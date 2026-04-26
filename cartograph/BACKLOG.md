@@ -1,33 +1,66 @@
 # Cartograph Backlog
 
-Last updated: 2026-04-26 PM (later)
+Last updated: 2026-04-26 (Phase 4 shipped)
 
-## 2026-04-26 PM (later) — Path B Phases 1+2+3 SHIPPED
+## 2026-04-26 — Path B Phases 1+2+3+4 SHIPPED
 
 | Phase | Status | Commits |
 |---|---|---|
 | 1. Skeleton phase analyzer | ✅ shipped | `613a6ff`, `6d7045c` (tuning) |
 | 2. Phase-aware welding | ✅ shipped | `78f78bd` |
 | 3. Skeleton emits phase metadata | ✅ shipped | `d6a3c42` |
-| 4. Derive consumes phase info | ⏳ next session | — |
-| 5. Ribbon knitting | ⏳ | — |
+| 4. Derive consumes phase info | ✅ shipped | (this session) |
+| 5. Ribbon knitting | ⏳ next | — |
 | 6. Emergent grass median | ⏳ | — |
 
-**Visual confirmation:** divided carriageways render as separate
-parallel ribbons in Designer / Survey ("split traffic" working).
-Visible breaks at transition nodes are the expected mid-state until
-Phase 5 knits them.
+**Phase 4 results:**
+- 23 emergent medians (was 6 — old geometric `meanGap < 30m`
+  threshold under-detected).
+- 46 chains marked `anchor='inner-edge'` (was 0 — old buildCorridors
+  pair-detection silently failed; oneway-edge node clustering rarely
+  satisfied `sA===eB && eA===sB`).
+- 23 carriageway-A + 23 carriageway-B chains (was 17+17 — pairKey
+  gating in welder revealed pair structure that was silently fused).
+- 18 pinch transitions across 69 corridors.
+- 182 ribbon chains total (was 154); the +28 are pair-correctness.
+  Phase 5 knit will close the visible seams.
 
-**Phase 4 starts next session.** Read NOTES 2026-04-26 PM (later)
-entry first — covers the new `street.phase` shape, the derive sites
-to delete (`splitAtFolds`, `dropShadowedChains`, `meanPerpDistance`
-pair detection, `innerSign`/`pairId`/`medians` emission ~derive.js
-2580–2870), and the dependent-map for `src/data/ribbons.json` and
-the overlay file.
+**What changed structurally:**
+- `analyzePhases` stamps stable `pairKey` per divided pair.
+- `weldChains` gates on `(signature, pairKey)`. Different pairs in
+  the same corridor (Lafayette has 4 A-pairs) can no longer fuse.
+- Skeleton emits `phase.pairKey` per chain.
+- Derive `ribbonStreets` carries `phase` through; pairing is now a
+  pairKey slot-fill — no `meanPerpDistance`, no `tanDot`, no
+  edge-key matching.
+- Deleted from skeleton: `splitAtFolds`, `dropShadowedChains`,
+  `nearestOnPolyline`.
+- Deleted from derive: ~325 lines of geometric pair detection,
+  `buildCorridors` edge-key logic, `offsetPolyline`/`avgTangent`/
+  `meanPerpDistance` helpers, `medians[].meanGap` field.
 
-**Operational gotcha to remember:** if Survey/Measure go blank,
-check `lsof -i :3333` — `serve.js` may have died; that mimics a
-data regression but isn't one. `node serve.js &` to restart.
+## Operational notes worth remembering
+
+- **`pipeline.js` does NOT run `skeleton.js`** — they're separate
+  scripts. After editing skeleton, run `node skeleton.js` first,
+  then `node pipeline.js`. Forgetting gives a stale skeleton.json
+  and silent regressions in derive.
+- If Survey/Measure go blank, check `lsof -i :3333` — `serve.js`
+  may have died. `node serve.js &` to restart.
+
+## Phase 5 pickup pointer
+
+Phase 5 ("ribbon knitting") closes the 18 pinch transitions where a
+single phase meets a divided phase. Each transition has a node coord
+and an emergent wedge: median grass opens at single→divided, tapers
+to zero at divided→single. Implementation candidates:
+- "Merge plug" geometry analogous to corner plugs.
+- Extend insert-coupler taper logic.
+
+Start at `src/components/StreetRibbons.jsx` line ~703 (main fills
+per-chain loop). The `corridors[].transitions[]` array in
+`data/clean/map.json → layers.ribbons` already lists every seam
+location — Phase 5 just renders them.
 
 ---
 

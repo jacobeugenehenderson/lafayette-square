@@ -6,6 +6,102 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-04-26 (evening) — Path B Phase 4 SHIPPED (derive consumes phase metadata)
+
+Implemented in this session, on top of Phases 1+2+3:
+
+1. **Skeleton: stable `pairKey` per divided pair.** `analyzePhases`
+   already had pair info via `partner: B.osmId`. Promoted that into a
+   stable key (`min-max` of the two OSM ids) attached to each
+   classified fragment as `c.pairKey`. Both A and B fragments of a
+   pair carry the same key.
+
+2. **Welder gates on `(signature, pairKey)`.** Previously the welder
+   gated only on signature, so two `divided-A` fragments from
+   *different* pairs in the same corridor (Lafayette has 4 A-pairs)
+   could weld together if their endpoints happened to coincide. That
+   silently fused pair structure. New gate keeps each pair's A and B
+   chains separate end-to-end. PairKey threads through `weldChains`
+   pool entries and survives extension because the seed chain's
+   pairKey carries through.
+
+3. **Skeleton emits `phase.pairKey`** per chain. Joins `kind`, `role`,
+   `corridorName`, `startNode`, `endNode` already there.
+
+4. **`ribbonStreets` in derive carries `phase` through** (single line
+   added to the construction loop — the earlier omission was the bug
+   that silently broke first-pass pairing).
+
+5. **Derive: one corridor pass replaces three.** Deleted ~325 lines:
+   the geometric divided-pair detection (`meanPerpDistance` +
+   `tanDot < -0.6` + `MEDIAN_MAX_MEAN_GAP=30`), the edge-key oneway
+   pair logic inside `buildCorridors`, and the `offsetPolyline` /
+   `avgTangent` / `meanPerpDistance` helpers. New ~150-line block
+   does endpoint clustering once per corridor name, fills pair slots
+   by `phase.pairKey`, walks the node graph for ordering, and emits
+   `corridors[]` + `dividedPairs[]` + `medians[]` + anchor stamping
+   from the same data.
+
+6. **Skeleton: deleted `splitAtFolds`, `dropShadowedChains`,
+   `nearestOnPolyline`.** All three were workarounds for pair-blind
+   welding. PairKey gating obviates them — verified visually and by
+   chain count.
+
+7. **Dropped `medians[].meanGap`** from the ribbons output. No
+   consumer in `src/`. Per the "fix things properly, no patches"
+   directive — vestigial fields shouldn't linger.
+
+### Counts (this session)
+
+| Metric | Before P4 | After P4 |
+|---|---|---|
+| carriageway-A chains | 17 | 23 |
+| carriageway-B chains | 17 | 23 |
+| Emergent medians | 6 | 23 |
+| `anchor='inner-edge'` chains | 0 (silent failure) | 46 |
+| Pinch transitions | 0 (not detected) | 18 |
+| Total ribbon chains | 154 | 182 |
+
+The +6 carriageway pairs come from pairKey gating revealing pair
+structure the old welder was hiding. The +28 ribbon chains are the
+cost; they show as visible seams at phase transitions until Phase 5
+knits them. Mid-state is structurally correct, visually rough — same
+trade as Phase 2.
+
+### Operational lessons (save these)
+
+- **`pipeline.js` does NOT run `skeleton.js`.** They're separate
+  scripts. After editing skeleton, run `node skeleton.js` first,
+  then `node pipeline.js`. I lost a debug cycle to a stale
+  skeleton.json this session before catching it. The fix is workflow,
+  not code: think of skeleton + pipeline as a two-step build.
+- The first attempt at Phase 4 produced 0 medians and 0 anchored
+  chains. Cause: `ribbonStreets.push(...)` was dropping `phase`. Easy
+  miss. Future refactors that thread new fields from skeleton through
+  derive should sanity-check the construction loop *first*.
+
+### Phase 5 pickup pointer
+
+Phase 5 (knitting) renders geometry across the 18 pinch transitions.
+At single→divided, median grass opens as a wedge from zero to full
+gap; at divided→single, it tapers back to zero. The
+`corridors[].transitions[]` array in `data/clean/map.json →
+layers.ribbons` lists every seam location with `at: {x,z}`,
+`from`/`to` phase kinds, and a `pinch` flag.
+
+Read order:
+1. This entry.
+2. `src/components/StreetRibbons.jsx` line ~703 (main fills per-chain loop).
+3. `cartograph/derive.js` "Corridors, divided pairs, medians,
+   anchors" block — phase data shape that ribbons consume.
+4. Memory: `project_phase_aware_skeleton_emission.md`.
+
+Implementation candidates: "merge plug" geometry analogous to corner
+plugs, or extend insert-coupler taper logic. Phase 5 is visual
+iteration; budget at least one full session.
+
+---
+
 ## 2026-04-26 PM (later) — Path B Phases 1+2+3 SHIPPED ("split traffic" works)
 
 Implemented in this session:

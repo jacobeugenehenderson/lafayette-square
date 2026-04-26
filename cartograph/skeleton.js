@@ -173,17 +173,20 @@ function analyzePhases(name, fragments) {
   }
   cand.sort((a, b) => a.gap - b.gap)
 
-  const paired = new Map() // osmId → { partner, gap, role }
+  const paired = new Map() // osmId → { partner, gap, role, pairKey }
   for (const { A, B, gap } of cand) {
     if (paired.has(A.osmId) || paired.has(B.osmId)) continue
-    paired.set(A.osmId, { partner: B.osmId, gap, role: 'divided-A' })
-    paired.set(B.osmId, { partner: A.osmId, gap, role: 'divided-B' })
+    // pairKey stays stable across welding so derive can rejoin A/B
+    // chains by lookup instead of geometry.
+    const pairKey = `${Math.min(A.osmId, B.osmId)}-${Math.max(A.osmId, B.osmId)}`
+    paired.set(A.osmId, { partner: B.osmId, gap, role: 'divided-A', pairKey })
+    paired.set(B.osmId, { partner: A.osmId, gap, role: 'divided-B', pairKey })
   }
 
   const classified = fragments.map(f => {
     if (f.tags?.oneway === 'yes') {
       const p = paired.get(f.osmId)
-      if (p) return { osmId: f.osmId, kind: 'divided', role: p.role, partner: p.partner, gap: p.gap }
+      if (p) return { osmId: f.osmId, kind: 'divided', role: p.role, partner: p.partner, gap: p.gap, pairKey: p.pairKey }
       return { osmId: f.osmId, kind: 'single-oneway' }
     }
     return { osmId: f.osmId, kind: 'single-bidi' }
@@ -203,13 +206,20 @@ function analyzePhases(name, fragments) {
 // endpoint matches. Repeat until no more matches, then start a new chain.
 
 // If a welded chain folds back on itself (two adjacent segments whose
-// tangents face opposite directions), split it at the fold. This cleans
-// up divided roads where OSM bidirectional connector fragments let the
-// welder splice opposing one-way halves together — oneway direction
-// rules alone don't catch those.
+// tangents face opposite directions, cos < -0.5), split it at the fold.
+// Only meaningful for non-divided signatures: `pairKey` gating already
+// keeps divided-A/-B fragments from fusing across pairs, but a
+// single-bidi chain whose OSM fragments happen to zigzag (typical at
+// Y-junctions where one OSM way doubles back) will weld into one chain
+// that physically folds. Without this split, clicking the chain
+// highlights both arms of the fold.
 function splitAtFolds(chains) {
   const out = []
   for (const chain of chains) {
+    // Divided carriageway chains are pre-paired and pre-gated; skip.
+    if (chain.signature === 'divided-A' || chain.signature === 'divided-B') {
+      out.push(chain); continue
+    }
     const coords = chain.coords
     const foldIdxs = []
     for (let i = 1; i < coords.length - 1; i++) {
@@ -223,7 +233,6 @@ function splitAtFolds(chains) {
       if (cos < -0.5) foldIdxs.push(i)
     }
     if (!foldIdxs.length) { out.push(chain); continue }
-    // Split at each fold: emit chain[0..fold], chain[fold..next], ...
     const cuts = [0, ...foldIdxs, coords.length - 1]
     for (let i = 0; i < cuts.length - 1; i++) {
       const slice = coords.slice(cuts[i], cuts[i + 1] + 1)
@@ -235,12 +244,13 @@ function splitAtFolds(chains) {
 }
 
 // signatureByOsmId: Map<osmId, 'divided-A'|'divided-B'|'single-oneway'|'single-bidi'>.
-// Welds are gated on signature equality — fragments only fuse with same-phase
-// peers. This forbids the splice bridges that previously let bidi connector
-// fragments at intersections weld opposing-direction oneway carriageways into
-// one super-chain (Lafayette: 22 ways → 1 chain). Signature attaches to the
-// pool seed and is invariant across welds (since welds preserve it).
-function weldChains(fragments, signatureByOsmId) {
+// pairKeyByOsmId: Map<osmId, pairKey> for divided fragments — null otherwise.
+// Welds are gated on (signature, pairKey) equality. Signature alone forbids
+// the splice bridges that fused opposing carriageways into one super-chain
+// (Lafayette 22→1). PairKey additionally keeps separate divided pairs in the
+// same corridor (e.g. Lafayette's three A carriageways) from welding into
+// each other when their endpoints happen to coincide.
+function weldChains(fragments, signatureByOsmId, pairKeyByOsmId) {
   const pool = fragments.map(f => ({
     coords: f.coords.slice(),
     sources: [f.osmId],
@@ -248,6 +258,7 @@ function weldChains(fragments, signatureByOsmId) {
     oneway: f.tags?.oneway === 'yes',
     isClosed: f.isClosed,
     signature: signatureByOsmId.get(f.osmId) || 'single-bidi',
+    pairKey: pairKeyByOsmId.get(f.osmId) || null,
   }))
   const chains = []
 
@@ -259,6 +270,7 @@ function weldChains(fragments, signatureByOsmId) {
       for (let i = 0; i < pool.length; i++) {
         const c = pool[i]
         if (c.signature !== chain.signature) continue
+        if (c.pairKey !== chain.pairKey) continue
         const chainHead = chain.coords[0]
         const chainTail = chain.coords[chain.coords.length - 1]
         const cHead = c.coords[0]
@@ -336,21 +348,6 @@ function resamplePolyline(coords, n) {
   return out
 }
 
-function nearestOnPolyline(p, coords) {
-  let best = { dist: Infinity, point: coords[0] }
-  for (let i = 1; i < coords.length; i++) {
-    const a = coords[i - 1], b = coords[i]
-    const dx = b.x - a.x, dz = b.z - a.z
-    const len2 = dx * dx + dz * dz
-    let t = len2 === 0 ? 0 : ((p.x - a.x) * dx + (p.z - a.z) * dz) / len2
-    t = Math.max(0, Math.min(1, t))
-    const px = a.x + t * dx, pz = a.z + t * dz
-    const d = Math.hypot(p.x - px, p.z - pz)
-    if (d < best.dist) best = { dist: d, point: { x: px, z: pz } }
-  }
-  return best
-}
-
 // --- Step 4: angular-tolerance simplification -----------------------------
 // Collapse a point if its perpendicular deviation from the chord formed by
 // its neighbors < DEV_TOL AND the turn angle < ANGLE_TOL.
@@ -396,6 +393,7 @@ function main() {
   const VALIDATION_NAMES = new Set(['South Jefferson Avenue', 'Lafayette Avenue'])
   const phaseReports = []
   const signatureByOsmId = new Map()
+  const pairKeyByOsmId = new Map()
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
     const report = analyzePhases(name, fragments)
@@ -403,6 +401,7 @@ function main() {
     for (const c of report.classified) {
       const sig = c.kind === 'divided' ? c.role : c.kind
       signatureByOsmId.set(c.osmId, sig)
+      if (c.pairKey) pairKeyByOsmId.set(c.osmId, c.pairKey)
     }
   }
   console.log('\nPhase analysis (pre-weld):')
@@ -424,31 +423,6 @@ function main() {
 
   const streets = []
 
-  // Drop any short chain fully "shadowed" by a longer same-name chain
-  // (both endpoints project within SHADOW_PERP of the longer chain AND
-  // the shorter chain is <50% of the longer's length). Handles OSM's
-  // pattern of duplicate-tracing a subsection. Divided-road carriageway
-  // pairs (both ~full length) are NOT dropped — they stay as two
-  // separate streets per the positive-carriageway model.
-  const SHADOW_PERP = 30
-  const SHADOW_LEN_RATIO = 0.5
-  function dropShadowedChains(chains) {
-    if (chains.length < 2) return chains
-    const sorted = chains.slice().sort((a, b) => chainLength(b.coords) - chainLength(a.coords))
-    const kept = []
-    for (const c of sorted) {
-      const cLen = chainLength(c.coords)
-      const shadowedBy = kept.find(k => {
-        if (cLen / chainLength(k.coords) >= SHADOW_LEN_RATIO) return false
-        const endA = nearestOnPolyline(c.coords[0], k.coords)
-        const endB = nearestOnPolyline(c.coords[c.coords.length - 1], k.coords)
-        return endA.dist < SHADOW_PERP && endB.dist < SHADOW_PERP
-      })
-      if (!shadowedBy) kept.push(c)
-    }
-    return kept
-  }
-
   // Signature → phase (kind, role) mapping. Both single-oneway and
   // single-bidi chains are 'single' phases — they share the spine role.
   // 'divided-A' / 'divided-B' carry through as carriageway-A / -B so
@@ -461,7 +435,7 @@ function main() {
   }
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
-    const chains = dropShadowedChains(splitAtFolds(weldChains(fragments, signatureByOsmId)))
+    const chains = splitAtFolds(weldChains(fragments, signatureByOsmId, pairKeyByOsmId))
     // One street per surviving chain. Divided roads emit two streets
     // (one per carriageway) — medians are emergent downstream.
     chains.forEach((c, i) => {
@@ -472,8 +446,9 @@ function main() {
         name, fragments[0].tags, c,
         // Phase metadata: derived from signature so downstream (Phase 4
         // derive, Phase 5 knit) consumes phase shape directly instead of
-        // rediscovering it. startNode/endNode populated post-normalize.
-        { phase: { kind: ph.kind, role: ph.role, corridorName: name } },
+        // rediscovering it. pairKey ties carriageway-A to its B partner
+        // through welding; startNode/endNode populated post-normalize.
+        { phase: { kind: ph.kind, role: ph.role, corridorName: name, pairKey: c.pairKey || null } },
       ))
     })
   }

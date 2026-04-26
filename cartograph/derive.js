@@ -2296,7 +2296,7 @@ export function deriveLayers(highways) {
     if (!s.name || !s.points || s.points.length < 2) continue
     const points = s.points.map(p => [p.x, p.z])
     const measure = computeStreetMeasure(s.name, { highway: s.highway })
-    ribbonStreets.push({ name: s.name, points, measure, intersections: [], oneway: !!s.oneway, skelId: s.id })
+    ribbonStreets.push({ name: s.name, points, measure, intersections: [], oneway: !!s.oneway, skelId: s.id, phase: s.phase || null })
   }
   console.log(`    ${ribbonStreets.length} ribbon chains from skeleton (${skelStreets.length} skeleton streets)`)
 
@@ -2570,16 +2570,21 @@ export function deriveLayers(highways) {
   // StreetRibbons.jsx clips them at render time against the live ribbon
   // silhouette so blocks shrink/grow as Measure drags widths.
 
-  // ── Emergent medians ───────────────────────────────────────
-  // A divided road is two same-name oneway carriageways with opposite
-  // direction. The median is the polygon between their INNER edges —
-  // the sides facing each other. We walk one inner edge forward, the
-  // other backward, and close the ring. Pinch-to-zero points where the
-  // carriageways converge at intersections fall out of the geometry
-  // because the inner edges meet there naturally.
+  // ── Corridors, divided pairs, medians, anchors ─────────────
+  // Phase 4 (Path B): skeleton.js now classifies each chain as
+  // single/spine or carriageway-A/-B, with corridorName and start/end
+  // node coords stamped into `street.phase`. We consume that directly
+  // — no perpendicular-distance hunting, no oneway-edge pair detection.
   //
-  // Nothing is authored. The median shape is a function of the two
-  // carriageway centerlines and their per-side pavement widths.
+  // One pass builds:
+  //   - corridors[]  → per-name ordered list of phases (single | divided)
+  //                    plus transition nodes; consumed by ribbons.json.
+  //   - dividedPairs → list of {aIdx, bIdx} carriageway pairs; drives
+  //                    median ring construction and anchor stamping.
+  //
+  // The median ring itself is purely geometric: walk A forward, B
+  // reversed, close the ring. Pick the larger-area orientation as a
+  // self-intersection guard for figure-eight cases.
   function polygonArea(ring) {
     let a = 0
     for (let i = 0; i < ring.length; i++) {
@@ -2614,287 +2619,162 @@ export function deriveLayers(highways) {
     }
     return votes >= 0 ? +1 : -1
   }
-  function offsetPolyline(pts, innerSign, hw) {
-    // Offset each polyline point by innerSign * hw along the
-    // average perpendicular of its adjacent segments.
-    const out = []
-    for (let i = 0; i < pts.length; i++) {
-      let nx = 0, nz = 0
-      if (i > 0) {
-        const dx = pts[i][0] - pts[i - 1][0], dz = pts[i][1] - pts[i - 1][1]
-        const L = Math.hypot(dx, dz) || 1
-        nx += -dz / L; nz += dx / L
-      }
-      if (i < pts.length - 1) {
-        const dx = pts[i + 1][0] - pts[i][0], dz = pts[i + 1][1] - pts[i][1]
-        const L = Math.hypot(dx, dz) || 1
-        nx += -dz / L; nz += dx / L
-      }
-      const L = Math.hypot(nx, nz) || 1
-      out.push([
-        pts[i][0] + innerSign * hw * nx / L,
-        pts[i][1] + innerSign * hw * nz / L,
-      ])
-    }
-    return out
-  }
-
-  // Pair up same-name oneway streets whose directions are opposite.
-  // "Opposite direction" = average tangents dot-negative AND each
-  // polyline's points project close to the other polyline overall
-  // (indicating they're parallel carriageways, not random same-named
-  // streets far apart).
-  function avgTangent(pts) {
-    let dx = 0, dz = 0
-    for (let i = 1; i < pts.length; i++) { dx += pts[i][0] - pts[i-1][0]; dz += pts[i][1] - pts[i-1][1] }
-    const L = Math.hypot(dx, dz) || 1
-    return [dx / L, dz / L]
-  }
-  function meanPerpDistance(aPts, bPts) {
-    // Mean of (for each point on A) the nearest point on B's polyline.
-    let sum = 0, n = 0
-    for (const p of aPts) {
-      let best = Infinity
-      for (let i = 0; i < bPts.length - 1; i++) {
-        const ax = bPts[i][0], az = bPts[i][1]
-        const bx = bPts[i+1][0], bz = bPts[i+1][1]
-        const dx = bx - ax, dz = bz - az
-        const len2 = dx*dx + dz*dz
-        if (len2 < 1e-9) continue
-        let t = ((p[0]-ax)*dx + (p[1]-az)*dz) / len2
-        t = Math.max(0, Math.min(1, t))
-        const px = ax + t*dx, pz = az + t*dz
-        const d = Math.hypot(px - p[0], pz - p[1])
-        if (d < best) best = d
-      }
-      if (best < Infinity) { sum += best; n++ }
-    }
-    return n ? sum / n : Infinity
-  }
-
-  const MEDIAN_MAX_MEAN_GAP = 30 // meters — wider than this isn't a median
-  const MEDIAN_MIN_OVERLAP = 0.5 // fraction of shorter chain covered
-
-  const medians = []
-  const byName = new Map()
+  // Build corridors + divided pairs from phase metadata. One pass per
+  // corridor name: cluster endpoints into nodes, look up which chains
+  // are paired carriageways via phase.role, and walk the node graph to
+  // order phases along the corridor.
+  const NODE_TOL = 15 // meters — carriageway pair ends often sit apart
+  const byCorridorName = new Map()
   for (let i = 0; i < ribbonStreets.length; i++) {
     const s = ribbonStreets[i]
-    if (!s.oneway) continue
-    if (!byName.has(s.name)) byName.set(s.name, [])
-    byName.get(s.name).push(i)
+    const cname = s.phase?.corridorName || s.name
+    if (!byCorridorName.has(cname)) byCorridorName.set(cname, [])
+    byCorridorName.get(cname).push(i)
   }
-  const pairedStreetIdx = new Set()
-  for (const [name, idxs] of byName) {
-    if (idxs.length < 2) continue
-    for (let i = 0; i < idxs.length; i++) {
-      if (pairedStreetIdx.has(idxs[i])) continue
-      const A = ribbonStreets[idxs[i]]
-      const aTan = avgTangent(A.points)
-      for (let j = i + 1; j < idxs.length; j++) {
-        if (pairedStreetIdx.has(idxs[j])) continue
-        const B = ribbonStreets[idxs[j]]
-        const bTan = avgTangent(B.points)
-        const tanDot = aTan[0]*bTan[0] + aTan[1]*bTan[1]
-        if (tanDot > -0.6) continue // not opposite enough
-        const meanGap = meanPerpDistance(A.points, B.points)
-        if (meanGap > MEDIAN_MAX_MEAN_GAP) continue
-        // Pair them.
-        pairedStreetIdx.add(idxs[i]); pairedStreetIdx.add(idxs[j])
 
-        // Median polygon = the space between the two centerlines, with
-        // NO inner offset. At render time, pavement ribbons on each
-        // carriageway paint over the outside portion of this polygon;
-        // what's visibly left in the middle is the real median.
-        // Attempting to offset by pavementHW before emitting leads to
-        // self-intersection whenever the gap is less than 2×pavementHW
-        // (common — see Park Ave's 8m gap vs 5m default pavementHW).
-        //
-        // Since A and B are opposite-direction carriageways, walking
-        // A forward then B forward gives a figure-eight; walking A
-        // forward then B reversed closes as a simple lens. Pick the
-        // one with larger absolute area as a self-intersection guard.
-        const ringFwd = [...A.points.map(p => [p[0], p[1]]), ...B.points.map(p => [p[0], p[1]])]
-        const ringRev = [...A.points.map(p => [p[0], p[1]]), ...B.points.slice().reverse().map(p => [p[0], p[1]])]
-        const aFwd = Math.abs(polygonArea(ringFwd))
-        const aRev = Math.abs(polygonArea(ringRev))
-        const ring = aRev >= aFwd ? ringRev : ringFwd
+  const corridors = []
+  const dividedPairs = [] // [{ aIdx, bIdx }, ...] — drives medians + anchors
 
-        medians.push({
-          name,
-          streets: [A.name, B.name],
-          ring,
-          meanGap,
-        })
-        break
+  for (const [name, idxs] of byCorridorName) {
+    // Cluster endpoints within NODE_TOL into nodes.
+    const nodes = [] // { pt: avg, endpoints: [{ chainIdx, which }] }
+    for (const ci of idxs) {
+      const pts = ribbonStreets[ci].points
+      for (const which of ['start', 'end']) {
+        const pt = which === 'start' ? pts[0] : pts[pts.length - 1]
+        let found = null
+        for (const n of nodes) {
+          if (Math.hypot(pt[0] - n.pt[0], pt[1] - n.pt[1]) < NODE_TOL) { found = n; break }
+        }
+        if (found) {
+          found.endpoints.push({ chainIdx: ci, which })
+          const k = found.endpoints.length
+          found.pt = [
+            found.pt[0] + (pt[0] - found.pt[0]) / k,
+            found.pt[1] + (pt[1] - found.pt[1]) / k,
+          ]
+        } else {
+          nodes.push({ pt: [pt[0], pt[1]], endpoints: [{ chainIdx: ci, which }] })
+        }
       }
     }
-  }
-  console.log(`    ${medians.length} emergent medians from carriageway pairs`)
 
-  // ── Corridors ──────────────────────────────────────────────
-  // A corridor groups same-name chains into a single logical road with
-  // ordered phases (single-chain vs divided-pair) and transition points
-  // between them. Transitions are where phase kind changes — e.g. a
-  // bidirectional portion meets a divided portion at an intersection.
-  // Derived purely from endpoint topology; no authoring.
-  const NODE_TOL = 15 // meters — carriageway pair ends often sit apart
-  function buildCorridors() {
-    const byName = new Map()
-    for (let i = 0; i < ribbonStreets.length; i++) {
-      const s = ribbonStreets[i]
-      if (!byName.has(s.name)) byName.set(s.name, [])
-      byName.get(s.name).push(i)
+    // Chain → [startNodeIdx, endNodeIdx]
+    const chainNodes = new Map()
+    for (const [ni, node] of nodes.entries()) {
+      for (const { chainIdx, which } of node.endpoints) {
+        if (!chainNodes.has(chainIdx)) chainNodes.set(chainIdx, [null, null])
+        chainNodes.get(chainIdx)[which === 'start' ? 0 : 1] = ni
+      }
     }
-    const corridors = []
-    for (const [name, idxs] of byName) {
-      if (!idxs.length) continue
 
-      // Cluster endpoints within NODE_TOL into nodes.
-      const nodes = [] // { pt: avg, endpoints: [{ chainIdx, which }] }
-      for (const ci of idxs) {
-        const pts = ribbonStreets[ci].points
-        for (const which of ['start', 'end']) {
-          const pt = which === 'start' ? pts[0] : pts[pts.length - 1]
-          let found = null
-          for (const n of nodes) {
-            if (Math.hypot(pt[0] - n.pt[0], pt[1] - n.pt[1]) < NODE_TOL) { found = n; break }
-          }
-          if (found) {
-            found.endpoints.push({ chainIdx: ci, which })
-            // Update node centroid
-            const k = found.endpoints.length
-            found.pt = [
-              found.pt[0] + (pt[0] - found.pt[0]) / k,
-              found.pt[1] + (pt[1] - found.pt[1]) / k,
-            ]
-          } else {
-            nodes.push({ pt: [pt[0], pt[1]], endpoints: [{ chainIdx: ci, which }] })
-          }
-        }
-      }
-
-      // Chain → [startNodeIdx, endNodeIdx]
-      const chainNodes = new Map()
-      for (const [ni, node] of nodes.entries()) {
-        for (const { chainIdx, which } of node.endpoints) {
-          if (!chainNodes.has(chainIdx)) chainNodes.set(chainIdx, [null, null])
-          chainNodes.get(chainIdx)[which === 'start' ? 0 : 1] = ni
-        }
-      }
-
-      // Identify divided pairs: two oneway chains between the same two
-      // nodes, in opposite directions.
-      const edgeKeys = new Map() // sorted "a-b" → [chainIdx, ...]
-      for (const [ci, [sNode, eNode]] of chainNodes) {
-        const s = ribbonStreets[ci]
-        if (!s.oneway) continue
-        const key = sNode < eNode ? `${sNode}-${eNode}` : `${eNode}-${sNode}`
-        if (!edgeKeys.has(key)) edgeKeys.set(key, [])
-        edgeKeys.get(key).push(ci)
-      }
-      const inPair = new Map() // chainIdx → [partner chainIdx, key]
-      const pairChains = new Map() // key → [chainIdx, chainIdx]
-      for (const [key, chains] of edgeKeys) {
-        if (chains.length !== 2) continue
-        const [a, b] = chains
-        const [sA, eA] = chainNodes.get(a)
-        const [sB, eB] = chainNodes.get(b)
-        // Opposite directions check: A's start node == B's end node.
-        if (sA === eB && eA === sB) {
-          inPair.set(a, b); inPair.set(b, a)
-          pairChains.set(key, [a, b])
-        }
-      }
-
-      // Emit phases by walking the node graph. Pick a leaf (degree 1)
-      // if available; otherwise any node.
-      const nodeDegree = nodes.map(n => n.endpoints.length)
-      // For divided pairs, each carriageway contributes one endpoint per
-      // node, so a divided transition node has degree 3+ (1 bidir + 2
-      // oneway). Leaf nodes are those with only 1 endpoint attached.
-      let startNode = nodeDegree.findIndex(d => d === 1)
-      if (startNode < 0) startNode = 0
-
-      const phases = []
-      const transitions = []
-      const visitedChains = new Set()
-      let current = startNode
-      let prevPhaseKind = null
-
-      while (true) {
-        // Find an unvisited chain incident to `current`
-        const node = nodes[current]
-        let nextChain = null
-        for (const { chainIdx } of node.endpoints) {
-          if (!visitedChains.has(chainIdx)) { nextChain = chainIdx; break }
-        }
-        if (nextChain == null) break
-
-        const isDivided = inPair.has(nextChain)
-        const phase = isDivided
-          ? { kind: 'divided', chainIds: [ribbonStreets[nextChain].skelId, ribbonStreets[inPair.get(nextChain)].skelId] }
-          : { kind: 'single', chainIds: [ribbonStreets[nextChain].skelId] }
-
-        if (prevPhaseKind && prevPhaseKind !== phase.kind) {
-          transitions.push({ at: node.pt, from: prevPhaseKind, to: phase.kind, pinch: prevPhaseKind === 'single' || phase.kind === 'single' })
-        }
-        phases.push(phase)
-        prevPhaseKind = phase.kind
-
-        // Mark chains visited
-        visitedChains.add(nextChain)
-        if (isDivided) visitedChains.add(inPair.get(nextChain))
-
-        // Advance to the far node of this chain
-        const [sNode, eNode] = chainNodes.get(nextChain)
-        current = sNode === current ? eNode : sNode
-      }
-
-      // If some chains remain (disconnected components), emit them too
-      for (const ci of idxs) {
-        if (visitedChains.has(ci)) continue
-        const isDivided = inPair.has(ci)
-        if (isDivided && visitedChains.has(inPair.get(ci))) { visitedChains.add(ci); continue }
-        const phase = isDivided
-          ? { kind: 'divided', chainIds: [ribbonStreets[ci].skelId, ribbonStreets[inPair.get(ci)].skelId] }
-          : { kind: 'single', chainIds: [ribbonStreets[ci].skelId] }
-        phases.push(phase)
-        visitedChains.add(ci)
-        if (isDivided) visitedChains.add(inPair.get(ci))
-      }
-
-      corridors.push({ name, phases, transitions })
+    // Pair carriageway-A ↔ carriageway-B by phase.pairKey. The skeleton
+    // analyzer assigned a stable pairKey at the OSM level; weldChains
+    // gates on (signature, pairKey), so welded A and B chains for the
+    // same pair carry the same pairKey. No geometry guessing.
+    const inPair = new Map()
+    const byPairKey = new Map() // pairKey → { a, b }
+    for (const ci of idxs) {
+      const phase = ribbonStreets[ci].phase
+      if (!phase?.pairKey) continue
+      if (!byPairKey.has(phase.pairKey)) byPairKey.set(phase.pairKey, {})
+      const slot = byPairKey.get(phase.pairKey)
+      if (phase.role === 'carriageway-A') slot.a = ci
+      else if (phase.role === 'carriageway-B') slot.b = ci
     }
-    return corridors
+    for (const { a, b } of byPairKey.values()) {
+      if (a == null || b == null) continue
+      inPair.set(a, b); inPair.set(b, a)
+      dividedPairs.push({ aIdx: a, bIdx: b })
+    }
+
+    // Walk the node graph to order phases. Start at a leaf (degree 1)
+    // if available so single→divided→single transitions emit in order.
+    const nodeDegree = nodes.map(n => n.endpoints.length)
+    let startNode = nodeDegree.findIndex(d => d === 1)
+    if (startNode < 0) startNode = 0
+
+    const phases = []
+    const transitions = []
+    const visitedChains = new Set()
+    let current = startNode
+    let prevPhaseKind = null
+
+    while (true) {
+      const node = nodes[current]
+      let nextChain = null
+      for (const { chainIdx } of node.endpoints) {
+        if (!visitedChains.has(chainIdx)) { nextChain = chainIdx; break }
+      }
+      if (nextChain == null) break
+
+      const isDivided = inPair.has(nextChain)
+      const phase = isDivided
+        ? { kind: 'divided', chainIds: [ribbonStreets[nextChain].skelId, ribbonStreets[inPair.get(nextChain)].skelId] }
+        : { kind: 'single', chainIds: [ribbonStreets[nextChain].skelId] }
+
+      if (prevPhaseKind && prevPhaseKind !== phase.kind) {
+        transitions.push({ at: node.pt, from: prevPhaseKind, to: phase.kind, pinch: prevPhaseKind === 'single' || phase.kind === 'single' })
+      }
+      phases.push(phase)
+      prevPhaseKind = phase.kind
+
+      visitedChains.add(nextChain)
+      if (isDivided) visitedChains.add(inPair.get(nextChain))
+
+      const [sNode, eNode] = chainNodes.get(nextChain)
+      current = sNode === current ? eNode : sNode
+    }
+
+    // Disconnected components: emit any chains the walk didn't reach.
+    for (const ci of idxs) {
+      if (visitedChains.has(ci)) continue
+      const isDivided = inPair.has(ci)
+      if (isDivided && visitedChains.has(inPair.get(ci))) { visitedChains.add(ci); continue }
+      const phase = isDivided
+        ? { kind: 'divided', chainIds: [ribbonStreets[ci].skelId, ribbonStreets[inPair.get(ci)].skelId] }
+        : { kind: 'single', chainIds: [ribbonStreets[ci].skelId] }
+      phases.push(phase)
+      visitedChains.add(ci)
+      if (isDivided) visitedChains.add(inPair.get(ci))
+    }
+
+    corridors.push({ name, phases, transitions })
   }
-  const corridors = buildCorridors()
   const pinchCount = corridors.reduce((a, c) => a + c.transitions.filter(t => t.pinch).length, 0)
   console.log(`    ${corridors.length} corridors, ${pinchCount} pinch transitions`)
 
-  // ── Anchor + innerSign for divided carriageways ──
-  // For each chain that participates in a `kind: 'divided'` phase, mark
-  // it as `anchor: 'inner-edge'` and compute `innerSign` (+1 or -1) =
-  // which perpendicular direction (left of tangent vs. right of tangent)
-  // points toward the paired carriageway. Runtime uses these to render
-  // the visible centerline at the inner edge and emit ribbons outward.
-  // Operator can override `anchor` per chain in Survey.
-  const idToChain = new Map(ribbonStreets.map(s => [s.skelId, s]))
-  for (const c of corridors) {
-    for (const phase of c.phases) {
-      if (phase.kind !== 'divided' || phase.chainIds.length !== 2) continue
-      const [aId, bId] = phase.chainIds
-      const A = idToChain.get(aId)
-      const B = idToChain.get(bId)
-      if (!A || !B) continue
-      const bCenter = chainCenter(B.points)
-      const aCenter = chainCenter(A.points)
-      A.anchor = 'inner-edge'
-      A.innerSign = innerSideSign(A.points, bCenter)
-      A.pairId = bId
-      B.anchor = 'inner-edge'
-      B.innerSign = innerSideSign(B.points, aCenter)
-      B.pairId = aId
-    }
+  // Emergent medians: for each pair, ring = A forward + B reversed,
+  // picking the larger-area orientation as a figure-eight guard.
+  // Inner-offset is applied at render time, not here — pre-offsetting
+  // self-intersects when the gap is less than 2×pavementHW.
+  const medians = []
+  for (const { aIdx, bIdx } of dividedPairs) {
+    const A = ribbonStreets[aIdx]
+    const B = ribbonStreets[bIdx]
+    const ringFwd = [...A.points.map(p => [p[0], p[1]]), ...B.points.map(p => [p[0], p[1]])]
+    const ringRev = [...A.points.map(p => [p[0], p[1]]), ...B.points.slice().reverse().map(p => [p[0], p[1]])]
+    const ring = Math.abs(polygonArea(ringRev)) >= Math.abs(polygonArea(ringFwd)) ? ringRev : ringFwd
+    medians.push({
+      name: A.phase?.corridorName || A.name,
+      streets: [A.name, B.name],
+      ring,
+    })
+  }
+  console.log(`    ${medians.length} emergent medians from carriageway pairs`)
+
+  // Anchor + innerSign for paired carriageways. Runtime uses these to
+  // render the visible centerline at the inner edge and emit ribbons
+  // outward. Operator can override `anchor` per chain in Survey.
+  for (const { aIdx, bIdx } of dividedPairs) {
+    const A = ribbonStreets[aIdx]
+    const B = ribbonStreets[bIdx]
+    A.anchor = 'inner-edge'
+    A.innerSign = innerSideSign(A.points, chainCenter(B.points))
+    A.pairId = B.skelId
+    B.anchor = 'inner-edge'
+    B.innerSign = innerSideSign(B.points, chainCenter(A.points))
+    B.pairId = A.skelId
   }
   const innerEdgeCount = ribbonStreets.filter(s => s.anchor === 'inner-edge').length
   if (innerEdgeCount) console.log(`    ${innerEdgeCount} chains marked anchor=inner-edge (divided carriageways)`)
@@ -2926,7 +2806,7 @@ export function deriveLayers(highways) {
       streets: ix.streets.map(s => ({ name: s.name, ix: s.ix })),
     })),
     faces: faceFills,
-    medians: medians.map(m => ({ name: m.name, streets: m.streets, ring: m.ring, meanGap: m.meanGap })),
+    medians: medians.map(m => ({ name: m.name, streets: m.streets, ring: m.ring })),
     corridors,
   }
 
