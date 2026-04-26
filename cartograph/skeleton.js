@@ -449,15 +449,33 @@ function main() {
     return kept
   }
 
+  // Signature → phase (kind, role) mapping. Both single-oneway and
+  // single-bidi chains are 'single' phases — they share the spine role.
+  // 'divided-A' / 'divided-B' carry through as carriageway-A / -B so
+  // the knit step (Phase 5) can pair them.
+  const SIG_TO_PHASE = {
+    'divided-A':     { kind: 'divided', role: 'carriageway-A' },
+    'divided-B':     { kind: 'divided', role: 'carriageway-B' },
+    'single-oneway': { kind: 'single',  role: 'spine' },
+    'single-bidi':   { kind: 'single',  role: 'spine' },
+  }
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
     const chains = dropShadowedChains(splitAtFolds(weldChains(fragments, signatureByOsmId)))
     // One street per surviving chain. Divided roads emit two streets
     // (one per carriageway) — medians are emergent downstream.
-    chains.forEach((c, i) => streets.push(makeStreet(
-      chains.length === 1 ? slugify(name) : `${slugify(name)}-${i}`,
-      name, fragments[0].tags, c
-    )))
+    chains.forEach((c, i) => {
+      const sig = c.signature || 'single-bidi'
+      const ph = SIG_TO_PHASE[sig] || SIG_TO_PHASE['single-bidi']
+      streets.push(makeStreet(
+        chains.length === 1 ? slugify(name) : `${slugify(name)}-${i}`,
+        name, fragments[0].tags, c,
+        // Phase metadata: derived from signature so downstream (Phase 4
+        // derive, Phase 5 knit) consumes phase shape directly instead of
+        // rediscovering it. startNode/endNode populated post-normalize.
+        { phase: { kind: ph.kind, role: ph.role, corridorName: name } },
+      ))
+    })
   }
 
   // Unnamed → paths, preserved verbatim but typed.
@@ -497,6 +515,16 @@ function main() {
   }
   console.log(`  direction-normalized: flipped ${flipped} non-oneway chain(s)`)
 
+  // Stamp phase endpoint coords (post-normalize so orientation is final).
+  // startNode/endNode are the chain's first/last point — they're the
+  // joining points the knit step will look up to find adjacent phases.
+  for (const s of streets) {
+    if (!s.phase) continue
+    const p = s.points
+    s.phase.startNode = { x: p[0].x, z: p[0].z }
+    s.phase.endNode   = { x: p[p.length - 1].x, z: p[p.length - 1].z }
+  }
+
   console.log('\nSkeleton:')
   console.log(`  streets: ${streets.length}`)
   console.log(`  paths:   ${paths.length}`)
@@ -516,6 +544,16 @@ function main() {
       console.log(`  ${name}: ${ss.length} chain(s) — ${ss.map(s => s.points.length + 'pts').join(', ')}`)
     }
   }
+
+  // Phase metadata summary.
+  const byKindRole = new Map()
+  for (const s of streets) {
+    if (!s.phase) continue
+    const k = `${s.phase.kind}/${s.phase.role}`
+    byKindRole.set(k, (byKindRole.get(k) || 0) + 1)
+  }
+  console.log('\nPhase metadata (per chain):')
+  for (const [k, n] of byKindRole) console.log(`  ${k}: ${n}`)
 
   const outPath = join(CLEAN_DIR, 'skeleton.json')
   writeFileSync(outPath, JSON.stringify({ streets, paths }, null, 2))
