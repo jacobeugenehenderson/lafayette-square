@@ -76,6 +76,99 @@ function groupByName(highways) {
   return { groups, unnamed }
 }
 
+// --- Step 1.5: phase analyzer (Path B, phase 1 — analysis-only) -----------
+// For each name group, classify each OSM fragment as:
+//   - 'divided-A' / 'divided-B' — half of an antiparallel oneway pair
+//     (mean perpendicular distance < DIVIDED_MAX_GAP, tangent dot < -0.6)
+//   - 'single-oneway' — oneway fragment with no antiparallel partner
+//   - 'single-bidi'   — bidirectional fragment
+//
+// This is pure analysis. Welding behavior is untouched. The decomposition
+// is logged so we can validate it against the OSM-source table in NOTES
+// (Jefferson 19 ways, Lafayette 22 ways) before phase 2 gates the welder.
+//
+// Why at the fragment level rather than chain level: a corridor like
+// Lafayette has its divided carriageways at the OSM-way granularity.
+// Once weldChains splices them, the structure is gone. The analyzer
+// must run on raw fragments to see what's there.
+const DIVIDED_MAX_GAP = 30           // meters — mean perpendicular distance
+const DIVIDED_MIN_TAN_DOT = -0.6     // -1 = exactly antiparallel
+
+function avgTangentXZ(coords) {
+  let dx = 0, dz = 0
+  for (let i = 1; i < coords.length; i++) {
+    dx += coords[i].x - coords[i - 1].x
+    dz += coords[i].z - coords[i - 1].z
+  }
+  const L = Math.hypot(dx, dz) || 1
+  return { x: dx / L, z: dz / L }
+}
+
+// Mean nearest-distance from points of A onto polyline B.
+function meanPerpDistanceXZ(aCoords, bCoords) {
+  let sum = 0, n = 0
+  for (const p of aCoords) {
+    let best = Infinity
+    for (let i = 0; i < bCoords.length - 1; i++) {
+      const a = bCoords[i], b = bCoords[i + 1]
+      const dx = b.x - a.x, dz = b.z - a.z
+      const len2 = dx * dx + dz * dz
+      if (len2 < 1e-9) continue
+      let t = ((p.x - a.x) * dx + (p.z - a.z) * dz) / len2
+      t = Math.max(0, Math.min(1, t))
+      const px = a.x + t * dx, pz = a.z + t * dz
+      const d = Math.hypot(px - p.x, pz - p.z)
+      if (d < best) best = d
+    }
+    if (best < Infinity) { sum += best; n++ }
+  }
+  return n ? sum / n : Infinity
+}
+
+function analyzePhases(name, fragments) {
+  const oneway = fragments.filter(f => f.tags?.oneway === 'yes')
+  const bidi = fragments.filter(f => f.tags?.oneway !== 'yes')
+
+  const paired = new Map() // osmId → { partner, gap, role }
+  for (let i = 0; i < oneway.length; i++) {
+    if (paired.has(oneway[i].osmId)) continue
+    const A = oneway[i]
+    const aTan = avgTangentXZ(A.coords)
+    let best = null
+    for (let j = i + 1; j < oneway.length; j++) {
+      if (paired.has(oneway[j].osmId)) continue
+      const B = oneway[j]
+      const bTan = avgTangentXZ(B.coords)
+      const dot = aTan.x * bTan.x + aTan.z * bTan.z
+      if (dot > DIVIDED_MIN_TAN_DOT) continue
+      const gap = meanPerpDistanceXZ(A.coords, B.coords)
+      if (gap > DIVIDED_MAX_GAP) continue
+      if (!best || gap < best.gap) best = { B, gap }
+    }
+    if (best) {
+      paired.set(A.osmId, { partner: best.B.osmId, gap: best.gap, role: 'divided-A' })
+      paired.set(best.B.osmId, { partner: A.osmId, gap: best.gap, role: 'divided-B' })
+    }
+  }
+
+  const classified = fragments.map(f => {
+    if (f.tags?.oneway === 'yes') {
+      const p = paired.get(f.osmId)
+      if (p) return { osmId: f.osmId, kind: 'divided', role: p.role, partner: p.partner, gap: p.gap }
+      return { osmId: f.osmId, kind: 'single-oneway' }
+    }
+    return { osmId: f.osmId, kind: 'single-bidi' }
+  })
+
+  const counts = {
+    total: fragments.length,
+    dividedPairs: paired.size / 2,
+    singleOneway: classified.filter(c => c.kind === 'single-oneway').length,
+    singleBidi: bidi.length,
+  }
+  return { name, classified, counts }
+}
+
 // --- Step 2: weld end-to-end fragments within a group ---------------------
 // Greedy: pick a fragment, try to extend either end with another whose
 // endpoint matches. Repeat until no more matches, then start a new chain.
@@ -255,6 +348,35 @@ function main() {
 
   const { groups, unnamed } = groupByName(highways)
   console.log(`       ${groups.size} unique names, ${unnamed.length} unnamed`)
+
+  // ── Phase analyzer (Path B, phase 1 — analysis-only) ──────────────
+  // Pre-weld: classify fragments per name as divided-pair / single-oneway
+  // / single-bidi. Logs decomposition for every multi-fragment named
+  // group; ALWAYS dumps Jefferson + Lafayette per-fragment for the
+  // NOTES.md validation table. Welding behavior unchanged.
+  const VALIDATION_NAMES = new Set(['South Jefferson Avenue', 'Lafayette Avenue'])
+  const phaseReports = []
+  for (const [name, fragments] of groups) {
+    if (EXCLUDE_FROM_STREETS.has(name)) continue
+    if (fragments.length < 2 && !VALIDATION_NAMES.has(name)) continue
+    phaseReports.push(analyzePhases(name, fragments))
+  }
+  console.log('\nPhase analysis (pre-weld):')
+  for (const r of phaseReports) {
+    const c = r.counts
+    if (c.dividedPairs === 0 && !VALIDATION_NAMES.has(r.name)) continue
+    console.log(`  ${r.name}: ${c.total} ways → ${c.dividedPairs} divided pair(s), ${c.singleOneway} single-oneway, ${c.singleBidi} bidi`)
+  }
+  for (const r of phaseReports) {
+    if (!VALIDATION_NAMES.has(r.name)) continue
+    console.log(`\n  ${r.name} — fragment-level:`)
+    for (const c of r.classified) {
+      const tag = c.kind === 'divided'
+        ? `${c.role} (partner ${c.partner}, gap ${c.gap.toFixed(1)}m)`
+        : c.kind
+      console.log(`    osm ${c.osmId}  ${tag}`)
+    }
+  }
 
   const streets = []
 
