@@ -27,6 +27,10 @@ npm-debug.log*
 
 # Temp files
 *.zip
+*.bak
+
+# Supabase CLI cache (auto-regenerating)
+cary/supabase/.temp/
 
 # Python
 __pycache__/
