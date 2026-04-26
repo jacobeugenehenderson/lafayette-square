@@ -234,13 +234,20 @@ function splitAtFolds(chains) {
   return out
 }
 
-function weldChains(fragments) {
+// signatureByOsmId: Map<osmId, 'divided-A'|'divided-B'|'single-oneway'|'single-bidi'>.
+// Welds are gated on signature equality — fragments only fuse with same-phase
+// peers. This forbids the splice bridges that previously let bidi connector
+// fragments at intersections weld opposing-direction oneway carriageways into
+// one super-chain (Lafayette: 22 ways → 1 chain). Signature attaches to the
+// pool seed and is invariant across welds (since welds preserve it).
+function weldChains(fragments, signatureByOsmId) {
   const pool = fragments.map(f => ({
     coords: f.coords.slice(),
     sources: [f.osmId],
     tags: f.tags,
     oneway: f.tags?.oneway === 'yes',
     isClosed: f.isClosed,
+    signature: signatureByOsmId.get(f.osmId) || 'single-bidi',
   }))
   const chains = []
 
@@ -251,6 +258,7 @@ function weldChains(fragments) {
       extended = false
       for (let i = 0; i < pool.length; i++) {
         const c = pool[i]
+        if (c.signature !== chain.signature) continue
         const chainHead = chain.coords[0]
         const chainTail = chain.coords[chain.coords.length - 1]
         const cHead = c.coords[0]
@@ -378,17 +386,24 @@ function main() {
   const { groups, unnamed } = groupByName(highways)
   console.log(`       ${groups.size} unique names, ${unnamed.length} unnamed`)
 
-  // ── Phase analyzer (Path B, phase 1 — analysis-only) ──────────────
-  // Pre-weld: classify fragments per name as divided-pair / single-oneway
-  // / single-bidi. Logs decomposition for every multi-fragment named
-  // group; ALWAYS dumps Jefferson + Lafayette per-fragment for the
-  // NOTES.md validation table. Welding behavior unchanged.
+  // ── Phase analyzer (Path B, phases 1+2) ───────────────────────────
+  // Pre-weld: classify each named OSM fragment as divided-A / divided-B
+  // / single-oneway / single-bidi. The signature map then gates welding
+  // (phase 2): welds only fuse fragments with matching signatures, so
+  // bidi splice bridges can no longer fuse opposing carriageways into
+  // one super-chain. Logs decomposition for groups with divided pairs
+  // or in the NOTES validation set.
   const VALIDATION_NAMES = new Set(['South Jefferson Avenue', 'Lafayette Avenue'])
   const phaseReports = []
+  const signatureByOsmId = new Map()
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
-    if (fragments.length < 2 && !VALIDATION_NAMES.has(name)) continue
-    phaseReports.push(analyzePhases(name, fragments))
+    const report = analyzePhases(name, fragments)
+    phaseReports.push(report)
+    for (const c of report.classified) {
+      const sig = c.kind === 'divided' ? c.role : c.kind
+      signatureByOsmId.set(c.osmId, sig)
+    }
   }
   console.log('\nPhase analysis (pre-weld):')
   for (const r of phaseReports) {
@@ -436,7 +451,7 @@ function main() {
 
   for (const [name, fragments] of groups) {
     if (EXCLUDE_FROM_STREETS.has(name)) continue
-    const chains = dropShadowedChains(splitAtFolds(weldChains(fragments)))
+    const chains = dropShadowedChains(splitAtFolds(weldChains(fragments, signatureByOsmId)))
     // One street per surviving chain. Divided roads emit two streets
     // (one per carriageway) — medians are emergent downstream.
     chains.forEach((c, i) => streets.push(makeStreet(
