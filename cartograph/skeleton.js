@@ -91,8 +91,14 @@ function groupByName(highways) {
 // Lafayette has its divided carriageways at the OSM-way granularity.
 // Once weldChains splices them, the structure is gone. The analyzer
 // must run on raw fragments to see what's there.
-const DIVIDED_MAX_GAP = 30           // meters — mean perpendicular distance
+const DIVIDED_MAX_GAP = 60           // meters — symmetric mean perp distance
+                                     // (max of the two directional means, so
+                                     // a stub can't claim a long partner via
+                                     // its sliver of overlap). Truman's
+                                     // widest carriageway pair sits at 54m;
+                                     // length-ratio filter blocks stub abuse.
 const DIVIDED_MIN_TAN_DOT = -0.6     // -1 = exactly antiparallel
+const DIVIDED_MIN_LEN_RATIO = 0.5    // shorter / longer; rejects connector stubs
 
 function avgTangentXZ(coords) {
   let dx = 0, dz = 0
@@ -102,6 +108,14 @@ function avgTangentXZ(coords) {
   }
   const L = Math.hypot(dx, dz) || 1
   return { x: dx / L, z: dz / L }
+}
+
+function polylineLengthXZ(coords) {
+  let s = 0
+  for (let i = 1; i < coords.length; i++) {
+    s += Math.hypot(coords[i].x - coords[i - 1].x, coords[i].z - coords[i - 1].z)
+  }
+  return s
 }
 
 // Mean nearest-distance from points of A onto polyline B.
@@ -129,26 +143,41 @@ function analyzePhases(name, fragments) {
   const oneway = fragments.filter(f => f.tags?.oneway === 'yes')
   const bidi = fragments.filter(f => f.tags?.oneway !== 'yes')
 
-  const paired = new Map() // osmId → { partner, gap, role }
+  // Score every candidate oneway pair, then resolve by ascending gap so
+  // the cleanest matches claim partners first. Greedy first-match was
+  // letting connector stubs lock out same-length carriageway mates
+  // (Truman: 361m main pair lost to a 12m stub at 12.4m one-way gap).
+  const cand = []
   for (let i = 0; i < oneway.length; i++) {
-    if (paired.has(oneway[i].osmId)) continue
     const A = oneway[i]
+    const aLen = polylineLengthXZ(A.coords)
     const aTan = avgTangentXZ(A.coords)
-    let best = null
     for (let j = i + 1; j < oneway.length; j++) {
-      if (paired.has(oneway[j].osmId)) continue
       const B = oneway[j]
+      const bLen = polylineLengthXZ(B.coords)
       const bTan = avgTangentXZ(B.coords)
       const dot = aTan.x * bTan.x + aTan.z * bTan.z
       if (dot > DIVIDED_MIN_TAN_DOT) continue
-      const gap = meanPerpDistanceXZ(A.coords, B.coords)
+      const lenRatio = Math.min(aLen, bLen) / Math.max(aLen, bLen)
+      if (lenRatio < DIVIDED_MIN_LEN_RATIO) continue
+      // Symmetric gap: take max of the two directional means so a short
+      // fragment can't claim a long partner cheaply (its sliver of
+      // overlap dominates the one-way mean).
+      const gap = Math.max(
+        meanPerpDistanceXZ(A.coords, B.coords),
+        meanPerpDistanceXZ(B.coords, A.coords),
+      )
       if (gap > DIVIDED_MAX_GAP) continue
-      if (!best || gap < best.gap) best = { B, gap }
+      cand.push({ A, B, gap, lenRatio })
     }
-    if (best) {
-      paired.set(A.osmId, { partner: best.B.osmId, gap: best.gap, role: 'divided-A' })
-      paired.set(best.B.osmId, { partner: A.osmId, gap: best.gap, role: 'divided-B' })
-    }
+  }
+  cand.sort((a, b) => a.gap - b.gap)
+
+  const paired = new Map() // osmId → { partner, gap, role }
+  for (const { A, B, gap } of cand) {
+    if (paired.has(A.osmId) || paired.has(B.osmId)) continue
+    paired.set(A.osmId, { partner: B.osmId, gap, role: 'divided-A' })
+    paired.set(B.osmId, { partner: A.osmId, gap, role: 'divided-B' })
   }
 
   const classified = fragments.map(f => {
