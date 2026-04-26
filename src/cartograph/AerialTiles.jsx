@@ -103,10 +103,10 @@ function TileMesh({ tile }) {
   )
 }
 
-// z=19 gives 2× the pixel density of z=18 — needed for visual handle
-// alignment against curb edges. Previous dark-tile issue may recur in
-// some areas; add a z18 fallback if it does.
-export default function AerialTiles({ zoom = 19, visible = true }) {
+// z=20 gives 2× the pixel density of z=19 (4× tile count). ArcGIS
+// World_Imagery serves z=20 in most areas including St. Louis. Drop to
+// z=19 or z=18 if dark/missing tiles recur.
+export default function AerialTiles({ zoom = 20, visible = true }) {
   const tiles = useMemo(() => buildTiles(zoom), [zoom])
 
   return (

@@ -598,15 +598,19 @@ export default function MeasureOverlay() {
       ))}
       {selection && selection.handles.map((h, i) => (
         <group key={i} position={[h.x, 0, h.z]} rotation={[0, h.rotY, 0]}>
-          {/* Black outline (slightly larger) */}
+          {/* Black outline (slightly larger) — transparent flag puts it
+              into three.js's transparent draw pass so high renderOrder
+              actually beats the transparent ribbon stripes (which would
+              otherwise paint over an opaque handle, since opaque always
+              draws before transparent regardless of renderOrder). */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={149}>
             <planeGeometry args={[SHORT + BORDER, LONG + BORDER]} />
-            <meshBasicMaterial color="#000000" side={THREE.DoubleSide} depthTest={false} />
+            <meshBasicMaterial color="#000000" side={THREE.DoubleSide} depthTest={false} transparent opacity={1} />
           </mesh>
           {/* White fill */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={150}>
             <planeGeometry args={[SHORT, LONG]} />
-            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} depthTest={false} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} depthTest={false} transparent opacity={1} />
           </mesh>
         </group>
       ))}
