@@ -207,19 +207,19 @@ function analyzePhases(name, fragments) {
 
 // If a welded chain folds back on itself (two adjacent segments whose
 // tangents face opposite directions, cos < -0.5), split it at the fold.
-// Only meaningful for non-divided signatures: `pairKey` gating already
-// keeps divided-A/-B fragments from fusing across pairs, but a
-// single-bidi chain whose OSM fragments happen to zigzag (typical at
-// Y-junctions where one OSM way doubles back) will weld into one chain
-// that physically folds. Without this split, clicking the chain
-// highlights both arms of the fold.
+// Required for any signature: pairKey gating prevents cross-pair fusion
+// but a single OSM way can still trace a doubled-back path (Y-junctions,
+// turning loops), and the welder preserves it as one chain. Without
+// splitting, clicking the chain highlights both arms of the fold.
+//
+// For divided chains (carriageway-A/-B), splitting is signature-aware:
+// keep ONLY the longest sub-chain with the original (signature, pairKey).
+// Shorter sub-chains demote to single-bidi (no pairKey) so derive's
+// pair lookup stays 1:1 — there can only be one carriageway-A and one
+// carriageway-B per pairKey.
 function splitAtFolds(chains) {
   const out = []
   for (const chain of chains) {
-    // Divided carriageway chains are pre-paired and pre-gated; skip.
-    if (chain.signature === 'divided-A' || chain.signature === 'divided-B') {
-      out.push(chain); continue
-    }
     const coords = chain.coords
     const foldIdxs = []
     for (let i = 1; i < coords.length - 1; i++) {
@@ -234,10 +234,29 @@ function splitAtFolds(chains) {
     }
     if (!foldIdxs.length) { out.push(chain); continue }
     const cuts = [0, ...foldIdxs, coords.length - 1]
+    const slices = []
     for (let i = 0; i < cuts.length - 1; i++) {
       const slice = coords.slice(cuts[i], cuts[i + 1] + 1)
-      if (slice.length < 2) continue
-      out.push({ ...chain, coords: slice })
+      if (slice.length >= 2) slices.push(slice)
+    }
+    const isDivided = chain.signature === 'divided-A' || chain.signature === 'divided-B'
+    if (isDivided && slices.length > 1) {
+      // Keep the longest as the carriageway; demote the rest.
+      let bestIdx = 0, bestLen = 0
+      for (let i = 0; i < slices.length; i++) {
+        let L = 0
+        for (let j = 1; j < slices[i].length; j++) L += Math.hypot(slices[i][j].x - slices[i][j-1].x, slices[i][j].z - slices[i][j-1].z)
+        if (L > bestLen) { bestLen = L; bestIdx = i }
+      }
+      for (let i = 0; i < slices.length; i++) {
+        if (i === bestIdx) {
+          out.push({ ...chain, coords: slices[i] })
+        } else {
+          out.push({ ...chain, coords: slices[i], signature: 'single-bidi', pairKey: null, oneway: false })
+        }
+      }
+    } else {
+      for (const slice of slices) out.push({ ...chain, coords: slice })
     }
   }
   return out
