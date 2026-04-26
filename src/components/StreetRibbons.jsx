@@ -282,9 +282,20 @@ function computePerps(pts) {
   const n = pts.length
   return pts.map((_, i) => {
     let nx = 0, nz = 0
-    if (i < n-1) { const dx=pts[i+1][0]-pts[i][0],dz=pts[i+1][1]-pts[i][1],l=Math.hypot(dx,dz); nx-=dz/l; nz+=dx/l }
-    if (i > 0)   { const dx=pts[i][0]-pts[i-1][0],dz=pts[i][1]-pts[i-1][1],l=Math.hypot(dx,dz); nx-=dz/l; nz+=dx/l }
-    const l = Math.hypot(nx, nz); return [nx/l, nz/l]
+    if (i < n-1) {
+      const dx=pts[i+1][0]-pts[i][0], dz=pts[i+1][1]-pts[i][1], l=Math.hypot(dx,dz)
+      if (l > 1e-9) { nx-=dz/l; nz+=dx/l }
+    }
+    if (i > 0) {
+      const dx=pts[i][0]-pts[i-1][0], dz=pts[i][1]-pts[i-1][1], l=Math.hypot(dx,dz)
+      if (l > 1e-9) { nx-=dz/l; nz+=dx/l }
+    }
+    const l = Math.hypot(nx, nz)
+    // Fallback to +Z if both adjacent segments were zero-length: keeps the
+    // ribbon position finite and contained instead of NaN-poisoning the
+    // entire merged buffer's bounding box.
+    if (l < 1e-9) return [0, 1]
+    return [nx/l, nz/l]
   })
 }
 

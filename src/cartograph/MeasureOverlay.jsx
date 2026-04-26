@@ -327,6 +327,12 @@ export default function MeasureOverlay() {
   // Updates the named field on the given side. If symmetric, mirrors the
   // same field on the other side.
   const applyDrag = useCallback((streetIdx, ordinal, side, kind, r) => {
+    // Guard against non-finite r — if the pointer briefly leaves the canvas
+    // mid-drag, screenToWorld can return NaN, distToPolyline propagates it,
+    // and Math.max(0.3, NaN) is NaN. A persisted NaN in any measure field
+    // poisons the merged ribbon buffer's bounding box and drops every
+    // ribbon from the frame.
+    if (!Number.isFinite(r)) return
     modifyMeasure(streetIdx, ordinal, (m) => {
       const sides = m.symmetric ? ['left', 'right'] : [side]
       if (window.__measureDebug) {
