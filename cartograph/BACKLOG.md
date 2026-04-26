@@ -1,6 +1,680 @@
 # Cartograph Backlog
 
-Last updated: 2026-04-20
+Last updated: 2026-04-26
+
+## 2026-04-26 session (in progress) — inner-edge anchor for divided carriageways
+
+### Shipped this session
+
+- **Step A — auto-detect anchor.** `derive.js` walks `corridors`, marks
+  chains in `kind: 'divided'` phases with `anchor: 'inner-edge'`,
+  `innerSign`, `pairId`. 8 chains tagged in current data.
+- **Persistence.** Anchor override flows through overlay file via
+  `setAnchor` action; `_autoAnchor` tracks default so save only writes
+  when overridden.
+- **`SurveyorPanel` Anchor row.** Center / Inner-edge dropdown, disabled
+  when no paired chain detected.
+- **Step B model PIVOT.** Initial offset-polyline + synthetic pavement
+  approach scrapped per operator. Replaced with simpler:
+  - Chain at carriageway center; visible centerline = chain.
+  - Cross-section authored two-sided; inner-edge chains zero out
+    inboard `treelawn`/`sidewalk`, keep pavement+curb on both sides.
+  - `streetProfiles.innerEdgeMeasure` + `StreetRibbons.inboardPedZoneless`
+    helpers; called in main fills, edge strokes, face-clip per-segment loops.
+
+### OPEN BLOCKER — render visibility
+
+Royal-blue authoring centerlines (`MeasureOverlay`) aren't visible over
+asphalt — depth/renderOrder fight with asphalt's `polygonOffset`. Three
+attempts this session, none resolved. Diagnostic in place; operator
+testing morning of 2026-04-26.
+
+### Still open (after blocker resolves)
+
+- **Re-measure 8 inner-edge chains.** Auto-survey `pavementHW` values
+  are wrong for divided roads (Truman 2m vs reality ~10m). Use Measure
+  tool — drag both sides of carriageway pavement on each.
+- **Step C — emergent grass median.** Replace `ribbons.medians` lens
+  with runtime polygon between paired chains' inboard pavement edges.
+  Close at `corridors[].transitions[].pinch === true`.
+- **Loop streets** (Benton, Mackay) — extend inner-edge auto-detect to
+  closed polylines (winding-derived `innerSign`) once divided pairs
+  verify. Deferred; same model applies.
+
+See `cartograph/NOTES.md` 2026-04-26 entry for full breakdown +
+`project_inner_edge_anchor_in_flight.md` memory for next-session pickup.
+
+---
+
+## 2026-04-25 session — couplers shipped end-to-end
+
+### Shipped this session (kept)
+
+- **Canonical chain direction in `skeleton.js`.** Non-oneway chains
+  oriented so dominant of `(last − first)` is positive (50/93 flipped).
+  Closes the "left of A == right of B" twist for adjacent chains and
+  stabilizes ribbon winding across rebuilds. Oneway chains untouched
+  (their direction is direction of travel).
+- **Coupler authoring in Survey.** Ctrl/⌘-click interior node → toggle.
+  Orange diamond marker, panel coupler/segment count + hint.
+- **`segmentMeasures` ordinal-keyed schema.** `"0", "1", "2"` instead
+  of `"from-to"`. Stable across skeleton/ribbons coord systems.
+  Couplers carry world coords for projection. Helpers
+  `segmentRangesForCouplers(pts, couplers)` and
+  `measureForSegment(street, ord)` are the single read points.
+- **Per-segment Measure tool.** Click resolves segment via
+  `resolveSegmentOrdinal`. Drag / dblclick-insert / right-click-delete /
+  Reset all scope to the clicked segment. Empty-space click and Enter
+  both accept (deselect); Esc still works.
+- **`StreetRibbons` segment-aware fills.** Main fills, edge strokes,
+  caps, corner plugs, face-clipping all walk segments per chain. Face
+  clip emits one ring per (segment × side) instead of one per chain.
+- **Live merge by `skelId`.** `derive.js` emits `skelId` on each ribbon
+  street. All three merge sites in `StreetRibbons` (main fills, edge
+  strokes, face-clip) prefer skelId-match over name-match. Mississippi
+  carriageways no longer leak into each other.
+- **Tool-scoped translucency.** Selected-corridor dim only applies
+  while a tool is active. Unselected chains in Measure render opaque.
+  No-tool view never dims a chain even if `selectedStreet` is set.
+
+Closes B.1 (foundation) and ships C.1 (Couplers Phase 1B).
+
+### Still open / next-session candidates
+
+- **Persistence for couplers + segmentMeasures.** Currently in-memory
+  only. Overlay file design (caps + couplers + segmentMeasures) is the
+  unblock for shipping authoring durably.
+- **Direction-normalize legacy measure overrides.** 12 streets in
+  `centerlines.json` had pre-existing `measure` overrides; if their
+  chain was among the 50 flipped, left/right is now swapped. Either
+  manually re-measure or write a one-shot migration that detects flip
+  by comparing the chain's pre/post first-point.
+- **Corner plug at oblique IXes** — unchanged, still the priority
+  picked up from 2026-04-24. See that section below.
+- **Test split + insert coupler co-existing.** Code paths are
+  independent but no current data exercises both on the same chain.
+
+---
+
+## 2026-04-24 evening session — corner plug deep dive, geometry still open
+
+### Shipped this session (kept)
+
+- **IX-lookup fix** in `StreetRibbons.jsx:647-678`. ~80 missing plugs at
+  oblique IXes recovered. 99/183 → 183/183 cross-street pairs resolve.
+  Root cause: `derive.js:2415` shifts `ix.streets[].ix` by name, breaking
+  multi-chain same-name corridors. Runtime works around via point-proximity
+  matching against `ix.point` rather than trusting the IX-level index.
+- **R = treelawn + sidewalk** (`plugSwWidth` redefinition). ADA-corner-pad
+  scale at oblique IXes. Operator picked option ii after seeing 1 m vs
+  2.7 m radii at Mississippi × Park.
+
+### OPEN — corner plug shape at oblique IXes
+
+**Test case**: Mississippi × Park, IX at (229, −158.9), interior angle
+~69°/111°. Right-angle IXes look fine; oblique IXes don't.
+
+- Acute (~70°) sectors render as thin spike/tongue.
+- Obtuse (~110°) sectors render with a "tooth" where plug curb meets
+  leg curb. Re-measuring sidewalk widths in Measure mode produced
+  noticeably different (also-broken) shapes — the geometry is fragile,
+  not just imperfect.
+
+Root cause (numerically traced): plug's leg-end cross-sections sit on
+each leg's *parallel* offset line; leg arms terminate on the *perpendicular*
+at IX. These lines coincide only at 90°.
+
+**See `cartograph/NOTES.md` 2026-04-24 evening entry for the full list
+of approaches tried this session that all reverted.** Do not re-try them
+blindly.
+
+### Operator's mental model (foundational, do not re-derive)
+
+- Geometry comes from per-IX ribbon-overlap intersections, never from a
+  global formula or centerline-derived rule.
+- 4 corners + bezier arc per quadrant; arc bows toward IX.
+- "If the shape is squashed, the arc gets squashed" — accept oblique
+  shearing in principle.
+- Outer corner of plug = property-line corner.
+- Inner corner of plug = asph corner.
+- No treelawn in the plug.
+- Plug curb meets leg curb flush at the legs.
+
+### Memories to update
+
+- `project_corner_plug_open_problem.md` — narrow scope to "oblique IXes
+  only" (right-angle works).
+- New: `feedback_corner_geometry_attempts_to_avoid.md` documenting the
+  6 reverted approaches.
+
+---
+
+## 2026-04-23/24 session — skeleton pipeline landed; three bugs left in selection-based aerial reveal
+
+### Session outcomes (all NEW since last BACKLOG entry)
+
+**Shipped and working:**
+- **Phase-0 skeleton extractor** (`cartograph/skeleton.js`) — reads OSM,
+  emits one clean chain per carriageway to `data/clean/skeleton.json`.
+  Same-direction tangent-aware welding, fold-split at 180° reversals,
+  shadow-drop of duplicate short parallels, angular-tolerance RDP.
+- **`derive.js` routed through skeleton** — old same-name welding +
+  direction-alignment dance deleted. Skeleton is sole street-geometry
+  source. Intersection-finding splices on the nearest skeleton segment
+  (not vertex) with descending (afterIdx, t) apply order; this
+  eliminated the `cos=-1` crimp artifacts that were plaguing divided
+  roads.
+- **`ribbons.json` new fields:**
+  - `medians[]` — emergent polygon between paired oneway carriageways;
+    6 medians in Lafayette Square (Truman, S 14th, S 18th ×2, Park Ave,
+    S Jefferson).
+  - `corridors[]` — 69 corridors with ordered `phases` and pinch
+    `transitions`. Park Ave = 3 phases with a pinch at (424, -89).
+  - Face fills **clipped** to ribbon outer edge (MIN of left/right)
+    so they don't bleed under road ribbons.
+- **`StreetRibbons.jsx` cleanup** — deleted `resolveStreetSources`,
+  `hasReversal`, `authoredIsSubstantive`, `hasAuthoredMedian`,
+  `bboxDiag`, `SUBSTANTIVE_RATIO`. Added `medianMeshes` renderer.
+- **Survey shrink** — `SurveyorOverlay` −60%, `SurveyorPanel` −50%.
+  Geometry is read-only. Authoring surface = caps + name/type overrides.
+  Store pruned (−~200 lines): undo stacks, nodeMenu state, old coupler
+  setters, move/hide/disable/revert actions. `NodeContextMenu.jsx`
+  deleted.
+- **Corridor-level Survey selection** — click any chain, whole
+  corridor's centerlines highlight yellow.
+- `window.cs = useCartographStore` dev hook for browser-console
+  debugging.
+
+### Foundational decisions (do not re-derive)
+
+See `~/.claude/projects/-Users-jacobhenderson-Desktop-lafayette-square/memory/`:
+
+- `project_skeleton_architecture.md` (SHIPPED)
+- `project_positive_carriageway_model.md` — divided roads = 2
+  centerlines, emergent median polygon between them, never authored
+- `feedback_couplers_are_segment_local.md` — medians are couplers on
+  a single carriageway, NOT cross-section bands
+- `project_cartograph_pipeline_shape.md` — full pipeline + "Frequent
+  re-derivations to avoid" checklist
+
+### OPEN — selection-based aerial reveal (must-have; three bugs)
+
+Clicking a centerline should make that street's ribbon transparent
+enough that the operator can align Measure handles to real curb edges
+visible in the aerial photo underneath. **This is required for
+authoring, not optional.** Partial implementation landed — three bugs
+prevent it from being usable.
+
+Root cause: the `groups` vs `groupsSelected` split added to
+`meshes` useMemo in `StreetRibbons.jsx` is incomplete and its cache
+dependencies are wrong.
+
+- **E.A.1 Park Avenue (all 4 chains) not rendering ribbons** in any
+  mode (Survey/Measure/Designer). Centerlines + handles show; ribbon
+  bands are absent. Data in `ribbons.json` is correct (4 chains with
+  valid measures). Likely: Park Ave routed into `groupsSelected` at
+  initial render when no corridor should be selected, or cache
+  staleness from missing deps.
+- **E.A.2 Measure handle drags don't visibly update ribbons.**
+  `st.measure` mutates, `centerlineData.streets` gets a new array
+  ref, but the `meshes` useMemo does NOT list `selectedCorridorNames`
+  as a dep — cached mesh data with stale `m.selected` flags can
+  survive the drag.
+- **E.A.3 Corner plugs disrupted on selected corridors.** Corner-plug
+  geometry (around line 765 in `StreetRibbons.jsx`) pushes directly
+  to `groups['corner_sw'|'corner_curb'|'corner_asph']` — not updated
+  to use `activeGroups`. Corner plugs always land in the opaque
+  bucket, visible inconsistency when the adjacent band is in the
+  translucent selected bucket.
+
+**Fix plan (ONE pass, in order):**
+
+1. Add `selectedCorridorNames` to every relevant useMemo's deps array
+   in `StreetRibbons.jsx` (`meshes`, `silhouetteMeshes`, `medianMeshes`,
+   `edgeStrokes`, `pathRibbons`).
+2. Route corner-plug pushes through `activeGroups` instead of `groups`
+   directly.
+3. Trace Park Ave end-to-end in console: hard-refresh, do NOT select
+   anything; run:
+   ```js
+   cs.getState().selectedStreet                          // should be null
+   cs.getState().corridorByIdx.size                      // should be >0
+   ```
+   Open Park Ave in the scene, confirm ribbon geometry renders.
+   If not, instrument `buildMeshes` with a console.log of which
+   streets ended up in each group. Park Ave should be in `groups`,
+   not `groupsSelected`, when nothing is selected.
+4. Verify handle drags: add a `console.log('[meshes memo]')` at the
+   top of the `meshes` useMemo. Drag a handle — should log each time.
+   If it logs but geometry doesn't change, the `measure` update isn't
+   propagating through `mergedStreets` build.
+
+**Fallback if the split keeps fighting back:** use three.js stencil
+buffer. Render the selected corridor's ribbon silhouette to stencil
+(colorWrite=false, stencilWrite=true, stencilRef=1,
+stencilZPass=THREE.ReplaceStencilOp). Face fills and non-selected
+ribbon bands render with stencilFunc=NotEqual, stencilRef=1 — pixels
+where the selected silhouette wrote to stencil are rejected, revealing
+aerial. No geometry-buildup split needed; one state guard.
+
+### OPEN — architectural question to resolve before overlay file
+
+**Is the reference line for a divided carriageway its centerline or its
+inner curb?** Raised at end of 2026-04-24 session. Currently we use
+centerline (two per divided road) with symmetric left/right bands. But
+a carriageway around a median is inherently asymmetric — its inner
+edge (median-facing curb) is the engineered boundary, and building
+bands OUTWARD from that edge matches both construction reality and
+aerial authoring workflow. Proposed unified model:
+
+- Divided carriageway: reference line = inner curb; bands build
+  outward (pavement → outer curb → treelawn → sidewalk → lot).
+- Undivided street: reference line = centerline; bands build
+  symmetrically (current behavior, asymmetric per-side override).
+
+If we adopt this for divided roads:
+- Skeleton output for divided carriageways emits inner-edge polyline
+  (OSM centerline offset by inner pavementHW) OR keeps centerline
+  with a "which side is inner" flag.
+- Measure for divided carriageways becomes a single outward stack —
+  simpler UX than symmetric handles.
+- Emergent median polygon = space between two inner-edge polylines
+  (cleaner than today's "between centerlines").
+- Chicken-and-egg on the bootstrap (knowing inner pavementHW requires
+  authored data) — no worse than today.
+
+Resolve before finalizing overlay file schema, since measure's shape
+differs between the two models.
+
+### OPEN — pipeline-level followups
+
+- **Park Ave median plausibility** — the auto-detected median for Park
+  Ave's east divided section has 3 chains forming a pair, but some of
+  the pair-endpoint matching is still loose. Verify the emergent
+  median polygon for Park Ave actually pinches correctly at the
+  Park × Grattan transition.
+- **S 18th Street has 6 chains** — the street is divided in multiple
+  short sections. Corridor walking may not emit clean phase sequences;
+  test and adjust NODE_TOL in `derive.js`'s corridor builder if phases
+  look wrong in Survey.
+- **Measure persistence** — `_saveCenterlines()` is a no-op; drags
+  evaporate on reload. Overlay file design still TBD (was intended as
+  the milestone after skeleton). Draft schema:
+  ```js
+  // data/clean/overlay.json
+  {
+    streets: {
+      "park-avenue-0": { measure: {...}, capStart: null, capEnd: 'round' },
+      ...
+    }
+  }
+  ```
+
+### Files touched this session (full list)
+
+- `cartograph/skeleton.js` — NEW
+- `cartograph/derive.js` — consumes skeleton; medians, corridors,
+  face fill clip added; old OSM welding removed
+- `cartograph/serve.js` — `/skeleton` route
+- `cartograph/NOTES.md`, `cartograph/BACKLOG.md` — session entries
+- `src/components/StreetRibbons.jsx` — removed `resolveStreetSources`
+  stack, added median render, added selected-vs-unselected split
+  (source of E.A.1–E.A.3 bugs)
+- `src/cartograph/SurveyorOverlay.jsx` — rewrite/shrink
+- `src/cartograph/SurveyorPanel.jsx` — rewrite/shrink
+- `src/cartograph/CartographApp.jsx` — corridor selection wiring,
+  aerial-reveal hiding logic (reverted after it was too aggressive)
+- `src/cartograph/api.js` — `fetchSkeleton` added, `saveCenterlines`
+  removed
+- `src/cartograph/stores/useCartographStore.js` — major prune,
+  `corridorByIdx`, dev hook
+- `src/cartograph/NodeContextMenu.jsx` — DELETED
+
+---
+
+## 2026-04-22 → 2026-04-23 session — Survey/Measure rework
+
+Long session attempting to "fix Survey and Measure once and for all." Landed
+a lot of infrastructure; hit the limits of the centerlines.json data; left
+several visual states still off. Key takeaways at the top, detail below.
+
+### Architectural discoveries (most important thing from this session)
+
+1. **The pipeline's OSM-way stitching produces loop chains for divided
+   roads.** Two parallel one-way OSM ways of a divided road (Park Avenue
+   east of 18th, Truman Parkway, Chouteau, Lafayette, Russell, S. 12th,
+   S. 14th, Gravois) get stitched into a single polyline that folds back
+   on itself at its apex. Buffering a reversing polyline produces
+   self-overlapping quads — the bowtie/chevron visible in Survey and the
+   seam artifacts in Design. Detectable: adjacent-segment dot product
+   `< -0.5` = reversal. `hasReversal()` helper in `StreetRibbons.jsx`.
+
+2. **Single centerline per street + median as a band is the right model.**
+   Not "split the loop into two lanes and render parallel." The authored
+   centerline runs down the **spine of the ROW** (not a lane), and a
+   median insert coupler carves a center slice that renders with a new
+   `median` band material (grass/concrete). Band stack becomes
+   `[median, asphalt, curb, treelawn, sidewalk]`. Data model + renderer
+   now support this (see `resolveInserts` + the `hasMedian` branch in
+   `meshes` useMemo + `streetProfiles.BAND_COLORS.median`). UI: right-click
+   menu has **Median** entry.
+
+3. **centerlines.json has mixed data quality.** Of 444 valid authored
+   centerlines, only 73 match a pipeline street name; the other 371 are
+   orphans (legacy / outside neighborhood). Of the 73 matched, many are
+   stubs (authored bbox diagonal < 50% of pipeline chain diagonal —
+   Benton Place is 47m authored vs 209m pipeline loop). Several streets
+   have duplicate authored entries (Lasalle Street ×3, S. 18th Street ×2,
+   Waverly Place ×2, Ann Avenue ×2). The "one centerline per street"
+   architecture requires an operator pass through every street to
+   re-author as a single clean spine line.
+
+4. **Survey / Measure / Design / 3D must share the same street source.**
+   Divergence between silhouette (old: liveCenterlines) and meshes
+   (welded pipeline) causes visible mismatches. Current state:
+   silhouette + meshes + edgeStrokes all iterate the same
+   `renderRibbons.streets` output from `resolveStreetSources`.
+   **SurveyorOverlay still reads centerlineData directly**, so the
+   navy centerline spine can disagree with the silhouette for
+   stub-authored streets. Unresolved.
+
+### Locked (changes that stuck)
+
+1. **Reroute coupler** (`feature: 'jog'`) — data model in `streetProfiles.js`
+   (`resolveInserts` contributes signed `lateralOffset`), store actions
+   `setRerouteCoupler` / `removeRerouteCoupler`, right-click menu entry,
+   draggable yellow handle, live silhouette bending.
+2. **Median coupler** (`feature: 'median'`) — new `median` band material
+   (`BAND_COLORS.median = '#4a6a32'`), band stack shifts outward by
+   `medianHW[i]` per point via `halfRingVarRaw`, median band renders
+   grass fill. Store actions + right-click menu entry. UI for adjusting
+   taper/hold/medianHW not yet built.
+3. **Alleys + paths as first-class roadway ribbons.** `derive.js` emits
+   `ribbons.alleys[]` (145) and `ribbons.paths[]` (345) as centerlines +
+   `pavedWidth`. `StreetRibbons.jsx` renders them via `pathAsStreet`
+   helper + `pathRibbons` useMemo. `MapLayers.jsx` no longer renders
+   alley/footway polygons. Paths participate in Survey silhouette.
+4. **Circle crop on aerial.** `AerialTiles.jsx` injects a radial alpha
+   fade matching `FADE_CENTER (162,-127)` / `FADE_INNER 758` /
+   `FADE_OUTER 892` — aerial silhouette matches the main-map circle.
+5. **Design + Fills OFF = aerial only.** Distinct from Survey/Measure
+   Fills-off behavior; both documented in NOTES.md Fills section.
+6. **GroundMesh.jsx deleted.** Was disabled with `{false && ...}`.
+7. **Centerline spine in Survey** = navy `#0a1a4a`, miter joints
+   (`polylineRibbon` rewritten to compute miter offset
+   `halfWidth / cos(θ/2)` with 6× clamp), transparent material
+   (`transparent: true`) to force Three.js to draw it in the
+   transparent pass — otherwise opaque centerlines get drawn in the
+   opaque pass and subsequent transparent silhouettes paint over them.
+   This was a tough root-cause debugging story.
+8. **NodeContextMenu** is a DOM-level component portaled to `document.body`,
+   driven by store state (`nodeMenu: {x, y, nodeIdx}`). Rendering DOM
+   inside R3F Canvas crashes the WebGL context (reconciler confusion).
+9. **Pipeline segment direction alignment** from earlier (2026-04-22
+   morning) — `derive.js` reverses ribbon chains whose local tangent
+   disagrees with the authored centerline's direction. Was 37/122
+   reversed; now 0/122. Downstream orientation swaps deleted.
+
+### Unlocked / still broken (punch list to pick up next)
+
+| # | Issue | Notes |
+|---|-------|-------|
+| E.1 | **Aerial photo not reliably visible under streets in Survey/Measure + Fills ON.** Current attempt: hide `MapLayers.ground` when `toolActive`. Still not showing aerial consistently in user testing. Suspect: `StreetRibbons` face fills extending into road gaps, OR some other opaque layer between road ribbon and aerial. Need to diagnose which layer is occluding aerial in the road gap area. | Core fail. |
+| E.2 | **"Two streets stacked" on divided roads** (Lafayette Avenue, Russell Boulevard, probably Chouteau). Pipeline has two parallel chains (divided OSM ways). When authored isn't substantive, both chains render as separate ribbons. Proper fix: author these streets as single spine centerlines, add median coupler. Or: detect divided pairs at pipeline time, merge into a single spine with median width derived from parallel gap. | Architectural. |
+| E.3 | **Selection-driven translucency not implemented.** User's desire: "roadway becomes translucent when you select the street." Currently all Survey streets show translucent silhouette; all Measure streets show translucent per-stripe. Intended: unselected = opaque (Design-like) or simpler silhouette; selected = translucent edit surface. Requires splitting `meshes` useMemo output into selected vs. other groups for per-street materials. | UX. |
+| E.4 | **SurveyorOverlay reads centerlineData directly** — doesn't pull from `renderRibbons`. So the navy centerline spine follows authored points even where `StreetRibbons` rendered pipeline geometry (Benton Place's loop is rendered, but SurveyorOverlay draws only the authored 8-pt stub). Unify: either (a) SurveyorOverlay iterates `renderRibbons.streets`, (b) `centerlineData` gets populated from pipeline for non-authored streets on load. | Source-of-truth consistency. |
+| E.5 | **Dead-end endcap previews in Survey must show for all dead-ends,** not just the selected street. Currently cap preview is gated inside `selectedStreet !== null` block in `SurveyorOverlay.jsx`. Extract and render for every authored dead-end. | UX. |
+| E.6 | **Right-side pan/drag dead zone.** User reported that pan/zoom doesn't work on the right side of the screen even when the panel isn't there. Investigate which overlay is capturing pointer events with full-width DOM. Candidates: `StagePanel`, `Panel`, `Toolbar`. Not yet investigated. | Bug. |
+| E.7 | **Measure tool "no centerline to select"** after introducing renderRibbons routing. Measure needs to let the operator select a street to bring up its per-stripe handles. Currently mediated by `selectedStreet` from `centerlineData`, which requires the street to be in `centerlineData`. Pipeline-sourced streets aren't there, so they can't be selected in Measure. Fix: populate `centerlineData` fully on load, or teach Measure to select from `renderRibbons`. | Core feature regression. |
+| E.8 | **Duplicate authored centerlines** (Lasalle Street ×3, S. 18th Street ×2, Waverly Place ×2, Ann Avenue ×2, Rutger Street ×2) render as multiple overlapping centerlines in SurveyorOverlay. Either dedupe at load, weld during load, or operator cleanup. | Data quality. |
+| E.9 | **Orphan centerlines** (371 entries not in pipeline). Currently filtered out at render. Could also be deleted from centerlines.json as one-shot cleanup. | Data quality. |
+| E.10 | **No corner plugs on authored streets.** The pipeline's intersections are indexed against pipeline points, which don't match authored points after we switch source. `resolveStreetSources` sets authored streets' `intersections: []`. Design-mode renders for Park Avenue etc. have flat intersections. Fix: spatial intersection detection at render time — find where two authored centerlines share a node and emit plug there. | Design rendering polish. |
+| E.11 | **Median coupler UI is add/remove only.** No inspector for taper/hold/medianHW sliders. Defaults sized for residential (taperIn 8m, hold 30m, taperOut 8m, medianHW 3m). | UX completion. |
+| E.12 | **Authored-vs-pipeline source heuristic is fragile.** Ratio of 0.5 between authored bbox diagonal and pipeline longest chain's diagonal. Breaks when authored is a closed loop (Truman — first=last, diagonal = 0 using endpoint-only) — internal span is actually wide but the heuristic can misjudge. Current heuristic uses full bbox diagonal which works for Truman; verify across full neighborhood. Long-term: operator flag per centerline ("this is the canonical one"). | Heuristic risk. |
+| D.2 | **Chevron reads as dead-end in Measure.** Still queued from earlier session. Likely resolved incidentally if divided-road authoring lands (see E.2). | Related. |
+
+### The real architectural fix — skeleton extraction as "Phase 0"
+
+The premise of this whole session was wrong. Survey has been operating on
+the pipeline's raw OSM-derived fragments (122 chains for ~68 logical
+streets, plus tangled divided-road loops). That's why every data quality
+problem surfaced as a rendering bug. The answer isn't more heuristics at
+render time — it's a **skeleton extraction step** between raw OSM and
+everything downstream.
+
+**Phase 0 — Skeleton extraction** (new):
+- Input: raw OSM highways (or whatever source a new neighborhood brings).
+- Output: `skeleton.json` — one clean continuous polyline per logical
+  street, with intersection topology and flags (divided, one-way,
+  median width, type).
+- Algorithm:
+  1. Group OSM ways by name.
+  2. Weld end-to-end within each group.
+  3. Detect divided pairs (same name + parallel + opposite one-way):
+     emit one synthetic spine line at the midpoint + a synthetic
+     median insert coupler sized by the perpendicular gap.
+  4. Unnamed fragments: attach to nearest named group by proximity +
+     tangent alignment, or drop as "unclassified" for later triage.
+  5. **Simplify to minimum nodes.** Ramer-Douglas-Peucker with ~0.5m
+     tolerance + collinear-collapse + curvature-aware thinning. Most
+     OSM polylines are over-subdivided; per-street node counts should
+     drop from dozens to ~8-12 control points.
+- Result: ~68 clean Street objects for Lafayette Square. Each with the
+  minimum control-point set that describes its shape. No duplicates,
+  no stubs, no orphans.
+
+**Curve interpolation at render time** (renderer change, paired with
+skeleton):
+- Ribbon renderer samples the centerline as a C1-continuous spline
+  (Catmull-Rom or cubic Bézier) to ~0.5m spacing BEFORE building quad
+  geometry. Control points stay sparse and operator-editable; the mesh
+  is always smooth.
+- Benton Place (8 control points) renders as a perfect smooth loop.
+  W 18th Street (5 control points) renders as a perfect arc. No "smooth
+  slider" — smoothness is the default rendering behavior.
+- Per-node `corner: true` flag breaks the spline for genuine sharp
+  corners (e.g. at a T-intersection where the centerline abruptly turns).
+  Default smooth; corners are opt-in.
+- Kills the pointy-joint problem (miter math becomes unnecessary for
+  smooth streets — adjacent segments are already tangent-continuous).
+
+**Survey operates on the skeleton, not on raw pipeline fragments.** The
+operator sees ~68 clean lines. Editing becomes tractable.
+
+**centerlines.json becomes a thin overlay** on top of the skeleton —
+just operator edits (moved nodes, couplers, measure overrides). Not the
+source of geometry. The skeleton is regenerable from OSM; the overlay
+is operator intent. Merging skeleton + overlay at render time is
+deterministic and simple.
+
+Downstream is almost untouched:
+- StreetRibbons' rendering path: identical. Just consumes skeleton +
+  overlay instead of ribbons + centerlines.
+- Median coupler, reroute coupler, band system: unchanged.
+- Measure tool: unchanged, just fewer streets to iterate.
+
+**What Phase 0 replaces:**
+- `resolveStreetSources` and its ratio heuristic — gone.
+- End-to-end weld and reversal-split logic at render time — moved
+  upstream into skeleton extraction; happens once per pipeline build.
+- The authored-vs-pipeline question at every level — the skeleton is
+  authoritative; the overlay adjusts it.
+
+**What remains separate:**
+- Face-fill vs. aerial (issue E.1) — geometric/rendering issue;
+  separate from skeleton. Fix: clip `ribbons.faces` against street
+  ribbon extent, or stencil-mask aerial-through-road area.
+- Selection-driven translucency, dead-end-preview-always, right-side
+  pan dead zone, Measure selection regression — all UI-level; easy
+  once the skeleton exists.
+
+### Sequenced plan for next session
+
+1. **Write skeleton extractor** (`cartograph/skeleton.js`). Consumes
+   `data/raw/osm.json`, emits `data/clean/skeleton.json`. Includes:
+   group-by-name, end-to-end weld, divided-pair detection + synthetic
+   spine emission, unnamed-fragment attachment, RDP simplification to
+   minimum control-point set.
+2. **Add spline interpolation to StreetRibbons.** Pre-sample centerline
+   at ~0.5m via Catmull-Rom before extruding ribbon quads. Respect
+   per-node `corner: true` breaks. Eliminate render-time node-count
+   assumptions elsewhere.
+3. **Route the renderer through skeleton.** StreetRibbons +
+   SurveyorOverlay + MeasureOverlay all read from skeleton + overlay.
+   Delete `resolveStreetSources` and its machinery. Delete the
+   `polylineRibbon` miter math (unnecessary once curves are smooth).
+4. **Decide overlay merge semantics.** Skeleton has stable slugified
+   IDs (`park-avenue`, `south-18th-street`). Overlay keys by
+   `{streetId, pointIdx}` for node overrides; by `{streetId}` for
+   measure / couplers / caps. One-time migration script moves existing
+   `centerlines.json` edits into the new overlay shape by name +
+   spatial match.
+5. **Face-fill vs. aerial** (E.1). Algorithmic clip of `ribbons.faces`
+   polygons against street ribbon extent at pipeline time so there's a
+   true road gap for aerial to show through in Fills-on tool mode.
+6. **UI polish.** Selection-driven translucency (E.3), cap previews
+   for all dead-ends (E.5), right-side pan dead zone (E.6), Measure
+   selection regression (E.7). Small fixes once the base is solid.
+7. **Median / reroute coupler inspector UI** (E.11). Sliders for
+   taper / hold / medianHW / offset. Right-click menu already triggers
+   the couplers.
+
+---
+
+## 2026-04-22 session — Survey/Measure split + segment direction fix
+
+Two structural moves landed, plus data-model scaffolding for complex street
+geometry (medians, jogs).
+
+### Locked
+
+1. **Survey vs. Measure division of labor.**
+   - Survey owns longitudinal structure (centerline shape, nodes, couplers,
+     caps, terminal, jog/median inserts). Renders as translucent blue
+     silhouette envelope + centerline spine + outer property-line outline.
+     No per-stripe strokes.
+   - Measure owns cross-section (pavementHW/curb/treelawn/sidewalk per side,
+     per coupler-segment). Renders as per-stripe translucent fills with
+     per-material edge strokes. The color story.
+   - Both write to `centerlines.json`; every surface (Survey overlay,
+     Measure overlay, Designer ribbon, Stage shots) reads from the same
+     live source.
+   - "Fills" toggle unchanged — governs everything except the tool's
+     subject matter (street-ways/paths).
+
+2. **Silhouette renderer** (`StreetRibbons.jsx`, Survey-only).
+   Iterates live centerlines (not `ribbons.streets` — that caused per-
+   segment fragmentation on long multi-segment streets). One translucent
+   blue envelope per street via `halfRingVarRaw` with per-point inner/outer
+   radii, so insert couplers can carve the envelope.
+
+3. **Insert-coupler data model** (`streetProfiles.js`).
+   Couplers are now a mixed array of numbers (legacy split couplers) and
+   objects. Object form:
+   ```js
+   { kind: 'insert', feature: 'median', pointIdx: 42,
+     taperIn: 5, hold: 40, taperOut: 5, medianHW: 3 }
+   ```
+   `normalizeCoupler()` handles back-compat. `resolveInserts(street)`
+   walks arc-length and returns per-point `{medianHW, lateralOffset}`
+   with cosine-eased fairings. `segmentRangesForCouplers` updated to only
+   pay attention to `kind: 'split'` (inserts don't segment the street).
+
+   "Rock in the river" metaphor: one coupler carries taper-in / hold /
+   taper-out as a composed object — not four loose keyframes the operator
+   has to coordinate. Extends to jogs (`feature: 'jog'`), slip lanes,
+   curb bulges without adding new primitives.
+
+4. **Pipeline-level segment direction alignment.**
+   `derive.js` now reverses ribbon chains whose local tangent disagrees
+   with the authored centerline's direction over the span the chain
+   covers. Was 37/122 reversed segments in `ribbons.json`, now 0/122.
+   Consequence: `measure.left` is physical-left on every segment of every
+   street. Downstream orientation-guard swaps in StreetRibbons
+   (`meshes` + `edgeStrokes` useMemos) deleted — runtime stays simple.
+
+   Root cause: OSM way-ordering is a drawing convention on two-way
+   streets, not a directionality constraint. 23 of 25 direction-flipped
+   streets were two-way (Park Ave, Rutger, Lafayette, Lasalle, Geyer,
+   Jefferson, Truman Parkway…). Not a one-way-traffic issue.
+
+   Why it matters: asymmetric Measure drags on long multi-segment streets
+   were growing "both sides" because the guard's per-segment swap
+   propagated the growth to inconsistent physical sides. Now consistent.
+
+5. **Measure stripe-stroke reduction.** Per-stripe strokes in Measure
+   now emit only at the pavement edge (asphalt outer) and the property
+   line (outermost ring) — intermediate curb-outer / treelawn-outer
+   strokes were visual noise on wide boulevards.
+
+### Shelved / Partial
+
+6. **Silhouette renderer doesn't handle medians yet.** The renderer
+   consumes `resolveInserts` → per-point `medianHW` and carves the
+   envelope correctly, but no Survey UI to author inserts. Test requires
+   hand-editing `centerlines.json`:
+   ```json
+   "couplers": [{"kind":"insert","feature":"median","pointIdx":18,
+     "taperIn":8,"hold":30,"taperOut":8,"medianHW":3}]
+   ```
+
+### Follow-ups
+
+| # | Task | Notes |
+|---|------|-------|
+| D.1 | **Survey UI for insert couplers.** Right-click node → Split \| Median insert \| (future: Jog / Bulge). Inspector with taperIn/hold/taperOut/medianHW sliders + live silhouette feedback. Store action `setCouplerInsert(nodeIdx, props)`. | Queued; data model + renderer ready. |
+| D.2 | **Chevron reads as dead-end in Measure.** Park Ave × 18th: pipeline segments Park Ave at the chevron; each segment ends flush with no continuation. Solutions: (a) don't segment at the chevron — it's an insert, not an intersection; (b) merge adjacent same-named segments seamlessly at render; (c) bake chevron from median/jog insert in derive. Likely (c) once D.1 lands. | Blocked on D.1. |
+| D.3 | **Jog/lane-shift insert.** Same pattern as median, but modifies `lateralOffset` instead of `medianHW`. `resolveInserts` already reserves the field. Handles the Park Ave × 18th chevron geometry cleanly: coupler at the jog anchor, shift amount = Δy of the two halves, taper = chevron length. | Queued. |
+
+## 2026-04-21 session — alley clipping landed
+
+Long debugging cycle. Pointy-alley-end artifact at cross-street terminations
+traced all the way to the alley ROW computation. Ribbons render the full
+back-of-sidewalk at `pavementHW + CURB_WIDTH + treelawn + sidewalk`, but the
+derive.js alley clip was subtracting two terms (curb, and survey data on
+fallback streets) and over-halving divided streets. Result: alleys poked
+through the sidewalk and terminated as knife-shaped wedges where the clip
+polygon turned a corner.
+
+### Locked
+
+1. **Alley trim = polyline clip by per-street ROW, at sidewalkOuter.**
+   `derive.js [7/8]` builds `streetROWUnion` by buffering each vehicular
+   centerline by the full outer reach (pavement + curb + treelawn + sidewalk),
+   then `Clipper.ctDifference` against each alley polyline via `PolyTree +
+   OpenPathsFromPolyTree`. Flat caps (`EndType.etOpenButt`). 8m min-length
+   filter drops sub-curb stubs. 113 alley polygons.
+
+2. **Measure source preference:** `centerlines.json` per-side measure first,
+   `defaultMeasure(type, correctedSurvey[name])` fallback — survey is now
+   passed into the fallback so arterial streets (Chouteau, Jefferson,
+   Dolman, S. 18th) that lack centerline data still get their surveyed
+   `pavementHalfWidth` + sidewalk offsets instead of flat residential defaults.
+
+3. **No divide-by-2 for divided streets in alley clip.** We want the buffer
+   to reach the outer back-of-sidewalk regardless of whether the OSM
+   centerline represents whole pavement or one half.
+
+4. **CURB_WIDTH imported from `streetProfiles.js`** so `derive.js` uses the
+   same constant as the ribbon renderer. Single source of truth.
+
+### Shelved
+
+5. **GroundMesh experiment** (`src/cartograph/GroundMesh.jsx`, ~270 lines)
+   — planar subdivision + poly2tri Steiner grid to bake all ground layers
+   into one z-fight-free mesh. Disabled via `{false &&}` in CartographApp.
+   Was the wrong tool for this session's problem (alley ROW math, not
+   z-fighting). Revisit if spillage becomes the top priority.
+
+### Follow-ups
+
+- Task #9: Debug remaining terminal-into-street cases. "One of these is
+  fixed" after iter 15 — spot-check the full neighborhood for alleys still
+  poking past sidewalkOuter. Likely candidates: streets where survey has
+  no `pavementHalfWidth` at all (they'd still hit `TYPE_PAVEMENT_HW`
+  defaults).
+- Per-alley manual override JSON as an escape hatch if a specific
+  terminal resists the algorithmic fix.
 
 ## 2026-04-20 session — locked decisions
 
@@ -101,7 +775,7 @@ redesigned and Fills semantics finally make sense.
 
 | # | Task | Notes |
 |---|------|------|
-| C.1 | **Couplers Phase 1B.** Per-segment measure storage in store (`segmentMeasures: {"start-end": {...}}`). Measure tool selects segment-between-couplers. Per-segment reset button. Pipeline splits centerlines at coupler nodes when emitting ribbons. Helpers `segmentRangesForCouplers` + `measureForSegment` already exist in `streetProfiles.js`; store actions `toggleCoupler` + `resetSegment` already exist. Just need editor + pipeline wiring. | Foundation laid. |
+| C.1 | ~~**Couplers Phase 1B.**~~ **SHIPPED 2026-04-25.** `segmentMeasures` keyed by ordinal (not `"from-to"` — stable across coord systems). Survey places couplers (Ctrl-click); Measure binds per-segment with reset; renderer walks segments end-to-end. Persistence still in-memory only — see new "overlay file" item. | Done. |
 | C.2 | **Aerial z=19 with z=18 fallback.** TextureLoader can take an `onError` callback; on 404 retry the equivalent z=18 tile and stretch. | UX win — aerial detail at zoom-in. |
 | C.3 | **Survey shows measured silhouette stroke.** Once Measure has been used, the Survey ribbon outer-stroke should reflect the actual measured ROW, not the default. Closes the Survey↔Measure feedback loop the operator needs. | High value. |
 | C.4 | **Shadow post-pass (Approach D).** Per-frame post-processing effect that reads scene depth + shadow map, masks with material-ID stencil, multiplies onto flat-shaded ground pixels. Solves shadows on StreetRibbons without changing its flat shader. ~2-3 days. See `SHADOW_HANDOFF.md`. | Publishing polish blocker. |

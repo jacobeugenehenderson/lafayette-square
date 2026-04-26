@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import clipperLib from 'clipper-lib'
 import ribbonsRaw from '../data/ribbons.json'
 import { streetInBoundary, faceInBoundary, pointInBoundary } from '../cartograph/boundary.js'
 import useCamera from '../hooks/useCamera'
-import { BAND_COLORS, sideToStripes, refEdges, defaultMeasure } from '../cartograph/streetProfiles.js'
+import { BAND_COLORS, sideToStripes, refEdges, defaultMeasure, resolveInserts, segmentRangesForCouplers, measureForSegment, offsetPolyline, innerEdgeMeasure } from '../cartograph/streetProfiles.js'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, BAND_TO_LAYER } from '../cartograph/m3Colors.js'
 import {
@@ -58,6 +59,7 @@ const LEGACY_COLORS = {
 const BAND_PRIORITY = {
   lawn:               2,
   treelawn:           3,
+  median:             3,
   sidewalk:           5,
   gutter:             6,
   curb:               6,
@@ -65,9 +67,18 @@ const BAND_PRIORITY = {
   'parking-angled':   7,
   asphalt:            8,
 }
-const CORNER_PRIORITY = { corner_sw: 7, corner_curb: 9, corner_asph: 10 }
+// corner_curb is a STROKE (constant-width painted on the asph/sw boundary)
+// that needs to render above both asph and sw fills. Priority is therefore
+// higher than corner_asph; it's the topmost band-level layer.
+const CORNER_PRIORITY = { corner_sw: 7, corner_asph: 10, corner_curb: 11 }
 const FACE_FILL_PRIORITY = 1  // lowest — underneath everything
-const CURB_WIDTH = 0.3
+// Match streetProfiles' CURB_WIDTH (6" = 0.1524 m) — the value sideToStripes
+// uses for the leg's curb stripe. The face-clip below offsets the ribbon's
+// outer edge by `pavementHW + CURB_WIDTH + treelawn + sidewalk`; if this
+// disagrees with the leg ribbon's actual outer edge, a strip of width
+// |delta| appears between the leg ribbon and the block face. The previous
+// 0.3 m value left exactly that 0.15 m gap visible along every straight leg.
+const CURB_WIDTH = 0.1524
 
 // ── Radial edge fade (soft neighborhood boundary) ──────────────────
 // Faces fade on a short schedule; streets extend farther and fade slower,
@@ -82,6 +93,17 @@ const STREET_FADE = { inner: 800, outer: 1000 }  // starts later, reaches past R
 // {pavementHW, treelawn, sidewalk, terminal}. These helpers convert that
 // shape into rings (for geometry) and reference edges (for corner plugs).
 
+// For inner-edge anchored chains, the chain stays at carriageway center.
+// The cross-section is two-sided (pavement + curb on both sides), but the
+// inboard ped zone (treelawn + sidewalk) is zeroed since there's no
+// pedestrian zone along the median. Outboard keeps its full cross-section.
+// Returns just the transformed measure — no polyline shift, no synthetic
+// pavement combining. Standard handles, standard ribbon emission.
+function inboardPedZoneless(street, baseMeasure) {
+  if (street.anchor !== 'inner-edge' || !street.innerSign) return baseMeasure
+  return innerEdgeMeasure(baseMeasure, street.innerSign)
+}
+
 // Convert one side's measure into rings with cumulative radii + pri + color.
 function sideToRings(side) {
   const stripes = sideToStripes(side)
@@ -92,6 +114,30 @@ function sideToRings(side) {
   }))
 }
 
+// Convert a centerline-only entry (alley, footway, cycleway, steps, path)
+// into a street-shaped object so the existing ribbon geometry helpers
+// (sideToRings, halfRingRaw, silhouette, edge strokes) work unchanged.
+// Alleys/paths are pavement-only: terminal is undefined → sideToStripes
+// emits a single asphalt ring (no curb, no sidewalk, no treelawn).
+// BAND_TO_LAYER routes 'asphalt' through the 'alley' / 'footway' panel
+// picker when kind is passed down via the mesh group id.
+function pathAsStreet(p, fallbackIdx = 0) {
+  const hw = (p.pavedWidth || 3) / 2
+  return {
+    name: p.name || `__${p.kind || 'path'}_${fallbackIdx}`,
+    points: p.points,
+    kind: p.kind || 'alley',
+    measure: {
+      left:  { pavementHW: hw },
+      right: { pavementHW: hw },
+      symmetric: true,
+    },
+    capEnds: { start: null, end: null },
+    intersections: [],
+    isPath: true,
+  }
+}
+
 // Ensure a street has a valid measure; synthesize a default residential one
 // when absent (back-compat safety for legacy ribbons.json).
 function ensureMeasure(street) {
@@ -99,6 +145,21 @@ function ensureMeasure(street) {
   const d = defaultMeasure('residential')
   return d
 }
+
+// ── Authored centerlines are the source of truth ────────────────
+// The pipeline's OSM-way stitching can produce tangled loop chains (two
+// parallel one-way ways of a divided road stitched into one polyline that
+// folds back on itself) and end-to-end fragmentation of single streets.
+// Rather than un-tangling the pipeline's artifacts, we prefer the authored
+// centerlines.json geometry whenever available — one clean polyline per
+// street as the operator drew it — and fall back to pipeline chains only
+// for streets that aren't authored yet.
+//
+// Divided roads (median-bearing streets) are expressed as ONE authored
+// centerline running down the middle of the whole ROW, with a median
+// insert coupler carving a center gap. The median's carved slice is
+// rendered as its own material (grass / concrete) via the band stack —
+// no separate "lane halves" needed.
 
 // ── Terrain-bounds clip (fragment discard outside terrain coverage) ──
 // vWorldPos is passed from vertex shader; discard fragments outside terrain
@@ -267,6 +328,26 @@ function halfRingRaw(pts, innerHW, outerHW, perps, side) {
   return ensureCCW({ positions, normals, indices })
 }
 
+// Per-point variable-radius variant. `innerArr` / `outerArr` are per-vertex
+// half-widths (length = pts.length) — lets insert couplers vary the inner
+// edge over arc-length (a median taper, for instance) without splitting the
+// street into many segments.
+function halfRingVarRaw(pts, innerArr, outerArr, perps, side) {
+  const n = pts.length; if (n < 2) return null
+  const positions = [], normals = [], indices = []
+  for (let i = 0; i < n; i++) {
+    const [x, z] = pts[i], [nx, nz] = perps[i]
+    const oR = outerArr[i], iR = innerArr[i]
+    positions.push(x+side*nx*oR, 0, z+side*nz*oR)
+    positions.push(x+side*nx*iR, 0, z+side*nz*iR)
+    normals.push(0,1,0, 0,1,0)
+  }
+  for (let i = 0; i < n-1; i++) {
+    const a=i*2, b=(i+1)*2; indices.push(a,b,a+1, a+1,b,b+1)
+  }
+  return ensureCCW({ positions, normals, indices })
+}
+
 function mergeRawGeo(parts) {
   const valid = parts.filter(Boolean)
   if (!valid.length) return null
@@ -345,6 +426,140 @@ function bezierBandRaw(P0o, P1o, ctrlO, P0i, P1i, ctrlI, segments = 16) {
   return { positions, normals, indices }
 }
 
+// ── Corner plug via canonical 90° template + per-quadrant affine ──
+// The plug is built in a canonical 90° frame and mapped to actual world
+// via the affine T(cx, cy) = IX + (sA·cy·edB − sB·cx·edA) / cross, where
+// cross = edA × edB. This mapping preserves both leg directions AND
+// perpendicular distances from each leg simultaneously (verified against
+// Mississippi×Park's all-four-quadrant numerics). Returns asphalt-corner
+// fill + sidewalk-pad fill (both as triangle-fan raw geometries) plus the
+// asph/sidewalk boundary polyline (for the curb stroke pass). Curb is not
+// part of the plug — it's a stroke applied on top of the boundary curve
+// at constant world width.
+function buildCornerPlug(IX, edA, edB, sA, sB, refA, refB) {
+  const R_A = refA.propertyLine - refA.curbOuter
+  const R_B = refB.propertyLine - refB.curbOuter
+  const R = Math.min(R_A, R_B)
+  if (R <= 0) return null
+  const curbOA = refA.curbOuter, curbOB = refB.curbOuter
+  const swOA = refA.propertyLine, swOB = refB.propertyLine
+  // cross = edA × edB. Degenerate (parallel legs) if near zero.
+  const cross = edA[0]*edB[1] - edA[1]*edB[0]
+  if (Math.abs(cross) < 1e-6) return null
+  // Canonical → world mapping. Derived from the constraints:
+  //   (point − IX) · perpA = sA · cy   (perp distance from leg A on +sA side)
+  //   (point − IX) · perpB = sB · cx   (perp distance from leg B on +sB side)
+  // Solving gives T(cx, cy) = IX + (sA·cy·edB − sB·cx·edA) / cross.
+  const T = (cx, cy) => [
+    IX[0] + (sA * cy * edB[0] - sB * cx * edA[0]) / cross,
+    IX[1] + (sA * cy * edB[1] - sB * cx * edA[1]) / cross,
+  ]
+  // Canonical key points (90° frame, x = leg B perp distance, y = leg A perp distance).
+  // Arc center stays at the curb-outer corner (curbOB+R, curbOA+R). The arc
+  // RADIUS is bumped by CURB_HALF (= half of street-profile CURB_WIDTH) so
+  // that the boundary curve runs along each leg's CURB-STRIPE CENTER, not
+  // its curb-outer edge. With the curb rendered as a constant-width stroke
+  // CENTERED on this curve, the stroke perpendicular range exactly equals
+  // [asphOuter, curbOuter] on each leg — the same range the leg ribbon's
+  // straight curb stripe occupies. Curb thickness is therefore identical
+  // and continuous from leg into corner and back into leg.
+  const CURB_HALF = 0.075   // = streetProfiles CURB_WIDTH / 2 (= 6"/2)
+  const arcCx = curbOB + R, arcCy = curbOA + R
+  const arcR = R + CURB_HALF
+  const asphOA = refA.curbInner    // = curbOA - CURB_WIDTH (leg A's asphalt-outer line)
+  const asphOB = refB.curbInner
+  // Arc tangent perp positions: curb-stripe-center on each leg.
+  const tangentA_y = curbOA - CURB_HALF   // leg A curb-stripe-center perp
+  const tangentB_x = curbOB - CURB_HALF
+  const ARC_SEGS = 16
+  const arcWorld = []
+  for (let i = 0; i <= ARC_SEGS; i++) {
+    const t = i / ARC_SEGS
+    const angle = -Math.PI/2 - t * (Math.PI/2)  // -π/2 → -π, sweep -π/2 (CW)
+    const cx = arcCx + arcR * Math.cos(angle)
+    const cy = arcCy + arcR * Math.sin(angle)
+    arcWorld.push(T(cx, cy))
+  }
+  // Asphalt fill polygon: extends DOWN to the asph-outer corner so the plug
+  // masks the leg curb stripes in the IX area. Polygon vertices CCW:
+  //   asph_corner → (Tangent_A.x, asphOA) → Tangent_A → arc → Tangent_B
+  //                → (asphOB, Tangent_B.y) → asph_corner.
+  const asphCorner = T(asphOB, asphOA)
+  const asphLegA = T(arcCx, asphOA)             // leg A asph-outer at tangent edA-pos
+  const asphLegB = T(asphOB, arcCy)             // leg B asph-outer at tangent edB-pos
+  const asphRing = [asphLegA, ...arcWorld, asphLegB]
+  const asphFill = fanRaw(asphCorner, asphRing)
+  // Sidewalk pad polygon: extends UP to property-line corner; covers the
+  // leg sidewalk overlap area in the IX.
+  const oo = T(swOB, swOA)
+  const swLegB = T(swOB, arcCy)
+  const swLegA = T(arcCx, swOA)
+  const swRing = [swLegB, ...arcWorld.slice().reverse(), swLegA]
+  const swFill = fanRaw(oo, swRing)
+  return { asphFill, swFill, boundary: arcWorld }
+}
+
+function fanRaw(apex, ringWorld) {
+  const positions = [], normals = [], indices = []
+  positions.push(apex[0], 0, apex[1]); normals.push(0, 1, 0)
+  for (const p of ringWorld) {
+    positions.push(p[0], 0, p[1]); normals.push(0, 1, 0)
+  }
+  for (let i = 1; i < ringWorld.length; i++) {
+    indices.push(0, i, i + 1)
+  }
+  return { positions, normals, indices }
+}
+
+// Stroke a world-space polyline as a thin band of constant total width.
+// Used for the curb stroke on each corner plug's asph/sidewalk boundary.
+// Returns raw geometry (positions/normals/indices). Uses bisector-perp at
+// each vertex (miter join), suitable for smooth curves like our arcs.
+function strokePolylineRaw(points, width) {
+  const n = points.length
+  if (n < 2) return null
+  const positions = [], normals = [], indices = []
+  const half = width / 2
+  for (let i = 0; i < n; i++) {
+    let nx = 0, nz = 0
+    if (i < n - 1) {
+      const dx = points[i + 1][0] - points[i][0], dz = points[i + 1][1] - points[i][1]
+      const l = Math.hypot(dx, dz) || 1
+      nx -= dz / l; nz += dx / l
+    }
+    if (i > 0) {
+      const dx = points[i][0] - points[i - 1][0], dz = points[i][1] - points[i - 1][1]
+      const l = Math.hypot(dx, dz) || 1
+      nx -= dz / l; nz += dx / l
+    }
+    const l = Math.hypot(nx, nz) || 1
+    nx /= l; nz /= l
+    const [px, pz] = points[i]
+    positions.push(px + nx * half, 0, pz + nz * half)
+    positions.push(px - nx * half, 0, pz - nz * half)
+    normals.push(0, 1, 0, 0, 1, 0)
+  }
+  for (let i = 0; i < n - 1; i++) {
+    const a = i * 2, b = (i + 1) * 2
+    indices.push(a, b, a + 1, a + 1, b, b + 1)
+  }
+  return { positions, normals, indices }
+}
+
+// ── Diagnostic marker disk (for plug-point visualization) ────────
+// Triangle fan disk at ground level. Caller picks color via material.
+function diagDiskRaw(point, r = 0.5, segments = 12) {
+  const positions = [], normals = [], indices = []
+  positions.push(point[0], 0, point[1]); normals.push(0, 1, 0)
+  for (let i = 0; i <= segments; i++) {
+    const a = (i / segments) * 2 * Math.PI
+    positions.push(point[0] + r * Math.cos(a), 0, point[1] + r * Math.sin(a))
+    normals.push(0, 1, 0)
+  }
+  for (let i = 0; i < segments; i++) indices.push(0, i + 1, i + 2)
+  return { positions, normals, indices }
+}
+
 // ── Segment direction helper ─────────────────────────────────────
 
 function segDir(pts, i0, i1) {
@@ -355,7 +570,7 @@ function segDir(pts, i0, i1) {
 
 // ── Main component ───────────────────────────────────────────────
 
-export default function StreetRibbons({ hiddenLayers, flat = false, luColors, liveCenterlines, measureActive = false, surveyActive = false, ribbons = ribbonsRaw, useBoundary = true, hideFaceFills = false }) {
+export default function StreetRibbons({ hiddenLayers, flat = false, luColors, liveCenterlines, measureActive = false, surveyActive = false, selectedCorridorNames = null, ribbons = ribbonsRaw, useBoundary = true, hideFaceFills = false }) {
   // Architectural blue — used for overlays in Measure/Survey contexts.
   const ARCH_BLUE = '#2250E8'
   const authoringActive = measureActive || surveyActive
@@ -380,58 +595,55 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     terrainExag.value += (target - cur) * 0.06
   })
 
+  // Skeleton (via derive.js) is the sole geometry source. ribbons.streets
+  // is emitted per skeleton street; no authored-vs-pipeline election, no
+  // hasReversal drop, no substantive-ratio heuristics. Live overlay data
+  // (measure, caps) is merged below in the main meshes useMemo.
+  const renderRibbons = useMemo(() => ribbons, [ribbons])
+
   const meshes = useMemo(() => {
-    // Build a name → live-centerline lookup for merging Measure/Survey edits
-    // into the rendered ribbons without a pipeline rebuild.
+    // Build a skelId → live-centerline lookup for merging Measure/Survey
+    // edits into the rendered ribbons. Keying by id (not name) is required
+    // because divided roads emit multiple same-name chains; matching by name
+    // alone leaks one chain's edits onto its sibling carriageway. Name
+    // remains as a fallback for any ribbons.json street missing skelId.
+    const liveById = new Map()
     const liveByName = new Map()
     if (liveCenterlines) {
       for (const cl of liveCenterlines) {
-        if (!cl || !cl.name || cl.disabled) continue
-        // First entry per name wins; prefer ones with measure or cap overrides
-        const prev = liveByName.get(cl.name)
-        const hasOverrides = cl.measure || cl.capStart || cl.capEnd
-        if (!prev || (hasOverrides && !(prev.measure || prev.capStart || prev.capEnd))) {
-          liveByName.set(cl.name, cl)
-        }
+        if (!cl || cl.disabled) continue
+        if (cl.id) liveById.set(cl.id, cl)
+        if (cl.name && !liveByName.has(cl.name)) liveByName.set(cl.name, cl)
       }
     }
+    const lookupLive = (st) =>
+      (st.skelId && liveById.get(st.skelId)) || liveByName.get(st.name) || null
 
     // Merge live measure/cap overrides onto ribbons.json streets. Points,
     // intersections, and faces stay from ribbons.json (structural); measure
     // and caps come live from centerlineData when present.
     //
-    // Orientation guard: the pipeline (derive.js) splits centerlines at
-    // intersections and the resulting ribbon segments aren't guaranteed to
-    // share the live centerline's point order.  When a segment's tangent
-    // points opposite to the centerline's tangent, our perpendicular flips
-    // sign — and `measure.left` / `measure.right` end up rendered on the
-    // wrong physical side relative to the Measure-overlay handles (which
-    // anchor on centerline points).  Detect the reversal and swap sides.
+    // Direction is now pipeline-aligned (derive.js reverses chains whose
+    // tangent disagrees with the authored centerline), so `measure.left`
+    // maps to physical-left on every segment without any runtime swap.
     const pointsNearlyEqual = (a, b, eps = 0.5) =>
       a && b && Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps
-    const avgTangent = (pts) => {
-      let dx = 0, dz = 0
-      for (let i = 1; i < pts.length; i++) { dx += pts[i][0] - pts[i-1][0]; dz += pts[i][1] - pts[i-1][1] }
-      const l = Math.hypot(dx, dz) || 1
-      return [dx / l, dz / l]
-    }
-    const mergedStreets = ribbons.streets.map(st => {
-      const live = liveByName.get(st.name)
+    const mergedStreets = renderRibbons.streets.map(st => {
+      const live = lookupLive(st)
       if (!live) return st
       const merged = { ...st }
-      let reversed = false
-      if (live.points && live.points.length >= 2 && st.points.length >= 2) {
-        const [rtx, rtz] = avgTangent(st.points)
-        const [ltx, ltz] = avgTangent(live.points)
-        reversed = (rtx * ltx + rtz * ltz) < 0
-      }
       if (live.measure?.left && live.measure?.right) {
-        merged.measure = reversed
-          ? { left: { ...live.measure.right }, right: { ...live.measure.left },
-              symmetric: live.measure.symmetric }
-          : { left: { ...live.measure.left }, right: { ...live.measure.right },
-              symmetric: live.measure.symmetric }
+        merged.measure = {
+          left: { ...live.measure.left },
+          right: { ...live.measure.right },
+          symmetric: live.measure.symmetric,
+        }
       }
+      if (live.couplers && live.couplers.length) merged.couplers = live.couplers
+      if (live.segmentMeasures) merged.segmentMeasures = live.segmentMeasures
+      // Anchor: live override (from store) wins; otherwise the ribbons.json
+      // default (auto-detected by derive) is already on `st`.
+      if (live.anchor) merged.anchor = live.anchor
       if (live.capStart !== undefined || live.capEnd !== undefined) {
         // Caps apply only to the ribbon segment whose terminal actually
         // matches the centerline's terminal — prevents chain-split segments
@@ -460,7 +672,21 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     }
 
     const groups = {}
-    const ensure = (id) => { if (!groups[id]) groups[id] = [] }
+    const groupsSelected = {}
+    // ── DIAGNOSTIC: per-color marker disks at plug-construction points.
+    // Populated only at Mississippi × Park (oblique IX) so we don't
+    // pollute every IX. Rendered last with renderOrder 99 so they sit
+    // above all ribbons. Remove this block once green-tongue is fixed.
+    const diagMarkers = { red: [], orange: [], yellow: [], cyan: [], magenta: [], blue: [], green: [] }
+    // Per-corner asph/sidewalk boundary polylines (world coords) for the
+    // curb-stroke pass. Each entry is the arc samples from one corner plug.
+    const cornerBoundaries = []
+    // The active group is chosen per-street based on corridor selection:
+    // when the current street's name is in selectedCorridorNames, its
+    // geometry routes into groupsSelected, which renders translucent so
+    // the aerial shows through for alignment. Rest go into `groups`.
+    let activeGroups = groups
+    const ensure = (id) => { if (!activeGroups[id]) activeGroups[id] = [] }
 
     // Index streets by name for intersection lookups
     const streetsByName = new Map()
@@ -477,30 +703,92 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     for (const street of ribbonsData.streets) {
       const pts = street.points
       if (pts.length < 2) continue
+      activeGroups = (selectedCorridorNames && selectedCorridorNames.has(street.name))
+        ? groupsSelected : groups
       const perps = computePerps(pts)
-      const measure = ensureMeasure(street)
+      const chainMeasure = ensureMeasure(street)
+      // Per-point median half-width from insert couplers. A non-zero
+      // medianHW at a point shifts the cross-section outward by that
+      // amount on both sides and emits a 'median' band in the carved
+      // center slice.
+      const inserts = resolveInserts(street)
+      const hasMedian = inserts.some(ins => (ins.medianHW || 0) > 0)
 
-      // Split at each intersection index
-      const splits = [0, ...street.intersections.map(ix => ix.ix).sort((a, b) => a - b), pts.length - 1]
-      const uniqueSplits = [...new Set(splits)].sort((a, b) => a - b)
+      // Split couplers carve the chain into addressable segments. Couplers
+      // carry world coords, so segmentRangesForCouplers projects them onto
+      // the ribbons polyline (which has more points than skeleton because
+      // intersection vertices were spliced in by derive). With no couplers,
+      // there is exactly one segment spanning the whole chain.
+      const segRanges = segmentRangesForCouplers(pts, street.couplers || [])
+      const ranges = segRanges.length ? segRanges : [[0, pts.length - 1]]
+      const ixIdxs = (street.intersections || []).map(ix => ix.ix).sort((a, b) => a - b)
+
+      for (let segOrd = 0; segOrd < ranges.length; segOrd++) {
+        const range = ranges[segOrd]
+        const baseMeasure = measureForSegment(street, segOrd) || chainMeasure
+        const measure = inboardPedZoneless(street, baseMeasure)
+        const segPts = pts.slice(range[0], range[1] + 1)
+        const segPp = perps.slice(range[0], range[1] + 1)
+        const segInsertsSlice = inserts.slice(range[0], range[1] + 1)
+        const segHasMedian = segInsertsSlice.some(ins => (ins.medianHW || 0) > 0)
+        // Pedestrian-band sub-splits: chain intersections that fall inside
+        // this segment break pedestrian rings for corner plugs. Indices
+        // are converted to segment-local space.
+        const segIxs = ixIdxs.filter(i => i > range[0] && i < range[1])
+        const localSplits = [0, ...segIxs.map(i => i - range[0]), segPts.length - 1]
+        const uniqueLocalSplits = [...new Set(localSplits)].sort((a, b) => a - b)
 
       for (const [side, sideMeasure] of [[-1, measure.left], [+1, measure.right]]) {
         const rings = sideToRings(sideMeasure)
+
+        // Median band: centerline → ±medianHW. Rendered as a per-side
+        // half-ring (inner=0, outer=medianHW[i]) so both sides fuse into
+        // the full median strip at the centerline.
+        if (segHasMedian) {
+          ensure('median')
+          const zeros = new Float64Array(segPts.length)
+          const medianArr = new Float64Array(segPts.length)
+          for (let i = 0; i < segPts.length; i++) medianArr[i] = segInsertsSlice[i]?.medianHW || 0
+          activeGroups.median.push(halfRingVarRaw(segPts, zeros, medianArr, segPp, side))
+        }
+
         for (const ring of rings) {
           ensure(ring.material)
-          if (FULL_LENGTH_BANDS.has(ring.material)) {
-            groups[ring.material].push(halfRingRaw(pts, ring.innerR, ring.outerR, perps, side))
+          if (segHasMedian) {
+            const innerArr = new Float64Array(segPts.length)
+            const outerArr = new Float64Array(segPts.length)
+            for (let i = 0; i < segPts.length; i++) {
+              const m = segInsertsSlice[i]?.medianHW || 0
+              innerArr[i] = ring.innerR + m
+              outerArr[i] = ring.outerR + m
+            }
+            if (FULL_LENGTH_BANDS.has(ring.material)) {
+              activeGroups[ring.material].push(halfRingVarRaw(segPts, innerArr, outerArr, segPp, side))
+            } else {
+              for (let si = 0; si < uniqueLocalSplits.length - 1; si++) {
+                const from = uniqueLocalSplits[si], to = uniqueLocalSplits[si + 1]
+                const sPts = segPts.slice(from, to + 1)
+                const sPp = segPp.slice(from, to + 1)
+                const sInner = innerArr.slice(from, to + 1)
+                const sOuter = outerArr.slice(from, to + 1)
+                if (sPts.length < 2) continue
+                activeGroups[ring.material].push(halfRingVarRaw(sPts, sInner, sOuter, sPp, side))
+              }
+            }
+          } else if (FULL_LENGTH_BANDS.has(ring.material)) {
+            activeGroups[ring.material].push(halfRingRaw(segPts, ring.innerR, ring.outerR, segPp, side))
           } else {
-            for (let si = 0; si < uniqueSplits.length - 1; si++) {
-              const from = uniqueSplits[si], to = uniqueSplits[si + 1]
-              const segPts = pts.slice(from, to + 1)
-              const segPp = perps.slice(from, to + 1)
-              if (segPts.length < 2) continue
-              groups[ring.material].push(halfRingRaw(segPts, ring.innerR, ring.outerR, segPp, side))
+            for (let si = 0; si < uniqueLocalSplits.length - 1; si++) {
+              const from = uniqueLocalSplits[si], to = uniqueLocalSplits[si + 1]
+              const sPts = segPts.slice(from, to + 1)
+              const sPp = segPp.slice(from, to + 1)
+              if (sPts.length < 2) continue
+              activeGroups[ring.material].push(halfRingRaw(sPts, ring.innerR, ring.outerR, sPp, side))
             }
           }
         }
       }
+      } // end per-segment range loop
 
       // ── Endcaps at operator-marked dead-ends ──
       // capStart / capEnd come from Survey mode (operator is authority, no
@@ -510,9 +798,10 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       const CAP_ENABLED = true
       if (CAP_ENABLED) {
         const capEnds = street.capEnds || { start: null, end: null }
+        const lastOrd = ranges.length - 1
         const endInfo = [
-          { cap: capEnds.start, idx: 0, tanPt0: pts[1], tanPt1: pts[0] },
-          { cap: capEnds.end,   idx: pts.length - 1, tanPt0: pts[pts.length - 2], tanPt1: pts[pts.length - 1] },
+          { cap: capEnds.start, idx: 0, tanPt0: pts[1], tanPt1: pts[0], ord: 0 },
+          { cap: capEnds.end,   idx: pts.length - 1, tanPt0: pts[pts.length - 2], tanPt1: pts[pts.length - 1], ord: lastOrd },
         ]
         for (const e of endInfo) {
           if (e.cap !== 'round') continue
@@ -521,11 +810,12 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           const tlen = Math.hypot(tdx, tdz) || 1
           const tangent = [tdx / tlen, tdz / tlen]
           const perp = perps[e.idx]
-          for (const [side, sideMeasure] of [[-1, measure.left], [+1, measure.right]]) {
+          const capMeasure = measureForSegment(street, e.ord) || chainMeasure
+          for (const [side, sideMeasure] of [[-1, capMeasure.left], [+1, capMeasure.right]]) {
             const rings = sideToRings(sideMeasure)
             for (const ring of rings) {
               ensure(ring.material)
-              groups[ring.material].push(
+              activeGroups[ring.material].push(
                 ensureCCW(quarterCapRaw(endpoint, tangent, perp, side, ring.innerR, ring.outerR))
               )
             }
@@ -547,16 +837,40 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           // Skip same-street pairs (a street doesn't form corners with itself)
           if (stA_ref.name === stB_ref.name) continue
 
-          const stA_data = ribbonsData.streets.find(s =>
-            s.name === stA_ref.name && s.intersections.some(i =>
-              i.ix === stA_ref.ix && i.withStreets.includes(stB_ref.name)))
-          const stB_data = ribbonsData.streets.find(s =>
-            s.name === stB_ref.name && s.intersections.some(i =>
-              i.ix === stB_ref.ix && i.withStreets.includes(stA_ref.name)))
-          if (!stA_data || !stB_data) continue
+          // Resolve each ref to (chain, vertexIdx) by trusting chain-internal
+          // intersection records + point proximity, NOT the IX-level
+          // `stA_ref.ix`. derive.js's splice-shifter mutates `ix.streets[].ix`
+          // by name, which corrupts the index whenever a corridor has
+          // multiple same-name chains (Lasalle ×5, Park Ave ×4, etc.).
+          // Chain-internal `st.intersections[].ix` stays correct because it's
+          // shifted per-chain. Point proximity disambiguates which chain
+          // actually touches this IX.
+          // Walk mergedStreets (NOT raw ribbonsData.streets) so the corner
+          // plug picks up live couplers + segmentMeasures from the Measure
+          // tool. Without this, segMeasureAt below sees stale couplers and
+          // the plug uses the wrong segment's measure when a chain has been
+          // sub-divided in Measure.
+          const resolveChain = (name, partnerName) => {
+            for (const s of mergedStreets) {
+              if (s.name !== name) continue
+              for (const i of s.intersections) {
+                if (!i.withStreets.includes(partnerName)) continue
+                const v = s.points[i.ix]
+                if (!v) continue
+                if (Math.hypot(v[0] - IX[0], v[1] - IX[1]) < 0.5) {
+                  return { st: s, ixIdx: i.ix }
+                }
+              }
+            }
+            return null
+          }
+          const resA = resolveChain(stA_ref.name, stB_ref.name)
+          const resB = resolveChain(stB_ref.name, stA_ref.name)
+          if (!resA || !resB) continue
+          const stA_data = resA.st, stB_data = resB.st
 
-          const ptsA = stA_data.points, ixA = stA_ref.ix
-          const ptsB = stB_data.points, ixB = stB_ref.ix
+          const ptsA = stA_data.points, ixA = resA.ixIdx
+          const ptsB = stB_data.points, ixB = resB.ixIdx
 
           // Terminal detection. A street is "terminal at start" if ixA=0 (no pre-IX arm),
           // "terminal at end" if ixA=last (no post-IX arm). At a T-intersection, one street
@@ -586,8 +900,18 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           const dB_avg = [(dB_left[0]+dB_right[0])/2, (dB_left[1]+dB_right[1])/2]
           const lB = Math.hypot(dB_avg[0], dB_avg[1]); dB_avg[0]/=lB; dB_avg[1]/=lB
 
-          const measureA = ensureMeasure(stA_data)
-          const measureB = ensureMeasure(stB_data)
+          // Corner plug picks up the measure of whichever segment contains
+          // the intersection — so segmentMeasures overrides flow into the
+          // sidewalk arc at the corner.
+          const segMeasureAt = (st, idx) => {
+            const ranges = segmentRangesForCouplers(st.points, st.couplers || [])
+            if (!ranges.length) return ensureMeasure(st)
+            let ord = ranges.findIndex(([a, b]) => a <= idx && idx < b)
+            if (ord < 0) ord = ranges.length - 1
+            return measureForSegment(st, ord) || ensureMeasure(st)
+          }
+          const measureA = segMeasureAt(stA_data, ixA)
+          const measureB = segMeasureAt(stB_data, ixB)
 
           for (const sA of [1, -1]) {
             // Per-side refs: asymmetric measures may differ left vs right.
@@ -596,26 +920,26 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
               const refB = refEdges(sB > 0 ? measureB.right : measureB.left)
 
               // Corner plug: three materials (asphalt+curb+sidewalk) arc
-              // around the bend. Sized to the NARROWER sidewalk of the two
-              // meeting legs. See project_corner_plug_rules.md.
+              // around the bend. Sized to the NARROWER outside-curb width
+              // (treelawn + sidewalk stripe) of the two meeting legs.
+              // See project_corner_plug_rules.md and
+              // project_corner_plug_open_problem.md.
               //   - Both legs have sidewalk → full plug (all three arcs)
               //   - Either leg lacks sidewalk → skip corner_sw; keep
               //     corner_curb + corner_asph (curb still needs to arc).
               //   - Both legs lack sidewalk → still generate curb arc.
               const hasSwA = refA.hasSidewalk
               const hasSwB = refB.hasSidewalk
-              const swWidthA = hasSwA ? refA.sidewalkOuter - refA.sidewalkInner : 0
-              const swWidthB = hasSwB ? refB.sidewalkOuter - refB.sidewalkInner : 0
+              const swWidthA = hasSwA ? refA.propertyLine - refA.curbOuter : 0
+              const swWidthB = hasSwB ? refB.propertyLine - refB.curbOuter : 0
               const plugSwWidth = (hasSwA && hasSwB)
                 ? Math.min(swWidthA, swWidthB)
                 : (hasSwA ? swWidthA : swWidthB)
 
               const curbOuterA = refA.curbOuter
               const curbOuterB = refB.curbOuter
-              const asphOuterA = refA.curbInner   // outer edge of asphalt
+              const asphOuterA = refA.curbInner
               const asphOuterB = refB.curbInner
-              // Effective sidewalk outer radii for the plug arc — narrower
-              // side wins; wider side butts against the plug.
               const swOuterA = hasSwA ? curbOuterA + plugSwWidth : curbOuterA
               const swOuterB = hasSwB ? curbOuterB + plugSwWidth : curbOuterB
 
@@ -627,14 +951,10 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
               const dotA = (testOo[0]-IX[0])*dA_avg[0] + (testOo[1]-IX[1])*dA_avg[1]
               const dotB = (testOo[0]-IX[0])*dB_avg[0] + (testOo[1]-IX[1])*dB_avg[1]
 
-              // Terminal-street quadrant guard: if a street terminates at the IX,
-              // skip the quadrants where its "missing arm" would be. This is what
-              // distinguishes a T (2 plugs) from an X (4 plugs) — the bezier math
-              // doesn't change, we just don't build plugs where there's no arm.
-              if (termA_start && dotA < 0) continue  // no pre-IX arm on A
-              if (termA_end && dotA > 0) continue    // no post-IX arm on A
-              if (termB_start && dotB < 0) continue  // no pre-IX arm on B
-              if (termB_end && dotB > 0) continue    // no post-IX arm on B
+              if (termA_start && dotA < 0) continue
+              if (termA_end && dotA > 0) continue
+              if (termB_start && dotB < 0) continue
+              if (termB_end && dotB > 0) continue
 
               const edA = dotA < 0 ? dA_left : dA_right
               const edB = dotB < 0 ? dB_left : dB_right
@@ -660,47 +980,88 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
               const pt1 = lineX(P0a, edA, P1a, edB)
               if (!pt1) continue
 
-              // corner_sw only when at least one leg has sidewalk. When both
-              // legs are lawn/none, sidewalk arc collapses — curb still arcs,
-              // asphalt still arcs, so corner_curb and corner_asph continue.
-              if (hasSwA || hasSwB) {
-                ensure('corner_sw')
-                groups['corner_sw'].push(ensureCCW(cornerBandRaw(swA, oo, swB, swA, swB, swCtrl, 16)))
+              activeGroups = (selectedCorridorNames && (
+                selectedCorridorNames.has(stA_ref.name) ||
+                selectedCorridorNames.has(stB_ref.name)
+              )) ? groupsSelected : groups
+
+              // ── Canonical 90° corner + per-quadrant affine matrix ──
+              // Build the plug as a canonical 90° template (asph corner,
+              // sidewalk pad, curb arc), then map to actual world via
+              // M = [edA/sinθ | edB/sinθ]. The matrix preserves both leg
+              // directions and perpendicular distances. Curb is rendered
+              // separately as a stroke on the asph/sidewalk boundary.
+              if (hasSwA && hasSwB) {
+                const plug = buildCornerPlug(IX, edA, edB, sA, sB, refA, refB)
+                if (plug) {
+                  ensure('corner_sw')
+                  activeGroups['corner_sw'].push(ensureCCW(plug.swFill))
+                  ensure('corner_asph')
+                  activeGroups['corner_asph'].push(ensureCCW(plug.asphFill))
+                  // boundary curve collected for stroke pass below.
+                  cornerBoundaries.push(plug.boundary)
+                }
               }
-              ensure('corner_curb')
-              groups['corner_curb'].push(ensureCCW(bezierBandRaw(coA, coB, coCtrl, swA, swB, swCtrl, 16)))
-              ensure('corner_asph')
-              groups['corner_asph'].push(ensureCCW(cornerBandRaw(coA, pt1, coB, coA, coB, coCtrl, 16)))
             }
           }
         }
       }
     }
 
+    // ── Curb stroke pass: paint a thin band at constant world-units width
+    // on each corner plug's asph/sidewalk boundary curve. Pure stylization,
+    // not part of the plug's geometric construction — the stroke width is
+    // invariant under any underlying curve distortion. ──
+    const CURB_STROKE_WIDTH = 0.15  // meters (= ~6 inches, ADA standard).
+    if (cornerBoundaries.length) {
+      if (!groups['corner_curb']) groups['corner_curb'] = []
+      for (const boundary of cornerBoundaries) {
+        const stroke = strokePolylineRaw(boundary, CURB_STROKE_WIDTH)
+        if (stroke) groups['corner_curb'].push(ensureCCW(stroke))
+      }
+    }
+
     // Corner-plug materials inherit color from the underlying band material:
     // sidewalk plug uses sidewalk color, curb plug uses curb color, etc.
     const CORNER_SRC = { corner_sw: 'sidewalk', corner_curb: 'curb', corner_asph: 'asphalt' }
-    const result = Object.entries(groups).map(([id, parts]) => {
-      const isCorner = id.startsWith('corner_')
-      const pri = isCorner ? CORNER_PRIORITY[id] : (BAND_PRIORITY[id] ?? 5)
-      const srcMat = isCorner ? CORNER_SRC[id] : id
-      // Color resolution order: live panel picker → M3 default → BAND_COLORS
-      // fallback → LEGACY. BAND_TO_LAYER maps band materials ('asphalt',
-      // 'curb', 'sidewalk' …) onto the Panel's picker ids ('street', 'curb',
-      // 'sidewalk' …) so one picker can paint several related bands.
-      const layerId = BAND_TO_LAYER[srcMat]
-      const color =
-        (layerId && layerColors[layerId]) ||
-        (layerId && DEFAULT_LAYER_COLORS[layerId]) ||
-        BAND_COLORS[srcMat] ||
-        LEGACY_COLORS[id] ||
-        LEGACY_COLORS.asphalt
-      let geo = mergeRawGeo(parts)
-      // Subdivide so ribbons follow terrain in non-flat modes (per-vertex
-      // displacement needs enough vertices, or the ribbon cuts through hills).
-      if (geo) geo = subdivideGeo(geo, 30)
-      return { id, geo, color, pri }
-    }).filter(m => m.geo)
+    function buildMeshes(groupMap, selectedFlag) {
+      return Object.entries(groupMap).map(([id, parts]) => {
+        const isCorner = id.startsWith('corner_')
+        const pri = isCorner ? CORNER_PRIORITY[id] : (BAND_PRIORITY[id] ?? 5)
+        const srcMat = isCorner ? CORNER_SRC[id] : id
+        const layerId = BAND_TO_LAYER[srcMat]
+        const color =
+          (layerId && layerColors[layerId]) ||
+          (layerId && DEFAULT_LAYER_COLORS[layerId]) ||
+          BAND_COLORS[srcMat] ||
+          LEGACY_COLORS[id] ||
+          LEGACY_COLORS.asphalt
+        let geo = mergeRawGeo(parts)
+        if (geo) geo = subdivideGeo(geo, 30)
+        return { id, geo, color, pri, selected: selectedFlag }
+      }).filter(m => m.geo)
+    }
+    const result = [
+      ...buildMeshes(groups, false),
+      ...buildMeshes(groupsSelected, true),
+    ]
+
+    // ── DIAGNOSTIC marker meshes (renderOrder 99 — sit above ribbons) ──
+    const DIAG_COLORS = {
+      red:     '#ff0033',  // oo — sw L apex
+      orange:  '#ff9900',  // swA, swB — sw leg endpoints
+      yellow:  '#ffee00',  // swCtrl — sw bezier control
+      cyan:    '#00ddff',  // coA, coB — asph leg endpoints
+      magenta: '#ff00ff',  // pt1 — asph L apex (= coCtrl)
+      blue:    '#0033ff',  // leg A chain start/end (Mississippi)
+      green:   '#00aa44',  // leg B chain start/end (Park)
+    }
+    for (const [color, parts] of Object.entries(diagMarkers)) {
+      if (!parts.length) continue
+      const geo = mergeRawGeo(parts)
+      if (!geo) continue
+      result.push({ id: `diag_${color}`, geo, color: DIAG_COLORS[color], pri: 99, selected: false })
+    }
 
     // Winding diagnostic — check first triangle of first geometry
     if (result.length > 0) {
@@ -723,7 +1084,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     }
 
     return result
-  }, [liveCenterlines, layerColors, ribbons, useBoundary])
+  }, [liveCenterlines, layerColors, ribbons, renderRibbons, useBoundary, selectedCorridorNames])
 
   // ── Edge strokes (measure mode only) ──────────────────────────
   // When Measure is active, emit thin opaque half-rings at each stripe's
@@ -731,36 +1092,43 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
   // "field + stroke" — aerial shows through the fills, boundaries stay crisp.
   const edgeStrokes = useMemo(() => {
     if (!authoringActive) return []
+    const liveById = new Map()
     const liveByName = new Map()
     if (liveCenterlines) {
       for (const cl of liveCenterlines) {
-        if (!cl?.name || cl.disabled) continue
-        if (!liveByName.has(cl.name)) liveByName.set(cl.name, cl)
+        if (!cl || cl.disabled) continue
+        if (cl.id) liveById.set(cl.id, cl)
+        if (cl.name && !liveByName.has(cl.name)) liveByName.set(cl.name, cl)
       }
     }
-    // Same orientation guard as the main meshes useMemo — ensures edge
-    // strokes adopt the live measure with sides matching the ribbon's
-    // physical direction.
-    const avgTangent2 = (pts) => {
-      let dx = 0, dz = 0
-      for (let i = 1; i < pts.length; i++) { dx += pts[i][0] - pts[i-1][0]; dz += pts[i][1] - pts[i-1][1] }
-      const l = Math.hypot(dx, dz) || 1
-      return [dx / l, dz / l]
-    }
-    const mergedStreets = ribbons.streets.map(st => {
-      const live = liveByName.get(st.name)
-      if (!live?.measure?.left) return st
-      let reversed = false
-      if (live.points && live.points.length >= 2 && st.points.length >= 2) {
-        const [rtx, rtz] = avgTangent2(st.points)
-        const [ltx, ltz] = avgTangent2(live.points)
-        reversed = (rtx * ltx + rtz * ltz) < 0
+    const lookupLive = (st) =>
+      (st.skelId && liveById.get(st.skelId)) || liveByName.get(st.name) || null
+    // Single source of truth with Measure/Design — both modes strike the
+    // same edges so Survey's outer boundary matches Measure's property line
+    // matches Design's calculated map. Measure overlays live measure
+    // overrides; Survey renders the same streets but only the outer ring
+    // (see renderer below).
+    const mergedStreets = renderRibbons.streets.map(st => {
+      const live = lookupLive(st)
+      if (!live) return st
+      const out = { ...st }
+      if (live.measure?.left) {
+        out.measure = {
+          left: { ...live.measure.left },
+          right: { ...live.measure.right },
+          symmetric: live.measure.symmetric,
+        }
       }
-      const measure = reversed
-        ? { left: { ...live.measure.right }, right: { ...live.measure.left }, symmetric: live.measure.symmetric }
-        : { left: { ...live.measure.left }, right: { ...live.measure.right }, symmetric: live.measure.symmetric }
-      return { ...st, measure }
+      if (live.couplers && live.couplers.length) out.couplers = live.couplers
+      if (live.segmentMeasures) out.segmentMeasures = live.segmentMeasures
+      // Anchor: live override wins; otherwise inherit ribbons.json default.
+      if (live.anchor) out.anchor = live.anchor
+      return out
     })
+    // Streets-only for edge strokes — alleys + paths are shown via their
+    // silhouette alone in Survey/Measure. Dense path networks (park internal
+    // footpaths) produce chaotic parallel-rail noise when every side of
+    // every path emits strokes; the blue envelope carries enough signal.
     const streets = mergedStreets.filter(st => !useBoundary || streetInBoundary(st.points))
     const STROKE_W = 0.2
     // Keyed by material+isOuter so we can render property-line strokes
@@ -769,17 +1137,26 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     for (const street of streets) {
       if (street.points.length < 2) continue
       const perps = computePerps(street.points)
-      const measure = ensureMeasure(street)
-      for (const [side, sideMeasure] of [[-1, measure.left], [+1, measure.right]]) {
-        const rings = sideToRings(sideMeasure)
-        for (let ri = 0; ri < rings.length; ri++) {
-          const ring = rings[ri]
-          const isOuter = ri === rings.length - 1
-          const key = ring.material + (isOuter ? ':outer' : '')
-          if (!groups[key]) groups[key] = { material: ring.material, isOuter, parts: [] }
-          const inner = Math.max(0, ring.outerR - STROKE_W)
-          const outer = ring.outerR + STROKE_W
-          groups[key].parts.push(halfRingRaw(street.points, inner, outer, perps, side))
+      const chainM = ensureMeasure(street)
+      const segRanges = segmentRangesForCouplers(street.points, street.couplers || [])
+      const ranges = segRanges.length ? segRanges : [[0, street.points.length - 1]]
+      for (let ord = 0; ord < ranges.length; ord++) {
+        const range = ranges[ord]
+        const baseMeasure = measureForSegment(street, ord) || chainM
+        const measure = inboardPedZoneless(street, baseMeasure)
+        const segPts = street.points.slice(range[0], range[1] + 1)
+        const segPp = perps.slice(range[0], range[1] + 1)
+        for (const [side, sideMeasure] of [[-1, measure.left], [+1, measure.right]]) {
+          const rings = sideToRings(sideMeasure)
+          for (let ri = 0; ri < rings.length; ri++) {
+            const ring = rings[ri]
+            const isOuter = ri === rings.length - 1
+            const key = ring.material + (isOuter ? ':outer' : '')
+            if (!groups[key]) groups[key] = { material: ring.material, isOuter, parts: [] }
+            const inner = Math.max(0, ring.outerR - STROKE_W)
+            const outer = ring.outerR + STROKE_W
+            groups[key].parts.push(halfRingRaw(segPts, inner, outer, segPp, side))
+          }
         }
       }
     }
@@ -792,11 +1169,237 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       const geo = mergeRawGeo(parts)
       return { id: material, geo, color, isOuter }
     }).filter(m => m.geo)
-  }, [authoringActive, liveCenterlines, layerColors, ribbons, useBoundary])
+  }, [authoringActive, liveCenterlines, layerColors, ribbons, renderRibbons, useBoundary])
+
+  // ── Silhouette meshes (authoring-mode envelope rendering) ─────
+  // In Survey every street renders as one translucent outer silhouette
+  // (centerline → outer ring on each side), with any insert couplers
+  // (medians, future jogs) carving the inner edge. The full per-stripe
+  // stack is suppressed — operators author centerline structure here, not
+  // cross-section details.
+  //
+  // In Measure the same silhouette is used for UNSELECTED streets; the
+  // selected street escalates to the full per-stripe rendering via the
+  // existing `meshes` path. Gives Measure a clear "this is my subject"
+  // affordance instead of every street competing visually.
+  const silhouetteMeshes = useMemo(() => {
+    if (!surveyActive) return []
+    // Single source of truth — the silhouette iterates the same streets
+    // array that Measure/Design render from. That keeps Survey's blue
+    // envelope pixel-aligned with the cross-section fills/strokes of the
+    // other modes. `renderRibbons.streets` already resolves authored vs.
+    // pipeline per street (substantive authored wins; stubs fall back to
+    // pipeline, which is why Benton Place's loop shows here even though
+    // its authored centerline is an 8-pt stub).
+    const extra = [
+      ...(renderRibbons.alleys || []).map((p, i) => pathAsStreet({ ...p, kind: 'alley' }, i)),
+      ...(renderRibbons.paths  || []).map((p, i) => pathAsStreet(p, i)),
+    ]
+    const parts = []
+    const partsSelected = []
+    for (const st of [...renderRibbons.streets, ...extra]) {
+      if (!st || st.disabled) continue
+      if (!st.points || st.points.length < 2) continue
+      if (useBoundary && !streetInBoundary(st.points)) continue
+
+      const measure = st.measure?.left && st.measure?.right
+        ? st.measure
+        : ensureMeasure(st)
+      const perps = computePerps(st.points)
+      const inserts = resolveInserts(st)
+      const target = (selectedCorridorNames && selectedCorridorNames.has(st.name))
+        ? partsSelected : parts
+
+      for (const [side, sideMeasure] of [[-1, measure.left], [+1, measure.right]]) {
+        const rings = sideToRings(sideMeasure)
+        if (!rings.length) continue
+        const outerR = rings[rings.length - 1].outerR
+        const innerArr = new Float64Array(st.points.length)
+        const outerArr = new Float64Array(st.points.length)
+        for (let i = 0; i < st.points.length; i++) {
+          const lat = inserts[i]?.lateralOffset || 0
+          const signed = lat * side
+          innerArr[i] = Math.max(0, (inserts[i]?.medianHW || 0) - signed)
+          outerArr[i] = Math.max(0, outerR + signed)
+        }
+        target.push(halfRingVarRaw(st.points, innerArr, outerArr, perps, side))
+      }
+    }
+    const out = []
+    const geo = mergeRawGeo(parts)
+    if (geo) out.push({ id: 'silhouette', geo, selected: false })
+    const geoSelected = mergeRawGeo(partsSelected)
+    if (geoSelected) out.push({ id: 'silhouette-selected', geo: geoSelected, selected: true })
+    return out
+  }, [surveyActive, renderRibbons, useBoundary, selectedCorridorNames])
+
+  // ── Path ribbons (alleys + footways/cycleways/steps/paths) ────
+  // Pavement-only ribbons for non-street roadways. Rendered in Design
+  // and Measure (Survey is covered by silhouetteMeshes above). Grouped
+  // by kind so the Designer panel's alley/footway color picker paints
+  // them.
+  const pathRibbons = useMemo(() => {
+    const groups = {}  // kind → [raw parts]
+    const push = (kind, geo) => { (groups[kind] ||= []).push(geo) }
+    const sources = [
+      { list: ribbons.alleys || [], kind: 'alley' },
+      // Normalize all foot paths (footway/cycleway/steps/path) to 'footway'
+      // so they share one panel picker + one hide key.
+      { list: ribbons.paths  || [], kind: 'footway' },
+    ]
+    for (const { list, kind } of sources) {
+      for (let i = 0; i < list.length; i++) {
+        const p = list[i]
+        const st = pathAsStreet({ ...p, kind }, i)
+        if (useBoundary && !streetInBoundary(st.points)) continue
+        const perps = computePerps(st.points)
+        for (const [side, sideMeasure] of [[-1, st.measure.left], [+1, st.measure.right]]) {
+          const rings = sideToRings(sideMeasure)
+          for (const ring of rings) {
+            push(st.kind, halfRingRaw(st.points, ring.innerR, ring.outerR, perps, side))
+          }
+        }
+      }
+    }
+    return Object.entries(groups).map(([kind, parts]) => {
+      let geo = mergeRawGeo(parts)
+      if (geo) geo = subdivideGeo(geo, 30)
+      const color = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || MAT.asphalt
+      return { id: kind, geo, color }
+    }).filter(m => m.geo)
+  }, [ribbons, layerColors, useBoundary])
+
+  // ── Live-clipped faces ────────────────────────────────────────
+  // Face rings emit unclipped from the pipeline (centerline-reach). Here
+  // we subtract the live ribbon silhouette (per-side pavementHW + curb +
+  // treelawn + sidewalk) from each face, so blocks shrink/grow as Measure
+  // drags the ribbon widths. Debounced by 120 ms — the main ribbon stack
+  // updates live on drag; faces settle right after handle release.
+  const [stableLiveCenterlines, setStableLiveCenterlines] = useState(liveCenterlines)
+  useEffect(() => {
+    const t = setTimeout(() => setStableLiveCenterlines(liveCenterlines), 120)
+    return () => clearTimeout(t)
+  }, [liveCenterlines])
+
+  const clippedFaces = useMemo(() => {
+    const raw = (ribbons.faces || []).filter(f => !useBoundary || faceInBoundary(f.ring))
+    if (!raw.length) return raw
+    try {
+      // Merge live measures onto pipeline streets by name (same pattern as
+      // `meshes` useMemo) so the clip tracks whatever Measure just drew.
+      const liveById = new Map()
+      const liveByName = new Map()
+      if (stableLiveCenterlines) {
+        for (const cl of stableLiveCenterlines) {
+          if (!cl || cl.disabled) continue
+          if (cl.id) liveById.set(cl.id, cl)
+          if (cl.name && !liveByName.has(cl.name)) liveByName.set(cl.name, cl)
+        }
+      }
+      // Forward couplers + segmentMeasures along with chain measure so the
+      // clip can walk segments. With per-segment overrides, a single chain
+      // contributes multiple clip rings (one per segment, per side).
+      const streetsToClip = ribbons.streets.map(st => {
+        const live = (st.skelId && liveById.get(st.skelId)) || liveByName.get(st.name) || null
+        return {
+          points: st.points,
+          measure: (live?.measure?.left && live?.measure?.right) ? live.measure : st.measure,
+          couplers: live?.couplers || st.couplers,
+          segmentMeasures: live?.segmentMeasures,
+          anchor: live?.anchor || st.anchor,
+          innerSign: st.innerSign,
+        }
+      })
+
+      const SCALE = 1000
+      const toClipper = (x, z) => ({ X: Math.round(x * SCALE), Y: Math.round(z * SCALE) })
+      const { Clipper, PolyType, ClipType, PolyFillType, Paths } = clipperLib
+
+      // Per-side ribbon clip polygons. Building a symmetric offset at
+      // min(L,R) (what the old pipeline did) means the face never updates
+      // when you widen ONE side — MIN doesn't move. So for each side we
+      // build a closed ring = centerline + its own side-offset polyline,
+      // and union all sides across all streets. Widening the park side
+      // of Missouri now shrinks the park polygon; widening the opposite
+      // side moves only that side.
+      const offsetPolyline = (points, perps, sideSign, W) => {
+        const out = new Array(points.length)
+        for (let i = 0; i < points.length; i++) {
+          const [x, z] = points[i]
+          const [px, pz] = perps[i]
+          out[i] = [x + sideSign * px * W, z + sideSign * pz * W]
+        }
+        return out
+      }
+      const ribbonClipPaths = []
+      for (const st of streetsToClip) {
+        if (!st.points || st.points.length < 2) continue
+        if (!st.measure?.left || !st.measure?.right) continue
+        const perps = computePerps(st.points)
+        const segRanges = segmentRangesForCouplers(st.points, st.couplers || [])
+        const ranges = segRanges.length ? segRanges : [[0, st.points.length - 1]]
+        for (let ord = 0; ord < ranges.length; ord++) {
+          const [from, to] = ranges[ord]
+          const baseM = (st.segmentMeasures && st.segmentMeasures[String(ord)]) || st.measure
+          if (!baseM?.left || !baseM?.right) continue
+          const m = inboardPedZoneless(st, baseM)
+          const segPts = st.points.slice(from, to + 1)
+          const segPp = perps.slice(from, to + 1)
+          // Width per side. Skip entirely when the side has no ped zone
+          // and no pavement (inner-edge synthetic inboard) — otherwise the
+          // CURB_WIDTH constant carves a sliver into the median.
+          const widthFor = (s) => {
+            if (!s) return 0
+            const hw = s.pavementHW || 0, tl = s.treelawn || 0, sw = s.sidewalk || 0
+            if (!hw && !tl && !sw && (s.terminal === 'none' || !s.terminal)) return 0
+            return hw + CURB_WIDTH + tl + sw
+          }
+          const outerL = widthFor(m.left)
+          const outerR = widthFor(m.right)
+          if (outerL <= 0 && outerR <= 0) continue
+          for (const [sideSign, W] of [[-1, outerL], [+1, outerR]]) {
+            if (W <= 0) continue
+            const outerEdge = offsetPolyline(segPts, segPp, sideSign, W)
+            const ring = []
+            for (const p of segPts) ring.push(toClipper(p[0], p[1]))
+            for (let i = outerEdge.length - 1; i >= 0; i--) ring.push(toClipper(outerEdge[i][0], outerEdge[i][1]))
+            ribbonClipPaths.push(ring)
+          }
+        }
+      }
+      if (!ribbonClipPaths.length) return raw
+
+      const unionC = new Clipper()
+      unionC.AddPaths(ribbonClipPaths, PolyType.ptSubject, true)
+      const ribbonUnion = new Paths()
+      unionC.Execute(ClipType.ctUnion, ribbonUnion, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+
+      const out = []
+      for (const f of raw) {
+        if (f.ring.length < 3) { out.push(f); continue }
+        const subj = new Paths()
+        subj.push(f.ring.map(([x, z]) => toClipper(x, z)))
+        const diff = new Clipper()
+        diff.AddPaths(subj, PolyType.ptSubject, true)
+        diff.AddPaths(ribbonUnion, PolyType.ptClip, true)
+        const result = new Paths()
+        diff.Execute(ClipType.ctDifference, result, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+        if (!result.length) continue
+        for (const ring of result) {
+          if (ring.length < 3) continue
+          out.push({ ring: ring.map(p => [p.X / SCALE, p.Y / SCALE]), use: f.use })
+        }
+      }
+      return out
+    } catch (e) {
+      console.warn('[faces] runtime clip failed; using unclipped:', e)
+      return raw
+    }
+  }, [ribbons, useBoundary, stableLiveCenterlines])
 
   // ── Face fills (land-use color per block) ─────────────────────
   const faceMeshes = useMemo(() => {
-    const faces = (ribbons.faces || []).filter(f => !useBoundary || faceInBoundary(f.ring))
+    const faces = clippedFaces
     if (!faces.length) return []
 
     // Park + residential faces each get their own grass material (richer
@@ -849,7 +1452,51 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       })
     }
     return result
-  }, [luColors, ribbons, useBoundary])
+  }, [luColors, clippedFaces])
+
+  // ── Emergent median polygons ─────────────────────────────────
+  // `ribbons.medians` is the space between two paired oneway carriageways
+  // of the same name, derived in derive.js from the two centerlines.
+  // Rendered as flat polygons at ground level with a grass default. The
+  // carriageway ribbons paint over the outside of each median where
+  // pavement overlaps; what's visibly left IS the landscaped median.
+  const medianMeshes = useMemo(() => {
+    const meds = (ribbons.medians || []).filter(m => !useBoundary || faceInBoundary(m.ring))
+    if (!meds.length) return []
+    // Skip medians belonging to the selected corridor entirely — the
+    // aerial should show through the authoring region, including the
+    // median, for alignment. Real-world median grass is visible in the
+    // aerial photo anyway.
+    const filtered = selectedCorridorNames
+      ? meds.filter(m => !selectedCorridorNames.has(m.name))
+      : meds
+    if (!filtered.length) return []
+    const allPos = [], allNrm = [], allIdx = []
+    let vOffset = 0
+    for (const m of filtered) {
+      if (m.ring.length < 3) continue
+      const shape = new THREE.Shape(m.ring.map(([x, z]) => new THREE.Vector2(x, z)))
+      const shapeGeo = new THREE.ShapeGeometry(shape)
+      const pos = shapeGeo.attributes.position.array
+      const idx = shapeGeo.index.array
+      for (let i = 0; i < pos.length; i += 3) {
+        allPos.push(pos[i], 0, pos[i + 1])
+        allNrm.push(0, 1, 0)
+      }
+      for (let i = 0; i < idx.length; i += 3) {
+        allIdx.push(idx[i] + vOffset, idx[i + 2] + vOffset, idx[i + 1] + vOffset)
+      }
+      vOffset += pos.length / 3
+      shapeGeo.dispose()
+    }
+    if (allPos.length === 0) return []
+    let geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(allPos, 3))
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(allNrm, 3))
+    geo.setIndex(allIdx)
+    geo = subdivideGeo(geo, 30)
+    return [{ geo }]
+  }, [ribbons, useBoundary, selectedCorridorNames])
 
   // Grass material for park faces — shared by Designer (flat ambient) and
   // shots (full lighting). Lamp lightmap wires in night glow. Sun altitude
@@ -882,8 +1529,20 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       const mat = new THREE.MeshStandardMaterial({
         color: opts.surveyActive ? ARCH_BLUE : color,
         roughness: 0.9, metalness: 0, side: THREE.FrontSide,
-        transparent: !!fade || !!opts.measureActive || !!opts.surveyActive,
-        opacity: opts.surveyActive ? 0.28 : (opts.measureActive ? 0.45 : 1),
+        transparent: !!fade || !!opts.measureActive || !!opts.surveyActive || !!opts.selectedCorridor,
+        // Selected corridor becomes MORE translucent than any base mode
+        // so the aerial underneath is clearly visible for alignment. It
+        // always reads as more see-through than the rest of the ribbons
+        // around it, in any tool.
+        // Translucency strategy:
+        //   Selected corridor in Measure → 0.55 (see edits land while aerial reads through)
+        //   Selected corridor in Survey  → 0.15 (silhouette + aerial alignment)
+        //   Survey, unselected           → 0.28 (all chains slightly translucent in Survey)
+        //   Measure, unselected          → 1.0  (only the chain you're editing is translucent)
+        //   Default (no tool)            → 1.0
+        opacity: opts.selectedCorridor
+          ? (opts.measureActive ? 0.55 : 0.15)
+          : (opts.surveyActive ? 0.28 : 1),
         // Negative offset pulls ribbons toward the camera (beats terrain at 0).
         // More-negative = closer; higher pri should win, so factor = -pri.
         polygonOffset: true, polygonOffsetFactor: -pri, polygonOffsetUnits: -pri * 4,
@@ -946,10 +1605,8 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     <group position={[0, flat ? 0 : 0.15, 0]}>
       {!hide.lot && !hideFaceFills && faceMeshes.map((m, i) => {
         const faceFade = { center: FADE_CENTER, inner: FACE_FADE.inner, outer: FACE_FADE.outer }
-        // Face fills stay opaque in every tool. Translucency is reserved for
-        // the ribbon meshes (Survey blue tint, Measure per-stripe) — that's
-        // where the aerial-through-edit-subject affordance lives. Translucent
-        // face fills on top of aerial were too much noise on screen.
+        // Face fills (block land use) stay opaque in every tool. Hide
+        // them via the Fills toggle to reveal aerial.
         let mat
         if (m.isPark) {
           mat = flat
@@ -964,26 +1621,58 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
         }
         return <mesh key={`face-${i}`} geometry={m.geo} renderOrder={FACE_FILL_PRIORITY} receiveShadow material={mat} />
       })}
-      {meshes.map((m, i) => {
+      {/* Emergent medians — between paired oneway carriageways. Rendered
+          as park-style grass by default; carriageway ribbons paint over
+          the outside where pavement overlaps. */}
+      {medianMeshes.map((m, i) => {
+        const mat = flat
+          ? makeMaterial(layerColors.park || DEFAULT_LAYER_COLORS.park, FACE_FILL_PRIORITY + 0.5)
+          : parkGrass.material
+        return <mesh key={`median-${i}`} geometry={m.geo} renderOrder={FACE_FILL_PRIORITY + 0.5} receiveShadow material={mat} />
+      })}
+      {/* Path/alley ribbons — pavement-only roadway strips for non-street
+          highways. Rendered in Design and Measure; Survey gets these via
+          silhouetteMeshes instead. Designer panel's alley/footway color
+          pickers paint them via layerColors. */}
+      {!surveyActive && pathRibbons.map((m, i) => {
+        if (hide[m.id]) return null
+        const streetFade = { center: FADE_CENTER, inner: STREET_FADE.inner, outer: STREET_FADE.outer }
+        const mat = makeMaterial(m.color, 8, streetFade, { measureActive })
+        return <mesh key={`path-${m.id}-${i}`} geometry={m.geo} renderOrder={8} receiveShadow material={mat} />
+      })}
+      {/* Per-stripe ribbon stack — the map's normal rendering and Measure's
+          color story (translucent stripe fills). Suppressed only in Survey,
+          where the blue silhouette pass below replaces it. */}
+      {!surveyActive && meshes.map((m, i) => {
         const layerId = LAYER_MAP[m.id]
         if (layerId && hide[layerId]) return null
         const streetFade = { center: FADE_CENTER, inner: STREET_FADE.inner, outer: STREET_FADE.outer }
-        // Grass bands (treelawn + lawn) adopt the adjacent-block grass shader
-        // in shot mode so the strip flows into the block's grass seamlessly.
-        // Designer keeps the flat band color for plan-view legibility.
         let mat
-        if (!flat && !measureActive && !surveyActive && (m.id === 'treelawn' || m.id === 'lawn')) {
+        if (!flat && !measureActive && !m.selected && (m.id === 'treelawn' || m.id === 'lawn')) {
           mat = m.id === 'lawn' ? parkGrass.material : residentialGrass.material
         } else {
-          mat = makeMaterial(m.color, m.pri, streetFade, { measureActive, surveyActive })
+          mat = makeMaterial(m.color, m.pri, streetFade, { measureActive, selectedCorridor: m.selected })
         }
         return (
           <mesh key={i} geometry={m.geo} renderOrder={m.pri} receiveShadow material={mat} />
         )
       })}
+      {/* Silhouette pass — Survey-only blue envelope per centerline, carved
+          by insert couplers (medians, future jogs). */}
+      {surveyActive && silhouetteMeshes.map((m, i) => {
+        // Selected corridor's silhouette skips rendering entirely so the
+        // aerial shows through unfettered for alignment. The centerline
+        // + node markers from SurveyorOverlay still mark what's selected.
+        if (m.selected) return null
+        const streetFade = { center: FADE_CENTER, inner: STREET_FADE.inner, outer: STREET_FADE.outer }
+        return (
+          <mesh key={`silh-${i}`} geometry={m.geo} renderOrder={8} receiveShadow
+            material={makeMaterial(ARCH_BLUE, 8, streetFade, { surveyActive: true })} />
+        )
+      })}
+      {/* Edge strokes — Measure draws per-stripe boundaries (the color
+          story), Survey draws only the outer property-line outline in blue. */}
       {authoringActive && edgeStrokes.map((m, i) => {
-        // In survey mode render only the outermost property-line stroke in blue.
-        // In measure mode render per-material strokes at every boundary.
         if (surveyActive && !m.isOuter) return null
         const strokeColor = surveyActive ? ARCH_BLUE : m.color
         return (

@@ -1,5 +1,5 @@
 import useCartographStore from './stores/useCartographStore.js'
-import { defaultMeasure, sideToStripes, CURB_WIDTH, BAND_COLORS, BAND_LABELS } from './streetProfiles.js'
+import { defaultMeasure, sideToStripes, CURB_WIDTH, BAND_COLORS, BAND_LABELS, segmentRangesForCouplers, measureForSegment } from './streetProfiles.js'
 import ribbonsRaw from '../data/ribbons.json'
 
 function fmtFt(m) { return (m * 3.28084).toFixed(1) + 'ft' }
@@ -12,7 +12,7 @@ const PIPELINE_MEASURE = (() => {
   return m
 })()
 
-function getMeasure(st) {
+function chainMeasure(st) {
   if (st.measure) return st.measure
   const fromPipeline = PIPELINE_MEASURE.get(st.name)
   if (fromPipeline) {
@@ -25,6 +25,9 @@ function getMeasure(st) {
     }
   }
   return defaultMeasure(st.type || 'residential')
+}
+function getMeasure(st, ordinal) {
+  return (Number.isFinite(ordinal) && measureForSegment(st, ordinal)) || chainMeasure(st)
 }
 
 const FT = 0.3048
@@ -84,14 +87,16 @@ function SideBlock({ sideKey, side, onChange, onReset, canReset, editable }) {
 
 export default function MeasurePanel() {
   const selectedStreet = useCartographStore(s => s.selectedStreet)
+  const selectedOrdinal = useCartographStore(s => s.selectedSegmentOrdinal)
   const centerlineData = useCartographStore(s => s.centerlineData)
+  const setSegmentMeasure = useCartographStore(s => s.setSegmentMeasure)
 
   if (selectedStreet === null) {
     return (
       <div className="carto-section">
         <h2>Cross-Section</h2>
         <div className="carto-hint">
-          Click a centerline to select a street. Handles appear at every stripe boundary — drag to resize. Double-click between handles to insert a boundary. Right-click a handle to remove. Default mode mirrors both sides; toggle Asymmetrical to edit independently.
+          Click a centerline to select a street. Handles appear at every stripe boundary — drag to resize. Ctrl/⌘-click (or right-click) a handle to remove it; same gesture in an empty band to add a boundary. Default mode mirrors both sides; toggle Asymmetrical to edit independently.
         </div>
       </div>
     )
@@ -100,28 +105,32 @@ export default function MeasurePanel() {
   const st = centerlineData.streets[selectedStreet]
   if (!st) return null
 
-  const measure = getMeasure(st)
-  const hasMeasured = !!st.measure
+  // Active segment by ordinal. Falls back to first segment if nothing clicked.
+  const allRanges = segmentRangesForCouplers(st.points, st.couplers || [])
+  const ordinal = Number.isFinite(selectedOrdinal) && selectedOrdinal >= 0 && selectedOrdinal < allRanges.length
+    ? selectedOrdinal : 0
+
+  const measure = getMeasure(st, ordinal)
+  const hasMeasured = !!(st.segmentMeasures && st.segmentMeasures[String(ordinal)])
   const symmetric = measure.symmetric !== false
 
-  function updateMeasure(patch) {
-    if (!st.measure) st.measure = getMeasure(st)
-    Object.assign(st.measure, patch)
-    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] } })
+  function modify(updater) {
+    setSegmentMeasure(selectedStreet, ordinal, updater, getMeasure(st, ordinal))
     useCartographStore.getState()._saveCenterlines()
   }
 
+  function updateMeasure(patch) {
+    modify(m => Object.assign(m, patch))
+  }
+
   function updateSide(sideKey, newSide) {
-    if (!st.measure) st.measure = getMeasure(st)
-    const patch = { [sideKey]: newSide }
-    if (symmetric) {
-      // Mirror to the other side
-      const other = sideKey === 'left' ? 'right' : 'left'
-      patch[other] = { ...newSide }
-    }
-    Object.assign(st.measure, patch)
-    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] } })
-    useCartographStore.getState()._saveCenterlines()
+    modify(m => {
+      m[sideKey] = newSide
+      if (symmetric) {
+        const other = sideKey === 'left' ? 'right' : 'left'
+        m[other] = { ...newSide }
+      }
+    })
   }
 
   function toggleAsymmetric() {
@@ -129,27 +138,21 @@ export default function MeasurePanel() {
   }
 
   function resetToDefault() {
-    delete st.measure
-    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] } })
+    const sm = { ...(st.segmentMeasures || {}) }
+    delete sm[String(ordinal)]
+    const streets = centerlineData.streets.map((s, i) =>
+      i === selectedStreet ? { ...s, segmentMeasures: sm } : s)
+    useCartographStore.setState({ centerlineData: { ...centerlineData, streets } })
     useCartographStore.getState()._saveCenterlines()
   }
 
-  // Per-side reset: restore one side to the pipeline default, leaving the
-  // other side untouched. Recovery affordance for handle collapses or any
-  // edit the operator wants to undo without losing the other side's work.
-  //
-  // Even when symmetric is on, this acts on one side only — that's the
-  // whole point of a per-side button. We also flip symmetric off so that
-  // future drags don't immediately mirror the reset away. The user can
-  // re-enable Asymmetrical → off to re-link if they want.
   function resetSide(sideKey) {
     const fromPipeline = PIPELINE_MEASURE.get(st.name)
     const restored = fromPipeline ? { ...fromPipeline[sideKey] } : defaultMeasure(st.type || 'residential')[sideKey]
-    if (!st.measure) st.measure = getMeasure(st)
-    st.measure[sideKey] = restored
-    if (symmetric) st.measure.symmetric = false
-    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] } })
-    useCartographStore.getState()._saveCenterlines()
+    modify(m => {
+      m[sideKey] = restored
+      if (symmetric) m.symmetric = false
+    })
   }
 
   function copyMeasure() {
@@ -161,9 +164,8 @@ export default function MeasurePanel() {
   function pasteMeasure() {
     const copied = useCartographStore.getState()._copiedProfile
     if (!copied) return
-    st.measure = JSON.parse(JSON.stringify(copied))
-    useCartographStore.setState({ centerlineData: { ...centerlineData, streets: [...centerlineData.streets] }, status: 'Measure pasted' })
-    useCartographStore.getState()._saveCenterlines()
+    modify(m => Object.assign(m, JSON.parse(JSON.stringify(copied))))
+    useCartographStore.setState({ status: 'Measure pasted' })
   }
 
   return (
@@ -197,6 +199,7 @@ export default function MeasurePanel() {
 
       <div className="carto-meta">
         {hasMeasured ? 'Measured' : 'Default'} · {symmetric ? 'symmetric' : 'asymmetrical'} · curb={fmtFt(CURB_WIDTH)} (fixed)
+        {allRanges.length > 1 ? ` · segment ${ordinal + 1} of ${allRanges.length}` : ''}
       </div>
     </div>
   )

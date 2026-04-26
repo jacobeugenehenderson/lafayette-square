@@ -282,6 +282,8 @@ export default function CartographApp() {
   const luColors = useCartographStore(s => s.luColors)
   const fillsVisible = useCartographStore(s => s.fillsVisible)
   const centerlineData = useCartographStore(s => s.centerlineData)
+  const corridorByIdx = useCartographStore(s => s.corridorByIdx)
+  const selectedStreet = useCartographStore(s => s.selectedStreet)
 
   // StagePanel state — local, used when a non-Designer shot is active
   const [keyframes, setKeyframes] = useState(() => defaultKeyframes('hero'))
@@ -298,31 +300,32 @@ export default function CartographApp() {
   for (const k in layerVis) {
     if (!layerVis[k]) hiddenLayers[k] = true
   }
-  // "Fills" toggle: hide everything that's NOT road/pathway infrastructure
-  // so the operator can focus on the road network against the aerial.
-  //   - Hidden when Fills off: face fills (land use), buildings, parking
-  //     lots, landscape, barriers, trees.
-  //   - Always kept: ribbons, alleys, footways, cycleways, steps, lamps,
-  //     stripes / edge lines / bike lanes.
-  // Tool-specific overlays (blue tint in Survey, handles in Measure) layer
-  // on top independently. Shot mode keeps using stageHidden for its own
-  // 3D-vs-flat layer dance.
+  // "Fills" toggle — behavior per tool (see NOTES.md Fills section):
+  //   - Survey/Measure + Fills OFF: hide context decorations (land use,
+  //     buildings, park, landscape, barriers, trees) but KEEP roadway
+  //     composites so the tool's translucent edit surface shows over aerial.
+  //   - Design (tool null) + Fills OFF: hide everything — aerial only.
+  //     Ribbons are also suppressed via `designAerialOnly` below.
+  const designAerialOnly = inDesigner && !fillsVisible && !tool
+  // When a tool is active (Survey/Measure), hide the giant off-map ground
+  // plane so the aerial photo shows through under the streets. Face fills
+  // cover blocks; the gap between blocks = road = aerial reference.
+  const toolActive = inDesigner && !!tool && scene !== 'toy'
+  const corridorSelected = toolActive && selectedStreet !== null
   const decorationsHidden = (!fillsVisible && inDesigner) ? {
     ...hiddenLayers,
-    // Land-use family — hidden together with StreetRibbons face fills so the
-    // aerial shows through, not MapLayers' dark ground plane.
     ground: true, park: true,
-    // Decorations that sit on the land use.
     building: true, parking_lot: true, tree: true,
-    // Landscape kinds (leisure + natural) — hide individually because the
-    // renderer maps Object.entries(landscapeByKind) to per-kind meshes,
-    // not a single "landscape" mesh.
     garden: true, playground: true, swimming_pool: true, pitch: true,
     sports_centre: true, outdoor_seating: true, fitness_station: true,
     water: true, wood: true, scrub: true, cliff: true, bare_rock: true,
-    // Barrier kinds (per fence/wall/hedge/retaining_wall sub-rendering).
     fence: true, wall: true, hedge: true, retaining_wall: true,
-  } : hiddenLayers
+    // Fills OFF — strip street decorations (stripes, bike lanes, markings,
+    // alleys/footways, lamps) in every mode so the tool's own affordances
+    // (ribbons + centerlines + handles) read clean over the aerial.
+    alley: true, footway: true, lamp: true,
+    stripe: true, edgeline: true, bikelane: true, centerline: true,
+  } : (toolActive ? { ...hiddenLayers, ground: true } : hiddenLayers)
   const stageHidden = fillsVisible ? hiddenLayers : {
     ...hiddenLayers,
     ground: true, park: true, building: true,
@@ -370,22 +373,45 @@ export default function CartographApp() {
           {/* ── Always rendered (the map itself) ── */}
           {inDesigner && <ambientLight intensity={1} />}
           <R3FErrorBoundary name="StreetRibbons">
+            <group visible={!designAerialOnly}>
             <StreetRibbons hiddenLayers={inDesigner ? hiddenLayers : stageHidden}
               luColors={luColors}
               liveCenterlines={scene === 'toy' ? null : centerlineData.streets}
               measureActive={tool === 'measure' && inDesigner && scene !== 'toy'}
               surveyActive={tool === 'surveyor' && inDesigner && scene !== 'toy'}
+              selectedCorridorNames={(() => {
+                // Selection highlight is only meaningful while a tool is
+                // active — it dims the chain so its aerial reads through
+                // for alignment/measurement. Outside any tool the chain
+                // should render like every other street.
+                if (!tool || !inDesigner) return null
+                if (selectedStreet === null) return null
+                const corridor = corridorByIdx?.get(selectedStreet)
+                if (corridor) {
+                  const names = new Set()
+                  for (const idx of corridor) {
+                    const s = centerlineData.streets[idx]
+                    if (s?.name) names.add(s.name)
+                  }
+                  return names
+                }
+                const s = centerlineData?.streets?.[selectedStreet]
+                return s?.name ? new Set([s.name]) : null
+              })()}
               flat={inDesigner}
               ribbons={scene === 'toy' ? toyRibbons : undefined}
               useBoundary={scene !== 'toy'}
               hideFaceFills={inDesigner && !fillsVisible} />
+            </group>
           </R3FErrorBoundary>
 
           {/* ── Map layers (flat ground geometry — neighborhood only).
               In shots, layers with 3D equivalents (park, buildings, trees,
               lamps, water) are suppressed so the 3D components own them. */}
           {scene === 'neighborhood' && (
-            <MapLayers hiddenLayers={inDesigner ? decorationsHidden : stageHidden} inShot={!inDesigner} />
+            <MapLayers hiddenLayers={inDesigner ? decorationsHidden : stageHidden} inShot={!inDesigner}
+              surveyActive={tool === 'surveyor' && inDesigner && scene !== 'toy'}
+              measureActive={tool === 'measure' && inDesigner && scene !== 'toy'} />
           )}
 
           {/* ── Designer-only UI overlays (authoring tools only make sense

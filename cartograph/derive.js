@@ -18,13 +18,13 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
-import { RAW_DIR, CARTOGRAPH_DIR, wgs84ToLocal } from './config.js'
+import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
-import { defaultMeasure } from '../src/cartograph/streetProfiles.js'
+import { defaultMeasure, defaultSideMeasure, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 
-const { Clipper, ClipperOffset, Paths, IntPoint,
+const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
 
 const SCALE = 100
@@ -1971,26 +1971,120 @@ export function deriveLayers(highways) {
 
   // ── Alleys: separate internal layer ─────────────────────────
   console.log('  [7/8] Processing alleys...')
-  const alleyBuffers = alleys.map(f => {
-    const co = new ClipperOffset()
-    co.ArcTolerance = ARC_TOL
-    co.AddPath(
-      f.coords.map(c => toClipper(c.x, c.z)),
-      JoinType.jtRound, EndType.etOpenRound
-    )
-    const result = new Paths()
-    co.Execute(result, STANDARDS.alley.pavedWidth / 2 * SCALE)
-    return result
-  })
-  const alleyRaw = unionAll(alleyBuffers)
+  // Per-street ROW buffer out to the computed back-of-sidewalk — the SAME
+  // math that drives ribbon rendering, so the alley clip line matches the
+  // visible sidewalk back-edge per street (not a standards-based average).
+  // Preference order: centerlines.json measure (per-side, surveyor-authored)
+  // → standards.crossSection fallback.
+  let _centerlineForAlleys = new Map()
+  try {
+    const _cPath = join(RAW_DIR, 'centerlines.json')
+    if (existsSync(_cPath)) {
+      const cd = JSON.parse(readFileSync(_cPath, 'utf-8'))
+      for (const st of (cd.streets || [])) {
+        if (!st.name || _centerlineForAlleys.has(st.name)) continue
+        _centerlineForAlleys.set(st.name, st)
+      }
+    }
+  } catch { /* no centerlines */ }
 
-  // Clip alleys to block polygons (internal features)
-  const alleyClipper = new Clipper()
-  alleyClipper.AddPaths(alleyRaw, PolyType.ptSubject, true)
-  alleyClipper.AddPaths(allBlockPaths, PolyType.ptClip, true)
+  const _rowBufferPaths = new Paths()
+  for (const f of vehicularStreets) {
+    const name = f.tags?.name
+    if (name && LOOP_STREET_NAMES.has(name)) continue
+    let rowHW
+    const cl = _centerlineForAlleys.get(name)
+    if (cl?.measure?.left && cl?.measure?.right) {
+      const L = cl.measure.left, R = cl.measure.right
+      // Full spectrum: pavement + curb + treelawn + sidewalk (matches
+      // streetProfiles.getHalfWidth — the exact back-of-sidewalk reach
+      // that StreetRibbons renders).
+      const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
+      const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
+      const leftOuter  = L.pavementHW + lCurb + (L.treelawn || 0) + (L.sidewalk || 0)
+      const rightOuter = R.pavementHW + rCurb + (R.treelawn || 0) + (R.sidewalk || 0)
+      rowHW = Math.max(leftOuter, rightOuter)
+    } else {
+      const type = f.tags?.highway === 'primary' ? 'primary'
+                 : f.tags?.highway === 'secondary' || f.tags?.highway === 'tertiary' ? 'secondary'
+                 : 'residential'
+      // Pass survey so fallback streets (Chouteau, Jefferson, Dolman, …)
+      // still pick up their surveyed pavementHalfWidth + sidewalk offsets.
+      const dm = defaultMeasure(type, correctedSurvey[name])
+      const L = dm.left, R = dm.right
+      const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
+      const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
+      const leftOuter  = L.pavementHW + lCurb + (L.treelawn || 0) + (L.sidewalk || 0)
+      const rightOuter = R.pavementHW + rCurb + (R.treelawn || 0) + (R.sidewalk || 0)
+      rowHW = Math.max(leftOuter, rightOuter)
+    }
+    // NOTE: no divide-by-2 for divided streets here.  For alley clipping we
+    // want the ROW buffer to reach the outer back-of-sidewalk regardless of
+    // whether the OSM centerline represents the whole pavement or one half.
+    const simplified = simplifyPolyline(f.coords, 1.0)
+    const buf = bufferPolyline(simplified, rowHW)
+    for (let i = 0; i < buf.length; i++) _rowBufferPaths.push(buf[i])
+  }
+  const streetROWUnion = new Paths()
+  {
+    const c = new Clipper()
+    c.AddPaths(_rowBufferPaths, PolyType.ptSubject, true)
+    c.Execute(ClipType.ctUnion, streetROWUnion, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+  }
+
+  const alleyKeptPieces = new Paths()
+  const alleyCenterlines = []  // {name, points:[[x,z]], pavedWidth}
+  for (const f of alleys) {
+    if (!f.coords || f.coords.length < 2) continue
+    const linePath = f.coords.map(c => toClipper(c.x, c.z))
+    const lineClipper = new Clipper()
+    lineClipper.AddPath(linePath, PolyType.ptSubject, false)  // open
+    lineClipper.AddPaths(streetROWUnion, PolyType.ptClip, true)
+    const tree = new PolyTree()
+    lineClipper.Execute(ClipType.ctDifference, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+    const trimmedSegs = Clipper.OpenPathsFromPolyTree(tree)
+    for (const seg of trimmedSegs) {
+      if (seg.length < 2) continue
+      let segLen = 0
+      for (let k = 1; k < seg.length; k++) {
+        const dx = (seg[k].X - seg[k - 1].X) / SCALE
+        const dy = (seg[k].Y - seg[k - 1].Y) / SCALE
+        segLen += Math.hypot(dx, dy)
+      }
+      // Drop tiny fragments (OSM polyline ends that barely poked past a
+      // curb — they'd buffer into useless stubs on far sides of streets).
+      if (segLen < 8) continue
+      // Emit centerline (pre-buffer polyline) so StreetRibbons can render
+      // the alley as a proper ribbon (centerline spine + silhouette + edge
+      // strokes) matching street treatment in Survey/Measure/Design.
+      const pts = []
+      for (let k = 0; k < seg.length; k++) {
+        pts.push([seg[k].X / SCALE, seg[k].Y / SCALE])
+      }
+      alleyCenterlines.push({
+        name: f.tags?.name || null,
+        points: pts,
+        pavedWidth: STANDARDS.alley.pavedWidth,
+      })
+      const co = new ClipperOffset()
+      co.ArcTolerance = ARC_TOL
+      // etOpenButt: flat cap terminating at the polyline endpoint (no
+      // bulge past it).  Alley ends flush at the block boundary where
+      // the polyline was trimmed — no rounded caps, no pavement poke.
+      co.AddPath(seg, JoinType.jtRound, EndType.etOpenButt)
+      const buf = new Paths()
+      co.Execute(buf, STANDARDS.alley.pavedWidth / 2 * SCALE)
+      for (let i = 0; i < buf.length; i++) alleyKeptPieces.push(buf[i])
+    }
+  }
+  // Union overlapping kept pieces (alleys meeting at T/+ junctions).
   const alleyUnion = new Paths()
-  alleyClipper.Execute(ClipType.ctIntersection, alleyUnion, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-  console.log(`    ${alleyUnion.length} alley polygons (clipped to blocks)`)
+  {
+    const c = new Clipper()
+    c.AddPaths(alleyKeptPieces, PolyType.ptSubject, true)
+    c.Execute(ClipType.ctUnion, alleyUnion, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+  }
+  console.log(`    ${alleyUnion.length} alley polygons (block-trim polyline, caps inside sidewalk)`)
 
   // ── Street markings ─────────────────────────────────────────
   const stripeMeta = []
@@ -2036,6 +2130,22 @@ export function deriveLayers(highways) {
     }
     return result
   }
+  // Emit path centerlines alongside polygons so StreetRibbons can render
+  // them as roadway ribbons (centerline + silhouette + edge strokes) in
+  // Survey/Measure/Design, matching the street/alley treatment.
+  function centerlinesFor(features, kind, width) {
+    const out = []
+    for (const f of features) {
+      if (!f.coords || f.coords.length < 2) continue
+      out.push({
+        name: f.tags?.name || null,
+        kind,
+        points: f.coords.map(c => [c.x, c.z]),
+        pavedWidth: width,
+      })
+    }
+    return out
+  }
 
   const footways = highways.filter(f =>
     f.tags?.highway === 'footway' && f.tags?.footway !== 'crossing' && f.tags?.footway !== 'sidewalk' && f.coords.length >= 2
@@ -2043,6 +2153,13 @@ export function deriveLayers(highways) {
   const cycleways = highways.filter(f => f.tags?.highway === 'cycleway' && f.coords.length >= 2)
   const steps = highways.filter(f => f.tags?.highway === 'steps' && f.coords.length >= 2)
   const paths = highways.filter(f => (f.tags?.highway === 'path' || f.tags?.highway === 'pedestrian') && f.coords.length >= 2)
+
+  const pathCenterlines = [
+    ...centerlinesFor(footways,  'footway',  STANDARDS.footway.width),
+    ...centerlinesFor(cycleways, 'cycleway', STANDARDS.cycleway.width),
+    ...centerlinesFor(steps,     'steps',    STANDARDS.steps.width),
+    ...centerlinesFor(paths,     'path',     STANDARDS.path.width),
+  ]
 
   const toFeats = (cp) =>
     Array.from({ length: cp.length }, (_, i) => ({ ring: pathFromClipper(cp[i]) }))
@@ -2087,36 +2204,6 @@ export function deriveLayers(highways) {
   streetClipClipper.Execute(ClipType.ctDifference, clippedStreets, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
   const pavementFeats = toCompoundFeatures(clippedStreets)
   console.log(`    ${pavementFeats.length} street pavement polygons (clipped to exclude blocks)`)
-
-  // ── Curb-extended pavement union for path/alley clipping ───
-  // Paths/alleys/footways/cycleways/steps should never extend past the
-  // curb of an adjacent street. We grow the pavement union by CURB_WIDTH
-  // and subtract from each path-layer geometry just before emission below.
-  // One foolproof rule: nothing pedestrian crosses the curb line.
-  const CURB_WIDTH_M = 6 * 0.0254  // matches streetProfiles.js
-  const _curbCo = new ClipperOffset()
-  _curbCo.ArcTolerance = ARC_TOL
-  _curbCo.AddPaths(clippedStreets, JoinType.jtRound, EndType.etClosedPolygon)
-  const pavementWithCurb = new Paths()
-  _curbCo.Execute(pavementWithCurb, CURB_WIDTH_M * SCALE)
-  function clipFeaturesOutsideCurb(features) {
-    if (!features || features.length === 0 || pavementWithCurb.length === 0) return features
-    const out = []
-    for (const f of features) {
-      if (!f.ring || f.ring.length < 3) { out.push(f); continue }
-      const subj = new Paths()
-      subj.push(f.ring.map(p => toClipper(p.x, p.z)))
-      const c = new Clipper()
-      c.AddPaths(subj, PolyType.ptSubject, true)
-      c.AddPaths(pavementWithCurb, PolyType.ptClip, true)
-      const result = new Paths()
-      c.Execute(ClipType.ctDifference, result, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-      for (let i = 0; i < result.length; i++) {
-        if (result[i].length >= 3) out.push({ ...f, ring: pathFromClipper(result[i]) })
-      }
-    }
-    return out
-  }
 
   // ── Compute ribbons layer (3D street cross-section data) ───
   console.log('  [8/8] Computing ribbons layer...')
@@ -2189,73 +2276,29 @@ export function deriveLayers(highways) {
     }
   }
 
-  // Build per-street ribbon data: chain same-name segments into polylines,
-  // compute measures, detect intersection points
-  const ribbonsByName = new Map()
-  for (const f of vehicularStreets) {
-    const name = f.tags?.name
-    if (!name) continue
-    if (!ribbonsByName.has(name)) ribbonsByName.set(name, { segments: [], tags: f.tags })
-    ribbonsByName.get(name).segments.push(f.coords.map(c => [c.x, c.z]))
+  // Street geometry comes from skeleton.json (Phase 0). Skeleton has already
+  // welded same-name fragments, collapsed divided pairs (where listed in
+  // DIVIDED_PAIRS), simplified, and fixed direction. Every skeleton entry
+  // becomes one ribbon chain here — no re-welding, no reversal-detection,
+  // no substantive-ratio heuristics. If Park Ave still splits into three
+  // chains, that's because it isn't in DIVIDED_PAIRS yet; the signal is
+  // visible and correct.
+  const skelPath = join(CLEAN_DIR, 'skeleton.json')
+  if (!existsSync(skelPath)) {
+    throw new Error(`skeleton.json not found at ${skelPath}. Run \`node skeleton.js\` first.`)
   }
+  const skeleton = JSON.parse(readFileSync(skelPath, 'utf-8'))
+  const skelStreets = skeleton.streets || []
 
-  // Chain segments into continuous polylines, producing MULTIPLE chains
-  // for disconnected segments of the same street name
-  function chainAllSegments(segments) {
-    if (segments.length === 0) return []
-    if (segments.length === 1) return [segments[0]]
-
-    const used = new Set()
-    const chains = []
-    const EPS = 0.5
-
-    while (used.size < segments.length) {
-      // Start a new chain from the first unused segment
-      let startIdx = -1
-      for (let i = 0; i < segments.length; i++) {
-        if (!used.has(i)) { startIdx = i; break }
-      }
-      if (startIdx === -1) break
-
-      const result = [...segments[startIdx]]
-      used.add(startIdx)
-
-      let changed = true
-      while (changed) {
-        changed = false
-        for (let i = 0; i < segments.length; i++) {
-          if (used.has(i)) continue
-          const seg = segments[i]
-          const rFirst = result[0], rLast = result[result.length - 1]
-          const sFirst = seg[0], sLast = seg[seg.length - 1]
-
-          if (Math.hypot(rLast[0] - sFirst[0], rLast[1] - sFirst[1]) < EPS) {
-            result.push(...seg.slice(1)); used.add(i); changed = true
-          } else if (Math.hypot(rLast[0] - sLast[0], rLast[1] - sLast[1]) < EPS) {
-            result.push(...[...seg].reverse().slice(1)); used.add(i); changed = true
-          } else if (Math.hypot(rFirst[0] - sLast[0], rFirst[1] - sLast[1]) < EPS) {
-            result.unshift(...seg.slice(0, -1)); used.add(i); changed = true
-          } else if (Math.hypot(rFirst[0] - sFirst[0], rFirst[1] - sFirst[1]) < EPS) {
-            result.unshift(...[...seg].reverse().slice(0, -1)); used.add(i); changed = true
-          }
-        }
-      }
-      chains.push(result)
-    }
-    return chains
-  }
-
-  // Build ribbon entries: each connected chain of a named street becomes one ribbon
   const ribbonStreets = []
   const intersections = []
-
-  for (const [name, data] of ribbonsByName) {
-    const chains = chainAllSegments(data.segments)
-    const measure = computeStreetMeasure(name, data.tags)
-    for (const points of chains) {
-      ribbonStreets.push({ name, points, measure, intersections: [] })
-    }
+  for (const s of skelStreets) {
+    if (!s.name || !s.points || s.points.length < 2) continue
+    const points = s.points.map(p => [p.x, p.z])
+    const measure = computeStreetMeasure(s.name, { highway: s.highway })
+    ribbonStreets.push({ name: s.name, points, measure, intersections: [], oneway: !!s.oneway, skelId: s.id })
   }
+  console.log(`    ${ribbonStreets.length} ribbon chains from skeleton (${skelStreets.length} skeleton streets)`)
 
   // Find intersection points: use noded segments (which have shared vertices
   // at crossings) to detect where different streets' polylines meet.
@@ -2284,30 +2327,97 @@ export function deriveLayers(highways) {
     }
   }
 
-  // For each noded intersection, find matching points on ribbon polylines
+  // For each noded intersection, find matching points on ribbon polylines.
+  // Skeleton polylines are RDP-simplified, so an intersection often falls
+  // on the INTERIOR of a segment rather than at a vertex. We project the
+  // noded intersection onto the nearest segment of each polyline; if the
+  // projection lies within IX_SEG_SNAP of a segment, we splice a new
+  // vertex at the projection (unless an endpoint of that segment is
+  // already within IX_VERTEX_SNAP, in which case we snap the vertex).
+  const IX_SEG_SNAP = 3.0    // meters — how close an OSM-noded intersection must lie to a skeleton segment
+  const IX_VERTEX_SNAP = 0.2 // meters — only "snap" (move) an existing vertex if it's already essentially at the intersection
+
+  // Apply splices in descending pointIdx order so earlier indices stay
+  // valid. Collect first, sort, then mutate.
+  const splicesByStreet = new Map()
+  const ixMatches = []
   for (const npt of nodedIxPts) {
     const matches = []
     for (let si = 0; si < ribbonStreets.length; si++) {
       const st = ribbonStreets[si]
-      let bestDist = Infinity, bestIdx = -1
-      for (let pi = 0; pi < st.points.length; pi++) {
-        const d = Math.hypot(st.points[pi][0] - npt.x, st.points[pi][1] - npt.z)
-        if (d < bestDist) { bestDist = d; bestIdx = pi }
+      let best = { dist: Infinity, segIdx: -1, t: 0, projX: 0, projZ: 0 }
+      for (let pi = 0; pi < st.points.length - 1; pi++) {
+        const ax = st.points[pi][0], az = st.points[pi][1]
+        const bx = st.points[pi + 1][0], bz = st.points[pi + 1][1]
+        const dx = bx - ax, dz = bz - az
+        const len2 = dx * dx + dz * dz
+        if (len2 < 1e-9) continue
+        let t = ((npt.x - ax) * dx + (npt.z - az) * dz) / len2
+        t = Math.max(0, Math.min(1, t))
+        const px = ax + t * dx, pz = az + t * dz
+        const d = Math.hypot(px - npt.x, pz - npt.z)
+        if (d < best.dist) best = { dist: d, segIdx: pi, t, projX: px, projZ: pz }
       }
-      if (bestDist < IX_SNAP) matches.push({ streetIdx: si, pointIdx: bestIdx, dist: bestDist })
+      if (best.dist < IX_SEG_SNAP) matches.push({ streetIdx: si, ...best })
     }
     if (matches.length < 2) continue
+    ixMatches.push({ npt, matches })
+  }
 
+  for (const { npt, matches } of ixMatches) {
     const pt = [npt.x, npt.z]
     const ixData = { point: pt, streets: [] }
     for (const m of matches) {
       const st = ribbonStreets[m.streetIdx]
-      // Snap the polyline point to the exact intersection coordinate
-      st.points[m.pointIdx] = pt
-      st.intersections.push({ ix: m.pointIdx, with: ixData })
-      ixData.streets.push({ name: st.name, ix: m.pointIdx })
+      // Decide: snap to an endpoint of the matched segment, or splice a
+      // new vertex at the projection.
+      const a = st.points[m.segIdx], b = st.points[m.segIdx + 1]
+      const dA = Math.hypot(a[0] - npt.x, a[1] - npt.z)
+      const dB = Math.hypot(b[0] - npt.x, b[1] - npt.z)
+      let targetIdx
+      if (dA < IX_VERTEX_SNAP && dA <= dB) {
+        st.points[m.segIdx] = pt
+        targetIdx = m.segIdx
+      } else if (dB < IX_VERTEX_SNAP) {
+        st.points[m.segIdx + 1] = pt
+        targetIdx = m.segIdx + 1
+      } else {
+        // Schedule a splice; apply in descending order later.
+        // `t` is the projection parameter along segment afterIdx→afterIdx+1.
+        const list = splicesByStreet.get(m.streetIdx) || []
+        list.push({ afterIdx: m.segIdx, t: m.t, point: pt, ixData })
+        splicesByStreet.set(m.streetIdx, list)
+        continue
+      }
+      st.intersections.push({ ix: targetIdx, with: ixData })
+      ixData.streets.push({ name: st.name, ix: targetIdx })
     }
     intersections.push(ixData)
+  }
+
+  // Apply splices in descending (afterIdx, t) order so earlier indices
+  // stay valid AND multiple splices onto the same segment land in
+  // increasing-t order in the final polyline (later-spliced points get
+  // pushed before earlier ones, so splice LAST what should end up FIRST).
+  for (const [streetIdx, list] of splicesByStreet) {
+    const st = ribbonStreets[streetIdx]
+    list.sort((a, b) => (b.afterIdx - a.afterIdx) || (b.t - a.t))
+    for (const { afterIdx, point, ixData } of list) {
+      const newIdx = afterIdx + 1
+      st.points.splice(newIdx, 0, point)
+      // Shift any previously-recorded intersections on this street whose
+      // ix >= newIdx up by 1 (they moved due to the splice).
+      for (const prev of st.intersections) {
+        if (prev.ix >= newIdx) prev.ix += 1
+      }
+      for (const ix of intersections) {
+        for (const s of ix.streets) {
+          if (s.name === st.name && s.ix >= newIdx) s.ix += 1
+        }
+      }
+      st.intersections.push({ ix: newIdx, with: ixData })
+      ixData.streets.push({ name: st.name, ix: newIdx })
+    }
   }
 
   // ── Emit capEnds from operator-marked centerlines ──────────────
@@ -2456,23 +2566,368 @@ export function deriveLayers(highways) {
   }
   console.log(`    ${faceFills.length} face fills (${osmClassified} via OSM, ${parcelClassified} via parcels)`)
 
+  // Face fills are emitted UNCLIPPED (extending to street centerlines).
+  // StreetRibbons.jsx clips them at render time against the live ribbon
+  // silhouette so blocks shrink/grow as Measure drags widths.
+
+  // ── Emergent medians ───────────────────────────────────────
+  // A divided road is two same-name oneway carriageways with opposite
+  // direction. The median is the polygon between their INNER edges —
+  // the sides facing each other. We walk one inner edge forward, the
+  // other backward, and close the ring. Pinch-to-zero points where the
+  // carriageways converge at intersections fall out of the geometry
+  // because the inner edges meet there naturally.
+  //
+  // Nothing is authored. The median shape is a function of the two
+  // carriageway centerlines and their per-side pavement widths.
+  function polygonArea(ring) {
+    let a = 0
+    for (let i = 0; i < ring.length; i++) {
+      const [x1, z1] = ring[i]
+      const [x2, z2] = ring[(i + 1) % ring.length]
+      a += x1 * z2 - x2 * z1
+    }
+    return a / 2
+  }
+  function chainCenter(pts) {
+    let cx = 0, cz = 0
+    for (const p of pts) { cx += p[0]; cz += p[1] }
+    return [cx / pts.length, cz / pts.length]
+  }
+  function innerSideSign(aPoints, bCenter) {
+    // For each segment of A, the perpendicular side pointing toward B
+    // is where the inner edge lies. Return +1 or -1 (left of tangent
+    // vs right of tangent, consistent across all segments of a well-
+    // behaved carriageway).
+    let votes = 0
+    for (let i = 0; i < aPoints.length - 1; i++) {
+      const dx = aPoints[i + 1][0] - aPoints[i][0]
+      const dz = aPoints[i + 1][1] - aPoints[i][1]
+      const L = Math.hypot(dx, dz) || 1
+      // Left perpendicular (counter-clockwise) of tangent.
+      const px = -dz / L, pz = dx / L
+      // Does bCenter lie on the +perpendicular side?
+      const mx = (aPoints[i][0] + aPoints[i + 1][0]) / 2
+      const mz = (aPoints[i][1] + aPoints[i + 1][1]) / 2
+      const dot = (bCenter[0] - mx) * px + (bCenter[1] - mz) * pz
+      votes += dot > 0 ? 1 : -1
+    }
+    return votes >= 0 ? +1 : -1
+  }
+  function offsetPolyline(pts, innerSign, hw) {
+    // Offset each polyline point by innerSign * hw along the
+    // average perpendicular of its adjacent segments.
+    const out = []
+    for (let i = 0; i < pts.length; i++) {
+      let nx = 0, nz = 0
+      if (i > 0) {
+        const dx = pts[i][0] - pts[i - 1][0], dz = pts[i][1] - pts[i - 1][1]
+        const L = Math.hypot(dx, dz) || 1
+        nx += -dz / L; nz += dx / L
+      }
+      if (i < pts.length - 1) {
+        const dx = pts[i + 1][0] - pts[i][0], dz = pts[i + 1][1] - pts[i][1]
+        const L = Math.hypot(dx, dz) || 1
+        nx += -dz / L; nz += dx / L
+      }
+      const L = Math.hypot(nx, nz) || 1
+      out.push([
+        pts[i][0] + innerSign * hw * nx / L,
+        pts[i][1] + innerSign * hw * nz / L,
+      ])
+    }
+    return out
+  }
+
+  // Pair up same-name oneway streets whose directions are opposite.
+  // "Opposite direction" = average tangents dot-negative AND each
+  // polyline's points project close to the other polyline overall
+  // (indicating they're parallel carriageways, not random same-named
+  // streets far apart).
+  function avgTangent(pts) {
+    let dx = 0, dz = 0
+    for (let i = 1; i < pts.length; i++) { dx += pts[i][0] - pts[i-1][0]; dz += pts[i][1] - pts[i-1][1] }
+    const L = Math.hypot(dx, dz) || 1
+    return [dx / L, dz / L]
+  }
+  function meanPerpDistance(aPts, bPts) {
+    // Mean of (for each point on A) the nearest point on B's polyline.
+    let sum = 0, n = 0
+    for (const p of aPts) {
+      let best = Infinity
+      for (let i = 0; i < bPts.length - 1; i++) {
+        const ax = bPts[i][0], az = bPts[i][1]
+        const bx = bPts[i+1][0], bz = bPts[i+1][1]
+        const dx = bx - ax, dz = bz - az
+        const len2 = dx*dx + dz*dz
+        if (len2 < 1e-9) continue
+        let t = ((p[0]-ax)*dx + (p[1]-az)*dz) / len2
+        t = Math.max(0, Math.min(1, t))
+        const px = ax + t*dx, pz = az + t*dz
+        const d = Math.hypot(px - p[0], pz - p[1])
+        if (d < best) best = d
+      }
+      if (best < Infinity) { sum += best; n++ }
+    }
+    return n ? sum / n : Infinity
+  }
+
+  const MEDIAN_MAX_MEAN_GAP = 30 // meters — wider than this isn't a median
+  const MEDIAN_MIN_OVERLAP = 0.5 // fraction of shorter chain covered
+
+  const medians = []
+  const byName = new Map()
+  for (let i = 0; i < ribbonStreets.length; i++) {
+    const s = ribbonStreets[i]
+    if (!s.oneway) continue
+    if (!byName.has(s.name)) byName.set(s.name, [])
+    byName.get(s.name).push(i)
+  }
+  const pairedStreetIdx = new Set()
+  for (const [name, idxs] of byName) {
+    if (idxs.length < 2) continue
+    for (let i = 0; i < idxs.length; i++) {
+      if (pairedStreetIdx.has(idxs[i])) continue
+      const A = ribbonStreets[idxs[i]]
+      const aTan = avgTangent(A.points)
+      for (let j = i + 1; j < idxs.length; j++) {
+        if (pairedStreetIdx.has(idxs[j])) continue
+        const B = ribbonStreets[idxs[j]]
+        const bTan = avgTangent(B.points)
+        const tanDot = aTan[0]*bTan[0] + aTan[1]*bTan[1]
+        if (tanDot > -0.6) continue // not opposite enough
+        const meanGap = meanPerpDistance(A.points, B.points)
+        if (meanGap > MEDIAN_MAX_MEAN_GAP) continue
+        // Pair them.
+        pairedStreetIdx.add(idxs[i]); pairedStreetIdx.add(idxs[j])
+
+        // Median polygon = the space between the two centerlines, with
+        // NO inner offset. At render time, pavement ribbons on each
+        // carriageway paint over the outside portion of this polygon;
+        // what's visibly left in the middle is the real median.
+        // Attempting to offset by pavementHW before emitting leads to
+        // self-intersection whenever the gap is less than 2×pavementHW
+        // (common — see Park Ave's 8m gap vs 5m default pavementHW).
+        //
+        // Since A and B are opposite-direction carriageways, walking
+        // A forward then B forward gives a figure-eight; walking A
+        // forward then B reversed closes as a simple lens. Pick the
+        // one with larger absolute area as a self-intersection guard.
+        const ringFwd = [...A.points.map(p => [p[0], p[1]]), ...B.points.map(p => [p[0], p[1]])]
+        const ringRev = [...A.points.map(p => [p[0], p[1]]), ...B.points.slice().reverse().map(p => [p[0], p[1]])]
+        const aFwd = Math.abs(polygonArea(ringFwd))
+        const aRev = Math.abs(polygonArea(ringRev))
+        const ring = aRev >= aFwd ? ringRev : ringFwd
+
+        medians.push({
+          name,
+          streets: [A.name, B.name],
+          ring,
+          meanGap,
+        })
+        break
+      }
+    }
+  }
+  console.log(`    ${medians.length} emergent medians from carriageway pairs`)
+
+  // ── Corridors ──────────────────────────────────────────────
+  // A corridor groups same-name chains into a single logical road with
+  // ordered phases (single-chain vs divided-pair) and transition points
+  // between them. Transitions are where phase kind changes — e.g. a
+  // bidirectional portion meets a divided portion at an intersection.
+  // Derived purely from endpoint topology; no authoring.
+  const NODE_TOL = 15 // meters — carriageway pair ends often sit apart
+  function buildCorridors() {
+    const byName = new Map()
+    for (let i = 0; i < ribbonStreets.length; i++) {
+      const s = ribbonStreets[i]
+      if (!byName.has(s.name)) byName.set(s.name, [])
+      byName.get(s.name).push(i)
+    }
+    const corridors = []
+    for (const [name, idxs] of byName) {
+      if (!idxs.length) continue
+
+      // Cluster endpoints within NODE_TOL into nodes.
+      const nodes = [] // { pt: avg, endpoints: [{ chainIdx, which }] }
+      for (const ci of idxs) {
+        const pts = ribbonStreets[ci].points
+        for (const which of ['start', 'end']) {
+          const pt = which === 'start' ? pts[0] : pts[pts.length - 1]
+          let found = null
+          for (const n of nodes) {
+            if (Math.hypot(pt[0] - n.pt[0], pt[1] - n.pt[1]) < NODE_TOL) { found = n; break }
+          }
+          if (found) {
+            found.endpoints.push({ chainIdx: ci, which })
+            // Update node centroid
+            const k = found.endpoints.length
+            found.pt = [
+              found.pt[0] + (pt[0] - found.pt[0]) / k,
+              found.pt[1] + (pt[1] - found.pt[1]) / k,
+            ]
+          } else {
+            nodes.push({ pt: [pt[0], pt[1]], endpoints: [{ chainIdx: ci, which }] })
+          }
+        }
+      }
+
+      // Chain → [startNodeIdx, endNodeIdx]
+      const chainNodes = new Map()
+      for (const [ni, node] of nodes.entries()) {
+        for (const { chainIdx, which } of node.endpoints) {
+          if (!chainNodes.has(chainIdx)) chainNodes.set(chainIdx, [null, null])
+          chainNodes.get(chainIdx)[which === 'start' ? 0 : 1] = ni
+        }
+      }
+
+      // Identify divided pairs: two oneway chains between the same two
+      // nodes, in opposite directions.
+      const edgeKeys = new Map() // sorted "a-b" → [chainIdx, ...]
+      for (const [ci, [sNode, eNode]] of chainNodes) {
+        const s = ribbonStreets[ci]
+        if (!s.oneway) continue
+        const key = sNode < eNode ? `${sNode}-${eNode}` : `${eNode}-${sNode}`
+        if (!edgeKeys.has(key)) edgeKeys.set(key, [])
+        edgeKeys.get(key).push(ci)
+      }
+      const inPair = new Map() // chainIdx → [partner chainIdx, key]
+      const pairChains = new Map() // key → [chainIdx, chainIdx]
+      for (const [key, chains] of edgeKeys) {
+        if (chains.length !== 2) continue
+        const [a, b] = chains
+        const [sA, eA] = chainNodes.get(a)
+        const [sB, eB] = chainNodes.get(b)
+        // Opposite directions check: A's start node == B's end node.
+        if (sA === eB && eA === sB) {
+          inPair.set(a, b); inPair.set(b, a)
+          pairChains.set(key, [a, b])
+        }
+      }
+
+      // Emit phases by walking the node graph. Pick a leaf (degree 1)
+      // if available; otherwise any node.
+      const nodeDegree = nodes.map(n => n.endpoints.length)
+      // For divided pairs, each carriageway contributes one endpoint per
+      // node, so a divided transition node has degree 3+ (1 bidir + 2
+      // oneway). Leaf nodes are those with only 1 endpoint attached.
+      let startNode = nodeDegree.findIndex(d => d === 1)
+      if (startNode < 0) startNode = 0
+
+      const phases = []
+      const transitions = []
+      const visitedChains = new Set()
+      let current = startNode
+      let prevPhaseKind = null
+
+      while (true) {
+        // Find an unvisited chain incident to `current`
+        const node = nodes[current]
+        let nextChain = null
+        for (const { chainIdx } of node.endpoints) {
+          if (!visitedChains.has(chainIdx)) { nextChain = chainIdx; break }
+        }
+        if (nextChain == null) break
+
+        const isDivided = inPair.has(nextChain)
+        const phase = isDivided
+          ? { kind: 'divided', chainIds: [ribbonStreets[nextChain].skelId, ribbonStreets[inPair.get(nextChain)].skelId] }
+          : { kind: 'single', chainIds: [ribbonStreets[nextChain].skelId] }
+
+        if (prevPhaseKind && prevPhaseKind !== phase.kind) {
+          transitions.push({ at: node.pt, from: prevPhaseKind, to: phase.kind, pinch: prevPhaseKind === 'single' || phase.kind === 'single' })
+        }
+        phases.push(phase)
+        prevPhaseKind = phase.kind
+
+        // Mark chains visited
+        visitedChains.add(nextChain)
+        if (isDivided) visitedChains.add(inPair.get(nextChain))
+
+        // Advance to the far node of this chain
+        const [sNode, eNode] = chainNodes.get(nextChain)
+        current = sNode === current ? eNode : sNode
+      }
+
+      // If some chains remain (disconnected components), emit them too
+      for (const ci of idxs) {
+        if (visitedChains.has(ci)) continue
+        const isDivided = inPair.has(ci)
+        if (isDivided && visitedChains.has(inPair.get(ci))) { visitedChains.add(ci); continue }
+        const phase = isDivided
+          ? { kind: 'divided', chainIds: [ribbonStreets[ci].skelId, ribbonStreets[inPair.get(ci)].skelId] }
+          : { kind: 'single', chainIds: [ribbonStreets[ci].skelId] }
+        phases.push(phase)
+        visitedChains.add(ci)
+        if (isDivided) visitedChains.add(inPair.get(ci))
+      }
+
+      corridors.push({ name, phases, transitions })
+    }
+    return corridors
+  }
+  const corridors = buildCorridors()
+  const pinchCount = corridors.reduce((a, c) => a + c.transitions.filter(t => t.pinch).length, 0)
+  console.log(`    ${corridors.length} corridors, ${pinchCount} pinch transitions`)
+
+  // ── Anchor + innerSign for divided carriageways ──
+  // For each chain that participates in a `kind: 'divided'` phase, mark
+  // it as `anchor: 'inner-edge'` and compute `innerSign` (+1 or -1) =
+  // which perpendicular direction (left of tangent vs. right of tangent)
+  // points toward the paired carriageway. Runtime uses these to render
+  // the visible centerline at the inner edge and emit ribbons outward.
+  // Operator can override `anchor` per chain in Survey.
+  const idToChain = new Map(ribbonStreets.map(s => [s.skelId, s]))
+  for (const c of corridors) {
+    for (const phase of c.phases) {
+      if (phase.kind !== 'divided' || phase.chainIds.length !== 2) continue
+      const [aId, bId] = phase.chainIds
+      const A = idToChain.get(aId)
+      const B = idToChain.get(bId)
+      if (!A || !B) continue
+      const bCenter = chainCenter(B.points)
+      const aCenter = chainCenter(A.points)
+      A.anchor = 'inner-edge'
+      A.innerSign = innerSideSign(A.points, bCenter)
+      A.pairId = bId
+      B.anchor = 'inner-edge'
+      B.innerSign = innerSideSign(B.points, aCenter)
+      B.pairId = aId
+    }
+  }
+  const innerEdgeCount = ribbonStreets.filter(s => s.anchor === 'inner-edge').length
+  if (innerEdgeCount) console.log(`    ${innerEdgeCount} chains marked anchor=inner-edge (divided carriageways)`)
+
   // Serialize (remove circular refs)
   const ribbonsLayer = {
     streets: ribbonStreets.map(st => ({
+      skelId: st.skelId,
       name: st.name,
       points: st.points,
       measure: st.measure,
       capEnds: st.capEnds,
+      anchor: st.anchor || 'center',
+      innerSign: st.innerSign || 0,
+      pairId: st.pairId || null,
       intersections: st.intersections.map(ix => ({
         ix: ix.ix,
         withStreets: ix.with.streets.filter(s => s.name !== st.name).map(s => s.name),
       })),
     })),
+    // Alleys + paths as roadway ribbons (centerline + paved width).
+    // StreetRibbons renders them with the same silhouette/edge-stroke
+    // pipeline as streets; widths are pavement-only (no curb/treelawn/
+    // sidewalk bands).
+    alleys: alleyCenterlines,
+    paths: pathCenterlines,
     intersections: intersections.map(ix => ({
       point: ix.point,
       streets: ix.streets.map(s => ({ name: s.name, ix: s.ix })),
     })),
     faces: faceFills,
+    medians: medians.map(m => ({ name: m.name, streets: m.streets, ring: m.ring, meanGap: m.meanGap })),
+    corridors,
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)
@@ -2535,14 +2990,14 @@ export function deriveLayers(highways) {
     parkSidewalk:   parkSidewalkFeats,
     park:           parkFeats,
     parcel:         clipParcelsToRoundedBlocks(parcels, parkParcelIds, allBlockPaths),
-    alley:          clipFeaturesOutsideCurb(toFeats(alleyUnion)),
+    alley:          toFeats(alleyUnion),
     centerStripe:   stripeMeta,
     bikeLane:       bikeLanes,
     parkingLine:    parkingLines,
-    footway:        clipFeaturesOutsideCurb(bufferEach(footways, STANDARDS.footway.width / 2)),
-    cycleway:       clipFeaturesOutsideCurb(bufferEach(cycleways, STANDARDS.cycleway.width / 2)),
-    steps:          clipFeaturesOutsideCurb(bufferEach(steps, STANDARDS.steps.width / 2)),
-    path:           clipFeaturesOutsideCurb(bufferEach(paths, STANDARDS.path.width / 2)),
+    footway:        bufferEach(footways, STANDARDS.footway.width / 2),
+    cycleway:       bufferEach(cycleways, STANDARDS.cycleway.width / 2),
+    steps:          bufferEach(steps,    STANDARDS.steps.width    / 2),
+    path:           bufferEach(paths,    STANDARDS.path.width     / 2),
     streetlamp:     streetlamps,
     contour:        contours,
     spike:          toFeats(spikeBlockPaths),

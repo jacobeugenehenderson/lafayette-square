@@ -66,6 +66,9 @@ export default defineConfig(({ command }) => ({
   plugins: [serveCartograph(), serveCodedesk(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
+    // poly2tri's UMD shim references `global`; polyfill to globalThis so
+    // it runs in-browser.
+    global: 'globalThis',
   },
   base: '/',
   server: {

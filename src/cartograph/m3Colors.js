@@ -24,6 +24,7 @@ export const DEFAULT_LAYER_COLORS = {
   curb:       '#A8826A',  // warm tan — reads as poured concrete in sun
   sidewalk:   '#B8B2A4',  // light warm cream
   treelawn:   '#5E8A3A',  // grass between sidewalk and curb
+  median:     '#4E7A32',  // center divider grass (divided roads)
   footway:    '#9A8E78',  // slightly cooler than sidewalk — trail
   cycleway:   '#6EA070',  // softer green (bike path)
   steps:      '#A0907E',  // stone tone
@@ -133,4 +134,5 @@ export const BAND_TO_LAYER = {
   sidewalk:           'sidewalk',
   treelawn:           'treelawn',
   lawn:               'treelawn',
+  median:             'median',
 }

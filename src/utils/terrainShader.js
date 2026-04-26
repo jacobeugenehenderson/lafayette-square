@@ -79,6 +79,26 @@ export const TERRAIN_DISPLACE = `
 }`
 
 /**
+ * Centroid-based rigid displacement — replaces #include <begin_vertex>.
+ * Samples terrain at a per-vertex `aCentroid.xz` attribute (world space)
+ * instead of the vertex's own world position, so every vertex of a given
+ * feature lifts by the same amount.  Use for path-family merged geometries
+ * (alleys, footways, parking lots, stripes, edgelines, bikelanes) where each
+ * feature needs to stay internally flat even when terrain ridges cross it.
+ */
+export const TERRAIN_DISPLACE_CENTROID = `
+#include <begin_vertex>
+{
+  // aCentroidXZ is declared by the material as: attribute vec2 aCentroidXZ;
+  // (x, z) in world space.
+  vec2 _tuv = clamp(vec2(
+    (aCentroidXZ.x - uBMinX) / uSpanX,
+    (aCentroidXZ.y - uBMinZ) / uSpanZ
+  ), 0.0, 1.0);
+  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
+}`
+
+/**
  * Rigid displacement — replaces #include <project_vertex>.
  * Samples terrain at the MESH ORIGIN (modelMatrix[3]), not per-vertex.
  * Every vertex gets the same Y offset → building moves as a solid body.

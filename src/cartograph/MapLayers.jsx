@@ -12,7 +12,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import {
   assignTerrainUniforms,
-  TERRAIN_DECL, TERRAIN_DISPLACE, TERRAIN_NORMAL,
+  TERRAIN_DECL, TERRAIN_DISPLACE, TERRAIN_DISPLACE_CENTROID, TERRAIN_NORMAL,
 } from '../utils/terrainShader'
 
 // Strokes (outlines) don't have a panel picker yet — keep local.
@@ -52,19 +52,26 @@ const FADE_CENTER = { x: 162, z: -127 }
 const FADE_INNER = 758
 const FADE_OUTER = 892
 
-function injectRadialFade(mat) {
+// `rigidCentroid=true` switches terrain displacement from per-vertex to
+// per-feature: the shader samples the heightmap at an `aCentroidXZ` vertex
+// attribute (world-space x,z of the feature's centroid), so every vertex of
+// a given path/alley/parking-lot lifts by the same amount.  Each feature
+// stays internally flat — terrain ridges can't cut through a path polygon's
+// interior the way they do with per-vertex sampling across sparse geometry.
+function injectRadialFade(mat, { rigidCentroid = false } = {}) {
   mat.transparent = true
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
     shader.uniforms.uFadeCenter = { value: new THREE.Vector2(FADE_CENTER.x, FADE_CENTER.z) }
     shader.uniforms.uFadeInner = { value: FADE_INNER }
     shader.uniforms.uFadeOuter = { value: FADE_OUTER }
-    // Terrain displacement — keeps MapLayers geometry riding the terrain
-    // alongside StreetRibbons in shots. In Designer, uTerrainExag is 0 so
-    // displacement is a no-op.
+    const displaceSnippet = rigidCentroid ? TERRAIN_DISPLACE_CENTROID : TERRAIN_DISPLACE
+    const commonDecl = '#include <common>\n' + TERRAIN_DECL +
+      (rigidCentroid ? '\nattribute vec2 aCentroidXZ;' : '') +
+      '\nvarying vec3 vFadeWorldPos;'
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL + '\nvarying vec3 vFadeWorldPos;')
-      .replace('#include <begin_vertex>', TERRAIN_DISPLACE)
+      .replace('#include <common>', commonDecl)
+      .replace('#include <begin_vertex>', displaceSnippet)
       .replace('#include <beginnormal_vertex>', TERRAIN_NORMAL)
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvFadeWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
     shader.fragmentShader = shader.fragmentShader
@@ -74,7 +81,7 @@ function injectRadialFade(mat) {
         'float _fadeR = distance(vFadeWorldPos.xz, uFadeCenter);\n' +
         'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _fadeR);')
   }
-  mat.customProgramCacheKey = () => `ml-terrain-fade-${FADE_INNER}-${FADE_OUTER}`
+  mat.customProgramCacheKey = () => `ml-terrain-fade-${rigidCentroid ? 'c' : 'v'}-${FADE_INNER}-${FADE_OUTER}`
   return mat
 }
 
@@ -84,14 +91,15 @@ function injectRadialFade(mat) {
 // toward the camera and caused alley z-fighting once terrain displacement
 // lifted everything simultaneously.
 function makeFlatMat(color, pri, opts = {}) {
+  const { rigidCentroid = false, ...matOpts } = opts
   const mat = new THREE.MeshStandardMaterial({
     color, roughness: 1, metalness: 0, side: THREE.DoubleSide,
     polygonOffset: true,
     polygonOffsetFactor: -pri,
     polygonOffsetUnits: -pri * 4,
-    ...opts,
+    ...matOpts,
   })
-  return injectRadialFade(mat)
+  return injectRadialFade(mat, { rigidCentroid })
 }
 
 // ── Line material ───────────────────────────────────────────
@@ -100,25 +108,98 @@ function makeLineMat(color, opacity = 1) {
 }
 
 // ── Triangulate a ring of {x, z} points into XZ-plane mesh ─
-function triangulateRing(ring) {
+// Optional maxEdge densification: recursively 4-to-1 subdivides any triangle
+// whose longest edge exceeds maxEdge, so per-vertex terrain displacement in
+// the shader can follow the ground faithfully instead of interpolating a
+// long flat triangle across a terrain bump (the "spillage" artifact).
+function triangulateRing(ring, { maxEdge = 0 } = {}) {
   if (ring.length < 3) return null
   const shape = new THREE.Shape(ring.map(p => new THREE.Vector2(p.x ?? p[0], p.z ?? p[1])))
   const shapeGeo = new THREE.ShapeGeometry(shape)
   const srcPos = shapeGeo.attributes.position.array
   const srcIdx = shapeGeo.index.array
   // ShapeGeometry outputs in XY plane; remap to XZ
-  const pos = new Float32Array(srcPos.length)
-  const nrm = new Float32Array(srcPos.length)
+  let pos = []
   for (let i = 0; i < srcPos.length; i += 3) {
-    pos[i] = srcPos[i]; pos[i + 1] = 0; pos[i + 2] = srcPos[i + 1]
-    nrm[i] = 0; nrm[i + 1] = 1; nrm[i + 2] = 0
+    pos.push(srcPos[i], 0, srcPos[i + 1])
+  }
+  let idx = Array.from(srcIdx)
+  shapeGeo.dispose()
+
+  if (maxEdge > 0) ({ pos, idx } = densifyTriangles(pos, idx, maxEdge))
+
+  // Per-feature centroid (mean of the ring vertices).  Stamped on every
+  // vertex of this geometry so the centroid-displacement shader can sample
+  // terrain at a single point per feature, keeping each polygon internally
+  // flat under terrain ridges.
+  let cx = 0, cz = 0
+  for (const p of ring) { cx += (p.x ?? p[0]); cz += (p.z ?? p[1]) }
+  cx /= ring.length; cz /= ring.length
+
+  const nVerts = pos.length / 3
+  const posArr = new Float32Array(pos)
+  const nrmArr = new Float32Array(pos.length)
+  const centArr = new Float32Array(nVerts * 2)
+  for (let i = 0; i < nVerts; i++) {
+    nrmArr[i * 3 + 1] = 1
+    centArr[i * 2]     = cx
+    centArr[i * 2 + 1] = cz
   }
   const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-  geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
-  geo.setIndex(new THREE.BufferAttribute(new Uint32Array(srcIdx), 1))
-  shapeGeo.dispose()
+  geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3))
+  geo.setAttribute('normal',   new THREE.BufferAttribute(nrmArr, 3))
+  geo.setAttribute('aCentroidXZ', new THREE.BufferAttribute(centArr, 2))
+  geo.setIndex(new THREE.BufferAttribute(
+    nVerts > 65535 ? new Uint32Array(idx) : new Uint16Array(idx), 1,
+  ))
   return geo
+}
+
+// 4-to-1 subdivision with per-edge midpoint sharing (no T-junctions).
+// Repeats until every triangle's longest edge ≤ maxEdge.
+function densifyTriangles(pos, idx, maxEdge) {
+  const maxEdgeSq = maxEdge * maxEdge
+  const edgeLenSq = (a, b) => {
+    const dx = pos[a * 3] - pos[b * 3]
+    const dz = pos[a * 3 + 2] - pos[b * 3 + 2]
+    return dx * dx + dz * dz
+  }
+  for (let pass = 0; pass < 8; pass++) {
+    let anyLong = false
+    for (let i = 0; i < idx.length; i += 3) {
+      const a = idx[i], b = idx[i + 1], c = idx[i + 2]
+      if (edgeLenSq(a, b) > maxEdgeSq || edgeLenSq(b, c) > maxEdgeSq || edgeLenSq(c, a) > maxEdgeSq) {
+        anyLong = true; break
+      }
+    }
+    if (!anyLong) break
+    const midCache = new Map()
+    const getMid = (a, b) => {
+      const key = a < b ? `${a}_${b}` : `${b}_${a}`
+      if (midCache.has(key)) return midCache.get(key)
+      const mx = (pos[a * 3]     + pos[b * 3])     * 0.5
+      const my = (pos[a * 3 + 1] + pos[b * 3 + 1]) * 0.5
+      const mz = (pos[a * 3 + 2] + pos[b * 3 + 2]) * 0.5
+      const mi = pos.length / 3
+      pos.push(mx, my, mz)
+      midCache.set(key, mi)
+      return mi
+    }
+    const nextIdx = []
+    for (let i = 0; i < idx.length; i += 3) {
+      const a = idx[i], b = idx[i + 1], c = idx[i + 2]
+      const tooLong = edgeLenSq(a, b) > maxEdgeSq || edgeLenSq(b, c) > maxEdgeSq || edgeLenSq(c, a) > maxEdgeSq
+      if (!tooLong) { nextIdx.push(a, b, c); continue }
+      // 4-to-1: one new triangle per corner + one center, all sharing midpoints
+      // with neighbors so seams stay watertight.
+      const mab = getMid(a, b)
+      const mbc = getMid(b, c)
+      const mca = getMid(c, a)
+      nextIdx.push(a, mab, mca, mab, b, mbc, mca, mbc, c, mab, mbc, mca)
+    }
+    idx = nextIdx
+  }
+  return { pos, idx }
 }
 
 // ── Merge multiple geometries ───────────────────────────────
@@ -127,14 +208,17 @@ function mergeGeos(geos) {
   if (!valid.length) return null
   let totalV = 0, totalI = 0
   for (const g of valid) { totalV += g.attributes.position.count; totalI += g.index.count }
+  const hasCentroid = valid.every(g => g.attributes.aCentroidXZ)
   const pos = new Float32Array(totalV * 3)
   const nrm = new Float32Array(totalV * 3)
+  const cent = hasCentroid ? new Float32Array(totalV * 2) : null
   const idx = new Uint32Array(totalI)
   let vO = 0, iO = 0
   for (const g of valid) {
     const nv = g.attributes.position.count
     pos.set(g.attributes.position.array, vO * 3)
     nrm.set(g.attributes.normal.array, vO * 3)
+    if (hasCentroid) cent.set(g.attributes.aCentroidXZ.array, vO * 2)
     const gi = g.index.array
     for (let i = 0; i < gi.length; i++) idx[iO + i] = gi[i] + vO
     vO += nv; iO += gi.length
@@ -142,6 +226,7 @@ function mergeGeos(geos) {
   const merged = new THREE.BufferGeometry()
   merged.setAttribute('position', new THREE.BufferAttribute(pos, 3))
   merged.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
+  if (hasCentroid) merged.setAttribute('aCentroidXZ', new THREE.BufferAttribute(cent, 2))
   merged.setIndex(new THREE.BufferAttribute(idx, 1))
   return merged
 }
@@ -209,15 +294,23 @@ function offsetLine(coords, offset, side) {
 // Component
 // ═══════════════════════════════════════════════════════════
 
-export default function MapLayers({ hiddenLayers, inShot = false }) {
+export default function MapLayers({ hiddenLayers, inShot = false, surveyActive = false, measureActive = false }) {
   const hideIn = hiddenLayers || {}
   // Layers owned by 3D components in shots — skip from MapLayers to avoid
   // double-rendering. Keep alleys/footways/paths/parking/landscape/barriers:
   // those stay as flat ground patches in shots (the map vernacular).
   const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'centerline', 'labels'])
-  const hide = inShot
-    ? new Proxy(hideIn, { get: (t, k) => SHOT_SKIP.has(k) ? true : t[k] })
-    : hideIn
+  // In Survey, roadway marking layers (stripes / edge lines / bike lanes /
+  // OSM centerlines) are Measure/Design-era surface paint — Survey only
+  // cares about roadway silhouettes, so hide them.
+  const SURVEY_HIDE = new Set(['stripe', 'edgeline', 'bikelane', 'centerline'])
+  const hide = new Proxy(hideIn, {
+    get: (t, k) => {
+      if (inShot && SHOT_SKIP.has(k)) return true
+      if (surveyActive && SURVEY_HIDE.has(k)) return true
+      return t[k]
+    },
+  })
   const layerColors = useCartographStore(s => s.layerColors) || {}
   const layerStrokes = useCartographStore(s => s.layerStrokes) || {}
   const luColors = useCartographStore(s => s.luColors) || {}
@@ -555,9 +648,11 @@ export default function MapLayers({ hiddenLayers, inShot = false }) {
     })(),
     tree: makeFlatMat(color('tree'), PRI.park + 1),
     water: makeFlatMat(color('water'), PRI.park + 1),
-    alley: makeFlatMat(color('alley'), PRI.alley),
-    footway: makeFlatMat(color('footway'), PRI.footway),
-    parking_lot: makeFlatMat(color('parking_lot'), PRI.parking_lot),
+    // rigidCentroid=true: sample terrain once per feature, not per vertex.
+    // Sparse path triangulations can't capture terrain ridges in their
+    // interior; under per-vertex displacement the ground mesh passes through
+    // them.  Centroid-sampled lift keeps each feature internally flat.
+    parking_lot: makeFlatMat(color('parking_lot'), PRI.parking_lot, { rigidCentroid: true }),
     parking_lot_stroke: makeLineMat(layerStrokes.parking_lot?.color || '#1a1a18', 1),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [layerColors, layerStrokes])
@@ -634,7 +729,7 @@ export default function MapLayers({ hiddenLayers, inShot = false }) {
       {/* Parking lots (amenity=parking overlays) — colored via Land Use: Parking */}
       {!hide.parking_lot && parkingLotGeo && (
         <mesh geometry={parkingLotGeo}
-          material={makeFlatMat(luColors.parking || DEFAULT_LU_COLORS.parking || '#6A6A62', PRI.parking_lot)}
+          material={makeFlatMat(luColors.parking || DEFAULT_LU_COLORS.parking || '#6A6A62', PRI.parking_lot, { rigidCentroid: true })}
           renderOrder={PRI.parking_lot} receiveShadow />
       )}
 
@@ -643,7 +738,7 @@ export default function MapLayers({ hiddenLayers, inShot = false }) {
       {Object.entries(landscapeByKind).map(([kind, geo]) => {
         if (!geo || hide[kind]) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
-        const mat = makeFlatMat(col, PRI.landscape)
+        const mat = makeFlatMat(col, PRI.landscape, { rigidCentroid: true })
         return <mesh key={`ls-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape} receiveShadow />
       })}
 
@@ -659,20 +754,9 @@ export default function MapLayers({ hiddenLayers, inShot = false }) {
         </group>
       })}
 
-      {/* Alleys — filled ring polygons. Lifted above ribbon face fills so
-          they sit cleanly on top instead of z-fighting under shot-mode terrain
-          displacement. Pipeline already clipped them to outside the curb so
-          they never overlap asphalt. */}
-      {!hide.alley && alleyGeo && (
-        <mesh geometry={alleyGeo} material={mats.alley} renderOrder={PRI.alley}
-          position={[0, 0.15, 0]} receiveShadow />
-      )}
-
-      {/* Footways / paths / walkways — filled ring polygons */}
-      {!hide.footway && footwayGeo && (
-        <mesh geometry={footwayGeo} material={mats.footway} renderOrder={PRI.footway}
-          position={[0, 0.15, 0]} receiveShadow />
-      )}
+      {/* Alleys + footways — now owned by StreetRibbons (pathRibbons).
+          Previously rendered as ring polygons here; retired 2026-04-22 so
+          alleys/paths are first-class roadway ribbons matching streets. */}
 
       {/* Streetlamps */}
       {!hide.lamp && lampPositions.map((l, i) => (

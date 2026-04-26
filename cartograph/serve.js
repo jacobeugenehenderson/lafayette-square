@@ -9,6 +9,8 @@ const RAW = join(import.meta.dirname, 'data', 'raw')
 const MARKERS = join(DIR, 'marker_strokes.json')
 const MEASUREMENTS = join(RAW, 'measurements.json')
 const CENTERLINES = join(RAW, 'centerlines.json')
+const SKELETON = join(DIR, 'skeleton.json')
+const OVERLAY = join(DIR, 'overlay.json')
 const PARCEL_FILE = join(import.meta.dirname, '..', 'scripts', 'raw', 'stl_parcels.json')
 const PORT = 3333
 
@@ -24,6 +26,7 @@ const MIME = {
 if (!existsSync(MARKERS)) writeFileSync(MARKERS, '[]')
 if (!existsSync(MEASUREMENTS)) writeFileSync(MEASUREMENTS, '{"measurements":[]}')
 if (!existsSync(CENTERLINES)) writeFileSync(CENTERLINES, '{"streets":[]}')
+if (!existsSync(OVERLAY)) writeFileSync(OVERLAY, '{"version":1,"streets":{}}')
 
 function pointInRing(px, pz, ring) {
   let inside = false
@@ -155,6 +158,18 @@ createServer((req, res) => {
     return
   }
 
+  // GET /skeleton — read Phase-0 skeleton output
+  if (req.method === 'GET' && req.url === '/skeleton') {
+    if (!existsSync(SKELETON)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end('{"error":"skeleton.json not found — run `node skeleton.js`"}')
+      return
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(readFileSync(SKELETON))
+    return
+  }
+
   // GET /centerlines — read centerline data
   if (req.method === 'GET' && req.url === '/centerlines') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -170,6 +185,33 @@ createServer((req, res) => {
       try {
         const parsed = JSON.parse(body)
         writeFileSync(CENTERLINES, JSON.stringify(parsed, null, 2))
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('{"ok":true}')
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
+  // GET /overlay — read the operator-intent overlay (skelId-keyed)
+  if (req.method === 'GET' && req.url === '/overlay') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(readFileSync(OVERLAY))
+    return
+  }
+
+  // POST /overlay — write overlay (authored caps, couplers, measures,
+  // segmentMeasures keyed by skeleton chain id). Skeleton owns geometry;
+  // this file owns operator intent.
+  if (req.method === 'POST' && req.url === '/overlay') {
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body)
+        writeFileSync(OVERLAY, JSON.stringify(parsed, null, 2))
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end('{"ok":true}')
       } catch (err) {

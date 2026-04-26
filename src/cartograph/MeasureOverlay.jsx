@@ -2,7 +2,7 @@ import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
-import { defaultMeasure, sideToStripes, CURB_WIDTH } from './streetProfiles.js'
+import { defaultMeasure, sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
 import { polylineRibbon } from './overlayGeom.js'
 import ribbonsRaw from '../data/ribbons.json'
 
@@ -17,7 +17,9 @@ const PIPELINE_MEASURE = (() => {
   return m
 })()
 
-function effectiveMeasure(st) {
+// Chain-level fallback used when a segment has no override. Order:
+// segment override → street.measure → pipeline-derived → type default.
+function chainMeasure(st) {
   if (st.measure) return st.measure
   const fromPipeline = PIPELINE_MEASURE.get(st.name)
   if (fromPipeline) {
@@ -30,6 +32,31 @@ function effectiveMeasure(st) {
     }
   }
   return defaultMeasure(st.type || 'residential')
+}
+
+// Resolve effective measure for a specific segment ordinal.
+function effectiveSegmentMeasure(st, ordinal) {
+  return measureForSegment(st, ordinal) || chainMeasure(st)
+}
+
+// Pavement half-width for the chain (used for inner-edge offset distance).
+// Reads chain-default measure; segment overrides aren't applied here because
+// the visible centerline is one continuous line per chain.
+function chainPavementHW(st) {
+  const m = chainMeasure(st)
+  return Math.max(m.left?.pavementHW || 0, m.right?.pavementHW || 0)
+}
+
+// Find which segment ordinal contains the click anchor. `segI` is the polyline
+// segment index returned by projection (between pts[segI] and pts[segI+1]).
+function resolveSegmentOrdinal(st, segI) {
+  const ranges = segmentRangesForCouplers(st.points, st.couplers || [])
+  if (!ranges.length) return 0
+  for (let i = 0; i < ranges.length; i++) {
+    const [a, b] = ranges[i]
+    if (segI >= a && segI < b) return i
+  }
+  return ranges.length - 1
 }
 
 // Measure overlay: when a street is selected, empty circles appear at each
@@ -114,7 +141,7 @@ function frameAtPoint(pts, px, pz) {
   const a = pts[segI], b = pts[Math.min(segI + 1, pts.length - 1)]
   const dx = b[0] - a[0], dz = b[1] - a[1]
   const len = Math.hypot(dx, dz) || 1
-  return { cx: proj.x, cz: proj.z, nx: -dz/len, nz: dx/len }
+  return { cx: proj.x, cz: proj.z, nx: -dz/len, nz: dx/len, segI }
 }
 
 // Polyline midpoint + perpendicular unit vector.
@@ -135,7 +162,7 @@ function midAndPerp(pts) {
   const cz = a[1] + (b[1] - a[1]) * segT
   const dx = b[0] - a[0], dz = b[1] - a[1]
   const len = Math.hypot(dx, dz) || 1
-  return { cx, cz, nx: -dz / len, nz: dx / len }
+  return { cx, cz, nx: -dz / len, nz: dx / len, segI }
 }
 
 // Boundaries on one side as draggable handles. Curb has fixed width, so only
@@ -189,14 +216,28 @@ export default function MeasureOverlay() {
 
   const selectedMeasurePoint = useCartographStore(s => s.selectedMeasurePoint)
 
-  // Thick royal-blue centerlines for every street in measure mode.
+  // Thick royal-blue centerlines for every street in measure mode. For
+  // inner-edge anchored chains (divided carriageways) the line is rendered
+  // at the offset position — where the asphalt actually starts — so the
+  // operator authors against where the median begins, not the carriageway
+  // center.
   const centerlineMeshes = useMemo(() => {
     if (!active) return []
     const out = []
+    const dividedNames = ['Truman Parkway', 'South 14th Street', 'Park Avenue', 'South Jefferson Avenue']
+    const dividedSeen = new Map()
     for (const { idx, st } of streetData) {
       if (!st.points || st.points.length < 2) continue
-      out.push({ idx, geo: polylineRibbon(st.points, 0.35, 0) })
+      const geo = polylineRibbon(st.points, 0.35, 0)
+      if (dividedNames.includes(st.name)) {
+        const arr = dividedSeen.get(st.name) || []
+        arr.push({ id: st.id, npts: st.points.length, geoOk: !!geo, first: st.points[0] })
+        dividedSeen.set(st.name, arr)
+      }
+      out.push({ idx, geo })
     }
+    console.log(`[MeasureOverlay] centerlineMeshes: ${out.length} total. Divided chains:`)
+    for (const [name, arr] of dividedSeen) console.log(`  ${name}: ${arr.length} chain(s)`, arr)
     return out
   }, [active, streetData])
 
@@ -206,11 +247,17 @@ export default function MeasureOverlay() {
     if (!active || selectedStreet === null) return null
     const st = centerlineData.streets[selectedStreet]
     if (!st || st.disabled || st.points.length < 2) return null
-    const measure = effectiveMeasure(st)
     const anchor = selectedMeasurePoint
       ? frameAtPoint(st.points, selectedMeasurePoint.x, selectedMeasurePoint.z)
       : midAndPerp(st.points)
-    const { cx, cz, nx, nz } = anchor
+    const { cx, cz, nx, nz, segI } = anchor
+    const ordinal = resolveSegmentOrdinal(st, segI ?? 0)
+    const baseMeasure = effectiveSegmentMeasure(st, ordinal)
+    // For inner-edge chains, zero out the inboard ped zone so its handles
+    // collapse (no treelawn/sidewalk along the median). Pavement + curb
+    // handles still emit on both sides — operator authors carriageway width
+    // the same as a regular street.
+    const measure = innerEdgeMeasure(baseMeasure, st.anchor === 'inner-edge' ? st.innerSign : 0)
     // Along-street unit vector (perpendicular to the ruler). Handles
     // orient with long axis along the street so they don't overlap each
     // other when boundary radii are close.
@@ -256,26 +303,31 @@ export default function MeasureOverlay() {
         }
       }
     }
-    return { streetIdx: selectedStreet, measure, mid: { cx, cz, nx, nz }, handles }
+    return { streetIdx: selectedStreet, measure, ordinal, mid: { cx, cz, nx, nz }, handles }
   }, [active, selectedStreet, centerlineData, selectedMeasurePoint])
 
-  const modifyMeasure = useCallback((streetIdx, updater) => {
+  // Mirror selection.ordinal to the store so MeasurePanel shows the right segment.
+  useEffect(() => {
+    if (!selection) return
+    useCartographStore.getState().setSegmentOrdinal(selection.ordinal)
+  }, [selection])
+
+  // Update the measure for a specific segment ordinal. Forks the segment
+  // from chain default on first edit (seedFrom = current effective measure).
+  const modifyMeasure = useCallback((streetIdx, ordinal, updater) => {
     const cd = useCartographStore.getState().centerlineData
     const st = cd.streets[streetIdx]
     if (!st) return
-    if (!st.measure) st.measure = effectiveMeasure(st)
-    updater(st.measure)
-    useCartographStore.setState({
-      centerlineData: { ...cd, streets: [...cd.streets] },
-    })
+    const seed = effectiveSegmentMeasure(st, ordinal)
+    useCartographStore.getState().setSegmentMeasure(streetIdx, ordinal, updater, seed)
     useCartographStore.getState()._saveCenterlines()
   }, [])
 
   // Apply a boundary drag. `r` = new radius (absolute, from centerline).
   // Updates the named field on the given side. If symmetric, mirrors the
   // same field on the other side.
-  const applyDrag = useCallback((streetIdx, side, kind, r) => {
-    modifyMeasure(streetIdx, (m) => {
+  const applyDrag = useCallback((streetIdx, ordinal, side, kind, r) => {
+    modifyMeasure(streetIdx, ordinal, (m) => {
       const sides = m.symmetric ? ['left', 'right'] : [side]
       if (window.__measureDebug) {
         console.log('[applyDrag]', { dragSide: side, kind, r: r.toFixed(2),
@@ -331,7 +383,7 @@ export default function MeasureOverlay() {
         const along = dx * ax + dz * az
         const across = dx * nx + dz * nz
         if (Math.abs(along) < longHalf && Math.abs(across) < shortHalf) {
-          dragRef.current = { streetIdx: selection.streetIdx, side: h.side, kind: h.kind }
+          dragRef.current = { streetIdx: selection.streetIdx, ordinal: selection.ordinal, side: h.side, kind: h.kind }
           e.stopPropagation()
           return
         }
@@ -354,24 +406,22 @@ export default function MeasureOverlay() {
       return
     }
 
-    // Priority 3: empty click → no-op.
-    //
-    // Previously this deselected the street, but that broke double-click-to-
-    // insert: dblclick is synthesized from two consecutive clicks, and the
-    // first click's pointerdown would deselect before dblclick could fire.
-    // Esc (handled below) is the explicit deselect gesture; empty clicks do
-    // nothing so the operator's selection isn't lost to stray clicks.
+    // Priority 3: empty click off any centerline → accept changes (deselect).
+    // Cheaper than reaching for Esc. Doesn't break double-click-to-insert:
+    // that gesture lands on the centerline (priority 2) or on a handle
+    // (priority 1), both of which take precedence above.
+    if (selection) deselectStreet()
   }, [active, spaceDown, camera, gl, selection, streetData, selectStreet, deselectStreet])
 
   const onPointerMove = useCallback((e) => {
     if (dragRef.current) {
       const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
-      const { streetIdx, side, kind } = dragRef.current
+      const { streetIdx, ordinal, side, kind } = dragRef.current
       const cd = useCartographStore.getState().centerlineData
       const st = cd.streets[streetIdx]
       if (!st) return
       const r = Math.max(0.3, distToPolyline(st.points, p.x, p.z))
-      applyDrag(streetIdx, side, kind, r)
+      applyDrag(streetIdx, ordinal, side, kind, r)
       useCartographStore.setState({
         status: kind + ': ' + (r * 3.28084).toFixed(1) + 'ft',
       })
@@ -405,23 +455,26 @@ export default function MeasureOverlay() {
     useCartographStore.setState({ status: '' })
   }, [])
 
-  // Right/Ctrl-click on a handle → delete that boundary (collapse stripe).
-  // Double-click on empty space inside the pedestrian zone → insert
-  // treelawn/sidewalk split.
+  // Ctrl/Cmd-click or right-click on a handle → delete that boundary
+  // (collapse stripe). Same gesture in an empty band → insert a boundary
+  // (split sidewalk into treelawn + sidewalk, or re-seed a removed zone).
   useEffect(() => {
     if (!active) return
     const dom = gl.domElement
-    const onKeyDown = (e) => { if (e.key === 'Escape') deselectStreet() }
-    const onContextMenu = (e) => {
-      if (!selection) return
-      const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
+    const onKeyDown = (e) => {
+      if (e.target?.tagName === 'INPUT' || e.target?.tagName === 'SELECT' || e.target?.tagName === 'TEXTAREA') return
+      if (e.key === 'Escape' || e.key === 'Enter') deselectStreet()
+    }
+    // Try to delete a handle at world point p. Returns true if a handle
+    // was hit and removed.
+    const tryDeleteHandle = (p) => {
+      if (!selection) return false
       const ax = -selection.mid.nz, az = selection.mid.nx
       const nx = selection.mid.nx, nz = selection.mid.nz
       for (const h of selection.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
         if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) {
-          e.preventDefault()
-          modifyMeasure(selection.streetIdx, (m) => {
+          modifyMeasure(selection.streetIdx, selection.ordinal, (m) => {
             const sides = m.symmetric ? ['left', 'right'] : [h.side]
             for (const s of sides) {
               const sd = m[s]
@@ -439,23 +492,25 @@ export default function MeasureOverlay() {
             }
           })
           useCartographStore.setState({ status: 'Removed boundary' })
-          return
+          return true
         }
       }
+      return false
     }
-    const onDblClick = (e) => {
-      if (!selection) return
-      const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
+    // Try to insert a boundary at world point p (in a band). Returns true
+    // if the click landed in an insertable band.
+    const tryInsertBoundary = (p) => {
+      if (!selection) return false
       const st = centerlineData.streets[selection.streetIdx]
-      if (!st) return
-      // Signed perpendicular distance from the centerline at the closest point
-      // determines side + radius.
+      if (!st) return false
       const frame = frameAtPoint(st.points, p.x, p.z)
       const dx = p.x - frame.cx, dz = p.z - frame.cz
       const signedPerp = dx * frame.nx + dz * frame.nz
       const side = signedPerp >= 0 ? 'right' : 'left'
       const r = Math.abs(signedPerp)
-      modifyMeasure(selection.streetIdx, (m) => {
+      const ord = resolveSegmentOrdinal(st, frame.segI ?? 0)
+      let inserted = false
+      modifyMeasure(selection.streetIdx, ord, (m) => {
         const sides = m.symmetric ? ['left', 'right'] : [side]
         for (const s of sides) {
           const sd = m[s]
@@ -466,28 +521,53 @@ export default function MeasureOverlay() {
             // Insert treelawn at click position; sidewalk = outer remainder.
             sd.treelawn = r - curbEnd
             sd.sidewalk = outerEnd - r
+            inserted = true
           } else if (sd.terminal === 'none') {
-            // Re-seed pedestrian zone at this radius (undo of ctrl+click).
+            // Re-seed pedestrian zone at this radius.
             sd.terminal = 'sidewalk'
             sd.sidewalk = Math.max(0.3, r - curbEnd)
             sd.treelawn = 0
+            inserted = true
           }
         }
       })
-      useCartographStore.setState({ status: 'Inserted boundary' })
+      if (inserted) useCartographStore.setState({ status: 'Inserted boundary' })
+      return inserted
+    }
+    // Unified ctrl/right gesture: hit a handle → delete; otherwise → insert.
+    const handleCtrlOrRight = (e) => {
+      if (!selection) return false
+      const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
+      if (tryDeleteHandle(p)) return true
+      if (tryInsertBoundary(p)) return true
+      return false
+    }
+    const onContextMenu = (e) => {
+      if (handleCtrlOrRight(e)) e.preventDefault()
+    }
+    // Ctrl/Cmd + left-click trigger the same as right-click. Capture phase
+    // so we beat the normal pointerdown flow (drag/select/deselect).
+    const onCtrlClickDown = (e) => {
+      if (!active || spaceDown) return
+      if (e.button !== 0) return
+      if (!(e.ctrlKey || e.metaKey)) return
+      if (handleCtrlOrRight(e)) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
     }
     const opts = { capture: true }
+    dom.addEventListener('pointerdown', onCtrlClickDown, opts)
     dom.addEventListener('pointerdown', onPointerDown, opts)
     dom.addEventListener('pointermove', onPointerMove, opts)
     dom.addEventListener('pointerup', onPointerUp, opts)
-    dom.addEventListener('dblclick', onDblClick, opts)
     dom.addEventListener('contextmenu', onContextMenu, opts)
     window.addEventListener('keydown', onKeyDown)
     return () => {
+      dom.removeEventListener('pointerdown', onCtrlClickDown, opts)
       dom.removeEventListener('pointerdown', onPointerDown, opts)
       dom.removeEventListener('pointermove', onPointerMove, opts)
       dom.removeEventListener('pointerup', onPointerUp, opts)
-      dom.removeEventListener('dblclick', onDblClick, opts)
       dom.removeEventListener('contextmenu', onContextMenu, opts)
       window.removeEventListener('keydown', onKeyDown)
     }
@@ -504,7 +584,10 @@ export default function MeasureOverlay() {
       {/* Royal-blue centerlines — clickable affordance for every street */}
       {centerlineMeshes.map(m => (
         <mesh key={`cl-${m.idx}`} geometry={m.geo} renderOrder={140}>
-          <meshBasicMaterial color={ROYAL_BLUE} depthTest={false} />
+          <meshBasicMaterial color={ROYAL_BLUE}
+            transparent opacity={1}
+            polygonOffset polygonOffsetFactor={-30} polygonOffsetUnits={-120}
+            depthTest={false} depthWrite={false} />
         </mesh>
       ))}
       {selection && selection.handles.map((h, i) => (

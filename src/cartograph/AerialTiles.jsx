@@ -1,6 +1,32 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 
+// Match MapLayers.jsx FADE_* — neighborhood circle silhouette.
+const FADE_CENTER = new THREE.Vector2(162, -127)
+const FADE_INNER = 758
+const FADE_OUTER = 892
+
+function injectCircleCrop(mat) {
+  mat.transparent = true
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uFadeCenter = { value: FADE_CENTER }
+    shader.uniforms.uFadeInner = { value: FADE_INNER }
+    shader.uniforms.uFadeOuter = { value: FADE_OUTER }
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vAerialWorldPos;')
+      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvAerialWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vAerialWorldPos;\nuniform vec2 uFadeCenter;\nuniform float uFadeInner;\nuniform float uFadeOuter;')
+      .replace('#include <opaque_fragment>',
+        '#include <opaque_fragment>\n' +
+        'float _r = distance(vAerialWorldPos.xz, uFadeCenter);\n' +
+        'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _r);\n' +
+        'if (gl_FragColor.a < 0.01) discard;')
+  }
+  mat.customProgramCacheKey = () => `aerial-crop-${FADE_INNER}-${FADE_OUTER}`
+  return mat
+}
+
 // Lafayette Square center + coordinate conversion (from config.js)
 const CENTER = { lat: 38.6160, lon: -90.2161 }
 const BBOX = {
@@ -61,17 +87,26 @@ function TileMesh({ tile }) {
     return tex
   }, [tile.url])
 
+  const material = useMemo(() => {
+    const mat = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false })
+    return injectCircleCrop(mat)
+  }, [texture])
+
   return (
-    <mesh position={[tile.x + tile.w / 2, -0.05, tile.z + tile.h / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh
+      position={[tile.x + tile.w / 2, -0.05, tile.z + tile.h / 2]}
+      rotation={[-Math.PI / 2, 0, 0]}
+      material={material}
+    >
       <planeGeometry args={[tile.w, tile.h]} />
-      <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
   )
 }
 
-// z=19 caused some tiles to fail to load in some areas (dark screen);
-// reverted to 18. Bump back when we have a tile-fallback strategy.
-export default function AerialTiles({ zoom = 18, visible = true }) {
+// z=19 gives 2× the pixel density of z=18 — needed for visual handle
+// alignment against curb edges. Previous dark-tile issue may recur in
+// some areas; add a z18 fallback if it does.
+export default function AerialTiles({ zoom = 19, visible = true }) {
   const tiles = useMemo(() => buildTiles(zoom), [zoom])
 
   return (
