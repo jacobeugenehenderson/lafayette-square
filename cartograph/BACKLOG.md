@@ -1,6 +1,35 @@
 # Cartograph Backlog
 
-Last updated: 2026-04-26 PM
+Last updated: 2026-04-26 PM (later)
+
+## 2026-04-26 PM (later) — Path B Phases 1+2+3 SHIPPED
+
+| Phase | Status | Commits |
+|---|---|---|
+| 1. Skeleton phase analyzer | ✅ shipped | `613a6ff`, `6d7045c` (tuning) |
+| 2. Phase-aware welding | ✅ shipped | `78f78bd` |
+| 3. Skeleton emits phase metadata | ✅ shipped | `d6a3c42` |
+| 4. Derive consumes phase info | ⏳ next session | — |
+| 5. Ribbon knitting | ⏳ | — |
+| 6. Emergent grass median | ⏳ | — |
+
+**Visual confirmation:** divided carriageways render as separate
+parallel ribbons in Designer / Survey ("split traffic" working).
+Visible breaks at transition nodes are the expected mid-state until
+Phase 5 knits them.
+
+**Phase 4 starts next session.** Read NOTES 2026-04-26 PM (later)
+entry first — covers the new `street.phase` shape, the derive sites
+to delete (`splitAtFolds`, `dropShadowedChains`, `meanPerpDistance`
+pair detection, `innerSign`/`pairId`/`medians` emission ~derive.js
+2580–2870), and the dependent-map for `src/data/ribbons.json` and
+the overlay file.
+
+**Operational gotcha to remember:** if Survey/Measure go blank,
+check `lsof -i :3333` — `serve.js` may have died; that mimics a
+data regression but isn't one. `node serve.js &` to restart.
+
+---
 
 ## 2026-04-26 PM — Path B chosen (phase-aware skeleton emission)
 

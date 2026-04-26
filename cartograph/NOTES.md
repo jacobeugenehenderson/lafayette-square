@@ -6,6 +6,118 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-04-26 PM (later) — Path B Phases 1+2+3 SHIPPED ("split traffic" works)
+
+Implemented in this session:
+
+1. **Phase 1 — Pre-weld phase analyzer** (`skeleton.js` `analyzePhases`,
+   commits `613a6ff` + `6d7045c` tuning). Per name group, classify each
+   raw OSM fragment as `divided-A` / `divided-B` / `single-oneway` /
+   `single-bidi`. Detects antiparallel oneway pairs by symmetric mean
+   perpendicular distance ≤ 60m **and** length ratio ≥ 0.5 **and**
+   tangent dot ≤ −0.6, with best-partner resolution (sort all candidate
+   pairs by gap ascending, claim greedily).
+
+   Tuning notes: original 30m gap + greedy first-match + asymmetric
+   mean-perp let connector stubs lock out same-length carriageway mates.
+   Truman Parkway's main 361m carriageway pair sits at symmetric-max
+   54m gap, so threshold went to 60m, paired with the length-ratio
+   filter to block stub abuse.
+
+   Validation: Lafayette 22 ways → 4 hidden divided pairs surfaced;
+   Jefferson 19 ways → 4 (vs the 2 today's `splitAtFolds` recovers
+   from a lucky fold). Truman 1 → 3 pairs.
+
+2. **Phase 2 — Phase-aware welding** (commit `78f78bd`, after a
+   revert+reinstate dance). `weldChains(fragments, signatureByOsmId)`
+   gates every weld on signature equality — `divided-A` only fuses
+   with `divided-A`, `single-bidi` only with `single-bidi`, etc.
+   This removes the splice bridges where bidi connector fragments at
+   intersections previously fused opposing-direction carriageways into
+   one super-chain (the Lafayette 22→1 collapse).
+
+   Result: Lafayette 1 → 10 chains (4 divided pairs + 12 bidi
+   connector stubs as singletons + 2 unpaired oneway). Jefferson 4 → 8.
+   Total streets 123 → 154. **Visible payoff: divided carriageways
+   now render as separate parallel ribbons in Designer / Survey.**
+   Operator confirmed "we have split traffic."
+
+3. **Phase 3 — Skeleton emits phase metadata** (commit `d6a3c42`).
+   Each emitted street carries:
+       `phase: { kind: 'single' | 'divided',
+                 role: 'spine' | 'carriageway-A' | 'carriageway-B',
+                 corridorName, startNode: {x,z}, endNode: {x,z} }`
+   Pure data addition. Existing consumers select fields explicitly
+   and ignore the new property. Counts: 120 single/spine, 17
+   carriageway-A, 17 carriageway-B.
+
+### What still bites mid-Path-B
+
+- **Visible breaks at phase transitions.** With Phase 2 producing
+  separate chains for connectors and carriageways, ribbon emission
+  (still per-chain, no stitching) leaves visible joins. Phase 5's
+  knit step closes these. Mid-state is structurally correct, visually
+  rough.
+- **Derive still does its own divided detection** (`buildCorridors`,
+  `meanPerpDistance`, `innerSign`, `pairId`, `medians`). Phase 4 is
+  the rewrite to consume `street.phase` directly and delete that
+  whole block plus `splitAtFolds` and `dropShadowedChains` in
+  skeleton.
+
+### Operational lesson worth saving
+
+Mid-session the operator reported "no centerlines in Survey, Measure
+controls dead, streets look the same." I leapt to a structural
+diagnosis (ID churn from Phase 2) and reverted. The actual cause:
+**`serve.js` was not running on port 3333.** Vite proxies
+`/api/cartograph/*` to localhost:3333 and every fetch was returning
+the proxy's connection-refused stub. Reinstating Phase 2 after
+restarting `serve.js` worked immediately.
+
+Lesson for next session: when Survey/Measure data goes blank,
+**check `lsof -i :3333` first**. If nothing's listening, run
+`node serve.js` (background) and reload the browser.
+
+That said, the dependent-map I sketched during the (incorrect) revert
+is real and will matter when Phase 4 ships:
+- `src/data/ribbons.json` (681KB, dated Apr 25, hand-curated /
+  no in-tree writer found) is bundled into the React app and consumed
+  by `StreetRibbons.jsx`, `MapLayers.jsx`, `MeasureOverlay.jsx`,
+  `MeasurePanel.jsx`, `useCartographStore.js`. Its `streets[].skelId`
+  values follow the OLD chain-ID scheme. If Phase 4 (or any later
+  refactor) shifts what ribbons.json should contain, we need to find
+  or rebuild the producer.
+- `useCartographStore._loadCenterlines` matches legacy intent by
+  `name` — for Lafayette's 10 chains, only one inherits authored
+  intent.
+- `corridorByIdx` reads `ribbonsData.corridors[].phases[].chainIds`
+  — those IDs correspond to the OLD welding output. Already
+  silently empty after Phase 2.
+- `overlay.json` is `skelId`-keyed; rewelded streets orphan their
+  authored intent. Migration needs to map old IDs → new by name +
+  geometry overlap, OR we accept loss for re-welded streets.
+
+### Phase 4 pickup pointer (start of next session)
+
+Read order:
+1. This entry.
+2. `cartograph/skeleton.js` lines around 379–530 (main, emit site,
+   makeStreet) for the phase metadata shape now in skeleton.json.
+3. `cartograph/derive.js` lines 2580–2870 (`buildCorridors`,
+   `meanPerpDistance`, `medians` emission, `innerSign`/`pairId`
+   pass) — this is what Phase 4 deletes/rewrites to consume
+   `street.phase` directly.
+4. `src/data/ribbons.json` schema — what fields derive currently
+   emits and ribbons-consumers depend on. Phase 4 must preserve
+   that contract OR coordinate a shape change with the React side.
+5. `src/cartograph/stores/useCartographStore.js` `_loadCenterlines`
+   — ID-keyed lookups likely to need updating once chain IDs shift
+   (which they already have under Phase 2; verify).
+
+Phase 4 is the bigger refactor and deserves a fresh context window.
+
+---
+
 ## 2026-04-26 PM — over-welding diagnosed, Path B (phase-aware emission) chosen
 
 **Drove this entry:** operator looked at Jefferson + Lafayette in Measure
