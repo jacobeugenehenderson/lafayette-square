@@ -360,7 +360,27 @@ function halfRingVarRaw(pts, innerArr, outerArr, perps, side) {
 }
 
 function mergeRawGeo(parts) {
-  const valid = parts.filter(Boolean)
+  // Drop parts with any non-finite position. One NaN in the merged
+  // buffer makes the auto-computed bounding sphere infinite, frustum
+  // culling drops the entire mesh, and every ribbon visually vanishes
+  // — refresh "fixes" it until the next bad part. Containing the
+  // damage to the offending part keeps the rest of the road on screen
+  // while we hunt the source.
+  const valid = []
+  for (const p of parts) {
+    if (!p) continue
+    let bad = false
+    for (let i = 0; i < p.positions.length; i++) {
+      if (!Number.isFinite(p.positions[i])) { bad = true; break }
+    }
+    if (bad) {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[StreetRibbons] dropped ribbon part with non-finite positions')
+      }
+      continue
+    }
+    valid.push(p)
+  }
   if (!valid.length) return null
   let totalV=0, totalI=0
   for (const p of valid) { totalV+=p.positions.length/3; totalI+=p.indices.length }
