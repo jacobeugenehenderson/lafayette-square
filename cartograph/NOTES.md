@@ -6,6 +6,240 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-04-26 PM — over-welding diagnosed, Path B (phase-aware emission) chosen
+
+**Drove this entry:** operator looked at Jefferson + Lafayette in Measure
+mode and noted they show ONE blue centerline despite being divided in
+reality. Rather than chase it as a render-visibility issue, we stripped
+back to OSM source data. The finding turned a render-side hypothesis
+into a structural/architectural one.
+
+### The data finding
+
+| Street | OSM ways | Skeleton chains | Notes |
+|---|---|---|---|
+| South Jefferson Avenue | 19 | 4 | Mix oneway + bidirectional. Lane counts 1–7. One has explicit `turn:lanes='left\|none\|none\|right'`. |
+| Lafayette Avenue | 22 | 1 | 17 oneway + bidirectional ways collapsed into one 2,292m chain. Divided structure entirely lost. |
+
+Skeleton inspection of Jefferson:
+- chain-0: 1086m, 6 OSM ways, oneway. Single, NOT detected as divided.
+- chain-1: 844m, 5 OSM ways, oneway. Single, NOT detected as divided.
+- chain-2: 168m, 4 OSM ways  ┐ paired (welded super-chain folded → splitAtFolds caught it)
+- chain-3: 166m, 4 OSM ways  ┘
+
+Of Jefferson's 4 chains, only -2/-3 were tagged as divided — and only
+because they happened to fold across themselves during welding, which
+`splitAtFolds` then caught. The other 1086m + 844m sections have just
+as much divided geometry in reality but their OSM ways didn't fold
+during welding, so they stayed as single chains.
+
+**Lafayette is the smoking gun.** No fold occurred during welding (the
+17 ways stitched cleanly tail-to-head), so all bidirectional + oneway
+fragments collapsed into one polyline running approximately down the
+median. The divided pairs the OSM data clearly contains never become
+separate chains.
+
+### Why this happens — `skeleton.js` weldChains
+
+The current welder allows any tail-to-head weld, including across
+oneway↔bidirectional boundaries. It only forbids FLIPPED welds when one
+side is oneway. The "bidirectional connector fragments" at intersections
+where carriageways merge act as bridges that splice opposing-direction
+oneway carriageways into one super-chain. `splitAtFolds` catches the
+180° bend cases (Jefferson -2/-3) but misses the cases where stitching
+is geometrically clean (Lafayette).
+
+### Why we can't just make the welder stricter — the ribbon constraint
+
+Ribbon emission in `StreetRibbons.jsx` (line 703 main fills loop, plus
+edge strokes + face-clip + caps) operates **per chain**. Each chain
+emits its own asphalt + curb + treelawn + sidewalk strips. Caps fire at
+each chain's start/end. **There is no stitching between chains** — chain
+boundary equals ribbon boundary.
+
+That's why the welder is aggressive: making every road one chain is the
+only way the ribbon comes out continuous. The "unified centerline"
+strategy isn't a mistake; it's the consequence of how rendering works.
+
+### The three paths considered
+
+**Path A — Stricter welder.** Forbid welds across `oneway` ↔
+bidirectional. Result: more chains per road, including isolated
+connector stubs at intersections. Ribbons gain visible breaks at every
+chain endpoint. Quick to implement. **Rejected — fragile visually.**
+
+**Path C — Manual operator override.** Keep over-welding in skeleton;
+operator manually adds couplers + flips `anchor` on chains where
+auto-detect missed it. Smallest code change. **Rejected — patch-shaped
+and we're past patches.**
+
+**Path B — Phase-aware emission. CHOSEN.** Restructure: skeleton emits
+chains per phase. Derive consumes existing phase data. Ribbons gain a
+"knit at phase boundary" rule. Architecturally correct; the long-term
+shape that matches `project_positive_carriageway_model` ("two
+centerlines per divided road, median emergent").
+
+### Path B — comprehensive plan
+
+Goal: every street = a corridor of one or more **phases**. Each phase
+emits its own chain(s):
+- **Single phase** → 1 chain. Continuous ribbon, two-sided cross-section.
+- **Divided phase** → 2 chains (one per carriageway). Two parallel ribbons.
+- **Transition node** between adjacent phases is an explicit knit point;
+  ribbons join cleanly there (single-phase ribbon merges into two
+  parallel divided ribbons, or vice versa).
+
+#### Phase 1 — Skeleton phase analyzer (BEFORE welding)
+
+In `cartograph/skeleton.js`, before `weldChains`:
+
+1. Group OSM ways by name (already done).
+2. Within a name group, identify **divided pairs**:
+   - Two oneway ways running antiparallel between the same two nodes.
+   - Mean perpendicular distance < ~30m (already in derive's
+     `meanPerpDistance` logic, move it here).
+3. Identify **single-phase fragments**: bidirectional ways, or
+   unpaired oneway ways.
+4. Identify **transition nodes**: any node where the phase kind changes
+   (e.g., bidirectional way ends and a divided pair begins).
+
+Output: a phase decomposition per name — a list of phases ordered
+along the corridor's spine, with explicit transition points.
+
+#### Phase 2 — Phase-aware welding
+
+In `weldChains`:
+
+1. Weld within a phase only, not across phases.
+   - Single phase → all ways in that phase weld into one chain.
+   - Divided phase → ways group by oneway direction; each direction
+     welds into its own chain. Output: 2 chains per divided phase.
+2. Forbid welds that would cross a transition node.
+
+Output: one chain per phase per direction.
+
+#### Phase 3 — Skeleton emits phase metadata
+
+Each emitted chain carries:
+- `id` (existing).
+- `name` (existing).
+- `oneway` (existing).
+- `phase: { kind: 'single' | 'divided', corridorName, role: 'spine' | 'carriageway-A' | 'carriageway-B', transitions: { startNode, endNode } }`.
+
+#### Phase 4 — Derive consumes skeleton's phase info
+
+`derive.js` `buildCorridors` is rewritten to read phase metadata from
+skeleton instead of inferring it from welded chain endpoints. Existing
+`anchor: 'inner-edge'`, `innerSign`, `pairId` emission still works —
+just driven by skeleton's phase info, not derive's after-the-fact
+detection.
+
+`splitAtFolds` and `dropShadowedChains` in skeleton are deleted (no
+longer needed — the phase analyzer handles separation correctly
+upstream).
+
+#### Phase 5 — Ribbon emission with phase-boundary knitting
+
+`StreetRibbons.jsx` main fills loop stays per-chain BUT adds knitting:
+
+At a phase transition node:
+- If single → divided: the single chain's endpoint cross-section needs
+  to morph into the two divided chains' starting cross-sections.
+  Geometrically: the single ribbon "splits" at the node, with the
+  median grass appearing as a wedge that opens up.
+- If divided → single: inverse — two parallel ribbons converge into
+  one centered ribbon, median tapers to zero.
+- If single → single (different cross-section): the existing ribbon
+  joint suffices; cross-sections share the transition node's
+  perpendicular and meet cleanly.
+- If divided → divided (different cross-section): each carriageway's
+  ribbons join independently at the transition, paired together.
+
+Implementation candidates:
+- "Merge plugs" — geometry similar to corner plugs at intersection
+  nodes, built at phase transitions to fill the join.
+- Or: extend the cross-section taper logic that insert-couplers
+  (medians) already use, applying it across phase boundaries.
+
+#### Phase 6 — Emergent grass median + merge points (was Step C)
+
+Once phase-aware ribbons emit, the median between paired carriageways
+is the polygon between their inboard pavement edges within a divided
+phase. At each transition node where divided meets single, the median
+polygon closes (pinches) at the transition point. This is what was
+queued as Step C of the inner-edge work; it lands naturally on top of
+the phase-aware ribbon system.
+
+### What carries forward from current work
+
+Keep:
+- `streetProfiles.innerEdgeMeasure` (zeros inboard treelawn/sidewalk for
+  inner-edge chains). The cross-section model is independent of how
+  chains are produced.
+- `StreetRibbons.inboardPedZoneless` wrapper.
+- `MeasureOverlay.selection` using `innerEdgeMeasure`.
+- Ordinal-keyed `segmentMeasures` and couplers.
+- Overlay file persistence.
+- `setAnchor` action (operator override stays).
+- Tool-scoped translucency.
+
+Adapt:
+- `derive.js` divided-pair detection (`innerSideSign`, `pairId`,
+  `meanPerpDistance`) — most logic moves to skeleton, derive consumes.
+- `derive.js` `buildCorridors` — driven by skeleton's phase metadata
+  rather than detecting from welded chain topology.
+
+Discard:
+- `splitAtFolds` (skeleton.js).
+- `dropShadowedChains` (skeleton.js).
+- Derive's after-the-fact divided detection at lines ~2640–2730.
+
+### Open issues this Path B fix INHERITS (still need addressing after)
+
+- **Auto-survey `pavementHW` values are wrong** for current divided
+  chains (Truman 2m, S 14th 5.35m, Park Ave 5.65/6.07m, S Jefferson
+  7.72/9.16m). Operator re-measure all 8 inner-edge chains plus any
+  newly-detected ones once Path B emits them.
+- **Royal-blue authoring centerline visibility** over asphalt. Last
+  attempt at depth/render-order fix didn't resolve. Path B doesn't fix
+  this directly — still needs the visibility tweak. Top suspect: copy
+  MapLayers' yellow-stripe material pattern (`MeshStandardMaterial`,
+  `polygonOffsetFactor: -14`, `polygonOffsetUnits: -56`).
+- **Loop streets** (Benton, Mackay) still need closed-polyline detection
+  for inner-edge anchoring.
+- **Corner plug shape at oblique IXes** — still open from 2026-04-24.
+- **12 legacy `centerlines.json` measure overrides** — chains flipped
+  by 2026-04-25 direction normalization may have left/right swapped.
+
+### Pickup order for next session
+
+1. Phase 1 + 2 (skeleton phase analyzer + phase-aware welding). The
+   most invasive single change. Verify by running pipeline and counting
+   chains per name — Lafayette should produce ~5–8 chains spanning
+   single + divided phases instead of 1.
+2. Phase 3 + 4 (skeleton emits phase metadata, derive consumes). Mostly
+   plumbing; existing `anchor`/`innerSign`/`pairId` stays the same shape.
+3. Phase 5 (ribbon knitting). The hardest part — needs visual iteration.
+   Start with the simplest case (divided → single transition where
+   carriageways converge) and validate before generalizing.
+4. Phase 6 (emergent median polygon + merge points). Step C in the
+   prior plan; trivially follows from phase 5.
+5. Loop back: re-measure the now-correctly-detected divided chains,
+   address the centerline visibility issue, etc.
+
+### Memories to update before next session
+
+- New project memory: `project_phase_aware_skeleton_emission.md` —
+  scope of Path B, the data evidence, plan with phases, what carries
+  forward.
+- Update `project_inner_edge_anchor_in_flight.md` to note the model
+  pivot: anchor detection moves from derive (after-the-fact) to
+  skeleton (by-construction). Inboard-zoneless cross-section stays.
+- Cross-reference from `project_positive_carriageway_model.md` →
+  the Path B plan IS its concrete implementation.
+
+---
+
 ## 2026-04-26 session (in progress) — inner-edge anchor for divided carriageways: Step A shipped, Step B pivoted, render visibility blocker
 
 **Drove this session:** operator asked for "centerlines offset to the

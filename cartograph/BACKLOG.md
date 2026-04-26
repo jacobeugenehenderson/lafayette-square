@@ -1,6 +1,81 @@
 # Cartograph Backlog
 
-Last updated: 2026-04-26
+Last updated: 2026-04-26 PM
+
+## 2026-04-26 PM — Path B chosen (phase-aware skeleton emission)
+
+**Premise:** stripped back to OSM data and found skeleton over-welds
+divided roads into single chains. Lafayette: 22 OSM ways → 1 chain
+(should be ~5–8 phase-segmented chains). Jefferson: 19 OSM ways → 4
+chains (only 2 of which were correctly tagged divided, by accident
+when their welded super-chain folded).
+
+The unified-centerline strategy isn't a bug — it exists because
+ribbons emit per chain with no stitching, so chain == ribbon segment.
+But the trade-off costs us divided-road fidelity.
+
+**Path B chosen** (over Path A "stricter welder + visible breaks" and
+Path C "manual operator override"): restructure skeleton to produce
+chains per **phase**, where a phase is single-bidirectional or
+divided-pair. Add ribbon-knitting at phase transition nodes.
+
+Plan in `cartograph/NOTES.md` 2026-04-26 PM entry.
+Memory: `project_phase_aware_skeleton_emission.md`.
+
+### Phase-by-phase implementation
+
+| Phase | Description | Effort |
+|---|---|---|
+| 1. Skeleton phase analyzer | Detect divided pairs + single fragments + transition nodes from OSM ways before welding | 1 session |
+| 2. Phase-aware welding | Weld within phases only; output one chain per phase per direction | small |
+| 3. Skeleton emits phase metadata | `phase: { kind, corridorName, role, transitions }` per chain | small |
+| 4. Derive consumes phase info | Rewrite `buildCorridors`; delete `splitAtFolds` + `dropShadowedChains` + after-the-fact divided detection | medium |
+| 5. Ribbon knitting | Geometry at phase transitions where ribbons merge/split | hardest, visual iteration |
+| 6. Emergent grass median + merge points | Replaces `ribbons.medians`; falls naturally out of (5) | small after (5) |
+
+### What carries forward from prior sessions
+
+- `streetProfiles.innerEdgeMeasure` (zeros inboard treelawn/sidewalk).
+- `StreetRibbons.inboardPedZoneless` wrapper.
+- Ordinal-keyed `segmentMeasures` + couplers.
+- Overlay file persistence + `setAnchor` operator override.
+- Tool-scoped translucency.
+
+### Inherited issues — still queued after Path B lands
+
+- **Re-measure inner-edge chains** (auto-survey `pavementHW` is wrong
+  for divided roads; will need re-measurement of all chains tagged by
+  the new phase analyzer).
+- **Royal-blue centerline visibility over asphalt** — Path B doesn't
+  fix this directly. Top suspect: copy MapLayers' yellow-stripe
+  pattern (`MeshStandardMaterial`, polygonOffset -14/-56).
+- **Loop streets** (Benton, Mackay) — closed-polyline phase detection.
+- **Corner plug at oblique IXes** — open from 2026-04-24.
+- **12 legacy measure overrides** flipped by direction normalization.
+
+---
+
+## 2026-04-26 AM session — inner-edge anchor for divided carriageways (SUPERSEDED by Path B)
+
+The Step A/B/C arc started this session is folded into Path B's plan.
+What was shipped (still in code):
+- `derive.js` auto-detect anchor (8 chains tagged from `kind: 'divided'`
+  corridor phases). After Path B, this will be driven by skeleton's
+  phase emission rather than derive's after-the-fact detection.
+- Persistence (overlay file) + `setAnchor` action.
+- `SurveyorPanel` Anchor dropdown.
+- `streetProfiles.innerEdgeMeasure` + `StreetRibbons.inboardPedZoneless`
+  (cross-section model: chain at carriageway center, zero out inboard
+  treelawn/sidewalk).
+
+Pivoted from earlier offset-polyline + synthetic pavement approach
+during the AM session per operator feedback ("each roadway gets a
+centerline, expand center out in both directions").
+
+Open visibility issue (royal-blue centerlines occluded by asphalt's
+polygonOffset) carries forward — Path B doesn't address it.
+
+---
 
 ## 2026-04-26 session (in progress) — inner-edge anchor for divided carriageways
 
