@@ -333,6 +333,15 @@ export default function MeasureOverlay() {
     // poisons the merged ribbon buffer's bounding box and drops every
     // ribbon from the frame.
     if (!Number.isFinite(r)) return
+    // Sanity-cap r so a handle dragged very far doesn't explode ribbon
+    // geometry. subdivideGeo subdivides each ribbon up to 8× whenever an
+    // edge exceeds 30m; a 500m-wide ribbon would request a multi-million-
+    // vertex Float32Array and the OOM crashes the StreetRibbons render
+    // (RangeError: Array buffer allocation failed). 60m from centerline
+    // is well past the widest real curb in the neighborhood.
+    if (r > 60) r = 60
+    const MAX_PAVEMENT_HW = 30
+    const MAX_STRIPE = 20
     modifyMeasure(streetIdx, ordinal, (m) => {
       const sides = m.symmetric ? ['left', 'right'] : [side]
       if (window.__measureDebug) {
@@ -349,15 +358,15 @@ export default function MeasureOverlay() {
         const sd = m[s]
         if (!sd) continue
         if (kind === 'pavementHW') {
-          sd.pavementHW = Math.max(0.5, r)
+          sd.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
         } else if (kind === 'treelawnOuter') {
           const curbEnd = sd.pavementHW + CURB_WIDTH
           const total = sd.treelawn + sd.sidewalk
           // treelawn ∈ [STRIPE_MIN, total - STRIPE_MIN]; sidewalk picks up the rest
           if (total >= STRIPE_MIN * 2) {
             const newTl = Math.max(STRIPE_MIN, Math.min(total - STRIPE_MIN, r - curbEnd))
-            sd.treelawn = newTl
-            sd.sidewalk = total - newTl
+            sd.treelawn = Math.min(MAX_STRIPE, newTl)
+            sd.sidewalk = Math.min(MAX_STRIPE, total - newTl)
           } else {
             // Total too small to honor both minimums — split evenly so neither vanishes
             sd.treelawn = total / 2
@@ -366,7 +375,7 @@ export default function MeasureOverlay() {
         } else if (kind === 'propertyLine') {
           const curbEnd = sd.pavementHW + CURB_WIDTH
           const inner = curbEnd + sd.treelawn
-          sd.sidewalk = Math.max(STRIPE_MIN, r - inner)
+          sd.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
         }
       }
     })
@@ -412,12 +421,10 @@ export default function MeasureOverlay() {
       return
     }
 
-    // Priority 3: empty click off any centerline → accept changes (deselect).
-    // Cheaper than reaching for Esc. Doesn't break double-click-to-insert:
-    // that gesture lands on the centerline (priority 2) or on a handle
-    // (priority 1), both of which take precedence above.
-    if (selection) deselectStreet()
-  }, [active, spaceDown, camera, gl, selection, streetData, selectStreet, deselectStreet])
+    // Empty click does NOT deselect — operators pan the map constantly and
+    // the gesture used to silently throw away their selection. Accept
+    // explicitly via double-click (handler below), Enter, or Escape.
+  }, [active, spaceDown, camera, gl, selection, streetData, selectStreet])
 
   const onPointerMove = useCallback((e) => {
     if (dragRef.current) {
@@ -435,7 +442,12 @@ export default function MeasureOverlay() {
     }
 
     // Hover feedback
-    if (!active || spaceDown) { useCartographStore.getState().setHoverTarget(false); return }
+    if (!active || spaceDown) {
+      const s = useCartographStore.getState()
+      s.setHoverTarget(false)
+      s.setHoveredStreet(null)
+      return
+    }
     const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
     let hit = false
     if (selection) {
@@ -446,13 +458,18 @@ export default function MeasureOverlay() {
         if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) { hit = true; break }
       }
     }
+    let hoveredIdx = null
     if (!hit) {
       const lineThresh = 6 / (camera.zoom || 1)
-      for (const { st } of streetData) {
-        if (distToPolyline(st.points, p.x, p.z) < lineThresh) { hit = true; break }
+      let bestD = Infinity
+      for (const { idx, st } of streetData) {
+        const d = distToPolyline(st.points, p.x, p.z)
+        if (d < lineThresh && d < bestD) { bestD = d; hoveredIdx = idx; hit = true }
       }
     }
-    useCartographStore.getState().setHoverTarget(hit)
+    const s = useCartographStore.getState()
+    s.setHoverTarget(hit)
+    s.setHoveredStreet(hoveredIdx)
   }, [active, spaceDown, camera, gl, selection, streetData, applyDrag])
 
   const onPointerUp = useCallback(() => {
@@ -562,12 +579,23 @@ export default function MeasureOverlay() {
         e.stopPropagation()
       }
     }
+    // Double-click anywhere on the canvas accepts the current edit and
+    // releases the selection — replaces the old empty-click-to-accept,
+    // which was too easy to trigger while panning.
+    const onDblClick = (e) => {
+      if (!selection) return
+      if (e.ctrlKey || e.metaKey) return
+      deselectStreet()
+      e.preventDefault()
+      e.stopPropagation()
+    }
     const opts = { capture: true }
     dom.addEventListener('pointerdown', onCtrlClickDown, opts)
     dom.addEventListener('pointerdown', onPointerDown, opts)
     dom.addEventListener('pointermove', onPointerMove, opts)
     dom.addEventListener('pointerup', onPointerUp, opts)
     dom.addEventListener('contextmenu', onContextMenu, opts)
+    dom.addEventListener('dblclick', onDblClick, opts)
     window.addEventListener('keydown', onKeyDown)
     return () => {
       dom.removeEventListener('pointerdown', onCtrlClickDown, opts)
@@ -575,6 +603,7 @@ export default function MeasureOverlay() {
       dom.removeEventListener('pointermove', onPointerMove, opts)
       dom.removeEventListener('pointerup', onPointerUp, opts)
       dom.removeEventListener('contextmenu', onContextMenu, opts)
+      dom.removeEventListener('dblclick', onDblClick, opts)
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, modifyMeasure])

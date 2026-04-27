@@ -224,6 +224,12 @@ function subdivideGeo(geo, maxEdge) {
   let idx = Array.from(geo.index.array)
   const midCache = new Map()
   const maxE2 = maxEdge * maxEdge
+  // Hard cap on the working vertex count. An 8-pass subdivision can
+  // multiply triangles by up to 4^8; if input geometry is already large
+  // (185 chains × wide ribbons in measure mode) the requested allocation
+  // exceeds the v8 typed-array limit and the whole StreetRibbons mesh
+  // crashes. Bail to the input geometry once we'd cross this threshold.
+  const MAX_VERTS = 2_000_000
 
   function getMid(i, j) {
     const key = Math.min(i, j) + '_' + Math.max(i, j)
@@ -243,7 +249,13 @@ function subdivideGeo(geo, maxEdge) {
     return dx * dx + dz * dz
   }
 
+  let aborted = false
   for (let pass = 0; pass < 8; pass++) {
+    if (srcPos.length / 3 >= MAX_VERTS) {
+      console.warn('[StreetRibbons.subdivideGeo] vertex cap reached, aborting subdivision at pass', pass)
+      aborted = true
+      break
+    }
     const next = []
     let changed = false
     for (let t = 0; t < idx.length; t += 3) {
@@ -258,6 +270,11 @@ function subdivideGeo(geo, maxEdge) {
     }
     idx = next
     if (!changed) break
+  }
+  if (aborted) {
+    // Fall back to the original (unsubdivided) geometry rather than
+    // attempt a partial-subdivision allocation that may also fail.
+    return geo
   }
 
   const result = new THREE.BufferGeometry()
@@ -417,6 +434,24 @@ function quarterCapRaw(endpoint, tangent, perp, side, innerR, outerR, segments =
     const a = i * 2, b = (i + 1) * 2
     indices.push(a, b, a + 1, a + 1, b, b + 1)
   }
+  return { positions, normals, indices }
+}
+
+// Per-side blunt cap stroke: a STROKE_W-thick perpendicular bar at the
+// endpoint, spanning [0, outerR] along the side's perp. Centered on the
+// endpoint's perpendicular line so the bar visually closes the outline.
+function bluntCapStrokeRaw(endpoint, tangent, perp, side, outerR, w) {
+  const ax = endpoint[0] - tangent[0] * w / 2, az = endpoint[1] - tangent[1] * w / 2
+  const bx = endpoint[0] + tangent[0] * w / 2, bz = endpoint[1] + tangent[1] * w / 2
+  const px = side * perp[0] * outerR,         pz = side * perp[1] * outerR
+  const positions = [
+    ax,      0, az,
+    ax + px, 0, az + pz,
+    bx + px, 0, bz + pz,
+    bx,      0, bz,
+  ]
+  const normals = [0,1,0, 0,1,0, 0,1,0, 0,1,0]
+  const indices = [0, 1, 2, 0, 2, 3]
   return { positions, normals, indices }
 }
 
@@ -687,8 +722,8 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
         const applyEnd = live.capEnd !== undefined && pointsNearlyEqual(stLast, cLast)
         if (applyStart || applyEnd) {
           merged.capEnds = {
-            start: applyStart ? (live.capStart ?? st.capEnds?.start ?? null) : (st.capEnds?.start ?? null),
-            end: applyEnd ? (live.capEnd ?? st.capEnds?.end ?? null) : (st.capEnds?.end ?? null),
+            start: applyStart ? (live.capStart ?? null) : (st.capEnds?.start ?? null),
+            end: applyEnd ? (live.capEnd ?? null) : (st.capEnds?.end ?? null),
           }
         }
       }
@@ -1139,6 +1174,8 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     // matches Design's calculated map. Measure overlays live measure
     // overrides; Survey renders the same streets but only the outer ring
     // (see renderer below).
+    const pointsNearlyEqual = (a, b, eps = 0.5) =>
+      a && b && Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps
     const mergedStreets = renderRibbons.streets.map(st => {
       const live = lookupLive(st)
       if (!live) return st
@@ -1154,6 +1191,20 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       if (live.segmentMeasures) out.segmentMeasures = live.segmentMeasures
       // Anchor: live override wins; otherwise inherit ribbons.json default.
       if (live.anchor) out.anchor = live.anchor
+      if (live.capStart !== undefined || live.capEnd !== undefined) {
+        const cLive = live.points
+        const stFirst = st.points[0], stLast = st.points[st.points.length - 1]
+        const cFirst = cLive && cLive[0]
+        const cLast = cLive && cLive[cLive.length - 1]
+        const applyStart = live.capStart !== undefined && pointsNearlyEqual(stFirst, cFirst)
+        const applyEnd = live.capEnd !== undefined && pointsNearlyEqual(stLast, cLast)
+        if (applyStart || applyEnd) {
+          out.capEnds = {
+            start: applyStart ? (live.capStart ?? null) : (st.capEnds?.start ?? null),
+            end: applyEnd ? (live.capEnd ?? null) : (st.capEnds?.end ?? null),
+          }
+        }
+      }
       return out
     })
     // Streets-only for edge strokes — alleys + paths are shown via their
@@ -1171,6 +1222,10 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       const chainM = ensureMeasure(street)
       const segRanges = segmentRangesForCouplers(street.points, street.couplers || [])
       const ranges = segRanges.length ? segRanges : [[0, street.points.length - 1]]
+      const caps = street.capEnds || { start: null, end: null }
+      const lastSegOrd = ranges.length - 1
+      const ptsAll = street.points
+      const nAll = ptsAll.length
       for (let ord = 0; ord < ranges.length; ord++) {
         const range = ranges[ord]
         const baseMeasure = measureForSegment(street, ord) || chainM
@@ -1187,6 +1242,33 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
             const inner = Math.max(0, ring.outerR - STROKE_W)
             const outer = ring.outerR + STROKE_W
             groups[key].parts.push(halfRingRaw(segPts, inner, outer, segPp, side))
+
+            // Endcap stroke — outer ring only, at chain ends only (not at
+            // coupler boundaries). 'round' = thin half-annulus arc.
+            // 'blunt' = perpendicular bar closing the outline.
+            if (!isOuter) continue
+            if (ord === 0 && caps.start && nAll >= 2) {
+              const ep = ptsAll[0]
+              const tdx = ep[0] - ptsAll[1][0], tdz = ep[1] - ptsAll[1][1]
+              const tl = Math.hypot(tdx, tdz) || 1
+              const tan = [tdx / tl, tdz / tl]
+              if (caps.start === 'round') {
+                groups[key].parts.push(ensureCCW(quarterCapRaw(ep, tan, perps[0], side, inner, outer)))
+              } else if (caps.start === 'blunt') {
+                groups[key].parts.push(ensureCCW(bluntCapStrokeRaw(ep, tan, perps[0], side, ring.outerR, STROKE_W * 2)))
+              }
+            }
+            if (ord === lastSegOrd && caps.end && nAll >= 2) {
+              const ep = ptsAll[nAll - 1]
+              const tdx = ep[0] - ptsAll[nAll - 2][0], tdz = ep[1] - ptsAll[nAll - 2][1]
+              const tl = Math.hypot(tdx, tdz) || 1
+              const tan = [tdx / tl, tdz / tl]
+              if (caps.end === 'round') {
+                groups[key].parts.push(ensureCCW(quarterCapRaw(ep, tan, perps[nAll - 1], side, inner, outer)))
+              } else if (caps.end === 'blunt') {
+                groups[key].parts.push(ensureCCW(bluntCapStrokeRaw(ep, tan, perps[nAll - 1], side, ring.outerR, STROKE_W * 2)))
+              }
+            }
           }
         }
       }
@@ -1222,13 +1304,58 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     // pipeline per street (substantive authored wins; stubs fall back to
     // pipeline, which is why Benton Place's loop shows here even though
     // its authored centerline is an 8-pt stub).
+    // Merge live cap edits onto ribbons.json streets so the dropdown
+    // updates the silhouette in Survey on the next render.
+    const liveById = new Map()
+    const liveByName = new Map()
+    if (liveCenterlines) {
+      for (const cl of liveCenterlines) {
+        if (!cl || cl.disabled) continue
+        if (cl.id) liveById.set(cl.id, cl)
+        if (cl.name && !liveByName.has(cl.name)) liveByName.set(cl.name, cl)
+      }
+    }
+    const lookupLive = (st) =>
+      (st.skelId && liveById.get(st.skelId)) || liveByName.get(st.name) || null
+    const pointsNearlyEqual = (a, b, eps = 0.5) =>
+      a && b && Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps
+    const mergedStreets = renderRibbons.streets.map(st => {
+      const live = lookupLive(st)
+      if (!live) return st
+      const out = { ...st }
+      if (live.measure?.left && live.measure?.right) {
+        out.measure = {
+          left: { ...live.measure.left },
+          right: { ...live.measure.right },
+          symmetric: live.measure.symmetric,
+        }
+      }
+      if (live.couplers && live.couplers.length) out.couplers = live.couplers
+      if (live.segmentMeasures) out.segmentMeasures = live.segmentMeasures
+      if (live.anchor) out.anchor = live.anchor
+      if (live.capStart !== undefined || live.capEnd !== undefined) {
+        const cLive = live.points
+        const stFirst = st.points[0], stLast = st.points[st.points.length - 1]
+        const cFirst = cLive && cLive[0]
+        const cLast = cLive && cLive[cLive.length - 1]
+        const applyStart = live.capStart !== undefined && pointsNearlyEqual(stFirst, cFirst)
+        const applyEnd = live.capEnd !== undefined && pointsNearlyEqual(stLast, cLast)
+        if (applyStart || applyEnd) {
+          out.capEnds = {
+            start: applyStart ? (live.capStart ?? null) : (st.capEnds?.start ?? null),
+            end: applyEnd ? (live.capEnd ?? null) : (st.capEnds?.end ?? null),
+          }
+        }
+      }
+      return out
+    })
     const extra = [
       ...(renderRibbons.alleys || []).map((p, i) => pathAsStreet({ ...p, kind: 'alley' }, i)),
       ...(renderRibbons.paths  || []).map((p, i) => pathAsStreet(p, i)),
     ]
     const parts = []
     const partsSelected = []
-    for (const st of [...renderRibbons.streets, ...extra]) {
+    for (const st of [...mergedStreets, ...extra]) {
       if (!st || st.disabled) continue
       if (!st.points || st.points.length < 2) continue
       if (useBoundary && !streetInBoundary(st.points)) continue
@@ -1254,6 +1381,28 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           outerArr[i] = Math.max(0, outerR + signed)
         }
         target.push(halfRingVarRaw(st.points, innerArr, outerArr, perps, side))
+
+        // Round endcaps: extend the silhouette around cul-de-sacs with a
+        // quarter-disk per side (innerR=0 → filled). Blunt caps need no
+        // extra fill — halfRingVarRaw already terminates perpendicular.
+        const caps = st.capEnds || { start: null, end: null }
+        const n = st.points.length
+        if (caps.start === 'round' && n >= 2) {
+          const ep = st.points[0]
+          const tdx = ep[0] - st.points[1][0], tdz = ep[1] - st.points[1][1]
+          const tl = Math.hypot(tdx, tdz) || 1
+          target.push(ensureCCW(quarterCapRaw(
+            ep, [tdx / tl, tdz / tl], perps[0], side, innerArr[0], outerArr[0]
+          )))
+        }
+        if (caps.end === 'round' && n >= 2) {
+          const ep = st.points[n - 1]
+          const tdx = ep[0] - st.points[n - 2][0], tdz = ep[1] - st.points[n - 2][1]
+          const tl = Math.hypot(tdx, tdz) || 1
+          target.push(ensureCCW(quarterCapRaw(
+            ep, [tdx / tl, tdz / tl], perps[n - 1], side, innerArr[n - 1], outerArr[n - 1]
+          )))
+        }
       }
     }
     const out = []
@@ -1262,7 +1411,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     const geoSelected = mergeRawGeo(partsSelected)
     if (geoSelected) out.push({ id: 'silhouette-selected', geo: geoSelected, selected: true })
     return out
-  }, [surveyActive, renderRibbons, useBoundary, selectedCorridorNames])
+  }, [surveyActive, renderRibbons, useBoundary, selectedCorridorNames, liveCenterlines])
 
   // ── Path ribbons (alleys + footways/cycleways/steps/paths) ────
   // Pavement-only ribbons for non-street roadways. Rendered in Design
@@ -1272,15 +1421,18 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
   const pathRibbons = useMemo(() => {
     const groups = {}  // kind → [raw parts]
     const push = (kind, geo) => { (groups[kind] ||= []).push(geo) }
+    // Each path entry carries its own `kind` (footway/cycleway/steps/path);
+    // alleys are tagged at the source level. Group by that kind so the
+    // Designer panel's separate pickers (footway / cycleway / steps / path)
+    // and visibility toggles each apply to their own ribbons.
     const sources = [
-      { list: ribbons.alleys || [], kind: 'alley' },
-      // Normalize all foot paths (footway/cycleway/steps/path) to 'footway'
-      // so they share one panel picker + one hide key.
-      { list: ribbons.paths  || [], kind: 'footway' },
+      { list: ribbons.alleys || [], defaultKind: 'alley' },
+      { list: ribbons.paths  || [], defaultKind: 'footway' },
     ]
-    for (const { list, kind } of sources) {
+    for (const { list, defaultKind } of sources) {
       for (let i = 0; i < list.length; i++) {
         const p = list[i]
+        const kind = p.kind || defaultKind
         const st = pathAsStreet({ ...p, kind }, i)
         if (useBoundary && !streetInBoundary(st.points)) continue
         const perps = computePerps(st.points)
@@ -1330,8 +1482,24 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       // Forward couplers + segmentMeasures along with chain measure so the
       // clip can walk segments. With per-segment overrides, a single chain
       // contributes multiple clip rings (one per segment, per side).
+      const ne = (a, b) => a && b && Math.abs(a[0] - b[0]) < 0.5 && Math.abs(a[1] - b[1]) < 0.5
       const streetsToClip = ribbons.streets.map(st => {
         const live = (st.skelId && liveById.get(st.skelId)) || liveByName.get(st.name) || null
+        let capEnds = st.capEnds || { start: null, end: null }
+        if (live && (live.capStart !== undefined || live.capEnd !== undefined)) {
+          const cLive = live.points
+          const stFirst = st.points[0], stLast = st.points[st.points.length - 1]
+          const cFirst = cLive && cLive[0]
+          const cLast = cLive && cLive[cLive.length - 1]
+          const applyStart = live.capStart !== undefined && ne(stFirst, cFirst)
+          const applyEnd = live.capEnd !== undefined && ne(stLast, cLast)
+          if (applyStart || applyEnd) {
+            capEnds = {
+              start: applyStart ? (live.capStart ?? null) : (capEnds.start ?? null),
+              end: applyEnd ? (live.capEnd ?? null) : (capEnds.end ?? null),
+            }
+          }
+        }
         return {
           points: st.points,
           measure: (live?.measure?.left && live?.measure?.right) ? live.measure : st.measure,
@@ -1339,6 +1507,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           segmentMeasures: live?.segmentMeasures,
           anchor: live?.anchor || st.anchor,
           innerSign: st.innerSign,
+          capEnds,
         }
       })
 
@@ -1388,12 +1557,49 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           const outerL = widthFor(m.left)
           const outerR = widthFor(m.right)
           if (outerL <= 0 && outerR <= 0) continue
+          const isFirstSeg = ord === 0
+          const isLastSeg = ord === ranges.length - 1
+          const ARC_N = 8
           for (const [sideSign, W] of [[-1, outerL], [+1, outerR]]) {
             if (W <= 0) continue
             const outerEdge = offsetPolyline(segPts, segPp, sideSign, W)
             const ring = []
+            // Centerline forward
             for (const p of segPts) ring.push(toClipper(p[0], p[1]))
+            // End cap: bulge from pt[last] around to offset[last]. Round →
+            // quarter-disk arc; blunt → implicit straight (no insert needed).
+            if (isLastSeg && st.capEnds?.end === 'round' && segPts.length >= 2) {
+              const last = segPts.length - 1
+              const ep = segPts[last]
+              const tdx = ep[0] - segPts[last - 1][0], tdz = ep[1] - segPts[last - 1][1]
+              const tl = Math.hypot(tdx, tdz) || 1
+              const tx = tdx / tl, tz = tdz / tl
+              const px = segPp[last][0],  pz = segPp[last][1]
+              for (let i = 0; i < ARC_N; i++) {
+                const a = (i / ARC_N) * (Math.PI / 2)
+                const ca = Math.cos(a), sa = Math.sin(a)
+                const dx = ca * tx + sa * sideSign * px
+                const dz = ca * tz + sa * sideSign * pz
+                ring.push(toClipper(ep[0] + dx * W, ep[1] + dz * W))
+              }
+            }
+            // Offset edge backward
             for (let i = outerEdge.length - 1; i >= 0; i--) ring.push(toClipper(outerEdge[i][0], outerEdge[i][1]))
+            // Start cap: bulge from offset[0] around to pt[0].
+            if (isFirstSeg && st.capEnds?.start === 'round' && segPts.length >= 2) {
+              const ep = segPts[0]
+              const tdx = ep[0] - segPts[1][0], tdz = ep[1] - segPts[1][1]
+              const tl = Math.hypot(tdx, tdz) || 1
+              const tx = tdx / tl, tz = tdz / tl
+              const px = segPp[0][0],  pz = segPp[0][1]
+              for (let i = 1; i <= ARC_N; i++) {
+                const a = (i / ARC_N) * (Math.PI / 2)
+                const ca = Math.cos(a), sa = Math.sin(a)
+                const dx = ca * sideSign * px + sa * tx
+                const dz = ca * sideSign * pz + sa * tz
+                ring.push(toClipper(ep[0] + dx * W, ep[1] + dz * W))
+              }
+            }
             ribbonClipPaths.push(ring)
           }
         }
