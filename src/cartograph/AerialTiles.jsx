@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
+import { BOUNDARY_CENTER_XZ, FADE_INNER, FADE_OUTER } from './boundary.js'
 
-// Match MapLayers.jsx FADE_* — neighborhood circle silhouette.
-const FADE_CENTER = new THREE.Vector2(162, -127)
-const FADE_INNER = 758
-const FADE_OUTER = 892
+// Neighborhood circle silhouette — center + fade band imported from
+// `boundary.js` so moving the circle is a one-file edit.
+const FADE_CENTER = new THREE.Vector2(BOUNDARY_CENTER_XZ[0], BOUNDARY_CENTER_XZ[1])
 
 function injectCircleCrop(mat) {
   mat.transparent = true
@@ -23,7 +23,7 @@ function injectCircleCrop(mat) {
         'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _r);\n' +
         'if (gl_FragColor.a < 0.01) discard;')
   }
-  mat.customProgramCacheKey = () => `aerial-crop-${FADE_INNER}-${FADE_OUTER}`
+  mat.customProgramCacheKey = () => `aerial-crop-${FADE_INNER.toFixed(0)}-${FADE_OUTER.toFixed(0)}`
   return mat
 }
 

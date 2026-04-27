@@ -222,6 +222,24 @@ createServer((req, res) => {
     return
   }
 
+  // POST /bake — run the cartograph bake step (ribbons.json → SVG).
+  // The bake is the cartograph's only publish artifact — see memory
+  // `project_cartograph_bake_step`. Synchronous on the server side; the
+  // client shows a modal during the round-trip.
+  if (req.method === 'POST' && req.url === '/bake') {
+    try {
+      const t0 = Date.now()
+      execSync('node bake-svg.js', { cwd: import.meta.dirname, timeout: 60000 })
+      const ms = Date.now() - t0
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, ms, path: 'public/cartograph-ground.svg' }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
+    return
+  }
+
   // POST /rebuild — re-run render.js and reload preview
   if (req.method === 'POST' && req.url === '/rebuild') {
     try {

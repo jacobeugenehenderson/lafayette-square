@@ -658,7 +658,12 @@ function ParkTrees({ trees: treesProp } = {}) {
       woodGeos.push(paint(flare, bark))
 
       // ── Depth of branching scales with tree size ──
-      const maxGen = dbh >= 20 ? 4 : dbh >= 10 ? 3 : 2
+      // Temporary cap at gen 3. Gen 4 produced ~5× more wood geometry and
+      // OOM'd on shots after the cartograph data grew. At hero/browse the
+      // visual difference is invisible. The proper fix is per-species
+      // instanced wood meshes (better visual AT eye-level too) — see plan
+      // below this commit / project_cartograph_bake_step memory.
+      const maxGen = dbh >= 10 ? 3 : 2
       const branchLen = canopyR * (0.8 + r(5) * 0.15)
       const branchR = trunkRTop * 0.6
       const rBase = idx * 10000

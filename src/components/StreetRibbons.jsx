@@ -83,10 +83,11 @@ const CURB_WIDTH = 0.1524
 // ── Radial edge fade (soft neighborhood boundary) ──────────────────
 // Faces fade on a short schedule; streets extend farther and fade slower,
 // so roads trail past the blocks' dissolved edge into empty space.
-// Center matches neighborhood_boundary.json.
-const FADE_CENTER = { x: 162, z: -127 }
-const FACE_FADE   = { inner: 758, outer: 892 }   // last 15% of R=892
-const STREET_FADE = { inner: 800, outer: 1000 }  // starts later, reaches past R
+// Center / radius come from boundary.js (= neighborhood_boundary.json).
+import { BOUNDARY_CENTER_XZ as _BC, BOUNDARY_RADIUS as _BR, FADE_INNER as _BFI } from '../cartograph/boundary.js'
+const FADE_CENTER = { x: _BC[0], z: _BC[1] }
+const FACE_FADE   = { inner: _BFI,         outer: _BR }            // last 15% of R
+const STREET_FADE = { inner: _BFI + 42,    outer: _BR + 108 }      // starts later, reaches past R
 
 // ── Measure-stack helpers ─────────────────────────────────────────
 // The pipeline emits `measure: {left, right}` per street. Each side is
@@ -522,21 +523,24 @@ function buildCornerPlug(IX, edA, edB, sA, sB, refA, refB) {
   ]
   // Canonical key points (90° frame, x = leg B perp distance, y = leg A perp distance).
   // Arc center stays at the curb-outer corner (curbOB+R, curbOA+R). The arc
-  // RADIUS is bumped by CURB_HALF (= half of street-profile CURB_WIDTH) so
-  // that the boundary curve runs along each leg's CURB-STRIPE CENTER, not
-  // its curb-outer edge. With the curb rendered as a constant-width stroke
-  // CENTERED on this curve, the stroke perpendicular range exactly equals
-  // [asphOuter, curbOuter] on each leg — the same range the leg ribbon's
-  // straight curb stripe occupies. Curb thickness is therefore identical
-  // and continuous from leg into corner and back into leg.
-  const CURB_HALF = 0.075   // = streetProfiles CURB_WIDTH / 2 (= 6"/2)
+  // RADIUS is bumped by curb-half so that the boundary curve runs along
+  // each leg's CURB-STRIPE CENTER, not its curb-outer edge. With the curb
+  // rendered as a constant-width stroke CENTERED on this curve, the stroke
+  // perpendicular range exactly equals [asphOuter, curbOuter] on each leg.
+  // Per-leg curb half is derived from refEdges' (curbOuter − curbInner) so
+  // chains with non-default curb widths render correctly. When legs differ,
+  // each tangent uses its own leg's half; the arc radius bump uses the
+  // average so the seam blends gracefully.
+  const curbHalfA = Math.max(0, (refA.curbOuter - refA.curbInner) / 2)
+  const curbHalfB = Math.max(0, (refB.curbOuter - refB.curbInner) / 2)
+  const curbHalfAvg = (curbHalfA + curbHalfB) / 2
   const arcCx = curbOB + R, arcCy = curbOA + R
-  const arcR = R + CURB_HALF
-  const asphOA = refA.curbInner    // = curbOA - CURB_WIDTH (leg A's asphalt-outer line)
+  const arcR = R + curbHalfAvg
+  const asphOA = refA.curbInner    // = curbOA − leg A curb (leg A asphalt-outer line)
   const asphOB = refB.curbInner
   // Arc tangent perp positions: curb-stripe-center on each leg.
-  const tangentA_y = curbOA - CURB_HALF   // leg A curb-stripe-center perp
-  const tangentB_x = curbOB - CURB_HALF
+  const tangentA_y = curbOA - curbHalfA
+  const tangentB_x = curbOB - curbHalfB
   const ARC_SEGS = 16
   const arcWorld = []
   for (let i = 0; i <= ARC_SEGS; i++) {
@@ -562,7 +566,9 @@ function buildCornerPlug(IX, edA, edB, sA, sB, refA, refB) {
   const swLegA = T(arcCx, swOA)
   const swRing = [swLegB, ...arcWorld.slice().reverse(), swLegA]
   const swFill = fanRaw(oo, swRing)
-  return { asphFill, swFill, boundary: arcWorld }
+  // curbStrokeWidth carries the average of the two legs' curbs so the
+  // corner curb-stroke pass renders at the same thickness as the legs.
+  return { asphFill, swFill, boundary: arcWorld, curbStrokeWidth: curbHalfAvg * 2 }
 }
 
 function fanRaw(apex, ringWorld) {
@@ -675,9 +681,12 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     // remains as a fallback for any ribbons.json street missing skelId.
     const liveById = new Map()
     const liveByName = new Map()
+    // Build live lookups WITHOUT excluding disabled chains here — disability
+    // needs to propagate to the merged street so corner plugs / face clip
+    // can also drop the chain. Filter on `merged.disabled` downstream.
     if (liveCenterlines) {
       for (const cl of liveCenterlines) {
-        if (!cl || cl.disabled) continue
+        if (!cl) continue
         if (cl.id) liveById.set(cl.id, cl)
         if (cl.name && !liveByName.has(cl.name)) liveByName.set(cl.name, cl)
       }
@@ -698,6 +707,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       const live = lookupLive(st)
       if (!live) return st
       const merged = { ...st }
+      if (live.disabled) merged.disabled = true
       if (live.measure?.left && live.measure?.right) {
         merged.measure = {
           left: { ...live.measure.left },
@@ -1064,8 +1074,9 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
                   activeGroups['corner_sw'].push(ensureCCW(plug.swFill))
                   ensure('corner_asph')
                   activeGroups['corner_asph'].push(ensureCCW(plug.asphFill))
-                  // boundary curve collected for stroke pass below.
-                  cornerBoundaries.push(plug.boundary)
+                  // boundary curve collected for stroke pass below; carry
+                  // the plug's curb width so the stroke matches the legs.
+                  cornerBoundaries.push({ boundary: plug.boundary, width: plug.curbStrokeWidth })
                 }
               }
             }
@@ -1074,15 +1085,15 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       }
     }
 
-    // ── Curb stroke pass: paint a thin band at constant world-units width
-    // on each corner plug's asph/sidewalk boundary curve. Pure stylization,
-    // not part of the plug's geometric construction — the stroke width is
-    // invariant under any underlying curve distortion. ──
-    const CURB_STROKE_WIDTH = 0.15  // meters (= ~6 inches, ADA standard).
+    // ── Curb stroke pass: paint a thin band on each corner plug's
+    // asph/sidewalk boundary curve. Stroke width is per-plug — average of
+    // the two meeting legs' curbs (carried on each entry as `width`) — so
+    // chains with non-default curbs render with matching corners. ──
     if (cornerBoundaries.length) {
       if (!groups['corner_curb']) groups['corner_curb'] = []
-      for (const boundary of cornerBoundaries) {
-        const stroke = strokePolylineRaw(boundary, CURB_STROKE_WIDTH)
+      for (const { boundary, width } of cornerBoundaries) {
+        const w = width > 0 ? width : 0.15  // fallback when two zero-curb legs meet
+        const stroke = strokePolylineRaw(boundary, w)
         if (stroke) groups['corner_curb'].push(ensureCCW(stroke))
       }
     }
@@ -1508,6 +1519,9 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           anchor: live?.anchor || st.anchor,
           innerSign: st.innerSign,
           capEnds,
+          // Operator-disabled chains contribute no clip polygon — toggling a
+          // chain off in Measure stops it from carving block faces.
+          disabled: !!live?.disabled,
         }
       })
 
@@ -1533,6 +1547,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       }
       const ribbonClipPaths = []
       for (const st of streetsToClip) {
+        if (st.disabled) continue
         if (!st.points || st.points.length < 2) continue
         if (!st.measure?.left || !st.measure?.right) continue
         const perps = computePerps(st.points)
@@ -1551,8 +1566,9 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           const widthFor = (s) => {
             if (!s) return 0
             const hw = s.pavementHW || 0, tl = s.treelawn || 0, sw = s.sidewalk || 0
+            const cw = Number.isFinite(s.curb) ? s.curb : CURB_WIDTH
             if (!hw && !tl && !sw && (s.terminal === 'none' || !s.terminal)) return 0
-            return hw + CURB_WIDTH + tl + sw
+            return hw + cw + tl + sw
           }
           const outerL = widthFor(m.left)
           const outerR = widthFor(m.right)
@@ -1827,6 +1843,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
 
   const LAYER_MAP = {
     asphalt: 'street', corner_asph: 'street',
+    highway: 'highway',
     gutter: 'street',
     'parking-parallel': 'street', 'parking-angled': 'street',
     sidewalk: 'sidewalk', corner_sw: 'sidewalk',

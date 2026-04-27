@@ -1,20 +1,57 @@
 import { create } from 'zustand'
-import { fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton, fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay } from '../api.js'
+import { fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton, fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay, bakeSvg } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
 
 const useCartographStore = create((set, get) => ({
   // ── Layer visibility + colors (synced from Panel.jsx) ─────
+  // Hydrated from overlay.design once /overlay loads. Panel.jsx watches
+  // _designHydrated to copy these into its local state on first arrival
+  // and to gate save calls so hydration itself doesn't echo a write.
   layerVis: {},
   layerColors: {},
   layerStrokes: {},
   luColors: {},
+  openSections: {},
   bgColor: '#1a1a18',
+  _designHydrated: false,
 
   // ── Map visibility (global, crosses all modes) ────────────
   // Both fills and aerial are orientation toggles, not styling — they live
   // in the toolbar alongside each other, not in the design panel.
   fillsVisible: true,
   toggleFills: () => set(s => ({ fillsVisible: !s.fillsVisible })),
+
+  // Background view: aerialVisible=false → curated SVG cartograph,
+  // aerialVisible=true → aerial photo. Same in pure Design and in tools.
+  // Ribbons + tool affordances always render on top of either background.
+  // AerialTiles stays mounted regardless so tiles preload in the
+  // background; this flag only gates render.
+  aerialVisible: false,
+  toggleAerial: () => set(s => ({ aerialVisible: !s.aerialVisible })),
+  setAerialVisible: (v) => set({ aerialVisible: !!v }),
+
+  // Bake state. The cartograph's publish step (Designer → Stage) writes
+  // public/cartograph-ground.svg from ribbons.json. `bakeStale` flips
+  // true on every authoring edit; `bakeRunning` gates the Stage button
+  // and drives the modal. After a successful bake we navigate to Hero.
+  bakeRunning: false,
+  bakeStale: true,           // true on app boot — never baked yet this session
+  bakeLastMs: null,
+  bakeError: null,
+  markBakeStale: () => set({ bakeStale: true }),
+  runBake: async () => {
+    if (get().bakeRunning) return
+    set({ bakeRunning: true, bakeError: null })
+    try {
+      const r = await bakeSvg()
+      set({ bakeRunning: false, bakeStale: false, bakeLastMs: r.ms })
+      // Hand off to Hero on success — the cartograph is published, the
+      // operator wants to see the result.
+      get().setShot('hero')
+    } catch (err) {
+      set({ bakeRunning: false, bakeError: String(err.message || err) })
+    }
+  },
 
   // ── Tool + Shot ───────────────────────────────────────────
   // Two orthogonal axes:
@@ -188,10 +225,29 @@ const useCartographStore = create((set, get) => ({
           oneway: !!s.oneway,
           points: (s.points || []).map(p => [p.x, p.z]),
           divided: !!s.divided,
+          // Operator can hide individual chains (echo hunting, suppress OSM
+          // junk centerlines). Hidden chains still appear in Measure (dim,
+          // re-selectable) so you can toggle them back on.
+          disabled: !!ov?.disabled,
           measure: ov?.measure ?? legacy?.measure,
           segmentMeasures: ov?.segmentMeasures ?? legacy?.segmentMeasures,
-          capStart: ov?.capStart ?? legacy?.capStart,
-          capEnd: ov?.capEnd ?? legacy?.capEnd,
+          // Effective cap = overlay (operator) > legacy (centerlines.json) >
+          // ribbons.json (what derive.js actually rendered). The fallback
+          // chain keeps the Survey dropdown in sync with the viewer when an
+          // overlay/legacy entry is missing or stripped of caps. `null` from
+          // an overlay or legacy entry is an explicit "no cap" and wins over
+          // any underlying ribbons.json default — only `undefined` falls
+          // through.
+          capStart: ov && 'capStart' in ov ? ov.capStart
+            : legacy && 'capStart' in legacy ? legacy.capStart
+            : rb?.capEnds?.start ?? null,
+          capEnd: ov && 'capEnd' in ov ? ov.capEnd
+            : legacy && 'capEnd' in legacy ? legacy.capEnd
+            : rb?.capEnds?.end ?? null,
+          // Baseline = ribbons.json default. Save logic uses this to detect
+          // operator overrides to null (suppressing an auto cap).
+          _baselineCapStart: rb?.capEnds?.start ?? null,
+          _baselineCapEnd: rb?.capEnds?.end ?? null,
           couplers: ov?.couplers ?? s.couplers ?? [],
           // Anchor: operator override wins; otherwise auto-detected from
           // derive's divided-pair pass. innerSign and pairId always come
@@ -234,7 +290,21 @@ const useCartographStore = create((set, get) => ({
         for (const idx of members) corridorByIdx.set(idx, members)
       }
 
-      set({ centerlineData: { streets }, svOriginals: originals, corridorByIdx })
+      // Hydrate design (layer visibility/colors/strokes/land-use colors) from
+      // the overlay's design block. Always set _designHydrated so Panel begins
+      // saving subsequent user edits — even when the overlay had no design yet.
+      const design = (overlay && overlay.design) || {}
+      set({
+        centerlineData: { streets },
+        svOriginals: originals,
+        corridorByIdx,
+        layerVis: design.layerVis || {},
+        layerColors: design.layerColors || {},
+        layerStrokes: design.layerStrokes || {},
+        luColors: design.luColors || {},
+        openSections: design.openSections || {},
+        _designHydrated: true,
+      })
     } catch (e) { console.warn('[skeleton] load failed:', e) }
   },
 
@@ -244,29 +314,66 @@ const useCartographStore = create((set, get) => ({
   // omitted so the overlay file stays compact. Called by every authoring
   // action after the in-memory state is updated.
   _saveOverlay: () => {
-    const { centerlineData } = get()
+    const { centerlineData, layerVis, layerColors, layerStrokes, luColors, openSections, _designHydrated } = get()
+    // Refuse to write while the store is in its uninitialized state — saving
+    // an empty streets/design dict here clobbers operator edits in
+    // overlay.json. The store reaches uninitialized state on real boot
+    // (before _loadCenterlines completes) AND on Vite HMR of this module
+    // (state resets to defaults but no remount of CartographApp re-fires
+    // _loadCenterlines). In both cases an immediate save would wipe disk.
+    if (!centerlineData.streets || centerlineData.streets.length === 0) {
+      console.warn('[overlay] save aborted: centerlineData not loaded')
+      return
+    }
+    if (!_designHydrated) {
+      console.warn('[overlay] save aborted: design not hydrated')
+      return
+    }
+    // Any save = the SVG bake is now stale. The Stage button shows it,
+    // the modal re-runs on next click. (Cheap to flip; doesn't auto-bake.)
+    if (!get().bakeStale) set({ bakeStale: true })
     const out = {}
     for (const st of centerlineData.streets || []) {
       if (!st.id) continue
       const hasMeasure = !!st.measure
       const hasSegM = st.segmentMeasures && Object.keys(st.segmentMeasures).length > 0
-      const hasCaps = !!(st.capStart || st.capEnd)
+      const capStart = st.capStart ?? null
+      const capEnd = st.capEnd ?? null
+      const baseStart = st._baselineCapStart ?? null
+      const baseEnd = st._baselineCapEnd ?? null
+      // Persist caps when the operator state differs from the ribbons.json
+      // baseline (including explicit override-to-null) OR when there's any
+      // non-null cap to remember.
+      const hasCaps = capStart !== baseStart || capEnd !== baseEnd || !!capStart || !!capEnd
       const hasCouplers = Array.isArray(st.couplers) && st.couplers.length > 0
       // Anchor is persisted only when it differs from the auto-detected
       // default (from ribbons.json). _autoAnchor is set on load.
       const hasAnchorOverride = st.anchor && st.anchor !== (st._autoAnchor || 'center')
-      if (!hasMeasure && !hasSegM && !hasCaps && !hasCouplers && !hasAnchorOverride) continue
+      const hasDisabled = !!st.disabled
+      if (!hasMeasure && !hasSegM && !hasCaps && !hasCouplers && !hasAnchorOverride && !hasDisabled) continue
       out[st.id] = {
         name: st.name,
         ...(hasMeasure ? { measure: st.measure } : {}),
         ...(hasSegM ? { segmentMeasures: st.segmentMeasures } : {}),
-        ...(hasCaps ? { capStart: st.capStart || null, capEnd: st.capEnd || null } : {}),
+        ...(hasCaps ? { capStart, capEnd } : {}),
         ...(hasCouplers ? { couplers: st.couplers } : {}),
         ...(hasAnchorOverride ? { anchor: st.anchor } : {}),
+        ...(hasDisabled ? { disabled: true } : {}),
       }
     }
-    saveOverlay({ version: 1, streets: out })
+    const design = { layerVis, layerColors, layerStrokes, luColors, openSections }
+    saveOverlay({ version: 1, streets: out, design })
   },
+  // Debounced save for design-panel edits. Color pickers fire `onInput` many
+  // times per drag; coalesce to a single network write 300 ms after the last
+  // change. Centerline edits keep using _saveOverlay directly.
+  _saveDesignDebounced: (() => {
+    let t = null
+    return () => {
+      if (t) clearTimeout(t)
+      t = setTimeout(() => { t = null; get()._saveOverlay() }, 300)
+    }
+  })(),
   // Back-compat alias for older callers that still invoke _saveCenterlines.
   _saveCenterlines: () => { get()._saveOverlay() },
 
@@ -303,6 +410,20 @@ const useCartographStore = create((set, get) => ({
     if (selectedStreet === null) return
     const streets = centerlineData.streets.map((s, i) =>
       i === selectedStreet ? { ...s, [field]: value } : s
+    )
+    set({ centerlineData: { ...centerlineData, streets } })
+    get()._saveOverlay()
+  },
+
+  // Toggle a chain's `disabled` flag. Disabled chains stop contributing
+  // ribbon geometry, edge strokes, silhouette, AND face-clip — but stay
+  // selectable in Measure (dimmed) so the operator can re-enable.
+  setStreetDisabled: (streetIdx, disabled) => {
+    const { centerlineData } = get()
+    const st = centerlineData.streets[streetIdx]
+    if (!st) return
+    const streets = centerlineData.streets.map((s, i) =>
+      i === streetIdx ? { ...s, disabled: !!disabled } : s
     )
     set({ centerlineData: { ...centerlineData, streets } })
     get()._saveOverlay()
@@ -489,3 +610,17 @@ export default useCartographStore
 
 // Dev hook: expose the store on window for quick inspection.
 if (typeof window !== 'undefined') window.cs = useCartographStore
+
+// Vite HMR resilience: reloading this module resets the store to initial
+// defaults, but CartographApp's _loadCenterlines effect (deps []) doesn't
+// re-fire on a store-only HMR. Re-trigger the load so design + centerlines
+// rehydrate from overlay.json, instead of sitting in the empty-guard state
+// until the next full page reload.
+if (import.meta.hot) {
+  import.meta.hot.accept()
+  if (typeof window !== 'undefined') {
+    useCartographStore.getState()._loadCenterlines()
+    useCartographStore.getState()._loadMarkers?.()
+    useCartographStore.getState()._loadMeasurements?.()
+  }
+}

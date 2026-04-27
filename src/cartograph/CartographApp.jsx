@@ -38,6 +38,7 @@ import Toolbar from './Toolbar.jsx'
 import StatusBar from './StatusBar.jsx'
 import Panel from './Panel.jsx'
 import StagePanelReal, { defaultKeyframes } from './StagePanel.jsx'
+import BakeModal from './BakeModal.jsx'
 
 // Hooks + store
 import useCartographStore from './stores/useCartographStore.js'
@@ -55,7 +56,7 @@ useTimeOfDay.getState().setHour(12)
 // makeDefault /> takes over for shots; flipping makeDefault back to false
 // returns control to the Canvas's ortho camera.
 function CameraRig({ orthoRef, perspRef, controlsRef }) {
-  const { camera, scene } = useThree()
+  const { camera, scene, size } = useThree()
   const shot = useCartographStore(s => s.shot)
   // Grab the Canvas's default ortho camera once.
   useEffect(() => {
@@ -67,6 +68,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     }
   }, [camera, scene, orthoRef])
   const appliedShot = useRef(null)
+  const prevShot = useRef(null)
   const didInitOrtho = useRef(false)
 
   // One-time: orient the ortho camera properly (top-down), using saved
@@ -98,6 +100,15 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
       if (shot === 'designer') {
         const cam = orthoRef.current
         if (!cam) return
+        // Coming from Browse: copy x/z + back-compute zoom from altitude so
+        // the visible patch matches what the user was looking at.
+        const persp = perspRef.current
+        if (persp && prevShot.current === 'browse') {
+          const fovRad = (persp.fov * Math.PI) / 180
+          const visibleH = 2 * Math.max(persp.position.y, 1) * Math.tan(fovRad / 2)
+          cam.position.set(persp.position.x, 500, persp.position.z)
+          cam.zoom = size.height / Math.max(visibleH, 1e-6)
+        }
         cam.up.set(0, 0, -1)
         cam.lookAt(cam.position.x, 0, cam.position.z)
         cam.updateProjectionMatrix()
@@ -106,13 +117,29 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         const cam = perspRef.current
         const s = SHOTS[shot]
         if (!cam || !s) return
-        cam.position.set(...s.position)
-        cam.up.set(...(s.up || [0, 1, 0]))
-        cam.fov = s.fov
-        cam.lookAt(...s.target)
-        cam.updateProjectionMatrix()
-        if (ctl) { ctl.target.set(...s.target); ctl.update() }
+        // Coming from Designer into Browse: copy x/z + derive altitude from
+        // ortho zoom so the perspective view frames the same ground patch.
+        if (shot === 'browse' && prevShot.current === 'designer' && orthoRef.current) {
+          const ortho = orthoRef.current
+          const fovRad = (s.fov * Math.PI) / 180
+          const visibleH = size.height / Math.max(ortho.zoom, 1e-6)
+          const altitude = visibleH / (2 * Math.tan(fovRad / 2))
+          cam.position.set(ortho.position.x, altitude, ortho.position.z)
+          cam.up.set(...(s.up || [0, 1, 0]))
+          cam.fov = s.fov
+          cam.lookAt(ortho.position.x, 0, ortho.position.z)
+          cam.updateProjectionMatrix()
+          if (ctl) { ctl.target.set(ortho.position.x, 0, ortho.position.z); ctl.update() }
+        } else {
+          cam.position.set(...s.position)
+          cam.up.set(...(s.up || [0, 1, 0]))
+          cam.fov = s.fov
+          cam.lookAt(...s.target)
+          cam.updateProjectionMatrix()
+          if (ctl) { ctl.target.set(...s.target); ctl.update() }
+        }
       }
+      prevShot.current = shot
     }
     // MapControls remounts via its key change — wait one tick for the new
     // instance to be in controlsRef before we push the target.
@@ -170,6 +197,23 @@ function Controls({ controlsRef }) {
         screenSpacePanning
         minZoom={0.5}
         maxZoom={40}
+      />
+    )
+  }
+  // Browse is a fixed overhead — pan + zoom only, rotation locked. The
+  // perspective camera stays where StageCamera placed it (top-down at
+  // SHOTS.browse.position); we just constrain what the user can do to it.
+  if (shot === 'browse') {
+    return (
+      <MapControls
+        key="browse"
+        ref={controlsRef}
+        enableRotate={false}
+        enablePan
+        enableZoom
+        screenSpacePanning
+        minDistance={50}
+        maxDistance={2000}
       />
     )
   }
@@ -280,7 +324,7 @@ export default function CartographApp() {
   const bgColor = useCartographStore(s => s.bgColor)
   const layerVis = useCartographStore(s => s.layerVis)
   const luColors = useCartographStore(s => s.luColors)
-  const fillsVisible = useCartographStore(s => s.fillsVisible)
+  const aerialVisible = useCartographStore(s => s.aerialVisible)
   const centerlineData = useCartographStore(s => s.centerlineData)
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
@@ -300,37 +344,19 @@ export default function CartographApp() {
   for (const k in layerVis) {
     if (!layerVis[k]) hiddenLayers[k] = true
   }
-  // "Fills" toggle — behavior per tool (see NOTES.md Fills section):
-  //   - Survey/Measure + Fills OFF: hide context decorations (land use,
-  //     buildings, park, landscape, barriers, trees) but KEEP roadway
-  //     composites so the tool's translucent edit surface shows over aerial.
-  //   - Design (tool null) + Fills OFF: hide everything — aerial only.
-  //     Ribbons are also suppressed via `designAerialOnly` below.
-  const designAerialOnly = inDesigner && !fillsVisible && !tool
-  // When a tool is active (Survey/Measure), hide the giant off-map ground
-  // plane so the aerial photo shows through under the streets. Face fills
-  // cover blocks; the gap between blocks = road = aerial reference.
+  // Background view: aerialVisible swaps the painted background between
+  // curated SVG and aerial photo. Curated rendering hides only when
+  // aerial is on AND we're in pure Design — under tools, ribbons +
+  // tool affordances stay over the aerial as reference.
+  const designAerialOnly = inDesigner && !tool && aerialVisible
+  // When a tool is active, hide the giant off-map ground plane so the
+  // background (curated or aerial) shows through under the streets.
   const toolActive = inDesigner && !!tool && scene !== 'toy'
   const corridorSelected = toolActive && selectedStreet !== null
-  const decorationsHidden = (!fillsVisible && inDesigner) ? {
-    ...hiddenLayers,
-    ground: true, park: true,
-    building: true, parking_lot: true, tree: true,
-    garden: true, playground: true, swimming_pool: true, pitch: true,
-    sports_centre: true, outdoor_seating: true, fitness_station: true,
-    water: true, wood: true, scrub: true, cliff: true, bare_rock: true,
-    fence: true, wall: true, hedge: true, retaining_wall: true,
-    // Fills OFF — strip street decorations (stripes, bike lanes, markings,
-    // alleys/footways, lamps) in every mode so the tool's own affordances
-    // (ribbons + centerlines + handles) read clean over the aerial.
-    alley: true, footway: true, lamp: true,
-    stripe: true, edgeline: true, bikelane: true, centerline: true,
-  } : (toolActive ? { ...hiddenLayers, ground: true } : hiddenLayers)
-  const stageHidden = fillsVisible ? hiddenLayers : {
-    ...hiddenLayers,
-    ground: true, park: true, building: true,
-    alley: true, footway: true, tree: true, lamp: true,
-  }
+  const decorationsHidden = toolActive ? { ...hiddenLayers, ground: true } : hiddenLayers
+  // Shots use the same hidden layers as Designer; the old Fills-OFF
+  // shot variant retired with the Fills toggle.
+  const stageHidden = hiddenLayers
 
   let cursor = 'grab'
   if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'
@@ -401,7 +427,7 @@ export default function CartographApp() {
               flat={inDesigner}
               ribbons={scene === 'toy' ? toyRibbons : undefined}
               useBoundary={scene !== 'toy'}
-              hideFaceFills={inDesigner && !fillsVisible} />
+              hideFaceFills={false} />
             </group>
           </R3FErrorBoundary>
 
@@ -415,13 +441,16 @@ export default function CartographApp() {
           )}
 
           {/* ── Designer-only UI overlays (authoring tools only make sense
-              against the real neighborhood data) ── */}
-          <group visible={inDesigner}>
-            {scene === 'neighborhood' && <AerialTiles visible={inDesigner} />}
-            {scene === 'neighborhood' && <DesignerArch />}
-            {scene === 'neighborhood' && <SurveyorOverlay />}
-            {tool === 'measure' && scene === 'neighborhood' && <MeasureOverlay />}
-          </group>
+              against the real neighborhood data) ──
+              All four mount only in Designer; shots don't need them and
+              keeping them out of the tree means TextureLoader never fires
+              for the 64 aerial tiles when the operator is in a shot. */}
+          {inDesigner && scene === 'neighborhood' && <>
+            <AerialTiles visible={!!tool || aerialVisible} />
+            <DesignerArch />
+            <SurveyorOverlay />
+            {tool === 'measure' && <MeasureOverlay />}
+          </>}
 
           {/* ── Shot-only (environment paint — must exactly mirror runtime) ── */}
           {!inDesigner && <StageShadows />}
@@ -434,7 +463,12 @@ export default function CartographApp() {
             <group visible={false}>
               <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
             </group>
-            {scene === 'neighborhood' && <>
+            {/* Heavy 3D-only props — skip mounting entirely in Designer
+                (flat top-down view doesn't render trees/arch/lamps/scene
+                detail, and `visible={false}` doesn't prevent the children's
+                expensive useMemos from running). They mount as soon as a
+                shot is active. */}
+            {scene === 'neighborhood' && !inDesigner && <>
               <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
               <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
               <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
@@ -466,6 +500,8 @@ export default function CartographApp() {
       </div>
 
       {inDesigner && <Panel />}
+
+      <BakeModal />
     </div>
   )
 }

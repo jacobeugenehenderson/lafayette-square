@@ -37,9 +37,18 @@ const TYPE_PAVEMENT_HW = {
   cycleway:    5 * FT,
   pedestrian:  5 * FT,
   steps:       4 * FT,
+  // Highway / motorway pavement profiles. Wider lanes, no curb-side
+  // pedestrian zone (highways have shoulders + barriers, not sidewalks).
+  // motorway = full freeway carriageway (~12ft × 3 lanes + shoulders).
+  // motorway_link = ramp (~16ft total). trunk ≈ primary.
+  motorway:      3 * 12 * FT / 2 + 10 * FT,
+  motorway_link: 16 * FT / 2,
+  trunk:         4 * 11 * FT / 2 + 8 * FT,
+  trunk_link:    16 * FT / 2,
 }
 
 // Types that get a default sidewalk-zone (treelawn + sidewalk, terminal='sidewalk').
+// Highways are intentionally excluded — they emit pavement-only ribbons.
 const SIDEWALK_ELIGIBLE = new Set(['residential', 'secondary', 'primary'])
 
 // ── Palettes ───────────────────────────────────────────
@@ -47,6 +56,7 @@ const SIDEWALK_ELIGIBLE = new Set(['residential', 'secondary', 'primary'])
 // overrides via store.layerColors — see m3Colors.js for the BAND_TO_LAYER map.
 export const BAND_COLORS = {
   asphalt:  '#3e3e3c',
+  highway:  '#2d2d2c',   // motorway / ramp asphalt — slightly darker by default
   curb:     '#6b4a30',
   treelawn: '#5a6e42',
   sidewalk: '#a89e8e',
@@ -66,6 +76,7 @@ export const CAUSTIC_BAND_COLORS = {
 
 export const BAND_LABELS = {
   asphalt:  'Asphalt',
+  highway:  'Highway',
   curb:     'Curb',
   treelawn: 'Treelawn',
   sidewalk: 'Sidewalk',
@@ -100,8 +111,13 @@ export const SNAP_RADIUS = 0.25
 //       default so the default rendering still reads as a residential block.
 export function defaultSideMeasure(type, survey, sideKey = 'left') {
   const hw = survey?.pavementHalfWidth || TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential
+  // Highway types carry their own asphalt material so the Designer panel
+  // can recolor them independently of residential streets. The pipeline
+  // (sideToStripes) reads `side.material` and falls back to 'asphalt'.
+  const isHighway = type === 'motorway' || type === 'motorway_link' || type === 'trunk' || type === 'trunk_link'
+  const material = isHighway ? 'highway' : undefined
   if (!SIDEWALK_ELIGIBLE.has(type)) {
-    return { pavementHW: hw, treelawn: 0, sidewalk: 0, terminal: 'none' }
+    return { pavementHW: hw, treelawn: 0, sidewalk: 0, terminal: 'none', ...(material ? { material } : {}) }
   }
   const swDist = sideKey === 'right'
     ? survey?.sidewalkRight
@@ -148,15 +164,19 @@ export function sideToStripes(side) {
   if (!side) return []
   const out = []
   let r = 0
-  // asphalt
+  // asphalt — `side.material` overrides the default for highway-class
+  // chains so the Designer panel can recolor them independently.
+  const asphMat = side.material || 'asphalt'
   if (side.pavementHW > 0) {
-    out.push({ material: 'asphalt', innerR: r, outerR: r + side.pavementHW })
+    out.push({ material: asphMat, innerR: r, outerR: r + side.pavementHW })
     r += side.pavementHW
   }
-  // curb — always present unless pavement is zero
+  // curb — always present unless pavement is zero. Per-side `side.curb`
+  // overrides the constant; absent → use CURB_WIDTH default.
   if (side.pavementHW > 0 && side.terminal !== undefined) {
-    out.push({ material: 'curb', innerR: r, outerR: r + CURB_WIDTH })
-    r += CURB_WIDTH
+    const cw = Number.isFinite(side.curb) ? side.curb : CURB_WIDTH
+    out.push({ material: 'curb', innerR: r, outerR: r + cw })
+    r += cw
   }
   if (side.terminal === 'none') return out
   // treelawn (optional)

@@ -1042,7 +1042,10 @@ export function deriveLayers(highways) {
   const vehicularStreets = highways.filter(f => {
     const t = f.tags?.highway
     return ['residential', 'primary', 'primary_link', 'secondary', 'secondary_link',
-            'tertiary', 'tertiary_link', 'unclassified'].includes(t) && f.coords.length >= 2
+            'tertiary', 'tertiary_link', 'unclassified',
+            // Freeway corridor — included so the I-44 edge of the
+            // neighborhood reads as real geography rather than absence.
+            'motorway', 'motorway_link', 'trunk', 'trunk_link'].includes(t) && f.coords.length >= 2
   })
   console.log(`    ${vehicularStreets.length} vehicular street segments`)
 
@@ -2005,8 +2008,12 @@ export function deriveLayers(highways) {
       const rightOuter = R.pavementHW + rCurb + (R.treelawn || 0) + (R.sidewalk || 0)
       rowHW = Math.max(leftOuter, rightOuter)
     } else {
-      const type = f.tags?.highway === 'primary' ? 'primary'
-                 : f.tags?.highway === 'secondary' || f.tags?.highway === 'tertiary' ? 'secondary'
+      const hw = f.tags?.highway
+      const type = hw === 'motorway' ? 'motorway'
+                 : hw === 'motorway_link' || hw === 'trunk_link' ? 'motorway_link'
+                 : hw === 'trunk' ? 'trunk'
+                 : hw === 'primary' ? 'primary'
+                 : hw === 'secondary' || hw === 'tertiary' ? 'secondary'
                  : 'residential'
       // Pass survey so fallback streets (Chouteau, Jefferson, Dolman, …)
       // still pick up their surveyed pavementHalfWidth + sidewalk offsets.
@@ -2238,6 +2245,10 @@ export function deriveLayers(highways) {
   // Map OSM highway tag → streetProfiles.js type vocabulary
   function mapHighwayToStreetType(highway) {
     switch (highway) {
+      case 'motorway':       return 'motorway'
+      case 'motorway_link':  return 'motorway_link'
+      case 'trunk':          return 'trunk'
+      case 'trunk_link':     return 'motorway_link'
       case 'primary': case 'primary_link': return 'primary'
       case 'secondary': case 'secondary_link':
       case 'tertiary': case 'tertiary_link': return 'secondary'

@@ -24,10 +24,11 @@ import { RAW_DIR, CLEAN_DIR } from './config.js'
  * named cycle-only tracks, etc.) — they become paths or are dropped.
  */
 const EXCLUDE_FROM_STREETS = new Set([
-  'Officer David Haynes Memorial Highway', // I-44
-  'Ozark Expressway',                      // I-44 / I-55
   'MetroLink Green Line',                  // rail, not a street
   '21st Street Cycle Track',               // cycle-only
+  // I-44 / Ozark Expressway names retired — we now ribbon motorways
+  // explicitly (see derive.js vehicularStreets filter), and the corridor
+  // reads better with the highway present than as a hole in the map.
 ])
 
 // --- Geometry helpers -----------------------------------------------------
@@ -472,8 +473,39 @@ function main() {
     })
   }
 
-  // Unnamed → paths, preserved verbatim but typed.
-  const paths = unnamed.map((f, i) => ({
+  // Unnamed highways: motorway/trunk and their ramps are vehicular and
+  // belong with the streets (they ribbon, accept measure overrides, and
+  // route through the Designer color picker). Everything else (footways,
+  // service drives, paths) stays in `paths` and renders pavement-only.
+  const VEHICULAR_UNNAMED = new Set([
+    'motorway', 'motorway_link', 'trunk', 'trunk_link',
+    'primary_link', 'secondary_link', 'tertiary_link',
+  ])
+  const unnamedVehicular = []
+  const unnamedNonVehicular = []
+  for (const f of unnamed) {
+    const hw = f.tags?.highway
+    if (VEHICULAR_UNNAMED.has(hw)) unnamedVehicular.push(f)
+    else unnamedNonVehicular.push(f)
+  }
+  // Promote unnamed vehicular fragments into streets with synthetic names.
+  // Each fragment becomes its own chain (no welding — ramps don't share
+  // endpoints reliably and the OSM ways already represent intent).
+  for (let i = 0; i < unnamedVehicular.length; i++) {
+    const f = unnamedVehicular[i]
+    const hw = f.tags?.highway
+    const synthName = `${hw} ${i + 1}`
+    streets.push({
+      id: slugify(synthName),
+      name: synthName,
+      highway: hw,
+      oneway: f.tags?.oneway === 'yes',
+      points: f.coords.map(c => ({ x: c.x, z: c.z })),
+      osmIds: [f.osmId],
+      tags: f.tags || {},
+    })
+  }
+  const paths = unnamedNonVehicular.map((f, i) => ({
     id: `path-${i}`,
     highway: f.tags?.highway || 'unknown',
     tags: f.tags || {},

@@ -11,8 +11,11 @@ export default function Toolbar() {
   const setTool = useCartographStore(s => s.setTool)
   const setShot = useCartographStore(s => s.setShot)
   const setScene = useCartographStore(s => s.setScene)
-  const fillsVisible = useCartographStore(s => s.fillsVisible)
-  const toggleFills = useCartographStore(s => s.toggleFills)
+  const aerialVisible = useCartographStore(s => s.aerialVisible)
+  const setAerialVisible = useCartographStore(s => s.setAerialVisible)
+  const bakeRunning = useCartographStore(s => s.bakeRunning)
+  const bakeStale = useCartographStore(s => s.bakeStale)
+  const runBake = useCartographStore(s => s.runBake)
 
   const inDesigner = shot === 'designer'
 
@@ -29,7 +32,16 @@ export default function Toolbar() {
             onSelect={setTool}
           />
 
-          <ToggleButton label="Fills" active={fillsVisible} onClick={toggleFills} />
+          {/* Background view: SVG (curated cartograph) vs Aerial (photo).
+              Same semantics in pure Design and in tools — ribbons + tool
+              affordances render on top of either background, so Survey/
+              Measure operators still get the aerial as alignment reference
+              when they need it. */}
+          <ToolGroup
+            items={[{ id: 'svg', label: 'SVG' }, { id: 'aerial', label: 'Aerial' }]}
+            active={aerialVisible ? 'aerial' : 'svg'}
+            onSelect={(id) => setAerialVisible(id === 'aerial')}
+          />
         </>
       ) : (
         <>
@@ -42,11 +54,27 @@ export default function Toolbar() {
         </>
       )}
 
-      <ToolGroup
-        items={SHOTS.map(id => ({ id, label: cap(id) }))}
-        active={inDesigner ? null : shot}
-        onSelect={setShot}
-      />
+      {/* Designer: a single Stage button replaces the angle picker. The
+          Stage step is the cartograph's publish moment — bakes the SVG,
+          then jumps to Hero. Inside a shot the angle picker reappears
+          (Browse / Hero / Street). */}
+      {inDesigner ? (
+        <div className="carto-toolgroup">
+          <button
+            className={`carto-stage-btn${bakeStale ? ' stale' : ''}`}
+            disabled={bakeRunning}
+            onClick={() => runBake()}
+            title={bakeStale ? 'Bake the cartograph SVG and view it in Stage' : 'Cartograph baked. Click to re-stage.'}>
+            {bakeRunning ? 'Baking…' : (bakeStale ? 'Stage' : 'Stage ✓')}
+          </button>
+        </div>
+      ) : (
+        <ToolGroup
+          items={SHOTS.map(id => ({ id, label: cap(id) }))}
+          active={shot}
+          onSelect={setShot}
+        />
+      )}
 
       <ToggleButton label="Toy"
         active={scene === 'toy'}

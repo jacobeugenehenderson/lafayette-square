@@ -55,3 +55,12 @@ export async function rebuild() {
   const res = await fetch(`${BASE}/rebuild`, { method: 'POST' })
   return res.json()
 }
+
+// Run the cartograph bake step — produces public/cartograph-ground.svg
+// from the current ribbons.json. The server runs `node bake-svg.js` and
+// returns timing + relative path. The cartograph's only publish artifact.
+export async function bakeSvg() {
+  const res = await fetch(`${BASE}/bake`, { method: 'POST' })
+  if (!res.ok) throw new Error(`bake failed: ${res.status}`)
+  return res.json()
+}

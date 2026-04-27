@@ -20,6 +20,7 @@ export const DEFAULT_LAYER_COLORS = {
 
   // Streets / alleys / walks
   street:     '#4A4A48',  // midday asphalt (warmer, lighter than muted)
+  highway:    '#2D2D2C',  // motorway/ramp asphalt — slightly darker, cooler
   alley:      '#3E3E3C',  // narrower/darker than streets but still open
   curb:       '#A8826A',  // warm tan — reads as poured concrete in sun
   sidewalk:   '#B8B2A4',  // light warm cream
@@ -127,6 +128,7 @@ export const DEFAULT_OVERLAY_COLORS = {
 // BAND_COLORS map that drifts from the panel.
 export const BAND_TO_LAYER = {
   asphalt:            'street',
+  highway:            'highway',
   'parking-parallel': 'street',
   'parking-angled':   'street',
   gutter:             'curb',

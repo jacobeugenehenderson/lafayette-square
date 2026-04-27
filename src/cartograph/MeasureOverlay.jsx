@@ -208,7 +208,8 @@ export default function MeasureOverlay() {
     const out = []
     for (let i = 0; i < centerlineData.streets.length; i++) {
       const st = centerlineData.streets[i]
-      if (st.disabled || st.points.length < 2) continue
+      if (st.points.length < 2) continue
+      // Disabled chains stay clickable (dim) so the operator can re-enable.
       out.push({ idx: i, st })
     }
     return out
@@ -234,7 +235,7 @@ export default function MeasureOverlay() {
         arr.push({ id: st.id, npts: st.points.length, geoOk: !!geo, first: st.points[0] })
         dividedSeen.set(st.name, arr)
       }
-      out.push({ idx, geo })
+      out.push({ idx, geo, disabled: !!st.disabled })
     }
     console.log(`[MeasureOverlay] centerlineMeshes: ${out.length} total. Divided chains:`)
     for (const [name, arr] of dividedSeen) console.log(`  ${name}: ${arr.length} chain(s)`, arr)
@@ -357,10 +358,11 @@ export default function MeasureOverlay() {
       for (const s of sides) {
         const sd = m[s]
         if (!sd) continue
+        const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
         if (kind === 'pavementHW') {
           sd.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
         } else if (kind === 'treelawnOuter') {
-          const curbEnd = sd.pavementHW + CURB_WIDTH
+          const curbEnd = sd.pavementHW + cw
           const total = sd.treelawn + sd.sidewalk
           // treelawn ∈ [STRIPE_MIN, total - STRIPE_MIN]; sidewalk picks up the rest
           if (total >= STRIPE_MIN * 2) {
@@ -373,7 +375,7 @@ export default function MeasureOverlay() {
             sd.sidewalk = total / 2
           }
         } else if (kind === 'propertyLine') {
-          const curbEnd = sd.pavementHW + CURB_WIDTH
+          const curbEnd = sd.pavementHW + cw
           const inner = curbEnd + sd.treelawn
           sd.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
         }
@@ -442,12 +444,7 @@ export default function MeasureOverlay() {
     }
 
     // Hover feedback
-    if (!active || spaceDown) {
-      const s = useCartographStore.getState()
-      s.setHoverTarget(false)
-      s.setHoveredStreet(null)
-      return
-    }
+    if (!active || spaceDown) { useCartographStore.getState().setHoverTarget(false); return }
     const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
     let hit = false
     if (selection) {
@@ -458,18 +455,13 @@ export default function MeasureOverlay() {
         if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) { hit = true; break }
       }
     }
-    let hoveredIdx = null
     if (!hit) {
       const lineThresh = 6 / (camera.zoom || 1)
-      let bestD = Infinity
-      for (const { idx, st } of streetData) {
-        const d = distToPolyline(st.points, p.x, p.z)
-        if (d < lineThresh && d < bestD) { bestD = d; hoveredIdx = idx; hit = true }
+      for (const { st } of streetData) {
+        if (distToPolyline(st.points, p.x, p.z) < lineThresh) { hit = true; break }
       }
     }
-    const s = useCartographStore.getState()
-    s.setHoverTarget(hit)
-    s.setHoveredStreet(hoveredIdx)
+    useCartographStore.getState().setHoverTarget(hit)
   }, [active, spaceDown, camera, gl, selection, streetData, applyDrag])
 
   const onPointerUp = useCallback(() => {
@@ -538,7 +530,8 @@ export default function MeasureOverlay() {
         for (const s of sides) {
           const sd = m[s]
           if (!sd) continue
-          const curbEnd = sd.pavementHW + CURB_WIDTH
+          const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
+          const curbEnd = sd.pavementHW + cw
           const outerEnd = curbEnd + sd.treelawn + sd.sidewalk
           if (r > curbEnd + 0.2 && r < outerEnd - 0.2 && sd.treelawn < 0.05) {
             // Insert treelawn at click position; sidewalk = outer remainder.
@@ -616,11 +609,13 @@ export default function MeasureOverlay() {
   const ROYAL_BLUE = '#2250E8'
   return (
     <group position={[0, 0.5, 0]}>
-      {/* Royal-blue centerlines — clickable affordance for every street */}
+      {/* Royal-blue centerlines — clickable affordance for every street.
+          Disabled chains render at low opacity so they're visible-but-dim,
+          stay clickable for re-enabling. */}
       {centerlineMeshes.map(m => (
         <mesh key={`cl-${m.idx}`} geometry={m.geo} renderOrder={140}>
           <meshBasicMaterial color={ROYAL_BLUE}
-            transparent opacity={1}
+            transparent opacity={m.disabled ? 0.18 : 1}
             polygonOffset polygonOffsetFactor={-30} polygonOffsetUnits={-120}
             depthTest={false} depthWrite={false} />
         </mesh>

@@ -82,7 +82,9 @@
   position: absolute;
   right: 0;
   top: 0;
-  bottom: 0;
+  /* Stop short of the bottom so the FAB sits in a clear lower-right corner
+     and MapControls drag works in the freed area below the panel. */
+  bottom: 76px;
   width: 340px;
   background: transparent;
   border-left: none;
@@ -93,15 +95,30 @@
   color: var(--carto-text);
   font-size: 13px;
   line-height: 1.4;
+  /* Wrapper is hit-test-transparent — only the title chip + section cards
+     capture pointer events. Empty space within the 340px column (between
+     cards, below collapsed sections) passes drag/zoom through to MapControls. */
+  pointer-events: none;
 }
+
+.carto-panel > * { pointer-events: auto; }
 
 .carto-panel h1 {
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: .15em;
-  color: var(--carto-text-ghost);
-  margin: 0 0 14px 4px;
-  font-weight: 600;
+  color: #fff;
+  margin: 0 0 12px 0;
+  padding: 10px 14px;
+  font-weight: 700;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* ---------- Sections (each one is its own glass card) ---------- */
@@ -130,6 +147,143 @@
 .carto-section h2 .count {
   color: var(--carto-text-invisible);
   font-weight: 400;
+}
+
+.carto-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.carto-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  flex: 1;
+}
+.carto-section-caret {
+  display: inline-block;
+  width: 10px;
+  font-size: 10px;
+  transition: transform 120ms;
+}
+.carto-section-eye {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--carto-text);
+  cursor: pointer;
+  font-size: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-weight: 400;
+}
+.carto-section-eye:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--carto-border-subtle);
+}
+.carto-section-eye.is-off  { color: rgba(255, 255, 255, 0.30); }
+.carto-section-eye.is-mixed { color: rgba(255, 255, 255, 0.65); }
+
+/* Stage button — the cartograph's publish moment. Distinct visual from
+   the regular toolbar buttons so it reads as "this is the action." */
+.carto-stage-btn {
+  background: var(--toolbar-btn-active, #2250E8);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background .12s ease, opacity .12s ease;
+}
+.carto-stage-btn:hover:not(:disabled) {
+  background: #3D6BFF;
+}
+.carto-stage-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.carto-stage-btn.stale {
+  /* Subtle pulse when there are unsaved authoring edits since the last bake. */
+  background: var(--toolbar-btn-active, #2250E8);
+}
+.carto-stage-btn:not(.stale):not(:disabled) {
+  /* Already baked — softer presentation. */
+  background: rgba(34, 80, 232, 0.6);
+}
+
+/* Bake modal — covers the canvas during the bake. */
+.carto-bake-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.carto-bake-modal-card {
+  background: var(--carto-surface, #1a1a18);
+  border: 1px solid var(--carto-border-subtle, rgba(255,255,255,0.12));
+  border-radius: 8px;
+  padding: 24px 28px;
+  max-width: 420px;
+  color: var(--carto-text, #f0f0f0);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.carto-bake-modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.carto-bake-modal-msg {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--carto-text-invisible, #999);
+}
+.carto-bake-modal-msg code {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  background: rgba(255,255,255,0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.carto-bake-modal-spinner {
+  margin-top: 14px;
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.carto-bake-modal-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, #2250E8, transparent);
+  animation: carto-bake-sweep 1.2s linear infinite;
+}
+@keyframes carto-bake-sweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+.carto-bake-modal-dismiss {
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid var(--carto-border-subtle, rgba(255,255,255,0.2));
+  color: var(--carto-text);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 /* ---------- Layer rows ---------- */
@@ -372,6 +526,82 @@
   text-align: right;
 }
 
+/* Measure panel — editable cross-section row. */
+.carto-band-row {
+  gap: 8px;
+  align-items: center;
+}
+.carto-band-row .carto-label {
+  flex: 1;
+}
+.carto-band-input {
+  width: 56px;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--carto-border-subtle);
+  border-radius: 3px;
+  color: var(--carto-text);
+}
+.carto-band-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+}
+.carto-band-unit {
+  font-size: 11px;
+  color: var(--carto-measure-border);
+  min-width: 14px;
+}
+
+.carto-side-block {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--carto-border-subtle);
+}
+.carto-side-block:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.carto-side-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--carto-measure-border);
+  margin-bottom: 4px;
+}
+
+.carto-measure-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.carto-eye {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--carto-text);
+  cursor: pointer;
+  font-size: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.carto-eye:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--carto-border-subtle);
+}
+.carto-eye.off {
+  color: rgba(255, 255, 255, 0.35);
+}
+
 .carto-row--total {
   margin-top: 6px;
   padding-top: 8px;
@@ -424,8 +654,9 @@
 /* ---------- Marker FAB ---------- */
 .carto-fab-wrap {
   position: absolute;
-  /* Panel is 340px wide on the right edge; sit clear of it with a 14px gap. */
-  right: calc(340px + 14px);
+  /* Panel stops above the bottom 76px, so the FAB sits in the cleared
+     lower-right corner. */
+  right: 14px;
   bottom: 14px;
   z-index: 12;
   display: flex;

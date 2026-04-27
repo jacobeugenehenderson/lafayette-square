@@ -45,12 +45,12 @@ const PRI = {
   labels: 16,
 }
 
-// ── Radial edge fade (matches StreetRibbons' circle boundary) ─
-// Center + outer must mirror neighborhood_boundary.json so shots and Designer
-// silhouettes agree. Fade from inner→outer; past outer alpha = 0.
-const FADE_CENTER = { x: 162, z: -127 }
-const FADE_INNER = 758
-const FADE_OUTER = 892
+// ── Radial edge fade ──
+// Imported from boundary.js so circle moves are a one-file edit.
+import { BOUNDARY_CENTER_XZ as _BC, FADE_INNER as _FI, FADE_OUTER as _FO } from './boundary.js'
+const FADE_CENTER = { x: _BC[0], z: _BC[1] }
+const FADE_INNER = _FI
+const FADE_OUTER = _FO
 
 // `rigidCentroid=true` switches terrain displacement from per-vertex to
 // per-feature: the shader samples the heightmap at an `aCentroidXZ` vertex

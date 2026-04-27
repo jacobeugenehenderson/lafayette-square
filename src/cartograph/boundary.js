@@ -1,7 +1,23 @@
-// Neighborhood boundary — point-in-polygon test for clipping
+// Neighborhood boundary — single source of truth for the circle that
+// defines what's "in scope" for the cartograph. All consumers (point-in-poly
+// tests for clipping, fade shaders in AerialTiles / StreetRibbons / MapLayers)
+// read from this file. To move the circle: edit
+// `cartograph/data/neighborhood_boundary.json` and re-run the polygon
+// regenerator (one-shot script). No code changes needed elsewhere.
 import boundaryData from '../../cartograph/data/neighborhood_boundary.json'
 
 const boundary = boundaryData.boundary || []
+
+// Center + radius + fade band — exported as plain values and as a THREE
+// Vector2 so consumers can use whichever shape they need without
+// re-typing literals.
+export const BOUNDARY_CENTER_XZ = boundaryData.center || [0, 0]
+export const BOUNDARY_RADIUS = boundaryData.radius || 0
+// Distance inside the radius where the fade starts. Default keeps the prior
+// magic number (892 outer, 758 inner = 134m fade band) when not specified.
+export const FADE_INNER_OFFSET = boundaryData.innerFadeOffset ?? 134
+export const FADE_OUTER = BOUNDARY_RADIUS
+export const FADE_INNER = Math.max(0, BOUNDARY_RADIUS - FADE_INNER_OFFSET)
 
 export function pointInBoundary(x, z) {
   if (!boundary.length) return true // no boundary = show everything

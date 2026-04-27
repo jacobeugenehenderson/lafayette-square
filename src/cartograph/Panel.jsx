@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import SurveyorPanel from './SurveyorPanel.jsx'
 import MeasurePanel from './MeasurePanel.jsx'
@@ -10,6 +10,7 @@ import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, DEFAULT_LAYER_STROKES } from '
 // ground is the circle-fade background, centerlines live in the Surveyor tool.
 const STREETS_DEFS = [
   { id: 'street',     label: 'Asphalt' },
+  { id: 'highway',    label: 'Highway' },
   { id: 'stripe',     label: 'Center Stripes' },
   { id: 'edgeline',   label: 'Edge Lines' },
   { id: 'bikelane',   label: 'Bike Lanes' },
@@ -86,6 +87,24 @@ export default function Panel() {
     return v
   })
   const toggleVis = (id) => setLayerVis(prev => ({ ...prev, [id]: !prev[id] }))
+  // Section-level visibility: "any visible → hide all, all hidden → show all"
+  // so one click clears the section, another click brings everything back.
+  const setSectionVis = (defs, on) => setLayerVis(prev => {
+    const next = { ...prev }
+    for (const L of defs) next[L.id] = on
+    return next
+  })
+  const sectionState = (defs) => {
+    let on = 0, off = 0
+    for (const L of defs) (layerVis[L.id] ? on++ : off++)
+    if (on === 0) return 'off'
+    if (off === 0) return 'on'
+    return 'mixed'
+  }
+  const toggleSectionVis = (defs) => {
+    const state = sectionState(defs)
+    setSectionVis(defs, state === 'off')   // off → all on; on or mixed → all off
+  }
 
   const [layerColors, setLayerColors] = useState(() => {
     const c = {}
@@ -123,14 +142,47 @@ export default function Panel() {
   // so off-map area always reads as a single base color.
   const bgColor = layerColors.ground
 
-  useEffect(() => {
-    useCartographStore.setState({ layerVis, layerColors, layerStrokes, luColors, bgColor })
-  }, [layerVis, layerColors, layerStrokes, luColors, bgColor])
-
   const [openSections, setOpenSections] = useState({
     Streets: true, Blocks: true, Paths: false, Features: false, Labels: false,
   })
   const toggleSection = (name) => setOpenSections(prev => ({ ...prev, [name]: !prev[name] }))
+
+  // Hydrate local state from overlay.design once the store loads it. We merge
+  // over defaults so newly-added layers keep their default until the user
+  // overrides them. Only runs once — guarded by hydratedRef.
+  const hydratedRef = useRef(false)
+  useEffect(() => {
+    const apply = () => {
+      const s = useCartographStore.getState()
+      if (!s._designHydrated) return false
+      if (s.layerVis && Object.keys(s.layerVis).length)
+        setLayerVis(prev => ({ ...prev, ...s.layerVis }))
+      if (s.layerColors && Object.keys(s.layerColors).length)
+        setLayerColors(prev => ({ ...prev, ...s.layerColors }))
+      if (s.layerStrokes && Object.keys(s.layerStrokes).length)
+        setLayerStrokes(prev => ({ ...prev, ...s.layerStrokes }))
+      if (s.luColors && Object.keys(s.luColors).length)
+        setLuColors(prev => ({ ...prev, ...s.luColors }))
+      if (s.openSections && Object.keys(s.openSections).length)
+        setOpenSections(prev => ({ ...prev, ...s.openSections }))
+      hydratedRef.current = true
+      return true
+    }
+    if (apply()) return
+    const unsub = useCartographStore.subscribe((s) => {
+      if (s._designHydrated && !hydratedRef.current) {
+        if (apply()) unsub()
+      }
+    })
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    useCartographStore.setState({ layerVis, layerColors, layerStrokes, luColors, bgColor, openSections })
+    // Persist only after hydration — the first sync mirrors hydrated values
+    // back to the store and would otherwise echo a redundant write.
+    if (hydratedRef.current) useCartographStore.getState()._saveDesignDebounced()
+  }, [layerVis, layerColors, layerStrokes, luColors, bgColor, openSections])
 
   const isToolActive = tool === 'surveyor' || tool === 'measure'
 
@@ -145,7 +197,8 @@ export default function Panel() {
       {/* ── Map controls (only shown when no authoring tool is active) ── */}
       {!isToolActive && (
         <>
-          <Section name="Streets" open={openSections.Streets} onToggle={toggleSection}>
+          <Section name="Streets" open={openSections.Streets} onToggle={toggleSection}
+            visState={sectionState(STREETS)} onToggleVis={() => toggleSectionVis(STREETS)}>
             {STREETS.map(L => (
               <LayerRow key={L.id} L={L}
                 layerVis={layerVis} toggleVis={toggleVis}
@@ -154,7 +207,8 @@ export default function Panel() {
             ))}
           </Section>
 
-          <Section name="Blocks" open={openSections.Blocks} onToggle={toggleSection}>
+          <Section name="Blocks" open={openSections.Blocks} onToggle={toggleSection}
+            visState={sectionState(BLOCKS)} onToggleVis={() => toggleSectionVis(BLOCKS)}>
             {BLOCKS.map(L => (
               <LayerRow key={L.id} L={L}
                 layerVis={layerVis} toggleVis={toggleVis}
@@ -173,7 +227,8 @@ export default function Panel() {
             ))}
           </Section>
 
-          <Section name="Paths" open={openSections.Paths} onToggle={toggleSection}>
+          <Section name="Paths" open={openSections.Paths} onToggle={toggleSection}
+            visState={sectionState(PATHS)} onToggleVis={() => toggleSectionVis(PATHS)}>
             {PATHS.map(L => (
               <LayerRow key={L.id} L={L}
                 layerVis={layerVis} toggleVis={toggleVis}
@@ -182,7 +237,8 @@ export default function Panel() {
             ))}
           </Section>
 
-          <Section name="Features" open={openSections.Features} onToggle={toggleSection}>
+          <Section name="Features" open={openSections.Features} onToggle={toggleSection}
+            visState={sectionState(FEATURES)} onToggleVis={() => toggleSectionVis(FEATURES)}>
             {FEATURES.map(L => (
               <LayerRow key={L.id} L={L}
                 layerVis={layerVis} toggleVis={toggleVis}
@@ -191,7 +247,8 @@ export default function Panel() {
             ))}
           </Section>
 
-          <Section name="Labels" open={openSections.Labels} onToggle={toggleSection}>
+          <Section name="Labels" open={openSections.Labels} onToggle={toggleSection}
+            visState={sectionState(LABELS)} onToggleVis={() => toggleSectionVis(LABELS)}>
             {LABELS.map(L => (
               <LayerRow key={L.id} L={L}
                 layerVis={layerVis} toggleVis={toggleVis}
@@ -206,13 +263,25 @@ export default function Panel() {
   )
 }
 
-// Collapsible section wrapper. Click the header to toggle open/closed.
-function Section({ name, open, onToggle, children }) {
+// Collapsible section wrapper. Header click toggles open/close. The eye
+// button on the right batch-hides/shows every layer in the section.
+//   visState: 'on' = all visible, 'off' = all hidden, 'mixed' = partial.
+function Section({ name, open, onToggle, children, visState, onToggleVis }) {
   return (
     <div className="carto-section">
-      <h2 onClick={() => onToggle(name)} style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ display: 'inline-block', width: 10, transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 120ms', fontSize: 10 }}>▸</span>
-        {name}
+      <h2 className="carto-section-header">
+        <span className="carto-section-title" onClick={() => onToggle(name)}>
+          <span className="carto-section-caret" style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>▸</span>
+          {name}
+        </span>
+        {onToggleVis && (
+          <button
+            className={`carto-section-eye is-${visState || 'on'}`}
+            title={visState === 'off' ? `Show all in ${name}` : `Hide all in ${name}`}
+            onClick={(e) => { e.stopPropagation(); onToggleVis() }}>
+            {visState === 'off' ? '◌' : visState === 'mixed' ? '◐' : '●'}
+          </button>
+        )}
       </h2>
       {open && children}
     </div>
