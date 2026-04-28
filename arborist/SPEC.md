@@ -21,9 +21,29 @@ The whole neighborhood — park trees + future street trees — gets "close enou
 
 ### v1 architecture refinements (revised 2026-04-27)
 
-Two material decisions on top of the original plan, based on inventory analysis and an audit of existing assets:
+Several decisions on top of the original plan, based on inventory analysis, asset audit, and design-conversation refinements. Each of these is now load-bearing — DO NOT re-litigate.
 
-**(a) Bake ~3 specimen variants per species, not 1.** 61 Sugar Maples sharing one branching structure read as repetition no matter how much you jitter rotation. Three specimens spanning the height distribution (one each near 18 m / 22 m / 26 m, the small/mid/large mature range) give the park three distinct silhouettes per species at trivial extra cost (3 × ~600 KB GLBs, 3 × bake time, picked per-tree via `hash(treeId) % nVariants`). Acceptance: ≥3 variants for Tree #1.
+**(a) Bake ~10 specimens per species (configurable), not 1 or 3.** 61 Sugar Maples sharing one or three branching structures still read as clones at street-level zoom. **10 is the sweet spot:** ~6 instances per specimen (good `InstancedMesh` batching), broad silhouette diversity, ~30 min bake time per species. Above ~15 specimens, each adds noise and InstancedMesh batching weakens. Default: 10. Configurable per species (rare ornamentals like redbud may use fewer; sycamores might use more). Per-tree variant pick via `hash(treeId) % nSeedlings`.
+
+**Vocabulary** — finalized 2026-04-27:
+
+- **Specimen** — raw `.laz` from FOR-species20K. Immutable. Hundreds available per species.
+- **Seedling** — a *picked* specimen, promoted to the species's curated library, with tune params attached. ~10 per species. Stored in `arborist/state/<species>/seedlings.json`.
+- **Variant** — a *baked* seedling, runtime artifact (`skeleton-N.glb`). 1:1 with seedlings post-bake.
+- **Pick** — the act of promoting a specimen to a seedling.
+- **Tune** — adjusting QSM/leaf-tip params on a seedling before bake.
+- **Bake** — committing the seedling library for a species into runtime variants.
+
+**Per-instance shader jitter** — each rendered tree gets a stable per-tree random seed (`hash(treeId)`) that drives a vertex/fragment shader to add variation that no number of seedlings can fake:
+
+- Branch-angle jitter (±15°)
+- Branch-length jitter (±10%)
+- Crown asymmetry weighting (one side fuller)
+- Leaf-card position + rotation jitter
+- Leaf tint micro-variation (±3–5% lightness/hue)
+- Wind animation phase offset
+
+Cost is negligible (vertex-shader ALU ops). Without this, even 10 seedlings would show repetition at street-level scrutiny. **With it, no two trees look identical.** Wired in `InstancedTrees.jsx` from day one — not a follow-on.
 
 **(b) Leaves use the EXISTING shared morph library, not per-species atlases.** The repo already ships:
 
@@ -33,6 +53,38 @@ Two material decisions on top of the original plan, based on inventory analysis 
 The Arborist does NOT author species-specific `leaves.png` atlases. Instead, each species's `manifest.json` references **a morph** (e.g. `"leafMorph": "palmate"`) **and a per-season tint** (e.g. `{ "summer": "#3a7b30", "fall": "#d4801f", "spring": "#7eba5e" }`). The runtime composes: load `public/textures/leaves/<morph>.png` once, apply species tint as a shader uniform per `InstancedMesh`. Stage Surfaces.Trees keeps its existing morph-tab structure; per-species tint comes through `materialColors[<species-id>]` (already wired into Stage's per-Look design.json). This is dramatically less authoring work and aligns with how the runtime already organizes leaves.
 
 **Sugar Maple's morph mapping is `palmate`** — confirmed by `assets/botanical-reference-hires/README.txt`. Default summer tint can start as `#3a7b30` (vibrant grass green); fall tint `#d4801f` (Sugar Maple's signature orange) — the operator iterates from there in Surfaces.
+
+**(c) Bark is parallel to leaves.** Same shared-morph + per-species + per-Look-override pattern. Add `public/textures/bark/<morph>.png` (e.g. `furrowed`, `papery`, `peeling`, `smooth`, `flaky`). Per-species manifest declares `barkMorph`. Sugar Maple = `furrowed`, sycamore = `peeling`, birch = `papery`. For v1 we may ship a single `default_bark.png` until species-specific textures are sourced; the architecture works either way.
+
+**(d) Seasonal variation is shader-driven, not bake-driven.** Six states (bare, buds, flowers, summer, fall, snowy) all come from the *same* baked artifact, modulated by Stage-driven shader uniforms:
+
+| State | Shader uniforms |
+|---|---|
+| **Bare** (deciduous winter) | `uLeafAlpha = 0` |
+| **Buds** (early spring) | `uLeafScale = 0.3`, `uLeafTint = manifest.tints.buds` |
+| **Flowers** (spring, species-dependent) | Swap leaf-card texture to `public/textures/flowers/<species>.png`. Per-species opt-in via `manifest.hasFlowers`. |
+| **Summer** | Default. `uLeafAlpha = 1`, `uLeafTint = manifest.tints.summer`. |
+| **Fall** | `uLeafTint = manifest.tints.fall`. Same density. |
+| **Snowy** (winter weather) | `uSnowCover > 0` — branch shader adds white wherever `normal.y > 0.6`. Independent of leaf state. |
+
+Manifest schema gains `deciduous: bool` and `hasFlowers: bool` per species. Conifers set `deciduous: false`. Showy-spring species (redbud, crabapple, magnolia) set `hasFlowers: true` and ship a flower texture; non-showy species don't.
+
+**Authoring split for season:**
+
+- **Arborist** authors per-species seasonal *defaults* (which states are supported, default tints per state, optional flower texture).
+- **Stage Looks** author per-Look *active* season (`season: 'fall'`, `snow: 0.6`). A "Halloween Look" pins fall + zero snow. A "First Snow Look" pins winter + 0.6 snow. A "Cardinals Opening Day Look" pins spring + zero snow.
+- **Runtime composes** active Look's season → shader uniforms → trees update instantly.
+
+This gives the project a premier showcase axis (seasonal park) at zero extra bake cost. v1 implements all six states in shader; Looks that use them follow.
+
+**(e) Shared materials, not shared panels.** The Arborist's preview viewport renders trees with the *same shaders + textures the runtime uses* via a shared `src/components/tree-materials.js` factory:
+
+```
+buildTreeMaterials({ leafMorph, leafTint, barkMorph, barkTint, season, snow })
+  → { trunkMat, leafMat }
+```
+
+Both the Arborist's workstage canvas and the runtime's `InstancedTrees.jsx` import this factory. The Arborist supplies basic GL lighting (one directional light + ambient) for preview; the runtime composes Stage's full sky/sun/cloud pipeline. Same materials, two callers, no panel duplication. The Arborist exposes a "preview tint" knob in its tune panel for authoring-time experimentation only — doesn't touch any Look state.
 
 ---
 
@@ -73,6 +125,27 @@ public/textures/leaves/          # EXISTING leaf-card library, NOT produced by A
   lobed.png                      # oaks
   compound.png                   # ash, walnut
   …                              # see assets/botanical-reference-hires/README.txt
+
+public/textures/bark/            # NEW shared bark library, NOT produced by Arborist
+  furrowed.png                   # maples, oaks
+  peeling.png                    # sycamore
+  papery.png                     # birch
+  smooth.png                     # beech
+  default_bark.png               # v1 fallback if species-specific source missing
+
+public/textures/flowers/         # NEW per-species flower library, optional, NOT produced by Arborist
+  cercis_canadensis.png          # redbud spring flowers
+  malus.png                      # crabapple
+  magnolia.png                   # magnolia
+  # most species don't ship a flower texture; their manifest.hasFlowers = false
+
+arborist/state/                  # GITIGNORED operator state (curated picks + tune params)
+  <species-id>/
+    seedlings.json               # picked specimens + per-seedling tune params
+
+arborist/_cache/                 # GITIGNORED conversion cache (.laz → .ply for browser preview)
+  preview/
+    <treeId>.ply
 ```
 
 **Conventions, must be honored:**
@@ -240,7 +313,7 @@ Authoritative morph reference: [`assets/botanical-reference-hires/README.txt`](.
 
 ### 7. Manifest + index update
 
-Write `manifest.json` per species. With multiple specimen variants and the morph+tint model, the schema is:
+Write `manifest.json` per species. With ~10 seedlings, morph+tint+bark, and the seasonal-state declarations, the schema is:
 
 ```json
 {
@@ -249,7 +322,11 @@ Write `manifest.json` per species. With multiple specimen variants and the morph
   "scientific": "Acer saccharum",
   "tier": "exact",
   "leafMorph": "palmate",
+  "barkMorph": "furrowed",
+  "deciduous": true,
+  "hasFlowers": false,
   "tints": {
+    "buds":   "#a8c870",
     "spring": "#7eba5e",
     "summer": "#3a7b30",
     "fall":   "#d4801f",
@@ -258,33 +335,31 @@ Write `manifest.json` per species. With multiple specimen variants and the morph
   "variants": [
     {
       "id": 1,
-      "sourceFile": "botanica/dev/<filename-small>.laz",
-      "treeH": 18.1,
+      "sourceFile": "botanica/dev/10178.laz",
+      "treeId": 10178,
+      "treeH": 18.52,
       "skeleton": "skeleton-1.glb",
       "tips": "tips-1.json",
+      "tuneParams": { "voxelSize": 0.02, "minRadius": 0.005, "tipRadius": 0.01 },
       "stats": { "cylinders": 312, "verts": 6210, "tipCount": 940 }
     },
     {
       "id": 2,
-      "sourceFile": "botanica/dev/<filename-mid>.laz",
-      "treeH": 22.4,
+      "sourceFile": "botanica/dev/10280.laz",
+      "treeId": 10280,
+      "treeH": 21.99,
       "skeleton": "skeleton-2.glb",
       "tips": "tips-2.json",
+      "tuneParams": { "voxelSize": 0.02, "minRadius": 0.005, "tipRadius": 0.01 },
       "stats": { "cylinders": 412, "verts": 8942, "tipCount": 1247 }
-    },
-    {
-      "id": 3,
-      "sourceFile": "botanica/dev/<filename-large>.laz",
-      "treeH": 26.0,
-      "skeleton": "skeleton-3.glb",
-      "tips": "tips-3.json",
-      "stats": { "cylinders": 568, "verts": 12100, "tipCount": 1820 }
     }
+    /* … up to ~10 variants. Default count configurable per species. */
   ],
-  "bakedAt": 1714172400000,
-  "params": { "voxelSize": 0.02, "minRadius": 0.005, "tipRadius": 0.01 }
+  "bakedAt": 1714172400000
 }
 ```
+
+`tuneParams` is **per-variant** because different specimens have different scan densities and may want different fitting thresholds. The static `arborist/config.json` carries only defaults that seed the tune panel for new picks; never specimen filenames or per-variant overrides.
 
 Update `public/trees/index.json` to register the species:
 
@@ -297,7 +372,10 @@ Update `public/trees/index.json` to register the species:
       "scientific": "Acer saccharum",
       "tier": "exact",
       "leafMorph": "palmate",
-      "variants": 3,
+      "barkMorph": "furrowed",
+      "deciduous": true,
+      "hasFlowers": false,
+      "variants": 10,
       "bakedAt": 1714172400000
     }
   ]
@@ -435,25 +513,29 @@ The Arborist UI at `/arborist` has three core surfaces. Specimen picking happens
 
 The build is complete for v1 when **all** of these are true with `acer_saccharum` baked:
 
-1. `python arborist/bake-tree.py --species=acer_saccharum` runs end-to-end in under ~10 minutes on the operator's Mac for all 3 variants.
-2. `public/trees/acer_saccharum/` contains **3 valid skeleton-N.glb files** (one per height variant) and **3 matching tips-N.json files**, plus `manifest.json`.
+1. `python arborist/bake-tree.py --species=acer_saccharum` runs end-to-end in ~30 minutes on the operator's Mac for all ~10 seedlings.
+2. `public/trees/acer_saccharum/` contains **N valid `skeleton-N.glb` files** (where N = the species's saved seedling count, default 10) and N matching `tips-N.json` files, plus `manifest.json`.
 3. Each `tips-N.json` contains ≥ 200 branch-tip positions.
-4. `manifest.json` references `leafMorph: "palmate"` and seed tints for at least summer + fall.
-5. `public/trees/index.json` lists `acer_saccharum` with `tier: "exact"`, `leafMorph: "palmate"`, `variants: 3`.
-6. The runtime mounts `<InstancedTrees />` and renders **all 61** Sugar Maples from `park_trees.json` at their positions, with Y-rotation jitter, dbh-scale variation, and **variant assignment via `hash(treeId) % 3`** (so the park visibly shows the three skeleton silhouettes mixed in roughly equal proportion).
-7. Leaf cards render at every variant's tip positions, sampling `public/textures/leaves/palmate.png`, tinted from the manifest's summer tint.
-8. **GPU budget verified.** On the operator's Mac in Stage Hero shot, framerate stays above 50 fps with all 61 trees in view. (Worst-case mobile target is a follow-on; flag it but don't block on it.)
-9. Stage Surfaces.Trees `Species` sub-panel lists `Sugar Maple` as a row; color picker edits the per-species tint live (no re-bake).
-10. Stage Surfaces.Trees `Morphs` sub-panel still shows `palmate` and editing it still works (existing behavior preserved).
-11. Switching Looks (e.g. to a Valentine's Look that tints maples pink) propagates to the trees instantly.
-12. The `ParkTrees` line in `LafayettePark.jsx` is replaced (or `ParkTrees` removed entirely).
+4. `manifest.json` references `leafMorph: "palmate"`, `barkMorph: "furrowed"`, `deciduous: true`, `hasFlowers: false`, plus seed tints for at least summer + fall + buds.
+5. `public/trees/index.json` lists `acer_saccharum` with `tier: "exact"`, `variants: N`, `barkMorph`, `deciduous`, `hasFlowers`.
+6. The runtime mounts `<InstancedTrees />` and renders **all 61** Sugar Maples from `park_trees.json` at their positions, variant assignment via `hash(treeId) % N` so each silhouette appears proportionally.
+7. **Per-instance shader jitter visibly active**: branch-angle, branch-length, crown asymmetry, leaf-card jitter, and tint micro-variation all wired and producing distinguishable variation between adjacent same-variant trees.
+8. Leaf cards render at every variant's tip positions, sampling `public/textures/leaves/palmate.png`, tinted from the manifest's *currently active* season tint (summer by default in v1).
+9. Trunk + branches sample `public/textures/bark/furrowed.png` (or `default_bark.png` if furrowed isn't yet sourced).
+10. **Seasonal uniforms wired**: setting a Stage Look's `season: 'fall'` shifts leaves to fall tint; `season: 'winter'` makes deciduous trees bare; `snow: 0.6` adds snow on branches. Verified on at least three states (summer, fall, bare-winter).
+11. **GPU budget verified.** On the operator's Mac in Stage Hero shot, framerate stays above 50 fps with all 61 trees in view. (Worst-case mobile target is a follow-on; flag it but don't block on it.)
+12. Stage Surfaces.Trees `Species` sub-panel lists `Sugar Maple` as a row; color picker edits the per-species tint live (no re-bake).
+13. Stage Surfaces.Trees `Morphs` sub-panel still shows `palmate` and editing it still works.
+14. Switching Looks (e.g. to a Valentine's Look that tints maples pink, or a Halloween Look that pins season=fall) propagates to the trees instantly.
+15. The `ParkTrees` line in `LafayettePark.jsx` is replaced (or `ParkTrees` removed entirely).
 
 **Stretch (nice but not required for v1):**
 
-- Wind animation via vertex shader (`uTime` + per-card noise).
+- Wind animation phase-offset per-instance (`uTime + hash(treeId)`).
 - LOD: lower-poly skeleton at far camera distances.
 - A second species baked end-to-end (proves the pipeline scales), e.g. Pin Oak via `quercus_robur` cousin → `lobed` morph.
-- Seasonal tint preview in the Inspector (cycle through manifest seasons).
+- Flower textures for the species that opt in (redbud, crabapple) — needs `public/textures/flowers/<species>.png`.
+- Bark sourcing beyond `default_bark.png` — at minimum `furrowed.png` and `peeling.png`.
 
 ---
 
@@ -477,9 +559,16 @@ The build is complete for v1 when **all** of these are true with `acer_saccharum
 | QSM implementation | Pure-Python first; MATLAB Engine fallback only if blocked | This document |
 | Tree #1 species | `acer_saccharum` (Sugar Maple) | Inventory analysis: 61 in park, 110 in dataset |
 | Specimen selection | UI-driven via Specimen Browser (3D point-cloud preview + variant slot picker). Recommended defaults from height × density heuristic; operator confirms or swaps. NOT hand-edited config files. | Conversation 2026-04-27 |
-| Variants per species | 3 (small / mid / large from height distribution); per-tree pick via `hash(treeId) % 3` | Inventory analysis 2026-04-27 |
+| Variants per species | Default 10, configurable per species. ~6 instances per variant for 61 park trees = good `InstancedMesh` batching. | Conversation 2026-04-27 |
+| Per-instance shader jitter | Wired in v1: branch-angle, length, crown asymmetry, leaf-card jitter, tint micro-variation, wind phase. | Conversation 2026-04-27 |
+| Vocabulary | specimen (raw) → seedling (picked, with tune params) → variant (baked) | Conversation 2026-04-27 |
 | Leaf source | Shared morph library at `public/textures/leaves/<morph>.png`; per-species tint stored in manifest + materialColors. NOT per-species atlases. | Asset audit 2026-04-27 |
-| Sugar Maple morph | `palmate` | `assets/botanical-reference-hires/README.txt` (LeafSet010) |
+| Bark source | Shared morph library at `public/textures/bark/<morph>.png`. Same pattern as leaves. v1 may use `default_bark.png` until species-specific textures land. | Conversation 2026-04-27 |
+| Sugar Maple morph | leaves: `palmate`, bark: `furrowed` | Asset audit + conversation 2026-04-27 |
+| Seasonal variation | Shader-driven (uniforms: `season`, `snow`); same baked artifact, no extra bake cost. Six states: bare, buds, flowers, summer, fall, snowy. Per-Look in Stage. | Conversation 2026-04-27 |
+| Per-species seasonal flags | `deciduous: bool`, `hasFlowers: bool` in manifest. | Conversation 2026-04-27 |
+| Preview material sharing | `src/components/tree-materials.js` factory used by both Arborist preview and runtime InstancedTrees. NOT a shared panel. | Conversation 2026-04-27 |
+| Workstage shape | One workstage. Pickers at top (species / specimen / variant), 3D viewport center, tune panel side. Tune controls disabled until specimen is promoted to seedling. | Conversation 2026-04-27 |
 | Plaques in Street view | Future feature, not part of Arborist | `memory/project_tree_lidar_pipeline.md` |
 | Per-Look tree composition | Out of scope; Looks vary styling, not which trees exist | `ARCHITECTURE.md` § 2 |
 | Park-scanning fieldwork | Deferred indefinitely; not part of v1 | `memory/project_tree_lidar_pipeline.md` |
