@@ -240,21 +240,24 @@ const server = createServer(async (req, res) => {
       return jsonRes(res, 200, data)
     }
 
-    // POST /species/:id/seedlings — save the seedling library for a species
+    // POST /species/:id/seedlings — save the species's curation state.
+    // Body shape: { starred: string[], seedlings: [...] }
+    //   starred   — free operator notes (UI only, no system action)
+    //   seedlings — the "checked" set; bake-tree.py reads only this field.
+    // Either field is optional; missing means empty.
     if (req.method === 'POST' && (m = req.url.match(/^\/species\/([^/]+)\/seedlings$/))) {
       const id = m[1]
       if (!SPECIES_DECL[id]) return jsonRes(res, 404, { error: 'unknown species', id })
       const body = await readBody(req)
-      if (!Array.isArray(body.seedlings)) {
-        return jsonRes(res, 400, { error: '`seedlings` must be an array' })
-      }
-      const out = {
+      const starred = Array.isArray(body.starred) ? body.starred : []
+      const seedlings = Array.isArray(body.seedlings) ? body.seedlings : []
+      writeJson(join(STATE_DIR, id, 'seedlings.json'), {
         species: id,
-        seedlings: body.seedlings,
+        starred,
+        seedlings,
         savedAt: Date.now(),
-      }
-      writeJson(join(STATE_DIR, id, 'seedlings.json'), out)
-      return jsonRes(res, 200, { ok: true, count: body.seedlings.length })
+      })
+      return jsonRes(res, 200, { ok: true, starred: starred.length, picked: seedlings.length })
     }
 
     // GET /specimens/:treeId/preview.ply — stream a converted PLY (cached)

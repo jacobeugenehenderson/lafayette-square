@@ -25,15 +25,16 @@ const useArboristStore = create((set, get) => ({
     set({
       activeSpeciesId: id,
       specimens: [], specimensError: null,
+      starredTreeIds: new Set(),
       pickedTreeIds: new Set(),
-      pickedDirty: false,
+      tuneParamsByTreeId: {},
       selectedTreeId: null,
       manifest: null,
       viewMode: 'cloud',
     })
     if (id) {
       get().loadSpecimens(id)
-      get().loadSeedlings(id)
+      get().loadCuration(id)
       get().loadManifest(id)
     }
   },
@@ -54,14 +55,21 @@ const useArboristStore = create((set, get) => ({
     } catch { set({ manifest: null }) }
   },
 
-  // ── Workstage: specimen list + picks ─────────────────────────
-  specimens: [],                // [{treeId, treeH, dataset, dataType, fileSize, recommended, ...}]
+  // ── Workstage state ─────────────────────────────────────────
+  specimens: [],                  // [{treeId, treeH, fileSize, recommended, ...}]
   specimensError: null,
   recommendCount: 10,
-  pickedTreeIds: new Set(),     // Set<treeId>; the currently picked seedlings (in-memory)
-  pickedDirty: false,           // edits since last save
-  selectedTreeId: null,         // which row is loaded in the 3D viewport
-  saving: false,
+
+  // Two independent curation flags per specimen:
+  //   starredTreeIds → free operator note. No system action. Persists.
+  //   pickedTreeIds  → "checked" for publish. Becomes seedlings on save.
+  //                    Bake-tree.py only processes pickedTreeIds.
+  // Both autosave (debounced 300 ms) to /species/:id/seedlings as a
+  // combined { starred, seedlings } payload.
+  starredTreeIds: new Set(),
+  pickedTreeIds:  new Set(),
+  tuneParamsByTreeId: {},         // { [treeId]: { voxelSize, minRadius, tipRadius } }
+  selectedTreeId: null,           // which row is loaded in the viewport
   loadSpecimens: async (id) => {
     try {
       const r = await fetch(`/api/arborist/species/${encodeURIComponent(id)}/specimens`)
@@ -82,31 +90,107 @@ const useArboristStore = create((set, get) => ({
       set({ specimensError: String(err) })
     }
   },
-  loadSeedlings: async (id) => {
+  loadCuration: async (id) => {
     try {
       const r = await fetch(`/api/arborist/species/${encodeURIComponent(id)}/seedlings`)
       if (r.ok) {
         const d = await r.json()
-        const ids = new Set((d.seedlings || []).map(s => s.treeId))
-        set({ pickedTreeIds: ids, pickedDirty: false })
-      } else if (r.status === 404) {
-        // No seedlings saved yet — start clean.
-        set({ pickedTreeIds: new Set(), pickedDirty: false })
+        const seedlings = d.seedlings || []
+        const tune = {}
+        for (const s of seedlings) tune[s.treeId] = s.tuneParams || {}
+        set({
+          starredTreeIds: new Set(d.starred || []),
+          pickedTreeIds:  new Set(seedlings.map(s => s.treeId)),
+          tuneParamsByTreeId: tune,
+        })
+      } else {
+        set({ starredTreeIds: new Set(), pickedTreeIds: new Set(), tuneParamsByTreeId: {} })
       }
     } catch { /* network fail; leave defaults */ }
   },
   selectSpecimen: (treeId) => set({ selectedTreeId: treeId }),
-  togglePick: (treeId) => set(s => {
-    const next = new Set(s.pickedTreeIds)
-    next.has(treeId) ? next.delete(treeId) : next.add(treeId)
-    return { pickedTreeIds: next, pickedDirty: true }
-  }),
-  pickAllRecommended: () => set(s => {
-    const next = new Set(s.pickedTreeIds)
-    for (const sp of s.specimens) if (sp.recommended) next.add(sp.treeId)
-    return { pickedTreeIds: next, pickedDirty: true }
-  }),
-  clearPicks: () => set({ pickedTreeIds: new Set(), pickedDirty: true }),
+  toggleStar: (treeId) => {
+    set(s => {
+      const next = new Set(s.starredTreeIds)
+      next.has(treeId) ? next.delete(treeId) : next.add(treeId)
+      return { starredTreeIds: next }
+    })
+    get()._saveCurationDebounced()
+  },
+  togglePick: (treeId) => {
+    set(s => {
+      const next = new Set(s.pickedTreeIds)
+      const tune = { ...s.tuneParamsByTreeId }
+      if (next.has(treeId)) {
+        next.delete(treeId)
+        delete tune[treeId]
+      } else {
+        next.add(treeId)
+        // Default tune params on first pick — operator overrides via the Tune panel.
+        tune[treeId] = { voxelSize: 0.03, minRadius: 0.005, tipRadius: 0.02 }
+      }
+      return { pickedTreeIds: next, tuneParamsByTreeId: tune }
+    })
+    get()._saveCurationDebounced()
+  },
+  setTuneParam: (treeId, key, value) => {
+    set(s => ({
+      tuneParamsByTreeId: {
+        ...s.tuneParamsByTreeId,
+        [treeId]: { ...(s.tuneParamsByTreeId[treeId] || {}), [key]: value },
+      },
+    }))
+    get()._saveCurationDebounced()
+  },
+  pickAllRecommended: () => {
+    set(s => {
+      const next = new Set(s.pickedTreeIds)
+      const tune = { ...s.tuneParamsByTreeId }
+      for (const sp of s.specimens) {
+        if (!sp.recommended) continue
+        if (next.has(sp.treeId)) continue
+        next.add(sp.treeId)
+        tune[sp.treeId] = { voxelSize: 0.03, minRadius: 0.005, tipRadius: 0.02 }
+      }
+      return { pickedTreeIds: next, tuneParamsByTreeId: tune }
+    })
+    get()._saveCurationDebounced()
+  },
+  clearPicks: () => {
+    set({ pickedTreeIds: new Set(), tuneParamsByTreeId: {} })
+    get()._saveCurationDebounced()
+  },
+  _saveCurationDebounced: (() => {
+    let t = null
+    return () => {
+      if (t) clearTimeout(t)
+      t = setTimeout(async () => {
+        t = null
+        const s = useArboristStore.getState()
+        const id = s.activeSpeciesId
+        if (!id) return
+        const seedlings = [...s.pickedTreeIds].map((treeId, i) => ({
+          id: i + 1,
+          treeId,
+          tuneParams: s.tuneParamsByTreeId[treeId] || { voxelSize: 0.03, minRadius: 0.005, tipRadius: 0.02 },
+        }))
+        try {
+          await fetch(`/api/arborist/species/${encodeURIComponent(id)}/seedlings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              starred: [...s.starredTreeIds],
+              seedlings,
+            }),
+          })
+          // Refresh /species so the Library count updates without a full reload.
+          s.loadSpecies()
+        } catch (err) {
+          console.warn('[arborist] curation save failed:', err)
+        }
+      }, 300)
+    }
+  })(),
   bakeRunning: false,
   bakeError: null,
   bakeLog: null,
@@ -131,41 +215,6 @@ const useArboristStore = create((set, get) => ({
     }
   },
 
-  saveSeedlings: async () => {
-    const s = get()
-    const id = s.activeSpeciesId
-    if (!id) return
-    set({ saving: true })
-    try {
-      // Build per-seedling rows from the picked tree IDs. Default tune
-      // params come from arborist/config.json — surfaced in the (future)
-      // Tune panel for per-seedling overrides.
-      const specimensById = new Map(s.specimens.map(sp => [sp.treeId, sp]))
-      const seedlings = [...s.pickedTreeIds].map((treeId, i) => {
-        const sp = specimensById.get(treeId) || {}
-        return {
-          id: i + 1,
-          treeId,
-          treeH: sp.treeH ?? null,
-          sourceFile: sp.sourceFile || `botanica/dev/${treeId}.laz`,
-          label: '',
-          tuneParams: { voxelSize: 0.02, minRadius: 0.005, tipRadius: 0.01 },
-        }
-      })
-      const r = await fetch(`/api/arborist/species/${encodeURIComponent(id)}/seedlings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seedlings }),
-      })
-      if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      set({ pickedDirty: false, saving: false })
-      // Refresh /species so the Library view shows the new seedlingsPicked count.
-      get().loadSpecies()
-    } catch (err) {
-      console.warn('[arborist] save failed:', err)
-      set({ saving: false })
-    }
-  },
 }))
 
 export default useArboristStore
