@@ -136,23 +136,33 @@ A species mapping file `arborist/species-map.json`:
 
 Sequence per species. Implemented in `arborist/bake-tree.py` with helpers in `arborist/pipeline/`.
 
-### 1. Specimen selection
+### 1. Specimen selection (UI-driven, not config-file-driven)
 
-For Tree #1 (Sugar Maple), the operator will manually pick the best specimen from `botanica/dev/<acer_saccharum>/...` after a visual sample. Default selection in `arborist/config.json` until then:
+Specimen picking happens **in the Arborist's Specimen Browser** (see "UI scope" below), not via hand-edited config files. The browser lists every specimen from `botanica/tree_metadata_dev.csv` filtered by species, surfaces three default recommendations from the height-bucket × density heuristic, lets the operator preview each as a 3D point cloud, and lets them confirm or swap variants.
+
+Picked variants are persisted server-side at:
+
+```
+arborist/state/<species-id>/variants.json
+```
+
+Schema:
 
 ```json
 {
-  "species": {
-    "acer_saccharum": {
-      "sourceFile": "botanica/dev/acer_saccharum/<filename>.laz",
-      "label": "Sugar Maple",
-      "scientific": "Acer saccharum"
-    }
-  }
+  "species": "acer_saccharum",
+  "variants": [
+    { "id": 1, "label": "small mature", "sourceFile": "botanica/dev/10178.laz", "treeId": 10178, "treeH": 18.52 },
+    { "id": 2, "label": "mid mature",   "sourceFile": "botanica/dev/10280.laz", "treeId": 10280, "treeH": 21.99 },
+    { "id": 3, "label": "large mature", "sourceFile": "botanica/dev/10290.laz", "treeId": 10290, "treeH": 26.57 }
+  ],
+  "savedAt": 1714172400000
 }
 ```
 
-(Where `<filename>.laz` is filled in once the operator picks. Have the agent leave a clear placeholder + log a warning if config points at a non-existent file.)
+The bake CLI reads this file to drive its work. `arborist/config.json` carries only static defaults (tints, voxel size, dataset root) — never specimen filenames. The `arborist/state/` directory is gitignored.
+
+**Tentative initial picks for Sugar Maple** (the values shown above) come from the height × density heuristic applied to `tree_metadata_dev.csv`. They're surfaced as the browser's defaults; the operator confirms or swaps via the UI before any bake runs.
 
 ### 2. Point-cloud ingest
 
@@ -308,9 +318,13 @@ Mirror Cartograph's serve.js patterns exactly. Local Node service, port 3334. Mo
 |---|---|---|
 | `GET`    | `/species` | Read `public/trees/index.json` (species library state) |
 | `GET`    | `/species/:id` | Read one species' `manifest.json` |
-| `POST`   | `/species/:id/bake` | Run `python bake-tree.py --species=<id>`, synchronous; returns `{ ok, ms, species }` |
-| `DELETE` | `/species/:id` | Remove a species directory + index entry |
-| `GET`    | `/inventory` | Compute the species histogram from `src/data/park_trees.json` (+ `street_trees.json` if present); useful for UI |
+| `GET`    | `/species/:id/specimens` | List candidate specimens from `tree_metadata_dev.csv` filtered to this species. Each row: `{ treeId, treeH, dataset, dataType, fileSize, sourceFile, recommended? }`. The `recommended` flag is true for the height-bucket × density heuristic picks (small/mid/large). |
+| `GET`    | `/species/:id/variants` | Read picked variants from `arborist/state/<id>/variants.json`. 404 if none picked yet. |
+| `POST`   | `/species/:id/variants` | Save picked variants (body = the schema in "Specimen selection"). |
+| `GET`    | `/specimens/:treeId/preview.ply` | Stream a `.laz`-derived point cloud as PLY for the 3D viewport. Backend converts on demand and caches results. |
+| `POST`   | `/species/:id/bake` | Run `python bake-tree.py --species=<id>`, synchronous; returns `{ ok, ms, species, variants: [...] }`. Requires `variants.json` to exist for that species. |
+| `DELETE` | `/species/:id` | Remove a species's published artifacts + `arborist/state/<id>/`. |
+| `GET`    | `/inventory` | Compute the species histogram from `src/data/park_trees.json` (+ `street_trees.json` if present); useful for the Library view's "inventory count" column. |
 
 The `bake` endpoint **shells out via `execSync`** like Cartograph does (`cartograph/serve.js` line ~290 in the bake handler). Bakes are infrequent and acceptable to be synchronous. If a future bake needs progress streaming, switch to spawn + SSE then; not now.
 
@@ -387,24 +401,33 @@ with a mount of `InstancedTrees`, OR delete the `ParkTrees` line entirely if `In
 
 ## UI scope (v1)
 
-The Arborist UI at `/arborist` is intentionally minimal in v1. Core surfaces:
+The Arborist UI at `/arborist` has three core surfaces. Specimen picking happens in the tool, not in config files — the same authoring discipline as Cartograph (geometry edits live in tools, not JSON).
 
-1. **Library** (`Library.jsx`)
-   - Lists all species in `public/trees/index.json` (already-baked) + species in `species-map.json` not yet baked.
-   - For each: name, scientific name, tier (exact / cousin / fallback), inventory count (from `/inventory`), `bakedAt` if any.
-   - Click a species → opens Inspector.
-   - "Bake" button per species → calls `POST /species/:id/bake`, shows progress modal (mirror `cartograph/BakeModal.jsx`).
+1. **Library** (`Library.jsx`) — left rail / overview
+   - Lists every species from `species-map.json`: name, scientific name, tier (exact / cousin / fallback), `leafMorph`, inventory count (from `/inventory`), # variants picked, `bakedAt` if any.
+   - Click a species → opens the Specimen Browser for that species.
+   - Compact status indicators: "no variants picked", "3 picked, not baked", "baked", "stale (config changed since last bake)".
 
-2. **Inspector** (`Inspector.jsx`)
-   - 3D preview of the species's `skeleton.glb` + leaves overlay (use the same shader the runtime will use).
-   - Read-only manifest view (params, stats, sourceFile).
-   - For v1: no editing of params, no specimen swapping. Operator edits `arborist/config.json` by hand and re-bakes.
+2. **Specimen Browser** (`SpecimenBrowser.jsx`) — main work surface, the specimen parade
+   - For the active species, lists every available specimen from FOR-species20K (filtered from `tree_metadata_dev.csv` by genus/species match).
+   - Columns: `treeID`, `treeH`, `dataset`, `data_type`, file size (point-density proxy).
+   - Sortable + filterable. Default sort: height ascending. Default filter: TLS only (highest detail).
+   - **3D viewport** showing the currently-hovered or selected specimen as a point cloud. The backend converts `.laz` → `.ply` on demand and the browser loads via Three.js `PLYLoader`. Cache `.ply` results next to the source.
+   - Each specimen row has **variant slot buttons**: `1` / `2` / `3` (for small / mid / large). Click to assign. Visual indicator on assigned slots.
+   - "Save selection" button → POSTs to `/species/:id/variants`, updating the per-species manifest with the picked variants. The Bake button activates only after variants are saved.
+   - **Recommend defaults** at the top: when the browser opens for a species with no variants picked, it surfaces three suggested specimens via the height-bucket × density heuristic (small mature ≈ 18 m × densest, mid ≈ 22 m × densest, large ≈ 26 m × densest). User accepts (one click) or swaps individually.
 
-3. **Toolbar** (top, like Cartograph's)
-   - Active species selector (drives Inspector).
-   - "Re-bake all" button (sequential bake of every mapped species — long, useful occasionally).
+3. **Inspector** (`Inspector.jsx`) — post-bake review
+   - Once a species has been baked, switch from Browser to Inspector to see the resulting `skeleton-N.glb` files rendered in 3D, leaf overlay applied (using the morph + tint from manifest).
+   - Read-only manifest view (params, stats, sourceFiles).
+   - "Re-bake" button: re-runs the bake against the currently saved variants without changing the picks.
 
-**No** plant tool, no positional editor, no density sliders, no per-instance UI in v1. Keep the Arborist surface narrow.
+4. **Toolbar** (top, mirrors Cartograph's)
+   - Active species selector.
+   - View switcher: `Library` / `Browser` / `Inspector`.
+   - "Bake species" button (active when variants are saved + the bake is stale or absent).
+
+**Out of scope in v1:** plant tool, density sliders, per-vertex editing, batch-bake-all-species (one-at-a-time is fine). Keep the Arborist surface narrow.
 
 ---
 
@@ -453,7 +476,7 @@ The build is complete for v1 when **all** of these are true with `acer_saccharum
 | Service shape | One-shot CLI invoked via `execSync`, not long-running Python service | This document |
 | QSM implementation | Pure-Python first; MATLAB Engine fallback only if blocked | This document |
 | Tree #1 species | `acer_saccharum` (Sugar Maple) | Inventory analysis: 61 in park, 110 in dataset |
-| Specimen selection | Operator picks 3 for Tree #1 (small / mid / large mature); auto for species 2+ | This document |
+| Specimen selection | UI-driven via Specimen Browser (3D point-cloud preview + variant slot picker). Recommended defaults from height × density heuristic; operator confirms or swaps. NOT hand-edited config files. | Conversation 2026-04-27 |
 | Variants per species | 3 (small / mid / large from height distribution); per-tree pick via `hash(treeId) % 3` | Inventory analysis 2026-04-27 |
 | Leaf source | Shared morph library at `public/textures/leaves/<morph>.png`; per-species tint stored in manifest + materialColors. NOT per-species atlases. | Asset audit 2026-04-27 |
 | Sugar Maple morph | `palmate` | `assets/botanical-reference-hires/README.txt` (LeafSet010) |
@@ -477,18 +500,22 @@ The build is complete for v1 when **all** of these are true with `acer_saccharum
 
 ## Build order recommendation
 
-The agent SHOULD follow this order to surface integration risks early:
+The agent SHOULD follow this order to surface integration risks early. **Critical reordering vs. earlier drafts: the Specimen Browser comes before `bake-tree.py`.** Specimen picking is authoring (lives in the tool); the bake CLI is the consumer (reads what the user picked).
 
 1. `arborist/serve.js` skeleton (endpoints stubbed, returning fixtures). Wire `npm run dev`, vite proxy. Confirm reachable from browser.
 2. `src/arborist/ArboristApp.jsx` skeleton at `/arborist`. Empty Library page reading `/api/arborist/species`. Confirm round-trip.
-3. `arborist/bake-tree.py` — phase by phase: ingest → QSM → mesh → tips → atlas → manifest. Each phase emits an intermediate file under `arborist/_scratch/<species>/`. Ship phase 1 (ingest) end-to-end before starting phase 2.
-4. Wire bake button in Library to `POST /species/:id/bake`. Verify it produces files under `public/trees/acer_saccharum/`.
-5. `Inspector.jsx` — 3D preview of the baked GLB.
-6. `src/components/InstancedTrees.jsx` — runtime consumer. Mount in `LafayettePark.jsx`, replacing `ParkTrees`.
-7. Surfaces.Trees rebind to dynamic species list.
-8. Acceptance-criteria checklist run-through.
+3. **Backend pieces for the Specimen Browser:**
+   - `GET /species/:id/specimens` — parse `tree_metadata_dev.csv`, filter to species, attach `fileSize` from disk, mark recommended flags via the height-bucket × density heuristic.
+   - `GET /specimens/:treeId/preview.ply` — Python utility (or `pdal pipeline`) converts `.laz` → `.ply`, cached under `arborist/_cache/preview/`. Stream PLY back.
+4. **Specimen Browser UI** (`SpecimenBrowser.jsx`): filterable table + 3D viewport via Three.js `PLYLoader`. Variant slot buttons. Save → `POST /species/:id/variants`.
+5. **Now** `arborist/bake-tree.py` — phase by phase: ingest → QSM → mesh → tips → manifest. Each phase emits an intermediate under `arborist/_scratch/<species>/<variant-n>/`. Ship phase 1 (ingest) end-to-end before starting phase 2. Reads `arborist/state/<species>/variants.json` for which files to process.
+6. Wire `POST /species/:id/bake` to invoke `python bake-tree.py --species=<id>` with all picked variants. Bake button in Library activates only when variants are saved + bake is stale.
+7. `Inspector.jsx` — 3D preview of the baked GLBs (one viewport per variant, leaf overlay applied).
+8. `src/components/InstancedTrees.jsx` — runtime consumer. Mount in `LafayettePark.jsx`, replacing `ParkTrees`. Variants picked per-tree via `hash(treeId) % nVariants`.
+9. Stage Surfaces.Trees Species sub-panel — dynamic species list from `public/trees/index.json`, per-species tint binding.
+10. Acceptance-criteria checklist run-through.
 
-Each step is a commit. Branch off the operator's current working branch.
+Each step is a commit. Branch off the operator's current working branch (`cartograph-looks-pass-ab` as of 2026-04-27).
 
 ---
 
