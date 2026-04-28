@@ -7,8 +7,11 @@
 # Versions are conservative; bump as needed when integrating against
 # specific QSM ports.
 laspy>=2.5
-numpy>=1.26
-open3d>=0.18
-trimesh>=4.0
-pygltflib>=1.16
-pillow>=10.0
+lazrs>=0.7      # LAZ decompression backend for laspy (the [laz] extra was
+                # removed in laspy 2.7 — install lazrs directly).
+numpy>=1.26     # numpy 2.x removed `arr.ptp()`; pipeline code must use
+                # `np.ptp(arr)` or `arr.max() - arr.min()`.
+open3d>=0.18    # voxel downsample, surface reconstruction (later phases)
+trimesh>=4.0    # cylinder → mesh → GLB
+pygltflib>=1.16 # GLB writer
+pillow>=10.0    # leaf/bark atlas packing (if/when needed)
