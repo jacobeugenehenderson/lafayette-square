@@ -36,6 +36,10 @@ export default function Workstage() {
   const pickAllRecommended = useArboristStore(s => s.pickAllRecommended)
   const clearPicks      = useArboristStore(s => s.clearPicks)
   const saveSeedlings   = useArboristStore(s => s.saveSeedlings)
+  const bakeRunning     = useArboristStore(s => s.bakeRunning)
+  const bakeError       = useArboristStore(s => s.bakeError)
+  const bakeMs          = useArboristStore(s => s.bakeMs)
+  const runBake         = useArboristStore(s => s.runBake)
 
   const sp = species.find(s => s.id === activeSpeciesId)
 
@@ -94,11 +98,38 @@ export default function Workstage() {
           <button
             onClick={saveSeedlings}
             disabled={!pickedDirty || saving}
-            style={btnStyle({ primary: true })}>
+            style={btnStyle({ primary: pickedDirty })}>
             {saving ? 'Saving…' : 'Save seedlings'}
+          </button>
+          <button
+            onClick={runBake}
+            disabled={bakeRunning || pickedDirty || pickedTreeIds.size === 0}
+            title={
+              pickedDirty ? 'Save seedlings before baking' :
+              pickedTreeIds.size === 0 ? 'Pick at least one specimen first' :
+              sp.bakedAt ? 'Re-bake this species' : 'Bake this species'
+            }
+            style={btnStyle({ primary: !pickedDirty && pickedTreeIds.size > 0 })}>
+            {bakeRunning ? 'Baking…' : sp.bakedAt ? 'Re-bake' : 'Bake'}
           </button>
         </span>
       </header>
+
+      {/* Bake status strip — shown after a bake completes or fails. Cleared
+          when the next bake starts. */}
+      {(bakeMs || bakeError) && !bakeRunning && (
+        <div style={{
+          padding: '6px 18px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: bakeError ? 'rgba(248,80,80,0.08)' : 'rgba(80,200,140,0.08)',
+          color: bakeError ? '#f88' : '#8c8',
+          fontSize: 11, display: 'flex', gap: 12,
+        }}>
+          {bakeError
+            ? <>✗ bake failed: {bakeError}</>
+            : <>✓ baked in {(bakeMs / 1000).toFixed(1)}s — {sp.variants} variants in <code>public/trees/{sp.id}/</code></>}
+        </div>
+      )}
 
       {/* Body — table left, viewport right */}
       <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '440px 1fr', minHeight: 0 }}>

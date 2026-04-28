@@ -286,9 +286,30 @@ const server = createServer(async (req, res) => {
       return
     }
 
-    // POST /species/:id/bake — placeholder until bake-tree.py lands
+    // POST /species/:id/bake — exec bake-tree.py for one species. Synchronous;
+    // the Workstage shows a modal during the round-trip. Bakes are infrequent
+    // (operator action) and bounded (~10s for 3 seedlings on a Mac).
     if (req.method === 'POST' && (m = req.url.match(/^\/species\/([^/]+)\/bake$/))) {
-      return notImplemented(res, 'POST /species/:id/bake')
+      const id = m[1]
+      if (!SPECIES_DECL[id]) return jsonRes(res, 404, { error: 'unknown species', id })
+      const seedlingsPath = join(STATE_DIR, id, 'seedlings.json')
+      if (!existsSync(seedlingsPath)) {
+        return jsonRes(res, 400, { error: 'no seedlings picked yet — pick some in the workstage first', id })
+      }
+      const t0 = Date.now()
+      try {
+        const bake = join(__dirname, 'bake-tree.py')
+        const { stdout, stderr } = await execAsync(VENV_PYTHON, [bake, `--species=${id}`])
+        const ms = Date.now() - t0
+        return jsonRes(res, 200, { ok: true, ms, species: id, log: stdout })
+      } catch (err) {
+        return jsonRes(res, 500, {
+          error: 'bake failed',
+          species: id,
+          stderr: String(err.stderr || err.message).slice(0, 8000),
+          stdout: String(err.stdout || '').slice(0, 4000),
+        })
+      }
     }
 
     // DELETE /species/:id — placeholder

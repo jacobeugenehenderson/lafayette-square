@@ -1,0 +1,81 @@
+{
+  "species": "acer_saccharum",
+  "label": "Sugar Maple",
+  "scientific": "Acer saccharum",
+  "tier": "exact",
+  "leafMorph": "palmate",
+  "barkMorph": "furrowed",
+  "deciduous": true,
+  "hasFlowers": false,
+  "tints": {
+    "buds": "#a8c870",
+    "spring": "#7eba5e",
+    "summer": "#3a7b30",
+    "fall": "#d4801f",
+    "winter": null
+  },
+  "variants": [
+    {
+      "id": 1,
+      "treeId": "10160",
+      "treeH": 17,
+      "sourceFile": "botanica/dev/10160.laz",
+      "skeleton": "skeleton-1.glb",
+      "tips": "tips-1.json",
+      "tuneParams": {
+        "voxelSize": 0.03,
+        "minRadius": 0.005,
+        "tipRadius": 0.03
+      },
+      "stats": {
+        "nodes": 321,
+        "edges": 223,
+        "verts": 3122,
+        "faces": 5352,
+        "tipCount": 18
+      }
+    },
+    {
+      "id": 2,
+      "treeId": "10184",
+      "treeH": 20.8,
+      "sourceFile": "botanica/dev/10184.laz",
+      "skeleton": "skeleton-2.glb",
+      "tips": "tips-2.json",
+      "tuneParams": {
+        "voxelSize": 0.03,
+        "minRadius": 0.005,
+        "tipRadius": 0.03
+      },
+      "stats": {
+        "nodes": 191,
+        "edges": 98,
+        "verts": 1372,
+        "faces": 2352,
+        "tipCount": 13
+      }
+    },
+    {
+      "id": 3,
+      "treeId": "10199",
+      "treeH": 24.7,
+      "sourceFile": "botanica/dev/10199.laz",
+      "skeleton": "skeleton-3.glb",
+      "tips": "tips-3.json",
+      "tuneParams": {
+        "voxelSize": 0.03,
+        "minRadius": 0.005,
+        "tipRadius": 0.03
+      },
+      "stats": {
+        "nodes": 915,
+        "edges": 706,
+        "verts": 9884,
+        "faces": 16944,
+        "tipCount": 106
+      }
+    }
+  ],
+  "failures": [],
+  "bakedAt": 1777349977830
+}

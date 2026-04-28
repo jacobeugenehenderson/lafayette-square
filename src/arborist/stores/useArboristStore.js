@@ -88,6 +88,29 @@ const useArboristStore = create((set, get) => ({
     return { pickedTreeIds: next, pickedDirty: true }
   }),
   clearPicks: () => set({ pickedTreeIds: new Set(), pickedDirty: true }),
+  bakeRunning: false,
+  bakeError: null,
+  bakeLog: null,
+  bakeMs: null,
+  runBake: async () => {
+    const id = get().activeSpeciesId
+    if (!id) return
+    set({ bakeRunning: true, bakeError: null, bakeLog: null, bakeMs: null })
+    try {
+      const r = await fetch(`/api/arborist/species/${encodeURIComponent(id)}/bake`, { method: 'POST' })
+      const d = await r.json()
+      if (!r.ok) {
+        set({ bakeRunning: false, bakeError: d.error || `HTTP ${r.status}`, bakeLog: d.stderr || d.stdout || null })
+        return
+      }
+      set({ bakeRunning: false, bakeMs: d.ms, bakeLog: d.log || null })
+      // Refresh /species so the bakedAt + variants count updates.
+      get().loadSpecies()
+    } catch (err) {
+      set({ bakeRunning: false, bakeError: String(err) })
+    }
+  },
+
   saveSeedlings: async () => {
     const s = get()
     const id = s.activeSpeciesId
