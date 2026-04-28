@@ -405,3 +405,13 @@ function Th({ label, col, sortBy, dir, onClick, align = 'left' }) {
     </th>
   )
 }
+function modeBtnStyle(active) {
+  return {
+    flex: 1,
+    background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+    color: active ? '#fff' : '#aaa',
+    border: 'none',
+    padding: '6px 12px',
+    fontFamily: 'inherit', fontSize: 12, cursor: 'pointer',
+  }
+}
