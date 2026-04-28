@@ -3,27 +3,29 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
 
-// Serve /cartograph and /stage as separate entry points
-function serveCartograph() {
+// Serve helper-app routes (/cartograph, /stage, /arborist) as separate
+// HTML entry points. Each helper has its own `*.html` at repo root and
+// `main.jsx` under `src/<helper>/`. Add new helpers by appending here +
+// adding the `*.html` to `build.rollupOptions.input` below.
+function serveHelperApps() {
+  const routes = [
+    { url: '/cartograph', file: 'cartograph.html' },
+    { url: '/stage',      file: 'stage.html' },
+    { url: '/arborist',   file: 'arborist.html' },
+  ]
   return {
-    name: 'serve-cartograph',
+    name: 'serve-helper-apps',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = (req.url || '').split('?')[0]
-        if (url === '/cartograph' || url === '/cartograph/') {
-          const filePath = path.resolve('cartograph.html')
-          if (fs.existsSync(filePath)) {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8')
-            res.end(fs.readFileSync(filePath, 'utf-8'))
-            return
-          }
-        }
-        if (url === '/stage' || url === '/stage/') {
-          const filePath = path.resolve('stage.html')
-          if (fs.existsSync(filePath)) {
-            res.setHeader('Content-Type', 'text/html; charset=utf-8')
-            res.end(fs.readFileSync(filePath, 'utf-8'))
-            return
+        for (const r of routes) {
+          if (url === r.url || url === r.url + '/') {
+            const filePath = path.resolve(r.file)
+            if (fs.existsSync(filePath)) {
+              res.setHeader('Content-Type', 'text/html; charset=utf-8')
+              res.end(fs.readFileSync(filePath, 'utf-8'))
+              return
+            }
           }
         }
         next()
@@ -63,7 +65,7 @@ function serveCodedesk() {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [serveCartograph(), serveCodedesk(), react()],
+  plugins: [serveHelperApps(), serveCodedesk(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
     // poly2tri's UMD shim references `global`; polyfill to globalThis so
@@ -80,6 +82,10 @@ export default defineConfig(({ command }) => ({
         target: 'http://localhost:3333',
         rewrite: (path) => path.replace(/^\/api\/cartograph/, ''),
       },
+      '/api/arborist': {
+        target: 'http://localhost:3334',
+        rewrite: (path) => path.replace(/^\/api\/arborist/, ''),
+      },
     },
   },
   build: {
@@ -88,6 +94,7 @@ export default defineConfig(({ command }) => ({
         main: 'index.html',
         cartograph: 'cartograph.html',
         stage: 'stage.html',
+        arborist: 'arborist.html',
       },
       output: {
         manualChunks: {

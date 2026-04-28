@@ -17,14 +17,16 @@ npm run dev
 
 | Prefix | Process | Port | Role |
 |---|---|---|---|
-| `web`   | `vite`                  | 5173 | Main neighborhood app + helper UIs (Cartograph, Stage, eventual Arborist) |
+| `web`   | `vite`                  | 5173 | Main neighborhood app + helper UIs (Cartograph, Stage, Arborist) |
 | `carto` | `cartograph/serve.js`   | 3333 | Cartograph backend: skeleton/overlay I/O, Looks API, bake CLI runner |
+| `arb`   | `arborist/serve.js`     | 3334 | Arborist backend: species library, specimen browser API, tree bake CLI runner |
 
-`Ctrl-C` kills both. Escape hatches if you want to run one in isolation:
+`Ctrl-C` kills all three. Escape hatches if you want to run one in isolation:
 
 ```bash
 npm run dev:web         # vite only
 npm run dev:cartograph  # cartograph backend only
+npm run dev:arborist    # arborist backend only
 ```
 
 The dev server reads environment variables from `.env` (gitignored):
@@ -48,11 +50,12 @@ The project is organized as a **public-facing runtime app** plus a small set of 
 |---|---|---|---|
 | **Cartograph** (`/cartograph`) | `src/cartograph/` + `cartograph/` | `public/looks/<id>/ground.svg` (per Look) | Stage's `SvgGround` |
 | **Stage** (`/stage`)             | `src/stage/` + `src/cartograph/Stage*` | (eventually) `stage-config.json` per Look | Runtime scene environment |
-| **Arborist** *(planned)*         | TBD                                    | `public/trees/<species>/{skeleton.glb, leaves.png, tips.json}` | Runtime `InstancedTrees` |
+| **Arborist** (`/arborist`)       | `src/arborist/` + `arborist/`          | `public/trees/<species>/{skeleton-N.glb, tips-N.json, manifest.json}` | Runtime `InstancedTrees` (planned) |
 
 Read [`ARCHITECTURE.md`](ARCHITECTURE.md) for the publish-loop pattern, the Looks model (per-Look styling vs. shared geometry), and the Designer/Stage role split. Each helper has its own README documenting its inputs, outputs, and command surface:
 
 - [`cartograph/README.md`](cartograph/README.md)
+- [`arborist/README.md`](arborist/README.md) (scaffold — see [`arborist/SPEC.md`](arborist/SPEC.md) for the build plan)
 
 URL routes during development:
 
@@ -61,6 +64,7 @@ URL routes during development:
 | `/`          | Public neighborhood viewer (the runtime) |
 | `/cartograph`| Cartograph helper app (Designer + Stage + Surfaces) |
 | `/stage`     | Standalone Stage page (camera/lighting authoring, no cartograph data) |
+| `/arborist`  | Arborist helper app (species library + specimen workstage; scaffold) |
 
 ---
 

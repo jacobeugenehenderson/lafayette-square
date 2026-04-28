@@ -77,3 +77,11 @@ src/data/ribbons.json.backup-*
 # tree-baking pipeline). Lives locally; never committed.
 # Source: https://zenodo.org/records/13255198
 botanica/
+
+# Arborist operator state + caches. Curated picks live in arborist/state/;
+# .laz → .ply preview conversion cache lives in arborist/_cache/. Both
+# regenerable; never committed. (public/trees/ IS committed — that's the
+# published artifact.)
+arborist/state/
+arborist/_cache/
+arborist/.venv/

@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n web,carto -c cyan,magenta --kill-others-on-fail \"npm:dev:web\" \"npm:dev:cartograph\"",
+    "dev": "concurrently -n web,carto,arb -c cyan,magenta,green --kill-others-on-fail \"npm:dev:web\" \"npm:dev:cartograph\" \"npm:dev:arborist\"",
     "dev:web": "vite",
     "dev:cartograph": "node cartograph/serve.js",
+    "dev:arborist": "node arborist/serve.js",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -1,0 +1,14 @@
+# Arborist Python pipeline.
+# Install into a venv at arborist/.venv (gitignored).
+#   python3 -m venv arborist/.venv
+#   source arborist/.venv/bin/activate
+#   pip install -r arborist/requirements.txt
+#
+# Versions are conservative; bump as needed when integrating against
+# specific QSM ports.
+laspy>=2.5
+numpy>=1.26
+open3d>=0.18
+trimesh>=4.0
+pygltflib>=1.16
+pillow>=10.0

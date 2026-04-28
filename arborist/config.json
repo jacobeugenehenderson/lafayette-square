@@ -1,0 +1,11 @@
+{
+  "_comment": "Arborist STATIC config. Specimen filenames live in arborist/state/<species>/seedlings.json (UI-driven), NOT here. This file holds only defaults that seed the workstage tune panel for new picks. See arborist/SPEC.md.",
+  "datasetRoot": "botanica",
+  "metadataCsv": "botanica/tree_metadata_dev.csv",
+  "defaultSeedlingCount": 10,
+  "tuneDefaults": {
+    "voxelSize": 0.02,
+    "minRadius": 0.005,
+    "tipRadius": 0.01
+  }
+}

@@ -19,7 +19,7 @@ The codebase is a **public-facing runtime app** plus a small set of **standalone
                                                                        │
 ┌────────────────┐    publishes     ┌──────────────────────────────┐   │
 │  Arborist      │ ───────────────▶ │ public/trees/<species>/...   │ ──┘
-│  (planned)     │                  └──────────────────────────────┘
+│  (scaffold)    │                  └──────────────────────────────┘
 └────────────────┘
 ```
 
@@ -91,7 +91,7 @@ public/<helper-output>/    # Where the helper's published artifacts live
   …                        # Served as static assets to the runtime
 ```
 
-Cartograph is the canonical example today. Arborist will mirror this when it's built.
+Cartograph is the canonical example today. Arborist (scaffolded) is mirroring it; see [`arborist/SPEC.md`](arborist/SPEC.md) for the build plan.
 
 ---
 
