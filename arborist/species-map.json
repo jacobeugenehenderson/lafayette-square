@@ -1,0 +1,23 @@
+{
+  "_comment": "Maps park-inventory species names → Arborist species IDs + morph + tier + scientific binomial. Drives /species (which Arborist species exist), /species/:id/specimens (which FOR-species20K subset to filter to), and downstream manifest. New species: add a row. v1 ships Sugar Maple as exact; cousins/fallbacks are placeholders to be filled out as we expand.",
+  "species": {
+    "acer_saccharum": {
+      "label": "Sugar Maple",
+      "scientific": "Acer saccharum",
+      "forSpeciesName": "Acer_saccharum",
+      "inventoryNames": ["Maple, Sugar"],
+      "tier": "exact",
+      "leafMorph": "palmate",
+      "barkMorph": "furrowed",
+      "deciduous": true,
+      "hasFlowers": false,
+      "tints": {
+        "buds":   "#a8c870",
+        "spring": "#7eba5e",
+        "summer": "#3a7b30",
+        "fall":   "#d4801f",
+        "winter": null
+      }
+    }
+  }
+}
