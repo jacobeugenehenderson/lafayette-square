@@ -1,6 +1,7 @@
 import useCartographStore from './stores/useCartographStore.js'
 
 const SHOTS = ['browse', 'hero', 'street']
+const DEFAULT_LOOK_ID = 'lafayette-square'
 
 function cap(s) { return s[0].toUpperCase() + s.slice(1) }
 
@@ -48,6 +49,7 @@ export default function Toolbar() {
           <div className="carto-toolgroup">
             <button onClick={() => setShot('designer')}>← Designer</button>
           </div>
+          <LooksMenu />
           <div className="carto-toolgroup">
             <button onClick={() => console.log('[publish] not wired yet')}>Publish</button>
           </div>
@@ -79,6 +81,57 @@ export default function Toolbar() {
       <ToggleButton label="Toy"
         active={scene === 'toy'}
         onClick={() => setScene(scene === 'toy' ? 'neighborhood' : 'toy')} />
+    </div>
+  )
+}
+
+/**
+ * Looks pulldown — switch active Look and create new ones from the current
+ * working draft. The default Look (lafayette-square) is the project's 0-state
+ * and can't be deleted.
+ */
+function LooksMenu() {
+  const looks = useCartographStore(s => s.looks)
+  const activeLookId = useCartographStore(s => s.activeLookId)
+  const setActiveLook = useCartographStore(s => s.setActiveLook)
+  const createLook = useCartographStore(s => s.createLook)
+  const deleteActiveLook = useCartographStore(s => s.deleteActiveLook)
+
+  const onChange = (e) => {
+    const v = e.target.value
+    if (v === '__new__') {
+      // Fork the current working draft into a new named Look. This is the
+      // deliberate save-as action — the Stage transition itself silently
+      // re-bakes the active Look from autosaved state, so the only thing
+      // the user is asked to *name* is the new fork.
+      const name = window.prompt('Name this Look (e.g. "Valentines", "Cardinals Win")')
+      if (name && name.trim()) createLook(name.trim())
+    } else if (v === '__delete__') {
+      if (window.confirm('Delete this Look? The default cannot be deleted.')) {
+        deleteActiveLook()
+      }
+    } else if (v && v !== activeLookId) {
+      setActiveLook(v)
+    }
+  }
+
+  return (
+    <div className="carto-toolgroup">
+      <select
+        className="carto-looks-select"
+        value={activeLookId || DEFAULT_LOOK_ID}
+        onChange={onChange}
+        title="Active Look — switch, save as new, or delete"
+      >
+        {(looks || []).map(l => (
+          <option key={l.id} value={l.id}>{l.name}</option>
+        ))}
+        <option disabled>──────────</option>
+        <option value="__new__">＋ Save as new Look…</option>
+        {activeLookId && activeLookId !== DEFAULT_LOOK_ID && (
+          <option value="__delete__">🗑 Delete this Look</option>
+        )}
+      </select>
     </div>
   )
 }

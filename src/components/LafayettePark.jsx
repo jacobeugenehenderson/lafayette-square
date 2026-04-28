@@ -1384,7 +1384,9 @@ function LafayettePark() {
       {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
       <ParkWater />
       <ParkPaths />
-      <ParkTrees />
+      {/* Park trees muted while ground-pipeline rework is in flight. Re-enable
+          by removing this guard. */}
+      {false && <ParkTrees />}
       <PerimeterFence />
 
       <Text

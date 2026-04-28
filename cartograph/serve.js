@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from 'http'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs'
 import { join, extname } from 'path'
 import { execSync } from 'child_process'
 
@@ -12,7 +12,63 @@ const CENTERLINES = join(RAW, 'centerlines.json')
 const SKELETON = join(DIR, 'skeleton.json')
 const OVERLAY = join(DIR, 'overlay.json')
 const PARCEL_FILE = join(import.meta.dirname, '..', 'scripts', 'raw', 'stl_parcels.json')
+// Looks: each Look is a styling snapshot — a complete material palette + its
+// baked SVG. Lives under public/looks/<id>/{design.json, ground.svg} so the
+// browser can fetch design and SVG via simple static URLs. index.json tracks
+// names + order; the default Look 'lafayette-square' is the project's 0-state
+// and can't be deleted.
+const PUBLIC_DIR = join(import.meta.dirname, '..', 'public')
+const LOOKS_DIR = join(PUBLIC_DIR, 'looks')
+const LOOKS_INDEX = join(LOOKS_DIR, 'index.json')
+const DEFAULT_LOOK_ID = 'lafayette-square'
 const PORT = 3333
+
+// ── Looks helpers ──────────────────────────────────────────────────────────
+function readJsonOrNull(path) {
+  try { return JSON.parse(readFileSync(path, 'utf-8')) } catch { return null }
+}
+function writeJson(path, obj) {
+  writeFileSync(path, JSON.stringify(obj, null, 2))
+}
+function lookDir(id) { return join(LOOKS_DIR, id) }
+function lookDesignPath(id) { return join(lookDir(id), 'design.json') }
+function lookSvgPath(id) { return join(lookDir(id), 'ground.svg') }
+function readLooksIndex() {
+  return readJsonOrNull(LOOKS_INDEX) || { default: DEFAULT_LOOK_ID, looks: [] }
+}
+function saveLooksIndex(idx) { writeJson(LOOKS_INDEX, idx) }
+function slugify(name) {
+  return String(name).toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'look'
+}
+function uniqueLookId(base, existingIds) {
+  let id = base, n = 2
+  while (existingIds.includes(id)) { id = `${base}-${n}`; n++ }
+  return id
+}
+
+// One-time migration: if public/looks/ doesn't exist, create it and seed the
+// default Look from overlay.json's design block (or empty if absent). Strip
+// the design block from overlay.json so it stops drifting from the Look.
+function migrateLooksOnBoot() {
+  if (existsSync(LOOKS_INDEX)) return
+  mkdirSync(lookDir(DEFAULT_LOOK_ID), { recursive: true })
+  const overlay = readJsonOrNull(OVERLAY) || {}
+  const design = overlay.design || {}
+  writeJson(lookDesignPath(DEFAULT_LOOK_ID), design)
+  saveLooksIndex({
+    default: DEFAULT_LOOK_ID,
+    looks: [
+      { id: DEFAULT_LOOK_ID, name: 'Lafayette Square', createdAt: Date.now() },
+    ],
+  })
+  if (overlay.design) {
+    delete overlay.design
+    writeJson(OVERLAY, overlay)
+  }
+  console.log(`[looks] migrated overlay.design → ${DEFAULT_LOOK_ID}`)
+}
+migrateLooksOnBoot()
 
 const MIME = {
   '.html': 'text/html',
@@ -233,6 +289,152 @@ createServer((req, res) => {
       const ms = Date.now() - t0
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ ok: true, ms, path: 'public/cartograph-ground.svg' }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
+    return
+  }
+
+  // ── Looks ───────────────────────────────────────────────────────────────
+  // Each Look is a styling snapshot: design.json (material palette + shader
+  // params) + ground.svg (baked artifact). The default Look is the project's
+  // 0-state and can't be deleted.
+
+  // GET /looks — list of {id, name, createdAt} + the default id.
+  if (req.method === 'GET' && req.url === '/looks') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(readLooksIndex()))
+    return
+  }
+
+  // GET /looks/<id>/design — the Look's autosaved design block.
+  // Returns {} (not 404) for an existing Look without a design yet, so the
+  // client can hydrate without a special-case error path.
+  let m
+  if (req.method === 'GET' && (m = req.url.match(/^\/looks\/([^/]+)\/design$/))) {
+    const id = m[1]
+    const idx = readLooksIndex()
+    if (!idx.looks.some(l => l.id === id)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'unknown look' }))
+      return
+    }
+    const design = readJsonOrNull(lookDesignPath(id)) || {}
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(design))
+    return
+  }
+
+  // POST /looks/<id>/design — autosave write. Body: design block JSON.
+  if (req.method === 'POST' && (m = req.url.match(/^\/looks\/([^/]+)\/design$/))) {
+    const id = m[1]
+    const idx = readLooksIndex()
+    if (!idx.looks.some(l => l.id === id)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'unknown look' }))
+      return
+    }
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body)
+        mkdirSync(lookDir(id), { recursive: true })
+        writeJson(lookDesignPath(id), parsed)
+        // Touch updatedAt so clients can show "last edited" if they want.
+        const idx2 = readLooksIndex()
+        const entry = idx2.looks.find(l => l.id === id)
+        if (entry) { entry.updatedAt = Date.now(); saveLooksIndex(idx2) }
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('{"ok":true}')
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
+  // POST /looks/<id>/bake — re-render the SVG for this Look from its
+  // design.json. Synchronous; client shows a modal during the round-trip.
+  if (req.method === 'POST' && (m = req.url.match(/^\/looks\/([^/]+)\/bake$/))) {
+    const id = m[1]
+    const idx = readLooksIndex()
+    if (!idx.looks.some(l => l.id === id)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'unknown look' }))
+      return
+    }
+    try {
+      const t0 = Date.now()
+      execSync(`node bake-svg.js --look=${id}`, { cwd: import.meta.dirname, timeout: 60000 })
+      const ms = Date.now() - t0
+      const idx2 = readLooksIndex()
+      const entry = idx2.looks.find(l => l.id === id)
+      if (entry) { entry.bakedAt = Date.now(); saveLooksIndex(idx2) }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, ms, lookId: id }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message }))
+    }
+    return
+  }
+
+  // POST /looks — create a new Look. Body: { name, fromLookId? }.
+  // Seeds the new Look's design.json from `fromLookId` (defaults to the
+  // currently-active or default Look). Caller bakes separately.
+  if (req.method === 'POST' && req.url === '/looks') {
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const { name, fromLookId } = JSON.parse(body || '{}')
+        if (!name || !String(name).trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'name required' }))
+          return
+        }
+        const idx = readLooksIndex()
+        const seedId = fromLookId && idx.looks.some(l => l.id === fromLookId)
+          ? fromLookId : idx.default
+        const id = uniqueLookId(slugify(name), idx.looks.map(l => l.id))
+        mkdirSync(lookDir(id), { recursive: true })
+        const seedDesign = readJsonOrNull(lookDesignPath(seedId)) || {}
+        writeJson(lookDesignPath(id), seedDesign)
+        idx.looks.push({ id, name: String(name).trim(), createdAt: Date.now() })
+        saveLooksIndex(idx)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, id }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
+  // DELETE /looks/<id> — remove a Look. Forbidden for the default 0-state.
+  if (req.method === 'DELETE' && (m = req.url.match(/^\/looks\/([^/]+)$/))) {
+    const id = m[1]
+    const idx = readLooksIndex()
+    if (id === idx.default) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'cannot delete default look' }))
+      return
+    }
+    if (!idx.looks.some(l => l.id === id)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'unknown look' }))
+      return
+    }
+    try {
+      rmSync(lookDir(id), { recursive: true, force: true })
+      idx.looks = idx.looks.filter(l => l.id !== id)
+      saveLooksIndex(idx)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end('{"ok":true}')
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))

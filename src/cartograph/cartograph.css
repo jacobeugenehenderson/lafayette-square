@@ -504,6 +504,46 @@
   cursor: not-allowed;
 }
 
+/* Looks dropdown — a <select> inside a toolgroup. Strips the platform's
+   native chrome and leans on the toolbar pill rhythm so it reads as a peer
+   of the .carto-toolgroup > button rules above, not a stray form element.
+   Caret is drawn as an inline SVG background so the visual matches the
+   toolbar's text color and stays crisp on dark glass. */
+.carto-toolgroup > .carto-looks-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  color: var(--toolbar-text-idle);
+  border: 0;
+  border-radius: calc(var(--toolbar-group-radius) - 1px);
+  padding: var(--toolbar-btn-pad-y) calc(var(--toolbar-btn-pad-x) + 14px) var(--toolbar-btn-pad-y) var(--toolbar-btn-pad-x);
+  font-size: var(--toolbar-btn-fs);
+  font-weight: var(--toolbar-btn-fw);
+  font-family: var(--carto-font);
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 10px 10px;
+  transition: background-color .12s ease, color .12s ease;
+}
+.carto-toolgroup > .carto-looks-select:hover {
+  background-color: var(--toolbar-btn-hover);
+  color: var(--toolbar-text-hover);
+}
+.carto-toolgroup > .carto-looks-select:focus-visible {
+  background-color: var(--toolbar-btn-hover);
+  color: var(--toolbar-text-hover);
+}
+/* Open/native-popup styling is browser-controlled; just make sure option
+   text is readable on whatever background the OS picks. */
+.carto-toolgroup > .carto-looks-select option {
+  background: var(--carto-surface);
+  color: var(--carto-text);
+}
+
 /* ---------- Measure panel band rows ---------- */
 .carto-band-list {
   margin-top: 6px;

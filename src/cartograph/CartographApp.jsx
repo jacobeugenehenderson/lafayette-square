@@ -6,6 +6,7 @@ import * as THREE from 'three'
 // Map geometry (rendered in every shot)
 import StreetRibbons from '../components/StreetRibbons.jsx'
 import MapLayers from './MapLayers.jsx'
+import SvgGround from './SvgGround.jsx'
 
 // Designer-only (aerial + authoring overlays)
 import AerialTiles from './AerialTiles.jsx'
@@ -39,6 +40,7 @@ import StatusBar from './StatusBar.jsx'
 import Panel from './Panel.jsx'
 import StagePanelReal, { defaultKeyframes } from './StagePanel.jsx'
 import BakeModal from './BakeModal.jsx'
+import CartographSurfaces from './CartographSurfaces.jsx'
 
 // Hooks + store
 import useCartographStore from './stores/useCartographStore.js'
@@ -328,6 +330,8 @@ export default function CartographApp() {
   const centerlineData = useCartographStore(s => s.centerlineData)
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
+  const activeLookId = useCartographStore(s => s.activeLookId)
+  const engineeringHidden = useCartographStore(s => s.engineeringHidden)
 
   // StagePanel state — local, used when a non-Designer shot is active
   const [keyframes, setKeyframes] = useState(() => defaultKeyframes('hero'))
@@ -340,14 +344,24 @@ export default function CartographApp() {
 
   const inDesigner = shot === 'designer'
 
+  // Effective hidden layers in Designer = active Look's layerVis(false)
+  // ∪ ephemeral engineeringHidden. Stage gets only layerVis (stageHidden
+  // is computed below). engineeringHidden never persists or reaches Stage.
   const hiddenLayers = {}
   for (const k in layerVis) {
     if (!layerVis[k]) hiddenLayers[k] = true
   }
+  if (inDesigner) {
+    for (const k in engineeringHidden) {
+      if (engineeringHidden[k]) hiddenLayers[k] = true
+    }
+  }
   // Background view: aerialVisible swaps the painted background between
   // curated SVG and aerial photo. Curated rendering hides only when
   // aerial is on AND we're in pure Design — under tools, ribbons +
-  // tool affordances stay over the aerial as reference.
+  // tool affordances stay over the aerial as reference, and the user
+  // declutters via per-layer engineering-visibility toggles in the
+  // Designer Panel.
   const designAerialOnly = inDesigner && !tool && aerialVisible
   // When a tool is active, hide the giant off-map ground plane so the
   // background (curated or aerial) shows through under the streets.
@@ -396,8 +410,11 @@ export default function CartographApp() {
           <TimeTicker />
           <SkyStateTicker />
 
-          {/* ── Always rendered (the map itself) ── */}
+          {/* ── Live ribbon mesh: Designer (any scene) and toy (any shot)
+              consume ribbons.json directly. Stage neighborhood shots
+              consume the baked SVG via <SvgGround/> instead. ── */}
           {inDesigner && <ambientLight intensity={1} />}
+          {(inDesigner || scene === 'toy') && (
           <R3FErrorBoundary name="StreetRibbons">
             <group visible={!designAerialOnly}>
             <StreetRibbons hiddenLayers={inDesigner ? hiddenLayers : stageHidden}
@@ -430,6 +447,12 @@ export default function CartographApp() {
               hideFaceFills={false} />
             </group>
           </R3FErrorBoundary>
+          )}
+
+          {/* ── Baked-SVG ground for Stage shots (neighborhood scene). ── */}
+          {!inDesigner && scene === 'neighborhood' && (
+            <R3FErrorBoundary name="SvgGround"><SvgGround /></R3FErrorBoundary>
+          )}
 
           {/* ── Map layers (flat ground geometry — neighborhood only).
               In shots, layers with 3D equivalents (park, buildings, trees,
@@ -495,11 +518,16 @@ export default function CartographApp() {
           <StagePanelReal shot={shot}
             setShot={(s) => useCartographStore.getState().setShot(s)}
             keyframes={keyframes} setKeyframes={setKeyframes}
-            heroMotion={heroMotion} setHeroMotion={setHeroMotion} />
+            heroMotion={heroMotion} setHeroMotion={setHeroMotion}
+            surfacesSlot={scene === 'neighborhood' ? <CartographSurfaces /> : undefined} />
         )}
       </div>
 
-      {inDesigner && <Panel />}
+      {/* Re-mount Panel when the active Look changes so its local state
+          rehydrates from the new Look's design. Cheap (Panel is just a
+          control surface) and avoids subscribing to every layer-color
+          change inside the Panel. */}
+      {inDesigner && <Panel key={activeLookId || 'default'} />}
 
       <BakeModal />
     </div>

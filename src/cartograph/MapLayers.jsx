@@ -90,7 +90,7 @@ function injectRadialFade(mat, { rigidCentroid = false } = {}) {
 // values (factor=-pri*4, units=-pri*50) pushed layers too aggressively
 // toward the camera and caused alley z-fighting once terrain displacement
 // lifted everything simultaneously.
-function makeFlatMat(color, pri, opts = {}) {
+export function makeFlatMat(color, pri, opts = {}) {
   const { rigidCentroid = false, ...matOpts } = opts
   const mat = new THREE.MeshStandardMaterial({
     color, roughness: 1, metalness: 0, side: THREE.DoubleSide,

@@ -1,19 +1,103 @@
 import { create } from 'zustand'
-import { fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton, fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay, bakeSvg } from '../api.js'
+import {
+  fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton,
+  fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay,
+  fetchLooks, fetchLookDesign, saveLookDesign, bakeLook,
+  createLook as apiCreateLook, deleteLook as apiDeleteLook,
+} from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
 
+const ACTIVE_LOOK_KEY = 'cartograph-active-look'
+const DEFAULT_LOOK_ID = 'lafayette-square'
+
+function readActiveLookFromStorage() {
+  try {
+    const v = localStorage.getItem(ACTIVE_LOOK_KEY)
+    if (v && typeof v === 'string') return v
+  } catch { /* ignore */ }
+  return DEFAULT_LOOK_ID
+}
+
 const useCartographStore = create((set, get) => ({
-  // ── Layer visibility + colors (synced from Panel.jsx) ─────
-  // Hydrated from overlay.design once /overlay loads. Panel.jsx watches
-  // _designHydrated to copy these into its local state on first arrival
-  // and to gate save calls so hydration itself doesn't echo a write.
+  // ── Layer visibility + colors ─────────────────────────────
+  // Hydrated from the active Look's design.json on _loadCenterlines.
+  // Stage's StyleEditor and Designer's Panel both read these directly;
+  // setters below also call _saveDesignDebounced so edits autosave to the
+  // active Look without going through a local-state-mirror dance.
   layerVis: {},
   layerColors: {},
   layerStrokes: {},
   luColors: {},
+  // 3D-scene material colors (walls, roofs, neon, trees, infra, park) — these
+  // never reach the SVG bake but live in the same per-Look design.json so
+  // switching Looks swaps the whole visual identity in one place.
+  materialColors: {},
   openSections: {},
   bgColor: '#1a1a18',
   _designHydrated: false,
+
+  // ── Style setters (used by StyleEditor and any other styling UI) ──
+  // Each writes the new value into the store, triggers a debounced save
+  // to /looks/<activeLookId>/design, and stales the bake.
+  setLayerColor: (id, color) => {
+    set(s => ({ layerColors: { ...s.layerColors, [id]: color } }))
+    get()._saveDesignDebounced()
+  },
+  setLuColor: (id, color) => {
+    set(s => ({ luColors: { ...s.luColors, [id]: color } }))
+    get()._saveDesignDebounced()
+  },
+  setMaterialColor: (id, color) => {
+    set(s => ({ materialColors: { ...s.materialColors, [id]: color } }))
+    get()._saveDesignDebounced()
+  },
+  setLayerVis: (id, visible) => {
+    set(s => ({ layerVis: { ...s.layerVis, [id]: !!visible } }))
+    get()._saveDesignDebounced()
+  },
+  toggleLayerVis: (id) => {
+    set(s => ({ layerVis: { ...s.layerVis, [id]: !s.layerVis[id] } }))
+    get()._saveDesignDebounced()
+  },
+  // Bulk visibility update — used by Section header "all on / all off".
+  setLayersVis: (ids, visible) => {
+    const v = !!visible
+    set(s => {
+      const next = { ...s.layerVis }
+      for (const id of ids) next[id] = v
+      return { layerVis: next }
+    })
+    get()._saveDesignDebounced()
+  },
+  setLayerStroke: (id, patch) => {
+    set(s => ({
+      layerStrokes: { ...s.layerStrokes, [id]: { ...s.layerStrokes[id], ...patch } },
+    }))
+    get()._saveDesignDebounced()
+  },
+  setOpenSections: (next) => {
+    set(s => ({ openSections: typeof next === 'function' ? next(s.openSections) : { ...s.openSections, ...next } }))
+    get()._saveDesignDebounced()
+  },
+
+  // Engineering visibility — Designer-only, session-ephemeral. NOT in
+  // design.json, NOT per-Look. Used while doing Survey / Measure / aerial
+  // alignment work to temporarily declutter the canvas (e.g., hide buildings
+  // to verify their footprints against the aerial). Resets on reload.
+  // Effective hidden layers in Designer = layerVis(false) ∪ engineeringHidden.
+  // Stage ignores this map entirely.
+  engineeringHidden: {},
+  toggleEngineeringHidden: (id) => {
+    set(s => ({ engineeringHidden: { ...s.engineeringHidden, [id]: !s.engineeringHidden[id] } }))
+  },
+  setEngineeringHiddenSection: (ids, hidden) => {
+    set(s => {
+      const next = { ...s.engineeringHidden }
+      for (const id of ids) next[id] = !!hidden
+      return { engineeringHidden: next }
+    })
+  },
+  clearEngineeringHidden: () => set({ engineeringHidden: {} }),
 
   // ── Map visibility (global, crosses all modes) ────────────
   // Both fills and aerial are orientation toggles, not styling — they live
@@ -30,10 +114,89 @@ const useCartographStore = create((set, get) => ({
   toggleAerial: () => set(s => ({ aerialVisible: !s.aerialVisible })),
   setAerialVisible: (v) => set({ aerialVisible: !!v }),
 
-  // Bake state. The cartograph's publish step (Designer → Stage) writes
-  // public/cartograph-ground.svg from ribbons.json. `bakeStale` flips
-  // true on every authoring edit; `bakeRunning` gates the Stage button
-  // and drives the modal. After a successful bake we navigate to Hero.
+  // ── Looks ────────────────────────────────────────────────
+  // A Look is a styling snapshot — `{ layerColors, luColors, layerStrokes, … }`
+  // plus a baked `ground.svg`. `lafayette-square` is the project's 0-state
+  // and can't be deleted; user-created Looks ('Valentines', 'Cardinals Win',
+  // …) sit alongside it. The active Look's design block is what Designer's
+  // panel binds to — autosave goes to `/looks/<id>/design`, not /overlay.
+  // Geometry (centerlines, measures, caps, couplers) stays in overlay.json
+  // and is shared across every Look — Looks vary styling, not shape.
+  looks: [],
+  activeLookId: readActiveLookFromStorage(),
+  _looksHydrated: false,
+
+  _loadLooks: async () => {
+    try {
+      const idx = await fetchLooks()
+      const looks = Array.isArray(idx.looks) ? idx.looks : []
+      let activeLookId = get().activeLookId
+      if (!looks.some(l => l.id === activeLookId)) {
+        activeLookId = idx.default || DEFAULT_LOOK_ID
+        try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ }
+      }
+      set({ looks, activeLookId, _looksHydrated: true })
+    } catch (err) {
+      console.warn('[looks] load failed:', err)
+      set({ _looksHydrated: true })
+    }
+  },
+
+  setActiveLook: async (id) => {
+    if (!id || id === get().activeLookId) return
+    try { localStorage.setItem(ACTIVE_LOOK_KEY, id) } catch { /* ignore */ }
+    set({ activeLookId: id })
+    // Hydrate the panel from the new Look's design.json. Bake-stale flag
+    // resets — switching is just a render swap, not an authoring edit.
+    try {
+      const design = await fetchLookDesign(id)
+      set({
+        layerVis:       design.layerVis       || {},
+        layerColors:    design.layerColors    || {},
+        layerStrokes:   design.layerStrokes   || {},
+        luColors:       design.luColors       || {},
+        materialColors: design.materialColors || {},
+        openSections:   design.openSections   || {},
+        bakeStale: false,
+      })
+    } catch (err) {
+      console.warn('[looks] hydrate failed for', id, err)
+    }
+  },
+
+  createLook: async (name, { fromActive = true } = {}) => {
+    try {
+      const fromLookId = fromActive ? get().activeLookId : null
+      const r = await apiCreateLook({ name, fromLookId })
+      // Re-fetch index so the new Look shows up in dropdowns immediately,
+      // then switch to it.
+      await get()._loadLooks()
+      await get().setActiveLook(r.id)
+      // Auto-bake the new Look so its ground.svg exists from the moment it
+      // becomes active. Without this, SvgGround would 404 on the SVG fetch.
+      await get().runBake()
+      return r.id
+    } catch (err) {
+      console.warn('[looks] create failed:', err)
+      throw err
+    }
+  },
+
+  deleteActiveLook: async () => {
+    const id = get().activeLookId
+    if (!id || id === DEFAULT_LOOK_ID) return
+    try {
+      await apiDeleteLook(id)
+      await get().setActiveLook(DEFAULT_LOOK_ID)
+      await get()._loadLooks()
+    } catch (err) {
+      console.warn('[looks] delete failed:', err)
+    }
+  },
+
+  // Bake state. Per-Look bake: writes public/looks/<activeLookId>/ground.svg.
+  // `bakeStale` flips true on every authoring edit; `bakeRunning` drives the
+  // modal. After a successful bake we hand off to Hero.
   bakeRunning: false,
   bakeStale: true,           // true on app boot — never baked yet this session
   bakeLastMs: null,
@@ -43,10 +206,10 @@ const useCartographStore = create((set, get) => ({
     if (get().bakeRunning) return
     set({ bakeRunning: true, bakeError: null })
     try {
-      const r = await bakeSvg()
+      const r = await bakeLook(get().activeLookId)
       set({ bakeRunning: false, bakeStale: false, bakeLastMs: r.ms })
-      // Hand off to Hero on success — the cartograph is published, the
-      // operator wants to see the result.
+      // Hand off to Hero on success — the Look is published, the operator
+      // wants to see the result.
       get().setShot('hero')
     } catch (err) {
       set({ bakeRunning: false, bakeError: String(err.message || err) })
@@ -290,19 +453,26 @@ const useCartographStore = create((set, get) => ({
         for (const idx of members) corridorByIdx.set(idx, members)
       }
 
-      // Hydrate design (layer visibility/colors/strokes/land-use colors) from
-      // the overlay's design block. Always set _designHydrated so Panel begins
-      // saving subsequent user edits — even when the overlay had no design yet.
-      const design = (overlay && overlay.design) || {}
+      // Set centerline state immediately so Designer geometry can render.
+      // Design (layer visibility/colors/strokes/land-use colors) hydrates
+      // separately from the *active Look's* design.json — overlay.json no
+      // longer carries a design block. See _loadLooks + setActiveLook.
       set({
         centerlineData: { streets },
         svOriginals: originals,
         corridorByIdx,
-        layerVis: design.layerVis || {},
-        layerColors: design.layerColors || {},
-        layerStrokes: design.layerStrokes || {},
-        luColors: design.luColors || {},
-        openSections: design.openSections || {},
+      })
+      // Kick off the active Look's design hydrate. setActiveLook needs the
+      // Looks index loaded so it can validate the id, so chain through that.
+      await get()._loadLooks()
+      const design = await fetchLookDesign(get().activeLookId).catch(() => ({}))
+      set({
+        layerVis:       design.layerVis       || {},
+        layerColors:    design.layerColors    || {},
+        layerStrokes:   design.layerStrokes   || {},
+        luColors:       design.luColors       || {},
+        materialColors: design.materialColors || {},
+        openSections:   design.openSections   || {},
         _designHydrated: true,
       })
     } catch (e) { console.warn('[skeleton] load failed:', e) }
@@ -314,12 +484,12 @@ const useCartographStore = create((set, get) => ({
   // omitted so the overlay file stays compact. Called by every authoring
   // action after the in-memory state is updated.
   _saveOverlay: () => {
-    const { centerlineData, layerVis, layerColors, layerStrokes, luColors, openSections, _designHydrated } = get()
+    const { centerlineData, _designHydrated } = get()
     // Refuse to write while the store is in its uninitialized state — saving
-    // an empty streets/design dict here clobbers operator edits in
-    // overlay.json. The store reaches uninitialized state on real boot
-    // (before _loadCenterlines completes) AND on Vite HMR of this module
-    // (state resets to defaults but no remount of CartographApp re-fires
+    // an empty streets dict here clobbers operator edits in overlay.json.
+    // The store reaches uninitialized state on real boot (before
+    // _loadCenterlines completes) AND on Vite HMR of this module (state
+    // resets to defaults but no remount of CartographApp re-fires
     // _loadCenterlines). In both cases an immediate save would wipe disk.
     if (!centerlineData.streets || centerlineData.streets.length === 0) {
       console.warn('[overlay] save aborted: centerlineData not loaded')
@@ -329,8 +499,9 @@ const useCartographStore = create((set, get) => ({
       console.warn('[overlay] save aborted: design not hydrated')
       return
     }
-    // Any save = the SVG bake is now stale. The Stage button shows it,
-    // the modal re-runs on next click. (Cheap to flip; doesn't auto-bake.)
+    // Geometry edits stale the active Look's bake (centerlines/measures/caps
+    // change the SVG geometry). Stage button shows it; the modal re-runs on
+    // next click. Cheap to flip; doesn't auto-bake.
     if (!get().bakeStale) set({ bakeStale: true })
     const out = {}
     for (const st of centerlineData.streets || []) {
@@ -361,17 +532,37 @@ const useCartographStore = create((set, get) => ({
         ...(hasDisabled ? { disabled: true } : {}),
       }
     }
-    const design = { layerVis, layerColors, layerStrokes, luColors, openSections }
-    saveOverlay({ version: 1, streets: out, design })
+    // overlay.json carries geometry only — design has moved to the active
+    // Look's design.json (see _saveDesignDebounced).
+    saveOverlay({ version: 1, streets: out })
   },
-  // Debounced save for design-panel edits. Color pickers fire `onInput` many
-  // times per drag; coalesce to a single network write 300 ms after the last
-  // change. Centerline edits keep using _saveOverlay directly.
+
+  // Debounced save for design-panel edits. Writes the active Look's
+  // design.json (NOT overlay.json — design has moved to per-Look files).
+  // Color pickers fire `onInput` many times per drag; coalesce to a single
+  // network write 300 ms after the last change.
   _saveDesignDebounced: (() => {
     let t = null
     return () => {
       if (t) clearTimeout(t)
-      t = setTimeout(() => { t = null; get()._saveOverlay() }, 300)
+      t = setTimeout(() => {
+        t = null
+        const s = get()
+        if (!s._designHydrated || !s._looksHydrated) return
+        const id = s.activeLookId
+        if (!id) return
+        if (!get().bakeStale) set({ bakeStale: true })
+        const design = {
+          layerVis: s.layerVis,
+          layerColors: s.layerColors,
+          layerStrokes: s.layerStrokes,
+          luColors: s.luColors,
+          materialColors: s.materialColors,
+          openSections: s.openSections,
+        }
+        saveLookDesign(id, design).catch(err =>
+          console.warn('[looks] design save failed:', err))
+      }, 300)
     }
   })(),
   // Back-compat alias for older callers that still invoke _saveCenterlines.

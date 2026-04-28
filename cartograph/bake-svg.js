@@ -29,7 +29,7 @@
  * direction, no flip. 1 SVG unit = 1 meter.
  */
 
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import {
@@ -37,6 +37,7 @@ import {
   CURB_WIDTH,
   BAND_COLORS,
 } from '../src/cartograph/streetProfiles.js'
+import { BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -248,14 +249,32 @@ export function buildPaths(ribbons) {
 
 // Resolve color for a material / face-use. Falls back through palettes.
 function colorForMaterial(material, layerColors = {}) {
+  // Designer panel keys colors by *layer* (e.g. 'street'), not by material
+  // (e.g. 'asphalt'). Map via BAND_TO_LAYER first, then fall back to a
+  // direct material-keyed lookup, then to the static BAND_COLORS defaults.
+  const layerId = BAND_TO_LAYER[material]
+  if (layerId && layerColors[layerId]) return layerColors[layerId]
   return layerColors[material] || BAND_COLORS[material] || '#666666'
 }
 function colorForFaceUse(use, luColors = {}) {
   return luColors[use] || LAND_USE_COLORS[use] || LAND_USE_COLORS.unknown
 }
 
-export function emitSvg(ribbons, { layerColors, luColors, viewBox } = {}) {
+// Visibility check. Looks the layer up via BAND_TO_LAYER first (panel keys
+// colors+visibility by layer, e.g. 'street' for material 'asphalt'); falls
+// back to a direct material-keyed lookup. A layer that isn't in `layerVis`
+// at all is treated as visible — matches the runtime convention where
+// missing keys default to visible.
+function isMaterialVisible(material, layerVis = {}) {
+  const layerId = BAND_TO_LAYER[material]
+  if (layerId && layerId in layerVis) return layerVis[layerId] !== false
+  if (material in layerVis) return layerVis[material] !== false
+  return true
+}
+
+export function emitSvg(ribbons, { layerColors, luColors, layerVis, viewBox } = {}) {
   const { byMaterial, byFaceUse } = buildPaths(ribbons)
+  const vis = layerVis || {}
 
   // Stable, alphabetical ordering per layer for deterministic output.
   const matKeys = [...byMaterial.keys()].sort()
@@ -264,7 +283,11 @@ export function emitSvg(ribbons, { layerColors, luColors, viewBox } = {}) {
   const lines = []
   lines.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">`)
 
-  // Faces first — they sit underneath ribbons.
+  // Faces first — they sit underneath ribbons. Land-use uses its own
+  // visibility namespace via Designer panel ids (e.g. lu-* fills under a
+  // 'lot' layer toggle). Today no luColors-side visibility key exists, so
+  // faces are always emitted; if a future toggle lands the predicate below
+  // is the single place to wire it.
   if (useKeys.length) {
     lines.push('<g id="land-use">')
     for (const use of useKeys) {
@@ -289,6 +312,10 @@ export function emitSvg(ribbons, { layerColors, luColors, viewBox } = {}) {
   if (orderedMats.length) {
     lines.push('<g id="ribbons">')
     for (const mat of orderedMats) {
+      // Honor the active Look's visibility — a Valentine's Look that hides
+      // 'stripe' or 'curb' produces an SVG with no <path id="stripe"/>.
+      // Looks vary styling, and visibility is styling.
+      if (!isMaterialVisible(mat, vis)) continue
       const fill = colorForMaterial(mat, layerColors)
       const d = ringsToPathD(byMaterial.get(mat))
       if (d) lines.push(`<path id="${mat}" fill="${fill}" d="${d}"/>`)
@@ -311,20 +338,49 @@ export function bakeStats(ribbons) {
 
 // ── CLI entrypoint ──────────────────────────────────────────────────
 async function main() {
-  const ribbonsPath = join(ROOT, 'src', 'data', 'ribbons.json')
-  const boundaryPath = join(__dirname, 'data', 'neighborhood_boundary.json')
-  const outPath = join(ROOT, 'public', 'cartograph-ground.svg')
+  // Parse --look=<id> (default to the project's 0-state). Each Look has its
+  // own design.json (operator's material palette) and ground.svg (the bake
+  // output). Geometry (ribbons.json) is shared across all Looks — Looks vary
+  // *styling*, not shape.
+  const lookId = (() => {
+    for (const arg of process.argv.slice(2)) {
+      const m = arg.match(/^--look=(.+)$/)
+      if (m) return m[1]
+    }
+    return 'lafayette-square'
+  })()
 
-  const ribbons = JSON.parse(readFileSync(ribbonsPath, 'utf-8'))
+  const ribbonsPath  = join(ROOT, 'src', 'data', 'ribbons.json')
+  const boundaryPath = join(__dirname, 'data', 'neighborhood_boundary.json')
+  const lookDir      = join(ROOT, 'public', 'looks', lookId)
+  const designPath   = join(lookDir, 'design.json')
+  const outPath      = join(lookDir, 'ground.svg')
+
+  if (!existsSync(lookDir)) mkdirSync(lookDir, { recursive: true })
+
+  const ribbons  = JSON.parse(readFileSync(ribbonsPath, 'utf-8'))
   const boundary = JSON.parse(readFileSync(boundaryPath, 'utf-8'))
   const [cx, cz] = boundary.center || [0, 0]
-  const R = boundary.radius || 1000
-  const viewBox = `${cx - R} ${cz - R} ${R * 2} ${R * 2}`
+  const R        = boundary.radius || 1000
+  const viewBox  = `${cx - R} ${cz - R} ${R * 2} ${R * 2}`
+
+  // Read this Look's design.json. Empty object on first bake (or missing file)
+  // → emitSvg falls back to BAND_COLORS / DEFAULT_LU_COLORS defaults and
+  // emits every material (visibility defaults to visible).
+  let layerColors = {}, luColors = {}, layerVis = {}
+  try {
+    const design = JSON.parse(readFileSync(designPath, 'utf-8'))
+    layerColors = design.layerColors || {}
+    luColors    = design.luColors    || {}
+    layerVis    = design.layerVis    || {}
+  } catch (e) {
+    console.warn(`[bake] ${lookId}/design.json not readable; using default colors`)
+  }
 
   const stats = bakeStats(ribbons)
-  console.log(`baking ${stats.streets} streets, ${stats.faces} faces, ${stats.paths} paths`)
+  console.log(`baking look=${lookId}: ${stats.streets} streets, ${stats.faces} faces, ${stats.paths} paths`)
 
-  const svg = emitSvg(ribbons, { viewBox })
+  const svg = emitSvg(ribbons, { viewBox, layerColors, luColors, layerVis })
   writeFileSync(outPath, svg)
 
   const sizeKb = (Buffer.byteLength(svg) / 1024).toFixed(1)

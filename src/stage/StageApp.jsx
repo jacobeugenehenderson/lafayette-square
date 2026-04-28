@@ -1470,7 +1470,7 @@ function SurfaceGallery() {
 
 // ── Stage Panel ─────────────────────────────────────────────────────────────
 
-export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
+export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot }) {
   const cam = useCameraState()
 
   return (
@@ -1527,10 +1527,13 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         </Collapsible>
       </div>
 
-      {/* Surfaces */}
+      {/* Surfaces — defaults to the standalone /stage mockup gallery; the
+          cartograph passes its own store-bound material editor as
+          `surfacesSlot` so per-Look styling lives here, not in a separate
+          panel. Same visual home, real wiring. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto flex-1 overflow-y-auto"
         style={{ minHeight: 200 }}>
-        <SurfaceGallery />
+        {surfacesSlot || <SurfaceGallery />}
       </div>
     </div>
   )

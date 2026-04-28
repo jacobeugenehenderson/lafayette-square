@@ -68,3 +68,12 @@ cartograph/node_modules/
 
 # Claude Code local settings
 .claude/
+
+# ribbons.json snapshot backups created by the pipeline scripts.
+# Useful locally for rollback; never wanted in source control.
+src/data/ribbons.json.backup-*
+
+# FOR-species20K LiDAR dataset (~51 GB, used as input to the Arborist
+# tree-baking pipeline). Lives locally; never committed.
+# Source: https://zenodo.org/records/13255198
+botanica/
