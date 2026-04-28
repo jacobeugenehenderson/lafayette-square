@@ -19,6 +19,21 @@ The whole neighborhood — park trees + future street trees — gets "close enou
 
 **Tree #1 = Sugar Maple** (*Acer saccharum*). Most-common species in the inventory (61 of 644 park trees) and a direct-hit species in the FOR-species20K dataset (110 specimens). Ship the entire pipeline end-to-end against this one species before scaling to others.
 
+### v1 architecture refinements (revised 2026-04-27)
+
+Two material decisions on top of the original plan, based on inventory analysis and an audit of existing assets:
+
+**(a) Bake ~3 specimen variants per species, not 1.** 61 Sugar Maples sharing one branching structure read as repetition no matter how much you jitter rotation. Three specimens spanning the height distribution (one each near 18 m / 22 m / 26 m, the small/mid/large mature range) give the park three distinct silhouettes per species at trivial extra cost (3 × ~600 KB GLBs, 3 × bake time, picked per-tree via `hash(treeId) % nVariants`). Acceptance: ≥3 variants for Tree #1.
+
+**(b) Leaves use the EXISTING shared morph library, not per-species atlases.** The repo already ships:
+
+- `assets/botanical-reference-hires/` — CC0 4K PBR leaf reference (ambientCG), README documents species/morph mapping (e.g. `LeafSet010 — Sycamore/Maple (palmate lobed) → palmate`).
+- `public/textures/leaves/<morph>.png` — 512×512 runtime billboards, one per morphology (`palmate`, `lobed`, `compound`, `heart`, `fan`, `narrow`, …).
+
+The Arborist does NOT author species-specific `leaves.png` atlases. Instead, each species's `manifest.json` references **a morph** (e.g. `"leafMorph": "palmate"`) **and a per-season tint** (e.g. `{ "summer": "#3a7b30", "fall": "#d4801f", "spring": "#7eba5e" }`). The runtime composes: load `public/textures/leaves/<morph>.png` once, apply species tint as a shader uniform per `InstancedMesh`. Stage Surfaces.Trees keeps its existing morph-tab structure; per-species tint comes through `materialColors[<species-id>]` (already wired into Stage's per-Look design.json). This is dramatically less authoring work and aligns with how the runtime already organizes leaves.
+
+**Sugar Maple's morph mapping is `palmate`** — confirmed by `assets/botanical-reference-hires/README.txt`. Default summer tint can start as `#3a7b30` (vibrant grass green); fall tint `#d4801f` (Sugar Maple's signature orange) — the operator iterates from there in Surfaces.
+
 ---
 
 ## Architectural placement
@@ -41,13 +56,23 @@ src/arborist/                    # runtime-side React UI for the helper
   stores/useArboristStore.js     # zustand state for the helper UI
 
 public/trees/                    # PUBLISHED ARTIFACTS — the contract
-  index.json                     # { species: [{ id, label, scientific, bakedAt, ... }] }
+  index.json                     # { species: [{ id, label, scientific, bakedAt, variants: N, ... }] }
   <species-id>/
-    skeleton.glb                 # branch-cylinder graph, GLTF
-    leaves.png                   # leaf-card atlas (rows = seasons)
-    leaves.atlas.json            # atlas metadata: rows, cols, sprite size, season map
-    tips.json                    # branch-tip world positions for leaf-card placement
-    manifest.json                # { species, scientific, sourceFile, bakedAt, params }
+    skeleton-1.glb               # branch-cylinder graph, variant 1 (small mature, ~18 m)
+    skeleton-2.glb               # variant 2 (mid mature, ~22 m)
+    skeleton-3.glb               # variant 3 (large mature, ~26 m)
+    tips-1.json                  # branch-tip positions, per variant
+    tips-2.json
+    tips-3.json
+    manifest.json                # { species, scientific, leafMorph, tints, variants[] }
+                                 # leafMorph references public/textures/leaves/<morph>.png
+                                 # No species-specific leaves.png — the morph library is shared.
+
+public/textures/leaves/          # EXISTING leaf-card library, NOT produced by Arborist
+  palmate.png                    # 512x512, used by maples, sycamore, etc.
+  lobed.png                      # oaks
+  compound.png                   # ash, walnut
+  …                              # see assets/botanical-reference-hires/README.txt
 ```
 
 **Conventions, must be honored:**
@@ -172,40 +197,82 @@ Walk the cylinder graph, collect endpoints of leaf-bearing branches (those below
 
 These positions are in **species-local coordinates** (origin at trunk base, y = up). The runtime transforms them per-instance.
 
-### 6. Leaf atlas
+### 6. Leaf morph + tint (NOT a per-species atlas)
 
-For Tree #1 (Sugar Maple), source 4 leaf-card variants (spring sparse, summer dense, fall species-correct, winter zero density). Where to source:
+The Arborist does NOT author species-specific leaf atlases. The runtime uses the existing shared morph library at `public/textures/leaves/<morph>.png`. Each species's manifest specifies which morph it uses and what tints to apply per season. See "v1 architecture refinements (b)" at the top of this document for the rationale.
 
-- Polyhaven, ambientCG (free, generic).
-- Photographs of real Sugar Maple leaves (any phone, against a neutral background, alpha-keyed).
-- AI-generated species-correct cards as last resort.
-
-Pack into a single `leaves.png` atlas — 4 rows (seasons) × N cols (variant cards). Sidecar `leaves.atlas.json` describes the layout:
+For Tree #1 (Sugar Maple), the manifest emits:
 
 ```json
-{
-  "spritePx": 256,
-  "rows": ["spring", "summer", "fall", "winter"],
-  "cols": 4,
-  "seasonMap": { "spring": 0, "summer": 1, "fall": 2, "winter": 3 }
+"leafMorph": "palmate",
+"tints": {
+  "spring": "#7eba5e",
+  "summer": "#3a7b30",
+  "fall":   "#d4801f",
+  "winter": null
 }
 ```
 
-For v1, summer is required; the others can be placeholders or copies of summer. Acceptance: the runtime can render summer at a believable density.
+These are seed values; operators tweak in Stage Surfaces. `null` for winter signals "deciduous, no leaves" — runtime renders the bare skeleton. The per-season tint table is stored in `manifest.json` and the runtime exposes the **active season's tint** as a shader uniform per `InstancedMesh`. Stage's `materialColors[acer_saccharum]` overrides the manifest's summer tint at render time (live, no re-bake).
+
+Morph mapping for the species roster lives in `arborist/species-map.json` (extends the mapping introduced earlier with `leafMorph`):
+
+```json
+{
+  "Maple, Sugar":     { "speciesId": "acer_saccharum", "tier": "exact",  "leafMorph": "palmate" },
+  "Maple, Silver":    { "speciesId": "acer_pseudoplatanus", "tier": "cousin", "leafMorph": "palmate" },
+  "Oak, Pin":         { "speciesId": "quercus_robur", "tier": "cousin", "leafMorph": "lobed"  },
+  "Ash, Green":       { "speciesId": "fallback_deciduous", "tier": "fallback", "leafMorph": "compound" }
+}
+```
+
+Authoritative morph reference: [`assets/botanical-reference-hires/README.txt`](../assets/botanical-reference-hires/README.txt).
 
 ### 7. Manifest + index update
 
-Write `manifest.json` per species:
+Write `manifest.json` per species. With multiple specimen variants and the morph+tint model, the schema is:
 
 ```json
 {
   "species": "acer_saccharum",
   "label": "Sugar Maple",
   "scientific": "Acer saccharum",
-  "sourceFile": "botanica/dev/acer_saccharum/<filename>.laz",
+  "tier": "exact",
+  "leafMorph": "palmate",
+  "tints": {
+    "spring": "#7eba5e",
+    "summer": "#3a7b30",
+    "fall":   "#d4801f",
+    "winter": null
+  },
+  "variants": [
+    {
+      "id": 1,
+      "sourceFile": "botanica/dev/<filename-small>.laz",
+      "treeH": 18.1,
+      "skeleton": "skeleton-1.glb",
+      "tips": "tips-1.json",
+      "stats": { "cylinders": 312, "verts": 6210, "tipCount": 940 }
+    },
+    {
+      "id": 2,
+      "sourceFile": "botanica/dev/<filename-mid>.laz",
+      "treeH": 22.4,
+      "skeleton": "skeleton-2.glb",
+      "tips": "tips-2.json",
+      "stats": { "cylinders": 412, "verts": 8942, "tipCount": 1247 }
+    },
+    {
+      "id": 3,
+      "sourceFile": "botanica/dev/<filename-large>.laz",
+      "treeH": 26.0,
+      "skeleton": "skeleton-3.glb",
+      "tips": "tips-3.json",
+      "stats": { "cylinders": 568, "verts": 12100, "tipCount": 1820 }
+    }
+  ],
   "bakedAt": 1714172400000,
-  "params": { "voxelSize": 0.02, "minRadius": 0.005, "tipRadius": 0.01 },
-  "stats": { "cylinders": 412, "verts": 8942, "tips": 1247 }
+  "params": { "voxelSize": 0.02, "minRadius": 0.005, "tipRadius": 0.01 }
 }
 ```
 
@@ -219,6 +286,8 @@ Update `public/trees/index.json` to register the species:
       "label": "Sugar Maple",
       "scientific": "Acer saccharum",
       "tier": "exact",
+      "leafMorph": "palmate",
+      "variants": 3,
       "bakedAt": 1714172400000
     }
   ]
@@ -280,24 +349,29 @@ Document the Python venv setup in `arborist/README.md` once the agent settles on
 
 Replace `ParkTrees` (currently muted in `src/components/LafayettePark.jsx`):
 
-- On mount, fetch `public/trees/index.json` and load each species's `skeleton.glb` + `tips.json` + `leaves.png` (use `useGLTF` and `useTexture` from drei).
+- On mount, fetch `public/trees/index.json` and each registered species's `manifest.json`. Load each variant's `skeleton-<n>.glb` and `tips-<n>.json` (use `useGLTF`).
+- Load the shared morph textures from `public/textures/leaves/<morph>.png` (use `useTexture`). One load per morph, shared across every species using that morph.
 - Read tree positions from `src/data/park_trees.json` (and eventually `src/data/street_trees.json`).
-- Group positions by species via `species-map.json`. Each group renders as one `InstancedMesh` over the species's GLB geometry.
+- Group positions by `(speciesId, variantId)` via `species-map.json` — variant chosen per tree by `hash(treeId) % manifest.variants.length`.
+- Each `(speciesId, variantId)` renders as one `InstancedMesh` over that variant's GLB geometry.
 - Per-instance attributes: position, Y-rotation (stable from `hash(treeId)`), scale (driven by `dbh`).
-- A second `InstancedMesh` per species for leaf cards, instanced over the tips × tree-instances product (tips count × instance count is bounded; verify GPU budget).
-- Subscribe to the active Look's `materialColors` for per-species leaf base color override.
+- A second `InstancedMesh` per `(speciesId, variantId)` for leaf cards: variant's tips × tree-instances product, sampling the morph texture.
+- **Live tint binding.** Per species, look up the active Look's `materialColors[speciesId]` if set; else fall back to the manifest's `tints.<currentSeason>`. Push as a shader uniform on the leaf-card material so Surfaces edits show instantly without a re-bake (mirrors how `SvgGround` already binds live colors — see `src/cartograph/SvgGround.jsx`).
 
-### Stage Surfaces.Trees tab — rebind to dynamic library
+### Stage Surfaces.Trees tab — keep morph rows, add per-species tints
 
-In `src/cartograph/CartographSurfaces.jsx`, the **Trees** tab today is hardcoded to leaf-morphology categories (`leaf_palmate`, `leaf_lobed`, ...). Replace that tab's `items` with a **dynamic list** populated from `public/trees/index.json` at runtime. Each entry's id = the species id (e.g. `acer_saccharum`).
+In `src/cartograph/CartographSurfaces.jsx`, the existing **Trees** tab is keyed by leaf morph (`leaf_palmate`, `leaf_lobed`, …). **Keep that.** It maps directly to the shared morph library and is the right axis for "all maple-like trees take this color treatment in this Look."
 
-Per-species Surfaces controls in v1:
+Add a **second tab** (or a sub-panel) called **Species** that lists every species in `public/trees/index.json`. For each species:
 
-- **Color** — base leaf tint, stored in `materialColors[species]`. Already plumbed.
-- **Visible** — per-species visibility, via `layerVis[species]`. Already plumbed.
+- **Tint** — overrides the manifest's seasonal tint, stored in `materialColors[speciesId]`. The store setter is already wired.
+- **Visible** — per-species visibility, via `layerVis[speciesId]`. Store setter already wired.
+- **Variants count** (read-only) — informational, e.g. `"3 specimens"`.
 - (Density, fall-color override, wind-bias, season override — all v1.x. Pass C territory.)
 
-Other Surfaces tabs are unaffected.
+The morph tab and the species tab compose at runtime — the species tint **wins** over the morph default, when present. If the operator wants `Sugar Maple` distinct from `Silver Maple`, they tint species; if they want all `palmate`-leafed trees to share a holiday theme, they tint the morph.
+
+Other Surfaces tabs (Streets / Blocks / etc.) are unaffected.
 
 ### Re-enable LafayettePark trees
 
@@ -338,22 +412,25 @@ The Arborist UI at `/arborist` is intentionally minimal in v1. Core surfaces:
 
 The build is complete for v1 when **all** of these are true with `acer_saccharum` baked:
 
-1. `python arborist/bake-tree.py --species=acer_saccharum` runs end-to-end in under 5 minutes on the operator's Mac.
-2. `public/trees/acer_saccharum/skeleton.glb` opens cleanly in Three.js (no parsing errors, no missing primitives).
-3. `public/trees/acer_saccharum/tips.json` contains ≥ 200 branch-tip positions for a single specimen.
-4. `public/trees/acer_saccharum/leaves.png` is a valid 4-row atlas with at least the `summer` row populated. Other rows can be placeholders.
-5. `public/trees/index.json` lists `acer_saccharum` with `tier: "exact"`.
-6. The runtime mounts `<InstancedTrees />` and renders **all 61** Sugar Maples from `park_trees.json` at their positions, with Y-rotation jitter and dbh-scale variation.
-7. **GPU budget verified.** On the operator's Mac in Stage Hero shot, framerate stays above 50 fps with all 61 trees in view. (Worst-case mobile target is a follow-on; flag it but don't block on it.)
-8. Stage Surfaces.Trees tab lists `Sugar Maple` as a row, color picker edits the leaf base color live (no re-bake).
-9. Switching Looks (e.g. to a Valentine's Look that tints leaves pink) propagates to the trees instantly.
-10. The `ParkTrees` line in `LafayettePark.jsx` is replaced (or `ParkTrees` removed entirely).
+1. `python arborist/bake-tree.py --species=acer_saccharum` runs end-to-end in under ~10 minutes on the operator's Mac for all 3 variants.
+2. `public/trees/acer_saccharum/` contains **3 valid skeleton-N.glb files** (one per height variant) and **3 matching tips-N.json files**, plus `manifest.json`.
+3. Each `tips-N.json` contains ≥ 200 branch-tip positions.
+4. `manifest.json` references `leafMorph: "palmate"` and seed tints for at least summer + fall.
+5. `public/trees/index.json` lists `acer_saccharum` with `tier: "exact"`, `leafMorph: "palmate"`, `variants: 3`.
+6. The runtime mounts `<InstancedTrees />` and renders **all 61** Sugar Maples from `park_trees.json` at their positions, with Y-rotation jitter, dbh-scale variation, and **variant assignment via `hash(treeId) % 3`** (so the park visibly shows the three skeleton silhouettes mixed in roughly equal proportion).
+7. Leaf cards render at every variant's tip positions, sampling `public/textures/leaves/palmate.png`, tinted from the manifest's summer tint.
+8. **GPU budget verified.** On the operator's Mac in Stage Hero shot, framerate stays above 50 fps with all 61 trees in view. (Worst-case mobile target is a follow-on; flag it but don't block on it.)
+9. Stage Surfaces.Trees `Species` sub-panel lists `Sugar Maple` as a row; color picker edits the per-species tint live (no re-bake).
+10. Stage Surfaces.Trees `Morphs` sub-panel still shows `palmate` and editing it still works (existing behavior preserved).
+11. Switching Looks (e.g. to a Valentine's Look that tints maples pink) propagates to the trees instantly.
+12. The `ParkTrees` line in `LafayettePark.jsx` is replaced (or `ParkTrees` removed entirely).
 
 **Stretch (nice but not required for v1):**
 
 - Wind animation via vertex shader (`uTime` + per-card noise).
 - LOD: lower-poly skeleton at far camera distances.
-- A second species baked end-to-end (proves the pipeline scales), e.g. Pin Oak via `quercus_robur` cousin.
+- A second species baked end-to-end (proves the pipeline scales), e.g. Pin Oak via `quercus_robur` cousin → `lobed` morph.
+- Seasonal tint preview in the Inspector (cycle through manifest seasons).
 
 ---
 
@@ -376,7 +453,10 @@ The build is complete for v1 when **all** of these are true with `acer_saccharum
 | Service shape | One-shot CLI invoked via `execSync`, not long-running Python service | This document |
 | QSM implementation | Pure-Python first; MATLAB Engine fallback only if blocked | This document |
 | Tree #1 species | `acer_saccharum` (Sugar Maple) | Inventory analysis: 61 in park, 110 in dataset |
-| Specimen selection | Operator picks for Tree #1; auto for species 2+ | This document |
+| Specimen selection | Operator picks 3 for Tree #1 (small / mid / large mature); auto for species 2+ | This document |
+| Variants per species | 3 (small / mid / large from height distribution); per-tree pick via `hash(treeId) % 3` | Inventory analysis 2026-04-27 |
+| Leaf source | Shared morph library at `public/textures/leaves/<morph>.png`; per-species tint stored in manifest + materialColors. NOT per-species atlases. | Asset audit 2026-04-27 |
+| Sugar Maple morph | `palmate` | `assets/botanical-reference-hires/README.txt` (LeafSet010) |
 | Plaques in Street view | Future feature, not part of Arborist | `memory/project_tree_lidar_pipeline.md` |
 | Per-Look tree composition | Out of scope; Looks vary styling, not which trees exist | `ARCHITECTURE.md` § 2 |
 | Park-scanning fieldwork | Deferred indefinitely; not part of v1 | `memory/project_tree_lidar_pipeline.md` |
@@ -386,11 +466,12 @@ The build is complete for v1 when **all** of these are true with `acer_saccharum
 
 ## Open questions — surface to operator, do NOT decide unilaterally
 
-1. **Specimen filename for Sugar Maple.** Once the agent visually inspects `botanica/dev/<acer_saccharum>/...`, the agent should propose a top-3 candidates and let the operator pick. Don't auto-pick for Tree #1.
+1. **Three Sugar Maple specimen filenames.** All 110 Sugar Maples are TLS scans from the `Xi_2020b` dataset (uniform capture method). Heights span 6.6–28 m, mean 20.8 m. Propose three candidates targeting **~18 m / ~22 m / ~26 m** for the small/mid/large mature trio. Surface filenames + treeIDs from `botanica/tree_metadata_dev.csv` and let the operator confirm before baking. Don't auto-pick.
 2. **PDAL system dep.** If `pdal` Python bindings need PDAL installed at the OS level, that's a meaningful install. Surface this with the alternative (use `laspy` + numpy directly) before committing.
-3. **Leaf atlas sourcing.** If acceptable Sugar Maple leaf cards aren't found in Polyhaven / ambientCG, the operator may want to photograph real leaves before the agent ships AI-generated ones. Pause and ask.
+3. **Sugar Maple fall tint.** Seed value in this SPEC is `#d4801f` (signature orange). The operator may want to tune from photographs. Surface the seed + offer to swap before persisting in the manifest. Same applies to summer/spring seeds.
 4. **Street tree species defaults.** OSM `natural=tree` rarely carries species. The agent should propose a realistic mix for St. Louis residential streets (e.g., 40% silver maple, 25% pin oak, 15% hackberry, 10% honeylocust, 10% sweetgum) and confirm before persisting.
-5. **GPU budget on mobile.** v1 acceptance criteria target the operator's Mac. If the agent finds the per-tree leaf-card count blows mobile budget, surface options (LOD, reduced tip density, lower atlas resolution) before committing.
+5. **GPU budget on mobile.** v1 acceptance criteria target the operator's Mac. If the agent finds the per-tree leaf-card count blows mobile budget, surface options (LOD, reduced tip density, fewer variants per species) before committing.
+6. **Surfaces split — sub-panels vs. unified.** SPEC proposes Stage Surfaces.Trees gets a `Morphs` and a `Species` sub-panel. If that's awkward in the existing UI, propose an alternative (single list with grouping, expandable rows, …) and confirm before building.
 
 ---
 
