@@ -28,11 +28,30 @@ const useArboristStore = create((set, get) => ({
       pickedTreeIds: new Set(),
       pickedDirty: false,
       selectedTreeId: null,
+      manifest: null,
+      viewMode: 'cloud',
     })
     if (id) {
       get().loadSpecimens(id)
       get().loadSeedlings(id)
+      get().loadManifest(id)
     }
+  },
+
+  // ── Inspector / viewport mode ────────────────────────────────
+  // viewMode flips the workstage viewport between the source point cloud
+  // (raw input) and the baked skeleton GLB (output). Both are mounted on
+  // the same Three.js Canvas; the toggle is the operator's primary
+  // visual feedback that bake params produced what they expected.
+  manifest: null,                // public/trees/<species>/manifest.json (post-bake)
+  viewMode: 'cloud',             // 'cloud' | 'skeleton'
+  setViewMode: (m) => set({ viewMode: m }),
+  loadManifest: async (id) => {
+    try {
+      const r = await fetch(`/api/arborist/species/${encodeURIComponent(id)}`)
+      if (r.ok) set({ manifest: await r.json() })
+      else      set({ manifest: null })
+    } catch { set({ manifest: null }) }
   },
 
   // ── Workstage: specimen list + picks ─────────────────────────
@@ -103,9 +122,10 @@ const useArboristStore = create((set, get) => ({
         set({ bakeRunning: false, bakeError: d.error || `HTTP ${r.status}`, bakeLog: d.stderr || d.stdout || null })
         return
       }
-      set({ bakeRunning: false, bakeMs: d.ms, bakeLog: d.log || null })
-      // Refresh /species so the bakedAt + variants count updates.
+      set({ bakeRunning: false, bakeMs: d.ms, bakeLog: d.log || null, viewMode: 'skeleton' })
+      // Refresh both /species (Library counts) and the manifest (Inspector data).
       get().loadSpecies()
+      get().loadManifest(id)
     } catch (err) {
       set({ bakeRunning: false, bakeError: String(err) })
     }

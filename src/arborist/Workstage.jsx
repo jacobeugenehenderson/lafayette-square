@@ -40,6 +40,9 @@ export default function Workstage() {
   const bakeError       = useArboristStore(s => s.bakeError)
   const bakeMs          = useArboristStore(s => s.bakeMs)
   const runBake         = useArboristStore(s => s.runBake)
+  const manifest        = useArboristStore(s => s.manifest)
+  const viewMode        = useArboristStore(s => s.viewMode)
+  const setViewMode     = useArboristStore(s => s.setViewMode)
 
   const sp = species.find(s => s.id === activeSpeciesId)
 
@@ -198,14 +201,61 @@ export default function Workstage() {
 
         {/* 3D viewport */}
         <div style={{ position: 'relative', minHeight: 0 }}>
-          <SpecimenViewport treeId={selectedTreeId} />
+          {(() => {
+            // Pick the right URL pair based on the active viewMode + the
+            // currently-selected specimen. In skeleton mode, look up the
+            // manifest variant whose treeId matches; cache-bust the GLB
+            // URL with the manifest's bakedAt so re-bakes replace the
+            // cached gl-tf instance.
+            const v = manifest?.variants?.find(x => String(x.treeId) === String(selectedTreeId))
+            const cloudUrl = selectedTreeId ? `/api/arborist/specimens/${selectedTreeId}/preview.ply` : null
+            const glbUrl   = v ? `/trees/${activeSpeciesId}/${v.skeleton}?v=${manifest.bakedAt}` : null
+            const viewKey  = `${viewMode}:${selectedTreeId || 'none'}:${manifest?.bakedAt || 0}`
+            return (
+              <SpecimenViewport
+                mode={viewMode}
+                cloudUrl={cloudUrl}
+                glbUrl={glbUrl}
+                viewKey={viewKey}
+              />
+            )
+          })()}
+
+          {/* Mode toggle (top-right) */}
+          <div style={{
+            position: 'absolute', top: 12, right: 12,
+            display: 'flex', gap: 0,
+            background: 'rgba(0,0,0,0.4)', borderRadius: 4,
+            border: '1px solid rgba(255,255,255,0.1)',
+            overflow: 'hidden',
+          }}>
+            <button
+              onClick={() => setViewMode('cloud')}
+              style={modeBtnStyle(viewMode === 'cloud')}>
+              Cloud
+            </button>
+            <button
+              onClick={() => setViewMode('skeleton')}
+              disabled={!manifest}
+              title={!manifest ? 'Bake the species first' : 'Show baked skeleton'}
+              style={modeBtnStyle(viewMode === 'skeleton')}>
+              Skeleton
+            </button>
+          </div>
+
           {selectedTreeId && (
             <div style={{
               position: 'absolute', bottom: 12, left: 12,
               padding: '6px 10px', borderRadius: 4,
-              background: 'rgba(0,0,0,0.5)', color: '#aaa', fontSize: 11,
+              background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: 11,
             }}>
-              specimen {selectedTreeId} · drag to orbit, scroll to zoom
+              specimen {selectedTreeId}
+              {viewMode === 'skeleton' && manifest?.variants?.find(v => String(v.treeId) === String(selectedTreeId)) && (
+                <span style={{ color: '#9c9', marginLeft: 8 }}>
+                  · variant {manifest.variants.find(v => String(v.treeId) === String(selectedTreeId)).id}
+                </span>
+              )}
+              <span style={{ color: '#888', marginLeft: 8 }}>· drag to orbit, scroll to zoom</span>
             </div>
           )}
         </div>
@@ -242,4 +292,13 @@ function Th({ label, col, sortBy, dir, onClick, align = 'left' }) {
       {active && <span style={{ marginLeft: 4, color: '#e8b860' }}>{dir === 'asc' ? '▴' : '▾'}</span>}
     </th>
   )
+}
+function modeBtnStyle(active) {
+  return {
+    background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+    color: active ? '#fff' : '#aaa',
+    border: 'none',
+    padding: '5px 12px',
+    fontFamily: 'inherit', fontSize: 11, cursor: 'pointer',
+  }
 }
