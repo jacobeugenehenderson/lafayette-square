@@ -7,7 +7,7 @@
  * (arborist/serve.js)" for the full endpoint contract.
  */
 import { createServer } from 'http'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, createReadStream } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, createReadStream, readdirSync } from 'fs'
 import { execFile } from 'child_process'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -74,7 +74,11 @@ function execAsync(cmd, args) {
 }
 
 // ── Startup config + caches ────────────────────────────────────────────────
-const SPECIES_DECL = readJsonOrNull(SPECIES_MAP)?.species || {}
+// Re-read species-map.json per request — operator-edits during dev (adding
+// a species, tweaking a tint) shouldn't require a server restart.
+function readSpeciesDecl() {
+  return readJsonOrNull(SPECIES_MAP)?.species || {}
+}
 const CONFIG = readJsonOrNull(CONFIG_PATH) || {}
 const META_CSV_PATH = join(ROOT, CONFIG.metadataCsv || 'botanica/tree_metadata_dev.csv')
 const DATASET_ROOT  = join(ROOT, CONFIG.datasetRoot || 'botanica')
@@ -167,32 +171,72 @@ function markRecommended(specimens, count = 10) {
   return specimens
 }
 
-// Merge species-map (declared) with public/trees/index.json (baked) so
-// /species lists every species the Arborist knows about — including ones
-// not yet baked (those carry bakedAt: null and seedlingsPicked counts).
+// Scan public/trees/*/manifest.json so both LiDAR and GLB ingest paths
+// surface here — the Arborist UI is source-agnostic. Then merge with
+// species-map.json declarations so undeclared-but-baked and
+// declared-but-not-yet-baked species both appear in the library.
+function scanBakedManifests() {
+  const out = new Map()
+  let entries = []
+  try { entries = readdirSync(PUBLIC_TREES, { withFileTypes: true }) } catch {}
+  for (const ent of entries) {
+    if (!ent.isDirectory()) continue
+    const manifestPath = join(PUBLIC_TREES, ent.name, 'manifest.json')
+    const m = readJsonOrNull(manifestPath)
+    if (!m) continue
+    out.set(ent.name, m)
+  }
+  return out
+}
+
 function listSpecies() {
-  const baked = readJsonOrNull(indexPath)?.species || []
-  const bakedById = new Map(baked.map(s => [s.id, s]))
+  const baked = scanBakedManifests()
+  const SPECIES_DECL = readSpeciesDecl()
   const out = []
+  const seen = new Set()
+  // Declared species first (preserves species-map ordering).
   for (const [id, decl] of Object.entries(SPECIES_DECL)) {
     const seedlings = readJsonOrNull(join(STATE_DIR, id, 'seedlings.json'))
     const seedlingCount = Array.isArray(seedlings?.seedlings)
       ? seedlings.seedlings.length : 0
-    const b = bakedById.get(id)
+    const m = baked.get(id)
     out.push({
       id,
-      label:        decl.label,
+      label:        m?.displayName || decl.label,
       scientific:   decl.scientific,
+      source:       decl.source || m?.source || 'lidar',
       tier:         decl.tier,
       leafMorph:    decl.leafMorph,
       barkMorph:    decl.barkMorph,
       deciduous:    decl.deciduous,
       hasFlowers:   decl.hasFlowers,
       seedlingsPicked: seedlingCount,
-      variants:     b?.variants || 0,
-      bakedAt:      b?.bakedAt || null,
+      variants:     m?.variants?.length || 0,
+      bakedAt:      m?.bakedAt || null,
+    })
+    seen.add(id)
+  }
+  // Baked-but-undeclared species (e.g. a quick GLB publish before adding to species-map).
+  for (const [id, m] of baked) {
+    if (seen.has(id)) continue
+    out.push({
+      id,
+      label:        m.displayName || m.label || id,
+      scientific:   m.scientific || null,
+      source:       m.source || 'lidar',
+      tier:         m.tier || null,
+      leafMorph:    m.leafMorph || null,
+      barkMorph:    m.barkMorph || null,
+      deciduous:    m.deciduous ?? true,
+      hasFlowers:   m.hasFlowers ?? false,
+      seedlingsPicked: 0,
+      variants:     m.variants?.length || 0,
+      bakedAt:      m.bakedAt || null,
     })
   }
+  // Alphabetical by display label so the library order matches the
+  // Workstage prev/next arrow-key navigation.
+  out.sort((a, b) => (a.label || a.id).localeCompare(b.label || b.id))
   return out
 }
 
@@ -202,9 +246,50 @@ const server = createServer(async (req, res) => {
   let m
 
   try {
-    // GET /species — declared + baked merged
-    if (req.method === 'GET' && req.url === '/species') {
+    // GET /species — declared + baked merged. Strip query string to allow
+    // cache-busting (?t=...) without breaking the exact-URL match.
+    const path = (req.url || '').split('?')[0]
+    if (req.method === 'GET' && path === '/species') {
       return jsonRes(res, 200, { species: listSpecies() })
+    }
+
+    // GET /grove — all rated GLB variants across the library, flattened.
+    // Used by the Arborist Grove view to render every accepted variant
+    // side-by-side so the operator can spot the duds. Includes the
+    // `excluded` flag so the view can show kill-switched variants too.
+    // (Distinct from the Stage app downstream, which consumes published
+    // trees rather than producing them.)
+    if (req.method === 'GET' && path === '/grove') {
+      const baked = scanBakedManifests()
+      const variants = []
+      for (const [speciesId, m] of baked) {
+        if (m.source !== 'glb' || !Array.isArray(m.variants)) continue
+        const speciesLabel = m.displayName || m.label || speciesId
+        const speciesCategory = m.category || null
+        for (const v of m.variants) {
+          const quality = v.qualityOverride ?? v.quality ?? 0
+          if (quality < 2) continue   // skip Untouched + Trash
+          const lod = v.skeletons?.lod1 || v.skeletons?.lod0 || v.skeletons?.lod2
+          if (!lod) continue
+          variants.push({
+            speciesId,
+            speciesLabel,
+            variantId: v.id,
+            quality,
+            excluded: v.excluded === true,
+            category: v.categoryOverride ?? v.category ?? speciesCategory,
+            styles: v.stylesOverride ?? v.styles ?? [],
+            normalizeScale: v.scaleOverride ?? v.normalizeScale ?? 1,
+            approxHeightM: v.approxHeightM ?? null,
+            position: v.positionOverride ?? null,
+            rotation: v.rotationOverride ?? null,
+            operatorNotes: v.operatorNotes || '',
+            glbUrl: `/trees/${speciesId}/${lod}?v=${m.bakedAt || 0}`,
+            sourceName: v.sourceName || null,
+          })
+        }
+      }
+      return jsonRes(res, 200, { variants, count: variants.length })
     }
 
     // GET /species/:id — manifest from public/trees (404 until baked)
@@ -218,7 +303,7 @@ const server = createServer(async (req, res) => {
     // GET /species/:id/specimens — candidates from FOR-species20K + recommended flags
     if (req.method === 'GET' && (m = req.url.match(/^\/species\/([^/]+)\/specimens$/))) {
       const id = m[1]
-      const decl = SPECIES_DECL[id]
+      const decl = readSpeciesDecl()[id]
       if (!decl) return jsonRes(res, 404, { error: 'unknown species', id })
       const csv = loadCsv()
       const rows = csv.get(decl.forSpeciesName) || []
@@ -247,7 +332,7 @@ const server = createServer(async (req, res) => {
     // Either field is optional; missing means empty.
     if (req.method === 'POST' && (m = req.url.match(/^\/species\/([^/]+)\/seedlings$/))) {
       const id = m[1]
-      if (!SPECIES_DECL[id]) return jsonRes(res, 404, { error: 'unknown species', id })
+      if (!readSpeciesDecl()[id]) return jsonRes(res, 404, { error: 'unknown species', id })
       const body = await readBody(req)
       const starred = Array.isArray(body.starred) ? body.starred : []
       const seedlings = Array.isArray(body.seedlings) ? body.seedlings : []
@@ -294,7 +379,7 @@ const server = createServer(async (req, res) => {
     // (operator action) and bounded (~10s for 3 seedlings on a Mac).
     if (req.method === 'POST' && (m = req.url.match(/^\/species\/([^/]+)\/bake$/))) {
       const id = m[1]
-      if (!SPECIES_DECL[id]) return jsonRes(res, 404, { error: 'unknown species', id })
+      if (!readSpeciesDecl()[id]) return jsonRes(res, 404, { error: 'unknown species', id })
       const seedlingsPath = join(STATE_DIR, id, 'seedlings.json')
       if (!existsSync(seedlingsPath)) {
         return jsonRes(res, 400, { error: 'no seedlings picked yet — pick some in the workstage first', id })
@@ -315,13 +400,74 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    // POST /species/:id/overrides
+    // Body: subset of { displayName, displayNotes }
+    // Updates manifest-level operator fields on the species (not variant).
+    // Pass `null` to clear. Rebuilds index.json afterward.
+    if (req.method === 'POST' && (m = req.url.match(/^\/species\/([^/]+)\/overrides$/))) {
+      const id = m[1]
+      const manifestPath = join(PUBLIC_TREES, id, 'manifest.json')
+      if (!existsSync(manifestPath)) return jsonRes(res, 404, { error: 'no manifest', species: id })
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
+      const body = await readBody(req)
+      for (const k of ['displayName', 'displayNotes']) {
+        if (!(k in body)) continue
+        if (body[k] === null) delete manifest[k]
+        else manifest[k] = body[k]
+      }
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+      try {
+        const { rebuildIndex } = await import('./build-index.js')
+        await rebuildIndex()
+      } catch (e) {
+        console.warn('[arborist] index rebuild failed:', e.message)
+      }
+      return jsonRes(res, 200, { ok: true, manifest })
+    }
+
+    // POST /species/:id/variants/:variantId/overrides
+    // Body: any subset of { qualityOverride, stylesOverride, scaleOverride,
+    //   categoryOverride, excluded, operatorNotes }. Pass `null` to clear.
+    // Updates the variant in public/trees/:id/manifest.json + rebuilds
+    // public/trees/index.json so the runtime picker sees the change.
+    if (req.method === 'POST' && (m = req.url.match(/^\/species\/([^/]+)\/variants\/([^/]+)\/overrides$/))) {
+      const id = m[1]
+      const variantId = parseInt(m[2], 10)
+      const manifestPath = join(PUBLIC_TREES, id, 'manifest.json')
+      if (!existsSync(manifestPath)) return jsonRes(res, 404, { error: 'no manifest', species: id })
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
+      const variant = manifest.variants?.find(v => v.id === variantId)
+      if (!variant) return jsonRes(res, 404, { error: 'no such variant', species: id, variantId })
+      const body = await readBody(req)
+      const fields = ['qualityOverride', 'stylesOverride', 'scaleOverride', 'categoryOverride', 'positionOverride', 'rotationOverride', 'excluded', 'operatorNotes']
+      for (const k of fields) {
+        if (!(k in body)) continue
+        if (body[k] === null) delete variant[k]
+        else variant[k] = body[k]
+      }
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+      try {
+        const { rebuildIndex } = await import('./build-index.js')
+        await rebuildIndex()
+      } catch (e) {
+        console.warn('[arborist] index rebuild failed:', e.message)
+      }
+      try {
+        const { bakeTrees } = await import('./bake-trees.js')
+        await bakeTrees()  // re-bake default Look so the cartograph reflects the new rating
+      } catch (e) {
+        console.warn('[arborist] bake failed:', e.message)
+      }
+      return jsonRes(res, 200, { ok: true, variant })
+    }
+
     // DELETE /species/:id — placeholder
     if (req.method === 'DELETE' && (m = req.url.match(/^\/species\/([^/]+)$/))) {
       return notImplemented(res, 'DELETE /species/:id')
     }
 
     // GET /inventory — species histogram from src/data/park_trees.json
-    if (req.method === 'GET' && req.url === '/inventory') {
+    if (req.method === 'GET' && path === '/inventory') {
       const trees = readJsonOrNull(join(ROOT, 'src', 'data', 'park_trees.json'))?.trees || []
       const counts = {}
       for (const t of trees) {
@@ -343,5 +489,5 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Arborist backend → http://localhost:${PORT}`)
-  console.log(`  declared species: ${Object.keys(SPECIES_DECL).join(', ') || '(none)'}`)
+  console.log(`  declared species: ${Object.keys(readSpeciesDecl()).join(', ') || '(none)'}`)
 })

@@ -6,14 +6,202 @@
  */
 import { create } from 'zustand'
 
+// activeLookId persists across sessions so the operator returns to the
+// Look they were curating. Stored under a separate key from cartograph's
+// own selection so the two apps can drift if needed.
+const ACTIVE_LOOK_KEY = 'arborist-active-look'
+
 const useArboristStore = create((set, get) => ({
+  // ── Looks ────────────────────────────────────────────────────
+  // Looks are owned by Cartograph (public/looks/<id>/design.json).
+  // Arborist co-edits them: it lists every Look so the operator can pick
+  // which one they're curating trees for, and (in pass 2) writes the
+  // `trees` roster onto the active Look's design.json. The Looks
+  // directory IS the shared bus — no inter-server polling needed.
+  looks: [],                    // [{id, name, createdAt, updatedAt}]
+  defaultLookId: null,
+  activeLookId:  (typeof localStorage !== 'undefined'
+    ? localStorage.getItem(ACTIVE_LOOK_KEY) : null) || null,
+  looksError: null,
+  loadLooks: async () => {
+    try {
+      const r = await fetch(`/api/cartograph/looks?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      const looks = d.looks || []
+      const defaultId = d.default || null
+      // First load: select active = persisted choice (if still exists),
+      // else the default Look.
+      let active = get().activeLookId
+      if (!active || !looks.some(l => l.id === active)) active = defaultId
+      set({ looks, defaultLookId: defaultId, activeLookId: active, looksError: null })
+      if (active && typeof localStorage !== 'undefined') {
+        localStorage.setItem(ACTIVE_LOOK_KEY, active)
+      }
+      get().loadLooksRosters()
+    } catch (err) {
+      set({ looksError: String(err) })
+    }
+  },
+  setActiveLook: (id) => {
+    set({ activeLookId: id })
+    if (id && typeof localStorage !== 'undefined') {
+      localStorage.setItem(ACTIVE_LOOK_KEY, id)
+    }
+  },
+
+  // Rosters keyed by lookId. A variant can belong to many Looks at once,
+  // so the rate panel shows a checkbox per Look. Each Look gets its own
+  // debounced save so rapid multi-Look toggles don't collide.
+  looksRosters: {},               // { [lookId]: [{species, variantId}] }
+  looksRostersError: null,
+  loadLooksRosters: async () => {
+    const ids = get().looks.map(l => l.id)
+    if (ids.length === 0) { set({ looksRosters: {} }); return }
+    try {
+      const results = await Promise.all(ids.map(async (id) => {
+        const r = await fetch(`/api/cartograph/looks/${encodeURIComponent(id)}/trees?t=${Date.now()}`)
+        if (!r.ok) throw new Error(`HTTP ${r.status} for ${id}`)
+        const d = await r.json()
+        return [id, d.trees || []]
+      }))
+      const next = {}
+      for (const [id, trees] of results) next[id] = trees
+      set({ looksRosters: next, looksRostersError: null })
+    } catch (err) {
+      set({ looksRostersError: String(err) })
+    }
+  },
+  isInLook: (lookId, species, variantId) => {
+    const list = get().looksRosters[lookId] || []
+    return list.some(
+      t => t.species === species && Number(t.variantId) === Number(variantId),
+    )
+  },
+  toggleInLook: (lookId, species, variantId) => {
+    if (!lookId) return
+    const cur = get().looksRosters[lookId] || []
+    const exists = cur.some(
+      t => t.species === species && Number(t.variantId) === Number(variantId),
+    )
+    const next = exists
+      ? cur.filter(t => !(t.species === species && Number(t.variantId) === Number(variantId)))
+      : [...cur, { species, variantId: Number(variantId) }]
+    set({ looksRosters: { ...get().looksRosters, [lookId]: next } })
+    get()._saveLookRosterDebounced(lookId)
+  },
+  _lookRosterTimers: {},
+  _saveLookRosterDebounced: (lookId) => {
+    const timers = get()._lookRosterTimers
+    if (timers[lookId]) clearTimeout(timers[lookId])
+    timers[lookId] = setTimeout(async () => {
+      delete timers[lookId]
+      const trees = get().looksRosters[lookId] || []
+      try {
+        await fetch(`/api/cartograph/looks/${encodeURIComponent(lookId)}/trees`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trees }),
+        })
+      } catch (err) {
+        console.warn('[arborist] roster save failed for', lookId, err)
+      }
+    }, 300)
+  },
+  createLook: async (name) => {
+    const trimmed = String(name || '').trim()
+    if (!trimmed) return null
+    try {
+      const r = await fetch('/api/cartograph/looks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      })
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${r.status}`)
+      }
+      const d = await r.json()
+      await get().loadLooks()
+      get().setActiveLook(d.id)
+      return d.id
+    } catch (err) {
+      set({ looksError: String(err) })
+      return null
+    }
+  },
+
   // ── Library / overall state ──────────────────────────────────
   species: [],                  // [{id,label,scientific,...,seedlingsPicked,bakedAt}]
   speciesError: null,
   activeSpeciesId: null,        // null = library view; set = workstage view
+  // Grove — gallery view across the whole library. Distinct from the
+  // downstream Stage app, which composes a Look from the trees the Grove
+  // publishes. Naming kept separate to avoid confusion.
+  groveOpen: false,
+  groveVariants: [],            // flattened list from /grove
+  groveError: null,
+  groveLoading: false,
+  setGroveOpen: (open) => {
+    set({ groveOpen: !!open })
+    if (open) get().loadGrove()
+  },
+  // Edit a variant's override field from Grove's hover card. Optimistic
+  // local update + POST to the existing per-species variant override
+  // endpoint. Pass value=null to clear an override (back to base).
+  setGroveVariantOverride: async (speciesId, variantId, key, value) => {
+    // Mirror the field changes onto the flattened grove row so the
+    // hover card reflects edits immediately without waiting for a
+    // /grove reload. Field-name translations: the /grove endpoint
+    // exposes `quality` (resolved override-or-base), `category`
+    // (resolved), `styles` (resolved), `normalizeScale` (resolved).
+    const list = get().groveVariants
+    const next = list.map(v => {
+      if (!(v.speciesId === speciesId && v.variantId === variantId)) return v
+      const updated = { ...v }
+      if (key === 'qualityOverride') updated.quality = value ?? updated.quality
+      else if (key === 'categoryOverride') updated.category = value ?? updated.category
+      else if (key === 'stylesOverride') updated.styles = value ?? updated.styles
+      else if (key === 'scaleOverride') updated.normalizeScale = value ?? updated.normalizeScale
+      else if (key === 'excluded') updated.excluded = value === true
+      else if (key === 'operatorNotes') updated.operatorNotes = value || ''
+      return updated
+    })
+    set({ groveVariants: next })
+    try {
+      await fetch(
+        `/api/arborist/species/${encodeURIComponent(speciesId)}/variants/${variantId}/overrides`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [key]: value }),
+        },
+      )
+      // If the active workstage is this species, refresh its manifest
+      // so the Workstage panel reflects what Grove just changed.
+      if (get().activeSpeciesId === speciesId) {
+        get().loadManifest(speciesId)
+      }
+    } catch (e) {
+      console.warn('[arborist] grove override save failed:', e)
+    }
+  },
+  loadGrove: async () => {
+    set({ groveLoading: true, groveError: null })
+    try {
+      const r = await fetch(`/api/arborist/grove?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set({ groveVariants: d.variants || [], groveLoading: false })
+    } catch (err) {
+      set({ groveError: String(err), groveLoading: false })
+    }
+  },
   loadSpecies: async () => {
     try {
-      const r = await fetch('/api/arborist/species')
+      // Cache-bust: the /species response can otherwise be served from
+      // browser cache after a rename + reload, hiding the new displayName.
+      const r = await fetch(`/api/arborist/species?t=${Date.now()}`)
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const d = await r.json()
       set({ species: d.species || [], speciesError: null })
@@ -22,6 +210,8 @@ const useArboristStore = create((set, get) => ({
     }
   },
   setActiveSpecies: (id) => {
+    const sp = get().species.find(s => s.id === id)
+    const isGlb = sp?.source === 'glb'
     set({
       activeSpeciesId: id,
       specimens: [], specimensError: null,
@@ -29,13 +219,87 @@ const useArboristStore = create((set, get) => ({
       pickedTreeIds: new Set(),
       tuneParamsByTreeId: {},
       selectedTreeId: null,
+      selectedVariantId: null,
       manifest: null,
-      viewMode: 'cloud',
+      // GLB ingest skips Cloud (no source point cloud); Skeleton mode only.
+      viewMode: isGlb ? 'skeleton' : 'cloud',
+      activeLod: 'lod0',
     })
     if (id) {
-      get().loadSpecimens(id)
-      get().loadCuration(id)
       get().loadManifest(id)
+      // GLB-source species don't have FOR-species20K specimens to browse.
+      if (!isGlb) {
+        get().loadSpecimens(id)
+        get().loadCuration(id)
+      }
+    }
+  },
+
+  // ── GLB-source state ────────────────────────────────────────
+  // For 'glb' species the variants come pre-baked in the manifest; the
+  // operator just previews + picks an LOD. No specimen browse, no curation.
+  selectedVariantId: null,
+  activeLod: 'lod0',
+  selectVariant: (id) => set({ selectedVariantId: id }),
+  setActiveLod:  (lod) => set({ activeLod: lod }),
+
+  // Operator-set overrides on GLB variants. Each call optimistically updates
+  // the local manifest then POSTs to the backend, which rewrites the
+  // species manifest + rebuilds public/trees/index.json so the runtime
+  // picker reflects the change immediately. Pass `value: null` to clear.
+  // Species-level operator overrides (currently: displayName, displayNotes).
+  // Updates manifest, rebuilds index, refreshes local manifest copy.
+  setSpeciesOverride: async (key, value) => {
+    const speciesId = get().activeSpeciesId
+    const m = get().manifest
+    if (!speciesId || !m) return
+    const next = { ...m }
+    if (value === null) delete next[key]
+    else next[key] = value
+    set({ manifest: next })
+    try {
+      await fetch(
+        `/api/arborist/species/${encodeURIComponent(speciesId)}/overrides`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [key]: value }),
+        },
+      )
+      // Refresh species list so the library view picks up new displayName.
+      get().loadSpecies?.()
+    } catch (e) {
+      console.warn('[arborist] species override save failed:', e)
+    }
+  },
+
+  setVariantOverride: async (variantId, key, value) => {
+    const speciesId = get().activeSpeciesId
+    const m = get().manifest
+    if (!speciesId || !m) return
+    set({
+      manifest: {
+        ...m,
+        variants: m.variants.map(v => {
+          if (v.id !== variantId) return v
+          const next = { ...v }
+          if (value === null) delete next[key]
+          else next[key] = value
+          return next
+        }),
+      },
+    })
+    try {
+      await fetch(
+        `/api/arborist/species/${encodeURIComponent(speciesId)}/variants/${variantId}/overrides`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [key]: value }),
+        },
+      )
+    } catch (e) {
+      console.warn('[arborist] override save failed:', e)
     }
   },
 
@@ -50,8 +314,17 @@ const useArboristStore = create((set, get) => ({
   loadManifest: async (id) => {
     try {
       const r = await fetch(`/api/arborist/species/${encodeURIComponent(id)}`)
-      if (r.ok) set({ manifest: await r.json() })
-      else      set({ manifest: null })
+      if (r.ok) {
+        const m = await r.json()
+        set({ manifest: m })
+        // Auto-pick the first variant on load for GLB species so the viewport
+        // has something to render immediately.
+        if (m.source === 'glb' && m.variants?.length && !get().selectedVariantId) {
+          set({ selectedVariantId: m.variants[0].id })
+        }
+      } else {
+        set({ manifest: null })
+      }
     } catch { set({ manifest: null }) }
   },
 

@@ -163,15 +163,18 @@ function analyzeMarkers() {
 }
 
 createServer((req, res) => {
+  // Strip query string for route matching. Clients add cache-busting
+  // ?t=... that would otherwise miss exact-equality checks.
+  const path = (req.url || '').split('?')[0]
   // GET /markers — read strokes
-  if (req.method === 'GET' && req.url === '/markers') {
+  if (req.method === 'GET' && path === '/markers') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(readFileSync(MARKERS))
     return
   }
 
   // POST /markers — write strokes
-  if (req.method === 'POST' && req.url === '/markers') {
+  if (req.method === 'POST' && path === '/markers') {
     let body = ''
     req.on('data', c => body += c)
     req.on('end', () => {
@@ -183,21 +186,21 @@ createServer((req, res) => {
   }
 
   // GET /analyze — report what's under the marker strokes
-  if (req.method === 'GET' && req.url === '/analyze') {
+  if (req.method === 'GET' && path === '/analyze') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(analyzeMarkers(), null, 2))
     return
   }
 
   // GET /measurements — read measurements
-  if (req.method === 'GET' && req.url === '/measurements') {
+  if (req.method === 'GET' && path === '/measurements') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(readFileSync(MEASUREMENTS))
     return
   }
 
   // POST /measurements — write measurements
-  if (req.method === 'POST' && req.url === '/measurements') {
+  if (req.method === 'POST' && path === '/measurements') {
     let body = ''
     req.on('data', c => body += c)
     req.on('end', () => {
@@ -215,7 +218,7 @@ createServer((req, res) => {
   }
 
   // GET /skeleton — read Phase-0 skeleton output
-  if (req.method === 'GET' && req.url === '/skeleton') {
+  if (req.method === 'GET' && path === '/skeleton') {
     if (!existsSync(SKELETON)) {
       res.writeHead(404, { 'Content-Type': 'application/json' })
       res.end('{"error":"skeleton.json not found — run `node skeleton.js`"}')
@@ -227,14 +230,14 @@ createServer((req, res) => {
   }
 
   // GET /centerlines — read centerline data
-  if (req.method === 'GET' && req.url === '/centerlines') {
+  if (req.method === 'GET' && path === '/centerlines') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(readFileSync(CENTERLINES))
     return
   }
 
   // POST /centerlines — write centerline data
-  if (req.method === 'POST' && req.url === '/centerlines') {
+  if (req.method === 'POST' && path === '/centerlines') {
     let body = ''
     req.on('data', c => body += c)
     req.on('end', () => {
@@ -252,7 +255,7 @@ createServer((req, res) => {
   }
 
   // GET /overlay — read the operator-intent overlay (skelId-keyed)
-  if (req.method === 'GET' && req.url === '/overlay') {
+  if (req.method === 'GET' && path === '/overlay') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(readFileSync(OVERLAY))
     return
@@ -261,7 +264,7 @@ createServer((req, res) => {
   // POST /overlay — write overlay (authored caps, couplers, measures,
   // segmentMeasures keyed by skeleton chain id). Skeleton owns geometry;
   // this file owns operator intent.
-  if (req.method === 'POST' && req.url === '/overlay') {
+  if (req.method === 'POST' && path === '/overlay') {
     let body = ''
     req.on('data', c => body += c)
     req.on('end', () => {
@@ -282,7 +285,7 @@ createServer((req, res) => {
   // The bake is the cartograph's only publish artifact — see memory
   // `project_cartograph_bake_step`. Synchronous on the server side; the
   // client shows a modal during the round-trip.
-  if (req.method === 'POST' && req.url === '/bake') {
+  if (req.method === 'POST' && path === '/bake') {
     try {
       const t0 = Date.now()
       execSync('node bake-svg.js', { cwd: import.meta.dirname, timeout: 60000 })
@@ -302,7 +305,7 @@ createServer((req, res) => {
   // 0-state and can't be deleted.
 
   // GET /looks — list of {id, name, createdAt} + the default id.
-  if (req.method === 'GET' && req.url === '/looks') {
+  if (req.method === 'GET' && path === '/looks') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(readLooksIndex()))
     return
@@ -312,7 +315,7 @@ createServer((req, res) => {
   // Returns {} (not 404) for an existing Look without a design yet, so the
   // client can hydrate without a special-case error path.
   let m
-  if (req.method === 'GET' && (m = req.url.match(/^\/looks\/([^/]+)\/design$/))) {
+  if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/design$/))) {
     const id = m[1]
     const idx = readLooksIndex()
     if (!idx.looks.some(l => l.id === id)) {
@@ -327,7 +330,10 @@ createServer((req, res) => {
   }
 
   // POST /looks/<id>/design — autosave write. Body: design block JSON.
-  if (req.method === 'POST' && (m = req.url.match(/^\/looks\/([^/]+)\/design$/))) {
+  // Preserves keys Cartograph doesn't author (notably `trees`, written
+  // by Arborist) so a Cartograph autosave can't clobber Arborist's
+  // roster. Co-authoring across apps relies on this merge.
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/design$/))) {
     const id = m[1]
     const idx = readLooksIndex()
     if (!idx.looks.some(l => l.id === id)) {
@@ -340,8 +346,14 @@ createServer((req, res) => {
     req.on('end', () => {
       try {
         const parsed = JSON.parse(body)
+        const existing = readJsonOrNull(lookDesignPath(id)) || {}
+        // Preserve Arborist-owned keys if the incoming payload omits them.
+        const merged = { ...parsed }
+        for (const k of ['trees']) {
+          if (!(k in parsed) && k in existing) merged[k] = existing[k]
+        }
         mkdirSync(lookDir(id), { recursive: true })
-        writeJson(lookDesignPath(id), parsed)
+        writeJson(lookDesignPath(id), merged)
         // Touch updatedAt so clients can show "last edited" if they want.
         const idx2 = readLooksIndex()
         const entry = idx2.looks.find(l => l.id === id)
@@ -356,9 +368,64 @@ createServer((req, res) => {
     return
   }
 
+  // GET /looks/<id>/trees — Arborist's tree roster for this Look.
+  // Returns [] when the Look hasn't been curated yet.
+  if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/trees$/))) {
+    const id = m[1]
+    const idx = readLooksIndex()
+    if (!idx.looks.some(l => l.id === id)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'unknown look' }))
+      return
+    }
+    const design = readJsonOrNull(lookDesignPath(id)) || {}
+    const trees = Array.isArray(design.trees) ? design.trees : []
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ trees }))
+    return
+  }
+
+  // POST /looks/<id>/trees — replace this Look's tree roster. Body:
+  // { trees: [{species, variantId}, …] }. Read-merge-write so a
+  // concurrent Cartograph autosave can't drop the trees field.
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/trees$/))) {
+    const id = m[1]
+    const idx = readLooksIndex()
+    if (!idx.looks.some(l => l.id === id)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'unknown look' }))
+      return
+    }
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}')
+        const trees = Array.isArray(parsed.trees) ? parsed.trees : []
+        // Normalize: drop entries missing species or variantId.
+        const clean = trees
+          .filter(t => t && t.species && (t.variantId != null))
+          .map(t => ({ species: String(t.species), variantId: Number(t.variantId) }))
+        const existing = readJsonOrNull(lookDesignPath(id)) || {}
+        const merged = { ...existing, trees: clean }
+        mkdirSync(lookDir(id), { recursive: true })
+        writeJson(lookDesignPath(id), merged)
+        const idx2 = readLooksIndex()
+        const entry = idx2.looks.find(l => l.id === id)
+        if (entry) { entry.updatedAt = Date.now(); saveLooksIndex(idx2) }
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, count: clean.length }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
   // POST /looks/<id>/bake — re-render the SVG for this Look from its
   // design.json. Synchronous; client shows a modal during the round-trip.
-  if (req.method === 'POST' && (m = req.url.match(/^\/looks\/([^/]+)\/bake$/))) {
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/bake$/))) {
     const id = m[1]
     const idx = readLooksIndex()
     if (!idx.looks.some(l => l.id === id)) {
@@ -368,7 +435,17 @@ createServer((req, res) => {
     }
     try {
       const t0 = Date.now()
-      execSync(`node bake-svg.js --look=${id}`, { cwd: import.meta.dirname, timeout: 60000 })
+      // Full bake: SVG ground (legacy artifact) + Three.js bake bundle
+      // (ground geom + AO lightmap + buildings + scene snapshot). Each
+      // step writes into its own folder under public/. Sequential so
+      // failures point at one bad step.
+      execSync(`node bake-svg.js --look=${id}`,       { cwd: import.meta.dirname, timeout: 60000 })
+      execSync(`node bake-ground.js --look=${id}`,    { cwd: import.meta.dirname, timeout: 60000 })
+      execSync(`node bake-buildings.js --look=${id}`, { cwd: import.meta.dirname, timeout: 60000 })
+      execSync(`node bake-lamps.js --look=${id}`,     { cwd: import.meta.dirname, timeout: 30000 })
+      execSync(`node bake-scene.js --look=${id}`,     { cwd: import.meta.dirname, timeout: 30000 })
+      // AO bake last — slowest (~25 sec), benefits from updated geometry.
+      execSync(`node bake-ground-ao.js --look=${id}`, { cwd: import.meta.dirname, timeout: 120000 })
       const ms = Date.now() - t0
       const idx2 = readLooksIndex()
       const entry = idx2.looks.find(l => l.id === id)
@@ -385,7 +462,7 @@ createServer((req, res) => {
   // POST /looks — create a new Look. Body: { name, fromLookId? }.
   // Seeds the new Look's design.json from `fromLookId` (defaults to the
   // currently-active or default Look). Caller bakes separately.
-  if (req.method === 'POST' && req.url === '/looks') {
+  if (req.method === 'POST' && path === '/looks') {
     let body = ''
     req.on('data', c => body += c)
     req.on('end', () => {
@@ -416,7 +493,7 @@ createServer((req, res) => {
   }
 
   // DELETE /looks/<id> — remove a Look. Forbidden for the default 0-state.
-  if (req.method === 'DELETE' && (m = req.url.match(/^\/looks\/([^/]+)$/))) {
+  if (req.method === 'DELETE' && (m = path.match(/^\/looks\/([^/]+)$/))) {
     const id = m[1]
     const idx = readLooksIndex()
     if (id === idx.default) {
@@ -443,7 +520,7 @@ createServer((req, res) => {
   }
 
   // POST /rebuild — re-run render.js and reload preview
-  if (req.method === 'POST' && req.url === '/rebuild') {
+  if (req.method === 'POST' && path === '/rebuild') {
     try {
       execSync('node render.js', { cwd: import.meta.dirname, timeout: 30000 })
       res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -455,13 +532,14 @@ createServer((req, res) => {
     return
   }
 
-  // Static file serving
-  const file = req.url === '/' ? '/preview.html' : req.url
-  const path = join(DIR, file)
-  if (!existsSync(path)) { res.writeHead(404); res.end('Not found'); return }
-  const ext = extname(path)
+  // Static file serving — uses the query-stripped path so cache-busting
+  // suffixes don't break file resolution.
+  const file = path === '/' ? '/preview.html' : path
+  const filePath = join(DIR, file)
+  if (!existsSync(filePath)) { res.writeHead(404); res.end('Not found'); return }
+  const ext = extname(filePath)
   res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' })
-  res.end(readFileSync(path))
+  res.end(readFileSync(filePath))
 }).listen(PORT, () => {
   console.log(`Cartograph preview → http://localhost:${PORT}`)
 })

@@ -12,6 +12,7 @@ function serveHelperApps() {
     { url: '/cartograph', file: 'cartograph.html' },
     { url: '/stage',      file: 'stage.html' },
     { url: '/arborist',   file: 'arborist.html' },
+    { url: '/preview',    file: 'preview.html' },
   ]
   return {
     name: 'serve-helper-apps',
@@ -75,16 +76,39 @@ export default defineConfig(({ command }) => ({
   base: '/',
   server: {
     watch: {
-      ignored: ['**/public/models/**', '**/public/photos/**'],
+      // Skip large asset trees so chokidar doesn't iterate hundreds of
+      // GLB/PNG files every time. iCloud-synced repos especially: any
+      // chokidar read can ETIMEDOUT if the file is a stub awaiting fetch,
+      // killing the dev server. None of these are sources we edit live.
+      ignored: [
+        '**/public/models/**',
+        '**/public/photos/**',
+        '**/public/trees/**',
+        '**/public/lidar/**',
+        '**/botanica/**',
+        '**/.git/**',
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/_cache/**',
+        '**/_republish.log',
+      ],
     },
     proxy: {
+      // agent:false disables keep-alive socket pooling. The cartograph
+      // and arborist backends are plain Node http servers with default
+      // Keep-Alive timeout (~5s); vite was holding pooled sockets past
+      // that and failing on next reuse with ECONNRESET → 404 "Not found"
+      // surfaced to the browser. Fresh connection per request is cheap
+      // here and rock-solid.
       '/api/cartograph': {
         target: 'http://localhost:3333',
         rewrite: (path) => path.replace(/^\/api\/cartograph/, ''),
+        agent: false,
       },
       '/api/arborist': {
         target: 'http://localhost:3334',
         rewrite: (path) => path.replace(/^\/api\/arborist/, ''),
+        agent: false,
       },
     },
   },
@@ -95,6 +119,7 @@ export default defineConfig(({ command }) => ({
         cartograph: 'cartograph.html',
         stage: 'stage.html',
         arborist: 'arborist.html',
+        preview: 'preview.html',
       },
       output: {
         manualChunks: {
