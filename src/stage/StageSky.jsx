@@ -6,6 +6,14 @@ import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
 import useSkyState from '../hooks/useSkyState'
+import { sky as _skyUniforms } from '../preview/skyState.js'
+import { lighting as _lightingState } from '../preview/lightingState.js'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import {
+  CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
+  MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
+} from '../cartograph/skyLightChannels.js'
 import brightStars from '../data/bright_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from '../components/PlanetariumOverlay'
@@ -68,6 +76,9 @@ function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, 
   useFrame(() => {
     if (!lightRef.current) return
 
+    // TOD-driven sun-light intensity multiplier (Sky&Light · Sun light).
+    lightRef.current.intensity = intensity * _lightingState.dirSun
+
     // Let autoUpdate run for a few frames so the shadow map captures
     // the full scene, then switch to manual updates.
     if (_framesSinceMountRef.current < 4) {
@@ -115,8 +126,13 @@ function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, 
 }
 
 function SecondaryOrb({ position, color, intensity }) {
+  const ref = useRef()
+  useFrame(() => {
+    if (ref.current) ref.current.intensity = intensity * _lightingState.dirMoon
+  })
   return (
     <directionalLight
+      ref={ref}
       position={position.toArray()}
       intensity={intensity}
       color={color}
@@ -305,6 +321,75 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
   )
 }
 
+// MilkyWaySphere — equirectangular Brunier panorama wrapped on a sphere
+// just inside the sky dome. Sidereal rotation matches the bright-star
+// renderer so the band rises/sets correctly. Opacity = milkyWay channel
+// × nightFactor (only visible when sky is dark).
+function MilkyWaySphere({ nightFactor }) {
+  const groupRef = useRef()
+  const matRef   = useRef()
+  const mwTexture = useTexture(`${import.meta.env.BASE_URL}textures/milky_way.jpg`)
+
+  // Filtering: disable mipmaps + max anisotropy so the panorama stays
+  // sharp at Hero/Street FOV (default LinearMipmapLinear blurs star
+  // detail into mush). Equirectangular wrap + sRGB color space.
+  useEffect(() => {
+    mwTexture.wrapS = THREE.RepeatWrapping
+    mwTexture.colorSpace = THREE.SRGBColorSpace
+    mwTexture.minFilter = THREE.LinearFilter
+    mwTexture.magFilter = THREE.LinearFilter
+    mwTexture.generateMipmaps = false
+    mwTexture.anisotropy = 16
+    mwTexture.needsUpdate = true
+  }, [mwTexture])
+
+  // NormalBlending (not Additive) — the panorama IS the sky at night,
+  // not "extra light on top of black sky." Additive over-saturated and
+  // shifted hue (warm yellows + cool ambient → milky green).
+  const material = useMemo(() => new THREE.MeshBasicMaterial({
+    map: mwTexture,
+    side: THREE.BackSide,
+    transparent: true,
+    depthWrite: false,
+    opacity: 0,
+    fog: false,  // sky elements are infinitely far — opt out of scene fog
+  }), [mwTexture])
+
+  // Sidereal spin + opacity per frame.
+  useFrame(() => {
+    const tod = useTimeOfDay.getState()
+    const currentTime = tod.currentTime
+    const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0)
+    const daysSinceJ2000 = (currentTime.getTime() - J2000) / 86400000
+    const GMST = (280.46061837 + 360.98564736629 * daysSinceJ2000) % 360
+    const LST = ((GMST + LONGITUDE) % 360 + 360) % 360
+    const lstRad = LST * (Math.PI / 180)
+    if (groupRef.current) groupRef.current.children[0].rotation.y = -lstRad
+
+    const slotMins = getTodSlotMinutes(currentTime)
+    const mw = resolveGroupAtMinute(
+      useCartographStore.getState().milkyWay,
+      tod.getMinuteOfDay(), slotMins,
+      MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
+    )
+    matRef.current && (matRef.current.opacity = mw.value * nightFactor)
+  })
+
+  // Outer group tilts the celestial pole to its actual altitude (latitude
+  // above the northern horizon). Inner group spins around the pole.
+  const latRad = LATITUDE * (Math.PI / 180)
+  return (
+    <group ref={groupRef} rotation-x={latRad - Math.PI / 2}>
+      <group>
+        <mesh renderOrder={-995}>
+          <sphereGeometry args={[SKY_RADIUS - 200, 64, 32]} />
+          <primitive object={material} ref={matRef} attach="material" />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
 function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
   const materialRef = useRef()
 
@@ -444,12 +529,30 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
       const u = materialRef.current.uniforms
       const planetariumActive = useCamera.getState().viewMode === 'planetarium'
       const dimFactor = planetariumActive ? 0.4 : 1.0
-      // 4-band colors
-      u.bandHorizon.value.copy(colors.bands.horizon).multiplyScalar(dimFactor)
-      u.bandLow.value.copy(colors.bands.low).multiplyScalar(dimFactor)
-      u.bandMid.value.copy(colors.bands.mid).multiplyScalar(dimFactor)
-      u.bandHigh.value.copy(colors.bands.high).multiplyScalar(dimFactor)
-      u.sunGlowColor.value.copy(colors.sunGlowColor).multiplyScalar(dimFactor)
+      // 4-band colors — authored sky-grid takes precedence when SkyPump
+      // has resolved a tuple; otherwise fall back to the legacy
+      // keyframe ladder (`colors.bands`) so unmounted-pump scenarios
+      // (Preview-only paths, future) still render. Weather modifiers
+      // currently only apply via the legacy path; authored sky carries
+      // its own per-Look color authoring instead. See HANDOFF-sky-and-light.md.
+      if (_skyUniforms.hasAuthored) {
+        const h = _skyUniforms.bandHorizonRGB
+        const l = _skyUniforms.bandLowRGB
+        const m = _skyUniforms.bandMidRGB
+        const hi = _skyUniforms.bandHighRGB
+        const sg = _skyUniforms.sunGlowRGB
+        u.bandHorizon.value.setRGB(h[0], h[1], h[2]).multiplyScalar(dimFactor)
+        u.bandLow.value.setRGB(l[0], l[1], l[2]).multiplyScalar(dimFactor)
+        u.bandMid.value.setRGB(m[0], m[1], m[2]).multiplyScalar(dimFactor)
+        u.bandHigh.value.setRGB(hi[0], hi[1], hi[2]).multiplyScalar(dimFactor)
+        u.sunGlowColor.value.setRGB(sg[0], sg[1], sg[2]).multiplyScalar(dimFactor)
+      } else {
+        u.bandHorizon.value.copy(colors.bands.horizon).multiplyScalar(dimFactor)
+        u.bandLow.value.copy(colors.bands.low).multiplyScalar(dimFactor)
+        u.bandMid.value.copy(colors.bands.mid).multiplyScalar(dimFactor)
+        u.bandHigh.value.copy(colors.bands.high).multiplyScalar(dimFactor)
+        u.sunGlowColor.value.copy(colors.sunGlowColor).multiplyScalar(dimFactor)
+      }
       if (sunDirection) {
         u.sunDir.value.copy(sunDirection).normalize()
       }
@@ -911,7 +1014,23 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
     }
   })
 
-  const planetariumActive = useCamera((s) => s.viewMode === 'planetarium')
+  // Constellations: Hero + Street, never Browse. Subscribe to the
+  // operator's `constellations` channel and gate by channel × nightFactor
+  // so they fade out in daytime regardless of authoring. Binary mount
+  // for v1; smooth opacity fade is a follow-up that needs propagating
+  // the value into PlanetariumOverlay's sub-materials.
+  const viewMode = useCamera((s) => s.viewMode)
+  const constellationsCh = useCartographStore((s) => s.constellations)
+  const tod = useTimeOfDay.getState()
+  const sunAlt = tod.getLightingPhase().sunAltitude
+  const nightFactor = Math.max(0, Math.min(1, (0.05 - sunAlt) / 0.20))
+  const slotMins = getTodSlotMinutes(tod.currentTime)
+  const constellationsVal = resolveGroupAtMinute(
+    constellationsCh, tod.getMinuteOfDay(), slotMins,
+    CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
+  ).value
+  const constellationsVisible = viewMode !== 'browse'
+    && (constellationsVal * nightFactor) > 0.05
 
   return (
     <>
@@ -921,7 +1040,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, isDawn }) {
       </mesh>
       <points ref={starRef} geometry={starGeo} material={starMat} frustumCulled={false} />
       <points ref={noiseRef} geometry={noiseGeo} material={noiseMat} frustumCulled={false} />
-      {planetariumActive && <PlanetariumOverlay />}
+      {constellationsVisible && <PlanetariumOverlay />}
     </>
   )
 }
@@ -1112,22 +1231,39 @@ function CelestialBodies({ skipSkyDome = false, debugLevel = 0 }) {
     intensity: lighting.primary.intensity * (1 - cc * 0.6),
   }), [lighting.primary, cc])
 
+  // Refs + useFrame to drive Sky&Light lighting-unit multipliers per
+  // frame (intensity values otherwise only update on re-render).
+  // PrimaryOrb / SecondaryOrb handle their own multipliers internally.
+  const ambientRef = useRef()
+  const hemiRef = useRef()
+  const ambientBase = (lighting.ambient?.intensity || 0.5) * (1 + cc * 0.4)
+  const hemiBase = (0.35 - lighting.nightFactor * 0.15) * (1 + cc * 0.5)
+  useFrame(() => {
+    if (ambientRef.current) ambientRef.current.intensity = ambientBase * _lightingState.ambient
+    if (hemiRef.current)    hemiRef.current.intensity    = hemiBase    * _lightingState.hemi
+  })
+
   if (debugLevel >= 3) return null
 
   return (
     <>
       {!skipSkyDome && debugLevel < 1 && <GradientSky sunAltitude={lighting.sunAlt} sunDirection={lighting.sunDir} moonGlow={lighting.moonGlow} isDawn={lighting.isDawn} />}
       {debugLevel < 1 && <Suspense fallback={null}><Moon {...lighting.moon} /></Suspense>}
+      {/* Milky Way mount hidden from runtime 2026-05-02 — see comment in
+          CartographSkyLight.jsx. MilkyWaySphere component preserved. */}
+      {/* {debugLevel < 1 && <MilkyWaySphere nightFactor={lighting.nightFactor} />} */}
       <ambientLight color="#ffffff" intensity={0.45} />
       {debugLevel < 99 && <ambientLight
+        ref={ambientRef}
         color={lighting.ambient?.color || '#ffffff'}
-        intensity={(lighting.ambient?.intensity || 0.5) * (1 + cc * 0.4)}
+        intensity={ambientBase}
       />}
       <ambientLight color="#8a7060" intensity={0.15 * lighting.nightFactor} />
       {debugLevel < 2 && <hemisphereLight
+        ref={hemiRef}
         color={lerpColor('#ffeedd', '#556688', lighting.nightFactor)}
         groundColor={lerpColor('#443333', '#443322', lighting.nightFactor)}
-        intensity={(0.35 - lighting.nightFactor * 0.15) * (1 + cc * 0.5)}
+        intensity={hemiBase}
       />}
       {debugLevel < 1 && <PrimaryOrb {...primaryWeathered} />}
       {debugLevel < 1 && <SecondaryOrb {...lighting.secondary} />}

@@ -56,15 +56,6 @@ export async function rebuild() {
   return res.json()
 }
 
-// Run the cartograph bake step — produces public/cartograph-ground.svg
-// from the current ribbons.json. The server runs `node bake-svg.js` and
-// returns timing + relative path. The cartograph's only publish artifact.
-export async function bakeSvg() {
-  const res = await fetch(`${BASE}/bake`, { method: 'POST' })
-  if (!res.ok) throw new Error(`bake failed: ${res.status}`)
-  return res.json()
-}
-
 // ── Looks ──────────────────────────────────────────────────────────────────
 // A Look is a styling snapshot: a complete material palette + its baked SVG.
 // Geometry (centerlines, measures, caps, couplers) is shared across Looks
@@ -92,8 +83,8 @@ export async function saveLookDesign(lookId, design) {
   return res.json()
 }
 
-// Re-bake a specific Look's ground.svg from its design.json. Replaces the
-// older bakeSvg() for the active-Look workflow.
+// Re-bake a specific Look's bundle (ground.json + bin + lightmap +
+// buildings + lamps + scene) from its design.json.
 export async function bakeLook(lookId) {
   const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake`, { method: 'POST' })
   if (!res.ok) throw new Error(`bake look failed: ${res.status}`)

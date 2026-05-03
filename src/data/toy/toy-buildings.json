@@ -2,23 +2,23 @@
   "meta": {
     "source": "toy",
     "count": 12,
-    "note": "12 houses in 4 quadrant blocks, fronting toy_ns.  Schema matches src/data/buildings.json so the real Building + Foundations components render them.  year_built drives roof style (mansard/hip/flat) and foundation height (1.2m pre-1900, 0.8m pre-1920, 0 otherwise)."
+    "note": "12 houses in 4 quadrant blocks, fronting toy_ns.  Schema matches src/data/buildings.json so the real Building + Foundations components render them.  year_built drives roof style (mansard/hip/flat) and foundation height (1.2m pre-1900, 0.8m pre-1920, 0 otherwise).  Each building also carries `neon: { category }` — eligibility metadata for the runtime Open-Places overlay (see HANDOFF-neon.md).  Band geometry is derived from the building footprint at runtime; there is no per-place anchor."
   },
   "buildings": [
-    { "id": "toy-nw-1", "footprint": [[-18,-34],[-12,-34],[-12,-26],[-18,-26]], "position": [-15,0,-30], "size": [6,7.5,8], "color": "#b8886a", "stories": 2, "year_built": 1885, "wall_material": "brick_red", "roof_material": "slate" },
-    { "id": "toy-nw-2", "footprint": [[-18,-26],[-12,-26],[-12,-18],[-18,-18]], "position": [-15,0,-22], "size": [6,10.5,8], "color": "#a8826a", "stories": 3, "year_built": 1890, "wall_material": "brick_weathered", "roof_material": "slate" },
-    { "id": "toy-nw-3", "footprint": [[-18,-18],[-12,-18],[-12,-10],[-18,-10]], "position": [-15,0,-14], "size": [6,7.5,8], "color": "#a89888", "stories": 2, "year_built": 1905, "wall_material": "stone", "roof_material": "slate" },
+    { "id": "toy-nw-1", "footprint": [[-18,-34],[-12,-34],[-12,-26],[-18,-26]], "position": [-15,0,-30], "size": [6,7.5,8], "color": "#b8886a", "stories": 2, "year_built": 1885, "wall_material": "brick_red",       "roof_material": "slate", "neon": { "category": "neon_residential" } },
+    { "id": "toy-nw-2", "footprint": [[-18,-26],[-12,-26],[-12,-18],[-18,-18]], "position": [-15,0,-22], "size": [6,10.5,8], "color": "#a8826a", "stories": 3, "year_built": 1890, "wall_material": "brick_weathered", "roof_material": "slate", "neon": { "category": "neon_historic"    } },
+    { "id": "toy-nw-3", "footprint": [[-18,-18],[-12,-18],[-12,-10],[-18,-10]], "position": [-15,0,-14], "size": [6,7.5,8], "color": "#a89888", "stories": 2, "year_built": 1905, "wall_material": "stone",           "roof_material": "slate", "neon": { "category": "neon_residential" } },
 
-    { "id": "toy-ne-1", "footprint": [[12,-34],[18,-34],[18,-26],[12,-26]], "position": [15,0,-30], "size": [6,7.5,8], "color": "#a8826a", "stories": 2, "year_built": 1888, "wall_material": "brick_weathered", "roof_material": "slate" },
-    { "id": "toy-ne-2", "footprint": [[12,-26],[18,-26],[18,-18],[12,-18]], "position": [15,0,-22], "size": [6,7.5,8], "color": "#c28868", "stories": 2, "year_built": 1895, "wall_material": "brick_red", "roof_material": "metal" },
-    { "id": "toy-ne-3", "footprint": [[12,-18],[18,-18],[18,-10],[12,-10]], "position": [15,0,-14], "size": [7,4.5,9], "color": "#b8a08a", "stories": 1, "year_built": 1930, "wall_material": "wood_siding", "roof_material": "flat" },
+    { "id": "toy-ne-1", "footprint": [[12,-34],[18,-34],[18,-26],[12,-26]], "position": [15,0,-30], "size": [6,7.5,8], "color": "#a8826a", "stories": 2, "year_built": 1888, "wall_material": "brick_weathered", "roof_material": "slate", "neon": { "category": "neon_dining"      } },
+    { "id": "toy-ne-2", "footprint": [[12,-26],[18,-26],[18,-18],[12,-18]], "position": [15,0,-22], "size": [6,7.5,8], "color": "#c28868", "stories": 2, "year_built": 1895, "wall_material": "brick_red",       "roof_material": "metal", "neon": { "category": "neon_residential" } },
+    { "id": "toy-ne-3", "footprint": [[12,-18],[18,-18],[18,-10],[12,-10]], "position": [15,0,-14], "size": [7,4.5,9], "color": "#b8a08a", "stories": 1, "year_built": 1930, "wall_material": "wood_siding",     "roof_material": "flat",  "neon": { "category": "neon_shopping"    } },
 
-    { "id": "toy-sw-1", "footprint": [[-18,10],[-12,10],[-12,18],[-18,18]], "position": [-15,0,14], "size": [6,10.5,8], "color": "#b8886a", "stories": 3, "year_built": 1880, "wall_material": "brick_red", "roof_material": "slate" },
-    { "id": "toy-sw-2", "footprint": [[-18,18],[-12,18],[-12,26],[-18,26]], "position": [-15,0,22], "size": [6,7.5,8], "color": "#ccbaa0", "stories": 2, "year_built": 1908, "wall_material": "stucco", "roof_material": "slate" },
-    { "id": "toy-sw-3", "footprint": [[-18,26],[-12,26],[-12,34],[-18,34]], "position": [-15,0,30], "size": [6,7.5,8], "color": "#a8826a", "stories": 2, "year_built": 1885, "wall_material": "brick_weathered", "roof_material": "slate" },
+    { "id": "toy-sw-1", "footprint": [[-18,10],[-12,10],[-12,18],[-18,18]], "position": [-15,0,14], "size": [6,10.5,8], "color": "#b8886a", "stories": 3, "year_built": 1880, "wall_material": "brick_red",       "roof_material": "slate", "neon": { "category": "neon_residential" } },
+    { "id": "toy-sw-2", "footprint": [[-18,18],[-12,18],[-12,26],[-18,26]], "position": [-15,0,22], "size": [6,7.5,8],  "color": "#ccbaa0", "stories": 2, "year_built": 1908, "wall_material": "stucco",          "roof_material": "slate", "neon": { "category": "neon_arts"        } },
+    { "id": "toy-sw-3", "footprint": [[-18,26],[-12,26],[-12,34],[-18,34]], "position": [-15,0,30], "size": [6,7.5,8],  "color": "#a8826a", "stories": 2, "year_built": 1885, "wall_material": "brick_weathered", "roof_material": "slate", "neon": { "category": "neon_residential" } },
 
-    { "id": "toy-se-1", "footprint": [[12,10],[18,10],[18,18],[12,18]], "position": [15,0,14], "size": [6,7.5,8], "color": "#c28868", "stories": 2, "year_built": 1893, "wall_material": "brick_red", "roof_material": "slate" },
-    { "id": "toy-se-2", "footprint": [[12,18],[18,18],[18,26],[12,26]], "position": [15,0,22], "size": [6,7.5,8], "color": "#a8826a", "stories": 2, "year_built": 1912, "wall_material": "brick_weathered", "roof_material": "metal" },
-    { "id": "toy-se-3", "footprint": [[12,26],[18,26],[18,34],[12,34]], "position": [15,0,30], "size": [6,7.5,8], "color": "#a89888", "stories": 2, "year_built": 1878, "wall_material": "stone", "roof_material": "slate" }
+    { "id": "toy-se-1", "footprint": [[12,10],[18,10],[18,18],[12,18]], "position": [15,0,14], "size": [6,7.5,8], "color": "#c28868", "stories": 2, "year_built": 1893, "wall_material": "brick_red",       "roof_material": "slate", "neon": { "category": "neon_services"   } },
+    { "id": "toy-se-2", "footprint": [[12,18],[18,18],[18,26],[12,26]], "position": [15,0,22], "size": [6,7.5,8], "color": "#a8826a", "stories": 2, "year_built": 1912, "wall_material": "brick_weathered", "roof_material": "metal", "neon": { "category": "neon_residential" } },
+    { "id": "toy-se-3", "footprint": [[12,26],[18,26],[18,34],[12,34]], "position": [15,0,30], "size": [6,7.5,8], "color": "#a89888", "stories": 2, "year_built": 1878, "wall_material": "stone",           "roof_material": "slate", "neon": { "category": "neon_community"  } }
   ]
 }

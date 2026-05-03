@@ -85,7 +85,7 @@
   /* Stop short of the bottom so the FAB sits in a clear lower-right corner
      and MapControls drag works in the freed area below the panel. */
   bottom: 76px;
-  width: 340px;
+  width: 400px;
   background: transparent;
   border-left: none;
   overflow-y: auto;
@@ -97,7 +97,8 @@
   line-height: 1.4;
   /* Wrapper is hit-test-transparent — only the title chip + section cards
      capture pointer events. Empty space within the 340px column (between
-     cards, below collapsed sections) passes drag/zoom through to MapControls. */
+     cards, below collapsed sections) passes drag/zoom through to MapControls.
+     Width matches Preview's right panel (RIGHT_PANEL_W in PreviewApp.jsx). */
   pointer-events: none;
 }
 
@@ -544,6 +545,18 @@
   color: var(--carto-text);
 }
 
+/* TOD ramp inputs — hide native number spinners so the small fixed width
+   isn't eaten by browser chrome. */
+.tod-ramp-input::-webkit-inner-spin-button,
+.tod-ramp-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.tod-ramp-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
 /* ---------- Measure panel band rows ---------- */
 .carto-band-list {
   margin-top: 6px;
@@ -791,6 +804,16 @@
   margin-top: 8px;
 }
 
+.carto-section-meta {
+  font-size: 11px;
+  color: var(--carto-text-ghost);
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
 .carto-actions {
   margin-top: 10px;
   display: flex;
@@ -810,3 +833,24 @@
   padding-left: 22px;
 }
 
+/* Hero panel: standard button press feedback (hover + active) */
+.hero-btn:hover { filter: brightness(1.15); }
+.hero-btn:active {
+  transform: translateY(1px) scale(0.985);
+  filter: brightness(0.9);
+}
+
+
+/* Sky gradient swatch — strip native color-input chrome so the visible
+   color fills the entire cell (otherwise browsers paint the swatch with
+   inset padding + border around it). */
+.sky-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+.sky-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.sky-swatch::-webkit-color-swatch { border: none; border-radius: 0; }
+.sky-swatch::-moz-color-swatch { border: none; }

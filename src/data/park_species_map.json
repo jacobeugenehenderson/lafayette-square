@@ -1,0 +1,148 @@
+{
+  "_doc": "Maps park_trees.json species names \u2192 preferred library species_ids. Empty array = no preferred match, runtime falls through to category-based picker (using park_trees.shape). Operator-edit by hand; this is the kind of curation no auto-guess gets right.",
+  "_libraryAt": "2026-04-29",
+  "map": {
+    "Maple, Sugar": [
+      "acer_saccharum",
+      "acer_saccharum_multistem"
+    ],
+    "Maple, Silver": [
+      "acer_saccharum",
+      "acer_rubrum"
+    ],
+    "Maple, Red": [
+      "acer_rubrum"
+    ],
+    "Maple, Red 'October Glory'": [
+      "acer_rubrum"
+    ],
+    "Maple, Norway": [
+      "acer_saccharum",
+      "acer_rubrum"
+    ],
+    "Maple, Amur": [
+      "acer_rubrum"
+    ],
+    "Maple, Hedge": [
+      "acer_rubrum"
+    ],
+    "maple, Japanese": [
+      "acer_rubrum"
+    ],
+    "Oak, Pin": [
+      "quercus_alba"
+    ],
+    "Oak, Pin (restricted use)": [
+      "quercus_alba"
+    ],
+    "Oak, Willow": [
+      "quercus_alba"
+    ],
+    "Oak, White": [
+      "quercus_alba"
+    ],
+    "Oak, English": [
+      "quercus_alba"
+    ],
+    "Oak, Sawtooth": [
+      "quercus_alba"
+    ],
+    "Oak, Shingle": [
+      "quercus_alba"
+    ],
+    "Oak, Swamp White": [
+      "quercus_alba"
+    ],
+    "Oak, Northern Red": [
+      "quercus_alba"
+    ],
+    "oak, northern red": [
+      "quercus_alba"
+    ],
+    "oak, bur": [
+      "quercus_alba"
+    ],
+    "oak, water": [
+      "quercus_alba"
+    ],
+    "oak, shingle": [
+      "quercus_alba"
+    ],
+    "Birch": [
+      "betula_pendula",
+      "betula_papyrifera"
+    ],
+    "Pine, White": [
+      "pinus_sp",
+      "pinus_sylvestris"
+    ],
+    "Pine, Austrian": [
+      "pinus_sp",
+      "pinus_sylvestris"
+    ],
+    "Pine, Scotch": [
+      "pinus_sylvestris"
+    ],
+    "pine, loblolly": [
+      "pinus_sp"
+    ],
+    "Linden, American": [
+      "tilia_americana"
+    ],
+    "Linden, Littleleaf": [
+      "tilia_americana"
+    ],
+    "sycamore, American": [
+      "platanus_acerifolia"
+    ],
+    "Sycamore American (restricted use)": [
+      "platanus_acerifolia"
+    ],
+    "juniper, Chinese": [
+      "juniperus_hollywood",
+      "juniperus_occidentalis"
+    ],
+    "redcedar, eastern": [
+      "juniperus_occidentalis"
+    ],
+    "Cottonwood, Eastern": [
+      "populus_alba_fall",
+      "populus_canescens",
+      "populus_tremuloides"
+    ],
+    "Blackgum": [
+      "nyssa_sylvatica"
+    ],
+    "Elm, American": [
+      "ulmus_americana"
+    ],
+    "Elm, Siberian": [
+      "ulmus_americana"
+    ],
+    "locust, black": [
+      "gleditsia_triacanthos"
+    ],
+    "honeylocust, thornless": [
+      "gleditsia_triacanthos"
+    ],
+    "Honeylocust": [
+      "gleditsia_triacanthos"
+    ],
+    "Willow, Weeping": [
+      "salix_babylonica"
+    ],
+    "willow, corkscrew": [
+      "salix_alba",
+      "salix_babylonica"
+    ],
+    "magnolia, star": [
+      "magnolia_sp"
+    ],
+    "magnolia, saucer": [
+      "magnolia_sp"
+    ],
+    "Spruce, Norway": [
+      "picea_abies"
+    ]
+  }
+}

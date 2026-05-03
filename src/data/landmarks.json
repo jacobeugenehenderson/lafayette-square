@@ -5118,6 +5118,37 @@
         "fitness",
         "kid-friendly"
       ]
+    },
+    {
+      "id": "lmk-124",
+      "name": "Kern Pavilion",
+      "address": "Lafayette Park",
+      "category": "parks",
+      "subcategory": "pavilions",
+      "building_id": "bldg-0924",
+      "description": "Italianate pavilion built in 1874 by architect August Beinke. One of the original Victorian-era park structures, contributing to the Lafayette Square Historic District.",
+      "amenities": [
+        "Built 1874",
+        "Italianate architecture",
+        "Architect: August Beinke",
+        "Historic district contributing"
+      ],
+      "tags": [
+        "historic",
+        "park-structure"
+      ]
+    },
+    {
+      "id": "lmk-125",
+      "name": "Betsy Cook Pavilion",
+      "address": "Lafayette Park",
+      "category": "parks",
+      "subcategory": "pavilions",
+      "building_id": "bldg-0985",
+      "description": "Park pavilion in the northeast quadrant of Lafayette Park.",
+      "tags": [
+        "park-structure"
+      ]
     }
   ]
 }

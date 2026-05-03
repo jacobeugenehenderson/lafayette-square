@@ -1,0 +1,93 @@
+{
+  "generatedAt": 1777656257240,
+  "look": "toy",
+  "lod": "lod2",
+  "activeStyles": [
+    "realistic"
+  ],
+  "count": 8,
+  "unmatched": 0,
+  "uniqueVariants": 6,
+  "instances": [
+    {
+      "x": -10.5,
+      "y": 0,
+      "z": -22,
+      "url": "/trees/acer_saccharum/skeleton-4-lod2.glb",
+      "rotY": 0.0305,
+      "species": "acer_saccharum",
+      "variantId": 4,
+      "category": "broadleaf"
+    },
+    {
+      "x": 10.5,
+      "y": 0,
+      "z": -22,
+      "url": "/trees/quercus_alba/skeleton-1-lod2.glb",
+      "rotY": 3.8029,
+      "species": "quercus_alba",
+      "variantId": 1,
+      "category": "broadleaf"
+    },
+    {
+      "x": -10.5,
+      "y": 0,
+      "z": 22,
+      "url": "/trees/betula_pendula/skeleton-5-lod2.glb",
+      "rotY": 0,
+      "species": "betula_pendula",
+      "variantId": 5,
+      "category": "broadleaf"
+    },
+    {
+      "x": 10.5,
+      "y": 0,
+      "z": 22,
+      "url": "/trees/platanus_acerifolia/skeleton-3-lod2.glb",
+      "rotY": 0.5224,
+      "species": "platanus_acerifolia",
+      "variantId": 3,
+      "category": "broadleaf"
+    },
+    {
+      "x": -10.5,
+      "y": 0,
+      "z": -10,
+      "url": "/trees/acer_saccharum/skeleton-4-lod2.glb",
+      "rotY": 0.0305,
+      "species": "acer_saccharum",
+      "variantId": 4,
+      "category": "broadleaf"
+    },
+    {
+      "x": 10.5,
+      "y": 0,
+      "z": 10,
+      "url": "/trees/tilia_americana/skeleton-1-lod2.glb",
+      "rotY": -1.197,
+      "species": "tilia_americana",
+      "variantId": 1,
+      "category": "broadleaf"
+    },
+    {
+      "x": -30,
+      "y": 0,
+      "z": -32,
+      "url": "/trees/acer_saccharum/skeleton-5-lod2.glb",
+      "rotY": 3.5692,
+      "species": "acer_saccharum",
+      "variantId": 5,
+      "category": "broadleaf"
+    },
+    {
+      "x": 30,
+      "y": 0,
+      "z": 32,
+      "url": "/trees/quercus_alba/skeleton-1-lod2.glb",
+      "rotY": 5.6572,
+      "species": "quercus_alba",
+      "variantId": 1,
+      "category": "broadleaf"
+    }
+  ]
+}

@@ -1,0 +1,249 @@
+{
+  "version": 1,
+  "look": "default",
+  "generatedAt": 1777482511112,
+  "bbox": {
+    "min": [
+      -1789.746337890625,
+      0,
+      -955.037353515625
+    ],
+    "max": [
+      1086.9462890625,
+      0,
+      1568.3201904296875
+    ]
+  },
+  "bin": "ground.bin",
+  "positionFormat": "float32",
+  "indexFormat": "uint32",
+  "componentsPerVertex": 3,
+  "groups": [
+    {
+      "kind": "face",
+      "id": "residential",
+      "color": "#5A8A3A",
+      "renderOrder": 0,
+      "polygonOffsetUnits": -1,
+      "vertexCount": 1532,
+      "vertexByteOffset": 0,
+      "indexCount": 4236,
+      "indexByteOffset": 370920
+    },
+    {
+      "kind": "face",
+      "id": "commercial",
+      "color": "#A87D3E",
+      "renderOrder": 1,
+      "polygonOffsetUnits": -2,
+      "vertexCount": 527,
+      "vertexByteOffset": 18384,
+      "indexCount": 1461,
+      "indexByteOffset": 387864
+    },
+    {
+      "kind": "face",
+      "id": "vacant",
+      "color": "#7A6E5C",
+      "renderOrder": 2,
+      "polygonOffsetUnits": -3,
+      "vertexCount": 53,
+      "vertexByteOffset": 24708,
+      "indexCount": 141,
+      "indexByteOffset": 393708
+    },
+    {
+      "kind": "face",
+      "id": "parking",
+      "color": "#7E7A72",
+      "renderOrder": 3,
+      "polygonOffsetUnits": -4,
+      "vertexCount": 377,
+      "vertexByteOffset": 25344,
+      "indexCount": 1065,
+      "indexByteOffset": 394272
+    },
+    {
+      "kind": "face",
+      "id": "institutional",
+      "color": "#7A6E96",
+      "renderOrder": 4,
+      "polygonOffsetUnits": -5,
+      "vertexCount": 66,
+      "vertexByteOffset": 29868,
+      "indexCount": 174,
+      "indexByteOffset": 398532
+    },
+    {
+      "kind": "face",
+      "id": "recreation",
+      "color": "#5E9E5E",
+      "renderOrder": 5,
+      "polygonOffsetUnits": -6,
+      "vertexCount": 694,
+      "vertexByteOffset": 30660,
+      "indexCount": 1926,
+      "indexByteOffset": 399228
+    },
+    {
+      "kind": "face",
+      "id": "industrial",
+      "color": "#7E6648",
+      "renderOrder": 6,
+      "polygonOffsetUnits": -7,
+      "vertexCount": 150,
+      "vertexByteOffset": 38988,
+      "indexCount": 444,
+      "indexByteOffset": 406932
+    },
+    {
+      "kind": "face",
+      "id": "park",
+      "color": "#5E8A3A",
+      "renderOrder": 7,
+      "polygonOffsetUnits": -8,
+      "vertexCount": 733,
+      "vertexByteOffset": 40788,
+      "indexCount": 2013,
+      "indexByteOffset": 408708
+    },
+    {
+      "kind": "face",
+      "id": "island",
+      "color": "#5E8A3A",
+      "renderOrder": 8,
+      "polygonOffsetUnits": -9,
+      "vertexCount": 159,
+      "vertexByteOffset": 49584,
+      "indexCount": 363,
+      "indexByteOffset": 416760
+    },
+    {
+      "kind": "face",
+      "id": "unknown",
+      "color": "#666666",
+      "renderOrder": 9,
+      "polygonOffsetUnits": -10,
+      "vertexCount": 113,
+      "vertexByteOffset": 51492,
+      "indexCount": 303,
+      "indexByteOffset": 418212
+    },
+    {
+      "kind": "mat",
+      "id": "lawn",
+      "color": "#5a6e42",
+      "renderOrder": 10,
+      "polygonOffsetUnits": -11,
+      "vertexCount": 292,
+      "vertexByteOffset": 52848,
+      "indexCount": 696,
+      "indexByteOffset": 419424
+    },
+    {
+      "kind": "mat",
+      "id": "treelawn",
+      "color": "#5a6e42",
+      "renderOrder": 11,
+      "polygonOffsetUnits": -12,
+      "vertexCount": 2638,
+      "vertexByteOffset": 56352,
+      "indexCount": 6756,
+      "indexByteOffset": 422208
+    },
+    {
+      "kind": "mat",
+      "id": "sidewalk",
+      "color": "#a89e8e",
+      "renderOrder": 12,
+      "polygonOffsetUnits": -13,
+      "vertexCount": 5128,
+      "vertexByteOffset": 88008,
+      "indexCount": 12210,
+      "indexByteOffset": 449232
+    },
+    {
+      "kind": "mat",
+      "id": "curb",
+      "color": "#6b4a30",
+      "renderOrder": 13,
+      "polygonOffsetUnits": -14,
+      "vertexCount": 6752,
+      "vertexByteOffset": 149544,
+      "indexCount": 17298,
+      "indexByteOffset": 498072
+    },
+    {
+      "kind": "mat",
+      "id": "asphalt",
+      "color": "#3e3e3c",
+      "renderOrder": 14,
+      "polygonOffsetUnits": -15,
+      "vertexCount": 4752,
+      "vertexByteOffset": 230568,
+      "indexCount": 12012,
+      "indexByteOffset": 567264
+    },
+    {
+      "kind": "mat",
+      "id": "highway",
+      "color": "#2d2d2c",
+      "renderOrder": 15,
+      "polygonOffsetUnits": -16,
+      "vertexCount": 2000,
+      "vertexByteOffset": 287592,
+      "indexCount": 5340,
+      "indexByteOffset": 615312
+    },
+    {
+      "kind": "mat",
+      "id": "footway",
+      "color": "#666666",
+      "renderOrder": 16,
+      "polygonOffsetUnits": -17,
+      "vertexCount": 4134,
+      "vertexByteOffset": 311592,
+      "indexCount": 9906,
+      "indexByteOffset": 636672
+    },
+    {
+      "kind": "mat",
+      "id": "cycleway",
+      "color": "#666666",
+      "renderOrder": 17,
+      "polygonOffsetUnits": -18,
+      "vertexCount": 364,
+      "vertexByteOffset": 361200,
+      "indexCount": 924,
+      "indexByteOffset": 676296
+    },
+    {
+      "kind": "mat",
+      "id": "steps",
+      "color": "#666666",
+      "renderOrder": 18,
+      "polygonOffsetUnits": -19,
+      "vertexCount": 112,
+      "vertexByteOffset": 365568,
+      "indexCount": 168,
+      "indexByteOffset": 679992
+    },
+    {
+      "kind": "mat",
+      "id": "path",
+      "color": "#666666",
+      "renderOrder": 19,
+      "polygonOffsetUnits": -20,
+      "vertexCount": 334,
+      "vertexByteOffset": 366912,
+      "indexCount": 894,
+      "indexByteOffset": 680664
+    }
+  ],
+  "lightmap": {
+    "image": "ground.lightmap.png",
+    "size": 1024,
+    "rays": 24,
+    "floor": 0.35
+  }
+}

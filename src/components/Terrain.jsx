@@ -68,49 +68,8 @@ function Terrain() {
     return [(bounds.minX + bounds.maxX) / 2, -0.1, (bounds.minZ + bounds.maxZ) / 2]
   }, [])
 
-  // Large ground skirt — flat, no terrain displacement
-  const skirtGeo = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(20000, 20000)
-    geo.rotateX(-Math.PI / 2)
-    return geo
-  }, [])
-
-  const skirtMat = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: '#3a3a32', roughness: 0.95,
-    })
-    // Fade to transparent at edges — distance from mesh center (local coords)
-    mat.onBeforeCompile = (shader) => {
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <common>',
-        '#include <common>\nvarying float vDist;'
-      )
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-        vDist = length(transformed.xz);`
-      )
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <common>',
-        '#include <common>\nvarying float vDist;'
-      )
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <dithering_fragment>',
-        `#include <dithering_fragment>
-        gl_FragColor.a *= 1.0 - smoothstep(7000.0, 9500.0, vDist);`
-      )
-    }
-    mat.transparent = true
-    mat.customProgramCacheKey = () => 'skirt-fade'
-    return mat
-  }, [])
-
   return (
-    <group>
-      <mesh geometry={skirtGeo} position={[center[0], -0.2, center[2]]} material={skirtMat} receiveShadow
-        renderOrder={-1} />
-      <mesh geometry={geometry} position={center} receiveShadow material={material} />
-    </group>
+    <mesh geometry={geometry} position={center} receiveShadow material={material} />
   )
 }
 

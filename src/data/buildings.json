@@ -47737,7 +47737,8 @@
       "address": "2001   LAFAYETTE AV",
       "historic_status": "contributing",
       "zoning": "B",
-      "building_sqft": 1310842,
+      "parkInterior": true,
+      "building_sqft": 2125,
       "architecture": {
         "district": "Lafayette Square Historic District",
         "nps_listed": true,
@@ -51732,6 +51733,7 @@
       ],
       "color": "#A0522D",
       "stories": 3,
+      "parkInterior": true,
       "architecture": {},
       "wall_material": "brick_red",
       "roof_material": "flat"

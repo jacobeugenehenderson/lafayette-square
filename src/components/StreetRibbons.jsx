@@ -83,11 +83,15 @@ const CURB_WIDTH = 0.1524
 // ── Radial edge fade (soft neighborhood boundary) ──────────────────
 // Faces fade on a short schedule; streets extend farther and fade slower,
 // so roads trail past the blocks' dissolved edge into empty space.
-// Center / radius come from boundary.js (= neighborhood_boundary.json).
-import { BOUNDARY_CENTER_XZ as _BC, BOUNDARY_RADIUS as _BR, FADE_INNER as _BFI } from '../cartograph/boundary.js'
+// Both bands share `center` from the canonical stencil artifact.
+import {
+  BOUNDARY_CENTER_XZ as _BC,
+  FADE_INNER as _FI, FADE_OUTER as _FO,
+  STREET_FADE_INNER as _SFI, STREET_FADE_OUTER as _SFO,
+} from '../cartograph/boundary.js'
 const FADE_CENTER = { x: _BC[0], z: _BC[1] }
-const FACE_FADE   = { inner: _BFI,         outer: _BR }            // last 15% of R
-const STREET_FADE = { inner: _BFI + 42,    outer: _BR + 108 }      // starts later, reaches past R
+const FACE_FADE   = { inner: _FI,  outer: _FO }
+const STREET_FADE = { inner: _SFI, outer: _SFO }
 
 // ── Measure-stack helpers ─────────────────────────────────────────
 // The pipeline emits `measure: {left, right}` per street. Each side is

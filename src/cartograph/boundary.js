@@ -1,23 +1,33 @@
-// Neighborhood boundary — single source of truth for the circle that
-// defines what's "in scope" for the cartograph. All consumers (point-in-poly
-// tests for clipping, fade shaders in AerialTiles / StreetRibbons / MapLayers)
-// read from this file. To move the circle: edit
-// `cartograph/data/neighborhood_boundary.json` and re-run the polygon
-// regenerator (one-shot script). No code changes needed elsewhere.
+// Neighborhood stencil — single source of truth for the silhouette every
+// consumer reads (point-in-poly clipping, face/street radial fades, bake
+// bbox). To move/reshape the neighborhood: edit
+// `cartograph/data/neighborhood_boundary.json` and re-bake. No code
+// changes elsewhere.
+//
+// v2 schema fields (with v1 fallbacks so older artifacts still load):
+//   center        [x, z]   — shared center for everything below
+//   radius        number   — nominal silhouette radius (the polygon hugs it)
+//   polygon       [[x,z]]  — 256-pt closed boundary
+//   fade          {inner, outer}  — face-fill radial fade band
+//   streetFade    {inner, outer}  — wider band; streets trail past faces
 import boundaryData from '../../cartograph/data/neighborhood_boundary.json'
 
 const boundary = boundaryData.boundary || []
 
-// Center + radius + fade band — exported as plain values and as a THREE
-// Vector2 so consumers can use whichever shape they need without
-// re-typing literals.
 export const BOUNDARY_CENTER_XZ = boundaryData.center || [0, 0]
 export const BOUNDARY_RADIUS = boundaryData.radius || 0
-// Distance inside the radius where the fade starts. Default keeps the prior
-// magic number (892 outer, 758 inner = 134m fade band) when not specified.
-export const FADE_INNER_OFFSET = boundaryData.innerFadeOffset ?? 134
-export const FADE_OUTER = BOUNDARY_RADIUS
-export const FADE_INNER = Math.max(0, BOUNDARY_RADIUS - FADE_INNER_OFFSET)
+
+// Face fade — v2 `fade.inner/outer`, falling back to v1 innerFadeOffset.
+const _v1Inner = Math.max(0, BOUNDARY_RADIUS - (boundaryData.innerFadeOffset ?? 134))
+export const FADE_INNER = boundaryData.fade?.inner ?? _v1Inner
+export const FADE_OUTER = boundaryData.fade?.outer ?? BOUNDARY_RADIUS
+export const FADE_INNER_OFFSET = BOUNDARY_RADIUS - FADE_INNER
+
+// Street fade — wider band, same center. v1 fallback reproduces the prior
+// derived offsets in StreetRibbons (FADE_INNER + 42, BOUNDARY_RADIUS + 108)
+// so loading an unmigrated artifact keeps the existing aesthetic.
+export const STREET_FADE_INNER = boundaryData.streetFade?.inner ?? (FADE_INNER + 42)
+export const STREET_FADE_OUTER = boundaryData.streetFade?.outer ?? (BOUNDARY_RADIUS + 108)
 
 export function pointInBoundary(x, z) {
   if (!boundary.length) return true // no boundary = show everything

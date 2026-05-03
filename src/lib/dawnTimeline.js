@@ -1,4 +1,5 @@
 import SunCalc from 'suncalc'
+import { NAMED_TOD_SLOTS_BY_ID } from '../cartograph/animatedParam'
 
 const LATITUDE = 38.6160
 const LONGITUDE = -90.2161
@@ -52,11 +53,14 @@ export function getWaypoints(window) {
   const mid = new Date((window.start.getTime() + window.end.getTime()) / 2)
   const times = SunCalc.getTimes(mid, LATITUDE, LONGITUDE)
 
+  // Pulls colors from the canonical NAMED_TOD_SLOTS_BY_ID so this older
+  // narrower-window helper stays in sync with the chip strip + DawnTimeline.
+  const slot = (id) => NAMED_TOD_SLOTS_BY_ID[id]?.color
   const candidates = [
-    { label: 'Sunrise', time: times.sunrise, color: '#fb923c', ticOnly: true },
-    { label: 'Noon', time: times.solarNoon, color: '#fbbf24', ticOnly: false },
-    { label: 'Golden', time: times.goldenHour, color: '#fbbf24', ticOnly: true },
-    { label: 'Sunset', time: times.sunset, color: '#fb923c', ticOnly: false },
+    { label: 'Sunrise', time: times.sunrise,   color: slot('sunrise'), ticOnly: true },
+    { label: 'Noon',    time: times.solarNoon, color: slot('noon'),    ticOnly: false },
+    { label: 'Golden',  time: times.goldenHour,color: slot('golden'),  ticOnly: true },
+    { label: 'Sunset',  time: times.sunset,    color: slot('sunset'),  ticOnly: false },
   ]
 
   return candidates

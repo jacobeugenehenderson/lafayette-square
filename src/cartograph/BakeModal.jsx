@@ -25,9 +25,11 @@ export default function BakeModal() {
           <>
             <div className="carto-bake-modal-title">Baking the cartograph…</div>
             <div className="carto-bake-modal-msg">
-              Generating <code>cartograph-ground.svg</code> from your design.
-              This is the only artifact the runtime needs — the buildings,
-              trees, lamps, and lighting come from their own data.
+              Freezing your design into the per-Look bake bundle —
+              ground geometry, AO lightmap, buildings, lamps, and a scene
+              snapshot. The runtime (Stage shots, Preview, the deployed
+              app) loads this bundle directly; nothing is recomputed at
+              render time.
             </div>
             <div className="carto-bake-modal-spinner" />
           </>

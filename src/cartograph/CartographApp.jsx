@@ -6,7 +6,7 @@ import * as THREE from 'three'
 // Map geometry (rendered in every shot)
 import StreetRibbons from '../components/StreetRibbons.jsx'
 import MapLayers from './MapLayers.jsx'
-import SvgGround from './SvgGround.jsx'
+import BakedGround from '../components/BakedGround.jsx'
 
 // Designer-only (aerial + authoring overlays)
 import AerialTiles from './AerialTiles.jsx'
@@ -19,13 +19,18 @@ import { DesignerArch } from '../stage/StageArch.jsx'
 // Shot-only (environment paint-in)
 import LafayetteScene from '../components/LafayetteScene'
 import LafayettePark from '../components/LafayettePark'
+import InstancedTrees from '../components/InstancedTrees'
 import StreetLights from '../components/StreetLights'
 import GatewayArch from '../stage/StageArch'
 import CelestialBodies from '../stage/StageSky'
 import CloudDome from '../components/CloudDome'
+import SpriteClouds from '../components/SpriteClouds'
 import Terrain from '../components/Terrain'
+import { V_EXAG } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { StageCamera, SHOTS, StageShadows, PostProcessing } from '../stage/StageApp.jsx'
+import { StageCamera, SHOTS, StageShadows, computeBrowseAltitude, HeroPreview, resolveHeroSubject, PostProcessing, StageFog } from '../stage/StageApp.jsx'
+import { buildings as _allBuildings } from '../data/buildings'
+import PreviewPostFx from '../preview/PreviewPostFx.jsx'
 
 // Toy scene fixtures (single 4-way corner for shader/shadow R&D)
 import toyRibbons from '../data/toy/toy-ribbons.json'
@@ -39,6 +44,21 @@ import Toolbar from './Toolbar.jsx'
 import StatusBar from './StatusBar.jsx'
 import Panel from './Panel.jsx'
 import StagePanelReal, { defaultKeyframes } from './StagePanel.jsx'
+import CartographSkyLight from './CartographSkyLight.jsx'
+import CartographPost from './CartographPost.jsx'
+import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState.js'
+import { neon as _neonUniforms } from '../preview/neonState.js'
+import { sky as _skyUniforms } from '../preview/skyState.js'
+import { lighting as _lightingState } from '../preview/lightingState.js'
+import { resolveLampGlowAtMinute, resolveGroupAtMinute, getTodSlotMinutes } from './animatedParam.js'
+import {
+  NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
+  AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS,
+  HEMI_FIELD_KEYS, HEMI_FLAT_DEFAULTS,
+  DIRSUN_FIELD_KEYS, DIRSUN_FLAT_DEFAULTS,
+  DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS,
+} from './skyLightChannels.js'
+import { resolveSkyAtMinute } from './skyGrid.js'
 import BakeModal from './BakeModal.jsx'
 import CartographSurfaces from './CartographSurfaces.jsx'
 
@@ -53,13 +73,103 @@ const CAM_KEY = 'cartograph-camera'
 // Pre-set time to noon so sky starts with daylight
 useTimeOfDay.getState().setHour(12)
 
+// ── LampGlow pump ──────────────────────────────────────────────────────────
+// Reads the active Look's lampGlow envelope + todSlots from the store and
+// pushes the resolved per-channel value into the shared lampGlowState
+// uniforms each frame. Each channel is either flat ({value}) — pumped
+// directly — or animated ({animated:'tod', values, transitionIn/Out}) —
+// resolved against the current TOD minute.
+// Neon pump — same shape as LampGlowPump. Resolves the per-Look neon
+// channel (group of 3: core/tube/bleed) at the current TOD minute and
+// writes into the module-scoped uniforms NeonBands' shader holds.
+// Lighting unit pump — resolves 4 single-value channels (ambient, hemi,
+// dirSun, dirMoon) each frame and writes scalar multipliers into
+// lightingState. StageSky's CelestialBodies multiplies into existing
+// physics. Defaults = 1.0 (no modulation).
+function LightingPump() {
+  useFrame(() => {
+    const s = useCartographStore.getState()
+    const tod = useTimeOfDay.getState()
+    const minute = tod.getMinuteOfDay()
+    const slotMinutes = getTodSlotMinutes(tod.currentTime)
+    const slotsAmb = s.ambient?.animated ? slotMinutes : null
+    const slotsHemi = s.hemi?.animated ? slotMinutes : null
+    const slotsSun = s.dirSun?.animated ? slotMinutes : null
+    const slotsMoon = s.dirMoon?.animated ? slotMinutes : null
+    _lightingState.ambient = resolveGroupAtMinute(s.ambient, minute, slotsAmb,  AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS).value ?? 1
+    _lightingState.hemi    = resolveGroupAtMinute(s.hemi,    minute, slotsHemi, HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS).value    ?? 1
+    _lightingState.dirSun  = resolveGroupAtMinute(s.dirSun,  minute, slotsSun,  DIRSUN_FIELD_KEYS,  DIRSUN_FLAT_DEFAULTS).value  ?? 1
+    _lightingState.dirMoon = resolveGroupAtMinute(s.dirMoon, minute, slotsMoon, DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS).value ?? 1
+  })
+  return null
+}
+
+// Sky pump — resolves the per-Look sky-gradient channel (4-band × N-col
+// matrix) at the current minute and writes RGB into skyState. GradientSky
+// reads from skyState each frame and applies weather/planetarium
+// modifiers on top.
+function SkyPump() {
+  useFrame(() => {
+    const { sky } = useCartographStore.getState()
+    if (!sky) return
+    const tod = useTimeOfDay.getState()
+    const minute = tod.getMinuteOfDay()
+    const slotMinutes = getTodSlotMinutes(tod.currentTime)
+    const resolved = resolveSkyAtMinute(sky, minute, slotMinutes)
+    if (!resolved) return
+    _skyUniforms.bandHorizonRGB = resolved.horizon
+    _skyUniforms.bandLowRGB     = resolved.low
+    _skyUniforms.bandMidRGB     = resolved.mid
+    _skyUniforms.bandHighRGB    = resolved.high
+    _skyUniforms.sunGlowRGB     = resolved.sunGlow
+    _skyUniforms.hasAuthored    = true
+  })
+  return null
+}
+
+function NeonPump() {
+  useFrame(() => {
+    const { neon } = useCartographStore.getState()
+    if (!neon) return
+    const tod = useTimeOfDay.getState()
+    const minute = tod.getMinuteOfDay()
+    const slotMinutes = neon.animated ? getTodSlotMinutes(tod.currentTime) : null
+    const triple = resolveGroupAtMinute(neon, minute, slotMinutes, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS)
+    _neonUniforms.coreUniform.value  = triple.core  ?? 0
+    _neonUniforms.tubeUniform.value  = triple.tube  ?? 0
+    _neonUniforms.bleedUniform.value = triple.bleed ?? 0
+  })
+  return null
+}
+
+function LampGlowPump() {
+  useFrame(() => {
+    const { lampGlow } = useCartographStore.getState()
+    if (!lampGlow) return
+    const tod = useTimeOfDay.getState()
+    const minute = tod.getMinuteOfDay()
+    const slotMinutes = lampGlow.animated ? getTodSlotMinutes(tod.currentTime) : null
+    const triple = resolveLampGlowAtMinute(lampGlow, minute, slotMinutes)
+    _lampGlowUniforms.grassUniform.value = triple.grass
+    _lampGlowUniforms.treesUniform.value = triple.trees
+    _lampGlowUniforms.poolUniform.value  = triple.pool
+  })
+  return null
+}
+
 // ── Camera rig ─────────────────────────────────────────────────────────────
 // Canvas creates the default ortho camera (Designer). <PerspectiveCamera
 // makeDefault /> takes over for shots; flipping makeDefault back to false
 // returns control to the Canvas's ortho camera.
+// Toy is a small fixture (~36 wide × 68 deep, centered on origin); the SHOTS
+// camera positions are authored for the full neighborhood, so on toy we
+// override with a fixed oblique framing that puts the cluster mid-screen.
+const TOY_CAM = { position: [38, 32, 58], target: [0, 4, 0], fov: 35 }
+
 function CameraRig({ orthoRef, perspRef, controlsRef }) {
   const { camera, scene, size } = useThree()
   const shot = useCartographStore(s => s.shot)
+  const sceneKey = useCartographStore(s => s.scene)
   // Grab the Canvas's default ortho camera once.
   useEffect(() => {
     if (!orthoRef.current) {
@@ -95,10 +205,26 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // target (and on Designer, also re-assert the ortho's orientation) here
   // after a frame delay — giving the new MapControls instance time to mount.
   useEffect(() => {
-    if (appliedShot.current === shot) return
-    appliedShot.current = shot
+    const key = `${sceneKey}:${shot}`
+    if (appliedShot.current === key) return
+    appliedShot.current = key
     const applyTarget = () => {
       const ctl = controlsRef.current
+      // Toy scene runs on its own fixed oblique framing in any non-Designer
+      // shot; the SHOTS table is authored for the full neighborhood and
+      // would put the toy fixture hundreds of units off-camera.
+      if (sceneKey === 'toy' && shot !== 'designer') {
+        const cam = perspRef.current
+        if (!cam) return
+        cam.position.set(...TOY_CAM.position)
+        cam.up.set(0, 1, 0)
+        cam.fov = TOY_CAM.fov
+        cam.lookAt(...TOY_CAM.target)
+        cam.updateProjectionMatrix()
+        if (ctl) { ctl.target.set(...TOY_CAM.target); ctl.update() }
+        prevShot.current = shot
+        return
+      }
       if (shot === 'designer') {
         const cam = orthoRef.current
         if (!cam) return
@@ -132,6 +258,19 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
           cam.lookAt(ortho.position.x, 0, ortho.position.z)
           cam.updateProjectionMatrix()
           if (ctl) { ctl.target.set(ortho.position.x, 0, ortho.position.z); ctl.update() }
+        } else if (shot === 'browse') {
+          // All non-Designer entries to Browse: aspect-fit altitude so all
+          // buildings stay framed (mirrors Preview's ShotCamera). The static
+          // SHOTS.browse.position[1] is just a default; real altitude is
+          // computed per-aspect.
+          const aspect = size.width / Math.max(size.height, 1)
+          const y = computeBrowseAltitude(aspect, s.fov)
+          cam.position.set(s.position[0], y, s.position[2])
+          cam.up.set(...(s.up || [0, 1, 0]))
+          cam.fov = s.fov
+          cam.lookAt(...s.target)
+          cam.updateProjectionMatrix()
+          if (ctl) { ctl.target.set(...s.target); ctl.update() }
         } else {
           cam.position.set(...s.position)
           cam.up.set(...(s.up || [0, 1, 0]))
@@ -148,7 +287,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     const id = requestAnimationFrame(applyTarget)
     useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
     return () => cancelAnimationFrame(id)
-  }, [shot, orthoRef, perspRef, controlsRef])
+  }, [shot, sceneKey, orthoRef, perspRef, controlsRef])
 
   // Persist designer pan/zoom (ortho only)
   useFrame(() => {
@@ -202,25 +341,53 @@ function Controls({ controlsRef }) {
       />
     )
   }
-  // Browse is a fixed overhead — pan + zoom only, rotation locked. The
-  // perspective camera stays where StageCamera placed it (top-down at
-  // SHOTS.browse.position); we just constrain what the user can do to it.
+  // Browse is a planar overhead by default — LEFT-drag pans, wheel zooms.
+  // RIGHT-drag (and Ctrl/Cmd+drag on Mac trackpads) is the hidden 360°
+  // orbit easter egg. See feedback_browse_right_drag_orbit.md.
   if (shot === 'browse') {
     return (
-      <MapControls
-        key="browse"
-        ref={controlsRef}
-        enableRotate={false}
-        enablePan
-        enableZoom
-        screenSpacePanning
-        minDistance={50}
-        maxDistance={2000}
-      />
+      <BrowseControls controlsRef={controlsRef} />
     )
   }
   return (
     <OrbitControlsShot controlsRef={controlsRef} />
+  )
+}
+
+function BrowseControls({ controlsRef }) {
+  const localRef = useRef(null)
+  useEffect(() => {
+    const setButtons = (modDown) => {
+      const c = localRef.current
+      if (!c) return
+      c.mouseButtons = {
+        LEFT: modDown ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.ROTATE,
+      }
+    }
+    const onKeyDown = (e) => { if (e.key === 'Control' || e.key === 'Meta') setButtons(true) }
+    const onKeyUp   = (e) => { if (e.key === 'Control' || e.key === 'Meta') setButtons(false) }
+    setButtons(false)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+    }
+  }, [])
+  return (
+    <OrbitControls
+      key="browse"
+      ref={(r) => { localRef.current = r; if (controlsRef) controlsRef.current = r }}
+      enablePan
+      enableRotate
+      enableZoom
+      screenSpacePanning
+      minDistance={50}
+      maxDistance={4000}
+      touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }}
+    />
   )
 }
 
@@ -250,11 +417,16 @@ function OrbitControlsShot({ controlsRef }) {
   return (
     <OrbitControls
       key="persp"
+      makeDefault
       ref={(r) => { localRef.current = r; if (controlsRef) controlsRef.current = r }}
       enablePan
       enableRotate
       enableZoom
-      screenSpacePanning={false}
+      enableDamping={false}
+      rotateSpeed={0.4}
+      panSpeed={0.6}
+      zoomSpeed={0.6}
+      screenSpacePanning
       minDistance={0.5}
       maxDistance={5000}
       minPolarAngle={0}
@@ -331,46 +503,66 @@ export default function CartographApp() {
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const activeLookId = useCartographStore(s => s.activeLookId)
-  const engineeringHidden = useCartographStore(s => s.engineeringHidden)
+  const bakeLastMs = useCartographStore(s => s.bakeLastMs)
+  const heroSubject = useCartographStore(s => s.heroSubject)
+  const storeKeyframes = useCartographStore(s => s.heroKeyframes)
+  const setStoreKeyframes = useCartographStore(s => s.setHeroKeyframes)
+  const storeMotion = useCartographStore(s => s.heroMotion)
+  const setStoreMotion = useCartographStore(s => s.setHeroMotion)
 
-  // StagePanel state — local, used when a non-Designer shot is active
-  const [keyframes, setKeyframes] = useState(() => defaultKeyframes('hero'))
-  const [heroMotion, setHeroMotion] = useState({
-    period: 720, tension: 0.5, easing: 'easeInOut', preview: false,
-  })
+  // Hero keyframes + authored motion live in the store (persisted to design.json).
+  // preview + speed are transient runtime UI only.
+  const keyframes = storeKeyframes
+  const setKeyframes = setStoreKeyframes
+  const [previewPlaying, setPreviewPlaying] = useState(false)
+  const [previewSpeed, setPreviewSpeed] = useState(1)
+  const heroMotion = { ...storeMotion, preview: previewPlaying, speed: previewSpeed }
+  const setHeroMotion = (next) => {
+    const f = typeof next === 'function' ? next(heroMotion) : next
+    if (f.period !== heroMotion.period || f.easing !== heroMotion.easing) {
+      setStoreMotion({ period: f.period, easing: f.easing })
+    }
+    if (!!f.preview !== previewPlaying) setPreviewPlaying(!!f.preview)
+    if ((f.speed || 1) !== previewSpeed) setPreviewSpeed(f.speed || 1)
+  }
 
   useSpaceKey()
   useLoadData()
 
   const inDesigner = shot === 'designer'
 
-  // Effective hidden layers in Designer = active Look's layerVis(false)
-  // ∪ ephemeral engineeringHidden. Stage gets only layerVis (stageHidden
-  // is computed below). engineeringHidden never persists or reaches Stage.
+  // Designer reads the LIVE store layerVis so toggles update instantly.
+  // Stage / shots consume the BAKED layerVis from scene.json — visibility
+  // gets locked in at bake time, same source Preview reads. Re-baking is
+  // what propagates Designer changes through to Stage and Preview.
+  const [bakedLayerVis, setBakedLayerVis] = useState(null)
+  useEffect(() => {
+    if (!activeLookId) return
+    let cancelled = false
+    fetch(`/baked/${activeLookId}/scene.json?t=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (!cancelled) setBakedLayerVis(j?.layerVis || {}) })
+      .catch(() => { if (!cancelled) setBakedLayerVis({}) })
+    // Re-fetch on activeLookId change AND on bake completion (bakeLastMs
+    // bumps when runBake succeeds).
+  }, [activeLookId, bakeLastMs])
+
+  const effectiveLayerVis = inDesigner ? layerVis : (bakedLayerVis || {})
   const hiddenLayers = {}
-  for (const k in layerVis) {
-    if (!layerVis[k]) hiddenLayers[k] = true
-  }
-  if (inDesigner) {
-    for (const k in engineeringHidden) {
-      if (engineeringHidden[k]) hiddenLayers[k] = true
-    }
+  for (const k in effectiveLayerVis) {
+    if (effectiveLayerVis[k] === false) hiddenLayers[k] = true
   }
   // Background view: aerialVisible swaps the painted background between
   // curated SVG and aerial photo. Curated rendering hides only when
   // aerial is on AND we're in pure Design — under tools, ribbons +
   // tool affordances stay over the aerial as reference, and the user
-  // declutters via per-layer engineering-visibility toggles in the
-  // Designer Panel.
+  // declutters via per-layer visibility toggles in the Designer Panel.
   const designAerialOnly = inDesigner && !tool && aerialVisible
   // When a tool is active, hide the giant off-map ground plane so the
   // background (curated or aerial) shows through under the streets.
   const toolActive = inDesigner && !!tool && scene !== 'toy'
   const corridorSelected = toolActive && selectedStreet !== null
   const decorationsHidden = toolActive ? { ...hiddenLayers, ground: true } : hiddenLayers
-  // Shots use the same hidden layers as Designer; the old Fills-OFF
-  // shot variant retired with the Fills toggle.
-  const stageHidden = hiddenLayers
 
   let cursor = 'grab'
   if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'
@@ -410,14 +602,17 @@ export default function CartographApp() {
           <TimeTicker />
           <SkyStateTicker />
 
+
           {/* ── Live ribbon mesh: Designer (any scene) and toy (any shot)
               consume ribbons.json directly. Stage neighborhood shots
-              consume the baked SVG via <SvgGround/> instead. ── */}
+              consume the per-Look pure-Three.js bake via <BakedGround/>
+              — the same component Preview mounts, so what Stage shows is
+              what Preview shows is what Publish ships. ── */}
           {inDesigner && <ambientLight intensity={1} />}
           {(inDesigner || scene === 'toy') && (
           <R3FErrorBoundary name="StreetRibbons">
             <group visible={!designAerialOnly}>
-            <StreetRibbons hiddenLayers={inDesigner ? hiddenLayers : stageHidden}
+            <StreetRibbons hiddenLayers={hiddenLayers}
               luColors={luColors}
               liveCenterlines={scene === 'toy' ? null : centerlineData.streets}
               measureActive={tool === 'measure' && inDesigner && scene !== 'toy'}
@@ -449,16 +644,24 @@ export default function CartographApp() {
           </R3FErrorBoundary>
           )}
 
-          {/* ── Baked-SVG ground for Stage shots (neighborhood scene). ── */}
+          {/* ── Baked Three.js ground for Stage shots (neighborhood scene).
+              Same component Preview mounts; cache-busts on bakeLastMs so
+              the Stage button's re-bake refreshes the artifact in place. ── */}
           {!inDesigner && scene === 'neighborhood' && (
-            <R3FErrorBoundary name="SvgGround"><SvgGround /></R3FErrorBoundary>
+            <R3FErrorBoundary name="BakedGround">
+              <BakedGround
+                lookId={activeLookId}
+                bakeLastMs={bakeLastMs}
+                targetExag={shot === 'street' ? 1 : V_EXAG}
+              />
+            </R3FErrorBoundary>
           )}
 
           {/* ── Map layers (flat ground geometry — neighborhood only).
               In shots, layers with 3D equivalents (park, buildings, trees,
               lamps, water) are suppressed so the 3D components own them. */}
           {scene === 'neighborhood' && (
-            <MapLayers hiddenLayers={inDesigner ? decorationsHidden : stageHidden} inShot={!inDesigner}
+            <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner && scene !== 'toy'}
               measureActive={tool === 'measure' && inDesigner && scene !== 'toy'} />
           )}
@@ -477,9 +680,12 @@ export default function CartographApp() {
 
           {/* ── Shot-only (environment paint — must exactly mirror runtime) ── */}
           {!inDesigner && <StageShadows />}
+          {!inDesigner && <StageFog />}
+          {!inDesigner && <PostProcessing />}
           <group visible={!inDesigner}>
             <R3FErrorBoundary name="CelestialBodies"><CelestialBodies debugLevel={0} /></R3FErrorBoundary>
             <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>
+            <R3FErrorBoundary name="SpriteClouds"><SpriteClouds /></R3FErrorBoundary>
             {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
                 visible ground. Terrain still mounts so its shader uniforms
                 drive displacement for ribbons/buildings. */}
@@ -493,8 +699,15 @@ export default function CartographApp() {
                 shot is active. */}
             {scene === 'neighborhood' && !inDesigner && <>
               <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
+              {!hiddenLayers.tree && (
+                <R3FErrorBoundary name="InstancedTrees">
+                  <InstancedTrees />
+                </R3FErrorBoundary>
+              )}
               <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
-              <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
+              {!hiddenLayers.lamp && (
+                <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
+              )}
               <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
             </>}
             {scene === 'toy' && <>
@@ -504,9 +717,21 @@ export default function CartographApp() {
               <R3FErrorBoundary name="ToyStreetLights"><StreetLights lamps={toyLamps.lamps} /></R3FErrorBoundary>
             </>}
           </group>
-          {!inDesigner && <PostProcessing />}
+          {/* Post-FX: same chain Preview ships with so Stage and Preview
+              read identically. Bloom on so the Stage Bloom panel sliders
+              actually drive a live effect (PreviewPostFx mutates envState
+              every frame); AO still off pending light-dome work. */}
+          {!inDesigner && <PreviewPostFx bloom aerial grade grain />}
 
+          <LampGlowPump />
+          <NeonPump />
+          <SkyPump />
+          <LightingPump />
           <Controls controlsRef={controlsRef} />
+          {shot === 'hero' && scene !== 'toy' && (
+            <HeroPreview keyframes={keyframes} motion={heroMotion}
+              subject={resolveHeroSubject(heroSubject, _allBuildings)} />
+          )}
         </Canvas>
 
         {inDesigner && <MarkerOverlay cameraRef={orthoRef} />}
@@ -519,7 +744,9 @@ export default function CartographApp() {
             setShot={(s) => useCartographStore.getState().setShot(s)}
             keyframes={keyframes} setKeyframes={setKeyframes}
             heroMotion={heroMotion} setHeroMotion={setHeroMotion}
-            surfacesSlot={scene === 'neighborhood' ? <CartographSurfaces /> : undefined} />
+            surfacesSlot={<CartographSurfaces />}
+            skyLightSlot={<CartographSkyLight />}
+            postSlot={<CartographPost />} />
         )}
       </div>
 

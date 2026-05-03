@@ -199,8 +199,9 @@ export default function Grove() {
                 hovered={hovered?.speciesId === v.speciesId && hovered?.variantId === v.variantId}
                 onHoverIn={() => enterHover({ speciesId: v.speciesId, variantId: v.variantId })}
                 onHoverOut={() => scheduleClose()}
+                activeLookName={activeLook?.name}
                 onSetOverride={(key, val) => setGroveVariantOverride(v.speciesId, v.variantId, key, val)}
-                onRemove={() => toggleInLook(activeLookId, v.speciesId, v.variantId)}
+                onToggleInLook={() => toggleInLook(activeLookId, v.speciesId, v.variantId)}
               />
             ))}
           </Suspense>
@@ -228,7 +229,7 @@ function FitToContent({ count, cols }) {
   return null
 }
 
-function Tile({ variant, position, inLook, activeLookId, hovered, onHoverIn, onHoverOut, onSetOverride, onRemove }) {
+function Tile({ variant, position, inLook, activeLookId, activeLookName, hovered, onHoverIn, onHoverOut, onSetOverride, onToggleInLook }) {
   const { glbUrl, normalizeScale, position: posOv, rotation: rotOv, quality, excluded, speciesLabel, variantId } = variant
   const { scene } = useGLTF(glbUrl)
   // Clone so each tile has its own scene graph (drei caches by URL).
@@ -312,8 +313,9 @@ function Tile({ variant, position, inLook, activeLookId, hovered, onHoverIn, onH
             variant={variant}
             inLook={inLook}
             activeLookId={activeLookId}
+            activeLookName={activeLookName}
             onSetOverride={onSetOverride}
-            onRemove={onRemove}
+            onToggleInLook={onToggleInLook}
             onPointerEnter={onHoverIn}
             onPointerLeave={onHoverOut}
           />
@@ -326,7 +328,7 @@ function Tile({ variant, position, inLook, activeLookId, hovered, onHoverIn, onH
 // Hover editor card. Stays open while the cursor is over it; exposes
 // rating, category, notes, and Remove. All edits go through the
 // store's setGroveVariantOverride (POST + optimistic local update).
-function EditorCard({ variant, inLook, activeLookId, onSetOverride, onRemove, onPointerEnter, onPointerLeave }) {
+function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onPointerEnter, onPointerLeave }) {
   const { speciesId, speciesLabel, variantId, quality, category, excluded, operatorNotes } = variant
   const [notes, setNotes] = useState(operatorNotes || '')
   useEffect(() => { setNotes(operatorNotes || '') }, [speciesId, variantId, operatorNotes])
@@ -426,26 +428,35 @@ function EditorCard({ variant, inLook, activeLookId, onSetOverride, onRemove, on
         />
       </div>
 
-      {/* Remove from active Look */}
+      {/* Toggle membership in active Look — adds when not in, removes when in. */}
       <button
-        disabled={!activeLookId || !inLook}
-        onClick={onRemove}
+        disabled={!activeLookId}
+        onClick={onToggleInLook}
         title={
           !activeLookId ? 'No Look active' :
-          !inLook       ? 'Not in this Look' :
-          'Remove from the active Look'
+          inLook        ? `Remove from ${activeLookName || 'this Look'}` :
+                          `Add to ${activeLookName || 'this Look'}`
         }
         style={{
           width: '100%',
           padding: '6px 10px', borderRadius: 3,
-          background: inLook ? 'rgba(154,74,74,0.3)' : 'rgba(255,255,255,0.04)',
-          border: '1px solid ' + (inLook ? '#9a4a4a' : 'rgba(255,255,255,0.08)'),
-          color: inLook ? '#f0c0c0' : '#666',
+          background: !activeLookId
+            ? 'rgba(255,255,255,0.04)'
+            : (inLook ? 'rgba(154,74,74,0.3)' : 'rgba(74,134,74,0.3)'),
+          border: '1px solid ' + (
+            !activeLookId ? 'rgba(255,255,255,0.08)' :
+            inLook        ? '#9a4a4a' : '#5a8a5a'
+          ),
+          color: !activeLookId ? '#666' : (inLook ? '#f0c0c0' : '#c0e0a8'),
           fontFamily: 'inherit', fontSize: 11,
-          cursor: inLook ? 'pointer' : 'default',
+          cursor: activeLookId ? 'pointer' : 'default',
           letterSpacing: '0.04em',
         }}>
-        {inLook ? 'Remove from Look' : 'Not in Look'}
+        {!activeLookId
+          ? 'No Look active'
+          : (inLook
+              ? `Remove from ${activeLookName || 'Look'}`
+              : `Add to ${activeLookName || 'Look'}`)}
       </button>
     </div>
   )

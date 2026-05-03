@@ -11,6 +11,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, createRea
 import { execFile } from 'child_process'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { bakeLook } from './bake-look.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
 const ROOT         = join(__dirname, '..')
@@ -454,7 +455,7 @@ const server = createServer(async (req, res) => {
       }
       try {
         const { bakeTrees } = await import('./bake-trees.js')
-        await bakeTrees()  // re-bake default Look so the cartograph reflects the new rating
+        await bakeTrees()  // re-bake shared placements (default.json) so the cartograph reflects the new rating
       } catch (e) {
         console.warn('[arborist] bake failed:', e.message)
       }
@@ -478,6 +479,24 @@ const server = createServer(async (req, res) => {
         .map(([species, count]) => ({ species, count }))
         .sort((a, b) => b.count - a.count)
       return jsonRes(res, 200, { total: trees.length, species: sorted })
+    }
+
+    // POST /atlas/bake?look=<name> — per-Look tree atlas + UV-rewritten GLBs.
+    // Reads public/looks/<look>/design.json#/trees, writes outputs to
+    // public/baked/<look>/. Empty roster = clean skip.
+    if (req.method === 'POST' && path === '/atlas/bake') {
+      const lookName = new URL(req.url, 'http://x').searchParams.get('look')
+      if (!lookName) return jsonRes(res, 400, { error: 'missing ?look=<name>' })
+      // Defensive: reject path traversal
+      if (lookName.includes('/') || lookName.includes('..') || lookName.startsWith('.')) {
+        return jsonRes(res, 400, { error: 'invalid look name' })
+      }
+      try {
+        const result = await bakeLook(lookName)
+        return jsonRes(res, result.ok ? 200 : 500, result)
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
+      }
     }
 
     // 404

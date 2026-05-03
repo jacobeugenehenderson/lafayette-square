@@ -92,8 +92,11 @@ function injectRadialFade(mat, { rigidCentroid = false } = {}) {
 // lifted everything simultaneously.
 export function makeFlatMat(color, pri, opts = {}) {
   const { rigidCentroid = false, ...matOpts } = opts
+  // Defensive: a missing layer color (e.g., a stale Look) used to crash
+  // here. Fall back to neutral grey so the scene renders.
+  const safeColor = color ?? '#888'
   const mat = new THREE.MeshStandardMaterial({
-    color, roughness: 1, metalness: 0, side: THREE.DoubleSide,
+    color: safeColor, roughness: 1, metalness: 0, side: THREE.DoubleSide,
     polygonOffset: true,
     polygonOffsetFactor: -pri,
     polygonOffsetUnits: -pri * 4,
@@ -238,11 +241,38 @@ function lineGeoFromCoords(coords) {
   return new THREE.BufferGeometry().setFromPoints(pts)
 }
 
+// Densify a polyline so per-vertex terrain displacement samples the
+// elevation field finely enough for the stripe to follow it smoothly.
+// ~10m matches the field's effective resolution; without this, long
+// straight stripes kink at the few original vertices when terrain rolls.
+function densifyPolyline(coords, maxSeg = 10) {
+  if (!coords || coords.length < 2) return coords
+  const out = []
+  const xy = (p) => ({ x: p.x ?? p[0], z: p.z ?? p[1] })
+  out.push(xy(coords[0]))
+  for (let i = 1; i < coords.length; i++) {
+    const a = xy(coords[i - 1])
+    const b = xy(coords[i])
+    const dx = b.x - a.x, dz = b.z - a.z
+    const len = Math.hypot(dx, dz)
+    if (len > maxSeg) {
+      const steps = Math.ceil(len / maxSeg)
+      for (let s = 1; s < steps; s++) {
+        const t = s / steps
+        out.push({ x: a.x + dx * t, z: a.z + dz * t })
+      }
+    }
+    out.push(b)
+  }
+  return out
+}
+
 // Build a thin quad-strip ribbon for a polyline — real geometry that picks
 // up terrain displacement via the flat material. Replaces THREE.Line for
 // street markings in shots, where the 1-pixel lines sit at y=0.2 and get
 // buried under lifted terrain.
-function stripeRibbonGeo(coords, halfWidth) {
+function stripeRibbonGeo(rawCoords, halfWidth) {
+  const coords = densifyPolyline(rawCoords)
   if (!coords || coords.length < 2) return null
   const n = coords.length
   const pos = new Float32Array(n * 6)
@@ -299,7 +329,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // Layers owned by 3D components in shots — skip from MapLayers to avoid
   // double-rendering. Keep alleys/footways/paths/parking/landscape/barriers:
   // those stay as flat ground patches in shots (the map vernacular).
-  const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'centerline', 'labels'])
+  const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'lamp', 'centerline', 'labels'])
   // In Survey, roadway marking layers (stripes / edge lines / bike lanes /
   // OSM centerlines) are Measure/Design-era surface paint — Survey only
   // cares about roadway silhouettes, so hide them.
@@ -316,28 +346,24 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   const luColors = useCartographStore(s => s.luColors) || {}
 
   // ── Ground plane ────────────────────────────────────────
+  // Segmented so the per-vertex terrain displacement (injected via
+  // makeFlatMat → TERRAIN_DISPLACE) actually conforms to the elevation
+  // field. A 1×1 PlaneGeometry samples only the 4 bbox corners, which
+  // with V_EXAG=5 lifts the plane's interior ~3m off the ground and you
+  // get a gray slab floating in the air clipping the tree trunks. ~25m
+  // per sample matches the terrain grid's effective resolution.
   const groundGeo = useMemo(() => {
     const bbox = mapData.bbox
     const w = bbox.maxX - bbox.minX + 200
     const h = bbox.maxZ - bbox.minZ + 200
     const cx = (bbox.minX + bbox.maxX) / 2
     const cz = (bbox.minZ + bbox.maxZ) / 2
-    const geo = new THREE.PlaneGeometry(w, h)
+    const wSeg = Math.max(1, Math.round(w / 25))
+    const hSeg = Math.max(1, Math.round(h / 25))
+    const geo = new THREE.PlaneGeometry(w, h, wSeg, hSeg)
     geo.rotateX(-Math.PI / 2)
     geo.translate(cx, 0, cz)
     return geo
-  }, [])
-
-  // ── Park ────────────────────────────────────────────────
-  const parkGeo = useMemo(() => {
-    const geos = []
-    for (const p of (mapData.layers?.park || [])) {
-      if (p.ring?.length >= 3) {
-        const g = triangulateRing(p.ring)
-        if (g) geos.push(g)
-      }
-    }
-    return mergeGeos(geos)
   }, [])
 
   // ── Buildings (boundary-clipped) ────────────────────────
@@ -590,7 +616,6 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   const color = (id) => layerColors[id] || DEFAULT_LAYER_COLORS[id]
   const mats = useMemo(() => ({
     ground: makeFlatMat(color('ground'), PRI.ground),
-    park: makeFlatMat(color('park'), PRI.park),
     building: makeFlatMat(color('building'), PRI.building),
     stripe: makeLineMat(color('stripe')),
     edgeline: makeLineMat(color('edgeline'), 0.7),
@@ -601,51 +626,17 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     bikelaneFlat: makeFlatMat(color('bikelane'), PRI.bikelane),
     centerline: makeLineMat(color('centerline'), 0.9),
     centerlineOutline: makeLineMat(STROKE_COLORS.centerlineOutline, 0.5),
-    lamp: (() => {
-      const mat = new THREE.ShaderMaterial({
-        uniforms: {
-          uColor: { value: new THREE.Color(color('lamp')) },
-          uSunAltitude: { value: 1 },  // updated per-frame from time-of-day
-          uTerrainMap: { value: null },
-          uBMinX: { value: 0 }, uBMinZ: { value: 0 },
-          uSpanX: { value: 1 }, uSpanZ: { value: 1 },
-          uExag: { value: 0 },
-        },
-        vertexShader: `
-          varying vec2 vUv;
-          uniform sampler2D uTerrainMap;
-          uniform float uBMinX, uBMinZ, uSpanX, uSpanZ, uExag;
-          void main(){
-            vUv = uv;
-            // Transform to world space, then add terrain elevation to
-            // world Y. The mesh is rotated -90° around X to lie flat, so
-            // adjusting *local* Y would shift the lamp sideways.
-            vec4 tw = modelMatrix * vec4(position, 1.0);
-            vec2 tuv = clamp(vec2((tw.x - uBMinX)/uSpanX, (tw.z - uBMinZ)/uSpanZ), 0.0, 1.0);
-            tw.y += texture2D(uTerrainMap, tuv).r * uExag;
-            gl_Position = projectionMatrix * viewMatrix * tw;
-          }`,
-        fragmentShader: `
-          uniform vec3 uColor;
-          uniform float uSunAltitude;
-          varying vec2 vUv;
-          void main(){
-            float d = length(vUv - 0.5) * 2.0;
-            float pool = exp(-d * d * 2.5);
-            // Night gate: bright at night, off at day (matches StreetLights).
-            float night = 1.0 - smoothstep(-0.1, 0.1, uSunAltitude);
-            gl_FragColor = vec4(uColor, pool * night * 0.12);
-          }`,
-        transparent: true,
-        depthWrite: false,
-        // depthTest stays on — lamp pools should be occluded by trees,
-        // buildings, and other foreground geometry naturally.
-        blending: THREE.AdditiveBlending,
-      })
-      // Wire shared terrain uniforms (so lamps ride the same terrain as ribbons).
-      assignTerrainUniforms(mat)
-      return mat
-    })(),
+    // Designer lamp marker — flat dot at the lamp's world position. The
+    // legacy shader-based "night pool" rendered a fake gradient halo here
+    // before Stage existed; with Stage owning the actual lamp shading,
+    // Designer's only job is to show placement (and visibility — the layer
+    // toggle handles on/off). Plain MeshBasicMaterial, no shader.
+    lamp: new THREE.MeshBasicMaterial({
+      color: new THREE.Color(color('lamp')),
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+    }),
     tree: makeFlatMat(color('tree'), PRI.park + 1),
     water: makeFlatMat(color('water'), PRI.park + 1),
     // rigidCentroid=true: sample terrain once per feature, not per vertex.
@@ -657,11 +648,8 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [layerColors, layerStrokes])
 
-  // Sync lamp sun altitude each frame — night-gate matches StreetLights.
-  useFrame(() => {
-    if (!mats.lamp?.uniforms?.uSunAltitude) return
-    mats.lamp.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
-  })
+  // (legacy lamp sun-altitude sync removed — Designer now uses a flat
+  // dot marker; Stage owns the real lamp shading.)
 
   // ── Boundary outline ────────────────────────────────────
   const boundaryGeo = useMemo(() => {
@@ -688,11 +676,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           receiveShadow position={[0, -0.2, 0]} />
       )}
 
-      {/* Park — below ribbons, above ground */}
-      {!hide.park && parkGeo && (
-        <mesh geometry={parkGeo} material={mats.park} renderOrder={PRI.park}
-          receiveShadow position={[0, -0.18, 0]} />
-      )}
+      {/* Park face is owned by StreetRibbons (Phase 11.3, 2026-04-17). */}
 
       {/* Buildings — above StreetRibbons (which sits at y=0.15) */}
       {!hide.building && buildingGeo && (
@@ -758,10 +742,11 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           Previously rendered as ring polygons here; retired 2026-04-22 so
           alleys/paths are first-class roadway ribbons matching streets. */}
 
-      {/* Streetlamps */}
+      {/* Streetlamps — Designer-only flat dots showing placement. Stage
+          mounts the real lamp props (StreetLights). */}
       {!hide.lamp && lampPositions.map((l, i) => (
         <mesh key={`lamp-${i}`} position={[l.x, 2, l.z]} rotation={[-Math.PI / 2, 0, 0]} material={mats.lamp} renderOrder={11.5} frustumCulled={false}>
-          <circleGeometry args={[8, 24]} />
+          <circleGeometry args={[1.2, 16]} />
         </mesh>
       ))}
 
@@ -817,6 +802,13 @@ function LabelSprite({ label }) {
     const worldW = worldH * (w / h)
     return { texture: tex, width: worldW, height: worldH }
   }, [label.name])
+
+  // Bail out if measurement returned NaN (font load failure etc.).
+  // A NaN-sized plane becomes a NaN-positioned BufferGeometry and
+  // breaks the entire scene's frustum culling.
+  if (!Number.isFinite(width) || !Number.isFinite(height) ||
+      !Number.isFinite(label.x) || !Number.isFinite(label.z) ||
+      !Number.isFinite(label.angle)) return null
 
   return (
     <mesh

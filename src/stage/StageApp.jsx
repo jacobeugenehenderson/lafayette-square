@@ -12,9 +12,8 @@ import { useRef, useEffect, useMemo, forwardRef, useState, useCallback } from 'r
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, SoftShadows } from '@react-three/drei'
 import { EffectComposer, Bloom, N8AO } from '@react-three/postprocessing'
-import { Effect } from 'postprocessing'
+import { Effect, BlendFunction } from 'postprocessing'
 import * as THREE from 'three'
-import SunCalc from 'suncalc'
 
 import LafayetteScene from '../components/LafayetteScene'
 import CelestialBodies from './StageSky'
@@ -26,15 +25,22 @@ import StreetRibbons from '../components/StreetRibbons'
 import Terrain from '../components/Terrain'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 
+import { catmullRom, EASINGS } from '../preview/heroAnim'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import useSkyState from '../hooks/useSkyState'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import {
-  getDawnWindow, dateToFraction, fractionToDate, getWaypoints,
-} from '../lib/dawnTimeline'
-
-const LATITUDE = 38.6160
-const LONGITUDE = -90.2161
+  BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
+  WARMTH_FLAT_DEFAULTS,
+  FILL_FLAT_DEFAULTS,
+  EXPOSURE_FLAT_DEFAULTS,
+  AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
+  MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, MIST_DENSITY_SCALE,
+  HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
+} from '../cartograph/skyLightChannels.js'
+import useSkyState from '../hooks/useSkyState'
+import DawnTimeline from '../components/DawnTimeline'
 
 // ── Post-processing effects (copied from Scene.jsx) ─────────────────────────
 
@@ -47,6 +53,7 @@ class FilmGradeEffect extends Effect {
       uniform float uSat;
       uniform float uVignette;
       uniform float uExposure;
+      uniform float uWarmth;
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec3 c = inputColor.rgb * uExposure;
         float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -67,6 +74,20 @@ class FilmGradeEffect extends Effect {
         float nightT = smoothstep(0.05, -0.15, uSunAlt);
         c *= mix(vec3(1.0), vec3(1.06, 1.0, 0.88), goldenT * 0.5);
         c *= mix(vec3(1.0), vec3(0.88, 0.92, 1.08), nightT * 0.4);
+        // Operator Warmth — Photo Filter math: tint then re-normalize
+        // luminosity so adding warmth doesn't change brightness. Density
+        // 0.6 max (cool/warm tint at the extremes is overt but not
+        // hue-rotating). Acts on every pixel — Photoshop "Photo Filter
+        // adjustment layer" analog, not a Hue/Saturation hue shift.
+        float warmthBias = (uWarmth - 0.5) * 2.0;
+        vec3 photoTint = warmthBias >= 0.0
+          ? vec3(1.10, 1.00, 0.84)   // warm reference (sodium)
+          : vec3(0.86, 0.94, 1.12);  // cool reference (moonlight)
+        float photoDensity = abs(warmthBias) * 0.6;
+        vec3 tinted = c * mix(vec3(1.0), photoTint, photoDensity);
+        float lumIn  = dot(c,      vec3(0.2126, 0.7152, 0.0722));
+        float lumOut = dot(tinted, vec3(0.2126, 0.7152, 0.0722));
+        c = tinted * (lumIn / max(lumOut, 1e-4));
         gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
         c = mix(gray, c, uSat);
         c = mix(c, inputColor.rgb, smoothstep(0.7, 1.0, lum));
@@ -84,19 +105,35 @@ class FilmGradeEffect extends Effect {
         ['uSat', new THREE.Uniform(1.1)],
         ['uVignette', new THREE.Uniform(1.0)],
         ['uExposure', new THREE.Uniform(0.95)],
+        ['uWarmth', new THREE.Uniform(0.5)],
       ])
     })
   }
   update() {
-    this.uniforms.get('uSunAlt').value = useTimeOfDay.getState().getLightingPhase().sunAltitude
+    const tod = useTimeOfDay.getState()
+    this.uniforms.get('uSunAlt').value = tod.getLightingPhase().sunAltitude
     this.uniforms.get('uContrast').value = envState.gradeContrast
-    this.uniforms.get('uToe').value = envState.gradeToe
     this.uniforms.get('uSat').value = envState.gradeSaturation
     this.uniforms.get('uVignette').value = envState.gradeVignette
-    this.uniforms.get('uExposure').value = envState.exposure
+    // Operator-authored channels (Post card): exposure, warmth, fill.
+    // Resolved at the current TOD minute from the cartograph store.
+    const slotMins = getTodSlotMinutes(tod.currentTime)
+    const minute   = tod.getMinuteOfDay()
+    const cs = useCartographStore.getState()
+    const expVal    = resolveGroupAtMinute(cs.exposure, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
+    const warmthVal = resolveGroupAtMinute(cs.warmth,   minute, slotMins, ['value'], WARMTH_FLAT_DEFAULTS).value
+    const fillVal   = resolveGroupAtMinute(cs.fill,     minute, slotMins, ['value'], FILL_FLAT_DEFAULTS).value
+    // Fill → uToe piecewise: 0..1 maps 0→0.28 (current default),
+    // 1..2 maps 0.28→1.0 (lifted shadows). Identity at fill = 1.
+    const toeMapped = fillVal <= 1
+      ? fillVal * 0.28
+      : 0.28 + (fillVal - 1) * 0.72
+    this.uniforms.get('uExposure').value = expVal
+    this.uniforms.get('uWarmth').value   = warmthVal
+    this.uniforms.get('uToe').value      = toeMapped
   }
 }
-const FilmGrade = forwardRef((_, ref) => {
+export const FilmGrade = forwardRef((_, ref) => {
   const effect = useMemo(() => new FilmGradeEffect(), [])
   return <primitive ref={ref} object={effect} dispose={null} />
 })
@@ -122,7 +159,7 @@ class FilmGrainEffect extends Effect {
     this.uniforms.get('uScale').value = (0.4 + day * 0.6) * envState.grainScale
   }
 }
-const FilmGrain = forwardRef((_, ref) => {
+export const FilmGrain = forwardRef((_, ref) => {
   const effect = useMemo(() => new FilmGrainEffect(), [])
   return <primitive ref={ref} object={effect} dispose={null} />
 })
@@ -143,19 +180,26 @@ class AerialPerspectiveEffect extends Effect {
 }
 class AerialPerspectiveWithEnv extends AerialPerspectiveEffect {
   update() {
-    const alt = useTimeOfDay.getState().getLightingPhase().sunAltitude
+    // Halo channel (Sky & Light) → AerialPerspective uniforms. Strength
+    // resolved from the operator-authored channel; sun-altitude
+    // dayFactor still rides on top so halo doesn't fire at night
+    // (physics modifier per project_celestial_physics_not_authored).
+    const tod = useTimeOfDay.getState()
+    const alt = tod.getLightingPhase().sunAltitude
     const dayFactor = alt > 0.1 ? 1 : alt < -0.05 ? 0 : (alt + 0.05) / 0.15
-    this.uniforms.get('uHazeStrength').value = dayFactor * envState.hazeStrength
-    const hc = useSkyState.getState().horizonColor
-    if (hc) {
-      const avg = (hc.r + hc.g + hc.b) / 3
-      this.uniforms.get('uHazeColor').value.set(
-        hc.r * 0.7 + avg * 0.3, hc.g * 0.7 + avg * 0.3, hc.b * 0.7 + avg * 0.3
-      )
-    }
+    const slotMins = getTodSlotMinutes(tod.currentTime)
+    const halo = resolveGroupAtMinute(
+      useCartographStore.getState().halo,
+      tod.getMinuteOfDay(), slotMins,
+      HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
+    )
+    this.uniforms.get('uHazeStrength').value = dayFactor * halo.strength
+    _haloC.set(halo.color)
+    this.uniforms.get('uHazeColor').value.set(_haloC.r, _haloC.g, _haloC.b)
   }
 }
-const AerialPerspective = forwardRef((_, ref) => {
+const _haloC = new THREE.Color()
+export const AerialPerspective = forwardRef((_, ref) => {
   const effect = useMemo(() => new AerialPerspectiveWithEnv(), [])
   return <primitive ref={ref} object={effect} dispose={null} />
 })
@@ -183,17 +227,12 @@ function FrameLimiter() {
 // ── Environment state (DOM ↔ R3F bridge) ────────────────────────────────────
 
 export const ENV_DEFAULTS = {
-  exposure: 0.95,
-  // AO
-  aoRadius: 15,
-  aoIntensity: 2.5,
-  aoDistanceFalloff: 0.3,
-  // Bloom
-  bloomIntensity: 0.5,       // base (adaptive adds to this)
-  bloomThreshold: 0.85,      // base (adaptive subtracts)
-  bloomSmoothing: 0.4,       // base (adaptive adds)
+  // Exposure, AO, and Bloom moved to the cartograph store as TOD-
+  // authored channels (Post card). FilmGrade resolves them per frame
+  // from the store; the legacy envState fields are gone.
   // Haze
-  hazeStrength: 0.12,        // max haze (scaled by dayFactor)
+  // hazeStrength moved to the cartograph store as a TOD-authored Halo
+  // channel (Sky & Light card).
   // Film Grade
   gradeContrast: 0.42,
   gradeToe: 0.28,
@@ -261,28 +300,56 @@ export function setArch(updates) {
 export function PostProcessing() {
   const bloomRef = useRef()
   const aoRef = useRef()
-  const { gl } = useThree()
+  const { gl, invalidate } = useThree()
+
+  // Stage uses frameloop="demand". Slider edits mutate envState but don't
+  // change any Three prop, so R3F never re-renders and the per-frame
+  // driver below stops running. Subscribe to env changes and force one
+  // frame so the new values land.
+  useEffect(() => subscribeEnv(invalidate), [invalidate])
 
   useFrame(() => {
     // Exposure (applied via FilmGrade uExposure uniform, not gl.toneMappingExposure)
     // gl.toneMappingExposure is overridden by EffectComposer
 
-    // AO — N8AOPostPass: params are direct properties on configuration
+    // AO — N8AOPostPass params resolved from the Post card's `ao`
+    // channel (group of 3: radius/intensity/distanceFalloff).
     const ao = aoRef.current
     if (ao?.configuration) {
-      ao.configuration.aoRadius = envState.aoRadius
-      ao.configuration.intensity = envState.aoIntensity
-      ao.configuration.distanceFalloff = envState.aoDistanceFalloff
+      const tod = useTimeOfDay.getState()
+      const slotMins = getTodSlotMinutes(tod.currentTime)
+      const aoTriple = resolveGroupAtMinute(
+        useCartographStore.getState().ao,
+        tod.getMinuteOfDay(), slotMins,
+        AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
+      )
+      ao.configuration.aoRadius = aoTriple.radius
+      ao.configuration.intensity = aoTriple.intensity
+      ao.configuration.distanceFalloff = aoTriple.distanceFalloff
     }
 
-    // Bloom — intensity, luminanceThreshold, luminanceSmoothing are direct properties
+    // Bloom — base values now resolved from the cartograph store's
+    // `bloom` TOD channel; sun-altitude `dk` adaptive bump rides on top.
+    // `intensity` is a real setter on BloomEffect; threshold/smoothing
+    // must be set on `luminanceMaterial`, not on the effect (the latter
+    // are constructor-only options that silently no-op if mutated).
     const bloom = bloomRef.current
     if (bloom) {
-      const alt = useTimeOfDay.getState().getLightingPhase().sunAltitude
+      const tod = useTimeOfDay.getState()
+      const alt = tod.getLightingPhase().sunAltitude
       const dk = alt > 0.1 ? 0 : alt < -0.15 ? 1 : 1 - (alt + 0.15) / 0.25
-      bloom.intensity = envState.bloomIntensity + dk * 0.5
-      bloom.luminanceThreshold = envState.bloomThreshold - dk * 0.5
-      bloom.luminanceSmoothing = envState.bloomSmoothing + dk * 0.4
+      const bch = useCartographStore.getState().bloom
+      const slotMins = getTodSlotMinutes(tod.currentTime)
+      const base = resolveGroupAtMinute(
+        bch, tod.getMinuteOfDay(), slotMins,
+        BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
+      )
+      bloom.intensity = base.intensity + dk * 0.5
+      const lm = bloom.luminanceMaterial
+      if (lm) {
+        lm.threshold = base.threshold - dk * 0.5
+        lm.smoothing = base.smoothing + dk * 0.4
+      }
     }
 
     // Haze, Grade, Grain driven by their own update() methods reading envState
@@ -293,7 +360,8 @@ export function PostProcessing() {
       <N8AO ref={aoRef} halfRes={false} aoRadius={15} intensity={2.5}
         distanceFalloff={0.3} quality="medium" />
       <Bloom ref={bloomRef} intensity={0.5} luminanceThreshold={0.85}
-        luminanceSmoothing={0.4} mipmapBlur />
+        luminanceSmoothing={0.4}
+        blendFunction={BlendFunction.SCREEN} />
       <AerialPerspective />
       <FilmGrade />
       <FilmGrain />
@@ -301,93 +369,33 @@ export function PostProcessing() {
   )
 }
 
-// ── GPU frame time meter ────────────────────────────────────────────────────
-
-const gpuTiming = { frameMs: 0, targetFps: 60, costs: {} }
-let gpuListeners = new Set()
-function subscribeGpu(fn) { gpuListeners.add(fn); return () => gpuListeners.delete(fn) }
-function notifyGpu() { for (const fn of gpuListeners) fn() }
-
-function GpuMeter() {
-  const times = useRef([])
-  const frameCount = useRef(0)
-
-  useFrame(() => {
-    const now = performance.now()
-    times.current.push(now)
-    if (times.current.length > 60) times.current.shift()
-
-    if (++frameCount.current % 20 === 0 && times.current.length > 1) {
-      const dt = times.current[times.current.length - 1] - times.current[0]
-      gpuTiming.frameMs = Math.round(dt / (times.current.length - 1) * 10) / 10
-      notifyGpu()
-    }
-  })
-
-  return null
-}
-
-function useGpuTiming() {
-  const [data, setData] = useState({ frameMs: 0, targetFps: 60, costs: {} })
-  useEffect(() => subscribeGpu(() => setData({ ...gpuTiming })), [])
-  return data
-}
-
-// ── GPU budget bar (top-level panel) ────────────────────────────────────────
-
-function GpuBudgetBar() {
-  const { frameMs, targetFps, costs } = useGpuTiming()
-  const budgetMs = 1000 / targetFps
-  const fps = frameMs > 0 ? Math.round(1000 / frameMs) : 0
-  const pct = Math.min(100, Math.round((frameMs / budgetMs) * 100))
-  const barColor = frameMs > budgetMs ? 'var(--error)' : frameMs > budgetMs * 0.75 ? 'var(--warning)' : 'var(--success)'
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="section-heading">GPU</span>
-          <span className="text-caption font-mono" style={{ color: barColor }}>
-            {frameMs}ms · {fps}fps
-          </span>
-        </div>
-        <div className="flex gap-0.5">
-          {[30, 60].map(t => (
-            <button key={t}
-              onClick={() => { gpuTiming.targetFps = t; notifyGpu() }}
-              className="px-1.5 py-0.5 rounded text-caption cursor-pointer transition-colors"
-              style={{
-                background: targetFps === t ? 'var(--surface-container-highest)' : 'transparent',
-                color: targetFps === t ? 'var(--on-surface)' : 'var(--on-surface-subtle)',
-              }}
-            >{t}fps</button>
-          ))}
-        </div>
-      </div>
-      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--surface-container-high)' }}>
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
-      </div>
-    </div>
-  )
-}
-
 // ── Atmospheric fog (blends ground into sky at horizon) ─────────────────────
 
-function StageFog() {
+export function StageFog() {
   const { scene } = useThree()
   const fogRef = useRef()
 
   useEffect(() => {
-    scene.fog = new THREE.FogExp2('#9dc5e0', 0.00015)
+    scene.fog = new THREE.FogExp2(MIST_FLAT_DEFAULTS.color, MIST_FLAT_DEFAULTS.density * MIST_DENSITY_SCALE)
     fogRef.current = scene.fog
     return () => { scene.fog = null }
   }, [scene])
 
-  // Update fog color to match sky horizon each frame
+  // Mist channel (Sky & Light) → scene.fog. Density slider is normalized
+  // 0–1; runtime maps to FogExp2 density via MIST_DENSITY_SCALE. Color
+  // pushes directly. Replaces the previous "fog tracks horizonColor"
+  // behavior — operator now owns mist color authoring.
   useFrame(() => {
     if (!fogRef.current) return
-    const hc = useSkyState.getState().horizonColor
-    if (hc) fogRef.current.color.copy(hc)
+    const tod = useTimeOfDay.getState()
+    const slotMins = getTodSlotMinutes(tod.currentTime)
+    const m = resolveGroupAtMinute(
+      useCartographStore.getState().mist,
+      tod.getMinuteOfDay(), slotMins,
+      MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS,
+    )
+    fogRef.current.density = m.density * MIST_DENSITY_SCALE
+    fogRef.current.color.set(m.color)
   })
 
   return null
@@ -439,41 +447,10 @@ function EnvironmentControls() {
 
   return (
     <div className="space-y-2">
-      <SliderRow label="Exposure" value={env.exposure} min={0.3} max={2.0} step={0.05}
-        onChange={(v) => setEnv({ exposure: v })} />
+      {/* Exposure, AO, Bloom moved to the Post card (TOD-authored).
+          Aerial Haze moved to the Sky & Light card as "Halo". */}
 
-      <div style={{ borderTop: '1px solid var(--outline-variant)' }} />
-
-      <Collapsible label="Ambient Occlusion">
-        <div className="space-y-1">
-          <SliderRow label="Radius" value={env.aoRadius} min={1} max={30}
-            onChange={(v) => setEnv({ aoRadius: v })} />
-          <SliderRow label="Intensity" value={env.aoIntensity} min={0} max={5} step={0.1}
-            onChange={(v) => setEnv({ aoIntensity: v })} />
-          <SliderRow label="Distance Falloff" value={env.aoDistanceFalloff} min={0} max={1} step={0.05}
-            onChange={(v) => setEnv({ aoDistanceFalloff: v })} />
-        </div>
-      </Collapsible>
-
-      <Collapsible label="Bloom">
-        <div className="space-y-1">
-          <SliderRow label="Intensity" value={env.bloomIntensity} min={0} max={2} step={0.05}
-            onChange={(v) => setEnv({ bloomIntensity: v })} />
-          <SliderRow label="Threshold" value={env.bloomThreshold} min={0.1} max={1.0} step={0.05}
-            onChange={(v) => setEnv({ bloomThreshold: v })} />
-          <SliderRow label="Smoothing" value={env.bloomSmoothing} min={0} max={1} step={0.05}
-            onChange={(v) => setEnv({ bloomSmoothing: v })} />
-        </div>
-      </Collapsible>
-
-      <Collapsible label="Aerial Haze">
-        <div className="space-y-1">
-          <SliderRow label="Strength" value={env.hazeStrength} min={0} max={0.5} step={0.01}
-            onChange={(v) => setEnv({ hazeStrength: v })} />
-        </div>
-      </Collapsible>
-
-      <Collapsible label="Film Grade">
+<Collapsible label="Film Grade">
         <div className="space-y-1">
           <SliderRow label="Contrast" value={env.gradeContrast} min={0} max={1} step={0.02}
             onChange={(v) => setEnv({ gradeContrast: v })} />
@@ -543,8 +520,28 @@ function ArchHorizonControls() {
 
 export const SHOTS = {
   hero:   { position: [-400, 55, 230], target: [400, 45, -100], fov: 22, label: 'Hero' },
-  browse: { position: [0, 600, 0.001], target: [0, 0, 0], up: [0, 0, -1], fov: 45, label: 'Browse' },
+  // Browse = pure overhead (90°) centered on the neighborhood's building
+  // centroid. `bounds` is the axis-aligned footprint of every building in
+  // src/data/buildings.json — computeBrowseAltitude() fits altitude to the
+  // viewport aspect so all buildings stay in frame (map gets cropped on
+  // the binding axis).
+  browse: {
+    position: [95, 1300, -158], target: [95, 0, -158], up: [0, 0, -1], fov: 45, label: 'Browse',
+    bounds: { cx: 95, cz: -158, w: 1292, h: 1025 }, padding: 1.05,
+  },
   street: { position: [0, 1.73, -50], target: [0, 1.73, -50.5], fov: 75, label: 'Street' },
+}
+
+// Fit Browse altitude to viewport aspect so SHOTS.browse.bounds always frames
+// in. Returns the altitude (camera Y) for a 90° overhead camera with the
+// given fov and viewport aspect (width / height).
+export function computeBrowseAltitude(aspect, fov = SHOTS.browse.fov) {
+  const { w, h } = SHOTS.browse.bounds
+  const pad = SHOTS.browse.padding ?? 1.05
+  const tan = Math.tan((fov * Math.PI) / 360)
+  const altForH = (h * pad) / (2 * tan)
+  const altForW = (w * pad) / (2 * tan * Math.max(aspect, 1e-6))
+  return Math.max(altForH, altForW)
 }
 
 // Live camera state bridge (R3F ↔ React DOM)
@@ -554,9 +551,31 @@ let cameraListeners = new Set()
 function subscribeCameraState(fn) { cameraListeners.add(fn); return () => cameraListeners.delete(fn) }
 function notifyCameraListeners() { for (const fn of cameraListeners) fn() }
 
+// Live camera ref — populated by HeroPreview while mounted.
+// Set-from-view reads this synchronously to avoid stale broadcast values.
+const liveCamera = { camera: null, controls: null }
+export function captureCameraSnapshot() {
+  const cam = liveCamera.camera
+  if (!cam) return null
+  const p = cam.position
+  let tx, ty, tz
+  if (liveCamera.controls) {
+    const t = liveCamera.controls.target
+    tx = t.x; ty = t.y; tz = t.z
+  } else {
+    const dir = new THREE.Vector3(); cam.getWorldDirection(dir)
+    tx = p.x + dir.x * 100; ty = p.y + dir.y * 100; tz = p.z + dir.z * 100
+  }
+  return {
+    position: [Math.round(p.x), Math.round(p.y), Math.round(p.z)],
+    target: [Math.round(tx), Math.round(ty), Math.round(tz)],
+    fov: Math.round(cam.fov),
+  }
+}
+
 export function StageCamera({ shot }) {
   const controlsRef = useRef()
-  const { camera } = useThree()
+  const { camera, size } = useThree()
   const applied = useRef(null)
   const frameCount = useRef(0)
 
@@ -565,8 +584,19 @@ export function StageCamera({ shot }) {
     applied.current = shot
     const s = SHOTS[shot]
     if (!s) return
-    camera.position.set(...s.position)
+    if (shot === 'browse') {
+      // Overhead, centered on building centroid; altitude fits viewport
+      // aspect so every building stays framed.
+      const aspect = size.width / Math.max(size.height, 1)
+      const y = computeBrowseAltitude(aspect, s.fov)
+      camera.position.set(s.position[0], y, s.position[2])
+      camera.up.set(...(s.up || [0, 1, 0]))
+    } else {
+      camera.position.set(...s.position)
+      camera.up.set(...(s.up || [0, 1, 0]))
+    }
     camera.fov = s.fov
+    camera.lookAt(...s.target)
     camera.updateProjectionMatrix()
     if (controlsRef.current) {
       controlsRef.current.target.set(...s.target)
@@ -574,163 +604,97 @@ export function StageCamera({ shot }) {
     }
     // Map 'street' to 'planetarium' for useCamera (controls terrain exag)
     useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
-  }, [shot, camera])
+  }, [shot, camera, size.width, size.height])
 
   // Apply pending camera changes from DOM inputs
   // + broadcast live camera state every 10 frames
   useFrame(() => {
     const ctl = controlsRef.current
-    if (!ctl) return
 
-    // Apply any pending push from the panel
+    // Apply any pending push from the panel (even before controls mount,
+    // we can still write camera + lookAt; controls catch up next frame).
     if (cameraPush.pending) {
       const u = cameraPush.pending
       cameraPush.pending = null
       if (u.position) camera.position.set(...u.position)
-      if (u.target) ctl.target.set(...u.target)
       if (u.fov != null) { camera.fov = u.fov; camera.updateProjectionMatrix() }
-      ctl.update()
+      if (u.target) {
+        if (ctl) ctl.target.set(...u.target)
+        camera.lookAt(u.target[0], u.target[1], u.target[2])
+      }
+      if (ctl) {
+        const wasDamping = ctl.enableDamping
+        ctl.enableDamping = false
+        ctl.update()
+        ctl.enableDamping = wasDamping
+      }
     }
 
     if (++frameCount.current % 10 !== 0) return
     const p = camera.position
-    const t = ctl.target
+    // Broadcast: use OrbitControls target if available, else derive from camera direction
+    let tx, ty, tz
+    if (ctl) {
+      tx = ctl.target.x; ty = ctl.target.y; tz = ctl.target.z
+    } else {
+      const dir = new THREE.Vector3(); camera.getWorldDirection(dir)
+      tx = p.x + dir.x * 100; ty = p.y + dir.y * 100; tz = p.z + dir.z * 100
+    }
     cameraState.position = [Math.round(p.x), Math.round(p.y), Math.round(p.z)]
-    cameraState.target = [Math.round(t.x), Math.round(t.y), Math.round(t.z)]
+    cameraState.target = [Math.round(tx), Math.round(ty), Math.round(tz)]
     cameraState.fov = Math.round(camera.fov)
     notifyCameraListeners()
   })
 
+  // Browse is a planar overhead by default — LEFT-drag pans, wheel zooms.
+  // RIGHT-drag is a hidden 360° orbit "easter egg" for the curious.
+  // Ctrl/Meta swaps LEFT→ROTATE so Mac trackpad users (no real right
+  // button) can access orbit too.
+  const isBrowse = shot === 'browse'
+  useEffect(() => {
+    if (!isBrowse) return
+    const ctl = controlsRef.current
+    if (!ctl) return
+    const apply = (modDown) => {
+      ctl.mouseButtons = {
+        LEFT: modDown ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.ROTATE,
+      }
+    }
+    const onDown = (e) => { if (e.key === 'Control' || e.key === 'Meta') apply(true) }
+    const onUp   = (e) => { if (e.key === 'Control' || e.key === 'Meta') apply(false) }
+    apply(false)
+    window.addEventListener('keydown', onDown)
+    window.addEventListener('keyup', onUp)
+    return () => {
+      window.removeEventListener('keydown', onDown)
+      window.removeEventListener('keyup', onUp)
+    }
+  }, [isBrowse])
   return (
     <OrbitControls
+      key={isBrowse ? 'browse' : 'orbit'}
       ref={controlsRef}
       makeDefault
       enableDamping
       dampingFactor={0.15}
-      minDistance={1}
+      screenSpacePanning={isBrowse}
+      minDistance={isBrowse ? 50 : 1}
       maxDistance={4000}
+      mouseButtons={isBrowse
+        ? { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }
+        : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
+      touches={isBrowse
+        ? { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }
+        : { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
     />
   )
 }
 
 // ── Timeline (dawn-to-dawn with waypoint snaps + slider) ────────────────────
-
-function formatTime(date) {
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-}
-
-function Timeline() {
-  const currentTime = useTimeOfDay((s) => s.currentTime)
-  const setTime = useTimeOfDay((s) => s.setTime)
-
-  const dawnWindow = useMemo(() => getDawnWindow(currentTime), [
-    currentTime.getFullYear(), currentTime.getMonth(),
-    currentTime.getDate(), currentTime.getHours(),
-  ])
-
-  const waypoints = useMemo(() => {
-    const mid = new Date((dawnWindow.start.getTime() + dawnWindow.end.getTime()) / 2)
-    const times = SunCalc.getTimes(mid, LATITUDE, LONGITUDE)
-    return [
-      { label: 'Dawn', time: dawnWindow.start, color: 'var(--vic-coral)' },
-      { label: 'Sunrise', time: times.sunrise, color: '#fb923c' },
-      { label: 'Noon', time: times.solarNoon, color: 'var(--vic-gold)' },
-      { label: 'Golden', time: times.goldenHour, color: '#fbbf24' },
-      { label: 'Sunset', time: times.sunset, color: '#fb923c' },
-      { label: 'Dusk', time: times.dusk, color: 'var(--vic-lavender)' },
-      { label: 'Night', time: times.night, color: 'var(--vic-sky)' },
-    ]
-      .filter(w => w.time >= dawnWindow.start && w.time <= dawnWindow.end)
-      .map(w => ({ ...w, fraction: dateToFraction(w.time, dawnWindow) }))
-  }, [dawnWindow])
-
-  const nowFrac = dateToFraction(currentTime, dawnWindow)
-
-  const trackRef = useRef(null)
-  const [dragging, setDragging] = useState(false)
-
-  const fracFromX = useCallback((clientX) => {
-    const rect = trackRef.current?.getBoundingClientRect()
-    if (!rect) return 0
-    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-  }, [])
-
-  const scrubTo = useCallback((frac) => {
-    setTime(fractionToDate(frac, dawnWindow))
-  }, [dawnWindow, setTime])
-
-  return (
-    <div className="space-y-1">
-      {/* Waypoint buttons */}
-      <div className="flex justify-between px-1">
-        {waypoints.map(wp => (
-          <button
-            key={wp.label}
-            onClick={() => setTime(wp.time)}
-            className="text-caption leading-none transition-opacity hover:opacity-100 cursor-pointer"
-            style={{ color: wp.color, opacity: 0.75 }}
-          >
-            {wp.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Slider track */}
-      <div
-        ref={trackRef}
-        className="relative h-6 flex items-center cursor-pointer select-none touch-none"
-        onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId)
-          setDragging(true)
-          scrubTo(fracFromX(e.clientX))
-        }}
-        onPointerMove={(e) => {
-          if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
-          scrubTo(fracFromX(e.clientX))
-        }}
-        onPointerUp={(e) => {
-          if (e.currentTarget.hasPointerCapture(e.pointerId))
-            e.currentTarget.releasePointerCapture(e.pointerId)
-          setDragging(false)
-        }}
-        onPointerCancel={(e) => {
-          if (e.currentTarget.hasPointerCapture(e.pointerId))
-            e.currentTarget.releasePointerCapture(e.pointerId)
-          setDragging(false)
-        }}
-      >
-        {/* Rail */}
-        <div className="absolute inset-x-0 h-[4px] rounded-full top-1/2 -translate-y-1/2"
-          style={{ background: 'var(--surface-container-high)' }} />
-
-        {/* Waypoint tics */}
-        {waypoints.map(wp => (
-          <div key={wp.label}
-            className="absolute w-[2px] h-[8px] top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full"
-            style={{ left: `${wp.fraction * 100}%`, backgroundColor: wp.color, opacity: 0.5 }}
-          />
-        ))}
-
-        {/* Thumb */}
-        <div
-          className="absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none border-2 shadow-sm"
-          style={{
-            left: `${nowFrac * 100}%`,
-            backgroundColor: dragging ? '#60a5fa' : '#4ade80',
-            borderColor: dragging ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)',
-          }}
-        />
-      </div>
-
-      {/* Current time */}
-      <div className="px-1">
-        <span className="text-body-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-          {formatTime(currentTime)}
-        </span>
-      </div>
-    </div>
-  )
-}
+// Shared with Preview; see src/components/DawnTimeline.jsx.
+const Timeline = DawnTimeline
 
 // ── Reusable input components ────────────────────────────────────────────────
 
@@ -747,12 +711,84 @@ const inputStyle = {
 }
 
 function NumInput({ value, onChange, step = 1, min, max }) {
+  // Hybrid: click-to-edit + horizontal drag-to-scrub.
+  // Drag only activates after >3px movement, leaving clicks free to focus the input.
+  const dragRef = useRef(null)
+  const inputRef = useRef(null)
+  const [editing, setEditing] = useState(false)
+  const [draftStr, setDraftStr] = useState(String(value))
+
+  const onPointerDown = (e) => {
+    if (editing) return  // let the focused input own pointer events
+    dragRef.current = {
+      startX: e.clientX, startValue: value, moved: false, pointerId: e.pointerId,
+    }
+  }
+  const onPointerMove = (e) => {
+    const d = dragRef.current
+    if (!d) return
+    const dx = e.clientX - d.startX
+    if (!d.moved && Math.abs(dx) < 3) return
+    if (!d.moved) {
+      d.moved = true
+      e.currentTarget.setPointerCapture(d.pointerId)
+    }
+    const mult = e.shiftKey ? 10 : e.altKey ? 0.1 : 1
+    let next = d.startValue + dx * step * mult
+    if (min != null) next = Math.max(min, next)
+    if (max != null) next = Math.min(max, next)
+    onChange(step >= 1 ? Math.round(next) : Math.round(next * 1000) / 1000)
+  }
+  const onPointerUp = (e) => {
+    const d = dragRef.current
+    if (d?.moved && e.currentTarget.hasPointerCapture(d.pointerId))
+      e.currentTarget.releasePointerCapture(d.pointerId)
+    dragRef.current = null
+  }
+  const startEdit = () => {
+    setDraftStr(String(value))
+    setEditing(true)
+    requestAnimationFrame(() => inputRef.current?.select())
+  }
+  const commit = () => {
+    const n = parseFloat(draftStr)
+    if (!Number.isNaN(n)) {
+      let next = n
+      if (min != null) next = Math.max(min, next)
+      if (max != null) next = Math.min(max, next)
+      onChange(next)
+    }
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text" inputMode="numeric" autoFocus
+        value={draftStr}
+        style={{ ...inputStyle, width: 64, textAlign: 'center' }}
+        onChange={(e) => setDraftStr(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit() }
+          else if (e.key === 'Escape') { setEditing(false) }
+        }}
+      />
+    )
+  }
   return (
-    <input
-      type="number" value={value} step={step} min={min} max={max}
-      style={{ ...inputStyle, width: 64 }}
-      onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-    />
+    <div
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onClick={(e) => { if (!dragRef.current?.moved) startEdit() }}
+      style={{
+        ...inputStyle, width: 64, textAlign: 'center',
+        cursor: 'ew-resize', touchAction: 'none', userSelect: 'none',
+      }}
+    >{value}</div>
   )
 }
 
@@ -800,56 +836,45 @@ function pushCamera(update) {
   cameraPush.pending = update
 }
 
-// ── Catmull-Rom interpolation ────────────────────────────────────────────────
-
-function catmullRom(points, t, tension = 0.5) {
-  const n = points.length
-  if (n < 2) return points[0] || [0, 0, 0]
-  const total = n - 1
-  const segment = Math.min(Math.floor(t * total), total - 1)
-  const local = t * total - segment
-
-  const p0 = points[Math.max(0, segment - 1)]
-  const p1 = points[segment]
-  const p2 = points[Math.min(n - 1, segment + 1)]
-  const p3 = points[Math.min(n - 1, segment + 2)]
-
-  const alpha = tension
-  const result = []
-  for (let i = 0; i < 3; i++) {
-    const t0 = local, t2 = t0 * t0, t3 = t2 * t0
-    const m1 = alpha * (p2[i] - p0[i])
-    const m2 = alpha * (p3[i] - p1[i])
-    result.push(
-      (2 * t3 - 3 * t2 + 1) * p1[i] +
-      (t3 - 2 * t2 + t0) * m1 +
-      (-2 * t3 + 3 * t2) * p2[i] +
-      (t3 - t2) * m2
-    )
-  }
-  return result
-}
-
-// ── Easing functions ────────────────────────────────────────────────────────
-
-const EASINGS = {
-  linear: (t) => t,
-  easeInOut: (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
-  slowInOut: (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
-}
-
 // ── Default keyframes per shot ──────────────────────────────────────────────
 
 export function defaultKeyframes(shotKey) {
   const s = SHOTS[shotKey]
   if (shotKey === 'hero') {
+    // Hero keyframes carry only camera position + fov; target = subject centroid (runtime).
+    // Two keyframes mark the swing extremes; the wave oscillates between them.
     return [
-      { position: [-540, 55, 362], target: [260, 45, -32], fov: 22 },
-      { position: [-400, 55, 230], target: [400, 45, -100], fov: 22 },
-      { position: [-260, 55, 98], target: [540, 45, -168], fov: 22 },
+      { position: [-540, 55, 362], fov: 22 },
+      { position: [-260, 55, 98], fov: 22 },
     ]
   }
-  return [{ position: [...s.position], target: [...s.target], fov: s.fov }]
+  return [{ position: [...s.position], fov: s.fov }]
+}
+
+// Subject centroid resolver. The Hero shot frames around a single designated
+// object; this turns the operator's designation (kind + id) into the 3D point
+// the camera locks onto. Falls back to the legacy arch centroid when no
+// subject is set, so a Look without designation still has a sensible shot.
+export const FALLBACK_HERO_SUBJECT = [400, 45, -100]
+
+export function resolveHeroSubject(subject, buildings) {
+  if (!subject) return FALLBACK_HERO_SUBJECT
+  if (subject.kind === 'arch') {
+    // Cartograph/Stage arch lives at archDistance × archBearing (live archState),
+    // not at the legacy GatewayArch.jsx constants. Mid-height ≈ archScale × 35
+    // for the catenary geometry — close enough for "look at the arch."
+    const x = archState.archDistance * archState.archBearingX
+    const z = archState.archDistance * archState.archBearingZ
+    const y = archState.archScale * 35
+    return [x, y, z]
+  }
+  if (subject.kind === 'building' || subject.kind === 'landmark') {
+    const b = buildings?.find(x => x.id === subject.id)
+    if (!b || !b.position) return FALLBACK_HERO_SUBJECT
+    const halfH = (b.size?.[1] ?? 10) / 2
+    return [b.position[0], halfH, b.position[2]]
+  }
+  return FALLBACK_HERO_SUBJECT
 }
 
 // ── Shared hero scrub position (R3F ↔ DOM) ──────────────────────────────────
@@ -875,14 +900,27 @@ function kfName(i, total) {
 
 // ── Shot-specific camera controls ───────────────────────────────────────────
 
-function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
+function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
   const scrubT = useHeroScrub()
   const trackRef = useRef(null)
   const [scrubDragging, setScrubDragging] = useState(false)
-  const [expandedKf, setExpandedKf] = useState(null)
 
-  // Keyframe fractional positions along the path (evenly spaced)
-  const kfFractions = keyframes.map((_, i) => i / (keyframes.length - 1))
+  const kfFractions = keyframes.length <= 1
+    ? keyframes.map(() => 0)
+    : keyframes.map((_, i) => i / (keyframes.length - 1))
+
+  // Selection is derived: if the playhead is on (close to) a keyframe dot,
+  // that's the selected keyframe. Otherwise no selection (button = Add).
+  const SNAP_TOLERANCE = 0.02
+  const selectedKf = (() => {
+    let best = -1, bestDist = Infinity
+    kfFractions.forEach((f, i) => {
+      const d = Math.abs(f - scrubT)
+      if (d < SNAP_TOLERANCE && d < bestDist) { best = i; bestDist = d }
+    })
+    return best >= 0 ? best : null
+  })()
+  const sel = selectedKf != null ? keyframes[selectedKf] : null
 
   const fracFromX = useCallback((clientX) => {
     const rect = trackRef.current?.getBoundingClientRect()
@@ -890,28 +928,71 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   }, [])
 
-  // When scrubbing manually, push camera to that position on the path
+  // Scrub: move playhead and push interpolated camera (position + fov).
+  // Target is supplied by the runtime (subject centroid), so we don't push it.
   const scrubTo = useCallback((t) => {
-    heroScrub.t = t
+    // Snap to nearby keyframe dots so the playhead lands ON them, not next to.
+    let snapped = t
+    let bestD = Infinity
+    kfFractions.forEach(f => {
+      const d = Math.abs(f - t)
+      if (d < SNAP_TOLERANCE && d < bestD) { snapped = f; bestD = d }
+    })
+    heroScrub.t = snapped
     notifyHeroScrub()
-    if (keyframes.length < 2) return
-    const pos = catmullRom(keyframes.map(k => k.position), t, heroMotion.tension)
-    const tgt = catmullRom(keyframes.map(k => k.target), t, heroMotion.tension)
-    // Interpolate FOV across keyframes
-    const segment = t * (keyframes.length - 1)
+    if (keyframes.length < 1) return
+    if (keyframes.length === 1) {
+      pushCamera({ position: keyframes[0].position, fov: keyframes[0].fov })
+      return
+    }
+    const pos = catmullRom(keyframes.map(k => k.position), snapped)
+    const segment = snapped * (keyframes.length - 1)
     const idx = Math.min(Math.floor(segment), keyframes.length - 2)
     const local = segment - idx
     const fov = keyframes[idx].fov + local * (keyframes[idx + 1].fov - keyframes[idx].fov)
-    pushCamera({ position: pos.map(Math.round), target: tgt.map(Math.round), fov: Math.round(fov) })
-  }, [keyframes, heroMotion.tension])
+    pushCamera({ position: pos.map(Math.round), fov: Math.round(fov) })
+  }, [keyframes, kfFractions])
 
-  // Jump to a keyframe
-  const goToKeyframe = useCallback((i) => {
+  const selectKeyframe = useCallback((i) => {
     const kf = keyframes[i]
-    pushCamera({ position: [...kf.position], target: [...kf.target], fov: kf.fov })
-    heroScrub.t = kfFractions[i]
+    if (!kf) return
+    pushCamera({ position: [...kf.position], fov: kf.fov })
+    heroScrub.t = kfFractions[i] ?? 0
     notifyHeroScrub()
   }, [keyframes, kfFractions])
+
+  const addKeyframeFromView = () => {
+    const snap = captureCameraSnapshot()
+    if (!snap) return
+    const newKf = { position: snap.position, fov: snap.fov }
+    const insertAt = keyframes.length === 0
+      ? 0
+      : Math.min(keyframes.length, Math.round(scrubT * keyframes.length))
+    const next = [...keyframes.slice(0, insertAt), newKf, ...keyframes.slice(insertAt)]
+    setKeyframes(next)
+    // Land the playhead on the new keyframe so the button toggles to "Set"
+    requestAnimationFrame(() => {
+      heroScrub.t = next.length <= 1 ? 0 : insertAt / (next.length - 1)
+      notifyHeroScrub()
+    })
+  }
+  const setSelectedFromView = () => {
+    if (selectedKf == null) return
+    const snap = captureCameraSnapshot()
+    if (!snap) return
+    const next = [...keyframes]
+    next[selectedKf] = { position: snap.position, fov: snap.fov }
+    setKeyframes(next)
+  }
+  const deleteSelected = () => {
+    if (selectedKf == null || keyframes.length <= 1) return
+    setKeyframes(keyframes.filter((_, j) => j !== selectedKf))
+    // Move playhead off the (now-deleted) frame so button goes back to "Add"
+    requestAnimationFrame(() => {
+      heroScrub.t = Math.min(0.999, scrubT + SNAP_TOLERANCE * 1.5)
+      notifyHeroScrub()
+    })
+  }
 
   return (
     <div className="space-y-3">
@@ -939,7 +1020,7 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
           ))}
         </div>
 
-        {/* Scrubber track with keyframe dots */}
+        {/* Timeline rail — click to scrub + deselect; click a dot to select */}
         <div
           ref={trackRef}
           className="relative h-6 flex items-center cursor-pointer select-none touch-none"
@@ -965,23 +1046,28 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
           }}
         >
           {/* Rail */}
-          <div className="absolute inset-x-0 h-[4px] rounded-full top-1/2 -translate-y-1/2"
+          <div className="absolute inset-x-0 h-[6px] rounded-full top-1/2 -translate-y-1/2 pointer-events-none"
             style={{ background: 'var(--surface-container-high)' }} />
 
-          {/* Keyframe dots (clickable) */}
-          {kfFractions.map((frac, i) => (
-            <div key={i}
-              className="absolute w-[10px] h-[10px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 cursor-pointer border"
-              style={{
-                left: `${frac * 100}%`,
-                backgroundColor: 'var(--vic-gold)',
-                borderColor: 'rgba(255,255,255,0.5)',
-                zIndex: 2,
-              }}
-              title={kfName(i, keyframes.length)}
-              onClick={(e) => { e.stopPropagation(); goToKeyframe(i) }}
-            />
-          ))}
+          {/* Keyframe dots — pointer-events disabled so the wrapper owns
+              all gestures (drag-to-scrub crosses dots smoothly; clicking
+              a dot still selects via SNAP_TOLERANCE in scrubTo). */}
+          {kfFractions.map((frac, i) => {
+            const active = selectedKf === i
+            return (
+              <div key={i}
+                className="absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border pointer-events-none"
+                style={{
+                  left: `${frac * 100}%`,
+                  backgroundColor: 'var(--vic-gold)',
+                  borderColor: active ? '#fff' : 'rgba(255,255,255,0.5)',
+                  borderWidth: active ? 2 : 1,
+                  boxShadow: active ? '0 0 0 2px rgba(255,255,255,0.2)' : 'none',
+                  zIndex: 2,
+                }}
+              />
+            )
+          })}
 
           {/* Playhead */}
           <div
@@ -994,112 +1080,79 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
             }}
           />
         </div>
-
-        {/* Keyframe labels under the scrubber */}
-        <div className="relative h-3">
-          {kfFractions.map((frac, i) => (
-            <button key={i}
-              className="absolute -translate-x-1/2 text-caption leading-none cursor-pointer transition-opacity hover:opacity-100"
-              style={{ left: `${frac * 100}%`, color: 'var(--vic-gold)', opacity: 0.6, fontSize: 9 }}
-              onClick={() => goToKeyframe(i)}
-            >{kfName(i, keyframes.length)}</button>
-          ))}
-        </div>
       </div>
 
-      {/* ── Motion parameters ───────────────────────────────────── */}
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <SliderRow label="Period" value={heroMotion.period} min={60} max={1800} step={10} suffix="s"
-            onChange={(v) => setHeroMotion({ ...heroMotion, period: v })} />
+      {/* ── Add / Set / Delete — single primary action zone ─────── */}
+      {sel == null ? (
+        <button className="hero-btn w-full py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
+          style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface)', border: '1px solid var(--outline-variant)' }}
+          onClick={addKeyframeFromView}
+        >+ Add Keyframe</button>
+      ) : (
+        <div className="flex gap-1.5">
+          <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
+            style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface)', border: '1px solid var(--outline)' }}
+            onClick={setSelectedFromView}
+          >Edit Keyframe</button>
+          {keyframes.length > 1 && (
+            <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all"
+              style={{ background: 'transparent', color: 'var(--error)', border: '1px solid var(--outline-variant)' }}
+              onClick={deleteSelected}
+              title="Delete keyframe"
+            >×</button>
+          )}
         </div>
-        <div className="flex-1">
-          <SliderRow label="Tension" value={heroMotion.tension} min={0} max={1} step={0.05}
-            onChange={(v) => setHeroMotion({ ...heroMotion, tension: v })} />
-        </div>
-      </div>
-      <div className="space-y-0.5">
-        <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>Easing</span>
-        <select
-          value={heroMotion.easing}
-          onChange={(e) => setHeroMotion({ ...heroMotion, easing: e.target.value })}
-          style={{
-            background: 'var(--surface-container)', border: '1px solid var(--outline-variant)',
-            color: 'var(--on-surface)', borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--type-caption)', padding: '3px 6px', width: '100%', outline: 'none',
-          }}
-        >
-          <option value="easeInOut">Ease In/Out</option>
-          <option value="slowInOut">Slow In/Out</option>
-          <option value="linear">Linear</option>
-        </select>
-      </div>
+      )}
 
-      {/* ── Keyframe cards (collapsible) ─────────────────────────── */}
+      {/* ── Per-keyframe FOV (selected only) ───────────────────── */}
+      {sel != null && (
+        <SliderRow label="FOV" value={sel.fov} min={5} max={120} suffix="°"
+          onChange={(v) => {
+            const next = [...keyframes]
+            next[selectedKf] = { ...sel, fov: v }
+            setKeyframes(next)
+            pushCamera({ fov: v })
+          }} />
+      )}
+
       <div style={{ borderTop: '1px solid var(--outline-variant)' }} />
 
-      {keyframes.map((kf, i) => {
-        const isOpen = expandedKf === i
-        return (
-          <div key={i} style={{
-            borderRadius: 'var(--radius-sm)',
-            background: isOpen ? 'var(--surface-container)' : 'transparent',
-            padding: isOpen ? '6px 8px' : '0 8px',
-          }}>
-            <div className="flex items-center justify-between py-1 cursor-pointer"
-              onClick={() => setExpandedKf(isOpen ? null : i)}>
-              <span className="text-caption font-medium flex items-center gap-1.5" style={{ color: 'var(--on-surface)' }}>
-                <span style={{ fontSize: 8, color: 'var(--on-surface-subtle)' }}>{isOpen ? '▾' : '▸'}</span>
-                {kfName(i, keyframes.length)}
-              </span>
-              <div className="flex gap-1">
-                <button className="text-caption px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                  style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)' }}
-                  onClick={(e) => { e.stopPropagation(); goToKeyframe(i) }}
-                >Go to</button>
-                <button className="text-caption px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                  style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)' }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const next = [...keyframes]
-                    next[i] = { position: [...cam.position], target: [...cam.target], fov: cam.fov }
-                    setKeyframes(next)
-                  }}
-                >Set from view</button>
-                {keyframes.length > 2 && i > 0 && i < keyframes.length - 1 && (
-                  <button className="text-caption px-1 py-0.5 rounded cursor-pointer"
-                    style={{ color: 'var(--error)' }}
-                    onClick={(e) => { e.stopPropagation(); setKeyframes(keyframes.filter((_, j) => j !== i)) }}
-                  >x</button>
-                )}
-              </div>
-            </div>
-            {isOpen && (
-              <div className="space-y-1.5 mt-1">
-                <Vec3Input label="Position" value={kf.position}
-                  onChange={(v) => { const next = [...keyframes]; next[i] = { ...kf, position: v }; setKeyframes(next) }} />
-                <Vec3Input label="Target" value={kf.target}
-                  onChange={(v) => { const next = [...keyframes]; next[i] = { ...kf, target: v }; setKeyframes(next) }} />
-                <SliderRow label="FOV" value={kf.fov} min={5} max={120} suffix="°"
-                  onChange={(v) => { const next = [...keyframes]; next[i] = { ...kf, fov: v }; setKeyframes(next) }} />
-              </div>
-            )}
-          </div>
-        )
-      })}
+      {/* ── Motion parameters ───────────────────────────────────── */}
+      <SliderRow label="Period" value={heroMotion.period} min={60} max={1800} step={10} suffix="s"
+        onChange={(v) => setHeroMotion({ ...heroMotion, period: v })} />
 
-      <button className="w-full py-1 rounded-lg text-caption font-medium cursor-pointer transition-colors"
-        style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}
-        onClick={() => {
-          const last = keyframes[keyframes.length - 1]
-          const prev = keyframes[keyframes.length - 2] || last
-          setKeyframes([...keyframes.slice(0, -1), {
-            position: last.position.map((v, j) => Math.round((v + prev.position[j]) / 2)),
-            target: last.target.map((v, j) => Math.round((v + prev.target[j]) / 2)),
-            fov: last.fov,
-          }, last])
-        }}
-      >+ Add keyframe</button>
+      {/* Wave shape */}
+      <div className="space-y-0.5">
+        <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>Wave</span>
+        <div className="flex gap-1">
+          {[
+            { key: 'sine', desc: 'Sine — smooth, slows at endpoints',
+              path: 'M2 12 Q 9 2, 16 12 T 30 12' },
+            { key: 'triangle', desc: 'Triangle — constant speed, sharp turn',
+              path: 'M2 18 L 9 6 L 16 18 L 23 6 L 30 18' },
+            { key: 'sawtooth', desc: 'Sawtooth — one-way sweep, snap reset',
+              path: 'M2 18 L 16 6 L 16 18 L 30 6 L 30 18' },
+          ].map(t => {
+            const active = heroMotion.easing === t.key
+            return (
+              <button key={t.key}
+                onClick={() => setHeroMotion({ ...heroMotion, easing: t.key })}
+                title={t.desc}
+                className="flex-1 py-2 rounded transition-colors cursor-pointer flex items-center justify-center"
+                style={{
+                  background: active ? 'var(--surface-container-highest)' : 'var(--surface-container)',
+                  border: `1px solid ${active ? 'var(--outline)' : 'var(--outline-variant)'}`,
+                }}
+              >
+                <svg width="32" height="20" viewBox="0 0 32 20" fill="none">
+                  <path d={t.path} stroke={active ? 'var(--on-surface)' : 'var(--on-surface-variant)'}
+                    strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
@@ -1140,43 +1193,70 @@ function StreetCamera({ cam }) {
 
 // ── Hero preview animation (runs inside R3F) ────────────────────────────────
 
-function HeroPreview({ keyframes, motion }) {
+export function HeroPreview({ keyframes, motion, subject }) {
   const { camera } = useThree()
+  const controls = useThree((s) => s.controls)
   const elapsed = useRef(0)
+  const frameCount = useRef(0)
 
-  useFrame(({ controls }, delta) => {
-    if (!motion.preview || keyframes.length < 2) return
-    const ctl = controls
-    if (!ctl) return
+  useFrame((_, delta) => {
+    // 0) Keep liveCamera fresh (Set-from-view reads this synchronously)
+    liveCamera.camera = camera
+    liveCamera.controls = controls
 
-    const speed = motion.speed || 1
-    elapsed.current += delta * speed
+    // Subject centroid = camera target. Always look at it, every frame.
+    const tgt = subject || FALLBACK_HERO_SUBJECT
 
-    const easing = EASINGS[motion.easing] || EASINGS.easeInOut
-    // Ping-pong: 0→1→0 over one period
-    const raw = (elapsed.current % motion.period) / motion.period
-    const pingPong = raw < 0.5 ? raw * 2 : 2 - raw * 2
-    const t = easing(pingPong)
-
-    // Broadcast scrub position to panel
-    heroScrub.t = pingPong  // raw position before easing, so the playhead moves linearly
-    notifyHeroScrub()
-
-    const pos = catmullRom(keyframes.map(k => k.position), t, motion.tension)
-    const tgt = catmullRom(keyframes.map(k => k.target), t, motion.tension)
-    // Interpolate FOV per-segment
-    const segment = t * (keyframes.length - 1)
-    const idx = Math.min(Math.floor(segment), keyframes.length - 2)
-    const local = segment - idx
-    const fov = keyframes[idx].fov + local * (keyframes[idx + 1].fov - keyframes[idx].fov)
-
-    camera.position.set(...pos)
-    ctl.target.set(...tgt)
-    if (Math.abs(camera.fov - fov) > 0.1) {
-      camera.fov = fov
-      camera.updateProjectionMatrix()
+    // 1) Drain panel pushes (position + fov from scrub, Add/Set Keyframe).
+    // Target is owned by the subject; we ignore u.target if present.
+    if (cameraPush.pending) {
+      const u = cameraPush.pending
+      cameraPush.pending = null
+      if (u.position) camera.position.set(u.position[0], u.position[1], u.position[2])
+      if (u.fov != null) { camera.fov = u.fov; camera.updateProjectionMatrix() }
     }
-    ctl.update()
+
+    // 2) Animate when playing — interpolate position + fov; target = subject.
+    if (motion.preview && keyframes.length >= 1) {
+      const speed = motion.speed || 1
+      elapsed.current += delta * speed
+      const wave = EASINGS[motion.easing] || EASINGS.sine
+      const t01 = (elapsed.current % motion.period) / motion.period
+      const t = wave(t01)
+
+      heroScrub.t = t01
+      notifyHeroScrub()
+
+      let pos, fov
+      if (keyframes.length === 1) {
+        pos = keyframes[0].position
+        fov = keyframes[0].fov
+      } else {
+        pos = catmullRom(keyframes.map(k => k.position), t)
+        const segment = t * (keyframes.length - 1)
+        const idx = Math.min(Math.floor(segment), keyframes.length - 2)
+        const local = segment - idx
+        fov = keyframes[idx].fov + local * (keyframes[idx + 1].fov - keyframes[idx].fov)
+      }
+
+      camera.position.set(pos[0], pos[1], pos[2])
+      if (Math.abs(camera.fov - fov) > 0.1) {
+        camera.fov = fov
+        camera.updateProjectionMatrix()
+      }
+    }
+
+    // 3) Always aim at the subject (every frame, animating or not)
+    camera.lookAt(tgt[0], tgt[1], tgt[2])
+    if (controls) controls.target.set(tgt[0], tgt[1], tgt[2])
+
+    // 4) Broadcast camera state to the panel (every 10 frames)
+    if (++frameCount.current % 10 !== 0) return
+    const p = camera.position
+    cameraState.position = [Math.round(p.x), Math.round(p.y), Math.round(p.z)]
+    cameraState.target = [Math.round(tgt[0]), Math.round(tgt[1]), Math.round(tgt[2])]
+    cameraState.fov = Math.round(camera.fov)
+    notifyCameraListeners()
   })
 
   return null
@@ -1373,136 +1453,211 @@ function SurfaceSwatch({ item, selected, onClick }) {
   )
 }
 
-function SurfaceGallery() {
-  const [activeTab, setActiveTab] = useState('streets')
-  const [selectedId, setSelectedId] = useState(null)
+// ── New Surfaces panel — driven by surfaceState (real material registry) ──
+import {
+  surfaceState, useSurfaceState, setSurface, resetSurface,
+  TEXTURE_OPTIONS,
+} from './surfaceState.js'
 
-  const tab = SURFACE_CATALOG[activeTab]
-  const selectedItem = selectedId ? tab.items.find(i => i.id === selectedId) : null
+const SURFACE_LABELS = {
+  walls:       'Walls',
+  roofs:       'Roofs',
+  foundations: 'Foundations',
+}
+const SURFACE_MATERIAL_LABELS = {
+  walls: {
+    brick_red: 'Brick — Red',
+    brick_weathered: 'Brick — Weathered',
+    stone: 'Stone',
+    stucco: 'Stucco',
+    wood_siding: 'Wood Siding',
+  },
+  roofs: {
+    flat: 'Flat',
+    slate: 'Slate',
+    metal: 'Metal',
+  },
+  foundations: {
+    foundation: 'Foundation',
+  },
+}
+const SURFACE_CATEGORIES = ['walls', 'roofs', 'foundations']
 
+function MaterialCard({ category, materialId, mat }) {
+  const [open, setOpen] = useState(false)
+  const label = SURFACE_MATERIAL_LABELS[category]?.[materialId] || materialId
   return (
-    <div className="space-y-2">
-      <div className="section-heading">Surfaces</div>
-
-      {/* Tab bar */}
-      <div className="flex flex-wrap gap-0.5">
-        {SURFACE_TABS.map(key => (
-          <button key={key}
-            onClick={() => { setActiveTab(key); setSelectedId(null) }}
-            className="px-1.5 py-0.5 rounded text-caption cursor-pointer transition-colors"
-            style={{
-              background: activeTab === key ? 'var(--surface-container-highest)' : 'transparent',
-              color: activeTab === key ? 'var(--on-surface)' : 'var(--on-surface-subtle)',
-            }}
-          >{SURFACE_CATALOG[key].label}</button>
-        ))}
+    <div style={{
+      borderRadius: 'var(--radius-sm)',
+      background: open ? 'var(--surface-container)' : 'transparent',
+      padding: open ? '6px 8px' : '2px 8px',
+    }}>
+      <div className="flex items-center gap-2 cursor-pointer py-1"
+        onClick={() => setOpen(!open)}>
+        <span style={{ fontSize: 8, color: 'var(--on-surface-subtle)' }}>{open ? '▾' : '▸'}</span>
+        <div className="w-4 h-4 rounded" style={{
+          backgroundColor: mat.color,
+          border: '1px solid rgba(255,255,255,0.18)',
+        }} />
+        <span className="text-caption" style={{ color: 'var(--on-surface)', flex: 1 }}>{label}</span>
+        {mat.texture !== 'none' && (
+          <span className="text-caption font-mono" style={{ color: 'var(--on-surface-subtle)', fontSize: 9 }}>
+            {mat.texture}
+          </span>
+        )}
+        <button
+          className="text-caption cursor-pointer"
+          style={{ color: 'var(--on-surface-subtle)', fontSize: 10 }}
+          onClick={(e) => { e.stopPropagation(); resetSurface(category, materialId) }}
+          title="Reset to default"
+        >↺</button>
       </div>
-
-      {/* Swatch grid */}
-      <div className="flex flex-wrap gap-1.5 py-1">
-        {tab.items.map(item => (
-          <SurfaceSwatch key={item.id} item={item}
-            selected={selectedId === item.id}
-            onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}
-          />
-        ))}
-      </div>
-
-      {/* Selected surface controls */}
-      {selectedItem && (
-        <div className="space-y-2 pt-1" style={{ borderTop: '1px solid var(--outline-variant)' }}>
+      {open && (
+        <div className="space-y-1.5 mt-1">
+          {/* Color */}
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full" style={{ backgroundColor: selectedItem.color }} />
-            <span className="text-body-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-              {selectedItem.label}
+            <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 56 }}>Color</span>
+            <input type="color" value={mat.color}
+              style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }}
+              onChange={(e) => setSurface(category, materialId, { color: e.target.value })}
+            />
+            <span className="text-caption font-mono" style={{ color: 'var(--on-surface-subtle)', flex: 1 }}>
+              {mat.color}
             </span>
           </div>
+          <SliderRow label="Roughness" value={mat.roughness} min={0} max={1} step={0.05}
+            onChange={(v) => setSurface(category, materialId, { roughness: v })} />
+          <SliderRow label="Metalness" value={mat.metalness} min={0} max={1} step={0.05}
+            onChange={(v) => setSurface(category, materialId, { metalness: v })} />
+
+          {/* Texture */}
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 60 }}>Color</span>
-              <input type="color" value={selectedItem.color}
-                style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }}
-                onChange={() => {/* wired in 6B.3 */}}
-              />
-              <span className="text-caption font-mono" style={{ color: 'var(--on-surface-subtle)' }}>
-                {selectedItem.color}
-              </span>
-            </div>
-            <SliderRow label="Roughness" value={0.85} min={0} max={1} step={0.05}
-              onChange={() => {/* wired in 6B.8 */}} />
-            <Collapsible label="Emissive">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 60 }}>Color</span>
-                  <input type="color" value="#000000"
-                    style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }}
-                    onChange={() => {}}
-                  />
-                </div>
-                <SliderRow label="Night Intensity" value={0} min={0} max={1} step={0.05}
-                  onChange={() => {}} />
-              </div>
-            </Collapsible>
-            <Collapsible label="Texture">
-              <div className="space-y-1">
-                <select style={{
-                  background: 'var(--surface-container)', border: '1px solid var(--outline-variant)',
-                  color: 'var(--on-surface)', borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--type-caption)', padding: '3px 6px', width: '100%', outline: 'none',
-                }}>
-                  <option value="none">None</option>
-                  <option value="gravel">Gravel</option>
-                  <option value="asphalt">Asphalt</option>
-                  <option value="concrete">Concrete</option>
-                  <option value="grass">Grass</option>
-                  <option value="brick">Brick</option>
-                </select>
-                <SliderRow label="Scale" value={1} min={0.1} max={5} step={0.1}
-                  onChange={() => {}} />
-              </div>
-            </Collapsible>
+            <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>Texture</span>
+            <select
+              value={mat.texture}
+              onChange={(e) => setSurface(category, materialId, { texture: e.target.value })}
+              style={{
+                background: 'var(--surface-container)',
+                border: '1px solid var(--outline-variant)',
+                color: 'var(--on-surface)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 'var(--type-caption)',
+                padding: '3px 6px', width: '100%', outline: 'none',
+              }}
+            >
+              {TEXTURE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            {mat.texture !== 'none' && (
+              <>
+                <SliderRow label="Scale" value={mat.textureScale} min={0.1} max={8} step={0.1}
+                  onChange={(v) => setSurface(category, materialId, { textureScale: v })} />
+                <SliderRow label="Strength" value={mat.textureStrength} min={0} max={1} step={0.05}
+                  onChange={(v) => setSurface(category, materialId, { textureStrength: v })} />
+              </>
+            )}
           </div>
+
+          {/* Emissive (collapsed by default — most materials are non-emissive) */}
+          <Collapsible label="Emissive">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 56 }}>Color</span>
+                <input type="color" value={mat.emissive}
+                  style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                  onChange={(e) => setSurface(category, materialId, { emissive: e.target.value })}
+                />
+                <span className="text-caption font-mono" style={{ color: 'var(--on-surface-subtle)' }}>
+                  {mat.emissive}
+                </span>
+              </div>
+              <SliderRow label="Intensity" value={mat.emissiveIntensity} min={0} max={5} step={0.1}
+                onChange={(v) => setSurface(category, materialId, { emissiveIntensity: v })} />
+            </div>
+          </Collapsible>
         </div>
       )}
     </div>
   )
 }
 
+function SurfaceGallery() {
+  const [activeTab, setActiveTab] = useState('walls')
+  const surfaces = useSurfaceState()
+  const cat = surfaces[activeTab] || {}
+
+  return (
+    <div className="space-y-2">
+      <div className="section-heading">Surfaces</div>
+
+      {/* Tab bar */}
+      <div className="flex gap-0.5">
+        {SURFACE_CATEGORIES.map(key => (
+          <button key={key}
+            onClick={() => setActiveTab(key)}
+            className="px-2 py-0.5 rounded text-caption cursor-pointer transition-colors"
+            style={{
+              background: activeTab === key ? 'var(--surface-container-highest)' : 'transparent',
+              color: activeTab === key ? 'var(--on-surface)' : 'var(--on-surface-subtle)',
+            }}
+          >{SURFACE_LABELS[key]}</button>
+        ))}
+      </div>
+
+      {/* Material cards */}
+      <div className="space-y-0.5">
+        {Object.entries(cat).map(([id, mat]) => (
+          <MaterialCard key={id} category={activeTab} materialId={id} mat={mat} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Stage Panel ─────────────────────────────────────────────────────────────
 
-export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot }) {
+export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot, skyLightSlot, postSlot }) {
   const cam = useCameraState()
 
   return (
-    <div className="absolute top-4 right-4 bottom-4 w-80 flex flex-col gap-3 z-10 pointer-events-none overflow-y-auto"
+    <div className="absolute top-4 right-4 bottom-4 w-[400px] flex flex-col gap-3 z-10 pointer-events-none overflow-y-auto"
       style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--outline-variant) transparent' }}>
 
-      {/* GPU budget — always visible at top */}
+      {/* Time of Day — top slot for Preview parity */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <GpuBudgetBar />
+        <div className="section-heading mb-2">Time of Day</div>
+        <Timeline />
       </div>
 
-      {/* Shot selector — always visible */}
-      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <div className="section-heading mb-2">Shot</div>
-        <div className="flex gap-1">
-          {Object.entries(SHOTS).map(([key, s]) => (
-            <button key={key}
-              onClick={() => setShot(key)}
-              className="flex-1 py-1.5 rounded-lg text-body-sm font-medium transition-colors cursor-pointer"
-              style={{
-                background: shot === key ? 'var(--surface-container-highest)' : 'var(--surface-container)',
-                color: shot === key ? 'var(--on-surface)' : 'var(--on-surface-variant)',
-                border: `1px solid ${shot === key ? 'var(--outline)' : 'var(--outline-variant)'}`,
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
+      {/* Sky & Light — TOD-animatable atmospheric + lighting channels.
+          Unmounted in Browse: card geometry (sky, celestial bodies, haze)
+          isn't visible looking straight down, and unmounting prevents the
+          channels' useMemos from running and the renderers from drawing. */}
+      {shot !== 'browse' && (
+        <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+          <Collapsible label="Sky & Light">
+            {skyLightSlot}
+          </Collapsible>
         </div>
+      )}
+
+      {/* Environment — ambient/world */}
+      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+        <Collapsible label="Environment">
+          <EnvironmentControls />
+        </Collapsible>
       </div>
 
-      {/* Camera — collapsible, shot-specific */}
+      {/* Surfaces — defaults to the standalone /stage mockup gallery; the
+          cartograph passes its own store-bound material editor as
+          `surfacesSlot` so per-Look styling lives here, not in a separate
+          panel. Same visual home, real wiring. */}
+      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+        <Collapsible label="Surfaces">
+          {surfacesSlot || <SurfaceGallery />}
+        </Collapsible>
+      </div>
+
+      {/* Camera — per-shot authoring */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
         <Collapsible label="Camera">
           {shot === 'hero' && (
@@ -1514,26 +1669,11 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         </Collapsible>
       </div>
 
-      {/* Timeline — always visible */}
+      {/* Post — camera/grade-side TOD channels. Visible in all shots. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <div className="section-heading mb-2">Time of Day</div>
-        <Timeline />
-      </div>
-
-      {/* Environment */}
-      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <Collapsible label="Environment" defaultOpen>
-          <EnvironmentControls />
+        <Collapsible label="Post">
+          {postSlot}
         </Collapsible>
-      </div>
-
-      {/* Surfaces — defaults to the standalone /stage mockup gallery; the
-          cartograph passes its own store-bound material editor as
-          `surfacesSlot` so per-Look styling lives here, not in a separate
-          panel. Same visual home, real wiring. */}
-      <div className="glass-panel rounded-xl p-3 pointer-events-auto flex-1 overflow-y-auto"
-        style={{ minHeight: 200 }}>
-        {surfacesSlot || <SurfaceGallery />}
       </div>
     </div>
   )
@@ -1541,62 +1681,7 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
-export default function StageApp() {
-  const [shot, setShot] = useState('hero')
-  const [keyframes, setKeyframes] = useState(() => defaultKeyframes('hero'))
-  const [heroMotion, setHeroMotion] = useState({
-    period: 720, tension: 0.5, easing: 'easeInOut', preview: false,
-  })
-
-  useEffect(() => {
-    useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
-  }, [shot])
-
-  return (
-    <div className="fixed inset-0 bg-black">
-      <Canvas
-        frameloop="demand"
-        camera={{ position: SHOTS.hero.position, fov: SHOTS.hero.fov, near: 1, far: 60000 }}
-        gl={{
-          alpha: false, antialias: true, stencil: true,
-          powerPreference: 'high-performance',
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 0.95,
-        }}
-        onCreated={({ gl, camera }) => {
-          gl.setClearColor(0x2a2a26, 1)  // match terrain ground color
-          camera.lookAt(...SHOTS.hero.target)
-        }}
-        dpr={[1, 1.5]}
-        shadows="soft"
-      >
-        <StageShadows />
-        <FrameLimiter />
-        <TimeTicker />
-        <SkyStateTicker />
-
-        <CelestialBodies />
-        <CloudDome />
-
-        <R3FErrorBoundary name="StreetRibbons"><StreetRibbons /></R3FErrorBoundary>
-
-        <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
-        <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
-        <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
-        <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
-
-        <StageCamera shot={shot} />
-        <SceneDiag />
-        <GpuMeter />
-        {shot === 'hero' && <HeroPreview keyframes={keyframes} motion={heroMotion} />}
-        <PathLine keyframes={keyframes} tension={heroMotion.tension}
-          visible={shot === 'hero' && heroMotion.preview} />
-        <PostProcessing />
-      </Canvas>
-
-      <StagePanel shot={shot} setShot={setShot}
-        keyframes={keyframes} setKeyframes={setKeyframes}
-        heroMotion={heroMotion} setHeroMotion={setHeroMotion} />
-    </div>
-  )
-}
+// Default export removed: Stage is cartograph-hosted, not a standalone
+// route. The /stage entry has been deleted (vite.config.js + stage.html
+// + src/stage/main.jsx). Real Stage is mounted via CartographApp's
+// Canvas + StagePanel. See feedback_stage_standalone_should_die.md.

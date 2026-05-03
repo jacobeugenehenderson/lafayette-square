@@ -80,8 +80,14 @@ botanica/
 
 # Arborist operator state + caches. Curated picks live in arborist/state/;
 # .laz → .ply preview conversion cache lives in arborist/_cache/. Both
-# regenerable; never committed. (public/trees/ IS committed — that's the
-# published artifact.)
+# regenerable; never committed.
 arborist/state/
 arborist/_cache/
 arborist/.venv/
+
+# Arborist raw-GLB library. Authoring-only source pool the Arborist
+# reads from; never read by runtime. The published artifact runtime
+# consumes is the per-Look bake at public/baked/<look>/, written by
+# arborist/bake-look.js. Library is multi-GB and regenerable; never
+# commit it. See ARCHITECTURE.md §1 for the publish-loop rule.
+public/trees/

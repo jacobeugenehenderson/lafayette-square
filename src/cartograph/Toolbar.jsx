@@ -51,7 +51,7 @@ export default function Toolbar() {
           </div>
           <LooksMenu />
           <div className="carto-toolgroup">
-            <button onClick={() => console.log('[publish] not wired yet')}>Publish</button>
+            <button onClick={() => window.open('/preview', '_blank')}>Preview</button>
           </div>
         </>
       )}
@@ -65,8 +65,8 @@ export default function Toolbar() {
           <button
             className={`carto-stage-btn${bakeStale ? ' stale' : ''}`}
             disabled={bakeRunning}
-            onClick={() => runBake()}
-            title={bakeStale ? 'Bake the cartograph SVG and view it in Stage' : 'Cartograph baked. Click to re-stage.'}>
+            onClick={() => bakeStale ? runBake() : setShot('hero')}
+            title={bakeStale ? 'Bake the cartograph SVG and view it in Stage' : 'Cartograph baked. Click to view in Stage.'}>
             {bakeRunning ? 'Baking…' : (bakeStale ? 'Stage' : 'Stage ✓')}
           </button>
         </div>

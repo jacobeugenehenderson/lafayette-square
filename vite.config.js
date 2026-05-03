@@ -3,14 +3,16 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
 
-// Serve helper-app routes (/cartograph, /stage, /arborist) as separate
+// Serve helper-app routes (/cartograph, /arborist, /preview) as separate
 // HTML entry points. Each helper has its own `*.html` at repo root and
 // `main.jsx` under `src/<helper>/`. Add new helpers by appending here +
 // adding the `*.html` to `build.rollupOptions.input` below.
+//
+// /stage is intentionally absent — Stage is cartograph-hosted, not a
+// standalone route. See feedback_stage_standalone_should_die.md.
 function serveHelperApps() {
   const routes = [
     { url: '/cartograph', file: 'cartograph.html' },
-    { url: '/stage',      file: 'stage.html' },
     { url: '/arborist',   file: 'arborist.html' },
     { url: '/preview',    file: 'preview.html' },
   ]
@@ -117,7 +119,6 @@ export default defineConfig(({ command }) => ({
       input: {
         main: 'index.html',
         cartograph: 'cartograph.html',
-        stage: 'stage.html',
         arborist: 'arborist.html',
         preview: 'preview.html',
       },

@@ -88,25 +88,25 @@ const useArboristStore = create((set, get) => ({
       ? cur.filter(t => !(t.species === species && Number(t.variantId) === Number(variantId)))
       : [...cur, { species, variantId: Number(variantId) }]
     set({ looksRosters: { ...get().looksRosters, [lookId]: next } })
-    get()._saveLookRosterDebounced(lookId)
+    get()._saveLookRoster(lookId)
   },
-  _lookRosterTimers: {},
-  _saveLookRosterDebounced: (lookId) => {
-    const timers = get()._lookRosterTimers
-    if (timers[lookId]) clearTimeout(timers[lookId])
-    timers[lookId] = setTimeout(async () => {
-      delete timers[lookId]
-      const trees = get().looksRosters[lookId] || []
-      try {
-        await fetch(`/api/cartograph/looks/${encodeURIComponent(lookId)}/trees`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ trees }),
-        })
-      } catch (err) {
-        console.warn('[arborist] roster save failed for', lookId, err)
-      }
-    }, 300)
+  _saveLookRoster: async (lookId) => {
+    const trees = get().looksRosters[lookId] || []
+    try {
+      await fetch(`/api/cartograph/looks/${encodeURIComponent(lookId)}/trees`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trees }),
+      })
+      // Roster saved → fire the per-Look atlas rebake. Fire-and-forget; the
+      // bake takes ~3-15s depending on roster size. Runtime cache-busts on
+      // next manifest fetch so the new artifacts land when Stage/Preview reloads.
+      fetch(`/api/arborist/atlas/bake?look=${encodeURIComponent(lookId)}`, {
+        method: 'POST',
+      }).catch(err => console.warn('[arborist] atlas auto-bake failed for', lookId, err))
+    } catch (err) {
+      console.warn('[arborist] roster save failed for', lookId, err)
+    }
   },
   createLook: async (name) => {
     const trimmed = String(name || '').trim()

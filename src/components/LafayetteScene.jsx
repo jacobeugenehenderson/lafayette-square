@@ -17,6 +17,27 @@ import { CATEGORY_HEX } from '../tokens/categories'
 import FacadeElements from './FacadeElements'
 import { patchTerrain } from '../utils/terrainShader'
 import { getElevation } from '../utils/elevation'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
+
+// Deterministic string hash — same id always picks the same palette slot.
+function hashStr(s) {
+  let h = 0
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0
+  }
+  return Math.abs(h)
+}
+
+// Effective per-building tint: per-building override > Look palette > legacy
+// building.color (kept as a final fallback so the data file still works
+// when no Look is loaded — e.g. tests, headless renders).
+function effectiveBuildingColor(building, palette, override) {
+  if (override) return override
+  if (palette && palette.length > 0) {
+    return palette[hashStr(building.id) % palette.length]
+  }
+  return building.color
+}
 
 // ============ BUILDING TEXTURES ============
 // Tileable PBR textures for walls and roofs (CC0, Poly Haven)
@@ -394,6 +415,25 @@ function Foundations({ buildings: buildingsProp } = {}) {
     return mat
   }, [])
 
+  // Live wire to Surfaces panel — foundation is a single shared material
+  // across all buildings so cost is one zustand read per frame.
+  useFrame(() => {
+    const phys = useCartographStore.getState().materialPhysics?.foundation
+    const colorOv = useCartographStore.getState().materialColors?.foundation
+    if (colorOv && foundationMat.color.getHexString() !== colorOv.replace('#', '').toLowerCase()) {
+      foundationMat.color.set(colorOv)
+    }
+    if (phys) {
+      if (phys.roughness !== undefined && foundationMat.roughness !== phys.roughness) foundationMat.roughness = phys.roughness
+      if (phys.metalness !== undefined && foundationMat.metalness !== phys.metalness) foundationMat.metalness = phys.metalness
+      const ei = phys.emissiveIntensity || 0
+      if (foundationMat.emissiveIntensity !== ei) foundationMat.emissiveIntensity = ei
+      if (phys.emissive && foundationMat.emissive.getHexString() !== phys.emissive.replace('#', '').toLowerCase()) {
+        foundationMat.emissive.set(phys.emissive)
+      }
+    }
+  })
+
   if (!geometry) return null
 
   return (
@@ -610,7 +650,14 @@ function Building({ building, neonInfo }) {
 
   const isSelected = selectedId === building.id
   const isHovered = hoveredId === building.id
-  const baseColor = useMemo(() => new THREE.Color(building.color), [building.color])
+  // Effective tint: per-building override (buildingOverrides.color) wins,
+  // else the active Look's 12-slot palette (deterministic by id), else
+  // the legacy `building.color` from buildings.json. Live-subscribes so
+  // palette edits in the Surfaces panel retint immediately.
+  const palette = useCartographStore(s => s.buildingPalette)
+  const colorOverride = getOverride(building.id, 'color')
+  const wallTintHex = effectiveBuildingColor(building, palette, colorOverride)
+  const baseColor = useMemo(() => new THREE.Color(wallTintHex), [wallTintHex])
 
   // Pre-compute night color: keep saturation, darken, cool-shift hue
   const nightColor = useMemo(() => {
@@ -754,6 +801,10 @@ function Building({ building, neonInfo }) {
       shader.uniforms.uRoofTint = { value: roofTintColor }
       shader.uniforms.uTexStrength = { value: 0.4 }
       shader.uniforms.uDarkFactor = { value: 0.0 }
+      // Texture-scale multipliers — 1.0 = default tiling, >1 = larger
+      // tiles (less repeat), <1 = smaller. Driven by materialPhysics.
+      shader.uniforms.uWallTexScale = { value: 1.0 }
+      shader.uniforms.uRoofTexScale = { value: 1.0 }
 
       // Vertex: pass world position and normal to fragment
       shader.vertexShader = shader.vertexShader.replace(
@@ -780,6 +831,8 @@ function Building({ building, neonInfo }) {
          uniform vec3 uRoofTint;
          uniform float uTexStrength;
          uniform float uDarkFactor;
+         uniform float uWallTexScale;
+         uniform float uRoofTexScale;
          varying vec3 vBldgWorldPos;
          varying vec3 vBldgWorldNorm;
 `
@@ -798,11 +851,11 @@ function Building({ building, neonInfo }) {
          if (abs(vBldgWorldNorm.x) > abs(vBldgWorldNorm.z)) {
            bWallUV = vec2(vBldgWorldPos.z, vBldgWorldPos.y) * 0.25;
          } else {
-           bWallUV = vec2(vBldgWorldPos.x, vBldgWorldPos.y) * 0.25;
+           bWallUV = vec2(vBldgWorldPos.x, vBldgWorldPos.y) * 0.25 / uWallTexScale;
          }
 
          // Roof UV: world XZ plane
-         vec2 bRoofUV = vBldgWorldPos.xz * 0.2;
+         vec2 bRoofUV = vBldgWorldPos.xz * 0.2 / uRoofTexScale;
 
          // Sample textures
          vec3 bWallSample = texture2D(uWallTex, bWallUV).rgb;
@@ -860,6 +913,40 @@ function Building({ building, neonInfo }) {
     // comparison has already cached the current value, leaving roofs bright at night.
     if (shaderRef.current) {
       shaderRef.current.uniforms.uDarkFactor.value = darkFactor
+    }
+
+    // Live wire to Surfaces panel — read materialPhysics for this
+    // building's wall material and mutate the shared per-building
+    // material. Cheap (one zustand read + a few property writes).
+    const physics = useCartographStore.getState().materialPhysics
+    const wallPhys = physics?.[building.wall_material]
+    if (wallPhys) {
+      if (wallPhys.roughness !== undefined && mat.roughness !== wallPhys.roughness) {
+        mat.roughness = wallPhys.roughness
+      }
+      if (wallPhys.metalness !== undefined && mat.metalness !== wallPhys.metalness) {
+        mat.metalness = wallPhys.metalness
+      }
+      if (shaderRef.current && wallPhys.textureStrength !== undefined) {
+        const s = shaderRef.current.uniforms.uTexStrength
+        if (s) s.value = wallPhys.textureStrength
+      }
+      if (shaderRef.current && wallPhys.textureScale !== undefined) {
+        const s = shaderRef.current.uniforms.uWallTexScale
+        if (s) s.value = wallPhys.textureScale
+      }
+    }
+    // Roof material physics — only the texture-side knobs apply here
+    // (mat.roughness/metalness are wall-driven since they're material-
+    // level not shader uniforms; a proper split needs separate roof
+    // submaterial, follow-up).
+    const roofKey = `roof_${building.roof_material || 'flat'}`
+    const roofPhys = physics?.[roofKey]
+    if (roofPhys && shaderRef.current) {
+      if (roofPhys.textureScale !== undefined) {
+        const s = shaderRef.current.uniforms.uRoofTexScale
+        if (s) s.value = roofPhys.textureScale
+      }
     }
 
     // Emissive for selection/hover

@@ -5,8 +5,9 @@
  * Per the Looks model (project_cartograph_looks_model): each material is one
  * editable unit — color now, shader knobs in Pass C. Tabs group materials by
  * the same five-section structure the bake produces (Streets / Blocks /
- * Paths / Features / Labels), so the catalog lines up with what
- * cartograph-ground.svg can actually emit.
+ * Paths / Features / Labels), so the catalog lines up with what the
+ * per-Look bake bundle (ground.json + bin + lightmap + scene snapshot)
+ * actually emits.
  *
  * Storage: every edit goes through the cartograph store's setters
  * (setLayerColor, setLuColor, toggleLayerVis, …) which autosave to the
@@ -15,6 +16,33 @@
 import { useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
+import TodChannel from './TodChannel.jsx'
+
+// Default shader physics for the 3D-scene materials. roughness/metalness
+// reflect what LafayetteScene's hardcoded materials use today; textures
+// match what _buildingTextures loads. Operator overrides ride on top in
+// the cartograph store as `materialPhysics[id]`.
+export const DEFAULT_MATERIAL_PHYSICS = {
+  // Walls
+  brick_red:       { roughness: 0.90, metalness: 0,    texture: 'brick_red',       textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  brick_weathered: { roughness: 0.95, metalness: 0,    texture: 'brick_weathered', textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  stone:           { roughness: 0.85, metalness: 0,    texture: 'stone',           textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  stucco:          { roughness: 0.95, metalness: 0,    texture: 'stucco',          textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  wood_siding:     { roughness: 0.85, metalness: 0,    texture: 'wood_siding',     textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  // Roofs
+  roof_flat:       { roughness: 0.90, metalness: 0,    texture: 'none',            textureScale: 1, textureStrength: 0.0, emissive: '#000000', emissiveIntensity: 0 },
+  roof_metal:      { roughness: 0.50, metalness: 0.40, texture: 'metal',           textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  roof_slate:      { roughness: 0.70, metalness: 0,    texture: 'slate',           textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  // Building (other)
+  foundation:      { roughness: 0.95, metalness: 0,    texture: 'none',            textureScale: 1, textureStrength: 0.0, emissive: '#000000', emissiveIntensity: 0 },
+  night_behavior:  { roughness: 0.80, metalness: 0,    texture: 'none',            textureScale: 1, textureStrength: 0.0, emissive: '#000000', emissiveIntensity: 0 },
+}
+
+export const TEXTURE_OPTIONS = [
+  'none',
+  'brick_red', 'brick_weathered', 'stone', 'stucco', 'wood_siding',
+  'slate', 'metal',
+]
 
 // Defaults for non-bake material kinds (walls/roofs/neon/trees/park/infra).
 // Mirrored from the standalone /stage SURFACE_CATALOG so identity matches
@@ -109,7 +137,6 @@ const TABS = [
     key: 'features',
     label: 'Features',
     items: [
-      { id: 'park',           label: 'Park',            kind: 'layer' },
       { id: 'water',          label: 'Water',           kind: 'layer' },
       { id: 'tree',           label: 'Trees',           kind: 'layer' },
       { id: 'lamp',           label: 'Lamps',           kind: 'layer' },
@@ -127,17 +154,6 @@ const TABS = [
     ],
   },
   {
-    key: 'walls',
-    label: 'Walls',
-    items: [
-      { id: 'brick_red',       label: 'Brick Red',       kind: 'material' },
-      { id: 'brick_weathered', label: 'Brick Weathered', kind: 'material' },
-      { id: 'stone',           label: 'Stone',           kind: 'material' },
-      { id: 'stucco',          label: 'Stucco',          kind: 'material' },
-      { id: 'wood_siding',     label: 'Wood Siding',     kind: 'material' },
-    ],
-  },
-  {
     key: 'roofs',
     label: 'Roofs',
     items: [
@@ -147,11 +163,32 @@ const TABS = [
     ],
   },
   {
+    key: 'lighting',
+    label: 'Lighting',
+    items: [
+      { id: 'lamp_glow', label: 'Lamp Glow', kind: 'lamp_glow' },
+    ],
+  },
+  {
     key: 'building',
     label: 'Building',
     items: [
-      { id: 'foundation',     label: 'Foundation', kind: 'material' },
-      { id: 'night_behavior', label: 'Night Shift', kind: 'material' },
+      // Wall textures up top — they're the dominant visible material on
+      // every building. Was a separate Walls tab; merged here since Walls
+      // _is_ the building textures and the split was redundant.
+      // Color words (red) intentionally stripped from labels — actual
+      // color comes from the building palette, not the material id.
+      { id: 'brick_red',       label: 'Brick',           kind: 'material' },
+      { id: 'brick_weathered', label: 'Brick Weathered', kind: 'material' },
+      { id: 'stone',           label: 'Stone',           kind: 'material' },
+      { id: 'stucco',          label: 'Stucco',          kind: 'material' },
+      { id: 'wood_siding',     label: 'Wood Siding',     kind: 'material' },
+      // Foundation + night behavior — building-scoped, not wall-specific.
+      { id: 'foundation',      label: 'Foundation',      kind: 'material' },
+      { id: 'night_behavior',  label: 'Night Shift',     kind: 'material' },
+      // Palette last — operator usually dials walls/roofs first, then
+      // tunes the per-building tint mix.
+      { id: 'palette',         label: 'Palette',         kind: 'palette' },
     ],
   },
   {
@@ -213,7 +250,17 @@ function colorFor(item, layerColors, luColors, materialColors) {
   return layerColors[item.id] || DEFAULT_LAYER_COLORS[item.id] || '#888888'
 }
 
-function Swatch({ item, color, visible, selected, onClick }) {
+function Swatch({ item, color, visible, selected, onClick, palette, materialPhysics }) {
+  const isPalette = item.kind === 'palette' && Array.isArray(palette)
+  // Resolve texture id for materials that have one. The swatch then renders
+  // a grayscale thumbnail instead of a solid color — the per-building tint
+  // (from palette) is what supplies the actual color, so a colored swatch
+  // here is misleading.
+  const phys = item.kind === 'material'
+    ? { ...(DEFAULT_MATERIAL_PHYSICS[item.id] || {}), ...((materialPhysics || {})[item.id] || {}) }
+    : null
+  const texId = phys && phys.texture && phys.texture !== 'none' ? phys.texture : null
+  const texUrl = texId ? `/textures/buildings/${texId}.jpg` : null
   return (
     <button
       onClick={onClick}
@@ -222,14 +269,31 @@ function Swatch({ item, color, visible, selected, onClick }) {
       title={visible ? item.label : `${item.label} (hidden)`}
     >
       <div
-        className="w-8 h-8 rounded-full border-2 transition-all shadow-sm"
+        className="w-8 h-8 rounded-full border-2 transition-all shadow-sm overflow-hidden"
         style={{
-          backgroundColor: color,
+          backgroundColor: (isPalette || texUrl) ? 'transparent' : color,
           borderColor: selected ? 'var(--vic-gold)' : 'var(--outline-variant)',
           boxShadow: selected ? '0 0 0 2px var(--vic-gold)' : 'none',
           opacity: visible ? 1 : 0.35,
+          position: 'relative',
+          backgroundImage: texUrl ? `url("${texUrl}")` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: texUrl ? 'grayscale(100%)' : undefined,
         }}
-      />
+      >
+        {isPalette && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr',
+          }}>
+            <div style={{ background: palette[0] }} />
+            <div style={{ background: palette[3] }} />
+            <div style={{ background: palette[6] }} />
+            <div style={{ background: palette[9] }} />
+          </div>
+        )}
+      </div>
       <span
         className="text-caption leading-tight text-center transition-colors"
         style={{
@@ -252,11 +316,27 @@ export default function CartographSurfaces() {
   const layerColors    = useCartographStore(s => s.layerColors)
   const luColors       = useCartographStore(s => s.luColors)
   const materialColors = useCartographStore(s => s.materialColors)
+  const materialPhysics = useCartographStore(s => s.materialPhysics)
+  const buildingPalette = useCartographStore(s => s.buildingPalette)
   const activeLookId   = useCartographStore(s => s.activeLookId)
   const setLayerColor    = useCartographStore(s => s.setLayerColor)
   const setLuColor       = useCartographStore(s => s.setLuColor)
   const setMaterialColor = useCartographStore(s => s.setMaterialColor)
+  const setMaterialPhysics   = useCartographStore(s => s.setMaterialPhysics)
+  const resetMaterialPhysics = useCartographStore(s => s.resetMaterialPhysics)
+  const setBuildingPaletteEntry = useCartographStore(s => s.setBuildingPaletteEntry)
+  const resetBuildingPalette    = useCartographStore(s => s.resetBuildingPalette)
   const toggleLayerVis   = useCartographStore(s => s.toggleLayerVis)
+
+  // Read effective physics for an item — operator override merged over default.
+  const physicsFor = (item) => {
+    const def = DEFAULT_MATERIAL_PHYSICS[item.id] || {
+      roughness: 0.85, metalness: 0, texture: 'none', textureScale: 1,
+      textureStrength: 0, emissive: '#000000', emissiveIntensity: 0,
+    }
+    const ov = materialPhysics[item.id] || {}
+    return { ...def, ...ov }
+  }
 
   const tab = TABS.find(t => t.key === activeTab) || TABS[0]
   const selectedItem = selectedId ? tab.items.find(i => i.id === selectedId) : null
@@ -307,13 +387,36 @@ export default function CartographSurfaces() {
             color={colorFor(item, layerColors, luColors, materialColors)}
             visible={isVisible(item)}
             selected={selectedId === item.id}
+            palette={buildingPalette}
+            materialPhysics={materialPhysics}
             onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}
           />
         ))}
       </div>
 
       {/* Selected material editor */}
-      {selectedItem && (
+      {selectedItem && selectedItem.kind === 'palette' && (
+        <PaletteEditor
+          palette={buildingPalette}
+          setEntry={setBuildingPaletteEntry}
+          reset={resetBuildingPalette}
+        />
+      )}
+      {selectedItem && selectedItem.kind === 'lamp_glow' && (
+        <LampGlowEditor />
+      )}
+      {selectedItem && selectedItem.kind !== 'palette' && (() => {
+        // Hide the color picker for textured materials — their color
+        // comes from the building palette + per-building overrides, not
+        // from this swatch. Foundation/Night Shift have no texture, so
+        // they keep the color picker as a real input.
+        const phys = selectedItem.kind === 'material'
+          ? { ...(DEFAULT_MATERIAL_PHYSICS[selectedItem.id] || {}),
+              ...((materialPhysics || {})[selectedItem.id] || {}) }
+          : null
+        const hasTexture = phys && phys.texture && phys.texture !== 'none'
+        const showColorPicker = !hasTexture
+        return (
         <div className="space-y-2 pt-1" style={{ borderTop: '1px solid var(--outline-variant)' }}>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-full"
@@ -321,24 +424,40 @@ export default function CartographSurfaces() {
             <span className="text-body-sm font-medium" style={{ color: 'var(--on-surface)' }}>
               {selectedItem.label}
             </span>
+            {hasTexture && (
+              <span className="text-caption font-mono" style={{
+                color: 'var(--on-surface-subtle)', fontSize: 10, marginLeft: 'auto',
+              }}>
+                {phys.texture}
+              </span>
+            )}
           </div>
 
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 60 }}>Color</span>
-              <input type="color"
-                value={colorFor(selectedItem, layerColors, luColors, materialColors)}
-                onChange={e => setColor(selectedItem, e.target.value)}
-                style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }} />
-              <span className="text-caption font-mono" style={{ color: 'var(--on-surface-subtle)' }}>
-                {colorFor(selectedItem, layerColors, luColors, materialColors)}
-              </span>
-              <button
-                onClick={() => resetColor(selectedItem)}
-                className="text-caption px-1.5 py-0.5 rounded cursor-pointer transition-colors ml-auto"
-                style={{ background: 'transparent', color: 'var(--on-surface-subtle)' }}
-                title="Reset to default">↺</button>
-            </div>
+            {showColorPicker && (
+              <div className="flex items-center gap-2">
+                <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 60 }}>Color</span>
+                <input type="color"
+                  value={colorFor(selectedItem, layerColors, luColors, materialColors)}
+                  onChange={e => setColor(selectedItem, e.target.value)}
+                  style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }} />
+                <span className="text-caption font-mono" style={{ color: 'var(--on-surface-subtle)' }}>
+                  {colorFor(selectedItem, layerColors, luColors, materialColors)}
+                </span>
+                <button
+                  onClick={() => resetColor(selectedItem)}
+                  className="text-caption px-1.5 py-0.5 rounded cursor-pointer transition-colors ml-auto"
+                  style={{ background: 'transparent', color: 'var(--on-surface-subtle)' }}
+                  title="Reset to default">↺</button>
+              </div>
+            )}
+            {hasTexture && (
+              <div className="text-caption" style={{
+                color: 'var(--on-surface-subtle)', fontSize: 11, fontStyle: 'italic',
+              }}>
+                Color is set by the building palette (or per-place overrides). Edit the palette in the Palette card above.
+              </div>
+            )}
 
             {selectedItem.kind === 'layer' && (
               <div className="flex items-center gap-2">
@@ -353,15 +472,163 @@ export default function CartographSurfaces() {
               </div>
             )}
 
-            {/* Shader controls — placeholder slots for Pass C: roughness,
-                emissive, texture, animation. Wired through the same Look
-                design.json once shader plumbing exists. */}
-            <div className="text-caption" style={{ color: 'var(--on-surface-subtle)', fontStyle: 'italic', paddingTop: 4 }}>
-              Shader controls (roughness, emissive, texture) — coming in Pass C.
-            </div>
+            {/* Shader physics — only meaningful for 3D-scene materials.
+                Layer/lu kinds (flat ground bake) ignore these knobs at
+                render time; we still expose them for forward-compat with
+                materials that promote to 3D. */}
+            {selectedItem.kind === 'material' && (
+              <ShaderControls
+                item={selectedItem}
+                phys={physicsFor(selectedItem)}
+                set={(patch) => setMaterialPhysics(selectedItem.id, patch)}
+                reset={() => resetMaterialPhysics(selectedItem.id)}
+              />
+            )}
           </div>
         </div>
+        )
+      })()}
+    </div>
+  )
+}
+
+// Slider ranges reflect the operator's actual working zone for each effect.
+// Trees was max=2/step=0.02; the useful range is 0.01–0.06, so the new
+// 0–0.1/0.005 keeps the slider meaningful across its entire travel.
+const LAMP_GLOW_FIELDS = [
+  { key: 'grass', label: 'Grass / treelawn / median', max: 0.5, step: 0.005 },
+  { key: 'trees', label: 'Tree foliage (canopy)',     max: 0.1, step: 0.005 },
+  { key: 'pool',  label: 'Ground pool intensity',     max: 3,   step: 0.05  },
+]
+const LAMP_GLOW_FLAT_DEFAULTS = { grass: 0, trees: 0, pool: 1.0 }
+
+function LampGlowEditor() {
+  const lampGlow              = useCartographStore(s => s.lampGlow)
+  const setLampGlow           = useCartographStore(s => s.setLampGlow)
+  const animateLampGlow       = useCartographStore(s => s.animateLampGlow)
+  const unanimateLampGlow     = useCartographStore(s => s.unanimateLampGlow)
+  const addLampGlowSlot       = useCartographStore(s => s.addLampGlowSlot)
+  const removeLampGlowSlot    = useCartographStore(s => s.removeLampGlowSlot)
+  const setLampGlowTransition = useCartographStore(s => s.setLampGlowTransition)
+  const revertLampGlow        = useCartographStore(s => s.revertLampGlow)
+  return (
+    <TodChannel
+      label="Lamp Glow"
+      fields={LAMP_GLOW_FIELDS}
+      flatDefaults={LAMP_GLOW_FLAT_DEFAULTS}
+      channel={lampGlow}
+      onSetValue={(key, value) => setLampGlow(key, value)}
+      onFillSlot={(slotId, isFirst) => isFirst ? animateLampGlow(slotId) : addLampGlowSlot(slotId)}
+      onRemoveSlot={removeLampGlowSlot}
+      onUnanimate={unanimateLampGlow}
+      onSetTransition={setLampGlowTransition}
+      onRevert={revertLampGlow}
+    />
+  )
+}
+
+
+function PaletteEditor({ palette, setEntry, reset }) {
+  return (
+    <div className="space-y-2 pt-1" style={{ borderTop: '1px solid var(--outline-variant)' }}>
+      <div className="flex items-center justify-between">
+        <span className="text-body-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+          Building Palette
+        </span>
+        <button
+          onClick={reset}
+          className="text-caption cursor-pointer"
+          style={{ color: 'var(--on-surface-subtle)', fontSize: 10 }}
+          title="Reset to default 12-color palette"
+        >↺ reset</button>
+      </div>
+      <div className="text-caption" style={{ color: 'var(--on-surface-subtle)', fontSize: 11 }}>
+        Each building deterministically picks one slot via hash of its id.
+        Edit any swatch to retint the buildings using that slot.
+      </div>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6,
+      }}>
+        {palette.map((hex, i) => (
+          <div key={i} style={{
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', gap: 2,
+          }}>
+            <input
+              type="color"
+              value={hex}
+              onChange={(e) => setEntry(i, e.target.value)}
+              style={{
+                width: 36, height: 36, border: '1px solid var(--outline-variant)',
+                borderRadius: 18, cursor: 'pointer', padding: 0,
+              }}
+            />
+            <span className="font-mono" style={{
+              color: 'var(--on-surface-subtle)', fontSize: 9,
+            }}>
+              {hex.replace('#', '')}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ShaderControls({ item, phys, set, reset }) {
+  const lblStyle = { color: 'var(--on-surface-variant)', fontSize: 11 }
+  const valStyle = { color: 'var(--on-surface-medium)', fontSize: 11, fontFamily: 'var(--font-mono)' }
+  return (
+    <div className="space-y-1.5 pt-2" style={{ borderTop: '1px solid var(--outline-variant)' }}>
+      <div className="flex items-center justify-between">
+        <span className="section-heading" style={{ opacity: 0.85 }}>Shader</span>
+        <button
+          onClick={reset}
+          className="text-caption cursor-pointer"
+          style={{ color: 'var(--on-surface-subtle)', fontSize: 10 }}
+          title="Reset shader knobs to default"
+        >↺ reset</button>
+      </div>
+
+      <Slider label="Roughness"  value={phys.roughness} min={0} max={1} step={0.05}
+        onChange={(v) => set({ roughness: v })} />
+      <Slider label="Metalness"  value={phys.metalness} min={0} max={1} step={0.05}
+        onChange={(v) => set({ metalness: v })} />
+
+      {phys.texture !== 'none' && (
+        <>
+          <Slider label="Tex scale"    value={phys.textureScale}    min={0.1} max={8} step={0.1}
+            onChange={(v) => set({ textureScale: v })} />
+          <Slider label="Tex strength" value={phys.textureStrength} min={0} max={1} step={0.05}
+            onChange={(v) => set({ textureStrength: v })} />
+        </>
       )}
+
+      <div className="flex items-center gap-2">
+        <span style={{ ...lblStyle, width: 70 }}>Emissive</span>
+        <input type="color" value={phys.emissive}
+          onChange={(e) => set({ emissive: e.target.value })}
+          style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }} />
+        <span style={valStyle}>{phys.emissive}</span>
+      </div>
+      <Slider label="Emissive ×" value={phys.emissiveIntensity} min={0} max={5} step={0.1}
+        onChange={(v) => set({ emissiveIntensity: v })} />
+    </div>
+  )
+}
+
+function Slider({ label, value, min, max, step, onChange }) {
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center justify-between">
+        <span style={{ color: 'var(--on-surface-variant)', fontSize: 11 }}>{label}</span>
+        <span style={{ color: 'var(--on-surface-medium)', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+          {Number(value).toFixed(2)}
+        </span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full" style={{ accentColor: 'var(--vic-gold)' }} />
     </div>
   )
 }

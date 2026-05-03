@@ -78,6 +78,18 @@
   --vic-cream:    rgb(225, 215, 195);
   --vic-slate:    rgb(140, 150, 165);
 
+  /* Time-of-Day chromatic arc — one slot, one hue. Each must be visually
+     distinct in tight chip rows; the arc reads cool→warm→warm→cool across
+     the day. Used by NAMED_TOD_SLOTS (animatedParam.js) and any UI that
+     color-codes by slot (DawnTimeline, TodAnimationRow chips, etc.). */
+  --tod-dawn:     rgb(192, 168, 210);  /* lilac-mauve, pre-dawn cool */
+  --tod-sunrise:  rgb(220, 130, 130);  /* pink-coral, rosy first light */
+  --tod-noon:     rgb(212, 175, 85);   /* vic-gold, bright midday */
+  --tod-golden:   rgb(220, 150, 80);   /* warm amber, the honey hour */
+  --tod-sunset:   rgb(196, 100, 80);   /* burnt orange-red, fading warm */
+  --tod-dusk:     rgb(140, 110, 175);  /* deeper violet, twilight purple */
+  --tod-night:    rgb(95, 115, 175);   /* deep blue, full dark */
+
   /* Fonts */
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }

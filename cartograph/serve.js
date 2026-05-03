@@ -12,11 +12,12 @@ const CENTERLINES = join(RAW, 'centerlines.json')
 const SKELETON = join(DIR, 'skeleton.json')
 const OVERLAY = join(DIR, 'overlay.json')
 const PARCEL_FILE = join(import.meta.dirname, '..', 'scripts', 'raw', 'stl_parcels.json')
-// Looks: each Look is a styling snapshot — a complete material palette + its
-// baked SVG. Lives under public/looks/<id>/{design.json, ground.svg} so the
-// browser can fetch design and SVG via simple static URLs. index.json tracks
-// names + order; the default Look 'lafayette-square' is the project's 0-state
-// and can't be deleted.
+// Looks: each Look is a styling snapshot — a complete material palette plus
+// the per-Look bake bundle (ground.json + bin + lightmap + buildings + lamps
+// + scene snapshot) under public/baked/<id>/. design.json (authoring state)
+// lives under public/looks/<id>/. index.json tracks names + order; the
+// default Look 'lafayette-square' is the project's 0-state and can't be
+// deleted.
 const PUBLIC_DIR = join(import.meta.dirname, '..', 'public')
 const LOOKS_DIR = join(PUBLIC_DIR, 'looks')
 const LOOKS_INDEX = join(LOOKS_DIR, 'index.json')
@@ -32,7 +33,6 @@ function writeJson(path, obj) {
 }
 function lookDir(id) { return join(LOOKS_DIR, id) }
 function lookDesignPath(id) { return join(lookDir(id), 'design.json') }
-function lookSvgPath(id) { return join(lookDir(id), 'ground.svg') }
 function readLooksIndex() {
   return readJsonOrNull(LOOKS_INDEX) || { default: DEFAULT_LOOK_ID, looks: [] }
 }
@@ -281,28 +281,10 @@ createServer((req, res) => {
     return
   }
 
-  // POST /bake — run the cartograph bake step (ribbons.json → SVG).
-  // The bake is the cartograph's only publish artifact — see memory
-  // `project_cartograph_bake_step`. Synchronous on the server side; the
-  // client shows a modal during the round-trip.
-  if (req.method === 'POST' && path === '/bake') {
-    try {
-      const t0 = Date.now()
-      execSync('node bake-svg.js', { cwd: import.meta.dirname, timeout: 60000 })
-      const ms = Date.now() - t0
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, ms, path: 'public/cartograph-ground.svg' }))
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: err.message }))
-    }
-    return
-  }
-
   // ── Looks ───────────────────────────────────────────────────────────────
   // Each Look is a styling snapshot: design.json (material palette + shader
-  // params) + ground.svg (baked artifact). The default Look is the project's
-  // 0-state and can't be deleted.
+  // params) + the per-Look bake bundle (public/baked/<id>/). The default
+  // Look is the project's 0-state and can't be deleted.
 
   // GET /looks — list of {id, name, createdAt} + the default id.
   if (req.method === 'GET' && path === '/looks') {
@@ -435,11 +417,12 @@ createServer((req, res) => {
     }
     try {
       const t0 = Date.now()
-      // Full bake: SVG ground (legacy artifact) + Three.js bake bundle
-      // (ground geom + AO lightmap + buildings + scene snapshot). Each
-      // step writes into its own folder under public/. Sequential so
-      // failures point at one bad step.
-      execSync(`node bake-svg.js --look=${id}`,       { cwd: import.meta.dirname, timeout: 60000 })
+      // Full bake: Three.js bake bundle (ground geom + AO lightmap +
+      // buildings + scene snapshot). Sequential so failures point at one
+      // bad step. bake-svg.js is intentionally NOT run here — it's
+      // demoted to a CLI-only QA artifact (human-readable / diffable);
+      // the runtime consumes ground.json + ground.bin + ground.lightmap
+      // exclusively.
       execSync(`node bake-ground.js --look=${id}`,    { cwd: import.meta.dirname, timeout: 60000 })
       execSync(`node bake-buildings.js --look=${id}`, { cwd: import.meta.dirname, timeout: 60000 })
       execSync(`node bake-lamps.js --look=${id}`,     { cwd: import.meta.dirname, timeout: 30000 })

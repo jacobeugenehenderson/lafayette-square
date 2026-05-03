@@ -15,24 +15,24 @@
     "playground": true,
     "swimming_pool": true,
     "pitch": true,
-    "sports_centre": true,
-    "wood": true,
-    "scrub": true,
-    "tree_row": true,
-    "alley": true,
-    "footway": true,
-    "cycleway": true,
-    "steps": true,
-    "path": true,
+    "sports_centre": false,
+    "wood": false,
+    "scrub": false,
+    "tree_row": false,
+    "alley": false,
+    "footway": false,
+    "cycleway": false,
+    "steps": false,
+    "path": false,
     "park": true,
     "water": true,
     "tree": true,
     "lamp": true,
-    "fence": true,
-    "wall": true,
-    "retaining_wall": true,
+    "fence": false,
+    "wall": false,
+    "retaining_wall": false,
     "hedge": true,
-    "labels": true,
+    "labels": false,
     "centerline": false
   },
   "layerColors": {
@@ -81,11 +81,367 @@
     "industrial": "#8E7060"
   },
   "materialColors": {},
+  "materialPhysics": {},
+  "buildingPalette": [
+    "#dcdcdc",
+    "#a0522d",
+    "#cd853f",
+    "#8b2500",
+    "#d2b48c",
+    "#778899",
+    "#8b4513",
+    "#a52a2a",
+    "#f5deb3",
+    "#696969",
+    "#b22222",
+    "#808080"
+  ],
+  "lampGlow": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
+    "values": {
+      "sunset": {
+        "grass": 0.5,
+        "trees": 0.005,
+        "pool": 0.1
+      },
+      "night": {
+        "grass": 0.5,
+        "trees": 0.06,
+        "pool": 0
+      }
+    }
+  },
+  "bloom": {
+    "values": {
+      "intensity": 0.5,
+      "threshold": 0.85,
+      "smoothing": 0.4
+    }
+  },
+  "warmth": {
+    "values": {
+      "value": 0
+    }
+  },
+  "fill": {
+    "values": {
+      "value": 0.65
+    }
+  },
+  "exposure": {
+    "values": {
+      "value": 0.95
+    }
+  },
+  "ao": {
+    "values": {
+      "radius": 15,
+      "intensity": 2.5,
+      "distanceFalloff": 0.3
+    }
+  },
+  "mist": {
+    "values": {
+      "density": 0,
+      "color": "#9dc5e0"
+    }
+  },
+  "halo": {
+    "values": {
+      "strength": 0,
+      "color": "#b8c8d8"
+    }
+  },
+  "constellations": {
+    "values": {
+      "value": 0
+    }
+  },
+  "milkyWay": {
+    "values": {
+      "value": 1
+    }
+  },
+  "neon": {
+    "values": {
+      "core": 1,
+      "tube": 1,
+      "bleed": 1
+    }
+  },
+  "sky": {
+    "values": {
+      "dawn": [
+        {
+          "horizon": "#3a2838",
+          "low": "#30254a",
+          "mid": "#151838",
+          "high": "#0a0c1a",
+          "sunGlow": "#000000"
+        },
+        {
+          "horizon": "#4d3245",
+          "low": "#4a3060",
+          "mid": "#241e48",
+          "high": "#10122a",
+          "sunGlow": "#220c08"
+        },
+        {
+          "horizon": "#7a5048",
+          "low": "#603e62",
+          "mid": "#34286e",
+          "high": "#0e1230",
+          "sunGlow": "#7a2818"
+        },
+        {
+          "horizon": "#c07050",
+          "low": "#885578",
+          "mid": "#4a3878",
+          "high": "#141838",
+          "sunGlow": "#dd4433"
+        }
+      ],
+      "sunrise": [
+        {
+          "horizon": "#dda065",
+          "low": "#b08088",
+          "mid": "#7068b0",
+          "high": "#223060",
+          "sunGlow": "#ee7755"
+        },
+        {
+          "horizon": "#d8aa6f",
+          "low": "#aa8898",
+          "mid": "#7480b8",
+          "high": "#2c4080",
+          "sunGlow": "#ffaa66"
+        },
+        {
+          "horizon": "#d0b888",
+          "low": "#a8a0a8",
+          "mid": "#7895c0",
+          "high": "#3a6aaa",
+          "sunGlow": "#ffbb77"
+        },
+        {
+          "horizon": "#b8c5b8",
+          "low": "#90b0c8",
+          "mid": "#6098d0",
+          "high": "#4080d8",
+          "sunGlow": "#ffd1a0"
+        }
+      ],
+      "noon": [
+        {
+          "horizon": "#9dc5e0",
+          "low": "#80b5e0",
+          "mid": "#5a9ce0",
+          "high": "#4a90e0",
+          "sunGlow": "#ffeedd"
+        }
+      ],
+      "golden": [
+        {
+          "horizon": "#a8c0d8",
+          "low": "#88b0d8",
+          "mid": "#609bd8",
+          "high": "#4888d8",
+          "sunGlow": "#ffe0bb"
+        },
+        {
+          "horizon": "#bcb5a8",
+          "low": "#9aa0b0",
+          "mid": "#7095bf",
+          "high": "#3c70b2",
+          "sunGlow": "#ffcc88"
+        },
+        {
+          "horizon": "#ccaa70",
+          "low": "#aa9088",
+          "mid": "#7090bb",
+          "high": "#3a68a8",
+          "sunGlow": "#ffaa55"
+        },
+        {
+          "horizon": "#d09665",
+          "low": "#b08077",
+          "mid": "#7080b0",
+          "high": "#2e588f",
+          "sunGlow": "#ff9a4a"
+        }
+      ],
+      "sunset": [
+        {
+          "horizon": "#dd8840",
+          "low": "#bb7065",
+          "mid": "#6858a0",
+          "high": "#1a2555",
+          "sunGlow": "#ff7733"
+        },
+        {
+          "horizon": "#dc7438",
+          "low": "#b06060",
+          "mid": "#5848a0",
+          "high": "#172048",
+          "sunGlow": "#ff5520"
+        },
+        {
+          "horizon": "#cc6030",
+          "low": "#a05058",
+          "mid": "#4a3570",
+          "high": "#141835",
+          "sunGlow": "#ff3318"
+        },
+        {
+          "horizon": "#a04a2c",
+          "low": "#704050",
+          "mid": "#2e2655",
+          "high": "#0e1228",
+          "sunGlow": "#cc2812"
+        }
+      ],
+      "dusk": [
+        {
+          "horizon": "#7a3828",
+          "low": "#40253a",
+          "mid": "#181535",
+          "high": "#0a0c1a",
+          "sunGlow": "#882010"
+        },
+        {
+          "horizon": "#502a28",
+          "low": "#2a1a30",
+          "mid": "#10112a",
+          "high": "#070914",
+          "sunGlow": "#3a1008"
+        },
+        {
+          "horizon": "#2c2028",
+          "low": "#181420",
+          "mid": "#0c0e1a",
+          "high": "#06070e",
+          "sunGlow": "#100404"
+        },
+        {
+          "horizon": "#1a1525",
+          "low": "#0f0f18",
+          "mid": "#080810",
+          "high": "#050508",
+          "sunGlow": "#000000"
+        }
+      ],
+      "night": [
+        {
+          "horizon": "#1a1525",
+          "low": "#0f0f18",
+          "mid": "#080810",
+          "high": "#050508",
+          "sunGlow": "#000000"
+        }
+      ]
+    }
+  },
+  "heroSubject": null,
+  "heroKeyframes": [
+    {
+      "position": [
+        -540,
+        55,
+        362
+      ],
+      "fov": 22
+    },
+    {
+      "position": [
+        -260,
+        55,
+        98
+      ],
+      "fov": 22
+    }
+  ],
+  "heroMotion": {
+    "period": 720,
+    "easing": "sine"
+  },
   "openSections": {
     "Streets": false,
     "Blocks": false,
     "Paths": true,
-    "Features": false,
-    "Labels": false
-  }
+    "Features": true,
+    "Labels": true,
+    "HeroSubject": false
+  },
+  "trees": [
+    {
+      "species": "cedar_generic",
+      "variantId": 1
+    },
+    {
+      "species": "broadleaf_rt3",
+      "variantId": 1
+    },
+    {
+      "species": "alaskan_cedar_2",
+      "variantId": 1
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 6
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 7
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 8
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 9
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 10
+    },
+    {
+      "species": "generic_leaf_tree",
+      "variantId": 3
+    },
+    {
+      "species": "generic_tree_2",
+      "variantId": 1
+    },
+    {
+      "species": "magnolia_sp",
+      "variantId": 1
+    },
+    {
+      "species": "magnolia_sp",
+      "variantId": 2
+    },
+    {
+      "species": "magnolia_sp",
+      "variantId": 3
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 4
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 3
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 2
+    },
+    {
+      "species": "platanus_acerifolia",
+      "variantId": 1
+    }
+  ]
 }

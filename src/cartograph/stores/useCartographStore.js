@@ -6,6 +6,29 @@ import {
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
 } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
+import useTimeOfDay from '../../hooks/useTimeOfDay'
+import {
+  migrateLampGlow, resolveLampGlowAtMinute,
+  resolveGroupAtMinute, migrateGroupChannel,
+  NAMED_TOD_SLOTS_BY_ID, getTodSlotMinutes, todSlotAtMinute,
+} from '../animatedParam.js'
+import {
+  BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
+  WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS,
+  FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS,
+  EXPOSURE_FIELD_KEYS, EXPOSURE_FLAT_DEFAULTS,
+  AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
+  MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS,
+  HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
+  CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
+  MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
+  NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
+  AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS,
+  HEMI_FIELD_KEYS, HEMI_FLAT_DEFAULTS,
+  DIRSUN_FIELD_KEYS, DIRSUN_FLAT_DEFAULTS,
+  DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS,
+} from '../skyLightChannels.js'
+import { migrateSkyChannel, SKY_DEFAULTS, SKY_BANDS, SKY_SLOT_COLUMNS } from '../skyGrid.js'
 
 const ACTIVE_LOOK_KEY = 'cartograph-active-look'
 const DEFAULT_LOOK_ID = 'lafayette-square'
@@ -16,6 +39,110 @@ function readActiveLookFromStorage() {
     if (v && typeof v === 'string') return v
   } catch { /* ignore */ }
   return DEFAULT_LOOK_ID
+}
+
+// Group-channel action factory. See use site below the LampGlow block.
+function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) {
+  const cap = name[0].toUpperCase() + name.slice(1)
+  const flatTuple = (s) => {
+    const out = {}
+    for (const k of fieldKeys) {
+      const v = s[name]?.values?.[k]
+      out[k] = v == null ? (flatDefaults[k] ?? 0) : Number(v)
+    }
+    return out
+  }
+  return {
+    [`set${cap}`]: (key, value) => {
+      set(s => {
+        const ch = s[name] || { values: {} }
+        if (!ch.animated) {
+          return { [name]: { ...ch, values: { ...(ch.values || {}), [key]: value } } }
+        }
+        const tod = useTimeOfDay.getState()
+        const sid = todSlotAtMinute(tod.getMinuteOfDay(), tod.currentTime)
+        if (!sid || !(sid in (ch.values || {}))) return s
+        const tuple = { ...(ch.values[sid] || {}), [key]: value }
+        return { [name]: { ...ch, values: { ...ch.values, [sid]: tuple } } }
+      })
+      get()._saveDesignDebounced()
+    },
+    [`animate${cap}`]: (slotId) => {
+      if (!slotId || !NAMED_TOD_SLOTS_BY_ID[slotId]) return
+      set(s => {
+        if (s[name]?.animated) return s
+        return {
+          [name]: {
+            animated: 'tod',
+            transitionIn: 30,
+            transitionOut: 30,
+            values: { [slotId]: flatTuple(s) },
+          },
+        }
+      })
+      get()._saveDesignDebounced()
+    },
+    [`unanimate${cap}`]: () => {
+      set(s => {
+        const ch = s[name]
+        if (!ch?.animated) return s
+        const tod = useTimeOfDay.getState()
+        const phId = todSlotAtMinute(tod.getMinuteOfDay(), tod.currentTime)
+        const slotIds = Object.keys(ch.values || {})
+        const useId = phId && slotIds.includes(phId) ? phId : slotIds[0]
+        const tuple = useId ? ch.values[useId] : { ...flatDefaults }
+        return { [name]: { values: { ...tuple } } }
+      })
+      get()._saveDesignDebounced()
+    },
+    [`add${cap}Slot`]: (slotId) => {
+      if (!slotId || !NAMED_TOD_SLOTS_BY_ID[slotId]) return
+      const slotMinutes = getTodSlotMinutes(useTimeOfDay.getState().currentTime)
+      const minute = slotMinutes[slotId]
+      if (minute == null) return
+      set(s => {
+        const ch = s[name]
+        if (!ch?.animated) return s
+        if (slotId in (ch.values || {})) return s
+        const seed = resolveGroupAtMinute(ch, minute, slotMinutes, fieldKeys, flatDefaults)
+        return { [name]: { ...ch, values: { ...ch.values, [slotId]: seed } } }
+      })
+      get()._saveDesignDebounced()
+    },
+    [`remove${cap}Slot`]: (slotId) => {
+      set(s => {
+        const ch = s[name]
+        if (!ch?.animated || !(slotId in (ch.values || {}))) return s
+        const values = { ...ch.values }
+        const removedTuple = values[slotId]
+        delete values[slotId]
+        // 0 authored slots → collapse to flat using the removed tuple
+        // (preserves the visual at the moment of removal).
+        const next = Object.keys(values).length === 0
+          ? { values: { ...removedTuple } }
+          : { ...ch, values }
+        return { [name]: next }
+      })
+      get()._saveDesignDebounced()
+    },
+    [`set${cap}Transition`]: (side, minutes) => {
+      set(s => {
+        const ch = s[name]
+        if (!ch?.animated) return s
+        const m = Math.max(0, Number(minutes) || 0)
+        const patch = side === 'in' ? { transitionIn: m } : { transitionOut: m }
+        return { [name]: { ...ch, ...patch } }
+      })
+      get()._saveDesignDebounced()
+    },
+    // Per-channel revert: collapse to flat AND reset to defaults.
+    // Single button at the channel header (feedback_per_item_revert) —
+    // never a card-level "reset everything," never a per-slider revert.
+    [`revert${cap}`]: () => {
+      set({ [name]: { values: { ...flatDefaults } } })
+      get()._saveDesignDebounced()
+    },
+  }
 }
 
 const useCartographStore = create((set, get) => ({
@@ -32,6 +159,86 @@ const useCartographStore = create((set, get) => ({
   // never reach the SVG bake but live in the same per-Look design.json so
   // switching Looks swaps the whole visual identity in one place.
   materialColors: {},
+  // Per-material shader knobs — roughness, metalness, texture id, texture scale,
+  // texture strength, emissive (color + intensity). Authored by the Surfaces
+  // panel; consumed live by LafayetteScene materials via useFrame.
+  materialPhysics: {},
+  // 12-slot building tint palette. Each building deterministically picks
+  // palette[hash(building.id) % 12]. Operator authors per-Look; per-building
+  // overrides (in buildingOverrides.json) can still trump the palette so
+  // landmarks/known-real colors lock to specific values.
+  buildingPalette: [
+    '#dcdcdc', '#a0522d', '#cd853f', '#8b2500',
+    '#d2b48c', '#778899', '#8b4513', '#a52a2a',
+    '#f5deb3', '#696969', '#b22222', '#808080',
+  ],
+  // ── Time-of-day slots ───────────────────────────────────────
+  // The TOD vocabulary is the same 7 SunCalc waypoints the DawnTimeline
+  // card renders (Dawn / Sunrise / Noon / Golden / Sunset / Dusk / Night),
+  // defined in animatedParam.js. Animatable parameters key into them by
+  // id; per-slot minutes are computed live from SunCalc each frame so the
+  // envelope shifts seasonally. There is no per-Look slot CRUD and no
+  // separate "parked" state — the playhead position IS the parked state.
+  // (project_stage_keyframe_authoring_rule)
+
+  // Lamp glow strengths per receiving surface — ONE animatable group with
+  // three channels (grass / trees / pool). Group shape:
+  //   flat:     { values: { grass, trees, pool } }
+  //   animated: { animated: 'tod', transitionIn, transitionOut,
+  //               values: { <slotId>: { grass, trees, pool }, … } }
+  // The three channels share one timeline: at each slot the operator
+  // authors a triple of values. Runtime envelope resolver lerps each
+  // channel independently between bracketing authored slots.
+  lampGlow: { values: { grass: 0, trees: 0, pool: 1.0 } },
+  // Bloom — first channel of the Sky & Light card. Group of 3
+  // (intensity / threshold / smoothing) sharing one TOD timeline.
+  // Flat defaults match the previous envState bloom* values so behavior
+  // is unchanged on Looks that haven't authored bloom yet.
+  bloom: { values: { ...BLOOM_FLAT_DEFAULTS } },
+  // Lighting floor — two mood axes, see skyLightChannels.js. Sun/moon
+  // stay physics-driven; these only bias the atmospheric soup between
+  // bodies (operator-tunable ambient + hemi).
+  warmth:   { values: { ...WARMTH_FLAT_DEFAULTS } },
+  fill:     { values: { ...FILL_FLAT_DEFAULTS } },
+  exposure: { values: { ...EXPOSURE_FLAT_DEFAULTS } },
+  ao:       { values: { ...AO_FLAT_DEFAULTS } },
+  mist:     { values: { ...MIST_FLAT_DEFAULTS } },
+  halo:     { values: { ...HALO_FLAT_DEFAULTS } },
+  constellations: { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
+  milkyWay:       { values: { ...MILKYWAY_FLAT_DEFAULTS } },
+  // Neon — group of 3 (core / tube / bleed) sharing one TOD timeline.
+  // Drives the runtime NeonBands shader uniforms via NeonPump. Per-place
+  // hue comes from the category palette; the Stage operator authors only
+  // the physics. See HANDOFF-neon.md.
+  neon:           { values: { ...NEON_FLAT_DEFAULTS } },
+  // Lighting unit — 4 single-value channels, intensity multipliers on
+  // the existing scene lights in StageSky. Defaults 1.0 = current
+  // behavior. Author 0 at Night to drop world lighting (fixes "bright
+  // sidewalks at night").
+  ambient:        { values: { ...AMBIENT_FLAT_DEFAULTS } },
+  hemi:           { values: { ...HEMI_FLAT_DEFAULTS } },
+  dirSun:         { values: { ...DIRSUN_FLAT_DEFAULTS } },
+  dirMoon:        { values: { ...DIRMOON_FLAT_DEFAULTS } },
+  // Sky gradient — 2D color matrix, see skyGrid.js. 4 vertical bands
+  // (horizon/low/mid/high) + sun-glow row × 7 TOD slots (Dawn 4 cols,
+  // Sunrise 4, Noon 1, Golden 4, Sunset 4, Dusk 4, Night 1) = 22
+  // columns total. Defaults seeded to match StageSky.jsx's hardcoded
+  // keyframe ladder so unauthored Looks render unchanged. SkyPump in
+  // CartographApp resolves this each frame and writes RGB to skyState.
+  sky:            { values: { ...SKY_DEFAULTS } },
+  // The single object the Hero shot frames around. Camera target locks to
+  // its centroid every frame. { kind, id } resolved at runtime to a 3D point.
+  // null = no designation (HeroPreview falls back to legacy arch centroid).
+  heroSubject: null,
+  // Authored Hero camera path. Each keyframe = { position: [x,y,z], fov }.
+  // Two sensible defaults at the swing extremes; operator captures more via
+  // the timeline. Hydrated from per-Look design.json on switch.
+  heroKeyframes: [
+    { position: [-540, 55, 362], fov: 22 },
+    { position: [-260, 55, 98],  fov: 22 },
+  ],
+  // Authored motion params (preview/speed are transient runtime UI, not here)
+  heroMotion: { period: 720, easing: 'sine' },
   openSections: {},
   bgColor: '#1a1a18',
   _designHydrated: false,
@@ -51,12 +258,286 @@ const useCartographStore = create((set, get) => ({
     set(s => ({ materialColors: { ...s.materialColors, [id]: color } }))
     get()._saveDesignDebounced()
   },
+  // Patch is a partial { roughness?, metalness?, texture?, textureScale?,
+  // textureStrength?, emissive?, emissiveIntensity? }. Values merge over
+  // existing per-id record. Missing fields fall back to MATERIAL_PHYSICS_DEFAULTS
+  // at read time.
+  setMaterialPhysics: (id, patch) => {
+    set(s => ({
+      materialPhysics: {
+        ...s.materialPhysics,
+        [id]: { ...(s.materialPhysics[id] || {}), ...patch },
+      },
+    }))
+    get()._saveDesignDebounced()
+  },
+  resetMaterialPhysics: (id) => {
+    set(s => {
+      const next = { ...s.materialPhysics }
+      delete next[id]
+      return { materialPhysics: next }
+    })
+    get()._saveDesignDebounced()
+  },
+  setBuildingPaletteEntry: (index, color) => {
+    set(s => {
+      const next = s.buildingPalette.slice()
+      next[index] = color
+      return { buildingPalette: next }
+    })
+    get()._saveDesignDebounced()
+  },
+  resetBuildingPalette: () => {
+    set({ buildingPalette: [
+      '#dcdcdc', '#a0522d', '#cd853f', '#8b2500',
+      '#d2b48c', '#778899', '#8b4513', '#a52a2a',
+      '#f5deb3', '#696969', '#b22222', '#808080',
+    ] })
+    get()._saveDesignDebounced()
+  },
+  // ── Lamp Glow group actions ─────────────────────────────────
+  // Write one channel's value (grass | trees | pool).
+  //   • Flat: writes lampGlow.values[channel].
+  //   • Animated: writes lampGlow.values[playheadSlot][channel]. Playhead
+  //     slot = whatever named TOD slot the playhead is sitting on within
+  //     tolerance. Silently no-ops if the playhead isn't on an attached
+  //     slot — UI also gates this.
+  setLampGlow: (channel, value) => {
+    set(s => {
+      const lg = s.lampGlow || { values: {} }
+      if (!lg.animated) {
+        return { lampGlow: { ...lg, values: { ...(lg.values || {}), [channel]: value } } }
+      }
+      const tod = useTimeOfDay.getState()
+      const minute = tod.getMinuteOfDay()
+      const sid = todSlotAtMinute(minute, tod.currentTime)
+      if (!sid || !(sid in (lg.values || {}))) return s
+      const triple = { ...(lg.values[sid] || {}), [channel]: value }
+      return { lampGlow: { ...lg, values: { ...lg.values, [sid]: triple } } }
+    })
+    get()._saveDesignDebounced()
+  },
+  // Turn on group animation. The operator must already be parked on a
+  // named TOD slot (UI gates the entry). Seeds that slot with the current
+  // flat triple so the visual doesn't change.
+  animateLampGlow: (slotId) => {
+    if (!slotId || !NAMED_TOD_SLOTS_BY_ID[slotId]) return
+    set(s => {
+      if (s.lampGlow?.animated) return s
+      const triple = {
+        grass: Number(s.lampGlow?.values?.grass) || 0,
+        trees: Number(s.lampGlow?.values?.trees) || 0,
+        pool:  s.lampGlow?.values?.pool == null ? 1.0 : Number(s.lampGlow.values.pool),
+      }
+      return {
+        lampGlow: {
+          animated: 'tod',
+          transitionIn: 30,
+          transitionOut: 30,
+          values: { [slotId]: triple },
+        },
+      }
+    })
+    get()._saveDesignDebounced()
+  },
+  // Collapse animation back to flat. Uses the playhead slot's triple if
+  // the playhead is on an attached slot; otherwise the first authored
+  // slot's triple.
+  unanimateLampGlow: () => {
+    set(s => {
+      const lg = s.lampGlow
+      if (!lg?.animated) return s
+      const tod = useTimeOfDay.getState()
+      const phId = todSlotAtMinute(tod.getMinuteOfDay(), tod.currentTime)
+      const slotIds = Object.keys(lg.values || {})
+      const useId = phId && slotIds.includes(phId) ? phId : slotIds[0]
+      const triple = useId ? lg.values[useId] : { grass: 0, trees: 0, pool: 1.0 }
+      return { lampGlow: { values: { ...triple } } }
+    })
+    get()._saveDesignDebounced()
+  },
+  // Attach lampGlow to a named TOD slot. Seeds it from the envelope-
+  // resolved value at that slot's minute so adding is a visual no-op.
+  // Caller must already have the playhead parked on the slot (UI gates).
+  addLampGlowSlot: (slotId) => {
+    if (!slotId || !NAMED_TOD_SLOTS_BY_ID[slotId]) return
+    const slotMinutes = getTodSlotMinutes(useTimeOfDay.getState().currentTime)
+    const minute = slotMinutes[slotId]
+    if (minute == null) return
+    set(s => {
+      const lg = s.lampGlow
+      if (!lg?.animated) return s
+      if (slotId in (lg.values || {})) return s
+      const seed = resolveLampGlowAtMinute(lg, minute, slotMinutes)
+      return { lampGlow: { ...lg, values: { ...lg.values, [slotId]: seed } } }
+    })
+    get()._saveDesignDebounced()
+  },
+  removeLampGlowSlot: (slotId) => {
+    set(s => {
+      const lg = s.lampGlow
+      if (!lg?.animated || !(slotId in (lg.values || {}))) return s
+      const values = { ...lg.values }
+      const removedTriple = values[slotId]
+      delete values[slotId]
+      // If lampGlow now has 0 authored slots, collapse to flat using the
+      // removed slot's triple as the new flat values (preserves visual at
+      // moment of removal).
+      const lampGlow = Object.keys(values).length === 0
+        ? { values: { ...removedTriple } }
+        : { ...lg, values }
+      return { lampGlow }
+    })
+    get()._saveDesignDebounced()
+  },
+  setLampGlowTransition: (side, minutes) => {
+    set(s => {
+      const lg = s.lampGlow
+      if (!lg?.animated) return s
+      const m = Math.max(0, Number(minutes) || 0)
+      const patch = side === 'in' ? { transitionIn: m } : { transitionOut: m }
+      return { lampGlow: { ...lg, ...patch } }
+    })
+    get()._saveDesignDebounced()
+  },
+  revertLampGlow: () => {
+    set({ lampGlow: { values: { grass: 0, trees: 0, pool: 1.0 } } })
+    get()._saveDesignDebounced()
+  },
+  // ── Group-channel action factory ────────────────────────────
+  // Generates the 6 standard actions any group-shape TOD channel needs
+  // (set / animate / unanimate / addSlot / removeSlot / setTransition).
+  // Action names follow set<Cap> / animate<Cap> / unanimate<Cap> /
+  // add<Cap>Slot / remove<Cap>Slot / set<Cap>Transition. Spread the
+  // returned object into the store body. LampGlow's hand-written actions
+  // remain (proven, no benefit to disturbing); new channels go through
+  // this factory.
+  ...createGroupChannelActions({
+    name: 'bloom',
+    fieldKeys: BLOOM_FIELD_KEYS,
+    flatDefaults: BLOOM_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'warmth',
+    fieldKeys: WARMTH_FIELD_KEYS,
+    flatDefaults: WARMTH_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'fill',
+    fieldKeys: FILL_FIELD_KEYS,
+    flatDefaults: FILL_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'exposure',
+    fieldKeys: EXPOSURE_FIELD_KEYS,
+    flatDefaults: EXPOSURE_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'ao',
+    fieldKeys: AO_FIELD_KEYS,
+    flatDefaults: AO_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'mist',
+    fieldKeys: MIST_FIELD_KEYS,
+    flatDefaults: MIST_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'halo',
+    fieldKeys: HALO_FIELD_KEYS,
+    flatDefaults: HALO_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'constellations',
+    fieldKeys: CONSTELLATIONS_FIELD_KEYS,
+    flatDefaults: CONSTELLATIONS_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'milkyWay',
+    fieldKeys: MILKYWAY_FIELD_KEYS,
+    flatDefaults: MILKYWAY_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'neon',
+    fieldKeys: NEON_FIELD_KEYS,
+    flatDefaults: NEON_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'ambient',
+    fieldKeys: AMBIENT_FIELD_KEYS,
+    flatDefaults: AMBIENT_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'hemi',
+    fieldKeys: HEMI_FIELD_KEYS,
+    flatDefaults: HEMI_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'dirSun',
+    fieldKeys: DIRSUN_FIELD_KEYS,
+    flatDefaults: DIRSUN_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'dirMoon',
+    fieldKeys: DIRMOON_FIELD_KEYS,
+    flatDefaults: DIRMOON_FLAT_DEFAULTS,
+  }, set, get),
+
+  // Sky gradient — write a single swatch hex into a specific cell.
+  // slotId: 'dawn'|'sunrise'|... colIdx: 0..N-1, band: 'horizon'|'low'|'mid'|'high'|'sunGlow'.
+  setSkySwatch: (slotId, colIdx, band, hex) => {
+    if (!SKY_SLOT_COLUMNS[slotId]) return
+    if (colIdx < 0 || colIdx >= SKY_SLOT_COLUMNS[slotId]) return
+    if (!SKY_BANDS.includes(band)) return
+    set(s => {
+      const sky = s.sky || { values: {} }
+      const slot = Array.isArray(sky.values?.[slotId])
+        ? sky.values[slotId].slice()
+        : (SKY_DEFAULTS[slotId] || []).slice()
+      const tuple = { ...(slot[colIdx] || SKY_DEFAULTS[slotId][colIdx] || {}) }
+      tuple[band] = hex
+      slot[colIdx] = tuple
+      return { sky: { ...sky, values: { ...sky.values, [slotId]: slot } } }
+    })
+    get()._saveDesignDebounced()
+  },
+  // Reset sky gradient to defaults (canonical-shader-matching).
+  revertSky: () => {
+    set({ sky: { values: { ...SKY_DEFAULTS } } })
+    get()._saveDesignDebounced()
+  },
+  // Scrub the TOD clock onto a named slot's SunCalc-computed minute. Used
+  // when the operator clicks an attached chip to "park" there — really
+  // just a clock scrub; the playhead's position is the only park state.
+  scrubToTodSlot: (id) => {
+    if (!id) return
+    const m = getTodSlotMinutes(useTimeOfDay.getState().currentTime)[id]
+    if (m != null) useTimeOfDay.getState().setMinuteOfDay(m)
+  },
+  // Designate (or clear) the Hero subject. Pass null to clear.
+  // subject = { kind: 'building'|'landmark'|'arch', id: string }
+  setHeroSubject: (subject) => {
+    set({ heroSubject: subject || null })
+    get()._saveDesignDebounced()
+  },
+  setHeroKeyframes: (keyframes) => {
+    set({ heroKeyframes: keyframes })
+    get()._saveDesignDebounced()
+  },
+  // Patch motion partial — { period?, easing? }. preview/speed are not stored.
+  setHeroMotion: (patch) => {
+    set(s => ({ heroMotion: { ...s.heroMotion, ...patch } }))
+    get()._saveDesignDebounced()
+  },
   setLayerVis: (id, visible) => {
-    set(s => ({ layerVis: { ...s.layerVis, [id]: !!visible } }))
+    set(s => ({ layerVis: { ...s.layerVis, [id]: !!visible }, bakeStale: true }))
     get()._saveDesignDebounced()
   },
   toggleLayerVis: (id) => {
-    set(s => ({ layerVis: { ...s.layerVis, [id]: !s.layerVis[id] } }))
+    set(s => ({
+      layerVis: { ...s.layerVis, [id]: s.layerVis[id] === false },
+      bakeStale: true,
+    }))
     get()._saveDesignDebounced()
   },
   // Bulk visibility update — used by Section header "all on / all off".
@@ -65,7 +546,7 @@ const useCartographStore = create((set, get) => ({
     set(s => {
       const next = { ...s.layerVis }
       for (const id of ids) next[id] = v
-      return { layerVis: next }
+      return { layerVis: next, bakeStale: true }
     })
     get()._saveDesignDebounced()
   },
@@ -116,7 +597,8 @@ const useCartographStore = create((set, get) => ({
 
   // ── Looks ────────────────────────────────────────────────
   // A Look is a styling snapshot — `{ layerColors, luColors, layerStrokes, … }`
-  // plus a baked `ground.svg`. `lafayette-square` is the project's 0-state
+  // plus the per-Look bake bundle (public/baked/<id>/ground.json + bin +
+  // lightmap + buildings + lamps + scene). `lafayette-square` is the project's 0-state
   // and can't be deleted; user-created Looks ('Valentines', 'Cardinals Win',
   // …) sit alongside it. The active Look's design block is what Designer's
   // panel binds to — autosave goes to `/looks/<id>/design`, not /overlay.
@@ -135,7 +617,15 @@ const useCartographStore = create((set, get) => ({
         activeLookId = idx.default || DEFAULT_LOOK_ID
         try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ }
       }
-      set({ looks, activeLookId, _looksHydrated: true })
+      // The store inits with bakeStale=true (no prior session knowledge).
+      // If the looks index reports a non-null bakedAt for the active Look,
+      // the artifacts exist on disk and are presumed valid until the user
+      // makes a geometry/design edit that re-stales them. Without this,
+      // every hard-refresh would surface a stale Stage button and a click
+      // would re-bake unnecessarily.
+      const activeEntry = looks.find(l => l.id === activeLookId)
+      const wasBaked = !!activeEntry?.bakedAt
+      set({ looks, activeLookId, _looksHydrated: true, bakeStale: !wasBaked })
     } catch (err) {
       console.warn('[looks] load failed:', err)
       set({ _looksHydrated: true })
@@ -146,18 +636,41 @@ const useCartographStore = create((set, get) => ({
     if (!id || id === get().activeLookId) return
     try { localStorage.setItem(ACTIVE_LOOK_KEY, id) } catch { /* ignore */ }
     set({ activeLookId: id })
-    // Hydrate the panel from the new Look's design.json. Bake-stale flag
-    // resets — switching is just a render swap, not an authoring edit.
+    // Hydrate the panel from the new Look's design.json. Bake-stale derives
+    // from whether the Look has bakedAt recorded — switching to a never-
+    // baked Look should still surface the Stage button as stale.
     try {
       const design = await fetchLookDesign(id)
+      const entry = get().looks.find(l => l.id === id)
       set({
         layerVis:       design.layerVis       || {},
         layerColors:    design.layerColors    || {},
         layerStrokes:   design.layerStrokes   || {},
         luColors:       design.luColors       || {},
         materialColors: design.materialColors || {},
+        materialPhysics: design.materialPhysics || {},
+        buildingPalette: design.buildingPalette || get().buildingPalette,
+        lampGlow:        migrateLampGlow(design.lampGlow),
+        bloom:           migrateGroupChannel(design.bloom, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS),
+        warmth:          migrateGroupChannel(design.warmth, WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS),
+        fill:            migrateGroupChannel(design.fill, FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS),
+        exposure:        migrateGroupChannel(design.exposure, EXPOSURE_FIELD_KEYS, EXPOSURE_FLAT_DEFAULTS),
+        ao:              migrateGroupChannel(design.ao, AO_FIELD_KEYS, AO_FLAT_DEFAULTS),
+        mist:            migrateGroupChannel(design.mist, MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS),
+        halo:            migrateGroupChannel(design.halo, HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS),
+        constellations:  migrateGroupChannel(design.constellations, CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
+        milkyWay:        migrateGroupChannel(design.milkyWay, MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS),
+        neon:            migrateGroupChannel(design.neon, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS),
+        sky:             migrateSkyChannel(design.sky),
+        ambient:         migrateGroupChannel(design.ambient, AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS),
+        hemi:            migrateGroupChannel(design.hemi,    HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS),
+        dirSun:          migrateGroupChannel(design.dirSun,  DIRSUN_FIELD_KEYS,  DIRSUN_FLAT_DEFAULTS),
+        dirMoon:         migrateGroupChannel(design.dirMoon, DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS),
+        heroSubject:    design.heroSubject    || null,
+        heroKeyframes:  design.heroKeyframes  || get().heroKeyframes,
+        heroMotion:     { ...get().heroMotion, ...(design.heroMotion || {}) },
         openSections:   design.openSections   || {},
-        bakeStale: false,
+        bakeStale: !entry?.bakedAt,
       })
     } catch (err) {
       console.warn('[looks] hydrate failed for', id, err)
@@ -172,8 +685,9 @@ const useCartographStore = create((set, get) => ({
       // then switch to it.
       await get()._loadLooks()
       await get().setActiveLook(r.id)
-      // Auto-bake the new Look so its ground.svg exists from the moment it
-      // becomes active. Without this, SvgGround would 404 on the SVG fetch.
+      // Auto-bake the new Look so its bake bundle (ground.json + bin +
+      // lightmap + buildings + lamps + scene) exists from the moment it
+      // becomes active. Without this, BakedGround would 404 on first load.
       await get().runBake()
       return r.id
     } catch (err) {
@@ -194,7 +708,7 @@ const useCartographStore = create((set, get) => ({
     }
   },
 
-  // Bake state. Per-Look bake: writes public/looks/<activeLookId>/ground.svg.
+  // Bake state. Per-Look bake: writes the bundle to public/baked/<activeLookId>/.
   // `bakeStale` flips true on every authoring edit; `bakeRunning` drives the
   // modal. After a successful bake we hand off to Hero.
   bakeRunning: false,
@@ -263,6 +777,28 @@ const useCartographStore = create((set, get) => ({
       set({ tool: null, status: '' })
     }
   },
+  // Tree variant style gate. Each Look chooses which style sets are
+  // eligible for the runtime picker (e.g. realistic-only daytime, vs
+  // a winter Look that activates 'winter' alongside 'realistic').
+  // Stored as Array for serialization; converted to Set on read.
+  activeStyles: (() => {
+    try {
+      const saved = localStorage.getItem('cartograph-active-styles')
+      if (saved) return JSON.parse(saved)
+    } catch {}
+    return ['realistic']
+  })(),
+  setActiveStyles: (arr) => {
+    const next = Array.isArray(arr) ? [...new Set(arr)] : ['realistic']
+    try { localStorage.setItem('cartograph-active-styles', JSON.stringify(next)) } catch {}
+    set({ activeStyles: next })
+  },
+  toggleActiveStyle: (style) => {
+    const cur = new Set(get().activeStyles)
+    if (cur.has(style)) cur.delete(style); else cur.add(style)
+    get().setActiveStyles([...cur])
+  },
+
   setShot: (shot) => {
     if (get().shot === 'designer' && shot !== 'designer') {
       set({ tool: null, selectedStreet: null, selectedNode: null, markerActive: false, markerEraserActive: false })
@@ -472,6 +1008,24 @@ const useCartographStore = create((set, get) => ({
         layerStrokes:   design.layerStrokes   || {},
         luColors:       design.luColors       || {},
         materialColors: design.materialColors || {},
+        materialPhysics: design.materialPhysics || {},
+        buildingPalette: design.buildingPalette || get().buildingPalette,
+        lampGlow:        migrateLampGlow(design.lampGlow),
+        bloom:           migrateGroupChannel(design.bloom, BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS),
+        warmth:          migrateGroupChannel(design.warmth, WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS),
+        fill:            migrateGroupChannel(design.fill, FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS),
+        exposure:        migrateGroupChannel(design.exposure, EXPOSURE_FIELD_KEYS, EXPOSURE_FLAT_DEFAULTS),
+        ao:              migrateGroupChannel(design.ao, AO_FIELD_KEYS, AO_FLAT_DEFAULTS),
+        mist:            migrateGroupChannel(design.mist, MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS),
+        halo:            migrateGroupChannel(design.halo, HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS),
+        constellations:  migrateGroupChannel(design.constellations, CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
+        milkyWay:        migrateGroupChannel(design.milkyWay, MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS),
+        neon:            migrateGroupChannel(design.neon, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS),
+        sky:             migrateSkyChannel(design.sky),
+        ambient:         migrateGroupChannel(design.ambient, AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS),
+        hemi:            migrateGroupChannel(design.hemi,    HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS),
+        dirSun:          migrateGroupChannel(design.dirSun,  DIRSUN_FIELD_KEYS,  DIRSUN_FLAT_DEFAULTS),
+        dirMoon:         migrateGroupChannel(design.dirMoon, DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS),
         openSections:   design.openSections   || {},
         _designHydrated: true,
       })
@@ -558,6 +1112,27 @@ const useCartographStore = create((set, get) => ({
           layerStrokes: s.layerStrokes,
           luColors: s.luColors,
           materialColors: s.materialColors,
+          materialPhysics: s.materialPhysics,
+          buildingPalette: s.buildingPalette,
+          lampGlow: s.lampGlow,
+          bloom: s.bloom,
+          warmth: s.warmth,
+          fill: s.fill,
+          exposure: s.exposure,
+          ao: s.ao,
+          mist: s.mist,
+          halo: s.halo,
+          constellations: s.constellations,
+          milkyWay: s.milkyWay,
+          neon: s.neon,
+          sky: s.sky,
+          ambient: s.ambient,
+          hemi: s.hemi,
+          dirSun: s.dirSun,
+          dirMoon: s.dirMoon,
+          heroSubject: s.heroSubject,
+          heroKeyframes: s.heroKeyframes,
+          heroMotion: s.heroMotion,
           openSections: s.openSections,
         }
         saveLookDesign(id, design).catch(err =>

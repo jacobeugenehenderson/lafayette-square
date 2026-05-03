@@ -1,0 +1,1605 @@
+{
+  "generatedAt": "2026-05-03T03:48:11.824Z",
+  "lookName": "lafayette-square",
+  "rosterSize": 17,
+  "materialDefaults": {
+    "roughness": 0.85,
+    "metalness": 0
+  },
+  "atlas": {
+    "width": 4040,
+    "height": 2072,
+    "colorPath": "/baked/lafayette-square/trees-atlas-color.png",
+    "normalPath": "/baked/lafayette-square/trees-atlas-normal.png",
+    "alphaMode": "MASK",
+    "alphaCutoff": 0.5,
+    "alphaTest": 0.5,
+    "doubleSided": true
+  },
+  "tiles": [
+    {
+      "tileIndex": 0,
+      "key": "abf702366ce6|2e6d9d5efe05",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 6,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 7,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 8,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 9,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 10,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1975,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.4888613861386139,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "512×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 1,
+      "key": "c41b250b9757|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "magnolia_sp",
+          "variantId": 1,
+          "matName": "Material #2"
+        },
+        {
+          "species": "magnolia_sp",
+          "variantId": 2,
+          "matName": "Material #2"
+        },
+        {
+          "species": "magnolia_sp",
+          "variantId": 3,
+          "matName": "Material #2"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 4,
+        "w": 403,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.3871287128712872,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.09975247524752477,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "805×2048",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 2,
+      "key": "15c88e3d0ad6|8f0866f3e68b",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "broadleaf_rt3",
+          "variantId": 1,
+          "matName": "BroadleafBark"
+        }
+      ],
+      "content": {
+        "x": 2239,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.5542079207920793,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "512×2048",
+      "sourceNormalDims": "512×2048"
+    },
+    {
+      "tileIndex": 3,
+      "key": "52f3b6d064a1|31382c4db848",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "alaskan_cedar_2",
+          "variantId": 1,
+          "matName": "AlaskaCedarBark"
+        }
+      ],
+      "content": {
+        "x": 2503,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.6195544554455445,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "512×2048",
+      "sourceNormalDims": "512×2048"
+    },
+    {
+      "tileIndex": 4,
+      "key": "ef7d501fb660|68ed62827ad4",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_leaf_tree",
+          "variantId": 3,
+          "matName": "Bark_3_Mat"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 5,
+      "key": "42788cae31b1|44d10fcb4523",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "bark_01_Mat"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 6,
+      "key": "c936750534a1|d8d5b8abe1ab",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "bark_03_Mat"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 0,
+      "key": "3b70158cae63|58277515a126",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 6,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 7,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 8,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 9,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 10,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "Cap_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 1,
+      "key": "84dbb3adc564|61006c8e394a",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 6,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 7,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 8,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 9,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 10,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 2,
+      "key": "d35e871733f0|bf646285c0a2",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 6,
+          "matName": "London_Plane_Leaves_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 7,
+          "matName": "London_Plane_Leaves_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 8,
+          "matName": "London_Plane_Leaves_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 9,
+          "matName": "London_Plane_Leaves_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 10,
+          "matName": "London_Plane_Leaves_Mat"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 3,
+      "key": "0a11d01fbf70|61006c8e394a",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.38712871287128714,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 4,
+      "key": "52af98ccfd22|bf646285c0a2",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 2084,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5158415841584159,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 5,
+      "key": "bf76de4c05a7|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "magnolia_sp",
+          "variantId": 1,
+          "matName": "Material #3"
+        },
+        {
+          "species": "magnolia_sp",
+          "variantId": 2,
+          "matName": "Material #3"
+        },
+        {
+          "species": "magnolia_sp",
+          "variantId": 3,
+          "matName": "Material #3"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 524,
+        "w": 236,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.05841584158415842,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "279×605",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 6,
+      "key": "5fa47a22ede0|0cce76cc520f",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "cedar_generic",
+          "variantId": 1,
+          "matName": "Branches_04_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 3908,
+        "y": 4,
+        "w": 128,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.9673267326732673,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.031683168316831684,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "256×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 7,
+      "key": "82efa31c1b78|44630a487d2f",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "cedar_generic",
+          "variantId": 1,
+          "matName": "Needle1_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 3644,
+        "y": 4,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.901980198019802,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 8,
+      "key": "238d9c7235d3|08b77dbfc0a1",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "cedar_generic",
+          "variantId": 1,
+          "matName": "Cap_01_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 2604,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6445544554455446,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 9,
+      "key": "415533f5f2d9|6b23a51141b4",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "broadleaf_rt3",
+          "variantId": 1,
+          "matName": "Leaf"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.38712871287128714,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": "256×512"
+    },
+    {
+      "tileIndex": 10,
+      "key": "56cbc3829802|6b23a51141b4",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "broadleaf_rt3",
+          "variantId": 1,
+          "matName": "Leaf2"
+        }
+      ],
+      "content": {
+        "x": 1828,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.4524752475247525,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": "256×512"
+    },
+    {
+      "tileIndex": 11,
+      "key": "524432a66f66|6e1f6d575ec1",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "broadleaf_rt3",
+          "variantId": 1,
+          "matName": "Cap_01"
+        }
+      ],
+      "content": {
+        "x": 3124,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7732673267326733,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "512×512"
+    },
+    {
+      "tileIndex": 12,
+      "key": "524432a66f66|c4d03f72b0d6",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "alaskan_cedar_2",
+          "variantId": 1,
+          "matName": "Cap_01"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "512×512"
+    },
+    {
+      "tileIndex": 13,
+      "key": "be4fc10697e8|59f3147e44d4",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "alaskan_cedar_2",
+          "variantId": 1,
+          "matName": "AlaskaCedarNeedles"
+        }
+      ],
+      "content": {
+        "x": 2092,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5178217821782178,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×1024",
+      "sourceNormalDims": "512×1024"
+    },
+    {
+      "tileIndex": 14,
+      "key": "13157a39ecd0|5889b08555c0",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "generic_leaf_tree",
+          "variantId": 3,
+          "matName": "Leaf_GREEN_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "2048×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 15,
+      "key": "0ecef2de0d01|c84336f17870",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "branches_Mat"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "2048×2048",
+      "sourceNormalDims": "1024×1024"
+    }
+  ],
+  "tilesByKey": {
+    "abf702366ce6|2e6d9d5efe05": {
+      "tileIndex": 0,
+      "key": "abf702366ce6|2e6d9d5efe05",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 6,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 7,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 8,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 9,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 10,
+          "matName": "London_Plane_Bark_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Bark_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1975,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.4888613861386139,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "512×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "c41b250b9757|": {
+      "tileIndex": 1,
+      "key": "c41b250b9757|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "magnolia_sp",
+          "variantId": 1,
+          "matName": "Material #2"
+        },
+        {
+          "species": "magnolia_sp",
+          "variantId": 2,
+          "matName": "Material #2"
+        },
+        {
+          "species": "magnolia_sp",
+          "variantId": 3,
+          "matName": "Material #2"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 4,
+        "w": 403,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.3871287128712872,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.09975247524752477,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "805×2048",
+      "sourceNormalDims": null
+    },
+    "15c88e3d0ad6|8f0866f3e68b": {
+      "tileIndex": 2,
+      "key": "15c88e3d0ad6|8f0866f3e68b",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "broadleaf_rt3",
+          "variantId": 1,
+          "matName": "BroadleafBark"
+        }
+      ],
+      "content": {
+        "x": 2239,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.5542079207920793,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "512×2048",
+      "sourceNormalDims": "512×2048"
+    },
+    "52f3b6d064a1|31382c4db848": {
+      "tileIndex": 3,
+      "key": "52f3b6d064a1|31382c4db848",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "alaskan_cedar_2",
+          "variantId": 1,
+          "matName": "AlaskaCedarBark"
+        }
+      ],
+      "content": {
+        "x": 2503,
+        "y": 4,
+        "w": 256,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.6195544554455445,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "512×2048",
+      "sourceNormalDims": "512×2048"
+    },
+    "ef7d501fb660|68ed62827ad4": {
+      "tileIndex": 4,
+      "key": "ef7d501fb660|68ed62827ad4",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_leaf_tree",
+          "variantId": 3,
+          "matName": "Bark_3_Mat"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "42788cae31b1|44d10fcb4523": {
+      "tileIndex": 5,
+      "key": "42788cae31b1|44d10fcb4523",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "bark_01_Mat"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "c936750534a1|d8d5b8abe1ab": {
+      "tileIndex": 6,
+      "key": "c936750534a1|d8d5b8abe1ab",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "bark_03_Mat"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 4,
+        "w": 512,
+        "h": 1024
+      },
+      "uvTransform": {
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.5038610038610039,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.4942084942084942
+      },
+      "sourceColorDims": "1024×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "3b70158cae63|58277515a126": {
+      "tileIndex": 0,
+      "key": "3b70158cae63|58277515a126",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 6,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 7,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 8,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 9,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 10,
+          "matName": "Cap_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "Cap_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "Cap_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    "84dbb3adc564|61006c8e394a": {
+      "tileIndex": 1,
+      "key": "84dbb3adc564|61006c8e394a",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 6,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 7,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 8,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 9,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 10,
+          "matName": "London_Plane_Leaf_Card_Mat"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "d35e871733f0|bf646285c0a2": {
+      "tileIndex": 2,
+      "key": "d35e871733f0|bf646285c0a2",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 6,
+          "matName": "London_Plane_Leaves_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 7,
+          "matName": "London_Plane_Leaves_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 8,
+          "matName": "London_Plane_Leaves_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 9,
+          "matName": "London_Plane_Leaves_Mat"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 10,
+          "matName": "London_Plane_Leaves_Mat"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "0a11d01fbf70|61006c8e394a": {
+      "tileIndex": 3,
+      "key": "0a11d01fbf70|61006c8e394a",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Leaf_Card_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.38712871287128714,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "52af98ccfd22|bf646285c0a2": {
+      "tileIndex": 4,
+      "key": "52af98ccfd22|bf646285c0a2",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 4,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 3,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 2,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        },
+        {
+          "species": "platanus_acerifolia",
+          "variantId": 1,
+          "matName": "London_Plane_Leaves_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 2084,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5158415841584159,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "bf76de4c05a7|": {
+      "tileIndex": 5,
+      "key": "bf76de4c05a7|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "magnolia_sp",
+          "variantId": 1,
+          "matName": "Material #3"
+        },
+        {
+          "species": "magnolia_sp",
+          "variantId": 2,
+          "matName": "Material #3"
+        },
+        {
+          "species": "magnolia_sp",
+          "variantId": 3,
+          "matName": "Material #3"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 524,
+        "w": 236,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.05841584158415842,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "279×605",
+      "sourceNormalDims": null
+    },
+    "5fa47a22ede0|0cce76cc520f": {
+      "tileIndex": 6,
+      "key": "5fa47a22ede0|0cce76cc520f",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "cedar_generic",
+          "variantId": 1,
+          "matName": "Branches_04_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 3908,
+        "y": 4,
+        "w": 128,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.9673267326732673,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.031683168316831684,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "256×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "82efa31c1b78|44630a487d2f": {
+      "tileIndex": 7,
+      "key": "82efa31c1b78|44630a487d2f",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "cedar_generic",
+          "variantId": 1,
+          "matName": "Needle1_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 3644,
+        "y": 4,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.901980198019802,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    "238d9c7235d3|08b77dbfc0a1": {
+      "tileIndex": 8,
+      "key": "238d9c7235d3|08b77dbfc0a1",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "cedar_generic",
+          "variantId": 1,
+          "matName": "Cap_01_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 2604,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6445544554455446,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "1024×1024"
+    },
+    "415533f5f2d9|6b23a51141b4": {
+      "tileIndex": 9,
+      "key": "415533f5f2d9|6b23a51141b4",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "broadleaf_rt3",
+          "variantId": 1,
+          "matName": "Leaf"
+        }
+      ],
+      "content": {
+        "x": 1564,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.38712871287128714,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": "256×512"
+    },
+    "56cbc3829802|6b23a51141b4": {
+      "tileIndex": 10,
+      "key": "56cbc3829802|6b23a51141b4",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "broadleaf_rt3",
+          "variantId": 1,
+          "matName": "Leaf2"
+        }
+      ],
+      "content": {
+        "x": 1828,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.4524752475247525,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "256×512",
+      "sourceNormalDims": "256×512"
+    },
+    "524432a66f66|6e1f6d575ec1": {
+      "tileIndex": 11,
+      "key": "524432a66f66|6e1f6d575ec1",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "broadleaf_rt3",
+          "variantId": 1,
+          "matName": "Cap_01"
+        }
+      ],
+      "content": {
+        "x": 3124,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7732673267326733,
+        "offsetV": 0.0019305019305019305,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "512×512"
+    },
+    "524432a66f66|c4d03f72b0d6": {
+      "tileIndex": 12,
+      "key": "524432a66f66|c4d03f72b0d6",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "alaskan_cedar_2",
+          "variantId": 1,
+          "matName": "Cap_01"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×512",
+      "sourceNormalDims": "512×512"
+    },
+    "be4fc10697e8|59f3147e44d4": {
+      "tileIndex": 13,
+      "key": "be4fc10697e8|59f3147e44d4",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "alaskan_cedar_2",
+          "variantId": 1,
+          "matName": "AlaskaCedarNeedles"
+        }
+      ],
+      "content": {
+        "x": 2092,
+        "y": 524,
+        "w": 256,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5178217821782178,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "512×1024",
+      "sourceNormalDims": "512×1024"
+    },
+    "13157a39ecd0|5889b08555c0": {
+      "tileIndex": 14,
+      "key": "13157a39ecd0|5889b08555c0",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "generic_leaf_tree",
+          "variantId": 3,
+          "matName": "Leaf_GREEN_Mat_2Sided"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "2048×2048",
+      "sourceNormalDims": "1024×1024"
+    },
+    "0ecef2de0d01|c84336f17870": {
+      "tileIndex": 15,
+      "key": "0ecef2de0d01|c84336f17870",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "generic_tree_2",
+          "variantId": 1,
+          "matName": "branches_Mat"
+        }
+      ],
+      "content": {
+        "x": 1044,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.2528957528957529,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.2471042471042471
+      },
+      "sourceColorDims": "2048×2048",
+      "sourceNormalDims": "1024×1024"
+    }
+  }
+}

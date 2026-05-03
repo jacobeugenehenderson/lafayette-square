@@ -1,6 +1,89 @@
 # Cartograph Backlog
 
-Last updated: 2026-04-26 (Phase 4 shipped)
+Last updated: 2026-05-02
+
+## 2026-05-02 — Weather pack (in flight: clouds first)
+
+The product vision crystallized this session: Lafayette Square as a living
+place, today's actual weather + scheduled event Looks. Real weather data is
+already wired (`useWeather.js` → `useSkyState` → existing shaders). What's
+missing is visual fidelity. See `project_weather_and_events_vision.md`.
+
+- [ ] **Cloud renderer upgrade** (in flight). Current `CloudDome.jsx` is
+  noise-based; needs to clear "people would set this as their desktop home
+  screen" quality bar. Options to evaluate: drei `<Cloud>` sprites
+  (cheap-medium), 2D textured layer parallax (medium), volumetric
+  raymarching (heavy but stunning), pre-baked cloud sprite cubemaps per
+  weather state (free at runtime, expensive to author). Desktop-quality
+  tier acceptable; mobile gets a downgraded variant.
+- [ ] **Wind effects.** Tree sway shader uniform (affects all instanced
+  trees), cloud movement direction + speed (CloudDome shader), audio
+  (wind, leaves, distant thunder).
+- [ ] **Precipitation effects.** Rain particles + wet-surface specular
+  shader on streets. Snow particles + roof accumulation (white tint
+  masked by surface normal). Drives off `useSkyState.storminess` +
+  WMO weather codes.
+- [ ] **Heat haze.** Full-screen shimmer distortion for hot summer days
+  in the park / hero shot.
+- [ ] **Autumn foliage.** Leaf-fall particles, color-shift in tree LODs.
+- [ ] **Audio integration.** Wind/rain/birdsong/distant city sounds tied
+  to weather + TOD.
+
+## 2026-05-02 — Sky gradient editor parked
+
+- [ ] **Sky gradient editor — re-evaluate.** Operator-facing maximalist
+  50-swatch sky color editor was scoped (4 bands × 10 palettes + sun
+  glow). Parked before code in favor of Events-as-product-surface vision.
+  When Events are real, per-event sky overrides will live there as one
+  of many bundled tweaks. The math + defaults stay; per-event overrides
+  rendered via the same patterns as Mist/Halo (color fields). May not
+  need full 50-swatch editor; might be 4–8 strategic swatches per event
+  (e.g., Bastille Day = R/W/B horizon/mid/high override + dusk variants).
+
+## 2026-05-02 — Milky Way parked
+
+- [ ] **Milky Way (Sky & Light, CELESTIAL) — re-enable.** Hidden from
+  operator UI + runtime mount on 2026-05-02 after Brunier panorama
+  showed visible JPEG block artifacting + stretched/oversized stars at
+  Hero/Street FOV. All scaffolding preserved: channel state in
+  `useCartographStore`, store actions via factory, `MilkyWaySphere`
+  component in `src/stage/StageSky.jsx`, 12000×6000 panorama at
+  `public/textures/milky_way.jpg`. Mounts commented at
+  `src/cartograph/CartographSkyLight.jsx` and `src/stage/StageSky.jsx`.
+  When returning, the real fix is one of: 16K+ equirectangular source,
+  cubemap with 4096×4096 per face, or a different MW source with
+  naked-eye-style star brightness instead of long-exposure photography
+  (Brunier's panorama is gorgeous data but optimized for print, not
+  real-time rendering at our FOV). See `project_milkyway_parked.md`.
+
+## 2026-05-01 — open items
+
+### Tree pipeline (just stabilized)
+- [x] Roster fallback: out-of-roster placements substitute a same-category roster variant deterministically. 644/644 placements survive a partial roster.
+- [x] Operator transforms (`scaleOverride` / `rotationOverride` / `positionOverride`) flow Arborist → manifest → index → bake → runtime.
+- [x] Forbidden-surface filter at bake time (water / building / pavement / alley / sidewalk / footway / path).
+- [x] Scale baked into the GLB at Arborist publish (`bake-look.js`). Runtime renders at scale=1; placement bake no longer carries a `scale` field.
+- [x] Toy scene migrated from `<ParkTrees>` → `<InstancedTrees bakeUrl="/baked/toy.json" lookId="lafayette-square" />`. Real arborist pipeline drives the testing fixture.
+- [x] `LafayettePark.jsx` cleaned (1293 → 700 lines): ParkTrees + helpers + leafTypesData removed.
+- [x] Per-tile InstancedMesh culling (2026-05-02). `bake-trees.js` emits a 4×4 spatial grid (`tiles.instancesByTile`); runtime splits each species into one InstancedMesh per (url × tile) sharing the single atlas material; `frustumCulled` flipped on. Off-screen tiles cull naturally — biggest wins on Browse-corner / Street shots.
+- [ ] **Fill out `lafayette-square` tree roster.** 17 entries today; runtime substitutes by category until topped up. Common species missing: quercus_alba, acer_saccharum, betula_pendula, tilia_americana, nyssa_sylvatica.
+- [ ] **Fix mismeasured `approxHeightM` in the Arborist** for variants whose authored size renders wrong (magnolias 4×, generic_tree_2 6.7×, garden_mix:3 7×, tilia_americana:1 0.39×, etc.). Either correct via `scaleOverride` in the Arborist UI or fix the publish-time `computeApproxHeight` measurement. The bake no longer clamps — wrong sizes ship until corrected.
+- [ ] **Auto re-bake-look on `scaleOverride` change.** Today operators must trigger `POST /atlas/bake?look=<name>` (or run the CLI) for scale changes to propagate into per-Look GLBs. Wire `arborist/serve.js`'s overrides handler to dispatch a per-Look re-bake when scale changes (debounce).
+
+### Data integrity
+- [x] `bldg-0924 building_sqft` corrected (1,310,842 → 2,125; the park's 30-acre area was mis-assigned to the building entry).
+- [x] `bldg-0924 / bldg-0985` tagged `parkInterior: true`.
+- [x] Kern Pavilion (lmk-124) + Betsy Cook Pavilion (lmk-125) added to `landmarks.json` under `parks/pavilions`.
+- [ ] **Audit other buildings for the same `building_sqft` slip pattern.** Any entry whose `building_sqft` exceeds plausible footprint × stories likely has the same source-data error.
+
+### Architecture / longer arc (deferred)
+- [ ] **Formalize the −9.2° rotation.** Hardcoded across LafayettePark, MapLayers, InstancedTrees, bake-trees, ParkWater capture-frame undo. Should live in one module, sourced from a per-neighborhood setup record, revisitable via a settings panel. See `memory/project_backlog_rotation_formalize.md`.
+- [ ] **Decide "Park as separate entity" vs full absorption.** Half-here today (water, paths, fence, labels still in `LafayettePark.jsx`; ground + trees absorbed into pipeline). Don't drift indefinitely. See `memory/project_backlog_park_as_entity.md`.
+- [ ] **Tree Y-position from elevation field.** Trees plant at y=0 today; should sample `getElevation(x, z) × V_EXAG` so they ride the terrain. See `memory/project_terrain_elevation_field.md`.
+- [ ] **Already-on-file longer arcs:** Y-offset → polygonOffset sweep, lamp-glow bake, Stage Time-of-Day parameterizer, intake procedure, pre-public cleanout/security audit.
+
+### Historical sections below
+The sections after this point document earlier skeleton/derive pipeline phases. Kept for historical context — Phases 1–4 landed; Phase 5 (knit) and Phase 6 (emergent grass median) remain open but are not the current focus.
 
 ## 2026-04-26 — Path B Phases 1+2+3+4 SHIPPED
 

@@ -134,6 +134,7 @@ function ConstellationLines() {
     opacity: 0.7,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
+    fog: false,  // sky elements are infinitely far — opt out of scene fog
   }), [])
 
   const _v = useMemo(() => new THREE.Vector3(), [])

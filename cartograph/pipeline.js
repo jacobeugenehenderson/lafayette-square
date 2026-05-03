@@ -102,11 +102,46 @@ async function main() {
     }
   }
 
+  // ── World-coord bbox (derived from projected layers + buildings) ────
+  // raw.bbox is geographic (lat/lon) and unsuitable for runtime consumers
+  // that work in world coords. Walk the projected outputs to compute the
+  // actual world extent.
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
+  const visit = (x, z) => {
+    if (Number.isFinite(x) && Number.isFinite(z)) {
+      if (x < minX) minX = x
+      if (x > maxX) maxX = x
+      if (z < minZ) minZ = z
+      if (z > maxZ) maxZ = z
+    }
+  }
+  for (const b of buildings) for (const p of (b.ring || [])) visit(p.x, p.z)
+  for (const cat of Object.keys(layers || {})) {
+    const arr = layers[cat]
+    if (!Array.isArray(arr)) continue  // skip nested-object layers like 'ribbons'
+    for (const item of arr) {
+      // Point features: streetlamp etc. carry x/z directly
+      if (typeof item.x === 'number' && typeof item.z === 'number') {
+        visit(item.x, item.z)
+        continue
+      }
+      // Polyline/polygon features: ring | coords | points
+      const pts = item.ring || item.coords || item.points || []
+      for (const p of pts) {
+        if (Array.isArray(p)) visit(p[0], p[1]); else visit(p.x, p.z)
+      }
+    }
+  }
+  const worldBbox = Number.isFinite(minX)
+    ? { minX, maxX, minZ, maxZ }
+    : { minX: 0, maxX: 0, minZ: 0, maxZ: 0 }
+
   // ── Write ───────────────────────────────────────────────────────────
   mkdirSync(CLEAN_DIR, { recursive: true })
 
   const output = {
-    bbox: raw.bbox,
+    bbox: worldBbox,
+    geoBbox: raw.bbox,
     elevation: elevationGrid ? {
       minElev: elevationGrid.minElev,
       maxElev: elevationGrid.maxElev,
