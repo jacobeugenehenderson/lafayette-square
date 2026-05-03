@@ -93,11 +93,11 @@ export default function GatewayArch() {
   const material = useMemo(() => {
     const mat = new THREE.MeshBasicMaterial({
       color: '#c8c8d0',
-      transparent: false,
+      transparent: true,
       depthWrite: true,
     })
 
-    mat.customProgramCacheKey = () => 'gateway-arch-v2'
+    mat.customProgramCacheKey = () => 'gateway-arch-v3'
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
       shader.uniforms.uDayFactor = { value: 1.0 }
@@ -106,6 +106,8 @@ export default function GatewayArch() {
       shader.uniforms.uSkyBright = { value: 0.5 }
       shader.uniforms.uHorizonColor = { value: new THREE.Color('#9dc5e0') }
       shader.uniforms.uGroundColor = { value: new THREE.Color('#3a4a3a') }
+      shader.uniforms.uGroundY = { value: 0.0 }
+      shader.uniforms.uFadeBelow = { value: 30.0 }
 
       // Vertex
       shader.vertexShader = shader.vertexShader.replace(
@@ -139,6 +141,8 @@ export default function GatewayArch() {
          uniform float uSkyBright;
          uniform vec3 uHorizonColor;
          uniform vec3 uGroundColor;
+         uniform float uGroundY;
+         uniform float uFadeBelow;
          varying float vCurveParam;
          varying float vEdge;
          varying vec3 vArchWorld;
@@ -218,20 +222,18 @@ export default function GatewayArch() {
          float glintCore = exp(-glintD * glintD * 5000.0) * edgeMask * topMask;
          gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * glintCore * uGlintBright * 0.7;
 
-         // ── Foot blending + clip ──
-         float footDist = min(vCurveParam, 1.0 - vCurveParam);
-         float footBlend = smoothstep(0.0, 0.12, footDist);
-         float paintStrength = (1.0 - footBlend) * 0.70;
-         float heightFrac = smoothstep(-20.0, 120.0, vArchWorld.y);
-         vec3 paintColor = mix(uGroundColor, uHorizonColor, heightFrac);
-         gl_FragColor.rgb = mix(gl_FragColor.rgb, paintColor, paintStrength);
-         if (vArchWorld.y < -40.0) discard;
-         float clipBlend = smoothstep(-40.0, 20.0, vArchWorld.y);
-         gl_FragColor.rgb = mix(paintColor, gl_FragColor.rgb, clipBlend);
-
          // ── Subtle depth on lower legs ──
+         // Slight dim on the lower portion before the alpha fade kicks in,
+         // so the legs read as receding rather than uniformly bright.
          float footFade = smoothstep(-20.0, 80.0, vArchWorld.y);
          gl_FragColor.rgb *= mix(0.85, 1.0, footFade);
+
+         // ── Foot alpha fade ──
+         // Full alpha at the ground plane (uGroundY); falls off linearly
+         // to zero uFadeBelow meters beneath. Lets the arch be enlarged so
+         // feet penetrate the ground without a hard intersection line.
+         float footAlpha = smoothstep(uGroundY - uFadeBelow, uGroundY, vArchWorld.y);
+         gl_FragColor.a *= footAlpha;
 `
       )
 
@@ -250,9 +252,14 @@ export default function GatewayArch() {
     const day = t * t * (3 - 2 * t)
 
     meshRef.current.rotation.y = archState.archRotation
+    // Pivot at the apex (keystone): scale grows feet outward+downward while
+    // the archstone holds its world-Y position. archYOffset then translates
+    // the apex directly, which matches how operators think about anchoring
+    // the hero subject.
+    const apexY = archState.archYOffset + PEAK_HEIGHT * (1 - archState.archScale)
     meshRef.current.position.set(
       archState.archDistance * archState.archBearingX,
-      archState.archYOffset,
+      apexY,
       archState.archDistance * archState.archBearingZ,
     )
     meshRef.current.scale.setScalar(archState.archScale)
@@ -267,6 +274,9 @@ export default function GatewayArch() {
 
       // Sky brightness — drives how bright the arch appears (never fully dark)
       shaderRef.current.uniforms.uSkyBright.value = 0.25 + day * 0.75
+
+      // Foot alpha fade depth (meters below world y=0).
+      shaderRef.current.uniforms.uFadeBelow.value = archState.archFootFade
 
       // Compute sun and moon as direction vectors, then blend the vectors
       // (blending angles causes jumps when they're far apart)

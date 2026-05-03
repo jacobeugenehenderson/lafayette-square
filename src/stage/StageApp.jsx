@@ -273,6 +273,11 @@ export const ARCH_DEFAULTS = {
   archScale: 1.3,
   archRotation: 1.36,
   archYOffset: 0,
+  // Foot fade: meters below world y=0 at which the arch alpha reaches zero.
+  // Lets feet penetrate the ground plane (BakedGround at y=0) without a
+  // hard edge — alpha is full at the ground line and falls off smoothly
+  // beneath. See StageArch shader's foot-fade block.
+  archFootFade: 30,
   horizonRadius: 3750,
   horizonFadeInner: 900,
   horizonFadeOuter: 3750,
@@ -498,12 +503,14 @@ function ArchHorizonControls() {
       <div className="space-y-1">
         <SliderRow label="Arch Distance" value={a.archDistance} min={400} max={2000} step={10}
           onChange={(v) => setArch({ archDistance: v })} />
-        <SliderRow label="Arch Scale" value={a.archScale} min={0.5} max={2.5} step={0.05}
+        <SliderRow label="Arch Scale" value={a.archScale} min={0.5} max={5.0} step={0.05}
           onChange={(v) => setArch({ archScale: v })} />
         <SliderRow label="Arch Rotation" value={a.archRotation} min={0} max={Math.PI * 2} step={0.01}
           onChange={(v) => setArch({ archRotation: v })} />
-        <SliderRow label="Arch Y Offset" value={a.archYOffset} min={-50} max={50} step={1}
+        <SliderRow label="Arch Y Offset" value={a.archYOffset} min={-200} max={200} step={1}
           onChange={(v) => setArch({ archYOffset: v })} />
+        <SliderRow label="Foot Fade" value={a.archFootFade} min={0} max={120} step={1}
+          onChange={(v) => setArch({ archFootFade: v })} />
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
         <SliderRow label="Horizon Radius" value={a.horizonRadius} min={400} max={8000} step={10}
           onChange={(v) => setArch({ horizonRadius: v })} />
