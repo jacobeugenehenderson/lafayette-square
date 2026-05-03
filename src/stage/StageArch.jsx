@@ -20,6 +20,15 @@ const HALF_SPAN = Math.acosh(A / B) / C
 const _upPos = new THREE.Vector3()
 const _upTarget = new THREE.Vector3()
 
+// Computed each frame by GatewayArch and read by GroundDisc — both feet's
+// live world positions, used for the floor wash light pools on the disc.
+// Sibling components, sharing through module scope avoids prop drilling
+// through R3F. One-frame lag in worst-case useFrame ordering is invisible.
+const archFootWorld = {
+  L: new THREE.Vector3(),
+  R: new THREE.Vector3(),
+}
+
 const BASE_RADIUS = 10.0   // thickened from 6 for heavier silhouette
 const TOP_RADIUS = 4.0     // thickened from 2
 
@@ -349,6 +358,7 @@ export default function GatewayArch() {
 
       _upPos.set(-HALF_SPAN, 0, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpL_pos.value.copy(_upPos)
+      archFootWorld.L.copy(_upPos)
       _upTarget.set(HALF_SPAN * 0.5, PEAK_HEIGHT * 0.6, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpL_dir.value.copy(_upTarget).sub(_upPos).normalize()
       shaderRef.current.uniforms.uUpL_color.value.set(archState.archUplightL_color)
@@ -359,6 +369,7 @@ export default function GatewayArch() {
 
       _upPos.set(HALF_SPAN, 0, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpR_pos.value.copy(_upPos)
+      archFootWorld.R.copy(_upPos)
       _upTarget.set(-HALF_SPAN * 0.5, PEAK_HEIGHT * 0.6, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpR_dir.value.copy(_upTarget).sub(_upPos).normalize()
       shaderRef.current.uniforms.uUpR_color.value.set(archState.archUplightR_color)
