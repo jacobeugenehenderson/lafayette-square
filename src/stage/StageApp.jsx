@@ -273,9 +273,9 @@ export const ARCH_DEFAULTS = {
   archScale: 1.3,
   archRotation: 1.36,
   archYOffset: 0,
-  horizonRadius: 1000,
-  horizonFadeInner: 800,
-  horizonFadeOuter: 1000,
+  horizonRadius: 3750,
+  horizonFadeInner: 900,
+  horizonFadeOuter: 3750,
 }
 export const archState = { ...ARCH_DEFAULTS }
 let archListeners = new Set()
@@ -505,11 +505,11 @@ function ArchHorizonControls() {
         <SliderRow label="Arch Y Offset" value={a.archYOffset} min={-50} max={50} step={1}
           onChange={(v) => setArch({ archYOffset: v })} />
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
-        <SliderRow label="Horizon Radius" value={a.horizonRadius} min={400} max={2000} step={10}
+        <SliderRow label="Horizon Radius" value={a.horizonRadius} min={400} max={8000} step={10}
           onChange={(v) => setArch({ horizonRadius: v })} />
-        <SliderRow label="Fade Inner" value={a.horizonFadeInner} min={100} max={2000} step={10}
+        <SliderRow label="Fade Inner" value={a.horizonFadeInner} min={100} max={8000} step={10}
           onChange={(v) => setArch({ horizonFadeInner: v })} />
-        <SliderRow label="Fade Outer" value={a.horizonFadeOuter} min={100} max={2000} step={10}
+        <SliderRow label="Fade Outer" value={a.horizonFadeOuter} min={100} max={8000} step={10}
           onChange={(v) => setArch({ horizonFadeOuter: v })} />
       </div>
     </Collapsible>

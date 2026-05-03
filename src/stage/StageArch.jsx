@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -6,6 +6,7 @@ import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
 import { LATITUDE, LONGITUDE } from './StageSky'
 import { archState, useArchState } from './StageApp.jsx'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
 
 // NPS catenary equation converted to meters:
 const A = 211.5
@@ -343,10 +344,32 @@ export function DesignerArch() {
   )
 }
 
+// The base-color disc shares its center with BakedGround by reading the
+// same ground.json manifest — `stencil.center` is the canonical map
+// centerpoint. Disc grows past the bake's radial fade and feathers softly
+// so the edge reads as horizon, not a ring.
 function GroundDisc() {
   const a = useArchState()
   const matRef = useRef(null)
   const meshRef = useRef(null)
+  const activeLookId = useCartographStore(s => s.activeLookId)
+  const bakeLastMs = useCartographStore(s => s.bakeLastMs)
+  const [center, setCenter] = useState([0, 0])
+
+  useEffect(() => {
+    if (!activeLookId) return
+    let cancelled = false
+    const t = bakeLastMs ?? Date.now()
+    fetch(`/baked/${activeLookId}/ground.json?t=${t}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(m => {
+        if (!cancelled && m?.stencil?.center) {
+          setCenter([m.stencil.center[0], m.stencil.center[1]])
+        }
+      })
+      .catch(() => { /* keep origin fallback */ })
+    return () => { cancelled = true }
+  }, [activeLookId, bakeLastMs])
 
   const material = useMemo(() => {
     const m = new THREE.ShaderMaterial({
@@ -369,9 +392,31 @@ function GroundDisc() {
         uniform float uOuter;
         uniform vec3 uColor;
         varying vec2 vLocal;
+        // Hash-based value noise — cheap edge wobble so the perimeter
+        // dissolves into atmosphere instead of reading as a clean circle.
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+        }
+        float vnoise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          float a = hash(i);
+          float b = hash(i + vec2(1.0, 0.0));
+          float c = hash(i + vec2(0.0, 1.0));
+          float d = hash(i + vec2(1.0, 1.0));
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+        }
         void main() {
           float r = length(vLocal);
-          float alpha = 1.0 - smoothstep(uInner, uOuter, r);
+          // Wobble radius by low-freq noise scaled to the feather width so
+          // the edge breaks up gently across the band, not on the disc face.
+          float band = max(1.0, uOuter - uInner);
+          float wobble = (vnoise(vLocal * 9.0) - 0.5) * band * 0.35;
+          float t = smoothstep(uInner, uOuter, r + wobble);
+          // Re-apply smoothstep on the inverse to soften both shoulders —
+          // gives a much fuzzier, atmospheric falloff than a linear ease.
+          float alpha = smoothstep(0.0, 1.0, 1.0 - t);
           if (alpha <= 0.001) discard;
           gl_FragColor = vec4(uColor, alpha);
         }
@@ -389,15 +434,20 @@ function GroundDisc() {
         hc.g * 0.35 + 0.03,
         hc.b * 0.30,
       )
-      matRef.current.uniforms.uInner.value = archState.horizonFadeInner
-      matRef.current.uniforms.uOuter.value = archState.horizonFadeOuter
+      // Geometry is a unit circle; vLocal in the shader is 0..1 in object
+      // space. Convert authored world-unit fade radii to that space using
+      // the live mesh scale.
+      const r = Math.max(1, archState.horizonRadius)
+      matRef.current.uniforms.uInner.value = archState.horizonFadeInner / r
+      matRef.current.uniforms.uOuter.value = archState.horizonFadeOuter / r
     }
     if (meshRef.current) {
-      meshRef.current.position.set(
-        archState.archDistance * archState.archBearingX,
-        -0.05,
-        archState.archDistance * archState.archBearingZ,
-      )
+      meshRef.current.position.set(center[0], -0.05, center[1])
+      // Geometry is a unit circle; scale to live archState.horizonRadius
+      // so HMR / React-state-stuck values can't pin the disc to a stale
+      // size. Reads the live ref every frame.
+      const r = archState.horizonRadius
+      meshRef.current.scale.set(r, r, 1)
     }
   })
 
@@ -408,7 +458,7 @@ function GroundDisc() {
       material={material}
       renderOrder={-100}
     >
-      <circleGeometry args={[a.horizonRadius, 128]} />
+      <circleGeometry args={[1, 128]} />
     </mesh>
   )
 }

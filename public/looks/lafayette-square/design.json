@@ -343,6 +343,26 @@
       ]
     }
   },
+  "ambient": {
+    "values": {
+      "value": 1
+    }
+  },
+  "hemi": {
+    "values": {
+      "value": 1
+    }
+  },
+  "dirSun": {
+    "values": {
+      "value": 1
+    }
+  },
+  "dirMoon": {
+    "values": {
+      "value": 1
+    }
+  },
   "heroSubject": null,
   "heroKeyframes": [
     {
