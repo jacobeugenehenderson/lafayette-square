@@ -345,15 +345,10 @@ function LayerRow({ layerKey, label, on, onToggle, disabled }) {
 }
 
 function TimeControl() {
-  const sunAlt = useSkyState((s) => s.sunElevation)
-  const astroAlpha = useSkyState((s) => s.astronomyAlpha)
   return (
     <div className="space-y-2">
       <div className="section-heading">Time of Day</div>
       <DawnTimeline />
-      <div className="font-mono glass-text-dim" style={{ fontSize: 10 }}>
-        sunAlt {sunAlt.toFixed(3)} rad · astroα {astroAlpha.toFixed(3)}
-      </div>
     </div>
   )
 }
