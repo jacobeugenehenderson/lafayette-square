@@ -1,6 +1,85 @@
 # Cartograph Backlog
 
-Last updated: 2026-05-02
+Last updated: 2026-05-03
+
+## 2026-05-03 — v1 punchlist
+
+The final blocker list for v1 of the visual stack. Once this clears, the
+**LS base-map swap** (the marriage leap — see `project_ls_basemap_swap.md`)
+is the last move before returning to the consumer app proper.
+
+The pipeline is conceived (`project_pipeline_is_conceived.md`). Most items
+collapse to hours; estimate at integration rate, not waterfall rate.
+
+### Arch (LS hero subject)
+- [ ] **Fade Arch feet.** Soften ground contact so the arch reads as integrated, not pasted-on.
+- [ ] **Fix Arch scale/position.** True up world-space scale + placement against the hero subject pin.
+- [ ] **Create Arch lighting.** Sky & Light–driven illumination respecting natural scene light — no artificial brightness hacks (`feedback_arch_shader.md`).
+
+### Buildings + roofs
+- [ ] **Finally fix roofs.** "Damaged" roofs render non-flat in Stage/Preview though data likely says flat. See `project_roofs_parity_gap.md` (OPEN since 2026-04-30).
+- [ ] **Fix foundation blocks in Preview.** Preview-side foundation parity with Stage.
+- [ ] **Add buildings + businesses on W Lafayette.** Fill in the W Lafayette frontage in `buildings.json` + `landmarks.json`.
+
+### Cartograph authoring (Survey + Measure)
+- [ ] **Survey: confirm road-coupler split behavior.** Verify segment-local coupler semantics still hold post–Path B (`project_couplers.md`, `feedback_couplers_are_segment_local.md`).
+- [ ] **Measure: do final for-real pass.** End-to-end Measure across every measured street.
+- [ ] **Measure: confirm file persistence once again.** Save → reload → same state.
+- [ ] **Measure: confirm 'Divided Traffic'.** Divided-carriageway behavior + emergent median (`project_positive_carriageway_model.md`).
+- [ ] **Measure: fix corners.** Plug shape still wrong/fragile at oblique intersections — see `project_corner_plug_open_problem.md`.
+- [ ] **Ribbon-to-ribbon profile stitching.** Where two streets with different cross-section profiles meet, stitch ribbons cleanly across the join. Phase 5 ribbon-knit / merge-plug; `corridors[].transitions[]` already marks the seams.
+- [ ] **Fix final land uses.** Close out remaining land-use polygon authoring gaps.
+
+### Trees
+- [ ] **Confirm: tree atlas repack.** Verify the skyline rect packer's output end-to-end on the LS roster (`project_per_look_tree_atlas.md`).
+- [ ] **Confirm: per-tile tree culling.** Verify 4×4 spatial grid + frustumCulled actually saves frames where expected (`project_tree_per_tile_culling.md`).
+
+### Atmosphere + Sky & Light
+- [ ] **Remove Sun info from TOD in Preview.** Sun readout currently surfaces in Preview's TOD UI; pull it out.
+- [ ] **QC Neon.** Toy fixture is live; perfect behavior + migrate to LS (`project_neon_bands_runtime.md`, `HANDOFF-neon.md`).
+- [ ] **Finish clouds.** Land the cloud renderer at desktop-quality bar (`HANDOFF-clouds-day2.md`, `project_weather_and_events_vision.md`).
+- [ ] **Add luminance to surfaces (off by default).** New surface-level luminance channel; defaults match today (off); operator opts in per material.
+
+### Park
+- [ ] **Build park fence.** Lafayette Square perimeter fence as a first-class element.
+- [ ] **Add community park** at the vacant lot at Dolman + Park. Treat as a neighborhood community-park entity.
+- [ ] **Add water texture.** Park water gets a real texture; today's flat fill replaced.
+
+### Designer / Preview UX
+- [ ] **Restyle "Look" in Designer.** Visual restyle of the Look selector / cards.
+- [ ] **Update Preview interface** (small refresh; not a big deal).
+- [ ] **Stack order.** Coplanar stacking sweep — replace remaining Y-offsets with polygonOffset (`project_backlog_y_offset_sweep.md`, `feedback_never_y_offsets.md`).
+- [ ] **Fix labels.** Close out remaining label rendering / authoring issues.
+
+### Mobile
+- [ ] **Successfully complete + test full functionality on the mobile environment via Preview.** Phone mode is the canary; budget = ~200 calls / 1M tris / 256MB GPU (`feedback_mobile_first_preview.md`, `project_preview_phone_mode.md`).
+
+---
+
+## 2026-05-03 — Recently shipped (celebrate)
+
+A pile of work landed across the visual stack between 2026-04-30 and 2026-05-03.
+Memory entries are the source of truth; this is the index.
+
+- ✅ **Bake pipeline + per-Look bundles** (2026-04-30). `BakedGround.jsx` + per-Look bake mounted in Stage and Preview. `SvgGround` retired. See `project_baked_ground_runtime.md`, `project_bake_pipeline_pure_threejs.md`.
+- ✅ **Neighborhood stencil unification** (2026-04-30). One canonical boundary v2; bake clips ribbons+faces to `streetFade.outer`; `BakedGround` applies concentric radial fade per group kind; Terrain skirt retired. See `project_neighborhood_stencil_unification.md`.
+- ✅ **Sky gradient grid editor** (2026-05-02). 2D color matrix (4 bands × 22 cols × sun-glow row), day-resolved preview in Sky & Light card, `SkyPump → skyState → GradientSky`. Replaces hardcoded altitude keyframes. *Awesome.* See `project_sky_gradient_grid.md`.
+- ✅ **TOD parameterizer** (2026-05-02 → 2026-05-03). TodChannel primitive, Lamp Glow end-to-end (per-tree gaussian → instance attr → canopy-gated shader), Post + Sky & Light card split, lighting-unit channels (ambient/hemi/dirSun/dirMoon as TOD multipliers). See `project_tod_parameterizer_inflight.md`, `project_lamp_glow_runtime.md`, `project_lighting_unit_runtime.md`, `project_post_vs_skylight_split.md`.
+- ✅ **Per-tile InstancedMesh tree culling + tighter atlas packing** (2026-05-02 → 2026-05-03). 4×4 spatial grid, skyline rect packer, `frustumCulled` on. See `project_per_look_tree_atlas.md`.
+- ✅ **Library / runtime split** (2026-05-03). `public/trees/` moved to `.gitignore` — Arborist authoring library is multi-GB, regenerable, never read by runtime. Runtime consumes `public/baked/<look>/` only. The publish-loop seam is now also enforced by git.
+
+## 2026-05-03 — In flight
+
+- [ ] **Cloud renderer upgrade.** Day-2 sprite tuning continues; clearing the desktop-home-screen quality bar. See `HANDOFF-clouds-day2.md` and `project_weather_and_events_vision.md`.
+- [ ] **Neon Bands — testing + perfecting.** Live in toy as R&D fixture (NeonBands shader + Sky & Light group-of-3 channel + NeonPump). Behavior is in; needs shake-out and LS migration. See `HANDOFF-neon.md`, `project_neon_bands_runtime.md`.
+- [ ] **Hero pan port — needs QC.** Structural port done (`src/preview/heroAnim.js` + `HeroCamera` + `heroKeyframes` persisted in design.json). Verify swing cadence/amplitude/ease against legacy `src/components/Scene.jsx:312` `heroPanSwing` side-by-side before declaring shipped. See `project_hero_pan_needs_qc.md`.
+- [ ] **Sky & Light + Post card polish.** Cards scaffolded; remaining work is per-channel polish + promoting single-channel emissives. See `HANDOFF-sky-and-light.md`.
+
+## 2026-05-03 — Upcoming
+
+- [ ] **LS base-map swap (the marriage leap).** LS at ~90% pending one move — replace the legacy base-map render path with the cartograph→Preview bake bundle. Final build sweep/sprint to follow. See `project_ls_basemap_swap.md`.
+- [ ] **Roofs parity gap** (OPEN 2026-04-30, still not fixed). "Damaged" roofs render non-flat in Stage/Preview though data probably says flat. Concrete parity audit ticket. See `project_roofs_parity_gap.md`.
+- [ ] **Pre-public cleanout + security audit.** Whitelist build, sterilize the bake, strip authoring code/data. Bake architecture supports inertness; build pipeline must enforce it. See `project_pre_public_cleanout_security_audit.md`.
 
 ## 2026-05-02 — Weather pack (in flight: clouds first)
 
@@ -29,16 +108,18 @@ missing is visual fidelity. See `project_weather_and_events_vision.md`.
 - [ ] **Audio integration.** Wind/rain/birdsong/distant city sounds tied
   to weather + TOD.
 
-## 2026-05-02 — Sky gradient editor parked
+## 2026-05-02 — Sky gradient editor: events overlay queued
 
-- [ ] **Sky gradient editor — re-evaluate.** Operator-facing maximalist
-  50-swatch sky color editor was scoped (4 bands × 10 palettes + sun
-  glow). Parked before code in favor of Events-as-product-surface vision.
-  When Events are real, per-event sky overrides will live there as one
-  of many bundled tweaks. The math + defaults stay; per-event overrides
-  rendered via the same patterns as Mist/Halo (color fields). May not
-  need full 50-swatch editor; might be 4–8 strategic swatches per event
-  (e.g., Bastille Day = R/W/B horizon/mid/high override + dusk variants).
+The base sky gradient grid **shipped 2026-05-02 and looks great** — see the
+"Recently shipped" section above and `project_sky_gradient_grid.md`. What
+remains is the Events overlay layer:
+
+- [ ] **Per-event sky overrides.** When Events-as-product-surface is real,
+  per-event palettes will overlay the base grid as one of many bundled
+  tweaks (Bastille Day = R/W/B horizon/mid/high + dusk variants;
+  Cardinals red; holidays). Rendered via the same patterns as Mist/Halo
+  (color fields). 4–8 strategic swatches per event likely sufficient —
+  no need for a 50-swatch editor.
 
 ## 2026-05-02 — Milky Way parked
 
@@ -66,6 +147,8 @@ missing is visual fidelity. See `project_weather_and_events_vision.md`.
 - [x] Toy scene migrated from `<ParkTrees>` → `<InstancedTrees bakeUrl="/baked/toy.json" lookId="lafayette-square" />`. Real arborist pipeline drives the testing fixture.
 - [x] `LafayettePark.jsx` cleaned (1293 → 700 lines): ParkTrees + helpers + leafTypesData removed.
 - [x] Per-tile InstancedMesh culling (2026-05-02). `bake-trees.js` emits a 4×4 spatial grid (`tiles.instancesByTile`); runtime splits each species into one InstancedMesh per (url × tile) sharing the single atlas material; `frustumCulled` flipped on. Off-screen tiles cull naturally — biggest wins on Browse-corner / Street shots.
+- [x] Tree-atlas tighter packing (2026-05-03). Skyline rect packer (`arborist/atlas-pack.js`) replaces uniform-grid + nextPow2; per-tile content rect at color-aspect with per-classification cap (bark 512×1024, leaf 512×512) + 4px clamp-extended mip gutter. `unifyAtlases` packs sub-atlases as two rects. Bark sub-atlas −30% on the LS roster; leaves already at cap so unchanged. Manifest UV contract preserved (runtime untouched).
+- [x] Open-tab GLB cache-bust (2026-05-03). Rewritten GLB URLs in `InstancedTrees.jsx` carry `?v=<atlas.generatedAt>` so an open Preview/Stage tab picks up new UVs on rebake instead of trapping drei's `useGLTF` cache (was misreadable as a packing bug — Grove looks fine because it loads raw source GLBs).
 - [ ] **Fill out `lafayette-square` tree roster.** 17 entries today; runtime substitutes by category until topped up. Common species missing: quercus_alba, acer_saccharum, betula_pendula, tilia_americana, nyssa_sylvatica.
 - [ ] **Fix mismeasured `approxHeightM` in the Arborist** for variants whose authored size renders wrong (magnolias 4×, generic_tree_2 6.7×, garden_mix:3 7×, tilia_americana:1 0.39×, etc.). Either correct via `scaleOverride` in the Arborist UI or fix the publish-time `computeApproxHeight` measurement. The bake no longer clamps — wrong sizes ship until corrected.
 - [ ] **Auto re-bake-look on `scaleOverride` change.** Today operators must trigger `POST /atlas/bake?look=<name>` (or run the CLI) for scale changes to propagate into per-Look GLBs. Wire `arborist/serve.js`'s overrides handler to dispatch a per-Look re-bake when scale changes (debounce).
@@ -80,7 +163,7 @@ missing is visual fidelity. See `project_weather_and_events_vision.md`.
 - [ ] **Formalize the −9.2° rotation.** Hardcoded across LafayettePark, MapLayers, InstancedTrees, bake-trees, ParkWater capture-frame undo. Should live in one module, sourced from a per-neighborhood setup record, revisitable via a settings panel. See `memory/project_backlog_rotation_formalize.md`.
 - [ ] **Decide "Park as separate entity" vs full absorption.** Half-here today (water, paths, fence, labels still in `LafayettePark.jsx`; ground + trees absorbed into pipeline). Don't drift indefinitely. See `memory/project_backlog_park_as_entity.md`.
 - [ ] **Tree Y-position from elevation field.** Trees plant at y=0 today; should sample `getElevation(x, z) × V_EXAG` so they ride the terrain. See `memory/project_terrain_elevation_field.md`.
-- [ ] **Already-on-file longer arcs:** Y-offset → polygonOffset sweep, lamp-glow bake, Stage Time-of-Day parameterizer, intake procedure, pre-public cleanout/security audit.
+- [ ] **Already-on-file longer arcs:** Y-offset → polygonOffset sweep, intake procedure, pre-public cleanout/security audit. (Lamp-glow bake + Stage TOD parameterizer shipped 2026-05-02 → 2026-05-03 — see "Recently shipped" section above.)
 
 ### Historical sections below
 The sections after this point document earlier skeleton/derive pipeline phases. Kept for historical context — Phases 1–4 landed; Phase 5 (knit) and Phase 6 (emergent grass median) remain open but are not the current focus.
