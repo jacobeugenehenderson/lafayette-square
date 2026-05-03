@@ -18,6 +18,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useTreeAtlas, treeSwayUniforms } from './treeAtlasMaterial'
 import useCartographStore from '../cartograph/stores/useCartographStore'
 
@@ -30,17 +31,20 @@ const BAKE_URL = '/baked/default.json'
 function VariantInstances({ url, instances, treeMaterial }) {
   const { scene } = useGLTF(url)
 
-  // Walk the rewritten GLB and collect every mesh's geometry. Every primitive
-  // uses the single shared tree material — bark and leaf tiles both live in
-  // the unified atlas, so one material covers everything and the renderer
-  // sees one shader program (Bloom-stable).
+  // Walk the rewritten GLB, baking each primitive's world matrix into its
+  // vertices, then merge all primitives that share attribute layout into a
+  // SINGLE BufferGeometry. Every primitive already uses the same shared
+  // treeMaterial (the unified atlas covers bark + leaves), so the only
+  // reason they're split is how the source FBX was authored. Merging at
+  // load time collapses one (url × tile) → one InstancedMesh, where it
+  // would otherwise have been (4 primitives × 154 mesh groups) ≈ 616
+  // draws per frame for trees alone. Falls back to per-primitive if
+  // attribute sets diverge across primitives.
   const meshes = useMemo(() => {
     scene.updateMatrixWorld(true)
-    const out = []
+    const collected = []
     scene.traverse(o => {
       if (!o.isMesh) return
-      o.castShadow = true
-      o.receiveShadow = true
       const pos = o.geometry?.attributes?.position
       if (!pos) return
       for (let i = 0; i < pos.count; i++) {
@@ -48,13 +52,33 @@ function VariantInstances({ url, instances, treeMaterial }) {
             !Number.isFinite(pos.getY(i)) ||
             !Number.isFinite(pos.getZ(i))) return
       }
-      out.push({
-        geometry: o.geometry,
-        material: treeMaterial,
-        localMatrix: o.matrixWorld.clone(),
-      })
+      // Bake the primitive's world transform into a cloned geometry so
+      // the merge sees vertices already in mesh-local frame.
+      const g = o.geometry.clone()
+      g.applyMatrix4(o.matrixWorld)
+      collected.push(g)
     })
-    return out
+    if (collected.length === 0) return []
+
+    // Verify all geometries share the same attribute keys before merging.
+    // If something diverges (rare, but a future tree variant could ship
+    // vertex colors on bark only), fall back to per-primitive submeshes.
+    const keys = Object.keys(collected[0].attributes).sort().join('|')
+    const merge = collected.every(g => Object.keys(g.attributes).sort().join('|') === keys)
+
+    if (merge) {
+      const merged = mergeGeometries(collected, false)
+      if (merged) {
+        // Identity local matrix — vertices already carry their original
+        // primitive's transform.
+        return [{ geometry: merged, material: treeMaterial, localMatrix: new THREE.Matrix4() }]
+      }
+    }
+    return collected.map(g => ({
+      geometry: g,
+      material: treeMaterial,
+      localMatrix: new THREE.Matrix4(),
+    }))
   }, [scene, treeMaterial])
 
   if (meshes.length === 0) return null
@@ -87,6 +111,17 @@ function VariantInstances({ url, instances, treeMaterial }) {
     }
     return arr
   }, [instances])
+
+  // One log per (url × tile) saying how many submeshes we ended up with.
+  // After the primitive-merge optimization this should be 1 for all variants
+  // — if any logs show >1, the merge fell back (attribute-set mismatch).
+  if (typeof window !== 'undefined' && !window.__treeMergeLogged) {
+    window.__treeMergeLogged = new Set()
+  }
+  if (typeof window !== 'undefined' && !window.__treeMergeLogged.has(url)) {
+    window.__treeMergeLogged.add(url)
+    console.log(`[VariantInstances] ${url.split('/trees/')[1]?.split('?')[0] || url}: ${meshes.length} submesh${meshes.length === 1 ? '' : 'es'} after merge × ${instances.length} instances`)
+  }
 
   return (
     <>
@@ -130,8 +165,8 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
     <instancedMesh
       ref={ref}
       args={[geometry, material, placementMatrices.length]}
-      castShadow
-      receiveShadow
+      castShadow={false}
+      receiveShadow={false}
       frustumCulled={true}
     />
   )

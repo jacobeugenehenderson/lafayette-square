@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-03T03:48:11.824Z",
+  "generatedAt": "2026-05-03T21:23:16.967Z",
   "lookName": "lafayette-square",
-  "rosterSize": 17,
+  "rosterSize": 14,
   "materialDefaults": {
     "roughness": 0.85,
     "metalness": 0
@@ -70,15 +70,15 @@
         }
       ],
       "content": {
-        "x": 1975,
+        "x": 1564,
         "y": 4,
         "w": 256,
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.4888613861386139,
+        "offsetU": 0.38712871287128714,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366337,
+        "scaleU": 0.06336633663366335,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "512×2048",
@@ -86,43 +86,6 @@
     },
     {
       "tileIndex": 1,
-      "key": "c41b250b9757|",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "magnolia_sp",
-          "variantId": 1,
-          "matName": "Material #2"
-        },
-        {
-          "species": "magnolia_sp",
-          "variantId": 2,
-          "matName": "Material #2"
-        },
-        {
-          "species": "magnolia_sp",
-          "variantId": 3,
-          "matName": "Material #2"
-        }
-      ],
-      "content": {
-        "x": 1564,
-        "y": 4,
-        "w": 403,
-        "h": 1024
-      },
-      "uvTransform": {
-        "offsetU": 0.3871287128712872,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.09975247524752477,
-        "scaleV": 0.4942084942084942
-      },
-      "sourceColorDims": "805×2048",
-      "sourceNormalDims": null
-    },
-    {
-      "tileIndex": 2,
       "key": "15c88e3d0ad6|8f0866f3e68b",
       "atlas": "unified",
       "classification": "bark",
@@ -134,22 +97,22 @@
         }
       ],
       "content": {
-        "x": 2239,
+        "x": 1828,
         "y": 4,
         "w": 256,
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.5542079207920793,
+        "offsetU": 0.4524752475247525,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366337,
+        "scaleU": 0.06336633663366335,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     {
-      "tileIndex": 3,
+      "tileIndex": 2,
       "key": "52f3b6d064a1|31382c4db848",
       "atlas": "unified",
       "classification": "bark",
@@ -161,22 +124,22 @@
         }
       ],
       "content": {
-        "x": 2503,
+        "x": 2092,
         "y": 4,
         "w": 256,
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.6195544554455445,
+        "offsetU": 0.5178217821782178,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366337,
+        "scaleU": 0.06336633663366335,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     {
-      "tileIndex": 4,
+      "tileIndex": 3,
       "key": "ef7d501fb660|68ed62827ad4",
       "atlas": "unified",
       "classification": "bark",
@@ -194,16 +157,16 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
+        "offsetU": 0.00099009900990099,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.12673267326732673,
+        "scaleU": 0.1267326732673267,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 5,
+      "tileIndex": 4,
       "key": "42788cae31b1|44d10fcb4523",
       "atlas": "unified",
       "classification": "bark",
@@ -221,16 +184,16 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.1297029702970297,
+        "offsetU": 0.12970297029702968,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.12673267326732673,
+        "scaleU": 0.1267326732673267,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 6,
+      "tileIndex": 5,
       "key": "c936750534a1|d8d5b8abe1ab",
       "atlas": "unified",
       "classification": "bark",
@@ -248,9 +211,9 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.2584158415841584,
+        "offsetU": 0.25841584158415837,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.12673267326732673,
+        "scaleU": 0.1267326732673267,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "1024×2048",
@@ -503,43 +466,6 @@
     },
     {
       "tileIndex": 5,
-      "key": "bf76de4c05a7|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "magnolia_sp",
-          "variantId": 1,
-          "matName": "Material #3"
-        },
-        {
-          "species": "magnolia_sp",
-          "variantId": 2,
-          "matName": "Material #3"
-        },
-        {
-          "species": "magnolia_sp",
-          "variantId": 3,
-          "matName": "Material #3"
-        }
-      ],
-      "content": {
-        "x": 2356,
-        "y": 524,
-        "w": 236,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.2528957528957529,
-        "scaleU": 0.05841584158415842,
-        "scaleV": 0.2471042471042471
-      },
-      "sourceColorDims": "279×605",
-      "sourceNormalDims": null
-    },
-    {
-      "tileIndex": 6,
       "key": "5fa47a22ede0|0cce76cc520f",
       "atlas": "unified",
       "classification": "leaf",
@@ -566,7 +492,7 @@
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 7,
+      "tileIndex": 6,
       "key": "82efa31c1b78|44630a487d2f",
       "atlas": "unified",
       "classification": "leaf",
@@ -593,7 +519,7 @@
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 8,
+      "tileIndex": 7,
       "key": "238d9c7235d3|08b77dbfc0a1",
       "atlas": "unified",
       "classification": "leaf",
@@ -620,7 +546,7 @@
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 9,
+      "tileIndex": 8,
       "key": "415533f5f2d9|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -647,7 +573,7 @@
       "sourceNormalDims": "256×512"
     },
     {
-      "tileIndex": 10,
+      "tileIndex": 9,
       "key": "56cbc3829802|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -674,7 +600,7 @@
       "sourceNormalDims": "256×512"
     },
     {
-      "tileIndex": 11,
+      "tileIndex": 10,
       "key": "524432a66f66|6e1f6d575ec1",
       "atlas": "unified",
       "classification": "leaf",
@@ -701,7 +627,7 @@
       "sourceNormalDims": "512×512"
     },
     {
-      "tileIndex": 12,
+      "tileIndex": 11,
       "key": "524432a66f66|c4d03f72b0d6",
       "atlas": "unified",
       "classification": "leaf",
@@ -728,7 +654,7 @@
       "sourceNormalDims": "512×512"
     },
     {
-      "tileIndex": 13,
+      "tileIndex": 12,
       "key": "be4fc10697e8|59f3147e44d4",
       "atlas": "unified",
       "classification": "leaf",
@@ -755,7 +681,7 @@
       "sourceNormalDims": "512×1024"
     },
     {
-      "tileIndex": 14,
+      "tileIndex": 13,
       "key": "13157a39ecd0|5889b08555c0",
       "atlas": "unified",
       "classification": "leaf",
@@ -782,7 +708,7 @@
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 15,
+      "tileIndex": 14,
       "key": "0ecef2de0d01|c84336f17870",
       "atlas": "unified",
       "classification": "leaf",
@@ -863,59 +789,22 @@
         }
       ],
       "content": {
-        "x": 1975,
+        "x": 1564,
         "y": 4,
         "w": 256,
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.4888613861386139,
+        "offsetU": 0.38712871287128714,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366337,
+        "scaleU": 0.06336633663366335,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
     },
-    "c41b250b9757|": {
-      "tileIndex": 1,
-      "key": "c41b250b9757|",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "magnolia_sp",
-          "variantId": 1,
-          "matName": "Material #2"
-        },
-        {
-          "species": "magnolia_sp",
-          "variantId": 2,
-          "matName": "Material #2"
-        },
-        {
-          "species": "magnolia_sp",
-          "variantId": 3,
-          "matName": "Material #2"
-        }
-      ],
-      "content": {
-        "x": 1564,
-        "y": 4,
-        "w": 403,
-        "h": 1024
-      },
-      "uvTransform": {
-        "offsetU": 0.3871287128712872,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.09975247524752477,
-        "scaleV": 0.4942084942084942
-      },
-      "sourceColorDims": "805×2048",
-      "sourceNormalDims": null
-    },
     "15c88e3d0ad6|8f0866f3e68b": {
-      "tileIndex": 2,
+      "tileIndex": 1,
       "key": "15c88e3d0ad6|8f0866f3e68b",
       "atlas": "unified",
       "classification": "bark",
@@ -927,22 +816,22 @@
         }
       ],
       "content": {
-        "x": 2239,
+        "x": 1828,
         "y": 4,
         "w": 256,
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.5542079207920793,
+        "offsetU": 0.4524752475247525,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366337,
+        "scaleU": 0.06336633663366335,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     "52f3b6d064a1|31382c4db848": {
-      "tileIndex": 3,
+      "tileIndex": 2,
       "key": "52f3b6d064a1|31382c4db848",
       "atlas": "unified",
       "classification": "bark",
@@ -954,22 +843,22 @@
         }
       ],
       "content": {
-        "x": 2503,
+        "x": 2092,
         "y": 4,
         "w": 256,
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.6195544554455445,
+        "offsetU": 0.5178217821782178,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366337,
+        "scaleU": 0.06336633663366335,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     "ef7d501fb660|68ed62827ad4": {
-      "tileIndex": 4,
+      "tileIndex": 3,
       "key": "ef7d501fb660|68ed62827ad4",
       "atlas": "unified",
       "classification": "bark",
@@ -987,16 +876,16 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
+        "offsetU": 0.00099009900990099,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.12673267326732673,
+        "scaleU": 0.1267326732673267,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     "42788cae31b1|44d10fcb4523": {
-      "tileIndex": 5,
+      "tileIndex": 4,
       "key": "42788cae31b1|44d10fcb4523",
       "atlas": "unified",
       "classification": "bark",
@@ -1014,16 +903,16 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.1297029702970297,
+        "offsetU": 0.12970297029702968,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.12673267326732673,
+        "scaleU": 0.1267326732673267,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     "c936750534a1|d8d5b8abe1ab": {
-      "tileIndex": 6,
+      "tileIndex": 5,
       "key": "c936750534a1|d8d5b8abe1ab",
       "atlas": "unified",
       "classification": "bark",
@@ -1041,9 +930,9 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.2584158415841584,
+        "offsetU": 0.25841584158415837,
         "offsetV": 0.5038610038610039,
-        "scaleU": 0.12673267326732673,
+        "scaleU": 0.1267326732673267,
         "scaleV": 0.4942084942084942
       },
       "sourceColorDims": "1024×2048",
@@ -1294,45 +1183,8 @@
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
-    "bf76de4c05a7|": {
-      "tileIndex": 5,
-      "key": "bf76de4c05a7|",
-      "atlas": "unified",
-      "classification": "leaf",
-      "refs": [
-        {
-          "species": "magnolia_sp",
-          "variantId": 1,
-          "matName": "Material #3"
-        },
-        {
-          "species": "magnolia_sp",
-          "variantId": 2,
-          "matName": "Material #3"
-        },
-        {
-          "species": "magnolia_sp",
-          "variantId": 3,
-          "matName": "Material #3"
-        }
-      ],
-      "content": {
-        "x": 2356,
-        "y": 524,
-        "w": 236,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.2528957528957529,
-        "scaleU": 0.05841584158415842,
-        "scaleV": 0.2471042471042471
-      },
-      "sourceColorDims": "279×605",
-      "sourceNormalDims": null
-    },
     "5fa47a22ede0|0cce76cc520f": {
-      "tileIndex": 6,
+      "tileIndex": 5,
       "key": "5fa47a22ede0|0cce76cc520f",
       "atlas": "unified",
       "classification": "leaf",
@@ -1359,7 +1211,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "82efa31c1b78|44630a487d2f": {
-      "tileIndex": 7,
+      "tileIndex": 6,
       "key": "82efa31c1b78|44630a487d2f",
       "atlas": "unified",
       "classification": "leaf",
@@ -1386,7 +1238,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "238d9c7235d3|08b77dbfc0a1": {
-      "tileIndex": 8,
+      "tileIndex": 7,
       "key": "238d9c7235d3|08b77dbfc0a1",
       "atlas": "unified",
       "classification": "leaf",
@@ -1413,7 +1265,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "415533f5f2d9|6b23a51141b4": {
-      "tileIndex": 9,
+      "tileIndex": 8,
       "key": "415533f5f2d9|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -1440,7 +1292,7 @@
       "sourceNormalDims": "256×512"
     },
     "56cbc3829802|6b23a51141b4": {
-      "tileIndex": 10,
+      "tileIndex": 9,
       "key": "56cbc3829802|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -1467,7 +1319,7 @@
       "sourceNormalDims": "256×512"
     },
     "524432a66f66|6e1f6d575ec1": {
-      "tileIndex": 11,
+      "tileIndex": 10,
       "key": "524432a66f66|6e1f6d575ec1",
       "atlas": "unified",
       "classification": "leaf",
@@ -1494,7 +1346,7 @@
       "sourceNormalDims": "512×512"
     },
     "524432a66f66|c4d03f72b0d6": {
-      "tileIndex": 12,
+      "tileIndex": 11,
       "key": "524432a66f66|c4d03f72b0d6",
       "atlas": "unified",
       "classification": "leaf",
@@ -1521,7 +1373,7 @@
       "sourceNormalDims": "512×512"
     },
     "be4fc10697e8|59f3147e44d4": {
-      "tileIndex": 13,
+      "tileIndex": 12,
       "key": "be4fc10697e8|59f3147e44d4",
       "atlas": "unified",
       "classification": "leaf",
@@ -1548,7 +1400,7 @@
       "sourceNormalDims": "512×1024"
     },
     "13157a39ecd0|5889b08555c0": {
-      "tileIndex": 14,
+      "tileIndex": 13,
       "key": "13157a39ecd0|5889b08555c0",
       "atlas": "unified",
       "classification": "leaf",
@@ -1575,7 +1427,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "0ecef2de0d01|c84336f17870": {
-      "tileIndex": 15,
+      "tileIndex": 14,
       "key": "0ecef2de0d01|c84336f17870",
       "atlas": "unified",
       "classification": "leaf",

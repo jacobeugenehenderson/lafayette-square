@@ -16,7 +16,7 @@ import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import CelestialBodies from '../stage/StageSky'
 import CloudDome from '../components/CloudDome'
 import BakedLamps from './BakedLamps'
-import GatewayArch from '../components/GatewayArch'
+import GatewayArch from '../stage/StageArch'
 import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -32,7 +32,7 @@ import TriggerBar from './TriggerBar'
 import { createCameraTween } from './cameraTween'
 import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
 import {
-  GpuMonitorTicker, noteEvent, measureToggle,
+  GpuMonitorTicker, GpuPanel, noteEvent, measureToggle,
   getLayerCost, layerCostSubscribe,
 } from './GpuMonitor'
 
@@ -493,6 +493,7 @@ export default function PreviewApp() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <TriggerBar shot={shot} setShot={setShot} onReload={onReload} />
               <StripChart height={220} />
+              <div className="glass-panel rounded-xl p-3"><GpuPanel /></div>
             </div>
           </>
         ) : (

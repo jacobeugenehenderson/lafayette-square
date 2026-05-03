@@ -34,8 +34,13 @@ collapse to hours; estimate at integration rate, not waterfall rate.
 - [ ] **Fix final land uses.** Close out remaining land-use polygon authoring gaps.
 
 ### Trees
-- [ ] **Confirm: tree atlas repack.** Verify the skyline rect packer's output end-to-end on the LS roster (`project_per_look_tree_atlas.md`).
-- [ ] **Confirm: per-tile tree culling.** Verify 4×4 spatial grid + frustumCulled actually saves frames where expected (`project_tree_per_tile_culling.md`).
+- [x] **Confirm: tree atlas repack** (2026-05-03). Atlas at 4040×2072 = 64 MB color+normal VRAM (~25% of 256MB phone budget). Packing currently leaf-width-bound (4040), can't snap to 2048×2048 without reducing per-classification leaf cap (512→384px = quality hit). Acceptable for now; revisit if memory pressure surfaces.
+- [x] **Confirm: per-tile tree culling** (2026-05-03). 4×4 spatial grid is engaged, frustumCulled = true. Working — off-screen tiles cull correctly on Browse/Street.
+- [x] **Per-frame draw budget for trees** (2026-05-03). After magnolia removal + primitive merge + shadow-pass disabled, trees consume **212 of 296 total draws** (1.48× budget). Real ~6× reduction from worst-case 1232. Manageable.
+- [ ] **🚨 LOD-by-distance + billboard tier (CRITICAL for mobile).** Elevated 2026-05-03 from `project_tree_lod_strategy.md`. Tris are the fatal mobile-budget overage: trees alone draw **9.85M of 10.6M** per frame (10.6× over 1M budget). With 627 placements at ~15K tris/tree avg even at lod2, the 1M budget is unreachable without distance-LOD swapping + an actual billboard impostor LOD for far trees. Bake side: extend `publish-glb.js` LODS from `[0.85, 0.40, 0.10]` ratios to add `lodImpostor` (camera-aligned billboard quad with baked color+normal). Runtime side: add per-instance distance-LOD selection in `InstancedTrees`/`VariantInstances` — substitute mesh per (camera distance × view mode). Until this lands the LS scene is mobile-uncertifiable on tris alone.
+- [ ] **Stop emitting unused split atlas PNGs.** `trees-atlas-{bark,leaves}-{color,normal,viz}.png` total 33 MB on disk; only the unified `trees-atlas-color/normal.png` is loaded by runtime. Bake should write the splits to a separate `_diagnostic/` dir or skip them entirely. Pure bundle-size cleanup.
+- [ ] **Repair LOD ladder for London Plane skeletons 6/7/8/9.** `meshoptimizer.simplify` produces zero reduction (lod0=lod1=lod2=755KB identical). Likely needs `weld()` + `dedup()` upstream in publish-glb.js or input mesh has degenerate topology. Quiet now (small files), will matter when LOD-by-distance lands.
+- [ ] **Replace magnolia source models** when a slimmer asset is sourced. Removed from LS roster 2026-05-03 because lod2 was 50–150K tris each; substitution path now shows London Planes in the formerly-magnolia placements, which reads green and reasonable. See `project_arborist_grove.md`.
 
 ### Atmosphere + Sky & Light
 - [ ] **Remove Sun info from TOD in Preview.** Sun readout currently surfaces in Preview's TOD UI; pull it out.

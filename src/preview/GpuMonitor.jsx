@@ -119,6 +119,10 @@ export function GpuMonitorTicker() {
     prevCalls.current = totalCalls
     prevTris.current  = totalTris
     phoneBusPushFrame(now, frameMs, dCalls, dTris)
+    // Hold the latest per-frame delta so GpuPanel's draws/tris readouts
+    // reflect this-frame work, not the renderer's cumulative since init.
+    stats.calls = dCalls
+    stats.tris  = dTris
 
     if (++frameCount.current % 10 !== 0) return
 
@@ -129,8 +133,8 @@ export function GpuMonitorTicker() {
     }
 
     const info = gl.info
-    stats.calls = info.render.calls
-    stats.tris  = info.render.triangles
+    // calls/tris are already per-frame deltas (set above); keep memory
+    // counters cumulative since they are.
     stats.geos  = info.memory.geometries
     stats.tex   = info.memory.textures
     stats.progs = info.programs?.length || 0
