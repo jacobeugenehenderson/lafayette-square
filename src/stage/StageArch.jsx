@@ -16,6 +16,10 @@ const C = 0.03292
 const PEAK_HEIGHT = A - B
 const HALF_SPAN = Math.acosh(A / B) / C
 
+// Scratch vectors for per-frame uplight world-space transforms (avoid GC).
+const _upPos = new THREE.Vector3()
+const _upTarget = new THREE.Vector3()
+
 const BASE_RADIUS = 10.0   // thickened from 6 for heavier silhouette
 const TOP_RADIUS = 4.0     // thickened from 2
 
@@ -97,7 +101,7 @@ export default function GatewayArch() {
       depthWrite: true,
     })
 
-    mat.customProgramCacheKey = () => 'gateway-arch-v3'
+    mat.customProgramCacheKey = () => 'gateway-arch-v4'
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunDir = { value: new THREE.Vector3(0, 0.3, 1) }
       shader.uniforms.uDayFactor = { value: 1.0 }
@@ -108,6 +112,24 @@ export default function GatewayArch() {
       shader.uniforms.uGroundColor = { value: new THREE.Color('#3a4a3a') }
       shader.uniforms.uGroundY = { value: 0.0 }
       shader.uniforms.uFadeBelow = { value: 30.0 }
+      // Cross-aimed uplights (L and R). Position + direction recomputed
+      // per frame in world space from arch transform; intensity/color/
+      // cone/reach driven by archState. cosCone is precomputed each frame
+      // to keep the fragment shader cheap.
+      shader.uniforms.uUpL_pos = { value: new THREE.Vector3() }
+      shader.uniforms.uUpL_dir = { value: new THREE.Vector3(0, 1, 0) }
+      shader.uniforms.uUpL_color = { value: new THREE.Color('#ffd6a8') }
+      shader.uniforms.uUpL_intensity = { value: 0.0 }
+      shader.uniforms.uUpL_cosCone = { value: Math.cos(0.55) }
+      shader.uniforms.uUpL_cosCenter = { value: Math.cos(0.55 * 0.3) }
+      shader.uniforms.uUpL_reach = { value: 200.0 }
+      shader.uniforms.uUpR_pos = { value: new THREE.Vector3() }
+      shader.uniforms.uUpR_dir = { value: new THREE.Vector3(0, 1, 0) }
+      shader.uniforms.uUpR_color = { value: new THREE.Color('#ffd6a8') }
+      shader.uniforms.uUpR_intensity = { value: 0.0 }
+      shader.uniforms.uUpR_cosCone = { value: Math.cos(0.55) }
+      shader.uniforms.uUpR_cosCenter = { value: Math.cos(0.55 * 0.3) }
+      shader.uniforms.uUpR_reach = { value: 200.0 }
 
       // Vertex
       shader.vertexShader = shader.vertexShader.replace(
@@ -143,6 +165,20 @@ export default function GatewayArch() {
          uniform vec3 uGroundColor;
          uniform float uGroundY;
          uniform float uFadeBelow;
+         uniform vec3 uUpL_pos;
+         uniform vec3 uUpL_dir;
+         uniform vec3 uUpL_color;
+         uniform float uUpL_intensity;
+         uniform float uUpL_cosCone;
+         uniform float uUpL_cosCenter;
+         uniform float uUpL_reach;
+         uniform vec3 uUpR_pos;
+         uniform vec3 uUpR_dir;
+         uniform vec3 uUpR_color;
+         uniform float uUpR_intensity;
+         uniform float uUpR_cosCone;
+         uniform float uUpR_cosCenter;
+         uniform float uUpR_reach;
          varying float vCurveParam;
          varying float vEdge;
          varying vec3 vArchWorld;
@@ -228,6 +264,32 @@ export default function GatewayArch() {
          float footFade = smoothstep(-20.0, 80.0, vArchWorld.y);
          gl_FragColor.rgb *= mix(0.85, 1.0, footFade);
 
+         // ── Cross-aimed uplights (L and R) ──
+         // Each fixture sits at a foot, beams across to the opposite leg.
+         // Per-fragment: cone falloff from beam axis + exponential reach +
+         // surface-facing test. Beam intersection mid-arch is automatic
+         // from additive contributions; hot spot lands on the opposite leg
+         // because that's where the cone axis hits.
+         {
+           vec3 toFragL = vArchWorld - uUpL_pos;
+           float distL = length(toFragL);
+           vec3 dirL = toFragL / max(distL, 0.001);
+           float dotL = dot(dirL, uUpL_dir);
+           float coneL = smoothstep(uUpL_cosCone, uUpL_cosCenter, dotL);
+           float reachL = exp(-distL / max(uUpL_reach, 1.0));
+           float faceL = max(0.0, dot(N, -dirL));
+           gl_FragColor.rgb += uUpL_color * uUpL_intensity * coneL * reachL * faceL;
+
+           vec3 toFragR = vArchWorld - uUpR_pos;
+           float distR = length(toFragR);
+           vec3 dirR = toFragR / max(distR, 0.001);
+           float dotR = dot(dirR, uUpR_dir);
+           float coneR = smoothstep(uUpR_cosCone, uUpR_cosCenter, dotR);
+           float reachR = exp(-distR / max(uUpR_reach, 1.0));
+           float faceR = max(0.0, dot(N, -dirR));
+           gl_FragColor.rgb += uUpR_color * uUpR_intensity * coneR * reachR * faceR;
+         }
+
          // ── Foot alpha fade ──
          // Full alpha at the ground plane (uGroundY); falls off linearly
          // to zero uFadeBelow meters beneath. Lets the arch be enlarged so
@@ -277,6 +339,33 @@ export default function GatewayArch() {
 
       // Foot alpha fade depth (meters below world y=0).
       shaderRef.current.uniforms.uFadeBelow.value = archState.archFootFade
+
+      // Cross-aimed uplights — recompute world-space position + aim every
+      // frame from the current arch transform. Each fixture sits at its
+      // foot; aim target is a point ~60% up the OPPOSITE leg so beams
+      // cross mid-arch and the hot spot lands on the opposite leg.
+      meshRef.current.updateMatrixWorld()
+      const mw = meshRef.current.matrixWorld
+
+      _upPos.set(-HALF_SPAN, 0, 0).applyMatrix4(mw)
+      shaderRef.current.uniforms.uUpL_pos.value.copy(_upPos)
+      _upTarget.set(HALF_SPAN * 0.5, PEAK_HEIGHT * 0.6, 0).applyMatrix4(mw)
+      shaderRef.current.uniforms.uUpL_dir.value.copy(_upTarget).sub(_upPos).normalize()
+      shaderRef.current.uniforms.uUpL_color.value.set(archState.archUplightL_color)
+      shaderRef.current.uniforms.uUpL_intensity.value = archState.archUplightL_intensity
+      shaderRef.current.uniforms.uUpL_cosCone.value = Math.cos(archState.archUplightL_cone)
+      shaderRef.current.uniforms.uUpL_cosCenter.value = Math.cos(archState.archUplightL_cone * 0.3)
+      shaderRef.current.uniforms.uUpL_reach.value = archState.archUplightL_reach
+
+      _upPos.set(HALF_SPAN, 0, 0).applyMatrix4(mw)
+      shaderRef.current.uniforms.uUpR_pos.value.copy(_upPos)
+      _upTarget.set(-HALF_SPAN * 0.5, PEAK_HEIGHT * 0.6, 0).applyMatrix4(mw)
+      shaderRef.current.uniforms.uUpR_dir.value.copy(_upTarget).sub(_upPos).normalize()
+      shaderRef.current.uniforms.uUpR_color.value.set(archState.archUplightR_color)
+      shaderRef.current.uniforms.uUpR_intensity.value = archState.archUplightR_intensity
+      shaderRef.current.uniforms.uUpR_cosCone.value = Math.cos(archState.archUplightR_cone)
+      shaderRef.current.uniforms.uUpR_cosCenter.value = Math.cos(archState.archUplightR_cone * 0.3)
+      shaderRef.current.uniforms.uUpR_reach.value = archState.archUplightR_reach
 
       // Compute sun and moon as direction vectors, then blend the vectors
       // (blending angles causes jumps when they're far apart)

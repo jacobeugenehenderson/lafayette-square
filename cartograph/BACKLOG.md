@@ -12,9 +12,12 @@ The pipeline is conceived (`project_pipeline_is_conceived.md`). Most items
 collapse to hours; estimate at integration rate, not waterfall rate.
 
 ### Arch (LS hero subject)
-- [ ] **Fade Arch feet.** Soften ground contact so the arch reads as integrated, not pasted-on.
-- [ ] **Fix Arch scale/position.** True up world-space scale + placement against the hero subject pin.
-- [ ] **Create Arch lighting.** Sky & Light–driven illumination respecting natural scene light — no artificial brightness hacks (`feedback_arch_shader.md`).
+- [x] **Fade Arch feet** (2026-05-03). Apex-pivot relocation (`position.y = archYOffset + PEAK_HEIGHT × (1 − archScale)`) + true alpha foot fade replacing the old discard/paintColor hack. New "Foot Fade" slider; archScale max bumped 2.5 → 5.0. Commit `4dfeccc`.
+- [x] **Fix Arch scale/position** (2026-05-03). Apex-pivot semantics: scaling holds the keystone in place, Y Offset translates the apex directly, slider range expanded to ±200. Same commit as above.
+- [x] **Create Arch lighting** (2026-05-03). Cross-aimed uplights L+R per `Option C` shader simulation in StageArch's onBeforeCompile. Group-of-4 per side (intensity, color, cone, reach) + derived aim toward 60% up the opposite leg — beam intersection mid-arch is automatic, hot spot lands on opposite leg, surface-facing test gives correct backside falloff. Defaults match today (intensity 0). **Pending promotion** to Sky & Light TodChannels — see `project_panel_reorg_set_umbrella.md` for the bundled re-org.
+
+### Floor wash + ground spill (Arch lighting follow-up)
+- [ ] **Add `archFloorWash` channel.** Same uplight positions/colors feeding a contribution shader on `BakedGround`/horizon disc — disc catches light spill from the same conceptual fixture. Group-of-2 (intensity, color), defaults pull from L/R for symmetry but operator can desync. Adds the IRL "floor mount wash" complement to the cross-aimed uplights.
 
 ### Buildings + roofs
 - [ ] **Finally fix roofs.** "Damaged" roofs render non-flat in Stage/Preview though data likely says flat. See `project_roofs_parity_gap.md` (OPEN since 2026-04-30).

@@ -278,6 +278,20 @@ export const ARCH_DEFAULTS = {
   // hard edge — alpha is full at the ground line and falls off smoothly
   // beneath. See StageArch shader's foot-fade block.
   archFootFade: 30,
+  // Uplights: cross-aimed fixtures at the base of each leg, beaming toward
+  // the opposite leg's mid-height (real-life Gateway Arch lighting). L and
+  // R are independent so operators can desync for events. Defaults match
+  // today (intensity 0). Aim direction is derived from arch geometry, not
+  // authored. coneHalfAngle in radians; reach in meters (e-fold distance).
+  // Will move to Sky & Light TodChannels in the panel re-org.
+  archUplightL_intensity: 0,
+  archUplightL_color: '#ffd6a8',
+  archUplightL_cone: 0.55,
+  archUplightL_reach: 200,
+  archUplightR_intensity: 0,
+  archUplightR_color: '#ffd6a8',
+  archUplightR_cone: 0.55,
+  archUplightR_reach: 200,
   horizonRadius: 3750,
   horizonFadeInner: 900,
   horizonFadeOuter: 3750,
@@ -496,6 +510,32 @@ function EnvironmentControls() {
   )
 }
 
+function UplightControls({ side, a }) {
+  const I = `archUplight${side}_intensity`
+  const C = `archUplight${side}_color`
+  const K = `archUplight${side}_cone`
+  const R = `archUplight${side}_reach`
+  const label = side === 'L' ? 'Uplight L' : 'Uplight R'
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <span className="text-caption" style={{ color: 'var(--on-surface-variant)', width: 78 }}>{label}</span>
+        <input type="color" value={a[C]}
+          style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }}
+          onChange={(e) => setArch({ [C]: e.target.value })}
+        />
+        <span className="text-caption font-mono" style={{ color: 'var(--on-surface-subtle)', flex: 1 }}>{a[C]}</span>
+      </div>
+      <SliderRow label={`${label} Intensity`} value={a[I]} min={0} max={3} step={0.05}
+        onChange={(v) => setArch({ [I]: v })} />
+      <SliderRow label={`${label} Cone°`} value={Math.round(a[K] * 180 / Math.PI)} min={5} max={60} step={1}
+        onChange={(v) => setArch({ [K]: v * Math.PI / 180 })} />
+      <SliderRow label={`${label} Reach`} value={a[R]} min={50} max={500} step={5}
+        onChange={(v) => setArch({ [R]: v })} />
+    </div>
+  )
+}
+
 function ArchHorizonControls() {
   const a = useArchState()
   return (
@@ -511,6 +551,9 @@ function ArchHorizonControls() {
           onChange={(v) => setArch({ archYOffset: v })} />
         <SliderRow label="Foot Fade" value={a.archFootFade} min={0} max={120} step={1}
           onChange={(v) => setArch({ archFootFade: v })} />
+        <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
+        <UplightControls side="L" a={a} />
+        <UplightControls side="R" a={a} />
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
         <SliderRow label="Horizon Radius" value={a.horizonRadius} min={400} max={8000} step={10}
           onChange={(v) => setArch({ horizonRadius: v })} />
