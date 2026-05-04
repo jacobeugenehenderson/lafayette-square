@@ -17,6 +17,7 @@ import { CATEGORY_HEX } from '../tokens/categories'
 import FacadeElements from './FacadeElements'
 import { patchTerrain } from '../utils/terrainShader'
 import { getElevation } from '../utils/elevation'
+import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 
 // Deterministic string hash — same id always picks the same palette slot.
@@ -103,15 +104,10 @@ function getGroundElevation(building) {
   return sum / building.footprint.length
 }
 
+// Thin alias preserving local call sites; canonical definition lives in
+// src/lib/foundationGeometry.js (shared with cartograph/bake-buildings.js).
 function getFoundationHeight(building) {
-  const override = getOverride(building.id, 'foundation_height')
-  if (override !== undefined) return override
-
-  const year = building.year_built
-  if (!year) return 0
-  if (year < 1900) return 1.2
-  if (year < 1920) return 0.8
-  return 0
+  return periodPedestalFor(building, _overrides)
 }
 
 // Building Y = foundation height only. Terrain displacement handled by patchTerrain on GPU.
@@ -347,10 +343,13 @@ function Foundations({ buildings: buildingsProp } = {}) {
       const footprint = building.footprint
       // Bake terrain elevation at building centroid (matches rigid patchTerrain on building)
       const groundY = getElevation(building.position[0], building.position[2])
-      // Every building gets a pedestal from (groundY + fh) down to Y=0
+      // Every building emits a foundation block — modern buildings (fh=0)
+      // included, so they have a contact joint with the heightfield.
+      // Top of block sits at (groundY + fh); bottom extends below grade
+      // by FOUNDATION_BELOW_GRADE_M so no footprint corner can ever
+      // surface the bottom edge on a slope.
       const top = groundY + fh
-      if (top <= 0.01) return
-      const depth = top + 0.05  // extends slightly below Y=0
+      const depth = (top + FOUNDATION_BELOW_GRADE_M)
 
       if (!footprint || footprint.length < 3) {
         const [w, , d] = building.size
@@ -374,7 +373,7 @@ function Foundations({ buildings: buildingsProp } = {}) {
 
           const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false })
           geo.rotateX(-Math.PI / 2)
-          // Bottom at ~0, top at (groundY + fh)
+          // Bottom at -FOUNDATION_BELOW_GRADE_M, top at (groundY + fh)
           geo.translate(building.position[0], top - depth, building.position[2])
           geos.push(geo)
         } catch (e) {

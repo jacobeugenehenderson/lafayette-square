@@ -21,6 +21,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
+import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../src/lib/foundationGeometry.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -129,17 +130,9 @@ function roofTintFor(buildingColorHex, roofMat) {
   return hslToRgb(h, sat, lum)
 }
 
-// Per-building foundation height. Mirrors getFoundationHeight() in
-// LafayetteScene.jsx — overrides win, then year-of-build heuristic.
-function foundationHeightFor(building, overrides) {
-  const ov = overrides && overrides[building.id]
-  if (ov && ov.foundation_height !== undefined) return ov.foundation_height
-  const year = building.year_built
-  if (!year) return 0
-  if (year < 1900) return 1.2
-  if (year < 1920) return 0.8
-  return 0
-}
+// foundationHeightFor: thin alias preserving the call sites below; canonical
+// definition lives in src/lib/foundationGeometry.js (shared with LafayetteScene).
+const foundationHeightFor = periodPedestalFor
 
 // Mirrors classifyRoof() — overrides + year/stories/footprint heuristic.
 function classifyRoofFor(building, overrides) {
@@ -368,9 +361,16 @@ function triangulateContour(footprint) {
 }
 
 // Build a single building's geometry. Walls go [foundationY .. wallTop],
-// foundation [0 .. foundationY], roof on top of wallTop in flat / mansard
-// / hip shape per `roofShape`. Each section emits its own UVs aligned to
-// the surface so tileable textures (slate courses, brick rows) read correctly.
+// foundation [-FOUNDATION_BELOW_GRADE_M .. foundationY], roof on top of
+// wallTop in flat / mansard / hip shape per `roofShape`. Each section
+// emits its own UVs aligned to the surface so tileable textures (slate
+// courses, brick rows) read correctly.
+//
+// Foundation extends well BELOW Y=0 in the bake frame so the rigid-
+// centroid GPU displacement at runtime can never lift its bottom edge
+// above the local ground at any footprint corner — buildings on
+// hillsides stay grounded instead of floating. See
+// src/lib/foundationGeometry.js for the margin rationale.
 function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
   const n = footprint.length
   const wallPositions = []
@@ -410,21 +410,23 @@ function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
     wallIndices.push(baseIdx, baseIdx + 1, baseIdx + 2)
     wallIndices.push(baseIdx, baseIdx + 2, baseIdx + 3)
   }
-  // Foundation: same shape, lower band [0, foundationY]. Skip if zero.
-  if (foundationY > 0) {
-    for (let i = 0; i < n; i++) {
-      const a = footprint[i]
-      const b = footprint[(i + 1) % n]
-      const baseIdx = foundPositions.length / 3
-      const edgeLen = Math.hypot(b[0] - a[0], b[1] - a[1])
-      foundPositions.push(a[0], 0,            a[1])
-      foundPositions.push(b[0], 0,            b[1])
-      foundPositions.push(b[0], foundationY,  b[1])
-      foundPositions.push(a[0], foundationY,  a[1])
-      foundUVs.push(0, 0,  edgeLen, 0,  edgeLen, foundationY,  0, foundationY)
-      foundIndices.push(baseIdx, baseIdx + 1, baseIdx + 2)
-      foundIndices.push(baseIdx, baseIdx + 2, baseIdx + 3)
-    }
+  // Foundation: same shape, lower band [-FOUNDATION_BELOW_GRADE_M, foundationY].
+  // Always emitted — modern buildings (foundationY = 0) still get the
+  // contact-joint block; only the visible-above-grade pedestal is zero.
+  const foundBottom = -FOUNDATION_BELOW_GRADE_M
+  for (let i = 0; i < n; i++) {
+    const a = footprint[i]
+    const b = footprint[(i + 1) % n]
+    const baseIdx = foundPositions.length / 3
+    const edgeLen = Math.hypot(b[0] - a[0], b[1] - a[1])
+    const foundH = foundationY - foundBottom
+    foundPositions.push(a[0], foundBottom,  a[1])
+    foundPositions.push(b[0], foundBottom,  b[1])
+    foundPositions.push(b[0], foundationY,  b[1])
+    foundPositions.push(a[0], foundationY,  a[1])
+    foundUVs.push(0, 0,  edgeLen, 0,  edgeLen, foundH,  0, foundH)
+    foundIndices.push(baseIdx, baseIdx + 1, baseIdx + 2)
+    foundIndices.push(baseIdx, baseIdx + 2, baseIdx + 3)
   }
   // Determine footprint winding (signed area in the x,z plane).
   // For CCW footprints (area2 > 0), the wall winding emitted above
@@ -547,19 +549,14 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     const fp = b.footprint
     if (!fp || fp.length < 3) continue
     const h = (b.size && b.size[1]) || (b.stories ? b.stories * 3.5 : 8)
-    // Foundation rule:
-    //   1. Sample elevation at every footprint vertex, average them →
-    //      the LEVEL platform height the house wants to sit on (so its
-    //      base spans the slope evenly, not tilted with one corner up).
-    //   2. Period pedestal height (fh) sits on top of that level platform
-    //      — the visible "pedestal" architectural feature.
-    //   3. Bottom of the foundation slab is always Y=0, no floating
-    //      houses. The slab gets taller wherever the average elevation
-    //      is high; from outside it pokes through the displaced ground
-    //      by ~fh in flat spots, and is mostly buried where ground is
-    //      higher than the average (e.g. at uphill corners).
+    // Foundation: visible top = period pedestal (fh) above grade; bottom
+    // extends FOUNDATION_BELOW_GRADE_M below grade so no corner of the
+    // displaced footprint can ever surface the bottom edge. Per-vertex
+    // aCentroidY (sampled below) drives rigid-body GPU displacement at
+    // runtime — wall + foundation rise/fall together with the centroid
+    // elevation; the below-grade extension absorbs the local-corner
+    // variance. See src/lib/foundationGeometry.js for sizing.
     const fh = foundationHeightFor(b, overrides)
-    // Ground reverted to flat (#19); foundation top = period pedestal only.
     const foundationY = fh
     const wallTop = foundationY + h
     const wallMat = b.wall_material || 'brick_red'
