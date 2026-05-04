@@ -20,9 +20,9 @@ collapse to hours; estimate at integration rate, not waterfall rate.
 - [ ] **Reapproach floor spill if/when revisited.** Tried 2026-05-03 as two literal circular pools on the horizon disc centered at each foot world XZ (radius scaling with archScale). Rejected: too geometric, read as "lights placed on a disc" rather than ambient brightening near the arch. The IRL phenomenon is subtle; my literal approach was not. If revisited, try: (a) much wider single soft gradient centered between the feet, no distinct circles; (b) drive the disc's own `uColor` warmer near arch, no additive; (c) skip entirely — at Hero camera distance, ground spill is too small to register. The `archFootWorld` module-scope plumbing in StageArch.jsx is preserved (cheap, may be useful for other purposes).
 
 ### Buildings + roofs
-- [ ] **Finally fix roofs.** "Damaged" roofs render non-flat in Stage/Preview though data likely says flat. See `project_roofs_parity_gap.md` (OPEN since 2026-04-30).
-- [ ] **Fix foundation blocks in Preview.** Preview-side foundation parity with Stage.
-- [ ] **Add buildings + businesses on W Lafayette.** Fill in the W Lafayette frontage in `buildings.json` + `landmarks.json`.
+- [→] **Roofs + damaged-roof fix MOVED to LS-side work** (2026-05-03). Belongs as a new tab on Residential PlaceCards, not cartograph dev tooling. PlaceCard infrastructure + ADMIN/GUARDIAN edit permissions already exist; building a cartograph click-tool would duplicate them. See `project_house_personalization_via_placecards.md`. Pick up post-clouds during the LS-app sprint phase.
+- [→] **Foundation blocks parity MOVED to LS-side work** (2026-05-03). Same routing as roofs — per-house authored data, not heuristic.
+- [ ] **Add buildings + businesses on W Lafayette.** Fill in the W Lafayette frontage in `buildings.json` + `landmarks.json`. (Stays here — bulk authoring, not per-house personalization.)
 
 ### Cartograph authoring (Survey + Measure)
 - [ ] **Survey: confirm road-coupler split behavior.** Verify segment-local coupler semantics still hold post–Path B (`project_couplers.md`, `feedback_couplers_are_segment_local.md`).
