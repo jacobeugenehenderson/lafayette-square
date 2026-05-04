@@ -1,11 +1,20 @@
-// de-park-data.mjs — one-shot migration: rotate park-local datasets into
+// de-park-data.mjs — one-shot migration: rotate datasets into project
 // world frame. After this runs, every spatial dataset speaks the same
 // frame (= terrain.json frame), and every PARK_GRID_ROTATION render-time
 // transform can be deleted.
 //
 // Datasets touched:
-//   src/data/park_trees.json   (park-local → world; full table)
+//   src/data/park_trees.json   (compass-aligned ETL output → project world)
 //   src/data/park_water.json   (compose pivot-undo + park rotation)
+//
+// Why park_trees needs rotation even though it came out of a GPS→meters
+// ETL: PROJECT WORLD IS PARK-ALIGNED, NOT COMPASS-ALIGNED. The Python
+// ETL (scripts/12-process-park-trees.py) projects lon/lat via simple
+// equirectangular about park center → compass-aligned meters. To land in
+// project world (which matches the -9.2° city street grid), apply
+// R(-9.2°). See terrainCommon.js header and ARCHITECTURE.md §7 for the
+// full convention. Re-running the ETL? Re-run this script after — it's
+// idempotent via the `meta.frame: "world"` marker below.
 //
 // Idempotency: this script writes a `meta.frame: "world"` marker. If
 // already present, the script aborts to avoid double-rotation.

@@ -18,10 +18,17 @@ The codebase is a **public-facing runtime app** plus a small set of **standalone
 └────────────────┘                  └──────────────────────────────┘   │   └──────────┘
                                                                        │
 ┌────────────────┐    publishes     ┌──────────────────────────────┐   │
-│  Arborist      │ ───────────────▶ │ public/trees/<species>/...   │ ──┘
-│  (scaffold)    │                  └──────────────────────────────┘
-└────────────────┘
+│  Arborist      │ ───────────────▶ │ public/trees/<species>/...   │ ──┤
+│  (scaffold)    │                  └──────────────────────────────┘   │
+└────────────────┘                                                     │
+                                                                       │
+┌────────────────┐    publishes     ┌──────────────────────────────┐   │
+│  Meteorologist │ ───────────────▶ │ public/clouds/{presets,      │ ──┘
+│  (in Stage)    │                  │            almanac}.json     │
+└────────────────┘                  └──────────────────────────────┘
 ```
+
+**Note on Meteorologist's shape:** unlike the other helpers, Meteorologist has no separate app shell — its authoring UI lives inside Stage, triggered from the Sky and Light card's "launch meteorologist" button. The publish-loop pattern still holds (one helper, canonical artifacts, decoupled runtime consumer); only the editor's housing differs. See [`meteorologist/SPEC.md`](meteorologist/SPEC.md).
 
 **Properties of this pattern, used everywhere:**
 
@@ -136,7 +143,7 @@ LiDAR (FOR-species20K) ─▶ tree-bake.py ─▶ trees/<species>/*.glb ─▶ I
 - **Look IDs are slugged user names.** `lafayette-square`, `valentines`, `cardinals-win`. Default Look = `lafayette-square`, can't be deleted.
 - **`overlay.json` carries geometry only.** Centerlines, caps, couplers, segment measures. The design block was extracted into per-Look `design.json` files.
 - **Materials, layers, land-use** all map through `BAND_TO_LAYER` in `src/cartograph/m3Colors.js`. The bake honors the active Look's `layerVis` to skip hidden materials.
-- **Coordinate systems.** World-meters with origin at the neighborhood center. `park_trees.json` and `park_water.json` are park-local (rotated 9.2°). `park_paths.json` is world-aligned. (See `memory/feedback_park_data_frames.md`.)
+- **Coordinate systems.** World-meters with origin at the neighborhood center. After the de-parking refactor (2026-05-03), every dataset lives in *one* frame: project world. **Important and counterintuitive:** project world is *park-aligned* — its axes match the city street grid, which sits at **-9.2° from compass-N**. It is NOT compass-aligned. The Python ETLs (`scripts/12-process-park-trees.py`, `scripts/14-process-park-paths.py`) project GPS via equirectangular about park center, which produces *compass-aligned* output; `scripts/de-park-data.mjs` then applies R(-9.2°) to rotate that into project world. So an "ETL just dumped GPS into meters, isn't that already world?" intuition is wrong here — the rotation is what reconciles compass meters with the project's park-aligned world. If you re-run an ETL, re-run de-park-data.mjs (it's idempotent via `meta.frame: "world"`).
 - **Park trees are currently muted.** Re-enable by removing the `{false && <ParkTrees />}` guard in `src/components/LafayettePark.jsx`.
 
 ---
