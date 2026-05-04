@@ -22,7 +22,6 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { useTreeAtlas, treeSwayUniforms } from './treeAtlasMaterial'
 import useCartographStore from '../cartograph/stores/useCartographStore'
 
-const PARK_GRID_ROTATION = -9.2 * (Math.PI / 180)
 // Trees are baked once globally (not per-Look) since species placement
 // is data, not styling. Path stays at /baked/default.json for now —
 // Arborist's auto-bake hook writes there.
@@ -324,19 +323,17 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeUrl = BAKE_URL })
   return (
     <>
       <SwayDriver />
-      <group rotation={[0, PARK_GRID_ROTATION, 0]}>
-        {Array.from(groups.entries()).flatMap(([url, byTile]) =>
-          Array.from(byTile.entries()).map(([tileId, instances]) => (
-            <Suspense key={`${url}#${tileId}`} fallback={null}>
-              <VariantInstances
-                url={url}
-                instances={instances}
-                treeMaterial={atlas.treeMaterial}
-              />
-            </Suspense>
-          )),
-        )}
-      </group>
+      {Array.from(groups.entries()).flatMap(([url, byTile]) =>
+        Array.from(byTile.entries()).map(([tileId, instances]) => (
+          <Suspense key={`${url}#${tileId}`} fallback={null}>
+            <VariantInstances
+              url={url}
+              instances={instances}
+              treeMaterial={atlas.treeMaterial}
+            />
+          </Suspense>
+        )),
+      )}
     </>
   )
 }

@@ -11,20 +11,36 @@ import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
 
-// Lafayette Park: ~350m square park (30 acres) centered at origin
-// Bounded by Park Ave (N), Lafayette Ave (S),
-// Mississippi Ave (W), Kennett Place (E)
-// Grid rotation: Park Ave runs ~9.2° off E-W axis (clockwise from above)
-const GRID_ROTATION = -9.2 * (Math.PI / 180)
-// Pre-computed for world → park-local coordinate transform
-const COS_GR = Math.cos(GRID_ROTATION)
-const SIN_GR = Math.sin(GRID_ROTATION)
-
-const PARK = {
-  minX: -175, maxX: 175,
-  minZ: -175, maxZ: 175,
-  width: 350, depth: 350,
+// Lafayette Park: ~350m square park (30 acres) centered at origin.
+// Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
+// Kennett Place (E). The park's grid is rotated -9.2° from compass-N
+// — a property of this neighborhood's street layout, not a coordinate
+// frame. All spatial data (park_trees, park_water, park_paths) is in
+// world frame at rest after the de-parking migration; the rotation
+// survives only in two places below as visual orientation:
+//   PARK_FENCE_CORNERS_WORLD — pre-rotated fence corners
+//   LABEL_TEXT_ROT_Y         — label spin so type aligns with fence
+const _PARK_AXIS_RAD = -9.2 * Math.PI / 180
+const _C = Math.cos(_PARK_AXIS_RAD)
+const _S = Math.sin(_PARK_AXIS_RAD)
+function _toWorld(px, pz) {
+  return [px * _C + pz * _S, -px * _S + pz * _C]
 }
+
+const PARK_HALF = 175  // half-width in park's natural axes
+const FENCE_INSET = 2
+const PARK_FENCE_CORNERS_WORLD = (() => {
+  const a = PARK_HALF - FENCE_INSET
+  return [
+    _toWorld(-a, -a),
+    _toWorld( a, -a),
+    _toWorld( a,  a),
+    _toWorld(-a,  a),
+  ]
+})()
+const LABEL_TITLE_POS_WORLD    = _toWorld(0, -PARK_HALF - 15)
+const LABEL_SUBTITLE_POS_WORLD = _toWorld(0, -PARK_HALF - 23)
+const LABEL_TEXT_ROT_Y = _PARK_AXIS_RAD
 
 const FENCE_HEIGHT = 1.5
 const FENCE_POST_SPACING = 8
@@ -316,10 +332,8 @@ function ParkPaths() {
     }
   })
 
-  // Counter-rotate: park_paths.json coords are world-aligned (OSM), parent
-  // LafayettePark group carries GRID_ROTATION.
   return (
-    <group rotation={[0, -GRID_ROTATION, 0]} position={[0, 0.4, 0]}>
+    <group position={[0, 0.4, 0]}>
       <mesh geometry={pathGeo} material={pathMat} receiveShadow frustumCulled={false} />
     </group>
   )
@@ -572,29 +586,15 @@ function ParkWater() {
   const bankMat = useMemo(() =>
     new THREE.MeshStandardMaterial({ color: '#5a5040', roughness: 0.95 }), [])
 
-  // The lake + grotto water polygons were captured in a frame rotated +9.2°
-  // relative to the park grid. The island sits in the correct world
-  // position, so we rotate ONLY the water + bank meshes by -9.2° around
-  // the island centroid — this keeps the water's island-hole aligned with
-  // the island while the lake shape rotates into its correct orientation.
-  // Island centroid in local park coords: (33.96, 86.00); mesh world after
-  // negZ + rotateX(-PI/2) is (33.96, 0, 86.00).
-  const ISLAND_PIVOT = [33.96, 0, 86.00]
+  // park_water.json is now in world frame (de-parking 2026-05-03) — the
+  // lake/grotto/island polygons render directly with no per-mesh rotation.
   return (
     <group>
-      {/* Water + banks rotate around the island to correct the capture-frame tilt */}
-      <group position={ISLAND_PIVOT}>
-        <group rotation={[0, -GRID_ROTATION, 0]}>
-          <group position={[-ISLAND_PIVOT[0], 0, -ISLAND_PIVOT[2]]}>
-            <mesh geometry={lakeBankGeo}   position={[0, lakeY   + 0.2,  0]} receiveShadow material={bankMat} />
-            <mesh geometry={grottoBankGeo} position={[0, grottoY + 0.2,  0]} receiveShadow material={bankMat} />
-            <mesh geometry={lakeWaterGeo}  position={[0, lakeY   + 0.35, 0]} receiveShadow material={waterMat} />
-            <mesh geometry={grottoWaterGeo} position={[0, grottoY + 0.35, 0]} receiveShadow material={waterMat} />
-          </group>
-        </group>
-      </group>
+      <mesh geometry={lakeBankGeo}    position={[0, lakeY   + 0.2,  0]} receiveShadow material={bankMat} />
+      <mesh geometry={grottoBankGeo}  position={[0, grottoY + 0.2,  0]} receiveShadow material={bankMat} />
+      <mesh geometry={lakeWaterGeo}   position={[0, lakeY   + 0.35, 0]} receiveShadow material={waterMat} />
+      <mesh geometry={grottoWaterGeo} position={[0, grottoY + 0.35, 0]} receiveShadow material={waterMat} />
 
-      {/* Island stays at its correct world position (not rotated) */}
       <mesh geometry={islandGeo} position={[0, islandY + 0.4, 0]} receiveShadow material={islandMat} />
     </group>
   )
@@ -604,13 +604,7 @@ function ParkWater() {
 // ── Perimeter Fence ────────────────────────────────────────────────────
 function PerimeterFence() {
   const { posts, rails } = useMemo(() => {
-    const inset = 2
-    const corners = [
-      [PARK.minX + inset, PARK.minZ + inset],
-      [PARK.maxX - inset, PARK.minZ + inset],
-      [PARK.maxX - inset, PARK.maxZ - inset],
-      [PARK.minX + inset, PARK.maxZ - inset],
-    ]
+    const corners = PARK_FENCE_CORNERS_WORLD
     const posts = [], rails = []
     for (let side = 0; side < 4; side++) {
       const [x1, z1] = corners[side]
@@ -661,15 +655,15 @@ function PerimeterFence() {
 // ── Main Park Component ────────────────────────────────────────────────
 function LafayettePark() {
   return (
-    <group rotation={[0, GRID_ROTATION, 0]}>
+    <group>
       {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
       <ParkWater />
       <ParkPaths />
       <PerimeterFence />
 
       <Text
-        position={[0, 0.08, PARK.minZ - 15]}
-        rotation={[-Math.PI / 2, 0, 0]}
+        position={[LABEL_TITLE_POS_WORLD[0], 0.08, LABEL_TITLE_POS_WORLD[1]]}
+        rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
         fontSize={6}
         color="#e8e8f0"
         anchorX="center"
@@ -681,8 +675,8 @@ function LafayettePark() {
         LAFAYETTE PARK
       </Text>
       <Text
-        position={[0, 0.08, PARK.minZ - 23]}
-        rotation={[-Math.PI / 2, 0, 0]}
+        position={[LABEL_SUBTITLE_POS_WORLD[0], 0.08, LABEL_SUBTITLE_POS_WORLD[1]]}
+        rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
         fontSize={3}
         color="#888890"
         anchorX="center"

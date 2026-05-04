@@ -1,1 +1,5168 @@
-{"meta":{"source":"City of St. Louis Forestry Division","url":"https://maps6.stlouis-mo.gov/arcgis/rest/services/FORESTRY/FORESTRY_TREES/MapServer","center":{"lat":38.616,"lon":-90.2161},"total":644,"coordinate_system":"Local meters, un-rotated. Park group rotation aligns to scene."},"trees":[{"x":35.0,"z":-56.3,"species":"Ash, Green","shape":"broad","dbh":12,"condition":"Fair"},{"x":118.5,"z":79.2,"species":"Witch-hazel","shape":"ornamental","dbh":1,"condition":"Good"},{"x":-124.1,"z":85.5,"species":"Crabapple, Flowering","shape":"ornamental","dbh":6,"condition":"Poor"},{"x":-24.0,"z":1.5,"species":"Pagoda Dogwood","shape":"ornamental","dbh":2,"condition":"Good"},{"x":11.1,"z":163.8,"species":"Maple, Sugar","shape":"broad","dbh":17,"condition":"Very Good"},{"x":114.2,"z":79.4,"species":"possumhaw","shape":"ornamental","dbh":1,"condition":"Good"},{"x":-11.6,"z":-43.3,"species":"Ash, Green","shape":"broad","dbh":9,"condition":"Poor"},{"x":127.0,"z":70.7,"species":"Dogwood, Flowering","shape":"ornamental","dbh":1,"condition":"Good"},{"x":-54.1,"z":70.6,"species":"Ash, Green","shape":"broad","dbh":12,"condition":"Poor"},{"x":56.4,"z":32.0,"species":"Blackgum","shape":"broad","dbh":9,"condition":"Very Good"},{"x":173.7,"z":-148.2,"species":"Oak, Willow","shape":"broad","dbh":9,"condition":"Very Good"},{"x":38.1,"z":145.9,"species":"Ash, Green","shape":"broad","dbh":14,"condition":"Fair"},{"x":164.2,"z":0.7,"species":"Catalpa, Southern","shape":"broad","dbh":18,"condition":"Fair"},{"x":11.4,"z":105.2,"species":"Linden, American","shape":"broad","dbh":31,"condition":"Fair"},{"x":10.1,"z":-14.4,"species":"Ash, Green","shape":"broad","dbh":28,"condition":"Fair"},{"x":-55.3,"z":164.3,"species":"Maple, Sugar","shape":"broad","dbh":12,"condition":"Poor"},{"x":75.3,"z":34.3,"species":"Maple, Sugar","shape":"broad","dbh":12,"condition":"Excellent"},{"x":134.6,"z":13.5,"species":"Sweetgum (undesirable)","shape":"broad","dbh":34,"condition":"Good"},{"x":21.7,"z":-169.9,"species":"Ash, Green","shape":"broad","dbh":16,"condition":"Poor"},{"x":161.2,"z":15.4,"species":"Amur corktree","shape":"broad","dbh":10,"condition":"Good"},{"x":38.2,"z":-45.0,"species":"Maple, Red","shape":"broad","dbh":11,"condition":"Very Good"},{"x":55.5,"z":-132.8,"species":"Sweetgum (undesirable)","shape":"broad","dbh":28,"condition":"Good"},{"x":117.1,"z":100.2,"species":"serviceberry, downy","shape":"ornamental","dbh":3,"condition":"Excellent"},{"x":-59.1,"z":173.8,"species":"Maple, Red","shape":"broad","dbh":1,"condition":"Very Good"},{"x":137.9,"z":90.7,"species":"Oak, Pin","shape":"broad","dbh":38,"condition":"Fair"},{"x":158.2,"z":-149.3,"species":"Oak, Willow","shape":"broad","dbh":10,"condition":"Very Good"},{"x":92.5,"z":110.7,"species":"Hackberry","shape":"broad","dbh":38,"condition":"Good"},{"x":103.7,"z":98.5,"species":"Elm, American","shape":"broad","dbh":22,"condition":"Fair"},{"x":126.4,"z":-6.9,"species":"Maple, Silver","shape":"broad","dbh":26,"condition":"Fair"},{"x":158.4,"z":-51.0,"species":"Maple, Silver","shape":"broad","dbh":28,"condition":"Fair"},{"x":-12.0,"z":168.5,"species":"oak, water","shape":"broad","dbh":20,"condition":"Very Good"},{"x":104.2,"z":-3.2,"species":"Linden, Littleleaf","shape":"broad","dbh":10,"condition":"Very Good"},{"x":-90.0,"z":64.8,"species":"Pine, Austrian","shape":"conifer","dbh":10,"condition":"Poor"},{"x":74.3,"z":-37.7,"species":"Cottonwood, Eastern","shape":"broad","dbh":18,"condition":"Fair"},{"x":119.1,"z":146.4,"species":"Maple, Silver","shape":"broad","dbh":17,"condition":"Good"},{"x":80.3,"z":80.5,"species":"Pine, Scotch","shape":"conifer","dbh":16,"condition":"Fair"},{"x":147.7,"z":-81.7,"species":"Pine, White","shape":"conifer","dbh":18,"condition":"Good"},{"x":-109.0,"z":89.0,"species":"Coffeetree, Kentucky","shape":"broad","dbh":8,"condition":"Very Good"},{"x":27.5,"z":-50.7,"species":"Elm, American","shape":"broad","dbh":10,"condition":"Fair"},{"x":-21.0,"z":81.5,"species":"Maple, Silver","shape":"broad","dbh":2,"condition":"Very Good"},{"x":100.4,"z":140.4,"species":"Sweetgum (undesirable)","shape":"broad","dbh":28,"condition":"Fair"},{"x":149.2,"z":30.6,"species":"Baldcypress","shape":"columnar","dbh":28,"condition":"Fair"},{"x":-90.7,"z":168.8,"species":"Maple, Red","shape":"broad","dbh":1,"condition":"Very Good"},{"x":106.0,"z":134.1,"species":"Redbud","shape":"ornamental","dbh":7,"condition":"Good"},{"x":51.8,"z":164.3,"species":"Maple, Sugar","shape":"broad","dbh":11,"condition":"Very Good"},{"x":-75.9,"z":-155.0,"species":"oak, bur","shape":"broad","dbh":11,"condition":"Very Good"},{"x":-99.9,"z":89.9,"species":"Coffeetree, Kentucky","shape":"broad","dbh":9,"condition":"Very Good"},{"x":107.9,"z":-73.2,"species":"Oak, Pin (restricted use)","shape":"broad","dbh":34,"condition":"Poor"},{"x":157.0,"z":-83.3,"species":"Pine, White","shape":"conifer","dbh":14,"condition":"Good"},{"x":-120.5,"z":-170.1,"species":"Zelkova, Japanese","shape":"broad","dbh":19,"condition":"Good"},{"x":124.0,"z":66.4,"species":"Redbud","shape":"ornamental","dbh":2,"condition":"Very Good"},{"x":155.6,"z":-159.1,"species":"Maple, Red","shape":"broad","dbh":22,"condition":"Good"},{"x":143.6,"z":78.0,"species":"hawthorn, Washington","shape":"ornamental","dbh":6,"condition":"Fair"},{"x":-167.4,"z":157.2,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Very Good"},{"x":34.0,"z":-2.4,"species":"Tuliptree","shape":"broad","dbh":22,"condition":"Very Good"},{"x":-122.6,"z":-90.1,"species":"Maple, Silver","shape":"broad","dbh":19,"condition":"Good"},{"x":-137.2,"z":1.0,"species":"Birch","shape":"broad","dbh":12,"condition":"Good"},{"x":43.3,"z":-174.9,"species":"sycamore, American","shape":"broad","dbh":26,"condition":"Good"},{"x":142.3,"z":57.9,"species":"Oak, Willow","shape":"broad","dbh":28,"condition":"Very Good"},{"x":-84.2,"z":72.4,"species":"Pine, Austrian","shape":"conifer","dbh":16,"condition":"Fair"},{"x":-102.6,"z":167.2,"species":"Maple, Sugar","shape":"broad","dbh":9,"condition":"Good"},{"x":-5.7,"z":146.3,"species":"juniper, Chinese","shape":"conifer","dbh":1,"condition":"Good"},{"x":124.1,"z":-106.5,"species":"Ash, Green","shape":"broad","dbh":27,"condition":"Fair"},{"x":-29.5,"z":130.0,"species":"serviceberry, downy","shape":"ornamental","dbh":6,"condition":"Poor"},{"x":-41.5,"z":-40.7,"species":"Tuliptree","shape":"broad","dbh":23,"condition":"Very Good"},{"x":-151.6,"z":82.9,"species":"Tuliptree","shape":"broad","dbh":34,"condition":"Fair"},{"x":100.3,"z":145.1,"species":"Redbud","shape":"ornamental","dbh":4,"condition":"Good"},{"x":-21.5,"z":-16.1,"species":"Ginkgo","shape":"columnar","dbh":12,"condition":"Good"},{"x":-131.8,"z":162.3,"species":"Maple, Sugar","shape":"broad","dbh":8,"condition":"Fair"},{"x":-20.5,"z":-7.2,"species":"Pagoda Dogwood","shape":"ornamental","dbh":2,"condition":"Good"},{"x":-95.8,"z":151.0,"species":"Linden, Littleleaf","shape":"broad","dbh":16,"condition":"Very Good"},{"x":-100.2,"z":-23.7,"species":"Maple, Silver","shape":"broad","dbh":26,"condition":"Fair"},{"x":156.2,"z":-16.5,"species":"Maple, Sugar","shape":"broad","dbh":13,"condition":"Good"},{"x":-126.0,"z":123.6,"species":"Redbud","shape":"ornamental","dbh":7,"condition":"Fair"},{"x":-126.0,"z":81.7,"species":"Ash, Green","shape":"broad","dbh":12,"condition":"Poor"},{"x":140.9,"z":-105.0,"species":"Pine, White","shape":"conifer","dbh":10,"condition":"Fair"},{"x":153.8,"z":-80.7,"species":"Pine, White","shape":"conifer","dbh":12,"condition":"Good"},{"x":139.2,"z":101.5,"species":"Holly, American","shape":"conifer","dbh":1,"condition":"Very Good"},{"x":41.4,"z":-91.0,"species":"goldenraintree","shape":"ornamental","dbh":16,"condition":"Fair"},{"x":44.8,"z":-166.7,"species":"sycamore, American","shape":"broad","dbh":18,"condition":"Good"},{"x":-170.3,"z":18.6,"species":"Maple, Sugar","shape":"broad","dbh":28,"condition":"Good"},{"x":52.0,"z":-0.6,"species":"Tuliptree","shape":"broad","dbh":22,"condition":"Very Good"},{"x":-145.2,"z":72.2,"species":"Blackgum","shape":"broad","dbh":2,"condition":"Fair"},{"x":67.9,"z":7.1,"species":"Maple, Red","shape":"broad","dbh":1,"condition":"Good"},{"x":-102.7,"z":93.2,"species":"Coffeetree, Kentucky","shape":"broad","dbh":11,"condition":"Very Good"},{"x":-32.0,"z":22.8,"species":"smoketree, American","shape":"ornamental","dbh":4,"condition":"Poor"},{"x":156.5,"z":-112.2,"species":"Spruce, Norway","shape":"conifer","dbh":6,"condition":"Excellent"},{"x":100.1,"z":-117.8,"species":"Pear, Callery","shape":"ornamental","dbh":16,"condition":"Fair"},{"x":29.6,"z":139.6,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Good"},{"x":-158.0,"z":133.6,"species":"Redbud","shape":"ornamental","dbh":5,"condition":"Fair"},{"x":-19.3,"z":124.5,"species":"Maple, Silver","shape":"broad","dbh":24,"condition":"Fair"},{"x":-95.4,"z":-78.7,"species":"filbert, American","shape":"ornamental","dbh":1,"condition":"Very Good"},{"x":91.2,"z":-17.7,"species":"Linden, Littleleaf","shape":"broad","dbh":12,"condition":"Very Good"},{"x":91.4,"z":147.6,"species":"Ash, Green","shape":"broad","dbh":33,"condition":"Fair"},{"x":73.0,"z":29.8,"species":"Maple, Sugar","shape":"broad","dbh":10,"condition":"Excellent"},{"x":-120.0,"z":134.8,"species":"Cypress, Bald","shape":"columnar","dbh":29,"condition":"Excellent"},{"x":78.8,"z":41.8,"species":"Tuliptree","shape":"broad","dbh":12,"condition":"Very Good"},{"x":-56.9,"z":-5.9,"species":"redcedar, eastern","shape":"conifer","dbh":2,"condition":"Fair"},{"x":154.5,"z":104.8,"species":"oak, bur","shape":"broad","dbh":34,"condition":"Very Good"},{"x":-125.2,"z":3.2,"species":"Birch","shape":"broad","dbh":14,"condition":"Good"},{"x":162.0,"z":-158.2,"species":"Maple, Sugar","shape":"broad","dbh":6,"condition":"Good"},{"x":-143.9,"z":-81.8,"species":"Oak, Pin","shape":"broad","dbh":34,"condition":"Very Good"},{"x":114.4,"z":80.8,"species":"possumhaw","shape":"ornamental","dbh":1,"condition":"Good"},{"x":91.4,"z":47.0,"species":"Maple, Hedge","shape":"broad","dbh":5,"condition":"Fair"},{"x":-43.1,"z":17.0,"species":"Maple, Silver","shape":"broad","dbh":26,"condition":"Good"},{"x":-115.7,"z":97.9,"species":"Maple, Silver","shape":"broad","dbh":24,"condition":"Fair"},{"x":137.6,"z":117.5,"species":"Oak, Willow","shape":"broad","dbh":20,"condition":"Very Good"},{"x":132.0,"z":-151.6,"species":"Ash, Green","shape":"broad","dbh":16,"condition":"Fair"},{"x":-169.0,"z":128.0,"species":"Sweetgum (undesirable)","shape":"broad","dbh":22,"condition":"Good"},{"x":53.9,"z":26.9,"species":"Blackgum","shape":"broad","dbh":10,"condition":"Very Good"},{"x":-105.7,"z":-37.0,"species":"Buckeye, Ohio","shape":"broad","dbh":8,"condition":"Fair"},{"x":-67.2,"z":-23.5,"species":"pine, loblolly","shape":"conifer","dbh":8,"condition":"Good"},{"x":-99.6,"z":81.1,"species":"Maple, Silver","shape":"broad","dbh":22,"condition":"Fair"},{"x":-110.2,"z":135.2,"species":"Cypress, Bald","shape":"columnar","dbh":35,"condition":"Excellent"},{"x":127.6,"z":-163.1,"species":"Maple, Sugar","shape":"broad","dbh":1,"condition":"Good"},{"x":-155.3,"z":-107.0,"species":"Tree of Heaven","shape":"broad","dbh":23,"condition":"Poor"},{"x":110.3,"z":-156.6,"species":"Sweetgum (undesirable)","shape":"broad","dbh":26,"condition":"Good"},{"x":-27.5,"z":1.2,"species":"juniper, Chinese","shape":"conifer","dbh":2,"condition":"Good"},{"x":-25.7,"z":18.0,"species":"Ginkgo","shape":"columnar","dbh":13,"condition":"Very Good"},{"x":84.6,"z":148.7,"species":"Ash, Green","shape":"broad","dbh":35,"condition":"Good"},{"x":-155.3,"z":130.5,"species":"Redbud","shape":"ornamental","dbh":5,"condition":"Poor"},{"x":-161.0,"z":63.4,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Fair"},{"x":75.0,"z":-45.4,"species":"Cottonwood, Eastern","shape":"broad","dbh":18,"condition":"Fair"},{"x":45.6,"z":-135.6,"species":"goldenraintree","shape":"ornamental","dbh":18,"condition":"Good"},{"x":-163.0,"z":-93.4,"species":"Maple, Silver","shape":"broad","dbh":28,"condition":"Fair"},{"x":-104.8,"z":-171.0,"species":"sycamore, American","shape":"broad","dbh":34,"condition":"Very Good"},{"x":-38.7,"z":166.7,"species":"Sweetgum (undesirable)","shape":"broad","dbh":26,"condition":"Very Good"},{"x":-24.5,"z":154.1,"species":"oak, water","shape":"broad","dbh":14,"condition":"Excellent"},{"x":-93.1,"z":66.7,"species":"Pine, Austrian","shape":"conifer","dbh":8,"condition":"Fair"},{"x":126.1,"z":161.2,"species":"Tuliptree","shape":"broad","dbh":26,"condition":"Fair"},{"x":25.0,"z":-19.7,"species":"Oak, Pin","shape":"broad","dbh":34,"condition":"Good"},{"x":115.1,"z":99.7,"species":"Holly, American","shape":"conifer","dbh":1,"condition":"Good"},{"x":-140.6,"z":32.5,"species":"Maple, Sugar","shape":"broad","dbh":13,"condition":"Excellent"},{"x":-149.8,"z":132.2,"species":"Redbud","shape":"ornamental","dbh":7,"condition":"Good"},{"x":164.1,"z":38.5,"species":"Crabapple, Flowering","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":-75.7,"z":59.1,"species":"Maple, Silver","shape":"broad","dbh":24,"condition":"Fair"},{"x":-89.6,"z":157.9,"species":"Hackberry","shape":"broad","dbh":14,"condition":"Good"},{"x":72.4,"z":161.9,"species":"Maple, Silver","shape":"broad","dbh":16,"condition":"Good"},{"x":11.4,"z":-5.4,"species":"Tuliptree","shape":"broad","dbh":13,"condition":"Very Good"},{"x":42.4,"z":-158.4,"species":"Maple, Red","shape":"broad","dbh":9,"condition":"Very Good"},{"x":-79.1,"z":48.9,"species":"Ash, Green","shape":"broad","dbh":18,"condition":"Fair"},{"x":120.5,"z":157.3,"species":"Redbud","shape":"ornamental","dbh":5,"condition":"Good"},{"x":112.9,"z":162.8,"species":"Oak, Pin (restricted use)","shape":"broad","dbh":22,"condition":"Fair"},{"x":104.1,"z":-146.3,"species":"oak, shingle","shape":"broad","dbh":38,"condition":"Good"},{"x":50.9,"z":103.6,"species":"Tuliptree","shape":"broad","dbh":48,"condition":"Poor"},{"x":38.2,"z":153.7,"species":"Ash, Green","shape":"broad","dbh":10,"condition":"Critical"},{"x":-26.8,"z":6.8,"species":"Pagoda Dogwood","shape":"ornamental","dbh":2,"condition":"Good"},{"x":102.3,"z":-15.4,"species":"Linden, Littleleaf","shape":"broad","dbh":13,"condition":"Very Good"},{"x":-151.6,"z":-167.4,"species":"Maple, Silver","shape":"broad","dbh":26,"condition":"Good"},{"x":-122.2,"z":-26.0,"species":"Pine, Scotch","shape":"conifer","dbh":8,"condition":"Poor"},{"x":81.0,"z":-131.8,"species":"Maple, Silver","shape":"broad","dbh":24,"condition":"Good"},{"x":-65.6,"z":-152.9,"species":"oak, bur","shape":"broad","dbh":6,"condition":"Very Good"},{"x":-21.8,"z":-8.8,"species":"Pagoda Dogwood","shape":"ornamental","dbh":2,"condition":"Good"},{"x":-170.0,"z":64.2,"species":"Oak, Pin","shape":"broad","dbh":19,"condition":"Good"},{"x":118.7,"z":105.1,"species":"Pine, Austrian","shape":"conifer","dbh":3,"condition":"Poor"},{"x":-84.9,"z":-114.8,"species":"Walnut, Black","shape":"broad","dbh":26,"condition":"Fair"},{"x":-125.9,"z":-81.0,"species":"Sweetgum (undesirable)","shape":"broad","dbh":42,"condition":"Very Good"},{"x":-142.2,"z":-93.4,"species":"Ash, Green","shape":"broad","dbh":10,"condition":"Good"},{"x":-26.5,"z":151.5,"species":"oak, water","shape":"broad","dbh":14,"condition":"Excellent"},{"x":22.9,"z":167.8,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Good"},{"x":73.5,"z":-134.5,"species":"honeylocust, thornless","shape":"broad","dbh":6,"condition":"Very Good"},{"x":136.6,"z":30.7,"species":"Cypress, Bald","shape":"columnar","dbh":14,"condition":"Very Good"},{"x":-165.1,"z":-81.8,"species":"Maple, Silver","shape":"broad","dbh":20,"condition":"Fair"},{"x":-84.9,"z":-66.6,"species":"pecan","shape":"broad","dbh":10,"condition":"Very Good"},{"x":170.7,"z":-54.5,"species":"Maple, Silver","shape":"broad","dbh":28,"condition":"Good"},{"x":-56.3,"z":-24.7,"species":"Ash, Green","shape":"broad","dbh":14,"condition":"Poor"},{"x":122.4,"z":112.4,"species":"possumhaw","shape":"ornamental","dbh":4,"condition":"Good"},{"x":114.4,"z":23.0,"species":"Crabapple, Flowering","shape":"ornamental","dbh":8,"condition":"Fair"},{"x":161.0,"z":59.1,"species":"Crabapple, Flowering","shape":"ornamental","dbh":26,"condition":"Poor"},{"x":54.0,"z":67.8,"species":"Tuliptree","shape":"broad","dbh":40,"condition":"Good"},{"x":-61.1,"z":136.1,"species":"Cypress, Bald","shape":"columnar","dbh":24,"condition":"Excellent"},{"x":-153.5,"z":-30.9,"species":"oak, northern red","shape":"broad","dbh":12,"condition":"Good"},{"x":120.9,"z":47.9,"species":"Oak, Pin","shape":"broad","dbh":6,"condition":"Very Good"},{"x":122.3,"z":-163.7,"species":"Maple, Sugar","shape":"broad","dbh":9,"condition":"Good"},{"x":-103.2,"z":98.3,"species":"Chestnut, Chinese","shape":"broad","dbh":15,"condition":"Good"},{"x":-71.7,"z":84.7,"species":"downy serviceberry","shape":"ornamental","dbh":1,"condition":"Good"},{"x":141.2,"z":17.1,"species":"Cypress, Bald","shape":"columnar","dbh":3,"condition":"Very Good"},{"x":-147.6,"z":-41.6,"species":"magnolia, star","shape":"ornamental","dbh":1,"condition":"Very Good"},{"x":127.4,"z":128.7,"species":"sycamore, American","shape":"broad","dbh":36,"condition":"Good"},{"x":-84.2,"z":-90.7,"species":"Maple, Silver","shape":"broad","dbh":34,"condition":"Good"},{"x":66.1,"z":135.6,"species":"Maple, Silver","shape":"broad","dbh":34,"condition":"Fair"},{"x":156.8,"z":-141.8,"species":"Oak, Pin","shape":"broad","dbh":21,"condition":"Good"},{"x":-24.9,"z":30.4,"species":"Cypress, Bald","shape":"columnar","dbh":38,"condition":"Excellent"},{"x":131.0,"z":50.2,"species":"Oak, Pin","shape":"broad","dbh":13,"condition":"Very Good"},{"x":163.9,"z":18.2,"species":"Amur corktree","shape":"broad","dbh":10,"condition":"Good"},{"x":-118.9,"z":-123.0,"species":"Maple, Silver","shape":"broad","dbh":34,"condition":"Fair"},{"x":67.0,"z":161.0,"species":"serviceberry, downy","shape":"ornamental","dbh":1,"condition":"Good"},{"x":70.1,"z":-139.7,"species":"honeylocust, thornless","shape":"broad","dbh":10,"condition":"Very Good"},{"x":123.2,"z":-147.6,"species":"Oak, Pin","shape":"broad","dbh":30,"condition":"Fair"},{"x":-131.2,"z":-172.4,"species":"Zelkova, Japanese","shape":"broad","dbh":14,"condition":"Good"},{"x":104.9,"z":174.1,"species":"redbud, Oklahoma","shape":"ornamental","dbh":2,"condition":"Very Good"},{"x":-93.8,"z":-32.0,"species":"Catalpa, Southern","shape":"broad","dbh":51,"condition":"Poor"},{"x":62.5,"z":-120.0,"species":"Pear, Callery","shape":"ornamental","dbh":11,"condition":"Fair"},{"x":168.4,"z":-89.2,"species":"Sweetgum (undesirable)","shape":"broad","dbh":28,"condition":"Good"},{"x":144.3,"z":25.9,"species":"Cypress, Bald","shape":"columnar","dbh":47,"condition":"Very Good"},{"x":-32.6,"z":-36.9,"species":"Oak, White","shape":"broad","dbh":9,"condition":"Excellent"},{"x":114.8,"z":80.0,"species":"possumhaw","shape":"ornamental","dbh":1,"condition":"Good"},{"x":14.2,"z":-141.7,"species":"Hackberry","shape":"broad","dbh":43,"condition":"Fair"},{"x":62.6,"z":-2.0,"species":"Linden, American","shape":"broad","dbh":11,"condition":"Very Good"},{"x":77.5,"z":38.4,"species":"Maple, Sugar","shape":"broad","dbh":9,"condition":"Excellent"},{"x":127.7,"z":141.6,"species":"Oak, Pin (restricted use)","shape":"broad","dbh":41,"condition":"Fair"},{"x":-13.1,"z":-25.6,"species":"Maple, Silver","shape":"broad","dbh":18,"condition":"Fair"},{"x":11.6,"z":152.9,"species":"juniper, Chinese","shape":"conifer","dbh":1,"condition":"Good"},{"x":-130.1,"z":-47.5,"species":"Walnut, Black","shape":"broad","dbh":9,"condition":"Good"},{"x":-89.7,"z":24.6,"species":"Maple, Red","shape":"broad","dbh":12,"condition":"Very Good"},{"x":-124.6,"z":46.1,"species":"Pine, Scotch","shape":"conifer","dbh":8,"condition":"Poor"},{"x":-16.6,"z":102.9,"species":"Maple, Silver","shape":"broad","dbh":24,"condition":"Fair"},{"x":78.1,"z":-153.0,"species":"Maple, Sugar","shape":"broad","dbh":9,"condition":"Good"},{"x":144.9,"z":-130.7,"species":"Cherry, Yoshino","shape":"ornamental","dbh":14,"condition":"Good"},{"x":-123.1,"z":146.4,"species":"Linden, American","shape":"broad","dbh":6,"condition":"Very Good"},{"x":-129.2,"z":-141.7,"species":"Oak, Pin","shape":"broad","dbh":28,"condition":"Very Good"},{"x":17.4,"z":-48.7,"species":"Ash, Green","shape":"broad","dbh":12,"condition":"Fair"},{"x":-77.8,"z":-59.4,"species":"pecan","shape":"broad","dbh":10,"condition":"Very Good"},{"x":54.5,"z":51.6,"species":"Willow, Weeping","shape":"weeping","dbh":21,"condition":"Critical"},{"x":10.3,"z":-167.0,"species":"Crabapple, Flowering","shape":"ornamental","dbh":2,"condition":"Poor"},{"x":123.1,"z":109.0,"species":"serviceberry, downy","shape":"ornamental","dbh":2,"condition":"Good"},{"x":63.7,"z":3.3,"species":"Linden, American","shape":"broad","dbh":13,"condition":"Very Good"},{"x":-73.3,"z":6.7,"species":"Oak, Shingle","shape":"broad","dbh":2,"condition":"Fair"},{"x":138.1,"z":74.4,"species":"hawthorn, Washington","shape":"ornamental","dbh":8,"condition":"Fair"},{"x":-139.3,"z":-109.5,"species":"Blackgum","shape":"broad","dbh":2,"condition":"Fair"},{"x":-108.1,"z":-149.7,"species":"locust, black","shape":"broad","dbh":18,"condition":"Good"},{"x":80.7,"z":121.8,"species":"Birch","shape":"broad","dbh":8,"condition":"Very Good"},{"x":61.6,"z":-66.0,"species":"serviceberry, downy","shape":"ornamental","dbh":8,"condition":"Very Good"},{"x":-135.7,"z":-50.1,"species":"Walnut, Black","shape":"broad","dbh":6,"condition":"Good"},{"x":-65.7,"z":130.2,"species":"Cypress, Bald","shape":"columnar","dbh":24,"condition":"Excellent"},{"x":-155.1,"z":74.7,"species":"Hackberry","shape":"broad","dbh":20,"condition":"Good"},{"x":-1.1,"z":137.0,"species":"juniper, Chinese","shape":"conifer","dbh":1,"condition":"Good"},{"x":-137.7,"z":46.3,"species":"Maple, Sugar","shape":"broad","dbh":18,"condition":"Excellent"},{"x":4.7,"z":167.5,"species":"Linden, Littleleaf","shape":"broad","dbh":18,"condition":"Very Good"},{"x":-26.6,"z":6.6,"species":"Pagoda Dogwood","shape":"ornamental","dbh":2,"condition":"Good"},{"x":150.5,"z":167.1,"species":"Cottonwood, Eastern","shape":"broad","dbh":38,"condition":"Poor"},{"x":75.3,"z":43.8,"species":"Tuliptree","shape":"broad","dbh":50,"condition":"Poor"},{"x":29.7,"z":158.9,"species":"Maple, Sugar","shape":"broad","dbh":16,"condition":"Very Good"},{"x":120.2,"z":111.8,"species":"serviceberry, downy","shape":"ornamental","dbh":2,"condition":"Very Good"},{"x":132.6,"z":98.0,"species":"Elm, American","shape":"broad","dbh":46,"condition":"Fair"},{"x":140.2,"z":-79.2,"species":"Oak, Pin","shape":"broad","dbh":35,"condition":"Very Good"},{"x":129.6,"z":-111.7,"species":"Ash, Green","shape":"broad","dbh":31,"condition":"Poor"},{"x":-17.7,"z":-46.1,"species":"Tuliptree","shape":"broad","dbh":28,"condition":"Fair"},{"x":65.9,"z":21.8,"species":"Maple, Sugar","shape":"broad","dbh":12,"condition":"Excellent"},{"x":-74.4,"z":160.5,"species":"Crabapple, Flowering","shape":"ornamental","dbh":12,"condition":"Fair"},{"x":172.7,"z":-2.7,"species":"Crabapple, Flowering","shape":"ornamental","dbh":2,"condition":"Poor"},{"x":-96.0,"z":32.0,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Very Good"},{"x":143.3,"z":95.1,"species":"Oak, Willow","shape":"broad","dbh":8,"condition":"Very Good"},{"x":-8.2,"z":-9.5,"species":"Maple, Silver","shape":"broad","dbh":22,"condition":"Good"},{"x":-129.3,"z":61.2,"species":"Maple, Sugar","shape":"broad","dbh":16,"condition":"Very Good"},{"x":-13.8,"z":-154.9,"species":"Ash, Green","shape":"broad","dbh":30,"condition":"Poor"},{"x":-134.4,"z":58.3,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Very Good"},{"x":98.7,"z":83.8,"species":"Cypress, Bald","shape":"columnar","dbh":6,"condition":"Excellent"},{"x":20.0,"z":-7.5,"species":"Ash, Green","shape":"broad","dbh":17,"condition":"Fair"},{"x":121.3,"z":-130.1,"species":"Maple, Silver","shape":"broad","dbh":28,"condition":"Good"},{"x":84.5,"z":27.2,"species":"Oak, Sawtooth","shape":"broad","dbh":18,"condition":"Very Good"},{"x":133.7,"z":78.8,"species":"hawthorn, Washington","shape":"ornamental","dbh":8,"condition":"Fair"},{"x":-134.7,"z":18.7,"species":"smoketree, American","shape":"ornamental","dbh":9,"condition":"Critical"},{"x":135.1,"z":23.1,"species":"Pear, Callery","shape":"ornamental","dbh":2,"condition":"Very Good"},{"x":-60.2,"z":-14.2,"species":"Maple, Silver","shape":"broad","dbh":28,"condition":"Good"},{"x":58.0,"z":81.8,"species":"Catalpa, Southern","shape":"broad","dbh":19,"condition":"Fair"},{"x":-55.8,"z":-157.6,"species":"oak, bur","shape":"broad","dbh":6,"condition":"Very Good"},{"x":-23.1,"z":2.2,"species":"Pagoda Dogwood","shape":"ornamental","dbh":2,"condition":"Good"},{"x":-83.2,"z":145.2,"species":"Cypress, Bald","shape":"columnar","dbh":14,"condition":"Excellent"},{"x":140.5,"z":-161.3,"species":"Maple, Sugar","shape":"broad","dbh":8,"condition":"Poor"},{"x":-148.9,"z":-87.1,"species":"Dogwood, Flowering","shape":"ornamental","dbh":6,"condition":"Good"},{"x":-6.9,"z":128.3,"species":"Oak, Pin","shape":"broad","dbh":22,"condition":"Good"},{"x":-150.9,"z":104.9,"species":"Ash, Green","shape":"broad","dbh":16,"condition":"Good"},{"x":-58.4,"z":-56.0,"species":"Hackberry","shape":"broad","dbh":2,"condition":"Fair"},{"x":-108.8,"z":166.4,"species":"Maple, Red","shape":"broad","dbh":1,"condition":"Very Good"},{"x":91.7,"z":59.8,"species":"Maple, Hedge","shape":"broad","dbh":6,"condition":"Good"},{"x":22.4,"z":153.9,"species":"Ash, Green","shape":"broad","dbh":12,"condition":"Fair"},{"x":136.8,"z":-69.2,"species":"Sweetgum (undesirable)","shape":"broad","dbh":32,"condition":"Fair"},{"x":127.7,"z":73.8,"species":"Dogwood, Flowering","shape":"ornamental","dbh":1,"condition":"Good"},{"x":11.7,"z":92.6,"species":"Catalpa, Southern","shape":"broad","dbh":18,"condition":"Good"},{"x":156.5,"z":118.1,"species":"Spruce, Norway","shape":"conifer","dbh":2,"condition":"Very Good"},{"x":61.5,"z":-140.8,"species":"Sweetgum (undesirable)","shape":"broad","dbh":36,"condition":"Good"},{"x":123.7,"z":74.6,"species":"Oak, Pin","shape":"broad","dbh":44,"condition":"Fair"},{"x":129.3,"z":168.7,"species":"Tuliptree","shape":"broad","dbh":25,"condition":"Fair"},{"x":-144.1,"z":80.5,"species":"Sweetgum (undesirable)","shape":"broad","dbh":26,"condition":"Fair"},{"x":-135.7,"z":-42.8,"species":"Walnut, Black","shape":"broad","dbh":9,"condition":"Good"},{"x":89.3,"z":-168.9,"species":"sycamore, American","shape":"broad","dbh":22,"condition":"Good"},{"x":-21.5,"z":-6.4,"species":"juniper, Chinese","shape":"conifer","dbh":2,"condition":"Good"},{"x":-78.7,"z":126.1,"species":"Maple, Silver","shape":"broad","dbh":26,"condition":"Fair"},{"x":-157.8,"z":26.7,"species":"Maple, Sugar","shape":"broad","dbh":16,"condition":"Good"},{"x":-119.6,"z":-100.8,"species":"Maple, Silver","shape":"broad","dbh":30,"condition":"Good"},{"x":-136.3,"z":88.8,"species":"Maple, Red","shape":"broad","dbh":16,"condition":"Good"},{"x":-87.7,"z":-23.3,"species":"persimmon, common","shape":"broad","dbh":22,"condition":"Fair"},{"x":108.2,"z":57.1,"species":"Maple, Red","shape":"broad","dbh":8,"condition":"Fair"},{"x":-64.2,"z":-140.6,"species":"locust, black","shape":"broad","dbh":20,"condition":"Critical"},{"x":-153.7,"z":141.2,"species":"persimmon, common","shape":"broad","dbh":32,"condition":"Very Good"},{"x":-18.7,"z":140.1,"species":"Oak, Pin","shape":"broad","dbh":26,"condition":"Good"},{"x":105.4,"z":110.7,"species":"mulberry, red","shape":"broad","dbh":12,"condition":"Fair"},{"x":113.4,"z":8.4,"species":"Crabapple, Flowering","shape":"ornamental","dbh":8,"condition":"Fair"},{"x":-86.8,"z":125.9,"species":"Cypress, Bald","shape":"columnar","dbh":16,"condition":"Excellent"},{"x":-133.9,"z":108.9,"species":"Ash, Green","shape":"broad","dbh":14,"condition":"Poor"},{"x":168.4,"z":-73.8,"species":"Pine, White","shape":"conifer","dbh":20,"condition":"Good"},{"x":120.8,"z":-75.9,"species":"Oak, Pin","shape":"broad","dbh":36,"condition":"Very Good"},{"x":136.3,"z":-112.1,"species":"Pine, White","shape":"conifer","dbh":13,"condition":"Fair"},{"x":167.2,"z":-157.3,"species":"Maple, Red","shape":"broad","dbh":8,"condition":"Good"},{"x":-87.9,"z":106.2,"species":"Chestnut, Chinese","shape":"broad","dbh":9,"condition":"Good"},{"x":134.6,"z":-162.2,"species":"Maple, Sugar","shape":"broad","dbh":1,"condition":"Good"},{"x":-120.9,"z":-18.6,"species":"Pine, Scotch","shape":"conifer","dbh":8,"condition":"Poor"},{"x":62.2,"z":155.1,"species":"Sycamore American (restricted use)","shape":"broad","dbh":28,"condition":"Fair"},{"x":175.0,"z":40.7,"species":"goldenraintree","shape":"ornamental","dbh":28,"condition":"Fair"},{"x":155.1,"z":62.4,"species":"oak, northern red","shape":"broad","dbh":18,"condition":"Very Good"},{"x":32.5,"z":169.7,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Good"},{"x":-105.0,"z":-162.9,"species":"Maple, Sugar","shape":"broad","dbh":20,"condition":"Very Good"},{"x":-107.0,"z":15.0,"species":"Birch","shape":"broad","dbh":13,"condition":"Good"},{"x":-157.6,"z":-130.4,"species":"Maple, Sugar","shape":"broad","dbh":1,"condition":"Good"},{"x":-117.6,"z":14.9,"species":"Birch","shape":"broad","dbh":16,"condition":"Good"},{"x":23.8,"z":106.5,"species":"Linden, American","shape":"broad","dbh":32,"condition":"Fair"},{"x":115.9,"z":99.7,"species":"serviceberry, downy","shape":"ornamental","dbh":3,"condition":"Excellent"},{"x":96.4,"z":139.9,"species":"Dogwood, Flowering","shape":"ornamental","dbh":3,"condition":"Good"},{"x":-129.1,"z":104.2,"species":"Ash, Green","shape":"broad","dbh":44,"condition":"Fair"},{"x":-120.1,"z":154.5,"species":"Ash, Green","shape":"broad","dbh":19,"condition":"Fair"},{"x":-17.5,"z":90.0,"species":"Maple, Silver","shape":"broad","dbh":2,"condition":"Very Good"},{"x":-146.0,"z":-164.4,"species":"sycamore, American","shape":"broad","dbh":28,"condition":"Good"},{"x":-76.9,"z":8.2,"species":"Sweetgum (undesirable)","shape":"broad","dbh":28,"condition":"Poor"},{"x":-158.9,"z":-121.3,"species":"Maple, Silver","shape":"broad","dbh":23,"condition":"Fair"},{"x":-62.5,"z":-35.4,"species":"Sweetgum (undesirable)","shape":"broad","dbh":20,"condition":"Good"},{"x":157.3,"z":-41.7,"species":"Maple, Silver","shape":"broad","dbh":18,"condition":"Fair"},{"x":138.7,"z":112.8,"species":"Oak, Willow","shape":"broad","dbh":22,"condition":"Very Good"},{"x":133.7,"z":132.9,"species":"Oak, Willow","shape":"broad","dbh":15,"condition":"Very Good"},{"x":126.5,"z":-141.5,"species":"Pine, White","shape":"conifer","dbh":2,"condition":"Fair"},{"x":169.8,"z":-64.3,"species":"Maple, Amur","shape":"broad","dbh":4,"condition":"Good"},{"x":129.1,"z":-137.3,"species":"Pine, White","shape":"conifer","dbh":13,"condition":"Excellent"},{"x":109.8,"z":-118.3,"species":"Ash, Green","shape":"broad","dbh":18,"condition":"Fair"},{"x":163.5,"z":142.6,"species":"Maple, Sugar","shape":"broad","dbh":10,"condition":"Fair"},{"x":165.9,"z":53.3,"species":"magnolia, saucer","shape":"ornamental","dbh":5,"condition":"Very Good"},{"x":-75.4,"z":82.9,"species":"sycamore, American","shape":"broad","dbh":30,"condition":"Fair"},{"x":105.4,"z":14.0,"species":"Tuliptree","shape":"broad","dbh":6,"condition":"Good"},{"x":156.4,"z":76.7,"species":"oak, northern red","shape":"broad","dbh":16,"condition":"Very Good"},{"x":103.7,"z":23.8,"species":"Crabapple, Flowering","shape":"ornamental","dbh":8,"condition":"Good"},{"x":32.9,"z":84.5,"species":"Sweetgum (undesirable)","shape":"broad","dbh":26,"condition":"Critical"},{"x":72.8,"z":-26.8,"species":"Cottonwood, Eastern","shape":"broad","dbh":18,"condition":"Fair"},{"x":165.3,"z":-137.6,"species":"Oak, Pin","shape":"broad","dbh":16,"condition":"Very Good"},{"x":-3.0,"z":46.1,"species":"Elm, American","shape":"broad","dbh":30,"condition":"Good"},{"x":-151.5,"z":113.7,"species":"filbert, American","shape":"ornamental","dbh":1,"condition":"Very Good"},{"x":-76.2,"z":158.2,"species":"Serviceberry, Apple 'Autumn Brilliance'","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":-18.0,"z":-4.3,"species":"juniper, Chinese","shape":"conifer","dbh":2,"condition":"Good"},{"x":69.1,"z":-149.5,"species":"Hackberry","shape":"broad","dbh":20,"condition":"Good"},{"x":109.8,"z":130.8,"species":"Dogwood, Flowering","shape":"ornamental","dbh":3,"condition":"Very Good"},{"x":17.7,"z":169.5,"species":"Oak, Pin","shape":"broad","dbh":30,"condition":"Very Good"},{"x":50.2,"z":-127.3,"species":"royal paulownia","shape":"broad","dbh":1,"condition":"Fair"},{"x":-93.3,"z":143.8,"species":"Cypress, Bald","shape":"columnar","dbh":16,"condition":"Excellent"},{"x":66.8,"z":146.1,"species":"Maple, Silver","shape":"broad","dbh":24,"condition":"Fair"},{"x":72.8,"z":3.4,"species":"Buckeye, Ohio","shape":"broad","dbh":30,"condition":"Fair"},{"x":56.4,"z":-79.3,"species":"serviceberry, downy","shape":"ornamental","dbh":9,"condition":"Good"},{"x":-171.7,"z":-46.5,"species":"Maple, Silver","shape":"broad","dbh":28,"condition":"Good"},{"x":-77.8,"z":171.4,"species":"Maple, Red","shape":"broad","dbh":19,"condition":"Fair"},{"x":-148.3,"z":83.6,"species":"Maple, Sugar","shape":"broad","dbh":6,"condition":"Good"},{"x":170.8,"z":-44.4,"species":"Maple, Sugar","shape":"broad","dbh":12,"condition":"Very Good"},{"x":44.7,"z":117.7,"species":"Oak, Pin","shape":"broad","dbh":26,"condition":"Good"},{"x":61.0,"z":-112.8,"species":"Pear, Callery","shape":"ornamental","dbh":15,"condition":"Fair"},{"x":-48.2,"z":-41.8,"species":"Tuliptree","shape":"broad","dbh":38,"condition":"Very Good"},{"x":-65.9,"z":-86.6,"species":"Crabapple, Flowering","shape":"ornamental","dbh":12,"condition":"Critical"},{"x":-58.2,"z":146.1,"species":"Linden, Littleleaf","shape":"broad","dbh":19,"condition":"Critical"},{"x":26.6,"z":148.3,"species":"Ash, Green","shape":"broad","dbh":15,"condition":"Fair"},{"x":117.8,"z":99.2,"species":"willow, corkscrew","shape":"weeping","dbh":3,"condition":"Very Good"},{"x":113.3,"z":81.1,"species":"possumhaw","shape":"ornamental","dbh":1,"condition":"Good"},{"x":173.5,"z":79.4,"species":"Maple, Norway","shape":"broad","dbh":14,"condition":"Fair"},{"x":64.0,"z":39.7,"species":"Birch","shape":"broad","dbh":8,"condition":"Good"},{"x":18.2,"z":11.5,"species":"Birch","shape":"broad","dbh":8,"condition":"Good"},{"x":-65.3,"z":-76.3,"species":"Crabapple, Flowering","shape":"ornamental","dbh":9,"condition":"Critical"},{"x":131.6,"z":38.2,"species":"Cypress, Bald","shape":"columnar","dbh":19,"condition":"Very Good"},{"x":-38.9,"z":71.8,"species":"Maple, Silver","shape":"broad","dbh":25,"condition":"Poor"},{"x":-129.2,"z":-157.4,"species":"Oak, Pin","shape":"broad","dbh":26,"condition":"Good"},{"x":25.0,"z":-83.3,"species":"Ash, Green","shape":"broad","dbh":36,"condition":"Critical"},{"x":144.0,"z":83.6,"species":"Oak, Willow","shape":"broad","dbh":17,"condition":"Very Good"},{"x":72.3,"z":121.9,"species":"Maple, Silver","shape":"broad","dbh":25,"condition":"Good"},{"x":53.1,"z":-114.8,"species":"Pear, Callery","shape":"ornamental","dbh":17,"condition":"Fair"},{"x":61.5,"z":165.3,"species":"Maple, Sugar","shape":"broad","dbh":16,"condition":"Very Good"},{"x":136.3,"z":-14.0,"species":"Ash, Green","shape":"broad","dbh":36,"condition":"Fair"},{"x":-3.3,"z":19.8,"species":"Hackberry","shape":"broad","dbh":17,"condition":"Good"},{"x":165.9,"z":126.8,"species":"Maple, Red","shape":"broad","dbh":16,"condition":"Fair"},{"x":70.0,"z":142.5,"species":"Maple, Silver","shape":"broad","dbh":20,"condition":"Fair"},{"x":158.8,"z":18.2,"species":"Amur corktree","shape":"broad","dbh":8,"condition":"Good"},{"x":86.9,"z":50.2,"species":"Maple, Hedge","shape":"broad","dbh":5,"condition":"Fair"},{"x":87.7,"z":80.7,"species":"Pine, Scotch","shape":"conifer","dbh":10,"condition":"Fair"},{"x":-33.0,"z":86.9,"species":"Linden, Littleleaf","shape":"broad","dbh":13,"condition":"Excellent"},{"x":-63.6,"z":-6.1,"species":"Maple, Silver","shape":"broad","dbh":22,"condition":"Good"},{"x":166.0,"z":-149.3,"species":"Oak, Willow","shape":"broad","dbh":10,"condition":"Very Good"},{"x":-92.9,"z":18.1,"species":"Sweetgum (undesirable)","shape":"broad","dbh":32,"condition":"Fair"},{"x":112.6,"z":150.2,"species":"Dogwood, Flowering","shape":"ornamental","dbh":4,"condition":"Good"},{"x":-98.6,"z":-98.8,"species":"Maple, Silver","shape":"broad","dbh":18,"condition":"Good"},{"x":126.2,"z":145.9,"species":"Redbud","shape":"ornamental","dbh":6,"condition":"Good"},{"x":84.9,"z":128.4,"species":"Redbud","shape":"ornamental","dbh":9,"condition":"Good"},{"x":-38.1,"z":123.3,"species":"sycamore, American","shape":"broad","dbh":26,"condition":"Fair"},{"x":61.3,"z":-129.2,"species":"Sweetgum (undesirable)","shape":"broad","dbh":30,"condition":"Good"},{"x":-142.9,"z":-35.2,"species":"oak, northern red","shape":"broad","dbh":14,"condition":"Good"},{"x":-107.3,"z":-141.0,"species":"locust, black","shape":"broad","dbh":16,"condition":"Good"},{"x":75.0,"z":-141.2,"species":"honeylocust, thornless","shape":"broad","dbh":14,"condition":"Very Good"},{"x":93.7,"z":61.6,"species":"Maple, Hedge","shape":"broad","dbh":5,"condition":"Good"},{"x":52.0,"z":-165.4,"species":"Sweetgum (undesirable)","shape":"broad","dbh":30,"condition":"Fair"},{"x":3.0,"z":15.7,"species":"Hackberry","shape":"broad","dbh":8,"condition":"Good"},{"x":69.4,"z":26.0,"species":"Maple, Sugar","shape":"broad","dbh":12,"condition":"Critical"},{"x":34.1,"z":122.8,"species":"Oak, Pin (restricted use)","shape":"broad","dbh":20,"condition":"Fair"},{"x":122.8,"z":108.1,"species":"serviceberry, downy","shape":"ornamental","dbh":2,"condition":"Good"},{"x":-24.8,"z":3.2,"species":"juniper, Chinese","shape":"conifer","dbh":2,"condition":"Good"},{"x":-94.3,"z":107.0,"species":"Chestnut, Chinese","shape":"broad","dbh":10,"condition":"Very Good"},{"x":-123.8,"z":164.4,"species":"Maple, Sugar","shape":"broad","dbh":1,"condition":"Very Good"},{"x":-154.1,"z":29.4,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Good"},{"x":-173.4,"z":-32.6,"species":"sycamore, American","shape":"broad","dbh":36,"condition":"Good"},{"x":-134.0,"z":13.5,"species":"plum, cherry","shape":"ornamental","dbh":1,"condition":"Fair"},{"x":-154.6,"z":16.2,"species":"Maple, Sugar","shape":"broad","dbh":9,"condition":"Fair"},{"x":-70.6,"z":-18.4,"species":"pine, loblolly","shape":"conifer","dbh":8,"condition":"Good"},{"x":-139.0,"z":10.9,"species":"Birch","shape":"broad","dbh":12,"condition":"Good"},{"x":114.2,"z":30.3,"species":"Crabapple, Flowering","shape":"ornamental","dbh":6,"condition":"Fair"},{"x":-165.7,"z":103.0,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Very Good"},{"x":151.9,"z":26.1,"species":"Baldcypress","shape":"columnar","dbh":28,"condition":"Fair"},{"x":119.7,"z":78.7,"species":"Witch-hazel","shape":"ornamental","dbh":1,"condition":"Good"},{"x":104.5,"z":128.7,"species":"Ash, Green","shape":"broad","dbh":25,"condition":"Poor"},{"x":-143.2,"z":-52.5,"species":"Oak, Pin","shape":"broad","dbh":29,"condition":"Very Good"},{"x":-116.9,"z":50.0,"species":"Maple, Red","shape":"broad","dbh":14,"condition":"Fair"},{"x":-70.1,"z":171.9,"species":"Maple, Red","shape":"broad","dbh":1,"condition":"Very Good"},{"x":113.4,"z":-11.6,"species":"Maple, Silver","shape":"broad","dbh":20,"condition":"Fair"},{"x":-171.5,"z":80.4,"species":"Ash, Green","shape":"broad","dbh":34,"condition":"Fair"},{"x":21.4,"z":120.7,"species":"juniper, Chinese","shape":"conifer","dbh":1,"condition":"Good"},{"x":168.1,"z":41.3,"species":"Crabapple, Flowering","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":93.0,"z":50.7,"species":"Maple, Hedge","shape":"broad","dbh":5,"condition":"Fair"},{"x":22.5,"z":-14.8,"species":"Ginkgo","shape":"columnar","dbh":11,"condition":"Good"},{"x":163.2,"z":47.6,"species":"Crabapple, Flowering","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":170.5,"z":-101.0,"species":"Cherry, Yoshino","shape":"ornamental","dbh":16,"condition":"Very Good"},{"x":108.7,"z":78.7,"species":"maple, Japanese","shape":"ornamental","dbh":1,"condition":"Fair"},{"x":-150.8,"z":159.6,"species":"Maple, Sugar","shape":"broad","dbh":8,"condition":"Very Good"},{"x":-28.5,"z":-153.3,"species":"Hackberry","shape":"broad","dbh":38,"condition":"Critical"},{"x":110.6,"z":-0.4,"species":"Linden, Littleleaf","shape":"broad","dbh":10,"condition":"Very Good"},{"x":-116.6,"z":147.5,"species":"Linden, American","shape":"broad","dbh":8,"condition":"Good"},{"x":125.7,"z":29.0,"species":"Cypress, Bald","shape":"columnar","dbh":19,"condition":"Very Good"},{"x":118.5,"z":112.3,"species":"serviceberry, downy","shape":"ornamental","dbh":2,"condition":"Very Good"},{"x":-78.2,"z":-6.3,"species":"Maple, Silver","shape":"broad","dbh":28,"condition":"Good"},{"x":73.3,"z":-120.9,"species":"Oak, Pin","shape":"broad","dbh":44,"condition":"Good"},{"x":108.7,"z":83.0,"species":"mulberry, red","shape":"broad","dbh":27,"condition":"Poor"},{"x":-154.2,"z":-150.5,"species":"Maple, Sugar","shape":"broad","dbh":1,"condition":"Good"},{"x":21.4,"z":-69.6,"species":"oak, northern red","shape":"broad","dbh":38,"condition":"Excellent"},{"x":170.0,"z":101.9,"species":"Maple, Silver","shape":"broad","dbh":16,"condition":"Fair"},{"x":139.2,"z":-99.1,"species":"Pine, White","shape":"conifer","dbh":16,"condition":"Fair"},{"x":112.1,"z":155.6,"species":"Birch","shape":"broad","dbh":4,"condition":"Fair"},{"x":173.7,"z":6.7,"species":"Crabapple, Flowering","shape":"ornamental","dbh":2,"condition":"Poor"},{"x":-168.9,"z":27.3,"species":"Honeylocust","shape":"broad","dbh":36,"condition":"Good"},{"x":-156.3,"z":-12.9,"species":"oak, northern red","shape":"broad","dbh":20,"condition":"Very Good"},{"x":128.7,"z":152.4,"species":"Oak, Willow","shape":"broad","dbh":15,"condition":"Very Good"},{"x":-125.4,"z":144.0,"species":"Linden, American","shape":"broad","dbh":6,"condition":"Good"},{"x":-69.3,"z":161.6,"species":"Crabapple, Flowering","shape":"ornamental","dbh":12,"condition":"Fair"},{"x":52.2,"z":-47.3,"species":"goldenraintree","shape":"ornamental","dbh":27,"condition":"Fair"},{"x":-76.5,"z":-41.0,"species":"Redbud","shape":"ornamental","dbh":2,"condition":"Good"},{"x":117.3,"z":112.4,"species":"serviceberry, downy","shape":"ornamental","dbh":2,"condition":"Very Good"},{"x":-140.7,"z":-45.7,"species":"Walnut, Black","shape":"broad","dbh":11,"condition":"Good"},{"x":86.0,"z":137.2,"species":"Redbud","shape":"ornamental","dbh":5,"condition":"Good"},{"x":87.9,"z":142.4,"species":"Redbud","shape":"ornamental","dbh":3,"condition":"Good"},{"x":99.5,"z":173.9,"species":"redbud, Oklahoma","shape":"ornamental","dbh":2,"condition":"Very Good"},{"x":-61.8,"z":148.9,"species":"Linden, Littleleaf","shape":"broad","dbh":12,"condition":"Very Good"},{"x":-64.0,"z":-164.1,"species":"oak, bur","shape":"broad","dbh":11,"condition":"Very Good"},{"x":-92.1,"z":-60.1,"species":"hawthorn, Washington","shape":"ornamental","dbh":7,"condition":"Poor"},{"x":-124.2,"z":-18.7,"species":"Pine, Scotch","shape":"conifer","dbh":8,"condition":"Poor"},{"x":160.9,"z":83.1,"species":"Dogwood, Flowering","shape":"ornamental","dbh":3,"condition":"Good"},{"x":-26.9,"z":-32.0,"species":"Ash, Green","shape":"broad","dbh":10,"condition":"Poor"},{"x":105.2,"z":149.7,"species":"Tuliptree","shape":"broad","dbh":38,"condition":"Fair"},{"x":-72.9,"z":-163.3,"species":"Oak, Pin","shape":"broad","dbh":32,"condition":"Very Good"},{"x":-75.9,"z":-52.0,"species":"Redbud","shape":"ornamental","dbh":2,"condition":"Good"},{"x":117.4,"z":78.9,"species":"Witch-hazel","shape":"ornamental","dbh":1,"condition":"Good"},{"x":-11.7,"z":121.7,"species":"Ash, Green","shape":"broad","dbh":12,"condition":"Fair"},{"x":68.2,"z":-80.5,"species":"serviceberry, downy","shape":"ornamental","dbh":5,"condition":"Poor"},{"x":-92.4,"z":-4.1,"species":"Redbud, Eastern","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":25.0,"z":-163.0,"species":"Maple, Red","shape":"broad","dbh":8,"condition":"Good"},{"x":116.6,"z":99.7,"species":"serviceberry, downy","shape":"ornamental","dbh":3,"condition":"Excellent"},{"x":-89.8,"z":-68.0,"species":"pecan","shape":"broad","dbh":10,"condition":"Very Good"},{"x":-58.9,"z":-53.4,"species":"Blackgum","shape":"broad","dbh":2,"condition":"Fair"},{"x":125.6,"z":110.1,"species":"possumhaw","shape":"ornamental","dbh":4,"condition":"Good"},{"x":-142.9,"z":94.1,"species":"Ash, Green","shape":"broad","dbh":15,"condition":"Good"},{"x":-151.5,"z":-156.4,"species":"Maple, Silver","shape":"broad","dbh":24,"condition":"Fair"},{"x":113.1,"z":53.9,"species":"Maple, Red","shape":"broad","dbh":6,"condition":"Fair"},{"x":111.5,"z":-150.6,"species":"Ash, Green","shape":"broad","dbh":14,"condition":"Fair"},{"x":29.2,"z":94.9,"species":"Birch","shape":"broad","dbh":10,"condition":"Good"},{"x":-155.9,"z":-140.3,"species":"Maple, Sugar","shape":"broad","dbh":8,"condition":"Good"},{"x":66.2,"z":-138.1,"species":"Redbud","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":-115.4,"z":-158.9,"species":"locust, black","shape":"broad","dbh":20,"condition":"Good"},{"x":38.8,"z":-114.3,"species":"Sweetgum (undesirable)","shape":"broad","dbh":8,"condition":"Very Good"},{"x":41.4,"z":162.3,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Very Good"},{"x":-114.7,"z":116.5,"species":"Cypress, Bald","shape":"columnar","dbh":22,"condition":"Excellent"},{"x":35.7,"z":82.5,"species":"Birch","shape":"broad","dbh":12,"condition":"Good"},{"x":50.4,"z":20.6,"species":"Birch","shape":"broad","dbh":12,"condition":"Poor"},{"x":157.7,"z":87.1,"species":"oak, northern red","shape":"broad","dbh":12,"condition":"Very Good"},{"x":-156.3,"z":158.5,"species":"Maple, Sugar","shape":"broad","dbh":1,"condition":"Very Good"},{"x":100.2,"z":-166.8,"species":"sycamore, American","shape":"broad","dbh":30,"condition":"Good"},{"x":131.6,"z":73.9,"species":"hawthorn, Washington","shape":"ornamental","dbh":8,"condition":"Good"},{"x":-88.0,"z":-127.8,"species":"Ash, Green","shape":"broad","dbh":10,"condition":"Poor"},{"x":43.6,"z":133.9,"species":"Ash, Blue","shape":"broad","dbh":28,"condition":"Good"},{"x":-156.5,"z":3.6,"species":"Maple, Sugar","shape":"broad","dbh":11,"condition":"Very Good"},{"x":-5.3,"z":-169.3,"species":"Maple, Red","shape":"broad","dbh":2,"condition":"Fair"},{"x":-75.8,"z":-68.1,"species":"Sweetgum (undesirable)","shape":"broad","dbh":12,"condition":"Good"},{"x":-131.9,"z":-15.6,"species":"Cypress, Bald","shape":"columnar","dbh":18,"condition":"Excellent"},{"x":-112.7,"z":-45.5,"species":"Zelkova, Japanese","shape":"broad","dbh":26,"condition":"Very Good"},{"x":174.3,"z":-75.3,"species":"Pine, White","shape":"conifer","dbh":12,"condition":"Good"},{"x":171.8,"z":-19.4,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Very Good"},{"x":-130.0,"z":-166.1,"species":"Zelkova, Japanese","shape":"broad","dbh":12,"condition":"Good"},{"x":-79.0,"z":159.3,"species":"Redbud","shape":"ornamental","dbh":2,"condition":"Good"},{"x":38.4,"z":-160.2,"species":"Dogwood, Kousa","shape":"ornamental","dbh":2,"condition":"Good"},{"x":135.1,"z":-25.3,"species":"Ash, Green","shape":"broad","dbh":28,"condition":"Fair"},{"x":-137.8,"z":-151.4,"species":"mulberry, red","shape":"broad","dbh":30,"condition":"Poor"},{"x":141.3,"z":146.8,"species":"Cherry, Japanese Flowering","shape":"ornamental","dbh":2,"condition":"Very Good"},{"x":-7.9,"z":115.7,"species":"Oak, Pin","shape":"broad","dbh":20,"condition":"Good"},{"x":-161.4,"z":-109.7,"species":"Maple, Sugar","shape":"broad","dbh":5,"condition":"Very Good"},{"x":-129.2,"z":-4.3,"species":"Crabapple, Flowering","shape":"ornamental","dbh":9,"condition":"Poor"},{"x":-161.1,"z":-29.8,"species":"oak, northern red","shape":"broad","dbh":12,"condition":"Poor"},{"x":163.4,"z":42.8,"species":"Crabapple, Flowering","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":-79.8,"z":-79.1,"species":"Tree of Heaven","shape":"broad","dbh":31,"condition":"Poor"},{"x":-29.2,"z":142.2,"species":"Sweetgum (undesirable)","shape":"broad","dbh":38,"condition":"Poor"},{"x":49.9,"z":-83.3,"species":"Linden, Littleleaf","shape":"broad","dbh":11,"condition":"Good"},{"x":-107.7,"z":-57.1,"species":"hawthorn, Washington","shape":"ornamental","dbh":6,"condition":"Fair"},{"x":25.0,"z":-31.0,"species":"Linden, American","shape":"broad","dbh":40,"condition":"Very Good"},{"x":121.1,"z":-92.0,"species":"Ash, Green","shape":"broad","dbh":30,"condition":"Poor"},{"x":-99.0,"z":-132.4,"species":"Maple, Silver","shape":"broad","dbh":36,"condition":"Good"},{"x":71.3,"z":-9.7,"species":"Linden, American","shape":"broad","dbh":10,"condition":"Very Good"},{"x":-147.4,"z":145.8,"species":"Holly, American","shape":"conifer","dbh":3,"condition":"Very Good"},{"x":1.1,"z":130.6,"species":"juniper, Chinese","shape":"conifer","dbh":1,"condition":"Good"},{"x":-46.1,"z":-151.2,"species":"Hackberry","shape":"broad","dbh":21,"condition":"Good"},{"x":-105.6,"z":-98.7,"species":"Tuliptree","shape":"broad","dbh":50,"condition":"Fair"},{"x":68.9,"z":-170.6,"species":"Maple, Sugar","shape":"broad","dbh":11,"condition":"Poor"},{"x":-129.4,"z":12.8,"species":"Birch","shape":"broad","dbh":18,"condition":"Good"},{"x":149.9,"z":160.7,"species":"Cottonwood, Eastern","shape":"broad","dbh":34,"condition":"Poor"},{"x":90.8,"z":-5.0,"species":"Oak, Swamp White","shape":"broad","dbh":4,"condition":"Fair"},{"x":116.2,"z":100.2,"species":"Dogwood, Flowering","shape":"ornamental","dbh":1,"condition":"Good"},{"x":141.6,"z":32.9,"species":"Cypress, Bald","shape":"columnar","dbh":13,"condition":"Very Good"},{"x":-104.6,"z":158.0,"species":"Hackberry","shape":"broad","dbh":14,"condition":"Good"},{"x":-15.8,"z":12.8,"species":"Ginkgo","shape":"columnar","dbh":19,"condition":"Very Good"},{"x":41.2,"z":12.6,"species":"Birch","shape":"broad","dbh":12,"condition":"Fair"},{"x":-36.1,"z":-28.2,"species":"Oak, White","shape":"broad","dbh":13,"condition":"Excellent"},{"x":-97.4,"z":62.6,"species":"Pine, Austrian","shape":"conifer","dbh":20,"condition":"Poor"},{"x":4.9,"z":117.2,"species":"juniper, Chinese","shape":"conifer","dbh":1,"condition":"Good"},{"x":-94.5,"z":77.9,"species":"Pine, Austrian","shape":"conifer","dbh":8,"condition":"Fair"},{"x":62.1,"z":-28.3,"species":"Cottonwood, Eastern","shape":"broad","dbh":18,"condition":"Fair"},{"x":-7.6,"z":162.9,"species":"Crabapple, Flowering","shape":"ornamental","dbh":6,"condition":"Fair"},{"x":-75.9,"z":-143.3,"species":"oak, bur","shape":"broad","dbh":12,"condition":"Very Good"},{"x":113.5,"z":80.1,"species":"possumhaw","shape":"ornamental","dbh":1,"condition":"Good"},{"x":61.0,"z":138.8,"species":"serviceberry, downy","shape":"ornamental","dbh":1,"condition":"Good"},{"x":146.7,"z":-102.0,"species":"Pine, White","shape":"conifer","dbh":16,"condition":"Excellent"},{"x":-157.4,"z":12.6,"species":"Maple, Sugar","shape":"broad","dbh":19,"condition":"Good"},{"x":152.1,"z":148.4,"species":"Oak, Pin","shape":"broad","dbh":28,"condition":"Very Good"},{"x":50.8,"z":-151.7,"species":"Hackberry","shape":"broad","dbh":20,"condition":"Good"},{"x":174.9,"z":-155.0,"species":"Maple, Red","shape":"broad","dbh":18,"condition":"Good"},{"x":-93.1,"z":-140.3,"species":"oak, bur","shape":"broad","dbh":11,"condition":"Excellent"},{"x":-121.7,"z":125.0,"species":"Cypress, Bald","shape":"columnar","dbh":24,"condition":"Excellent"},{"x":9.1,"z":-31.1,"species":"Linden, American","shape":"broad","dbh":32,"condition":"Very Good"},{"x":173.1,"z":-135.6,"species":"Oak, Pin","shape":"broad","dbh":32,"condition":"Good"},{"x":-103.9,"z":21.8,"species":"Buckeye, Ohio","shape":"broad","dbh":12,"condition":"Very Good"},{"x":31.6,"z":95.9,"species":"Birch","shape":"broad","dbh":6,"condition":"Good"},{"x":-12.0,"z":62.4,"species":"Tuliptree","shape":"broad","dbh":31,"condition":"Good"},{"x":-127.3,"z":-26.1,"species":"Pine, Scotch","shape":"conifer","dbh":8,"condition":"Poor"},{"x":140.0,"z":161.0,"species":"Oak, Pin","shape":"broad","dbh":12,"condition":"Very Good"},{"x":-83.4,"z":68.7,"species":"Pine, Austrian","shape":"conifer","dbh":12,"condition":"Fair"},{"x":16.5,"z":-158.4,"species":"Redbud","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":124.4,"z":-137.2,"species":"Pine, White","shape":"conifer","dbh":11,"condition":"Excellent"},{"x":-47.7,"z":148.3,"species":"Maple, Red 'October Glory'","shape":"broad","dbh":2,"condition":"Fair"},{"x":-150.2,"z":112.3,"species":"filbert, American","shape":"ornamental","dbh":1,"condition":"Very Good"},{"x":34.3,"z":95.4,"species":"Birch","shape":"broad","dbh":8,"condition":"Good"},{"x":-124.1,"z":-111.8,"species":"Pine, White","shape":"conifer","dbh":20,"condition":"Excellent"},{"x":161.6,"z":75.3,"species":"Holly, American","shape":"conifer","dbh":3,"condition":"Very Good"},{"x":70.6,"z":-68.5,"species":"Oak, English","shape":"broad","dbh":1,"condition":"Good"},{"x":-152.7,"z":-66.9,"species":"Tree of Heaven","shape":"broad","dbh":30,"condition":"Poor"},{"x":-130.4,"z":146.9,"species":"Linden, American","shape":"broad","dbh":7,"condition":"Very Good"},{"x":149.9,"z":-54.0,"species":"Oak, Pin","shape":"broad","dbh":23,"condition":"Very Good"},{"x":-130.3,"z":-120.6,"species":"Oak, Pin","shape":"broad","dbh":26,"condition":"Good"},{"x":60.9,"z":41.6,"species":"Blackgum","shape":"broad","dbh":9,"condition":"Very Good"},{"x":-148.1,"z":117.2,"species":"Redbud","shape":"ornamental","dbh":5,"condition":"Fair"},{"x":-33.8,"z":3.7,"species":"Ginkgo","shape":"columnar","dbh":14,"condition":"Very Good"},{"x":111.1,"z":62.7,"species":"Redbud","shape":"ornamental","dbh":2,"condition":"Good"},{"x":-123.4,"z":-36.0,"species":"Linden, American","shape":"broad","dbh":42,"condition":"Critical"},{"x":51.2,"z":174.1,"species":"Maple, Sugar","shape":"broad","dbh":12,"condition":"Very Good"},{"x":159.6,"z":-26.5,"species":"Maple, Sugar","shape":"broad","dbh":14,"condition":"Very Good"},{"x":154.6,"z":128.6,"species":"Elm, American","shape":"broad","dbh":24,"condition":"Good"},{"x":-111.4,"z":92.3,"species":"Sweetgum (undesirable)","shape":"broad","dbh":24,"condition":"Fair"},{"x":-150.8,"z":36.2,"species":"Maple, Sugar","shape":"broad","dbh":13,"condition":"Good"},{"x":-91.7,"z":109.5,"species":"Chestnut, Chinese","shape":"broad","dbh":12,"condition":"Very Good"},{"x":-94.2,"z":112.8,"species":"Ash, Green","shape":"broad","dbh":26,"condition":"Poor"},{"x":-83.9,"z":-173.9,"species":"Sweetgum (undesirable)","shape":"broad","dbh":34,"condition":"Good"},{"x":-87.7,"z":110.9,"species":"Redbud","shape":"ornamental","dbh":10,"condition":"Fair"},{"x":79.5,"z":-171.7,"species":"Maple, Sugar","shape":"broad","dbh":7,"condition":"Good"},{"x":122.3,"z":165.1,"species":"Sweetgum (undesirable)","shape":"broad","dbh":31,"condition":"Good"},{"x":78.9,"z":116.4,"species":"oak, northern red","shape":"broad","dbh":12,"condition":"Fair"},{"x":156.2,"z":-101.4,"species":"Sweetgum (undesirable)","shape":"broad","dbh":28,"condition":"Good"},{"x":122.7,"z":151.9,"species":"Birch","shape":"broad","dbh":8,"condition":"Good"},{"x":69.8,"z":92.7,"species":"Maple, Red","shape":"broad","dbh":19,"condition":"Good"},{"x":164.8,"z":-130.8,"species":"oak, northern red","shape":"broad","dbh":12,"condition":"Very Good"},{"x":88.7,"z":-123.3,"species":"Sweetgum (undesirable)","shape":"broad","dbh":34,"condition":"Good"},{"x":-124.5,"z":127.5,"species":"Cypress, Bald","shape":"columnar","dbh":40,"condition":"Very Good"},{"x":-170.5,"z":-56.4,"species":"Maple, Silver","shape":"broad","dbh":14,"condition":"Critical"},{"x":154.4,"z":-131.7,"species":"Buckeye, Ohio","shape":"broad","dbh":9,"condition":"Very Good"},{"x":132.6,"z":124.8,"species":"downy serviceberry","shape":"ornamental","dbh":2,"condition":"Good"},{"x":169.7,"z":-33.4,"species":"Maple, Sugar","shape":"broad","dbh":13,"condition":"Very Good"},{"x":51.5,"z":-64.8,"species":"Sweetgum (undesirable)","shape":"broad","dbh":38,"condition":"Fair"},{"x":-41.8,"z":-158.7,"species":"Hackberry","shape":"broad","dbh":24,"condition":"Poor"},{"x":121.8,"z":36.8,"species":"Sweetgum (undesirable)","shape":"broad","dbh":40,"condition":"Fair"},{"x":74.6,"z":-57.5,"species":"Cottonwood, Eastern","shape":"broad","dbh":18,"condition":"Fair"},{"x":105.8,"z":37.7,"species":"Oak, Sawtooth","shape":"broad","dbh":18,"condition":"Very Good"},{"x":57.4,"z":-174.1,"species":"Maple, Sugar","shape":"broad","dbh":5,"condition":"Very Good"},{"x":75.3,"z":-159.3,"species":"Maple, Sugar","shape":"broad","dbh":8,"condition":"Very Good"},{"x":100.5,"z":47.6,"species":"Oak, Willow","shape":"broad","dbh":22,"condition":"Excellent"},{"x":-105.6,"z":-50.3,"species":"Linden, Littleleaf","shape":"broad","dbh":13,"condition":"Very Good"},{"x":98.3,"z":132.5,"species":"Dogwood, Flowering","shape":"ornamental","dbh":4,"condition":"Good"},{"x":149.3,"z":119.5,"species":"honeylocust, thornless","shape":"broad","dbh":2,"condition":"Very Good"},{"x":123.9,"z":108.8,"species":"serviceberry, downy","shape":"ornamental","dbh":2,"condition":"Good"},{"x":144.2,"z":-144.2,"species":"Oak, Pin","shape":"broad","dbh":23,"condition":"Good"},{"x":122.3,"z":-97.6,"species":"Ash, Green","shape":"broad","dbh":19,"condition":"Fair"},{"x":34.1,"z":77.4,"species":"Ash, Green","shape":"broad","dbh":16,"condition":"Fair"},{"x":-151.4,"z":-47.4,"species":"Coffeetree, Kentucky","shape":"broad","dbh":11,"condition":"Very Good"},{"x":-117.0,"z":-26.7,"species":"Pine, Scotch","shape":"conifer","dbh":8,"condition":"Poor"},{"x":-100.5,"z":131.4,"species":"Cypress, Bald","shape":"columnar","dbh":28,"condition":"Excellent"},{"x":-0.5,"z":-151.0,"species":"Ash, Green","shape":"broad","dbh":32,"condition":"Good"},{"x":109.6,"z":126.8,"species":"Birch","shape":"broad","dbh":3,"condition":"Good"},{"x":-110.2,"z":-70.1,"species":"Tuliptree","shape":"broad","dbh":41,"condition":"Critical"},{"x":44.9,"z":-113.6,"species":"Pear, Callery","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":111.7,"z":136.7,"species":"Redbud","shape":"ornamental","dbh":3,"condition":"Good"},{"x":-93.9,"z":58.9,"species":"Maple, Red","shape":"broad","dbh":21,"condition":"Fair"},{"x":50.8,"z":152.8,"species":"Oak, Pin","shape":"broad","dbh":22,"condition":"Good"},{"x":-77.6,"z":134.3,"species":"Cypress, Bald","shape":"columnar","dbh":38,"condition":"Excellent"},{"x":-72.7,"z":-23.7,"species":"pine, loblolly","shape":"conifer","dbh":8,"condition":"Good"},{"x":-8.1,"z":-0.5,"species":"Ginkgo","shape":"columnar","dbh":18,"condition":"Excellent"},{"x":1.4,"z":-168.6,"species":"Maple, Red","shape":"broad","dbh":2,"condition":"Fair"},{"x":5.5,"z":-59.5,"species":"oak, northern red","shape":"broad","dbh":40,"condition":"Good"},{"x":167.6,"z":46.1,"species":"Crabapple, Flowering","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":-169.7,"z":-62.5,"species":"Maple, Sugar","shape":"broad","dbh":2,"condition":"Very Good"},{"x":139.3,"z":-141.7,"species":"Oak, Pin","shape":"broad","dbh":20,"condition":"Good"},{"x":56.9,"z":96.0,"species":"lilac, Japanese tree","shape":"ornamental","dbh":2,"condition":"Fair"},{"x":-67.3,"z":74.0,"species":"Maple, Silver","shape":"broad","dbh":24,"condition":"Fair"},{"x":-62.4,"z":-67.1,"species":"Maple, Sugar","shape":"broad","dbh":24,"condition":"Fair"},{"x":145.1,"z":-33.9,"species":"Ash, Green","shape":"broad","dbh":38,"condition":"Fair"},{"x":-142.9,"z":-132.4,"species":"Oak, Pin","shape":"broad","dbh":32,"condition":"Good"},{"x":-65.5,"z":145.9,"species":"Linden, Littleleaf","shape":"broad","dbh":11,"condition":"Very Good"},{"x":140.4,"z":-58.6,"species":"Elm, Siberian","shape":"broad","dbh":1,"condition":"Poor"},{"x":78.4,"z":-70.2,"species":"Oak, English","shape":"broad","dbh":1,"condition":"Good"},{"x":43.1,"z":-78.9,"species":"serviceberry, downy","shape":"ornamental","dbh":7,"condition":"Fair"},{"x":-148.9,"z":57.1,"species":"Maple, Sugar","shape":"broad","dbh":24,"condition":"Very Good"},{"x":64.3,"z":-9.0,"species":"Linden, American","shape":"broad","dbh":12,"condition":"Very Good"},{"x":-114.6,"z":165.6,"species":"sycamore, American","shape":"broad","dbh":22,"condition":"Good"},{"x":-96.4,"z":75.8,"species":"Pine, Austrian","shape":"conifer","dbh":8,"condition":"Fair"},{"x":-83.4,"z":-134.7,"species":"oak, bur","shape":"broad","dbh":11,"condition":"Very Good"},{"x":-114.0,"z":-52.3,"species":"Zelkova, Japanese","shape":"broad","dbh":22,"condition":"Very Good"},{"x":79.8,"z":-146.2,"species":"Ash, Green","shape":"broad","dbh":12,"condition":"Fair"},{"x":22.7,"z":-132.9,"species":"oak, northern red","shape":"broad","dbh":46,"condition":"Very Good"},{"x":-112.1,"z":122.8,"species":"Cypress, Bald","shape":"columnar","dbh":28,"condition":"Excellent"},{"x":114.4,"z":90.8,"species":"Willow, Weeping","shape":"weeping","dbh":3,"condition":"Good"},{"x":173.0,"z":49.6,"species":"Tree of Heaven","shape":"broad","dbh":24,"condition":"Poor"},{"x":83.8,"z":98.9,"species":"Pine, Austrian","shape":"conifer","dbh":10,"condition":"Poor"},{"x":-171.1,"z":52.0,"species":"Maple, Sugar","shape":"broad","dbh":22,"condition":"Very Good"},{"x":100.2,"z":160.0,"species":"Oak, Northern Red","shape":"broad","dbh":22,"condition":"Fair"},{"x":128.4,"z":77.8,"species":"Dogwood, Flowering","shape":"ornamental","dbh":1,"condition":"Good"},{"x":-93.5,"z":136.3,"species":"Cypress, Bald","shape":"columnar","dbh":28,"condition":"Excellent"}]}
+{
+  "meta": {
+    "source": "City of St. Louis Forestry Division",
+    "url": "https://maps6.stlouis-mo.gov/arcgis/rest/services/FORESTRY/FORESTRY_TREES/MapServer",
+    "center": {
+      "lat": 38.616,
+      "lon": -90.2161
+    },
+    "total": 644,
+    "coordinate_system": "World meters, neighborhood-aligned (de-parking 2026-05-03).",
+    "frame": "world",
+    "note": "Migrated from park-local by scripts/de-park-data.mjs."
+  },
+  "trees": [
+    {
+      "x": 43.5511,
+      "z": -49.9799,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 104.3131,
+      "z": 97.1271,
+      "species": "Witch-hazel",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -136.1735,
+      "z": 64.5589,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 6,
+      "condition": "Poor"
+    },
+    {
+      "x": -23.9311,
+      "z": -2.3564,
+      "species": "Pagoda Dogwood",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -15.2313,
+      "z": 163.4676,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 17,
+      "condition": "Very Good"
+    },
+    {
+      "x": 100.0364,
+      "z": 96.6371,
+      "species": "possumhaw",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -4.5279,
+      "z": -44.5976,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Poor"
+    },
+    {
+      "x": 114.0627,
+      "z": 90.0954,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -64.6917,
+      "z": 61.0422,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Poor"
+    },
+    {
+      "x": 50.5583,
+      "z": 40.6057,
+      "species": "Blackgum",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Very Good"
+    },
+    {
+      "x": 195.16,
+      "z": -118.5222,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Very Good"
+    },
+    {
+      "x": 14.2832,
+      "z": 150.1147,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Fair"
+    },
+    {
+      "x": 161.9759,
+      "z": 26.9435,
+      "species": "Catalpa, Southern",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": -5.5661,
+      "z": 105.6694,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 31,
+      "condition": "Fair"
+    },
+    {
+      "x": 12.2724,
+      "z": -12.6,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": -80.8571,
+      "z": 153.3451,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Poor"
+    },
+    {
+      "x": 68.8474,
+      "z": 45.8978,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Excellent"
+    },
+    {
+      "x": 130.7101,
+      "z": 34.8463,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Good"
+    },
+    {
+      "x": 48.5847,
+      "z": -164.245,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Poor"
+    },
+    {
+      "x": 156.6642,
+      "z": 40.9747,
+      "species": "Amur corktree",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Good"
+    },
+    {
+      "x": 44.9033,
+      "z": -38.3137,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": 76.0183,
+      "z": -122.2183,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": 99.5736,
+      "z": 117.6331,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 3,
+      "condition": "Excellent"
+    },
+    {
+      "x": -86.1271,
+      "z": 162.1153,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 121.6249,
+      "z": 111.5809,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Fair"
+    },
+    {
+      "x": 180.0352,
+      "z": -122.0862,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": 73.6113,
+      "z": 124.065,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Good"
+    },
+    {
+      "x": 86.6177,
+      "z": 113.8126,
+      "species": "Elm, American",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Fair"
+    },
+    {
+      "x": 125.8772,
+      "z": 13.3977,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Fair"
+    },
+    {
+      "x": 164.5163,
+      "z": -25.0188,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": -38.7856,
+      "z": 164.4139,
+      "species": "oak, water",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Very Good"
+    },
+    {
+      "x": 103.3712,
+      "z": 13.5008,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": -99.2026,
+      "z": 49.5771,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 10,
+      "condition": "Poor"
+    },
+    {
+      "x": 79.3717,
+      "z": -25.3359,
+      "species": "Cottonwood, Eastern",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": 94.1613,
+      "z": 163.5586,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 17,
+      "condition": "Good"
+    },
+    {
+      "x": 66.3966,
+      "z": 92.3029,
+      "species": "Pine, Scotch",
+      "shape": "conifer",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": 158.8623,
+      "z": -57.0346,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 18,
+      "condition": "Good"
+    },
+    {
+      "x": -121.8273,
+      "z": 70.4281,
+      "species": "Coffeetree, Kentucky",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Very Good"
+    },
+    {
+      "x": 35.2522,
+      "z": -45.6511,
+      "species": "Elm, American",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Fair"
+    },
+    {
+      "x": -33.7602,
+      "z": 77.0941,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": 76.6612,
+      "z": 154.646,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": 142.3884,
+      "z": 54.0606,
+      "species": "Baldcypress",
+      "shape": "columnar",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": -116.5212,
+      "z": 152.1274,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 83.1964,
+      "z": 149.3224,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 7,
+      "condition": "Good"
+    },
+    {
+      "x": 24.8652,
+      "z": 170.4683,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": -50.1421,
+      "z": -165.1411,
+      "species": "oak, bur",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": -112.9882,
+      "z": 72.7714,
+      "species": "Coffeetree, Kentucky",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Very Good"
+    },
+    {
+      "x": 118.2153,
+      "z": -55.0072,
+      "species": "Oak, Pin (restricted use)",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Poor"
+    },
+    {
+      "x": 168.2985,
+      "z": -57.1271,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": -91.7541,
+      "z": -187.1776,
+      "species": "Zelkova, Japanese",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Good"
+    },
+    {
+      "x": 111.7888,
+      "z": 85.3711,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": 179.0355,
+      "z": -132.1759,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Good"
+    },
+    {
+      "x": 129.282,
+      "z": 99.9556,
+      "species": "hawthorn, Washington",
+      "shape": "ornamental",
+      "dbh": 6,
+      "condition": "Fair"
+    },
+    {
+      "x": -190.3799,
+      "z": 128.4137,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": 33.9463,
+      "z": 3.0668,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Very Good"
+    },
+    {
+      "x": -106.6176,
+      "z": -108.5424,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Good"
+    },
+    {
+      "x": -135.595,
+      "z": -20.9486,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": 70.7062,
+      "z": -165.7273,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Good"
+    },
+    {
+      "x": 131.2124,
+      "z": 79.9063,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Very Good"
+    },
+    {
+      "x": -94.6923,
+      "z": 58.0067,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": -128.0123,
+      "z": 148.6454,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Good"
+    },
+    {
+      "x": -29.0173,
+      "z": 143.5067,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 139.531,
+      "z": -85.2888,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 27,
+      "condition": "Fair"
+    },
+    {
+      "x": -49.9051,
+      "z": 123.6112,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 6,
+      "condition": "Poor"
+    },
+    {
+      "x": -34.459,
+      "z": -46.8115,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 23,
+      "condition": "Very Good"
+    },
+    {
+      "x": -162.904,
+      "z": 57.5956,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Fair"
+    },
+    {
+      "x": 75.811,
+      "z": 159.2696,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 4,
+      "condition": "Good"
+    },
+    {
+      "x": -18.6493,
+      "z": -19.3303,
+      "species": "Ginkgo",
+      "shape": "columnar",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": -156.0533,
+      "z": 139.1399,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": -19.0851,
+      "z": -10.3849,
+      "species": "Pagoda Dogwood",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -118.7097,
+      "z": 133.741,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Very Good"
+    },
+    {
+      "x": -95.1219,
+      "z": -39.4152,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Fair"
+    },
+    {
+      "x": 156.8287,
+      "z": 8.6857,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Good"
+    },
+    {
+      "x": -144.1405,
+      "z": 101.865,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 7,
+      "condition": "Fair"
+    },
+    {
+      "x": -137.4415,
+      "z": 60.504,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Poor"
+    },
+    {
+      "x": 155.875,
+      "z": -81.122,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 10,
+      "condition": "Fair"
+    },
+    {
+      "x": 164.724,
+      "z": -55.0722,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": 121.1814,
+      "z": 122.4498,
+      "species": "Holly, American",
+      "shape": "conifer",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 55.4166,
+      "z": -83.2103,
+      "species": "goldenraintree",
+      "shape": "ornamental",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": 70.8759,
+      "z": -157.3929,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Good"
+    },
+    {
+      "x": -171.0831,
+      "z": -8.867,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": 51.427,
+      "z": 7.7215,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Very Good"
+    },
+    {
+      "x": -154.8756,
+      "z": 48.0565,
+      "species": "Blackgum",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 65.8914,
+      "z": 17.8646,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -116.2798,
+      "z": 75.5813,
+      "species": "Coffeetree, Kentucky",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": -35.2337,
+      "z": 17.3905,
+      "species": "smoketree, American",
+      "shape": "ornamental",
+      "dbh": 4,
+      "condition": "Poor"
+    },
+    {
+      "x": 172.4255,
+      "z": -85.7353,
+      "species": "Spruce, Norway",
+      "shape": "conifer",
+      "dbh": 6,
+      "condition": "Excellent"
+    },
+    {
+      "x": 117.6463,
+      "z": -100.2805,
+      "species": "Pear, Callery",
+      "shape": "ornamental",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": 6.8998,
+      "z": 142.5367,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": -177.3277,
+      "z": 106.6202,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 5,
+      "condition": "Fair"
+    },
+    {
+      "x": -38.9569,
+      "z": 119.8128,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": -81.5902,
+      "z": -92.9403,
+      "species": "filbert, American",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 92.8567,
+      "z": -2.8911,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": 66.6258,
+      "z": 160.3145,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 33,
+      "condition": "Fair"
+    },
+    {
+      "x": 67.2965,
+      "z": 41.088,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Excellent"
+    },
+    {
+      "x": -140.0083,
+      "z": 113.8802,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 29,
+      "condition": "Excellent"
+    },
+    {
+      "x": 71.1033,
+      "z": 53.8609,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": -55.2248,
+      "z": -14.9213,
+      "species": "redcedar, eastern",
+      "shape": "conifer",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 135.757,
+      "z": 128.1535,
+      "species": "oak, bur",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Very Good"
+    },
+    {
+      "x": -124.1011,
+      "z": -16.8583,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": 185.2093,
+      "z": -130.2642,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": -128.9706,
+      "z": -103.7546,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Very Good"
+    },
+    {
+      "x": 100.01,
+      "z": 98.051,
+      "species": "possumhaw",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 82.7098,
+      "z": 61.0085,
+      "species": "Maple, Hedge",
+      "shape": "broad",
+      "dbh": 5,
+      "condition": "Fair"
+    },
+    {
+      "x": -45.2636,
+      "z": 9.8904,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Good"
+    },
+    {
+      "x": -129.864,
+      "z": 78.1424,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": 117.0439,
+      "z": 137.9882,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Very Good"
+    },
+    {
+      "x": 154.54,
+      "z": -128.5455,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": -187.2908,
+      "z": 99.3335,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Good"
+    },
+    {
+      "x": 48.9058,
+      "z": 35.1716,
+      "species": "Blackgum",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": -98.4247,
+      "z": -53.4235,
+      "species": "Buckeye, Ohio",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": -62.5783,
+      "z": -33.9417,
+      "species": "pine, loblolly",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": -111.2851,
+      "z": 64.1326,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Fair"
+    },
+    {
+      "x": -130.3984,
+      "z": 115.8419,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 35,
+      "condition": "Excellent"
+    },
+    {
+      "x": 152.0352,
+      "z": -140.6011,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -136.195,
+      "z": -130.4531,
+      "species": "Tree of Heaven",
+      "shape": "broad",
+      "dbh": 23,
+      "condition": "Poor"
+    },
+    {
+      "x": 133.9185,
+      "z": -136.9506,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Good"
+    },
+    {
+      "x": -27.3381,
+      "z": -3.2122,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -28.2473,
+      "z": 13.6595,
+      "species": "Ginkgo",
+      "shape": "columnar",
+      "dbh": 13,
+      "condition": "Very Good"
+    },
+    {
+      "x": 59.7374,
+      "z": 160.3131,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 35,
+      "condition": "Good"
+    },
+    {
+      "x": -174.1668,
+      "z": 103.9917,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 5,
+      "condition": "Poor"
+    },
+    {
+      "x": -169.0654,
+      "z": 36.8436,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Fair"
+    },
+    {
+      "x": 81.2938,
+      "z": -32.8249,
+      "species": "Cottonwood, Eastern",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": 66.6933,
+      "z": -126.5651,
+      "species": "goldenraintree",
+      "shape": "ornamental",
+      "dbh": 18,
+      "condition": "Good"
+    },
+    {
+      "x": -145.9703,
+      "z": -118.2592,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": -76.1122,
+      "z": -185.5558,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Very Good"
+    },
+    {
+      "x": -64.8544,
+      "z": 158.3682,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Very Good"
+    },
+    {
+      "x": -48.8225,
+      "z": 148.2006,
+      "species": "oak, water",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Excellent"
+    },
+    {
+      "x": -102.5665,
+      "z": 50.9571,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": 98.705,
+      "z": 179.2874,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Fair"
+    },
+    {
+      "x": 27.8281,
+      "z": -15.4496,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Good"
+    },
+    {
+      "x": 97.6792,
+      "z": 116.8198,
+      "species": "Holly, American",
+      "shape": "conifer",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -143.9875,
+      "z": 9.6026,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Excellent"
+    },
+    {
+      "x": -169.0093,
+      "z": 106.5492,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 7,
+      "condition": "Good"
+    },
+    {
+      "x": 155.8336,
+      "z": 64.2412,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -84.1752,
+      "z": 46.2367,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": -113.6926,
+      "z": 141.5435,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": 45.5839,
+      "z": 171.3928,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Good"
+    },
+    {
+      "x": 12.1167,
+      "z": -3.5079,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Very Good"
+    },
+    {
+      "x": 67.1798,
+      "z": -149.5834,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Very Good"
+    },
+    {
+      "x": -85.9007,
+      "z": 35.6244,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": 93.8006,
+      "z": 174.5422,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 5,
+      "condition": "Good"
+    },
+    {
+      "x": 85.419,
+      "z": 178.7564,
+      "species": "Oak, Pin (restricted use)",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Fair"
+    },
+    {
+      "x": 126.1515,
+      "z": -127.7744,
+      "species": "oak, shingle",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Good"
+    },
+    {
+      "x": 33.6815,
+      "z": 110.4053,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 48,
+      "condition": "Poor"
+    },
+    {
+      "x": 13.1349,
+      "z": 157.8303,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Critical"
+    },
+    {
+      "x": -27.5424,
+      "z": 2.4277,
+      "species": "Pagoda Dogwood",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 103.4462,
+      "z": 1.1539,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Very Good"
+    },
+    {
+      "x": -122.8857,
+      "z": -189.4846,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Good"
+    },
+    {
+      "x": -116.4711,
+      "z": -45.203,
+      "species": "Pine, Scotch",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Poor"
+    },
+    {
+      "x": 101.0304,
+      "z": -117.1542,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Good"
+    },
+    {
+      "x": -40.3103,
+      "z": -161.4213,
+      "species": "oak, bur",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Very Good"
+    },
+    {
+      "x": -20.1126,
+      "z": -12.1722,
+      "species": "Pagoda Dogwood",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -178.0775,
+      "z": 36.1943,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Good"
+    },
+    {
+      "x": 100.3696,
+      "z": 122.7259,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 3,
+      "condition": "Poor"
+    },
+    {
+      "x": -65.4535,
+      "z": -126.8972,
+      "species": "Walnut, Black",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Fair"
+    },
+    {
+      "x": -111.3301,
+      "z": -100.0871,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 42,
+      "condition": "Very Good"
+    },
+    {
+      "x": -125.4379,
+      "z": -114.9336,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Good"
+    },
+    {
+      "x": -50.3811,
+      "z": 145.3143,
+      "species": "oak, water",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Excellent"
+    },
+    {
+      "x": -4.2226,
+      "z": 169.3027,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": 94.0585,
+      "z": -121.0186,
+      "species": "honeylocust, thornless",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Very Good"
+    },
+    {
+      "x": 129.9345,
+      "z": 52.1449,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": -149.8979,
+      "z": -107.1441,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Fair"
+    },
+    {
+      "x": -73.1598,
+      "z": -79.3172,
+      "species": "pecan",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": 177.2177,
+      "z": -26.5072,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": -51.6267,
+      "z": -33.3836,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Poor"
+    },
+    {
+      "x": 102.8548,
+      "z": 130.5236,
+      "species": "possumhaw",
+      "shape": "ornamental",
+      "dbh": 4,
+      "condition": "Good"
+    },
+    {
+      "x": 109.2511,
+      "z": 40.9945,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": 149.48,
+      "z": 84.0806,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 26,
+      "condition": "Poor"
+    },
+    {
+      "x": 42.4654,
+      "z": 75.5614,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 40,
+      "condition": "Good"
+    },
+    {
+      "x": -82.0739,
+      "z": 124.5805,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 24,
+      "condition": "Excellent"
+    },
+    {
+      "x": -146.5851,
+      "z": -55.0443,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": 111.6865,
+      "z": 66.6135,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Very Good"
+    },
+    {
+      "x": 146.8993,
+      "z": -142.0407,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Good"
+    },
+    {
+      "x": -117.5888,
+      "z": 80.5358,
+      "species": "Chestnut, Chinese",
+      "shape": "broad",
+      "dbh": 15,
+      "condition": "Good"
+    },
+    {
+      "x": -84.3196,
+      "z": 72.147,
+      "species": "downy serviceberry",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 136.6497,
+      "z": 39.4553,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 3,
+      "condition": "Very Good"
+    },
+    {
+      "x": -139.0503,
+      "z": -64.6633,
+      "species": "magnolia, star",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 105.1845,
+      "z": 147.4133,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 36,
+      "condition": "Good"
+    },
+    {
+      "x": -68.6156,
+      "z": -102.9953,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Good"
+    },
+    {
+      "x": 43.5698,
+      "z": 144.4238,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Fair"
+    },
+    {
+      "x": 177.4541,
+      "z": -114.9066,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 21,
+      "condition": "Good"
+    },
+    {
+      "x": -29.4401,
+      "z": 26.0279,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 38,
+      "condition": "Excellent"
+    },
+    {
+      "x": 121.2888,
+      "z": 70.4987,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Very Good"
+    },
+    {
+      "x": 158.8818,
+      "z": 44.1704,
+      "species": "Amur corktree",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Good"
+    },
+    {
+      "x": -97.7051,
+      "z": -140.4276,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Fair"
+    },
+    {
+      "x": 40.3973,
+      "z": 169.641,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 91.5337,
+      "z": -126.6953,
+      "species": "honeylocust, thornless",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": 145.2137,
+      "z": -126.004,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Fair"
+    },
+    {
+      "x": -101.9488,
+      "z": -191.1587,
+      "species": "Zelkova, Japanese",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": 75.7153,
+      "z": 188.632,
+      "species": "redbud, Oklahoma",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": -87.4772,
+      "z": -46.5852,
+      "species": "Catalpa, Southern",
+      "shape": "broad",
+      "dbh": 51,
+      "condition": "Poor"
+    },
+    {
+      "x": 80.8818,
+      "z": -108.4638,
+      "species": "Pear, Callery",
+      "shape": "ornamental",
+      "dbh": 11,
+      "condition": "Fair"
+    },
+    {
+      "x": 180.4951,
+      "z": -61.1286,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": 138.3028,
+      "z": 48.6377,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 47,
+      "condition": "Very Good"
+    },
+    {
+      "x": -26.281,
+      "z": -41.6375,
+      "species": "Oak, White",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Excellent"
+    },
+    {
+      "x": 100.5327,
+      "z": 97.3253,
+      "species": "possumhaw",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 36.6725,
+      "z": -137.6069,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 43,
+      "condition": "Fair"
+    },
+    {
+      "x": 62.1145,
+      "z": 8.0343,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": 70.3636,
+      "z": 50.2968,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Excellent"
+    },
+    {
+      "x": 103.4181,
+      "z": 160.1953,
+      "species": "Oak, Pin (restricted use)",
+      "shape": "broad",
+      "dbh": 41,
+      "condition": "Fair"
+    },
+    {
+      "x": -8.8385,
+      "z": -27.3651,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": -12.9951,
+      "z": 152.7878,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -120.8321,
+      "z": -67.6895,
+      "species": "Walnut, Black",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Good"
+    },
+    {
+      "x": -92.4792,
+      "z": 9.9422,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": -130.3677,
+      "z": 25.5858,
+      "species": "Pine, Scotch",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Poor"
+    },
+    {
+      "x": -32.8382,
+      "z": 98.9223,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": 101.5572,
+      "z": -138.5451,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Good"
+    },
+    {
+      "x": 163.9325,
+      "z": -105.8519,
+      "species": "Cherry, Yoshino",
+      "shape": "ornamental",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": -144.9231,
+      "z": 124.8354,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Very Good"
+    },
+    {
+      "x": -104.8828,
+      "z": -160.5339,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Very Good"
+    },
+    {
+      "x": 24.9624,
+      "z": -45.2916,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": -67.3023,
+      "z": -71.0747,
+      "species": "pecan",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": 45.5491,
+      "z": 59.6498,
+      "species": "Willow, Weeping",
+      "shape": "weeping",
+      "dbh": 21,
+      "condition": "Critical"
+    },
+    {
+      "x": 36.8677,
+      "z": -163.205,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Poor"
+    },
+    {
+      "x": 104.0894,
+      "z": 127.2792,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 62.353,
+      "z": 13.442,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Very Good"
+    },
+    {
+      "x": -73.4283,
+      "z": -5.1055,
+      "species": "Oak, Shingle",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 124.4284,
+      "z": 95.5225,
+      "species": "hawthorn, Washington",
+      "shape": "ornamental",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": -120.0011,
+      "z": -130.3629,
+      "species": "Blackgum",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -82.7752,
+      "z": -165.0575,
+      "species": "locust, black",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Good"
+    },
+    {
+      "x": 60.1884,
+      "z": 133.1356,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Very Good"
+    },
+    {
+      "x": 71.3598,
+      "z": -55.3023,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 8,
+      "condition": "Very Good"
+    },
+    {
+      "x": -125.9443,
+      "z": -71.1514,
+      "species": "Walnut, Black",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": -85.6714,
+      "z": 118.0209,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 24,
+      "condition": "Excellent"
+    },
+    {
+      "x": -165.048,
+      "z": 48.9415,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Good"
+    },
+    {
+      "x": -22.9896,
+      "z": 135.0618,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -143.3312,
+      "z": 23.6888,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Excellent"
+    },
+    {
+      "x": -22.1406,
+      "z": 166.0968,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Very Good"
+    },
+    {
+      "x": -27.313,
+      "z": 2.2623,
+      "species": "Pagoda Dogwood",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 121.8479,
+      "z": 189.0126,
+      "species": "Cottonwood, Eastern",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Poor"
+    },
+    {
+      "x": 67.3286,
+      "z": 55.2756,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 50,
+      "condition": "Poor"
+    },
+    {
+      "x": 3.9128,
+      "z": 161.6044,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Very Good"
+    },
+    {
+      "x": 100.7791,
+      "z": 129.5796,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": 115.2259,
+      "z": 117.9396,
+      "species": "Elm, American",
+      "shape": "broad",
+      "dbh": 46,
+      "condition": "Fair"
+    },
+    {
+      "x": 151.0591,
+      "z": -55.7658,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 35,
+      "condition": "Very Good"
+    },
+    {
+      "x": 145.7916,
+      "z": -89.5425,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 31,
+      "condition": "Poor"
+    },
+    {
+      "x": -10.1018,
+      "z": -48.3369,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": 61.5669,
+      "z": 32.0557,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Excellent"
+    },
+    {
+      "x": -99.1039,
+      "z": 146.5402,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 170.9101,
+      "z": 24.9462,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Poor"
+    },
+    {
+      "x": -99.8813,
+      "z": 16.2398,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": 126.2519,
+      "z": 116.7876,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Very Good"
+    },
+    {
+      "x": -6.5756,
+      "z": -10.6888,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Good"
+    },
+    {
+      "x": -137.4214,
+      "z": 39.7401,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Very Good"
+    },
+    {
+      "x": 11.1431,
+      "z": -155.1138,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Poor"
+    },
+    {
+      "x": -141.9922,
+      "z": 36.062,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": 84.0323,
+      "z": 98.5023,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 6,
+      "condition": "Excellent"
+    },
+    {
+      "x": 20.9418,
+      "z": -4.2059,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 17,
+      "condition": "Fair"
+    },
+    {
+      "x": 140.5402,
+      "z": -109.0328,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": 79.0642,
+      "z": 40.3601,
+      "species": "Oak, Sawtooth",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Very Good"
+    },
+    {
+      "x": 119.3815,
+      "z": 99.1625,
+      "species": "hawthorn, Washington",
+      "shape": "ornamental",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": -135.957,
+      "z": -3.0765,
+      "species": "smoketree, American",
+      "shape": "ornamental",
+      "dbh": 9,
+      "condition": "Critical"
+    },
+    {
+      "x": 129.6689,
+      "z": 44.4028,
+      "species": "Pear, Callery",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": -57.1553,
+      "z": -23.6422,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": 44.1756,
+      "z": 90.0209,
+      "species": "Catalpa, Southern",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Fair"
+    },
+    {
+      "x": -29.8849,
+      "z": -164.494,
+      "species": "oak, bur",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Very Good"
+    },
+    {
+      "x": -23.1546,
+      "z": -1.5216,
+      "species": "Pagoda Dogwood",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -105.3445,
+      "z": 130.0301,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 14,
+      "condition": "Excellent"
+    },
+    {
+      "x": 164.4815,
+      "z": -136.7618,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Poor"
+    },
+    {
+      "x": -133.0589,
+      "z": -109.7859,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": -27.324,
+      "z": 125.5464,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Good"
+    },
+    {
+      "x": -165.7304,
+      "z": 79.4245,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Good"
+    },
+    {
+      "x": -48.6954,
+      "z": -64.6167,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -134.0047,
+      "z": 146.8644,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 80.9595,
+      "z": 73.6919,
+      "species": "Maple, Hedge",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": -2.4939,
+      "z": 155.5016,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 146.104,
+      "z": -46.4381,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Fair"
+    },
+    {
+      "x": 114.2581,
+      "z": 93.2675,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -3.2555,
+      "z": 93.2794,
+      "species": "Catalpa, Southern",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Good"
+    },
+    {
+      "x": 135.6049,
+      "z": 141.6022,
+      "species": "Spruce, Norway",
+      "shape": "conifer",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": 83.2202,
+      "z": -129.1561,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 36,
+      "condition": "Good"
+    },
+    {
+      "x": 110.1816,
+      "z": 93.4177,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 44,
+      "condition": "Fair"
+    },
+    {
+      "x": 100.6648,
+      "z": 187.2025,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 25,
+      "condition": "Fair"
+    },
+    {
+      "x": -155.1168,
+      "z": 56.4256,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Fair"
+    },
+    {
+      "x": -127.1115,
+      "z": -63.9453,
+      "species": "Walnut, Black",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Good"
+    },
+    {
+      "x": 115.1552,
+      "z": -152.4499,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Good"
+    },
+    {
+      "x": -20.2002,
+      "z": -9.7551,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -97.8486,
+      "z": 111.8952,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Fair"
+    },
+    {
+      "x": -160.0389,
+      "z": 1.1273,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Good"
+    },
+    {
+      "x": -101.9455,
+      "z": -118.6251,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Good"
+    },
+    {
+      "x": -148.7441,
+      "z": 65.8659,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Good"
+    },
+    {
+      "x": -82.8466,
+      "z": -37.0219,
+      "species": "persimmon, common",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Fair"
+    },
+    {
+      "x": 97.6789,
+      "z": 73.6646,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": -40.8949,
+      "z": -149.0557,
+      "species": "locust, black",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Critical"
+    },
+    {
+      "x": -174.2981,
+      "z": 114.8099,
+      "species": "persimmon, common",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Very Good"
+    },
+    {
+      "x": -40.8588,
+      "z": 135.308,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Good"
+    },
+    {
+      "x": 86.3453,
+      "z": 126.1275,
+      "species": "mulberry, red",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 110.5983,
+      "z": 26.4225,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": -105.8125,
+      "z": 110.4028,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 16,
+      "condition": "Excellent"
+    },
+    {
+      "x": -149.5886,
+      "z": 86.091,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Poor"
+    },
+    {
+      "x": 178.033,
+      "z": -45.9267,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 20,
+      "condition": "Good"
+    },
+    {
+      "x": 131.381,
+      "z": -55.61,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 36,
+      "condition": "Very Good"
+    },
+    {
+      "x": 152.4694,
+      "z": -88.8662,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 13,
+      "condition": "Fair"
+    },
+    {
+      "x": 190.1985,
+      "z": -128.5444,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": -103.7487,
+      "z": 90.7803,
+      "species": "Chestnut, Chinese",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Good"
+    },
+    {
+      "x": 158.8013,
+      "z": -138.5935,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -116.371,
+      "z": -37.6904,
+      "species": "Pine, Scotch",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Poor"
+    },
+    {
+      "x": 36.6023,
+      "z": 163.0494,
+      "species": "Sycamore American (restricted use)",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": 166.2417,
+      "z": 68.1557,
+      "species": "goldenraintree",
+      "shape": "ornamental",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": 143.1282,
+      "z": 86.3949,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Very Good"
+    },
+    {
+      "x": 4.9501,
+      "z": 172.7132,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": -77.6047,
+      "z": -177.592,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Very Good"
+    },
+    {
+      "x": -108.0218,
+      "z": -2.3002,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Good"
+    },
+    {
+      "x": -134.7242,
+      "z": -153.9198,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -118.4695,
+      "z": -4.0937,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Good"
+    },
+    {
+      "x": 6.4665,
+      "z": 108.9352,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Fair"
+    },
+    {
+      "x": 98.4689,
+      "z": 116.9477,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 3,
+      "condition": "Excellent"
+    },
+    {
+      "x": 72.7926,
+      "z": 153.5129,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 3,
+      "condition": "Good"
+    },
+    {
+      "x": -144.0989,
+      "z": 82.2189,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 44,
+      "condition": "Fair"
+    },
+    {
+      "x": -143.2567,
+      "z": 133.3108,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Fair"
+    },
+    {
+      "x": -31.6642,
+      "z": 86.0443,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": -117.8374,
+      "z": -185.6279,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": -77.2218,
+      "z": -4.2003,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Poor"
+    },
+    {
+      "x": -137.4624,
+      "z": -145.1447,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 23,
+      "condition": "Fair"
+    },
+    {
+      "x": -56.0362,
+      "z": -44.9372,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Good"
+    },
+    {
+      "x": 161.9436,
+      "z": -16.0143,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": 118.8812,
+      "z": 133.5245,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Very Good"
+    },
+    {
+      "x": 110.7319,
+      "z": 152.5665,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 15,
+      "condition": "Very Good"
+    },
+    {
+      "x": 147.4959,
+      "z": -119.4548,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 177.8961,
+      "z": -36.325,
+      "species": "Maple, Amur",
+      "shape": "broad",
+      "dbh": 4,
+      "condition": "Good"
+    },
+    {
+      "x": 149.391,
+      "z": -114.8931,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 13,
+      "condition": "Excellent"
+    },
+    {
+      "x": 127.3015,
+      "z": -99.2233,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": 138.5977,
+      "z": 166.9062,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Fair"
+    },
+    {
+      "x": 155.2442,
+      "z": 79.1387,
+      "species": "magnolia, saucer",
+      "shape": "ornamental",
+      "dbh": 5,
+      "condition": "Very Good"
+    },
+    {
+      "x": -87.6842,
+      "z": 69.7786,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Fair"
+    },
+    {
+      "x": 101.8058,
+      "z": 30.6714,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": 142.1252,
+      "z": 100.7188,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Very Good"
+    },
+    {
+      "x": 98.5609,
+      "z": 40.0735,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": 18.9668,
+      "z": 88.6731,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Critical"
+    },
+    {
+      "x": 76.1483,
+      "z": -14.8159,
+      "species": "Cottonwood, Eastern",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": 185.1733,
+      "z": -109.4016,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Very Good"
+    },
+    {
+      "x": -10.3319,
+      "z": 45.0273,
+      "species": "Elm, American",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Good"
+    },
+    {
+      "x": -167.7296,
+      "z": 88.0154,
+      "species": "filbert, American",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": -100.513,
+      "z": 143.982,
+      "species": "Serviceberry, Apple 'Autumn Brilliance'",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -17.081,
+      "z": -7.1225,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 92.1134,
+      "z": -136.5291,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Good"
+    },
+    {
+      "x": 87.4751,
+      "z": 146.6724,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 3,
+      "condition": "Very Good"
+    },
+    {
+      "x": -9.6275,
+      "z": 170.1495,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Very Good"
+    },
+    {
+      "x": 69.9071,
+      "z": -117.6364,
+      "species": "royal paulownia",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Fair"
+    },
+    {
+      "x": -115.0907,
+      "z": 127.0333,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 16,
+      "condition": "Excellent"
+    },
+    {
+      "x": 42.5821,
+      "z": 154.9007,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": 71.3199,
+      "z": 14.9956,
+      "species": "Buckeye, Ohio",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Fair"
+    },
+    {
+      "x": 68.3531,
+      "z": -69.2626,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 9,
+      "condition": "Good"
+    },
+    {
+      "x": -162.0568,
+      "z": -73.3534,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": -104.2028,
+      "z": 156.7564,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Fair"
+    },
+    {
+      "x": -159.7584,
+      "z": 58.8142,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": 175.7016,
+      "z": -16.5211,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": 25.307,
+      "z": 123.3326,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Good"
+    },
+    {
+      "x": 78.2499,
+      "z": -101.5962,
+      "species": "Pear, Callery",
+      "shape": "ornamental",
+      "dbh": 15,
+      "condition": "Fair"
+    },
+    {
+      "x": -40.8969,
+      "z": -48.9686,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Very Good"
+    },
+    {
+      "x": -51.2066,
+      "z": -96.0222,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 12,
+      "condition": "Critical"
+    },
+    {
+      "x": -80.81,
+      "z": 134.9155,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Critical"
+    },
+    {
+      "x": 2.5474,
+      "z": 150.6451,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 15,
+      "condition": "Fair"
+    },
+    {
+      "x": 100.4244,
+      "z": 116.7579,
+      "species": "willow, corkscrew",
+      "shape": "weeping",
+      "dbh": 3,
+      "condition": "Very Good"
+    },
+    {
+      "x": 98.8762,
+      "z": 98.1713,
+      "species": "possumhaw",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 158.5736,
+      "z": 106.118,
+      "species": "Maple, Norway",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Fair"
+    },
+    {
+      "x": 56.8294,
+      "z": 49.4217,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": 16.1272,
+      "z": 14.2619,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": -52.2611,
+      "z": -85.7587,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 9,
+      "condition": "Critical"
+    },
+    {
+      "x": 123.7997,
+      "z": 58.749,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 19,
+      "condition": "Very Good"
+    },
+    {
+      "x": -49.8791,
+      "z": 64.657,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 25,
+      "condition": "Poor"
+    },
+    {
+      "x": -102.3727,
+      "z": -176.0319,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Good"
+    },
+    {
+      "x": 37.9965,
+      "z": -78.2314,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 36,
+      "condition": "Critical"
+    },
+    {
+      "x": 128.7816,
+      "z": 105.5475,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 17,
+      "condition": "Very Good"
+    },
+    {
+      "x": 51.8804,
+      "z": 131.8913,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 25,
+      "condition": "Good"
+    },
+    {
+      "x": 70.7713,
+      "z": -104.8336,
+      "species": "Pear, Callery",
+      "shape": "ornamental",
+      "dbh": 17,
+      "condition": "Fair"
+    },
+    {
+      "x": 34.2805,
+      "z": 173.0063,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Very Good"
+    },
+    {
+      "x": 136.785,
+      "z": 7.9719,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 36,
+      "condition": "Fair"
+    },
+    {
+      "x": -6.4232,
+      "z": 19.0177,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 17,
+      "condition": "Good"
+    },
+    {
+      "x": 143.493,
+      "z": 151.6932,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": 46.3165,
+      "z": 151.8586,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Fair"
+    },
+    {
+      "x": 153.8474,
+      "z": 43.355,
+      "species": "Amur corktree",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": 77.7561,
+      "z": 63.4479,
+      "species": "Maple, Hedge",
+      "shape": "broad",
+      "dbh": 5,
+      "condition": "Fair"
+    },
+    {
+      "x": 73.6694,
+      "z": 93.6835,
+      "species": "Pine, Scotch",
+      "shape": "conifer",
+      "dbh": 10,
+      "condition": "Fair"
+    },
+    {
+      "x": -46.4692,
+      "z": 80.5061,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Excellent"
+    },
+    {
+      "x": -61.8066,
+      "z": -16.19,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Good"
+    },
+    {
+      "x": 187.7349,
+      "z": -120.8392,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": -94.5988,
+      "z": 3.0142,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Fair"
+    },
+    {
+      "x": 87.1374,
+      "z": 166.2705,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 4,
+      "condition": "Good"
+    },
+    {
+      "x": -81.5354,
+      "z": -113.2933,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Good"
+    },
+    {
+      "x": 101.2499,
+      "z": 164.2002,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": 63.2791,
+      "z": 140.3222,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 9,
+      "condition": "Good"
+    },
+    {
+      "x": -57.3232,
+      "z": 115.6224,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Fair"
+    },
+    {
+      "x": 81.1681,
+      "z": -117.7373,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Good"
+    },
+    {
+      "x": -135.434,
+      "z": -57.5942,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": -83.3765,
+      "z": -156.3415,
+      "species": "locust, black",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Good"
+    },
+    {
+      "x": 96.6104,
+      "z": -127.3926,
+      "species": "honeylocust, thornless",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": 82.646,
+      "z": 75.7885,
+      "species": "Maple, Hedge",
+      "shape": "broad",
+      "dbh": 5,
+      "condition": "Good"
+    },
+    {
+      "x": 77.7754,
+      "z": -154.9585,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Fair"
+    },
+    {
+      "x": 0.4513,
+      "z": 15.9777,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": 64.3503,
+      "z": 36.7613,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Critical"
+    },
+    {
+      "x": 14.0279,
+      "z": 126.6723,
+      "species": "Oak, Pin (restricted use)",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Fair"
+    },
+    {
+      "x": 103.9372,
+      "z": 126.3428,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -24.9926,
+      "z": -0.8062,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -110.1942,
+      "z": 90.5468,
+      "species": "Chestnut, Chinese",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": -148.4919,
+      "z": 142.4919,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": -156.8182,
+      "z": 4.3841,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": -165.9573,
+      "z": -59.904,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 36,
+      "condition": "Good"
+    },
+    {
+      "x": -134.4347,
+      "z": -8.0977,
+      "species": "plum, cherry",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Fair"
+    },
+    {
+      "x": -155.2013,
+      "z": -8.726,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Fair"
+    },
+    {
+      "x": -66.75,
+      "z": -29.4509,
+      "species": "pine, loblolly",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": -138.9546,
+      "z": -11.4637,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": 107.8866,
+      "z": 48.1687,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 6,
+      "condition": "Fair"
+    },
+    {
+      "x": -180.0362,
+      "z": 75.1827,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": 145.7731,
+      "z": 50.0502,
+      "species": "Baldcypress",
+      "shape": "columnar",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": 105.5776,
+      "z": 96.8254,
+      "species": "Witch-hazel",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 82.579,
+      "z": 143.752,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 25,
+      "condition": "Poor"
+    },
+    {
+      "x": -132.9642,
+      "z": -74.7196,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 29,
+      "condition": "Very Good"
+    },
+    {
+      "x": -123.3903,
+      "z": 30.6667,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Fair"
+    },
+    {
+      "x": -96.6818,
+      "z": 158.4811,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 113.7959,
+      "z": 6.6797,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Fair"
+    },
+    {
+      "x": -182.1483,
+      "z": 51.9461,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Fair"
+    },
+    {
+      "x": 1.8271,
+      "z": 122.5688,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 159.3345,
+      "z": 67.6448,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 83.6977,
+      "z": 64.9168,
+      "species": "Maple, Hedge",
+      "shape": "broad",
+      "dbh": 5,
+      "condition": "Fair"
+    },
+    {
+      "x": 24.5768,
+      "z": -11.0123,
+      "species": "Ginkgo",
+      "shape": "columnar",
+      "dbh": 11,
+      "condition": "Good"
+    },
+    {
+      "x": 153.4903,
+      "z": 73.0803,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 184.4547,
+      "z": -72.441,
+      "species": "Cherry, Yoshino",
+      "shape": "ornamental",
+      "dbh": 16,
+      "condition": "Very Good"
+    },
+    {
+      "x": 94.7191,
+      "z": 95.0667,
+      "species": "maple, Japanese",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Fair"
+    },
+    {
+      "x": -174.3772,
+      "z": 133.4369,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Very Good"
+    },
+    {
+      "x": -3.6236,
+      "z": -155.8846,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Critical"
+    },
+    {
+      "x": 109.2412,
+      "z": 17.288,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": -138.6826,
+      "z": 126.9605,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": 119.4465,
+      "z": 48.724,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 19,
+      "condition": "Very Good"
+    },
+    {
+      "x": 99.021,
+      "z": 129.8013,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": -76.1868,
+      "z": -18.7217,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": 91.6867,
+      "z": -107.6255,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 44,
+      "condition": "Good"
+    },
+    {
+      "x": 94.0316,
+      "z": 99.3114,
+      "species": "mulberry, red",
+      "shape": "broad",
+      "dbh": 27,
+      "condition": "Poor"
+    },
+    {
+      "x": -128.1543,
+      "z": -173.2177,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 32.2524,
+      "z": -65.2832,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Excellent"
+    },
+    {
+      "x": 151.5213,
+      "z": 127.769,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": 153.2536,
+      "z": -75.5697,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": 85.7805,
+      "z": 171.5211,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 4,
+      "condition": "Fair"
+    },
+    {
+      "x": 170.3944,
+      "z": 34.3852,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Poor"
+    },
+    {
+      "x": -171.0921,
+      "z": -0.0551,
+      "species": "Honeylocust",
+      "shape": "broad",
+      "dbh": 36,
+      "condition": "Good"
+    },
+    {
+      "x": -152.2269,
+      "z": -37.7235,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Very Good"
+    },
+    {
+      "x": 102.6785,
+      "z": 171.0163,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 15,
+      "condition": "Very Good"
+    },
+    {
+      "x": -146.8098,
+      "z": 122.0985,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": -94.2453,
+      "z": 148.4415,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 59.0909,
+      "z": -38.3457,
+      "species": "goldenraintree",
+      "shape": "ornamental",
+      "dbh": 27,
+      "condition": "Fair"
+    },
+    {
+      "x": -68.9608,
+      "z": -52.7035,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 97.8204,
+      "z": 129.7082,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": -131.5835,
+      "z": -67.6074,
+      "species": "Walnut, Black",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Good"
+    },
+    {
+      "x": 62.958,
+      "z": 149.1849,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 5,
+      "condition": "Good"
+    },
+    {
+      "x": 64.0022,
+      "z": 154.6218,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 3,
+      "condition": "Good"
+    },
+    {
+      "x": 70.4167,
+      "z": 187.5712,
+      "species": "redbud, Oklahoma",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": -84.8113,
+      "z": 137.1039,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": -36.9402,
+      "z": -172.2215,
+      "species": "oak, bur",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": -81.3064,
+      "z": -74.0519,
+      "species": "hawthorn, Washington",
+      "shape": "ornamental",
+      "dbh": 7,
+      "condition": "Poor"
+    },
+    {
+      "x": -119.6125,
+      "z": -38.3167,
+      "species": "Pine, Scotch",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Poor"
+    },
+    {
+      "x": 145.5441,
+      "z": 107.7559,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 3,
+      "condition": "Good"
+    },
+    {
+      "x": -21.4378,
+      "z": -35.8892,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Poor"
+    },
+    {
+      "x": 79.9125,
+      "z": 164.5938,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Fair"
+    },
+    {
+      "x": -45.8536,
+      "z": -172.8547,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Very Good"
+    },
+    {
+      "x": -66.6098,
+      "z": -63.4661,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 103.2752,
+      "z": 96.6551,
+      "species": "Witch-hazel",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -31.007,
+      "z": 118.2639,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 80.1931,
+      "z": -68.5606,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 5,
+      "condition": "Poor"
+    },
+    {
+      "x": -90.5559,
+      "z": -18.8203,
+      "species": "Redbud, Eastern",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 50.739,
+      "z": -156.9062,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": 99.1599,
+      "z": 117.0596,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 3,
+      "condition": "Excellent"
+    },
+    {
+      "x": -77.7729,
+      "z": -81.4826,
+      "species": "pecan",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": -49.6047,
+      "z": -62.1301,
+      "species": "Blackgum",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 106.3814,
+      "z": 128.7648,
+      "species": "possumhaw",
+      "shape": "ornamental",
+      "dbh": 4,
+      "condition": "Good"
+    },
+    {
+      "x": -156.1066,
+      "z": 70.0425,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 15,
+      "condition": "Good"
+    },
+    {
+      "x": -124.5457,
+      "z": -178.6101,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": 103.0275,
+      "z": 71.2892,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Fair"
+    },
+    {
+      "x": 134.1438,
+      "z": -130.836,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Fair"
+    },
+    {
+      "x": 13.6517,
+      "z": 98.3478,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Good"
+    },
+    {
+      "x": -131.4632,
+      "z": -163.4207,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": 87.428,
+      "z": -125.7394,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -88.5104,
+      "z": -175.3062,
+      "species": "locust, black",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Good"
+    },
+    {
+      "x": 56.5753,
+      "z": -106.6263,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Very Good"
+    },
+    {
+      "x": 14.9187,
+      "z": 166.8313,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": -131.8507,
+      "z": 96.663,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 22,
+      "condition": "Excellent"
+    },
+    {
+      "x": 22.0506,
+      "z": 87.1465,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": 46.4581,
+      "z": 28.393,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Poor"
+    },
+    {
+      "x": 141.7457,
+      "z": 111.1928,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": -179.6306,
+      "z": 131.4717,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 125.5792,
+      "z": -148.6342,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Good"
+    },
+    {
+      "x": 118.0919,
+      "z": 93.9897,
+      "species": "hawthorn, Washington",
+      "shape": "ornamental",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": -66.4352,
+      "z": -140.2256,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Poor"
+    },
+    {
+      "x": 21.6311,
+      "z": 139.1484,
+      "species": "Ash, Blue",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": -155.0624,
+      "z": -21.4677,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": 21.8361,
+      "z": -167.9695,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -63.937,
+      "z": -79.343,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": -127.7091,
+      "z": -36.4877,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 18,
+      "condition": "Excellent"
+    },
+    {
+      "x": -103.9757,
+      "z": -62.9333,
+      "species": "Zelkova, Japanese",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Very Good"
+    },
+    {
+      "x": 184.0969,
+      "z": -46.4641,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": 172.6917,
+      "z": 8.3171,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": -101.7714,
+      "z": -184.7479,
+      "species": "Zelkova, Japanese",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Good"
+    },
+    {
+      "x": -103.4528,
+      "z": 144.6202,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 63.519,
+      "z": -151.9998,
+      "species": "Dogwood, Kousa",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 137.4071,
+      "z": -3.3746,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Fair"
+    },
+    {
+      "x": -111.8214,
+      "z": -171.4841,
+      "species": "mulberry, red",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Poor"
+    },
+    {
+      "x": 116.0118,
+      "z": 167.5028,
+      "species": "Cherry, Japanese Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": -26.2966,
+      "z": 112.9486,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Good"
+    },
+    {
+      "x": -141.7848,
+      "z": -134.0937,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 5,
+      "condition": "Very Good"
+    },
+    {
+      "x": -126.8505,
+      "z": -24.9013,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 9,
+      "condition": "Poor"
+    },
+    {
+      "x": -154.2632,
+      "z": -55.1735,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Poor"
+    },
+    {
+      "x": 154.4552,
+      "z": 68.374,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -66.1269,
+      "z": -90.841,
+      "species": "Tree of Heaven",
+      "shape": "broad",
+      "dbh": 31,
+      "condition": "Poor"
+    },
+    {
+      "x": -51.5595,
+      "z": 135.7022,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Poor"
+    },
+    {
+      "x": 62.5762,
+      "z": -74.2504,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Good"
+    },
+    {
+      "x": -97.1854,
+      "z": -73.5847,
+      "species": "hawthorn, Washington",
+      "shape": "ornamental",
+      "dbh": 6,
+      "condition": "Fair"
+    },
+    {
+      "x": 29.6347,
+      "z": -26.6042,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 40,
+      "condition": "Very Good"
+    },
+    {
+      "x": 134.2513,
+      "z": -71.4549,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Poor"
+    },
+    {
+      "x": -76.5582,
+      "z": -146.5251,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 36,
+      "condition": "Good"
+    },
+    {
+      "x": 71.9337,
+      "z": 1.8243,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 10,
+      "condition": "Very Good"
+    },
+    {
+      "x": -168.8146,
+      "z": 120.358,
+      "species": "Holly, American",
+      "shape": "conifer",
+      "dbh": 3,
+      "condition": "Very Good"
+    },
+    {
+      "x": -19.7946,
+      "z": 129.0959,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -21.3329,
+      "z": -156.6255,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 21,
+      "condition": "Good"
+    },
+    {
+      "x": -88.4613,
+      "z": -114.3138,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 50,
+      "condition": "Fair"
+    },
+    {
+      "x": 95.2894,
+      "z": -157.3896,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Poor"
+    },
+    {
+      "x": -129.7819,
+      "z": -8.0533,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Good"
+    },
+    {
+      "x": 122.2788,
+      "z": 182.599,
+      "species": "Cottonwood, Eastern",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Poor"
+    },
+    {
+      "x": 90.4314,
+      "z": 9.5815,
+      "species": "Oak, Swamp White",
+      "shape": "broad",
+      "dbh": 4,
+      "condition": "Fair"
+    },
+    {
+      "x": 98.6851,
+      "z": 117.4892,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 134.5184,
+      "z": 55.116,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 13,
+      "condition": "Very Good"
+    },
+    {
+      "x": -128.5157,
+      "z": 139.244,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Good"
+    },
+    {
+      "x": -17.6432,
+      "z": 10.1092,
+      "species": "Ginkgo",
+      "shape": "columnar",
+      "dbh": 19,
+      "condition": "Very Good"
+    },
+    {
+      "x": 38.6555,
+      "z": 19.025,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": -31.127,
+      "z": -33.609,
+      "species": "Oak, White",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Excellent"
+    },
+    {
+      "x": -106.1556,
+      "z": 46.2223,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 20,
+      "condition": "Poor"
+    },
+    {
+      "x": -13.9011,
+      "z": 116.4758,
+      "species": "juniper, Chinese",
+      "shape": "conifer",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -105.7391,
+      "z": 61.7891,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": 65.8258,
+      "z": -18.0073,
+      "species": "Cottonwood, Eastern",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": -33.5469,
+      "z": 159.5894,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 6,
+      "condition": "Fair"
+    },
+    {
+      "x": -52.0127,
+      "z": -153.5916,
+      "species": "oak, bur",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": 99.2335,
+      "z": 97.2161,
+      "species": "possumhaw",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 38.0238,
+      "z": 146.7673,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 161.1208,
+      "z": -77.2333,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 16,
+      "condition": "Excellent"
+    },
+    {
+      "x": -157.3898,
+      "z": -12.7274,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Good"
+    },
+    {
+      "x": 126.4171,
+      "z": 170.809,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Very Good"
+    },
+    {
+      "x": 74.4005,
+      "z": -141.6266,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Good"
+    },
+    {
+      "x": 197.4317,
+      "z": -125.0429,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Good"
+    },
+    {
+      "x": -69.4711,
+      "z": -153.3802,
+      "species": "oak, bur",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Excellent"
+    },
+    {
+      "x": -140.1196,
+      "z": 103.9345,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 24,
+      "condition": "Excellent"
+    },
+    {
+      "x": 13.9552,
+      "z": -29.245,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Very Good"
+    },
+    {
+      "x": 192.5532,
+      "z": -106.1802,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Good"
+    },
+    {
+      "x": -106.0489,
+      "z": 4.9079,
+      "species": "Buckeye, Ohio",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": 15.8609,
+      "z": 99.7186,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 6,
+      "condition": "Good"
+    },
+    {
+      "x": -21.8222,
+      "z": 59.6787,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 31,
+      "condition": "Good"
+    },
+    {
+      "x": -121.4895,
+      "z": -46.1171,
+      "species": "Pine, Scotch",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Poor"
+    },
+    {
+      "x": 112.4582,
+      "z": 181.3123,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": -93.311,
+      "z": 54.4822,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 41.6129,
+      "z": -153.7243,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 144.7355,
+      "z": -115.5459,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 11,
+      "condition": "Excellent"
+    },
+    {
+      "x": -70.7968,
+      "z": 138.766,
+      "species": "Maple, Red 'October Glory'",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -166.2225,
+      "z": 86.8412,
+      "species": "filbert, American",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Very Good"
+    },
+    {
+      "x": 18.6061,
+      "z": 99.6567,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": -104.6289,
+      "z": -130.2031,
+      "species": "Pine, White",
+      "shape": "conifer",
+      "dbh": 20,
+      "condition": "Excellent"
+    },
+    {
+      "x": 147.4822,
+      "z": 100.1682,
+      "species": "Holly, American",
+      "shape": "conifer",
+      "dbh": 3,
+      "condition": "Very Good"
+    },
+    {
+      "x": 80.6437,
+      "z": -56.3312,
+      "species": "Oak, English",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -140.0397,
+      "z": -90.4533,
+      "species": "Tree of Heaven",
+      "shape": "broad",
+      "dbh": 30,
+      "condition": "Poor"
+    },
+    {
+      "x": -152.2091,
+      "z": 124.1618,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 7,
+      "condition": "Very Good"
+    },
+    {
+      "x": 156.6053,
+      "z": -29.3392,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 23,
+      "condition": "Very Good"
+    },
+    {
+      "x": -109.3422,
+      "z": -139.8812,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Good"
+    },
+    {
+      "x": 53.4655,
+      "z": 50.8016,
+      "species": "Blackgum",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Very Good"
+    },
+    {
+      "x": -164.933,
+      "z": 92.014,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 5,
+      "condition": "Fair"
+    },
+    {
+      "x": -33.9568,
+      "z": -1.7516,
+      "species": "Ginkgo",
+      "shape": "columnar",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": 99.6463,
+      "z": 79.6562,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": -116.0569,
+      "z": -55.2662,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 42,
+      "condition": "Critical"
+    },
+    {
+      "x": 22.7061,
+      "z": 180.0463,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": 161.7838,
+      "z": -0.6421,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Very Good"
+    },
+    {
+      "x": 132.0505,
+      "z": 151.6634,
+      "species": "Elm, American",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Good"
+    },
+    {
+      "x": -124.724,
+      "z": 73.3019,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": -154.6478,
+      "z": 11.6242,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Good"
+    },
+    {
+      "x": -108.0274,
+      "z": 93.4303,
+      "species": "Chestnut, Chinese",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": -111.0228,
+      "z": 96.2882,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 26,
+      "condition": "Poor"
+    },
+    {
+      "x": -55.0174,
+      "z": -185.077,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Good"
+    },
+    {
+      "x": -104.3027,
+      "z": 95.4518,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 10,
+      "condition": "Fair"
+    },
+    {
+      "x": 105.9289,
+      "z": -156.7807,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 7,
+      "condition": "Good"
+    },
+    {
+      "x": 94.3304,
+      "z": 182.5297,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 31,
+      "condition": "Good"
+    },
+    {
+      "x": 59.2749,
+      "z": 127.5173,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 170.4026,
+      "z": -75.1222,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 28,
+      "condition": "Good"
+    },
+    {
+      "x": 96.8357,
+      "z": 169.5634,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": 54.0811,
+      "z": 102.6672,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Good"
+    },
+    {
+      "x": 183.5925,
+      "z": -102.769,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": 107.2723,
+      "z": -107.5324,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 34,
+      "condition": "Good"
+    },
+    {
+      "x": -143.2833,
+      "z": 105.9547,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 40,
+      "condition": "Very Good"
+    },
+    {
+      "x": -159.2894,
+      "z": -82.9342,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 14,
+      "condition": "Critical"
+    },
+    {
+      "x": 173.4702,
+      "z": -105.3202,
+      "species": "Buckeye, Ohio",
+      "shape": "broad",
+      "dbh": 9,
+      "condition": "Very Good"
+    },
+    {
+      "x": 110.9411,
+      "z": 144.3949,
+      "species": "downy serviceberry",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 172.8571,
+      "z": -5.8385,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Very Good"
+    },
+    {
+      "x": 61.1978,
+      "z": -55.7325,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Fair"
+    },
+    {
+      "x": -15.8892,
+      "z": -163.3416,
+      "species": "Hackberry",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Poor"
+    },
+    {
+      "x": 114.3496,
+      "z": 55.8001,
+      "species": "Sweetgum (undesirable)",
+      "shape": "broad",
+      "dbh": 40,
+      "condition": "Fair"
+    },
+    {
+      "x": 82.8335,
+      "z": -44.8332,
+      "species": "Cottonwood, Eastern",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Fair"
+    },
+    {
+      "x": 98.4115,
+      "z": 54.1305,
+      "species": "Oak, Sawtooth",
+      "shape": "broad",
+      "dbh": 18,
+      "condition": "Very Good"
+    },
+    {
+      "x": 84.4969,
+      "z": -162.6832,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 5,
+      "condition": "Very Good"
+    },
+    {
+      "x": 99.8004,
+      "z": -145.2118,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 8,
+      "condition": "Very Good"
+    },
+    {
+      "x": 91.5969,
+      "z": 63.0557,
+      "species": "Oak, Willow",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Excellent"
+    },
+    {
+      "x": -96.1996,
+      "z": -66.5364,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 13,
+      "condition": "Very Good"
+    },
+    {
+      "x": 75.8512,
+      "z": 146.5119,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 4,
+      "condition": "Good"
+    },
+    {
+      "x": 128.2736,
+      "z": 141.833,
+      "species": "honeylocust, thornless",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": 104.9111,
+      "z": 127.2097,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Good"
+    },
+    {
+      "x": 165.3999,
+      "z": -119.2902,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 23,
+      "condition": "Good"
+    },
+    {
+      "x": 136.3312,
+      "z": -76.791,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 19,
+      "condition": "Fair"
+    },
+    {
+      "x": 21.2865,
+      "z": 81.8563,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 16,
+      "condition": "Fair"
+    },
+    {
+      "x": -141.8741,
+      "z": -70.9963,
+      "species": "Coffeetree, Kentucky",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": -111.2261,
+      "z": -45.0626,
+      "species": "Pine, Scotch",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Poor"
+    },
+    {
+      "x": -120.2156,
+      "z": 113.6416,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 28,
+      "condition": "Excellent"
+    },
+    {
+      "x": 23.6485,
+      "z": -149.1375,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Good"
+    },
+    {
+      "x": 87.9172,
+      "z": 142.6919,
+      "species": "Birch",
+      "shape": "broad",
+      "dbh": 3,
+      "condition": "Good"
+    },
+    {
+      "x": -97.5747,
+      "z": -86.8172,
+      "species": "Tuliptree",
+      "shape": "broad",
+      "dbh": 41,
+      "condition": "Critical"
+    },
+    {
+      "x": 62.4849,
+      "z": -104.96,
+      "species": "Pear, Callery",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 88.4074,
+      "z": 152.8003,
+      "species": "Redbud",
+      "shape": "ornamental",
+      "dbh": 3,
+      "condition": "Good"
+    },
+    {
+      "x": -102.1091,
+      "z": 43.1295,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 21,
+      "condition": "Fair"
+    },
+    {
+      "x": 25.7167,
+      "z": 158.9564,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Good"
+    },
+    {
+      "x": -98.0738,
+      "z": 120.1656,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 38,
+      "condition": "Excellent"
+    },
+    {
+      "x": -67.9756,
+      "z": -35.0185,
+      "species": "pine, loblolly",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Good"
+    },
+    {
+      "x": -7.9159,
+      "z": -1.7886,
+      "species": "Ginkgo",
+      "shape": "columnar",
+      "dbh": 18,
+      "condition": "Excellent"
+    },
+    {
+      "x": 28.338,
+      "z": -166.2073,
+      "species": "Maple, Red",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": 14.9422,
+      "z": -57.8553,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 40,
+      "condition": "Good"
+    },
+    {
+      "x": 158.0735,
+      "z": 72.3031,
+      "species": "Crabapple, Flowering",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -157.5244,
+      "z": -88.8279,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 2,
+      "condition": "Very Good"
+    },
+    {
+      "x": 160.1632,
+      "z": -117.6058,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 20,
+      "condition": "Good"
+    },
+    {
+      "x": 40.8195,
+      "z": 103.8623,
+      "species": "lilac, Japanese tree",
+      "shape": "ornamental",
+      "dbh": 2,
+      "condition": "Fair"
+    },
+    {
+      "x": -78.2655,
+      "z": 62.2881,
+      "species": "Maple, Silver",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": -50.8693,
+      "z": -76.2134,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Fair"
+    },
+    {
+      "x": 148.6534,
+      "z": -10.2652,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 38,
+      "condition": "Fair"
+    },
+    {
+      "x": -119.8935,
+      "z": -153.5439,
+      "species": "Oak, Pin",
+      "shape": "broad",
+      "dbh": 32,
+      "condition": "Good"
+    },
+    {
+      "x": -87.9841,
+      "z": 133.551,
+      "species": "Linden, Littleleaf",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": 147.963,
+      "z": -35.3989,
+      "species": "Elm, Siberian",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Poor"
+    },
+    {
+      "x": 88.6151,
+      "z": -56.7623,
+      "species": "Oak, English",
+      "shape": "broad",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": 55.1602,
+      "z": -70.9942,
+      "species": "serviceberry, downy",
+      "shape": "ornamental",
+      "dbh": 7,
+      "condition": "Fair"
+    },
+    {
+      "x": -156.1138,
+      "z": 32.5592,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Very Good"
+    },
+    {
+      "x": 64.9118,
+      "z": 1.3961,
+      "species": "Linden, American",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Very Good"
+    },
+    {
+      "x": -139.6021,
+      "z": 145.1474,
+      "species": "sycamore, American",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Good"
+    },
+    {
+      "x": -107.2789,
+      "z": 59.4124,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 8,
+      "condition": "Fair"
+    },
+    {
+      "x": -60.7912,
+      "z": -146.3013,
+      "species": "oak, bur",
+      "shape": "broad",
+      "dbh": 11,
+      "condition": "Very Good"
+    },
+    {
+      "x": -104.1717,
+      "z": -69.8537,
+      "species": "Zelkova, Japanese",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Very Good"
+    },
+    {
+      "x": 102.1481,
+      "z": -131.5608,
+      "species": "Ash, Green",
+      "shape": "broad",
+      "dbh": 12,
+      "condition": "Fair"
+    },
+    {
+      "x": 43.6562,
+      "z": -127.5611,
+      "species": "oak, northern red",
+      "shape": "broad",
+      "dbh": 46,
+      "condition": "Very Good"
+    },
+    {
+      "x": -130.2914,
+      "z": 103.2977,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 28,
+      "condition": "Excellent"
+    },
+    {
+      "x": 98.4112,
+      "z": 107.9224,
+      "species": "Willow, Weeping",
+      "shape": "weeping",
+      "dbh": 3,
+      "condition": "Good"
+    },
+    {
+      "x": 162.8445,
+      "z": 76.6214,
+      "species": "Tree of Heaven",
+      "shape": "broad",
+      "dbh": 24,
+      "condition": "Poor"
+    },
+    {
+      "x": 66.9098,
+      "z": 111.0258,
+      "species": "Pine, Austrian",
+      "shape": "conifer",
+      "dbh": 10,
+      "condition": "Poor"
+    },
+    {
+      "x": -177.2128,
+      "z": 23.9754,
+      "species": "Maple, Sugar",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Very Good"
+    },
+    {
+      "x": 73.3301,
+      "z": 173.9619,
+      "species": "Oak, Northern Red",
+      "shape": "broad",
+      "dbh": 22,
+      "condition": "Fair"
+    },
+    {
+      "x": 114.3095,
+      "z": 97.3279,
+      "species": "Dogwood, Flowering",
+      "shape": "ornamental",
+      "dbh": 1,
+      "condition": "Good"
+    },
+    {
+      "x": -114.089,
+      "z": 119.5978,
+      "species": "Cypress, Bald",
+      "shape": "columnar",
+      "dbh": 28,
+      "condition": "Excellent"
+    }
+  ]
+}
