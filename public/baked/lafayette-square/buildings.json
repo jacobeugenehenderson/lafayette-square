@@ -1,11 +1,11 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "generatedAt": 1777753128858,
+  "generatedAt": 1777873658916,
   "bbox": {
     "min": [
       -551.2000122070312,
-      0,
+      -8,
       -670.7000122070312
     ],
     "max": [
@@ -37,13 +37,13 @@
       "emissive": "#000000",
       "emissiveIntensity": 0,
       "renderOrder": 0,
-      "vertexCount": 18916,
+      "vertexCount": 25832,
       "vertexByteOffset": 0,
-      "colorByteOffset": 679140,
-      "uvByteOffset": 1358280,
-      "centroidYByteOffset": 1811040,
-      "indexCount": 28374,
-      "indexByteOffset": 2037420
+      "colorByteOffset": 762132,
+      "uvByteOffset": 1524264,
+      "centroidYByteOffset": 2032352,
+      "indexCount": 38748,
+      "indexByteOffset": 2286396
     },
     {
       "kind": "wall",
@@ -57,12 +57,12 @@
       "emissiveIntensity": 0,
       "renderOrder": 1,
       "vertexCount": 16064,
-      "vertexByteOffset": 226992,
-      "colorByteOffset": 906132,
-      "uvByteOffset": 1509608,
-      "centroidYByteOffset": 1886704,
+      "vertexByteOffset": 309984,
+      "colorByteOffset": 1072116,
+      "uvByteOffset": 1730920,
+      "centroidYByteOffset": 2135680,
       "indexCount": 24096,
-      "indexByteOffset": 2150916
+      "indexByteOffset": 2441388
     },
     {
       "kind": "wall",
@@ -76,12 +76,12 @@
       "emissiveIntensity": 0,
       "renderOrder": 2,
       "vertexCount": 1100,
-      "vertexByteOffset": 419760,
-      "colorByteOffset": 1098900,
-      "uvByteOffset": 1638120,
-      "centroidYByteOffset": 1950960,
+      "vertexByteOffset": 502752,
+      "colorByteOffset": 1264884,
+      "uvByteOffset": 1859432,
+      "centroidYByteOffset": 2199936,
       "indexCount": 1650,
-      "indexByteOffset": 2247300
+      "indexByteOffset": 2537772
     },
     {
       "kind": "wall",
@@ -95,12 +95,12 @@
       "emissiveIntensity": 0,
       "renderOrder": 3,
       "vertexCount": 2524,
-      "vertexByteOffset": 432960,
-      "colorByteOffset": 1112100,
-      "uvByteOffset": 1646920,
-      "centroidYByteOffset": 1955360,
+      "vertexByteOffset": 515952,
+      "colorByteOffset": 1278084,
+      "uvByteOffset": 1868232,
+      "centroidYByteOffset": 2204336,
       "indexCount": 3786,
-      "indexByteOffset": 2253900
+      "indexByteOffset": 2544372
     },
     {
       "kind": "wall",
@@ -114,12 +114,12 @@
       "emissiveIntensity": 0,
       "renderOrder": 4,
       "vertexCount": 4908,
-      "vertexByteOffset": 463248,
-      "colorByteOffset": 1142388,
-      "uvByteOffset": 1667112,
-      "centroidYByteOffset": 1965456,
+      "vertexByteOffset": 546240,
+      "colorByteOffset": 1308372,
+      "uvByteOffset": 1888424,
+      "centroidYByteOffset": 2214432,
       "indexCount": 7362,
-      "indexByteOffset": 2269044
+      "indexByteOffset": 2559516
     },
     {
       "kind": "wall",
@@ -133,12 +133,12 @@
       "emissiveIntensity": 0,
       "renderOrder": 5,
       "vertexCount": 1236,
-      "vertexByteOffset": 522144,
-      "colorByteOffset": 1201284,
-      "uvByteOffset": 1706376,
-      "centroidYByteOffset": 1985088,
+      "vertexByteOffset": 605136,
+      "colorByteOffset": 1367268,
+      "uvByteOffset": 1927688,
+      "centroidYByteOffset": 2234064,
       "indexCount": 1854,
-      "indexByteOffset": 2298492
+      "indexByteOffset": 2588964
     },
     {
       "kind": "roof",
@@ -152,12 +152,12 @@
       "emissiveIntensity": 0,
       "renderOrder": 6,
       "vertexCount": 4821,
-      "vertexByteOffset": 536976,
-      "colorByteOffset": 1216116,
-      "uvByteOffset": 1716264,
-      "centroidYByteOffset": 1990032,
+      "vertexByteOffset": 619968,
+      "colorByteOffset": 1382100,
+      "uvByteOffset": 1937576,
+      "centroidYByteOffset": 2239008,
       "indexCount": 10356,
-      "indexByteOffset": 2305908
+      "indexByteOffset": 2596380
     },
     {
       "kind": "roof",
@@ -171,12 +171,12 @@
       "emissiveIntensity": 0,
       "renderOrder": 7,
       "vertexCount": 4593,
-      "vertexByteOffset": 594828,
-      "colorByteOffset": 1273968,
-      "uvByteOffset": 1754832,
-      "centroidYByteOffset": 2009316,
+      "vertexByteOffset": 677820,
+      "colorByteOffset": 1439952,
+      "uvByteOffset": 1976144,
+      "centroidYByteOffset": 2258292,
       "indexCount": 7884,
-      "indexByteOffset": 2347332
+      "indexByteOffset": 2637804
     },
     {
       "kind": "roof",
@@ -190,12 +190,12 @@
       "emissiveIntensity": 0,
       "renderOrder": 8,
       "vertexCount": 2433,
-      "vertexByteOffset": 649944,
-      "colorByteOffset": 1329084,
-      "uvByteOffset": 1791576,
-      "centroidYByteOffset": 2027688,
+      "vertexByteOffset": 732936,
+      "colorByteOffset": 1495068,
+      "uvByteOffset": 2012888,
+      "centroidYByteOffset": 2276664,
       "indexCount": 2733,
-      "indexByteOffset": 2378868
+      "indexByteOffset": 2669340
     }
   ]
 }
