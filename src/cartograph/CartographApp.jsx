@@ -652,7 +652,7 @@ export default function CartographApp() {
               <BakedGround
                 lookId={activeLookId}
                 bakeLastMs={bakeLastMs}
-                targetExag={shot === 'street' ? 1 : V_EXAG}
+                targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG}
               />
             </R3FErrorBoundary>
           )}

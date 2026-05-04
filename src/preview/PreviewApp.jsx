@@ -551,7 +551,7 @@ function CanvasContents({ layers, shot }) {
       {layers.clouds && <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>}
 
       <Suspense fallback={null}>
-        {layers.ground    && <R3FErrorBoundary name="BakedGround"><BakedGround targetExag={shot === 'street' ? 1 : V_EXAG} /></R3FErrorBoundary>}
+        {layers.ground    && <R3FErrorBoundary name="BakedGround"><BakedGround targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG} /></R3FErrorBoundary>}
         {layers.buildings && <R3FErrorBoundary name="BakedBuildings"><BakedBuildings /></R3FErrorBoundary>}
         {layers.trees && <R3FErrorBoundary name="InstancedTrees">
           <InstancedTrees lookId={(() => {
