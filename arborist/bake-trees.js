@@ -26,38 +26,20 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { makeElevationSampler, PARK_GRID_ROTATION } from '../src/lib/terrainCommon.js'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
 
-// Inline elevation utility — same bilinear sampler as elevation.js. Trees
-// must use the SAME field as ground + foundations (per
-// project_terrain_elevation_field.md) or they'll float/sink. PARK trees
-// are stored in park_trees.json as park-local coords; at runtime they're
-// rotated by PARK_GRID_ROTATION into world coords. Elevation is
-// world-space, so we apply the rotation here at bake time.
-const PARK_GRID_ROTATION = -9.2 * (Math.PI / 180)
+// Trees must sample the SAME elevation field as ground + foundations
+// (per project_terrain_elevation_field.md) or they'll float/sink.
+// PARK trees are still in park-local coords here; the elevationParkLocal
+// wrapper rotates park-local→world before sampling. After de-parking
+// data migration, that wrapper goes away.
 const _terrain = JSON.parse(readFileSync(
   path.join(REPO_ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
-const _spanX = _terrain.bounds.maxX - _terrain.bounds.minX
-const _spanZ = _terrain.bounds.maxZ - _terrain.bounds.minZ
-const V_EXAG = 5
-function getElevation(x, z) {
-  const gx = ((x - _terrain.bounds.minX) / _spanX) * (_terrain.width - 1)
-  const gz = ((z - _terrain.bounds.minZ) / _spanZ) * (_terrain.height - 1)
-  const gx0 = Math.max(0, Math.min(_terrain.width - 2, Math.floor(gx)))
-  const gz0 = Math.max(0, Math.min(_terrain.height - 2, Math.floor(gz)))
-  const fx = Math.max(0, Math.min(1, gx - gx0))
-  const fz = Math.max(0, Math.min(1, gz - gz0))
-  const e00 = _terrain.data[gz0 * _terrain.width + gx0] || 0
-  const e10 = _terrain.data[gz0 * _terrain.width + (gx0 + 1)] || 0
-  const e01 = _terrain.data[(gz0 + 1) * _terrain.width + gx0] || 0
-  const e11 = _terrain.data[(gz0 + 1) * _terrain.width + (gx0 + 1)] || 0
-  const e0 = e00 * (1 - fx) + e10 * fx
-  const e1 = e01 * (1 - fx) + e11 * fx
-  return (e0 * (1 - fz) + e1 * fz) * V_EXAG
-}
+const { getElevation } = makeElevationSampler(_terrain)
 function elevationParkLocal(px, pz) {
-  // Apply PARK_GRID_ROTATION around Y to convert park-local → world.
   const c = Math.cos(PARK_GRID_ROTATION), s = Math.sin(PARK_GRID_ROTATION)
   const wx = px * c + pz * s
   const wz = -px * s + pz * c

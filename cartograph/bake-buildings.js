@@ -21,40 +21,17 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
+import { makeElevationSampler } from '../src/lib/terrainCommon.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 
-// Replica of src/utils/elevation.js — node ESM can't import the JSON
-// directly without the `with { type: 'json' }` import attribute, so we
-// load + bilinear-sample the heightmap inline. Vertical exaggeration
-// matches V_EXAG = 5 from elevation.js so Preview's foundation heights
-// match LafayetteScene's exactly.
+// Per-building centroid elevation is emitted as a raw `aCentroidY`
+// per-vertex attribute; BakedBuildings multiplies by `uExag` (the same
+// uniform driving ground displacement) so buildings rise/fall in lockstep
+// with the ground. Hence we use getElevationRaw, NOT getElevation.
 const _terrain = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
-const _terrainSpanX = _terrain.bounds.maxX - _terrain.bounds.minX
-const _terrainSpanZ = _terrain.bounds.maxZ - _terrain.bounds.minZ
-// Raw bilinear elevation sample (no V_EXAG multiplication). Mirrors the
-// runtime terrain texture, which stores raw values and applies the exag
-// multiplier in-shader. Per-building centroid elevation is emitted as a
-// raw `aCentroidY` per-vertex attribute; BakedBuildings multiplies by
-// `uExag` (the same uniform driving ground displacement) so buildings
-// rise/fall in lockstep with the ground.
-function getElevationRaw(x, z) {
-  const gx = ((x - _terrain.bounds.minX) / _terrainSpanX) * (_terrain.width - 1)
-  const gz = ((z - _terrain.bounds.minZ) / _terrainSpanZ) * (_terrain.height - 1)
-  const gx0 = Math.max(0, Math.min(_terrain.width - 2, Math.floor(gx)))
-  const gz0 = Math.max(0, Math.min(_terrain.height - 2, Math.floor(gz)))
-  const gx1 = gx0 + 1, gz1 = gz0 + 1
-  const fx = gx - gx0, fz = gz - gz0
-  const e00 = _terrain.data[gz0 * _terrain.width + gx0] || 0
-  const e10 = _terrain.data[gz0 * _terrain.width + gx1] || 0
-  const e01 = _terrain.data[gz1 * _terrain.width + gx0] || 0
-  const e11 = _terrain.data[gz1 * _terrain.width + gx1] || 0
-  const e0 = e00 * (1 - fx) + e10 * fx
-  const e1 = e01 * (1 - fx) + e11 * fx
-  return e0 * (1 - fz) + e1 * fz
-}
-function getElevation(x, z) { return getElevationRaw(x, z) * 5 }
+const { getElevationRaw } = makeElevationSampler(_terrain)
 
 // Material palette. Wall + roof + foundation. Roughness is reasonable.
 const WALL_MATERIALS = {

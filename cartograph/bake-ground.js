@@ -30,15 +30,6 @@ import { BAND_COLORS } from '../src/cartograph/streetProfiles.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 
-// Inline elevation utility — node ESM can't import the JSON via the
-// browser-side elevation.js without import attributes, so we duplicate
-// the bilinear sampler here. Must match src/utils/elevation.js exactly
-// (V_EXAG, bounds, sampling) so Preview and cartograph agree.
-const _terrain = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
-const _spanX = _terrain.bounds.maxX - _terrain.bounds.minX
-const _spanZ = _terrain.bounds.maxZ - _terrain.bounds.minZ
-const V_EXAG = 5
-
 // Canonical stencil — same artifact every consumer reads. The bake bbox
 // is derived from skirtExtent ± center here so AO baker rays + UV map
 // stay locked to the silhouette regardless of where ribbon positions
@@ -63,24 +54,6 @@ const STENCIL_POLYGON = (() => {
   const scale = targetR / STENCIL_RADIUS
   return poly.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
 })()
-
-function getElevation(x, z) {
-  const gx = ((x - _terrain.bounds.minX) / _spanX) * (_terrain.width - 1)
-  const gz = ((z - _terrain.bounds.minZ) / _spanZ) * (_terrain.height - 1)
-  const gx0 = Math.max(0, Math.min(_terrain.width - 2, Math.floor(gx)))
-  const gz0 = Math.max(0, Math.min(_terrain.height - 2, Math.floor(gz)))
-  // Clamp the fractional offsets so out-of-bounds points don't
-  // extrapolate to wonky values — they just inherit the nearest cell.
-  const fx = Math.max(0, Math.min(1, gx - gx0))
-  const fz = Math.max(0, Math.min(1, gz - gz0))
-  const e00 = _terrain.data[gz0 * _terrain.width + gx0] || 0
-  const e10 = _terrain.data[gz0 * _terrain.width + (gx0 + 1)] || 0
-  const e01 = _terrain.data[(gz0 + 1) * _terrain.width + gx0] || 0
-  const e11 = _terrain.data[(gz0 + 1) * _terrain.width + (gx0 + 1)] || 0
-  const e0 = e00 * (1 - fx) + e10 * fx
-  const e1 = e01 * (1 - fx) + e11 * fx
-  return (e0 * (1 - fz) + e1 * fz) * V_EXAG
-}
 
 // Paint order (deepest = drawn first). The pure-Three.js bake bundle is
 // the canonical runtime artifact.
