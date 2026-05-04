@@ -127,26 +127,30 @@ function SpriteClouds() {
   // top-down authoring view; sky-radius sprites are meaningless there.
   if (viewMode !== 'hero' && viewMode !== 'planetarium') return null
 
+  // ── DAY 2 DIAGNOSTIC ──
+  // One large pure-white cumulus parked over Hero's look target [400,45,-100]
+  // at altitude 200. Bounds 600×120×600. This is the "what big enough looks
+  // like" recalibration puff per HANDOFF-clouds-day2.md step 3. Once we
+  // know scale, restore the multi-puff layout (puffs[] memo above) with
+  // tuned bounds. All sky-state-driven color/opacity logic is bypassed
+  // here intentionally — diagnostic only.
   return (
     <group ref={groupRef}>
-      <Clouds limit={PUFF_COUNT * SEGMENTS_HEAVY + 32} frustumCulled={false}>
-        {puffs.map((p) => (
-          <Cloud
-            key={p.seed}
-            position={p.position}
-            bounds={p.bounds}
-            seed={p.seed}
-            segments={segments}
-            volume={5.5}
-            smallestVolume={0.4}
-            growth={3}
-            speed={0.18}
-            concentrate="inside"
-            color={color}
-            opacity={baseOpacity * opacityScale * (0.55 + p.horizonFade * 0.45)}
-            fade={3500}
-          />
-        ))}
+      <Clouds limit={64} frustumCulled={false}>
+        <Cloud
+          position={[3500, 800, -1500]}
+          bounds={[500, 150, 500]}
+          seed={42}
+          segments={40}
+          volume={400}
+          smallestVolume={0.4}
+          growth={4}
+          speed={0.18}
+          concentrate="inside"
+          color="#ffffff"
+          opacity={0.85}
+          fade={15000}
+        />
       </Clouds>
     </group>
   )

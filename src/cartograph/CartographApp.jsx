@@ -685,7 +685,14 @@ export default function CartographApp() {
           <group visible={!inDesigner}>
             <R3FErrorBoundary name="CelestialBodies"><CelestialBodies debugLevel={0} /></R3FErrorBoundary>
             <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>
-            <R3FErrorBoundary name="SpriteClouds"><SpriteClouds /></R3FErrorBoundary>
+            {/* SpriteClouds parked 2026-05-03 — drei sprite Clouds approach
+                produces stylized cartoon puffs, not the photoreal-stylized
+                weather-responsive aesthetic this project is going for. The
+                right path is upgrading CloudDome's noise shader (better fbm,
+                domain warping, sun-direction lighting, weather-state morphing).
+                Component file kept as a parked experiment. See
+                HANDOFF-clouds-day3-clouddome-v2.md for the rebooted brief. */}
+            {/* <R3FErrorBoundary name="SpriteClouds"><SpriteClouds /></R3FErrorBoundary> */}
             {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
                 visible ground. Terrain still mounts so its shader uniforms
                 drive displacement for ribbons/buildings. */}
