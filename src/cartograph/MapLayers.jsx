@@ -23,7 +23,6 @@ const STROKE_COLORS = {
 
 // Park-local → world rotation. Tree GPS coords are in park-local meters;
 // see park_trees.json `meta.coordinate_system`.
-const PARK_GRID_ROTATION = -9.2 * (Math.PI / 180)
 
 // Crown radius from trunk DBH (open-grown urban hardwoods rule of thumb).
 const treeCrownRadius = (dbh) => Math.max(0.5, Math.min(8, (typeof dbh === 'number' ? dbh : 12) * 0.305 / 2))
@@ -750,18 +749,12 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         </mesh>
       ))}
 
-      {/* Trees: park_trees.json coords are park-local (axis-aligned in the
-          park's own frame); PARK_GRID_ROTATION tilts them into the park's
-          real-world orientation so they align with the rotated park face. */}
-      {!hide.tree && (
-        <group rotation={[0, PARK_GRID_ROTATION, 0]}>
-          {treePositions.map((t, i) => (
-            <mesh key={`tree-${i}`} position={[t.x, 0.2, t.z]} rotation={[-Math.PI / 2, 0, 0]} material={mats.tree}>
-              <circleGeometry args={[t.r, 12]} />
-            </mesh>
-          ))}
-        </group>
-      )}
+      {/* Trees: park_trees.json is now world-frame (de-parking 2026-05-03). */}
+      {!hide.tree && treePositions.map((t, i) => (
+        <mesh key={`tree-${i}`} position={[t.x, 0.2, t.z]} rotation={[-Math.PI / 2, 0, 0]} material={mats.tree}>
+          <circleGeometry args={[t.r, 12]} />
+        </mesh>
+      ))}
       {/* Water: park_water.json coords orientation is unresolved. Start with
           no rotation (world-aligned); user iterates from here. */}
       {!hide.water && waterGeo && (

@@ -26,25 +26,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { makeElevationSampler, PARK_GRID_ROTATION } from '../src/lib/terrainCommon.js'
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
-
-// Trees must sample the SAME elevation field as ground + foundations
-// (per project_terrain_elevation_field.md) or they'll float/sink.
-// PARK trees are still in park-local coords here; the elevationParkLocal
-// wrapper rotates park-local→world before sampling. After de-parking
-// data migration, that wrapper goes away.
-const _terrain = JSON.parse(readFileSync(
-  path.join(REPO_ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
-const { getElevation } = makeElevationSampler(_terrain)
-function elevationParkLocal(px, pz) {
-  const c = Math.cos(PARK_GRID_ROTATION), s = Math.sin(PARK_GRID_ROTATION)
-  const wx = px * c + pz * s
-  const wz = -px * s + pz * c
-  return getElevation(wx, wz)
-}
 
 // Per-tree lamp-glow: sample the same gaussian splat the runtime
 // `getLampLightmap()` builds in src/components/lampLightmap.js, but
@@ -70,13 +53,6 @@ function lampGlowAt(wx, wz) {
   }
   return Math.min(acc, LAMP_MAX)
 }
-function lampGlowParkLocal(px, pz) {
-  const c = Math.cos(PARK_GRID_ROTATION), s = Math.sin(PARK_GRID_ROTATION)
-  const wx = px * c + pz * s
-  const wz = -px * s + pz * c
-  return lampGlowAt(wx, wz)
-}
-
 // ── Forbidden-surface filter ─────────────────────────────────────────────
 // Trees can't occupy buildings, streets, alleys, sidewalks, footways, paths,
 // or water. Tested in WORLD coords against polygons sourced from the
@@ -105,29 +81,13 @@ function makeForbiddenTester() {
   const map = JSON.parse(readFileSync(path.join(REPO_ROOT, 'cartograph', 'data', 'clean', 'map.json'), 'utf-8'))
   const water = JSON.parse(readFileSync(path.join(REPO_ROOT, 'src', 'data', 'park_water.json'), 'utf-8'))
 
-  // Park water capture frame → world. Per LafayettePark.jsx:
-  // capture frame is rotated +9.2° around ISLAND_PIVOT (33.96, 86) in park-
-  // local coords; park-local is then rotated -9.2° around origin to world.
-  // Compose both into one transform applied to each water vertex once.
-  const PIV = [33.96, 86.00]
-  const aRev = -PARK_GRID_ROTATION   // undo +9.2° around pivot
-  const aPark = PARK_GRID_ROTATION    // park-local → world
-  const cR = Math.cos(aRev), sR = Math.sin(aRev)
-  const cP = Math.cos(aPark), sP = Math.sin(aPark)
-  function waterToWorld([x, z]) {
-    // 1) rotate by aRev around PIV → park-local
-    const dx = x - PIV[0], dz = z - PIV[1]
-    const lx = PIV[0] + dx * cR - dz * sR
-    const lz = PIV[1] + dx * sR + dz * cR
-    // 2) rotate by aPark around origin → world
-    return [lx * cP + lz * sP, -lx * sP + lz * cP]
-  }
-  const lakeOuterW  = (water.lake?.outer  || []).map(waterToWorld)
-  const lakeIslandW = (water.lake?.island || []).map(waterToWorld)
-  const grottoW     = (water.grotto       || []).map(waterToWorld)
+  // park_water.json is already in world frame (de-parking migration).
+  const lakeOuter  = water.lake?.outer  || []
+  const lakeIsland = water.lake?.island || []
+  const grotto     = water.grotto       || []
   const waterPolys = []
-  if (lakeOuterW.length) waterPolys.push({ ring: lakeOuterW, holes: lakeIslandW.length ? [lakeIslandW] : null })
-  if (grottoW.length)    waterPolys.push({ ring: grottoW })
+  if (lakeOuter.length) waterPolys.push({ ring: lakeOuter, holes: lakeIsland.length ? [lakeIsland] : null })
+  if (grotto.length)    waterPolys.push({ ring: grotto })
 
   // map.json layers (already world-coord). Each entry is { ring, holes? }.
   const buildings = (map.buildings || []).map(b => ({ ring: b.footprint || b.ring }))
@@ -266,14 +226,11 @@ export async function bakeTrees({
     if (!v) { unmatched++; continue }
     const lodUrl = v.skeletons[targetLod] || v.skeletons.lod1 || v.skeletons.lod0
     if (!lodUrl) { unmatched++; continue }
-    // Surface filter: convert tree park-local → world, drop if it lands in
-    // a forbidden polygon (water/building/street/etc.). Applied BEFORE
-    // applying positionOverride since the override is variant-local nudge.
+    // Surface filter: drop trees that land in a forbidden polygon
+    // (water/building/street/etc.). Applied BEFORE positionOverride since
+    // the override is a variant-local nudge.
     if (isForbidden) {
-      const cR = Math.cos(PARK_GRID_ROTATION), sR = Math.sin(PARK_GRID_ROTATION)
-      const wx = tree.x * cR + tree.z * sR
-      const wz = -tree.x * sR + tree.z * cR
-      const reason = isForbidden(wx, wz)
+      const reason = isForbidden(tree.x, tree.z)
       if (reason) {
         forbiddenCounts[reason] = (forbiddenCounts[reason] || 0) + 1
         continue
@@ -307,7 +264,7 @@ export async function bakeTrees({
       // Pre-sampled lamp gaussian at this tree's world position. Runtime
       // multiplies by `uLampGlow` (per-Look TOD-curve slider) for the
       // final emissive contribution.
-      lampGlow: +lampGlowParkLocal(finalX, finalZ).toFixed(4),
+      lampGlow: +lampGlowAt(finalX, finalZ).toFixed(4),
     })
   }
 

@@ -40,12 +40,17 @@ function getWidth(street) {
 }
 
 // ── Park detection ──────────────────────────────────────────────────────
-const PARK_COS = Math.cos(9.2 * Math.PI / 180)
-const PARK_SIN = Math.sin(9.2 * Math.PI / 180)
+// Point-in-rotated-rectangle test for the park footprint. The park is a
+// 350m square at -9.2° from compass-N; we project the world point into
+// the rectangle's axis-aligned frame for a cheap AABB check. This is a
+// LOCAL implementation detail of this test — not a coordinate-frame
+// shim. (GroundExport is currently unimported; preserved for now.)
+const _PARK_COS = Math.cos(9.2 * Math.PI / 180)
+const _PARK_SIN = Math.sin(9.2 * Math.PI / 180)
 const PARK_CLIP = 175
 function isInsidePark(x, z) {
-  const rx = x * PARK_COS + z * PARK_SIN
-  const rz = -x * PARK_SIN + z * PARK_COS
+  const rx = x * _PARK_COS + z * _PARK_SIN
+  const rz = -x * _PARK_SIN + z * _PARK_COS
   return Math.abs(rx) < PARK_CLIP && Math.abs(rz) < PARK_CLIP
 }
 
