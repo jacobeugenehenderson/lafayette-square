@@ -158,7 +158,11 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
       im.setMatrixAt(i, tmp)
     }
     im.instanceMatrix.needsUpdate = true
-    im.computeBoundingSphere?.()
+    // The merged geometry's local bounding sphere may not be tight around
+    // (0,0,0); recompute it to reflect baked-in primitive offsets, then
+    // recompute the InstancedMesh bound that wraps it across all instances.
+    if (im.geometry?.computeBoundingSphere) im.geometry.computeBoundingSphere()
+    if (im.computeBoundingSphere) im.computeBoundingSphere()
   }, [placementMatrices, localMatrix])
 
   return (

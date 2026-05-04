@@ -353,6 +353,29 @@ function TimeControl() {
   )
 }
 
+function ProfilerTab({ tab, setTab }) {
+  const btn = (id, label) => (
+    <button
+      key={id}
+      onClick={() => setTab(id)}
+      className="glass-panel rounded-md"
+      style={{
+        padding: '4px 10px',
+        fontSize: 11,
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        opacity: tab === id ? 1 : 0.5,
+        cursor: 'pointer',
+      }}
+    >{label}</button>
+  )
+  return (
+    <div style={{ display: 'flex', gap: 4, flex: 'none' }}>
+      {btn('strip', 'strip')}
+      {btn('gpu', 'gpu')}
+    </div>
+  )
+}
+
 function RightPanel({ layers, setLayer, top, bottom }) {
   return (
     <div className="absolute z-10 flex flex-col gap-3 pointer-events-auto overflow-y-auto"
@@ -426,6 +449,7 @@ export default function PreviewApp() {
   const [mode, setModeRaw] = useState(loadMode)
   const setMode = (m) => { setModeRaw(m); saveMode(m) }
   const [layers, setLayers] = useState(loadLayers)
+  const [profilerTab, setProfilerTab] = useState('strip')
   const setLayer = (k, v) => setLayers(prev => {
     const next = { ...prev, [k]: v }
     saveLayers(next)
@@ -491,9 +515,15 @@ export default function PreviewApp() {
               <PhoneFrame scale={phoneScale}>{canvas}</PhoneFrame>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <TriggerBar shot={shot} setShot={setShot} onReload={onReload} />
-              <StripChart height={220} />
-              <div className="glass-panel rounded-xl p-3"><GpuPanel /></div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <TriggerBar shot={shot} setShot={setShot} onReload={onReload} />
+                </div>
+                <ProfilerTab tab={profilerTab} setTab={setProfilerTab} />
+              </div>
+              {profilerTab === 'strip'
+                ? <StripChart height={220} />
+                : <div className="glass-panel rounded-xl p-3"><GpuPanel /></div>}
             </div>
           </>
         ) : (

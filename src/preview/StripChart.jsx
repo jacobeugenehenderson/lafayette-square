@@ -23,7 +23,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getSession, subscribe } from './phoneBus'
 
 const CEILING_MS = 17               // 60fps reference line
-const Y_MIN_MAX_MS = 25             // axis floor — never compress below this
+const Y_MIN_MAX_MS = 20             // axis floor — just above the budget wall so over-budget spikes have headroom
 
 // Literal mobile budget. Bar height = worst-axis overage so the meter
 // warns regardless of which axis is closest to the wall.
@@ -37,18 +37,24 @@ const KNOB = {
   tris:  'LOD harder · decimate',
 }
 
-// Composite: largest budget ratio across axes, expressed as ms-equivalent
-// so we can plot height + apply the existing ms gradient consistently.
+// Composite: largest budget ratio across the WORK axes (draws, tris).
+//
+// Frame time is intentionally excluded — at 60fps the GPU consumes ~100%
+// of its 16.6ms frame-time budget every frame regardless of how little
+// work was queued (v-sync waits out the rest). Plotting ms makes the bar
+// peg at ~98% even on an empty scene, which is information-free. The bar
+// instead reflects work-vs-budget: empty scene = empty bar, at-budget on
+// any work axis = bar at the ceiling line, over-budget = bar above.
+// Stutter (frames missing v-sync) is surfaced by the textual `verdict()`
+// label; severe hitches still appear as ms outliers in the GpuPanel.
 function composite(f) {
-  const rMs    = f.ms    / BUDGET.ms
   const rDraws = f.calls / BUDGET.draws
   const rTris  = f.tris  / BUDGET.tris
-  let axis = 'ms', factor = rMs
-  if (rDraws > factor) { axis = 'draws'; factor = rDraws }
-  if (rTris  > factor) { axis = 'tris';  factor = rTris  }
-  // ms-equivalent — preserves raw ms when it dominates, otherwise
-  // synthesizes the height that the worst axis would warrant.
-  const effMs = Math.max(f.ms, BUDGET.ms * factor)
+  let axis = 'draws', factor = rDraws
+  if (rTris > factor) { axis = 'tris'; factor = rTris }
+  // ms-equivalent height — keeps the existing ms-anchored gradient + y-axis
+  // machinery. At-budget = 17ms ≈ ceiling line; 2× tris overage = ~34ms.
+  const effMs = BUDGET.ms * factor
   return { effMs, axis, factor }
 }
 const HEADER_H = 20
@@ -196,13 +202,13 @@ export default function StripChart({ height = 110 }) {
       const barAreaW = barRight - barLeft
       const xPerMs = barAreaW / dur
 
-      // Y-axis fits the 98th-percentile composite ms (max overage across
-      // axes). Outliers clamp at the top with a saturated cap, so a single
-      // 600ms hitch doesn't shrink everything else to a sliver.
-      const compEffs = s.frames.map(f => composite(f).effMs).sort((a, b) => a - b)
-      const p98 = compEffs[Math.floor(compEffs.length * 0.98)] ?? Y_MIN_MAX_MS
-      let yMax = Math.max(Y_MIN_MAX_MS, p98)
-      yMax = Math.ceil(yMax * 1.15)
+      // Y-axis is FIXED at 2× budget (34ms-equivalent) so bar heights are
+      // directly comparable across toggle states. Auto-scaling created a
+      // moving target — removing work could LOWER yMax and make remaining
+      // bars look taller relative to the shrunken axis. Now: at-budget =
+      // 50% bar, 2× overage = 100% bar (top of axis), worse-than-2× clips.
+      // Read severe spikes from the GpuPanel readout, not the chart shape.
+      const yMax = BUDGET.ms * 2
 
       // Header text — session label, top-right
       ctx.textAlign = 'right'
