@@ -2,6 +2,8 @@
 
 How this codebase is organized and how its pieces fit together. Read top to bottom; it builds.
 
+> Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; flag contradictions during work; update at session end. Goal: keep this doc pristine and current. Stale claims are worse than no claims — they actively mistrain readers.
+
 ---
 
 ## 1. The publish-loop pattern
@@ -10,8 +12,9 @@ The codebase is a **public-facing runtime app** plus a small set of **standalone
 
 ```
 ┌────────────────┐    publishes     ┌──────────────────────────────┐
-│  Cartograph    │ ───────────────▶ │ public/looks/<id>/ground.svg │ ──┐
-└────────────────┘                  └──────────────────────────────┘   │
+│  Cartograph    │ ───────────────▶ │ public/baked/<id>/ground.bin │ ──┐
+└────────────────┘                  │ + ground.json + lightmap.png │   │
+                                    └──────────────────────────────┘   │
                                                                        │
 ┌────────────────┐    publishes     ┌──────────────────────────────┐   │   ┌──────────┐
 │  Stage         │ ───────────────▶ │  stage-config.json (future)  │ ──┼──▶│ Runtime  │ ──▶ pixels
@@ -63,7 +66,7 @@ This same split shows up in every helper that has both kinds of editing:
 
 ## 3. The Looks model
 
-A **Look** is a styling snapshot. Each Look is `{ design.json, ground.svg }` plus eventually shader params. The user always works in *some* Look.
+A **Look** is a styling snapshot. Each Look is `{ design.json, public/baked/<id>/* slab }` plus eventually shader params. The user always works in *some* Look.
 
 Three layers, in order:
 
@@ -71,9 +74,9 @@ Three layers, in order:
 2. **Looks (named saved configurations).** First-class names: `lafayette-square` (the project's 0-state, can't be deleted), `valentines`, `cardinals-win`, `winter`. User explicitly forks via "＋ Save as new Look…". Each carries its own autosaved working state.
 3. **Stage shaders (runtime, no per-Look persistence).** Future. Lives in a stage-config layer; applies on top of whatever Look is active.
 
-**The implicit bake.** Going Designer → Stage silently re-bakes the active Look (so the Stage SVG reflects current geometry). The user never explicitly "saves the bake" — that language is misleading. The deliberate save action is *forking* into a new named Look.
+**The implicit bake.** Designer's "Stage →" navigates immediately and bakes async in the background, so the Stage view's slab refreshes via `bakeLastMs` cache-bust when the bake finishes. Stage's "↻" re-bakes in place. The user never explicitly "saves the bake" — that language is misleading. The deliberate save action is *forking* into a new named Look.
 
-**Looks are material-keyed, never feature-keyed.** A Look's `design.json` says *"asphalt is pink"*, not *"the asphalt of street id chain-43A12 is pink"*. So adding geometry in Designer never invalidates a Look — new streets inherit the active Look's rules, re-bake just enlarges the SVG with consistent styling. **Designer → maintain → Stage is purely additive.**
+**Looks are material-keyed, never feature-keyed.** A Look's `design.json` says *"asphalt is pink"*, not *"the asphalt of street id chain-43A12 is pink"*. So adding geometry in Designer never invalidates a Look — new streets inherit the active Look's rules, re-bake just enlarges the slab with consistent styling. **Designer → maintain → Stage is purely additive.**
 
 See `memory/project_cartograph_looks_model.md` for the full decisions.
 
@@ -109,8 +112,9 @@ The runtime is the public app at `/`. It mounts the rendered neighborhood, loads
 Key runtime entry points:
 
 - `src/components/Scene.jsx` — main app scene tree
-- `src/cartograph/SvgGround.jsx` — consumes a Look's `ground.svg`, renders as flat-shaded ground (lighting + shaders are Pass C work)
-- `src/components/InstancedTrees.jsx` *(planned)* — consumes Arborist's species library + tree positions
+- `src/components/BakedGround.jsx` — consumes a Look's slab (`public/baked/<id>/ground.{json,bin}` + `ground.lightmap.png`), renders as a single fortified mesh with baked AO
+- `src/components/StreetRibbons.jsx` — live-render path for Designer/Stage authoring; uses shared `src/lib/ribbonsGeometry.js:buildRibbonGeometry()` so its face-clip output matches the bake structurally
+- `src/components/InstancedTrees.jsx` — consumes Arborist's `public/baked/default.json` + GLB variant atlas
 
 The runtime also re-renders live edits in Designer/Stage during authoring sessions — color changes in Stage Surfaces show on screen *immediately*, not on next bake. The bake then captures a snapshot for handoff.
 
@@ -118,23 +122,7 @@ The runtime also re-renders live edits in Designer/Stage during authoring sessio
 
 ## 6. Data flow summary
 
-```
-Skeleton + OSM ─▶ ribbons.json ─▶ bake-svg.js ─▶ ground.svg ─▶ SvgGround
-                                       ▲
-                                       │ uses
-                              looks/<id>/design.json
-                                       ▲
-                                       │ writes
-                              Stage Surfaces (live)
-                                       ▲
-                                       │ autosaves
-                              cartograph store
-
-LiDAR (FOR-species20K) ─▶ tree-bake.py ─▶ trees/<species>/*.glb ─▶ InstancedTrees
-                                                                          ▲
-                                                                          │ positions
-                                                                  park_trees.json
-```
+See `FEATURES.md §"Data flow & the bake chain"` for the full canonical pipeline diagram (raw → clean → pipeline → promote-ribbons → per-concern bakes → slab). Keep that one in sync; this section is a pointer.
 
 ---
 
@@ -142,9 +130,8 @@ LiDAR (FOR-species20K) ─▶ tree-bake.py ─▶ trees/<species>/*.glb ─▶ I
 
 - **Look IDs are slugged user names.** `lafayette-square`, `valentines`, `cardinals-win`. Default Look = `lafayette-square`, can't be deleted.
 - **`overlay.json` carries geometry only.** Centerlines, caps, couplers, segment measures. The design block was extracted into per-Look `design.json` files.
-- **Materials, layers, land-use** all map through `BAND_TO_LAYER` in `src/cartograph/m3Colors.js`. The bake honors the active Look's `layerVis` to skip hidden materials.
-- **Coordinate systems.** World-meters with origin at the neighborhood center. After the de-parking refactor (2026-05-03), every dataset lives in *one* frame: project world. **Important and counterintuitive:** project world is *park-aligned* — its axes match the city street grid, which sits at **-9.2° from compass-N**. It is NOT compass-aligned. The Python ETLs (`scripts/12-process-park-trees.py`, `scripts/14-process-park-paths.py`) project GPS via equirectangular about park center, which produces *compass-aligned* output; `scripts/de-park-data.mjs` then applies R(-9.2°) to rotate that into project world. So an "ETL just dumped GPS into meters, isn't that already world?" intuition is wrong here — the rotation is what reconciles compass meters with the project's park-aligned world. If you re-run an ETL, re-run de-park-data.mjs (it's idempotent via `meta.frame: "world"`).
-- **Park trees are currently muted.** Re-enable by removing the `{false && <ParkTrees />}` guard in `src/components/LafayettePark.jsx`.
+- **Materials, layers, land-use** all map through `BAND_TO_LAYER` in `src/cartograph/m3Colors.js`. The bake honors the active Look's `layerVis` to skip hidden materials. As of 2026-05-05, every Designer-Panel toggle has a matching bake group, so what the operator hides in Designer is hidden everywhere downstream (Stage, Preview, production) after the next bake.
+- **Coordinate systems.** World-meters with origin at the neighborhood center, in **compass frame** — equirectangular GPS→meters projection, no rotation applied. One frame, every dataset. The earlier "de-parking" episode (May 2026) briefly introduced a parallel park-aligned world frame at -9.2°; that duality was misdiagnosed and reverted. The screen-orientation desire is camera-only, lives on `SHOTS.browse.up` (the Heading slider). See FEATURES.md §"Frame discipline" for the canonical statement and `project_compass_only_camera_heading` memory entry for history.
 
 ---
 

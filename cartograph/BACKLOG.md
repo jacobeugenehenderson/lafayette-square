@@ -2,47 +2,55 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-04
+Last updated: 2026-05-05
 
-## 2026-05-05 — Designer toggles ↔ Stage Surfaces parity audit (easy win, first thing)
+## 2026-05-05 — Designer toggles ↔ Stage Surfaces parity (LANDED)
 
-Operator established contract 2026-05-04: **everything toggleable in the Designer
-panel must be hide-able in Stage/Preview, with its color/material authored from the
-Stage Surfaces panel.** Suspected gap: most Designer-toggleable items don't yet have
-a corresponding Stage Surfaces entry.
+Operator's contract: **everything toggleable in the Designer panel must be
+hide-able in Stage/Preview, with its color/material authored from the Stage
+Surfaces panel.** Full sweep landed 2026-05-05.
 
-Audit scope:
-1. Enumerate every toggleable layer in Designer (CartographSurfaces or wherever the
-   Designer-mode toggles live — `layerVis` keys).
-2. Enumerate every entry in the Stage Surfaces panel.
-3. Diff: list every Designer toggle with no Stage Surfaces material entry → those need
-   a Surfaces panel listing added (one row per missing material, color/shader fields).
-4. Confirm `BakedGround` honors `layerVis` at render time so Preview's hide-toggles
-   actually do something. Check Preview's layer-toggle matrix wires through the same
-   `layerVis` path.
-5. Confirm Designer mode carries ONLY visibility toggles — any color pickers that have
-   leaked into Designer should be flagged for relocation to Stage Surfaces.
+**Bake-side (`cartograph/bake-ground.js`):** now reads `map.json` directly
+in addition to `ribbons.json` and emits a bake group for every Designer
+toggle. New groups: `parking_lot`, `garden`, `playground`, `swimming_pool`,
+`pitch`, `sports_centre`, `wood`, `scrub`, `tree_row` (polygon overlays);
+`alley` (split out from asphalt — was previously folded in by
+`ribbonsGeometry.js:489`); `stripe`, `edgeline`, `bikelane`, `fence`,
+`wall`, `retaining_wall`, `hedge` (buffered polylines via new
+`polylineToRing` helper, half-widths in `POLYLINE_HALF_WIDTHS` mirror
+`MapLayers.jsx:stripeRibbonGeo`). `clipAllToStencil` exported from
+`ribbonsGeometry.js` and re-run after injection so overlays don't leak past
+the silhouette.
 
-Architecture context (load-bearing):
-- Designer = visibility (on/off, structural).
-- Stage = materials + shaders (color is a property of a material, not a thing in itself).
-- Hardcoded `BAND_COLORS` in `streetProfiles.js` = generic cartographic fallback when a
-  Look hasn't authored a material override. Kept as the safe "any map looks like this"
-  default.
+**Bake honors Look colors.** `bakeGround()` loads `public/looks/<look>/design.json`
+and resolves color in priority order: `design.layerColors[BAND_TO_LAYER[key] || key]`
+→ `DEFAULT_LAYER_COLORS` → `BAND_COLORS` → grey. Faces resolve via `design.luColors`.
+Routing through `BAND_TO_LAYER` lets the operator's `street` color reach the
+`asphalt` group. (Closes the 2026-05-04 separate item.)
 
-## 2026-05-04 — Bake-honors-Look-colors fix (pending operator OK)
+**Stage Surfaces (`src/cartograph/CartographSurfaces.jsx`):** `parking_lot` row
+added to Blocks tab. All other Designer-toggleable ids already had Surfaces rows.
 
-`cartograph/bake-ground.js:182-184` reads colors from `BAND_COLORS` defaults, ignoring
-the active Look's `design.json`. Symptom: operator authors custom material colors in
-Stage Surfaces; Designer's live render shows them; Stage neighborhood shots (BakedGround)
-and Preview show defaults instead.
+**ParkWater visibility (`src/components/LafayettePark.jsx`):** ParkWater now
+fetches `scene.json` and early-returns when `layerVis.water === false`.
+Mirrors the BakedLamps / BakedBuildings pattern.
 
-Fix: load `public/looks/<look>/design.json` in `bakeGround()`, apply `layerColors[key]`
-and `luColors[key]` overrides ahead of the hardcoded fallback. ~10-line patch.
-Requires re-bake of lafayette-square to take effect.
-
-Discovered via Preview street-markings investigation 2026-05-04. Operator's chosen
-green bike lane (`cycleway: #6EA070` in design.json) bakes as `#666666`.
+**Followups (not blocking):**
+- The Designer `lot` toggle has no bake group of its own — `lot` is the generic
+  block-interior color, but the bake's face fills (residential/commercial/etc.)
+  paint that surface via LU instead. Consider either (a) wiring `lot` to
+  collectively gate all LU faces, or (b) removing the toggle. Cosmetic for now.
+- `parking_lot` bake group color may visually compete with the `parking` LU face
+  color on blocks where amenity=parking dominates the whole block — both fire
+  on the same footprint (LU face under, parking_lot overlay on top). Operator
+  to tune in Stage Surfaces.
+- Sharp-corner self-intersection in `polylineToRing` is theoretically possible
+  for buffered polylines that turn ~180°. Not observed in current data; if
+  bake artifacts develop visible glitches at barrier corners, swap to
+  per-segment quads.
+- `labels` Designer toggle still has no Stage/Preview rendering surface
+  (intentional today — labels not in shot views). If labels-in-shots becomes
+  a feature, wire through then.
 
 ## 2026-05-04 — Survey polish project (8 phases)
 
@@ -347,7 +355,7 @@ collapse to hours; estimate at integration rate, not waterfall rate.
 ### Atmosphere + Sky & Light
 - [ ] **Remove Sun info from TOD in Preview.** Sun readout currently surfaces in Preview's TOD UI; pull it out.
 - [ ] **QC Neon.** Toy fixture is live; perfect behavior + migrate to LS (`project_neon_bands_runtime.md`, `HANDOFF-neon.md`).
-- [ ] **Build Meteorologist** (atmospheric authoring + runtime). Replaces "finish clouds" — full architecture + 52-preset Teapot scaffold landed 2026-05-04; build order step 1 is the volumetric raymarch shader. See `meteorologist/README.md`, `meteorologist/SPEC.md`. Supersedes `HANDOFF-clouds-day2.md` and `HANDOFF-clouds-day3-clouddome-v2.md`.
+- [ ] **Build Meteorologist** (atmospheric authoring + runtime). Replaces "finish clouds" — full architecture + 52-preset Teapot scaffold landed 2026-05-04; build order step 1 is the volumetric raymarch shader. See `meteorologist/README.md`, `meteorologist/SPEC.md`. (`HANDOFF-clouds-day2.md` retired 2026-05-05; `HANDOFF-clouds-day3-clouddome-v2.md` kept until `<Atmosphere />` ships — its "tune to principles" guidance is still authoritative.)
 - [ ] **Add luminance to surfaces (off by default).** New surface-level luminance channel; defaults match today (off); operator opts in per material.
 
 ### Park

@@ -155,7 +155,10 @@ node cartograph/promote-ribbons.js → src/data/ribbons.json
 [Bakes — POST /api/cartograph/looks/<id>/bake]
   pipeline.js                              ← only if raw inputs are dirty
   promote-ribbons.js                       ← only if map.json is dirty
-  bake-ground.js + bake-paths.js → public/baked/<id>/ground.{json,bin}
+  bake-ground.js                 → public/baked/<id>/ground.{json,bin}
+                                   (reads ribbons.json + map.json + design.json
+                                    so every Designer toggle becomes a baked
+                                    group with the Look's authored color)
   bake-buildings.js              → public/baked/<id>/buildings.{json,bin}
   bake-lamps.js                  → public/baked/<id>/lamps.json
   bake-scene.js                  → public/baked/<id>/scene.json
@@ -205,13 +208,15 @@ Decisions that affect how to think about new work:
 
 This is the bug-magnet that's burned hours twice now. Survey + Measure tools save to `cartograph/data/clean/overlay.json` (skelId-keyed: `measure`, `segmentMeasures`, `capStart`/`capEnd`, `anchor`, `couplers`). The Designer runtime merges overlay into the live street list via `useCartographStore.js:_loadCenterlines`. The bake pipeline (`derive.js`) reads skeleton + raw/centerlines + raw/measurements + osm/elevation — and as of 2026-05-04 *also reads `overlay.json`* (after a fix). If the bake ever stops reflecting Designer Preview edits, the first thing to check is whether `derive.js`'s overlay merge is still in place. Legacy `cartograph/data/raw/centerlines.json` is fallback only (matched by name, used to seed older streets that don't have skelId entries yet).
 
-### Algorithm drift between live `StreetRibbons.jsx` and offline `bake-paths.js` — partially resolved (2026-05-04)
+### Algorithm drift between live `StreetRibbons.jsx` and offline ground bake — resolved
 
-**Face-clip layer: consolidated.** The face-clip algorithm now lives in `src/lib/ribbonsGeometry.js` (`buildRibbonGeometry(ribbons, stencilPolygon)`); `StreetRibbons.jsx`'s `clippedFaces` useMemo and `cartograph/bake-ground.js` both call it. Drift at the face layer is structurally impossible.
+**Face-clip layer: consolidated.** The face-clip algorithm lives in `src/lib/ribbonsGeometry.js` (`buildRibbonGeometry(ribbons, stencilPolygon)`); `StreetRibbons.jsx`'s `clippedFaces` useMemo and `cartograph/bake-ground.js` both call it. Drift at the face layer is structurally impossible. The legacy `bake-paths.js` was retired (alleys/paths now flow through `bake-ground.js` via the same shared geometry pipeline).
 
 **Ribbon-stripe layer: never drifted.** Both sides already use `sideToStripes` from `src/cartograph/streetProfiles.js` — same source.
 
 **Hole-handling caveat:** `buildRibbonGeometry` returns face data with explicit `{outer, holes}` topology. The bake honors holes; the live render currently flattens to `outer` only because `THREE.Shape` in `faceMeshes` doesn't consume the holes array. Visually identical to old behavior; if face-with-hole geometry ever needs to render correctly in Designer, update `faceMeshes` to pass holes through to `THREE.Shape.holes`.
+
+**Designer-toggle ↔ bake parity (2026-05-05).** Every Designer-Panel toggle now has a matching bake group. `bake-ground.js` reads `map.json` directly for sub-block polygon overlays (`parking_lot`, leisure subtypes, natural subtypes) and buffers polylines (`stripe`, `edgeline`, `bikelane`, barriers) into thin polygons, so what the operator hides in Designer is what's hidden in Stage/Preview. Color resolution in the bake routes through `BAND_TO_LAYER` and `design.json`, so authored Look colors reach all groups (no more `BAND_COLORS` defaults masking operator overrides).
 
 ### Two sources of water/lamps existed; deduped
 

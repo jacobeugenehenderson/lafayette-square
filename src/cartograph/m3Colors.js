@@ -42,6 +42,11 @@ export const DEFAULT_LAYER_COLORS = {
   lamp:       '#F2D67A',  // warm amber glow
   labels:     '#2A2826',  // dark text on map
 
+  // Sub-block parking lot (amenity=parking polygons). Distinct from the
+  // 'parking' LU face color (Land Use tab) — that paints whole blocks
+  // dominated by parking; this paints individual lots inside other blocks.
+  parking_lot:    '#6A6A62',
+
   // Landscape overlays (sub-block features, each its own swatch)
   garden:         '#7EB04A',
   playground:     '#D89A4E',

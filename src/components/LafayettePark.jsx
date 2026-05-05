@@ -13,33 +13,32 @@ import { getLampLightmap } from './lampLightmap.js'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin.
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
-// Kennett Place (E). The park's grid is rotated -9.2° from compass-N
-// — a property of this neighborhood's street layout, not a coordinate
-// frame. All spatial data (park_trees, park_water, park_paths) is in
-// world frame at rest after the de-parking migration; the rotation
-// survives only in two places below as visual orientation:
-//   PARK_FENCE_CORNERS_WORLD — pre-rotated fence corners
-//   LABEL_TEXT_ROT_Y         — label spin so type aligns with fence
+// Kennett Place (E). The actual fence in real life is rotated -9.2°
+// from compass-N because the whole city grid sits at that bearing.
+// All spatial data is in compass frame; the constants below author the
+// fence + labels using "park-axis" coords (axis-aligned ±a) and bake in
+// the real-world tilt to land at the correct compass-frame positions.
+// LABEL_TEXT_ROT_Y rotates label text to read along the fence direction.
 const _PARK_AXIS_RAD = -9.2 * Math.PI / 180
 const _C = Math.cos(_PARK_AXIS_RAD)
 const _S = Math.sin(_PARK_AXIS_RAD)
-function _toWorld(px, pz) {
+function parkAxisToCompass(px, pz) {
   return [px * _C + pz * _S, -px * _S + pz * _C]
 }
 
 const PARK_HALF = 175  // half-width in park's natural axes
 const FENCE_INSET = 2
-const PARK_FENCE_CORNERS_WORLD = (() => {
+const PARK_FENCE_CORNERS = (() => {
   const a = PARK_HALF - FENCE_INSET
   return [
-    _toWorld(-a, -a),
-    _toWorld( a, -a),
-    _toWorld( a,  a),
-    _toWorld(-a,  a),
+    parkAxisToCompass(-a, -a),
+    parkAxisToCompass( a, -a),
+    parkAxisToCompass( a,  a),
+    parkAxisToCompass(-a,  a),
   ]
 })()
-const LABEL_TITLE_POS_WORLD    = _toWorld(0, -PARK_HALF - 15)
-const LABEL_SUBTITLE_POS_WORLD = _toWorld(0, -PARK_HALF - 23)
+const LABEL_TITLE_POS    = parkAxisToCompass(0, -PARK_HALF - 15)
+const LABEL_SUBTITLE_POS = parkAxisToCompass(0, -PARK_HALF - 23)
 const LABEL_TEXT_ROT_Y = _PARK_AXIS_RAD
 
 const FENCE_HEIGHT = 1.5
@@ -339,8 +338,28 @@ function ParkPaths() {
   )
 }
 
+// Resolve the active Look from the URL (`?look=...`) for scene.json fetch.
+// Mirrors the pattern in BakedGround / BakedLamps so ParkWater can honor
+// the Look's `layerVis.water` toggle without depending on the cartograph
+// store (which isn't populated in production).
+function _lookFromQuery() {
+  if (typeof window === 'undefined') return 'lafayette-square'
+  const m = window.location.search.match(/look=([^&]+)/)
+  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+}
+
 // ── Park Water Features (Lake + Grotto Pond) ─────────────────────────
 function ParkWater() {
+  const [waterHidden, setWaterHidden] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    const look = _lookFromQuery()
+    fetch(`/baked/${look}/scene.json?t=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (!cancelled) setWaterHidden(j?.layerVis?.water === false) })
+      .catch(() => { /* scene.json optional */ })
+    return () => { cancelled = true }
+  }, [])
   const waterShaderRef = useRef()
 
   // Build water + island + bank geometries from polygon data
@@ -586,8 +605,10 @@ function ParkWater() {
   const bankMat = useMemo(() =>
     new THREE.MeshStandardMaterial({ color: '#5a5040', roughness: 0.95 }), [])
 
-  // park_water.json is now in world frame (de-parking 2026-05-03) — the
-  // lake/grotto/island polygons render directly with no per-mesh rotation.
+  if (waterHidden) return null
+
+  // park_water.json polygons are in compass frame; render directly with
+  // no per-mesh rotation.
   return (
     <group>
       <mesh geometry={lakeBankGeo}    position={[0, lakeY   + 0.2,  0]} receiveShadow material={bankMat} />
@@ -604,7 +625,7 @@ function ParkWater() {
 // ── Perimeter Fence ────────────────────────────────────────────────────
 function PerimeterFence() {
   const { posts, rails } = useMemo(() => {
-    const corners = PARK_FENCE_CORNERS_WORLD
+    const corners = PARK_FENCE_CORNERS
     const posts = [], rails = []
     for (let side = 0; side < 4; side++) {
       const [x1, z1] = corners[side]
@@ -662,7 +683,7 @@ function LafayettePark() {
       <PerimeterFence />
 
       <Text
-        position={[LABEL_TITLE_POS_WORLD[0], 0.08, LABEL_TITLE_POS_WORLD[1]]}
+        position={[LABEL_TITLE_POS[0], 0.08, LABEL_TITLE_POS[1]]}
         rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
         fontSize={6}
         color="#e8e8f0"
@@ -675,7 +696,7 @@ function LafayettePark() {
         LAFAYETTE PARK
       </Text>
       <Text
-        position={[LABEL_SUBTITLE_POS_WORLD[0], 0.08, LABEL_SUBTITLE_POS_WORLD[1]]}
+        position={[LABEL_SUBTITLE_POS[0], 0.08, LABEL_SUBTITLE_POS[1]]}
         rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
         fontSize={3}
         color="#888890"

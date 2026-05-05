@@ -78,7 +78,7 @@ Mounted under `/api/cartograph` from the web app's perspective (vite proxies).
 | Command | What it does |
 |---|---|
 | `node cartograph/serve.js`              | Start the backend on port 3333 (called automatically by `npm run dev`) |
-| `node cartograph/bake-ground.js --look=<id>`    | Bake the ground geometry (positions + indices + manifest) into `public/baked/<id>/`. Reads `src/data/ribbons.json`. Imports shared geometry helpers from `bake-paths.js`. |
+| `node cartograph/bake-ground.js --look=<id>`    | Bake the ground geometry (positions + indices + manifest) into `public/baked/<id>/`. Reads `src/data/ribbons.json` (ribbon + path geometry), `cartograph/data/clean/map.json` (sub-block overlays + linear features), and `public/looks/<id>/design.json` (Look colors). Shared face-clip + ribbon helpers live in `src/lib/ribbonsGeometry.js`. |
 | `node cartograph/bake-ground-ao.js --look=<id>` | Bake the AO lightmap (1024² PNG, 24 cosine-weighted rays per texel). Depends on `ground.json` already existing. |
 | `node cartograph/bake-buildings.js --look=<id>` | Bake building geometry. |
 | `node cartograph/bake-lamps.js --look=<id>`     | Bake lamp instance data. |
@@ -93,8 +93,8 @@ Mounted under `/api/cartograph` from the web app's perspective (vite proxies).
 
 ```
 cartograph/
-  bake-paths.js                      # shared ribbon + face-clip geometry (consumed by all bake-*.js)
   bake-ground.js                     # writes public/baked/<id>/{ground.json, ground.bin}
+                                     # (shared ribbon + face-clip geometry lives in src/lib/ribbonsGeometry.js)
   bake-ground-ao.js                  # writes public/baked/<id>/ground.lightmap.png
   bake-buildings.js                  # writes public/baked/<id>/{buildings.json, buildings.bin}
   bake-lamps.js                      # writes public/baked/<id>/lamps.json

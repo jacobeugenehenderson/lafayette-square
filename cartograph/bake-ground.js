@@ -24,8 +24,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
-import { buildPaths, LAND_USE_COLORS } from './bake-paths.js'
+import { buildRibbonGeometry, clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { BAND_COLORS } from '../src/cartograph/streetProfiles.js'
+import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -71,6 +72,17 @@ const PAINT_ORDER = [
   ['face', 'park'],
   ['face', 'island'],
   ['face', 'unknown'],
+  // Sub-block overlays — sit on top of LU faces, under street ribbons.
+  // Polygon overlays from map.json (parking_lot + leisure + natural).
+  ['mat', 'parking_lot'],
+  ['mat', 'garden'],
+  ['mat', 'playground'],
+  ['mat', 'swimming_pool'],
+  ['mat', 'pitch'],
+  ['mat', 'sports_centre'],
+  ['mat', 'wood'],
+  ['mat', 'scrub'],
+  ['mat', 'tree_row'],
   // Ribbons stacked from outside → inside
   ['mat', 'lawn'],
   ['mat', 'treelawn'],
@@ -79,12 +91,84 @@ const PAINT_ORDER = [
   ['mat', 'asphalt'],
   ['mat', 'highway'],
   ['mat', 'median'],
-  // Path ribbons painted last (sit on top wherever they cross)
+  // Alley + path ribbons painted on top of streets where they cross.
+  ['mat', 'alley'],
   ['mat', 'footway'],
   ['mat', 'cycleway'],
   ['mat', 'steps'],
   ['mat', 'path'],
+  // Linear barriers (buffered polylines).
+  ['mat', 'fence'],
+  ['mat', 'wall'],
+  ['mat', 'retaining_wall'],
+  ['mat', 'hedge'],
+  // Roadway markings (paint), drawn last so they sit on top of asphalt.
+  ['mat', 'edgeline'],
+  ['mat', 'bikelane'],
+  ['mat', 'stripe'],
 ]
+
+// Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
+// MapLayers.jsx's stripeRibbonGeo widths so the bake matches the live render.
+const POLYLINE_HALF_WIDTHS = {
+  stripe:         0.10,
+  edgeline:       0.08,
+  bikelane:       0.25,
+  fence:          0.05,
+  wall:           0.10,
+  retaining_wall: 0.20,
+  hedge:          0.30,
+}
+
+// Buffer a polyline to a closed ring polygon by sweeping +halfWidth then
+// −halfWidth. Per-vertex perpendicular = perpendicular of (prev → next) so
+// straight segments produce parallel edges and gentle bends miter cleanly.
+// Sharp corners can self-intersect; barrier/stripe data is dense enough
+// that this hasn't bitten in practice.
+function polylineToRing(coords, halfWidth) {
+  if (!coords || coords.length < 2) return null
+  const n = coords.length
+  const left = new Array(n), right = new Array(n)
+  for (let i = 0; i < n; i++) {
+    const c = coords[i]
+    const prev = coords[Math.max(0, i - 1)]
+    const next = coords[Math.min(n - 1, i + 1)]
+    const px = prev.x ?? prev[0], pz = prev.z ?? prev[1]
+    const nx = next.x ?? next[0], nz = next.z ?? next[1]
+    const cx = c.x    ?? c[0],    cz = c.z    ?? c[1]
+    const dx = nx - px, dz = nz - pz
+    const l = Math.hypot(dx, dz) || 1
+    const ux = -dz / l, uz = dx / l
+    left[i]  = [cx + ux * halfWidth, cz + uz * halfWidth]
+    right[i] = [cx - ux * halfWidth, cz - uz * halfWidth]
+  }
+  const ring = []
+  for (let i = 0; i < n; i++) ring.push(left[i])
+  for (let i = n - 1; i >= 0; i--) ring.push(right[i])
+  return ring
+}
+
+// Lateral-offset a polyline by `offset` to one side, then return the
+// offset polyline. Mirrors MapLayers.jsx:offsetLine. Used by parking_line
+// (edgeline) + bike_lane which carry a single centerline + lateral offset
+// — the actual paint sits on the offset, not the centerline.
+function lateralOffset(coords, offset, side) {
+  const out = []
+  for (let i = 0; i < coords.length; i++) {
+    const prev = coords[Math.max(0, i - 1)]
+    const next = coords[Math.min(coords.length - 1, i + 1)]
+    const dx = (next.x ?? next[0]) - (prev.x ?? prev[0])
+    const dz = (next.z ?? next[1]) - (prev.z ?? prev[1])
+    const len = Math.hypot(dx, dz) || 1
+    const cx = coords[i].x ?? coords[i][0]
+    const cz = coords[i].z ?? coords[i][1]
+    out.push({
+      x: cx + side * (-dz / len) * offset,
+      z: cz + side * ( dx / len) * offset,
+    })
+  }
+  return out
+}
 
 // Triangulate one polygon (outer ring + optional hole rings). Returns
 // indices referencing the merged buffer. ShapeUtils.triangulateShape
@@ -156,11 +240,80 @@ function itemsToBuffers(items) {
 
 export async function bakeGround({ look = 'default' } = {}) {
   const ribbonsPath = join(ROOT, 'src', 'data', 'ribbons.json')
+  const mapPath     = join(ROOT, 'cartograph', 'data', 'clean', 'map.json')
+  const designPath  = join(ROOT, 'public', 'looks', look, 'design.json')
   const outDir      = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   const ribbons = JSON.parse(readFileSync(ribbonsPath, 'utf-8'))
-  const { byMaterial, byFaceUse } = buildPaths(ribbons, STENCIL_POLYGON)
+  const mapData = existsSync(mapPath) ? JSON.parse(readFileSync(mapPath, 'utf-8')) : { layers: {} }
+  const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
+  const designLayerColors = design.layerColors || {}
+  const designLuColors    = design.luColors    || {}
+  const { byMaterial, byFaceUse } = buildRibbonGeometry(ribbons, STENCIL_POLYGON)
+
+  // ── Inject map.json overlays into byMaterial ──────────────────────
+  // Each Designer-toggleable id needs to come out as its own bake group
+  // so layerVis can hide it in Stage/Preview. Polygon overlays (parking_lot,
+  // leisure subtypes, natural subtypes) drop in as raw rings; line features
+  // (centerStripe / parkingLine / bikeLane / barriers) buffer to thin
+  // polygons via polylineToRing.
+  const mapLayers = mapData.layers || {}
+  const pushMat = (key, ring) => {
+    if (!ring || ring.length < 3) return
+    if (!byMaterial.has(key)) byMaterial.set(key, [])
+    byMaterial.get(key).push(ring)
+  }
+  const ringFromOSM = (ring) => ring.map(p => [p.x ?? p[0], p.z ?? p[1]])
+
+  // parking_lot: every amenity=parking polygon as its own group.
+  for (const item of (mapLayers.parking_lot || [])) {
+    if (item.ring) pushMat('parking_lot', ringFromOSM(item.ring))
+  }
+  // leisure subtypes operator can toggle individually.
+  const LEISURE_KEYS = new Set(['garden', 'playground', 'swimming_pool', 'pitch', 'sports_centre'])
+  for (const item of (mapLayers.leisure || [])) {
+    if (LEISURE_KEYS.has(item.use) && item.ring) pushMat(item.use, ringFromOSM(item.ring))
+  }
+  // natural subtypes — water is owned by park_water.json, skip it here.
+  const NATURAL_KEYS = new Set(['wood', 'scrub', 'tree_row'])
+  for (const item of (mapLayers.natural || [])) {
+    if (NATURAL_KEYS.has(item.use) && item.ring) pushMat(item.use, ringFromOSM(item.ring))
+  }
+  // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
+  for (const item of (mapLayers.barrier || [])) {
+    const hw = POLYLINE_HALF_WIDTHS[item.kind]
+    if (!hw || !item.coords) continue
+    const ring = polylineToRing(item.coords, hw)
+    if (ring) pushMat(item.kind, ring)
+  }
+  // Center stripes — polylines with no offset, paint sits on the centerline.
+  for (const item of (mapLayers.centerStripe || [])) {
+    const ring = polylineToRing(item.coords, POLYLINE_HALF_WIDTHS.stripe)
+    if (ring) pushMat('stripe', ring)
+  }
+  // Parking-lane edge lines + bike lanes — both sides offset from a centerline.
+  for (const item of (mapLayers.parkingLine || [])) {
+    if (!item.coords || !item.offset) continue
+    for (const side of [-1, 1]) {
+      const off = lateralOffset(item.coords, item.offset, side)
+      const ring = polylineToRing(off, POLYLINE_HALF_WIDTHS.edgeline)
+      if (ring) pushMat('edgeline', ring)
+    }
+  }
+  for (const item of (mapLayers.bikeLane || [])) {
+    if (!item.coords || !item.offset) continue
+    for (const side of [-1, 1]) {
+      const off = lateralOffset(item.coords, item.offset, side)
+      const ring = polylineToRing(off, POLYLINE_HALF_WIDTHS.bikelane)
+      if (ring) pushMat('bikelane', ring)
+    }
+  }
+
+  // Re-clip to the stencil — buildRibbonGeometry already clipped its own
+  // output, but our injected overlays haven't seen the clipper yet. Run
+  // it again so nothing leaks past the silhouette.
+  clipAllToStencil(byMaterial, byFaceUse, STENCIL_POLYGON)
 
   // Build groups in paint order. Each group = one merged BufferGeometry.
   const groups = []
@@ -179,9 +332,24 @@ export async function bakeGround({ look = 'default' } = {}) {
     const { positions, indices } = itemsToBuffers(items)
     if (indices.length === 0) continue
 
-    const color = kind === 'face'
-      ? (LAND_USE_COLORS[key] || LAND_USE_COLORS.unknown)
-      : (BAND_COLORS[key] || '#666666')
+    // Color resolution: per-Look design.json wins, then the canonical
+    // Designer palette (DEFAULT_LAYER_COLORS / DEFAULT_LU_COLORS), then
+    // the legacy ribbon-band defaults, then a grey fallback. Faces look
+    // up under luColors; ribbon/overlay materials under layerColors.
+    //
+    // Ribbon-band keys (asphalt, curb, sidewalk, …) route through
+    // BAND_TO_LAYER first so a Designer toggle named 'street' (color
+    // authored under layerColors.street) reaches the 'asphalt' bake group.
+    let color
+    if (kind === 'face') {
+      color = designLuColors[key] || DEFAULT_LU_COLORS[key] || LAND_USE_COLORS[key] || LAND_USE_COLORS.unknown
+    } else {
+      const layerKey = BAND_TO_LAYER[key] || key
+      color = designLayerColors[layerKey]
+           || DEFAULT_LAYER_COLORS[layerKey]
+           || BAND_COLORS[key]
+           || '#666666'
+    }
 
     groups.push({
       kind,

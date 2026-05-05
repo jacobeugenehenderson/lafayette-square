@@ -98,6 +98,7 @@ const TABS = [
       { id: 'sidewalk',      label: 'Sidewalk',      kind: 'layer' },
       { id: 'treelawn',      label: 'Treelawn',      kind: 'layer' },
       { id: 'building',      label: 'Buildings',     kind: 'layer' },
+      { id: 'parking_lot',   label: 'Parking Lots',  kind: 'layer' },
       { id: 'garden',        label: 'Gardens',       kind: 'layer' },
       { id: 'playground',    label: 'Playgrounds',   kind: 'layer' },
       { id: 'swimming_pool', label: 'Pools',         kind: 'layer' },
