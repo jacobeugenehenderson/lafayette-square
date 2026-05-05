@@ -93,6 +93,16 @@ export default function SurveyorPanel() {
         </select>
       </div>
 
+      <div className="carto-row">
+        <label className="carto-label-fixed">Smooth</label>
+        <input type="range" className="carto-input" min="0" max="1" step="0.05"
+          value={st.smooth || 0}
+          onChange={e => updateStreetField('smooth', parseFloat(e.target.value))} />
+        <span className="carto-meta" style={{ minWidth: 32, textAlign: 'right' }}>
+          {(st.smooth || 0).toFixed(2)}
+        </span>
+      </div>
+
       <div className="carto-meta">
         {st.points.length} nodes
         {(() => {

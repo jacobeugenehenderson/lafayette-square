@@ -716,15 +716,21 @@ const useCartographStore = create((set, get) => ({
   bakeLastMs: null,
   bakeError: null,
   markBakeStale: () => set({ bakeStale: true }),
-  runBake: async () => {
+  runBake: async ({ force = false, navigateTo = null } = {}) => {
     if (get().bakeRunning) return
     set({ bakeRunning: true, bakeError: null })
     try {
-      const r = await bakeLook(get().activeLookId)
-      set({ bakeRunning: false, bakeStale: false, bakeLastMs: r.ms })
-      // Hand off to Hero on success — the Look is published, the operator
-      // wants to see the result.
-      get().setShot('hero')
+      const r = await bakeLook(get().activeLookId, { force })
+      // bakeLastMs is the cache-bust signal for BakedGround / InstancedTrees
+      // (`?t=${bakeLastMs}`). Must be unique per bake-completion or the
+      // browser will hit cache and show stale geometry. r.ms (duration) is
+      // not unique — incremental bakes can return identical small durations.
+      // Use Date.now() to guarantee uniqueness.
+      set({ bakeRunning: false, bakeStale: false, bakeLastMs: Date.now(), bakeDurationMs: r.ms })
+      // Optional navigation tied to bake success. Designer's "Stage →"
+      // passes navigateTo='browse' so the operator lands at the matching
+      // overhead view immediately after the bake.
+      if (navigateTo) get().setShot(navigateTo)
     } catch (err) {
       set({ bakeRunning: false, bakeError: String(err.message || err) })
     }
@@ -744,6 +750,17 @@ const useCartographStore = create((set, get) => ({
       if (saved && ['designer', 'browse', 'hero', 'street'].includes(saved)) return saved
     } catch { /* ignore */ }
     return 'designer'
+  })(),
+  // Most-recent non-designer shot. Used by the Designer toolbar's
+  // "Stage →" button so the operator returns to whichever Stage shot
+  // they were last working in (preserves "linear-but-concurrent"
+  // tool-switching feel — see FEATURES.md).
+  lastStageShot: (() => {
+    try {
+      const saved = localStorage.getItem('cartograph-last-stage-shot')
+      if (saved && ['browse', 'hero', 'street'].includes(saved)) return saved
+    } catch { /* ignore */ }
+    return 'browse'
   })(),
   // Scene = what geometry we're looking at. Orthogonal to tool and shot.
   // 'neighborhood' = real Lafayette Square data. 'toy' = compact test fixture
@@ -804,7 +821,13 @@ const useCartographStore = create((set, get) => ({
       set({ tool: null, selectedStreet: null, selectedNode: null, markerActive: false, markerEraserActive: false })
     }
     try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
-    set({ shot, status: '' })
+    // Remember the last Stage shot so Designer's "Stage →" returns to it.
+    if (shot !== 'designer') {
+      try { localStorage.setItem('cartograph-last-stage-shot', shot) } catch { /* ignore */ }
+      set({ shot, status: '', lastStageShot: shot })
+    } else {
+      set({ shot, status: '' })
+    }
   },
   toggleMarker: () => {
     const cur = get().markerActive
@@ -948,6 +971,7 @@ const useCartographStore = create((set, get) => ({
           _baselineCapStart: rb?.capEnds?.start ?? null,
           _baselineCapEnd: rb?.capEnds?.end ?? null,
           couplers: ov?.couplers ?? s.couplers ?? [],
+          smooth: ov?.smooth ?? 0,
           // Anchor: operator override wins; otherwise auto-detected from
           // derive's divided-pair pass. innerSign and pairId always come
           // from auto-detection (geometric, not operator intent).
@@ -1071,11 +1095,12 @@ const useCartographStore = create((set, get) => ({
       // non-null cap to remember.
       const hasCaps = capStart !== baseStart || capEnd !== baseEnd || !!capStart || !!capEnd
       const hasCouplers = Array.isArray(st.couplers) && st.couplers.length > 0
+      const hasSmooth = (st.smooth || 0) > 0
       // Anchor is persisted only when it differs from the auto-detected
       // default (from ribbons.json). _autoAnchor is set on load.
       const hasAnchorOverride = st.anchor && st.anchor !== (st._autoAnchor || 'center')
       const hasDisabled = !!st.disabled
-      if (!hasMeasure && !hasSegM && !hasCaps && !hasCouplers && !hasAnchorOverride && !hasDisabled) continue
+      if (!hasMeasure && !hasSegM && !hasCaps && !hasCouplers && !hasAnchorOverride && !hasDisabled && !hasSmooth) continue
       out[st.id] = {
         name: st.name,
         ...(hasMeasure ? { measure: st.measure } : {}),
@@ -1084,6 +1109,7 @@ const useCartographStore = create((set, get) => ({
         ...(hasCouplers ? { couplers: st.couplers } : {}),
         ...(hasAnchorOverride ? { anchor: st.anchor } : {}),
         ...(hasDisabled ? { disabled: true } : {}),
+        ...(hasSmooth ? { smooth: st.smooth } : {}),
       }
     }
     // overlay.json carries geometry only — design has moved to the active

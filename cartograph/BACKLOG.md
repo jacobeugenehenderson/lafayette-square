@@ -1,6 +1,299 @@
 # Cartograph Backlog
 
-Last updated: 2026-05-03
+> Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
+
+Last updated: 2026-05-04
+
+## 2026-05-05 — Designer toggles ↔ Stage Surfaces parity audit (easy win, first thing)
+
+Operator established contract 2026-05-04: **everything toggleable in the Designer
+panel must be hide-able in Stage/Preview, with its color/material authored from the
+Stage Surfaces panel.** Suspected gap: most Designer-toggleable items don't yet have
+a corresponding Stage Surfaces entry.
+
+Audit scope:
+1. Enumerate every toggleable layer in Designer (CartographSurfaces or wherever the
+   Designer-mode toggles live — `layerVis` keys).
+2. Enumerate every entry in the Stage Surfaces panel.
+3. Diff: list every Designer toggle with no Stage Surfaces material entry → those need
+   a Surfaces panel listing added (one row per missing material, color/shader fields).
+4. Confirm `BakedGround` honors `layerVis` at render time so Preview's hide-toggles
+   actually do something. Check Preview's layer-toggle matrix wires through the same
+   `layerVis` path.
+5. Confirm Designer mode carries ONLY visibility toggles — any color pickers that have
+   leaked into Designer should be flagged for relocation to Stage Surfaces.
+
+Architecture context (load-bearing):
+- Designer = visibility (on/off, structural).
+- Stage = materials + shaders (color is a property of a material, not a thing in itself).
+- Hardcoded `BAND_COLORS` in `streetProfiles.js` = generic cartographic fallback when a
+  Look hasn't authored a material override. Kept as the safe "any map looks like this"
+  default.
+
+## 2026-05-04 — Bake-honors-Look-colors fix (pending operator OK)
+
+`cartograph/bake-ground.js:182-184` reads colors from `BAND_COLORS` defaults, ignoring
+the active Look's `design.json`. Symptom: operator authors custom material colors in
+Stage Surfaces; Designer's live render shows them; Stage neighborhood shots (BakedGround)
+and Preview show defaults instead.
+
+Fix: load `public/looks/<look>/design.json` in `bakeGround()`, apply `layerColors[key]`
+and `luColors[key]` overrides ahead of the hardcoded fallback. ~10-line patch.
+Requires re-bake of lafayette-square to take effect.
+
+Discovered via Preview street-markings investigation 2026-05-04. Operator's chosen
+green bike lane (`cycleway: #6EA070` in design.json) bakes as `#666666`.
+
+## 2026-05-04 — Survey polish project (8 phases)
+
+End-to-end polish pass on the Survey tool, designed in conversation with operator
+2026-05-04. Phases are mostly independent; can be worked in parallel after Phase 0.
+Whole-intersection plugs (separate plan, below) plug in alongside this — they replace
+the legacy "Measure: fix corners" item and supersede corner-plug authoring entirely.
+
+### Phase 0 — Baseline read (1 hr)
+Confirm three unknowns before file-level work:
+- Are path/alley features in `centerlineData.streets` selectable by `SurveyorOverlay`,
+  or excluded by source/type filter?
+- Exact `couplers[]` data shape in `overlay.json` for an existing flipped/inserted
+  coupler.
+- Does the skeleton mark T-junction vertices distinctly, or is every vertex a polyline
+  point?
+
+### Phase 1 — Couplers as intersection-flip gestures (priority)
+Reframe: every intersection is implicitly coupler-eligible; authoring is a graphical
+"flip" gesture, not data plumbing.
+- Mark every intersection vertex (vertex shared by ≥2 streets) with a hit-target in
+  `SurveyorOverlay`. Selected street → its intersection vertices become hover-glowing
+  pivot handles.
+- Gesture: select street → ⌥-click intersection handle → flip ribbon side at that
+  vertex. Visual = small directional chevron (Illustrator reflect-handle style).
+- Virtual-vertex insertion: if street A passes through an intersection where B has a
+  vertex, A gets a virtual coupler-eligible point projected onto its segment. No
+  skeleton mutation; lives in overlay.
+- Existing `couplers[]` continue working unchanged.
+
+Open: flip = always 180° reflect, or rotate-by-arbitrary-angle? Start reflect-only.
+Estimate: 2 days core + 1 day polish.
+
+### Phase 2 — Cap stitching (cul-de-sac arcs that meet)
+When two adjacent caps with mismatched arcs near-meet, generate a connector envelope.
+- Detect adjacent `capEnd === 'round'` endpoints in `ribbonsGeometry.js` whose
+  terminal disks overlap or near-meet.
+- Add `capStitch` polygon: sweep connecting outer arcs as a single filled silhouette.
+  Flows automatically into live render and bake (consolidation makes it free).
+- Threshold: only stitch if gap < N meters (constant, not per-street).
+
+Open: when constitutions differ (one cap has treelawn, one doesn't), absorb wider down
+to narrower via linear taper, or render with a notch? Recommend: linear taper.
+Estimate: 2 days stitch + 1 day taper.
+
+### Phase 3 — Marquee select + continuity merge (SCOPE-REDUCED 2026-05-04)
+Visual fix at Dolman/18th-style steps now absorbed by the whole-intersection-plug
+project (transition-plug case = 2 chains with mismatched ribbon widths). What
+remains here is *naming/styling* unification — declaring two skelIds are one street
+for label/Look purposes — not the geometric stitching.
+- Marquee tool in `SurveyorOverlay`: drag-rect selects vertices across multiple streets.
+- Multi-select state in `useCartographStore`.
+- New panel action when marquee spans 2+ streets: "Merge as continuous" → writes a
+  `continuity` pair link to `overlay.json` keyed by skelIds.
+- Ribbon assembly honors continuity at bake time: profiles linearly blend across the
+  join.
+
+Open: pair link vs. group. Recommend pair, transitive resolution at bake.
+Estimate: 1.5 days marquee + 1.5 days render.
+
+### Phase 4 — Highway hierarchy z-order (partially shipped 2026-05-04)
+- ✅ `osmHierarchyScore(highway)` helper added to `streetProfiles.js`.
+- ✅ Applied as `renderOrder` offset on path/alley/footway/cycleway meshes
+  (`StreetRibbons.jsx:1797`). Higher-class paths now paint over lower-class on
+  coplanar overlap.
+- [ ] **Street stripes don't yet split per class.** Stripes (asphalt/sidewalk/treelawn)
+  merge across all streets sharing a band, so per-street hierarchy never reaches
+  `renderOrder`. To make motorway_link paint *under* motorway, the stripe emission
+  needs to split bands by hierarchy class (motorway-asphalt vs residential-asphalt as
+  separate meshes) OR Clipper-subtract lower-class outlines from higher-class ones.
+  Helper is ready; structural change is the next step.
+- [ ] **Per-street override** (auto/above/below tristate) — deferred until structural
+  split lands.
+
+### Phase 5 — Loop road designation
+Lift hardcoded `LOOP_STREET_NAMES` (`cartograph/derive.js:1297`, 7 references) into
+operator-facing flag.
+- Add `isLoopStreet: bool` to overlay.json per-street.
+- Survey panel checkbox: "Loop street (frontage stem + closed loop)."
+- Replace all `LOOP_STREET_NAMES.has(name)` checks with `street.isLoopStreet`.
+- Migrate Benton + Mackay at migration time; delete the constant.
+
+Estimate: ½ day.
+
+### Phase 6 — Bring alleys/paths into authoring layer (BLOCKED 2026-05-04)
+Investigation found: `skeleton.json` has 1702 paths under a separate `paths` key
+(positionally-keyed `path-N` IDs); `ribbons.json` has 145 alleys + 345 paths
+(neighborhood-filtered, no stable IDs at all). `_loadCenterlines` only reads
+`skel.streets`, which is why alleys/paths aren't surveyable today.
+
+**Blocker:** neither source carries operator-stable IDs for paths. Surfacing them
+into `centerlineData.streets` would let the operator click them but their authored
+state (caps, smooth, etc.) couldn't survive a skeleton rebuild.
+
+**Required prework (1 day):**
+1. `cartograph/skeleton.js` — generate stable path IDs from canonical OSM way IDs +
+   sources (mirror the pattern used for streets).
+2. `cartograph/derive.js` / `promote-ribbons.js` — propagate path IDs through
+   ribbons.json so the live render keys by the same ID the store uses.
+3. Then merge paths into `centerlineData.streets` with a `kind: 'path'` flag (½ day).
+
+Note: Measure-side alley work (trim to land-use boundary as defined by ribbons) is a
+separate Measure-polish project.
+
+### Phase 7 — Smooth, made real (Designer-side shipped 2026-05-04)
+- ✅ Per-street `smooth: 0..1` field on overlay/store, persisted via `_saveOverlay`.
+- ✅ `subdividePolyline(pts, smooth)` Catmull-Rom point sampler in `streetProfiles.js`.
+- ✅ Smooth slider in `SurveyorPanel`.
+- ✅ Live render applies subdivision in `StreetRibbons.jsx` merge step (`merged.points`).
+  Authored vertex markers in `SurveyorOverlay` stay at original points (markers read
+  `centerlineData.streets`, not the merged ribbons).
+- [ ] **Bake propagation TODO.** `cartograph/derive.js` reads overlay but does not yet
+  call `subdividePolyline` on `street.smooth`. Stage/Preview will look unsmoothed
+  until derive subdivides at the same point ribbons.json's street.points are emitted.
+  ~½ hour follow-up.
+- [ ] **Preview overlay deferred.** Side-by-side original (dashed) vs smoothed (solid)
+  visualization in SurveyorOverlay — defer until the wiring is field-tested.
+
+Open: per-street vs per-segment (between couplers). Per-street is what shipped.
+
+### Phase 8 — Saint Vincent + S. 21st blue wash
+Investigate why these two streets don't get the blue stripe (likely missing `measure`
+in overlay.json or missing measurements.json entry). Data fix.
+Estimate: 30 min.
+
+### Sequencing
+```
+Phase 0 (baseline)                         1 hr
+  ├── Phase 1 (couplers/pivots)            3 days   ← priority
+  ├── Phase 5 (loop designation)           ½ day
+  ├── Phase 4 (z-order)                    ½ day
+  ├── Phase 6 (alleys in authoring)        1 day
+  ├── Phase 8 (blue wash)                  ½ hr
+  └── Phase 2 (cap stitching)              3 days
+                ▼
+        Phase 3 (marquee + continuity)     3 days
+                ▼
+        Phase 7 (smooth + preview)         2 days
+```
+Total: ~10 working days. Phase 1 long-pole; 5/4/6/8 parallelizable.
+
+## 2026-05-04 — Whole-intersection plugs (in design)
+
+Replaces per-corner plug authoring entirely. Sibling project to Survey polish above;
+no conflicts (Survey Phase 1 owns ribbon-side-of-centerline, this owns intersection
+footprint geometry).
+
+### Dataflow framing (load-bearing — don't lose this)
+
+The intersection polygon is **derived live from ribbon outlines**, not from a stored
+"setback" parameter. Same dataflow line as the ribbon outline itself: change a Measure
+input → ribbon outline grows → intersection polygon's leg-mouth grows → marking
+positions track. No setback concept exists in the data model. If you find yourself
+adding a `setback` field to overlay.json, stop — you're solving the wrong problem.
+
+### Geometry construction
+1. Each incoming ribbon outline already self-computes via `ribbonsGeometry.js`.
+2. At skeleton vertex V (≥2 chains), detect overlap among the N incoming ribbon outlines.
+3. Intersection polygon = Clipper union of (incoming ribbon outlines near V) + corner
+   connectors (arc or line) bridging the *gaps* between adjacent legs' outlines.
+4. Ribbons render unchanged — they keep going to V; the intersection polygon overlays
+   on top. Stripes inside ribbons that fall inside the intersection polygon get clipped
+   at render time (the polygon owns its own painted markings).
+
+Result: ribbons stay dumb and self-contained; intersection polygon is purely additive.
+Oblique angles and 5+ way intersections work without special-casing — one algorithm.
+
+### Auto-generate everywhere (decision 2026-05-04)
+Every skeleton vertex with ≥2 chains gets a polygon by default. Operator opts out
+per-intersection (`disabled: true`) for grade-separated crossings (overpasses).
+
+### Three behaviors fall out of one algorithm
+- **≥3 chains at vertex** → intersection plug (the headline case)
+- **2 chains, ribbon widths differ** → transition plug (Dolman/18th continuity case)
+- **2 chains, widths match** → no polygon needed (today's behavior)
+
+This absorbs Survey Phase 3's continuity/stitching geometry for free — the visual fix
+at Dolman/18th-style steps falls out of the same union+connector machinery. Phase 3's
+marquee + "merge as continuous" remains useful for *naming/styling* unification but
+is no longer load-bearing for the visual problem. Mark Phase 3 as scope-reduced.
+
+### Corner radius from ADA + DOT guidelines (decision 2026-05-04)
+Default corner radius derives from a lookup table keyed by (highway class pair, angle):
+
+- AASHTO Green Book minimum corner radii by class pair:
+  - residential ↔ residential: 4.5m (15ft)
+  - residential ↔ collector (secondary): 7.5m (25ft)
+  - collector ↔ arterial (primary): 9–15m (30–50ft)
+  - arterial ↔ arterial: 12–15m (40–50ft)
+  - any ↔ motorway/trunk: 15m+
+- NACTO Urban Street Design Guide: smaller-is-better for pedestrian safety; 3–4.5m
+  preferred in urban contexts. Lafayette Square is dense urban → bias toward NACTO low
+  end (3–6m) for residential intersections, AASHTO mid-range for arterials.
+- ADA curb-ramp rules: ramps align with pedestrian crossing path; smaller radius = shorter
+  crossing distance = ADA-friendlier. Doesn't set radius directly but reinforces
+  smaller-is-better.
+- Angle factor: sharper angles between legs → slightly larger radius for drivability.
+
+Implementation: lookup table `CORNER_RADIUS_M[classPair]` with angle multiplier
+`f(angle) = clamp(1 + (90° − angle) / 90°, 1, 1.5)`. Operator override per-intersection
+(`cornerRadius: auto | meters`).
+
+### Markings deferred (decision 2026-05-04)
+Phase A geometry only ships first. Crosswalks / stop bars / yield triangles / turn
+arrows / curb ramps / painted islands all land in Phase C+ once geometry is stable.
+
+### Per-intersection authoring data
+Stored in `overlay.json` under `intersections: { [vertexId]: {...} }`. vertexId =
+stable hash of skeleton coords so it survives skeleton rebuilds.
+- `disabled: bool` (default false)
+- `cornerRadius: 'auto' | meters` (default 'auto' — derive from class pair + angle)
+- `cornerStyle: 'arc' | 'line'` (default 'arc')
+- `style: 'standard' | 'painted' | 'brick' | 'cobblestone' | 'uncontrolled'` (Stage hooks)
+- `legs: { [adjacentSkelId]: { ...future markings flags } }` (Phase C+)
+
+### Upstream changes
+- `src/lib/ribbonsGeometry.js` — `buildRibbonGeometry` adds `intersectionPolygons[]` to
+  its output. Computed via Clipper union + corner-connector arcs.
+- `src/components/StreetRibbons.jsx` — renders intersection polygons in the same pass
+  as ribbon faces. Same default material; overridable per-Look.
+- `cartograph/derive.js` — block/parcel cutting passes now use (ribbon outlines ∪
+  intersection polygons) as the cutter. Structurally similar Clipper pass.
+- Corner-plug code retired. `project_corner_plug_open_problem.md` open problem dissolves.
+
+### Authoring UX
+New **Intersection panel** in Survey, opens when operator clicks an intersection node
+(same SurveyorOverlay handler that currently dispatches street/node selection adds an
+intersection-vertex case). Click a non-street region near a vertex → panel opens.
+
+### Phases
+```
+Phase A — Geometry foundation                 3 days
+  Detect intersection nodes; compute polygons via union + corner connectors;
+  retire corner-plug code. No authoring UI yet, no markings.
+
+Phase B — Authoring panel                     2 days
+  Intersection click target in SurveyorOverlay; Intersection panel;
+  per-vertex overrides written to overlay.json `intersections: {}`.
+
+Phase C — Crosswalks                          1 day  (deferred)
+Phase D — Stop bars + turn arrows             2 days (deferred)
+Phase E — Curb ramps + style presets          2 days (deferred)
+```
+
+MVP = A + B (~5 days). Markings (C–E) follow once A+B prove stable.
+
+## 2026-05-04 — Camera + orientation followups
+
+- [ ] **Restore compass rose to Browse.** Was crowded out by other on-screen elements; especially relevant now that the Heading slider lets the operator orient screen-up away from compass-N. Without it, users will assume screen-up = compass-N (and vice versa).
+- [ ] **Persist Browse target/altitude/FOV** alongside Heading. Today only the heading is persisted to localStorage (`stage.browse.heading`); the rest of the Browse panel's sliders push live but reset to `SHOTS.browse` defaults on shot transition.
+- [ ] **Fence corner authoring from real GPS** in `LafayettePark.jsx`. The `parkAxisToCompass(±a, ±a)` helper is concise but bakes a hardcoded -9.2° tilt; a kit version would pull the four real corner GPS points through `wgs84ToLocal` for an honest source-of-truth.
 
 ## 2026-05-03 — v1 punchlist
 
@@ -25,27 +318,36 @@ collapse to hours; estimate at integration rate, not waterfall rate.
 - [ ] **Add buildings + businesses on W Lafayette.** Fill in the W Lafayette frontage in `buildings.json` + `landmarks.json`. (Stays here — bulk authoring, not per-house personalization.)
 
 ### Cartograph authoring (Survey + Measure)
+- [ ] **Extract `resolveStreets()` to unify Designer + bake operator-intent merge.** Today Designer's `useCartographStore.js:_loadCenterlines` and the bake's `derive.js` overlay merge each implement their own version of "raw centerlines + overlay → resolved street list." This was the source of the 2026-05-04 face-clip drift bug (derive's serializer dropped `couplers`/`segmentMeasures`/`disabled`). One shared resolver eliminates the whole class of drift. Pair with the shared `buildRibbonGeometry` helper for end-to-end structural parity.
+- [ ] **Bake handler should spawn async, not block the event loop.** `cartograph/serve.js`'s POST `/looks/:id/bake` runs each step via `execSync`, blocking *all* other API requests for the duration of the bake. Symptom: every `/api/cartograph/*` request shows "Pending" until the server is killed and restarted. Fix: switch to `spawn`/`execFile` with Promises so the server keeps handling requests during a bake. Documented in FEATURES.md §"Bake handler blocks the cartograph event loop."
 - [ ] **Survey: confirm road-coupler split behavior.** Verify segment-local coupler semantics still hold post–Path B (`project_couplers.md`, `feedback_couplers_are_segment_local.md`).
 - [ ] **Measure: do final for-real pass.** End-to-end Measure across every measured street.
 - [ ] **Measure: confirm file persistence once again.** Save → reload → same state.
 - [ ] **Measure: confirm 'Divided Traffic'.** Divided-carriageway behavior + emergent median (`project_positive_carriageway_model.md`).
-- [ ] **Measure: fix corners.** Plug shape still wrong/fragile at oblique intersections — see `project_corner_plug_open_problem.md`.
+- [→] **Measure: fix corners — SUPERSEDED 2026-05-04 by whole-intersection plugs.** Per-corner plug geometry retired in favor of one polygon per intersection node. See the intersection-plugs project plan (in flight). The "plug shape still wrong/fragile at oblique intersections" symptom dissolves because there are no longer 4 corners to misshape — oblique intersections just produce a different-shaped single polygon. Original notes preserved at `project_corner_plug_open_problem.md` for context.
 - [ ] **Ribbon-to-ribbon profile stitching.** Where two streets with different cross-section profiles meet, stitch ribbons cleanly across the join. Phase 5 ribbon-knit / merge-plug; `corridors[].transitions[]` already marks the seams.
 - [ ] **Fix final land uses.** Close out remaining land-use polygon authoring gaps.
 
 ### Trees
+- [🅿️] **PARKED 2026-05-04: Trees shelved pending platform completion.** Spent significant time on the arborist (atlas, LOD, culling, magnolia removal, draw-budget); diminishing returns vs. unshipped Designer/Stage/Preview surface area. Decision: trees are dressing, neighborhood is the hero — finish the authoring loop first, return to trees when product surface is settled. Pickup path when revisited:
+    1. **Billboard impostor tier first** (load-bearing for mobile budget). Octahedral or 8-angle billboard atlas; runtime swaps near→far via per-instance distance LOD. Solves the 9.4M-tri overage regardless of source asset. ~1-2 days. Wind on impostors: option (a) skip — invisible past ~50m at Browse altitude; option (b) cheap vertex-shader sway on the quad's top corners. Both acceptable; option (a) is the default.
+    2. **SpeedTree for near trees** (quality lift, post-budget-fix). Indie-tier license. Don't start from blank — buy/grab `.spm` project files (SpeedTree's own Asset Store, $5–30/tree; bundled Library if on UE/Unity sub; free starter pack). Tweak proportions/leaf density on a "London Plane" + generic deciduous + generic conifer, export glTF at 4–5 LODs + bake billboards from the same source (SpeedTree's killer feature: one-click billboard baker — matches the full mesh exactly). Replace hand-modeled trees in arborist roster. Leaf-cards-not-leaf-geo alone is a 5–10× per-tree triangle reduction. Learning curve was the blocker on first look; balks once, then becomes a weekend with `.spm` starter kits.
+    3. **Open-source fallback** if SpeedTree route doesn't pan out: `proctree.js` (port of Proctree, ~600 lines, three.js-friendly), `tree-js` / `three.js-tree-generator` (parametric, GUI-tunable, glTF export), or `Arbaro` for offline Weber-Penn baking.
+    4. Existing 🚨 LOD-by-distance task below is **strictly billboard-impostor-first**, not generic LOD reshuffling. The LOD ratio knobs (`[0.85, 0.40, 0.10]` → `[…, 0.04]`) are a sidecar optimization; only the impostor tier solves the budget.
 - [x] **Confirm: tree atlas repack** (2026-05-03). Atlas at 4040×2072 = 64 MB color+normal VRAM (~25% of 256MB phone budget). Packing currently leaf-width-bound (4040), can't snap to 2048×2048 without reducing per-classification leaf cap (512→384px = quality hit). Acceptable for now; revisit if memory pressure surfaces.
 - [x] **Confirm: per-tile tree culling** (2026-05-03). 4×4 spatial grid is engaged, frustumCulled = true. Working — off-screen tiles cull correctly on Browse/Street.
 - [x] **Per-frame draw budget for trees** (2026-05-03). After magnolia removal + primitive merge + shadow-pass disabled, trees consume **212 of 296 total draws** (1.48× budget). Real ~6× reduction from worst-case 1232. Manageable.
 - [ ] **🚨 LOD-by-distance + billboard tier (CRITICAL for mobile).** Elevated 2026-05-03 from `project_tree_lod_strategy.md`. Tris are the fatal mobile-budget overage: trees alone draw **9.85M of 10.6M** per frame (10.6× over 1M budget). With 627 placements at ~15K tris/tree avg even at lod2, the 1M budget is unreachable without distance-LOD swapping + an actual billboard impostor LOD for far trees. Bake side: extend `publish-glb.js` LODS from `[0.85, 0.40, 0.10]` ratios to add `lodImpostor` (camera-aligned billboard quad with baked color+normal). Runtime side: add per-instance distance-LOD selection in `InstancedTrees`/`VariantInstances` — substitute mesh per (camera distance × view mode). Until this lands the LS scene is mobile-uncertifiable on tris alone.
 - [ ] **Stop emitting unused split atlas PNGs.** `trees-atlas-{bark,leaves}-{color,normal,viz}.png` total 33 MB on disk; only the unified `trees-atlas-color/normal.png` is loaded by runtime. Bake should write the splits to a separate `_diagnostic/` dir or skip them entirely. Pure bundle-size cleanup.
 - [ ] **Repair LOD ladder for London Plane skeletons 6/7/8/9.** `meshoptimizer.simplify` produces zero reduction (lod0=lod1=lod2=755KB identical). Likely needs `weld()` + `dedup()` upstream in publish-glb.js or input mesh has degenerate topology. Quiet now (small files), will matter when LOD-by-distance lands.
+- [ ] **Per-shot tree-scale slider.** Hero defaults to 2× tree scale (for the romance — sparse-looking neighborhood gets visual lushness from larger crowns). Slider 1.0–3.0 in the Hero panel; persists per-Look. Browse + Street stay 1.0 (1:1 with reality). Cheap; instance-matrix scale only.
+- [ ] **Stochastic per-instance variation pass** (scale jitter ±10%, mirror flip, hue shift, slight bend). Adds visual variety from the same handful of variants without authoring more species. Bake-time pass over `default.json` placements; runtime reads the perturbed per-instance transforms unchanged.
 - [ ] **Replace magnolia source models** when a slimmer asset is sourced. Removed from LS roster 2026-05-03 because lod2 was 50–150K tris each; substitution path now shows London Planes in the formerly-magnolia placements, which reads green and reasonable. See `project_arborist_grove.md`.
 
 ### Atmosphere + Sky & Light
 - [ ] **Remove Sun info from TOD in Preview.** Sun readout currently surfaces in Preview's TOD UI; pull it out.
 - [ ] **QC Neon.** Toy fixture is live; perfect behavior + migrate to LS (`project_neon_bands_runtime.md`, `HANDOFF-neon.md`).
-- [ ] **Finish clouds.** Land the cloud renderer at desktop-quality bar (`HANDOFF-clouds-day2.md`, `project_weather_and_events_vision.md`).
+- [ ] **Build Meteorologist** (atmospheric authoring + runtime). Replaces "finish clouds" — full architecture + 52-preset Teapot scaffold landed 2026-05-04; build order step 1 is the volumetric raymarch shader. See `meteorologist/README.md`, `meteorologist/SPEC.md`. Supersedes `HANDOFF-clouds-day2.md` and `HANDOFF-clouds-day3-clouddome-v2.md`.
 - [ ] **Add luminance to surfaces (off by default).** New surface-level luminance channel; defaults match today (off); operator opts in per material.
 
 ### Park
@@ -78,7 +380,7 @@ Memory entries are the source of truth; this is the index.
 
 ## 2026-05-03 — In flight
 
-- [ ] **Cloud renderer upgrade.** Day-2 sprite tuning continues; clearing the desktop-home-screen quality bar. See `HANDOFF-clouds-day2.md` and `project_weather_and_events_vision.md`.
+- [→] **Cloud renderer upgrade — promoted to Meteorologist.** Day-2 sprite tuning + day-3 CloudDome v2 noise-shader spike both retired in favor of the volumetric raymarched approach. Architecture, schemas, 52-preset Teapot canon, and 16-rule starter Almanac landed 2026-05-04. See `meteorologist/SPEC.md`. Build order step 1 (the shader) is tomorrow's first task.
 - [ ] **Neon Bands — testing + perfecting.** Live in toy as R&D fixture (NeonBands shader + Sky & Light group-of-3 channel + NeonPump). Behavior is in; needs shake-out and LS migration. See `HANDOFF-neon.md`, `project_neon_bands_runtime.md`.
 - [ ] **Hero pan port — needs QC.** Structural port done (`src/preview/heroAnim.js` + `HeroCamera` + `heroKeyframes` persisted in design.json). Verify swing cadence/amplitude/ease against legacy `src/components/Scene.jsx:312` `heroPanSwing` side-by-side before declaring shipped. See `project_hero_pan_needs_qc.md`.
 - [ ] **Sky & Light + Post card polish.** Cards scaffolded; remaining work is per-channel polish + promoting single-channel emissives. See `HANDOFF-sky-and-light.md`.

@@ -410,6 +410,65 @@ export function innerEdgeMeasure(baseMeasure, innerSign) {
   }
 }
 
+// Catmull-Rom polyline subdivision. Returns a new point array with
+// interpolated samples between original points. `smooth` ∈ [0..1] controls
+// segment density (0 = pass-through, 1 = ~8 samples per original segment).
+// Original points are preserved as exact samples (Catmull-Rom interpolant
+// passes through control points). Operates on [x, z] arrays; mirrors the
+// shape of `points` everywhere else in the cartograph.
+export function subdividePolyline(pts, smooth) {
+  if (!pts || pts.length < 3 || !smooth || smooth <= 0) return pts
+  const n = pts.length
+  const samplesPerSeg = Math.max(1, Math.round(smooth * 8))
+  const out = []
+  const tension = 0.5
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[Math.min(n - 1, i + 2)]
+    out.push([p1[0], p1[1]])
+    for (let k = 1; k < samplesPerSeg; k++) {
+      const t = k / samplesPerSeg
+      const t2 = t * t
+      const t3 = t2 * t
+      const a = -tension * t + 2 * tension * t2 - tension * t3
+      const b = 1 + (tension - 3) * t2 + (2 - tension) * t3
+      const c = tension * t + (3 - 2 * tension) * t2 + (tension - 2) * t3
+      const d = -tension * t2 + tension * t3
+      out.push([
+        a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0],
+        a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1],
+      ])
+    }
+  }
+  out.push([pts[n - 1][0], pts[n - 1][1]])
+  return out
+}
+
+// OSM highway hierarchy score for z-order tie-break and future render rules.
+// Higher score = visually dominant (paints later / on top).
+export function osmHierarchyScore(highway) {
+  switch (highway) {
+    case 'motorway':      return 70
+    case 'trunk':         return 60
+    case 'primary':       return 50
+    case 'secondary':     return 40
+    case 'tertiary':      return 35
+    case 'residential':   return 30
+    case 'unclassified':  return 25
+    case 'service':       return 20
+    case 'trunk_link':    return 18
+    case 'motorway_link': return 15
+    case 'cycleway':      return 12
+    case 'pedestrian':    return 10
+    case 'footway':       return 8
+    case 'path':          return 6
+    case 'steps':         return 5
+    default:              return 30
+  }
+}
+
 // Offset a polyline by `dist` along its normal; side=+1 right, -1 left.
 export function offsetPolyline(pts, dist, side) {
   const result = []

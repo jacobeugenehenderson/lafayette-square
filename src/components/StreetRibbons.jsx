@@ -1,11 +1,11 @@
 import { useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import clipperLib from 'clipper-lib'
+import { buildRibbonGeometry } from '../lib/ribbonsGeometry.js'
 import ribbonsRaw from '../data/ribbons.json'
 import { streetInBoundary, faceInBoundary, pointInBoundary } from '../cartograph/boundary.js'
 import useCamera from '../hooks/useCamera'
-import { BAND_COLORS, sideToStripes, refEdges, defaultMeasure, resolveInserts, segmentRangesForCouplers, measureForSegment, offsetPolyline, innerEdgeMeasure } from '../cartograph/streetProfiles.js'
+import { BAND_COLORS, sideToStripes, refEdges, defaultMeasure, resolveInserts, segmentRangesForCouplers, measureForSegment, offsetPolyline, innerEdgeMeasure, subdividePolyline, osmHierarchyScore } from '../cartograph/streetProfiles.js'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, BAND_TO_LAYER } from '../cartograph/m3Colors.js'
 import {
@@ -721,8 +721,9 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       }
       if (live.couplers && live.couplers.length) merged.couplers = live.couplers
       if (live.segmentMeasures) merged.segmentMeasures = live.segmentMeasures
-      // Anchor: live override (from store) wins; otherwise the ribbons.json
-      // default (auto-detected by derive) is already on `st`.
+      if (live.smooth && live.smooth > 0) {
+        merged.points = subdividePolyline(st.points, live.smooth)
+      }
       if (live.anchor) merged.anchor = live.anchor
       if (live.capStart !== undefined || live.capEnd !== undefined) {
         // Caps apply only to the ribbon segment whose terminal actually
@@ -1157,11 +1158,11 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       // cross product (B-A) × (C-A)
       const e1x = bx-ax, e1y = by-ay, e1z = bz-az
       const e2x = cx-ax, e2y = cy-ay, e2z = cz-az
-      const crossY = e1z*e2x - e1x*e2z
-      console.log('[winding]', result[0].id,
-        'tri verts:', [ax,ay,az], [bx,by,bz], [cx,cy,cz],
-        'cross Y:', crossY, crossY > 0 ? 'UP (CCW from above)' : 'DOWN (CW from above)',
-        'stored normal:', [nrm[i0*3], nrm[i0*3+1], nrm[i0*3+2]])
+      // (Per-triangle winding sanity check, kept inert. To revive for
+      // diagnosis: uncomment the console.log below. crossY > 0 = CCW
+      // from above = upward-facing normal.)
+      // const crossY = e1z*e2x - e1x*e2z
+      // console.log('[winding]', result[0].id, 'cross Y:', crossY, crossY > 0 ? 'UP' : 'DOWN')
     }
 
     return result
@@ -1480,11 +1481,13 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
   }, [liveCenterlines])
 
   const clippedFaces = useMemo(() => {
-    const raw = (ribbons.faces || []).filter(f => !useBoundary || faceInBoundary(f.ring))
-    if (!raw.length) return raw
+    const rawFaces = (ribbons.faces || []).filter(f => !useBoundary || faceInBoundary(f.ring))
+    if (!rawFaces.length) return rawFaces
     try {
-      // Merge live measures onto pipeline streets by name (same pattern as
-      // `meshes` useMemo) so the clip tracks whatever Measure just drew.
+      // Merge live operator intent (Measure / Survey edits) onto pipeline
+      // streets by skelId or name. The bake reads ribbons.json directly
+      // (already merged by derive.js); only the live render needs this
+      // step because the operator's mid-edit state hasn't been baked yet.
       const liveById = new Map()
       const liveByName = new Map()
       if (stableLiveCenterlines) {
@@ -1494,9 +1497,6 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           if (cl.name && !liveByName.has(cl.name)) liveByName.set(cl.name, cl)
         }
       }
-      // Forward couplers + segmentMeasures along with chain measure so the
-      // clip can walk segments. With per-segment overrides, a single chain
-      // contributes multiple clip rings (one per segment, per side).
       const ne = (a, b) => a && b && Math.abs(a[0] - b[0]) < 0.5 && Math.abs(a[1] - b[1]) < 0.5
       const streetsToClip = ribbons.streets.map(st => {
         const live = (st.skelId && liveById.get(st.skelId)) || liveByName.get(st.name) || null
@@ -1516,6 +1516,8 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           }
         }
         return {
+          name: st.name,
+          skelId: st.skelId,
           points: st.points,
           measure: (live?.measure?.left && live?.measure?.right) ? live.measure : st.measure,
           couplers: live?.couplers || st.couplers,
@@ -1529,128 +1531,29 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
         }
       })
 
-      const SCALE = 1000
-      const toClipper = (x, z) => ({ X: Math.round(x * SCALE), Y: Math.round(z * SCALE) })
-      const { Clipper, PolyType, ClipType, PolyFillType, Paths } = clipperLib
+      // Hand off to the shared helper. Same algorithm the offline bake
+      // uses (src/lib/ribbonsGeometry.js), so Designer + bake produce
+      // identical face geometry — no drift to chase.
+      const { byFaceUse } = buildRibbonGeometry({
+        streets: streetsToClip,
+        faces: rawFaces,
+      })
 
-      // Per-side ribbon clip polygons. Building a symmetric offset at
-      // min(L,R) (what the old pipeline did) means the face never updates
-      // when you widen ONE side — MIN doesn't move. So for each side we
-      // build a closed ring = centerline + its own side-offset polyline,
-      // and union all sides across all streets. Widening the park side
-      // of Missouri now shrinks the park polygon; widening the opposite
-      // side moves only that side.
-      const offsetPolyline = (points, perps, sideSign, W) => {
-        const out = new Array(points.length)
-        for (let i = 0; i < points.length; i++) {
-          const [x, z] = points[i]
-          const [px, pz] = perps[i]
-          out[i] = [x + sideSign * px * W, z + sideSign * pz * W]
-        }
-        return out
-      }
-      const ribbonClipPaths = []
-      for (const st of streetsToClip) {
-        if (st.disabled) continue
-        if (!st.points || st.points.length < 2) continue
-        if (!st.measure?.left || !st.measure?.right) continue
-        const perps = computePerps(st.points)
-        const segRanges = segmentRangesForCouplers(st.points, st.couplers || [])
-        const ranges = segRanges.length ? segRanges : [[0, st.points.length - 1]]
-        for (let ord = 0; ord < ranges.length; ord++) {
-          const [from, to] = ranges[ord]
-          const baseM = (st.segmentMeasures && st.segmentMeasures[String(ord)]) || st.measure
-          if (!baseM?.left || !baseM?.right) continue
-          const m = inboardPedZoneless(st, baseM)
-          const segPts = st.points.slice(from, to + 1)
-          const segPp = perps.slice(from, to + 1)
-          // Width per side. Skip entirely when the side has no ped zone
-          // and no pavement (inner-edge synthetic inboard) — otherwise the
-          // CURB_WIDTH constant carves a sliver into the median.
-          const widthFor = (s) => {
-            if (!s) return 0
-            const hw = s.pavementHW || 0, tl = s.treelawn || 0, sw = s.sidewalk || 0
-            const cw = Number.isFinite(s.curb) ? s.curb : CURB_WIDTH
-            if (!hw && !tl && !sw && (s.terminal === 'none' || !s.terminal)) return 0
-            return hw + cw + tl + sw
-          }
-          const outerL = widthFor(m.left)
-          const outerR = widthFor(m.right)
-          if (outerL <= 0 && outerR <= 0) continue
-          const isFirstSeg = ord === 0
-          const isLastSeg = ord === ranges.length - 1
-          const ARC_N = 8
-          for (const [sideSign, W] of [[-1, outerL], [+1, outerR]]) {
-            if (W <= 0) continue
-            const outerEdge = offsetPolyline(segPts, segPp, sideSign, W)
-            const ring = []
-            // Centerline forward
-            for (const p of segPts) ring.push(toClipper(p[0], p[1]))
-            // End cap: bulge from pt[last] around to offset[last]. Round →
-            // quarter-disk arc; blunt → implicit straight (no insert needed).
-            if (isLastSeg && st.capEnds?.end === 'round' && segPts.length >= 2) {
-              const last = segPts.length - 1
-              const ep = segPts[last]
-              const tdx = ep[0] - segPts[last - 1][0], tdz = ep[1] - segPts[last - 1][1]
-              const tl = Math.hypot(tdx, tdz) || 1
-              const tx = tdx / tl, tz = tdz / tl
-              const px = segPp[last][0],  pz = segPp[last][1]
-              for (let i = 0; i < ARC_N; i++) {
-                const a = (i / ARC_N) * (Math.PI / 2)
-                const ca = Math.cos(a), sa = Math.sin(a)
-                const dx = ca * tx + sa * sideSign * px
-                const dz = ca * tz + sa * sideSign * pz
-                ring.push(toClipper(ep[0] + dx * W, ep[1] + dz * W))
-              }
-            }
-            // Offset edge backward
-            for (let i = outerEdge.length - 1; i >= 0; i--) ring.push(toClipper(outerEdge[i][0], outerEdge[i][1]))
-            // Start cap: bulge from offset[0] around to pt[0].
-            if (isFirstSeg && st.capEnds?.start === 'round' && segPts.length >= 2) {
-              const ep = segPts[0]
-              const tdx = ep[0] - segPts[1][0], tdz = ep[1] - segPts[1][1]
-              const tl = Math.hypot(tdx, tdz) || 1
-              const tx = tdx / tl, tz = tdz / tl
-              const px = segPp[0][0],  pz = segPp[0][1]
-              for (let i = 1; i <= ARC_N; i++) {
-                const a = (i / ARC_N) * (Math.PI / 2)
-                const ca = Math.cos(a), sa = Math.sin(a)
-                const dx = ca * sideSign * px + sa * tx
-                const dz = ca * sideSign * pz + sa * tz
-                ring.push(toClipper(ep[0] + dx * W, ep[1] + dz * W))
-              }
-            }
-            ribbonClipPaths.push(ring)
-          }
-        }
-      }
-      if (!ribbonClipPaths.length) return raw
-
-      const unionC = new Clipper()
-      unionC.AddPaths(ribbonClipPaths, PolyType.ptSubject, true)
-      const ribbonUnion = new Paths()
-      unionC.Execute(ClipType.ctUnion, ribbonUnion, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-
+      // Flatten Map<use, [{outer, holes}]> → [{ring, use}] for the
+      // existing faceMeshes triangulation. Holes are currently dropped
+      // (the live render's downstream `THREE.Shape` doesn't honor them).
+      // The bake preserves holes; if/when faceMeshes learns to consume
+      // them, switch to passing the full face object.
       const out = []
-      for (const f of raw) {
-        if (f.ring.length < 3) { out.push(f); continue }
-        const subj = new Paths()
-        subj.push(f.ring.map(([x, z]) => toClipper(x, z)))
-        const diff = new Clipper()
-        diff.AddPaths(subj, PolyType.ptSubject, true)
-        diff.AddPaths(ribbonUnion, PolyType.ptClip, true)
-        const result = new Paths()
-        diff.Execute(ClipType.ctDifference, result, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-        if (!result.length) continue
-        for (const ring of result) {
-          if (ring.length < 3) continue
-          out.push({ ring: ring.map(p => [p.X / SCALE, p.Y / SCALE]), use: f.use })
+      for (const [use, faces] of byFaceUse) {
+        for (const f of faces) {
+          if (f.outer && f.outer.length >= 3) out.push({ ring: f.outer, use })
         }
       }
       return out
     } catch (e) {
       console.warn('[faces] runtime clip failed; using unclipped:', e)
-      return raw
+      return rawFaces
     }
   }, [ribbons, useBoundary, stableLiveCenterlines])
 
@@ -1895,8 +1798,9 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       {!surveyActive && pathRibbons.map((m, i) => {
         if (hide[m.id]) return null
         const streetFade = { center: FADE_CENTER, inner: STREET_FADE.inner, outer: STREET_FADE.outer }
-        const mat = makeMaterial(m.color, 8, streetFade, { measureActive })
-        return <mesh key={`path-${m.id}-${i}`} geometry={m.geo} renderOrder={8} receiveShadow material={mat} />
+        const ord = 8 + (osmHierarchyScore(m.id) - 30) * 0.001
+        const mat = makeMaterial(m.color, ord, streetFade, { measureActive })
+        return <mesh key={`path-${m.id}-${i}`} geometry={m.geo} renderOrder={ord} receiveShadow material={mat} />
       })}
       {/* Per-stripe ribbon stack — the map's normal rendering and Measure's
           color story (translucent stripe fills). Suppressed only in Survey,
