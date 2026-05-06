@@ -11,10 +11,10 @@
  *    hide here is hidden everywhere. Toggling visibility stales the bake
  *    (it's a real Look edit); re-exposing a layer requires a re-bake.
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import SurveyorPanel from './SurveyorPanel.jsx'
-import { buildings as _allBuildings } from '../data/buildings'
+import landmarksData from '../data/landmarks.json'
 import MeasurePanel from './MeasurePanel.jsx'
 
 const STREETS_DEFS = [
@@ -83,6 +83,106 @@ function Section({ name, open, onToggle, children, visState, onToggleVis }) {
   )
 }
 
+// Corners subsection — lives inside the Streets section and exposes the
+// Look-level corner-radius controls. Phase 1 of 3: global scale slider.
+// Phase 2 will add a "Corner edit mode" toggle that surfaces draggable
+// per-IX center handles; phase 3 the per-corner handles. The whole
+// authoring stack lands here, not in a sibling section, so all
+// corner-shaping lives in one place inside the Streets menu.
+function CornersSubsection() {
+  const stored = useCartographStore(s => s.cornerRadiusScale ?? 1)
+  const setStored = useCartographStore(s => s.setCornerRadiusScale)
+  const cornerEditMode = useCartographStore(s => s.cornerEditMode)
+  const setCornerEditMode = useCartographStore(s => s.setCornerEditMode)
+  const overrides = useCartographStore(s => s.cornerRadiusOverrides) || {}
+  const cornerOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides) || {}
+  const clearAllIxCornerRadii = useCartographStore(s => s.clearAllIxCornerRadii)
+  const overrideCount = Object.keys(overrides).length + Object.keys(cornerOverrides).length
+  // Local draft tracks the slider thumb at input rate so the UI feels
+  // responsive even though the store→geometry rebuild is heavy (Clipper
+  // booleans + ShapeGeometry triangulation in StreetRibbons run synchronously
+  // on every store change). Commits to the store are rAF-throttled and
+  // always finalized on pointer-up so the persisted value matches the thumb.
+  const [draft, setDraft] = useState(stored)
+  const rafRef = useRef(null)
+  const targetRef = useRef(stored)
+  const draggingRef = useRef(false)
+  // Resync the slider when the store changes externally (Look switch, etc.)
+  // but not mid-drag — that would clobber the user's in-progress motion.
+  useEffect(() => {
+    if (!draggingRef.current) setDraft(stored)
+  }, [stored])
+  const scheduleCommit = (v) => {
+    targetRef.current = v
+    if (rafRef.current != null) return
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null
+      setStored(targetRef.current)
+    })
+  }
+  const finalCommit = () => {
+    draggingRef.current = false
+    if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    setStored(targetRef.current)
+  }
+  return (
+    <>
+      <div className="carto-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+        <label className="carto-label-fixed" title="Multiplies every IX corner radius (default 1 = AASHTO baseline). Crank up for a bubblier neighborhood; down to 0 for square corners.">
+          Corners
+        </label>
+        <input type="range" className="carto-input"
+          min="0" max="11" step="0.1"
+          value={draft}
+          onPointerDown={() => { draggingRef.current = true }}
+          onPointerUp={finalCommit}
+          onChange={e => {
+            const v = parseFloat(e.target.value)
+            setDraft(v)
+            scheduleCommit(v)
+          }}
+          onKeyUp={finalCommit} />
+        <span className="carto-meta" style={{ minWidth: 34, textAlign: 'right' }}>
+          {Number(draft).toFixed(2)}×
+        </span>
+      </div>
+      <div className="carto-row" style={{ gap: 6 }}>
+        <button
+          className="carto-button"
+          onClick={() => setCornerEditMode(!cornerEditMode)}
+          style={{
+            background: cornerEditMode ? 'var(--vic-gold, #ffaa00)' : 'transparent',
+            color: cornerEditMode ? '#000' : 'var(--on-surface, #ddd)',
+            border: '1px solid var(--outline-variant, #555)',
+            padding: '4px 10px',
+            cursor: 'pointer',
+            flex: 1,
+          }}
+          title="Show draggable handles at every intersection center. Drag a handle: world distance from cursor to IX = new corner radius. Release to commit.">
+          {cornerEditMode ? '● Edit corners' : '○ Edit corners'}
+        </button>
+        <button
+          className="carto-button"
+          onClick={clearAllIxCornerRadii}
+          disabled={overrideCount === 0}
+          style={{
+            background: 'transparent',
+            color: overrideCount ? 'var(--on-surface, #ddd)' : 'var(--on-surface-disabled, #555)',
+            border: '1px solid var(--outline-variant, #555)',
+            padding: '4px 10px',
+            cursor: overrideCount ? 'pointer' : 'default',
+            opacity: overrideCount ? 1 : 0.4,
+          }}
+          title={overrideCount
+            ? `Clear ${overrideCount} per-IX override${overrideCount === 1 ? '' : 's'} — every corner reverts to its default radius (the AASHTO/data-table baseline). Global scale is unaffected.`
+            : 'No per-IX overrides to revert.'}>
+          Revert{overrideCount ? ` (${overrideCount})` : ''}
+        </button>
+      </div>
+    </>
+  )
+}
+
 function VisRow({ id, label, hidden, onToggle }) {
   return (
     <div className="carto-row">
@@ -97,21 +197,21 @@ function HeroSubjectPicker({ open, onToggle }) {
   const heroSubject = useCartographStore(s => s.heroSubject)
   const setHeroSubject = useCartographStore(s => s.setHeroSubject)
 
-  // Subjects available for designation. Arch is special (fixed in-world).
-  // Buildings with a `name` are the human-meaningful subset (65 of 1056);
-  // unnamed buildings are noise here.
+  // Roster: every landmark in Lafayette Square. Wiring is academic for now;
+  // the operator-visible roster matches the public Landmarks list.
   const options = useMemo(() => {
-    const named = _allBuildings
-      .filter(b => b.name)
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(b => ({ kind: 'building', id: b.id, label: b.name }))
-    return [{ kind: 'arch', id: 'arch', label: 'Arch' }, ...named]
+    const landmarks = (landmarksData.landmarks || [])
+      .map(l => ({ kind: 'landmark', id: l.id, label: l.name }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+    // Gateway Arch is the titular hero — pinned to the top, kept separate
+    // from the landmark roster so its identity (and the camera anchor) stay
+    // distinct from the dining/listings data.
+    return [{ kind: 'arch', id: 'arch', label: 'Gateway Arch' }, ...landmarks]
   }, [])
 
   const currentKey = heroSubject ? `${heroSubject.kind}:${heroSubject.id}` : ''
-  const currentLabel = heroSubject
-    ? options.find(o => `${o.kind}:${o.id}` === currentKey)?.label || '—'
-    : 'None (arch fallback)'
+  const currentLabel =
+    options.find(o => `${o.kind}:${o.id}` === currentKey)?.label || '—'
 
   return (
     <div className="carto-section">
@@ -119,35 +219,56 @@ function HeroSubjectPicker({ open, onToggle }) {
         <span className="carto-section-title" onClick={onToggle}>
           <span className="carto-section-caret"
             style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>▸</span>
-          Hero Subject
+          Hero
         </span>
         {!open && (
           <span className="carto-section-meta" title={currentLabel}>{currentLabel}</span>
         )}
       </h2>
       {open && (
-        <>
-          <div className="carto-hint">
-            The Hero shot frames around this object. The camera target locks to its centroid.
-          </div>
-          <div className="carto-row">
-            <select
-              className="carto-select"
-              value={currentKey}
-              onChange={(e) => {
-                const v = e.target.value
-                if (!v) { setHeroSubject(null); return }
-                const [kind, ...rest] = v.split(':')
-                setHeroSubject({ kind, id: rest.join(':') })
-              }}
-            >
-              <option value="">— None (arch fallback) —</option>
-              {options.map(o => (
-                <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-        </>
+        <div className="carto-row">
+          <select
+            className="carto-select"
+            value={currentKey}
+            onChange={(e) => {
+              const v = e.target.value
+              if (!v) { setHeroSubject(null); return }
+              const [kind, ...rest] = v.split(':')
+              setHeroSubject({ kind, id: rest.join(':') })
+            }}
+          >
+            {options.map(o => (
+              <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Cosmetic-only Look picker. Not wired — clicking "+ add look" is a no-op
+// today; real multi-Look authoring is tracked in cartograph/BACKLOG.md.
+function LookPicker({ open, onToggle }) {
+  return (
+    <div className="carto-section">
+      <h2 className="carto-section-header">
+        <span className="carto-section-title" onClick={onToggle}>
+          <span className="carto-section-caret"
+            style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>▸</span>
+          Lafayette Square
+        </span>
+      </h2>
+      {open && (
+        <div className="carto-row">
+          <button
+            type="button"
+            className="carto-look-add"
+            onClick={(e) => e.preventDefault()}
+          >
+            + add look
+          </button>
+        </div>
       )}
     </div>
   )
@@ -155,7 +276,6 @@ function HeroSubjectPicker({ open, onToggle }) {
 
 export default function Panel() {
   const tool = useCartographStore(s => s.tool)
-  const activeLookId = useCartographStore(s => s.activeLookId)
   const layerVis = useCartographStore(s => s.layerVis)
   const toggleLayerVis = useCartographStore(s => s.toggleLayerVis)
   const setLayersVis = useCartographStore(s => s.setLayersVis)
@@ -201,20 +321,12 @@ export default function Panel() {
       {tool === 'surveyor' && <SurveyorPanel />}
       {tool === 'measure' && <MeasurePanel />}
 
-      {/* Active-Look reminder + visibility toggles. Visibility writes to
-          the Look's layerVis and propagates everywhere; styling lives
-          separately in Stage → Surfaces. */}
-      <div className="carto-section">
-        <div className="carto-section-header" style={{ paddingTop: 0 }}>
-          <span className="carto-section-title" style={{ cursor: 'default' }}>
-            Look · {activeLookId || '—'}
-          </span>
-        </div>
-        <div className="carto-row" style={{ color: '#888', fontSize: 10, lineHeight: 1.4, paddingBottom: 4 }}>
-          Visibility toggles edit the Look (Stage + Preview see the change;
-          stales the bake). Colors and materials live in Stage → Surfaces.
-        </div>
-      </div>
+      {/* Cosmetic Look picker. Visibility toggles below still write to the
+          active Look's layerVis (Stage + Preview pick up the change and the
+          bake stales). Colors and materials live in Stage → Surfaces. */}
+      <LookPicker
+        open={!!openSections['Look']}
+        onToggle={() => toggleSection('Look')} />
 
       <HeroSubjectPicker
         open={!!openSections['HeroSubject']}
@@ -229,6 +341,7 @@ export default function Panel() {
             <VisRow key={L.id} id={L.id} label={L.label}
               hidden={isHidden(L.id)} onToggle={toggleLayerVis} />
           ))}
+          {name === 'Streets' && <CornersSubsection />}
         </Section>
       ))}
     </div>

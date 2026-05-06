@@ -6,6 +6,141 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-06 — Corner-authoring kit, Phases 1 & 2 (`cartograph-looks-pass-ab`)
+
+Two-phase landing of the corner-radius authoring stack. The 4-step plan from
+the session's outset (variant testing → global slider → per-IX handles →
+per-corner handles → roll to neighborhood) is complete through the per-IX
+layer. Phase 3 (per-corner handles, leg-pair-keyed) and the neighborhood
+roll-out are tracked in `BACKLOG.md`.
+
+### Variant grid (regression fixture)
+
+`src/data/toy/toy-input.json` was rebuilt as an 8-variant 4×2 grid (80m
+spacing) covering the angle regimes that stress corner-plug geometry: 90° X
+baseline, 60°/45°/30° X, T-90°, Y-120°, 175°/5° degenerate X, and 5-way at
+72° spokes. All chains share an asymmetric measure (left=tl+sw, right=sw)
+so angle is the only varying axis. Symmetric/near-symmetric cases (90°, T,
+Y) render cleanly; acute regimes show the artifacts that motivate the
+deferred "corner-case corners" punchlist.
+
+The grid is now the canonical regression fixture for any future
+corner-plug work — flip Designer to the toy scene, drag the corner-radius
+slider full range, and visually scan all 8 cells.
+
+Earlier in the session: parcel face inner edges in `toy-input.json` were
+extended from ±7 to centerline (0,0) to fix a sliver of background
+showing through at sw-only sides. The lesson — *parcel face inner edges
+must extend well past any ribbon outer width to let the ribbon-union clip
+carve them flush, regardless of treelawn presence* — generalizes to
+authoring real LS faces.
+
+### Phase 1 — Look-level `cornerRadiusScale` slider
+
+A single multiplier applied uniformly to every IX corner radius across
+the active Look. Persists to `design.json#cornerRadiusScale`. Drives the
+"bubbly retro" sponsored-event mode without per-IX authoring.
+
+Threading: `cornerRadiusScale` reaches `buildCornerPadClips` (bake +
+face clip) and the live `getR(ix)` callback in `StreetRibbons.jsx`
+(curb annulus + sidewalk pad). Multiplied AFTER per-IX overrides, so a
+3.5m authored corner becomes 5.25m at scale 1.5.
+
+`buildRibbonGeometry(ribbons, opts)` switched signature: 2nd arg is now
+an opts object `{ stencilPolygon?, cornerRadiusScale?, cornerRadiusOverrides? }`.
+Legacy-array form auto-rewraps for back-compat. Both `bake-ground.js`
+and `StreetRibbons.jsx` updated.
+
+**UX bugs fixed during Phase 1, worth remembering:**
+- Slider felt "click-and-jump" — the heavy meshes useMemo was running
+  synchronously on every onChange, blocking the input thread. Fix:
+  local draft state for the visible thumb, `requestAnimationFrame`-
+  throttled commits to the store, final commit on `onPointerUp`. Pattern
+  is reusable for any heavy-onChange slider.
+- Slider was wired correctly but corners didn't change. Cause: the
+  legacy `buildCornerPlug` (line 900 in StreetRibbons.jsx) emits its
+  own `corner_sw` / `corner_asph` fills with R derived from sidewalk
+  width, ignoring `ix.cornerRadius` entirely. The new `buildCurbAnnulus`
+  + `buildSidewalkPads` paint OVER it at higher renderOrder, but at
+  scale=0 the new layers go empty and the legacy fills are exposed.
+  Fix: gated `buildCornerPlug` behind `if (false && ...)` (function
+  body kept for easy revert if regressions surface).
+- Slider STILL didn't change corners. Cause: `cornerRadiusScale` was
+  added to the wrong useMemo's dep array (caught `pathRibbons` instead
+  of `meshes`). Fix: added to the correct one (`meshes` closes ~300
+  lines earlier). **Lesson: when adding a dep, verify by line number
+  which useMemo's dep array you're editing — multiple in the same file
+  can have nearly-identical shapes.**
+
+### Phase 2 — Per-IX center handles in corner-edit mode
+
+New `src/cartograph/CornerEditHandles.jsx` — Illustrator-style draggable
+dots at every IX. Mounted unconditionally in Designer mode (toy + LS);
+component bails out when `cornerEditMode` is false.
+
+Toggle button (`○ Edit corners` / `● Edit corners`) lives in the Streets >
+Corners subsection alongside the global slider. While on:
+- Blue dots at every IX center, blue rings at the current effective radius.
+- Drag a dot: world distance from cursor to IX = new radius. Live commit
+  to store at pointermove rate; geometry rebuilds during drag.
+- Release: dot snaps back to IX center. If the value differs from
+  default, dot turns gold (override-bearing flag).
+- Revert button next to the toggle clears all overrides for the active
+  Look. Disabled when no overrides exist; shows count when active.
+
+Persistence: `design.json#cornerRadiusOverrides` — sparse map keyed by
+quantized point string (`"x.xxx,z.zzz"`, 3-decimal precision). The same
+`ixPointKey` helper is exposed on the store and inlined in
+`buildCornerPadClips` so Designer and bake produce the same lookup.
+
+The override stores the BASE radius (what gets multiplied by
+`cornerRadiusScale`). Authoring at scale=2 stores half the apparent
+size; switching to scale=1 reveals the base. This is intentional —
+the slider is a true uniform multiplier on top of authored intent.
+
+### Pattern saved to memory
+
+`feedback_illustrator_handles_for_spatial_authoring`: per-feature spatial
+controls (per-IX, per-corner, per-vertex) → in-scene draggable dots with
+direct-manipulation gestures, NEVER panel sliders / numeric inputs.
+Look-level / global controls → panel slider is fine. Color-code handles
+by override status.
+
+### Phase 3 — per-corner handles, leg-pair-keyed (added in same session)
+
+Per-corner overrides keyed by `<pointKey>|<legKeyA>|<legKeyB>` where
+legKey = `<skelId>:<dir>` and the two leg keys are sorted alphabetically
+(invariant under A/B swap; only invalidates if one of the keyed legs is
+removed from the IX — the explicit reason we picked leg-pair keys over
+ordinal indices).
+
+Geometry refactor: `buildSidewalkPads` now emits per-corner asphalt-mouth
+fills + curb annuli alongside sidewalk pads. Each per-corner asphalt
+cover splits into THREE simple polygons (legA-tail rect + legB-tail rect
++ lens) that tile around Q_curb without self-intersection. The naive
+single-polygon-around-the-L-shape approach failed because earcut
+triangulates the re-entrant Q_curb vertex incorrectly. The dead
+`buildCurbAnnulus` (uniform-R Clipper-offset trick) is kept in the file
+for revert-safety but no longer called.
+
+Two additional debugging-pattern lessons saved to memory:
+
+- `project_overlay_meshes_must_be_transparent` — every overlay mesh
+  added to the cartograph Canvas needs `transparent opacity={1}` on its
+  material; opaque meshes silently don't render in Designer mode (the
+  post-FX / fade pipeline drops them from the final framebuffer). Cost
+  hours during Phase 3 to discover. Symptom: layout/log fires correctly,
+  no mesh visible. **Don't go down the renderOrder / frustum-culling /
+  sphereGeometry rabbit hole — try `transparent` first.**
+- React `useMemo` dep-array gotcha: when adding a new dependency to a
+  useMemo, verify by line number which useMemo's dep array you're
+  editing — multiple in the same file can have nearly-identical shapes
+  (`[ribbons, layerColors, useBoundary, ...]`). Phase 1 of the slider
+  silently failed for ~30 minutes because I added `cornerRadiusScale`
+  to `pathRibbons`'s deps instead of `meshes`'s.
+
+---
+
 ## 2026-04-26 (evening) — Path B Phase 4 SHIPPED (derive consumes phase metadata)
 
 Implemented in this session, on top of Phases 1+2+3:

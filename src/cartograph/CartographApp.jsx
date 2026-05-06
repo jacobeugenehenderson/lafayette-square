@@ -12,6 +12,7 @@ import BakedGround from '../components/BakedGround.jsx'
 import AerialTiles from './AerialTiles.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
 import MeasureOverlay from './MeasureOverlay.jsx'
+import CornerEditHandles from './CornerEditHandles.jsx'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import { DesignerArch } from '../stage/StageArch.jsx'
@@ -34,6 +35,7 @@ import PreviewPostFx from '../preview/PreviewPostFx.jsx'
 
 // Toy scene fixtures (single 4-way corner for shader/shadow R&D)
 import toyRibbons from '../data/toy/toy-ribbons.json'
+import ribbonsRaw from '../data/ribbons.json'
 import toyLamps from '../data/toy/toy-lamps.json'
 import ToyBuildings from '../toy/ToyBuildings.jsx'
 import ToyTrees from '../toy/ToyTrees.jsx'
@@ -642,6 +644,20 @@ export default function CartographApp() {
               hideFaceFills={false} />
             </group>
           </R3FErrorBoundary>
+          )}
+
+          {/* ── Corner-edit handles — surface only in Designer mode, in
+              whichever scene is active. Toggle lives in Streets > Corners
+              in Panel.jsx. Component bails out internally when
+              cornerEditMode is off; mount is unconditional in Designer
+              so the toggle takes effect without a re-mount. */}
+          {inDesigner && (
+            <R3FErrorBoundary name="CornerEditHandles">
+              <CornerEditHandles
+                ribbons={scene === 'toy'
+                  ? toyRibbons
+                  : { intersections: ribbonsRaw.intersections || [] }} />
+            </R3FErrorBoundary>
           )}
 
           {/* ── Baked Three.js ground for Stage shots (neighborhood scene).

@@ -9,7 +9,7 @@
  * which derive.js has already merged overlay.json into). Output:
  * canonical ring data the consumer turns into meshes.
  *
- * Outputs from `buildRibbonGeometry(ribbons, opts)`:
+ * Outputs from `buildRibbonGeometry(ribbons, { stencilPolygon?, cornerRadiusScale? })`:
  *   - byMaterial: Map<material, ring[]>           — ribbon bands
  *                                                   (asphalt, sidewalk,
  *                                                   curb, lawn, …)
@@ -151,19 +151,34 @@ const DEFAULT_CORNER_R = 4.5
 // edge concentric instead of leaving the parcel's raw L corner. Mirror
 // of buildSidewalkPads() in StreetRibbons.jsx; if you change one,
 // change the other.
-function buildCornerPadClips(streets, intersections) {
+function buildCornerPadClips(streets, intersections, scale = 1, overrides = {}, cornerOverrides = {}) {
   if (!intersections?.length) return []
   const TWO_PI = Math.PI * 2
   const toClipper = (p) => ({ X: Math.round(p[0] * CLIP_SCALE), Y: Math.round(p[1] * CLIP_SCALE) })
+  const ixKey = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
+  // Stable leg identity = "<skelId>:<dir>". Direction 'b' = back from V toward
+  // the previous chain vertex; 'f' = forward toward the next. Mirror of the
+  // store's legKey helper; if you change the format, change both.
+  const legKey = (skel, dir) => `${skel || '?'}:${dir === -1 || dir === 'b' ? 'b' : 'f'}`
+  // Composite per-corner key. Sort the two leg keys so authoring is invariant
+  // under (A,B) ↔ (B,A) swap. Mirror of the store's cornerKey helper.
+  const cornerKey = (V, lkA, lkB) => {
+    const [a, b] = (lkA <= lkB) ? [lkA, lkB] : [lkB, lkA]
+    return `${ixKey(V)}|${a}|${b}`
+  }
   const streetByName = new Map(streets.map(s => [s.name, s]))
   const out = []
   for (const ix of intersections) {
     if (!ix.streets || ix.streets.length < 2) continue
     if (ix.disabled) continue
     const V = ix.point
-    const cornerR = Number.isFinite(ix.cornerRadius) ? ix.cornerRadius : DEFAULT_CORNER_R
-    const R_curb = cornerR - CURB_WIDTH
-    if (R_curb <= 0) continue
+    // IX-level fallback radius (per-IX override → data-file → AASHTO default).
+    // Per-corner overrides are applied INSIDE the corner loop below; this is
+    // the value those overrides fall back to.
+    const ixOverrideR = overrides[ixKey(V)]
+    const baseR_ix = Number.isFinite(ixOverrideR) ? ixOverrideR
+      : Number.isFinite(ix.cornerRadius) ? ix.cornerRadius
+      : DEFAULT_CORNER_R
 
     const legs = []
     for (const sref of ix.streets) {
@@ -176,6 +191,7 @@ function buildCornerPadClips(streets, intersections) {
       const v = pts[ixIdx]
       if (!v) continue
       if (Math.hypot(v[0] - V[0], v[1] - V[1]) >= 0.5) continue
+      const skel = chain.skelId || chain.name
       const buildLeg = (direction) => {
         const ni = ixIdx + direction
         if (ni < 0 || ni >= pts.length) return null
@@ -195,6 +211,7 @@ function buildCornerPadClips(streets, intersections) {
           rightPed: tlSafe(right) + swSafe(right),
           leftTreelawn:  tlSafe(left),
           rightTreelawn: tlSafe(right),
+          legKey: legKey(skel, direction),
         }
       }
       if (ixIdx > 0) { const l = buildLeg(-1); if (l) legs.push(l) }
@@ -213,6 +230,16 @@ function buildCornerPadClips(streets, intersections) {
       while (theta >= TWO_PI) theta -= TWO_PI
       const thetaDeg = theta * 180 / Math.PI
       if (thetaDeg <= 5 || thetaDeg >= 175) continue
+      // Per-corner radius resolution: per-corner override → IX fallback (per-IX
+      // override or data-file or default), then × scale. Per-corner radii give
+      // each corner of an IX its own value (Phase 3 of the corner-authoring
+      // kit); per-IX is the bulk control via the center handle.
+      const ckey = cornerKey(V, A.legKey, B.legKey)
+      const cornerOverrideR = cornerOverrides[ckey]
+      const baseR = Number.isFinite(cornerOverrideR) ? cornerOverrideR : baseR_ix
+      const cornerR = baseR * scale
+      const R_curb = cornerR - CURB_WIDTH
+      if (R_curb <= 0) continue
       const halfTheta = theta / 2
       const sinH = Math.sin(halfTheta)
       const tanH = Math.tan(halfTheta)
@@ -233,7 +260,9 @@ function buildCornerPadClips(streets, intersections) {
 
       if (A.leftPed <= 0 && B.rightPed <= 0) continue
       // Mirror StreetRibbons.jsx — scan all four sides for the smallest
-      // sidewalk width so R_pad is uniform across corners.
+      // sidewalk width so R_pad is uniform across corners. Per-corner-
+      // decoupled variant deferred to the dedicated asymmetric-corner pass
+      // (see note in StreetRibbons.jsx:buildSidewalkPads).
       const minPed = Math.min(A.leftPed, A.rightPed, B.leftPed, B.rightPed)
       const R_pad = R_curb - minPed
       const TA_padarc = [TA_curb[0] + minPed * P_A[0], TA_curb[1] + minPed * P_A[1]]
@@ -268,7 +297,7 @@ function buildCornerPadClips(streets, intersections) {
   return out
 }
 
-function buildRibbonUnion(streets, intersections) {
+function buildRibbonUnion(streets, intersections, cornerRadiusScale = 1, cornerRadiusOverrides = {}, cornerCornerRadiusOverrides = {}) {
   const { Clipper, PolyType, ClipType, PolyFillType, Paths } = clipperLib
   const toClipper = (x, z) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) })
   const ribbonClipPaths = []
@@ -332,7 +361,7 @@ function buildRibbonUnion(streets, intersections) {
   }
   // Add corner-pad annular sectors so face clipping carves the parcel's
   // L corner with the same concentric arc the rendered pad uses.
-  const cornerPads = buildCornerPadClips(streets, intersections)
+  const cornerPads = buildCornerPadClips(streets, intersections, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides)
   for (const ring of cornerPads) ribbonClipPaths.push(ring)
   if (!ribbonClipPaths.length) return null
   const unionC = new Clipper()
@@ -468,10 +497,19 @@ export function clipAllToStencil(byMaterial, byFaceUse, stencilPolygon) {
 // Output:
 //   byMaterial: Map<material, ring[]>
 //   byFaceUse:  Map<use,      [{outer, holes}]>
-// `stencilPolygon` (optional): closed [x,z] polygon. If supplied, every
-// ring is intersected with it as a final pass — bounds the bake to the
-// silhouette so nothing extends past it.
-export function buildRibbonGeometry(ribbons, stencilPolygon = null) {
+// opts:
+//   stencilPolygon  — closed [x,z] polygon. If supplied, every ring is
+//                     intersected with it as a final pass; bounds the
+//                     bake to the silhouette so nothing extends past it.
+//   cornerRadiusScale — Look-level multiplier on every IX corner radius
+//                     (default 1). Applies to per-IX overrides AND the
+//                     baseline default at buildCornerPadClips.
+export function buildRibbonGeometry(ribbons, opts = {}) {
+  // Back-compat: legacy callers passed stencilPolygon as the 2nd arg
+  // (an Array of [x,z] points). Detect and rewrap.
+  if (Array.isArray(opts)) opts = { stencilPolygon: opts }
+  const { stencilPolygon = null, cornerRadiusScale = 1, cornerRadiusOverrides = {}, cornerCornerRadiusOverrides = {} } = opts
+
   const byMaterial = new Map()
   const byFaceUse = new Map()
 
@@ -497,7 +535,7 @@ export function buildRibbonGeometry(ribbons, stencilPolygon = null) {
   // Face fills (land-use). Pipeline emits unclipped (centerline-reach);
   // subtract the ribbon footprint here so consumers don't have to re-clip
   // and so triangulation honors holes correctly.
-  const ribbonUnion = buildRibbonUnion(streets, ribbons.intersections || [])
+  const ribbonUnion = buildRibbonUnion(streets, ribbons.intersections || [], cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides)
   const facesRaw = (ribbons.faces || []).map(f => ({
     ring: (f.ring || []).map(p => Array.isArray(p) ? p : [p.x, p.z]),
     use: f.use || 'unknown',

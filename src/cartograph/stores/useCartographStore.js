@@ -155,6 +155,33 @@ const useCartographStore = create((set, get) => ({
   layerColors: {},
   layerStrokes: {},
   luColors: {},
+  // Look-level multiplier on every street-corner radius. 1 = AASHTO/NACTO
+  // baseline (4.5m residential, larger for arterials). >1 → bubblier corners
+  // (sponsored-event "retro" mode); <1 → tighter / more square. Applies on
+  // top of per-IX cornerRadius overrides AND the default-table value, so
+  // operators can still author specific corners without losing the global
+  // dial. Persists in design.json; consumed by StreetRibbons.jsx (live)
+  // and ribbonsGeometry.js#buildCornerPadClips (bake / face clip).
+  cornerRadiusScale: 1,
+  // Per-IX corner-radius overrides, keyed by quantized point ("x.xxx,z.zzz").
+  // Operator-authored via the Corner-edit center handles. Per-Look (lives in
+  // design.json) so duplicating a Look carries the operator's IX-by-IX work
+  // forward; revert-to-default clears the map. Resolution priority:
+  //   per-corner override → IX override → ix.cornerRadius (data-file) → 4.5m,
+  // then * cornerRadiusScale.
+  cornerRadiusOverrides: {},
+  // Per-corner overrides for true corner cases (Phase 3). Keyed by
+  //   "<pointKey>|<legKeyA>|<legKeyB>"
+  // where legKey = "<skelId>:<dir>" with dir ∈ {b,f}, and the two legKeys
+  // are sorted alphabetically so the composite key is invariant under
+  // (A,B)↔(B,A) swap. Identity loses validity only if one of the named
+  // legs is removed from the IX — the explicit point of leg-pair keys
+  // over CCW-ordinal indices. Resolved before the per-IX map.
+  cornerCornerRadiusOverrides: {},
+  // Transient UI mode — when true, the Corner-edit handles surface in the
+  // 3D scene. Not persisted (operators don't want a Look to load in edit
+  // mode); toggled from the Streets > Corners subsection in Panel.
+  cornerEditMode: false,
   // 3D-scene material colors (walls, roofs, neon, trees, infra, park) — these
   // never reach the SVG bake but live in the same per-Look design.json so
   // switching Looks swaps the whole visual identity in one place.
@@ -252,6 +279,80 @@ const useCartographStore = create((set, get) => ({
   },
   setLuColor: (id, color) => {
     set(s => ({ luColors: { ...s.luColors, [id]: color } }))
+    get()._saveDesignDebounced()
+  },
+  // Look-level corner-radius multiplier. Clamp at 0 (square) and a
+  // generous upper bound to keep the slider sane.
+  setCornerRadiusScale: (v) => {
+    // Cap matches the per-IX setter cap (50m) divided by the residential
+    // baseline (4.5m) so the global slider's range matches what an operator
+    // can author with a per-IX center handle. Round up for a generous
+    // headroom + nicer slider tick math.
+    const n = Math.max(0, Math.min(11, Number(v) || 0))
+    set({ cornerRadiusScale: n })
+    get()._saveDesignDebounced()
+  },
+  // Transient UI toggle — drives whether CornerEditHandles render.
+  setCornerEditMode: (on) => set({ cornerEditMode: !!on }),
+  // Quantize a [x,z] point to a stable string key. 3 decimal places (mm
+  // precision) is plenty — IX points come from derive's deterministic
+  // clustering so they don't drift between runs.
+  // Exposed on the store so Designer code, geometry, and bake all use one
+  // canonical key form.
+  ixPointKey: (point) => {
+    if (!point || point.length < 2) return ''
+    return `${(+point[0]).toFixed(3)},${(+point[1]).toFixed(3)}`
+  },
+  // Write a per-IX corner-radius override. Pass null/undefined for r to
+  // remove the override (revert that IX to its data-file / default value).
+  setIxCornerRadius: (point, r) => {
+    const key = get().ixPointKey(point)
+    if (!key) return
+    set(s => {
+      const next = { ...s.cornerRadiusOverrides }
+      if (r == null || !Number.isFinite(r)) {
+        delete next[key]
+      } else {
+        next[key] = Math.max(0, Math.min(50, +r))   // clamp to sane meters
+      }
+      return { cornerRadiusOverrides: next }
+    })
+    get()._saveDesignDebounced()
+  },
+  // Wipe ALL per-IX overrides — the "revert corners to default" action.
+  // Phase 3: clears per-corner overrides too so a single Revert click
+  // returns the active Look to its data-file baseline (× any global
+  // cornerRadiusScale).
+  clearAllIxCornerRadii: () => {
+    set({ cornerRadiusOverrides: {}, cornerCornerRadiusOverrides: {} })
+    get()._saveDesignDebounced()
+  },
+  // Stable identifier for one leg of an IX. dir = 'b' (back from V toward
+  // the previous chain vertex) or 'f' (forward toward the next). Pair this
+  // with chain.skelId (or chain.name as fallback) and you get a leg
+  // identity that survives chain reroute / vertex re-splice as long as
+  // the leg itself still exists.
+  legKey: (skelOrName, dir) => `${skelOrName || '?'}:${dir === -1 || dir === 'b' ? 'b' : 'f'}`,
+  // Composite key for one corner = (IX point, two leg keys). The leg keys
+  // are sorted alphabetically so authoring is invariant under A/B swap.
+  cornerKey: (point, legKeyA, legKeyB) => {
+    const pk = `${(+point[0]).toFixed(3)},${(+point[1]).toFixed(3)}`
+    const [a, b] = (legKeyA <= legKeyB) ? [legKeyA, legKeyB] : [legKeyB, legKeyA]
+    return `${pk}|${a}|${b}`
+  },
+  // Write a per-corner override. Pass null/undefined for r to clear.
+  setCornerCornerRadius: (point, legKeyA, legKeyB, r) => {
+    const key = get().cornerKey(point, legKeyA, legKeyB)
+    if (!key) return
+    set(s => {
+      const next = { ...s.cornerCornerRadiusOverrides }
+      if (r == null || !Number.isFinite(r)) {
+        delete next[key]
+      } else {
+        next[key] = Math.max(0, Math.min(50, +r))
+      }
+      return { cornerCornerRadiusOverrides: next }
+    })
     get()._saveDesignDebounced()
   },
   setMaterialColor: (id, color) => {
@@ -647,6 +748,9 @@ const useCartographStore = create((set, get) => ({
         layerColors:    design.layerColors    || {},
         layerStrokes:   design.layerStrokes   || {},
         luColors:       design.luColors       || {},
+        cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
+        cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
+        cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
         materialColors: design.materialColors || {},
         materialPhysics: design.materialPhysics || {},
         buildingPalette: design.buildingPalette || get().buildingPalette,
@@ -1031,6 +1135,9 @@ const useCartographStore = create((set, get) => ({
         layerColors:    design.layerColors    || {},
         layerStrokes:   design.layerStrokes   || {},
         luColors:       design.luColors       || {},
+        cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
+        cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
+        cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
         materialColors: design.materialColors || {},
         materialPhysics: design.materialPhysics || {},
         buildingPalette: design.buildingPalette || get().buildingPalette,
@@ -1137,6 +1244,9 @@ const useCartographStore = create((set, get) => ({
           layerColors: s.layerColors,
           layerStrokes: s.layerStrokes,
           luColors: s.luColors,
+          cornerRadiusScale: s.cornerRadiusScale,
+          cornerRadiusOverrides: s.cornerRadiusOverrides,
+          cornerCornerRadiusOverrides: s.cornerCornerRadiusOverrides,
           materialColors: s.materialColors,
           materialPhysics: s.materialPhysics,
           buildingPalette: s.buildingPalette,

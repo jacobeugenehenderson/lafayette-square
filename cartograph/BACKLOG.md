@@ -2,42 +2,127 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-06 (EOD)
+Last updated: 2026-05-06 (EOD, post corner-authoring kit phases 1-2)
 
-## 2026-05-06 — Corner plugs: next steps
+## 2026-05-06 — Corner-authoring kit: ✅ Phases 1–3 landed
 
-**Landed today:** uniform concentric carve across all 4 toy corners. The SW
-back-flip bug closed by changing `minPed` from
-`min(A.leftPed, B.rightPed)` to scanning all four leg-side peds
-(`min(A.leftPed, A.rightPed, B.leftPed, B.rightPed)`). Treelawn carves
-unchanged. Mirror in both `StreetRibbons.jsx#buildSidewalkPads` and
-`ribbonsGeometry.js#buildCornerPadClips`. See `HANDOFF-corner-plugs.md`.
+All three layers of the corner-radius authoring stack are live and tested
+on the toy fixture:
 
-**Open, in order:**
+- **Phase 1 — Look-level `cornerRadiusScale` slider.** Streets > Corners
+  in Panel. Range 0–11× (matches per-IX 50m cap). Persists to
+  `design.json`. Threaded through `buildCornerPadClips` (bake + face
+  clip) and `getR` in `StreetRibbons.jsx` (live render). rAF-throttled
+  commit so the heavy useMemo doesn't choke the slider thumb.
+- **Phase 2 — Per-IX center handles** with corner-edit toggle. Drag the
+  big blue dot at any intersection center; world-space distance from
+  cursor to IX sets the bulk radius for that IX. Persists to
+  `design.json#cornerRadiusOverrides`.
+- **Phase 3 — Per-corner handles, leg-pair-keyed.** Smaller cyan dots at
+  each corner's Q point (outboard tangent corner of the leg curb-outer
+  lines). Drag = that corner's radius only. Stable identity via
+  `<pointKey>|<legKeyA>|<legKeyB>` where legKey = `<skelId>:<dir>` and
+  the two leg keys are sorted alphabetically (invariant under A/B swap;
+  only invalidates if one of the keyed legs is removed from the IX).
+  Persists to `design.json#cornerRadiusOverrides` separately from per-IX.
 
-1. **Lawn gap on 3/4 corners.** Visible gap between leg sidewalk band's
-   outer edge and parcel face boundary. Toy parcel inner corners sit at
-   perp 7m; leg prop tangents at perp 6.65m. Either author parcel face
-   inner corners at the prop tangent, or have the bake snap parcel face
-   boundaries to leg-prop tangents.
+Resolution priority (live + bake): per-corner override → per-IX override
+→ data-file `ix.cornerRadius` → 4.5m AASHTO default, then
+× `cornerRadiusScale`.
 
-2. **Vary intersection angles in the toy.** Add T, Y, oblique, sharp-bend,
-   5-leg variants to `toy-input.json` and verify the construction holds
-   across them. Fortify before parameterizing — the 4-way orthogonal X
-   is the easy case.
+Geometry refactor under Phase 3: `buildSidewalkPads` (in
+`StreetRibbons.jsx`) now emits per-corner asphalt-mouth fills + curb
+annuli in addition to sidewalk pads, so the visible curb contour follows
+per-corner R (not just the pad). Asphalt fill is split into THREE simple
+polygons per corner (legA tail rect + legB tail rect + lens) so the
+L-shape avoids self-intersection — earcut triangulates each cleanly,
+they tile around Q_curb with no interior overlap. `buildCurbAnnulus`
+(the legacy uniform-R Clipper-offset trick) is retained as dead code in
+case of regression but no longer called.
 
-3. **Parameterize and place on real LS data.** Re-bake LS, verify Stage
-   and Preview render correctly. Build operator UI for per-IX
-   `cornerRadius` (Survey-tool slider; default 4.5m; bulk ops:
-   reset-to-default, select-all-and-set).
+UI handles live in `src/cartograph/CornerEditHandles.jsx`. Mounted in
+Designer mode for both toy and neighborhood scenes. Revert button counts
+both override maps.
 
-## 2026-05-06 — Operator UI for per-IX `cornerRadius`
+**Lessons captured to memory:**
+- `feedback_illustrator_handles_for_spatial_authoring` — per-feature
+  spatial controls → in-scene draggable dots, never panel sliders.
+- `project_overlay_meshes_must_be_transparent` — overlay meshes in
+  cartograph's Canvas must use `transparent opacity={1}` to render at
+  all (the post-FX / fade pipeline drops opaque meshes from the final
+  framebuffer).
 
-Per-intersection corner radius override is plumbed end-to-end (`derive-toy.js`
-+ `derive.js` carry it through to `intersections[].cornerRadius`, both
-`buildSidewalkPads` and `buildCornerPadClips` honor it). No operator-facing
-UI yet. Survey-tool slider on the IX vertex; default 4.5m; bulk operations
-(reset to default, select-all-and-set).
+## 2026-05-06 — Roll the kit onto neighborhood data
+
+The corner-authoring kit is currently exercised on the toy fixture only.
+For real LS:
+
+- Re-bake LS with a default `cornerRadiusScale = 1` and zero overrides;
+  verify Stage/Preview render correctly (no regression vs. pre-kit
+  baseline).
+- Pick a sponsored-event Look (or fork `lafayette-square` to a new id)
+  and dial `cornerRadiusScale` up for the bubbly variant; bake; eyeball
+  in Preview at phone aspect.
+- Spot-author a few corner overrides at marquee intersections (Park &
+  18th, Lafayette & Mississippi, etc.) — confirm the per-IX center
+  handles work at neighborhood density (~243 intersections; performance
+  and visual clutter are the risks). Adjust `HANDLE_HIT_R` and dot/ring
+  visual sizes if needed for the denser scene.
+
+## 2026-05-06 — Corner-case corners (deferred from variant grid)
+
+Split off so the kit can land for the common (right-angle / near-right)
+case without blocking on the long tail. Each item below is its own pass.
+
+- **Per-corner-decoupled `minPed`.** The current global-min couples
+  opposite corners of asymmetric streets — a tl+sw/tl+sw corner inherits
+  the narrow sw-only width from the OPPOSITE corner. The architectural
+  goal is `min(A.leftPed, B.rightPed)` (corner-facing pair only) so each
+  corner stands on its own, but a one-line swap regressed the sw↔sw
+  junction fix at tl+sw/tl+sw corners (R_pad shrank from 2.85m to 1.35m,
+  green parcel face crept into the corner-pad area). Needs a coordinated
+  pass through pad polygon + face clip + treelawn carve geometry that
+  holds together at independently-sized R_pad per corner. Both
+  `StreetRibbons.jsx#buildSidewalkPads` and
+  `ribbonsGeometry.js#buildCornerPadClips` carry the deferral note.
+
+- **Right-angle treelawn caps at oblique angles.** At non-90°
+  intersections the per-leg treelawn carve box (leg-axis-aligned) meets
+  the corner pad's annular sector at oblique angles, producing acute
+  corners on the rendered treelawn region instead of clean right-angle
+  cuts. At 90° everything is right-angle by construction, so this only
+  bites at 45°/60°/30° variants. Likely fix: terminate the treelawn
+  carve perpendicular to the leg with an explicit cap at the pad-arc
+  side, rather than letting the leg-aligned rectangle run through.
+
+- **5-way / acute-X sidewalk fragments.** v8 (5-way) and v3/v7 (45° /
+  30° X) variants show stray sidewalk fragments outside the corner
+  pads. Probably the same family — pad polygon Boolean against
+  leg-aligned carves leaves disconnected sliver regions when leg angles
+  are tight. Diagnose alongside the right-angle treelawn fix.
+
+- **Use the global slider as a deformation probe.** Once the
+  corner-plug fixes start landing, drag `cornerRadiusScale` across its
+  full range while watching a non-90° toy variant. The construction's
+  failure modes vary continuously with R (small R → degenerate Q,
+  large R → carve overshoots), so the slider surfaces breakpoints a
+  static R=4.5 screenshot can't. Useful for both diagnosis and
+  regression-checking proposed fixes.
+
+## 2026-05-06 — Preview quality pass: arc smoothness
+
+Curb / pad-inner / corner-arc polylines are currently sampled at
+`~12/π` rad density (≈ 1 sample per 15°) plus a hardcoded `N=8` on the
+corner-pad inner concentric arc. At zoom-in (Preview closeup) the
+chord segmentation is visible. Bump points:
+
+- `src/lib/intersectionGeometry.js` — `segs = Math.max(4, Math.ceil(theta * 12 / Math.PI))`
+- `src/components/StreetRibbons.jsx#buildSidewalkPads` — `arcSegs` same formula + the inner-arc fixed `N = 8`
+- `src/lib/ribbonsGeometry.js#buildCornerPadClips` — `arcSegs` same formula + the inner-arc fixed `8`
+
+All three need bumping in lockstep so live render, face clip, and bake
+agree on point density. Defer to the end-of-project quality pass; tune
+density vs. tri-budget when Preview camera framing is locked.
 
 ## 2026-05-05 — Wire the Look picker (cosmetic-only today)
 

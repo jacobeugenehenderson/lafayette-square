@@ -373,19 +373,38 @@ const CURB_CLIP_SCALE = 1000
 // per-leg property lines + parcel corner (sharp) on the outboard side.
 // Per-leg treelawn carve = concentric strip at perp [curb-outer,
 // curb-outer + treelawn] along that leg, Clipper-differenced from pad.
-function buildSidewalkPads(ribbonsData, getR, curbW) {
+function buildSidewalkPads(ribbonsData, getR, curbW, getCornerR = null) {
   const { Clipper, ClipperOffset, JoinType, EndType, PolyType, ClipType, PolyFillType, Paths, PolyTree } = clipperLib
   const toClipperI = (x, z) => ({ X: Math.round(x * CURB_CLIP_SCALE), Y: Math.round(z * CURB_CLIP_SCALE) })
   const toWorld = (path) => path.map(p => [p.X / CURB_CLIP_SCALE, p.Y / CURB_CLIP_SCALE])
 
+  // Per-corner outputs:
+  //   pads          — sidewalk pad polygons (between curb-outer arc and pad-inner arc)
+  //   asphaltFills  — corner-mouth lens polygons (Q_curb → curb-outer arc → close).
+  //                   Each one is per-corner, so per-corner R authoring shapes the
+  //                   curb-outer arc at THIS corner (replaces buildCurbAnnulus's
+  //                   uniform-R output for the corner mouth).
+  //   curbAnnuli    — thin annular sector between asphalt-outer arc (radius R_corner
+  //                   from C) and curb-outer arc (radius R_curb from C). Painted with
+  //                   curb material. Per-corner so its contour follows the same
+  //                   per-corner R as the sidewalk pad.
   const pads = []
+  const asphaltFills = []
+  const curbAnnuli = []
   const TWO_PI = Math.PI * 2
 
   for (const ix of ribbonsData.intersections) {
     if (!ix.streets || ix.streets.length < 2) continue
     const V = ix.point
-    const R = getR(ix, V)
-    if (!Number.isFinite(R) || R <= 0) continue
+    // IX-level fallback radius. Per-corner radii (resolved via getCornerR
+    // below) override this on a per-(legA, legB) basis when the operator has
+    // authored corner-specific values; this remains the bulk-control value.
+    const R_ix = getR(ix, V)
+    if (!Number.isFinite(R_ix) || R_ix <= 0) {
+      // No IX radius and no override could rescue it (per-corner overrides
+      // also pass through the same scale, so 0 means 0). Skip the IX.
+      continue
+    }
 
     // Build legs at this vertex (one or two per chain, depending on
     // whether the chain passes through V or terminates).
@@ -403,6 +422,7 @@ function buildSidewalkPads(ribbonsData, getR, curbW) {
       if (!m?.left?.pavementHW || !m?.right?.pavementHW) continue
       const ixIdx = sref.ix
       const pts = chain.points
+      const skel = chain.skelId || chain.name
       const buildLeg = (direction) => {
         const ni = ixIdx + direction
         if (ni < 0 || ni >= pts.length) return null
@@ -422,6 +442,11 @@ function buildSidewalkPads(ribbonsData, getR, curbW) {
           rightPed: tlSafe(right) + swSafe(right),
           leftTreelawn:  tlSafe(left),
           rightTreelawn: tlSafe(right),
+          // Stable leg identity for per-corner key composition. Mirror of
+          // ribbonsGeometry.js#buildCornerPadClips legKey shape; if you change
+          // either, change both — Designer + bake must agree on the lookup
+          // key or per-corner overrides will only work in one path.
+          legKey: `${skel || '?'}:${direction === -1 ? 'b' : 'f'}`,
         }
       }
       if (ixIdx > 0) { const l = buildLeg(-1); if (l) legs.push(l) }
@@ -446,10 +471,14 @@ function buildSidewalkPads(ribbonsData, getR, curbW) {
       const thetaDeg = theta * 180 / Math.PI
       if (thetaDeg <= 5 || thetaDeg >= 175) continue
 
+      // Per-corner radius: getCornerR returns this corner's effective R if
+      // an override exists for the (V, A.legKey, B.legKey) triple, else null
+      // (caller's resolution chain — Phase 3). Falls back to the IX-level R.
+      const R_corner = (getCornerR && getCornerR(V, A.legKey, B.legKey)) ?? R_ix
       const halfTheta = theta / 2
       const sinH = Math.sin(halfTheta)
       const tanH = Math.tan(halfTheta)
-      const R_curb = R - curbW
+      const R_curb = R_corner - curbW
       if (R_curb <= 0) continue
 
       // Curb-outer corner: legA's left curb-outer × legB's right curb-outer.
@@ -475,6 +504,78 @@ function buildSidewalkPads(ribbonsData, getR, curbW) {
       const Cdist = R_curb / sinH
       const C = [Q_curb[0] + Cdist * Math.cos(bisAng), Q_curb[1] + Cdist * Math.sin(bisAng)]
 
+      // Sample curb-outer arc from TA_curb (angle around C = arcStart) to
+      // TB_curb sweeping CW (= bowed toward Q_curb / V). theta sweeps the
+      // arc angle. Computed BEFORE the no-ped skip so the per-corner asphalt
+      // + curb emission below can use it (curb stripe exists even without
+      // sidewalk peds).
+      const arcStart = Math.atan2(TA_curb[1] - C[1], TA_curb[0] - C[0])
+      const arcSegs = Math.max(6, Math.ceil(theta * 12 / Math.PI))
+      const arcSamples = []
+      for (let k = 0; k <= arcSegs; k++) {
+        const a = arcStart - (k / arcSegs) * theta
+        arcSamples.push([C[0] + R_curb * Math.cos(a), C[1] + R_curb * Math.sin(a)])
+      }
+
+      // ── Per-corner asphalt mouth + curb annulus (Phase 3) ──
+      // Replaces the uniform-R output of buildCurbAnnulus.
+      //
+      // Asphalt cover at the corner is split into THREE simple polygons that
+      // tile around Q_curb (no self-intersection — the L-shape needs Q_curb
+      // as a re-entrant vertex which earcut triangulates poorly):
+      //   • legA tail — rect overpainting legA's curb stripe inside the
+      //     intersection on this corner's perp side (V_a_inner → TA_inner →
+      //     TA_curb → A0). The leg's straight curb stripe (band pass) ends
+      //     at TA_curb; this rect covers the portion between V and TA_curb.
+      //   • legB tail — same for legB.
+      //   • lens — Q_curb → curb-outer arc → close. The corner mouth
+      //     beyond the legs' straight sections.
+      // Per-corner curb annulus: thin annular sector between asphalt-outer
+      // arc (R_corner from C) and curb-outer arc (R_curb from C). Concentric.
+      {
+        // Concentric inner arc — asphalt-outer arc samples derived from the
+        // curb-outer arc samples by extending each radial by curbW.
+        const innerArcSamples = arcSamples.map(p => [
+          p[0] + curbW * (p[0] - C[0]) / R_curb,
+          p[1] + curbW * (p[1] - C[1]) / R_curb,
+        ])
+        const TA_inner = innerArcSamples[0]
+        const TB_inner = innerArcSamples[arcSegs]
+
+        // legA tail rect: V_a_inner=(V + outerL*P_A) → TA_inner → TA_curb → A0
+        const V_a_inner = [V[0] + A.outerL * P_A[0], V[1] + A.outerL * P_A[1]]
+        asphaltFills.push({
+          outer: [V_a_inner, TA_inner, TA_curb, A0],
+          holes: [],
+        })
+
+        // legB tail rect: B0 → TB_curb → TB_inner → V_b_inner. Wound the
+        // opposite direction from legA tail since legB's facing-corner side
+        // is the -P_B perp, swapped from legA's +P_A.
+        const V_b_inner = [V[0] - B.outerR * P_B[0], V[1] - B.outerR * P_B[1]]
+        asphaltFills.push({
+          outer: [B0, TB_curb, TB_inner, V_b_inner],
+          holes: [],
+        })
+
+        // Lens at the corner mouth.
+        asphaltFills.push({
+          outer: [Q_curb, ...arcSamples],
+          holes: [],
+        })
+
+        // Curb annulus: TA_inner → TA_curb → curb-outer arc → TB_curb →
+        // TB_inner → asphalt-outer arc backward to TA_inner.
+        const curbRing = []
+        curbRing.push(TA_inner)
+        for (const p of arcSamples) curbRing.push(p)
+        curbRing.push(TB_inner)
+        for (let k = innerArcSamples.length - 2; k > 0; k--) {
+          curbRing.push(innerArcSamples[k])
+        }
+        curbAnnuli.push({ outer: curbRing, holes: [] })
+      }
+
       // Property line points: TA_curb + A.leftPed * P_A; TB_curb - B.rightPed * P_B.
       const TA_prop = [TA_curb[0] + A.leftPed * P_A[0], TA_curb[1] + A.leftPed * P_A[1]]
       const TB_prop = [TB_curb[0] - B.rightPed * P_B[0], TB_curb[1] - B.rightPed * P_B[1]]
@@ -486,20 +587,8 @@ function buildSidewalkPads(ribbonsData, getR, curbW) {
       const sp = (dxp * (-T_B[1]) - dzp * (-T_B[0])) / det
       const Q_prop = [A0p[0] + sp * T_A[0], A0p[1] + sp * T_A[1]]
 
-      // Skip if pad has no positive ped on either side (= sw-only and treelawn
-      // both 0 → no pad to draw).
+      // Skip pad emission only — asphalt+curb above already happened.
       if (A.leftPed <= 0 && B.rightPed <= 0) continue
-
-      // Sample curb-outer arc from TA_curb (angle around C = arcStart) to
-      // TB_curb sweeping CW (= bowed toward Q_curb / V). theta sweeps the
-      // arc angle.
-      const arcStart = Math.atan2(TA_curb[1] - C[1], TA_curb[0] - C[0])
-      const arcSegs = Math.max(6, Math.ceil(theta * 12 / Math.PI))
-      const arcSamples = []
-      for (let k = 0; k <= arcSegs; k++) {
-        const a = arcStart - (k / arcSegs) * theta
-        arcSamples.push([C[0] + R_curb * Math.cos(a), C[1] + R_curb * Math.sin(a)])
-      }
 
       // Concentric carve: replace Q_prop with a concentric arc around C
       // (same center as the curb arc), radius R_pad = R_curb − min_ped.
@@ -515,6 +604,16 @@ function buildSidewalkPads(ribbonsData, getR, curbW) {
       // produces a uniform R_pad across all corners regardless of how
       // the back-flip lands per pair. Treelawn carves still use the
       // corner-facing leftTreelawn / rightTreelawn (back-flip-correct).
+      //
+      // KNOWN LIMITATION: This couples opposite corners of asymmetric
+      // streets — a tl+sw/tl+sw corner inherits the narrower sw-only ped
+      // from the OPPOSITE corner via this min. For symmetric streets (most
+      // of LS) the four values are equal and there's no coupling. The
+      // per-corner-decoupled variant (min(A.leftPed, B.rightPed)) is the
+      // architectural goal for the asymmetric case but regressed the
+      // sw↔sw junction fix at tl+sw/tl+sw corners — deferred to a
+      // dedicated asymmetric-corner pass; tracked alongside the kit's
+      // "corner case corners" work.
       const minPed = Math.min(A.leftPed, A.rightPed, B.leftPed, B.rightPed)
       const R_pad = R_curb - minPed
       const TA_padarc = [TA_curb[0] + minPed * P_A[0], TA_curb[1] + minPed * P_A[1]]
@@ -611,7 +710,7 @@ function buildSidewalkPads(ribbonsData, getR, curbW) {
       }
     }
   }
-  return pads
+  return { pads, asphaltFills, curbAnnuli }
 }
 
 function buildCurbAnnulus(ribbonsData, getR, curbW) {
@@ -1034,6 +1133,15 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
   // Live Designer-panel layer colors (falls back to M3 defaults when a picker
   // hasn't been touched yet, or to BAND_COLORS for bands not on the panel).
   const layerColors = useCartographStore(s => s.layerColors) || {}
+  // Look-level corner-radius multiplier. 1 = AASHTO/NACTO baseline.
+  const cornerRadiusScale = useCartographStore(s => s.cornerRadiusScale ?? 1)
+  // Per-IX operator overrides keyed by quantized point ("x.xxx,z.zzz"). When
+  // the corner-edit mode handles drag, they write into this map; geometry
+  // reads it here and merges via the same priority as bake-ground does.
+  const cornerRadiusOverrides = useCartographStore(s => s.cornerRadiusOverrides) || {}
+  // Per-corner overrides keyed by "<pointKey>|<legKeyA>|<legKeyB>". Resolved
+  // BEFORE the per-IX map so individual corners can override the bulk value.
+  const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides) || {}
 
   // ── Drive shared terrain exaggeration from view mode ──────────
   useFrame(() => {
@@ -1451,12 +1559,16 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
               )) ? groupsSelected : groups
 
               // ── Canonical 90° corner + per-quadrant affine matrix ──
-              // Build the plug as a canonical 90° template (asph corner,
-              // sidewalk pad, curb arc), then map to actual world via
-              // M = [edA/sinθ | edB/sinθ]. The matrix preserves both leg
-              // directions and perpendicular distances. Curb is rendered
-              // separately as a stroke on the asph/sidewalk boundary.
-              if (hasSwA && hasSwB) {
+              // RETIRED 2026-05-06: buildCornerPlug derived its R from leg
+              // sidewalk widths (~1.5m), independent of `ix.cornerRadius` and
+              // the Look-level `cornerRadiusScale`. Its corner_sw / corner_asph
+              // fills were painted UNDER the new buildCurbAnnulus +
+              // buildSidewalkPads layers (priorities 11.5 / 11.7 vs legacy 7 /
+              // 10), so dropping the global scale to 0 removed the new layers
+              // but left the legacy ones visible — slider appeared dead. The
+              // newer pipeline covers everything this branch did. Code kept
+              // (function defs above) for easy revert if regressions surface.
+              if (false && hasSwA && hasSwB) {
                 const plug = buildCornerPlug(IX, edA, edB, sA, sB, refA, refB)
                 if (plug) {
                   ensure('corner_sw')
@@ -1500,8 +1612,30 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       // UI lands. For now: hand-author by editing toy-input.json's
       // intersections[i].cornerRadius (passes through derive-toy.js).
       const CORNER_R_DEFAULT = 4.5
-      const getR = (ix /*, V */) => Number.isFinite(ix.cornerRadius) ? ix.cornerRadius : CORNER_R_DEFAULT
-      const result = buildCurbAnnulus(ribbonsData, getR, CURB_WIDTH)
+      // Resolution priority: per-IX operator override (live store) → data-file
+      // ix.cornerRadius → AASHTO 4.5m default. Then * cornerRadiusScale so the
+      // global slider applies on top. Mirror of buildCornerPadClips priority
+      // in ribbonsGeometry.js.
+      const ixKey = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
+      const getR = (ix /*, V */) => {
+        const overrideR = cornerRadiusOverrides[ixKey(ix.point)]
+        const baseR = Number.isFinite(overrideR) ? overrideR
+          : Number.isFinite(ix.cornerRadius) ? ix.cornerRadius
+          : CORNER_R_DEFAULT
+        return baseR * cornerRadiusScale
+      }
+      // Per-corner radius lookup. Returns the effective radius (scale-multiplied)
+      // if an override exists for (V, legKeyA, legKeyB), else null so the caller
+      // falls back to the IX-level R. Resolution priority:
+      //   per-corner override → per-IX override / data-file → AASHTO default,
+      // then × scale.
+      const getCornerR = (V, legKeyA, legKeyB) => {
+        const [a, b] = (legKeyA <= legKeyB) ? [legKeyA, legKeyB] : [legKeyB, legKeyA]
+        const ck = `${ixKey(V)}|${a}|${b}`
+        const overrideR = cornerCornerRadiusOverrides[ck]
+        if (!Number.isFinite(overrideR)) return null
+        return overrideR * cornerRadiusScale
+      }
       const triangulate = (poly, y) => {
         try {
           const shape = new THREE.Shape(poly.outer.map(([x, z]) => new THREE.Vector2(x, z)))
@@ -1531,31 +1665,35 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
           return null
         }
       }
+      // Per-corner asphalt mouth + curb annulus + sidewalk pad — emitted
+      // together by buildSidewalkPads using the per-corner R from
+      // getCornerR (Phase 3). Replaces buildCurbAnnulus's uniform-R output:
+      // each corner of an IX can have its own R, so the visible asphalt
+      // mouth and curb stripe follow per-corner authoring (not just the
+      // sidewalk pad). buildCurbAnnulus is no longer called here.
+      const sidewalkOut = buildSidewalkPads(ribbonsData, getR, CURB_WIDTH, getCornerR)
       // Asphalt corner-plug fill at Y=0.005 — paints over the leg's
-      // sharp-Q area with asphalt material so the asphalt mouth reads as
-      // rounded out to the curb arc. The "street-colored plug" pattern.
-      if (result?.asphaltFills?.length) {
+      // sharp-Q area with asphalt material out to the per-corner curb arc.
+      if (sidewalkOut.asphaltFills?.length) {
         if (!groups['corner_plug_asph']) groups['corner_plug_asph'] = []
-        for (const fill of result.asphaltFills) {
+        for (const fill of sidewalkOut.asphaltFills) {
           const raw = triangulate(fill, 0.005)
           if (raw) groups['corner_plug_asph'].push(raw)
         }
       }
-      // Curb annulus stroke at Y=0.012 (above the asphalt fill).
-      if (result?.annuli?.length) {
+      // Curb annulus stroke at Y=0.012 (above the asphalt fill). Now
+      // per-corner — each annulus is sized by its own corner's R.
+      if (sidewalkOut.curbAnnuli?.length) {
         if (!groups['corner_plug_curb']) groups['corner_plug_curb'] = []
-        for (const ann of result.annuli) {
+        for (const ann of sidewalkOut.curbAnnuli) {
           const raw = triangulate(ann, 0.012)
           if (raw) groups['corner_plug_curb'].push(raw)
         }
       }
       // Sidewalk pad per corner (with treelawn carves) at Y=0.020.
-      // Painted at sidewalk material; treelawn from leg ribbons (Y=0)
-      // shows through the carved-out grass strips.
-      const pads = buildSidewalkPads(ribbonsData, getR, CURB_WIDTH)
-      if (pads && pads.length) {
+      if (sidewalkOut.pads?.length) {
         if (!groups['corner_plug_sidewalk']) groups['corner_plug_sidewalk'] = []
-        for (const pad of pads) {
+        for (const pad of sidewalkOut.pads) {
           const raw = triangulate(pad, 0.020)
           if (raw) groups['corner_plug_sidewalk'].push(raw)
         }
@@ -1625,7 +1763,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     }
 
     return result
-  }, [liveCenterlines, layerColors, ribbons, renderRibbons, useBoundary, selectedCorridorNames])
+  }, [liveCenterlines, layerColors, ribbons, renderRibbons, useBoundary, selectedCorridorNames, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides])
 
   // ── Edge strokes (measure mode only) ──────────────────────────
   // When Measure is active, emit thin opaque half-rings at each stripe's
@@ -1997,7 +2135,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
         streets: streetsToClip,
         faces: rawFaces,
         intersections: ribbons.intersections || [],
-      })
+      }, { cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides })
 
       // Flatten Map<use, [{outer, holes}]> → [{ring, use}] for the
       // existing faceMeshes triangulation. Holes are currently dropped
@@ -2015,7 +2153,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       console.warn('[faces] runtime clip failed; using unclipped:', e)
       return rawFaces
     }
-  }, [ribbons, useBoundary, stableLiveCenterlines])
+  }, [ribbons, useBoundary, stableLiveCenterlines, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides])
 
   // ── Face fills (land-use color per block) ─────────────────────
   const faceMeshes = useMemo(() => {

@@ -250,7 +250,15 @@ export async function bakeGround({ look = 'default' } = {}) {
   const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
   const designLayerColors = design.layerColors || {}
   const designLuColors    = design.luColors    || {}
-  const { byMaterial, byFaceUse } = buildRibbonGeometry(ribbons, STENCIL_POLYGON)
+  const cornerRadiusScale = Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1
+  const cornerRadiusOverrides = (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {}
+  const cornerCornerRadiusOverrides = (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {}
+  const { byMaterial, byFaceUse } = buildRibbonGeometry(ribbons, {
+    stencilPolygon: STENCIL_POLYGON,
+    cornerRadiusScale,
+    cornerRadiusOverrides,
+    cornerCornerRadiusOverrides,
+  })
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
