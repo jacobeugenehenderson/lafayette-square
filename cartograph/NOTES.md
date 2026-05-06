@@ -6,6 +6,64 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-06 (PM) — Aborted IP-rule switch + docs hardening (`cartograph-looks-pass-ab`)
+
+A second session today. Net code change: zero. Net doc change: continuity
+contract added to BACKLOG, two-pass principle added to ARCHITECTURE,
+obsolete `HANDOFF_corner_plugs_2026-04-24.md` retired (commit `94860f4`).
+
+**What was attempted:** rolling the corner-authoring kit (per-IX handles +
+Phase 3 per-corner handles) onto Lafayette Square neighborhood data, and
+during the roll-out, switching corner construction from per-corner annular
+sectors to the IP rule (BACKLOG decision 2026-05-05).
+
+**What broke:** the IP polygon was built without verifying its outer edges
+shared perp positions with the leg-ribbon band-stripe pass. The result
+floated independently of the legs — corner pads as detached blobs rather
+than continuations. Hours of overshoot/trim iteration on top of a broken
+foundation. Reverted both `StreetRibbons.jsx` and `ribbonsGeometry.js` to
+HEAD; nothing landed.
+
+**Root cause (now in docs):** there was no acceptance test for "did I
+build the right polygon?" before staring at corner artifacts. Added one —
+see `BACKLOG.md §"Pad geometry from NACTO/AASHTO/ADA convention"` →
+"Continuity contract" subsection. Three perp checks per leg-side, must
+pass on a symmetric toy IX before iterating on visuals.
+
+**Stash for next agent:**
+
+In-flight neighborhood-rollout testing artifacts were stashed (not
+deleted, not committed) under:
+
+```
+git stash list
+# stash@{0}: in-flight 2026-05-06: LS rollout testing — triage before resuming
+```
+
+Contents: `cartograph/data/clean/map.json`, `public/baked/`,
+`public/looks/`, `src/data/ribbons.json`. These are a mix of regenerable
+bakes and possibly-real authoring edits the prior agent couldn't
+disentangle. Triage with `git stash show -p stash@{0}` before resuming.
+The bakes are safely regenerable; the data files (`design.json`,
+`ribbons.json`, `map.json`, `index.json`) may contain real edits and
+should be diffed individually.
+
+**Kept dirty in working tree (intentional, active surface):**
+- `src/data/toy/toy-input.json` + `toy-ribbons.json` — adds v9
+  (bent-chain) + v10 (asymmetric-pavement) toy variants. Useful
+  regression fixtures for the IP-rule re-attempt.
+- `src/cartograph/CartographApp.jsx` + `CornerEditHandles.jsx` —
+  Phase 3 polish.
+
+**Opener for the next agent:** see the BACKLOG continuity contract first.
+Then verify the three perp checks on toy v1 (symmetric 4-way 90° X) BEFORE
+touching corner geometry. Then re-attempt the IP-rule switch with the
+contract as the gate. Known data-classification issues blocking the LS
+rollout are flagged in BACKLOG (undefined `highway` field, divided-road
+continuations, missing real IXs from `derive.js`).
+
+---
+
 ## 2026-05-06 — Corner-authoring kit, Phases 1 & 2 (`cartograph-looks-pass-ab`)
 
 Two-phase landing of the corner-radius authoring stack. The 4-step plan from
