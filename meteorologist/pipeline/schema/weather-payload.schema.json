@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lafayette-square/meteorologist/weather-payload.schema.json",
+  "title": "Weather payload",
+  "description": "Runtime input to the Almanac evaluator. The shape WeatherPoller publishes (extended for the full Almanac field set). Conductor's fake-weather sliders produce the same shape; fixtures in public/clouds/fixtures/ validate against this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cloudCover", "sunElevationDeg", "sunAzimuthDeg"],
+  "properties": {
+    "tempC":            { "type": "number", "minimum": -60, "maximum": 60 },
+    "cloudCover":       { "type": "number", "minimum": 0, "maximum": 1, "description": "Fraction of sky covered by cloud." },
+    "pressureMb":       { "type": "number", "minimum": 870, "maximum": 1085 },
+    "humidity":         { "type": "number", "minimum": 0, "maximum": 1 },
+    "windKph":          { "type": "number", "minimum": 0, "maximum": 400 },
+    "windDirDeg":       { "type": "number", "minimum": 0, "maximum": 360, "description": "Compass bearing the wind is blowing FROM (meteorological convention)." },
+    "precipMmHr":       { "type": "number", "minimum": 0, "maximum": 500 },
+    "precipKind":       { "type": ["string", "null"], "enum": ["rain", "snow", "sleet", "hail", null] },
+    "stormDistanceKm":  { "type": ["number", "null"], "minimum": 0 },
+    "sunElevationDeg":  { "type": "number", "minimum": -90, "maximum": 90 },
+    "sunAzimuthDeg":    { "type": "number", "minimum": 0, "maximum": 360 },
+    "tod":              { "type": "string", "enum": ["dawn", "morning", "noon", "afternoon", "dusk", "night", "blue_hour", "golden_hour"] },
+    "season":           { "type": "string", "enum": ["spring", "summer", "fall", "winter"] }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lafayette-square/meteorologist/presets-file.schema.json",
+  "title": "Presets file",
+  "description": "Wrapper schema for public/clouds/presets.json — a meta block plus an array of preset entries with unique ids.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "presets"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bakedAt": { "type": "integer" },
+        "notes":   { "type": "string" }
+      }
+    },
+    "presets": {
+      "type": "array",
+      "items": { "$ref": "preset.schema.json" }
+    }
+  }
+}

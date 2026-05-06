@@ -8,22 +8,11 @@
 
 export const V_EXAG = 5
 
-// Lafayette Square's street grid sits at -9.2° relative to compass-N.
-//
-// PROJECT WORLD FRAME IS PARK-ALIGNED, NOT COMPASS-ALIGNED. Project world
-// axes match the city street grid (= park-aligned). When the GPS-→-meters
-// ETLs (scripts/12-process-park-trees.py, scripts/14-process-park-paths.py)
-// project lon/lat via equirectangular about park center, the output is
-// compass-aligned, NOT project world. scripts/de-park-data.mjs applies
-// R(-9.2°) to convert ETL-output → project world. The intuition "GPS
-// projected into meters is already world" is wrong here.
-//
-// This constant is preserved ONLY for the one-shot data-migration script
-// (scripts/de-park-data.mjs). After de-parking lands, NO production
-// render or bake code references it — every dataset is in project world
-// frame at rest. If you find yourself reaching for it from a render path,
-// stop; the data is already rotated.
-export const PARK_GRID_ROTATION = -9.2 * Math.PI / 180
+// All spatial data is in compass frame (the natural output of the
+// GPS→meters projection). Cosmetic screen orientation lives on the
+// Browse camera's `up` vector via the Heading slider in StageApp.jsx.
+// No rotation constants belong here — if a render path is reaching for
+// one, it shouldn't be.
 
 export function makeElevationSampler(terrain) {
   const { width, height, bounds, data } = terrain

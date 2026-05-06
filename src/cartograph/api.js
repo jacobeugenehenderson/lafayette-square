@@ -84,9 +84,12 @@ export async function saveLookDesign(lookId, design) {
 }
 
 // Re-bake a specific Look's bundle (ground.json + bin + lightmap +
-// buildings + lamps + scene) from its design.json.
-export async function bakeLook(lookId) {
-  const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake`, { method: 'POST' })
+// buildings + lamps + scene) from its design.json. Pass `force: true`
+// to bypass the server's dirty-check and rebuild every step (the
+// cache-bust escape hatch).
+export async function bakeLook(lookId, { force = false } = {}) {
+  const url = `${BASE}/looks/${encodeURIComponent(lookId)}/bake${force ? '?force=1' : ''}`
+  const res = await fetch(url, { method: 'POST' })
   if (!res.ok) throw new Error(`bake look failed: ${res.status}`)
   return res.json()
 }

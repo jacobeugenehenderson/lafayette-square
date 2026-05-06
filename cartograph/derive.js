@@ -2301,15 +2301,54 @@ export function deriveLayers(highways) {
   const skeleton = JSON.parse(readFileSync(skelPath, 'utf-8'))
   const skelStreets = skeleton.streets || []
 
+  // Operator-intent overlay: skelId-keyed measure/caps/segmentMeasures/
+  // couplers/anchor overrides written by Survey + Measure tools. The
+  // Designer runtime merges these the same way (useCartographStore.js
+  // `_loadCenterlines`); applying here makes the bake reflect operator
+  // edits, otherwise pipeline reads stale defaults and Stage diverges
+  // from Designer Preview.
+  let overlayById = {}
+  try {
+    const overlayPath = join(CLEAN_DIR, 'overlay.json')
+    if (existsSync(overlayPath)) {
+      const overlay = JSON.parse(readFileSync(overlayPath, 'utf-8'))
+      overlayById = overlay.streets || {}
+    }
+  } catch { /* no overlay; bake from defaults */ }
+
   const ribbonStreets = []
   const intersections = []
   for (const s of skelStreets) {
     if (!s.name || !s.points || s.points.length < 2) continue
     const points = s.points.map(p => [p.x, p.z])
-    const measure = computeStreetMeasure(s.name, { highway: s.highway })
-    ribbonStreets.push({ name: s.name, points, measure, intersections: [], oneway: !!s.oneway, skelId: s.id, phase: s.phase || null })
+    const ov = overlayById[s.id] || null
+    // Measure: overlay override → computeStreetMeasure default fallback.
+    const measure = (ov?.measure?.left && ov?.measure?.right)
+      ? ov.measure
+      : computeStreetMeasure(s.name, { highway: s.highway })
+    const street = {
+      name: s.name,
+      points,
+      measure,
+      intersections: [],
+      oneway: !!s.oneway,
+      skelId: s.id,
+      phase: s.phase || null,
+    }
+    // Skel owns geometric couplers; overlay-authored couplers override.
+    if (ov?.couplers) street.couplers = ov.couplers
+    else if (s.couplers) street.couplers = s.couplers
+    if (ov?.segmentMeasures) street.segmentMeasures = ov.segmentMeasures
+    if (ov?.anchor) street.anchor = ov.anchor
+    if (ov?.innerSign) street.innerSign = ov.innerSign
+    if (ov?.disabled) street.disabled = true
+    // capEnds: overlay-first; legacy centerlines.json fallback runs below.
+    if (ov?.capStart || ov?.capEnd) {
+      street.capEnds = { start: ov.capStart || null, end: ov.capEnd || null }
+    }
+    ribbonStreets.push(street)
   }
-  console.log(`    ${ribbonStreets.length} ribbon chains from skeleton (${skelStreets.length} skeleton streets)`)
+  console.log(`    ${ribbonStreets.length} ribbon chains from skeleton (${skelStreets.length} skeleton streets, ${Object.keys(overlayById).length} overlay overrides)`)
 
   // Find intersection points: use noded segments (which have shared vertices
   // at crossings) to detect where different streets' polylines meet.
@@ -2456,6 +2495,8 @@ export function deriveLayers(highways) {
     return Math.hypot(ax - bx, az - bz) <= PTS_EQ_TOL
   }
   for (const st of ribbonStreets) {
+    // Overlay-supplied caps win; skip the legacy fallback for these chains.
+    if (st.capEnds && (st.capEnds.start || st.capEnds.end)) continue
     let capStart = null, capEnd = null
     const chFirst = st.points[0], chLast = st.points[st.points.length - 1]
     for (const cl of (centerlinesByName.get(st.name) || [])) {
@@ -2801,6 +2842,14 @@ export function deriveLayers(highways) {
       anchor: st.anchor || 'center',
       innerSign: st.innerSign || 0,
       pairId: st.pairId || null,
+      // Operator-intent fields the bake's face-clip helper consumes. Live
+      // render's `clippedFaces` useMemo passes these from the overlay; if
+      // we strip them here, the bake's `buildRibbonGeometry` call sees a
+      // narrower per-side ped zone than Designer Preview and faces extend
+      // past the curb. Keep shape parity with `_loadCenterlines` output.
+      ...(st.couplers ? { couplers: st.couplers } : {}),
+      ...(st.segmentMeasures ? { segmentMeasures: st.segmentMeasures } : {}),
+      ...(st.disabled ? { disabled: true } : {}),
       intersections: st.intersections.map(ix => ({
         ix: ix.ix,
         withStreets: ix.with.streets.filter(s => s.name !== st.name).map(s => s.name),

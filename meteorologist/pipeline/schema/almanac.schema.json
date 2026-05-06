@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lafayette-square/meteorologist/almanac.schema.json",
+  "title": "Almanac",
+  "description": "Rule table mapping weather-payload inputs to atmospheric directives. Authored in Conductor, published as public/clouds/almanac.json, evaluated by src/lib/almanac-eval.js at runtime and during bake validation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "rules", "fallback"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Almanac schema version. Bumped when rule semantics change in a way that requires migration."
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bakedAt": { "type": "integer", "description": "Unix epoch ms of last bake." },
+        "notes":   { "type": "string" }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/rule" },
+      "description": "Evaluated in order. First rule whose `when` ranges all match the payload wins. Where two rules share a boundary, the directive interpolates across `softness`."
+    },
+    "fallback": {
+      "$ref": "#/$defs/directiveBlock",
+      "description": "Used when no rule matches. Seeded from current Stage Sky and Light defaults at first bake."
+    }
+  },
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when", "directive"],
+      "properties": {
+        "id":           { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+        "label":        { "type": "string" },
+        "when":         { "$ref": "#/$defs/whenBlock" },
+        "softness":     { "type": "number", "minimum": 0, "maximum": 1, "default": 0.05, "description": "Boundary smoothing band, in the range-units of each `when` field. 0 = hard edges; 0.05 = gentle interpolation across overlap." },
+        "transitionMs": { "type": "integer", "minimum": 0, "maximum": 600000, "description": "Optional override for the global default 60000ms lerp into this rule's directive. Use small values (~20s) for fast-moving phenomena, large values (~4 min) for slow clearing." },
+        "directive":    { "$ref": "#/$defs/directiveBlock" }
+      }
+    },
+    "whenBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-field range constraints. Each present field is matched as [min, max] inclusive against the corresponding payload value. Absent fields are wildcards. All present fields must match (AND semantics).",
+      "properties": {
+        "tempC":           { "$ref": "#/$defs/range" },
+        "cloudCover":      { "$ref": "#/$defs/range" },
+        "pressureMb":      { "$ref": "#/$defs/range" },
+        "humidity":        { "$ref": "#/$defs/range" },
+        "windKph":         { "$ref": "#/$defs/range" },
+        "windDirDeg":      { "$ref": "#/$defs/range" },
+        "precipMmHr":      { "$ref": "#/$defs/range" },
+        "stormDistanceKm": { "$ref": "#/$defs/range" },
+        "sunElevationDeg": { "$ref": "#/$defs/range" },
+        "sunAzimuthDeg":   { "$ref": "#/$defs/range" },
+        "tod":             { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "season":          { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "precipKind":      { "type": "array", "items": { "type": ["string", "null"] }, "uniqueItems": true }
+      }
+    },
+    "range": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "number" },
+      "description": "[min, max] inclusive."
+    },
+    "directiveBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Same shape as the runtime directive. Any subset of keys may be specified; unspecified keys inherit from the TOD base envelope (or the fallback, for the fallback block itself).",
+      "properties": {
+        "clouds": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["preset", "weight"],
+            "properties": {
+              "preset": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+              "weight": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "sun": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "azimuth":   { "type": "number", "minimum": 0, "maximum": 360 },
+            "elevation": { "type": "number", "minimum": -90, "maximum": 90 },
+            "intensity": { "type": "number", "minimum": 0, "maximum": 4 },
+            "tint":      { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+          }
+        },
+        "lightDome": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top":          { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "horizon":      { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "ambientFloor": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "wind": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "scale": { "type": "number", "minimum": 0, "maximum": 5 },
+            "dir":   { "type": "number", "minimum": 0, "maximum": 360 }
+          }
+        },
+        "precip": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind":      { "type": ["string", "null"], "enum": ["rain", "snow", "sleet", "hail", null] },
+            "intensity": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    }
+  }
+}

@@ -460,10 +460,12 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   }, [])
 
   // ── Streetlamps (dots, no boundary clip — the 641 street lamps from
-  // map.json all sit in the neighborhood anyway; lamp pools gate visibility) ─
+  // street_lamps.json all sit in the neighborhood anyway; lamp pools gate
+  // visibility). street_lamps.json (Python ETL) is canonical; map.json
+  // also carries a streetlamp layer from the same OSM source — skip it
+  // to avoid rendering each lamp twice.
   const lampPositions = useMemo(() => {
     const lamps = []
-    for (const l of (mapData.layers?.streetlamp || [])) lamps.push({ x: l.x, z: l.z })
     for (const l of (lampData.lamps || [])) lamps.push({ x: l.x, z: l.z })
     return lamps
   }, [])
@@ -527,10 +529,13 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
 
 
   // ── Landscape overlays (leisure + natural, grouped by subtype) ─
+  // park_water.json owns lake/grotto rendering; skip OSM natural=water
+  // here to avoid rendering both (visible double outline at compass-frame).
   const landscapeByKind = useMemo(() => {
     const groups = {}  // kind → [geo,...]
     for (const cat of ['leisure', 'natural']) {
       for (const item of (mapData.layers?.[cat] || [])) {
+        if (cat === 'natural' && item.use === 'water') continue
         const ring = item.ring
         if (!ring || ring.length < 3) continue
         let sx = 0, sz = 0
@@ -749,14 +754,12 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         </mesh>
       ))}
 
-      {/* Trees: park_trees.json is now world-frame (de-parking 2026-05-03). */}
+      {/* Trees: park_trees.json is in compass frame, like all spatial data. */}
       {!hide.tree && treePositions.map((t, i) => (
         <mesh key={`tree-${i}`} position={[t.x, 0.2, t.z]} rotation={[-Math.PI / 2, 0, 0]} material={mats.tree}>
           <circleGeometry args={[t.r, 12]} />
         </mesh>
       ))}
-      {/* Water: park_water.json coords orientation is unresolved. Start with
-          no rotation (world-aligned); user iterates from here. */}
       {!hide.water && waterGeo && (
         <mesh geometry={waterGeo} material={mats.water} />
       )}

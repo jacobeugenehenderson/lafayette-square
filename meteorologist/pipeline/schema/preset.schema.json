@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lafayette-square/meteorologist/preset.schema.json",
+  "title": "Meteorologist preset",
+  "description": "One entry in the First Set library. Describes a single atmospheric phenomenon (cloud archetype, fog, or stub for v1.x rain/snow/lightning) as a parameter set consumed by the runtime raymarch shader.",
+  "type": "object",
+  "required": ["id", "label", "kind", "params"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Slug. Stable identifier referenced by Almanac rules. Lowercase + underscores only."
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name for the gallery (e.g. 'Fair-weather Cumulus')."
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["cloud", "fog", "rain", "snow", "lightning"],
+      "description": "Phenomenon class. v1 renders cloud + fog; rain/snow/lightning are schema-stubbed for v1.x."
+    },
+    "wmo": {
+      "type": "string",
+      "description": "WMO classification code (e.g. 'Cu hum', 'Cb cap', 'Ci fib'). Optional but recommended for canon entries."
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "If false, runtime ignores this preset. Used for v1.x stubs (rain/snow/lightning) declared but not yet rendered."
+    },
+    "modifiers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "incus", "mamma", "virga", "praecipitatio", "arcus", "tuba",
+          "pileus", "velum", "pannus", "fluctus", "asperitas", "cavum",
+          "cataractagenitus", "flammagenitus", "homogenitus", "silvagenitus"
+        ]
+      },
+      "uniqueItems": true,
+      "description": "WMO accessory clouds + supplementary features layered atop the base genus by the shader. Per Open Q B: modifiers are flags on parent presets, not standalone presets."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Free-form tags for filtering in Library (e.g. 'fair', 'storm', 'sunset', 'high', 'low-coverage')."
+    },
+    "params": {
+      "type": "object",
+      "description": "Kind-dependent parameter block. See per-kind constraints below."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "cloud" } } },
+      "then": {
+        "properties": {
+          "params": { "$ref": "#/$defs/cloudParams" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "fog" } } },
+      "then": {
+        "properties": {
+          "params": { "$ref": "#/$defs/fogParams" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "enum": ["rain", "snow", "lightning"] } } },
+      "then": {
+        "properties": {
+          "params": { "$ref": "#/$defs/stubParams" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "cloudParams": {
+      "type": "object",
+      "required": [
+        "noiseSeed", "octaves", "coverage", "density",
+        "baseAlt", "thickness",
+        "warpFreq", "warpAmp",
+        "sunScatter", "ambientFloor", "edgeSilver", "shadowStrength",
+        "drift"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "noiseSeed":      { "type": "number", "minimum": 0, "maximum": 10000, "description": "Procedural seed; different values yield different cloud shapes with same other params." },
+        "octaves":        { "type": "integer", "minimum": 1, "maximum": 8, "description": "FBM octave count. >6 expensive on phone." },
+        "coverage":       { "type": "number", "minimum": 0, "maximum": 1, "description": "Fraction of slab volume that contains cloud (0 = clear, 1 = overcast)." },
+        "density":        { "type": "number", "minimum": 0, "maximum": 2, "description": "Optical thickness multiplier. 1.0 = baseline; 2.0 reads as nimbostratus." },
+        "anvil":          { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Anvil-spread amount near top of slab. Cb-specific." },
+        "baseAlt":        { "type": "number", "minimum": 0, "maximum": 15000, "description": "Cloud-base altitude in meters (world Y)." },
+        "thickness":      { "type": "number", "minimum": 0, "maximum": 18000, "description": "Vertical extent in meters. Real Cb can reach 12–18 km." },
+        "warpFreq":       { "type": "number", "minimum": 0, "maximum": 0.01, "description": "Domain-warp noise frequency (1/m). Small numbers — multiplied by world coords." },
+        "warpAmp":        { "type": "number", "minimum": 0, "maximum": 2000, "description": "Domain-warp amplitude in meters. Drives cauliflower lobing." },
+        "sunScatter":     { "type": "number", "minimum": 0, "maximum": 3, "description": "Mie forward-scatter strength on sun-facing edges (silver lining)." },
+        "ambientFloor":   { "type": "number", "minimum": 0, "maximum": 1, "description": "Minimum lit value in fully shadowed regions; prevents black undersides." },
+        "edgeSilver":     { "type": "number", "minimum": 0, "maximum": 2, "description": "Edge-feather silver-lining gain at thin density boundaries." },
+        "shadowStrength": { "type": "number", "minimum": 0, "maximum": 2, "description": "Self-shadow opacity multiplier in the in-shader shadow march." },
+        "drift":          { "type": "number", "minimum": 0, "maximum": 5, "description": "Wind-drift response multiplier (1.0 = matches Almanac wind directly)." }
+      }
+    },
+    "fogParams": {
+      "type": "object",
+      "required": ["density", "baseAlt", "thickness", "ambientFloor"],
+      "additionalProperties": false,
+      "properties": {
+        "density":      { "type": "number", "minimum": 0, "maximum": 2 },
+        "baseAlt":      { "type": "number", "minimum": 0, "maximum": 5000 },
+        "thickness":    { "type": "number", "minimum": 0, "maximum": 5000 },
+        "ambientFloor": { "type": "number", "minimum": 0, "maximum": 1 },
+        "tint":         { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "Optional warm/cool fog tint as hex." }
+      }
+    },
+    "stubParams": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Rain/snow/lightning are schema-declared in v1 but not rendered. Params are unconstrained until the v1.x SPEC for each phenomenon lands."
+    }
+  }
+}

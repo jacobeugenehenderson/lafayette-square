@@ -1,5 +1,7 @@
 # HANDOFF — Clouds, day 3 (CloudDome v2 reboot)
 
+> **SUPERSEDED 2026-05-04** by [`meteorologist/SPEC.md`](meteorologist/SPEC.md). The architectural plan moved to volumetric raymarching inside the Meteorologist system (which lives in Stage). **The "Tune to principles, not to a reference image" section below is still authoritative for shader tuning** — keep this file alive until `<Atmosphere />` ships and supersedes those principles in working code. Don't act on the architectural plan above that section; act on the meteorologist SPEC.
+
 **Created:** 2026-05-03 evening
 **Supersedes:** `HANDOFF-clouds-day2.md` (sprite-based approach abandoned).
 **Status:** SpriteClouds component parked, mount commented out in `src/cartograph/CartographApp.jsx`. CloudDome remains live as today's renderer.

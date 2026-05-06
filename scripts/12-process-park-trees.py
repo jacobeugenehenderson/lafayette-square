@@ -10,11 +10,44 @@ The LafayettePark.jsx group rotation handles alignment with the scene.
 
 import json
 import sys
+import os
 
 CENTER_LON = -90.2161
 CENTER_LAT = 38.6160
 LON_TO_METERS = 86774
 LAT_TO_METERS = 111000
+
+# Load the park boundary polygon from the cartograph derive. The actual
+# park is rotated ~9° from compass; an axis-aligned ±175 bbox filter
+# would either exclude real perimeter trees (past the rotated park's
+# corners on one axis) or include sidewalk trees on adjacent streets.
+# Point-in-polygon against the real boundary is exact regardless of
+# orientation. Run cartograph/pipeline.js first if map.json is stale.
+def _load_park_polygon():
+    here = os.path.dirname(os.path.abspath(__file__))
+    map_json = os.path.normpath(os.path.join(here, '..', 'cartograph', 'data', 'clean', 'map.json'))
+    with open(map_json) as f:
+        m = json.load(f)
+    park = m.get('layers', {}).get('park', [])
+    if not park or not park[0].get('ring'):
+        raise RuntimeError(f'No park polygon in {map_json}; run cartograph/pipeline.js first.')
+    ring = park[0]['ring']
+    return [(p['x'] if isinstance(p, dict) else p[0],
+             p['z'] if isinstance(p, dict) else p[1]) for p in ring]
+
+def _point_in_ring(px, pz, ring):
+    inside = False
+    n = len(ring)
+    j = n - 1
+    for i in range(n):
+        xi, zi = ring[i]
+        xj, zj = ring[j]
+        if (zi > pz) != (zj > pz) and px < (xj - xi) * (pz - zi) / (zj - zi) + xi:
+            inside = not inside
+        j = i
+    return inside
+
+PARK_RING = _load_park_polygon()
 
 # Shape archetypes for rendering
 SHAPE_MAP = {
@@ -114,8 +147,10 @@ def main():
         x = (lon - CENTER_LON) * LON_TO_METERS
         z = (CENTER_LAT - lat) * LAT_TO_METERS
 
-        # Skip trees outside park bounds (street trees along perimeter)
-        if abs(x) > 175 or abs(z) > 175:
+        # Skip trees outside the real park boundary (street trees along
+        # perimeter sidewalks). Polygon test handles the park's natural
+        # rotation correctly — see _load_park_polygon comment above.
+        if not _point_in_ring(x, z, PARK_RING):
             skipped['outside_park'] = skipped.get('outside_park', 0) + 1
             continue
 
@@ -145,7 +180,7 @@ def main():
             'url': 'https://maps6.stlouis-mo.gov/arcgis/rest/services/FORESTRY/FORESTRY_TREES/MapServer',
             'center': {'lat': CENTER_LAT, 'lon': CENTER_LON},
             'total': len(trees),
-            'coordinate_system': 'Local meters, un-rotated. Park group rotation aligns to scene.',
+            'coordinate_system': 'Local meters, compass-aligned (unrotated equirectangular about park center).',
         },
         'trees': trees,
     }

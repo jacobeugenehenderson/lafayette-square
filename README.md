@@ -20,6 +20,7 @@ npm run dev
 | `web`   | `vite`                  | 5173 | Main neighborhood app + helper UIs (Cartograph, Stage, Arborist) |
 | `carto` | `cartograph/serve.js`   | 3333 | Cartograph backend: skeleton/overlay I/O, Looks API, bake CLI runner |
 | `arb`   | `arborist/serve.js`     | 3334 | Arborist backend: species library, specimen browser API, tree bake CLI runner |
+| `met`   | `meteorologist/serve.js`| 3335 | Meteorologist backend: Teapot (clouds) + Almanac (weather rules) I/O, almanac evaluator endpoint *(not yet wired into dev script — see meteorologist/README.md)* |
 
 `Ctrl-C` kills all three. Escape hatches if you want to run one in isolation:
 
@@ -51,11 +52,13 @@ The project is organized as a **public-facing runtime app** plus a small set of 
 | **Cartograph** (`/cartograph`) | `src/cartograph/` + `cartograph/` | `public/looks/<id>/ground.svg` (per Look) | Stage's `SvgGround` |
 | **Stage** (`/stage`)             | `src/stage/` + `src/cartograph/Stage*` | (eventually) `stage-config.json` per Look | Runtime scene environment |
 | **Arborist** (`/arborist`)       | `src/arborist/` + `arborist/`          | `public/trees/<species>/{skeleton-N.glb, tips-N.json, manifest.json}` | Runtime `InstancedTrees` (planned) |
+| **Meteorologist** (in Stage)     | `meteorologist/` + `src/cartograph/` (UI inline) + `src/components/Atmosphere.jsx` (planned) | `public/clouds/{presets,almanac}.json` | Runtime `<Atmosphere />` (planned) |
 
 Read [`ARCHITECTURE.md`](ARCHITECTURE.md) for the publish-loop pattern, the Looks model (per-Look styling vs. shared geometry), and the Designer/Stage role split. Each helper has its own README documenting its inputs, outputs, and command surface:
 
 - [`cartograph/README.md`](cartograph/README.md)
 - [`arborist/README.md`](arborist/README.md) (scaffold — see [`arborist/SPEC.md`](arborist/SPEC.md) for the build plan)
+- [`meteorologist/README.md`](meteorologist/README.md) (scaffold — see [`meteorologist/SPEC.md`](meteorologist/SPEC.md) for the build plan; Meteorologist is unique in that it has no separate route — its UI lives inside Stage's `/cartograph`)
 
 URL routes during development:
 

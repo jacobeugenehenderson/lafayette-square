@@ -1,0 +1,402 @@
+{
+  "version": 1,
+  "meta": {
+    "bakedAt": 0,
+    "notes": "Teapot scaffold (a tempest in same). WMO genera × visually-distinct species + practical fog/haze + v1.x precipitation stubs. TOD lighting is handled by Almanac directive's sun/lightDome blocks, NOT by separate sunset/dawn presets — morphology is preset's job, lighting is directive's job. Tune values in Meteorologist Tuner."
+  },
+  "presets": [
+    {
+      "id": "clear_sky",
+      "label": "Clear sky",
+      "kind": "cloud",
+      "wmo": "—",
+      "tags": ["clear", "any-altitude"],
+      "params": {
+        "noiseSeed": 0, "octaves": 1, "coverage": 0, "density": 0,
+        "baseAlt": 1500, "thickness": 1, "warpFreq": 0, "warpAmp": 0,
+        "sunScatter": 0, "ambientFloor": 0, "edgeSilver": 0, "shadowStrength": 0, "drift": 0
+      }
+    },
+
+    { "id": "cirrus_fibratus", "label": "Cirrus fibratus", "kind": "cloud", "wmo": "Ci fib",
+      "tags": ["high", "thin", "fibrous"],
+      "params": {
+        "noiseSeed": 11, "octaves": 3, "coverage": 0.18, "density": 0.25,
+        "baseAlt": 9000, "thickness": 600,
+        "warpFreq": 0.0008, "warpAmp": 80,
+        "sunScatter": 1.8, "ambientFloor": 0.55, "edgeSilver": 1.4, "shadowStrength": 0.15, "drift": 1.4
+      }
+    },
+    { "id": "cirrus_uncinus", "label": "Cirrus uncinus", "kind": "cloud", "wmo": "Ci unc",
+      "tags": ["high", "hooked", "mares-tails"],
+      "params": {
+        "noiseSeed": 12, "octaves": 4, "coverage": 0.15, "density": 0.3,
+        "baseAlt": 9500, "thickness": 700,
+        "warpFreq": 0.0012, "warpAmp": 140,
+        "sunScatter": 1.9, "ambientFloor": 0.55, "edgeSilver": 1.5, "shadowStrength": 0.18, "drift": 1.4
+      }
+    },
+    { "id": "cirrus_spissatus", "label": "Cirrus spissatus", "kind": "cloud", "wmo": "Ci spi",
+      "tags": ["high", "dense", "anvil-debris"],
+      "params": {
+        "noiseSeed": 13, "octaves": 4, "coverage": 0.32, "density": 0.55,
+        "baseAlt": 8500, "thickness": 1100,
+        "warpFreq": 0.0009, "warpAmp": 180,
+        "sunScatter": 1.2, "ambientFloor": 0.4, "edgeSilver": 0.9, "shadowStrength": 0.45, "drift": 1.2
+      }
+    },
+    { "id": "cirrus_castellanus", "label": "Cirrus castellanus", "kind": "cloud", "wmo": "Ci cas",
+      "tags": ["high", "turreted", "instability"],
+      "params": {
+        "noiseSeed": 14, "octaves": 5, "coverage": 0.22, "density": 0.4,
+        "baseAlt": 8800, "thickness": 1400,
+        "warpFreq": 0.0014, "warpAmp": 260,
+        "sunScatter": 1.5, "ambientFloor": 0.5, "edgeSilver": 1.2, "shadowStrength": 0.35, "drift": 1.2
+      }
+    },
+    { "id": "cirrus_floccus", "label": "Cirrus floccus", "kind": "cloud", "wmo": "Ci flo",
+      "tags": ["high", "tufted"],
+      "params": {
+        "noiseSeed": 15, "octaves": 4, "coverage": 0.2, "density": 0.32,
+        "baseAlt": 8800, "thickness": 800,
+        "warpFreq": 0.0016, "warpAmp": 200,
+        "sunScatter": 1.6, "ambientFloor": 0.5, "edgeSilver": 1.3, "shadowStrength": 0.25, "drift": 1.3
+      }
+    },
+
+    { "id": "cirrocumulus_stratiformis", "label": "Cirrocumulus stratiformis (mackerel sky)", "kind": "cloud", "wmo": "Cc str",
+      "tags": ["high", "rippled", "mackerel"],
+      "params": {
+        "noiseSeed": 21, "octaves": 4, "coverage": 0.55, "density": 0.4,
+        "baseAlt": 8000, "thickness": 500,
+        "warpFreq": 0.0022, "warpAmp": 90,
+        "sunScatter": 1.3, "ambientFloor": 0.5, "edgeSilver": 1.1, "shadowStrength": 0.3, "drift": 1.2
+      }
+    },
+    { "id": "cirrocumulus_lenticularis", "label": "Cirrocumulus lenticularis", "kind": "cloud", "wmo": "Cc len",
+      "tags": ["high", "lens", "wave"],
+      "params": {
+        "noiseSeed": 22, "octaves": 3, "coverage": 0.12, "density": 0.5,
+        "baseAlt": 8200, "thickness": 400,
+        "warpFreq": 0.0006, "warpAmp": 60,
+        "sunScatter": 1.4, "ambientFloor": 0.5, "edgeSilver": 1.2, "shadowStrength": 0.3, "drift": 0.4
+      }
+    },
+    { "id": "cirrocumulus_floccus", "label": "Cirrocumulus floccus", "kind": "cloud", "wmo": "Cc flo",
+      "tags": ["high", "tufted"],
+      "params": {
+        "noiseSeed": 23, "octaves": 4, "coverage": 0.3, "density": 0.4,
+        "baseAlt": 8200, "thickness": 600,
+        "warpFreq": 0.002, "warpAmp": 140,
+        "sunScatter": 1.4, "ambientFloor": 0.5, "edgeSilver": 1.2, "shadowStrength": 0.3, "drift": 1.2
+      }
+    },
+    { "id": "cirrocumulus_castellanus", "label": "Cirrocumulus castellanus", "kind": "cloud", "wmo": "Cc cas",
+      "tags": ["high", "turreted"],
+      "params": {
+        "noiseSeed": 24, "octaves": 4, "coverage": 0.28, "density": 0.45,
+        "baseAlt": 8000, "thickness": 900,
+        "warpFreq": 0.0018, "warpAmp": 200,
+        "sunScatter": 1.4, "ambientFloor": 0.5, "edgeSilver": 1.2, "shadowStrength": 0.35, "drift": 1.2
+      }
+    },
+
+    { "id": "cirrostratus_fibratus", "label": "Cirrostratus fibratus", "kind": "cloud", "wmo": "Cs fib",
+      "tags": ["high", "veil", "halo-capable", "fibrous"],
+      "params": {
+        "noiseSeed": 31, "octaves": 3, "coverage": 0.85, "density": 0.22,
+        "baseAlt": 8500, "thickness": 700,
+        "warpFreq": 0.0006, "warpAmp": 60,
+        "sunScatter": 1.6, "ambientFloor": 0.55, "edgeSilver": 1.0, "shadowStrength": 0.18, "drift": 1.1
+      }
+    },
+    { "id": "cirrostratus_nebulosus", "label": "Cirrostratus nebulosus", "kind": "cloud", "wmo": "Cs neb",
+      "tags": ["high", "veil", "smooth", "halo-capable"],
+      "params": {
+        "noiseSeed": 32, "octaves": 2, "coverage": 0.95, "density": 0.18,
+        "baseAlt": 8500, "thickness": 600,
+        "warpFreq": 0.0003, "warpAmp": 30,
+        "sunScatter": 1.5, "ambientFloor": 0.6, "edgeSilver": 0.8, "shadowStrength": 0.12, "drift": 1.0
+      }
+    },
+    { "id": "cirrostratus_duplicatus", "label": "Cirrostratus duplicatus", "kind": "cloud", "wmo": "Cs du",
+      "tags": ["high", "two-layer", "veil"],
+      "params": {
+        "noiseSeed": 33, "octaves": 3, "coverage": 0.9, "density": 0.3,
+        "baseAlt": 8200, "thickness": 1500,
+        "warpFreq": 0.0005, "warpAmp": 50,
+        "sunScatter": 1.4, "ambientFloor": 0.55, "edgeSilver": 0.9, "shadowStrength": 0.2, "drift": 1.0
+      }
+    },
+
+    { "id": "altocumulus_stratiformis", "label": "Altocumulus stratiformis", "kind": "cloud", "wmo": "Ac str",
+      "tags": ["mid", "patches", "sheet"],
+      "params": {
+        "noiseSeed": 41, "octaves": 4, "coverage": 0.6, "density": 0.7,
+        "baseAlt": 4000, "thickness": 600,
+        "warpFreq": 0.0014, "warpAmp": 120,
+        "sunScatter": 1.2, "ambientFloor": 0.4, "edgeSilver": 0.9, "shadowStrength": 0.5, "drift": 1.0
+      }
+    },
+    { "id": "altocumulus_lenticularis", "label": "Altocumulus lenticularis", "kind": "cloud", "wmo": "Ac len",
+      "tags": ["mid", "lens", "wave", "stationary"],
+      "params": {
+        "noiseSeed": 42, "octaves": 3, "coverage": 0.1, "density": 0.85,
+        "baseAlt": 4200, "thickness": 700,
+        "warpFreq": 0.0006, "warpAmp": 80,
+        "sunScatter": 1.3, "ambientFloor": 0.4, "edgeSilver": 1.0, "shadowStrength": 0.55, "drift": 0.2
+      }
+    },
+    { "id": "altocumulus_castellanus", "label": "Altocumulus castellanus", "kind": "cloud", "wmo": "Ac cas",
+      "tags": ["mid", "turreted", "instability"],
+      "params": {
+        "noiseSeed": 43, "octaves": 5, "coverage": 0.45, "density": 0.8,
+        "baseAlt": 4000, "thickness": 1500,
+        "warpFreq": 0.0016, "warpAmp": 280,
+        "sunScatter": 1.2, "ambientFloor": 0.4, "edgeSilver": 1.0, "shadowStrength": 0.55, "drift": 1.0
+      }
+    },
+    { "id": "altocumulus_floccus", "label": "Altocumulus floccus", "kind": "cloud", "wmo": "Ac flo",
+      "tags": ["mid", "tufted"],
+      "params": {
+        "noiseSeed": 44, "octaves": 4, "coverage": 0.4, "density": 0.7,
+        "baseAlt": 4200, "thickness": 900,
+        "warpFreq": 0.0018, "warpAmp": 220,
+        "sunScatter": 1.3, "ambientFloor": 0.4, "edgeSilver": 1.0, "shadowStrength": 0.5, "drift": 1.0
+      }
+    },
+    { "id": "altocumulus_translucidus", "label": "Altocumulus translucidus", "kind": "cloud", "wmo": "Ac tr",
+      "tags": ["mid", "thin", "sun-visible"],
+      "params": {
+        "noiseSeed": 45, "octaves": 4, "coverage": 0.55, "density": 0.5,
+        "baseAlt": 4000, "thickness": 500,
+        "warpFreq": 0.0014, "warpAmp": 110,
+        "sunScatter": 1.4, "ambientFloor": 0.5, "edgeSilver": 1.0, "shadowStrength": 0.35, "drift": 1.0
+      }
+    },
+    { "id": "altocumulus_opacus", "label": "Altocumulus opacus", "kind": "cloud", "wmo": "Ac op",
+      "tags": ["mid", "thick", "sun-obscured"],
+      "params": {
+        "noiseSeed": 46, "octaves": 4, "coverage": 0.8, "density": 1.1,
+        "baseAlt": 3800, "thickness": 900,
+        "warpFreq": 0.0012, "warpAmp": 140,
+        "sunScatter": 0.9, "ambientFloor": 0.32, "edgeSilver": 0.7, "shadowStrength": 0.7, "drift": 0.9
+      }
+    },
+    { "id": "altocumulus_lacunosus", "label": "Altocumulus lacunosus", "kind": "cloud", "wmo": "Ac la",
+      "tags": ["mid", "honeycomb", "rare"],
+      "params": {
+        "noiseSeed": 47, "octaves": 5, "coverage": 0.55, "density": 0.7,
+        "baseAlt": 4000, "thickness": 600,
+        "warpFreq": 0.0024, "warpAmp": 160,
+        "sunScatter": 1.2, "ambientFloor": 0.4, "edgeSilver": 1.0, "shadowStrength": 0.55, "drift": 0.9
+      }
+    },
+
+    { "id": "altostratus_translucidus", "label": "Altostratus translucidus", "kind": "cloud", "wmo": "As tr",
+      "tags": ["mid", "sheet", "ground-glass-sun"],
+      "params": {
+        "noiseSeed": 51, "octaves": 2, "coverage": 0.95, "density": 0.6,
+        "baseAlt": 3500, "thickness": 1200,
+        "warpFreq": 0.0004, "warpAmp": 40,
+        "sunScatter": 1.0, "ambientFloor": 0.45, "edgeSilver": 0.6, "shadowStrength": 0.45, "drift": 0.9
+      }
+    },
+    { "id": "altostratus_opacus", "label": "Altostratus opacus", "kind": "cloud", "wmo": "As op",
+      "tags": ["mid", "sheet", "sun-obscured", "pre-rain"],
+      "params": {
+        "noiseSeed": 52, "octaves": 2, "coverage": 1.0, "density": 1.0,
+        "baseAlt": 3000, "thickness": 1800,
+        "warpFreq": 0.0003, "warpAmp": 30,
+        "sunScatter": 0.6, "ambientFloor": 0.3, "edgeSilver": 0.4, "shadowStrength": 0.7, "drift": 0.9
+      }
+    },
+
+    { "id": "nimbostratus", "label": "Nimbostratus", "kind": "cloud", "wmo": "Ns",
+      "tags": ["mid-low", "rain-bearing", "dark"],
+      "params": {
+        "noiseSeed": 61, "octaves": 3, "coverage": 1.0, "density": 1.6,
+        "baseAlt": 1200, "thickness": 4000,
+        "warpFreq": 0.0005, "warpAmp": 80,
+        "sunScatter": 0.4, "ambientFloor": 0.22, "edgeSilver": 0.3, "shadowStrength": 1.0, "drift": 0.8
+      }
+    },
+
+    { "id": "stratocumulus_stratiformis", "label": "Stratocumulus stratiformis", "kind": "cloud", "wmo": "Sc str",
+      "tags": ["low", "lumpy", "sheet"],
+      "params": {
+        "noiseSeed": 71, "octaves": 4, "coverage": 0.75, "density": 0.95,
+        "baseAlt": 1100, "thickness": 600,
+        "warpFreq": 0.0009, "warpAmp": 180,
+        "sunScatter": 1.0, "ambientFloor": 0.32, "edgeSilver": 0.85, "shadowStrength": 0.65, "drift": 0.9
+      }
+    },
+    { "id": "stratocumulus_castellanus", "label": "Stratocumulus castellanus", "kind": "cloud", "wmo": "Sc cas",
+      "tags": ["low", "turreted"],
+      "params": {
+        "noiseSeed": 72, "octaves": 5, "coverage": 0.55, "density": 1.0,
+        "baseAlt": 1100, "thickness": 1400,
+        "warpFreq": 0.0014, "warpAmp": 280,
+        "sunScatter": 1.0, "ambientFloor": 0.32, "edgeSilver": 0.9, "shadowStrength": 0.7, "drift": 0.9
+      }
+    },
+    { "id": "stratocumulus_lenticularis", "label": "Stratocumulus lenticularis", "kind": "cloud", "wmo": "Sc len",
+      "tags": ["low", "lens", "wave"],
+      "params": {
+        "noiseSeed": 73, "octaves": 3, "coverage": 0.15, "density": 1.1,
+        "baseAlt": 1200, "thickness": 700,
+        "warpFreq": 0.0005, "warpAmp": 100,
+        "sunScatter": 1.0, "ambientFloor": 0.32, "edgeSilver": 0.95, "shadowStrength": 0.65, "drift": 0.2
+      }
+    },
+    { "id": "stratocumulus_perlucidus", "label": "Stratocumulus perlucidus", "kind": "cloud", "wmo": "Sc pe",
+      "tags": ["low", "lumpy", "with-gaps"],
+      "params": {
+        "noiseSeed": 74, "octaves": 4, "coverage": 0.65, "density": 0.9,
+        "baseAlt": 1200, "thickness": 600,
+        "warpFreq": 0.0011, "warpAmp": 200,
+        "sunScatter": 1.05, "ambientFloor": 0.34, "edgeSilver": 0.9, "shadowStrength": 0.6, "drift": 0.9
+      }
+    },
+    { "id": "stratocumulus_opacus", "label": "Stratocumulus opacus", "kind": "cloud", "wmo": "Sc op",
+      "tags": ["low", "thick-sheet"],
+      "params": {
+        "noiseSeed": 75, "octaves": 3, "coverage": 0.95, "density": 1.2,
+        "baseAlt": 1000, "thickness": 700,
+        "warpFreq": 0.0007, "warpAmp": 120,
+        "sunScatter": 0.75, "ambientFloor": 0.28, "edgeSilver": 0.6, "shadowStrength": 0.85, "drift": 0.85
+      }
+    },
+    { "id": "stratocumulus_volutus", "label": "Stratocumulus volutus (roll cloud)", "kind": "cloud", "wmo": "Sc vol",
+      "tags": ["low", "roll", "rare", "dramatic"],
+      "params": {
+        "noiseSeed": 76, "octaves": 3, "coverage": 0.18, "density": 1.3,
+        "baseAlt": 900, "thickness": 500,
+        "warpFreq": 0.0004, "warpAmp": 80,
+        "sunScatter": 1.0, "ambientFloor": 0.32, "edgeSilver": 0.95, "shadowStrength": 0.7, "drift": 1.5
+      }
+    },
+
+    { "id": "stratus_nebulosus", "label": "Stratus nebulosus", "kind": "cloud", "wmo": "St neb",
+      "tags": ["low", "ceiling", "smooth"],
+      "params": {
+        "noiseSeed": 81, "octaves": 2, "coverage": 1.0, "density": 1.0,
+        "baseAlt": 300, "thickness": 400,
+        "warpFreq": 0.0002, "warpAmp": 20,
+        "sunScatter": 0.55, "ambientFloor": 0.32, "edgeSilver": 0.4, "shadowStrength": 0.7, "drift": 0.7
+      }
+    },
+    { "id": "stratus_fractus", "label": "Stratus fractus (scud)", "kind": "cloud", "wmo": "St fra",
+      "tags": ["low", "broken", "ragged", "post-rain"],
+      "params": {
+        "noiseSeed": 82, "octaves": 5, "coverage": 0.4, "density": 0.75,
+        "baseAlt": 350, "thickness": 500,
+        "warpFreq": 0.0024, "warpAmp": 260,
+        "sunScatter": 1.0, "ambientFloor": 0.32, "edgeSilver": 0.95, "shadowStrength": 0.5, "drift": 1.4
+      }
+    },
+    { "id": "stratus_opacus", "label": "Stratus opacus", "kind": "cloud", "wmo": "St op",
+      "tags": ["low", "heavy-ceiling"],
+      "params": {
+        "noiseSeed": 83, "octaves": 2, "coverage": 1.0, "density": 1.3,
+        "baseAlt": 250, "thickness": 600,
+        "warpFreq": 0.0002, "warpAmp": 25,
+        "sunScatter": 0.4, "ambientFloor": 0.26, "edgeSilver": 0.3, "shadowStrength": 0.85, "drift": 0.7
+      }
+    },
+
+    { "id": "cumulus_humilis", "label": "Cumulus humilis (fair-weather)", "kind": "cloud", "wmo": "Cu hum",
+      "tags": ["low", "fair", "puffy", "flatter-than-wide"],
+      "params": {
+        "noiseSeed": 91, "octaves": 4, "coverage": 0.32, "density": 0.85,
+        "baseAlt": 1200, "thickness": 500,
+        "warpFreq": 0.001, "warpAmp": 280,
+        "sunScatter": 1.3, "ambientFloor": 0.32, "edgeSilver": 1.05, "shadowStrength": 0.65, "drift": 1.0
+      }
+    },
+    { "id": "cumulus_mediocris", "label": "Cumulus mediocris", "kind": "cloud", "wmo": "Cu med",
+      "tags": ["low", "moderate-vertical", "puffy"],
+      "params": {
+        "noiseSeed": 92, "octaves": 5, "coverage": 0.4, "density": 1.0,
+        "baseAlt": 1200, "thickness": 1500,
+        "warpFreq": 0.0011, "warpAmp": 380,
+        "sunScatter": 1.25, "ambientFloor": 0.3, "edgeSilver": 1.0, "shadowStrength": 0.75, "drift": 0.95
+      }
+    },
+    { "id": "cumulus_congestus", "label": "Cumulus congestus", "kind": "cloud", "wmo": "Cu con",
+      "tags": ["towering", "building", "pre-storm"],
+      "params": {
+        "noiseSeed": 93, "octaves": 6, "coverage": 0.45, "density": 1.3,
+        "baseAlt": 1100, "thickness": 4500,
+        "warpFreq": 0.0012, "warpAmp": 520,
+        "sunScatter": 1.2, "ambientFloor": 0.28, "edgeSilver": 1.0, "shadowStrength": 0.9, "drift": 0.9
+      }
+    },
+    { "id": "cumulus_fractus", "label": "Cumulus fractus", "kind": "cloud", "wmo": "Cu fra",
+      "tags": ["low", "broken", "ragged"],
+      "params": {
+        "noiseSeed": 94, "octaves": 5, "coverage": 0.25, "density": 0.7,
+        "baseAlt": 900, "thickness": 600,
+        "warpFreq": 0.0022, "warpAmp": 300,
+        "sunScatter": 1.25, "ambientFloor": 0.32, "edgeSilver": 1.05, "shadowStrength": 0.55, "drift": 1.2
+      }
+    },
+
+    { "id": "cumulonimbus_calvus", "label": "Cumulonimbus calvus", "kind": "cloud", "wmo": "Cb cal",
+      "tags": ["storm", "tower", "no-anvil"],
+      "params": {
+        "noiseSeed": 101, "octaves": 6, "coverage": 0.4, "density": 1.6,
+        "baseAlt": 800, "thickness": 8000,
+        "warpFreq": 0.001, "warpAmp": 600,
+        "sunScatter": 1.0, "ambientFloor": 0.24, "edgeSilver": 0.9, "shadowStrength": 1.05, "drift": 0.85
+      }
+    },
+    { "id": "cumulonimbus_capillatus", "label": "Cumulonimbus capillatus (anvil)", "kind": "cloud", "wmo": "Cb cap",
+      "tags": ["storm", "thunderhead", "anvil", "dramatic"],
+      "modifiers": ["incus"],
+      "params": {
+        "noiseSeed": 102, "octaves": 6, "coverage": 0.5, "density": 1.7,
+        "baseAlt": 800, "thickness": 11000, "anvil": 0.85,
+        "warpFreq": 0.0009, "warpAmp": 700,
+        "sunScatter": 0.95, "ambientFloor": 0.22, "edgeSilver": 0.85, "shadowStrength": 1.15, "drift": 0.85
+      }
+    },
+    { "id": "cumulonimbus_mammatus", "label": "Cumulonimbus mammatus underside", "kind": "cloud", "wmo": "Cb cap mam",
+      "tags": ["storm", "post-storm", "pouches", "ominous"],
+      "modifiers": ["incus", "mamma"],
+      "params": {
+        "noiseSeed": 103, "octaves": 6, "coverage": 0.7, "density": 1.5,
+        "baseAlt": 1500, "thickness": 6000, "anvil": 0.6,
+        "warpFreq": 0.0014, "warpAmp": 500,
+        "sunScatter": 0.85, "ambientFloor": 0.24, "edgeSilver": 0.8, "shadowStrength": 1.0, "drift": 0.8
+      }
+    },
+
+    { "id": "fog_ground", "label": "Ground fog", "kind": "fog",
+      "tags": ["surface", "morning", "dense"],
+      "params": { "density": 1.2, "baseAlt": 0, "thickness": 60, "ambientFloor": 0.4, "tint": "#cfd6dc" }
+    },
+    { "id": "fog_valley", "label": "Valley fog (pooled)", "kind": "fog",
+      "tags": ["surface", "morning", "low-ground"],
+      "params": { "density": 1.5, "baseAlt": 0, "thickness": 120, "ambientFloor": 0.42, "tint": "#c8d2da" }
+    },
+    { "id": "haze_summer", "label": "Summer haze", "kind": "fog",
+      "tags": ["atmospheric", "dry", "warm"],
+      "params": { "density": 0.25, "baseAlt": 0, "thickness": 3000, "ambientFloor": 0.55, "tint": "#e8dcc6" }
+    },
+    { "id": "haze_smoke", "label": "Wildfire smoke haze", "kind": "fog",
+      "tags": ["atmospheric", "warm", "ominous", "rare"],
+      "params": { "density": 0.6, "baseAlt": 0, "thickness": 4000, "ambientFloor": 0.35, "tint": "#a07a55" }
+    },
+
+    { "id": "rain_light",            "label": "Light rain (stub)",            "kind": "rain",      "enabled": false, "tags": ["v1.x"], "params": {} },
+    { "id": "rain_moderate",         "label": "Moderate rain (stub)",         "kind": "rain",      "enabled": false, "tags": ["v1.x"], "params": {} },
+    { "id": "rain_heavy",            "label": "Heavy rain (stub)",            "kind": "rain",      "enabled": false, "tags": ["v1.x"], "params": {} },
+    { "id": "rain_squall",           "label": "Rain squall (stub)",           "kind": "rain",      "enabled": false, "tags": ["v1.x"], "params": {} },
+    { "id": "snow_calm",             "label": "Calm snow (stub)",             "kind": "snow",      "enabled": false, "tags": ["v1.x"], "params": {} },
+    { "id": "snow_heavy",            "label": "Heavy snow (stub)",            "kind": "snow",      "enabled": false, "tags": ["v1.x"], "params": {} },
+    { "id": "snow_blizzard",         "label": "Blizzard (stub)",              "kind": "snow",      "enabled": false, "tags": ["v1.x"], "params": {} },
+    { "id": "lightning_intracloud",  "label": "Intra-cloud lightning (stub)", "kind": "lightning", "enabled": false, "tags": ["v1.x"], "params": {} },
+    { "id": "lightning_cloud_ground","label": "Cloud-to-ground lightning (stub)", "kind": "lightning", "enabled": false, "tags": ["v1.x"], "params": {} }
+  ]
+}

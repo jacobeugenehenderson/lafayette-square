@@ -12,6 +12,20 @@ const CENTERLINES = join(RAW, 'centerlines.json')
 const SKELETON = join(DIR, 'skeleton.json')
 const OVERLAY = join(DIR, 'overlay.json')
 const PARCEL_FILE = join(import.meta.dirname, '..', 'scripts', 'raw', 'stl_parcels.json')
+
+// mtime-based dirty check used by the bake chain. Returns true if any output
+// is missing or any input is newer than the oldest output. Missing inputs
+// are treated as mtime=0 (won't force a rebuild on their own); missing
+// outputs always force a rebuild. Both inputs and outputs lists may include
+// .js source paths so script edits invalidate downstream artifacts.
+function needsRebuild(inputs, outputs) {
+  const outMtimes = outputs.map(o => existsSync(o) ? statSync(o).mtimeMs : 0)
+  if (outMtimes.some(t => t === 0)) return true
+  const minOut = Math.min(...outMtimes)
+  const inMtimes = inputs.map(i => existsSync(i) ? statSync(i).mtimeMs : 0)
+  const maxIn = inMtimes.length ? Math.max(...inMtimes) : 0
+  return maxIn > minOut
+}
 // Looks: each Look is a styling snapshot — a complete material palette plus
 // the per-Look bake bundle (ground.json + bin + lightmap + buildings + lamps
 // + scene snapshot) under public/baked/<id>/. design.json (authoring state)
@@ -417,24 +431,105 @@ createServer((req, res) => {
     }
     try {
       const t0 = Date.now()
-      // Full bake: Three.js bake bundle (ground geom + AO lightmap +
-      // buildings + scene snapshot). Sequential so failures point at one
-      // bad step. bake-svg.js is intentionally NOT run here — it's
-      // demoted to a CLI-only QA artifact (human-readable / diffable);
-      // the runtime consumes ground.json + ground.bin + ground.lightmap
-      // exclusively.
-      execSync(`node bake-ground.js --look=${id}`,    { cwd: import.meta.dirname, timeout: 60000 })
-      execSync(`node bake-buildings.js --look=${id}`, { cwd: import.meta.dirname, timeout: 60000 })
-      execSync(`node bake-lamps.js --look=${id}`,     { cwd: import.meta.dirname, timeout: 30000 })
-      execSync(`node bake-scene.js --look=${id}`,     { cwd: import.meta.dirname, timeout: 30000 })
-      // AO bake last — slowest (~25 sec), benefits from updated geometry.
-      execSync(`node bake-ground-ao.js --look=${id}`, { cwd: import.meta.dirname, timeout: 120000 })
+      // Full bake chain — every step the operator might forget rolled into
+      // the Bake button so "edit, bake, see" actually works:
+      //
+      //   1. pipeline.js + promote-ribbons.js — re-derive map.json + ribbons
+      //      from the latest measurements/overlay/centerlines edits.
+      //   2. cartograph bakes — ground / buildings / lamps / scene from
+      //      the freshly-derived map.json.
+      //   3. arborist tree bake — public/baked/default.json placements;
+      //      reads map.json for forbidden-surface polygons.
+      //   4. ground-ao bake last — slowest (~25 sec), benefits from
+      //      stable upstream geometry.
+      //
+      // Each step is incremental: skipped when all outputs are newer than
+      // every declared input (including its own .js source). Pass
+      // `?force=1` on the bake URL to force a full rebuild.
+      //
+      // bake-svg.js is intentionally NOT run here — it's demoted to a
+      // CLI-only QA artifact (human-readable / diffable); the runtime
+      // consumes ground.json + ground.bin + ground.lightmap exclusively.
+      const force = /[?&]force=1\b/.test(req.url || '')
+      const REPO_ROOT = join(import.meta.dirname, '..')
+      const here = import.meta.dirname
+      // overlay.json + skeleton.json live in data/clean (Survey/Measure
+      // write to /overlay → data/clean/overlay.json; skeleton is derived).
+      // Everything else is raw inputs.
+      const RAW_PATHS = [
+        join(here, 'data', 'raw', 'osm.json'),
+        join(here, 'data', 'raw', 'measurements.json'),
+        join(here, 'data', 'raw', 'centerlines.json'),
+        join(here, 'data', 'raw', 'elevation.json'),
+        join(here, 'data', 'clean', 'overlay.json'),
+        join(here, 'data', 'clean', 'skeleton.json'),
+        join(REPO_ROOT, 'src', 'data', 'buildings.json'),
+      ]
+      const PIPELINE_SRC = ['pipeline.js', 'derive.js', 'snap.js', 'classify.js', 'standards.js', 'config.js'].map(f => join(here, f))
+      const MAP_JSON   = join(here, 'data', 'clean', 'map.json')
+      const RIBBONS    = join(REPO_ROOT, 'src', 'data', 'ribbons.json')
+      const PARK_TREES = join(REPO_ROOT, 'src', 'data', 'park_trees.json')
+      const PARK_WATER = join(REPO_ROOT, 'src', 'data', 'park_water.json')
+      const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')
+      const DESIGN    = join(REPO_ROOT, 'public', 'looks', id, 'design.json')
+      const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
+      const ranSteps = []
+      const skipped = []
+      const runIfDirty = (label, inputs, outputs, cmd, opts) => {
+        if (!force && !needsRebuild(inputs, outputs)) { skipped.push(label); return }
+        execSync(cmd, opts)
+        ranSteps.push(label)
+      }
+
+      runIfDirty('pipeline',
+        [...RAW_PATHS, ...PIPELINE_SRC],
+        [MAP_JSON],
+        `node pipeline.js`,
+        { cwd: here, timeout: 120000 })
+      runIfDirty('promote-ribbons',
+        [MAP_JSON, join(here, 'promote-ribbons.js')],
+        [RIBBONS],
+        `node promote-ribbons.js`,
+        { cwd: here, timeout: 30000 })
+      runIfDirty('ground',
+        [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js')],
+        [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
+        `node bake-ground.js --look=${id}`,
+        { cwd: here, timeout: 60000 })
+      runIfDirty('buildings',
+        [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
+        [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
+        `node bake-buildings.js --look=${id}`,
+        { cwd: here, timeout: 60000 })
+      runIfDirty('lamps',
+        [STREET_LAMPS, DESIGN, join(here, 'bake-lamps.js')],
+        [join(LOOK_DIR, 'lamps.json')],
+        `node bake-lamps.js --look=${id}`,
+        { cwd: here, timeout: 30000 })
+      runIfDirty('scene',
+        [DESIGN, join(here, 'bake-scene.js')],
+        [join(LOOK_DIR, 'scene.json')],
+        `node bake-scene.js --look=${id}`,
+        { cwd: here, timeout: 30000 })
+      // `--look default` is intentional: trees-atlas is per-look
+      // (texture/style), but placements are shared across looks.
+      runIfDirty('trees',
+        [PARK_TREES, PARK_WATER, MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
+        [join(REPO_ROOT, 'public', 'baked', 'default.json')],
+        `node arborist/bake-trees.js --look default`,
+        { cwd: REPO_ROOT, timeout: 60000 })
+      // AO bake last — slowest, benefits from updated geometry.
+      runIfDirty('ground-ao',
+        [MAP_JSON, DESIGN, join(LOOK_DIR, 'ground.json'), join(here, 'bake-ground-ao.js')],
+        [join(LOOK_DIR, 'ground.lightmap.png')],
+        `node bake-ground-ao.js --look=${id}`,
+        { cwd: here, timeout: 120000 })
       const ms = Date.now() - t0
       const idx2 = readLooksIndex()
       const entry = idx2.looks.find(l => l.id === id)
       if (entry) { entry.bakedAt = Date.now(); saveLooksIndex(idx2) }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, ms, lookId: id }))
+      res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))

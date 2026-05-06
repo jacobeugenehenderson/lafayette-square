@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
@@ -227,6 +227,21 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         prevShot.current = shot
         return
       }
+      // Toy + Designer: reset ortho camera to origin so the toy fixture is
+      // visible (otherwise localStorage-persisted LS-centered position
+      // leaves toy hundreds of meters off-screen → user sees gray canvas).
+      if (sceneKey === 'toy' && shot === 'designer') {
+        const cam = orthoRef.current
+        if (!cam) return
+        cam.position.set(0, 500, 0)
+        cam.zoom = Math.max(2, size.height / 200)  // fit ~200m vertical
+        cam.up.set(0, 0, -1)
+        cam.lookAt(0, 0, 0)
+        cam.updateProjectionMatrix()
+        if (ctl) { ctl.target.set(0, 0, 0); ctl.update() }
+        prevShot.current = shot
+        return
+      }
       if (shot === 'designer') {
         const cam = orthoRef.current
         if (!cam) return
@@ -291,7 +306,9 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     return () => cancelAnimationFrame(id)
   }, [shot, sceneKey, orthoRef, perspRef, controlsRef])
 
-  // Persist designer pan/zoom (ortho only)
+  // Persist designer pan/zoom (ortho only). Browse-↔-Designer view sync
+  // is handled by the cross-camera handoff in the shot-change useEffect
+  // above (read ortho/persp directly), not via localStorage.
   useFrame(() => {
     if (useCartographStore.getState().shot !== 'designer') return
     if (!camera.isOrthographicCamera) return
@@ -344,8 +361,8 @@ function Controls({ controlsRef }) {
     )
   }
   // Browse is a planar overhead by default — LEFT-drag pans, wheel zooms.
-  // RIGHT-drag (and Ctrl/Cmd+drag on Mac trackpads) is the hidden 360°
-  // orbit easter egg. See feedback_browse_right_drag_orbit.md.
+  // ⌥/Alt+LEFT-drag (and RIGHT-drag) is the hidden 360° orbit easter
+  // egg. See feedback_browse_right_drag_orbit.md.
   if (shot === 'browse') {
     return (
       <BrowseControls controlsRef={controlsRef} />
@@ -357,31 +374,61 @@ function Controls({ controlsRef }) {
 }
 
 function BrowseControls({ controlsRef }) {
-  const localRef = useRef(null)
+  // LEFT=PAN by default, ⌥/Alt+LEFT=ROTATE, RIGHT=ROTATE always.
+  //
+  // Two delivery paths because each alone has been observed to fail:
+  //   (a) Declarative `mouseButtons` prop. drei renders OrbitControls as
+  //       <primitive object={controls} ...restProps>, and R3F's applyProps
+  //       *mutates* `controls.mouseButtons` keys in place. That works on
+  //       initial mount, but if THREE.OrbitControls' constructor (or the
+  //       running drag handler) ever resets the object, the React tree
+  //       won't re-push it because the prop value is referentially equal.
+  //   (b) Imperative assignment after every mouse/key event. Robust against
+  //       any internal reset, and against the underlying controls instance
+  //       being recreated by drei when the default camera swaps (entering
+  //       Browse from Designer flips makeDefault on PerspectiveCamera, which
+  //       changes drei's internal `useMemo(new OrbitControls(...), [camera])`
+  //       dependency and creates a NEW controls instance — our previous
+  //       useEffect-once imperative set was applied to the OLD instance and
+  //       silently lost). Tying the ref to a state setter forces a re-apply
+  //       on every controls-instance swap.
+  const [controls, setControls] = useState(null)
+  const [altDown, setAltDown] = useState(false)
+  const buttons = useMemo(() => ({
+    LEFT: altDown ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
+    MIDDLE: THREE.MOUSE.DOLLY,
+    RIGHT: THREE.MOUSE.ROTATE,
+  }), [altDown])
+  // Re-apply imperatively whenever the controls instance OR alt state
+  // changes. Belt-and-suspenders against drei recreating the underlying
+  // OrbitControls when explCamera changes.
   useEffect(() => {
-    const setButtons = (modDown) => {
-      const c = localRef.current
-      if (!c) return
-      c.mouseButtons = {
-        LEFT: modDown ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
-        MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.ROTATE,
-      }
-    }
-    const onKeyDown = (e) => { if (e.key === 'Control' || e.key === 'Meta') setButtons(true) }
-    const onKeyUp   = (e) => { if (e.key === 'Control' || e.key === 'Meta') setButtons(false) }
-    setButtons(false)
+    if (!controls) return
+    controls.mouseButtons = buttons
+  }, [controls, buttons])
+  useEffect(() => {
+    const onKeyDown = (e) => { if (e.key === 'Alt') setAltDown(true) }
+    const onKeyUp   = (e) => { if (e.key === 'Alt') setAltDown(false) }
+    const onBlur    = () => setAltDown(false)
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
     }
   }, [])
+  const refCb = useCallback((r) => {
+    setControls(r)
+    if (controlsRef) controlsRef.current = r
+  }, [controlsRef])
   return (
     <OrbitControls
       key="browse"
-      ref={(r) => { localRef.current = r; if (controlsRef) controlsRef.current = r }}
+      makeDefault
+      ref={refCb}
+      mouseButtons={buttons}
       enablePan
       enableRotate
       enableZoom
@@ -566,6 +613,19 @@ export default function CartographApp() {
   const corridorSelected = toolActive && selectedStreet !== null
   const decorationsHidden = toolActive ? { ...hiddenLayers, ground: true } : hiddenLayers
 
+  // Tool + Aerial = focus mode. Drops the visual noise that competes
+  // with the aerial photo for align-to-photo authoring:
+  //   - StreetRibbons keeps ribbon bands (asphalt/sidewalk/curb — the
+  //     measurement targets) but drops `hideFaceFills` so the colored
+  //     block faces (residential/commercial/park) stop tinting the
+  //     aerial.
+  //   - MapLayers (buildings, landscape overlays, parking lots, lamps,
+  //     trees, water, labels, barriers) hides entirely.
+  //   - DesignerArch (decoration) hides.
+  // Aerial photo + ribbon bands + tool's authoring overlay = clean
+  // direct-align surface.
+  const toolAerialFocus = inDesigner && !!tool && aerialVisible && scene !== 'toy'
+
   let cursor = 'grab'
   if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'
   else if (markerActive && !spaceDown) cursor = 'crosshair'
@@ -641,7 +701,7 @@ export default function CartographApp() {
               flat={inDesigner}
               ribbons={scene === 'toy' ? toyRibbons : undefined}
               useBoundary={scene !== 'toy'}
-              hideFaceFills={false} />
+              hideFaceFills={toolAerialFocus} />
             </group>
           </R3FErrorBoundary>
           )}
@@ -675,8 +735,10 @@ export default function CartographApp() {
 
           {/* ── Map layers (flat ground geometry — neighborhood only).
               In shots, layers with 3D equivalents (park, buildings, trees,
-              lamps, water) are suppressed so the 3D components own them. */}
-          {scene === 'neighborhood' && (
+              lamps, water) are suppressed so the 3D components own them.
+              In Designer's tool+aerial focus mode, hidden entirely so the
+              authoring overlay is unblocked against the aerial photo. */}
+          {scene === 'neighborhood' && !toolAerialFocus && (
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner && scene !== 'toy'}
               measureActive={tool === 'measure' && inDesigner && scene !== 'toy'} />
@@ -686,10 +748,12 @@ export default function CartographApp() {
               against the real neighborhood data) ──
               All four mount only in Designer; shots don't need them and
               keeping them out of the tree means TextureLoader never fires
-              for the 64 aerial tiles when the operator is in a shot. */}
+              for the 64 aerial tiles when the operator is in a shot.
+              DesignerArch is decoration; suppressed in tool+aerial focus
+              so it doesn't compete with the photo. */}
           {inDesigner && scene === 'neighborhood' && <>
             <AerialTiles visible={!!tool || aerialVisible} />
-            <DesignerArch />
+            {!toolAerialFocus && <DesignerArch />}
             <SurveyorOverlay />
             {tool === 'measure' && <MeasureOverlay />}
           </>}

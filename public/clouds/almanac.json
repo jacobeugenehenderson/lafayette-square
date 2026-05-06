@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "meta": {
+    "bakedAt": 0,
+    "notes": "Starter ruleset. Rules evaluated in order; first match wins. Boundary smoothing per rule via softness. Lighting (sun, lightDome) is intentionally sparse here — most rules let the TOD base envelope handle lighting; only weather-specific overrides (storm dimming, overcast desaturation) appear in directives. Tune in Conductor."
+  },
+  "rules": [
+    {
+      "id": "thunderstorm_active",
+      "label": "Active thunderstorm",
+      "when": { "precipMmHr": [4, 500], "stormDistanceKm": [0, 25] },
+      "softness": 0.05,
+      "transitionMs": 20000,
+      "directive": {
+        "clouds": [
+          { "preset": "cumulonimbus_capillatus", "weight": 0.65 },
+          { "preset": "stratus_fractus",         "weight": 0.25 }
+        ],
+        "sun":       { "intensity": 0.35, "tint": "#8c8a86" },
+        "lightDome": { "top": "#3d4047", "horizon": "#5a5550", "ambientFloor": 0.18 },
+        "wind":      { "scale": 2.4 },
+        "precip":    { "kind": "rain", "intensity": 0.85 }
+      }
+    },
+    {
+      "id": "post_storm_mammatus",
+      "label": "Post-storm mammatus underside",
+      "when": { "precipMmHr": [0, 1], "stormDistanceKm": [10, 60], "cloudCover": [0.6, 1] },
+      "softness": 0.05,
+      "transitionMs": 90000,
+      "directive": {
+        "clouds": [
+          { "preset": "cumulonimbus_mammatus", "weight": 0.7 },
+          { "preset": "cumulus_fractus",       "weight": 0.2 }
+        ],
+        "sun":       { "intensity": 0.7, "tint": "#d8a06c" },
+        "lightDome": { "top": "#5e5e6e", "horizon": "#c8956a", "ambientFloor": 0.25 }
+      }
+    },
+    {
+      "id": "rain_steady",
+      "label": "Steady rain",
+      "when": { "precipMmHr": [0.5, 4], "cloudCover": [0.85, 1] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [{ "preset": "nimbostratus", "weight": 0.95 }],
+        "sun":    { "intensity": 0.45, "tint": "#a8a39d" },
+        "wind":   { "scale": 1.2 },
+        "precip": { "kind": "rain", "intensity": 0.5 }
+      }
+    },
+    {
+      "id": "snow_active",
+      "label": "Active snow",
+      "when": { "tempC": [-30, 1], "precipMmHr": [0.2, 30] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [
+          { "preset": "nimbostratus",      "weight": 0.6 },
+          { "preset": "stratocumulus_opacus", "weight": 0.3 }
+        ],
+        "sun":       { "intensity": 0.5, "tint": "#cdd6df" },
+        "lightDome": { "top": "#94a4b3", "horizon": "#d8dde3", "ambientFloor": 0.45 },
+        "precip":    { "kind": "snow", "intensity": 0.6 }
+      }
+    },
+    {
+      "id": "blizzard",
+      "label": "Blizzard",
+      "when": { "tempC": [-30, 0], "precipMmHr": [3, 30], "windKph": [50, 200] },
+      "softness": 0.05,
+      "transitionMs": 30000,
+      "directive": {
+        "clouds": [{ "preset": "stratus_opacus", "weight": 1.0 }],
+        "sun":       { "intensity": 0.3, "tint": "#cdd6df" },
+        "lightDome": { "top": "#7c8895", "horizon": "#a8b4c0", "ambientFloor": 0.4 },
+        "wind":      { "scale": 3.0 },
+        "precip":    { "kind": "snow", "intensity": 0.95 }
+      }
+    },
+    {
+      "id": "overcast_pre_rain",
+      "label": "Overcast, pre-rain altostratus",
+      "when": { "cloudCover": [0.85, 1], "precipMmHr": [0, 0.5], "humidity": [0.7, 1] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [{ "preset": "altostratus_opacus", "weight": 0.95 }],
+        "sun":    { "intensity": 0.55, "tint": "#bdb6ac" }
+      }
+    },
+    {
+      "id": "overcast_low",
+      "label": "Overcast low ceiling",
+      "when": { "cloudCover": [0.85, 1], "precipMmHr": [0, 0.5] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [
+          { "preset": "stratocumulus_opacus", "weight": 0.7 },
+          { "preset": "stratus_opacus",       "weight": 0.25 }
+        ],
+        "sun": { "intensity": 0.5, "tint": "#b8b6b0" }
+      }
+    },
+    {
+      "id": "broken_cloudy",
+      "label": "Mostly cloudy with breaks",
+      "when": { "cloudCover": [0.55, 0.85], "precipMmHr": [0, 0.2] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [
+          { "preset": "stratocumulus_perlucidus", "weight": 0.55 },
+          { "preset": "altocumulus_stratiformis", "weight": 0.25 }
+        ]
+      }
+    },
+    {
+      "id": "fair_cumulus_day",
+      "label": "Fair-weather cumulus day",
+      "when": { "cloudCover": [0.2, 0.55], "precipMmHr": [0, 0], "sunElevationDeg": [10, 90] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [
+          { "preset": "cumulus_humilis",          "weight": 0.6 },
+          { "preset": "altocumulus_translucidus", "weight": 0.2 }
+        ]
+      }
+    },
+    {
+      "id": "building_convection",
+      "label": "Building afternoon convection",
+      "when": { "cloudCover": [0.3, 0.7], "humidity": [0.55, 0.95], "tempC": [22, 40], "sunElevationDeg": [25, 90] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [
+          { "preset": "cumulus_mediocris",     "weight": 0.5 },
+          { "preset": "cumulus_congestus",     "weight": 0.25 },
+          { "preset": "altocumulus_castellanus", "weight": 0.15 }
+        ]
+      }
+    },
+    {
+      "id": "high_cirrus_day",
+      "label": "Mostly clear with high cirrus",
+      "when": { "cloudCover": [0.05, 0.25], "precipMmHr": [0, 0] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [{ "preset": "cirrus_fibratus", "weight": 0.4 }]
+      }
+    },
+    {
+      "id": "halo_cirrostratus",
+      "label": "Cirrostratus veil (halo-capable)",
+      "when": { "cloudCover": [0.6, 0.95], "humidity": [0.4, 0.8], "precipMmHr": [0, 0], "pressureMb": [990, 1015] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [{ "preset": "cirrostratus_fibratus", "weight": 0.85 }]
+      }
+    },
+    {
+      "id": "mackerel_sky",
+      "label": "Mackerel sky",
+      "when": { "cloudCover": [0.4, 0.75], "humidity": [0.4, 0.7], "precipMmHr": [0, 0], "windKph": [10, 40] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [
+          { "preset": "cirrocumulus_stratiformis", "weight": 0.7 },
+          { "preset": "cirrus_fibratus",           "weight": 0.15 }
+        ]
+      }
+    },
+    {
+      "id": "morning_fog",
+      "label": "Morning ground fog",
+      "when": { "humidity": [0.92, 1], "windKph": [0, 8], "tod": ["dawn", "morning"] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [{ "preset": "fog_ground", "weight": 0.9 }]
+      }
+    },
+    {
+      "id": "summer_haze",
+      "label": "Hazy summer afternoon",
+      "when": { "tempC": [27, 45], "humidity": [0.5, 0.85], "season": ["summer"], "precipMmHr": [0, 0] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [
+          { "preset": "haze_summer",     "weight": 0.6 },
+          { "preset": "cumulus_humilis", "weight": 0.25 }
+        ],
+        "sun": { "tint": "#f0d9a8" }
+      }
+    },
+    {
+      "id": "clear_dry",
+      "label": "Clear dry sky",
+      "when": { "cloudCover": [0, 0.05], "precipMmHr": [0, 0] },
+      "softness": 0.05,
+      "directive": {
+        "clouds": [{ "preset": "clear_sky", "weight": 1.0 }]
+      }
+    }
+  ],
+  "fallback": {
+    "clouds": [
+      { "preset": "cumulus_humilis",          "weight": 0.5 },
+      { "preset": "altocumulus_translucidus", "weight": 0.2 }
+    ]
+  }
+}

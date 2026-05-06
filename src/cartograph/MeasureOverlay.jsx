@@ -237,8 +237,10 @@ export default function MeasureOverlay() {
       }
       out.push({ idx, geo, disabled: !!st.disabled })
     }
-    console.log(`[MeasureOverlay] centerlineMeshes: ${out.length} total. Divided chains:`)
-    for (const [name, arr] of dividedSeen) console.log(`  ${name}: ${arr.length} chain(s)`, arr)
+    // (Diagnostic: total centerlineMesh count + divided-chain breakdown.
+    // Re-enable for survey-debugging by uncommenting below.)
+    // console.log(`[MeasureOverlay] centerlineMeshes: ${out.length} total. Divided chains:`)
+    // for (const [name, arr] of dividedSeen) console.log(`  ${name}: ${arr.length} chain(s)`, arr)
     return out
   }, [active, streetData])
 

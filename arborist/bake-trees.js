@@ -81,20 +81,32 @@ function makeForbiddenTester() {
   const map = JSON.parse(readFileSync(path.join(REPO_ROOT, 'cartograph', 'data', 'clean', 'map.json'), 'utf-8'))
   const water = JSON.parse(readFileSync(path.join(REPO_ROOT, 'src', 'data', 'park_water.json'), 'utf-8'))
 
-  // park_water.json is already in world frame (de-parking migration).
+  // pointInRing below indexes ring[i][0] / [1]. park_water.json uses
+  // [x, z] arrays directly; map.json uses {x, z} objects. Normalize to
+  // arrays here so the test works against every polygon source.
+  const toArr = (ring) => ring.map(p => Array.isArray(p) ? p : [p.x, p.z])
+
+  // park_water.json is in compass frame, same as map.json.
   const lakeOuter  = water.lake?.outer  || []
   const lakeIsland = water.lake?.island || []
   const grotto     = water.grotto       || []
   const waterPolys = []
-  if (lakeOuter.length) waterPolys.push({ ring: lakeOuter, holes: lakeIsland.length ? [lakeIsland] : null })
-  if (grotto.length)    waterPolys.push({ ring: grotto })
+  if (lakeOuter.length) waterPolys.push({ ring: toArr(lakeOuter), holes: lakeIsland.length ? [toArr(lakeIsland)] : null })
+  if (grotto.length)    waterPolys.push({ ring: toArr(grotto) })
 
-  // map.json layers (already world-coord). Each entry is { ring, holes? }.
-  const buildings = (map.buildings || []).map(b => ({ ring: b.footprint || b.ring }))
-  const layer = (k) => (map.layers?.[k] || []).map(p => ({ ring: p.ring, holes: p.holes || null }))
+  // map.json layers (compass frame). Each entry is { ring, holes? }.
+  const buildings = (map.buildings || [])
+    .map(b => ({ ring: toArr(b.footprint || b.ring || []) }))
+    .filter(b => b.ring.length >= 3)
+  const layer = (k) => (map.layers?.[k] || [])
+    .map(p => ({ ring: toArr(p.ring || []), holes: p.holes ? p.holes.map(toArr) : null }))
+    .filter(p => p.ring.length >= 3)
   const pavement = layer('pavement')
   const alley    = layer('alley')
-  const sidewalk = [...layer('sidewalk'), ...layer('parkSidewalk')]
+  // Note: `parkSidewalk` is a single polygon covering the park interior,
+  // not a perimeter strip — including it would forbid every park tree.
+  // Trees on park-internal walks are filtered via `path` + `footway` instead.
+  const sidewalk = layer('sidewalk')
   const footway  = layer('footway')
   const pathway  = layer('path')
 

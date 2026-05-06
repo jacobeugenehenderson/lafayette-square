@@ -17,6 +17,7 @@ export default function Toolbar() {
   const bakeRunning = useCartographStore(s => s.bakeRunning)
   const bakeStale = useCartographStore(s => s.bakeStale)
   const runBake = useCartographStore(s => s.runBake)
+  const lastStageShot = useCartographStore(s => s.lastStageShot)
 
   const inDesigner = shot === 'designer'
 
@@ -33,16 +34,22 @@ export default function Toolbar() {
             onSelect={setTool}
           />
 
-          {/* Background view: SVG (curated cartograph) vs Aerial (photo).
-              Same semantics in pure Design and in tools — ribbons + tool
-              affordances render on top of either background, so Survey/
-              Measure operators still get the aerial as alignment reference
-              when they need it. */}
-          <ToolGroup
-            items={[{ id: 'svg', label: 'SVG' }, { id: 'aerial', label: 'Aerial' }]}
-            active={aerialVisible ? 'aerial' : 'svg'}
-            onSelect={(id) => setAerialVisible(id === 'aerial')}
-          />
+          {/* Aerial toggle. Off = SVG (curated cartograph) shows
+              behind the ribbons; on = georeferenced aerial photo.
+              Tools (Survey/Measure) and pure Design both render on
+              top of whichever background is selected. */}
+          <ToggleButton label="Aerial"
+            active={aerialVisible}
+            onClick={() => setAerialVisible(!aerialVisible)} />
+
+          {/* Toy fixture toggle in Designer too — exposes the corner-case
+              test grid in src/data/toy/toy-ribbons.json so the plug system
+              can be debugged against a known fixture. CartographApp already
+              swaps `ribbons` + skips boundary clipping when scene==='toy';
+              this just makes the toggle reachable from Designer. */}
+          <ToggleButton label="Toy"
+            active={scene === 'toy'}
+            onClick={() => setScene(scene === 'toy' ? 'neighborhood' : 'toy')} />
         </>
       ) : (
         <>
@@ -56,31 +63,62 @@ export default function Toolbar() {
         </>
       )}
 
-      {/* Designer: a single Stage button replaces the angle picker. The
-          Stage step is the cartograph's publish moment — bakes the SVG,
-          then jumps to Hero. Inside a shot the angle picker reappears
-          (Browse / Hero / Street). */}
+      {/* Designer's "Stage" button is pure navigation — the operator
+          enters Stage to do look-authoring work. Bake is a Stage-level
+          action, not a Designer-level action. See FEATURES.md
+          "Bake button belongs in Stage's toolbar." */}
       {inDesigner ? (
         <div className="carto-toolgroup">
           <button
-            className={`carto-stage-btn${bakeStale ? ' stale' : ''}`}
+            className="carto-stage-btn"
             disabled={bakeRunning}
-            onClick={() => bakeStale ? runBake() : setShot('hero')}
-            title={bakeStale ? 'Bake the cartograph SVG and view it in Stage' : 'Cartograph baked. Click to view in Stage.'}>
-            {bakeRunning ? 'Baking…' : (bakeStale ? 'Stage' : 'Stage ✓')}
+            onClick={(e) => {
+              // Navigation is tied to the bake's success path inside
+              // runBake itself (navigateTo param), not chained via .then —
+              // .then closures got stranded across HMR re-renders, which
+              // left the operator in Designer after long bakes.
+              runBake({ force: e.altKey, navigateTo: 'browse' })
+            }}
+            title={bakeRunning
+              ? 'Baking…'
+              : 'Bake + enter Stage at Browse (overhead, matches Designer). ⌥-click forces full rebuild. Use Stage\'s ↻ to re-bake without navigating.'}>
+            {bakeRunning ? 'Baking…' : 'Stage →'}
           </button>
         </div>
       ) : (
-        <ToolGroup
-          items={SHOTS.map(id => ({ id, label: cap(id) }))}
-          active={shot}
-          onSelect={setShot}
-        />
+        <>
+          <ToolGroup
+            items={SHOTS.map(id => ({ id, label: cap(id) }))}
+            active={shot}
+            onSelect={setShot}
+          />
+          {/* Stage's Bake button — always runs the incremental bake chain
+              on click. No gating: clicking is always a legitimate "pour
+              me a fresh slab now." ⌥/Alt-click forces a full rebuild
+              (bypasses the dirty-check; the cache-bust escape hatch).
+              The stale indicator ("●") lights when authoring edits exist
+              but never disables the action. */}
+          <div className="carto-toolgroup">
+            <button
+              className={`carto-bake-btn${bakeStale ? ' stale' : ''}${bakeRunning ? ' running' : ''}`}
+              disabled={bakeRunning}
+              onClick={(e) => runBake({ force: e.altKey })}
+              title={bakeRunning
+                ? 'Baking…'
+                : (bakeStale
+                  ? 'Re-bake — pour a fresh slab. Authoring edits exist since last bake. ⌥-click forces full rebuild.'
+                  : 'Re-bake — pour a fresh slab. ⌥-click forces full rebuild.')}
+              aria-label={bakeRunning ? 'Baking' : 'Re-bake'}>
+              {/* Circle-arrow icon. Spins via CSS when bakeRunning. The
+                  stale dot is a CSS pseudo-element — see .carto-bake-btn.stale. */}
+              <span className="carto-bake-icon" aria-hidden="true">↻</span>
+            </button>
+          </div>
+          <ToggleButton label="Toy"
+            active={scene === 'toy'}
+            onClick={() => setScene(scene === 'toy' ? 'neighborhood' : 'toy')} />
+        </>
       )}
-
-      <ToggleButton label="Toy"
-        active={scene === 'toy'}
-        onClick={() => setScene(scene === 'toy' ? 'neighborhood' : 'toy')} />
     </div>
   )
 }

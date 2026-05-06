@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lafayette-square/meteorologist/directive.schema.json",
+  "title": "Atmospheric directive",
+  "description": "Runtime output of the Almanac evaluator. The complete atmospheric scene description the runtime consumes. Layered atop the TOD base envelope (Stage's per-Look design.json), under per-Look visual-styling overrides.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["clouds"],
+  "properties": {
+    "clouds": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 3,
+      "description": "Active cloud preset blend. Cap of 3 keeps the shader bounded. Two is the common case during weather transitions; one is steady state.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["preset", "weight"],
+        "properties": {
+          "preset": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "weight": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "sun": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "azimuth":   { "type": "number", "minimum": 0, "maximum": 360 },
+        "elevation": { "type": "number", "minimum": -90, "maximum": 90 },
+        "intensity": { "type": "number", "minimum": 0, "maximum": 4 },
+        "tint":      { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      }
+    },
+    "lightDome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "top":          { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "horizon":      { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "ambientFloor": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "wind": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scale": { "type": "number", "minimum": 0, "maximum": 5, "description": "Wind strength multiplier broadcast via useWindState; trees, pennants, future precip read it." },
+        "dir":   { "type": "number", "minimum": 0, "maximum": 360, "description": "Compass bearing the wind is blowing TO (rendering convention; flipped from meteorological)." }
+      }
+    },
+    "precip": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind":      { "type": ["string", "null"], "enum": ["rain", "snow", "sleet", "hail", null] },
+        "intensity": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

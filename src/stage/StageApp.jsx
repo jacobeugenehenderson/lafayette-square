@@ -595,11 +595,32 @@ export function computeBrowseAltitude(aspect, fov = SHOTS.browse.fov) {
 }
 
 // Live camera state bridge (R3F ↔ React DOM)
-const cameraState = { position: [0, 0, 0], target: [0, 0, 0], fov: 22 }
+const cameraState = { position: [0, 0, 0], target: [0, 0, 0], fov: 22, up: [0, 1, 0] }
 const cameraPush = { pending: null } // DOM → R3F: set .pending to apply next frame
 let cameraListeners = new Set()
 function subscribeCameraState(fn) { cameraListeners.add(fn); return () => cameraListeners.delete(fn) }
 function notifyCameraListeners() { for (const fn of cameraListeners) fn() }
+
+// Browse heading: site-wide cosmetic screen-orientation, persisted across
+// reloads. 0° = compass-N up. Positive degrees rotate the world CCW
+// underneath the camera (= screen-up sweeps east). All spatial data is in
+// compass frame; this is purely a viewing preference.
+const BROWSE_HEADING_KEY = 'stage.browse.heading'
+export function getBrowseHeading() {
+  try {
+    const v = parseFloat(localStorage.getItem(BROWSE_HEADING_KEY))
+    return Number.isFinite(v) ? v : 0
+  } catch { return 0 }
+}
+export function setBrowseHeading(deg) {
+  try { localStorage.setItem(BROWSE_HEADING_KEY, String(deg)) } catch { /* ignore */ }
+}
+// up vector for the overhead Browse camera given a heading in degrees.
+// Camera looks down -Y; up lives in the XZ plane. heading=0 → -Z (compass-N).
+export function browseUpFromHeading(deg) {
+  const r = deg * Math.PI / 180
+  return [Math.sin(r), 0, -Math.cos(r)]
+}
 
 // Live camera ref — populated by HeroPreview while mounted.
 // Set-from-view reads this synchronously to avoid stale broadcast values.
@@ -620,6 +641,7 @@ export function captureCameraSnapshot() {
     position: [Math.round(p.x), Math.round(p.y), Math.round(p.z)],
     target: [Math.round(tx), Math.round(ty), Math.round(tz)],
     fov: Math.round(cam.fov),
+    up: [cam.up.x, cam.up.y, cam.up.z],
   }
 }
 
@@ -640,7 +662,8 @@ export function StageCamera({ shot }) {
       const aspect = size.width / Math.max(size.height, 1)
       const y = computeBrowseAltitude(aspect, s.fov)
       camera.position.set(s.position[0], y, s.position[2])
-      camera.up.set(...(s.up || [0, 1, 0]))
+      // Heading override: site-wide cosmetic screen-orientation from localStorage.
+      camera.up.set(...browseUpFromHeading(getBrowseHeading()))
     } else {
       camera.position.set(...s.position)
       camera.up.set(...(s.up || [0, 1, 0]))
@@ -668,9 +691,15 @@ export function StageCamera({ shot }) {
       cameraPush.pending = null
       if (u.position) camera.position.set(...u.position)
       if (u.fov != null) { camera.fov = u.fov; camera.updateProjectionMatrix() }
+      if (u.up) camera.up.set(u.up[0], u.up[1], u.up[2])
       if (u.target) {
         if (ctl) ctl.target.set(...u.target)
         camera.lookAt(u.target[0], u.target[1], u.target[2])
+      } else if (u.up) {
+        // up changed without a new target: re-aim at current target so the
+        // camera reflects the new orientation immediately.
+        const t = ctl ? ctl.target : new THREE.Vector3()
+        camera.lookAt(t.x, t.y, t.z)
       }
       if (ctl) {
         const wasDamping = ctl.enableDamping
@@ -693,27 +722,27 @@ export function StageCamera({ shot }) {
     cameraState.position = [Math.round(p.x), Math.round(p.y), Math.round(p.z)]
     cameraState.target = [Math.round(tx), Math.round(ty), Math.round(tz)]
     cameraState.fov = Math.round(camera.fov)
+    cameraState.up = [camera.up.x, camera.up.y, camera.up.z]
     notifyCameraListeners()
   })
 
   // Browse is a planar overhead by default — LEFT-drag pans, wheel zooms.
-  // RIGHT-drag is a hidden 360° orbit "easter egg" for the curious.
-  // Ctrl/Meta swaps LEFT→ROTATE so Mac trackpad users (no real right
-  // button) can access orbit too.
+  // ⌥/Alt+LEFT-drag (and RIGHT-drag) is a hidden 360° orbit "easter egg"
+  // for the curious / for Mac trackpad users without a real right button.
   const isBrowse = shot === 'browse'
   useEffect(() => {
     if (!isBrowse) return
     const ctl = controlsRef.current
     if (!ctl) return
-    const apply = (modDown) => {
+    const apply = (altDown) => {
       ctl.mouseButtons = {
-        LEFT: modDown ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
+        LEFT: altDown ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: THREE.MOUSE.ROTATE,
       }
     }
-    const onDown = (e) => { if (e.key === 'Control' || e.key === 'Meta') apply(true) }
-    const onUp   = (e) => { if (e.key === 'Control' || e.key === 'Meta') apply(false) }
+    const onDown = (e) => { if (e.key === 'Alt') apply(true) }
+    const onUp   = (e) => { if (e.key === 'Alt') apply(false) }
     apply(false)
     window.addEventListener('keydown', onDown)
     window.addEventListener('keyup', onUp)
@@ -1208,6 +1237,13 @@ function HeroCamera({ keyframes, setKeyframes, heroMotion, setHeroMotion }) {
 }
 
 function BrowseCamera({ cam }) {
+  // Recover heading degrees from the live up vector. up = [sin θ, 0, -cos θ]
+  // → θ = atan2(ux, -uz). Falls back to stored heading if up is degenerate.
+  const headingFromUp = (() => {
+    const [ux, , uz] = cam.up || [0, 0, -1]
+    if (Math.hypot(ux, uz) < 1e-3) return getBrowseHeading()
+    return Math.atan2(ux, -uz) * 180 / Math.PI
+  })()
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -1226,6 +1262,9 @@ function BrowseCamera({ cam }) {
         onChange={(v) => pushCamera({ position: [cam.position[0], v, cam.position[2]] })} />
       <SliderRow label="FOV" value={cam.fov} min={10} max={90} suffix="°"
         onChange={(v) => pushCamera({ fov: v })} />
+      {/* Site-wide cosmetic screen-orientation. 0° = compass-N up. */}
+      <SliderRow label="Heading" value={Math.round(headingFromUp)} min={-180} max={180} suffix="°"
+        onChange={(v) => { setBrowseHeading(v); pushCamera({ up: browseUpFromHeading(v) }) }} />
     </div>
   )
 }
@@ -1306,6 +1345,7 @@ export function HeroPreview({ keyframes, motion, subject }) {
     cameraState.position = [Math.round(p.x), Math.round(p.y), Math.round(p.z)]
     cameraState.target = [Math.round(tgt[0]), Math.round(tgt[1]), Math.round(tgt[2])]
     cameraState.fov = Math.round(camera.fov)
+    cameraState.up = [camera.up.x, camera.up.y, camera.up.z]
     notifyCameraListeners()
   })
 
@@ -1679,16 +1719,15 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
       </div>
 
       {/* Sky & Light — TOD-animatable atmospheric + lighting channels.
-          Unmounted in Browse: card geometry (sky, celestial bodies, haze)
-          isn't visible looking straight down, and unmounting prevents the
-          channels' useMemos from running and the renderers from drawing. */}
-      {shot !== 'browse' && (
-        <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-          <Collapsible label="Sky & Light">
-            {skyLightSlot}
-          </Collapsible>
-        </div>
-      )}
+          Visible in all shots so the operator can author values from
+          Browse (the default Stage entry-point from Designer). The
+          underlying sky/celestial/haze geometry still skips render in
+          Browse for perf — that's a separate concern from panel access. */}
+      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+        <Collapsible label="Sky & Light">
+          {skyLightSlot}
+        </Collapsible>
+      </div>
 
       {/* Environment — ambient/world */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">

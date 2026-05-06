@@ -65,11 +65,16 @@ function fadeForGroup(group, stencil) {
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
 
-function GroundMeshes({ manifest, bin, scene }) {
+function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   const layerVis = scene?.layerVis
   const stencil = manifest.stencil || null
+  // Cache-bust the lightmap URL with the same `?t=` token used for ground.json /
+  // ground.bin. useLoader caches THREE.TextureLoader results by URL across
+  // mounts, so without this query param a re-bake leaves the OLD AO texture
+  // painted on the new geometry — the operator sees stale shadows that look
+  // like the edit "didn't take" even though ground.bin is fresh.
   const lightmapUrl = manifest.lightmap
-    ? '/baked/' + manifest.look + '/' + manifest.lightmap.image
+    ? '/baked/' + manifest.look + '/' + manifest.lightmap.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
     : null
   const lightmap = lightmapUrl ? useLoader(THREE.TextureLoader, lightmapUrl) : null
 
@@ -286,7 +291,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = V_EXAG } 
   return (
     <>
       <TerrainExagDriver target={targetExag} />
-      {data && <GroundMeshes manifest={data.manifest} bin={data.bin} scene={scene} />}
+      {data && <GroundMeshes manifest={data.manifest} bin={data.bin} scene={scene} bakeLastMs={bakeLastMs} />}
     </>
   )
 }

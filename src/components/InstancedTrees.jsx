@@ -63,9 +63,17 @@ function VariantInstances({ url, instances, treeMaterial }) {
     // If something diverges (rare, but a future tree variant could ship
     // vertex colors on bark only), fall back to per-primitive submeshes.
     const keys = Object.keys(collected[0].attributes).sort().join('|')
-    const merge = collected.every(g => Object.keys(g.attributes).sort().join('|') === keys)
+    const sameKeys = collected.every(g => Object.keys(g.attributes).sort().join('|') === keys)
 
-    if (merge) {
+    // Also reject merge if any attribute is interleaved — mergeGeometries
+    // doesn't support InterleavedBufferAttribute and would otherwise spam
+    // the console with "mergeAttributes() failed" thousands of times per
+    // mount. Per-primitive fallback handles interleaved fine.
+    const noInterleaved = collected.every(g =>
+      Object.values(g.attributes).every(a => !a.isInterleavedBufferAttribute)
+    )
+
+    if (sameKeys && noInterleaved) {
       const merged = mergeGeometries(collected, false)
       if (merged) {
         // Identity local matrix — vertices already carry their original

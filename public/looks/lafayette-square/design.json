@@ -2,19 +2,19 @@
   "layerVis": {
     "street": true,
     "highway": true,
-    "stripe": true,
-    "edgeline": true,
-    "bikelane": true,
+    "stripe": false,
+    "edgeline": false,
+    "bikelane": false,
     "lot": true,
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": true,
-    "parking_lot": true,
-    "garden": true,
-    "playground": true,
-    "swimming_pool": true,
-    "pitch": true,
+    "building": false,
+    "parking_lot": false,
+    "garden": false,
+    "playground": false,
+    "swimming_pool": false,
+    "pitch": false,
     "sports_centre": false,
     "wood": false,
     "scrub": false,
@@ -25,9 +25,9 @@
     "steps": false,
     "path": false,
     "park": true,
-    "water": true,
-    "tree": true,
-    "lamp": true,
+    "water": false,
+    "tree": false,
+    "lamp": false,
     "fence": false,
     "wall": false,
     "retaining_wall": false,
@@ -80,6 +80,9 @@
     "recreation": "#6EA03E",
     "industrial": "#8E7060"
   },
+  "cornerRadiusScale": 0.4,
+  "cornerRadiusOverrides": {},
+  "cornerCornerRadiusOverrides": {},
   "materialColors": {},
   "materialPhysics": {},
   "buildingPalette": [
@@ -109,7 +112,7 @@
       "night": {
         "grass": 0.5,
         "trees": 0.06,
-        "pool": 0
+        "pool": 0.25
       }
     }
   },
@@ -345,7 +348,7 @@
   },
   "ambient": {
     "values": {
-      "value": 1
+      "value": 1.58
     }
   },
   "hemi": {
@@ -387,12 +390,13 @@
     "easing": "sine"
   },
   "openSections": {
-    "Streets": false,
+    "Streets": true,
     "Blocks": false,
-    "Paths": true,
-    "Features": true,
-    "Labels": true,
-    "HeroSubject": false
+    "Paths": false,
+    "Features": false,
+    "Labels": false,
+    "HeroSubject": false,
+    "Look": false
   },
   "trees": [
     {

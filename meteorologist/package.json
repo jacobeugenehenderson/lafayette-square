@@ -1,0 +1,16 @@
+{
+  "name": "meteorologist",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Atmospheric authoring helper for lafayette-square. Publishes presets.json + almanac.json.",
+  "scripts": {
+    "validate": "node pipeline/validate.js",
+    "bake": "node bake.js",
+    "serve": "node serve.js"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}
