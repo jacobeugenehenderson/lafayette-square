@@ -531,20 +531,36 @@ it's the part of the procedural-cartography pipeline most worth claiming.
 
 Per vertex V with incident legs `legs[i]`:
 1. R = `cornerRadiusFor(highwayA, highwayB, angleDeg, look.cornerRadiusScale)`.
-2. Build asphalt polygon via `buildIntersectionPolygon` (legShapes + fillet wedges,
-   Clipper-union → asphalt outer ring; corner arcs concentric with C, radius R).
-3. **padWidthV** = `max(legPed)` across all corners at V, where legPed = treelawn +
-   sidewalk on the relevant side.
-4. **curb-outer polygon** = Clipper-offset(asphalt, +CURB_WIDTH, jtRound).
-5. **pad-outer polygon** = Clipper-offset(asphalt, +CURB_WIDTH + padWidthV, jtRound).
-6. **Curb annulus** = curb-outer ⊖ asphalt; emitted as `curb` material.
-7. **Pad annulus** = pad-outer ⊖ curb-outer; emitted as `sidewalk` material.
-8. Leg stripes (asphalt, curb, treelawn, sidewalk) Clipper-differenced against
+2. **Asphalt polygon** = `buildIntersectionPolygon(V, legs_asphalt, { override: R })`,
+   then Clipper-union(legShapes ∪ fillets). `legs_asphalt[i].outerL/outerR =
+   pavementHW`. Corner arcs concentric with C, radius R.
+3. **Curb-outer polygon** = `buildIntersectionPolygon(V, legs_curb,
+   { override: R - CURB_WIDTH })` then Clipper-union. `legs_curb[i].outerL/outerR
+   = pavementHW + CURB_WIDTH` per side. The R-shrink + leg-widen trick keeps C
+   fixed (algebra: `C = Q + R/sin(θ/2) · bisector`; widening Q by Δ in perp and
+   shrinking R by Δ leaves C invariant).
+4. **Pad-outer polygon** = `buildIntersectionPolygon(V, legs_pad,
+   { override: R - CURB_WIDTH - leg.outerPedΔ })` then Clipper-union. Per-leg-
+   per-side widening: `legs_pad[i].outerL = pavementHW + CURB_WIDTH + leg.leftPed`,
+   `outerR = pavementHW + CURB_WIDTH + leg.rightPed` (legPed = treelawn + sidewalk
+   per side). Same C-preservation logic as curb.
+5. **Curb annulus** = curb-outer ⊖ asphalt; emitted as `curb` material.
+6. **Pad annulus** = pad-outer ⊖ curb-outer; emitted as `sidewalk` material.
+7. Leg stripes (asphalt, curb, treelawn, sidewalk) Clipper-differenced against
    pad-outer polygon — leg ribbons butt against the plug perimeter cleanly.
 
-The three concentric offsets share C as their common arc center, so corner arcs are
-C¹-continuous and tangent-aligned with the leg edges by construction. There's no
-per-corner alignment / patching.
+All three stack levels share C as their common arc center, so corner arcs are
+C¹-continuous and tangent-aligned with the leg edges by construction. Leg-rectangle
+far ends align across the stack (the tangent point's projection onto T is constant
+under the C-preserving widen+shrink), so annuli butt at flat radial caps.
+
+⚠️ **Do NOT use `ClipperOffset` for curb-outer / pad-outer.** A previous attempt
+(2026-05-06) used `ClipperOffset(asphalt, +CURB_WIDTH + padWidth, jtRound)` for
+the stack and produced visible bulbs at every leg-rectangle far end (jtRound
+rounding the asphalt's perpendicular cap). The bulbs were image-confirmed broken,
+the approach reverted. The leg-widen + R-shrink construction above is the only
+known way to keep all three arcs concentric without bulbs. See
+`memory/project_intersection_plug_geometry.md` rules #2–4 for the full algebra.
 
 **Continuity contract (run this BEFORE iterating on visual artifacts):**
 
@@ -582,16 +598,15 @@ deliverable is a slab whose corners would pass a plan-review desk-check.
 - Per-vertex override `intersections[vertexId].cornerRadius: 'auto' | <meters>`
   (escape hatch).
 
-**Per-side asymmetric pad widening (decision 2026-05-05):**
-Pad polygon uses **per-leg-per-side** widening: each leg's `outerL` grows by
-`curbW + leg.leftPed`, each leg's `outerR` grows by `curbW + leg.rightPed`. The
-fillet construction has the property that its tangent perp on each leg-side
-equals the widening amount (independent of R), so the polygon's outer edges land
-EXACTLY on each leg ribbon's natural pad-outer perpendicular per side. This
-eliminates the sliver/seam artifacts that came from per-vertex-uniform widening
-on asymmetric ribbons. The arc center C is no longer concentric with asphalt's C
-when leg-sides differ — but the arc still passes through both adjacent legs'
-natural pad-outer endpoints with C¹-tangent transitions.
+**On asymmetric vertices (decision 2026-05-05):**
+The per-leg-per-side widening in step 4 (`outerL = pavementHW + curbW + leftPed`,
+`outerR = pavementHW + curbW + rightPed`) makes the pad polygon's outer edges
+land EXACTLY on each leg ribbon's natural pad-outer perp per side. When leg-sides
+differ across the vertex (asymmetric pavements or asymmetric peds), C is no
+longer perfectly concentric with asphalt's C — but each per-corner arc still
+passes through both adjacent legs' natural pad-outer endpoints with C¹-tangent
+transitions. The continuity contract still holds; visual smoothness at the
+corner arcs stays acceptable.
 
 **Chain-count cap for freeway interchanges (decision 2026-05-05):**
 Vertices with > 4 distinct chains skip plug emission. Real freeway interchanges
