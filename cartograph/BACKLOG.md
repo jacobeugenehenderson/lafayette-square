@@ -52,6 +52,105 @@ both override maps.
   all (the post-FX / fade pipeline drops opaque meshes from the final
   framebuffer).
 
+## 2026-05-06 — Effluvium cleanup: retired corner-management code paths
+
+Multiple prior attempts at corner geometry have accumulated as dead code
+in `StreetRibbons.jsx` (and one dead import). Each was retired correctly
+at the time but kept in-place behind `if (false &&...)` gates or as
+unreferenced functions for revert-safety. After Phase 3 lands and the
+neighborhood roll-out is verified, do a focused cleanup pass and remove:
+
+- `buildCornerPlug` function (~lines 989–1041) — "canonical 90° corner
+  template" approach. Never called (gated false at the call site).
+- `buildCurbAnnulus` function (~lines 716–828) — Clipper-offset
+  uniform-R rounding trick. Replaced by per-corner emission in
+  `buildSidewalkPads` as of Phase 3.
+- `if (false && hasSwA && hasSwB)` block (~line 1571) — call site for
+  `buildCornerPlug`.
+- `if (false && cornerBoundaries.length)` block (~line 1593) — legacy
+  curb stroke pass.
+- `cornerBoundaries` array (~line 1252) — only populated by the dead
+  `buildCornerPlug` call.
+- `corner_sw` / `corner_asph` entries in `MAT`, `CORNER_PRIORITY`, and
+  `CORNER_SRC` — these material groups are never populated post-retirement.
+  (`corner_curb` may also be legacy; verify before removing — the
+  Phase 3 path uses `corner_plug_curb` distinctly.)
+- The `import { buildIntersectionPolygon } from '../lib/intersectionGeometry.js'`
+  line in `StreetRibbons.jsx` — the import is dead (the function is
+  never called). `intersectionGeometry.js` itself stays — it carries
+  the IP-rule helpers used by `ribbonsGeometry.js`.
+
+Risk of cleanup: low. All gated/unused. Each removal is local. Drop in
+one commit titled "Retire dead corner-management paths" once Phase 3 is
+locked in by neighborhood QA.
+
+## 2026-05-06 — Authoring need: street splitting / IX insertion
+
+Surfaced repeatedly during the LS roll-out, advocated multiple times by
+Jacob: there's no operator-facing way to split a chain into two
+segments at a chosen point, or to insert a new IX where one is missing
+from derive.js's output. Today the IX list is what derive.js produces;
+operators can't add to it or split existing chains to create new ones.
+
+Concrete cases this would resolve:
+- **Dog-legs.** A street that jogs a few meters east at a crossing —
+  ideally modeled as two adjacent T-intersections, not one X with a
+  bent leg. Dog-legs are common in older urban grids and currently
+  render as a single bent geometry that misaligns the corner pads.
+- **Missing intersections.** Real visible crossings where derive.js's
+  IX-detection didn't fire. Operator could insert manually.
+- **Divided-pair joints.** Where two carriageways of one corridor meet
+  end-to-end and shouldn't be a real intersection — operator could
+  flag (today the kit filters these client-side via distinctNames < 2).
+
+UI: a "split chain" Survey-tool action — click a chain at the desired
+point, get two chains plus a fresh IX between them. Persists into
+`overlay.json`. Bake-pipeline-side, derive.js would need to honor
+operator splits (or the merge step downstream would).
+
+Out of scope for the corner-authoring kit; tracked here as the
+recurrent ask. Many of the "IX classification" symptoms in the
+neighborhood roll-out chain back to this.
+
+## 2026-05-06 — Data pipeline: classification gaps in `ribbons.json`
+
+Surfaced during the neighborhood roll-out. Both fall outside the
+corner-authoring kit itself (the kit handles whatever the data hands it)
+but limit how well the kit lands on LS until they're addressed.
+
+- **`highway` field is `undefined` on all 242 chains in
+  `src/data/ribbons.json`.** `derive.js` is supposed to carry the OSM
+  highway class through, and `cornerRadiusFor` (in `intersectionGeometry.js`)
+  has a full AASHTO/NACTO table keyed by `(classA | classB)` —
+  residential/residential = 4.5m, motorway/motorway = 15m, etc. Today
+  every IX falls through to the 4.5m residential default × scale,
+  so motorway crossings render at toy-residential corner radii.
+  Fix: either fix the highway-class carry in `derive.js` so chains
+  arrive with `highway: '<class>'`, or write a synthesis pass that
+  reconstructs class from `name` patterns (e.g., "Ozark Expressway" /
+  "motorway_link 16" → motorway/motorway_link). Then have `getR` /
+  `buildCornerPadClips` consult `cornerRadiusFor` as the per-class
+  default before falling back to 4.5m.
+
+- **Divided-road continuation joints pollute the IX list.** 190 of the
+  252 entries in `ribbons.intersections` only have 2 chain refs, and
+  many of those are points where one corridor's two carriageways meet
+  end-to-end (e.g., `Park Avenue@21` + `Park Avenue@0`) rather than a
+  real corner. Mitigated 2026-05-06 by a `distinctNames >= 2` filter
+  in three places (StreetRibbons.jsx#buildSidewalkPads,
+  ribbonsGeometry.js#buildCornerPadClips, CornerEditHandles.jsx#
+  computeIxLayout) — if a "intersection" has only one corridor name,
+  we skip it. **Better long-term**: filter at derive.js so `ribbons.json`
+  doesn't ship these as intersections in the first place.
+
+- **Real intersections missing from the IX list.** Operator reports
+  several visible intersections in LS where no corner handle appears.
+  Likely a derive.js IX-detection gap (some endpoint-on-interior or
+  segment-crossing case being missed). Concrete repro list TBD —
+  needs a session with the operator pointing at specific marquee IXs
+  (Park & 18th, Lafayette & Mississippi, etc.) and cross-checking
+  against `ribbons.intersections`.
+
 ## 2026-05-06 — Roll the kit onto neighborhood data
 
 The corner-authoring kit is currently exercised on the toy fixture only.
@@ -74,17 +173,16 @@ For real LS:
 Split off so the kit can land for the common (right-angle / near-right)
 case without blocking on the long tail. Each item below is its own pass.
 
-- **Per-corner-decoupled `minPed`.** The current global-min couples
-  opposite corners of asymmetric streets — a tl+sw/tl+sw corner inherits
-  the narrow sw-only width from the OPPOSITE corner. The architectural
-  goal is `min(A.leftPed, B.rightPed)` (corner-facing pair only) so each
-  corner stands on its own, but a one-line swap regressed the sw↔sw
-  junction fix at tl+sw/tl+sw corners (R_pad shrank from 2.85m to 1.35m,
-  green parcel face crept into the corner-pad area). Needs a coordinated
-  pass through pad polygon + face clip + treelawn carve geometry that
-  holds together at independently-sized R_pad per corner. Both
+- ~~**Per-corner-decoupled `minPed`.**~~ ✅ Re-attempted 2026-05-06.
+  Switched to `min(A.leftPed, B.rightPed)` (corner-facing only) in both
   `StreetRibbons.jsx#buildSidewalkPads` and
-  `ribbonsGeometry.js#buildCornerPadClips` carry the deferral note.
+  `ribbonsGeometry.js#buildCornerPadClips`. Each corner now stands on
+  its own. Re-validate against the v1 toy on next refresh; the earlier
+  attempt was reported as regressing the sw↔sw junction at NW
+  (tl+sw/tl+sw, which is the corner that actually changes value with
+  the swap, 1.5m → 3m). If a regression resurfaces it'll show on v1's
+  NW corner specifically — drop back into this BACKLOG item with
+  symptom notes.
 
 - **Right-angle treelawn caps at oblique angles.** At non-90°
   intersections the per-leg treelawn carve box (leg-axis-aligned) meets
@@ -108,6 +206,18 @@ case without blocking on the long tail. Each item below is its own pass.
   large R → carve overshoots), so the slider surfaces breakpoints a
   static R=4.5 screenshot can't. Useful for both diagnosis and
   regression-checking proposed fixes.
+
+- **Stacking / overlapping architecture (ramps, frontage roads,
+  freeway interchanges).** The kit's geometric model assumes coplanar
+  legs meeting at a single planar vertex V — fine for residential
+  grids, breaks down for multi-level interchanges where lanes cross
+  in 3D, on/off ramps fan out at a single elevation, or frontage roads
+  parallel a freeway with separate intersections sharing similar XZ
+  coordinates. Lafayette Square has none of these; future
+  neighborhoods that do (anywhere with an interstate cutting through)
+  will need a separate authoring model layered on top of this one.
+  Author Jacob flagged the constraint 2026-05-06 alongside the
+  neighborhood roll-out.
 
 ## 2026-05-06 — Preview quality pass: arc smoothness
 
@@ -435,6 +545,29 @@ Per vertex V with incident legs `legs[i]`:
 The three concentric offsets share C as their common arc center, so corner arcs are
 C¹-continuous and tangent-aligned with the leg edges by construction. There's no
 per-corner alignment / patching.
+
+**Continuity contract (run this BEFORE iterating on visual artifacts):**
+
+The corner pad is not a free-floating polygon — it must be the exact extension of
+the leg ribbon's three concentric edges into the intersection. Leg ribbons render
+in a separate band-stripe pass that runs from chain-start to chain-end at known
+perp positions; the corner pad is what closes the open ends of those bands at V.
+
+For each leg L incident to V, sample any chain vertex P on L well away from V
+(say, 5 m along the chain). At that sample:
+
+- `asphalt-outer` polygon edge perp from chain centerline = `pavementHW(L)` per side
+- `curb-outer` polygon edge perp from chain centerline = `pavementHW(L) + curbW` per side
+- `pad-outer` polygon edge perp from chain centerline = `pavementHW(L) + curbW + ped(L, side)` per side
+  (where `ped = treelawn + sidewalk` on that side of L)
+
+If any of those three checks fail, the IP polygon is in the wrong coord space or
+has the wrong inputs — fix that before staring at the corners. Do not iterate on
+overshoot/trimming/fillet tuning until all three pass on a flat 4-way 90° toy IX
+with symmetric ribbons (the simplest case). Then re-check on an asymmetric IX.
+
+A console check + a screenshot showing leg-ribbon and corner-pad sharing a
+single continuous outline is the acceptance test, not "looks roughly right."
 
 **Why it's IP-worthy:** the pipeline procedurally derives ADA/AASHTO/NACTO-compliant
 urban corner geometry from minimum data (centerlines + measure widths + OSM class +
