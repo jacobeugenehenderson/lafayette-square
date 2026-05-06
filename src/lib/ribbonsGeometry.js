@@ -140,7 +140,135 @@ function widthForSide(s) {
   return hw + cw + tl + sw
 }
 
-function buildRibbonUnion(streets) {
+// Default corner-plug fillet radius if an intersection has no per-IX
+// override. Matches StreetRibbons.jsx's CORNER_RADIUS_M default.
+const DEFAULT_CORNER_R = 4.5
+
+// Build per-corner annular-sector clip paths from intersections data.
+// Each corner pad covers area between curb arc (R_curb from C) and pad
+// arc (R_curb − min_ped from C). Used so parcel faces get carved by the
+// SAME concentric arc the rendered pad uses — keeps the inner-grass
+// edge concentric instead of leaving the parcel's raw L corner. Mirror
+// of buildSidewalkPads() in StreetRibbons.jsx; if you change one,
+// change the other.
+function buildCornerPadClips(streets, intersections) {
+  if (!intersections?.length) return []
+  const TWO_PI = Math.PI * 2
+  const toClipper = (p) => ({ X: Math.round(p[0] * CLIP_SCALE), Y: Math.round(p[1] * CLIP_SCALE) })
+  const streetByName = new Map(streets.map(s => [s.name, s]))
+  const out = []
+  for (const ix of intersections) {
+    if (!ix.streets || ix.streets.length < 2) continue
+    if (ix.disabled) continue
+    const V = ix.point
+    const cornerR = Number.isFinite(ix.cornerRadius) ? ix.cornerRadius : DEFAULT_CORNER_R
+    const R_curb = cornerR - CURB_WIDTH
+    if (R_curb <= 0) continue
+
+    const legs = []
+    for (const sref of ix.streets) {
+      const chain = streetByName.get(sref.name)
+      if (!chain) continue
+      const m = chain.measure
+      if (!m?.left?.pavementHW || !m?.right?.pavementHW) continue
+      const ixIdx = sref.ix
+      const pts = chain.points
+      const v = pts[ixIdx]
+      if (!v) continue
+      if (Math.hypot(v[0] - V[0], v[1] - V[1]) >= 0.5) continue
+      const buildLeg = (direction) => {
+        const ni = ixIdx + direction
+        if (ni < 0 || ni >= pts.length) return null
+        const dx = pts[ni][0] - V[0], dz = pts[ni][1] - V[1]
+        const L = Math.hypot(dx, dz)
+        if (L < 1e-6) return null
+        const isBack = direction === -1
+        const left  = isBack ? m.right : m.left
+        const right = isBack ? m.left  : m.right
+        const tlSafe = (s) => (s.terminal === 'sidewalk') ? (s.treelawn || 0) : 0
+        const swSafe = (s) => (s.terminal === 'sidewalk') ? (s.sidewalk || 0) : 0
+        return {
+          T: [dx / L, dz / L],
+          outerL: left.pavementHW || 0,
+          outerR: right.pavementHW || 0,
+          leftPed:  tlSafe(left)  + swSafe(left),
+          rightPed: tlSafe(right) + swSafe(right),
+          leftTreelawn:  tlSafe(left),
+          rightTreelawn: tlSafe(right),
+        }
+      }
+      if (ixIdx > 0) { const l = buildLeg(-1); if (l) legs.push(l) }
+      if (ixIdx < pts.length - 1) { const l = buildLeg(+1); if (l) legs.push(l) }
+    }
+    if (legs.length < 2) continue
+    legs.sort((a, b) => Math.atan2(a.T[1], a.T[0]) - Math.atan2(b.T[1], b.T[0]))
+
+    for (let i = 0; i < legs.length; i++) {
+      const A = legs[i], B = legs[(i + 1) % legs.length]
+      const T_A = A.T, T_B = B.T
+      const P_A = [-T_A[1], T_A[0]]
+      const P_B = [-T_B[1], T_B[0]]
+      let theta = Math.atan2(T_B[1], T_B[0]) - Math.atan2(T_A[1], T_A[0])
+      while (theta < 0) theta += TWO_PI
+      while (theta >= TWO_PI) theta -= TWO_PI
+      const thetaDeg = theta * 180 / Math.PI
+      if (thetaDeg <= 5 || thetaDeg >= 175) continue
+      const halfTheta = theta / 2
+      const sinH = Math.sin(halfTheta)
+      const tanH = Math.tan(halfTheta)
+      const A0 = [V[0] + (A.outerL + CURB_WIDTH) * P_A[0], V[1] + (A.outerL + CURB_WIDTH) * P_A[1]]
+      const B0 = [V[0] - (B.outerR + CURB_WIDTH) * P_B[0], V[1] - (B.outerR + CURB_WIDTH) * P_B[1]]
+      const det = T_A[0] * (-T_B[1]) - T_A[1] * (-T_B[0])
+      if (Math.abs(det) < 1e-9) continue
+      const dxQ = B0[0] - A0[0], dzQ = B0[1] - A0[1]
+      const sQ = (dxQ * (-T_B[1]) - dzQ * (-T_B[0])) / det
+      const Q_curb = [A0[0] + sQ * T_A[0], A0[1] + sQ * T_A[1]]
+      const distFromQ = R_curb / tanH
+      if (!Number.isFinite(distFromQ) || distFromQ > 200) continue
+      const TA_curb = [Q_curb[0] + distFromQ * T_A[0], Q_curb[1] + distFromQ * T_A[1]]
+      const TB_curb = [Q_curb[0] + distFromQ * T_B[0], Q_curb[1] + distFromQ * T_B[1]]
+      const bisAng = Math.atan2(T_A[1], T_A[0]) + halfTheta
+      const Cdist = R_curb / sinH
+      const C = [Q_curb[0] + Cdist * Math.cos(bisAng), Q_curb[1] + Cdist * Math.sin(bisAng)]
+
+      if (A.leftPed <= 0 && B.rightPed <= 0) continue
+      // Mirror StreetRibbons.jsx — scan all four sides for the smallest
+      // sidewalk width so R_pad is uniform across corners.
+      const minPed = Math.min(A.leftPed, A.rightPed, B.leftPed, B.rightPed)
+      const R_pad = R_curb - minPed
+      const TA_padarc = [TA_curb[0] + minPed * P_A[0], TA_curb[1] + minPed * P_A[1]]
+      const TB_padarc = [TB_curb[0] - minPed * P_B[0], TB_curb[1] - minPed * P_B[1]]
+
+      const arcStart = Math.atan2(TA_curb[1] - C[1], TA_curb[0] - C[0])
+      const arcSegs = Math.max(6, Math.ceil(theta * 12 / Math.PI))
+      const ring = []
+      ring.push(toClipper(TA_curb))
+      ring.push(toClipper(TA_padarc))
+      if (R_pad > 0.05) {
+        const angA_pad = Math.atan2(TA_padarc[1] - C[1], TA_padarc[0] - C[0])
+        const angB_pad = Math.atan2(TB_padarc[1] - C[1], TB_padarc[0] - C[0])
+        let dAB = angB_pad - angA_pad
+        if (dAB > Math.PI) dAB -= 2 * Math.PI
+        if (dAB < -Math.PI) dAB += 2 * Math.PI
+        for (let k = 1; k < 8; k++) {
+          const t = k / 8
+          const a = angA_pad + t * dAB
+          ring.push(toClipper([C[0] + R_pad * Math.cos(a), C[1] + R_pad * Math.sin(a)]))
+        }
+      }
+      ring.push(toClipper(TB_padarc))
+      ring.push(toClipper(TB_curb))
+      for (let k = arcSegs - 1; k >= 1; k--) {
+        const a = arcStart - (k / arcSegs) * theta
+        ring.push(toClipper([C[0] + R_curb * Math.cos(a), C[1] + R_curb * Math.sin(a)]))
+      }
+      out.push(ring)
+    }
+  }
+  return out
+}
+
+function buildRibbonUnion(streets, intersections) {
   const { Clipper, PolyType, ClipType, PolyFillType, Paths } = clipperLib
   const toClipper = (x, z) => ({ X: Math.round(x * CLIP_SCALE), Y: Math.round(z * CLIP_SCALE) })
   const ribbonClipPaths = []
@@ -202,6 +330,10 @@ function buildRibbonUnion(streets) {
       }
     }
   }
+  // Add corner-pad annular sectors so face clipping carves the parcel's
+  // L corner with the same concentric arc the rendered pad uses.
+  const cornerPads = buildCornerPadClips(streets, intersections)
+  for (const ring of cornerPads) ribbonClipPaths.push(ring)
   if (!ribbonClipPaths.length) return null
   const unionC = new Clipper()
   unionC.AddPaths(ribbonClipPaths, PolyType.ptSubject, true)
@@ -365,7 +497,7 @@ export function buildRibbonGeometry(ribbons, stencilPolygon = null) {
   // Face fills (land-use). Pipeline emits unclipped (centerline-reach);
   // subtract the ribbon footprint here so consumers don't have to re-clip
   // and so triangulation honors holes correctly.
-  const ribbonUnion = buildRibbonUnion(streets)
+  const ribbonUnion = buildRibbonUnion(streets, ribbons.intersections || [])
   const facesRaw = (ribbons.faces || []).map(f => ({
     ring: (f.ring || []).map(p => Array.isArray(p) ? p : [p.x, p.z]),
     use: f.use || 'unknown',

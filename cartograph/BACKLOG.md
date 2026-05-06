@@ -2,7 +2,64 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-05
+Last updated: 2026-05-06 (EOD)
+
+## 2026-05-06 — Corner plugs: next steps
+
+**Landed today:** uniform concentric carve across all 4 toy corners. The SW
+back-flip bug closed by changing `minPed` from
+`min(A.leftPed, B.rightPed)` to scanning all four leg-side peds
+(`min(A.leftPed, A.rightPed, B.leftPed, B.rightPed)`). Treelawn carves
+unchanged. Mirror in both `StreetRibbons.jsx#buildSidewalkPads` and
+`ribbonsGeometry.js#buildCornerPadClips`. See `HANDOFF-corner-plugs.md`.
+
+**Open, in order:**
+
+1. **Lawn gap on 3/4 corners.** Visible gap between leg sidewalk band's
+   outer edge and parcel face boundary. Toy parcel inner corners sit at
+   perp 7m; leg prop tangents at perp 6.65m. Either author parcel face
+   inner corners at the prop tangent, or have the bake snap parcel face
+   boundaries to leg-prop tangents.
+
+2. **Vary intersection angles in the toy.** Add T, Y, oblique, sharp-bend,
+   5-leg variants to `toy-input.json` and verify the construction holds
+   across them. Fortify before parameterizing — the 4-way orthogonal X
+   is the easy case.
+
+3. **Parameterize and place on real LS data.** Re-bake LS, verify Stage
+   and Preview render correctly. Build operator UI for per-IX
+   `cornerRadius` (Survey-tool slider; default 4.5m; bulk ops:
+   reset-to-default, select-all-and-set).
+
+## 2026-05-06 — Operator UI for per-IX `cornerRadius`
+
+Per-intersection corner radius override is plumbed end-to-end (`derive-toy.js`
++ `derive.js` carry it through to `intersections[].cornerRadius`, both
+`buildSidewalkPads` and `buildCornerPadClips` honor it). No operator-facing
+UI yet. Survey-tool slider on the IX vertex; default 4.5m; bulk operations
+(reset to default, select-all-and-set).
+
+## 2026-05-05 — Wire the Look picker (cosmetic-only today)
+
+The Designer panel's top "Lafayette Square" section is currently chrome:
+caret + label, with a "+ add look" button inside that no-ops. Real wiring
+needs:
+
+- Enumerate available Looks from `public/looks/index.json` (already fetched
+  by `fetchLooks()` in `src/cartograph/api.js`) and render them as the
+  picker body, with the active one marked.
+- Selecting a Look sets `activeLookId` in the store; downstream pumps and
+  the bake fetcher re-key off it (already supported — see
+  `CartographApp.jsx:587`'s `useEffect` on `activeLookId`).
+- "+ add look" should fork the active Look's `design.json` to a new id,
+  add an entry to `looks/index.json`, then activate it. Bake stays stale
+  until operator triggers it.
+- Stage panel needs the matching picker so Designer ↔ Stage stay in sync
+  on which Look is being edited.
+
+Out of scope until there's a second Look worth authoring; the current UI
+preserves operator muscle memory ("the picker is up there") without
+committing to plumbing.
 
 ## 2026-05-05 — Designer toggles ↔ Stage Surfaces parity (LANDED)
 
@@ -252,6 +309,81 @@ Default corner radius derives from a lookup table keyed by (highway class pair, 
 Implementation: lookup table `CORNER_RADIUS_M[classPair]` with angle multiplier
 `f(angle) = clamp(1 + (90° − angle) / 90°, 1, 1.5)`. Operator override per-intersection
 (`cornerRadius: auto | meters`).
+
+### Pad geometry from NACTO/AASHTO/ADA convention (decision 2026-05-05) ★ IP
+
+The corner pad's outer property line is the **concentric offset of the curb arc by the
+WIDER of the two adjacent legs' full ped-zone widths** (treelawn + sidewalk per side).
+This is the load-bearing geometric rule of the plug system — note it carefully because
+it's the part of the procedural-cartography pipeline most worth claiming.
+
+**Engineering basis (each guideline applied):**
+
+1. **AASHTO Green Book**: the curb-return radius R is set by class pair + angle
+   (already wired into `CORNER_RADIUS_M`).
+2. **NACTO Urban Street Design Guide**: at urban corners, the property-line arc is
+   the concentric offset of the curb arc — pedestrian zone wraps the corner at a
+   constant outboard distance from curb.
+3. **ADA PROWAG (§R304)**: the corner landing area must be paved sidewalk material,
+   never grass / treelawn. → in our model: treelawn never paints inside the pad area.
+4. **Wider-leg dominates**: when legs differ, the convention pegs the pad to the
+   wider leg's natural property-line offset. The narrower leg's sidewalk effectively
+   widens at the corner to match. Real-world corner parcels typically have setbacks
+   sized to the wider street's ped zone, and pedestrians benefit from the larger
+   landing area for crossings.
+
+**Construction (procedural — no per-corner authoring required):**
+
+Per vertex V with incident legs `legs[i]`:
+1. R = `cornerRadiusFor(highwayA, highwayB, angleDeg, look.cornerRadiusScale)`.
+2. Build asphalt polygon via `buildIntersectionPolygon` (legShapes + fillet wedges,
+   Clipper-union → asphalt outer ring; corner arcs concentric with C, radius R).
+3. **padWidthV** = `max(legPed)` across all corners at V, where legPed = treelawn +
+   sidewalk on the relevant side.
+4. **curb-outer polygon** = Clipper-offset(asphalt, +CURB_WIDTH, jtRound).
+5. **pad-outer polygon** = Clipper-offset(asphalt, +CURB_WIDTH + padWidthV, jtRound).
+6. **Curb annulus** = curb-outer ⊖ asphalt; emitted as `curb` material.
+7. **Pad annulus** = pad-outer ⊖ curb-outer; emitted as `sidewalk` material.
+8. Leg stripes (asphalt, curb, treelawn, sidewalk) Clipper-differenced against
+   pad-outer polygon — leg ribbons butt against the plug perimeter cleanly.
+
+The three concentric offsets share C as their common arc center, so corner arcs are
+C¹-continuous and tangent-aligned with the leg edges by construction. There's no
+per-corner alignment / patching.
+
+**Why it's IP-worthy:** the pipeline procedurally derives ADA/AASHTO/NACTO-compliant
+urban corner geometry from minimum data (centerlines + measure widths + OSM class +
+optional `cornerRadiusScale` slider). Competing 3D map systems either author the
+corner geometry by hand (Mapbox-style street-level rendering) or skip it entirely
+(Google Maps' cartographic style is post-hoc, not engineering-grade). Cartograph's
+deliverable is a slab whose corners would pass a plan-review desk-check.
+
+**Operator dial (future Stage Surfaces slider):**
+- `cornerRadiusScale` (default 1.0): multiplier on the AASHTO baseline. 0 = square,
+  1 = baseline, 2 = chunky/freeway-ish.
+- Per-vertex override `intersections[vertexId].cornerRadius: 'auto' | <meters>`
+  (escape hatch).
+
+**Per-side asymmetric pad widening (decision 2026-05-05):**
+Pad polygon uses **per-leg-per-side** widening: each leg's `outerL` grows by
+`curbW + leg.leftPed`, each leg's `outerR` grows by `curbW + leg.rightPed`. The
+fillet construction has the property that its tangent perp on each leg-side
+equals the widening amount (independent of R), so the polygon's outer edges land
+EXACTLY on each leg ribbon's natural pad-outer perpendicular per side. This
+eliminates the sliver/seam artifacts that came from per-vertex-uniform widening
+on asymmetric ribbons. The arc center C is no longer concentric with asphalt's C
+when leg-sides differ — but the arc still passes through both adjacent legs'
+natural pad-outer endpoints with C¹-tangent transitions.
+
+**Chain-count cap for freeway interchanges (decision 2026-05-05):**
+Vertices with > 4 distinct chains skip plug emission. Real freeway interchanges
+(cloverleafs, ramp merges at oblique angles) don't follow urban-corner geometry —
+no sidewalk, no curb radii in the same sense, often topologically intricate.
+Procedurally generating a plug there produces garbage; instead leg ribbons render
+as-is at the interchange. Cap implemented as `MAX_PLUG_CHAINS = 4` in
+`gatherPlugVertices`. Tradeoff is intentional: simpler authoring rules + sane
+output for non-urban intersections, at the cost of "no corners" rendering for
+freeway interchanges (which look messy IRL anyway).
 
 ### Markings deferred (decision 2026-05-04)
 Phase A geometry only ships first. Crosswalks / stop bars / yield triangles / turn

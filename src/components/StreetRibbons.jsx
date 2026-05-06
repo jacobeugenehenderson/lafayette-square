@@ -2,6 +2,8 @@ import { useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildRibbonGeometry } from '../lib/ribbonsGeometry.js'
+import { buildIntersectionPolygon } from '../lib/intersectionGeometry.js'
+import clipperLib from 'clipper-lib'
 import ribbonsRaw from '../data/ribbons.json'
 import { streetInBoundary, faceInBoundary, pointInBoundary } from '../cartograph/boundary.js'
 import useCamera from '../hooks/useCamera'
@@ -70,7 +72,7 @@ const BAND_PRIORITY = {
 // corner_curb is a STROKE (constant-width painted on the asph/sw boundary)
 // that needs to render above both asph and sw fills. Priority is therefore
 // higher than corner_asph; it's the topmost band-level layer.
-const CORNER_PRIORITY = { corner_sw: 7, corner_asph: 10, corner_curb: 11 }
+const CORNER_PRIORITY = { corner_sw: 7, corner_asph: 10, corner_curb: 11, corner_plug_asph: 11.5, corner_plug_sidewalk: 11.7, corner_plug_curb: 12 }
 const FACE_FILL_PRIORITY = 1  // lowest — underneath everything
 // Match streetProfiles' CURB_WIDTH (6" = 0.1524 m) — the value sideToStripes
 // uses for the leg's curb stripe. The face-clip below offsets the ribbon's
@@ -344,6 +346,384 @@ function ensureCCW(raw) {
     }
   }
   return raw
+}
+
+// ── Curb-driven rounded-corner pass ──────────────────────────────
+// "The curb is the magic item." Per-intersection construction:
+//   1. Asphalt fill (rounded interior, painted asphalt) and curb annulus
+//      (CURB_WIDTH stroke around the rounded asphalt) come from a global
+//      Clipper-offset trick on the leg-rectangle union — fast, single-R.
+//   2. Sidewalk pad per corner: full polygon to property line (= parcel
+//      corner) with concentric grass carves where legs have treelawn.
+//      Operator-controlled R per intersection drives the corner radius.
+//
+// Concentric carve model (the inclusion/exclusion polygons rule): always
+// build the full pad to property line, then per-leg-with-treelawn carve a
+// concentric grass strip into it. SW<>SW = no carve, full pad. TL<>TL =
+// two perpendicular carves forming an L-shape. Mixed = single carve.
+// One construction handles all cases.
+const CURB_CLIP_SCALE = 1000
+
+// Per-intersection per-corner sidewalk-pad construction with per-leg
+// treelawn carves. Returns array of {outer, holes} pad polygons (after
+// treelawn carves are subtracted) ready for THREE.Shape triangulation.
+//
+// One pad per corner (= per CCW-adjacent leg pair). Pad bounded by
+// curb-outer arc (rounded, bowed toward V) on the inboard side, by
+// per-leg property lines + parcel corner (sharp) on the outboard side.
+// Per-leg treelawn carve = concentric strip at perp [curb-outer,
+// curb-outer + treelawn] along that leg, Clipper-differenced from pad.
+function buildSidewalkPads(ribbonsData, getR, curbW) {
+  const { Clipper, ClipperOffset, JoinType, EndType, PolyType, ClipType, PolyFillType, Paths, PolyTree } = clipperLib
+  const toClipperI = (x, z) => ({ X: Math.round(x * CURB_CLIP_SCALE), Y: Math.round(z * CURB_CLIP_SCALE) })
+  const toWorld = (path) => path.map(p => [p.X / CURB_CLIP_SCALE, p.Y / CURB_CLIP_SCALE])
+
+  const pads = []
+  const TWO_PI = Math.PI * 2
+
+  for (const ix of ribbonsData.intersections) {
+    if (!ix.streets || ix.streets.length < 2) continue
+    const V = ix.point
+    const R = getR(ix, V)
+    if (!Number.isFinite(R) || R <= 0) continue
+
+    // Build legs at this vertex (one or two per chain, depending on
+    // whether the chain passes through V or terminates).
+    const legs = []
+    for (const sref of ix.streets) {
+      let chain = null
+      for (const st of ribbonsData.streets) {
+        if (st.name !== sref.name) continue
+        const v = st.points[sref.ix]
+        if (!v) continue
+        if (Math.hypot(v[0] - V[0], v[1] - V[1]) < 0.5) { chain = st; break }
+      }
+      if (!chain) continue
+      const m = chain.measure
+      if (!m?.left?.pavementHW || !m?.right?.pavementHW) continue
+      const ixIdx = sref.ix
+      const pts = chain.points
+      const buildLeg = (direction) => {
+        const ni = ixIdx + direction
+        if (ni < 0 || ni >= pts.length) return null
+        const dx = pts[ni][0] - V[0], dz = pts[ni][1] - V[1]
+        const L = Math.hypot(dx, dz)
+        if (L < 1e-6) return null
+        const isBack = direction === -1
+        const left  = isBack ? m.right : m.left
+        const right = isBack ? m.left  : m.right
+        const tlSafe = (s) => (s.terminal === 'sidewalk') ? (s.treelawn || 0) : 0
+        const swSafe = (s) => (s.terminal === 'sidewalk') ? (s.sidewalk || 0) : 0
+        return {
+          T: [dx / L, dz / L],
+          outerL: left.pavementHW || 0,
+          outerR: right.pavementHW || 0,
+          leftPed:  tlSafe(left)  + swSafe(left),
+          rightPed: tlSafe(right) + swSafe(right),
+          leftTreelawn:  tlSafe(left),
+          rightTreelawn: tlSafe(right),
+        }
+      }
+      if (ixIdx > 0) { const l = buildLeg(-1); if (l) legs.push(l) }
+      if (ixIdx < pts.length - 1) { const l = buildLeg(+1); if (l) legs.push(l) }
+    }
+    if (legs.length < 2) continue
+
+    // Sort CCW by tangent angle.
+    legs.sort((a, b) => Math.atan2(a.T[1], a.T[0]) - Math.atan2(b.T[1], b.T[0]))
+
+    // Per CCW-adjacent leg pair = one corner.
+    for (let i = 0; i < legs.length; i++) {
+      const A = legs[i], B = legs[(i + 1) % legs.length]
+      const T_A = A.T, T_B = B.T
+      const P_A = [-T_A[1], T_A[0]]   // perpLeft(T_A)
+      const P_B = [-T_B[1], T_B[0]]   // perpLeft(T_B)
+
+      // CCW angle from T_A to T_B; skip nearly-collinear or reflex.
+      let theta = Math.atan2(T_B[1], T_B[0]) - Math.atan2(T_A[1], T_A[0])
+      while (theta < 0) theta += TWO_PI
+      while (theta >= TWO_PI) theta -= TWO_PI
+      const thetaDeg = theta * 180 / Math.PI
+      if (thetaDeg <= 5 || thetaDeg >= 175) continue
+
+      const halfTheta = theta / 2
+      const sinH = Math.sin(halfTheta)
+      const tanH = Math.tan(halfTheta)
+      const R_curb = R - curbW
+      if (R_curb <= 0) continue
+
+      // Curb-outer corner: legA's left curb-outer × legB's right curb-outer.
+      // legA's left curb-outer line: through A0 = V + (A.outerL + curbW) * P_A in dir T_A.
+      // legB's right curb-outer line: through B0 = V - (B.outerR + curbW) * P_B in dir T_B.
+      const A0 = [V[0] + (A.outerL + curbW) * P_A[0], V[1] + (A.outerL + curbW) * P_A[1]]
+      const B0 = [V[0] - (B.outerR + curbW) * P_B[0], V[1] - (B.outerR + curbW) * P_B[1]]
+      // Solve A0 + s*T_A = B0 + t*T_B for Q_curb.
+      const det = T_A[0] * (-T_B[1]) - T_A[1] * (-T_B[0])
+      if (Math.abs(det) < 1e-9) continue
+      const dx = B0[0] - A0[0], dz = B0[1] - A0[1]
+      const s = (dx * (-T_B[1]) - dz * (-T_B[0])) / det
+      const Q_curb = [A0[0] + s * T_A[0], A0[1] + s * T_A[1]]
+
+      // Curb-outer tangent points.
+      const distFromQ = R_curb / tanH
+      if (!Number.isFinite(distFromQ) || distFromQ > 200) continue
+      const TA_curb = [Q_curb[0] + distFromQ * T_A[0], Q_curb[1] + distFromQ * T_A[1]]
+      const TB_curb = [Q_curb[0] + distFromQ * T_B[0], Q_curb[1] + distFromQ * T_B[1]]
+
+      // Curb-outer arc center C.
+      const bisAng = Math.atan2(T_A[1], T_A[0]) + halfTheta
+      const Cdist = R_curb / sinH
+      const C = [Q_curb[0] + Cdist * Math.cos(bisAng), Q_curb[1] + Cdist * Math.sin(bisAng)]
+
+      // Property line points: TA_curb + A.leftPed * P_A; TB_curb - B.rightPed * P_B.
+      const TA_prop = [TA_curb[0] + A.leftPed * P_A[0], TA_curb[1] + A.leftPed * P_A[1]]
+      const TB_prop = [TB_curb[0] - B.rightPed * P_B[0], TB_curb[1] - B.rightPed * P_B[1]]
+
+      // Parcel corner Q_prop = intersection of leg property lines.
+      const A0p = [V[0] + (A.outerL + curbW + A.leftPed)  * P_A[0], V[1] + (A.outerL + curbW + A.leftPed)  * P_A[1]]
+      const B0p = [V[0] - (B.outerR + curbW + B.rightPed) * P_B[0], V[1] - (B.outerR + curbW + B.rightPed) * P_B[1]]
+      const dxp = B0p[0] - A0p[0], dzp = B0p[1] - A0p[1]
+      const sp = (dxp * (-T_B[1]) - dzp * (-T_B[0])) / det
+      const Q_prop = [A0p[0] + sp * T_A[0], A0p[1] + sp * T_A[1]]
+
+      // Skip if pad has no positive ped on either side (= sw-only and treelawn
+      // both 0 → no pad to draw).
+      if (A.leftPed <= 0 && B.rightPed <= 0) continue
+
+      // Sample curb-outer arc from TA_curb (angle around C = arcStart) to
+      // TB_curb sweeping CW (= bowed toward Q_curb / V). theta sweeps the
+      // arc angle.
+      const arcStart = Math.atan2(TA_curb[1] - C[1], TA_curb[0] - C[0])
+      const arcSegs = Math.max(6, Math.ceil(theta * 12 / Math.PI))
+      const arcSamples = []
+      for (let k = 0; k <= arcSegs; k++) {
+        const a = arcStart - (k / arcSegs) * theta
+        arcSamples.push([C[0] + R_curb * Math.cos(a), C[1] + R_curb * Math.sin(a)])
+      }
+
+      // Concentric carve: replace Q_prop with a concentric arc around C
+      // (same center as the curb arc), radius R_pad = R_curb − min_ped.
+      // The end-cap on each leg is at width = min_ped (NOT each leg's
+      // own ped). For matched ped this is exactly TA_prop/TB_prop. For
+      // mismatched, the wider leg's "added point" past min_ped is cut
+      // off — the corner pad uses the narrower leg's width on both
+      // sides.
+      //
+      // minPed scans ALL FOUR leg-side ped values (each leg's left+right),
+      // not just the corner-facing two — that picks up the smallest
+      // sidewalk width across the whole intersection's leg measures and
+      // produces a uniform R_pad across all corners regardless of how
+      // the back-flip lands per pair. Treelawn carves still use the
+      // corner-facing leftTreelawn / rightTreelawn (back-flip-correct).
+      const minPed = Math.min(A.leftPed, A.rightPed, B.leftPed, B.rightPed)
+      const R_pad = R_curb - minPed
+      const TA_padarc = [TA_curb[0] + minPed * P_A[0], TA_curb[1] + minPed * P_A[1]]
+      const TB_padarc = [TB_curb[0] - minPed * P_B[0], TB_curb[1] - minPed * P_B[1]]
+
+      // Pad polygon CCW: TA_curb → TA_padarc → concentric arc → TB_padarc
+      // → TB_curb → curb-outer arc → close.
+      const padRing = []
+      padRing.push(toClipperI(TA_curb[0], TA_curb[1]))
+      padRing.push(toClipperI(TA_padarc[0], TA_padarc[1]))
+      if (R_pad > 0.05) {
+        const angA_pad = Math.atan2(TA_padarc[1] - C[1], TA_padarc[0] - C[0])
+        const angB_pad = Math.atan2(TB_padarc[1] - C[1], TB_padarc[0] - C[0])
+        let dAB = angB_pad - angA_pad
+        if (dAB > Math.PI) dAB -= 2 * Math.PI
+        if (dAB < -Math.PI) dAB += 2 * Math.PI
+        const N = 8
+        for (let k = 1; k < N; k++) {
+          const t = k / N
+          const a = angA_pad + t * dAB
+          padRing.push(toClipperI(C[0] + R_pad * Math.cos(a), C[1] + R_pad * Math.sin(a)))
+        }
+      }
+      padRing.push(toClipperI(TB_padarc[0], TB_padarc[1]))
+      padRing.push(toClipperI(TB_curb[0], TB_curb[1]))
+      // Arc samples back to TA_curb. arcSamples[0] = TA_curb (skip), so
+      // walk in reverse from arcSamples[arcSegs] = TB_curb (skip — already
+      // pushed) back to TA_curb (skip — closing).
+      for (let k = arcSegs - 1; k >= 1; k--) {
+        padRing.push(toClipperI(arcSamples[k][0], arcSamples[k][1]))
+      }
+
+      // Per-leg treelawn carve. Build a leg-rectangle stripe at perp
+      // [pavHW + curbW, pavHW + curbW + treelawn] along the leg, length =
+      // generous (well past TA_curb / TB_curb tangent positions).
+      const carves = []
+      const buildCarve = (T, P, outerEdge, perpInner, perpOuter, lengthAlong) => {
+        // Stripe along leg: V + s*T + perpInner*P  (inner edge),
+        //                   V + s*T + perpOuter*P  (outer edge).
+        // s in [0, lengthAlong].
+        const sgn = outerEdge // +1 for legA's left side, -1 for legB's right side
+        const v0 = [V[0] + sgn * perpInner * P[0],            V[1] + sgn * perpInner * P[1]]
+        const v1 = [V[0] + sgn * perpOuter * P[0],            V[1] + sgn * perpOuter * P[1]]
+        const v2 = [v1[0] + lengthAlong * T[0],               v1[1] + lengthAlong * T[1]]
+        const v3 = [v0[0] + lengthAlong * T[0],               v0[1] + lengthAlong * T[1]]
+        return [toClipperI(v0[0], v0[1]), toClipperI(v3[0], v3[1]), toClipperI(v2[0], v2[1]), toClipperI(v1[0], v1[1])]
+      }
+      // legA's facing-corner side = LEFT (+P_A). Treelawn at perp [outerL + curbW, outerL + curbW + treelawn].
+      if (A.leftTreelawn > 0) {
+        const carveLen = distFromQ + A.leftPed + 5  // past tangent + margin
+        carves.push(buildCarve(T_A, P_A, +1, A.outerL + curbW, A.outerL + curbW + A.leftTreelawn, carveLen))
+      }
+      // legB's facing-corner side = RIGHT (-P_B). Treelawn at perp [outerR + curbW, outerR + curbW + treelawn].
+      if (B.rightTreelawn > 0) {
+        const carveLen = distFromQ + B.rightPed + 5
+        carves.push(buildCarve(T_B, P_B, -1, B.outerR + curbW, B.outerR + curbW + B.rightTreelawn, carveLen))
+      }
+
+      // Pad ⊖ carves. The parcel corner Q_prop was already chamfered into
+      // an arc above; no global offset needed (which would over-shrink
+      // the thin step sections).
+      const subj = new Paths()
+      subj.push(padRing)
+      const c = new Clipper()
+      c.AddPaths(subj, PolyType.ptSubject, true)
+      if (carves.length) {
+        const clip = new Paths()
+        for (const cv of carves) clip.push(cv)
+        c.AddPaths(clip, PolyType.ptClip, true)
+      }
+      const tree = new PolyTree()
+      c.Execute(carves.length ? ClipType.ctDifference : ClipType.ctUnion, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+      const stack = tree.Childs().slice()
+      while (stack.length) {
+        const node = stack.shift()
+        if (!node.IsHole()) {
+          const o = toWorld(node.Contour())
+          if (o.length >= 3) {
+            const holes = []
+            for (const ch of node.Childs()) {
+              if (ch.IsHole()) {
+                const h = toWorld(ch.Contour())
+                if (h.length >= 3) holes.push(h)
+                for (const gc of ch.Childs()) stack.push(gc)
+              }
+            }
+            pads.push({ outer: o, holes })
+          } else {
+            for (const ch of node.Childs()) stack.push(ch)
+          }
+        } else {
+          for (const ch of node.Childs()) stack.push(ch)
+        }
+      }
+    }
+  }
+  return pads
+}
+
+function buildCurbAnnulus(ribbonsData, getR, curbW) {
+  const { Clipper, ClipperOffset, JoinType, EndType, PolyType, ClipType, PolyFillType, Paths, PolyTree } = clipperLib
+  const toClipperI = (x, z) => ({ X: Math.round(x * CURB_CLIP_SCALE), Y: Math.round(z * CURB_CLIP_SCALE) })
+  const toWorld = (path) => path.map(p => [p.X / CURB_CLIP_SCALE, p.Y / CURB_CLIP_SCALE])
+
+  // Three concentric layers per corner: asphalt fill (rounded interior),
+  // curb annulus (CURB_WIDTH stroke), sidewalk pad annulus (concrete pad
+  // between curb-outer and property line).
+  const asphaltFills = []
+  const annuli = []
+  const sidewalkPads = []
+
+  // Build the global asphalt polygon (= union of per-chain leg-rectangles
+  // at width pavementHW per side). One polygon, one Clipper-offset trick
+  // applied, rounds all concave corners (= intersection vertices) at
+  // uniform R. In-chain bends never become corners because chains are
+  // straight rectangles between vertices. Per-intersection R via this
+  // approach would require per-vertex sub-construction; uniform R is the
+  // current shipping form.
+  const R = (() => {
+    if (!ribbonsData.intersections?.length) return 0
+    return getR(ribbonsData.intersections[0], ribbonsData.intersections[0].point) || 0
+  })()
+  if (R <= 0) return { asphaltFills, annuli }
+
+  const chainRings = []
+  for (const st of ribbonsData.streets) {
+    if (st.disabled) continue
+    if (!st.points || st.points.length < 2) continue
+    const m = st.measure
+    if (!m?.left?.pavementHW || !m?.right?.pavementHW) continue
+    const perps = computePerps(st.points)
+    const left = [], right = []
+    for (let i = 0; i < st.points.length; i++) {
+      const [x, z] = st.points[i], [nx, nz] = perps[i]
+      left.push([x + nx * m.left.pavementHW, z + nz * m.left.pavementHW])
+      right.push([x - nx * m.right.pavementHW, z - nz * m.right.pavementHW])
+    }
+    const ring = []
+    for (const p of left) ring.push(toClipperI(p[0], p[1]))
+    for (let i = right.length - 1; i >= 0; i--) ring.push(toClipperI(right[i][0], right[i][1]))
+    chainRings.push(ring)
+  }
+  if (!chainRings.length) return { asphaltFills, annuli }
+
+  // 1. Sharp asphalt polygon = leg-rectangle union. Concave corners at
+  //    every intersection vertex.
+  const u = new Clipper()
+  u.AddPaths(chainRings, PolyType.ptSubject, true)
+  const sharp = new Paths()
+  u.Execute(ClipType.ctUnion, sharp, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+  if (!sharp.length) return { asphaltFills, annuli }
+
+  // 2. Outer offset by +R (jtMiter) + inner offset by -R (jtRound) =
+  //    standard Clipper trick to round concave corners with radius R.
+  //    Convex corners (leg far ends) restore to original. No fillet
+  //    wedges, no cusp degeneracies.
+  const off1 = new ClipperOffset(); off1.ArcTolerance = 50
+  off1.AddPaths(sharp, JoinType.jtMiter, EndType.etClosedPolygon)
+  const grown = new Paths(); off1.Execute(grown, R * CURB_CLIP_SCALE)
+
+  const off2 = new ClipperOffset(); off2.ArcTolerance = 50
+  off2.AddPaths(grown, JoinType.jtRound, EndType.etClosedPolygon)
+  const innerRounded = new Paths(); off2.Execute(innerRounded, -R * CURB_CLIP_SCALE)
+  if (!innerRounded.length) return { asphaltFills, annuli }
+
+  // 3. Curb-outer = innerRounded offset outward by curbW with round joins
+  //    (preserves the rounded corners — concentric).
+  const off3 = new ClipperOffset(); off3.ArcTolerance = 50
+  off3.AddPaths(innerRounded, JoinType.jtRound, EndType.etClosedPolygon)
+  const outer = new Paths(); off3.Execute(outer, curbW * CURB_CLIP_SCALE)
+
+  // 4. Asphalt fill = curb-outer polygon (covers per-leg curb stripes
+  //    that cross intersections). Push as {outer, holes:[]}.
+  for (const p of outer) {
+    if (!Clipper.Orientation(p)) continue
+    const ring = toWorld(p)
+    if (ring.length >= 3) asphaltFills.push({ outer: ring, holes: [] })
+  }
+
+  // 5. Curb annulus = outer ⊖ innerRounded, as PolyTree {outer, holes}.
+  const diff = new Clipper()
+  diff.AddPaths(outer, PolyType.ptSubject, true)
+  diff.AddPaths(innerRounded, PolyType.ptClip, true)
+  const tree = new PolyTree()
+  diff.Execute(ClipType.ctDifference, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+  const stack = tree.Childs().slice()
+  while (stack.length) {
+    const node = stack.shift()
+    if (!node.IsHole()) {
+      const o = toWorld(node.Contour())
+      if (o.length >= 3) {
+        const holes = []
+        for (const c of node.Childs()) {
+          if (c.IsHole()) {
+            const h = toWorld(c.Contour())
+            if (h.length >= 3) holes.push(h)
+            for (const gc of c.Childs()) stack.push(gc)
+          }
+        }
+        annuli.push({ outer: o, holes })
+      } else {
+        for (const c of node.Childs()) stack.push(c)
+      }
+    } else {
+      for (const c of node.Childs()) stack.push(c)
+    }
+  }
+
+  return { asphaltFills, annuli }
 }
 
 function halfRingRaw(pts, innerHW, outerHW, perps, side) {
@@ -905,8 +1285,12 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       }
     }
 
-    // ── Corner plugs ─────────────────────────────────────────────
-    for (const ix of ribbonsData.intersections) {
+    // ── Legacy corner plugs (DISABLED 2026-05-05) ────────────────
+    // The new buildCurbAnnulus pass below replaces the per-corner-pair
+    // fillet construction with a per-intersection rounded annulus driven
+    // by operator-chosen R. Re-enable by changing `if (false)` to
+    // `if (true)` if needed for visual A/B testing.
+    if (false) for (const ix of ribbonsData.intersections) {
       if (ix.streets.length < 2) continue
       const IX = ix.point
 
@@ -1094,7 +1478,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     // asph/sidewalk boundary curve. Stroke width is per-plug — average of
     // the two meeting legs' curbs (carried on each entry as `width`) — so
     // chains with non-default curbs render with matching corners. ──
-    if (cornerBoundaries.length) {
+    if (false && cornerBoundaries.length) {
       if (!groups['corner_curb']) groups['corner_curb'] = []
       for (const { boundary, width } of cornerBoundaries) {
         const w = width > 0 ? width : 0.15  // fallback when two zero-curb legs meet
@@ -1103,9 +1487,84 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       }
     }
 
+    // ── Curb-driven rounded corner (post-process) ────────────────
+    // After all per-leg ribbons are emitted, build a single rounded curb
+    // annulus that overpaints the legacy corner-plug curb_curb stroke.
+    // This is the "curb is the magic item" approach: the curb polygon
+    // defines the asphalt-mouth boundary, with concave corners rounded
+    // via a Clipper-offset trick rather than per-vertex fillet math.
+    {
+      // Per-intersection corner radius. Default = 4.5m (residential
+      // NACTO low end). Operator overrides via overlay.json.intersections
+      // [vertexId].cornerRadius will replace this lookup once authoring
+      // UI lands. For now: hand-author by editing toy-input.json's
+      // intersections[i].cornerRadius (passes through derive-toy.js).
+      const CORNER_R_DEFAULT = 4.5
+      const getR = (ix /*, V */) => Number.isFinite(ix.cornerRadius) ? ix.cornerRadius : CORNER_R_DEFAULT
+      const result = buildCurbAnnulus(ribbonsData, getR, CURB_WIDTH)
+      const triangulate = (poly, y) => {
+        try {
+          const shape = new THREE.Shape(poly.outer.map(([x, z]) => new THREE.Vector2(x, z)))
+          for (const h of (poly.holes || [])) {
+            shape.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, z))))
+          }
+          const sg = new THREE.ShapeGeometry(shape)
+          const pos = sg.attributes.position.array
+          const idx = sg.index ? sg.index.array : null
+          const positions = [], normals = [], indices = []
+          for (let i = 0; i < pos.length; i += 3) {
+            positions.push(pos[i], y, pos[i + 1])
+            normals.push(0, 1, 0)
+          }
+          if (idx) {
+            for (let i = 0; i < idx.length; i += 3) {
+              indices.push(idx[i], idx[i + 2], idx[i + 1])  // flip XY→XZ winding
+            }
+          }
+          sg.dispose()
+          return ensureCCW({ positions, normals, indices })
+        } catch (e) {
+          if (typeof window !== 'undefined' && !window.__curbAnnulusErr) {
+            window.__curbAnnulusErr = true
+            console.error('[buildCurbAnnulus triangulation]', e)
+          }
+          return null
+        }
+      }
+      // Asphalt corner-plug fill at Y=0.005 — paints over the leg's
+      // sharp-Q area with asphalt material so the asphalt mouth reads as
+      // rounded out to the curb arc. The "street-colored plug" pattern.
+      if (result?.asphaltFills?.length) {
+        if (!groups['corner_plug_asph']) groups['corner_plug_asph'] = []
+        for (const fill of result.asphaltFills) {
+          const raw = triangulate(fill, 0.005)
+          if (raw) groups['corner_plug_asph'].push(raw)
+        }
+      }
+      // Curb annulus stroke at Y=0.012 (above the asphalt fill).
+      if (result?.annuli?.length) {
+        if (!groups['corner_plug_curb']) groups['corner_plug_curb'] = []
+        for (const ann of result.annuli) {
+          const raw = triangulate(ann, 0.012)
+          if (raw) groups['corner_plug_curb'].push(raw)
+        }
+      }
+      // Sidewalk pad per corner (with treelawn carves) at Y=0.020.
+      // Painted at sidewalk material; treelawn from leg ribbons (Y=0)
+      // shows through the carved-out grass strips.
+      const pads = buildSidewalkPads(ribbonsData, getR, CURB_WIDTH)
+      if (pads && pads.length) {
+        if (!groups['corner_plug_sidewalk']) groups['corner_plug_sidewalk'] = []
+        for (const pad of pads) {
+          const raw = triangulate(pad, 0.020)
+          if (raw) groups['corner_plug_sidewalk'].push(raw)
+        }
+      }
+    }
+
     // Corner-plug materials inherit color from the underlying band material:
     // sidewalk plug uses sidewalk color, curb plug uses curb color, etc.
-    const CORNER_SRC = { corner_sw: 'sidewalk', corner_curb: 'curb', corner_asph: 'asphalt' }
+    const CORNER_SRC = { corner_sw: 'sidewalk', corner_curb: 'curb', corner_asph: 'asphalt', corner_plug_asph: 'asphalt', corner_plug_sidewalk: 'sidewalk', corner_plug_curb: 'curb' }
     function buildMeshes(groupMap, selectedFlag) {
       return Object.entries(groupMap).map(([id, parts]) => {
         const isCorner = id.startsWith('corner_')
@@ -1537,6 +1996,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
       const { byFaceUse } = buildRibbonGeometry({
         streets: streetsToClip,
         faces: rawFaces,
+        intersections: ribbons.intersections || [],
       })
 
       // Flatten Map<use, [{outer, holes}]> → [{ring, use}] for the
