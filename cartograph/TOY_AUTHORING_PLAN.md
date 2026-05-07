@@ -43,6 +43,7 @@ This implies a few constraints on every phase:
 - **Affordances must be discoverable.** Tooltips, panel labels, keyboard shortcuts shown contextually. Don't bury features behind unmarked clicks.
 - **The progression is the curriculum.** Each kit feature in the "one of everything" catalog corresponds to a moment a designer encounters the corresponding tool affordance. Order the catalog from easy to hard so the toy walks you through it.
 - **Reset must be cheap.** A trainee should be able to revert toy to its default state without losing other work. Toy overlay/centerline files versioned in git; a "reset toy" panel button writes the seed back.
+- **Designer can publish their work.** A "+ Add to Looks" button (from the toy designer view) takes the trainee's current toy state and saves it as a Look. Closes the start-to-finish loop — the trainee has a finished published artifact at the end of the curriculum, not just a configured-then-thrown-away scene. Phase TBD; surface this when the persistence pipeline is firm enough to snapshot a scene's centerlines + overlay + look-level dials into a single Look entry.
 
 ## Why we're doing this
 
