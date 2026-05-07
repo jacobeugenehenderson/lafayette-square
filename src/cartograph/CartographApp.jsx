@@ -13,6 +13,7 @@ import AerialTiles from './AerialTiles.jsx'
 import SurveyorOverlay from './SurveyorOverlay.jsx'
 import MeasureOverlay from './MeasureOverlay.jsx'
 import CornerEditHandles from './CornerEditHandles.jsx'
+import BlockGeometryV2Debug from './BlockGeometryV2Debug.jsx'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import { DesignerArch } from '../stage/StageArch.jsx'
@@ -704,6 +705,17 @@ export default function CartographApp() {
               hideFaceFills={toolAerialFocus} />
             </group>
           </R3FErrorBoundary>
+          )}
+
+          {/* ── Rounded-block-clip prototype overlay (toy v1 validation).
+              Renders sharp + rounded asphalt void as semi-transparent
+              meshes on top of the existing StreetRibbons render.
+              Toy-only for now; promote to a real Designer toggle when
+              the prototype validates. ── */}
+          {scene === 'toy' && (
+            <R3FErrorBoundary name="BlockGeometryV2Debug">
+              <BlockGeometryV2Debug ribbons={toyRibbons} />
+            </R3FErrorBoundary>
           )}
 
           {/* ── Corner-edit handles — surface only in Designer mode, in

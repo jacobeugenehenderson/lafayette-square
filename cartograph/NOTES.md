@@ -122,20 +122,137 @@ vertices respond. Untouched.
 - `streetProfiles.js` ribbon composition (sw / tl+sw per side).
 - Dead-end + cap geometry (already correct).
 
-### Open before code
+### Prototype landed (EOD 2026-05-07)
 
-1. **Where do block polygons get derived?** — `derive.js` (bake-side)
-   and a shared helper for live Designer? Or live and bake reads from
-   `map.json`?
-2. **Asphalt complement bound** — neighborhood frame, or each block's
-   own envelope?
-3. **Curb stroke pass** — single sweep over all block clips, or
-   per-block emission?
+Files:
+- `src/lib/buildBlockGeometryV2.js` — shared helper. Computes asphalt
+  union from chain pavement footprints, identifies IX corners from
+  `ribbons.intersections`, applies round-corners with the default-R
+  rule. Also has a `chainStripBand` helper + treelawn/sidewalk emission
+  + `intersectRings` clip step (not currently rendered, see below).
+- `src/cartograph/BlockGeometryV2Debug.jsx` — visualizer. Currently
+  rendering as: red translucent sharp-asphalt + blue translucent
+  rounded-asphalt + yellow IX-corner dots, layered on top of the
+  legacy StreetRibbons render. Toy-scene only (gated by `scene==='toy'`).
+
+Smoke test on v1 (90° X with asymmetric ped zones) passes:
+- 12-vertex sharp + → 76-vertex rounded (4 corners × 16 arc segs + 12 originals).
+- 4 corners detected with correct d_min:
+  - NW (tl+sw / tl+sw): d=3, R=4.5m (class wins).
+  - NE/SW (mixed): d=1.5, R=3.31m (geometry-cap wins).
+  - SE (sw / sw): d=1.5, R=3.31m.
+
+What works in the live render (per Jacob's screenshot):
+- Asphalt void renders as +-shape with rounded mouths at all 4 IX corners.
+- Visible R difference between NW (4.5m, biggest arc) and others (3.31m).
+- Yellow dots land on the correct sharp-corner positions.
+- Cap ends stay unrounded (correctly skipped — concave from block POV).
+
+What didn't work yet:
+- **Real material colors broke visually.** Attempted to switch from debug
+  primary colors to BAND_COLORS (asphalt #3e3e3c, sidewalk #a89e8e,
+  treelawn #5a6e42, residential #5A8A3A) using plain `meshBasicMaterial
+  opacity={1}`. Result conflicted with the legacy render's fade-shader
+  + post-FX pipeline. Reverted to debug colors. Two paths forward next
+  session: (a) thread V2 meshes through `makeMaterial` so they
+  participate in the fade pipeline, or (b) add a Designer toggle that
+  hides the legacy StreetRibbons entirely in toy mode so V2 can use
+  plain materials without conflict.
+- **Block fill addition felt unclear.** Adding the green block parcel
+  fill on top of the legacy render made the visual hard to read (mixed
+  signals from two competing models). Reverted — current state is
+  asphalt-only V2 overlay.
+- **Strip bands not yet rendered.** Helper computes them and the
+  intersection-clip works (smoke test on v1 produces 6 sidewalk +
+  3 treelawn bands clipped to the rounded block); just not wired into
+  the visualizer pending the legacy-occlusion question above.
+
+Open observations from Jacob:
+- "The internal rules aren't as simple as I was saying" — the cap-only-
+  at-(tl+sw)/(tl+sw) framing may need refinement once the strip bands
+  render visibly. Worth revisiting before adding the case-3 cap.
+
+### Next session opener (2026-05-08)
+
+1. Decide legacy-occlusion path: thread V2 through `makeMaterial`, OR
+   add a "hide legacy ribbons in toy" toggle. (b) is faster for
+   prototype validation; (a) is what production needs anyway.
+2. Once V2 can render alone, switch to real material colors and wire
+   in the strip bands. Verify v1 looks sane before adding cap rule.
+3. Then walk v2-v10 to validate the model on harder cases (acute
+   angles, T, Y, 5-way, bent chain, asymmetric pavement).
+4. The strip bands' case-2 rule is currently implicit via render order
+   (sidewalk paints on top of treelawn). Verify this looks correct on
+   v1's NE/SW mixed corners; if not, add explicit case-2 termination.
+5. Case-3 cap (concrete square at tl+sw/tl+sw corners) is still
+   unimplemented. Add only after v1 looks right without it.
+
+### Resolutions (2026-05-07)
+
+1. **Block polygons derived in a shared helper** (likely
+   `src/lib/buildBlockGeometry.js` or similar). Live render
+   (`StreetRibbons.jsx` or successor) and offline bake
+   (`cartograph/bake-ground.js`) both call it. Same pattern as today's
+   `buildRibbonGeometry`. Designer slider/handles update in real time
+   without needing a bake.
+
+2. **Asphalt complement bound = neighborhood stencil.** Asphalt =
+   stencil polygon MINUS union(rounded blocks). One polygon, one clip.
+   Reuses the existing `useBoundary`-style clipping. Toy uses the
+   residential face's outer ring; LS uses its existing stencil.
+
+3. **Curb is a single stroke pass** over the union of all block-clip
+   outlines. Uniform width + color → one geometry pass, one material.
+   Continuous around intersections by construction (no seams at IX
+   centers because there's nothing IX-specific in the pass).
+
+### Still open (resolve during prototype)
+
 4. **`(tl+sw) ↔ (tl+sw)` cap implementation** — paint a separate
    sidewalk-material square at the corner and union with strip
    sidewalks? Or extend the strip's sidewalk portion (depth `tl..tl+sw`)
    to wrap the corner via a curb-following stroke at depth `0..tl+sw`
-   for the cap region only?
+   for the cap region only? Either works; pick whichever is simpler in
+   code.
+
+### Default-R rule (added 2026-05-07)
+
+Worked the math on what R should default to at each corner so the new
+model produces visually-OK geometry without per-corner authoring.
+
+**The pinch formula:** at a corner with interior angle θ, leg strip
+depth d (= sw or tl+sw), and curb radius R, the visible strip width at
+the arc midpoint is:
+
+```
+w_midpoint = (d - R) / sin(θ/2) + R
+```
+
+This pinches as R grows past d. Capping by "strip stays ≥ k·d at arc
+midpoint" gives:
+
+```
+R_max(d, θ, k) = d × (1 - k·sin(θ/2)) / (1 - sin(θ/2))
+```
+
+**The rule (k=0.5, decided this session):**
+
+```
+R_default(corner) = min(R_class, R_max(d_min, θ, 0.5))
+                  × cornerRadiusScale
+                  × per-corner override
+d_min = min(legA.depth, legB.depth)
+```
+
+Skip rounding if θ ≤ 5° or θ ≥ 175°.
+
+**Toy v1 outcome:** NW (tl+sw/tl+sw) gets R=4.5m (class wins);
+NE/SW/SE all get R=3.31m (geometry-cap wins on the sw-side d_min=1.5m).
+The class table is the ceiling; geometry-cap kicks in whenever the
+strip is too narrow to carry the AASHTO-baseline R.
+
+The class table from `intersectionGeometry.js#CORNER_RADIUS_M` carries
+forward unchanged as `R_class`.
 
 ### Next session opener
 
