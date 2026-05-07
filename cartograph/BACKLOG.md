@@ -4,7 +4,58 @@
 
 Last updated: 2026-05-06 (EOD, post corner-authoring kit phases 1-2)
 
-## 2026-05-06 — Corner-authoring kit: ✅ Phases 1–3 landed
+## Data-pipeline truths surfaced 2026-05-06
+
+Diagnosed during the IP-rule attempt + LS-rollout debugging session. These
+hold regardless of which corner-architecture (rounded-block-clip is next)
+the next operator picks — wire them into block-polygon derivation from
+day one or the same hours of confusion repeat.
+
+1. **`ix.streets[].ix` indices in `src/data/ribbons.json` are STALE on
+   most LS IXs.** Chain points were re-coordinated upstream but IX
+   references weren't updated. Symptom: `chain.points[sref.ix]` is
+   either `undefined` or hundreds of meters from `ix.point`. Workaround:
+   trust `ix.point` (V), find the chain's nearest point, ignore
+   `sref.ix`. The 0.5m tolerance is a reasonable cutoff for "this chain
+   actually passes through this IX."
+
+2. **Multiple chains share a street name.** Rutger Street has 5 entries
+   (`rutger-street-0..4`), Park Avenue has 2, Hickory has 4, etc. A
+   `Map(name → chain)` lookup (`streetByName.get(sref.name)`) returns
+   only one entry — usually the wrong one. Iterate all entries with
+   matching name and pick by nearest-point to V:
+   ```js
+   const streetsByName = new Map()
+   for (const st of ribbons.streets) {
+     if (!streetsByName.has(st.name)) streetsByName.set(st.name, [])
+     streetsByName.get(st.name).push(st)
+   }
+   // for sref of ix.streets:
+   for (const st of (streetsByName.get(sref.name) || [])) { /* nearest-point */ }
+   ```
+
+3. **`segmentMeasures[<ord>]` is the source of truth at IX-adjacent
+   segments, not `chain.measure`.** Real LS chains carry hand-authored
+   per-segment overlays (e.g., `Mississippi Avenue.segmentMeasures[0].right.pavementHW = 8.08`
+   vs `chain.measure.right.pavementHW = 8.66` — 0.58m difference at the
+   most common IX corner). The leg-stripe band emission already uses
+   `measureForSegment`; any corner / plug / clip path code that reads
+   `chain.measure` directly will visually misalign with the band by the
+   exact authored difference. Always resolve via:
+   ```js
+   const segOrd = ranges.findIndex(([f, t]) => ni >= f && ni <= t)
+   const baseM = measureForSegment(chain, segOrd) || chain.measure
+   ```
+   where `ranges = segmentRangesForCouplers(chain.points, chain.couplers || [])`.
+
+4. **Skip plug / corner emission when any incident chain is
+   `motorway` / `motorway_link` / `trunk` / `trunk_link`.** Freeway-scale
+   geometry doesn't follow urban-corner conventions — no curb returns,
+   no sidewalks, no plug. This is a SEPARATE filter from the
+   chains-per-vertex cap (which targets cloverleaf interchanges via
+   chain-count). Both filters needed.
+
+
 
 All three layers of the corner-radius authoring stack are live and tested
 on the toy fixture:

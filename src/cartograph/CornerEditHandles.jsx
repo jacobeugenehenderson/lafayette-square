@@ -161,6 +161,16 @@ export default function CornerEditHandles({ ribbons }) {
 
   const dragRef = useRef(null)
   const [dragState, setDragState] = useState(null)
+  // rAF-throttle the heavy store commit so the dot tracks the cursor
+  // smoothly even at neighborhood density (~252 IXs / ~600 corners). The
+  // local `dragState` updates synchronously every pointermove for visual
+  // responsiveness; the store update (which triggers the meshes useMemo
+  // rebuild — Clipper booleans + ShapeGeometry triangulation across the
+  // whole neighborhood) fires at most once per frame. Pointer-up flushes
+  // any pending value so the persisted radius matches where the user
+  // released. Same pattern as the Streets > Corners slider in Panel.jsx.
+  const rafRef = useRef(null)
+  const pendingCommitRef = useRef(null)
 
   const layout = useMemo(() => computeIxLayout(ribbons), [ribbons])
 
@@ -224,6 +234,14 @@ export default function CornerEditHandles({ ribbons }) {
       }
     }
 
+    const flushCommit = (drag, baseR) => {
+      if (drag.kind === 'corner') {
+        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, baseR)
+      } else {
+        setIxCornerRadius(drag.V, baseR)
+      }
+    }
+
     const onMove = (e) => {
       const drag = dragRef.current
       if (!drag) return
@@ -232,17 +250,38 @@ export default function CornerEditHandles({ ribbons }) {
       const r = Math.hypot(dx, dz)
       // Store the BASE radius (what gets multiplied by cornerRadiusScale).
       const baseR = r / Math.max(0.0001, cornerRadiusScale)
-      if (drag.kind === 'corner') {
-        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, baseR)
-      } else {
-        setIxCornerRadius(drag.V, baseR)
-      }
+      // Visual update (cheap) — synchronous so the dot tracks the cursor.
       setDragState(prev => prev && { ...prev, cursor: p, r })
+      // Heavy store commit (rebuilds meshes useMemo across the whole
+      // neighborhood) — rAF-throttled so it doesn't choke pointer events
+      // at LS density (~252 IXs / ~600 corners).
+      pendingCommitRef.current = baseR
+      if (rafRef.current == null) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = null
+          const target = pendingCommitRef.current
+          if (target == null) return
+          pendingCommitRef.current = null
+          const liveDrag = dragRef.current
+          if (liveDrag) flushCommit(liveDrag, target)
+        })
+      }
       e.stopPropagation()
     }
 
     const onUp = (e) => {
-      if (!dragRef.current) return
+      const drag = dragRef.current
+      if (!drag) return
+      // Flush any pending rAF-throttled commit so the persisted radius
+      // matches where the user released the dot.
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+      if (pendingCommitRef.current != null) {
+        flushCommit(drag, pendingCommitRef.current)
+        pendingCommitRef.current = null
+      }
       dragRef.current = null
       setDragState(null)
       dom.releasePointerCapture?.(e.pointerId)

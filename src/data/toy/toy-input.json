@@ -1,16 +1,18 @@
 {
   "meta": {
     "source": "toy",
-    "description": "Cleanroom test fixture for cartograph plug + ribbon work. EIGHT angle-regime variants laid out on a 4×2 grid (80m spacing): 90° X (baseline), 60° X, 45° X, T-junction (90°), Y-junction (120°), near-collinear 175°/5° X (degenerate, expects all-flat corners), sharp 30° X (acute = max angleMult), 5-way (72° spokes). All chains share an asymmetric measure (left=treelawn+sidewalk, right=sidewalk-only) so the angle is the only varying axis. Re-run cartograph/derive-toy.js after editing.",
+    "description": "Cleanroom test fixture for cartograph plug + ribbon work. TEN variants laid out on a grid: rows 1-2 cover ANGLE regimes (90° X, 60° X, 45° X, T-90°, Y-120°, near-collinear 175°/5° X, sharp 30° X, 5-way 72° spokes); row 3 covers RIBBON-SHAPE regimes (chain bends within corner-pad reach, asymmetric pavement widths). All chains in rows 1-2 share an asymmetric ped-zone measure (left=treelawn+sidewalk, right=sidewalk-only); row 3 mixes those with asymmetric pavement widths (wide left lane vs narrow right lane). Re-run cartograph/derive-toy.js after editing.",
     "grid": {
-      "v1_90X":     { "center": [-120,  40] },
-      "v2_60X":     { "center": [ -40,  40] },
-      "v3_45X":     { "center": [  40,  40] },
-      "v4_T90":     { "center": [ 120,  40] },
-      "v5_Y120":    { "center": [-120, -40] },
-      "v6_175X":    { "center": [ -40, -40] },
-      "v7_30X":     { "center": [  40, -40] },
-      "v8_5way":    { "center": [ 120, -40] }
+      "v1_90X":         { "center": [-120,   40] },
+      "v2_60X":         { "center": [ -40,   40] },
+      "v3_45X":         { "center": [  40,   40] },
+      "v4_T90":         { "center": [ 120,   40] },
+      "v5_Y120":        { "center": [-120,  -40] },
+      "v6_175X":        { "center": [ -40,  -40] },
+      "v7_30X":         { "center": [  40,  -40] },
+      "v8_5way":        { "center": [ 120,  -40] },
+      "v9_bent":        { "center": [-120, -120] },
+      "v10_asymmPave":  { "center": [ -40, -120] }
     }
   },
   "_measure_template": {
@@ -114,11 +116,33 @@
     { "id": "v8-e", "name": "v8-e", "highway": "residential",
       "points": [[120, -40], [129.3, -68.5]],
       "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
+      "capEnds": { "start": "blunt", "end": "blunt" } },
+
+    { "id": "v9-a", "name": "v9-a", "highway": "residential",
+      "_comment": "Bent-chain variant — straight horizontal control chain through V=(-120, -120). The bend lives on v9-b.",
+      "points": [[-150, -120], [-120, -120], [-90, -120]],
+      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
+      "capEnds": { "start": "blunt", "end": "blunt" } },
+    { "id": "v9-b", "name": "v9-b", "highway": "residential",
+      "_comment": "Bent within corner-pad reach — vertex at (-119.5, -117) is 3m past V=(-120,-120) at ~10° off vertical, well inside the typical R=4.5m corner-pad span. Tests whether the leg-rectangle's straight-line tangent extrapolation handles a chain bend that sits between V and TA_curb.",
+      "points": [[-120, -150], [-120, -120], [-119.48, -117], [-114.4, -90]],
+      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
+      "capEnds": { "start": "blunt", "end": "blunt" } },
+
+    { "id": "v10-a", "name": "v10-a", "highway": "residential",
+      "_comment": "Asymmetric-pavement variant — left.pavementHW=6 (wide), right.pavementHW=4 (narrow). Different from the wider-treelawn asymmetry every other variant uses; here the ASPHALT itself is offset from the chain centerline. Same ped-zone pattern (left=tl+sw, right=sw-only).",
+      "points": [[-70, -120], [-40, -120], [-10, -120]],
+      "measure": { "left":{"pavementHW":6,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":4,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
+      "capEnds": { "start": "blunt", "end": "blunt" } },
+    { "id": "v10-b", "name": "v10-b", "highway": "residential",
+      "_comment": "Asymmetric-pavement variant — same wide-left/narrow-right pattern, vertical chain. CCW rotation around V means the wide side rotates from north (chain-a) to west (chain-b), so each of the IX's four corners gets a different pavement-width pairing.",
+      "points": [[-40, -150], [-40, -120], [-40, -90]],
+      "measure": { "left":{"pavementHW":6,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":4,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
       "capEnds": { "start": "blunt", "end": "blunt" } }
   ],
   "faces": [
     { "_comment": "One residential face covers the entire 4×2 grid; ribbon-union clip carves all streets out automatically. Ring extends well past chain reach on every side (chains end ≤ ±150 in x and ≤ ±70 in z + ~7m ribbon outer ≈ ±157 / ±77 worst case) so no inner-edge can fall inside any ribbon outer.",
-      "ring": [[-180, -85], [180, -85], [180, 85], [-180, 85]],
+      "ring": [[-180, -170], [180, -170], [180, 85], [-180, 85]],
       "use": "residential" }
   ]
 }

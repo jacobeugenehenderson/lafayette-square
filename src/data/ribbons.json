@@ -567,6 +567,23 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 2,
+            "treelawn": 1.2456,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 5.080001426855457,
+            "treelawn": 4.3856,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": [
         {
           "ix": 9,

@@ -6,6 +6,153 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-06 (PM-2) — Corner geometry retired & rebuilt: rounded-block-clip plan
+
+Long planning conversation with Jacob. After weeks of corner-plug
+construction (per-corner annular sectors, then the IP-rule concentric
+stack with shared C and leg-widen+R-shrink algebra), we walked all the
+way back and rebuilt the model from scratch. This entry is the plan;
+no code yet. Author's intent + step-by-step design follow.
+
+### The new model — figure-ground inversion
+
+Today: street is positive space (asphalt + curbs + sidewalks emanate
+from centerline outward). Corner plug is a constructed object we paint
+over the block's pointy corner.
+
+New: **block is positive space**. Street is the void around blocks.
+
+1. Centerlines + measured pavement half-widths derive **block polygons**
+   (the land masses between streets). Sharp rectilinear shapes; corners
+   are pointy where two streets meet.
+2. Apply Illustrator-style round-corners to each block polygon. Every
+   convex vertex becomes a circular arc tangent to both incident edges,
+   inset by R. The block polygon is now a **rounded clipping path**.
+3. **The arcs exist only as the boundary of the clip.** No fillet
+   primitive, no constructed corner-plug object, no "corner block"
+   primitive. The arc is a property of the clip outline.
+4. **Inside the clip:** ribbon strips (treelawn, sidewalk) run all the
+   way to the underlying *sharp* corner of the block. The clip hides
+   what falls outside. Strips don't know about the rounding.
+5. **Outside the clip = asphalt.** Its rounded mouths appear
+   automatically — they're the inverse of each block's arcs.
+6. **Curb = stroke along the clip outline.** Straight along the
+   frontage, arc at the corner. One stroke pass; no separate curb-arc
+   geometry.
+
+The same arc serves the asphalt's mouth, the curb stroke, and the trim
+of inboard strips. We never construct the arc as filled geometry — the
+clip does it.
+
+### Strip composition near the corner (still sharp polygon, before clip)
+
+Each block-edge has a leg ribbon running parallel to its curb, with
+either `sw` (sidewalk-only, depth = sw) or `tl+sw` (treelawn at curb,
+sidewalk inboard, depth = tl+sw) composition. At each corner:
+
+- **`sw ↔ sw` corner.** *No cap.* The two leg sidewalk strips meet
+  naturally at the corner — their sw × sw overlap *is* the corner.
+  Continuous L-band emerges from the strip union. Elegant minimum.
+
+- **`sw ↔ (tl+sw)` corner.** *No separate cap.* The sw leg's strip runs
+  full block length (corner to corner). The (tl+sw) leg's strip
+  terminates at depth=sw from the perpendicular block edge — its
+  treelawn never reaches the corner because the sw leg's sidewalk
+  strip already occupies that area. Leg ribbons do all the work.
+
+- **`(tl+sw) ↔ (tl+sw)` corner.** *Cap exists.* A `(tl+sw) × (tl+sw)`
+  concrete square at the corner. Both legs' treelawns terminate at the
+  cap's inner edges; both legs' sidewalk portions connect with the cap.
+  ADA landing.
+
+**Unifying principle:** the cap appears exactly when the corner geometry
+is "fat enough" to need it — when both legs carry treelawn, the corner
+area would otherwise be grass-on-grass. At the sw-only end, there's no
+fat to cap; the strokes alone are the elegant answer.
+
+Bonus: the cap also gives the rounded-corner arc somewhere logical to
+bite. At a `(tl+sw) × (tl+sw)` corner, R has real concrete to cut
+through. At a `sw × sw` corner, R must stay small (≤ sw-ish) because
+the arc cuts the sw band itself — too big and the sidewalk pinches.
+NACTO's "smaller-is-better in dense urban" maps onto this naturally.
+
+### Authoring kit transfers unchanged
+
+Global `cornerRadiusScale` slider, per-IX handles, per-corner handles
+(leg-pair-keyed) all feed R into the round-corners operation on the
+block polygon. Same UI, same storage shape (`design.json#cornerRadiusScale`,
+`design.json#cornerRadiusOverrides`), same color coding (blue = default,
+gold = authored, white = mid-drag), same revert button. Only the
+geometry consumer changes.
+
+### Dead-ends are safe
+
+Round-corners only operates on **convex** polygon vertices — corners
+that bulge outward into asphalt. Dead-ends are notches into the block;
+their throats are *concave* vertices (round-corners ignores) and their
+caps are arcs (no vertex to round). Today's dead-end + cap geometry is
+incorporated into the block polygon's perimeter as a pre-resolved
+sub-path. Photoshop analogy: dead-end is a flat layer below; block
+polygon is the smart layer with round-corners applied; only the convex
+vertices respond. Untouched.
+
+### What gets retired
+
+- `intersectionGeometry.js` — `buildIntersectionPolygon`,
+  `buildFilletWedge`, `buildLegRectangle`, `cornerRadiusFor` is kept
+  (table feeds R into new op).
+- `ribbonsGeometry.js` — `computeIntersectionPolygons`,
+  `padWidthForCorner`, `makeLegFromChainVertex`, the per-corner
+  annular-sector additions to `buildRibbonUnion`.
+- `StreetRibbons.jsx#buildSidewalkPads` — the per-corner asphalt-mouth
+  fills + curb annuli, the leg-pair-keyed asphalt L-shape splitter.
+- `buildCornerPlug` (already gated dead).
+- `buildCurbAnnulus` (Phase 3 dead code, retained for revert-safety).
+- The "wider-leg-dominates pad width" rule.
+- The shared-C concentric stack, leg-widen+R-shrink algebra.
+- The continuity-contract perp checks (made structural by derivation).
+
+### What carries forward
+
+- `CORNER_RADIUS_M` lookup table (AASHTO/NACTO class-pair × angle).
+- `cornerRadiusScale` Look-level dial.
+- Per-IX and per-corner override schemas in `design.json`.
+- `CornerEditHandles.jsx` — UI surface unchanged, just feeds different
+  consumer.
+- `streetProfiles.js` ribbon composition (sw / tl+sw per side).
+- Dead-end + cap geometry (already correct).
+
+### Open before code
+
+1. **Where do block polygons get derived?** — `derive.js` (bake-side)
+   and a shared helper for live Designer? Or live and bake reads from
+   `map.json`?
+2. **Asphalt complement bound** — neighborhood frame, or each block's
+   own envelope?
+3. **Curb stroke pass** — single sweep over all block clips, or
+   per-block emission?
+4. **`(tl+sw) ↔ (tl+sw)` cap implementation** — paint a separate
+   sidewalk-material square at the corner and union with strip
+   sidewalks? Or extend the strip's sidewalk portion (depth `tl..tl+sw`)
+   to wrap the corner via a curb-following stroke at depth `0..tl+sw`
+   for the cap region only?
+
+### Next session opener
+
+Read this entry. Then bring up the **Toy fixture** (`/cartograph.html`
+in toy mode, which loads `src/data/toy/toy-input.json` +
+`toy-ribbons.json`) and walk through whether the rounded-block-clip
+model produces good corner geometry on the 8-variant grid. Toy v1
+(symmetric 4-way 90° X) is the simplest case — make it work there
+first. Then v2/v3/v4 (60°/45°/30° X), v5 (T), v6 (Y-120°), v7
+(degenerate 175°/5°), v8 (5-way 72° spokes).
+
+The new model should handle obliques and 5-way without special-casing
+because round-corners is angle-agnostic. The acute regimes (v3, v4, v7)
+that were broken under the IP-rule should be naturally clean here.
+
+---
+
 ## 2026-05-06 (PM) — Aborted IP-rule switch + docs hardening (`cartograph-looks-pass-ab`)
 
 A second session today. Net code change: zero. Net doc change: continuity

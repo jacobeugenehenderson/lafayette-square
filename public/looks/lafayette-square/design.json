@@ -31,7 +31,7 @@
     "fence": false,
     "wall": false,
     "retaining_wall": false,
-    "hedge": true,
+    "hedge": false,
     "labels": false,
     "centerline": false
   },
@@ -80,9 +80,11 @@
     "recreation": "#6EA03E",
     "industrial": "#8E7060"
   },
-  "cornerRadiusScale": 0.4,
+  "cornerRadiusScale": 0.6,
   "cornerRadiusOverrides": {},
-  "cornerCornerRadiusOverrides": {},
+  "cornerCornerRadiusOverrides": {
+    "284.800,-353.900|hickory-street-0:b|mississippi-avenue:b": 13.552338884168721
+  },
   "materialColors": {},
   "materialPhysics": {},
   "buildingPalette": [
