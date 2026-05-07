@@ -10,13 +10,11 @@ import useCamera from '../hooks/useCamera'
 import { BAND_COLORS, sideToStripes, refEdges, defaultMeasure, resolveInserts, segmentRangesForCouplers, measureForSegment, offsetPolyline, innerEdgeMeasure, subdividePolyline, osmHierarchyScore } from '../cartograph/streetProfiles.js'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, BAND_TO_LAYER } from '../cartograph/m3Colors.js'
-import {
-  terrainExag, assignTerrainUniforms,
-  TERRAIN_DECL, TERRAIN_DISPLACE, TERRAIN_NORMAL, patchTerrain,
-} from '../utils/terrainShader'
+import { terrainExag, patchTerrain } from '../utils/terrainShader'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import useSurfaceMaterial, { ARCH_BLUE } from '../lib/useSurfaceMaterial.js'
 
 // Hero mode terrain exaggeration — 10× makes terrain (0–29m) comparable
 // to building heights (3–15m) for dramatic but proportional landscape
@@ -168,61 +166,9 @@ function ensureMeasure(street) {
 // rendered as its own material (grass / concrete) via the band stack —
 // no separate "lane halves" needed.
 
-// ── Terrain-bounds clip (fragment discard outside terrain coverage) ──
-// vWorldPos is passed from vertex shader; discard fragments outside terrain
-const TERRAIN_CLIP_VARYING_DECL = `varying vec3 vWorldPos;`
-const TERRAIN_CLIP_VERTEX = `vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`
-// Soft fade at terrain bounds — 80m feather inward from each edge
-// Applied inside lights_fragment_maps (before gl_FragColor), so we store
-// the fade factor in diffuseColor.a and apply it in output_fragment
-const TERRAIN_CLIP_FRAG = `
-{
-  float _fadeL = smoothstep(uBMinX, uBMinX + 80.0, vWorldPos.x);
-  float _fadeR = smoothstep(uBMinX + uSpanX, uBMinX + uSpanX - 80.0, vWorldPos.x);
-  float _fadeB = smoothstep(uBMinZ, uBMinZ + 80.0, vWorldPos.z);
-  float _fadeT = smoothstep(uBMinZ + uSpanZ, uBMinZ + uSpanZ - 80.0, vWorldPos.z);
-  float _edgeFade = _fadeL * _fadeR * _fadeB * _fadeT;
-  diffuseColor.a *= _edgeFade;
-}`
-
-// ── Shadow-tinted flat shader ────────────────────────────────────
-// Let Three.js compute full PBR lighting (sun, shadows, point lights, ambient).
-// Extract a grayscale light factor from the result. Multiply curated colors
-// by that factor. Palette stays coherent — shadows darken, sun brightens.
-
-// Lets Three.js compute full PBR lighting, then extracts a grayscale light
-// factor and re-applies it to the curated palette color. Why the π factor:
-// three.js's BRDF_Lambert divides diffuse by π for energy conservation. For
-// a curated palette where the designer picked #RRGGBB *as the display-target
-// tone under sun*, we undo that division so the ribbon lands at its palette
-// color in full light and falls toward ~25% in deep shadow.
-const SHADOW_TINTED_FLAT = `
-#include <lights_fragment_maps>
-// Terrain clip removed — radial fade (circle) is the authoritative silhouette
-// now. Keeping the clip made shots look cropped to the elevation grid rect.
-// ${/* TERRAIN_CLIP_FRAG — retired */ ''}
-{
-  vec3 _totalLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
-  float _baseLum = max(dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722)), 0.0005);
-  // Multiply by PI to cancel BRDF_Lambert's 1/π — brings palette-tone back.
-  float _lightMul = dot(_totalLight, vec3(0.2126, 0.7152, 0.0722)) / _baseLum * 3.14159;
-  // Floor at 0.25 so shadowed asphalt still reads as "dark asphalt" not void.
-  // Ceiling at 1.6 lets bright-lit surfaces push slightly over palette tone.
-  float _lightFactor = clamp(_lightMul, 0.25, 1.6);
-
-  reflectedLight.directDiffuse = vec3(0.0);
-  reflectedLight.directSpecular = vec3(0.0);
-  reflectedLight.indirectSpecular = vec3(0.0);
-  reflectedLight.indirectDiffuse = diffuseColor.rgb * _lightFactor;
-}`
-
-// Cartograph flat shader — exact base colors, zero lighting
-const CARTOGRAPH_FLAT = `
-#include <lights_fragment_maps>
-reflectedLight.directDiffuse = vec3(0.0);
-reflectedLight.directSpecular = vec3(0.0);
-reflectedLight.indirectSpecular = vec3(0.0);
-reflectedLight.indirectDiffuse = diffuseColor.rgb;`
+// Shader plumbing (terrain clip varying, SHADOW_TINTED_FLAT, CARTOGRAPH_FLAT)
+// lives with makeMaterial in src/lib/useSurfaceMaterial.js so the V2
+// rounded-block-clip prototype can share the exact same material pipeline.
 
 // ── Face fill subdivision (dense enough vertices for terrain following) ──
 
@@ -1126,8 +1072,6 @@ function segDir(pts, i0, i1) {
 // ── Main component ───────────────────────────────────────────────
 
 export default function StreetRibbons({ hiddenLayers, flat = false, luColors, liveCenterlines, measureActive = false, surveyActive = false, selectedCorridorNames = null, ribbons = ribbonsRaw, useBoundary = true, hideFaceFills = false }) {
-  // Architectural blue — used for overlays in Measure/Survey contexts.
-  const ARCH_BLUE = '#2250E8'
   const authoringActive = measureActive || surveyActive
 
   // Live Designer-panel layer colors (falls back to M3 defaults when a picker
@@ -2279,70 +2223,9 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     if (sR) sR.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
   })
 
-  // ── Materials: terrain displacement + shadow-tinted flat ──────
-  const makeMaterial = useMemo(() => {
-    const fragShader = flat ? CARTOGRAPH_FLAT : SHADOW_TINTED_FLAT
-    const cacheKey = flat ? 'sr-flat' : 'sr-shadow'
-    return (color, pri, fade = null, opts = {}) => {
-      const mat = new THREE.MeshStandardMaterial({
-        color: opts.surveyActive ? ARCH_BLUE : color,
-        roughness: 0.9, metalness: 0, side: THREE.FrontSide,
-        transparent: !!fade || !!opts.measureActive || !!opts.surveyActive || !!opts.selectedCorridor,
-        // Selected corridor becomes MORE translucent than any base mode
-        // so the aerial underneath is clearly visible for alignment. It
-        // always reads as more see-through than the rest of the ribbons
-        // around it, in any tool.
-        // Translucency strategy:
-        //   Selected corridor in Measure → 0.55 (see edits land while aerial reads through)
-        //   Selected corridor in Survey  → 0.15 (silhouette + aerial alignment)
-        //   Survey, unselected           → 0.28 (all chains slightly translucent in Survey)
-        //   Measure, unselected          → 1.0  (only the chain you're editing is translucent)
-        //   Default (no tool)            → 1.0
-        opacity: opts.selectedCorridor
-          ? (opts.measureActive ? 0.55 : 0.15)
-          : (opts.surveyActive ? 0.28 : 1),
-        // Negative offset pulls ribbons toward the camera (beats terrain at 0).
-        // More-negative = closer; higher pri should win, so factor = -pri.
-        polygonOffset: true, polygonOffsetFactor: -pri, polygonOffsetUnits: -pri * 4,
-      })
-      mat.onBeforeCompile = (shader) => {
-        assignTerrainUniforms(shader)
-        shader.vertexShader = shader.vertexShader
-          .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL + (flat ? '' : '\n' + TERRAIN_CLIP_VARYING_DECL))
-          .replace('#include <begin_vertex>', TERRAIN_DISPLACE + (flat ? '' : '\n' + TERRAIN_CLIP_VERTEX))
-          .replace('#include <beginnormal_vertex>', TERRAIN_NORMAL)
-        if (flat) {
-          shader.fragmentShader = shader.fragmentShader
-            .replace('#include <lights_fragment_maps>', fragShader)
-        } else {
-          // Non-flat (shots): SHADOW_TINTED_FLAT with π compensation — palette
-          // colors land near their Designer tone in full light, darken toward
-          // 25% in shadow. Terrain-edge alpha fade is baked into the shader.
-          shader.fragmentShader = shader.fragmentShader
-            .replace('#include <common>', '#include <common>\n' + TERRAIN_CLIP_VARYING_DECL + '\n' + TERRAIN_DECL)
-          shader.fragmentShader = shader.fragmentShader
-            .replace('#include <lights_fragment_maps>', fragShader)
-        }
-        if (fade) {
-          shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade.center.x, fade.center.z) }
-          shader.uniforms.uFadeInner  = { value: fade.inner }
-          shader.uniforms.uFadeOuter  = { value: fade.outer }
-          shader.vertexShader = shader.vertexShader
-            .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;')
-            .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvFadeWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
-          shader.fragmentShader = shader.fragmentShader
-            .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;\nuniform vec2 uFadeCenter;\nuniform float uFadeInner;\nuniform float uFadeOuter;')
-            .replace('#include <opaque_fragment>',
-              '#include <opaque_fragment>\n' +
-              'float _fadeR = distance(vFadeWorldPos.xz, uFadeCenter);\n' +
-              'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _fadeR);')
-        }
-      }
-      const fadeKey = fade ? `-f${fade.inner}-${fade.outer}` : ''
-      mat.customProgramCacheKey = () => (flat ? 'sr-flat' : 'sr-pbr-v3') + fadeKey
-      return mat
-    }
-  }, [flat])
+  // Materials: lifted to src/lib/useSurfaceMaterial.js so V2 (rounded-block-clip)
+  // surfaces share the exact same fade-shader + post-FX pipeline.
+  const makeMaterial = useSurfaceMaterial(flat)
 
   const hide = hiddenLayers || {}
 

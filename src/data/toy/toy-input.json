@@ -1,148 +1,484 @@
 {
   "meta": {
     "source": "toy",
-    "description": "Cleanroom test fixture for cartograph plug + ribbon work. TEN variants laid out on a grid: rows 1-2 cover ANGLE regimes (90° X, 60° X, 45° X, T-90°, Y-120°, near-collinear 175°/5° X, sharp 30° X, 5-way 72° spokes); row 3 covers RIBBON-SHAPE regimes (chain bends within corner-pad reach, asymmetric pavement widths). All chains in rows 1-2 share an asymmetric ped-zone measure (left=treelawn+sidewalk, right=sidewalk-only); row 3 mixes those with asymmetric pavement widths (wide left lane vs narrow right lane). Re-run cartograph/derive-toy.js after editing.",
-    "grid": {
-      "v1_90X":         { "center": [-120,   40] },
-      "v2_60X":         { "center": [ -40,   40] },
-      "v3_45X":         { "center": [  40,   40] },
-      "v4_T90":         { "center": [ 120,   40] },
-      "v5_Y120":        { "center": [-120,  -40] },
-      "v6_175X":        { "center": [ -40,  -40] },
-      "v7_30X":         { "center": [  40,  -40] },
-      "v8_5way":        { "center": [ 120,  -40] },
-      "v9_bent":        { "center": [-120, -120] },
-      "v10_asymmPave":  { "center": [ -40, -120] }
-    }
+    "description": "Rounded-block-clip prototype fixture. 4 horizontal + 4 vertical residential streets form a 3\u00d73 grid of 9 fully-bounded blocks. Irregularities: VW3 bends NE from (40,60) to (60,160) (top-right blocks become trapezoidal + bent-chain regression); HW3 jogs up from z=40 to z=60 between x=0 and x=20 (saw-tooth top edge on middle blocks); a dead-end stub branches N off HW3 at (25,60), tip at (25,90). Re-run cartograph/derive-toy.js after editing."
   },
   "_measure_template": {
-    "comment": "Inlined per-chain. Asymmetric ped-zones — left has treelawn+sidewalk (full ~8.15m outer); right has sidewalk-only (narrow ~6.65m outer). Mirrors the original toy ped-zone variation.",
-    "left":  { "pavementHW": 5, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" },
-    "right": { "pavementHW": 5, "treelawn": 0,   "sidewalk": 1.5, "terminal": "sidewalk" }
+    "comment": "Symmetric residential measure \u2014 both sides have treelawn + sidewalk so V2 strip-band rendering exercises both rails.",
+    "left": {
+      "pavementHW": 5,
+      "treelawn": 1.5,
+      "sidewalk": 1.5,
+      "terminal": "sidewalk"
+    },
+    "right": {
+      "pavementHW": 5,
+      "treelawn": 1.5,
+      "sidewalk": 1.5,
+      "terminal": "sidewalk"
+    }
   },
   "streets": [
-    { "id": "v1-x", "name": "v1-x", "highway": "residential",
-      "points": [[-150, 40], [-120, 40], [-90, 40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v1-y", "name": "v1-y", "highway": "residential",
-      "points": [[-120, 10], [-120, 40], [-120, 70]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v2-a", "name": "v2-a", "highway": "residential",
-      "points": [[-70, 40], [-40, 40], [-10, 40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v2-b", "name": "v2-b", "highway": "residential",
-      "_comment": "Tangent (cos60°, sin60°) = (0.5, 0.866). 30m on each side of IX.",
-      "points": [[-55, 14], [-40, 40], [-25, 66]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v3-a", "name": "v3-a", "highway": "residential",
-      "points": [[10, 40], [40, 40], [70, 40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v3-b", "name": "v3-b", "highway": "residential",
-      "_comment": "Tangent (cos45°, sin45°) = (0.707, 0.707). 30m on each side.",
-      "points": [[19, 19], [40, 40], [61, 61]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v4-a", "name": "v4-a", "highway": "residential",
-      "points": [[90, 40], [120, 40], [150, 40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v4-b", "name": "v4-b", "highway": "residential",
-      "_comment": "T-stem terminating at v4-a's interior. Open side (north of IX) should resolve as flat boundary.",
-      "points": [[120, 15], [120, 40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v5-a", "name": "v5-a", "highway": "residential",
-      "_comment": "Y-arm pointing NORTH from IX. Outer end is start, IX is end.",
-      "points": [[-120, -10], [-120, -40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v5-b", "name": "v5-b", "highway": "residential",
-      "_comment": "Y-arm at 210° (CCW 120° past v5-a's tangent). Outer at IX + 30*(cos210°, sin210°).",
-      "points": [[-146, -55], [-120, -40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v5-c", "name": "v5-c", "highway": "residential",
-      "_comment": "Y-arm at 330°.",
-      "points": [[-94, -55], [-120, -40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v6-a", "name": "v6-a", "highway": "residential",
-      "points": [[-70, -40], [-40, -40], [-10, -40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v6-b", "name": "v6-b", "highway": "residential",
-      "_comment": "Tangent at 5° from v6-a — produces 5° / 175° / 5° / 175° corner angles. Both extremes hit the geometry's skip threshold (≤5° or ≥175°), so all four corners should resolve flat (no fillet wedge).",
-      "points": [[-69.9, -42.6], [-40, -40], [-10.1, -37.4]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v7-a", "name": "v7-a", "highway": "residential",
-      "points": [[10, -40], [40, -40], [70, -40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v7-b", "name": "v7-b", "highway": "residential",
-      "_comment": "Tangent at 30° — acute corners trigger angleMult clamp at 1.5× baseline (so 4.5m → 6.75m). Obtuse pair stays at 4.5m.",
-      "points": [[14, -55], [40, -40], [66, -25]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v8-a", "name": "v8-a", "highway": "residential",
-      "_comment": "5-way spokes at 0°, 72°, 144°, 216°, 288° from IX. Each chain has IX at index 0, outer at index 1.",
-      "points": [[120, -40], [150, -40]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v8-b", "name": "v8-b", "highway": "residential",
-      "points": [[120, -40], [129.3, -11.5]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v8-c", "name": "v8-c", "highway": "residential",
-      "points": [[120, -40], [95.7, -22.4]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v8-d", "name": "v8-d", "highway": "residential",
-      "points": [[120, -40], [95.7, -57.6]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v8-e", "name": "v8-e", "highway": "residential",
-      "points": [[120, -40], [129.3, -68.5]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v9-a", "name": "v9-a", "highway": "residential",
-      "_comment": "Bent-chain variant — straight horizontal control chain through V=(-120, -120). The bend lives on v9-b.",
-      "points": [[-150, -120], [-120, -120], [-90, -120]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v9-b", "name": "v9-b", "highway": "residential",
-      "_comment": "Bent within corner-pad reach — vertex at (-119.5, -117) is 3m past V=(-120,-120) at ~10° off vertical, well inside the typical R=4.5m corner-pad span. Tests whether the leg-rectangle's straight-line tangent extrapolation handles a chain bend that sits between V and TA_curb.",
-      "points": [[-120, -150], [-120, -120], [-119.48, -117], [-114.4, -90]],
-      "measure": { "left":{"pavementHW":5,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":5,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-
-    { "id": "v10-a", "name": "v10-a", "highway": "residential",
-      "_comment": "Asymmetric-pavement variant — left.pavementHW=6 (wide), right.pavementHW=4 (narrow). Different from the wider-treelawn asymmetry every other variant uses; here the ASPHALT itself is offset from the chain centerline. Same ped-zone pattern (left=tl+sw, right=sw-only).",
-      "points": [[-70, -120], [-40, -120], [-10, -120]],
-      "measure": { "left":{"pavementHW":6,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":4,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } },
-    { "id": "v10-b", "name": "v10-b", "highway": "residential",
-      "_comment": "Asymmetric-pavement variant — same wide-left/narrow-right pattern, vertical chain. CCW rotation around V means the wide side rotates from north (chain-a) to west (chain-b), so each of the IX's four corners gets a different pavement-width pairing.",
-      "points": [[-40, -150], [-40, -120], [-40, -90]],
-      "measure": { "left":{"pavementHW":6,"treelawn":1.5,"sidewalk":1.5,"terminal":"sidewalk"}, "right":{"pavementHW":4,"treelawn":0,"sidewalk":1.5,"terminal":"sidewalk"} },
-      "capEnds": { "start": "blunt", "end": "blunt" } }
+    {
+      "id": "HW1",
+      "name": "HW1",
+      "highway": "residential",
+      "points": [
+        [
+          -160,
+          -120
+        ],
+        [
+          -120,
+          -120
+        ],
+        [
+          -40,
+          -120
+        ],
+        [
+          40,
+          -120
+        ],
+        [
+          120,
+          -120
+        ],
+        [
+          160,
+          -120
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "id": "HW2",
+      "name": "HW2",
+      "highway": "residential",
+      "points": [
+        [
+          -160,
+          -40
+        ],
+        [
+          -120,
+          -40
+        ],
+        [
+          -40,
+          -40
+        ],
+        [
+          40,
+          -40
+        ],
+        [
+          120,
+          -40
+        ],
+        [
+          160,
+          -40
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "id": "HW3",
+      "name": "HW3",
+      "highway": "residential",
+      "points": [
+        [
+          -160,
+          40
+        ],
+        [
+          -120,
+          40
+        ],
+        [
+          -40,
+          40
+        ],
+        [
+          0,
+          40
+        ],
+        [
+          20,
+          60
+        ],
+        [
+          25,
+          60
+        ],
+        [
+          40,
+          60
+        ],
+        [
+          120,
+          60
+        ],
+        [
+          160,
+          60
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "id": "HW4",
+      "name": "HW4",
+      "highway": "residential",
+      "points": [
+        [
+          -160,
+          120
+        ],
+        [
+          -120,
+          120
+        ],
+        [
+          -40,
+          120
+        ],
+        [
+          52,
+          120
+        ],
+        [
+          120,
+          120
+        ],
+        [
+          160,
+          120
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "id": "VW1",
+      "name": "VW1",
+      "highway": "residential",
+      "points": [
+        [
+          -120,
+          -160
+        ],
+        [
+          -120,
+          -120
+        ],
+        [
+          -120,
+          -40
+        ],
+        [
+          -120,
+          40
+        ],
+        [
+          -120,
+          120
+        ],
+        [
+          -120,
+          160
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "id": "VW2",
+      "name": "VW2",
+      "highway": "residential",
+      "points": [
+        [
+          -40,
+          -160
+        ],
+        [
+          -40,
+          -120
+        ],
+        [
+          -40,
+          -40
+        ],
+        [
+          -40,
+          40
+        ],
+        [
+          -40,
+          120
+        ],
+        [
+          -40,
+          160
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "id": "VW3",
+      "name": "VW3",
+      "highway": "residential",
+      "points": [
+        [
+          40,
+          -160
+        ],
+        [
+          40,
+          -120
+        ],
+        [
+          40,
+          -40
+        ],
+        [
+          40,
+          60
+        ],
+        [
+          52,
+          120
+        ],
+        [
+          60,
+          160
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "id": "VW4",
+      "name": "VW4",
+      "highway": "residential",
+      "points": [
+        [
+          120,
+          -160
+        ],
+        [
+          120,
+          -120
+        ],
+        [
+          120,
+          -40
+        ],
+        [
+          120,
+          60
+        ],
+        [
+          120,
+          120
+        ],
+        [
+          120,
+          160
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "id": "STUB-N",
+      "name": "STUB-N",
+      "highway": "residential",
+      "points": [
+        [
+          25,
+          60
+        ],
+        [
+          25,
+          90
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    }
   ],
   "faces": [
-    { "_comment": "One residential face covers the entire 4×2 grid; ribbon-union clip carves all streets out automatically. Ring extends well past chain reach on every side (chains end ≤ ±150 in x and ≤ ±70 in z + ~7m ribbon outer ≈ ±157 / ±77 worst case) so no inner-edge can fall inside any ribbon outer.",
-      "ring": [[-180, -170], [180, -170], [180, 85], [-180, 85]],
-      "use": "residential" }
+    {
+      "_comment": "Single residential face covering the new fixture bounds (\u00b1180 x \u00b1180). Ribbon-union clip carves all streets out automatically.",
+      "ring": [
+        [
+          -180,
+          -180
+        ],
+        [
+          180,
+          -180
+        ],
+        [
+          180,
+          180
+        ],
+        [
+          -180,
+          180
+        ]
+      ],
+      "kind": "residential"
+    }
   ]
 }

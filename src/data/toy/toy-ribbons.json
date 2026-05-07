@@ -1,356 +1,36 @@
 {
   "meta": {
     "source": "toy",
-    "description": "Cleanroom test fixture for cartograph plug + ribbon work. TEN variants laid out on a grid: rows 1-2 cover ANGLE regimes (90° X, 60° X, 45° X, T-90°, Y-120°, near-collinear 175°/5° X, sharp 30° X, 5-way 72° spokes); row 3 covers RIBBON-SHAPE regimes (chain bends within corner-pad reach, asymmetric pavement widths). All chains in rows 1-2 share an asymmetric ped-zone measure (left=treelawn+sidewalk, right=sidewalk-only); row 3 mixes those with asymmetric pavement widths (wide left lane vs narrow right lane). Re-run cartograph/derive-toy.js after editing.",
-    "grid": {
-      "v1_90X": {
-        "center": [
-          -120,
-          40
-        ]
-      },
-      "v2_60X": {
-        "center": [
-          -40,
-          40
-        ]
-      },
-      "v3_45X": {
-        "center": [
-          40,
-          40
-        ]
-      },
-      "v4_T90": {
-        "center": [
-          120,
-          40
-        ]
-      },
-      "v5_Y120": {
-        "center": [
-          -120,
-          -40
-        ]
-      },
-      "v6_175X": {
-        "center": [
-          -40,
-          -40
-        ]
-      },
-      "v7_30X": {
-        "center": [
-          40,
-          -40
-        ]
-      },
-      "v8_5way": {
-        "center": [
-          120,
-          -40
-        ]
-      },
-      "v9_bent": {
-        "center": [
-          -120,
-          -120
-        ]
-      },
-      "v10_asymmPave": {
-        "center": [
-          -40,
-          -120
-        ]
-      }
-    }
+    "description": "Rounded-block-clip prototype fixture. 4 horizontal + 4 vertical residential streets form a 3×3 grid of 9 fully-bounded blocks. Irregularities: VW3 bends NE from (40,60) to (60,160) (top-right blocks become trapezoidal + bent-chain regression); HW3 jogs up from z=40 to z=60 between x=0 and x=20 (saw-tooth top edge on middle blocks); a dead-end stub branches N off HW3 at (25,60), tip at (25,90). Re-run cartograph/derive-toy.js after editing."
   },
   "streets": [
     {
-      "name": "v1-x",
-      "skelId": "v1-x",
+      "name": "HW1",
+      "skelId": "HW1",
       "points": [
         [
-          -150,
-          40
+          -160,
+          -120
         ],
         [
           -120,
-          40
-        ],
-        [
-          -90,
-          40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v1-y"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v1-y",
-      "skelId": "v1-y",
-      "points": [
-        [
-          -120,
-          10
-        ],
-        [
-          -120,
-          40
-        ],
-        [
-          -120,
-          70
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v1-x"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v2-a",
-      "skelId": "v2-a",
-      "points": [
-        [
-          -70,
-          40
+          -120
         ],
         [
           -40,
-          40
-        ],
-        [
-          -10,
-          40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v2-b"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v2-b",
-      "skelId": "v2-b",
-      "points": [
-        [
-          -55,
-          14
-        ],
-        [
-          -40,
-          40
-        ],
-        [
-          -25,
-          66
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v2-a"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v3-a",
-      "skelId": "v3-a",
-      "points": [
-        [
-          10,
-          40
+          -120
         ],
         [
           40,
-          40
-        ],
-        [
-          70,
-          40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v3-b"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v3-b",
-      "skelId": "v3-b",
-      "points": [
-        [
-          19,
-          19
-        ],
-        [
-          40,
-          40
-        ],
-        [
-          61,
-          61
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v3-a"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v4-a",
-      "skelId": "v4-a",
-      "points": [
-        [
-          90,
-          40
+          -120
         ],
         [
           120,
-          40
+          -120
         ],
         [
-          150,
-          40
+          160,
+          -120
         ]
       ],
       "measure": {
@@ -362,57 +42,34 @@
         },
         "right": {
           "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v4-b"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v4-b",
-      "skelId": "v4-b",
-      "points": [
-        [
-          120,
-          15
-        ],
-        [
-          120,
-          40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
         }
       },
       "intersections": [
         {
           "ix": 1,
           "withStreets": [
-            "v4-a"
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "VW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "VW4"
           ]
         }
       ],
@@ -423,227 +80,19 @@
       }
     },
     {
-      "name": "v5-a",
-      "skelId": "v5-a",
+      "name": "HW2",
+      "skelId": "HW2",
       "points": [
         [
-          -120,
-          -10
-        ],
-        [
-          -120,
+          -160,
           -40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v5-b",
-            "v5-c"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v5-b",
-      "skelId": "v5-b",
-      "points": [
-        [
-          -146,
-          -55
         ],
         [
           -120,
-          -40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v5-a",
-            "v5-c"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v5-c",
-      "skelId": "v5-c",
-      "points": [
-        [
-          -94,
-          -55
-        ],
-        [
-          -120,
-          -40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v5-a",
-            "v5-b"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v6-a",
-      "skelId": "v6-a",
-      "points": [
-        [
-          -70,
           -40
         ],
         [
           -40,
-          -40
-        ],
-        [
-          -10,
-          -40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v6-b"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v6-b",
-      "skelId": "v6-b",
-      "points": [
-        [
-          -69.9,
-          -42.6
-        ],
-        [
-          -40,
-          -40
-        ],
-        [
-          -10.1,
-          -37.4
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v6-a"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v7-a",
-      "skelId": "v7-a",
-      "points": [
-        [
-          10,
           -40
         ],
         [
@@ -651,7 +100,11 @@
           -40
         ],
         [
-          70,
+          120,
+          -40
+        ],
+        [
+          160,
           -40
         ]
       ],
@@ -664,7 +117,7 @@
         },
         "right": {
           "pavementHW": 5,
-          "treelawn": 0,
+          "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
@@ -673,7 +126,25 @@
         {
           "ix": 1,
           "withStreets": [
-            "v7-b"
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "VW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "VW4"
           ]
         }
       ],
@@ -684,20 +155,350 @@
       }
     },
     {
-      "name": "v7-b",
-      "skelId": "v7-b",
+      "name": "HW3",
+      "skelId": "HW3",
       "points": [
         [
-          14,
-          -55
+          -160,
+          40
+        ],
+        [
+          -120,
+          40
+        ],
+        [
+          -40,
+          40
+        ],
+        [
+          0,
+          40
+        ],
+        [
+          20,
+          60
+        ],
+        [
+          25,
+          60
+        ],
+        [
+          40,
+          60
+        ],
+        [
+          120,
+          60
+        ],
+        [
+          160,
+          60
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "VW2"
+          ]
+        },
+        {
+          "ix": 5,
+          "withStreets": [
+            "STUB-N"
+          ]
+        },
+        {
+          "ix": 6,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 7,
+          "withStreets": [
+            "VW4"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "name": "HW4",
+      "skelId": "HW4",
+      "points": [
+        [
+          -160,
+          120
+        ],
+        [
+          -120,
+          120
+        ],
+        [
+          -40,
+          120
+        ],
+        [
+          52,
+          120
+        ],
+        [
+          120,
+          120
+        ],
+        [
+          160,
+          120
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "VW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "VW4"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "name": "VW1",
+      "skelId": "VW1",
+      "points": [
+        [
+          -120,
+          -160
+        ],
+        [
+          -120,
+          -120
+        ],
+        [
+          -120,
+          -40
+        ],
+        [
+          -120,
+          40
+        ],
+        [
+          -120,
+          120
+        ],
+        [
+          -120,
+          160
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "HW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "HW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "HW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "name": "VW2",
+      "skelId": "VW2",
+      "points": [
+        [
+          -40,
+          -160
+        ],
+        [
+          -40,
+          -120
+        ],
+        [
+          -40,
+          -40
+        ],
+        [
+          -40,
+          40
+        ],
+        [
+          -40,
+          120
+        ],
+        [
+          -40,
+          160
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "HW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "HW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "HW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "blunt",
+        "end": "blunt"
+      }
+    },
+    {
+      "name": "VW3",
+      "skelId": "VW3",
+      "points": [
+        [
+          40,
+          -160
+        ],
+        [
+          40,
+          -120
         ],
         [
           40,
           -40
         ],
         [
-          66,
-          -25
+          40,
+          60
+        ],
+        [
+          52,
+          120
+        ],
+        [
+          60,
+          160
         ]
       ],
       "measure": {
@@ -709,7 +510,7 @@
         },
         "right": {
           "pavementHW": 5,
-          "treelawn": 0,
+          "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
@@ -718,7 +519,25 @@
         {
           "ix": 1,
           "withStreets": [
-            "v7-a"
+            "HW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "HW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "HW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4"
           ]
         }
       ],
@@ -729,240 +548,32 @@
       }
     },
     {
-      "name": "v8-a",
-      "skelId": "v8-a",
+      "name": "VW4",
+      "skelId": "VW4",
       "points": [
         [
           120,
-          -40
+          -160
         ],
-        [
-          150,
-          -40
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 0,
-          "withStreets": [
-            "v8-b",
-            "v8-c",
-            "v8-d",
-            "v8-e"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v8-b",
-      "skelId": "v8-b",
-      "points": [
         [
           120,
-          -40
-        ],
-        [
-          129.3,
-          -11.5
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 0,
-          "withStreets": [
-            "v8-a",
-            "v8-c",
-            "v8-d",
-            "v8-e"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v8-c",
-      "skelId": "v8-c",
-      "points": [
-        [
-          120,
-          -40
-        ],
-        [
-          95.7,
-          -22.4
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 0,
-          "withStreets": [
-            "v8-a",
-            "v8-b",
-            "v8-d",
-            "v8-e"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v8-d",
-      "skelId": "v8-d",
-      "points": [
-        [
-          120,
-          -40
-        ],
-        [
-          95.7,
-          -57.6
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 0,
-          "withStreets": [
-            "v8-a",
-            "v8-b",
-            "v8-c",
-            "v8-e"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v8-e",
-      "skelId": "v8-e",
-      "points": [
-        [
-          120,
-          -40
-        ],
-        [
-          129.3,
-          -68.5
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 0,
-          "withStreets": [
-            "v8-a",
-            "v8-b",
-            "v8-c",
-            "v8-d"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v9-a",
-      "skelId": "v9-a",
-      "points": [
-        [
-          -150,
           -120
         ],
         [
-          -120,
-          -120
+          120,
+          -40
         ],
         [
-          -90,
-          -120
+          120,
+          60
+        ],
+        [
+          120,
+          120
+        ],
+        [
+          120,
+          160
         ]
       ],
       "measure": {
@@ -974,7 +585,7 @@
         },
         "right": {
           "pavementHW": 5,
-          "treelawn": 0,
+          "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
         }
@@ -983,7 +594,25 @@
         {
           "ix": 1,
           "withStreets": [
-            "v9-b"
+            "HW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "HW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "HW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4"
           ]
         }
       ],
@@ -994,24 +623,16 @@
       }
     },
     {
-      "name": "v9-b",
-      "skelId": "v9-b",
+      "name": "STUB-N",
+      "skelId": "STUB-N",
       "points": [
         [
-          -120,
-          -150
+          25,
+          60
         ],
         [
-          -120,
-          -120
-        ],
-        [
-          -119.48,
-          -117
-        ],
-        [
-          -114.4,
-          -90
+          25,
+          90
         ]
       ],
       "measure": {
@@ -1023,106 +644,16 @@
         },
         "right": {
           "pavementHW": 5,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v9-a"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v10-a",
-      "skelId": "v10-a",
-      "points": [
-        [
-          -70,
-          -120
-        ],
-        [
-          -40,
-          -120
-        ],
-        [
-          -10,
-          -120
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 6,
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 4,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
         }
       },
       "intersections": [
         {
-          "ix": 1,
+          "ix": 0,
           "withStreets": [
-            "v10-b"
-          ]
-        }
-      ],
-      "highway": "residential",
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
-    },
-    {
-      "name": "v10-b",
-      "skelId": "v10-b",
-      "points": [
-        [
-          -40,
-          -150
-        ],
-        [
-          -40,
-          -120
-        ],
-        [
-          -40,
-          -90
-        ]
-      ],
-      "measure": {
-        "left": {
-          "pavementHW": 6,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 4,
-          "treelawn": 0,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
-      },
-      "intersections": [
-        {
-          "ix": 1,
-          "withStreets": [
-            "v10-a"
+            "HW3"
           ]
         }
       ],
@@ -1137,159 +668,15 @@
     {
       "point": [
         -120,
-        40
-      ],
-      "streets": [
-        {
-          "name": "v1-x",
-          "ix": 1
-        },
-        {
-          "name": "v1-y",
-          "ix": 1
-        }
-      ]
-    },
-    {
-      "point": [
-        -40,
-        40
-      ],
-      "streets": [
-        {
-          "name": "v2-a",
-          "ix": 1
-        },
-        {
-          "name": "v2-b",
-          "ix": 1
-        }
-      ]
-    },
-    {
-      "point": [
-        40,
-        40
-      ],
-      "streets": [
-        {
-          "name": "v3-a",
-          "ix": 1
-        },
-        {
-          "name": "v3-b",
-          "ix": 1
-        }
-      ]
-    },
-    {
-      "point": [
-        120,
-        40
-      ],
-      "streets": [
-        {
-          "name": "v4-a",
-          "ix": 1
-        },
-        {
-          "name": "v4-b",
-          "ix": 1
-        }
-      ]
-    },
-    {
-      "point": [
-        -120,
-        -40
-      ],
-      "streets": [
-        {
-          "name": "v5-a",
-          "ix": 1
-        },
-        {
-          "name": "v5-b",
-          "ix": 1
-        },
-        {
-          "name": "v5-c",
-          "ix": 1
-        }
-      ]
-    },
-    {
-      "point": [
-        -40,
-        -40
-      ],
-      "streets": [
-        {
-          "name": "v6-a",
-          "ix": 1
-        },
-        {
-          "name": "v6-b",
-          "ix": 1
-        }
-      ]
-    },
-    {
-      "point": [
-        40,
-        -40
-      ],
-      "streets": [
-        {
-          "name": "v7-a",
-          "ix": 1
-        },
-        {
-          "name": "v7-b",
-          "ix": 1
-        }
-      ]
-    },
-    {
-      "point": [
-        120,
-        -40
-      ],
-      "streets": [
-        {
-          "name": "v8-a",
-          "ix": 0
-        },
-        {
-          "name": "v8-b",
-          "ix": 0
-        },
-        {
-          "name": "v8-c",
-          "ix": 0
-        },
-        {
-          "name": "v8-d",
-          "ix": 0
-        },
-        {
-          "name": "v8-e",
-          "ix": 0
-        }
-      ]
-    },
-    {
-      "point": [
-        -120,
         -120
       ],
       "streets": [
         {
-          "name": "v9-a",
+          "name": "HW1",
           "ix": 1
         },
         {
-          "name": "v9-b",
+          "name": "VW1",
           "ix": 1
         }
       ]
@@ -1301,38 +688,278 @@
       ],
       "streets": [
         {
-          "name": "v10-a",
+          "name": "HW1",
+          "ix": 2
+        },
+        {
+          "name": "VW2",
+          "ix": 1
+        }
+      ]
+    },
+    {
+      "point": [
+        40,
+        -120
+      ],
+      "streets": [
+        {
+          "name": "HW1",
+          "ix": 3
+        },
+        {
+          "name": "VW3",
+          "ix": 1
+        }
+      ]
+    },
+    {
+      "point": [
+        120,
+        -120
+      ],
+      "streets": [
+        {
+          "name": "HW1",
+          "ix": 4
+        },
+        {
+          "name": "VW4",
+          "ix": 1
+        }
+      ]
+    },
+    {
+      "point": [
+        -120,
+        -40
+      ],
+      "streets": [
+        {
+          "name": "HW2",
           "ix": 1
         },
         {
-          "name": "v10-b",
+          "name": "VW1",
+          "ix": 2
+        }
+      ]
+    },
+    {
+      "point": [
+        -40,
+        -40
+      ],
+      "streets": [
+        {
+          "name": "HW2",
+          "ix": 2
+        },
+        {
+          "name": "VW2",
+          "ix": 2
+        }
+      ]
+    },
+    {
+      "point": [
+        40,
+        -40
+      ],
+      "streets": [
+        {
+          "name": "HW2",
+          "ix": 3
+        },
+        {
+          "name": "VW3",
+          "ix": 2
+        }
+      ]
+    },
+    {
+      "point": [
+        120,
+        -40
+      ],
+      "streets": [
+        {
+          "name": "HW2",
+          "ix": 4
+        },
+        {
+          "name": "VW4",
+          "ix": 2
+        }
+      ]
+    },
+    {
+      "point": [
+        -120,
+        40
+      ],
+      "streets": [
+        {
+          "name": "HW3",
           "ix": 1
+        },
+        {
+          "name": "VW1",
+          "ix": 3
+        }
+      ]
+    },
+    {
+      "point": [
+        -40,
+        40
+      ],
+      "streets": [
+        {
+          "name": "HW3",
+          "ix": 2
+        },
+        {
+          "name": "VW2",
+          "ix": 3
+        }
+      ]
+    },
+    {
+      "point": [
+        25,
+        60
+      ],
+      "streets": [
+        {
+          "name": "HW3",
+          "ix": 5
+        },
+        {
+          "name": "STUB-N",
+          "ix": 0
+        }
+      ]
+    },
+    {
+      "point": [
+        40,
+        60
+      ],
+      "streets": [
+        {
+          "name": "HW3",
+          "ix": 6
+        },
+        {
+          "name": "VW3",
+          "ix": 3
+        }
+      ]
+    },
+    {
+      "point": [
+        120,
+        60
+      ],
+      "streets": [
+        {
+          "name": "HW3",
+          "ix": 7
+        },
+        {
+          "name": "VW4",
+          "ix": 3
+        }
+      ]
+    },
+    {
+      "point": [
+        -120,
+        120
+      ],
+      "streets": [
+        {
+          "name": "HW4",
+          "ix": 1
+        },
+        {
+          "name": "VW1",
+          "ix": 4
+        }
+      ]
+    },
+    {
+      "point": [
+        -40,
+        120
+      ],
+      "streets": [
+        {
+          "name": "HW4",
+          "ix": 2
+        },
+        {
+          "name": "VW2",
+          "ix": 4
+        }
+      ]
+    },
+    {
+      "point": [
+        52,
+        120
+      ],
+      "streets": [
+        {
+          "name": "HW4",
+          "ix": 3
+        },
+        {
+          "name": "VW3",
+          "ix": 4
+        }
+      ]
+    },
+    {
+      "point": [
+        120,
+        120
+      ],
+      "streets": [
+        {
+          "name": "HW4",
+          "ix": 4
+        },
+        {
+          "name": "VW4",
+          "ix": 4
         }
       ]
     }
   ],
   "faces": [
     {
-      "_comment": "One residential face covers the entire 4×2 grid; ribbon-union clip carves all streets out automatically. Ring extends well past chain reach on every side (chains end ≤ ±150 in x and ≤ ±70 in z + ~7m ribbon outer ≈ ±157 / ±77 worst case) so no inner-edge can fall inside any ribbon outer.",
+      "_comment": "Single residential face covering the new fixture bounds (±180 x ±180). Ribbon-union clip carves all streets out automatically.",
       "ring": [
         [
           -180,
-          -170
+          -180
         ],
         [
           180,
-          -170
+          -180
         ],
         [
           180,
-          85
+          180
         ],
         [
           -180,
-          85
+          180
         ]
       ],
-      "use": "residential"
+      "kind": "residential"
     }
   ]
 }

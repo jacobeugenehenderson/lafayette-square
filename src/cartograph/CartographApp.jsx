@@ -672,7 +672,10 @@ export default function CartographApp() {
               — the same component Preview mounts, so what Stage shows is
               what Preview shows is what Publish ships. ── */}
           {inDesigner && <ambientLight intensity={1} />}
-          {(inDesigner || scene === 'toy') && (
+          {/* Toy scene renders ground geometry exclusively through V2 (rounded-
+              block-clip) below. Legacy StreetRibbons stays mounted everywhere
+              else. Once V2 ships for the neighborhood, this guard goes away. */}
+          {inDesigner && scene !== 'toy' && (
           <R3FErrorBoundary name="StreetRibbons">
             <group visible={!designAerialOnly}>
             <StreetRibbons hiddenLayers={hiddenLayers}
@@ -714,7 +717,7 @@ export default function CartographApp() {
               the prototype validates. ── */}
           {scene === 'toy' && (
             <R3FErrorBoundary name="BlockGeometryV2Debug">
-              <BlockGeometryV2Debug ribbons={toyRibbons} />
+              <BlockGeometryV2Debug ribbons={toyRibbons} flat={inDesigner} />
             </R3FErrorBoundary>
           )}
 

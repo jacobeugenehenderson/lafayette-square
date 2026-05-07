@@ -1,27 +1,32 @@
 /**
  * BlockGeometryV2Debug — visual probe for the rounded-block-clip prototype.
  *
- * Renders the V2 helper's output as semi-transparent overlay meshes:
- *   - Sharp asphalt void (red, low alpha) — what the union of chain
- *     pavement rings looks like before rounding.
- *   - Rounded asphalt void (blue, higher alpha, stacked on top) — same
- *     polygon with round-corners applied at every block-convex vertex.
- *   - Yellow dots at each detected IX corner (the round-corners
- *     candidates, before R is applied).
+ * Renders the V2 helper's output through the shared cartograph surface
+ * pipeline (useSurfaceMaterial) so colors, terrain displacement, shadow
+ * tinting, and post-FX match the legacy StreetRibbons render exactly.
  *
- * Mounted unconditionally in toy scene; no toggle UI yet (drive via
- * a constant in CartographApp until the prototype validates).
+ * Layers (back-to-front via BAND_PRIORITY):
+ *   - treelawn bands  (#5a6e42, pri 3)
+ *   - sidewalk bands  (#a89e8e, pri 5)
+ *   - asphalt rounded (#3e3e3c, pri 8)
+ *   - yellow IX-corner dots (debug overlay, plain basic material)
  *
- * Coord convention follows StreetRibbons.jsx: ShapeGeometry built from
- * Vector2(x, z), then per-vertex remap to (x, 0, z) flips XY→XZ. Winding
- * also flips (handled in indices).
+ * Strip bands are emitted raw by the helper (no stencil clip in toy v0).
+ * The rounded asphalt paints on top at IX corners, which produces the
+ * correct visual rounding without an explicit block-polygon clip.
+ *
+ * Coord convention follows StreetRibbons: ShapeGeometry built from
+ * Vector2(x, z), then per-vertex remap to (x, 0, z) flips XY→XZ.
  */
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2 } from '../lib/buildBlockGeometryV2.js'
+import { BAND_COLORS } from './streetProfiles.js'
+import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
 
-// Signed area; >0 if CCW (in XY where Y is up; here our [x, z] follows
-// the same convention so CCW outer means +area, CW hole means -area).
+// Match StreetRibbons' BAND_PRIORITY for the bands V2 renders.
+const PRI = { treelawn: 3, sidewalk: 5, asphalt: 8 }
+
 function ringSignedArea(ring) {
   let a = 0
   for (let i = 0, n = ring.length; i < n; i++) {
@@ -33,8 +38,9 @@ function ringSignedArea(ring) {
 }
 
 // Build a flat-on-ground geometry from a list of clipper-output rings.
-// Treats CCW rings as outers and CW rings as holes (standard PolyFillType
-// non-zero output). Pairs holes with the outer that contains them.
+// CCW outers + CW holes (Clipper non-zero output). When asPolygonWithHoles
+// is set, all holes get paired with each outer (naive containment — fine
+// for stencil-minus-asphalt where there's one big outer).
 function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
   if (!rings || !rings.length) return null
   const outers = []
@@ -59,45 +65,26 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
     return new THREE.ShapeGeometry(shape)
   }
 
+  const append = (geo) => {
+    const pos = geo.attributes.position.array
+    const idx = geo.index ? geo.index.array : null
+    for (let i = 0; i < pos.length; i += 3) {
+      allPos.push(pos[i], yLift, pos[i + 1])
+      allNrm.push(0, 1, 0)
+    }
+    if (idx) {
+      for (let i = 0; i < idx.length; i += 3) {
+        allIdx.push(idx[i] + vOffset, idx[i + 2] + vOffset, idx[i + 1] + vOffset)
+      }
+    }
+    vOffset += pos.length / 3
+    geo.dispose()
+  }
+
   if (asPolygonWithHoles && outers.length) {
-    // Naive containment: assume any single outer contains ALL holes
-    // (true for stencil-minus-asphalt since the stencil is one big rect
-    // and the asphalt void sits inside it). For multi-block neighborhoods
-    // we'd point-in-polygon-test holes against outers.
-    for (const outer of outers) {
-      const geo = buildShapeGeo(outer, holes)
-      const pos = geo.attributes.position.array
-      const idx = geo.index ? geo.index.array : null
-      for (let i = 0; i < pos.length; i += 3) {
-        allPos.push(pos[i], yLift, pos[i + 1])
-        allNrm.push(0, 1, 0)
-      }
-      if (idx) {
-        for (let i = 0; i < idx.length; i += 3) {
-          allIdx.push(idx[i] + vOffset, idx[i + 2] + vOffset, idx[i + 1] + vOffset)
-        }
-      }
-      vOffset += pos.length / 3
-      geo.dispose()
-    }
+    for (const outer of outers) append(buildShapeGeo(outer, holes))
   } else {
-    // Each ring becomes its own shape (no holes paired).
-    for (const ring of [...outers, ...holes]) {
-      const geo = buildShapeGeo(ring, null)
-      const pos = geo.attributes.position.array
-      const idx = geo.index ? geo.index.array : null
-      for (let i = 0; i < pos.length; i += 3) {
-        allPos.push(pos[i], yLift, pos[i + 1])
-        allNrm.push(0, 1, 0)
-      }
-      if (idx) {
-        for (let i = 0; i < idx.length; i += 3) {
-          allIdx.push(idx[i] + vOffset, idx[i + 2] + vOffset, idx[i + 1] + vOffset)
-        }
-      }
-      vOffset += pos.length / 3
-      geo.dispose()
-    }
+    for (const ring of [...outers, ...holes]) append(buildShapeGeo(ring, null))
   }
 
   if (!allPos.length) return null
@@ -108,33 +95,41 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
   return out
 }
 
-export default function BlockGeometryV2Debug({ ribbons, cornerRadiusScale = 1 }) {
-  const { asphaltSharp, asphaltRounded, corners } = useMemo(() => {
-    if (!ribbons) return { asphaltSharp: [], asphaltRounded: [], corners: [] }
+export default function BlockGeometryV2Debug({ ribbons, cornerRadiusScale = 1, flat = true, showCornerDots = true }) {
+  const makeMaterial = useSurfaceMaterial(flat)
+
+  const { asphaltRounded, treelawnBands, sidewalkBands, corners } = useMemo(() => {
+    if (!ribbons) return { asphaltRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
     try {
       return buildBlockGeometryV2(ribbons, { cornerRadiusScale })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
-      return { asphaltSharp: [], asphaltRounded: [], corners: [] }
+      return { asphaltRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
     }
   }, [ribbons, cornerRadiusScale])
 
-  const sharpGeo = useMemo(() => ringsToFlatGeo(asphaltSharp, 0.05), [asphaltSharp])
-  const roundedGeo = useMemo(() => ringsToFlatGeo(asphaltRounded, 0.06), [asphaltRounded])
+  // Tiny y-lifts keep coplanar layers from z-fighting; polygonOffset (driven
+  // by pri in makeMaterial) is the authoritative depth resolver.
+  const treelawnGeo = useMemo(() => ringsToFlatGeo(treelawnBands, 0.02), [treelawnBands])
+  const sidewalkGeo = useMemo(() => ringsToFlatGeo(sidewalkBands, 0.03), [sidewalkBands])
+  const asphaltGeo  = useMemo(() => ringsToFlatGeo(asphaltRounded, 0.04), [asphaltRounded])
+
+  const treelawnMat = useMemo(() => makeMaterial(BAND_COLORS.treelawn, PRI.treelawn), [makeMaterial])
+  const sidewalkMat = useMemo(() => makeMaterial(BAND_COLORS.sidewalk, PRI.sidewalk), [makeMaterial])
+  const asphaltMat  = useMemo(() => makeMaterial(BAND_COLORS.asphalt,  PRI.asphalt),  [makeMaterial])
 
   return (
     <group>
-      {sharpGeo && (
-        <mesh geometry={sharpGeo} renderOrder={500}>
-          <meshBasicMaterial color="#ff3344" transparent opacity={0.25} depthWrite={false} />
-        </mesh>
+      {treelawnGeo && (
+        <mesh geometry={treelawnGeo} renderOrder={PRI.treelawn} receiveShadow material={treelawnMat} />
       )}
-      {roundedGeo && (
-        <mesh geometry={roundedGeo} renderOrder={501}>
-          <meshBasicMaterial color="#3388ff" transparent opacity={0.55} depthWrite={false} />
-        </mesh>
+      {sidewalkGeo && (
+        <mesh geometry={sidewalkGeo} renderOrder={PRI.sidewalk} receiveShadow material={sidewalkMat} />
       )}
-      {corners.map((c, i) => (
+      {asphaltGeo && (
+        <mesh geometry={asphaltGeo} renderOrder={PRI.asphalt} receiveShadow material={asphaltMat} />
+      )}
+      {showCornerDots && corners.map((c, i) => (
         <mesh
           key={i}
           position={[c.point[0], 0.07, c.point[1]]}
