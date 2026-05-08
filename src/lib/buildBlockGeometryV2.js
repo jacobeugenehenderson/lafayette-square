@@ -69,8 +69,13 @@ function chainPavementRing(street) {
   const hwR = m.right?.pavementHW ?? 0
   if (hwL <= 0 && hwR <= 0) return null
   const perps = computePerps(pts)
-  const leftSide = pts.map((p, i) => [p[0] + perps[i][0] * hwL, p[1] + perps[i][1] * hwL])
-  const rightSide = pts.map((p, i) => [p[0] - perps[i][0] * hwR, p[1] - perps[i][1] * hwR])
+  // Sign convention matches V1's MeasureOverlay: 'left' is at -perp from
+  // the centerline (north of an east-bound chain), 'right' is at +perp
+  // (south). Operator drags 'right' handle → m.right.pavementHW grows →
+  // visible right band grows. Inverting either side here breaks that
+  // contract and the asphalt expands on the wrong side of the screen.
+  const leftSide  = pts.map((p, i) => [p[0] - perps[i][0] * hwL, p[1] - perps[i][1] * hwL])
+  const rightSide = pts.map((p, i) => [p[0] + perps[i][0] * hwR, p[1] + perps[i][1] * hwR])
 
   const n = pts.length
   const capStart = street.capStart || street.capEnds?.start
@@ -598,12 +603,13 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // covers the inner-edge seams where adjacent chains meet at an IX.
   //
   // Stripe edges: per-chain (per-segment) offset polylines at every band
-  // transition (hw, hw+cw, hw+cw+tl, hw+cw+tl+sw). The Measure tool
-  // surfaces them as opaque strokes so the operator can see exactly
-  // where each band boundary sits while ribbons go translucent.
-  const stripeEdges = []
+  // transition. The Measure tool surfaces them as opaque strokes on the
+  // SELECTED chain only — they mark where boundary handles attach.
+  // Per-chain provenance keeps them in entry.stripeEdges so the renderer
+  // picks the right one.
   const offsetPoly = (pts, perps, sideSign, r) =>
     pts.map((p, i) => [p[0] + perps[i][0] * sideSign * r, p[1] + perps[i][1] * sideSign * r])
+  for (const e of byChain) { if (e) e.stripeEdges = [] }
   for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
     const street = streets[chainIdx]
     const entry = byChain[chainIdx]
@@ -632,7 +638,10 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       const segPts = pts.slice(seg.start, seg.end + 1)
       const segPerps = perps.slice(seg.start, seg.end + 1)
       for (const sideKey of ['left', 'right']) {
-        const sideSign = sideKey === 'left' ? +1 : -1
+        // Sign convention matches V1: 'left' = -perp (north of an east-
+        // bound chain), 'right' = +perp (south). See chainPavementRing
+        // comment above. Drag 'right' handle → +perp band grows.
+        const sideSign = sideKey === 'left' ? -1 : +1
         const chainSide = m[sideKey]
         if (!chainSide || chainSide.terminal !== 'sidewalk') continue
         const hw = chainSide.pavementHW || 0
@@ -650,10 +659,10 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         }
         // Stripe edges per segment so the operator's edge-line overlay
         // reflects the per-block widths in Measure mode.
-        if (hw > 0)            stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw))
-        if (cw > 0 && hw > 0)  stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw))
-        if (tl > 0)            stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
-        if (sw > 0)            stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
+        if (hw > 0)            entry.stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw))
+        if (cw > 0 && hw > 0)  entry.stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw))
+        if (tl > 0)            entry.stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
+        if (sw > 0)            entry.stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
       }
     }
     // Round-cap band extensions for treelawn + sidewalk. Curb's cap is
@@ -707,7 +716,6 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     blockRounded,
     curbBands,
     byChain,
-    stripeEdges,
     corners: allCorners,
   }
 }
