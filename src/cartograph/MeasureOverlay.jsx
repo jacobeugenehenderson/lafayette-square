@@ -390,12 +390,13 @@ export default function MeasureOverlay() {
 
     // Custom mode: write to blockCustoms instead of segmentMeasures.
     const mode = useCartographStore.getState().measureMode
+    if (window.__customDebug) console.log('[applyDrag] mode:', mode, 'side:', side, 'kind:', kind)
     if (mode?.type === 'custom') {
       const cd = useCartographStore.getState().centerlineData
       const st = cd.streets[streetIdx]
-      if (!st) return
+      if (!st) { if (window.__customDebug) console.log('  bail: no street'); return }
       const anchor = useCartographStore.getState().selectedMeasurePoint
-      if (!anchor) return
+      if (!anchor) { if (window.__customDebug) console.log('  bail: no anchor'); return }
       const frame = frameAtPoint(st.points, anchor.x, anchor.z)
       const sideSign = side === 'left' ? -1 : +1
       const blocks = useCartographStore.getState()._v2Blocks || []
@@ -405,6 +406,10 @@ export default function MeasureOverlay() {
         { x: frame.nx, z: frame.nz },
         sideSign, hwForProbe, blocks,
       )
+      if (window.__customDebug) {
+        console.log('  blocks count:', blocks.length, 'blockId:', blockId,
+          'probe:', { cx: frame.cx, cz: frame.cz, nx: frame.nx, nz: frame.nz, sideSign, hwForProbe })
+      }
       if (blockId == null) return
       const existing = useCartographStore.getState().blockCustoms?.[blockId]?.[streetIdx]?.[side]
       const seed = existing || st.measure?.[side] || { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
