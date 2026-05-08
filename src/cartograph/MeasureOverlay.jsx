@@ -220,6 +220,7 @@ export default function MeasureOverlay() {
   const selectStreet = useCartographStore(s => s.selectStreet)
   const deselectStreet = useCartographStore(s => s.deselectStreet)
   const measureMode = useCartographStore(s => s.measureMode)
+  const blockCustoms = useCartographStore(s => s.blockCustoms)
 
   const { camera, gl } = useThree()
   const active = tool === 'measure'
@@ -277,8 +278,20 @@ export default function MeasureOverlay() {
       ? frameAtPoint(st.points, selectedMeasurePoint.x, selectedMeasurePoint.z)
       : midAndPerp(st.points)
     const { cx, cz, nx, nz, segI } = anchor
-    const ordinal = resolveSegmentOrdinal(st, segI ?? 0)
-    const baseMeasure = effectiveSegmentMeasure(st, ordinal)
+    const ordinal = naturalSegmentOrdinal(st, segI ?? 0)
+    // Effective measure for handle positioning. Per-side override from
+    // blockCustoms[streetIdx][ordinal] wins over chain.measure[side].
+    // This is what makes handles stick to the BAND boundaries when the
+    // operator drags in per-block mode — without it, handles read the
+    // chain default while the bands reshape per-segment, and the
+    // handles look "inert" because they don't follow the cursor.
+    const customs = blockCustoms?.[selectedStreet]?.[ordinal]
+    const chainM = st.measure || {}
+    const baseMeasure = {
+      left:  customs?.left  || chainM.left,
+      right: customs?.right || chainM.right,
+      symmetric: chainM.symmetric,
+    }
     // For inner-edge chains, zero out the inboard ped zone so its handles
     // collapse (no treelawn/sidewalk along the median). Pavement + curb
     // handles still emit on both sides — operator authors carriageway width
@@ -330,7 +343,7 @@ export default function MeasureOverlay() {
       }
     }
     return { streetIdx: selectedStreet, measure, ordinal, mid: { cx, cz, nx, nz }, handles }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint])
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms])
 
   // Mirror selection.ordinal to the store so MeasurePanel shows the right segment.
   useEffect(() => {
