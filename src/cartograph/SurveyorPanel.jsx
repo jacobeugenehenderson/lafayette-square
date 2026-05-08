@@ -105,15 +105,7 @@ export default function SurveyorPanel() {
 
       <div className="carto-meta">
         {st.points.length} nodes
-        {(() => {
-          const couplers = (st.couplers || []).map(c => typeof c === 'number' ? c : c?.pointIdx).filter(Number.isFinite)
-          const segs = couplers.length + 1
-          return ` · ${couplers.length} coupler${couplers.length === 1 ? '' : 's'} · ${segs} segment${segs === 1 ? '' : 's'}`
-        })()}
         {selectedNode !== null ? ' · node ' + selectedNode : ''}
-      </div>
-      <div className="carto-hint">
-        Ctrl/⌘-click an interior node to toggle a coupler.
       </div>
     </div>
   )

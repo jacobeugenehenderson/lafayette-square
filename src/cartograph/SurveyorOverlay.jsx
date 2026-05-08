@@ -44,7 +44,8 @@ export default function SurveyorOverlay() {
   const selectStreet = useCartographStore(s => s.selectStreet)
   const selectNode = useCartographStore(s => s.selectNode)
   const deselectStreet = useCartographStore(s => s.deselectStreet)
-  const toggleCoupler = useCartographStore(s => s.toggleCoupler)
+  // toggleCoupler retired with the block-customs feature; couplers stay in
+  // the schema as legacy data, but Survey no longer authors new ones.
 
   // The set of chain indices that belong to the same corridor as the
   // selected street. When two divided carriageways share a corridor
@@ -80,13 +81,6 @@ export default function SurveyorOverlay() {
       if (st) {
         for (let i = 0; i < st.points.length; i++) {
           if (Math.hypot(p.x - st.points[i][0], p.z - st.points[i][1]) < nodeThresh) {
-            // Ctrl/Meta+click on an interior node toggles a coupler there.
-            // Endpoints (idx 0 and idx n-1) are already chain boundaries.
-            if ((e.ctrlKey || e.metaKey) && i > 0 && i < st.points.length - 1) {
-              toggleCoupler(selectedStreet, i)
-              e.stopPropagation()
-              return
-            }
             selectNode(i)
             e.stopPropagation()
             return
@@ -108,7 +102,7 @@ export default function SurveyorOverlay() {
     }
 
     deselectStreet()
-  }, [active, spaceDown, camera, gl, selectedStreet, centerlineData, selectStreet, selectNode, deselectStreet, toggleCoupler])
+  }, [active, spaceDown, camera, gl, selectedStreet, centerlineData, selectStreet, selectNode, deselectStreet])
 
   const onPointerMove = useCallback((e) => {
     if (!active || spaceDown) { useCartographStore.getState().setHoverTarget(false); return }
@@ -181,36 +175,25 @@ export default function SurveyorOverlay() {
         )
       })}
 
-      {selectedStreet !== null && (() => {
-        const sel = centerlineData.streets[selectedStreet]
-        const couplerSet = new Set((sel?.couplers || [])
-          .map(c => typeof c === 'number' ? c : c.pointIdx)
-          .filter(c => Number.isFinite(c)))
-        return nodePositions.map((pt, i) => {
-          const isSelected = i === selectedNode
-          const isCoupler = couplerSet.has(i)
-          const radius = isSelected ? 2.5 : 1.8
-          // Coupler = orange diamond; selected = yellow circle; default = white circle.
-          const color = isCoupler ? '#ff7a1a' : (isSelected ? '#ffcc00' : '#ffffff')
-          // Diamonds rotate 45°; circles use a many-segment circle.
-          const segments = isCoupler ? 4 : 20
-          const rotZ = isCoupler ? Math.PI / 4 : 0
-          return (
-            <group key={i} position={[pt[0], 0.4, pt[1]]} rotation={[0, 0, rotZ]}>
-              <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={OVERLAY_Z + 5}>
-                <ringGeometry args={[radius, radius + 0.6, segments]} />
-                <meshBasicMaterial color="#000" transparent opacity={0.6}
-                  side={THREE.DoubleSide} depthTest={false} />
-              </mesh>
-              <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={OVERLAY_Z + 6}>
-                <circleGeometry args={[radius, segments]} />
-                <meshBasicMaterial color={color} transparent opacity={1}
-                  side={THREE.DoubleSide} depthTest={false} />
-              </mesh>
-            </group>
-          )
-        })
-      })()}
+      {selectedStreet !== null && nodePositions.map((pt, i) => {
+        const isSelected = i === selectedNode
+        const radius = isSelected ? 2.5 : 1.8
+        const color = isSelected ? '#ffcc00' : '#ffffff'
+        return (
+          <group key={i} position={[pt[0], 0.4, pt[1]]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={OVERLAY_Z + 5}>
+              <ringGeometry args={[radius, radius + 0.6, 20]} />
+              <meshBasicMaterial color="#000" transparent opacity={0.6}
+                side={THREE.DoubleSide} depthTest={false} />
+            </mesh>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={OVERLAY_Z + 6}>
+              <circleGeometry args={[radius, 20]} />
+              <meshBasicMaterial color={color} transparent opacity={1}
+                side={THREE.DoubleSide} depthTest={false} />
+            </mesh>
+          </group>
+        )
+      })}
     </group>
   )
 }

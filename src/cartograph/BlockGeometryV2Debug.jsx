@@ -190,8 +190,8 @@ export default function BlockGeometryV2Debug({
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
-  const { asphaltRounded, blockRounded, curbBands, byChain, stripeEdges, corners } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], curbBands: [], byChain: [], stripeEdges: [], corners: [] }
+  const { asphaltRounded, blockRounded, curbBands, byChain, corners } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], curbBands: [], byChain: [], corners: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -238,26 +238,6 @@ export default function BlockGeometryV2Debug({
     return out
   }, [byChain])
 
-  // Edge strokes — one BufferGeometry of LineSegments emitted only when
-  // Measure is active, so the operator can see exactly where each band
-  // transition sits while authoring measures. Sits above the asphalt
-  // depth-wise so the lines aren't occluded by translucent bands.
-  const edgeGeo = useMemo(() => {
-    if (!measureActive || !stripeEdges?.length) return null
-    const positions = []
-    for (const poly of stripeEdges) {
-      if (!poly || poly.length < 2) continue
-      for (let i = 0; i < poly.length - 1; i++) {
-        positions.push(poly[i][0],   0.06, poly[i][1])
-        positions.push(poly[i+1][0], 0.06, poly[i+1][1])
-      }
-    }
-    if (!positions.length) return null
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-    return g
-  }, [stripeEdges, measureActive])
-
   // Two material variants per per-chain band — one for the selected chain
   // (translucent via useSurfaceMaterial's selectedCorridor opt), one for
   // every other chain. Per-chain meshes pick whichever matches their
@@ -298,11 +278,6 @@ export default function BlockGeometryV2Debug({
         <mesh key={`a${g.chainIdx}`} geometry={g.asphalt} renderOrder={PRI.asphalt} receiveShadow
           material={g.chainIdx === selectedStreet ? asphaltMatSel : asphaltMat} />
       ))}
-      {edgeGeo && (
-        <lineSegments geometry={edgeGeo} renderOrder={PRI.asphalt + 1}>
-          <lineBasicMaterial color="#ffffff" transparent opacity={0.85} depthWrite={false} />
-        </lineSegments>
-      )}
       {showCornerDots && corners.map((c, i) => (
         <mesh
           key={i}
