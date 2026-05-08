@@ -258,7 +258,7 @@ function main() {
   const curatedStreets = blockData.streets || []  // hand-tuned centerlines + ROW widths
 
   // Neighborhood boundary — defines what's visible
-  const boundaryData = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'data', 'neighborhood_boundary.json'), 'utf-8'))
+  const boundaryData = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'data', 'lafayette-square', 'neighborhood_boundary.json'), 'utf-8'))
   const hoodBoundary = boundaryData.boundary.map(([x, z]) => ({ x, z }))
 
   function pointInPoly(px, pz, ring) {

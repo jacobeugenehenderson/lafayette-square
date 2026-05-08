@@ -260,13 +260,15 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
 
 // CLI
 async function main() {
-  let look = 'default', size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL
+  let look = 'default', size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL, _scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/))) look = m[1]
+    else if ((m = arg.match(/^--scene=(.+)$/))) _scene = m[1]
     else if ((m = arg.match(/^--size=(\d+)$/))) size = parseInt(m[1], 10)
     else if ((m = arg.match(/^--rays=(\d+)$/))) rays = parseInt(m[1], 10)
   }
+  // TODO(0e-followup): scene-keyed map.json + ground.json inputs.
   await bakeGroundAO({ look, size, rays })
 }
 

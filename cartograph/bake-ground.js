@@ -35,8 +35,11 @@ const ROOT = join(__dirname, '..')
 // is derived from skirtExtent ± center here so AO baker rays + UV map
 // stay locked to the silhouette regardless of where ribbon positions
 // happen to fall this run.
+// LS-specific (its neighborhood-boundary stencil drives the bake bbox).
+// Toy bakes don't go through this top-level read today; when toy bake is
+// wired (Phase 0e-followup) this becomes a function of the active scene.
 const _stencil = JSON.parse(readFileSync(
-  join(ROOT, 'cartograph', 'data', 'neighborhood_boundary.json'),
+  join(ROOT, 'cartograph', 'data', 'lafayette-square', 'neighborhood_boundary.json'),
   'utf-8'
 ))
 const STENCIL_CENTER = _stencil.center || [0, 0]
@@ -238,10 +241,9 @@ function itemsToBuffers(items) {
   return { positions, indices }
 }
 
-export async function bakeGround({ look = 'default' } = {}) {
-  // TODO(0e): resolve mapPath from the Look's scene field instead of LS default.
+export async function bakeGround({ look = 'default', scene = 'lafayette-square' } = {}) {
   const ribbonsPath = join(ROOT, 'src', 'data', 'ribbons.json')
-  const mapPath     = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'map.json')
+  const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   const designPath  = join(ROOT, 'public', 'looks', look, 'design.json')
   const outDir      = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
@@ -446,12 +448,13 @@ export async function bakeGround({ look = 'default' } = {}) {
 
 // CLI
 async function main() {
-  let look = 'default'
+  let look = 'default', scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
-    const m = arg.match(/^--look=(.+)$/)
-    if (m) look = m[1]
+    let m
+    if ((m = arg.match(/^--look=(.+)$/)))   look  = m[1]
+    else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
   }
-  await bakeGround({ look })
+  await bakeGround({ look, scene })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

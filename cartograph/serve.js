@@ -446,9 +446,14 @@ createServer((req, res) => {
       const force = /[?&]force=1\b/.test(req.url || '')
       const REPO_ROOT = join(import.meta.dirname, '..')
       const here = import.meta.dirname
-      // Phase 0e will route bake inputs through the Look's scene field;
-      // for now the bake chain still operates on the default LS scene.
-      const bakeScene = DEFAULT_SCENE
+      // Bake inputs come from the active Look's scene. Looks without an
+      // explicit scene fall back to the default; pipeline.js + promote-
+      // ribbons.js + arborist trees are skipped for non-LS scenes today
+      // (toy doesn't have an OSM-derived pipeline yet — its centerlines
+      // are hand-authored, so the pipeline step is a no-op for now).
+      const bakeLookEntry = idx.looks.find(l => l.id === id)
+      const bakeScene = bakeLookEntry?.scene || DEFAULT_SCENE
+      const isDefaultScene = bakeScene === DEFAULT_SCENE
       const bakePaths = sceneDataPaths(bakeScene)
       // overlay.json + skeleton.json are operator-edited / derived
       // (Survey/Measure write to /overlay → clean/overlay.json; skeleton
@@ -470,6 +475,7 @@ createServer((req, res) => {
       const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')
       const DESIGN    = join(REPO_ROOT, 'public', 'looks', id, 'design.json')
       const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
+      const sceneFlag = `--scene=${bakeScene}`
       const ranSteps = []
       const skipped = []
       const runIfDirty = (label, inputs, outputs, cmd, opts) => {
@@ -478,48 +484,62 @@ createServer((req, res) => {
         ranSteps.push(label)
       }
 
-      runIfDirty('pipeline',
-        [...RAW_PATHS, ...PIPELINE_SRC],
-        [MAP_JSON],
-        `node pipeline.js`,
-        { cwd: here, timeout: 120000 })
-      runIfDirty('promote-ribbons',
-        [MAP_JSON, join(here, 'promote-ribbons.js')],
-        [RIBBONS],
-        `node promote-ribbons.js`,
-        { cwd: here, timeout: 30000 })
+      // pipeline.js is LS-specific (reads OSM ingest → derives map.json).
+      // For toy we skip — the toy fixture is hand-authored centerlines +
+      // overlay; a future toy-pipeline.js will derive map.json from those.
+      if (isDefaultScene) {
+        runIfDirty('pipeline',
+          [...RAW_PATHS, ...PIPELINE_SRC],
+          [MAP_JSON],
+          `node pipeline.js`,
+          { cwd: here, timeout: 120000 })
+        runIfDirty('promote-ribbons',
+          [MAP_JSON, join(here, 'promote-ribbons.js')],
+          [RIBBONS],
+          `node promote-ribbons.js ${sceneFlag}`,
+          { cwd: here, timeout: 30000 })
+      } else {
+        skipped.push('pipeline (scene-specific pipeline not yet implemented)')
+        skipped.push('promote-ribbons (depends on pipeline)')
+      }
       runIfDirty('ground',
         [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js')],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
-        `node bake-ground.js --look=${id}`,
+        `node bake-ground.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 60000 })
       runIfDirty('buildings',
         [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
         [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
-        `node bake-buildings.js --look=${id}`,
+        `node bake-buildings.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 60000 })
       runIfDirty('lamps',
         [STREET_LAMPS, DESIGN, join(here, 'bake-lamps.js')],
         [join(LOOK_DIR, 'lamps.json')],
-        `node bake-lamps.js --look=${id}`,
+        `node bake-lamps.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 30000 })
       runIfDirty('scene',
         [DESIGN, join(here, 'bake-scene.js')],
         [join(LOOK_DIR, 'scene.json')],
-        `node bake-scene.js --look=${id}`,
+        `node bake-scene.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 30000 })
-      // `--look default` is intentional: trees-atlas is per-look
-      // (texture/style), but placements are shared across looks.
-      runIfDirty('trees',
-        [PARK_TREES, PARK_WATER, MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
-        [join(REPO_ROOT, 'public', 'baked', 'default.json')],
-        `node arborist/bake-trees.js --look default`,
-        { cwd: REPO_ROOT, timeout: 60000 })
+      // Trees: LS-only today (the LS scene's PARK_TREES + PARK_WATER are
+      // hardcoded inputs, and tree placements are shared across LS Looks).
+      // Toy has its own ToyTrees component fed by a static JSON; no bake
+      // step is needed for it yet.
+      if (isDefaultScene) {
+        runIfDirty('trees',
+          [PARK_TREES, PARK_WATER, MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
+          [join(REPO_ROOT, 'public', 'baked', 'default.json')],
+          `node arborist/bake-trees.js --look default`,
+          { cwd: REPO_ROOT, timeout: 60000 })
+      } else {
+        skipped.push('trees (LS-only today; toy uses its own static fixture)')
+      }
       // AO bake last — slowest, benefits from updated geometry.
       runIfDirty('ground-ao',
         [MAP_JSON, DESIGN, join(LOOK_DIR, 'ground.json'), join(here, 'bake-ground-ao.js')],
         [join(LOOK_DIR, 'ground.lightmap.png')],
-        `node bake-ground-ao.js --look=${id}`,
+        `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 120000 })
       const ms = Date.now() - t0
       const idx2 = readLooksIndex()

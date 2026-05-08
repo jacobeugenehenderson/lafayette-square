@@ -60,11 +60,14 @@ export async function bakeScene({ look = 'default' } = {}) {
 }
 
 async function main() {
-  let look = 'default'
+  let look = 'default', _scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
-    const m = arg.match(/^--look=(.+)$/)
-    if (m) look = m[1]
+    let m
+    if ((m = arg.match(/^--look=(.+)$/)))      look   = m[1]
+    else if ((m = arg.match(/^--scene=(.+)$/))) _scene = m[1]
   }
+  // bake-scene reads design.json only (per-Look); --scene is accepted for
+  // CLI uniformity but doesn't change the inputs today.
   await bakeScene({ look })
 }
 

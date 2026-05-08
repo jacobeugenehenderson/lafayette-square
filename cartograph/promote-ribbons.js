@@ -8,10 +8,17 @@ import { readFileSync, writeFileSync, copyFileSync } from 'fs'
 import { join } from 'path'
 import { DEFAULT_SCENE, sceneCleanDir } from './config.js'
 
-// TODO(0e): scene-parametrize via CLI arg once bake reads from the active
-// Look's scene field. For now promote-ribbons always operates on the
-// default scene's map.json.
-const MAP_PATH = join(sceneCleanDir(DEFAULT_SCENE), 'map.json')
+// CLI: --scene=<name> chooses which scene's map.json to read. The output
+// path is currently fixed at src/data/ribbons.json (the default-scene
+// runtime bundle). Non-default scenes need their own bundled ribbons file
+// (see SCENE_REGISTRY in CartographApp.jsx); wire that up alongside a
+// per-scene src/data/<scene>/ribbons.json migration.
+let scene = DEFAULT_SCENE
+for (const arg of process.argv.slice(2)) {
+  const m = arg.match(/^--scene=(.+)$/)
+  if (m) scene = m[1]
+}
+const MAP_PATH = join(sceneCleanDir(scene), 'map.json')
 const BUNDLED_PATH = join(import.meta.dirname, '..', 'src', 'data', 'ribbons.json')
 
 const map = JSON.parse(readFileSync(MAP_PATH, 'utf-8'))
