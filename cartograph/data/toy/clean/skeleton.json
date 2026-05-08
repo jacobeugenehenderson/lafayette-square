@@ -1,0 +1,306 @@
+{
+  "streets": [
+    {
+      "id": "HW1",
+      "name": "HW1",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": -160,
+          "z": -120
+        },
+        {
+          "x": -120,
+          "z": -120
+        },
+        {
+          "x": -40,
+          "z": -120
+        },
+        {
+          "x": 40,
+          "z": -120
+        },
+        {
+          "x": 120,
+          "z": -120
+        },
+        {
+          "x": 160,
+          "z": -120
+        }
+      ],
+      "couplers": []
+    },
+    {
+      "id": "HW2",
+      "name": "HW2",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": -160,
+          "z": -40
+        },
+        {
+          "x": -120,
+          "z": -40
+        },
+        {
+          "x": -40,
+          "z": -40
+        },
+        {
+          "x": 40,
+          "z": -40
+        },
+        {
+          "x": 120,
+          "z": -40
+        },
+        {
+          "x": 160,
+          "z": -40
+        }
+      ],
+      "couplers": []
+    },
+    {
+      "id": "HW3",
+      "name": "HW3",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": -160,
+          "z": 40
+        },
+        {
+          "x": -120,
+          "z": 40
+        },
+        {
+          "x": -40,
+          "z": 40
+        },
+        {
+          "x": 0,
+          "z": 40
+        },
+        {
+          "x": 20,
+          "z": 60
+        },
+        {
+          "x": 25,
+          "z": 60
+        },
+        {
+          "x": 40,
+          "z": 60
+        },
+        {
+          "x": 120,
+          "z": 60
+        },
+        {
+          "x": 160,
+          "z": 60
+        }
+      ],
+      "couplers": []
+    },
+    {
+      "id": "HW4",
+      "name": "HW4",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": -160,
+          "z": 120
+        },
+        {
+          "x": -120,
+          "z": 120
+        },
+        {
+          "x": -40,
+          "z": 120
+        },
+        {
+          "x": 52,
+          "z": 120
+        },
+        {
+          "x": 120,
+          "z": 120
+        },
+        {
+          "x": 160,
+          "z": 120
+        }
+      ],
+      "couplers": []
+    },
+    {
+      "id": "VW1",
+      "name": "VW1",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": -120,
+          "z": -160
+        },
+        {
+          "x": -120,
+          "z": -120
+        },
+        {
+          "x": -120,
+          "z": -40
+        },
+        {
+          "x": -120,
+          "z": 40
+        },
+        {
+          "x": -120,
+          "z": 120
+        },
+        {
+          "x": -120,
+          "z": 160
+        }
+      ],
+      "couplers": []
+    },
+    {
+      "id": "VW2",
+      "name": "VW2",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": -40,
+          "z": -160
+        },
+        {
+          "x": -40,
+          "z": -120
+        },
+        {
+          "x": -40,
+          "z": -40
+        },
+        {
+          "x": -40,
+          "z": 40
+        },
+        {
+          "x": -40,
+          "z": 120
+        },
+        {
+          "x": -40,
+          "z": 160
+        }
+      ],
+      "couplers": []
+    },
+    {
+      "id": "VW3",
+      "name": "VW3",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": 40,
+          "z": -160
+        },
+        {
+          "x": 40,
+          "z": -120
+        },
+        {
+          "x": 40,
+          "z": -40
+        },
+        {
+          "x": 40,
+          "z": 60
+        },
+        {
+          "x": 52,
+          "z": 120
+        },
+        {
+          "x": 60,
+          "z": 160
+        }
+      ],
+      "couplers": []
+    },
+    {
+      "id": "VW4",
+      "name": "VW4",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": 120,
+          "z": -160
+        },
+        {
+          "x": 120,
+          "z": -120
+        },
+        {
+          "x": 120,
+          "z": -40
+        },
+        {
+          "x": 120,
+          "z": 60
+        },
+        {
+          "x": 120,
+          "z": 120
+        },
+        {
+          "x": 120,
+          "z": 160
+        }
+      ],
+      "couplers": []
+    },
+    {
+      "id": "STUB-N",
+      "name": "STUB-N",
+      "highway": "residential",
+      "oneway": false,
+      "divided": false,
+      "points": [
+        {
+          "x": 25,
+          "z": 60
+        },
+        {
+          "x": 25,
+          "z": 90
+        }
+      ],
+      "couplers": []
+    }
+  ]
+}

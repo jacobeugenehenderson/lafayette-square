@@ -135,7 +135,7 @@ function LooksMenu() {
       // the user is asked to *name* is the new fork.
       const name = window.prompt('Name this Look (e.g. "Valentines", "Cardinals Win")')
       if (name && name.trim()) {
-        if (inToy) setScene('neighborhood')
+        if (inToy) setScene('lafayette-square')
         createLook(name.trim())
       }
     } else if (v === '__delete__') {
@@ -144,7 +144,7 @@ function LooksMenu() {
       }
     } else if (v) {
       // Switching to a Look from toy implies leaving the toy scene.
-      if (inToy) setScene('neighborhood')
+      if (inToy) setScene('lafayette-square')
       if (v !== activeLookId) setActiveLook(v)
     }
   }

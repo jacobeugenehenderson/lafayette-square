@@ -744,7 +744,7 @@ export default function CartographApp() {
           {/* ── Baked Three.js ground for Stage shots (neighborhood scene).
               Same component Preview mounts; cache-busts on bakeLastMs so
               the Stage button's re-bake refreshes the artifact in place. ── */}
-          {!inDesigner && scene === 'neighborhood' && (
+          {!inDesigner && scene === 'lafayette-square' && (
             <R3FErrorBoundary name="BakedGround">
               <BakedGround
                 lookId={activeLookId}
@@ -759,7 +759,7 @@ export default function CartographApp() {
               lamps, water) are suppressed so the 3D components own them.
               In Designer's tool+aerial focus mode, hidden entirely so the
               authoring overlay is unblocked against the aerial photo. */}
-          {scene === 'neighborhood' && !toolAerialFocus && (
+          {scene === 'lafayette-square' && !toolAerialFocus && (
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner && scene !== 'toy'}
               measureActive={tool === 'measure' && inDesigner && scene !== 'toy'} />
@@ -772,7 +772,7 @@ export default function CartographApp() {
               for the 64 aerial tiles when the operator is in a shot.
               DesignerArch is decoration; suppressed in tool+aerial focus
               so it doesn't compete with the photo. */}
-          {inDesigner && scene === 'neighborhood' && <>
+          {inDesigner && scene === 'lafayette-square' && <>
             <AerialTiles visible={!!tool || aerialVisible} />
             {!toolAerialFocus && <DesignerArch />}
             <SurveyorOverlay />
@@ -805,7 +805,7 @@ export default function CartographApp() {
                 detail, and `visible={false}` doesn't prevent the children's
                 expensive useMemos from running). They mount as soon as a
                 shot is active. */}
-            {scene === 'neighborhood' && !inDesigner && <>
+            {scene === 'lafayette-square' && !inDesigner && <>
               <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
               {!hiddenLayers.tree && (
                 <R3FErrorBoundary name="InstancedTrees">

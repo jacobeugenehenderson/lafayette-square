@@ -752,13 +752,28 @@ const useCartographStore = create((set, get) => ({
   setActiveLook: async (id) => {
     if (!id || id === get().activeLookId) return
     try { localStorage.setItem(ACTIVE_LOOK_KEY, id) } catch { /* ignore */ }
+    const entry = get().looks.find(l => l.id === id)
+    const newScene = entry?.scene || get().scene
+    const sceneChanged = newScene !== get().scene
     set({ activeLookId: id })
+    // Each Look points at a scene (its centerlines + overlay dataset).
+    // Switching Looks across scenes requires reloading geometry, not just
+    // the design palette. Single-scene switches (e.g. between two LS
+    // Looks) keep this path light: design hydrate only, geometry stays.
+    if (sceneChanged) {
+      get().setScene(newScene)
+      // _loadCenterlines hydrates geometry AND design for the active Look,
+      // so we don't fall through to the design-only branch below.
+      try { await get()._loadCenterlines() } catch (err) { console.warn('[looks] geometry reload failed:', err) }
+      try { await get()._loadMeasurements() } catch (err) { console.warn('[looks] measurements reload failed:', err) }
+      try { await get()._loadMarkers() } catch (err) { console.warn('[looks] markers reload failed:', err) }
+      return
+    }
     // Hydrate the panel from the new Look's design.json. Bake-stale derives
     // from whether the Look has bakedAt recorded — switching to a never-
     // baked Look should still surface the Stage button as stale.
     try {
       const design = await fetchLookDesign(id)
-      const entry = get().looks.find(l => l.id === id)
       set({
         layerVis:       design.layerVis       || {},
         layerColors:    design.layerColors    || {},
@@ -882,18 +897,23 @@ const useCartographStore = create((set, get) => ({
     } catch { /* ignore */ }
     return 'browse'
   })(),
-  // Scene = what geometry we're looking at. Orthogonal to tool and shot.
-  // 'neighborhood' = real Lafayette Square data. 'toy' = compact test fixture
-  // (single 4-way corner, 4 blocks of houses) for shader + rendering R&D.
+  // Scene = what geometry we're looking at — the dataset name that data/<scene>/
+  // holds. Currently 'lafayette-square' (the real neighborhood) or 'toy' (the
+  // shipped diagnostic / training fixture). Mirrored from the active Look's
+  // `scene` field so selecting a Look determines the scene; setActiveLook is
+  // the canonical way to switch. Hydrates from localStorage on cold boot
+  // before _loadLooks resolves; the legacy 'neighborhood' value is rewritten
+  // to 'lafayette-square' on read for backward compat.
   scene: (() => {
     try {
       const saved = localStorage.getItem('cartograph-scene')
-      if (saved === 'toy' || saved === 'neighborhood') return saved
+      if (saved === 'toy') return 'toy'
+      if (saved === 'lafayette-square' || saved === 'neighborhood') return 'lafayette-square'
     } catch { /* ignore */ }
-    return 'neighborhood'
+    return 'lafayette-square'
   })(),
   setScene: (scene) => {
-    if (scene !== 'neighborhood' && scene !== 'toy') return
+    if (scene !== 'lafayette-square' && scene !== 'toy') return
     try { localStorage.setItem('cartograph-scene', scene) } catch { /* ignore */ }
     set({ scene })
   },
@@ -986,30 +1006,30 @@ const useCartographStore = create((set, get) => ({
   markerStrokes: [],
   _loadMarkers: async () => {
     try {
-      const data = await fetchMarkers()
+      const data = await fetchMarkers(get().scene)
       set({ markerStrokes: Array.isArray(data) ? data : [] })
     } catch { /* ignore */ }
   },
   addMarkerStroke: (stroke) => {
     const strokes = [...get().markerStrokes, stroke]
     set({ markerStrokes: strokes, status: strokes.length + ' stroke(s)' })
-    saveMarkers(strokes)
+    saveMarkers(strokes, get().scene)
   },
   undoMarkerStroke: () => {
     const strokes = get().markerStrokes.slice(0, -1)
     set({ markerStrokes: strokes, status: strokes.length ? strokes.length + ' stroke(s)' : '' })
-    saveMarkers(strokes)
+    saveMarkers(strokes, get().scene)
   },
   clearMarkerStrokes: () => {
     set({ markerStrokes: [], status: 'Cleared.' })
-    saveMarkers([])
+    saveMarkers([], get().scene)
   },
   deleteMarkerStroke: (idx) => {
     const strokes = get().markerStrokes
     if (idx < 0 || idx >= strokes.length) return
     const next = strokes.slice(0, idx).concat(strokes.slice(idx + 1))
     set({ markerStrokes: next, status: next.length ? next.length + ' stroke(s)' : '' })
-    saveMarkers(next)
+    saveMarkers(next, get().scene)
   },
 
   // ── Surveyor ──────────────────────────────────────────────
@@ -1027,10 +1047,11 @@ const useCartographStore = create((set, get) => ({
   // centerlines.json by name; a proper overlay file is TBD.
   _loadCenterlines: async () => {
     try {
+      const scene = get().scene
       const [skel, legacy, overlay] = await Promise.all([
-        fetchSkeleton(),
-        fetchCenterlines().catch(() => ({ streets: [] })),
-        fetchOverlay().catch(() => ({ version: 1, streets: {} })),
+        fetchSkeleton(scene),
+        fetchCenterlines(scene).catch(() => ({ streets: [] })),
+        fetchOverlay(scene).catch(() => ({ version: 1, streets: {} })),
       ])
       const skelStreets = (skel && skel.streets) || []
       const legacyStreets = (legacy && legacy.streets) || []
@@ -1237,7 +1258,7 @@ const useCartographStore = create((set, get) => ({
     }
     // overlay.json carries geometry only — design has moved to the active
     // Look's design.json (see _saveDesignDebounced).
-    saveOverlay({ version: 1, streets: out })
+    saveOverlay({ version: 1, streets: out }, get().scene)
   },
 
   // Debounced save for design-panel edits. Writes the active Look's
@@ -1440,7 +1461,7 @@ const useCartographStore = create((set, get) => ({
 
   _loadMeasurements: async () => {
     try {
-      const data = await fetchMeasurements()
+      const data = await fetchMeasurements(get().scene)
       const ms = ((data && data.measurements) || []).map(m => {
         const ts = m.ts || []
         const mats = m.materials && m.materials.length === ts.length + 1
@@ -1452,12 +1473,12 @@ const useCartographStore = create((set, get) => ({
     } catch { /* ignore */ }
   },
   _saveMeasurements: () => {
-    saveMeasurements({ measurements: get().measurements })
+    saveMeasurements({ measurements: get().measurements }, get().scene)
   },
   addMeasurement: (m) => {
     const ms = [...get().measurements, m]
     set({ measurements: ms })
-    saveMeasurements({ measurements: ms })
+    saveMeasurements({ measurements: ms }, get().scene)
   },
   deleteMeasurement: (id) => {
     const ms = get().measurements.filter(m => m.id !== id)
@@ -1466,7 +1487,7 @@ const useCartographStore = create((set, get) => ({
       measurements: ms,
       selectedMeasurement: sel && sel.id === id ? null : sel,
     })
-    saveMeasurements({ measurements: ms })
+    saveMeasurements({ measurements: ms }, get().scene)
   },
   updateMeasurementName: (id, name) => {
     const ms = get().measurements

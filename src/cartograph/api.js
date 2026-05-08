@@ -1,35 +1,44 @@
 const BASE = '/api/cartograph'
 
-export async function fetchMarkers() {
-  const res = await fetch(`${BASE}/markers`)
+// Scene-aware route helper. The server accepts both /<verb> (default scene)
+// and /<scene>/<verb> (explicit). Pass scene='lafayette-square' or 'toy'.
+// Omitting scene falls through to the server's default-scene alias — kept
+// for any caller that genuinely shouldn't care (currently none in the store
+// after Phase 0c, but the alias keeps small CLIs / probes working).
+function sceneUrl(scene, verb) {
+  return scene ? `${BASE}/${encodeURIComponent(scene)}/${verb}` : `${BASE}/${verb}`
+}
+
+export async function fetchMarkers(scene) {
+  const res = await fetch(sceneUrl(scene, 'markers'))
   return res.json()
 }
 
-export async function saveMarkers(strokes) {
-  await fetch(`${BASE}/markers`, {
+export async function saveMarkers(strokes, scene) {
+  await fetch(sceneUrl(scene, 'markers'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(strokes),
   })
 }
 
-export async function fetchCenterlines() {
-  const res = await fetch(`${BASE}/centerlines`)
+export async function fetchCenterlines(scene) {
+  const res = await fetch(sceneUrl(scene, 'centerlines'))
   return res.json()
 }
 
-export async function fetchSkeleton() {
-  const res = await fetch(`${BASE}/skeleton`)
+export async function fetchSkeleton(scene) {
+  const res = await fetch(sceneUrl(scene, 'skeleton'))
   return res.json()
 }
 
-export async function fetchMeasurements() {
-  const res = await fetch(`${BASE}/measurements`)
+export async function fetchMeasurements(scene) {
+  const res = await fetch(sceneUrl(scene, 'measurements'))
   return res.json()
 }
 
-export async function saveMeasurements(data) {
-  await fetch(`${BASE}/measurements`, {
+export async function saveMeasurements(data, scene) {
+  await fetch(sceneUrl(scene, 'measurements'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -38,13 +47,13 @@ export async function saveMeasurements(data) {
 
 // Operator-intent overlay: keyed by skelId, stores caps, couplers,
 // measure, and segmentMeasures. Layered on top of the skeleton at load.
-export async function fetchOverlay() {
-  const res = await fetch(`${BASE}/overlay`)
+export async function fetchOverlay(scene) {
+  const res = await fetch(sceneUrl(scene, 'overlay'))
   return res.json()
 }
 
-export async function saveOverlay(data) {
-  await fetch(`${BASE}/overlay`, {
+export async function saveOverlay(data, scene) {
+  await fetch(sceneUrl(scene, 'overlay'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
