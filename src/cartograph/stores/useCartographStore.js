@@ -182,6 +182,11 @@ const useCartographStore = create((set, get) => ({
   // specific block + chain + side override in blockCustoms. Set via the
   // canvas right-click context menu while a chain is selected.
   measureMode: { type: 'global' },
+  // Transient cache of V2's rounded block rings — written by
+  // BlockGeometryV2Debug on every recompute, read by MeasureOverlay so
+  // the drag path can do block adjacency at drag time without
+  // re-running buildBlockGeometryV2. Not persisted.
+  _v2Blocks: [],
   // Per-IX corner-radius overrides, keyed by quantized point ("x.xxx,z.zzz").
   // Operator-authored via the Corner-edit center handles. Per-Look (lives in
   // design.json) so duplicating a Look carries the operator's IX-by-IX work
@@ -307,6 +312,7 @@ const useCartographStore = create((set, get) => ({
     set({ curbWidth: n })
     get()._saveDesignDebounced()
   },
+  _setV2Blocks: (blocks) => set({ _v2Blocks: Array.isArray(blocks) ? blocks : [] }),
   // Measure-mode toggle. 'global' is the default; 'custom' writes per-block.
   // The custom mode payload carries everything applyDrag needs to route the
   // edit: which block, which chain, which side.

@@ -190,6 +190,8 @@ export default function MeasurePanel() {
         <label className="carto-label">Asymmetric (edit sides separately)</label>
       </div>
 
+      <ModeToggle />
+
       {symmetric ? (
         <SideBlock sideKey="left" side={measure.left} single
           onChange={s => updateSide('left', s)} />
@@ -212,6 +214,39 @@ export default function MeasurePanel() {
           <button className="carto-btn-sm" onClick={resetToDefault}>Reset to default</button>
         </div>
       )}
+    </div>
+  )
+}
+
+// Measure-mode toggle — the new block-customs flow. "Global" (default)
+// drags edit chain.measure; the chain-wide width updates everywhere the
+// chain borders a block. "Custom" drags target the block adjacent to the
+// click anchor: drag once → that block's left or right side breaks away
+// from the chain default. Switching back to Global wipes any customs on
+// the chain (globals are truth; customs are local deviations that don't
+// survive a chain-level edit).
+function ModeToggle() {
+  const mode = useCartographStore(s => s.measureMode)
+  const setMode = useCartographStore(s => s.setMeasureMode)
+  const isCustom = mode?.type === 'custom'
+  return (
+    <div className="carto-row" style={{ gap: 6, marginTop: 4 }}>
+      <button
+        className="carto-btn-sm"
+        onClick={() => setMode({ type: isCustom ? 'global' : 'custom' })}
+        style={{
+          background: isCustom ? 'var(--vic-gold, #ffaa00)' : 'transparent',
+          color: isCustom ? '#000' : 'var(--on-surface, #ddd)',
+          border: '1px solid var(--outline-variant, #555)',
+          padding: '4px 10px',
+          cursor: 'pointer',
+          flex: 1,
+        }}
+        title={isCustom
+          ? 'Custom mode: drag handles edit the block adjacent to the click anchor (per-block override). Click again for Global.'
+          : 'Global mode: drag handles edit the chain default everywhere. Click for Custom (per-block) mode.'}>
+        {isCustom ? '● Adjust this block' : '○ Adjust global'}
+      </button>
     </div>
   )
 }

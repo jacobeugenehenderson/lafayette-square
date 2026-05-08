@@ -190,6 +190,35 @@ const HANDLE_LONG = 5.0
 const HANDLE_SHORT = 1.2
 const HANDLE_BORDER = 0.35
 
+// Even-odd point-in-ring test for block-adjacency lookup at drag time.
+// Mirrors the helper in buildBlockGeometryV2 — kept inline here to avoid
+// a cross-module import path purely for one tiny utility.
+function pointInRing(px, pz, ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], zi = ring[i][1]
+    const xj = ring[j][0], zj = ring[j][1]
+    if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
+// Resolve which block sits on a given side of a chain at the anchor point.
+// `sideSign`: +1 left, -1 right. `hw` is the chain-wide pavementHW so the
+// probe lands solidly inside the adjacent block (past asphalt + curb).
+function resolveAdjacentBlockId(anchor, perp, sideSign, hw, blocks) {
+  if (!blocks?.length) return null
+  const probeR = (hw || 0) + 1.0
+  const tx = anchor.x + perp.x * sideSign * probeR
+  const tz = anchor.z + perp.z * sideSign * probeR
+  for (let i = 0; i < blocks.length; i++) {
+    if (pointInRing(tx, tz, blocks[i])) return i
+  }
+  return null
+}
+
 export default function MeasureOverlay() {
   const tool = useCartographStore(s => s.tool)
   const spaceDown = useCartographStore(s => s.spaceDown)
@@ -197,6 +226,7 @@ export default function MeasureOverlay() {
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const selectStreet = useCartographStore(s => s.selectStreet)
   const deselectStreet = useCartographStore(s => s.deselectStreet)
+  const measureMode = useCartographStore(s => s.measureMode)
 
   const { camera, gl } = useThree()
   const active = tool === 'measure'
@@ -329,6 +359,13 @@ export default function MeasureOverlay() {
   // Apply a boundary drag. `r` = new radius (absolute, from centerline).
   // Updates the named field on the given side. If symmetric, mirrors the
   // same field on the other side.
+  //
+  // Block-customs routing: when measureMode === 'custom', the drag writes
+  // to design.blockCustoms[blockId][chainIdx][side] instead of the chain's
+  // segment measure. blockId is resolved at drag time from the anchor
+  // point + dragged side using V2's stashed block rings. When in 'global'
+  // mode, the drag also clears any customs on this chain — globals are
+  // truth, customs are local deviations that don't survive a chain edit.
   const applyDrag = useCallback((streetIdx, ordinal, side, kind, r) => {
     // Guard against non-finite r — if the pointer briefly leaves the canvas
     // mid-drag, screenToWorld can return NaN, distToPolyline propagates it,
@@ -345,6 +382,55 @@ export default function MeasureOverlay() {
     if (r > 60) r = 60
     const MAX_PAVEMENT_HW = 30
     const MAX_STRIPE = 20
+
+    // Custom mode: write to blockCustoms instead of segmentMeasures.
+    const mode = useCartographStore.getState().measureMode
+    if (mode?.type === 'custom') {
+      const cd = useCartographStore.getState().centerlineData
+      const st = cd.streets[streetIdx]
+      if (!st) return
+      const anchor = useCartographStore.getState().selectedMeasurePoint
+      if (!anchor) return
+      const frame = frameAtPoint(st.points, anchor.x, anchor.z)
+      const sideSign = side === 'left' ? -1 : +1
+      const blocks = useCartographStore.getState()._v2Blocks || []
+      const hwForProbe = st.measure?.[side]?.pavementHW || 5
+      const blockId = resolveAdjacentBlockId(
+        { x: frame.cx, z: frame.cz },
+        { x: frame.nx, z: frame.nz },
+        sideSign, hwForProbe, blocks,
+      )
+      if (blockId == null) return
+      const existing = useCartographStore.getState().blockCustoms?.[blockId]?.[streetIdx]?.[side]
+      const seed = existing || st.measure?.[side] || { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
+      const next = { ...seed }
+      const cw = Number.isFinite(next.curb) ? next.curb : CURB_WIDTH
+      const STRIPE_MIN = 1.0
+      if (kind === 'pavementHW') {
+        next.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
+      } else if (kind === 'treelawnOuter') {
+        const curbEnd = next.pavementHW + cw
+        const total = next.treelawn + next.sidewalk
+        if (total >= STRIPE_MIN * 2) {
+          const newTl = Math.max(STRIPE_MIN, Math.min(total - STRIPE_MIN, r - curbEnd))
+          next.treelawn = Math.min(MAX_STRIPE, newTl)
+          next.sidewalk = Math.min(MAX_STRIPE, total - newTl)
+        } else {
+          next.treelawn = total / 2
+          next.sidewalk = total / 2
+        }
+      } else if (kind === 'propertyLine') {
+        const curbEnd = next.pavementHW + cw
+        const inner = curbEnd + next.treelawn
+        next.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
+      }
+      useCartographStore.getState().setBlockCustomMeasure(blockId, streetIdx, side, next)
+      return
+    }
+
+    // Global mode: clear this chain's existing customs (globals are truth)
+    // then fall through to the chain.measure write path.
+    useCartographStore.getState().clearBlockCustomsForChain(streetIdx)
     modifyMeasure(streetIdx, ordinal, (m) => {
       const sides = m.symmetric ? ['left', 'right'] : [side]
       if (window.__measureDebug) {

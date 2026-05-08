@@ -18,7 +18,7 @@
  * Coord convention follows StreetRibbons: ShapeGeometry built from
  * Vector2(x, z), then per-vertex remap to (x, 0, z) flips XY→XZ.
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2 } from '../lib/buildBlockGeometryV2.js'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
@@ -204,6 +204,13 @@ export default function BlockGeometryV2Debug({
       return empty
     }
   }, [liveRibbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockCustoms])
+
+  // Stash the rounded block rings into the store so MeasureOverlay's
+  // drag path can resolve block adjacency at drag time without re-running
+  // buildBlockGeometryV2 (Clipper booleans aren't free).
+  useEffect(() => {
+    useCartographStore.getState()._setV2Blocks(blockRounded)
+  }, [blockRounded])
 
   // Tiny y-lifts keep coplanar layers from z-fighting; polygonOffset (driven
   // by pri in makeMaterial) is the authoritative depth resolver.
