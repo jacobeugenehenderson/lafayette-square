@@ -34,9 +34,13 @@ function chainMeasure(st) {
   return defaultMeasure(st.type || 'residential')
 }
 
-// Resolve effective measure for a specific segment ordinal.
-function effectiveSegmentMeasure(st, ordinal) {
-  return measureForSegment(st, ordinal) || chainMeasure(st)
+// Resolve effective measure for a specific segment ordinal. Post-couplers
+// (block-customs model) the chain default is the single source for handle
+// positions; segment-ordinal storage retires. Kept as a thin wrapper so
+// downstream callers don't need to change shape if a future feature reads
+// per-segment again.
+function effectiveSegmentMeasure(st /* , ordinal */) {
+  return chainMeasure(st)
 }
 
 // Pavement half-width for the chain (used for inner-edge offset distance).
@@ -345,15 +349,16 @@ export default function MeasureOverlay() {
     useCartographStore.getState().setSegmentOrdinal(selection.ordinal)
   }, [selection])
 
-  // Update the measure for a specific segment ordinal. Forks the segment
-  // from chain default on first edit (seedFrom = current effective measure).
-  const modifyMeasure = useCallback((streetIdx, ordinal, updater) => {
+  // Whole-chain measure write — global Measure-mode drags target chain.measure
+  // directly. Per-block divergence routes through setBlockCustomMeasure on
+  // the custom branch in applyDrag (block-customs model — Survey couplers
+  // and segmentMeasures retire).
+  const modifyMeasure = useCallback((streetIdx, _ordinal, updater) => {
     const cd = useCartographStore.getState().centerlineData
     const st = cd.streets[streetIdx]
     if (!st) return
-    const seed = effectiveSegmentMeasure(st, ordinal)
-    useCartographStore.getState().setSegmentMeasure(streetIdx, ordinal, updater, seed)
-    useCartographStore.getState()._saveCenterlines()
+    const seed = chainMeasure(st)
+    useCartographStore.getState().setStreetMeasure(streetIdx, updater, seed)
   }, [])
 
   // Apply a boundary drag. `r` = new radius (absolute, from centerline).

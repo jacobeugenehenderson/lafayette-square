@@ -1524,6 +1524,30 @@ const useCartographStore = create((set, get) => ({
   // Write a per-segment measure override, keyed by ordinal segment index.
   // Seeds from the supplied fallback measure on first edit so the segment
   // forks cleanly from chain default.
+  // Whole-chain measure write — replaces V1's segmentMeasures path for the
+  // post-couplers world. Global Measure-mode drags target this. Updater is
+  // a (measure) => void mutator; the function deep-clones the chain's
+  // current measure (or seedFrom) so updater can mutate freely. Persists
+  // via _saveOverlay.
+  setStreetMeasure: (streetIdx, updater, seedFrom) => {
+    const { centerlineData } = get()
+    const st = centerlineData.streets[streetIdx]
+    if (!st) return
+    const seed = st.measure || seedFrom
+    if (!seed) return
+    const next = {
+      left: { ...(seed.left || {}) },
+      right: { ...(seed.right || {}) },
+      symmetric: !!seed.symmetric,
+    }
+    updater(next)
+    const streets = centerlineData.streets.map((s, i) =>
+      i === streetIdx ? { ...s, measure: next } : s
+    )
+    set({ centerlineData: { ...centerlineData, streets } })
+    get()._saveOverlay()
+  },
+
   setSegmentMeasure: (streetIdx, ordinal, updater, seedFrom) => {
     const { centerlineData } = get()
     const st = centerlineData.streets[streetIdx]

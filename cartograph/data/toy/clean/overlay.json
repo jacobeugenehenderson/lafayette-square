@@ -93,23 +93,6 @@
           "terminal": "sidewalk"
         }
       },
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 5,
-            "treelawn": 1.5,
-            "sidewalk": 1.5,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 5,
-            "treelawn": 1.5,
-            "sidewalk": 1.5,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "capStart": "blunt",
       "capEnd": "blunt"
     },
@@ -127,23 +110,6 @@
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
-        }
-      },
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 8.580496813220577,
-            "treelawn": 3.848885154736543,
-            "sidewalk": 1,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 7.349893544363383,
-            "treelawn": 3.838466010852251,
-            "sidewalk": 2.017915893357589,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
         }
       },
       "capStart": "blunt",
@@ -204,7 +170,7 @@
         }
       },
       "capStart": "blunt",
-      "capEnd": "blunt"
+      "capEnd": "round"
     }
   }
 }
