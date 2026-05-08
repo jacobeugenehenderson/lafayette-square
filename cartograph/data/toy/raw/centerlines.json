@@ -1,0 +1,324 @@
+{
+  "streets": [
+    {
+      "id": "HW1",
+      "name": "HW1",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          -160,
+          -120
+        ],
+        [
+          -120,
+          -120
+        ],
+        [
+          -40,
+          -120
+        ],
+        [
+          40,
+          -120
+        ],
+        [
+          120,
+          -120
+        ],
+        [
+          160,
+          -120
+        ]
+      ],
+      "source": "toy-authored"
+    },
+    {
+      "id": "HW2",
+      "name": "HW2",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          -160,
+          -40
+        ],
+        [
+          -120,
+          -40
+        ],
+        [
+          -40,
+          -40
+        ],
+        [
+          40,
+          -40
+        ],
+        [
+          120,
+          -40
+        ],
+        [
+          160,
+          -40
+        ]
+      ],
+      "source": "toy-authored"
+    },
+    {
+      "id": "HW3",
+      "name": "HW3",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          -160,
+          40
+        ],
+        [
+          -120,
+          40
+        ],
+        [
+          -40,
+          40
+        ],
+        [
+          0,
+          40
+        ],
+        [
+          20,
+          60
+        ],
+        [
+          25,
+          60
+        ],
+        [
+          40,
+          60
+        ],
+        [
+          120,
+          60
+        ],
+        [
+          160,
+          60
+        ]
+      ],
+      "source": "toy-authored"
+    },
+    {
+      "id": "HW4",
+      "name": "HW4",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          -160,
+          120
+        ],
+        [
+          -120,
+          120
+        ],
+        [
+          -40,
+          120
+        ],
+        [
+          52,
+          120
+        ],
+        [
+          120,
+          120
+        ],
+        [
+          160,
+          120
+        ]
+      ],
+      "source": "toy-authored"
+    },
+    {
+      "id": "VW1",
+      "name": "VW1",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          -120,
+          -160
+        ],
+        [
+          -120,
+          -120
+        ],
+        [
+          -120,
+          -40
+        ],
+        [
+          -120,
+          40
+        ],
+        [
+          -120,
+          120
+        ],
+        [
+          -120,
+          160
+        ]
+      ],
+      "source": "toy-authored"
+    },
+    {
+      "id": "VW2",
+      "name": "VW2",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          -40,
+          -160
+        ],
+        [
+          -40,
+          -120
+        ],
+        [
+          -40,
+          -40
+        ],
+        [
+          -40,
+          40
+        ],
+        [
+          -40,
+          120
+        ],
+        [
+          -40,
+          160
+        ]
+      ],
+      "source": "toy-authored"
+    },
+    {
+      "id": "VW3",
+      "name": "VW3",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          40,
+          -160
+        ],
+        [
+          40,
+          -120
+        ],
+        [
+          40,
+          -40
+        ],
+        [
+          40,
+          60
+        ],
+        [
+          52,
+          120
+        ],
+        [
+          60,
+          160
+        ]
+      ],
+      "source": "toy-authored"
+    },
+    {
+      "id": "VW4",
+      "name": "VW4",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          120,
+          -160
+        ],
+        [
+          120,
+          -120
+        ],
+        [
+          120,
+          -40
+        ],
+        [
+          120,
+          60
+        ],
+        [
+          120,
+          120
+        ],
+        [
+          120,
+          160
+        ]
+      ],
+      "source": "toy-authored"
+    },
+    {
+      "id": "STUB-N",
+      "name": "STUB-N",
+      "type": "residential",
+      "oneway": false,
+      "deadEnd": false,
+      "loop": false,
+      "smooth": false,
+      "points": [
+        [
+          25,
+          60
+        ],
+        [
+          25,
+          90
+        ]
+      ],
+      "source": "toy-authored"
+    }
+  ]
+}

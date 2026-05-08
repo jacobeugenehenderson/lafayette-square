@@ -96,7 +96,7 @@ function migrateLooksOnBoot() {
   saveLooksIndex({
     default: DEFAULT_LOOK_ID,
     looks: [
-      { id: DEFAULT_LOOK_ID, name: 'Lafayette Square', createdAt: Date.now() },
+      { id: DEFAULT_LOOK_ID, name: 'Lafayette Square', scene: DEFAULT_SCENE, createdAt: Date.now() },
     ],
   })
   if (overlay.design) {
@@ -106,6 +106,23 @@ function migrateLooksOnBoot() {
   console.log(`[looks] migrated overlay.design → ${DEFAULT_LOOK_ID}`)
 }
 migrateLooksOnBoot()
+
+// Idempotent migration: stamp `scene` on any pre-existing Look entry that
+// lacks it. Defaults to the project's 0-state scene (Lafayette Square).
+// Runs every boot but only writes if something needed stamping.
+function backfillLookScenesOnBoot() {
+  const idx = readJsonOrNull(LOOKS_INDEX)
+  if (!idx || !Array.isArray(idx.looks)) return
+  let changed = false
+  for (const entry of idx.looks) {
+    if (!entry.scene) { entry.scene = DEFAULT_SCENE; changed = true }
+  }
+  if (changed) {
+    saveLooksIndex(idx)
+    console.log(`[looks] backfilled scene field on ${idx.looks.length} entr${idx.looks.length === 1 ? 'y' : 'ies'}`)
+  }
+}
+backfillLookScenesOnBoot()
 
 const MIME = {
   '.html': 'text/html',
@@ -517,28 +534,32 @@ createServer((req, res) => {
     return
   }
 
-  // POST /looks — create a new Look. Body: { name, fromLookId? }.
+  // POST /looks — create a new Look. Body: { name, fromLookId?, scene? }.
   // Seeds the new Look's design.json from `fromLookId` (defaults to the
-  // currently-active or default Look). Caller bakes separately.
+  // currently-active or default Look). The new Look's scene defaults to
+  // the seed Look's scene — cloning a Look keeps you in its scene unless
+  // the caller explicitly passes a different one. Caller bakes separately.
   if (req.method === 'POST' && path === '/looks') {
     let body = ''
     req.on('data', c => body += c)
     req.on('end', () => {
       try {
-        const { name, fromLookId } = JSON.parse(body || '{}')
+        const { name, fromLookId, scene } = JSON.parse(body || '{}')
         if (!name || !String(name).trim()) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'name required' }))
           return
         }
         const idx = readLooksIndex()
-        const seedId = fromLookId && idx.looks.some(l => l.id === fromLookId)
-          ? fromLookId : idx.default
+        const seedEntry = (fromLookId && idx.looks.find(l => l.id === fromLookId))
+          || idx.looks.find(l => l.id === idx.default)
+        const seedId = seedEntry ? seedEntry.id : idx.default
+        const newScene = (scene && String(scene).trim()) || (seedEntry && seedEntry.scene) || DEFAULT_SCENE
         const id = uniqueLookId(slugify(name), idx.looks.map(l => l.id))
         mkdirSync(lookDir(id), { recursive: true })
         const seedDesign = readJsonOrNull(lookDesignPath(seedId)) || {}
         writeJson(lookDesignPath(id), seedDesign)
-        idx.looks.push({ id, name: String(name).trim(), createdAt: Date.now() })
+        idx.looks.push({ id, name: String(name).trim(), scene: newScene, createdAt: Date.now() })
         saveLooksIndex(idx)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, id }))
