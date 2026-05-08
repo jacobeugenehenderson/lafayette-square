@@ -20,6 +20,43 @@ If you are about to:
 
 When debugging "feature X doesn't work in toy", the answer is almost never "build a parallel toy version." It's "make the canonical scene-parametric." If you can't do that in the time available, the right move is to revert your shortcuts and document the gap, not pile on another shortcut.
 
+## Toolbar Looks `<select>` reads taller than `<button>` peers (queued 2026-05-08)
+
+The Looks dropdown in the Designer toolbar renders larger than the Aerial
+and Stage buttons next to it, even after several attempted CSS fixes.
+What's been tried (still didn't take):
+
+- Explicit `line-height: 1.2` + `box-sizing: border-box` on both peers.
+- `font: inherit` shorthand reset followed by re-applied font-family /
+  font-size / font-weight.
+- Explicit `height: 28px`.
+- Most-recent attempt: dropped the `font` shorthand entirely; set
+  font-family, font-size, font-weight, font-style, letter-spacing,
+  line-height as individual sub-properties on a shared rule
+  (`.carto-toolgroup > button, .carto-toolgroup > .carto-looks-select`).
+  Bumped to panel-pill geometry (13px / 8px 14px padding / 8px radius).
+  Look still reads larger.
+
+Likely cause: macOS UA stylesheet for `<select>` is harder to neutralize
+than expected. Possibilities to try next session:
+
+1. Inspect the Looks `<select>` in DevTools. Check **computed** font-size
+   and box height. If computed font-size is the value we set (13px) but
+   the box is still taller, something about UA padding/baseline is the
+   culprit. If computed font-size is *not* what we set, find the rule
+   that's winning the cascade.
+2. Replace the native `<select>` with a custom dropdown (a `<button>` +
+   listbox) that uses the same DOM/CSS as its peers. Removes the UA
+   surface entirely.
+3. Try `appearance: none` + explicit `font-size` with `!important`. Crude
+   but tells us if it's a specificity issue vs. an appearance-control
+   issue.
+4. As a last resort, target macOS Safari/Chrome with a feature query
+   override.
+
+Files: `src/cartograph/cartograph.css` (`.carto-toolgroup` rules),
+`src/cartograph/Toolbar.jsx` (LooksMenu component).
+
 ## Lesson logged 2026-05-07: stop parallel-piping toy
 
 While iterating V2 in toy this session, the next operator (me) added a
