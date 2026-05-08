@@ -168,6 +168,20 @@ const useCartographStore = create((set, get) => ({
   // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
   // operator can dial up/down via the Streets > Curb slider.
   curbWidth: 0.1524,
+  // Per-block per-chain-side measure overrides — the "block-customs" model
+  // that replaces V1's couplers / segmentMeasures authoring. A chain's
+  // measure is the global default; the operator right-clicks a chain in
+  // Measure mode → context menu's "Adjust this block" flips the measure
+  // mode to write to a block-scoped override. Editing the chain's global
+  // measure clears any customs on that chain (by design — globals are
+  // truth, customs are local deviations that don't survive a chain edit).
+  // Shape: blockCustoms[blockId][chainIdx][side] = { pavementHW, treelawn, sidewalk, terminal }
+  blockCustoms: {},
+  // Measure tool's edit mode. 'global' (default) writes to chain.measure
+  // for whichever side the dragged handle belongs to. 'custom' targets a
+  // specific block + chain + side override in blockCustoms. Set via the
+  // canvas right-click context menu while a chain is selected.
+  measureMode: { type: 'global' },
   // Per-IX corner-radius overrides, keyed by quantized point ("x.xxx,z.zzz").
   // Operator-authored via the Corner-edit center handles. Per-Look (lives in
   // design.json) so duplicating a Look carries the operator's IX-by-IX work
@@ -292,6 +306,46 @@ const useCartographStore = create((set, get) => ({
     const n = Math.max(0, Math.min(1.0, Number(v) || 0))
     set({ curbWidth: n })
     get()._saveDesignDebounced()
+  },
+  // Measure-mode toggle. 'global' is the default; 'custom' writes per-block.
+  // The custom mode payload carries everything applyDrag needs to route the
+  // edit: which block, which chain, which side.
+  setMeasureMode: (mode) => {
+    if (!mode || mode.type === 'global') {
+      set({ measureMode: { type: 'global' } })
+      return
+    }
+    if (mode.type === 'custom') {
+      set({ measureMode: { type: 'custom', blockId: mode.blockId, chainIdx: mode.chainIdx, side: mode.side } })
+    }
+  },
+  // Write a per-block per-chain-side measure override. Called by the drag
+  // path when measureMode === 'custom'. Persists via _saveDesignDebounced.
+  setBlockCustomMeasure: (blockId, chainIdx, side, measure) => {
+    if (blockId == null || chainIdx == null || (side !== 'left' && side !== 'right')) return
+    const next = { ...(get().blockCustoms || {}) }
+    next[blockId] = { ...(next[blockId] || {}) }
+    next[blockId][chainIdx] = { ...(next[blockId][chainIdx] || {}) }
+    next[blockId][chainIdx][side] = { ...measure }
+    set({ blockCustoms: next })
+    get()._saveDesignDebounced()
+  },
+  // Clear every block custom that targets this chain. Called from the
+  // global-edit drag path so editing the chain default wipes its locals
+  // (the "globals are truth" semantics).
+  clearBlockCustomsForChain: (chainIdx) => {
+    const cur = get().blockCustoms || {}
+    let changed = false
+    const next = {}
+    for (const [blockId, byChain] of Object.entries(cur)) {
+      const filtered = { ...byChain }
+      if (filtered[chainIdx]) { delete filtered[chainIdx]; changed = true }
+      if (Object.keys(filtered).length) next[blockId] = filtered
+    }
+    if (changed) {
+      set({ blockCustoms: next })
+      get()._saveDesignDebounced()
+    }
   },
   // Look-level corner-radius multiplier. Clamp at 0 (square) and a
   // generous upper bound to keep the slider sane.
@@ -802,6 +856,7 @@ const useCartographStore = create((set, get) => ({
         luColors:       design.luColors       || {},
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
         curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
+        blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
         cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
         materialColors: design.materialColors || {},
@@ -1196,6 +1251,7 @@ const useCartographStore = create((set, get) => ({
         luColors:       design.luColors       || {},
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
         curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
+        blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
         cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
         materialColors: design.materialColors || {},
@@ -1308,6 +1364,7 @@ const useCartographStore = create((set, get) => ({
           cornerRadiusOverrides: s.cornerRadiusOverrides,
           cornerCornerRadiusOverrides: s.cornerCornerRadiusOverrides,
           curbWidth: s.curbWidth,
+          blockCustoms: s.blockCustoms,
           materialColors: s.materialColors,
           materialPhysics: s.materialPhysics,
           buildingPalette: s.buildingPalette,
