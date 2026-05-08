@@ -742,7 +742,16 @@ const useCartographStore = create((set, get) => ({
       // would re-bake unnecessarily.
       const activeEntry = looks.find(l => l.id === activeLookId)
       const wasBaked = !!activeEntry?.bakedAt
-      set({ looks, activeLookId, _looksHydrated: true, bakeStale: !wasBaked })
+      // Align the store's scene with the active Look's scene field. This
+      // covers cold boots where localStorage's `cartograph-scene` may
+      // disagree with the persisted active Look (e.g. user closed the tab
+      // while on toy, then we set a different default Look later).
+      const lookScene = activeEntry?.scene
+      const sceneUpdate = (lookScene && lookScene !== get().scene) ? { scene: lookScene } : {}
+      if (sceneUpdate.scene) {
+        try { localStorage.setItem('cartograph-scene', sceneUpdate.scene) } catch { /* ignore */ }
+      }
+      set({ looks, activeLookId, _looksHydrated: true, bakeStale: !wasBaked, ...sceneUpdate })
     } catch (err) {
       console.warn('[looks] load failed:', err)
       set({ _looksHydrated: true })

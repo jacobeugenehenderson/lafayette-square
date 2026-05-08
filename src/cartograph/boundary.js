@@ -10,7 +10,7 @@
 //   polygon       [[x,z]]  — 256-pt closed boundary
 //   fade          {inner, outer}  — face-fill radial fade band
 //   streetFade    {inner, outer}  — wider band; streets trail past faces
-import boundaryData from '../../cartograph/data/neighborhood_boundary.json'
+import boundaryData from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
 
 const boundary = boundaryData.boundary || []
 

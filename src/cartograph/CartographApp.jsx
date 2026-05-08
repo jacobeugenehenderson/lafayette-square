@@ -533,9 +533,54 @@ function useLoadData() {
 }
 
 // Toy bounding rectangle — defines the residential substrate that V2's
-// rounded asphalt is carved out of. Toy-only constant; non-toy scenes
-// don't pass a stencil (V2 emits asphalt + bands without block-fill).
+// rounded asphalt is carved out of. Toy-only stencil; non-toy scenes
+// don't pass one (V2 emits asphalt + bands without block-fill).
 const TOY_STENCIL = [[-180, -180], [180, -180], [180, 180], [-180, 180]]
+
+// Per-scene configuration. The single source of truth for "what's
+// different about this scene" — components above this line should not
+// branch on scene names. New scenes register here; capabilities default
+// to false unless declared.
+//
+// `ribbons` is the static post-bake intersections + faces artifact
+// (centerline geometry comes from the live store, scene-aware). Once
+// promote-ribbons is scene-keyed (Phase 0e) this can shrink to a path.
+const SCENE_REGISTRY = {
+  'lafayette-square': {
+    ribbons: ribbonsRaw,
+    stencil: null,
+    useBoundary: true,
+    hasAerial: true,
+    hasHero: true,
+    StageEnvironment: ({ hiddenLayers }) => <>
+      <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
+      {!hiddenLayers.tree && (
+        <R3FErrorBoundary name="InstancedTrees"><InstancedTrees /></R3FErrorBoundary>
+      )}
+      <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
+      {!hiddenLayers.lamp && (
+        <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
+      )}
+      <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
+    </>,
+  },
+  'toy': {
+    ribbons: toyRibbons,
+    stencil: TOY_STENCIL,
+    useBoundary: false,
+    hasAerial: false,
+    hasHero: false,
+    StageEnvironment: () => <>
+      <R3FErrorBoundary name="ToyTerrain"><ToyTerrain /></R3FErrorBoundary>
+      <R3FErrorBoundary name="ToyBuildings"><ToyBuildings /></R3FErrorBoundary>
+      <R3FErrorBoundary name="ToyTrees"><ToyTrees /></R3FErrorBoundary>
+      <R3FErrorBoundary name="ToyStreetLights"><StreetLights lamps={toyLamps.lamps} /></R3FErrorBoundary>
+    </>,
+  },
+}
+function sceneConfig(scene) {
+  return SCENE_REGISTRY[scene] || SCENE_REGISTRY['lafayette-square']
+}
 
 // ── App ─────────────────────────────────────────────────────────────────────
 export default function CartographApp() {
@@ -612,10 +657,11 @@ export default function CartographApp() {
   // aerial is on AND we're in pure Design — under tools, ribbons +
   // tool affordances stay over the aerial as reference, and the user
   // declutters via per-layer visibility toggles in the Designer Panel.
+  const sceneCfg = sceneConfig(scene)
   const designAerialOnly = inDesigner && !tool && aerialVisible
   // When a tool is active, hide the giant off-map ground plane so the
   // background (curated or aerial) shows through under the streets.
-  const toolActive = inDesigner && !!tool && scene !== 'toy'
+  const toolActive = inDesigner && !!tool
   const corridorSelected = toolActive && selectedStreet !== null
   const decorationsHidden = toolActive ? { ...hiddenLayers, ground: true } : hiddenLayers
 
@@ -629,8 +675,9 @@ export default function CartographApp() {
   //     trees, water, labels, barriers) hides entirely.
   //   - DesignerArch (decoration) hides.
   // Aerial photo + ribbon bands + tool's authoring overlay = clean
-  // direct-align surface.
-  const toolAerialFocus = inDesigner && !!tool && aerialVisible && scene !== 'toy'  // aerial is LS-only; toy has no aerial photo
+  // direct-align surface. Gated by `sceneCfg.hasAerial` because scenes
+  // without an aerial photo can't enter focus mode.
+  const toolAerialFocus = inDesigner && !!tool && aerialVisible && sceneCfg.hasAerial
 
   let cursor = 'grab'
   if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'
@@ -671,20 +718,20 @@ export default function CartographApp() {
           <SkyStateTicker />
 
 
-          {/* ── Live ribbon mesh: Designer (any scene) and toy (any shot)
-              consume ribbons.json directly. Stage neighborhood shots
-              consume the per-Look pure-Three.js bake via <BakedGround/>
-              — the same component Preview mounts, so what Stage shows is
-              what Preview shows is what Publish ships. ── */}
+          {/* ── Live ribbon mesh: Designer (any scene) and any non-Designer
+              shot consume ribbons.json + the live centerline store
+              directly. Stage neighborhood shots consume the per-Look
+              pure-Three.js bake via <BakedGround/> — the same component
+              Preview mounts, so what Stage shows is what Preview shows
+              is what Publish ships. ── */}
           {inDesigner && <ambientLight intensity={1} />}
-          {(inDesigner || scene === 'toy') && (
           <R3FErrorBoundary name="StreetRibbons">
             <group visible={!designAerialOnly}>
             <StreetRibbons hiddenLayers={hiddenLayers}
               luColors={luColors}
-              liveCenterlines={scene === 'toy' ? null : centerlineData.streets}
-              measureActive={tool === 'measure' && inDesigner && scene !== 'toy'}
-              surveyActive={tool === 'surveyor' && inDesigner && scene !== 'toy'}
+              liveCenterlines={centerlineData.streets}
+              measureActive={tool === 'measure' && inDesigner}
+              surveyActive={tool === 'surveyor' && inDesigner}
               selectedCorridorNames={(() => {
                 // Selection highlight is only meaningful while a tool is
                 // active — it dims the chain so its aerial reads through
@@ -705,27 +752,25 @@ export default function CartographApp() {
                 return s?.name ? new Set([s.name]) : null
               })()}
               flat={inDesigner}
-              ribbons={scene === 'toy' ? toyRibbons : undefined}
-              useBoundary={scene !== 'toy'}
+              ribbons={sceneCfg.ribbons}
+              useBoundary={sceneCfg.useBoundary}
               hideFaceFills={toolAerialFocus} />
             </group>
           </R3FErrorBoundary>
-          )}
 
-          {/* ── Rounded-block-clip prototype overlay.
-              Toy: V2 is the sole ground render (legacy hidden above).
-              Neighborhood (LS): V2 layers on top of legacy StreetRibbons
-              for side-by-side comparison; will replace legacy when
-              validated. Both scenes read centerlineData from the store
-              (scene-aware seed) so Measure edits propagate live. IX
-              positions come from the static ribbons import for each
-              scene (frozen at last bake; fine until Survey edits
-              centerline geometry). ── */}
-          {scene === 'toy' && (
-            <R3FErrorBoundary name="BlockGeometryV2Debug">
-              <BlockGeometryV2Debug ribbons={toyRibbons} stencil={TOY_STENCIL} flat={inDesigner} />
-            </R3FErrorBoundary>
-          )}
+          {/* ── Rounded-block-clip V2 ground render.
+              Mounted in every scene; reads live centerlines from the
+              store (scene-aware) and intersections from the per-scene
+              static ribbons artifact. Stencil is per-scene (toy carves
+              the asphalt out of a residential rectangle; LS lets V2
+              emit asphalt + bands without block-fill). Will retire
+              legacy StreetRibbons once Measure visuals reach parity. ── */}
+          <R3FErrorBoundary name="BlockGeometryV2Debug">
+            <BlockGeometryV2Debug
+              ribbons={sceneCfg.ribbons}
+              stencil={sceneCfg.stencil}
+              flat={inDesigner} />
+          </R3FErrorBoundary>
 
           {/* ── Corner-edit handles — surface only in Designer mode, in
               whichever scene is active. Toggle lives in Streets > Corners
@@ -734,10 +779,7 @@ export default function CartographApp() {
               so the toggle takes effect without a re-mount. */}
           {inDesigner && (
             <R3FErrorBoundary name="CornerEditHandles">
-              <CornerEditHandles
-                ribbons={scene === 'toy'
-                  ? toyRibbons
-                  : { intersections: ribbonsRaw.intersections || [] }} />
+              <CornerEditHandles ribbons={sceneCfg.ribbons} />
             </R3FErrorBoundary>
           )}
 
@@ -761,20 +803,19 @@ export default function CartographApp() {
               authoring overlay is unblocked against the aerial photo. */}
           {scene === 'lafayette-square' && !toolAerialFocus && (
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
-              surveyActive={tool === 'surveyor' && inDesigner && scene !== 'toy'}
-              measureActive={tool === 'measure' && inDesigner && scene !== 'toy'} />
+              surveyActive={tool === 'surveyor' && inDesigner}
+              measureActive={tool === 'measure' && inDesigner} />
           )}
 
-          {/* ── Designer-only UI overlays (authoring tools only make sense
-              against the real neighborhood data) ──
-              All four mount only in Designer; shots don't need them and
-              keeping them out of the tree means TextureLoader never fires
-              for the 64 aerial tiles when the operator is in a shot.
-              DesignerArch is decoration; suppressed in tool+aerial focus
-              so it doesn't compete with the photo. */}
-          {inDesigner && scene === 'lafayette-square' && <>
-            <AerialTiles visible={!!tool || aerialVisible} />
-            {!toolAerialFocus && <DesignerArch />}
+          {/* ── Designer-only UI overlays. Survey + Measure overlays mount
+              in every scene that supports authoring (toy and LS both).
+              AerialTiles + DesignerArch are LS-specific visual surfaces:
+              gated by scene capabilities so toy doesn't try to load the
+              64 aerial tiles or the gateway-arch decoration. Mounting
+              only in Designer keeps these out of Stage shots. */}
+          {inDesigner && <>
+            {sceneCfg.hasAerial && <AerialTiles visible={!!tool || aerialVisible} />}
+            {scene === 'lafayette-square' && !toolAerialFocus && <DesignerArch />}
             <SurveyorOverlay />
             {tool === 'measure' && <MeasureOverlay />}
           </>}
@@ -805,25 +846,9 @@ export default function CartographApp() {
                 detail, and `visible={false}` doesn't prevent the children's
                 expensive useMemos from running). They mount as soon as a
                 shot is active. */}
-            {scene === 'lafayette-square' && !inDesigner && <>
-              <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
-              {!hiddenLayers.tree && (
-                <R3FErrorBoundary name="InstancedTrees">
-                  <InstancedTrees />
-                </R3FErrorBoundary>
-              )}
-              <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
-              {!hiddenLayers.lamp && (
-                <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
-              )}
-              <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
-            </>}
-            {scene === 'toy' && <>
-              <R3FErrorBoundary name="ToyTerrain"><ToyTerrain /></R3FErrorBoundary>
-              <R3FErrorBoundary name="ToyBuildings"><ToyBuildings /></R3FErrorBoundary>
-              <R3FErrorBoundary name="ToyTrees"><ToyTrees /></R3FErrorBoundary>
-              <R3FErrorBoundary name="ToyStreetLights"><StreetLights lamps={toyLamps.lamps} /></R3FErrorBoundary>
-            </>}
+            {!inDesigner && sceneCfg.StageEnvironment && (
+              <sceneCfg.StageEnvironment hiddenLayers={hiddenLayers} />
+            )}
           </group>
           {/* Post-FX: same chain Preview ships with so Stage and Preview
               read identically. Bloom on so the Stage Bloom panel sliders
@@ -836,7 +861,7 @@ export default function CartographApp() {
           <SkyPump />
           <LightingPump />
           <Controls controlsRef={controlsRef} />
-          {shot === 'hero' && scene !== 'toy' && (
+          {shot === 'hero' && sceneCfg.hasHero && (
             <HeroPreview keyframes={keyframes} motion={heroMotion}
               subject={resolveHeroSubject(heroSubject, _allBuildings)} />
           )}
