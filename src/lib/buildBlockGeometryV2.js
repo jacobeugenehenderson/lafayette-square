@@ -644,7 +644,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     // Asphalt stays chain-wide (its width drives the curb stroke; varying
     // it per segment would make the unified curb impossible).
     const segments = naturalSegments(street)
-    for (const seg of segments) {
+    for (let segOrd = 0; segOrd < segments.length; segOrd++) {
+      const seg = segments[segOrd]
       const segPts = pts.slice(seg.start, seg.end + 1)
       const segPerps = perps.slice(seg.start, seg.end + 1)
       for (const sideKey of ['left', 'right']) {
@@ -655,8 +656,9 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         const chainSide = m[sideKey]
         if (!chainSide || chainSide.terminal !== 'sidewalk') continue
         const hw = chainSide.pavementHW || 0
-        const blockId = adjacentBlockId(pts, perps, seg.start, seg.end, sideSign, hw, blockRounded)
-        const eff = (blockCustoms?.[blockId]?.[chainIdx]?.[sideKey]) || chainSide
+        // Per-segment override lookup. Keyed by (chainIdx, segOrd, side):
+        // each natural segment between IXs is one block edge.
+        const eff = (blockCustoms?.[chainIdx]?.[segOrd]?.[sideKey]) || chainSide
         const tl = eff.treelawn || 0
         const sw = eff.sidewalk || 0
         if (tl > 0 && segPts.length >= 2) {

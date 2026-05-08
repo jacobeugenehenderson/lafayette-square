@@ -218,34 +218,46 @@ export default function MeasurePanel() {
   )
 }
 
-// Measure-mode toggle — the new block-customs flow. "Global" (default)
-// drags edit chain.measure; the chain-wide width updates everywhere the
-// chain borders a block. "Custom" drags target the block adjacent to the
-// click anchor: drag once → that block's left or right side breaks away
-// from the chain default. Switching back to Global wipes any customs on
-// the chain (globals are truth; customs are local deviations that don't
-// survive a chain-level edit).
+// Measure-mode toggle — block (per-segment) vs whole-chain.
+// "Edit whole chain" toggles the universal authoring mode. Pressing it
+// ON IMMEDIATELY wipes the chain's existing per-block customs — going
+// global is the commit to "this is the universal width" and the
+// per-block deviations don't survive that. Pressing OFF returns to
+// per-block authoring with no side effect (chain.measure stays).
+// Default is OFF: most authoring time is per-block; operators set the
+// universal once at survey time and spend the rest refining blocks.
 function ModeToggle() {
   const mode = useCartographStore(s => s.measureMode)
   const setMode = useCartographStore(s => s.setMeasureMode)
-  const isCustom = mode?.type === 'custom'
+  const selectedStreet = useCartographStore(s => s.selectedStreet)
+  const clearCustomsForChain = useCartographStore(s => s.clearBlockCustomsForChain)
+  const isWholeChain = mode?.type === 'global'
+  const click = () => {
+    if (isWholeChain) {
+      setMode({ type: 'block' })
+    } else {
+      // Toggling INTO whole-chain wipes the chain's per-block customs.
+      if (selectedStreet != null) clearCustomsForChain(selectedStreet)
+      setMode({ type: 'global' })
+    }
+  }
   return (
     <div className="carto-row" style={{ gap: 6, marginTop: 4 }}>
       <button
         className="carto-btn-sm"
-        onClick={() => setMode({ type: isCustom ? 'global' : 'custom' })}
+        onClick={click}
         style={{
-          background: isCustom ? 'var(--vic-gold, #ffaa00)' : 'transparent',
-          color: isCustom ? '#000' : 'var(--on-surface, #ddd)',
+          background: isWholeChain ? 'var(--vic-gold, #ffaa00)' : 'transparent',
+          color: isWholeChain ? '#000' : 'var(--on-surface, #ddd)',
           border: '1px solid var(--outline-variant, #555)',
           padding: '4px 10px',
           cursor: 'pointer',
           flex: 1,
         }}
-        title={isCustom
-          ? 'Custom mode: drag handles edit the block adjacent to the click anchor (per-block override). Click again for Global.'
-          : 'Global mode: drag handles edit the chain default everywhere. Click for Custom (per-block) mode.'}>
-        {isCustom ? '● Adjust this block' : '○ Adjust global'}
+        title={isWholeChain
+          ? 'Whole-chain mode: drag edits the chain default for every block. Click to return to per-block authoring.'
+          : 'Per-block mode (default): drag edits the block at the click anchor. Click to switch to whole-chain — that wipes any per-block customs on this chain.'}>
+        {isWholeChain ? '● Edit whole chain' : '○ Edit whole chain'}
       </button>
     </div>
   )

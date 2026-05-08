@@ -168,20 +168,35 @@ const useCartographStore = create((set, get) => ({
   // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
   // operator can dial up/down via the Streets > Curb slider.
   curbWidth: 0.1524,
-  // Per-block per-chain-side measure overrides — the "block-customs" model
-  // that replaces V1's couplers / segmentMeasures authoring. A chain's
-  // measure is the global default; the operator right-clicks a chain in
-  // Measure mode → context menu's "Adjust this block" flips the measure
-  // mode to write to a block-scoped override. Editing the chain's global
-  // measure clears any customs on that chain (by design — globals are
-  // truth, customs are local deviations that don't survive a chain edit).
-  // Shape: blockCustoms[blockId][chainIdx][side] = { pavementHW, treelawn, sidewalk, terminal }
+  // Per-segment per-side measure overrides — the "block-customs" model
+  // that replaces V1's couplers/segmentMeasures authoring. The OPERATOR
+  // model is per-block ("Adjust this block"); the storage is keyed by
+  // (chainIdx, natural-segment-ordinal, side) since each natural segment
+  // (the stretch of chain between two IXs) IS one block edge. Real
+  // block ids would require planar-subdivision face computation; per-
+  // segment keying is functionally equivalent for ribbon widths and
+  // ships today. Shape:
+  //   blockCustoms[chainIdx][segOrd][side] = { pavementHW, treelawn, sidewalk, terminal }
+  // The chain's global measure is the default; the operator right-clicks
+  // (or panel-toggles) Custom mode and drags to write a per-segment-side
+  // override. Editing the chain's global measure clears the chain's
+  // customs (globals are truth; customs are local deviations).
   blockCustoms: {},
-  // Measure tool's edit mode. 'global' (default) writes to chain.measure
-  // for whichever side the dragged handle belongs to. 'custom' targets a
-  // specific block + chain + side override in blockCustoms. Set via the
-  // canvas right-click context menu while a chain is selected.
-  measureMode: { type: 'global' },
+  // Measure tool's edit mode.
+  //   'block' (default) — drag writes a per-segment-per-side override in
+  //     blockCustoms keyed by (chainIdx, segOrd, side). Operator-time
+  //     authoring is per-block; the segment is implicit in the click
+  //     anchor's position along the chain.
+  //   'global' — drag writes chain.measure (the universal default for
+  //     every block edge along the chain). Toggling INTO this mode also
+  //     wipes the chain's existing per-block customs (globals are truth;
+  //     per-block customs are local deviations that don't survive a
+  //     universal redefinition). Toggling back to 'block' has no side
+  //     effect; subsequent drags resume per-segment authoring.
+  // Default is per-block because that's the bulk of authoring time;
+  // operators set the universal value once per chain at survey time and
+  // spend the rest of the session refining individual blocks.
+  measureMode: { type: 'block' },
   // Transient cache of V2's rounded block rings — written by
   // BlockGeometryV2Debug on every recompute, read by MeasureOverlay so
   // the drag path can do block adjacency at drag time without
@@ -313,45 +328,34 @@ const useCartographStore = create((set, get) => ({
     get()._saveDesignDebounced()
   },
   _setV2Blocks: (blocks) => set({ _v2Blocks: Array.isArray(blocks) ? blocks : [] }),
-  // Measure-mode toggle. 'global' is the default; 'custom' writes per-block.
-  // The custom mode payload carries everything applyDrag needs to route the
-  // edit: which block, which chain, which side.
+  // Measure-mode setter. 'block' is the default; 'global' is the
+  // whole-chain authoring mode (= edit chain.measure).
   setMeasureMode: (mode) => {
-    if (!mode || mode.type === 'global') {
-      set({ measureMode: { type: 'global' } })
-      return
-    }
-    if (mode.type === 'custom') {
-      set({ measureMode: { type: 'custom', blockId: mode.blockId, chainIdx: mode.chainIdx, side: mode.side } })
-    }
+    const t = mode?.type === 'global' ? 'global' : 'block'
+    set({ measureMode: { type: t } })
   },
-  // Write a per-block per-chain-side measure override. Called by the drag
-  // path when measureMode === 'custom'. Persists via _saveDesignDebounced.
-  setBlockCustomMeasure: (blockId, chainIdx, side, measure) => {
-    if (blockId == null || chainIdx == null || (side !== 'left' && side !== 'right')) return
+  // Write a per-segment per-side measure override. Called by the drag
+  // path when measureMode === 'custom'. The (chainIdx, segOrd, side)
+  // composite key uniquely identifies one block edge along the chain.
+  setBlockCustomMeasure: (chainIdx, segOrd, side, measure) => {
+    if (chainIdx == null || segOrd == null || (side !== 'left' && side !== 'right')) return
     const next = { ...(get().blockCustoms || {}) }
-    next[blockId] = { ...(next[blockId] || {}) }
-    next[blockId][chainIdx] = { ...(next[blockId][chainIdx] || {}) }
-    next[blockId][chainIdx][side] = { ...measure }
+    next[chainIdx] = { ...(next[chainIdx] || {}) }
+    next[chainIdx][segOrd] = { ...(next[chainIdx][segOrd] || {}) }
+    next[chainIdx][segOrd][side] = { ...measure }
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
-  // Clear every block custom that targets this chain. Called from the
-  // global-edit drag path so editing the chain default wipes its locals
-  // (the "globals are truth" semantics).
+  // Clear every block custom on this chain. Called from the global-edit
+  // drag path so editing the chain default wipes its locals (the
+  // "globals are truth" semantics).
   clearBlockCustomsForChain: (chainIdx) => {
     const cur = get().blockCustoms || {}
-    let changed = false
-    const next = {}
-    for (const [blockId, byChain] of Object.entries(cur)) {
-      const filtered = { ...byChain }
-      if (filtered[chainIdx]) { delete filtered[chainIdx]; changed = true }
-      if (Object.keys(filtered).length) next[blockId] = filtered
-    }
-    if (changed) {
-      set({ blockCustoms: next })
-      get()._saveDesignDebounced()
-    }
+    if (!cur[chainIdx]) return
+    const next = { ...cur }
+    delete next[chainIdx]
+    set({ blockCustoms: next })
+    get()._saveDesignDebounced()
   },
   // Look-level corner-radius multiplier. Clamp at 0 (square) and a
   // generous upper bound to keep the slider sane.

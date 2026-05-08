@@ -194,33 +194,22 @@ const HANDLE_LONG = 5.0
 const HANDLE_SHORT = 1.2
 const HANDLE_BORDER = 0.35
 
-// Even-odd point-in-ring test for block-adjacency lookup at drag time.
-// Mirrors the helper in buildBlockGeometryV2 — kept inline here to avoid
-// a cross-module import path purely for one tiny utility.
-function pointInRing(px, pz, ring) {
-  let inside = false
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], zi = ring[i][1]
-    const xj = ring[j][0], zj = ring[j][1]
-    if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) {
-      inside = !inside
-    }
+// Compute which natural-segment ordinal contains a polyline-segment
+// index. Natural segments are the stretches of chain between IX
+// vertices (and the chain endpoints). Ordinals: [0..ixs[0]] = 0,
+// [ixs[0]..ixs[1]] = 1, etc. Mirrors buildBlockGeometryV2.naturalSegments
+// but exposes the ordinal directly given a polyline `segI` index.
+function naturalSegmentOrdinal(street, segI) {
+  const n = (street.points || []).length
+  if (n < 2) return 0
+  const ixs = (street.intersections || [])
+    .map(r => r.ix).filter(i => Number.isInteger(i) && i > 0 && i < n - 1)
+    .sort((a, b) => a - b)
+  if (!ixs.length) return 0
+  for (let k = 0; k < ixs.length; k++) {
+    if (segI < ixs[k]) return k
   }
-  return inside
-}
-
-// Resolve which block sits on a given side of a chain at the anchor point.
-// `sideSign`: +1 left, -1 right. `hw` is the chain-wide pavementHW so the
-// probe lands solidly inside the adjacent block (past asphalt + curb).
-function resolveAdjacentBlockId(anchor, perp, sideSign, hw, blocks) {
-  if (!blocks?.length) return null
-  const probeR = (hw || 0) + 1.0
-  const tx = anchor.x + perp.x * sideSign * probeR
-  const tz = anchor.z + perp.z * sideSign * probeR
-  for (let i = 0; i < blocks.length; i++) {
-    if (pointInRing(tx, tz, blocks[i])) return i
-  }
-  return null
+  return ixs.length
 }
 
 export default function MeasureOverlay() {
@@ -388,30 +377,25 @@ export default function MeasureOverlay() {
     const MAX_PAVEMENT_HW = 30
     const MAX_STRIPE = 20
 
-    // Custom mode: write to blockCustoms instead of segmentMeasures.
+    // Per-block mode (default): write to blockCustoms. Each natural
+    // segment of the chain (between two IXs) is one block-edge; the
+    // segment is identified from the click anchor's polyline-segment
+    // index. Operator clicks the block they want to author, drags
+    // handles → only that block-edge changes.
     const mode = useCartographStore.getState().measureMode
     if (window.__customDebug) console.log('[applyDrag] mode:', mode, 'side:', side, 'kind:', kind)
-    if (mode?.type === 'custom') {
+    if (mode?.type !== 'global') {
       const cd = useCartographStore.getState().centerlineData
       const st = cd.streets[streetIdx]
       if (!st) { if (window.__customDebug) console.log('  bail: no street'); return }
       const anchor = useCartographStore.getState().selectedMeasurePoint
       if (!anchor) { if (window.__customDebug) console.log('  bail: no anchor'); return }
       const frame = frameAtPoint(st.points, anchor.x, anchor.z)
-      const sideSign = side === 'left' ? -1 : +1
-      const blocks = useCartographStore.getState()._v2Blocks || []
-      const hwForProbe = st.measure?.[side]?.pavementHW || 5
-      const blockId = resolveAdjacentBlockId(
-        { x: frame.cx, z: frame.cz },
-        { x: frame.nx, z: frame.nz },
-        sideSign, hwForProbe, blocks,
-      )
+      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0)
       if (window.__customDebug) {
-        console.log('  blocks count:', blocks.length, 'blockId:', blockId,
-          'probe:', { cx: frame.cx, cz: frame.cz, nx: frame.nx, nz: frame.nz, sideSign, hwForProbe })
+        console.log('  segOrd:', segOrd, 'segI:', frame.segI, 'streetIdx:', streetIdx, 'side:', side)
       }
-      if (blockId == null) return
-      const existing = useCartographStore.getState().blockCustoms?.[blockId]?.[streetIdx]?.[side]
+      const existing = useCartographStore.getState().blockCustoms?.[streetIdx]?.[segOrd]?.[side]
       const seed = existing || st.measure?.[side] || { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
       const next = { ...seed }
       const cw = Number.isFinite(next.curb) ? next.curb : CURB_WIDTH
@@ -434,13 +418,15 @@ export default function MeasureOverlay() {
         const inner = curbEnd + next.treelawn
         next.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
       }
-      useCartographStore.getState().setBlockCustomMeasure(blockId, streetIdx, side, next)
+      if (window.__customDebug) console.log('  → write segCustom[chain', streetIdx, '][seg', segOrd, '][', side, '] =', next)
+      useCartographStore.getState().setBlockCustomMeasure(streetIdx, segOrd, side, next)
       return
     }
 
-    // Global mode: clear this chain's existing customs (globals are truth)
-    // then fall through to the chain.measure write path.
-    useCartographStore.getState().clearBlockCustomsForChain(streetIdx)
+    // Whole-chain mode: write chain.measure. Per-block customs are
+    // already wiped at the moment the operator toggled INTO global mode
+    // (handled by ModeToggle in MeasurePanel) — toggling INTO global
+    // is the operator's commit to "this is the universal width now."
     modifyMeasure(streetIdx, ordinal, (m) => {
       // Symmetric is the default. measure.symmetric === true → drag mirrors
       // both sides together; false → drag affects only the dragged side.
