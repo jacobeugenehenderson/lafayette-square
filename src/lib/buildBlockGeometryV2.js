@@ -521,8 +521,16 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // rectangles starting past the curb (perp distance hw+CURB_WIDTH from
   // centerline) and let render order resolve overlaps; the unified curb
   // covers the inner-edge seams where adjacent chains meet at an IX.
+  // ── Stripe edges: per-chain offset polylines at every band transition
+  // (hw, hw+cw, hw+cw+tl, hw+cw+tl+sw). Rendered as line meshes when the
+  // Measure tool is active so the operator can see exactly where each
+  // band edge sits; same source as the band rings, just sampled as a
+  // single polyline rather than a closed ring.
   const treelawnBandsRaw = []
   const sidewalkBandsRaw = []
+  const stripeEdges = []
+  const offsetPoly = (pts, perps, sideSign, r) =>
+    pts.map((p, i) => [p[0] + perps[i][0] * sideSign * r, p[1] + perps[i][1] * sideSign * r])
   for (const street of streets) {
     const pts = street.points
     const m = street.measure
@@ -557,6 +565,12 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         const ring = chainStripBand(pts, perps, sideSign, hw + cw + tl, hw + cw + tl + sw)
         if (ring) sidewalkBandsRaw.push(ring)
       }
+      // Stripe edges — emit one polyline per band transition. Hidden
+      // from render at idle; line meshes for these surface in Measure.
+      if (hw > 0) stripeEdges.push(offsetPoly(pts, perps, sideSign, hw))
+      if (cw > 0) stripeEdges.push(offsetPoly(pts, perps, sideSign, hw + cw))
+      if (tl > 0) stripeEdges.push(offsetPoly(pts, perps, sideSign, hw + cw + tl))
+      if (sw > 0) stripeEdges.push(offsetPoly(pts, perps, sideSign, hw + cw + tl + sw))
     }
     // Round-cap band extensions for treelawn + sidewalk. Curb's cap is
     // already handled by the unified stroke (asphaltRounded includes the
@@ -608,6 +622,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     curbBands,
     treelawnBands,
     sidewalkBands,
+    stripeEdges,
     corners: allCorners,
   }
 }

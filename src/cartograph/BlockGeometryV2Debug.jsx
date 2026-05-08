@@ -151,7 +151,10 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
   return out
 }
 
-export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor }) {
+export default function BlockGeometryV2Debug({
+  ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
+  measureActive = false, surveyActive = false,
+}) {
   const makeMaterial = useSurfaceMaterial(flat)
   // Read corner-authoring + palette state directly from the store. Keeps
   // the V2 mount simple (just `ribbons` + `stencil` as props) and lets the
@@ -184,8 +187,8 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
-  const { asphaltRounded, blockRounded, curbBands, treelawnBands, sidewalkBands, corners } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], curbBands: [], treelawnBands: [], sidewalkBands: [], corners: [] }
+  const { asphaltRounded, blockRounded, curbBands, treelawnBands, sidewalkBands, stripeEdges, corners } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], curbBands: [], treelawnBands: [], sidewalkBands: [], stripeEdges: [], corners: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -212,11 +215,37 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   const asphaltGeo  = useMemo(() => ringsToFlatGeo(asphaltRounded, 0.04, true), [asphaltRounded])
 
-  const blockMat    = useMemo(() => makeMaterial(blockCol,    PRI.residential), [makeMaterial, blockCol])
-  const treelawnMat = useMemo(() => makeMaterial(treelawnCol, PRI.treelawn),    [makeMaterial, treelawnCol])
-  const sidewalkMat = useMemo(() => makeMaterial(sidewalkCol, PRI.sidewalk),    [makeMaterial, sidewalkCol])
-  const curbMat     = useMemo(() => makeMaterial(curbCol,     PRI.curb),        [makeMaterial, curbCol])
-  const asphaltMat  = useMemo(() => makeMaterial(asphaltCol,  PRI.asphalt),     [makeMaterial, asphaltCol])
+  // Edge strokes — one BufferGeometry of LineSegments emitted only when
+  // Measure is active, so the operator can see exactly where each band
+  // transition sits while authoring measures. Sits above the asphalt
+  // depth-wise so the lines aren't occluded by translucent bands.
+  const edgeGeo = useMemo(() => {
+    if (!measureActive || !stripeEdges?.length) return null
+    const positions = []
+    for (const poly of stripeEdges) {
+      if (!poly || poly.length < 2) continue
+      for (let i = 0; i < poly.length - 1; i++) {
+        positions.push(poly[i][0],   0.06, poly[i][1])
+        positions.push(poly[i+1][0], 0.06, poly[i+1][1])
+      }
+    }
+    if (!positions.length) return null
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    return g
+  }, [stripeEdges, measureActive])
+
+  // Measure / Survey overlay opts thread through useSurfaceMaterial so V2
+  // matches V1's translucency story (transparent flag flips when either
+  // tool is active). Per-chain selection (selectedCorridor) needs chain
+  // provenance preserved through the band rings and is a followup — for
+  // now V2 applies the tool flag uniformly to every band.
+  const matOpts = useMemo(() => ({ measureActive, surveyActive }), [measureActive, surveyActive])
+  const blockMat    = useMemo(() => makeMaterial(blockCol,    PRI.residential, null, matOpts), [makeMaterial, blockCol,    matOpts])
+  const treelawnMat = useMemo(() => makeMaterial(treelawnCol, PRI.treelawn,    null, matOpts), [makeMaterial, treelawnCol, matOpts])
+  const sidewalkMat = useMemo(() => makeMaterial(sidewalkCol, PRI.sidewalk,    null, matOpts), [makeMaterial, sidewalkCol, matOpts])
+  const curbMat     = useMemo(() => makeMaterial(curbCol,     PRI.curb,        null, matOpts), [makeMaterial, curbCol,     matOpts])
+  const asphaltMat  = useMemo(() => makeMaterial(asphaltCol,  PRI.asphalt,     null, matOpts), [makeMaterial, asphaltCol,  matOpts])
 
   return (
     <group>
@@ -234,6 +263,11 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
       )}
       {asphaltGeo && (
         <mesh geometry={asphaltGeo} renderOrder={PRI.asphalt} receiveShadow material={asphaltMat} />
+      )}
+      {edgeGeo && (
+        <lineSegments geometry={edgeGeo} renderOrder={PRI.asphalt + 1}>
+          <lineBasicMaterial color="#ffffff" transparent opacity={0.85} depthWrite={false} />
+        </lineSegments>
       )}
       {showCornerDots && corners.map((c, i) => (
         <mesh

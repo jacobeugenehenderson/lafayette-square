@@ -778,7 +778,9 @@ export default function CartographApp() {
             <BlockGeometryV2Debug
               ribbons={sceneCfg.ribbons}
               stencil={sceneCfg.stencil}
-              flat={inDesigner} />
+              flat={inDesigner}
+              measureActive={tool === 'measure' && inDesigner}
+              surveyActive={tool === 'surveyor' && inDesigner} />
           </R3FErrorBoundary>
 
           {/* ── Corner-edit handles — surface only in Designer mode, in
