@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs'
-import { join, extname } from 'path'
+import { join, extname, dirname } from 'path'
 import { execSync } from 'child_process'
 import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
 
@@ -203,119 +203,72 @@ createServer((req, res) => {
   // Strip query string for route matching. Clients add cache-busting
   // ?t=... that would otherwise miss exact-equality checks.
   const path = (req.url || '').split('?')[0]
-  // GET /markers — read strokes
-  if (req.method === 'GET' && path === '/markers') {
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(readFileSync(MARKERS))
-    return
-  }
-
-  // POST /markers — write strokes
-  if (req.method === 'POST' && path === '/markers') {
-    let body = ''
-    req.on('data', c => body += c)
-    req.on('end', () => {
-      writeFileSync(MARKERS, JSON.stringify(JSON.parse(body), null, 2))
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end('{"ok":true}')
-    })
-    return
-  }
-
-  // GET /analyze — report what's under the marker strokes
+  // GET /analyze — report what's under the marker strokes (LS-only helper).
   if (req.method === 'GET' && path === '/analyze') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(analyzeMarkers(), null, 2))
     return
   }
 
-  // GET /measurements — read measurements
-  if (req.method === 'GET' && path === '/measurements') {
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(readFileSync(MEASUREMENTS))
-    return
+  // ── Per-scene data routes ──────────────────────────────────────────────
+  // Canonical: /<scene>/<verb> (e.g. /lafayette-square/centerlines, /toy/overlay).
+  // Legacy: /<verb> with no scene prefix resolves to the default scene; this
+  // alias exists so older clients keep working through Phase 0c's store
+  // migration. Once every caller is scene-aware we can retire it.
+  //
+  // Verbs split by allowed methods to match the prior per-route behavior
+  // exactly: skeleton is GET-only (derived artifact), the rest accept POST
+  // for autosave. Empty-payload defaults match the boot-time inits.
+  const READ_VERBS = ['markers', 'measurements', 'skeleton', 'centerlines', 'overlay']
+  const WRITE_VERBS = ['markers', 'measurements', 'centerlines', 'overlay']
+  const EMPTY = {
+    markers:      '[]',
+    measurements: '{"measurements":[]}',
+    centerlines:  '{"streets":[]}',
+    overlay:      '{"version":1,"streets":{}}',
   }
+  // Reserved top-level prefixes that must NOT be mistaken for scene names.
+  const RESERVED_PREFIXES = new Set(['looks', 'analyze', 'rebuild'])
+  const sceneRouteMatch = path.match(/^\/(?:([a-z0-9][a-z0-9-]*)\/)?(markers|measurements|skeleton|centerlines|overlay)$/)
+  if (sceneRouteMatch && !RESERVED_PREFIXES.has(sceneRouteMatch[1])) {
+    const scene = sceneRouteMatch[1] || DEFAULT_SCENE
+    const verb = sceneRouteMatch[2]
+    const paths = sceneDataPaths(scene)
+    const filePath = paths[verb]
 
-  // POST /measurements — write measurements
-  if (req.method === 'POST' && path === '/measurements') {
-    let body = ''
-    req.on('data', c => body += c)
-    req.on('end', () => {
-      try {
-        const parsed = JSON.parse(body)
-        writeFileSync(MEASUREMENTS, JSON.stringify(parsed, null, 2))
+    if (req.method === 'GET' && READ_VERBS.includes(verb)) {
+      if (!existsSync(filePath)) {
+        if (verb === 'skeleton') {
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: `skeleton.json not found for scene '${scene}' — run skeleton.js` }))
+          return
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end('{"ok":true}')
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: err.message }))
+        res.end(EMPTY[verb] || '{}')
+        return
       }
-    })
-    return
-  }
-
-  // GET /skeleton — read Phase-0 skeleton output
-  if (req.method === 'GET' && path === '/skeleton') {
-    if (!existsSync(SKELETON)) {
-      res.writeHead(404, { 'Content-Type': 'application/json' })
-      res.end('{"error":"skeleton.json not found — run `node skeleton.js`"}')
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(readFileSync(filePath))
       return
     }
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(readFileSync(SKELETON))
-    return
-  }
 
-  // GET /centerlines — read centerline data
-  if (req.method === 'GET' && path === '/centerlines') {
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(readFileSync(CENTERLINES))
-    return
-  }
-
-  // POST /centerlines — write centerline data
-  if (req.method === 'POST' && path === '/centerlines') {
-    let body = ''
-    req.on('data', c => body += c)
-    req.on('end', () => {
-      try {
-        const parsed = JSON.parse(body)
-        writeFileSync(CENTERLINES, JSON.stringify(parsed, null, 2))
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end('{"ok":true}')
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: err.message }))
-      }
-    })
-    return
-  }
-
-  // GET /overlay — read the operator-intent overlay (skelId-keyed)
-  if (req.method === 'GET' && path === '/overlay') {
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(readFileSync(OVERLAY))
-    return
-  }
-
-  // POST /overlay — write overlay (authored caps, couplers, measures,
-  // segmentMeasures keyed by skeleton chain id). Skeleton owns geometry;
-  // this file owns operator intent.
-  if (req.method === 'POST' && path === '/overlay') {
-    let body = ''
-    req.on('data', c => body += c)
-    req.on('end', () => {
-      try {
-        const parsed = JSON.parse(body)
-        writeFileSync(OVERLAY, JSON.stringify(parsed, null, 2))
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end('{"ok":true}')
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: err.message }))
-      }
-    })
-    return
+    if (req.method === 'POST' && WRITE_VERBS.includes(verb)) {
+      let body = ''
+      req.on('data', c => body += c)
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body)
+          mkdirSync(dirname(filePath), { recursive: true })
+          writeFileSync(filePath, JSON.stringify(parsed, null, 2))
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end('{"ok":true}')
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: err.message }))
+        }
+      })
+      return
+    }
   }
 
   // ── Looks ───────────────────────────────────────────────────────────────
