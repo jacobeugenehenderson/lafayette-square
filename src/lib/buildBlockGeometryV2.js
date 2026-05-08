@@ -612,7 +612,11 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // picks the right one.
   const offsetPoly = (pts, perps, sideSign, r) =>
     pts.map((p, i) => [p[0] + perps[i][0] * sideSign * r, p[1] + perps[i][1] * sideSign * r])
-  for (const e of byChain) { if (e) e.stripeEdges = [] }
+  // Per-chain edges, split by which band's outer they mark — so the
+  // renderer can color them after that band's color. The asphalt|curb
+  // and curb|treelawn boundaries don't need strokes (the curb stripe
+  // itself is the visible boundary stroke between asphalt and treelawn).
+  for (const e of byChain) { if (e) { e.treelawnEdges = []; e.sidewalkEdges = [] } }
   for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
     const street = streets[chainIdx]
     const entry = byChain[chainIdx]
@@ -662,10 +666,12 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         }
         // Stripe edges per segment so the operator's edge-line overlay
         // reflects the per-block widths in Measure mode.
-        if (hw > 0)            entry.stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw))
-        if (cw > 0 && hw > 0)  entry.stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw))
-        if (tl > 0)            entry.stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
-        if (sw > 0)            entry.stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
+        // Treelawn outer edge — only when treelawn exists. Colored green
+        // (= treelawn band's color) by the renderer.
+        if (tl > 0) entry.treelawnEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
+        // Sidewalk outer edge — the property line. Colored white
+        // (= sidewalk band's color) by the renderer.
+        if (sw > 0) entry.sidewalkEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
       }
     }
     // Round-cap band extensions for treelawn + sidewalk. Curb's cap is

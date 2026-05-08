@@ -4,7 +4,6 @@ import { MapControls, OrbitControls, PerspectiveCamera } from '@react-three/drei
 import * as THREE from 'three'
 
 // Map geometry (rendered in every shot)
-import StreetRibbons from '../components/StreetRibbons.jsx'
 import MapLayers from './MapLayers.jsx'
 import BakedGround from '../components/BakedGround.jsx'
 
@@ -552,10 +551,6 @@ const SCENE_REGISTRY = {
     useBoundary: true,
     hasAerial: true,
     hasHero: true,
-    // Legacy V1 StreetRibbons mounts under V2 for side-by-side until V2
-    // ships Measure visuals (Phase 0g). Toy disables it (see below) so
-    // V2 is the sole render in the diagnostic scene.
-    legacyRibbons: true,
     StageEnvironment: ({ hiddenLayers }) => <>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
       {!hiddenLayers.tree && (
@@ -574,9 +569,6 @@ const SCENE_REGISTRY = {
     useBoundary: false,
     hasAerial: false,
     hasHero: false,
-    // V2 (rounded-block-clip) is the sole ground render in toy. V1's
-    // residual corner-plug primitives don't belong in the diagnostic lab.
-    legacyRibbons: false,
     StageEnvironment: () => <>
       <R3FErrorBoundary name="ToyTerrain"><ToyTerrain /></R3FErrorBoundary>
       <R3FErrorBoundary name="ToyBuildings"><ToyBuildings /></R3FErrorBoundary>
@@ -755,40 +747,7 @@ export default function CartographApp() {
               <sceneCfg.DesignerBackdrop />
             </R3FErrorBoundary>
           )}
-          {sceneCfg.legacyRibbons && (
-          <R3FErrorBoundary name="StreetRibbons">
-            <group visible={!designAerialOnly}>
-            <StreetRibbons hiddenLayers={hiddenLayers}
-              luColors={luColors}
-              liveCenterlines={centerlineData.streets}
-              measureActive={tool === 'measure' && inDesigner}
-              surveyActive={tool === 'surveyor' && inDesigner}
-              selectedCorridorNames={(() => {
-                // Selection highlight is only meaningful while a tool is
-                // active — it dims the chain so its aerial reads through
-                // for alignment/measurement. Outside any tool the chain
-                // should render like every other street.
-                if (!tool || !inDesigner) return null
-                if (selectedStreet === null) return null
-                const corridor = corridorByIdx?.get(selectedStreet)
-                if (corridor) {
-                  const names = new Set()
-                  for (const idx of corridor) {
-                    const s = centerlineData.streets[idx]
-                    if (s?.name) names.add(s.name)
-                  }
-                  return names
-                }
-                const s = centerlineData?.streets?.[selectedStreet]
-                return s?.name ? new Set([s.name]) : null
-              })()}
-              flat={inDesigner}
-              ribbons={sceneCfg.ribbons}
-              useBoundary={sceneCfg.useBoundary}
-              hideFaceFills={toolAerialFocus} />
-            </group>
-          </R3FErrorBoundary>
-          )}
+
 
           {/* ── Rounded-block-clip V2 ground render.
               Mounted in every scene; reads live centerlines from the
@@ -803,7 +762,8 @@ export default function CartographApp() {
               stencil={sceneCfg.stencil}
               flat={inDesigner}
               measureActive={tool === 'measure' && inDesigner}
-              surveyActive={tool === 'surveyor' && inDesigner} />
+              surveyActive={tool === 'surveyor' && inDesigner}
+              hideLandUse={toolAerialFocus} />
           </R3FErrorBoundary>
 
           {/* ── Corner-edit handles — surface only in Designer mode, in
