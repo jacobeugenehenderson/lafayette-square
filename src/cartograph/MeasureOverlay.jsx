@@ -437,10 +437,15 @@ export default function MeasureOverlay() {
     // then fall through to the chain.measure write path.
     useCartographStore.getState().clearBlockCustomsForChain(streetIdx)
     modifyMeasure(streetIdx, ordinal, (m) => {
-      const sides = m.symmetric ? ['left', 'right'] : [side]
+      // Asymmetric drag is the operator default. The chain's measure.symmetric
+      // flag now controls only the panel-side "edit sides together" affordance
+      // (a mirroring convenience); pulling a handle on one side never changes
+      // the other implicitly. Matches the operator mental model: pulling the
+      // right boundary right doesn't move the left boundary left.
+      const sides = [side]
       if (window.__measureDebug) {
         console.log('[applyDrag]', { dragSide: side, kind, r: r.toFixed(2),
-          m_symmetric: m.symmetric, willUpdate: sides,
+          willUpdate: sides,
           before_left: { ...m.left }, before_right: { ...m.right } })
       }
       // Pedestrian-stripe minimum width: ribbons can't be dragged thinner

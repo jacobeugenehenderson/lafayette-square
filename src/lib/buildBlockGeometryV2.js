@@ -596,11 +596,14 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // rectangles starting past the curb (perp distance hw+CURB_WIDTH from
   // centerline) and let render order resolve overlaps; the unified curb
   // covers the inner-edge seams where adjacent chains meet at an IX.
-  // ── Stripe edges: per-chain offset polylines at every band transition
-  // (hw, hw+cw, hw+cw+tl, hw+cw+tl+sw). Rendered as line meshes when the
-  // Measure tool is active so the operator can see exactly where each
-  // band edge sits; same source as the band rings, just sampled as a
-  // single polyline rather than a closed ring.
+  //
+  // Stripe edges: per-chain (per-segment) offset polylines at every band
+  // transition (hw, hw+cw, hw+cw+tl, hw+cw+tl+sw). The Measure tool
+  // surfaces them as opaque strokes so the operator can see exactly
+  // where each band boundary sits while ribbons go translucent.
+  const stripeEdges = []
+  const offsetPoly = (pts, perps, sideSign, r) =>
+    pts.map((p, i) => [p[0] + perps[i][0] * sideSign * r, p[1] + perps[i][1] * sideSign * r])
   for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
     const street = streets[chainIdx]
     const entry = byChain[chainIdx]
@@ -645,6 +648,12 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
           const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
           if (ring) entry.sidewalkRings.push(ring)
         }
+        // Stripe edges per segment so the operator's edge-line overlay
+        // reflects the per-block widths in Measure mode.
+        if (hw > 0)            stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw))
+        if (cw > 0 && hw > 0)  stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw))
+        if (tl > 0)            stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
+        if (sw > 0)            stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
       }
     }
     // Round-cap band extensions for treelawn + sidewalk. Curb's cap is
@@ -698,6 +707,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     blockRounded,
     curbBands,
     byChain,
+    stripeEdges,
     corners: allCorners,
   }
 }
