@@ -191,6 +191,29 @@ function CornersSubsection() {
 function CurbSubsection() {
   const stored = useCartographStore(s => s.curbWidth ?? 0.1524)
   const setStored = useCartographStore(s => s.setCurbWidth)
+  const [draft, setDraft] = useState(stored)
+  const rafRef = useRef(null)
+  const targetRef = useRef(stored)
+  const draggingRef = useRef(false)
+  useEffect(() => {
+    if (!draggingRef.current) setDraft(stored)
+  }, [stored])
+  // rAF-throttled commit — V2's geometry rebuild on every input event
+  // would stutter the slider. Slider thumb moves at input rate (setDraft);
+  // store commits piggyback on the next animation frame.
+  const scheduleCommit = (v) => {
+    targetRef.current = v
+    if (rafRef.current != null) return
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null
+      setStored(targetRef.current)
+    })
+  }
+  const finalCommit = () => {
+    draggingRef.current = false
+    if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    setStored(targetRef.current)
+  }
   return (
     <div className="carto-row" style={{ flexWrap: 'wrap', gap: 6 }}>
       <label className="carto-label-fixed" title="Width of the curb band that traces every block's asphalt boundary. Default 6&quot; (0.1524 m); 0 hides the curb entirely.">
@@ -198,10 +221,17 @@ function CurbSubsection() {
       </label>
       <input type="range" className="carto-input"
         min="0" max="0.5" step="0.0254"
-        value={stored}
-        onChange={e => setStored(parseFloat(e.target.value))} />
+        value={draft}
+        onPointerDown={() => { draggingRef.current = true }}
+        onPointerUp={finalCommit}
+        onChange={e => {
+          const v = parseFloat(e.target.value)
+          setDraft(v)
+          scheduleCommit(v)
+        }}
+        onKeyUp={finalCommit} />
       <span className="carto-meta" style={{ minWidth: 40, textAlign: 'right' }}>
-        {(stored * 39.3701).toFixed(1)}″
+        {(draft * 39.3701).toFixed(1)}″
       </span>
     </div>
   )

@@ -98,19 +98,22 @@ function chainPavementRing(street) {
     return out
   }
 
-  // End cap: bridge rightSide[last] → leftSide[last] going OUTWARD past
-  // the chain's last vertex. Polygon walks rightSide forward then leftSide
-  // reversed, so the cap arc sits between those two segments.
+  // End cap: bridge leftSide[last] → rightSide[last] going OUTWARD past
+  // the chain's last vertex. With the V1-aligned sign convention
+  // (leftSide at -perp, rightSide at +perp), CCW from leftSide to
+  // rightSide travels through +tangent (= outward past the chain end).
+  // Polygon walks leftSide forward then rightSide reversed.
   const endArc = capEnd === 'round'
-    ? halfArc(pts[n - 1], Math.max(hwL, hwR), rightSide[n - 1], leftSide[n - 1])
+    ? halfArc(pts[n - 1], Math.max(hwL, hwR), leftSide[n - 1], rightSide[n - 1])
     : []
-  // Start cap: bridge leftSide[0] → rightSide[0] going OUTWARD past the
-  // chain's first vertex. Sits at the polygon's wrap-around closure.
+  // Start cap: bridge rightSide[0] → leftSide[0] going OUTWARD past the
+  // chain's first vertex. CCW from rightSide to leftSide travels through
+  // -tangent (outward past the chain start).
   const startArc = capStart === 'round'
-    ? halfArc(pts[0], Math.max(hwL, hwR), leftSide[0], rightSide[0])
+    ? halfArc(pts[0], Math.max(hwL, hwR), rightSide[0], leftSide[0])
     : []
 
-  return [...rightSide, ...endArc, ...leftSide.slice().reverse(), ...startArc]
+  return [...leftSide, ...endArc, ...rightSide.slice().reverse(), ...startArc]
 }
 
 function unionRings(rings) {
