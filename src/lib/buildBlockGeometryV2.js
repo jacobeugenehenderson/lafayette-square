@@ -253,21 +253,24 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides) {
     while (theta >= 2 * Math.PI) theta -= 2 * Math.PI
     if (theta < 5 * RAD || theta > 355 * RAD) continue
 
-    // Block corner = intersection of A's LEFT curb-outer and B's RIGHT
-    // curb-outer. Legs are sorted CCW; the wedge between two adjacent legs
-    // (going CCW from A to B) sits on A's left side and B's right side.
-    // (Earlier mis-derivation had this swapped, which only worked at 90°
-    // IXs where the four corners are identical by symmetry — hidden the
-    // bug at the bent T and the dead-end IX. Must match the same A0/B0
-    // formula used in CornerEditHandles' Q computation, otherwise the
-    // per-corner override key and the geometric corner disagree on which
-    // wedge they refer to.) Perp-left of T = (-Ty, Tx).
+    // Block corner = intersection of A's RIGHT curb-outer and B's LEFT
+    // curb-outer. Legs are sorted CCW; the wedge between two adjacent
+    // legs (CCW from A to B) sits on A's right and B's left in the V2
+    // chainPavementRing convention (left = -perp, right = +perp). The
+    // OLD convention had this inverted (left = +perp); cornersAtIx was
+    // written for that and used outerL on A and outerR on B. After the
+    // 2026-05-08 chainPavementRing flip we use outerR on A + outerL on
+    // B to match the same physical sides chainPavementRing emits the
+    // polygon edges on. Symptom of getting this wrong: corners look
+    // correct on chains with symmetric measure (point-symmetric polygon
+    // hides the side mismatch) but break the moment the operator edits
+    // one side asymmetrically. Perp-left of T = (-Ty, Tx).
     const P_A = [-A.T[1], A.T[0]]
     const P_B = [-B.T[1], B.T[0]]
-    // A's LEFT curb passes through V + A.outerL · P_A, along A.T.
-    const A0 = [V[0] + A.outerL * P_A[0], V[1] + A.outerL * P_A[1]]
-    // B's RIGHT curb passes through V - B.outerR · P_B, along B.T.
-    const B0 = [V[0] - B.outerR * P_B[0], V[1] - B.outerR * P_B[1]]
+    // A's RIGHT curb passes through V + A.outerR · P_A, along A.T.
+    const A0 = [V[0] + A.outerR * P_A[0], V[1] + A.outerR * P_A[1]]
+    // B's LEFT curb passes through V - B.outerL · P_B, along B.T.
+    const B0 = [V[0] - B.outerL * P_B[0], V[1] - B.outerL * P_B[1]]
     // Intersect A0 + s·A.T = B0 + t·B.T.
     const det = A.T[0] * (-B.T[1]) - A.T[1] * (-B.T[0])
     if (Math.abs(det) < 1e-9) continue
@@ -275,8 +278,8 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides) {
     const s = (dx * (-B.T[1]) - dz * (-B.T[0])) / det
     const Vc = [A0[0] + s * A.T[0], A0[1] + s * A.T[1]]
 
-    const d_A = A.leftDepth    // A's LEFT side faces this corner.
-    const d_B = B.rightDepth   // B's RIGHT side faces this corner.
+    const d_A = A.rightDepth   // A's RIGHT side faces this corner.
+    const d_B = B.leftDepth    // B's LEFT side faces this corner.
     const d_min = Math.min(d_A, d_B)
 
     // Override lookup: per-corner key wins over per-IX key. Both are

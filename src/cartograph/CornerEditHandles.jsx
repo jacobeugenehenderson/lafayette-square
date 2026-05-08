@@ -136,8 +136,13 @@ function computeIxLayout(ribbons) {
       // Skip degenerate / non-corner pairs — geometry won't render a wedge
       // here either, so there's no corner to author.
       if (thetaDeg <= 5 || thetaDeg >= 175) continue
-      const A0 = [V[0] + (A.outerL + CURB_WIDTH) * P_A[0], V[1] + (A.outerL + CURB_WIDTH) * P_A[1]]
-      const B0 = [V[0] - (B.outerR + CURB_WIDTH) * P_B[0], V[1] - (B.outerR + CURB_WIDTH) * P_B[1]]
+      // Wedge between adjacent CCW legs sits on A's RIGHT and B's LEFT
+      // in the V2 chainPavementRing convention (left = -perp, right =
+      // +perp). Must match the same A0/B0 derivation in
+      // buildBlockGeometryV2's cornersAtIx — otherwise the per-corner
+      // override key here disagrees with the geometric corner there.
+      const A0 = [V[0] + (A.outerR + CURB_WIDTH) * P_A[0], V[1] + (A.outerR + CURB_WIDTH) * P_A[1]]
+      const B0 = [V[0] - (B.outerL + CURB_WIDTH) * P_B[0], V[1] - (B.outerL + CURB_WIDTH) * P_B[1]]
       const det = T_A[0] * (-T_B[1]) - T_A[1] * (-T_B[0])
       if (Math.abs(det) < 1e-9) continue
       const dq = [B0[0] - A0[0], B0[1] - A0[1]]
