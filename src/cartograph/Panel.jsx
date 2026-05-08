@@ -247,29 +247,37 @@ function HeroSubjectPicker({ open, onToggle }) {
   )
 }
 
-// Cosmetic-only Look picker. Not wired — clicking "+ add look" is a no-op
-// today; real multi-Look authoring is tracked in cartograph/BACKLOG.md.
-function LookPicker({ open, onToggle }) {
+// Tool pill at the top of the panel — Survey | Measure | Design. The pill
+// IS the tool selector (Toolbar's two-button group is gone) and replaces
+// the old text status indicator. "Design" = no tool active = pure Look
+// editing in the panel below.
+function ToolPill() {
+  const tool = useCartographStore(s => s.tool)
+  const setTool = useCartographStore(s => s.setTool)
+  const items = [
+    { id: 'surveyor', label: 'Survey' },
+    { id: 'measure',  label: 'Measure' },
+    { id: 'design',   label: 'Design' },
+  ]
+  const activeId = tool === 'surveyor' ? 'surveyor'
+                 : tool === 'measure'  ? 'measure'
+                 : 'design'
+  const onPick = (id) => {
+    const target = id === 'design' ? null : id
+    if (tool === target) return  // pill is no-op when clicking the active option
+    setTool(target)
+  }
   return (
-    <div className="carto-section">
-      <h2 className="carto-section-header">
-        <span className="carto-section-title" onClick={onToggle}>
-          <span className="carto-section-caret"
-            style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>▸</span>
-          Lafayette Square
-        </span>
-      </h2>
-      {open && (
-        <div className="carto-row">
-          <button
-            type="button"
-            className="carto-look-add"
-            onClick={(e) => e.preventDefault()}
-          >
-            + add look
-          </button>
-        </div>
-      )}
+    <div className="carto-toolgroup carto-panel-toolpill">
+      {items.map(item => (
+        <button
+          key={item.id}
+          className={activeId === item.id ? 'is-active' : ''}
+          onClick={() => onPick(item.id)}
+        >
+          {item.label}
+        </button>
+      ))}
     </div>
   )
 }
@@ -302,10 +310,6 @@ export default function Panel() {
     setOpenSections(prev => ({ ...prev, [name]: !prev[name] }))
   }
 
-  const heading = tool === 'surveyor' ? 'Survey'
-                : tool === 'measure'  ? 'Measure'
-                : 'Designer'
-
   const sections = [
     ['Streets',  STREETS_DEFS],
     ['Blocks',   BLOCKS_DEFS],
@@ -316,17 +320,10 @@ export default function Panel() {
 
   return (
     <div className="carto-panel">
-      <h1>{heading}</h1>
+      <ToolPill />
 
       {tool === 'surveyor' && <SurveyorPanel />}
       {tool === 'measure' && <MeasurePanel />}
-
-      {/* Cosmetic Look picker. Visibility toggles below still write to the
-          active Look's layerVis (Stage + Preview pick up the change and the
-          bake stales). Colors and materials live in Stage → Surfaces. */}
-      <LookPicker
-        open={!!openSections['Look']}
-        onToggle={() => toggleSection('Look')} />
 
       <HeroSubjectPicker
         open={!!openSections['HeroSubject']}

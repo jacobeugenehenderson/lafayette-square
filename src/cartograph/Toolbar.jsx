@@ -6,18 +6,13 @@ const DEFAULT_LOOK_ID = 'lafayette-square'
 function cap(s) { return s[0].toUpperCase() + s.slice(1) }
 
 export default function Toolbar() {
-  const tool = useCartographStore(s => s.tool)
   const shot = useCartographStore(s => s.shot)
-  const scene = useCartographStore(s => s.scene)
-  const setTool = useCartographStore(s => s.setTool)
   const setShot = useCartographStore(s => s.setShot)
-  const setScene = useCartographStore(s => s.setScene)
   const aerialVisible = useCartographStore(s => s.aerialVisible)
   const setAerialVisible = useCartographStore(s => s.setAerialVisible)
   const bakeRunning = useCartographStore(s => s.bakeRunning)
   const bakeStale = useCartographStore(s => s.bakeStale)
   const runBake = useCartographStore(s => s.runBake)
-  const lastStageShot = useCartographStore(s => s.lastStageShot)
 
   const inDesigner = shot === 'designer'
 
@@ -25,31 +20,18 @@ export default function Toolbar() {
     <div className="carto-toolbar carto-glass">
       {inDesigner ? (
         <>
-          <ToolGroup
-            items={[
-              { id: 'surveyor', label: 'Survey' },
-              { id: 'measure', label: 'Measure' },
-            ]}
-            active={tool}
-            onSelect={setTool}
-          />
-
+          {/* Toolbar = views only. Authoring tool selection (Survey /
+              Measure / Design) lives in the panel as a 3-part pill. */}
           {/* Aerial toggle. Off = SVG (curated cartograph) shows
-              behind the ribbons; on = georeferenced aerial photo.
-              Tools (Survey/Measure) and pure Design both render on
-              top of whichever background is selected. */}
+              behind the ribbons; on = georeferenced aerial photo. */}
           <ToggleButton label="Aerial"
             active={aerialVisible}
             onClick={() => setAerialVisible(!aerialVisible)} />
 
-          {/* Toy fixture toggle in Designer too — exposes the corner-case
-              test grid in src/data/toy/toy-ribbons.json so the plug system
-              can be debugged against a known fixture. CartographApp already
-              swaps `ribbons` + skips boundary clipping when scene==='toy';
-              this just makes the toggle reachable from Designer. */}
-          <ToggleButton label="Toy"
-            active={scene === 'toy'}
-            onClick={() => setScene(scene === 'toy' ? 'neighborhood' : 'toy')} />
+          {/* Looks pulldown also surfaces the Toy scene as an option, so
+              one consolidated context switcher replaces the old separate
+              Toy button. */}
+          <LooksMenu />
         </>
       ) : (
         <>
@@ -114,9 +96,6 @@ export default function Toolbar() {
               <span className="carto-bake-icon" aria-hidden="true">↻</span>
             </button>
           </div>
-          <ToggleButton label="Toy"
-            active={scene === 'toy'}
-            onClick={() => setScene(scene === 'toy' ? 'neighborhood' : 'toy')} />
         </>
       )}
     </div>
@@ -134,22 +113,39 @@ function LooksMenu() {
   const setActiveLook = useCartographStore(s => s.setActiveLook)
   const createLook = useCartographStore(s => s.createLook)
   const deleteActiveLook = useCartographStore(s => s.deleteActiveLook)
+  const scene = useCartographStore(s => s.scene)
+  const setScene = useCartographStore(s => s.setScene)
+
+  // Toy is conceptually a scene (different dataset), not a Look. We surface
+  // it inside this picker so the operator has one consolidated place to
+  // switch contexts — no separate Toy button cluttering the toolbar.
+  const inToy = scene === 'toy'
+  const value = inToy ? '__toy__' : (activeLookId || DEFAULT_LOOK_ID)
 
   const onChange = (e) => {
     const v = e.target.value
+    if (v === '__toy__') {
+      if (!inToy) setScene('toy')
+      return
+    }
     if (v === '__new__') {
       // Fork the current working draft into a new named Look. This is the
       // deliberate save-as action — the Stage transition itself silently
       // re-bakes the active Look from autosaved state, so the only thing
       // the user is asked to *name* is the new fork.
       const name = window.prompt('Name this Look (e.g. "Valentines", "Cardinals Win")')
-      if (name && name.trim()) createLook(name.trim())
+      if (name && name.trim()) {
+        if (inToy) setScene('neighborhood')
+        createLook(name.trim())
+      }
     } else if (v === '__delete__') {
       if (window.confirm('Delete this Look? The default cannot be deleted.')) {
         deleteActiveLook()
       }
-    } else if (v && v !== activeLookId) {
-      setActiveLook(v)
+    } else if (v) {
+      // Switching to a Look from toy implies leaving the toy scene.
+      if (inToy) setScene('neighborhood')
+      if (v !== activeLookId) setActiveLook(v)
     }
   }
 
@@ -157,13 +153,15 @@ function LooksMenu() {
     <div className="carto-toolgroup">
       <select
         className="carto-looks-select"
-        value={activeLookId || DEFAULT_LOOK_ID}
+        value={value}
         onChange={onChange}
-        title="Active Look — switch, save as new, or delete"
+        title="Active Look or Toy scene — switch, save as new, or delete"
       >
         {(looks || []).map(l => (
           <option key={l.id} value={l.id}>{l.name}</option>
         ))}
+        <option disabled>──────────</option>
+        <option value="__toy__">🧪 Toy scene</option>
         <option disabled>──────────</option>
         <option value="__new__">＋ Save as new Look…</option>
         {activeLookId && activeLookId !== DEFAULT_LOOK_ID && (
