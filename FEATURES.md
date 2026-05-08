@@ -228,6 +228,27 @@ This is the bug-magnet that's burned hours twice now. Survey + Measure tools sav
 
 **Corner-pad ↔ face-clip parity (2026-05-06).** Corner-pad geometry is built in two places — `StreetRibbons.jsx:buildSidewalkPads` (rendered concrete) and `ribbonsGeometry.js:buildCornerPadClips` (face-clip silhouette so parcel grass carves to match). They MUST stay in sync; comments in both files cross-reference. `buildRibbonGeometry(ribbons, ...)` consumes `ribbons.intersections` and threads it into `buildRibbonUnion`, which adds the per-corner annular sectors to the silhouette before subtracting from face polygons. Without this, parcel faces show their natural sharp L corner peeking through the corner pad. ⚠️ **STALE 2026-05-06 PM:** this describes the per-corner-annular-sector approach, which the IP-rule decision (BACKLOG 2026-05-05) supersedes architecturally. Code still implements the older approach; rewrite is queued. The cross-referenced `HANDOFF-corner-plugs.md` was retired the same day. Update this paragraph when the IP-rule rewrite lands.
 
+### V2 curb is the unifying boundary stroke (2026-05-08)
+
+In the rounded-block-clip model (V2 — `src/lib/buildBlockGeometryV2.js`), the **curb is the edge that separates asphalt from block**. It's not a per-side rectangular band like V1's curb stripe — it's a single continuous stroked polygon per block, derived directly from the rounded asphalt boundary that the corner geometry is already built on.
+
+```
+curb = dilate(asphaltRounded, CURB_WIDTH) − asphaltRounded
+```
+
+Read this as: the curb is the asphalt's silhouette, painted in width `CURB_WIDTH`, on the block side. Because `asphaltRounded` already carries the rounded corners (from the corner-radius authoring kit) and the cap shapes (from Survey: round / blunt / none), the curb honors all of them automatically. There is no separate corner-curb pass and no separate cap-curb annulus — one offset op covers every silhouette V2 produces.
+
+What the curb traces:
+- **On chain sides:** the asphalt edge running parallel to the centerline at `pavementHW`. This is the place V1 emits the per-side curb stripe; V2's curb covers it as part of the unified stroke.
+- **At intersections:** the rounded asphalt corner. The corner-radius authoring kit (`cornerRadiusScale`, per-IX overrides, per-corner overrides) shapes `asphaltRounded`; the curb inherits that shape with no extra plumbing.
+- **At dead ends:** whatever silhouette Survey + Measure authored. Round-capped end → round curb. Flat / blunt end → straight curb across the end. "None" / open end is the underauthored case (asphalt still closes structurally; if a true open dead-end is needed it requires unclosed asphalt geometry, which neither V1 nor V2 emit today).
+
+Because curb width is global (one `CURB_WIDTH` constant — per-side `side.curb` overrides aren't supported in this model), the dilation produces a constant-width band with no seams. The other strip bands (treelawn, sidewalk) remain per-side rectangles since their widths vary per chain; their inner-edge seams at IX get visually covered by the unified curb stroke sitting on top of them at render priority 6 (curb) > 5 (sidewalk) > 3 (treelawn).
+
+**Don't rebuild this as per-side rectangles.** If a future task ever needs to vary curb width per side, the right move is to emit per-side curb sectors and *union* them with the global stroke, not replace it.
+
+The principle in plain words: in V2, the silhouette of the asphalt — wherever it goes, however the corners and caps are shaped — IS the curb's path. Survey + Measure author the silhouette; the corner editor refines it; the curb traces it.
+
 ### Two sources of water/lamps existed; deduped
 
 The cartograph derive pulls OSM water and street lamps; the Python ETLs also produce `park_water.json` and `street_lamps.json`. Both versions used to render, causing visible double-outlines. As of 2026-05-04: `MapLayers.jsx` skips OSM water (`use === 'water'`) in the natural layer and skips `mapData.layers.streetlamp` in lamps. `park_water.json` and `street_lamps.json` are canonical.

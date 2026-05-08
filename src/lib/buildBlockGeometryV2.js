@@ -15,6 +15,7 @@
  * center.
  */
 import clipperLib from 'clipper-lib'
+import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 
 const SCALE = 1000
 const ARC_N = 16
@@ -380,6 +381,24 @@ function differenceRings(subjectRings, clipRings) {
   return out.map(path => path.map(fromClipper))
 }
 
+// Outward polygon offset (Minkowski sum with a disc of radius `delta`).
+// Uses miter joins so the result preserves the vertex structure of the
+// input — corners that are already smooth polyline arcs (asphaltRounded)
+// stay smooth. The clipping rounding lives in the input geometry, not in
+// the offset op.
+function dilateRings(rings, delta) {
+  if (delta <= 0 || !rings.length) return rings
+  const { ClipperOffset, JoinType, EndType } = clipperLib
+  const co = new ClipperOffset()
+  for (const r of rings) {
+    if (!r || r.length < 3) continue
+    co.AddPath(r.map(toClipper), JoinType.jtMiter, EndType.etClosedPolygon)
+  }
+  const out = []
+  co.Execute(out, delta * SCALE)
+  return out.map(path => path.map(fromClipper))
+}
+
 // Intersection of subject rings with clip rings.
 function intersectRings(subjectRings, clipRings) {
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -485,6 +504,23 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // treelawn implicitly satisfies the case-2 rule for sw/tl+sw corners).
   // The case-3 corner cap (concrete square at tl+sw/tl+sw) is a separate
   // pass — not implemented yet.
+  // ── Curb: the unifying stroked boundary that ties every side + corner
+  // into one contiguous polygon. NOT a per-side band — it's the rounded
+  // asphalt boundary dilated outward by CURB_WIDTH, with the asphalt void
+  // subtracted out. The result is a single closed ring per asphalt
+  // component, riding the same rounded corners the block geometry uses.
+  // This is the clipping-mask-as-stroke architecture: curb width is
+  // global, so a single offset op produces a constant-width band that
+  // wraps every block edge without seams. (Per-side curb overrides aren't
+  // supported in this model — if a real cross-section needs them we'd
+  // emit separate per-side bands and union them with the global stroke.)
+  const curbDilated = dilateRings(asphaltRounded, CURB_WIDTH)
+  const curbBands   = differenceRings(curbDilated, asphaltRounded)
+
+  // ── Treelawn + sidewalk strip bands per chain side. v0 scope: emit raw
+  // rectangles starting past the curb (perp distance hw+CURB_WIDTH from
+  // centerline) and let render order resolve overlaps; the unified curb
+  // covers the inner-edge seams where adjacent chains meet at an IX.
   const treelawnBandsRaw = []
   const sidewalkBandsRaw = []
   for (const street of streets) {
@@ -493,11 +529,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     if (!pts || pts.length < 2 || !m) continue
     const n = pts.length
     const perps = computePerps(pts)
-    // Use max ped-zone of the two sides for cap-extension annulus widths
-    // (caps are radially symmetric — both sides' bands meet at the back
-    // of the cap). For asymmetric chains, the side that's narrower will
-    // simply not reach the full annulus thickness; intersection-clip with
-    // blockRounded keeps the geometry honest.
+    // Use max ped-zone of the two sides for cap-extension annulus widths.
     let maxHw = 0, maxTl = 0, maxSw = 0
     for (const sideKey of ['left', 'right']) {
       const s = m[sideKey]
@@ -506,6 +538,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       maxTl = Math.max(maxTl, s.treelawn || 0)
       maxSw = Math.max(maxSw, s.sidewalk || 0)
     }
+    const cw = CURB_WIDTH   // global; per-side overrides defer to a future kit feature
     for (const sideKey of ['left', 'right']) {
       const sideSign = sideKey === 'left' ? +1 : -1
       const s = m[sideKey]
@@ -514,65 +547,52 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       const hw = s.pavementHW || 0
       const tl = s.treelawn || 0
       const sw = s.sidewalk || 0
-      // Treelawn at perp ∈ [hw, hw+tl] (only if tl > 0).
+      // Treelawn at perp ∈ [hw+cw, hw+cw+tl] (only if tl > 0).
       if (tl > 0) {
-        const ring = chainStripBand(pts, perps, sideSign, hw, hw + tl)
+        const ring = chainStripBand(pts, perps, sideSign, hw + cw, hw + cw + tl)
         if (ring) treelawnBandsRaw.push(ring)
       }
-      // Sidewalk at perp ∈ [hw+tl, hw+tl+sw].
+      // Sidewalk at perp ∈ [hw+cw+tl, hw+cw+tl+sw].
       if (sw > 0) {
-        const ring = chainStripBand(pts, perps, sideSign, hw + tl, hw + tl + sw)
+        const ring = chainStripBand(pts, perps, sideSign, hw + cw + tl, hw + cw + tl + sw)
         if (ring) sidewalkBandsRaw.push(ring)
       }
     }
-    // Round-cap band extensions — one per cap'd endpoint. Half-annulus
-    // around the chain endpoint at the same radial offsets as the straight
-    // bands, so the ribbon stack wraps continuously around the cap.
+    // Round-cap band extensions for treelawn + sidewalk. Curb's cap is
+    // already handled by the unified stroke (asphaltRounded includes the
+    // round endpoint).
     const capStart = street.capStart || street.capEnds?.start
     const capEnd   = street.capEnd   || street.capEnds?.end
+    const emitCapAnnuli = (center, T) => {
+      if (maxTl > 0) {
+        const ring = roundCapHalfAnnulus(center, T, maxHw + cw, maxHw + cw + maxTl)
+        if (ring) treelawnBandsRaw.push(ring)
+      }
+      if (maxSw > 0) {
+        const ring = roundCapHalfAnnulus(center, T, maxHw + cw + maxTl, maxHw + cw + maxTl + maxSw)
+        if (ring) sidewalkBandsRaw.push(ring)
+      }
+    }
     if (maxHw > 0) {
-      // End cap: T_out points forward (off the chain in +T direction).
       if (capEnd === 'round' && n >= 2) {
         const dx = pts[n-1][0] - pts[n-2][0], dz = pts[n-1][1] - pts[n-2][1]
         const L = Math.hypot(dx, dz)
-        if (L > 1e-6) {
-          const T = [dx/L, dz/L]
-          const center = pts[n-1]
-          if (maxTl > 0) {
-            const ring = roundCapHalfAnnulus(center, T, maxHw, maxHw + maxTl)
-            if (ring) treelawnBandsRaw.push(ring)
-          }
-          if (maxSw > 0) {
-            const ring = roundCapHalfAnnulus(center, T, maxHw + maxTl, maxHw + maxTl + maxSw)
-            if (ring) sidewalkBandsRaw.push(ring)
-          }
-        }
+        if (L > 1e-6) emitCapAnnuli(pts[n-1], [dx/L, dz/L])
       }
-      // Start cap: T_out points back off the chain (-T direction).
       if (capStart === 'round' && n >= 2) {
         const dx = pts[1][0] - pts[0][0], dz = pts[1][1] - pts[0][1]
         const L = Math.hypot(dx, dz)
-        if (L > 1e-6) {
-          const T = [-dx/L, -dz/L]
-          const center = pts[0]
-          if (maxTl > 0) {
-            const ring = roundCapHalfAnnulus(center, T, maxHw, maxHw + maxTl)
-            if (ring) treelawnBandsRaw.push(ring)
-          }
-          if (maxSw > 0) {
-            const ring = roundCapHalfAnnulus(center, T, maxHw + maxTl, maxHw + maxTl + maxSw)
-            if (ring) sidewalkBandsRaw.push(ring)
-          }
-        }
+        if (L > 1e-6) emitCapAnnuli(pts[0], [-dx/L, -dz/L])
       }
     }
   }
 
   // Clip strip bands to the rounded block (intersect with block polygon).
-  // This trims the bands at chain endpoints (cap ends) and at corner arcs
-  // where the rounded asphalt has bulged into the block.
-  let treelawnBands = []
-  let sidewalkBands = []
+  // This trims them at chain endpoints (cap ends) and at corner arcs
+  // where the rounded asphalt has bulged into the block. Curb is NOT
+  // clipped this way — it's already constructed from the asphalt boundary
+  // and lives in the band between asphalt and block.
+  let treelawnBands = [], sidewalkBands = []
   if (blockRounded.length) {
     treelawnBands = intersectRings(treelawnBandsRaw, blockRounded)
     sidewalkBands = intersectRings(sidewalkBandsRaw, blockRounded)
@@ -585,6 +605,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     asphaltSharp,
     asphaltRounded,
     blockRounded,
+    curbBands,
     treelawnBands,
     sidewalkBands,
     corners: allCorners,

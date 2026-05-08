@@ -29,7 +29,8 @@ import useCartographStore from './stores/useCartographStore.js'
 
 // Match StreetRibbons' BAND_PRIORITY for the bands V2 renders. Residential
 // block fill sits at face-level (pri 1) — below all street/strip layers.
-const PRI = { residential: 1, treelawn: 3, sidewalk: 5, asphalt: 8 }
+// Curb sits between sidewalk and asphalt to match V1's stack order.
+const PRI = { residential: 1, treelawn: 3, sidewalk: 5, curb: 6, asphalt: 8 }
 
 function ringSignedArea(ring) {
   let a = 0
@@ -174,6 +175,7 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
     return (layerColors && layerColors[layer]) || DEFAULT_LAYER_COLORS[layer] || BAND_COLORS[band]
   }
   const asphaltCol  = colorFor('asphalt')
+  const curbCol     = colorFor('curb')
   const treelawnCol = colorFor('treelawn')
   const sidewalkCol = colorFor('sidewalk')
   const blockCol    = residentialColor || (luColors && luColors.residential) || DEFAULT_LU_COLORS.residential
@@ -182,8 +184,9 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
-  const { asphaltRounded, blockRounded, treelawnBands, sidewalkBands, corners } = useMemo(() => {
-    if (!liveRibbons) return { asphaltRounded: [], blockRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
+  const { asphaltRounded, blockRounded, curbBands, treelawnBands, sidewalkBands, corners } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], curbBands: [], treelawnBands: [], sidewalkBands: [], corners: [] }
+    if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
         cornerRadiusScale, stencil,
@@ -191,7 +194,7 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
       })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
-      return { asphaltRounded: [], blockRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
+      return empty
     }
   }, [liveRibbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides])
 
@@ -206,11 +209,13 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
   const blockGeo    = useMemo(() => ringsToFlatGeo(blockRounded, 0.01, true), [blockRounded])
   const treelawnGeo = useMemo(() => ringsToFlatGeo(treelawnBands, 0.02, true), [treelawnBands])
   const sidewalkGeo = useMemo(() => ringsToFlatGeo(sidewalkBands, 0.03, true), [sidewalkBands])
+  const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   const asphaltGeo  = useMemo(() => ringsToFlatGeo(asphaltRounded, 0.04, true), [asphaltRounded])
 
   const blockMat    = useMemo(() => makeMaterial(blockCol,    PRI.residential), [makeMaterial, blockCol])
   const treelawnMat = useMemo(() => makeMaterial(treelawnCol, PRI.treelawn),    [makeMaterial, treelawnCol])
   const sidewalkMat = useMemo(() => makeMaterial(sidewalkCol, PRI.sidewalk),    [makeMaterial, sidewalkCol])
+  const curbMat     = useMemo(() => makeMaterial(curbCol,     PRI.curb),        [makeMaterial, curbCol])
   const asphaltMat  = useMemo(() => makeMaterial(asphaltCol,  PRI.asphalt),     [makeMaterial, asphaltCol])
 
   return (
@@ -223,6 +228,9 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
       )}
       {sidewalkGeo && (
         <mesh geometry={sidewalkGeo} renderOrder={PRI.sidewalk} receiveShadow material={sidewalkMat} />
+      )}
+      {curbGeo && (
+        <mesh geometry={curbGeo} renderOrder={PRI.curb} receiveShadow material={curbMat} />
       )}
       {asphaltGeo && (
         <mesh geometry={asphaltGeo} renderOrder={PRI.asphalt} receiveShadow material={asphaltMat} />
