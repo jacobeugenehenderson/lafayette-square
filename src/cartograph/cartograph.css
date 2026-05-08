@@ -520,6 +520,12 @@
   font-size: var(--toolbar-btn-fs);
   font-weight: var(--toolbar-btn-fw);
   font-family: var(--carto-font);
+  /* Explicit line-height + box-sizing so <button> and <select> peers in the
+     same toolgroup have identical box heights — without this, browser
+     defaults for <select> are taller than <button>, which is what made
+     the Looks dropdown look oversized next to its neighbors. */
+  line-height: 1.2;
+  box-sizing: border-box;
   cursor: pointer;
   transition: background .12s ease, color .12s ease;
   white-space: nowrap;
@@ -573,10 +579,19 @@
   font-size: var(--toolbar-btn-fs);
   font-weight: var(--toolbar-btn-fw);
   font-family: var(--carto-font);
+  /* Match the sibling <button> peers' box rhythm so the Looks dropdown
+     doesn't read taller than its neighbors. */
+  line-height: 1.2;
+  box-sizing: border-box;
   cursor: pointer;
   outline: none;
   white-space: nowrap;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  /* Caret stroke hardcoded to %23999 (= #999, toolbar text-dim). Native
+     `currentColor` does NOT resolve inside data-URI background-image SVGs
+     — the SVG is rendered as a flat raster, divorced from its host
+     element's `color`, so the caret was reading as the UA default stroke
+     (black) before. Hardcoding makes it match the toolbar text. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' fill='none' stroke='%23999' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
   background-repeat: no-repeat;
   background-position: right 6px center;
   background-size: 10px 10px;
