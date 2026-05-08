@@ -583,6 +583,20 @@ const SCENE_REGISTRY = {
       <R3FErrorBoundary name="ToyTrees"><ToyTrees /></R3FErrorBoundary>
       <R3FErrorBoundary name="ToyStreetLights"><StreetLights lamps={toyLamps.lamps} /></R3FErrorBoundary>
     </>,
+    // Designer-mode backdrop — a graph-paper grid that sits under the
+    // V2 surface so the translucent/opaque story has something to read
+    // against. LS uses real aerial tiles for this; toy is purely
+    // diagnostic so a procedural grid signals "design mode" instead.
+    DesignerBackdrop: () => (
+      <group>
+        <mesh position={[0, -0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={-1}>
+          <planeGeometry args={[400, 400]} />
+          <meshBasicMaterial color="#1f2530" transparent opacity={1.0} depthWrite={false} />
+        </mesh>
+        <gridHelper args={[400, 80, '#3a4658', '#2a3340']} position={[0, -0.05, 0]} />
+        <gridHelper args={[400, 8,  '#56708a', '#56708a']} position={[0, -0.04, 0]} />
+      </group>
+    ),
   },
 }
 function sceneConfig(scene) {
@@ -732,6 +746,15 @@ export default function CartographApp() {
               Preview mounts, so what Stage shows is what Preview shows
               is what Publish ships. ── */}
           {inDesigner && <ambientLight intensity={1} />}
+
+          {/* Designer-mode backdrop. LS uses aerial tiles (gated lower);
+              toy registers a procedural grid so the V2 translucent layers
+              have something to read against in Designer. */}
+          {inDesigner && sceneCfg.DesignerBackdrop && (
+            <R3FErrorBoundary name="DesignerBackdrop">
+              <sceneCfg.DesignerBackdrop />
+            </R3FErrorBoundary>
+          )}
           {sceneCfg.legacyRibbons && (
           <R3FErrorBoundary name="StreetRibbons">
             <group visible={!designAerialOnly}>
