@@ -463,7 +463,8 @@ function roundCapHalfAnnulus(center, T_out, dInner, dOuter) {
 
 export function buildBlockGeometryV2(ribbons, opts = {}) {
   const { cornerRadiusScale = 1, stencil = null,
-    cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null } = opts
+    cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
+    curbWidth = CURB_WIDTH } = opts
   const streets = ribbons?.streets || []
   const intersections = ribbons?.intersections || []
 
@@ -514,7 +515,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // wraps every block edge without seams. (Per-side curb overrides aren't
   // supported in this model — if a real cross-section needs them we'd
   // emit separate per-side bands and union them with the global stroke.)
-  const curbDilated = dilateRings(asphaltRounded, CURB_WIDTH)
+  const curbDilated = dilateRings(asphaltRounded, curbWidth)
   const curbBands   = differenceRings(curbDilated, asphaltRounded)
 
   // ── Treelawn + sidewalk strip bands per chain side. v0 scope: emit raw
@@ -546,7 +547,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       maxTl = Math.max(maxTl, s.treelawn || 0)
       maxSw = Math.max(maxSw, s.sidewalk || 0)
     }
-    const cw = CURB_WIDTH   // global; per-side overrides defer to a future kit feature
+    const cw = curbWidth   // global; per-side overrides defer to a future kit feature
     for (const sideKey of ['left', 'right']) {
       const sideSign = sideKey === 'left' ? +1 : -1
       const s = m[sideKey]

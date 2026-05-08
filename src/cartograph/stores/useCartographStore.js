@@ -163,6 +163,11 @@ const useCartographStore = create((set, get) => ({
   // dial. Persists in design.json; consumed by StreetRibbons.jsx (live)
   // and ribbonsGeometry.js#buildCornerPadClips (bake / face clip).
   cornerRadiusScale: 1,
+  // Look-level global curb width (meters). V2 emits the curb as a single
+  // unified stroke around the rounded asphalt boundary, so width is
+  // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
+  // operator can dial up/down via the Streets > Curb slider.
+  curbWidth: 0.1524,
   // Per-IX corner-radius overrides, keyed by quantized point ("x.xxx,z.zzz").
   // Operator-authored via the Corner-edit center handles. Per-Look (lives in
   // design.json) so duplicating a Look carries the operator's IX-by-IX work
@@ -279,6 +284,13 @@ const useCartographStore = create((set, get) => ({
   },
   setLuColor: (id, color) => {
     set(s => ({ luColors: { ...s.luColors, [id]: color } }))
+    get()._saveDesignDebounced()
+  },
+  // Look-level global curb width (meters). Clamp to a sane band — at 0
+  // the curb stroke vanishes; at ~1 m it visually overruns the band stack.
+  setCurbWidth: (v) => {
+    const n = Math.max(0, Math.min(1.0, Number(v) || 0))
+    set({ curbWidth: n })
     get()._saveDesignDebounced()
   },
   // Look-level corner-radius multiplier. Clamp at 0 (square) and a
@@ -789,6 +801,7 @@ const useCartographStore = create((set, get) => ({
         layerStrokes:   design.layerStrokes   || {},
         luColors:       design.luColors       || {},
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
+        curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
         cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
         materialColors: design.materialColors || {},
@@ -1182,6 +1195,7 @@ const useCartographStore = create((set, get) => ({
         layerStrokes:   design.layerStrokes   || {},
         luColors:       design.luColors       || {},
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
+        curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
         cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
         materialColors: design.materialColors || {},
@@ -1293,6 +1307,7 @@ const useCartographStore = create((set, get) => ({
           cornerRadiusScale: s.cornerRadiusScale,
           cornerRadiusOverrides: s.cornerRadiusOverrides,
           cornerCornerRadiusOverrides: s.cornerCornerRadiusOverrides,
+          curbWidth: s.curbWidth,
           materialColors: s.materialColors,
           materialPhysics: s.materialPhysics,
           buildingPalette: s.buildingPalette,

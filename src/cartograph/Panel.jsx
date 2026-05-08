@@ -183,6 +183,42 @@ function CornersSubsection() {
   )
 }
 
+// Global curb-width slider — Look-level value (meters) that V2's
+// rounded-block-clip emits the curb stroke at. Uniform across the whole
+// scene; per-side / per-chain curb overrides aren't supported in V2's
+// unified-stroke model. Default 6 inches (0.1524 m); slider runs from
+// 0 (no curb) to 0.5 m (oversized), step 0.0254 (1 inch).
+function CurbSubsection() {
+  const stored = useCartographStore(s => s.curbWidth ?? 0.1524)
+  const setStored = useCartographStore(s => s.setCurbWidth)
+  const [draft, setDraft] = useState(stored)
+  const draggingRef = useRef(false)
+  useEffect(() => {
+    if (!draggingRef.current) setDraft(stored)
+  }, [stored])
+  return (
+    <div className="carto-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+      <label className="carto-label-fixed" title="Width of the curb band that traces every block's asphalt boundary. Default 6&quot; (0.1524 m); 0 hides the curb entirely.">
+        Curb
+      </label>
+      <input type="range" className="carto-input"
+        min="0" max="0.5" step="0.0254"
+        value={draft}
+        onPointerDown={() => { draggingRef.current = true }}
+        onPointerUp={() => { draggingRef.current = false; setStored(draft) }}
+        onChange={e => {
+          const v = parseFloat(e.target.value)
+          setDraft(v)
+          if (!draggingRef.current) setStored(v)
+        }}
+        onKeyUp={() => { draggingRef.current = false; setStored(draft) }} />
+      <span className="carto-meta" style={{ minWidth: 40, textAlign: 'right' }}>
+        {(draft * 39.3701).toFixed(1)}″
+      </span>
+    </div>
+  )
+}
+
 function VisRow({ id, label, hidden, onToggle }) {
   return (
     <div className="carto-row">
@@ -338,7 +374,7 @@ export default function Panel() {
             <VisRow key={L.id} id={L.id} label={L.label}
               hidden={isHidden(L.id)} onToggle={toggleLayerVis} />
           ))}
-          {name === 'Streets' && <CornersSubsection />}
+          {name === 'Streets' && <><CornersSubsection /><CurbSubsection /></>}
         </Section>
       ))}
     </div>
