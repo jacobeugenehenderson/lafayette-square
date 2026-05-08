@@ -381,6 +381,66 @@ function differenceRings(subjectRings, clipRings) {
   return out.map(path => path.map(fromClipper))
 }
 
+// Even-odd point-in-ring test. Used to find which block polygon contains
+// a given world-point (chain-segment midpoint perp-offset by hw + 1 m, in
+// the per-segment block-adjacency lookup).
+function pointInRing(px, pz, ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], zi = ring[i][1]
+    const xj = ring[j][0], zj = ring[j][1]
+    if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
+// Walk a chain's vertex sequence and partition it into natural segments
+// bounded by IX vertices. Returns [{ start, end }] inclusive ranges that
+// together cover the full chain. A chain with no IXs returns one segment
+// spanning the whole chain.
+function naturalSegments(street) {
+  const n = (street.points || []).length
+  if (n < 2) return []
+  const ixs = (street.intersections || [])
+    .map(r => r.ix).filter(i => Number.isInteger(i) && i > 0 && i < n - 1)
+    .sort((a, b) => a - b)
+  if (!ixs.length) return [{ start: 0, end: n - 1 }]
+  const segs = []
+  let prev = 0
+  for (const ix of ixs) {
+    if (ix > prev) segs.push({ start: prev, end: ix })
+    prev = ix
+  }
+  if (prev < n - 1) segs.push({ start: prev, end: n - 1 })
+  return segs
+}
+
+// For a chain segment and a side (sideSign = +1 left, -1 right), return
+// the index of the block in blockRounded that's adjacent on that side, or
+// null if no block contains the perp-offset midpoint. Probe distance is
+// hw + 1 m so the test point lands solidly inside the adjacent block
+// (past the asphalt + curb).
+function adjacentBlockId(pts, perps, segStart, segEnd, sideSign, hw, blockRounded) {
+  if (!blockRounded?.length) return null
+  const midI = Math.floor((segStart + segEnd) / 2)
+  // Use the segment midpoint between two vertices for stability — perps at
+  // an IX vertex can swing wildly when the chain bends sharply.
+  const aI = midI, bI = Math.min(midI + 1, segEnd)
+  const mx = (pts[aI][0] + pts[bI][0]) * 0.5
+  const mz = (pts[aI][1] + pts[bI][1]) * 0.5
+  const px = (perps[aI][0] + perps[bI][0]) * 0.5
+  const pz = (perps[aI][1] + perps[bI][1]) * 0.5
+  const probeR = hw + 1.0
+  const tx = mx + px * sideSign * probeR
+  const tz = mz + pz * sideSign * probeR
+  for (let i = 0; i < blockRounded.length; i++) {
+    if (pointInRing(tx, tz, blockRounded[i])) return i
+  }
+  return null
+}
+
 // Outward polygon offset (Minkowski sum with a disc of radius `delta`).
 // Uses miter joins so the result preserves the vertex structure of the
 // input — corners that are already smooth polyline arcs (asphaltRounded)
@@ -464,7 +524,7 @@ function roundCapHalfAnnulus(center, T_out, dInner, dOuter) {
 export function buildBlockGeometryV2(ribbons, opts = {}) {
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
-    curbWidth = CURB_WIDTH } = opts
+    curbWidth = CURB_WIDTH, blockCustoms = null } = opts
   const streets = ribbons?.streets || []
   const intersections = ribbons?.intersections || []
 
@@ -563,30 +623,38 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       maxSw = Math.max(maxSw, s.sidewalk || 0)
     }
     const cw = curbWidth   // global; per-side overrides defer to a future kit feature
-    for (const sideKey of ['left', 'right']) {
-      const sideSign = sideKey === 'left' ? +1 : -1
-      const s = m[sideKey]
-      if (!s) continue
-      if (s.terminal !== 'sidewalk') continue
-      const hw = s.pavementHW || 0
-      const tl = s.treelawn || 0
-      const sw = s.sidewalk || 0
-      // Treelawn at perp ∈ [hw+cw, hw+cw+tl] (only if tl > 0).
-      if (tl > 0) {
-        const ring = chainStripBand(pts, perps, sideSign, hw + cw, hw + cw + tl)
-        if (ring) entry.treelawnRings.push(ring)
+    // Natural segments — IX-bounded vertex ranges. Each segment can have
+    // its own per-side ped-zone measure if the adjacent block is custom.
+    // Asphalt stays chain-wide (its width drives the curb stroke; varying
+    // it per segment would make the unified curb impossible).
+    const segments = naturalSegments(street)
+    for (const seg of segments) {
+      const segPts = pts.slice(seg.start, seg.end + 1)
+      const segPerps = perps.slice(seg.start, seg.end + 1)
+      for (const sideKey of ['left', 'right']) {
+        const sideSign = sideKey === 'left' ? +1 : -1
+        const chainSide = m[sideKey]
+        if (!chainSide || chainSide.terminal !== 'sidewalk') continue
+        const hw = chainSide.pavementHW || 0
+        const blockId = adjacentBlockId(pts, perps, seg.start, seg.end, sideSign, hw, blockRounded)
+        const eff = (blockCustoms?.[blockId]?.[chainIdx]?.[sideKey]) || chainSide
+        const tl = eff.treelawn || 0
+        const sw = eff.sidewalk || 0
+        if (tl > 0 && segPts.length >= 2) {
+          const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
+          if (ring) entry.treelawnRings.push(ring)
+        }
+        if (sw > 0 && segPts.length >= 2) {
+          const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
+          if (ring) entry.sidewalkRings.push(ring)
+        }
+        // Stripe edges per segment so the operator's edge lines reflect
+        // the per-block widths in Measure mode.
+        if (hw > 0) stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw))
+        if (cw > 0) stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw))
+        if (tl > 0) stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
+        if (sw > 0) stripeEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
       }
-      // Sidewalk at perp ∈ [hw+cw+tl, hw+cw+tl+sw].
-      if (sw > 0) {
-        const ring = chainStripBand(pts, perps, sideSign, hw + cw + tl, hw + cw + tl + sw)
-        if (ring) entry.sidewalkRings.push(ring)
-      }
-      // Stripe edges — emit one polyline per band transition. Hidden
-      // from render at idle; line meshes for these surface in Measure.
-      if (hw > 0) stripeEdges.push(offsetPoly(pts, perps, sideSign, hw))
-      if (cw > 0) stripeEdges.push(offsetPoly(pts, perps, sideSign, hw + cw))
-      if (tl > 0) stripeEdges.push(offsetPoly(pts, perps, sideSign, hw + cw + tl))
-      if (sw > 0) stripeEdges.push(offsetPoly(pts, perps, sideSign, hw + cw + tl + sw))
     }
     // Round-cap band extensions for treelawn + sidewalk. Curb's cap is
     // already handled by the unified stroke (asphaltRounded includes the

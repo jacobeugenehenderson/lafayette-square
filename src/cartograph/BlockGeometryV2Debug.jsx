@@ -164,6 +164,7 @@ export default function BlockGeometryV2Debug({
   const cornerRadiusOverrides     = useCartographStore(s => s.cornerRadiusOverrides)
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
+  const blockCustoms              = useCartographStore(s => s.blockCustoms)
   const layerColors               = useCartographStore(s => s.layerColors)
   const luColors                  = useCartographStore(s => s.luColors)
   // Live operator intent — Survey caps, Measure overrides, smooth, anchor.
@@ -196,13 +197,13 @@ export default function BlockGeometryV2Debug({
       return buildBlockGeometryV2(liveRibbons, {
         cornerRadiusScale, stencil,
         cornerRadiusOverrides, cornerCornerRadiusOverrides,
-        curbWidth,
+        curbWidth, blockCustoms,
       })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
       return empty
     }
-  }, [liveRibbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth])
+  }, [liveRibbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockCustoms])
 
   // Tiny y-lifts keep coplanar layers from z-fighting; polygonOffset (driven
   // by pri in makeMaterial) is the authoritative depth resolver.
