@@ -660,7 +660,7 @@
       "highway": "residential",
       "capEnds": {
         "start": "blunt",
-        "end": "blunt"
+        "end": "round"
       }
     }
   ],

@@ -1,5 +1,8 @@
 # Toy Authoring Plan — Survey/Measure as the kit-design surface
 
+> **Read first.** Toy is a scene. A scene is a different *dataset* — same pipeline. If you find yourself writing `scene === 'toy'` branches, parallel emitters, or hybrid mounts, you are off-track; revert and make the canonical pipeline scene-parametric instead. See `cartograph/BACKLOG.md` top section + memory file `feedback_no_parallel_pipeline_for_scenes.md`. The whole point of this plan is to remove every toy-only branch by routing toy through the same code paths LS uses.
+
+
 **Status:** Phase 0 is the next-session target. Framing below is directional, not blocking.
 **Owner:** next session opener.
 
@@ -56,6 +59,30 @@ This implies a few constraints on every phase:
 - V2 surfaces are wired through the shared `useSurfaceMaterial` hook (real BAND_COLORS + fade pipeline). Legacy StreetRibbons is hidden in toy.
 - Toy fixture is a 4+4 grid (9 blocks) with one bent chain (VW3), one jogged chain (HW3), one dead-end stub. Authored as `toy-input.json` → derived to `toy-ribbons.json` by `cartograph/derive-toy.js`.
 - Survey/Measure are gated OFF in toy (`scene !== 'toy'` in CartographApp:681,685,758). The store loads only neighborhood data from `/api/cartograph/centerlines` + `/overlay`. V2Debug reads `toyRibbons` static JSON, not the store.
+
+## Update 2026-05-07 — what's live and what we learned
+
+### Live in toy as of session end
+- V2 ground render with residential block fills, asphalt corridors, treelawn + sidewalk strips.
+- Survey overlay shows centerlines + IX dots in toy.
+- Measure overlay mounts in toy; chain selection, handles render.
+- `cornerRadiusScale` slider wired to V2 (live re-render on drag).
+- Look palette (`layerColors`, `luColors`) wired to V2 colors.
+
+### What the in-memory toy hack looks like in code (to remove during refactor)
+- `_loadCenterlines` toy branch: synthesizes `centerlineData` from a static `toy-ribbons.json` import. Lives in `useCartographStore.js` around the start of `_loadCenterlines`.
+- `_saveOverlay` early-returns when `scene === 'toy'` to avoid clobbering LS overlay. In-memory only; reload reverts.
+- `CartographApp` has two V2 wrappers (`ToyV2` and `NeighborhoodV2`) that compose ribbons from store + static intersections per scene.
+- `BlockGeometryV2Debug` accepts `stencil` only via prop; toy passes `[[-180,-180],[180,-180],[180,180],[-180,180]]` literal.
+- `import toyRibbons` lives in CartographApp + the store. Both should retire once toy data flows through API like LS.
+
+### Lesson
+Building parallel data paths to defer persistence costs more than just doing the persistence. Scene-parametric routes (Phase 0 below) are cheaper than the toy-special-case scaffolding it would take to keep simulating "toy is just data."
+
+### Order for next session
+1. Corner controls (per-IX, per-corner radius overrides + edit-mode visibility gating). Cheap, in-context, kit-completing.
+2. Phase 0 refactor (per the plan). Drop the toy hacks above; toy becomes a real scene.
+3. After Phase 0, reach the original "validate corners" goal with confidence.
 
 ## Decision points called out
 

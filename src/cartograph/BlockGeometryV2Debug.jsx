@@ -22,10 +22,13 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2 } from '../lib/buildBlockGeometryV2.js'
 import { BAND_COLORS } from './streetProfiles.js'
+import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
+import useCartographStore from './stores/useCartographStore.js'
 
-// Match StreetRibbons' BAND_PRIORITY for the bands V2 renders.
-const PRI = { treelawn: 3, sidewalk: 5, asphalt: 8 }
+// Match StreetRibbons' BAND_PRIORITY for the bands V2 renders. Residential
+// block fill sits at face-level (pri 1) — below all street/strip layers.
+const PRI = { residential: 1, treelawn: 3, sidewalk: 5, asphalt: 8 }
 
 function ringSignedArea(ring) {
   let a = 0
@@ -35,6 +38,37 @@ function ringSignedArea(ring) {
     a += (x1 * y2 - x2 * y1)
   }
   return a / 2
+}
+
+// Even-odd point-in-polygon (works for non-convex rings).
+function pointInRing(p, ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j]
+    if (((yi > p[1]) !== (yj > p[1])) &&
+        (p[0] < (xj - xi) * (p[1] - yi) / (yj - yi || 1e-12) + xi)) inside = !inside
+  }
+  return inside
+}
+
+// Find an interior probe point for a hole ring (CW from Clipper). Holes
+// share their boundary with surrounding outers, so a probe at a vertex is
+// AT the boundary and lands ambiguously by point-in-polygon. Instead, take
+// an edge midpoint and offset perpendicular-inward by epsilon. For CW
+// rings interior sits to the right of the edge direction; for CCW left.
+function ringInteriorProbe(ring) {
+  const ccw = ringSignedArea(ring) > 0
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length]
+    const dx = b[0] - a[0], dy = b[1] - a[1]
+    const len = Math.hypot(dx, dy)
+    if (len < 1e-3) continue
+    const px = ccw ? -dy / len : dy / len
+    const py = ccw ?  dx / len : -dx / len
+    const eps = 0.01
+    return [(a[0] + b[0]) / 2 + px * eps, (a[1] + b[1]) / 2 + py * eps]
+  }
+  return ring[0]
 }
 
 // Build a flat-on-ground geometry from a list of clipper-output rings.
@@ -82,7 +116,27 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
   }
 
   if (asPolygonWithHoles && outers.length) {
-    for (const outer of outers) append(buildShapeGeo(outer, holes))
+    // Pair each hole with the SMALLEST containing outer (point-in-polygon
+    // by hole's first vertex). Without this, "stencil minus asphalt" with
+    // 9 block-island outers floating inside the asphalt hole misroutes the
+    // hole onto every outer, blanking the blocks. Smallest-containing
+    // handles nested geometry — a hole inside a block-island would attach
+    // to that block, not the stencil.
+    const outerArea = outers.map(o => Math.abs(ringSignedArea(o)))
+    const holesByOuter = outers.map(() => [])
+    for (const h of holes) {
+      const probe = ringInteriorProbe(h)
+      let bestIdx = -1, bestArea = Infinity
+      for (let i = 0; i < outers.length; i++) {
+        if (pointInRing(probe, outers[i]) && outerArea[i] < bestArea) {
+          bestIdx = i; bestArea = outerArea[i]
+        }
+      }
+      if (bestIdx >= 0) holesByOuter[bestIdx].push(h)
+    }
+    for (let i = 0; i < outers.length; i++) {
+      append(buildShapeGeo(outers[i], holesByOuter[i]))
+    }
   } else {
     for (const ring of [...outers, ...holes]) append(buildShapeGeo(ring, null))
   }
@@ -95,31 +149,65 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
   return out
 }
 
-export default function BlockGeometryV2Debug({ ribbons, cornerRadiusScale = 1, flat = true, showCornerDots = true }) {
+export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor }) {
   const makeMaterial = useSurfaceMaterial(flat)
+  // Read corner-authoring + palette state directly from the store. Keeps
+  // the V2 mount simple (just `ribbons` + `stencil` as props) and lets the
+  // helper participate in the per-IX / per-corner authoring kit without
+  // any wrapper plumbing.
+  const cornerRadiusScale         = useCartographStore(s => s.cornerRadiusScale ?? 1)
+  const cornerRadiusOverrides     = useCartographStore(s => s.cornerRadiusOverrides)
+  const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
+  const layerColors               = useCartographStore(s => s.layerColors)
+  const luColors                  = useCartographStore(s => s.luColors)
+  // Color resolution: Look-level overrides (layerColors / luColors from the
+  // active design) win over BAND_COLORS / DEFAULT_LU_COLORS defaults.
+  // BAND_TO_LAYER maps band → layer key (e.g., "asphalt" → "street").
+  const colorFor = (band) => {
+    const layer = BAND_TO_LAYER[band] || band
+    return (layerColors && layerColors[layer]) || DEFAULT_LAYER_COLORS[layer] || BAND_COLORS[band]
+  }
+  const asphaltCol  = colorFor('asphalt')
+  const treelawnCol = colorFor('treelawn')
+  const sidewalkCol = colorFor('sidewalk')
+  const blockCol    = residentialColor || (luColors && luColors.residential) || DEFAULT_LU_COLORS.residential
 
-  const { asphaltRounded, treelawnBands, sidewalkBands, corners } = useMemo(() => {
-    if (!ribbons) return { asphaltRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
+  const { asphaltRounded, blockRounded, treelawnBands, sidewalkBands, corners } = useMemo(() => {
+    if (!ribbons) return { asphaltRounded: [], blockRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
     try {
-      return buildBlockGeometryV2(ribbons, { cornerRadiusScale })
+      return buildBlockGeometryV2(ribbons, {
+        cornerRadiusScale, stencil,
+        cornerRadiusOverrides, cornerCornerRadiusOverrides,
+      })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
-      return { asphaltRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
+      return { asphaltRounded: [], blockRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
     }
-  }, [ribbons, cornerRadiusScale])
+  }, [ribbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides])
 
   // Tiny y-lifts keep coplanar layers from z-fighting; polygonOffset (driven
   // by pri in makeMaterial) is the authoritative depth resolver.
-  const treelawnGeo = useMemo(() => ringsToFlatGeo(treelawnBands, 0.02), [treelawnBands])
-  const sidewalkGeo = useMemo(() => ringsToFlatGeo(sidewalkBands, 0.03), [sidewalkBands])
-  const asphaltGeo  = useMemo(() => ringsToFlatGeo(asphaltRounded, 0.04), [asphaltRounded])
+  // blockRounded is rendered as a polygon-with-holes (the stencil outer is
+  // the residential land mass; rounded asphalt rings are holes).
+  // asPolygonWithHoles=true on asphalt is critical: asphalt's union output
+  // is 1 corridor outer + N block-shaped holes. Without hole-aware rendering,
+  // the holes are drawn as filled asphalt-color rectangles, occluding the
+  // block parcels underneath.
+  const blockGeo    = useMemo(() => ringsToFlatGeo(blockRounded, 0.01, true), [blockRounded])
+  const treelawnGeo = useMemo(() => ringsToFlatGeo(treelawnBands, 0.02, true), [treelawnBands])
+  const sidewalkGeo = useMemo(() => ringsToFlatGeo(sidewalkBands, 0.03, true), [sidewalkBands])
+  const asphaltGeo  = useMemo(() => ringsToFlatGeo(asphaltRounded, 0.04, true), [asphaltRounded])
 
-  const treelawnMat = useMemo(() => makeMaterial(BAND_COLORS.treelawn, PRI.treelawn), [makeMaterial])
-  const sidewalkMat = useMemo(() => makeMaterial(BAND_COLORS.sidewalk, PRI.sidewalk), [makeMaterial])
-  const asphaltMat  = useMemo(() => makeMaterial(BAND_COLORS.asphalt,  PRI.asphalt),  [makeMaterial])
+  const blockMat    = useMemo(() => makeMaterial(blockCol,    PRI.residential), [makeMaterial, blockCol])
+  const treelawnMat = useMemo(() => makeMaterial(treelawnCol, PRI.treelawn),    [makeMaterial, treelawnCol])
+  const sidewalkMat = useMemo(() => makeMaterial(sidewalkCol, PRI.sidewalk),    [makeMaterial, sidewalkCol])
+  const asphaltMat  = useMemo(() => makeMaterial(asphaltCol,  PRI.asphalt),     [makeMaterial, asphaltCol])
 
   return (
     <group>
+      {blockGeo && (
+        <mesh geometry={blockGeo} renderOrder={PRI.residential} receiveShadow material={blockMat} />
+      )}
       {treelawnGeo && (
         <mesh geometry={treelawnGeo} renderOrder={PRI.treelawn} receiveShadow material={treelawnMat} />
       )}

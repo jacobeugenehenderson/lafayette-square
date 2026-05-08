@@ -453,7 +453,7 @@
       },
       "capEnds": {
         "start": "blunt",
-        "end": "blunt"
+        "end": "round"
       }
     }
   ],

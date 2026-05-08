@@ -532,6 +532,11 @@ function useLoadData() {
   }, [])
 }
 
+// Toy bounding rectangle — defines the residential substrate that V2's
+// rounded asphalt is carved out of. Toy-only constant; non-toy scenes
+// don't pass a stencil (V2 emits asphalt + bands without block-fill).
+const TOY_STENCIL = [[-180, -180], [180, -180], [180, 180], [-180, 180]]
+
 // ── App ─────────────────────────────────────────────────────────────────────
 export default function CartographApp() {
   const orthoRef = useRef(null)
@@ -625,7 +630,7 @@ export default function CartographApp() {
   //   - DesignerArch (decoration) hides.
   // Aerial photo + ribbon bands + tool's authoring overlay = clean
   // direct-align surface.
-  const toolAerialFocus = inDesigner && !!tool && aerialVisible && scene !== 'toy'
+  const toolAerialFocus = inDesigner && !!tool && aerialVisible && scene !== 'toy'  // aerial is LS-only; toy has no aerial photo
 
   let cursor = 'grab'
   if (markerActive && markerEraserActive && !spaceDown) cursor = 'pointer'
@@ -672,10 +677,7 @@ export default function CartographApp() {
               — the same component Preview mounts, so what Stage shows is
               what Preview shows is what Publish ships. ── */}
           {inDesigner && <ambientLight intensity={1} />}
-          {/* Toy scene renders ground geometry exclusively through V2 (rounded-
-              block-clip) below. Legacy StreetRibbons stays mounted everywhere
-              else. Once V2 ships for the neighborhood, this guard goes away. */}
-          {inDesigner && scene !== 'toy' && (
+          {(inDesigner || scene === 'toy') && (
           <R3FErrorBoundary name="StreetRibbons">
             <group visible={!designAerialOnly}>
             <StreetRibbons hiddenLayers={hiddenLayers}
@@ -710,14 +712,18 @@ export default function CartographApp() {
           </R3FErrorBoundary>
           )}
 
-          {/* ── Rounded-block-clip prototype overlay (toy v1 validation).
-              Renders sharp + rounded asphalt void as semi-transparent
-              meshes on top of the existing StreetRibbons render.
-              Toy-only for now; promote to a real Designer toggle when
-              the prototype validates. ── */}
+          {/* ── Rounded-block-clip prototype overlay.
+              Toy: V2 is the sole ground render (legacy hidden above).
+              Neighborhood (LS): V2 layers on top of legacy StreetRibbons
+              for side-by-side comparison; will replace legacy when
+              validated. Both scenes read centerlineData from the store
+              (scene-aware seed) so Measure edits propagate live. IX
+              positions come from the static ribbons import for each
+              scene (frozen at last bake; fine until Survey edits
+              centerline geometry). ── */}
           {scene === 'toy' && (
             <R3FErrorBoundary name="BlockGeometryV2Debug">
-              <BlockGeometryV2Debug ribbons={toyRibbons} flat={inDesigner} />
+              <BlockGeometryV2Debug ribbons={toyRibbons} stencil={TOY_STENCIL} flat={inDesigner} />
             </R3FErrorBoundary>
           )}
 

@@ -328,14 +328,16 @@ export default function CornerEditHandles({ ribbons }) {
 
         return (
           <group key={ixIdx}>
-            {/* IX-level preview ring at the bulk-control radius. Dimmed when
-                ANY corner has its own override so the operator's eye goes to
-                per-corner state. */}
-            <mesh position={[vx, Y_DOTS - 0.001, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={200}>
-              <ringGeometry args={[Math.max(0, ixRingR - 0.06), Math.max(0.06, ixRingR + 0.06), 64]} />
-              <meshBasicMaterial color={ixDotColor} transparent opacity={anyCornerOverride ? 0.3 : 0.7}
-                depthTest={false} depthWrite={false} />
-            </mesh>
+            {/* Bulk preview ring while DRAGGING the IX handle (live R feedback).
+                Otherwise the IX handle is just the center dot — empty preview
+                rings stack on every IX otherwise and clutter the canvas. */}
+            {draggingIx && (
+              <mesh position={[vx, Y_DOTS - 0.001, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={200}>
+                <ringGeometry args={[Math.max(0, ixRingR - 0.06), Math.max(0.06, ixRingR + 0.06), 64]} />
+                <meshBasicMaterial color={ixDotColor} transparent opacity={0.7}
+                  depthTest={false} depthWrite={false} />
+              </mesh>
+            )}
 
             {/* Per-corner dots at each Q point. */}
             {corners.map((c, ci) => {

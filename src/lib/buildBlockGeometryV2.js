@@ -52,7 +52,14 @@ function computePerps(pts) {
 }
 
 // Pavement ring = closed polygon at perp ±pavementHW from centerline.
-// Blunt caps only for the prototype (round caps add a quarter-disk).
+// Caps:
+//   'round'             → half-disk around the endpoint (cul-de-sac)
+//   'blunt' / 'none' /  → straight closure (current default; relies on the
+//   null / undefined      asphalt union covering the endpoint when it joins
+//                         another chain at an IX)
+// Cap fields read both `street.capStart`/`street.capEnd` (live store shape,
+// from SurveyorPanel) and `street.capEnds.start`/`.end` (baked ribbons.json
+// shape, from derive-toy.js) — so the same helper serves live + bake.
 function chainPavementRing(street) {
   const pts = street.points
   const m = street.measure
@@ -63,7 +70,41 @@ function chainPavementRing(street) {
   const perps = computePerps(pts)
   const leftSide = pts.map((p, i) => [p[0] + perps[i][0] * hwL, p[1] + perps[i][1] * hwL])
   const rightSide = pts.map((p, i) => [p[0] - perps[i][0] * hwR, p[1] - perps[i][1] * hwR])
-  return [...rightSide, ...leftSide.slice().reverse()]
+
+  const n = pts.length
+  const capStart = street.capStart || street.capEnds?.start
+  const capEnd   = street.capEnd   || street.capEnds?.end
+  const ARC_SEGS = 16
+
+  // Build a half-circle arc of (ARC_SEGS - 1) interior points sweeping CCW
+  // from `fromPt` to `toPt`, both on a circle of radius `r` centered at `c`.
+  // Endpoints are NOT included (they're already in rightSide / leftSide).
+  const halfArc = (c, r, fromPt, toPt) => {
+    const a0 = Math.atan2(fromPt[1] - c[1], fromPt[0] - c[0])
+    const a1 = Math.atan2(toPt[1] - c[1], toPt[0] - c[0])
+    let delta = a1 - a0
+    while (delta < 0) delta += 2 * Math.PI
+    const out = []
+    for (let k = 1; k < ARC_SEGS; k++) {
+      const a = a0 + delta * (k / ARC_SEGS)
+      out.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)])
+    }
+    return out
+  }
+
+  // End cap: bridge rightSide[last] → leftSide[last] going OUTWARD past
+  // the chain's last vertex. Polygon walks rightSide forward then leftSide
+  // reversed, so the cap arc sits between those two segments.
+  const endArc = capEnd === 'round'
+    ? halfArc(pts[n - 1], Math.max(hwL, hwR), rightSide[n - 1], leftSide[n - 1])
+    : []
+  // Start cap: bridge leftSide[0] → rightSide[0] going OUTWARD past the
+  // chain's first vertex. Sits at the polygon's wrap-around closure.
+  const startArc = capStart === 'round'
+    ? halfArc(pts[0], Math.max(hwL, hwR), leftSide[0], rightSide[0])
+    : []
+
+  return [...rightSide, ...endArc, ...leftSide.slice().reverse(), ...startArc]
 }
 
 function unionRings(rings) {
@@ -102,22 +143,72 @@ function defaultR(R_class, d_min, theta) {
   return Math.max(0, Math.min(R_class, Rmax))
 }
 
+// Resolve an IX-street reference (name + sref.ix) to a specific chain and
+// vertex index. Handles two real-world quirks of LS-baked ribbons.json:
+//   1. Multiple chains share a name (35 LS names span 164 chain entries).
+//   2. sref.ix is stale on ~36% of LS IX-refs (chain points were re-coord-
+//      inated upstream without updating the IX index).
+// Strategy:
+//   - Iterate all chains matching sref.name (not just the first).
+//   - On each candidate, prefer chain.points[sref.ix] if it lands within
+//     tolerance of V; otherwise scan all vertices for the nearest to V.
+//   - `claimed` set prevents double-assigning a chain when two srefs have
+//     the same name (the dupe-named-pair-across-an-IX pattern).
+// Returns { chain, vertexIdx } or null if no candidate is within tolerance.
+function resolveIxRef(sref, V, streetsByName, claimed) {
+  const TOL = 0.5
+  const candidates = streetsByName.get(sref.name) || []
+  let best = null
+  for (const chain of candidates) {
+    if (claimed.has(chain)) continue
+    const pts = chain.points
+    if (!pts || pts.length < 2) continue
+    // Honor sref.ix if it points at V (within tol).
+    const i = sref.ix
+    if (i != null && i >= 0 && i < pts.length) {
+      const d = Math.hypot(pts[i][0] - V[0], pts[i][1] - V[1])
+      if (d < TOL && (!best || d < best.d)) best = { chain, vertexIdx: i, d }
+    }
+    if (best && best.d < 1e-3) continue  // Already a near-perfect match.
+    // Fallback: nearest vertex on this chain.
+    let bi = -1, bd = Infinity
+    for (let k = 0; k < pts.length; k++) {
+      const d = Math.hypot(pts[k][0] - V[0], pts[k][1] - V[1])
+      if (d < bd) { bd = d; bi = k }
+    }
+    if (bd < TOL && (!best || bd < best.d)) best = { chain, vertexIdx: bi, d: bd }
+  }
+  return best
+}
+
+// Stable key for an intersection point — matches CornerEditHandles' ixKey
+// so per-IX overrides keyed there are applied here.
+function ixKey(p) { return `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}` }
+function sortedCornerKey(V, legKeyA, legKeyB) {
+  const [a, b] = (legKeyA <= legKeyB) ? [legKeyA, legKeyB] : [legKeyB, legKeyA]
+  return `${ixKey(V)}|${a}|${b}`
+}
+
 // For each IX, pair adjacent legs (sorted CCW around V) into corners.
 // Each corner has metadata: position (Vc), interior angle θ, d_min, R_class.
-function cornersAtIx(ix, streetByName) {
+// `ixOverrides` (map<ixKey, R>) and `cornerOverrides` (map<sortedCornerKey, R>)
+// carry operator-authored radii from the active Look's design — applied with
+// per-corner > per-IX > default-R-rule precedence, all × cornerRadiusScale.
+function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides) {
   const V = ix.point
   if (!ix.streets || ix.streets.length < 2) return []
   const legs = []
+  const claimed = new Set()
   for (const sref of ix.streets) {
-    const chain = streetByName.get(sref.name)
-    if (!chain) continue
-    const ixIdx = sref.ix
+    const match = resolveIxRef(sref, V, streetsByName, claimed)
+    if (!match) continue
+    claimed.add(match.chain)
+    const chain = match.chain
+    const ixIdx = match.vertexIdx
     const pts = chain.points
-    if (!pts || ixIdx == null || ixIdx < 0 || ixIdx >= pts.length) continue
-    const v = pts[ixIdx]
-    if (Math.hypot(v[0] - V[0], v[1] - V[1]) > 0.5) continue
     const m = chain.measure
     if (!m) continue
+    const skel = chain.skelId || chain.name || '?'
     const buildLeg = (dir) => {
       const ni = ixIdx + dir
       if (ni < 0 || ni >= pts.length) return null
@@ -135,6 +226,7 @@ function cornersAtIx(ix, streetByName) {
         outerR: right?.pavementHW || 0,
         leftDepth:  depthForSide(left),
         rightDepth: depthForSide(right),
+        legKey: `${skel}:${dir === -1 ? 'b' : 'f'}`,
       }
     }
     if (ixIdx > 0) { const l = buildLeg(-1); if (l) legs.push(l) }
@@ -152,15 +244,21 @@ function cornersAtIx(ix, streetByName) {
     while (theta >= 2 * Math.PI) theta -= 2 * Math.PI
     if (theta < 5 * RAD || theta > 355 * RAD) continue
 
-    // Block corner = intersection of A's right curb-outer and B's left
-    // curb-outer (the two ribbon edges that bound the block wedge between
-    // adjacent CCW legs). Perp-left of T = (-Ty, Tx).
+    // Block corner = intersection of A's LEFT curb-outer and B's RIGHT
+    // curb-outer. Legs are sorted CCW; the wedge between two adjacent legs
+    // (going CCW from A to B) sits on A's left side and B's right side.
+    // (Earlier mis-derivation had this swapped, which only worked at 90°
+    // IXs where the four corners are identical by symmetry — hidden the
+    // bug at the bent T and the dead-end IX. Must match the same A0/B0
+    // formula used in CornerEditHandles' Q computation, otherwise the
+    // per-corner override key and the geometric corner disagree on which
+    // wedge they refer to.) Perp-left of T = (-Ty, Tx).
     const P_A = [-A.T[1], A.T[0]]
     const P_B = [-B.T[1], B.T[0]]
-    // A's right curb passes through V - A.outerR · P_A, along A.T.
-    const A0 = [V[0] - A.outerR * P_A[0], V[1] - A.outerR * P_A[1]]
-    // B's left  curb passes through V + B.outerL · P_B, along B.T.
-    const B0 = [V[0] + B.outerL * P_B[0], V[1] + B.outerL * P_B[1]]
+    // A's LEFT curb passes through V + A.outerL · P_A, along A.T.
+    const A0 = [V[0] + A.outerL * P_A[0], V[1] + A.outerL * P_A[1]]
+    // B's RIGHT curb passes through V - B.outerR · P_B, along B.T.
+    const B0 = [V[0] - B.outerR * P_B[0], V[1] - B.outerR * P_B[1]]
     // Intersect A0 + s·A.T = B0 + t·B.T.
     const det = A.T[0] * (-B.T[1]) - A.T[1] * (-B.T[0])
     if (Math.abs(det) < 1e-9) continue
@@ -168,15 +266,26 @@ function cornersAtIx(ix, streetByName) {
     const s = (dx * (-B.T[1]) - dz * (-B.T[0])) / det
     const Vc = [A0[0] + s * A.T[0], A0[1] + s * A.T[1]]
 
-    const d_A = A.rightDepth   // A's right side faces this corner.
-    const d_B = B.leftDepth    // B's left  side faces this corner.
+    const d_A = A.leftDepth    // A's LEFT side faces this corner.
+    const d_B = B.rightDepth   // B's RIGHT side faces this corner.
     const d_min = Math.min(d_A, d_B)
+
+    // Override lookup: per-corner key wins over per-IX key. Both are
+    // pre-scale meters; the scale is applied later in applyRoundCornersToRing.
+    const cornerKey = sortedCornerKey(V, A.legKey, B.legKey)
+    let R_authored = null
+    if (cornerOverrides && Number.isFinite(cornerOverrides[cornerKey])) {
+      R_authored = cornerOverrides[cornerKey]
+    } else if (ixOverrides && Number.isFinite(ixOverrides[ixKey(V)])) {
+      R_authored = ixOverrides[ixKey(V)]
+    }
 
     corners.push({
       point: Vc,
       theta,
       d_min,
       R_class: R_CLASS_DEFAULT,
+      R_authored,
     })
   }
   return corners
@@ -235,7 +344,14 @@ function applyRoundCornersToRing(ring, corners, scale = 1) {
     const outDir = unit([next[0] - cur[0], next[1] - cur[1]])
     const cross = inDir[0] * outDir[1] - inDir[1] * outDir[0]
     if (cross >= 0) { out.push(cur); continue }  // not block-convex
-    const R = defaultR(matched.R_class, matched.d_min, matched.theta) * scale
+    // Authored override (per-corner or per-IX) bypasses the default-R cap —
+    // operator's intent wins, even past the geometric pinch threshold.
+    // Reverting an override (deleting the key) returns a non-finite value
+    // here and falls through to the default-R rule.
+    const baseR = Number.isFinite(matched.R_authored)
+      ? matched.R_authored
+      : defaultR(matched.R_class, matched.d_min, matched.theta)
+    const R = baseR * scale
     if (R <= 0.05) { out.push(cur); continue }
     const arc = arcReplaceVertex(prev, cur, next, R, matched.theta)
     for (const p of arc) out.push(p)
@@ -299,8 +415,36 @@ function chainStripBand(pts, perps, side, dInner, dOuter) {
   return [...outer, ...inner.slice().reverse()]
 }
 
+// Round-cap band extension: a half-annulus around a chain endpoint that
+// lets the strip bands wrap continuously around the cap (concentric arcs at
+// dInner/dOuter, sweeping 180° through the FORWARD direction off the chain
+// end). Returned as a closed polygon.
+//   `center` = chain endpoint (pts[0] or pts[n-1])
+//   `T_out`  = unit tangent pointing OFF the chain at this end
+//              (= forward at end, = -forward at start)
+function roundCapHalfAnnulus(center, T_out, dInner, dOuter) {
+  if (dOuter <= dInner || dInner <= 0) return null
+  const ARC = 16
+  // perp_right of T_out is the "starting" angle of the cap arc; sweep CCW
+  // 180° through T_out (forward) to perp_left of T_out.
+  // perp_right(T) = (Ty, -Tx) → angle = atan2(-Tx, Ty)
+  const startA = Math.atan2(-T_out[0], T_out[1])
+  const endA   = startA + Math.PI
+  const inner = []
+  const outer = []
+  for (let k = 0; k <= ARC; k++) {
+    const a = startA + (endA - startA) * (k / ARC)
+    inner.push([center[0] + dInner * Math.cos(a), center[1] + dInner * Math.sin(a)])
+    outer.push([center[0] + dOuter * Math.cos(a), center[1] + dOuter * Math.sin(a)])
+  }
+  // Closed: outer forward + inner reverse. Connects flush to the straight
+  // chain bands at both endpoints (perp_right and perp_left of T_out).
+  return [...outer, ...inner.slice().reverse()]
+}
+
 export function buildBlockGeometryV2(ribbons, opts = {}) {
-  const { cornerRadiusScale = 1, stencil = null } = opts
+  const { cornerRadiusScale = 1, stencil = null,
+    cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null } = opts
   const streets = ribbons?.streets || []
   const intersections = ribbons?.intersections || []
 
@@ -311,10 +455,17 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   }
   const asphaltSharp = unionRings(asphaltRings)
 
-  const streetByName = new Map(streets.map(s => [s.name, s]))
+  // Multi-value name map — LS has 35 names spanning 164 chain entries (a
+  // single-valued Map silently picks the wrong chain ~68% of the time).
+  const streetsByName = new Map()
+  for (const s of streets) {
+    if (!s.name) continue
+    const list = streetsByName.get(s.name)
+    if (list) list.push(s); else streetsByName.set(s.name, [s])
+  }
   const allCorners = []
   for (const ix of intersections) {
-    allCorners.push(...cornersAtIx(ix, streetByName))
+    allCorners.push(...cornersAtIx(ix, streetsByName, cornerRadiusOverrides, cornerCornerRadiusOverrides))
   }
 
   const asphaltRounded = asphaltSharp.map(ring =>
@@ -340,7 +491,21 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     const pts = street.points
     const m = street.measure
     if (!pts || pts.length < 2 || !m) continue
+    const n = pts.length
     const perps = computePerps(pts)
+    // Use max ped-zone of the two sides for cap-extension annulus widths
+    // (caps are radially symmetric — both sides' bands meet at the back
+    // of the cap). For asymmetric chains, the side that's narrower will
+    // simply not reach the full annulus thickness; intersection-clip with
+    // blockRounded keeps the geometry honest.
+    let maxHw = 0, maxTl = 0, maxSw = 0
+    for (const sideKey of ['left', 'right']) {
+      const s = m[sideKey]
+      if (!s || s.terminal !== 'sidewalk') continue
+      maxHw = Math.max(maxHw, s.pavementHW || 0)
+      maxTl = Math.max(maxTl, s.treelawn || 0)
+      maxSw = Math.max(maxSw, s.sidewalk || 0)
+    }
     for (const sideKey of ['left', 'right']) {
       const sideSign = sideKey === 'left' ? +1 : -1
       const s = m[sideKey]
@@ -358,6 +523,47 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       if (sw > 0) {
         const ring = chainStripBand(pts, perps, sideSign, hw + tl, hw + tl + sw)
         if (ring) sidewalkBandsRaw.push(ring)
+      }
+    }
+    // Round-cap band extensions — one per cap'd endpoint. Half-annulus
+    // around the chain endpoint at the same radial offsets as the straight
+    // bands, so the ribbon stack wraps continuously around the cap.
+    const capStart = street.capStart || street.capEnds?.start
+    const capEnd   = street.capEnd   || street.capEnds?.end
+    if (maxHw > 0) {
+      // End cap: T_out points forward (off the chain in +T direction).
+      if (capEnd === 'round' && n >= 2) {
+        const dx = pts[n-1][0] - pts[n-2][0], dz = pts[n-1][1] - pts[n-2][1]
+        const L = Math.hypot(dx, dz)
+        if (L > 1e-6) {
+          const T = [dx/L, dz/L]
+          const center = pts[n-1]
+          if (maxTl > 0) {
+            const ring = roundCapHalfAnnulus(center, T, maxHw, maxHw + maxTl)
+            if (ring) treelawnBandsRaw.push(ring)
+          }
+          if (maxSw > 0) {
+            const ring = roundCapHalfAnnulus(center, T, maxHw + maxTl, maxHw + maxTl + maxSw)
+            if (ring) sidewalkBandsRaw.push(ring)
+          }
+        }
+      }
+      // Start cap: T_out points back off the chain (-T direction).
+      if (capStart === 'round' && n >= 2) {
+        const dx = pts[1][0] - pts[0][0], dz = pts[1][1] - pts[0][1]
+        const L = Math.hypot(dx, dz)
+        if (L > 1e-6) {
+          const T = [-dx/L, -dz/L]
+          const center = pts[0]
+          if (maxTl > 0) {
+            const ring = roundCapHalfAnnulus(center, T, maxHw, maxHw + maxTl)
+            if (ring) treelawnBandsRaw.push(ring)
+          }
+          if (maxSw > 0) {
+            const ring = roundCapHalfAnnulus(center, T, maxHw + maxTl, maxHw + maxTl + maxSw)
+            if (ring) sidewalkBandsRaw.push(ring)
+          }
+        }
       }
     }
   }

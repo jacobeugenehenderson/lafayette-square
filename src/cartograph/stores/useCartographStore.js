@@ -289,7 +289,13 @@ const useCartographStore = create((set, get) => ({
     // can author with a per-IX center handle. Round up for a generous
     // headroom + nicer slider tick math.
     const n = Math.max(0, Math.min(11, Number(v) || 0))
-    set({ cornerRadiusScale: n })
+    // Slider RESETS authored overrides. Operator's mental model: "drag the
+    // slider → all corners scale together to this value × default-R." Any
+    // per-IX or per-corner authored values would otherwise produce
+    // non-uniform scaling that defeats the slider's intent. After this
+    // reset, the operator re-authors per-IX / per-corner from the new
+    // scaled baseline.
+    set({ cornerRadiusScale: n, cornerRadiusOverrides: {}, cornerCornerRadiusOverrides: {} })
     get()._saveDesignDebounced()
   },
   // Transient UI toggle — drives whether CornerEditHandles render.
@@ -305,17 +311,27 @@ const useCartographStore = create((set, get) => ({
   },
   // Write a per-IX corner-radius override. Pass null/undefined for r to
   // remove the override (revert that IX to its data-file / default value).
+  // IX commit RESETS per-corner overrides at this IX — operator's mental
+  // model: dragging the IX center handle "homogenizes" the IX to a single
+  // radius, clobbering any per-corner detail at that IX. Per-corner work
+  // on OTHER IXs is preserved.
   setIxCornerRadius: (point, r) => {
     const key = get().ixPointKey(point)
     if (!key) return
+    const ixPrefix = key + '|'
     set(s => {
-      const next = { ...s.cornerRadiusOverrides }
+      const nextIx = { ...s.cornerRadiusOverrides }
       if (r == null || !Number.isFinite(r)) {
-        delete next[key]
+        delete nextIx[key]
       } else {
-        next[key] = Math.max(0, Math.min(50, +r))   // clamp to sane meters
+        nextIx[key] = Math.max(0, Math.min(50, +r))   // clamp to sane meters
       }
-      return { cornerRadiusOverrides: next }
+      // Drop per-corner overrides whose key starts with this IX's pointKey.
+      const nextCorner = {}
+      for (const [k, v] of Object.entries(s.cornerCornerRadiusOverrides || {})) {
+        if (!k.startsWith(ixPrefix)) nextCorner[k] = v
+      }
+      return { cornerRadiusOverrides: nextIx, cornerCornerRadiusOverrides: nextCorner }
     })
     get()._saveDesignDebounced()
   },

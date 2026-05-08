@@ -6,6 +6,35 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-07 (PM session) — V2 lands in toy; parallel-pipeline lesson logged
+
+V2 (rounded-block-clip) now renders live in toy through the shared cartograph
+surface pipeline: residential block fills + asphalt corridors + treelawn /
+sidewalk strips + corner-rounded asphalt mouths. Look palette (`layerColors`,
+`luColors`) and `cornerRadiusScale` slider both wired to V2. Survey + Measure
+overlays mount in toy; centerlines and handles render.
+
+Mid-session, Jacob flagged the architectural drift: what landed is a parallel
+toy data pipeline (static `toy-ribbons.json` import in `_loadCenterlines`,
+toy-only branch in `_saveOverlay`, sibling `ToyV2`/`NeighborhoodV2` wrappers,
+duplicate static-`intersections` reads). The right shape is what
+`cartograph/TOY_AUTHORING_PLAN.md` already specified: scene-parametric server
+routes (`/api/cartograph/:scene/...`), per-scene file layout, one branch in
+the store, one V2 wrapper. Toy becomes "cartograph running on a small
+persistent Scene" — not a separate code path.
+
+Next session opens on:
+1. Corner controls — finish per-IX + per-corner radius overrides in
+   `buildBlockGeometryV2.cornersAtIx`; gate `CornerEditHandles` dot/circle
+   render on `cornerEditMode` (currently dots show whenever component mounts).
+2. Phase 0 refactor per `cartograph/TOY_AUTHORING_PLAN.md` — collapse the toy
+   parallel path. Net code goes down.
+
+Detailed punch list in `cartograph/BACKLOG.md` (sections "Lesson logged
+2026-05-07" + "Corner controls — known broken").
+
+---
+
 ## 2026-05-06 (PM-2) — Corner geometry retired & rebuilt: rounded-block-clip plan
 
 Long planning conversation with Jacob. After weeks of corner-plug

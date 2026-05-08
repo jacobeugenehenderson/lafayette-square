@@ -2,7 +2,100 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-06 (EOD, post corner-authoring kit phases 1-2)
+Last updated: 2026-05-08 (EOD, parallel-pipeline lesson reiterated)
+
+## STOP. Read this before touching toy.
+
+**Toy is a scene, not a parallel pipeline.** It's a different *dataset* (a small artificial neighborhood of nodes + line segments) that must run through the **exact same pipeline** as the canonical neighborhood. Same server endpoints (scene-parametric), same store loaders, same render components, same Survey/Measure tools. Slot a new scene into existing structures. Do not add toy-only code paths.
+
+If you are about to:
+
+- write `if (scene === 'toy')` in a store action / loader / render component
+- create a `ToyX` / `NeighborhoodX` sibling wrapper because props differ
+- import `toyRibbons` directly into anything other than a one-time seed
+- mount or hide a component conditionally on scene name in `CartographApp`
+- swap legacy ↔ V2 based on tool state for toy only
+
+— **stop**. Find the canonical version, make IT scene-parametric (route, file path, store key all keyed by `:scene`), and route toy through it. The Phase 0 plan in `cartograph/TOY_AUTHORING_PLAN.md` describes the right shape.
+
+When debugging "feature X doesn't work in toy", the answer is almost never "build a parallel toy version." It's "make the canonical scene-parametric." If you can't do that in the time available, the right move is to revert your shortcuts and document the gap, not pile on another shortcut.
+
+## Lesson logged 2026-05-07: stop parallel-piping toy
+
+While iterating V2 in toy this session, the next operator (me) added a
+second data path for "scene === 'toy'" instead of treating toy as a
+different *scene name* against the same path. Symptoms in the diff:
+
+- `_loadCenterlines` has a toy branch that synthesizes from a static
+  `toy-ribbons.json` import, bypassing `fetchCenterlines/Overlay`.
+- `_saveOverlay` early-returns on toy because no toy overlay endpoint
+  exists; toy edits are silently in-memory.
+- `CartographApp` has sibling `ToyV2` and `NeighborhoodV2` wrappers,
+  one passing a stencil literal, the other not.
+- V2 reads `toyRibbons.intersections` (static) for toy and
+  `ribbonsRaw.intersections` (static) for LS — both scenes work
+  around the same gap (intersections aren't in the live store).
+
+The right shape is what `cartograph/TOY_AUTHORING_PLAN.md` already
+specified: scene-parametric server routes (`/api/cartograph/:scene/...`),
+per-scene file layout (`src/data/<scene>/centerlines.json` +
+`overlay.json` + `intersections.json`), one branch in the store, one
+V2 wrapper. "Toy" then *is* cartograph, doped with a small persistent
+Scene — not a parallel pipeline.
+
+**Action**: do the refactor. See plan section "Phase 0 — Plumbing".
+Net code goes down: collapse the toy branch in `_loadCenterlines`,
+drop `ToyV2`/`NeighborhoodV2` distinction, drop the toy gate in
+`_saveOverlay`. The static `toyRibbons` import retires.
+
+## V2 Measure-mode visualization (queued)
+
+Tonight Jacob asked why Measure isn't producing the per-stripe color story
+in toy. The honest cause: V2 currently renders solid per-band fills only.
+The per-stripe translucent visualization + edge strokes the operator
+authors against was a legacy-StreetRibbons feature (rendered when
+`measureActive=true`).
+
+A workaround (re-mount legacy in toy when `tool === 'measure'`) was tried
+and reverted. Reasoning: legacy is meant to retire once V2 hits parity;
+keeping a hybrid render path that switches to legacy for one mode keeps
+the parallel pipeline alive. The professional path is to give V2 its own
+Measure-mode render branch.
+
+Next session work:
+- `BlockGeometryV2Debug` (or the V2 surface successor) takes a
+  `measureActive` prop. When true:
+  - Per-band materials switch to translucent (e.g., `opacity ~0.55`)
+    with `transparent=true`.
+  - Per-stripe edge strokes (line meshes) render along band boundaries —
+    use `polylineRibbon` from `overlayGeom.js` or equivalent.
+  - Selected chain (from store's `selectedStreet`) renders differently
+    (more opaque, edge-highlighted) so authoring focus is unambiguous.
+- Once shipped, `MeasureOverlay` no longer needs the legacy ribbon stack
+  underneath — it can author against V2's translucent stripes directly.
+- After V2 carries Measure visuals, plan legacy retirement: drop legacy
+  StreetRibbons from non-toy scenes too, V2 takes over everywhere.
+
+## Corner controls — known broken (queued for next-session fix before refactor)
+
+State going into next session:
+- Global `cornerRadiusScale` slider IS wired to V2 (`useSurfaceMaterial`-
+  hook day landed both LS and toy reading the store value).
+- Per-IX overrides (`cornerRadiusOverrides`, keyed by `ixKey(V)`) — NOT
+  applied in `buildBlockGeometryV2.cornersAtIx`. Helper now produces
+  `legKey` per leg as scaffolding (mid-edit at session end), but the
+  override-application call is not wired.
+- Per-corner overrides (`cornerCornerRadiusOverrides`, keyed by
+  `ixKey(V)|legKeyA|legKeyB`) — same; scaffolding present, no
+  application logic.
+- `CornerEditHandles` dots/circles render whenever the component mounts.
+  They should only show when the operator has flipped "Edit corners"
+  (`cornerEditMode` is true). Today's render path doesn't gate the
+  visual output even though pointer setup is gated.
+
+Working from the same V2 helper context, fix all three before
+touching the Phase 0 refactor — they're cheap once you're in the
+file and the user has high signal that the kit is close to working.
 
 ## Data-pipeline truths surfaced 2026-05-06
 
