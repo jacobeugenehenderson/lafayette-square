@@ -708,9 +708,13 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 
   // Per-chain clipping. Asphalt clips to the rounded asphalt polygon so
   // the per-chain meshes inherit the corner smoothing without each chain
-  // having to know about its IXs. Treelawn/sidewalk clip to the rounded
-  // block so the bands trim at chain endpoints and at the corner arcs
-  // where the rounded asphalt has bulged into the block.
+  // having to know about its IXs. Treelawn/sidewalk clip to blockRounded
+  // (= stencil − asphalt), the loose "outside-of-asphalt" area. They
+  // trim at chain endpoints and at corner arcs where the rounded asphalt
+  // has bulged into the block. (Note: blockRounded is later refined into
+  // a tighter `blockFill` below, but the LOOSE shape is what we clip
+  // bands against — they need to extend through the parcel area before
+  // the block-fill carve-out happens.)
   for (const entry of byChain) {
     if (!entry) continue
     if (entry.asphaltRings.length && asphaltRounded.length) {
@@ -722,10 +726,27 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     }
   }
 
+  // Block fill = stencil minus the union of every ribbon area (asphalt +
+  // curb + treelawn + sidewalk). What's left is "land-use" — the parcel
+  // proper, beyond the sidewalk's outer edge. Rendered opaque green so
+  // the translucent ribbons read against the aerial photo / graph paper
+  // backdrop instead of bleeding the block color through.
+  let blockFill = []
+  if (stencil && stencil.length >= 3) {
+    const ribbonUnion = unionRings([
+      ...asphaltRounded,
+      ...curbBands,
+      ...byChain.flatMap(c => c?.treelawnRings || []),
+      ...byChain.flatMap(c => c?.sidewalkRings || []),
+    ])
+    blockFill = differenceRings([stencil], ribbonUnion)
+  }
+
   return {
     asphaltSharp,
     asphaltRounded,
-    blockRounded,
+    blockRounded,    // loose: stencil − asphalt; used for adjacency + band clipping
+    blockFill,       // tight: stencil − all ribbons; rendered as the parcel fill
     curbBands,
     byChain,
     corners: allCorners,

@@ -190,8 +190,8 @@ export default function BlockGeometryV2Debug({
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
-  const { asphaltRounded, blockRounded, curbBands, byChain, corners } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], curbBands: [], byChain: [], corners: [] }
+  const { asphaltRounded, blockRounded, blockFill, curbBands, byChain, corners } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], curbBands: [], byChain: [], corners: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -220,7 +220,12 @@ export default function BlockGeometryV2Debug({
   // is 1 corridor outer + N block-shaped holes. Without hole-aware rendering,
   // the holes are drawn as filled asphalt-color rectangles, occluding the
   // block parcels underneath.
-  const blockGeo    = useMemo(() => ringsToFlatGeo(blockRounded, 0.01, true), [blockRounded])
+  // Block geometry uses the TIGHT blockFill (stencil − all ribbons) so
+  // the green parcel doesn't bleed under translucent treelawn / sidewalk.
+  // The loose blockRounded (stencil − asphalt) stays available for
+  // adjacency lookups (_setV2Blocks below) where the wider area better
+  // identifies "which block is on this side of the chain".
+  const blockGeo    = useMemo(() => ringsToFlatGeo(blockFill, 0.01, true), [blockFill])
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Per-chain band geometries so the selected chain's meshes can swap to
   // the translucent material variant while every other chain stays
