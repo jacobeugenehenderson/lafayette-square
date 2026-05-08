@@ -3,14 +3,37 @@ import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs'
 import { join, extname } from 'path'
 import { execSync } from 'child_process'
+import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
 
-const DIR = join(import.meta.dirname, 'data', 'clean')
-const RAW = join(import.meta.dirname, 'data', 'raw')
-const MARKERS = join(DIR, 'marker_strokes.json')
-const MEASUREMENTS = join(RAW, 'measurements.json')
-const CENTERLINES = join(RAW, 'centerlines.json')
-const SKELETON = join(DIR, 'skeleton.json')
-const OVERLAY = join(DIR, 'overlay.json')
+// Per-scene file resolver. Phase 0a only wires the default scene
+// (lafayette-square) and toy through here; further scenes follow the same
+// pattern. The raw/ + clean/ split inside each scene matches the existing
+// LS layout (raw = OSM ingestion / authored input; clean = derived).
+function sceneDataPaths(scene) {
+  const raw = sceneRawDir(scene)
+  const clean = sceneCleanDir(scene)
+  return {
+    raw, clean,
+    markers:      join(clean, 'marker_strokes.json'),
+    measurements: join(raw,   'measurements.json'),
+    centerlines:  join(raw,   'centerlines.json'),
+    skeleton:     join(clean, 'skeleton.json'),
+    overlay:      join(clean, 'overlay.json'),
+    map:          join(clean, 'map.json'),
+  }
+}
+
+// Default-scene aliases — preserved so the static-file serving path and
+// the analyze() routine keep working without per-request scene plumbing.
+// Per-scene routes resolve via sceneDataPaths(scene) instead.
+const DEFAULT_PATHS = sceneDataPaths(DEFAULT_SCENE)
+const DIR     = DEFAULT_PATHS.clean
+const RAW     = DEFAULT_PATHS.raw
+const MARKERS = DEFAULT_PATHS.markers
+const MEASUREMENTS = DEFAULT_PATHS.measurements
+const CENTERLINES  = DEFAULT_PATHS.centerlines
+const SKELETON     = DEFAULT_PATHS.skeleton
+const OVERLAY      = DEFAULT_PATHS.overlay
 const PARCEL_FILE = join(import.meta.dirname, '..', 'scripts', 'raw', 'stl_parcels.json')
 
 // mtime-based dirty check used by the bake chain. Returns true if any output
@@ -453,20 +476,24 @@ createServer((req, res) => {
       const force = /[?&]force=1\b/.test(req.url || '')
       const REPO_ROOT = join(import.meta.dirname, '..')
       const here = import.meta.dirname
-      // overlay.json + skeleton.json live in data/clean (Survey/Measure
-      // write to /overlay → data/clean/overlay.json; skeleton is derived).
-      // Everything else is raw inputs.
+      // Phase 0e will route bake inputs through the Look's scene field;
+      // for now the bake chain still operates on the default LS scene.
+      const bakeScene = DEFAULT_SCENE
+      const bakePaths = sceneDataPaths(bakeScene)
+      // overlay.json + skeleton.json are operator-edited / derived
+      // (Survey/Measure write to /overlay → clean/overlay.json; skeleton
+      // is derived). Everything else is raw inputs.
       const RAW_PATHS = [
-        join(here, 'data', 'raw', 'osm.json'),
-        join(here, 'data', 'raw', 'measurements.json'),
-        join(here, 'data', 'raw', 'centerlines.json'),
-        join(here, 'data', 'raw', 'elevation.json'),
-        join(here, 'data', 'clean', 'overlay.json'),
-        join(here, 'data', 'clean', 'skeleton.json'),
+        join(bakePaths.raw,   'osm.json'),
+        bakePaths.measurements,
+        bakePaths.centerlines,
+        join(bakePaths.raw,   'elevation.json'),
+        bakePaths.overlay,
+        bakePaths.skeleton,
         join(REPO_ROOT, 'src', 'data', 'buildings.json'),
       ]
       const PIPELINE_SRC = ['pipeline.js', 'derive.js', 'snap.js', 'classify.js', 'standards.js', 'config.js'].map(f => join(here, f))
-      const MAP_JSON   = join(here, 'data', 'clean', 'map.json')
+      const MAP_JSON   = bakePaths.map
       const RIBBONS    = join(REPO_ROOT, 'src', 'data', 'ribbons.json')
       const PARK_TREES = join(REPO_ROOT, 'src', 'data', 'park_trees.json')
       const PARK_WATER = join(REPO_ROOT, 'src', 'data', 'park_water.json')

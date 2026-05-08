@@ -78,7 +78,8 @@ function pointInPolygon(px, pz, poly) {
   return true
 }
 function makeForbiddenTester() {
-  const map = JSON.parse(readFileSync(path.join(REPO_ROOT, 'cartograph', 'data', 'clean', 'map.json'), 'utf-8'))
+  // TODO(0e): resolve scene from the active Look's scene field.
+  const map = JSON.parse(readFileSync(path.join(REPO_ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'map.json'), 'utf-8'))
   const water = JSON.parse(readFileSync(path.join(REPO_ROOT, 'src', 'data', 'park_water.json'), 'utf-8'))
 
   // pointInRing below indexes ring[i][0] / [1]. park_water.json uses

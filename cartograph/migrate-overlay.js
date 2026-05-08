@@ -20,8 +20,12 @@
 
 import { readFileSync, writeFileSync, copyFileSync } from 'fs'
 import { join } from 'path'
+import { DEFAULT_SCENE, sceneCleanDir } from './config.js'
 
-const ROOT = join(import.meta.dirname, 'data', 'clean')
+// One-shot migration tool. Operates on the default scene; if you need to
+// rebind a non-LS scene's overlay, pass the scene as an env var.
+const SCENE = process.env.SCENE || DEFAULT_SCENE
+const ROOT = sceneCleanDir(SCENE)
 const OVERLAY_PATH = join(ROOT, 'overlay.json')
 const SKELETON_PATH = join(ROOT, 'skeleton.json')
 

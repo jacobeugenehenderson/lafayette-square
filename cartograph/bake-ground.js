@@ -239,8 +239,9 @@ function itemsToBuffers(items) {
 }
 
 export async function bakeGround({ look = 'default' } = {}) {
+  // TODO(0e): resolve mapPath from the Look's scene field instead of LS default.
   const ribbonsPath = join(ROOT, 'src', 'data', 'ribbons.json')
-  const mapPath     = join(ROOT, 'cartograph', 'data', 'clean', 'map.json')
+  const mapPath     = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'map.json')
   const designPath  = join(ROOT, 'public', 'looks', look, 'design.json')
   const outDir      = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })

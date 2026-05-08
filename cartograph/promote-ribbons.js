@@ -6,8 +6,12 @@
 
 import { readFileSync, writeFileSync, copyFileSync } from 'fs'
 import { join } from 'path'
+import { DEFAULT_SCENE, sceneCleanDir } from './config.js'
 
-const MAP_PATH = join(import.meta.dirname, 'data', 'clean', 'map.json')
+// TODO(0e): scene-parametrize via CLI arg once bake reads from the active
+// Look's scene field. For now promote-ribbons always operates on the
+// default scene's map.json.
+const MAP_PATH = join(sceneCleanDir(DEFAULT_SCENE), 'map.json')
 const BUNDLED_PATH = join(import.meta.dirname, '..', 'src', 'data', 'ribbons.json')
 
 const map = JSON.parse(readFileSync(MAP_PATH, 'utf-8'))

@@ -42,5 +42,16 @@ import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 export const CARTOGRAPH_DIR = __dirname
-export const RAW_DIR = join(__dirname, 'data', 'raw')
-export const CLEAN_DIR = join(__dirname, 'data', 'clean')
+
+// Per-scene data lives under cartograph/data/<scene>/. Each scene mirrors
+// the same raw/ + clean/ split (raw = ingested inputs; clean = derived /
+// operator-edited artifacts). Scripts that operate on a specific scene
+// should call sceneRawDir(scene) / sceneCleanDir(scene); the unqualified
+// RAW_DIR / CLEAN_DIR aliases continue to point at the default scene
+// (Lafayette Square) so existing call sites keep working during migration.
+export const DEFAULT_SCENE = 'lafayette-square'
+export function sceneDir(scene)      { return join(__dirname, 'data', scene) }
+export function sceneRawDir(scene)   { return join(__dirname, 'data', scene, 'raw') }
+export function sceneCleanDir(scene) { return join(__dirname, 'data', scene, 'clean') }
+export const RAW_DIR   = sceneRawDir(DEFAULT_SCENE)
+export const CLEAN_DIR = sceneCleanDir(DEFAULT_SCENE)

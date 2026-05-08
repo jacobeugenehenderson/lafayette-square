@@ -153,7 +153,7 @@ async function main() {
 
   writeFileSync(join(CLEAN_DIR, 'map.json'), JSON.stringify(output, null, 2))
   const sizeKb = Math.round(JSON.stringify(output).length / 1024)
-  console.log(`\n  Output: data/clean/map.json (${sizeKb} KB)`)
+  console.log(`\n  Output: ${join(CLEAN_DIR, 'map.json')} (${sizeKb} KB)`)
   console.log(`  Buildings: ${buildings.length}`)
 
   if (elevationGrid) {

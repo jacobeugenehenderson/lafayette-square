@@ -10,9 +10,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { DEFAULT_SCENE, sceneRawDir } from './config.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const FILE = path.join(__dirname, 'data/raw/centerlines.json')
+const FILE = path.join(sceneRawDir(DEFAULT_SCENE), 'centerlines.json')
 const EPS = 0.5
 const dryRun = process.argv.includes('--dry-run')
 

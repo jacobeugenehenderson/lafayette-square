@@ -1132,7 +1132,7 @@ export function deriveLayers(highways) {
   // avoids visible straight edges in the fade zone).
   try {
     const boundaryData = JSON.parse(readFileSync(
-      join(CARTOGRAPH_DIR, 'data', 'neighborhood_boundary.json'), 'utf-8'
+      join(CARTOGRAPH_DIR, 'data', 'lafayette-square', 'neighborhood_boundary.json'), 'utf-8'
     ))
     const boundaryRing = boundaryData.boundary.map(([x, z]) => ({ x, z }))
     if (boundaryRing.length > 2) {
@@ -1372,7 +1372,7 @@ export function deriveLayers(highways) {
   // Load manual block patches (drawn in preview GUI)
   let blockPatches = []
   try {
-    blockPatches = JSON.parse(readFileSync(join(CARTOGRAPH_DIR, 'data', 'clean', 'block_patches.json'), 'utf-8'))
+    blockPatches = JSON.parse(readFileSync(join(CLEAN_DIR, 'block_patches.json'), 'utf-8'))
     if (blockPatches.length > 0) console.log(`    ${blockPatches.length} manual block patches loaded`)
   } catch {}
 
