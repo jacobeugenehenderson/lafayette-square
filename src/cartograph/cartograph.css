@@ -516,15 +516,12 @@
   border-radius: var(--toolbar-group-radius);
 }
 
-.carto-toolgroup > button,
-.carto-toolgroup > .carto-looks-select {
+.carto-toolgroup > button {
   /* Match the panel-pill rhythm so the toolbar reads as the same family
-     of UI as the panel's Survey/Measure/Design pill. Identical geometry
-     forces <button> and <select> peers to render the same size — the
-     <select> kept rendering taller because of UA shorthand defaults
-     that piecemeal `font-*` overrides didn't fully neutralize. Explicit
-     font sub-properties (no `font` shorthand anywhere) sidestep that
-     entirely. */
+     of UI as the panel's Survey/Measure/Design pill. The Looks dropdown
+     used to live here as a native <select> peer; macOS UA stylesheets
+     made it render taller despite explicit font/padding overrides, so
+     it's now a custom button+popup (LooksMenu) that inherits this rule. */
   font-family: var(--carto-font);
   font-size: 13px;
   font-weight: 600;
@@ -550,8 +547,7 @@
   margin-left: 4px;
 }
 
-.carto-toolgroup > button:hover,
-.carto-toolgroup > .carto-looks-select:hover {
+.carto-toolgroup > button:hover {
   background: rgba(255, 255, 255, 0.08);
   color: var(--toolbar-text-hover);
 }
@@ -566,39 +562,82 @@
   cursor: not-allowed;
 }
 
-/* Looks dropdown — a <select> inside a toolgroup. Strips the platform's
-   native chrome and leans on the toolbar pill rhythm so it reads as a peer
-   of the .carto-toolgroup > button rules above, not a stray form element.
-   Caret is drawn as an inline SVG background so the visual matches the
-   toolbar's text color and stays crisp on dark glass. */
-.carto-toolgroup > .carto-looks-select {
-  /* Most sizing inherits from the shared `.carto-toolgroup > button,
-     .carto-toolgroup > .carto-looks-select` rule above; only select-
-     specific bits live here: appearance reset and the caret. */
-  appearance: none;
-  -webkit-appearance: none;
-  outline: none;
-  /* Extra right-side room for the caret. */
-  padding-right: calc(var(--toolbar-btn-pad-x) + 14px);
-  /* Caret stroke hardcoded to %23999 (= #999, toolbar text-dim). Native
-     `currentColor` does NOT resolve inside data-URI background-image SVGs
-     — the SVG is rendered as a flat raster, divorced from its host
-     element's `color`, so the caret was reading as the UA default stroke
-     (black) before. Hardcoding makes it match the toolbar text. */
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' fill='none' stroke='%23999' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 6px center;
-  background-size: 10px 10px;
+/* Looks dropdown — a custom <button>+popup, NOT a native <select>. The
+   trigger inherits the shared toolgroup-button rule above for sizing, so
+   it reads as identical to its sibling buttons (no UA <select> stylesheet
+   to fight). The popup is an absolute-positioned listbox of options. */
+.carto-toolgroup.carto-looks-menu {
+  position: relative;
 }
-.carto-toolgroup > .carto-looks-select:focus-visible {
-  background-color: rgba(255, 255, 255, 0.08);
+.carto-toolgroup > .carto-looks-trigger {
+  /* Match the .carto-toolgroup > button rule by inheriting all geometry
+     from there; only stripe-internal layout for label + caret lives here. */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.carto-toolgroup > .carto-looks-trigger.is-open,
+.carto-toolgroup > .carto-looks-trigger:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--toolbar-text-hover);
+  outline: none;
+}
+.carto-toolgroup > .carto-looks-trigger .carto-looks-caret {
+  font-size: 9px;
+  color: var(--toolbar-text-idle);
+  line-height: 1;
+}
+.carto-toolgroup > .carto-looks-trigger.is-open .carto-looks-caret,
+.carto-toolgroup > .carto-looks-trigger:hover .carto-looks-caret {
   color: var(--toolbar-text-hover);
 }
-/* Open/native-popup styling is browser-controlled; just make sure option
-   text is readable on whatever background the OS picks. */
-.carto-toolgroup > .carto-looks-select option {
-  background: var(--carto-surface);
-  color: var(--carto-text);
+.carto-looks-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  padding: 4px;
+  border-radius: 8px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.carto-looks-option {
+  font-family: var(--carto-font);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .03em;
+  line-height: 1.2;
+  text-align: left;
+  background: transparent;
+  color: var(--toolbar-text-idle);
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s ease, color .12s ease;
+}
+.carto-looks-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--toolbar-text-hover);
+}
+.carto-looks-option.is-active {
+  background: var(--toolbar-btn-active);
+  color: var(--toolbar-text-active);
+}
+.carto-looks-option.carto-looks-danger {
+  color: #c87b6e;
+}
+.carto-looks-option.carto-looks-danger:hover {
+  background: rgba(200, 123, 110, 0.12);
+  color: #e2998a;
+}
+.carto-looks-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ---------- Panel tool pill (Survey | Measure | Design) ----------

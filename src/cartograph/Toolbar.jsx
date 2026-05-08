@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 
 const SHOTS = ['browse', 'hero', 'street']
@@ -114,46 +115,86 @@ function LooksMenu() {
   const createLook = useCartographStore(s => s.createLook)
   const deleteActiveLook = useCartographStore(s => s.deleteActiveLook)
 
-  // Each Look carries a `scene` field. Picking a Look (LS, Toy, or any
-  // user-saved fork) drives setActiveLook → setScene + reloads geometry.
-  // The picker just lists Looks in order; toy is a regular entry.
-  const value = activeLookId || DEFAULT_LOOK_ID
+  // Custom dropdown — a <button> + absolute-positioned popup, NOT a native
+  // <select>. The native control's macOS UA stylesheet renders taller than
+  // its <button> peers in the toolgroup; piecemeal CSS overrides (font
+  // sub-properties, explicit height, padding-block) didn't fully neutralize
+  // it. Using the same <button> chrome as every other toolbar item keeps
+  // sizing identical by construction.
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+  const activeEntry = (looks || []).find(l => l.id === activeLookId)
+  const label = activeEntry?.name || 'Lafayette Square'
 
-  const onChange = (e) => {
-    const v = e.target.value
-    if (v === '__new__') {
-      // Fork the current working draft into a new named Look. This is the
-      // deliberate save-as action — the Stage transition itself silently
-      // re-bakes the active Look from autosaved state, so the only thing
-      // the user is asked to *name* is the new fork.
-      const name = window.prompt('Name this Look (e.g. "Valentines", "Cardinals Win")')
-      if (name && name.trim()) createLook(name.trim())
-    } else if (v === '__delete__') {
-      if (window.confirm('Delete this Look? The default cannot be deleted.')) {
-        deleteActiveLook()
-      }
-    } else if (v && v !== activeLookId) {
-      setActiveLook(v)
+  // Close on outside click + Escape.
+  useEffect(() => {
+    if (!open) return
+    const onDocClick = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const pick = (id) => { setOpen(false); if (id !== activeLookId) setActiveLook(id) }
+  const onNew = () => {
+    setOpen(false)
+    // Fork the current working draft into a new named Look. The Stage
+    // transition silently re-bakes the active Look from autosaved state,
+    // so the only thing we ask the user to *name* is the new fork.
+    const name = window.prompt('Name this Look (e.g. "Valentines", "Cardinals Win")')
+    if (name && name.trim()) createLook(name.trim())
+  }
+  const onDelete = () => {
+    setOpen(false)
+    if (window.confirm('Delete this Look? The default cannot be deleted.')) {
+      deleteActiveLook()
     }
   }
 
   return (
-    <div className="carto-toolgroup">
-      <select
-        className="carto-looks-select"
-        value={value}
-        onChange={onChange}
+    <div className="carto-toolgroup carto-looks-menu" ref={wrapRef}>
+      <button
+        type="button"
+        className={`carto-looks-trigger${open ? ' is-open' : ''}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         title="Active Look — switch, save as new, or delete"
+        onClick={() => setOpen(o => !o)}
       >
-        {(looks || []).map(l => (
-          <option key={l.id} value={l.id}>{l.name}</option>
-        ))}
-        <option disabled>──────────</option>
-        <option value="__new__">＋ Save as new Look…</option>
-        {activeLookId && activeLookId !== DEFAULT_LOOK_ID && (
-          <option value="__delete__">🗑 Delete this Look</option>
-        )}
-      </select>
+        <span className="carto-looks-label">{label}</span>
+        <span className="carto-looks-caret" aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <div className="carto-looks-popup carto-glass" role="listbox">
+          {(looks || []).map(l => (
+            <button
+              key={l.id}
+              type="button"
+              role="option"
+              aria-selected={l.id === activeLookId}
+              className={`carto-looks-option${l.id === activeLookId ? ' is-active' : ''}`}
+              onClick={() => pick(l.id)}
+            >
+              {l.name}
+            </button>
+          ))}
+          <div className="carto-looks-sep" />
+          <button type="button" className="carto-looks-option" onClick={onNew}>
+            ＋ Save as new Look…
+          </button>
+          {activeLookId && activeLookId !== DEFAULT_LOOK_ID && (
+            <button type="button" className="carto-looks-option carto-looks-danger" onClick={onDelete}>
+              🗑 Delete this Look
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
