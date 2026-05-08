@@ -85,33 +85,25 @@ Net code goes down: collapse the toy branch in `_loadCenterlines`,
 drop `ToyV2`/`NeighborhoodV2` distinction, drop the toy gate in
 `_saveOverlay`. The static `toyRibbons` import retires.
 
-## V2 Measure-mode visualization (queued)
+## V2 Measure-mode visualization (in progress)
 
-Tonight Jacob asked why Measure isn't producing the per-stripe color story
-in toy. The honest cause: V2 currently renders solid per-band fills only.
-The per-stripe translucent visualization + edge strokes the operator
-authors against was a legacy-StreetRibbons feature (rendered when
-`measureActive=true`).
+Spec landed in memory: see `project_v2_measure_translucency_strokes.md`.
+Single source of truth — rebuild from it, not from V1 code or screenshots.
 
-A workaround (re-mount legacy in toy when `tool === 'measure'`) was tried
-and reverted. Reasoning: legacy is meant to retire once V2 hits parity;
-keeping a hybrid render path that switches to legacy for one mode keeps
-the parallel pipeline alive. The professional path is to give V2 its own
-Measure-mode render branch.
+Open work tracked here:
+- Asphalt translucency on selected chain isn't rendering visibly even
+  though the per-chain mesh + selectedCorridor material variant is wired
+  the same as treelawn/sidewalk (which DO dim). Likely an overlap or
+  occlusion bug specific to asphalt's mesh.
+- Stripe edge strokes need the colored treatment (treelawn-outer green,
+  sidewalk-outer white). Currently emitting white for all four.
+- Corner geometry on edited chains: rounded corners don't update when
+  the chain's `measure` changes. asphaltRounded comes from the asphalt
+  union which DOES rebuild on measure change, so the corners SHOULD
+  follow — investigate why they don't visually.
 
-Next session work:
-- `BlockGeometryV2Debug` (or the V2 surface successor) takes a
-  `measureActive` prop. When true:
-  - Per-band materials switch to translucent (e.g., `opacity ~0.55`)
-    with `transparent=true`.
-  - Per-stripe edge strokes (line meshes) render along band boundaries —
-    use `polylineRibbon` from `overlayGeom.js` or equivalent.
-  - Selected chain (from store's `selectedStreet`) renders differently
-    (more opaque, edge-highlighted) so authoring focus is unambiguous.
-- Once shipped, `MeasureOverlay` no longer needs the legacy ribbon stack
-  underneath — it can author against V2's translucent stripes directly.
-- After V2 carries Measure visuals, plan legacy retirement: drop legacy
-  StreetRibbons from non-toy scenes too, V2 takes over everywhere.
+Once the above land, V2 carries Measure visuals end-to-end and legacy
+StreetRibbons retires from non-toy scenes too.
 
 ## Corner controls — known broken (queued for next-session fix before refactor)
 
@@ -164,19 +156,11 @@ day one or the same hours of confusion repeat.
    for (const st of (streetsByName.get(sref.name) || [])) { /* nearest-point */ }
    ```
 
-3. **`segmentMeasures[<ord>]` is the source of truth at IX-adjacent
-   segments, not `chain.measure`.** Real LS chains carry hand-authored
-   per-segment overlays (e.g., `Mississippi Avenue.segmentMeasures[0].right.pavementHW = 8.08`
-   vs `chain.measure.right.pavementHW = 8.66` — 0.58m difference at the
-   most common IX corner). The leg-stripe band emission already uses
-   `measureForSegment`; any corner / plug / clip path code that reads
-   `chain.measure` directly will visually misalign with the band by the
-   exact authored difference. Always resolve via:
-   ```js
-   const segOrd = ranges.findIndex(([f, t]) => ni >= f && ni <= t)
-   const baseM = measureForSegment(chain, segOrd) || chain.measure
-   ```
-   where `ranges = segmentRangesForCouplers(chain.points, chain.couplers || [])`.
+3. **(Retired 2026-05-08.)** segmentMeasures + couplers were the V1.5
+   source of truth for per-segment per-side widths. They retire with the
+   block-customs migration: `chain.measure` is the single chain-wide
+   default; per-block divergence lives in `design.blockCustoms`. See
+   `project_v2_measure_translucency_strokes.md` memory entry.
 
 4. **Skip plug / corner emission when any incident chain is
    `motorway` / `motorway_link` / `trunk` / `trunk_link`.** Freeway-scale
@@ -493,29 +477,17 @@ Whole-intersection plugs (separate plan, below) plug in alongside this — they 
 the legacy "Measure: fix corners" item and supersede corner-plug authoring entirely.
 
 ### Phase 0 — Baseline read (1 hr)
-Confirm three unknowns before file-level work:
+Confirm two unknowns before file-level work:
 - Are path/alley features in `centerlineData.streets` selectable by `SurveyorOverlay`,
   or excluded by source/type filter?
-- Exact `couplers[]` data shape in `overlay.json` for an existing flipped/inserted
-  coupler.
 - Does the skeleton mark T-junction vertices distinctly, or is every vertex a polyline
   point?
 
-### Phase 1 — Couplers as intersection-flip gestures (priority)
-Reframe: every intersection is implicitly coupler-eligible; authoring is a graphical
-"flip" gesture, not data plumbing.
-- Mark every intersection vertex (vertex shared by ≥2 streets) with a hit-target in
-  `SurveyorOverlay`. Selected street → its intersection vertices become hover-glowing
-  pivot handles.
-- Gesture: select street → ⌥-click intersection handle → flip ribbon side at that
-  vertex. Visual = small directional chevron (Illustrator reflect-handle style).
-- Virtual-vertex insertion: if street A passes through an intersection where B has a
-  vertex, A gets a virtual coupler-eligible point projected onto its segment. No
-  skeleton mutation; lives in overlay.
-- Existing `couplers[]` continue working unchanged.
-
-Open: flip = always 180° reflect, or rotate-by-arbitrary-angle? Start reflect-only.
-Estimate: 2 days core + 1 day polish.
+### Phase 1 — (RETIRED 2026-05-08)
+Couplers retired entirely with the V2 block-customs migration. Per-block-edge
+divergence is authored via right-click → "Adjust this block" in Measure mode;
+the data lives in `design.blockCustoms`. See
+`project_v2_measure_translucency_strokes.md` memory entry.
 
 ### Phase 2 — Cap stitching (cul-de-sac arcs that meet)
 When two adjacent caps with mismatched arcs near-meet, generate a connector envelope.
@@ -612,7 +584,7 @@ Estimate: 30 min.
 ### Sequencing
 ```
 Phase 0 (baseline)                         1 hr
-  ├── Phase 1 (couplers/pivots)            3 days   ← priority
+  ├── Phase 1 (RETIRED — see block-customs)  —
   ├── Phase 5 (loop designation)           ½ day
   ├── Phase 4 (z-order)                    ½ day
   ├── Phase 6 (alleys in authoring)        1 day
@@ -623,7 +595,6 @@ Phase 0 (baseline)                         1 hr
                 ▼
         Phase 7 (smooth + preview)         2 days
 ```
-Total: ~10 working days. Phase 1 long-pole; 5/4/6/8 parallelizable.
 
 ## 2026-05-04 — Whole-intersection plugs (in design)
 
@@ -874,7 +845,7 @@ collapse to hours; estimate at integration rate, not waterfall rate.
 ### Cartograph authoring (Survey + Measure)
 - [ ] **Extract `resolveStreets()` to unify Designer + bake operator-intent merge.** Today Designer's `useCartographStore.js:_loadCenterlines` and the bake's `derive.js` overlay merge each implement their own version of "raw centerlines + overlay → resolved street list." This was the source of the 2026-05-04 face-clip drift bug (derive's serializer dropped `couplers`/`segmentMeasures`/`disabled`). One shared resolver eliminates the whole class of drift. Pair with the shared `buildRibbonGeometry` helper for end-to-end structural parity.
 - [ ] **Bake handler should spawn async, not block the event loop.** `cartograph/serve.js`'s POST `/looks/:id/bake` runs each step via `execSync`, blocking *all* other API requests for the duration of the bake. Symptom: every `/api/cartograph/*` request shows "Pending" until the server is killed and restarted. Fix: switch to `spawn`/`execFile` with Promises so the server keeps handling requests during a bake. Documented in FEATURES.md §"Bake handler blocks the cartograph event loop."
-- [ ] **Survey: confirm road-coupler split behavior.** Verify segment-local coupler semantics still hold post–Path B (`project_couplers.md`, `feedback_couplers_are_segment_local.md`).
+- [→] **(RETIRED 2026-05-08)** Survey couplers retired with the V2 block-customs migration. Per-block-edge divergence is authored via right-click → "Adjust this block" in Measure mode; per-segment couplers no longer apply.
 - [ ] **Measure: do final for-real pass.** End-to-end Measure across every measured street.
 - [ ] **Measure: confirm file persistence once again.** Save → reload → same state.
 - [ ] **Measure: confirm 'Divided Traffic'.** Divided-carriageway behavior + emergent median (`project_positive_carriageway_model.md`).

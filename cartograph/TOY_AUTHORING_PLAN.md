@@ -89,7 +89,7 @@ Building parallel data paths to defer persistence costs more than just doing the
 These are forks worth deciding before code, not during it.
 
 - **D1: Server route shape.** Given the kit framing, **unify under `/api/cartograph/:scene/...`** rather than mirroring per-scene. Toy and LS are both scenes; future neighborhoods are scenes. Hard-coding `toy/` paths sets the wrong precedent.
-- **D2: Centerlines vs overlay split.** Keep the real-pipeline split: a scene has `centerlines` (topology — points, names) and an `overlay` (per-street measure, anchor, segmentMeasures). The toy stores them as `toy-centerlines.json` + `toy-overlay.json`. `toy-input.json` was the pre-kit hand-authored single-file shape; it gets retired or kept only as a seed.
+- **D2: Centerlines vs overlay split.** Keep the real-pipeline split: a scene has `centerlines` (topology — points, names) and an `overlay` (per-street `measure` + caps). Per-block-edge measure overrides live separately in the active Look's `design.blockCustoms` (V2 block-customs migration, 2026-05-08). The toy stores centerlines + overlay as `toy/raw/centerlines.json` + `toy/clean/overlay.json`. `toy-input.json` was the pre-kit hand-authored single-file shape; retired or kept only as a seed.
 - **D3: Survey authoring scope.** Phase 2 below introduces real authoring affordances (draw/delete/split/swap/loop). These are *kit features*, not toy features — once they exist they should work in any scene. Confirm before starting Phase 2.
 - **D4: How to seed a new scene.** When a scene's overlay is empty, do we (a) infer reasonable defaults from centerline `highway` tags, (b) leave streets unmeasured until the operator measures them? Recommend (a) — toy and any new scene get a working render on first load; the operator re-measures to override.
 - **D5: One-of-everything fixture catalog.** Lock the kit-feature checklist (next section) before authoring Phase 1's expanded toy. The catalog *defines* what the kit covers.
@@ -118,7 +118,7 @@ Toy must include a representative case for each kit feature. New kit features ad
 - [ ] Sidewalk-only (no treelawn)
 - [ ] No pedestrian zone (alley / footway profile)
 - [ ] Median (chain with center treelawn or concrete strip)
-- [ ] Per-segment measure override (`segmentMeasures` — different cross-section near an IX vs mid-block)
+- [ ] Per-block measure override (V2 block-customs — different cross-section in one block vs another, authored via right-click → "Adjust this block" in Measure)
 
 ### Faces / land use
 - [ ] Residential block
