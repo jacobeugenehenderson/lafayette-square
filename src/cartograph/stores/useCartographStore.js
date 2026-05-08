@@ -1175,6 +1175,14 @@ const useCartographStore = create((set, get) => ({
           oneway: !!s.oneway,
           points: (s.points || []).map(p => [p.x, p.z]),
           divided: !!s.divided,
+          // IX vertex indices on this chain (the points where it crosses
+          // another chain). Drives the "natural segment" partition used
+          // by Measure handles + V2's per-segment band emission. Both
+          // sides MUST agree on the partition or the per-block override
+          // applies to the wrong segment.
+          intersections: Array.isArray(s.intersections)
+            ? s.intersections.map(ix => ({ ix: ix.ix, withStreets: ix.withStreets }))
+            : (rb?.intersections || []),
           // Operator can hide individual chains (echo hunting, suppress OSM
           // junk centerlines). Hidden chains still appear in Measure (dim,
           // re-selectable) so you can toggle them back on.

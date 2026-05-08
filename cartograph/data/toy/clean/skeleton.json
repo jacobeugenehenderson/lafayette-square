@@ -32,7 +32,33 @@
           "z": -120
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "VW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "VW4"
+          ]
+        }
+      ]
     },
     {
       "id": "HW2",
@@ -66,7 +92,33 @@
           "z": -40
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "VW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "VW4"
+          ]
+        }
+      ]
     },
     {
       "id": "HW3",
@@ -112,7 +164,39 @@
           "z": 60
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "VW2"
+          ]
+        },
+        {
+          "ix": 5,
+          "withStreets": [
+            "STUB-N"
+          ]
+        },
+        {
+          "ix": 6,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 7,
+          "withStreets": [
+            "VW4"
+          ]
+        }
+      ]
     },
     {
       "id": "HW4",
@@ -146,7 +230,33 @@
           "z": 120
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "VW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "VW4"
+          ]
+        }
+      ]
     },
     {
       "id": "VW1",
@@ -180,7 +290,33 @@
           "z": 160
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "HW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "HW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "HW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4"
+          ]
+        }
+      ]
     },
     {
       "id": "VW2",
@@ -214,7 +350,33 @@
           "z": 160
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "HW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "HW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "HW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4"
+          ]
+        }
+      ]
     },
     {
       "id": "VW3",
@@ -248,7 +410,33 @@
           "z": 160
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "HW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "HW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "HW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4"
+          ]
+        }
+      ]
     },
     {
       "id": "VW4",
@@ -282,7 +470,33 @@
           "z": 160
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "HW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "HW2"
+          ]
+        },
+        {
+          "ix": 3,
+          "withStreets": [
+            "HW3"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4"
+          ]
+        }
+      ]
     },
     {
       "id": "STUB-N",
@@ -300,7 +514,15 @@
           "z": 90
         }
       ],
-      "couplers": []
+      "couplers": [],
+      "intersections": [
+        {
+          "ix": 0,
+          "withStreets": [
+            "HW3"
+          ]
+        }
+      ]
     }
   ]
 }
