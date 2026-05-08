@@ -21,6 +21,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2 } from '../lib/buildBlockGeometryV2.js'
+import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
@@ -160,6 +161,11 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const layerColors               = useCartographStore(s => s.layerColors)
   const luColors                  = useCartographStore(s => s.luColors)
+  // Live operator intent — Survey caps, Measure overrides, smooth, anchor.
+  // Merged onto the static `ribbons` prop so V2 reflects edits without
+  // waiting for a re-bake. Structural data (chain points, IX positions,
+  // face rings) still comes from the static artifact.
+  const liveStreets               = useCartographStore(s => s.centerlineData?.streets)
   // Color resolution: Look-level overrides (layerColors / luColors from the
   // active design) win over BAND_COLORS / DEFAULT_LU_COLORS defaults.
   // BAND_TO_LAYER maps band → layer key (e.g., "asphalt" → "street").
@@ -172,10 +178,14 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
   const sidewalkCol = colorFor('sidewalk')
   const blockCol    = residentialColor || (luColors && luColors.residential) || DEFAULT_LU_COLORS.residential
 
+  const liveRibbons = useMemo(
+    () => mergeLiveRibbons(ribbons, liveStreets),
+    [ribbons, liveStreets]
+  )
   const { asphaltRounded, blockRounded, treelawnBands, sidewalkBands, corners } = useMemo(() => {
-    if (!ribbons) return { asphaltRounded: [], blockRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
+    if (!liveRibbons) return { asphaltRounded: [], blockRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
     try {
-      return buildBlockGeometryV2(ribbons, {
+      return buildBlockGeometryV2(liveRibbons, {
         cornerRadiusScale, stencil,
         cornerRadiusOverrides, cornerCornerRadiusOverrides,
       })
@@ -183,7 +193,7 @@ export default function BlockGeometryV2Debug({ ribbons, stencil = null, flat = t
       console.error('[BlockGeometryV2Debug] build failed:', e)
       return { asphaltRounded: [], blockRounded: [], treelawnBands: [], sidewalkBands: [], corners: [] }
     }
-  }, [ribbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides])
+  }, [liveRibbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides])
 
   // Tiny y-lifts keep coplanar layers from z-fighting; polygonOffset (driven
   // by pri in makeMaterial) is the authoritative depth resolver.

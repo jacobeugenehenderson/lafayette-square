@@ -552,6 +552,10 @@ const SCENE_REGISTRY = {
     useBoundary: true,
     hasAerial: true,
     hasHero: true,
+    // Legacy V1 StreetRibbons mounts under V2 for side-by-side until V2
+    // ships Measure visuals (Phase 0g). Toy disables it (see below) so
+    // V2 is the sole render in the diagnostic scene.
+    legacyRibbons: true,
     StageEnvironment: ({ hiddenLayers }) => <>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
       {!hiddenLayers.tree && (
@@ -570,6 +574,9 @@ const SCENE_REGISTRY = {
     useBoundary: false,
     hasAerial: false,
     hasHero: false,
+    // V2 (rounded-block-clip) is the sole ground render in toy. V1's
+    // residual corner-plug primitives don't belong in the diagnostic lab.
+    legacyRibbons: false,
     StageEnvironment: () => <>
       <R3FErrorBoundary name="ToyTerrain"><ToyTerrain /></R3FErrorBoundary>
       <R3FErrorBoundary name="ToyBuildings"><ToyBuildings /></R3FErrorBoundary>
@@ -725,6 +732,7 @@ export default function CartographApp() {
               Preview mounts, so what Stage shows is what Preview shows
               is what Publish ships. ── */}
           {inDesigner && <ambientLight intensity={1} />}
+          {sceneCfg.legacyRibbons && (
           <R3FErrorBoundary name="StreetRibbons">
             <group visible={!designAerialOnly}>
             <StreetRibbons hiddenLayers={hiddenLayers}
@@ -757,6 +765,7 @@ export default function CartographApp() {
               hideFaceFills={toolAerialFocus} />
             </group>
           </R3FErrorBoundary>
+          )}
 
           {/* ── Rounded-block-clip V2 ground render.
               Mounted in every scene; reads live centerlines from the
