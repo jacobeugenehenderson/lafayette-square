@@ -468,11 +468,25 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const streets = ribbons?.streets || []
   const intersections = ribbons?.intersections || []
 
-  const asphaltRings = []
-  for (const street of streets) {
-    const ring = chainPavementRing(street)
-    if (ring) asphaltRings.push(ring)
+  // Per-chain rendering data. Each entry holds the rings that belong to
+  // a single chain (asphalt, treelawn, sidewalk). Block + curb stay
+  // unified across the scene because they're block-level surfaces. The
+  // per-chain split is what lets BlockGeometryV2Debug dim a single
+  // chain's bands when the operator selects it in Measure mode.
+  const byChain = []
+  for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
+    const street = streets[chainIdx]
+    if (street?.disabled) { byChain.push(null); continue }
+    const pavementRing = chainPavementRing(street)
+    byChain.push({
+      chainIdx,
+      name: street.name,
+      asphaltRings:  pavementRing ? [pavementRing] : [],
+      treelawnRings: [],
+      sidewalkRings: [],
+    })
   }
+  const asphaltRings = byChain.flatMap(c => (c?.asphaltRings) || [])
   const asphaltSharp = unionRings(asphaltRings)
 
   // Multi-value name map — LS has 35 names spanning 164 chain entries (a
@@ -527,12 +541,13 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // Measure tool is active so the operator can see exactly where each
   // band edge sits; same source as the band rings, just sampled as a
   // single polyline rather than a closed ring.
-  const treelawnBandsRaw = []
-  const sidewalkBandsRaw = []
   const stripeEdges = []
   const offsetPoly = (pts, perps, sideSign, r) =>
     pts.map((p, i) => [p[0] + perps[i][0] * sideSign * r, p[1] + perps[i][1] * sideSign * r])
-  for (const street of streets) {
+  for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
+    const street = streets[chainIdx]
+    const entry = byChain[chainIdx]
+    if (!entry) continue
     const pts = street.points
     const m = street.measure
     if (!pts || pts.length < 2 || !m) continue
@@ -559,12 +574,12 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       // Treelawn at perp ∈ [hw+cw, hw+cw+tl] (only if tl > 0).
       if (tl > 0) {
         const ring = chainStripBand(pts, perps, sideSign, hw + cw, hw + cw + tl)
-        if (ring) treelawnBandsRaw.push(ring)
+        if (ring) entry.treelawnRings.push(ring)
       }
       // Sidewalk at perp ∈ [hw+cw+tl, hw+cw+tl+sw].
       if (sw > 0) {
         const ring = chainStripBand(pts, perps, sideSign, hw + cw + tl, hw + cw + tl + sw)
-        if (ring) sidewalkBandsRaw.push(ring)
+        if (ring) entry.sidewalkRings.push(ring)
       }
       // Stripe edges — emit one polyline per band transition. Hidden
       // from render at idle; line meshes for these surface in Measure.
@@ -581,11 +596,11 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     const emitCapAnnuli = (center, T) => {
       if (maxTl > 0) {
         const ring = roundCapHalfAnnulus(center, T, maxHw + cw, maxHw + cw + maxTl)
-        if (ring) treelawnBandsRaw.push(ring)
+        if (ring) entry.treelawnRings.push(ring)
       }
       if (maxSw > 0) {
         const ring = roundCapHalfAnnulus(center, T, maxHw + cw + maxTl, maxHw + cw + maxTl + maxSw)
-        if (ring) sidewalkBandsRaw.push(ring)
+        if (ring) entry.sidewalkRings.push(ring)
       }
     }
     if (maxHw > 0) {
@@ -602,18 +617,20 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     }
   }
 
-  // Clip strip bands to the rounded block (intersect with block polygon).
-  // This trims them at chain endpoints (cap ends) and at corner arcs
-  // where the rounded asphalt has bulged into the block. Curb is NOT
-  // clipped this way — it's already constructed from the asphalt boundary
-  // and lives in the band between asphalt and block.
-  let treelawnBands = [], sidewalkBands = []
-  if (blockRounded.length) {
-    treelawnBands = intersectRings(treelawnBandsRaw, blockRounded)
-    sidewalkBands = intersectRings(sidewalkBandsRaw, blockRounded)
-  } else {
-    treelawnBands = treelawnBandsRaw
-    sidewalkBands = sidewalkBandsRaw
+  // Per-chain clipping. Asphalt clips to the rounded asphalt polygon so
+  // the per-chain meshes inherit the corner smoothing without each chain
+  // having to know about its IXs. Treelawn/sidewalk clip to the rounded
+  // block so the bands trim at chain endpoints and at the corner arcs
+  // where the rounded asphalt has bulged into the block.
+  for (const entry of byChain) {
+    if (!entry) continue
+    if (entry.asphaltRings.length && asphaltRounded.length) {
+      entry.asphaltRings = intersectRings(entry.asphaltRings, asphaltRounded)
+    }
+    if (blockRounded.length) {
+      if (entry.treelawnRings.length) entry.treelawnRings = intersectRings(entry.treelawnRings, blockRounded)
+      if (entry.sidewalkRings.length) entry.sidewalkRings = intersectRings(entry.sidewalkRings, blockRounded)
+    }
   }
 
   return {
@@ -621,8 +638,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     asphaltRounded,
     blockRounded,
     curbBands,
-    treelawnBands,
-    sidewalkBands,
+    byChain,
     stripeEdges,
     corners: allCorners,
   }

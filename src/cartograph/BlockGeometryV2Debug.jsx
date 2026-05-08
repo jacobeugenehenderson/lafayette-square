@@ -171,6 +171,7 @@ export default function BlockGeometryV2Debug({
   // waiting for a re-bake. Structural data (chain points, IX positions,
   // face rings) still comes from the static artifact.
   const liveStreets               = useCartographStore(s => s.centerlineData?.streets)
+  const selectedStreet            = useCartographStore(s => s.selectedStreet)
   // Color resolution: Look-level overrides (layerColors / luColors from the
   // active design) win over BAND_COLORS / DEFAULT_LU_COLORS defaults.
   // BAND_TO_LAYER maps band → layer key (e.g., "asphalt" → "street").
@@ -188,8 +189,8 @@ export default function BlockGeometryV2Debug({
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
-  const { asphaltRounded, blockRounded, curbBands, treelawnBands, sidewalkBands, stripeEdges, corners } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], curbBands: [], treelawnBands: [], sidewalkBands: [], stripeEdges: [], corners: [] }
+  const { asphaltRounded, blockRounded, curbBands, byChain, stripeEdges, corners } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], curbBands: [], byChain: [], stripeEdges: [], corners: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -212,10 +213,22 @@ export default function BlockGeometryV2Debug({
   // the holes are drawn as filled asphalt-color rectangles, occluding the
   // block parcels underneath.
   const blockGeo    = useMemo(() => ringsToFlatGeo(blockRounded, 0.01, true), [blockRounded])
-  const treelawnGeo = useMemo(() => ringsToFlatGeo(treelawnBands, 0.02, true), [treelawnBands])
-  const sidewalkGeo = useMemo(() => ringsToFlatGeo(sidewalkBands, 0.03, true), [sidewalkBands])
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
-  const asphaltGeo  = useMemo(() => ringsToFlatGeo(asphaltRounded, 0.04, true), [asphaltRounded])
+  // Per-chain band geometries — one BufferGeometry per (chainIdx, band)
+  // so the selected chain's meshes can swap to a translucent material
+  // while every other chain stays opaque. Asphalt + treelawn + sidewalk
+  // are per-chain; block + curb stay unified above (block-level surfaces).
+  const perChainGeo = useMemo(() => {
+    const out = []
+    for (const entry of byChain || []) {
+      if (!entry) continue
+      const ag = entry.asphaltRings.length  ? ringsToFlatGeo(entry.asphaltRings,  0.04, true) : null
+      const tg = entry.treelawnRings.length ? ringsToFlatGeo(entry.treelawnRings, 0.02, true) : null
+      const sg = entry.sidewalkRings.length ? ringsToFlatGeo(entry.sidewalkRings, 0.03, true) : null
+      if (ag || tg || sg) out.push({ chainIdx: entry.chainIdx, asphalt: ag, treelawn: tg, sidewalk: sg })
+    }
+    return out
+  }, [byChain])
 
   // Edge strokes — one BufferGeometry of LineSegments emitted only when
   // Measure is active, so the operator can see exactly where each band
@@ -237,35 +250,46 @@ export default function BlockGeometryV2Debug({
     return g
   }, [stripeEdges, measureActive])
 
-  // Measure / Survey overlay opts thread through useSurfaceMaterial so V2
-  // matches V1's translucency story (transparent flag flips when either
-  // tool is active). Per-chain selection (selectedCorridor) needs chain
-  // provenance preserved through the band rings and is a followup — for
-  // now V2 applies the tool flag uniformly to every band.
-  const matOpts = useMemo(() => ({ measureActive, surveyActive }), [measureActive, surveyActive])
-  const blockMat    = useMemo(() => makeMaterial(blockCol,    PRI.residential, null, matOpts), [makeMaterial, blockCol,    matOpts])
-  const treelawnMat = useMemo(() => makeMaterial(treelawnCol, PRI.treelawn,    null, matOpts), [makeMaterial, treelawnCol, matOpts])
-  const sidewalkMat = useMemo(() => makeMaterial(sidewalkCol, PRI.sidewalk,    null, matOpts), [makeMaterial, sidewalkCol, matOpts])
-  const curbMat     = useMemo(() => makeMaterial(curbCol,     PRI.curb,        null, matOpts), [makeMaterial, curbCol,     matOpts])
-  const asphaltMat  = useMemo(() => makeMaterial(asphaltCol,  PRI.asphalt,     null, matOpts), [makeMaterial, asphaltCol,  matOpts])
+  // Two material variants per per-chain band — one for the selected chain
+  // (translucent via useSurfaceMaterial's selectedCorridor opt), one for
+  // every other chain. Per-chain meshes pick whichever matches their
+  // chainIdx vs the active selectedStreet. Block + curb get a single
+  // material each (no per-chain dim — they're unified surfaces).
+  const matOpts        = useMemo(() => ({ measureActive, surveyActive }),                          [measureActive, surveyActive])
+  const matOptsActive  = useMemo(() => ({ measureActive, surveyActive, selectedCorridor: true }),  [measureActive, surveyActive])
+  const blockMat       = useMemo(() => makeMaterial(blockCol,    PRI.residential, null, matOpts),        [makeMaterial, blockCol,    matOpts])
+  const curbMat        = useMemo(() => makeMaterial(curbCol,     PRI.curb,        null, matOpts),        [makeMaterial, curbCol,     matOpts])
+  const asphaltMat     = useMemo(() => makeMaterial(asphaltCol,  PRI.asphalt,     null, matOpts),        [makeMaterial, asphaltCol,  matOpts])
+  const treelawnMat    = useMemo(() => makeMaterial(treelawnCol, PRI.treelawn,    null, matOpts),        [makeMaterial, treelawnCol, matOpts])
+  const sidewalkMat    = useMemo(() => makeMaterial(sidewalkCol, PRI.sidewalk,    null, matOpts),        [makeMaterial, sidewalkCol, matOpts])
+  const asphaltMatSel  = useMemo(() => makeMaterial(asphaltCol,  PRI.asphalt,     null, matOptsActive),  [makeMaterial, asphaltCol,  matOptsActive])
+  const treelawnMatSel = useMemo(() => makeMaterial(treelawnCol, PRI.treelawn,    null, matOptsActive),  [makeMaterial, treelawnCol, matOptsActive])
+  const sidewalkMatSel = useMemo(() => makeMaterial(sidewalkCol, PRI.sidewalk,    null, matOptsActive),  [makeMaterial, sidewalkCol, matOptsActive])
 
   return (
     <group>
       {blockGeo && (
         <mesh geometry={blockGeo} renderOrder={PRI.residential} receiveShadow material={blockMat} />
       )}
-      {treelawnGeo && (
-        <mesh geometry={treelawnGeo} renderOrder={PRI.treelawn} receiveShadow material={treelawnMat} />
-      )}
-      {sidewalkGeo && (
-        <mesh geometry={sidewalkGeo} renderOrder={PRI.sidewalk} receiveShadow material={sidewalkMat} />
-      )}
+      {/* Per-chain band meshes. Each chain renders its own asphalt /
+          treelawn / sidewalk; selected chain gets the translucent
+          variant material. Order: treelawn (3) → sidewalk (5) → curb (6)
+          → asphalt (8), matching the per-mesh polygonOffset priorities. */}
+      {perChainGeo.map(g => g.treelawn && (
+        <mesh key={`t${g.chainIdx}`} geometry={g.treelawn} renderOrder={PRI.treelawn} receiveShadow
+          material={g.chainIdx === selectedStreet ? treelawnMatSel : treelawnMat} />
+      ))}
+      {perChainGeo.map(g => g.sidewalk && (
+        <mesh key={`s${g.chainIdx}`} geometry={g.sidewalk} renderOrder={PRI.sidewalk} receiveShadow
+          material={g.chainIdx === selectedStreet ? sidewalkMatSel : sidewalkMat} />
+      ))}
       {curbGeo && (
         <mesh geometry={curbGeo} renderOrder={PRI.curb} receiveShadow material={curbMat} />
       )}
-      {asphaltGeo && (
-        <mesh geometry={asphaltGeo} renderOrder={PRI.asphalt} receiveShadow material={asphaltMat} />
-      )}
+      {perChainGeo.map(g => g.asphalt && (
+        <mesh key={`a${g.chainIdx}`} geometry={g.asphalt} renderOrder={PRI.asphalt} receiveShadow
+          material={g.chainIdx === selectedStreet ? asphaltMatSel : asphaltMat} />
+      ))}
       {edgeGeo && (
         <lineSegments geometry={edgeGeo} renderOrder={PRI.asphalt + 1}>
           <lineBasicMaterial color="#ffffff" transparent opacity={0.85} depthWrite={false} />
