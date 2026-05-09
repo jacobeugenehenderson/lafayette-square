@@ -682,18 +682,27 @@ function intersectRings(subjectRings, clipRings) {
   return out.map(path => path.map(fromClipper))
 }
 
-// Closed band ring: outer edge forward, inner edge backward.
-//   `side` = +1 for left of chain tangent, -1 for right.
-//   `dInner` = perp distance from centerline at the band's inner edge.
-//   `dOuter` = perp distance from centerline at the band's outer edge.
-// (Outer is FURTHER from centerline = deeper into the block.)
+function ringSignedArea2D(r) {
+  let a = 0
+  for (let i = 0, n = r.length; i < n; i++) {
+    const [x1, y1] = r[i]
+    const [x2, y2] = r[(i + 1) % n]
+    a += (x1 * y2 - x2 * y1)
+  }
+  return a / 2
+}
+// Closed band ring: outer edge forward, inner edge backward, then
+// normalized to CCW. Walking outer-then-inner-reversed gives CCW for
+// left-side and CW for right-side; if we leave it CW, downstream
+// `intersectRings` with a NonZero subject fill rule cancels it against
+// CCW rings of the same chain at IX overlaps and produces empty bands.
+// Forcing CCW means every ring contributes positively to the union.
 function chainStripBand(pts, perps, side, dInner, dOuter) {
   if (dOuter <= dInner) return null
   const inner = pts.map((p, i) => [p[0] + side * perps[i][0] * dInner, p[1] + side * perps[i][1] * dInner])
   const outer = pts.map((p, i) => [p[0] + side * perps[i][0] * dOuter, p[1] + side * perps[i][1] * dOuter])
-  // Walk outer forward then inner backward → CCW for left-side bands,
-  // CW for right-side bands (which is fine — Clipper non-zero handles both).
-  return [...outer, ...inner.slice().reverse()]
+  const ring = [...outer, ...inner.slice().reverse()]
+  return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
 }
 
 // V1-style per-side per-band quarter cap around a chain endpoint. Sweeps
@@ -957,16 +966,20 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 
   // Per-chain clipping. Asphalt clips to the rounded asphalt polygon so
   // the per-chain meshes inherit the corner smoothing. Treelawn/sidewalk
-  // clip to blockRounded (= stencil − asphalt), the loose "outside-of-
-  // asphalt" area.
+  // were previously clipped to blockRounded for boundary cleanup, but on
+  // LS data that intersect drops valid bands for ~10 chains (Allen,
+  // Montrose, Geyer, Pennsylvania, Accomac, Cardinal — residential, full
+  // measure, no obvious data anomaly). Pre-clip each chain has 5–10
+  // bands; post-clip 0. Cause is buried in a Clipper interaction with
+  // blockRounded's specific topology that we haven't isolated yet.
+  // Skip the blockRounded clip — bands already sit outside the asphalt
+  // by curb width so they don't bleed into roadway area; the outer
+  // stencil clip in clipAllToStencil still bounds them to the
+  // neighborhood silhouette. Restore once V2 root cause is fixed.
   for (const entry of byChain) {
     if (!entry) continue
     if (entry.asphaltRings.length && asphaltRounded.length) {
       entry.asphaltRings = intersectRings(entry.asphaltRings, asphaltRounded)
-    }
-    if (blockRounded.length) {
-      if (entry.treelawnRings.length) entry.treelawnRings = intersectRings(entry.treelawnRings, blockRounded)
-      if (entry.sidewalkRings.length) entry.sidewalkRings = intersectRings(entry.sidewalkRings, blockRounded)
     }
   }
 
