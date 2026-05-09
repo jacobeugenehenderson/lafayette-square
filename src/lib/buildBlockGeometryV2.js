@@ -858,7 +858,13 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       if (hwL > 0 || hwR > 0) {
         const leftEdge  = segPts.map((p, i) => [p[0] - segPerps[i][0] * hwL, p[1] - segPerps[i][1] * hwL])
         const rightEdge = segPts.map((p, i) => [p[0] + segPerps[i][0] * hwR, p[1] + segPerps[i][1] * hwR])
-        entry.asphaltRings.push([...leftEdge, ...rightEdge.slice().reverse()])
+        const ring = [...leftEdge, ...rightEdge.slice().reverse()]
+        // Normalize to CCW. Without this the ring's winding flips with
+        // chain direction, and unionRings (NonZero) cancels mixed-winding
+        // overlaps at IXs — leaves gaps that the corner-asphalt plug is
+        // sized to fill, but those gaps then leak ground through the
+        // already-plugged area when the plug overlaps a CW asphalt ring.
+        entry.asphaltRings.push(ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse())
       }
 
       // Per-side ped-zone bands. Inner edge sits at the segment's own
