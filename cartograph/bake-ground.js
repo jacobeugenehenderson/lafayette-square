@@ -25,7 +25,8 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { buildRibbonGeometry, clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
-import { BAND_COLORS } from '../src/cartograph/streetProfiles.js'
+import { buildBlockGeometryV2 } from '../src/lib/buildBlockGeometryV2.js'
+import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -173,6 +174,174 @@ function lateralOffset(coords, offset, side) {
   return out
 }
 
+// ── V2 → bake-shape translation (transitional) ──────────────────────
+// While V1 (`buildRibbonGeometry`) and V2 (`buildBlockGeometryV2`) coexist
+// during the LS rollout, this function flattens V2's natural per-chain
+// output into the same `{ byMaterial, byFaceUse }` shape the rest of
+// `bakeGround` walks. When V1 retires, this folds away — bakeGround can
+// consume V2's named outputs (`asphaltRounded`, `curbBands`, `blocks`,
+// per-chain rings) directly, and the paint-order/triangulation/.bin
+// emission below stays. The translation is the temporary step, not a
+// permanent abstraction.
+// Clipper boolean output is a multi-ring polygon with CCW outers and CW
+// holes mixed in one array. Pushing them as independent rings paints each
+// hole as a filled polygon over its parent's interior — the "black voids"
+// failure. Partition rings by signed-area sign and pair each hole with
+// the smallest containing outer. Mirrors `ringsToFlatGeo(rings, lift,
+// asPolygonWithHoles=true)` in BlockGeometryV2Debug.jsx so the bake
+// renders V2 the same way Designer does.
+function ringSignedArea(ring) {
+  let a = 0
+  for (let i = 0, n = ring.length; i < n; i++) {
+    const [x1, y1] = ring[i]
+    const [x2, y2] = ring[(i + 1) % n]
+    a += (x1 * y2 - x2 * y1)
+  }
+  return a / 2
+}
+function pointInRing(p, ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j]
+    if (((yi > p[1]) !== (yj > p[1])) &&
+        (p[0] < (xj - xi) * (p[1] - yi) / (yj - yi || 1e-12) + xi)) inside = !inside
+  }
+  return inside
+}
+function ringInteriorProbe(ring) {
+  const ccw = ringSignedArea(ring) > 0
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length]
+    const dx = b[0] - a[0], dy = b[1] - a[1]
+    const len = Math.hypot(dx, dy)
+    if (len < 1e-3) continue
+    const px = ccw ? -dy / len : dy / len
+    const py = ccw ?  dx / len : -dx / len
+    const eps = 0.01
+    return [(a[0] + b[0]) / 2 + px * eps, (a[1] + b[1]) / 2 + py * eps]
+  }
+  return ring[0]
+}
+function ringsToHoledPolys(rings) {
+  const outers = [], holes = []
+  for (const r of rings) {
+    if (!r || r.length < 3) continue
+    if (ringSignedArea(r) > 0) outers.push(r); else holes.push(r)
+  }
+  if (!outers.length) return []
+  const outerArea = outers.map(o => Math.abs(ringSignedArea(o)))
+  const holesByOuter = outers.map(() => [])
+  for (const h of holes) {
+    const probe = ringInteriorProbe(h)
+    let bestIdx = -1, bestArea = Infinity
+    for (let i = 0; i < outers.length; i++) {
+      if (pointInRing(probe, outers[i]) && outerArea[i] < bestArea) {
+        bestIdx = i; bestArea = outerArea[i]
+      }
+    }
+    if (bestIdx >= 0) holesByOuter[bestIdx].push(h)
+  }
+  return outers.map((o, i) => ({ outer: o, holes: holesByOuter[i] }))
+}
+
+function computePerpsForPath(pts) {
+  const n = pts.length
+  return pts.map((_, i) => {
+    let nx = 0, nz = 0
+    if (i < n - 1) {
+      const dx = pts[i + 1][0] - pts[i][0], dz = pts[i + 1][1] - pts[i][1]
+      const l = Math.hypot(dx, dz)
+      if (l > 1e-9) { nx -= dz / l; nz += dx / l }
+    }
+    if (i > 0) {
+      const dx = pts[i][0] - pts[i - 1][0], dz = pts[i][1] - pts[i - 1][1]
+      const l = Math.hypot(dx, dz)
+      if (l > 1e-9) { nx -= dz / l; nz += dx / l }
+    }
+    const l = Math.hypot(nx, nz)
+    return l > 1e-9 ? [nx / l, nz / l] : [0, 1]
+  })
+}
+function buildV2BakeShape(ribbons, design, stencilPolygon) {
+  const v2 = buildBlockGeometryV2(ribbons, {
+    stencil: stencilPolygon,
+    cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
+    cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
+    cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
+    blockCustoms:    design.blockCustoms    || null,
+    vertexSmoothing: design.vertexSmoothing || null,
+    blockLandUse:    design.blockLandUse    || null,
+    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
+  })
+
+  const byMaterial = new Map()
+  const byFaceUse  = new Map()
+  const pushMat = (key, ring) => {
+    if (!ring || ring.length < 3) return
+    if (!byMaterial.has(key)) byMaterial.set(key, [])
+    byMaterial.get(key).push(ring)
+  }
+  // Push Clipper-output rings as proper holed polygons. Rings come in as
+  // a flat array mixing CCW outers + CW holes; partition and pair before
+  // pushing so the bake's triangulator honors the holes (otherwise the
+  // CW rings render as filled polygons and blank their parent outers).
+  const pushClipperRings = (key, rings) => {
+    if (!rings || !rings.length) return
+    if (!byMaterial.has(key)) byMaterial.set(key, [])
+    const polys = ringsToHoledPolys(rings)
+    for (const p of polys) byMaterial.get(key).push(p)
+  }
+
+  // Per-chain ribbons (asphalt + ped zones) flattened across all chains.
+  // Highway-class chains route their asphalt to the `highway` group
+  // (matches V1's LAYER_MAP split + the operator's Designer toggle so
+  // I-44 and ramps render with their own material/shader). Other chain
+  // asphalt → `asphalt` group. Ped zones aren't class-routed since
+  // motorways typically have no ped zones in the underlying measure.
+  // Plug rings union into their parent material — they ARE asphalt /
+  // sidewalk for shading purposes; the operator's "sidewalk" toggle
+  // hides the corner concrete with the rest.
+  const HIGHWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
+  const streets = ribbons?.streets || []
+  for (const c of v2.byChain) {
+    if (!c) continue
+    const cls = streets[c.chainIdx]?.highway
+    const asphaltKey = HIGHWAY_CLASSES.has(cls) ? 'highway' : 'asphalt'
+    pushClipperRings(asphaltKey,  c.asphaltRings)
+    pushClipperRings('treelawn',  c.treelawnRings)
+    pushClipperRings('sidewalk',  c.sidewalkRings)
+  }
+  pushClipperRings('asphalt',  v2.cornerAsphaltPlugs)
+  pushClipperRings('sidewalk', v2.cornerSidewalkPads)
+  pushClipperRings('curb',     v2.curbBands)
+
+  // Per-block faces grouped by land use. Bare rings → `{outer, holes:[]}`
+  // so the existing itemsToBuffers triangulator handles them like V1's
+  // `{outer, holes}` faces.
+  for (const b of v2.blocks) {
+    if (!b?.ring || b.ring.length < 3) continue
+    if (!byFaceUse.has(b.lu)) byFaceUse.set(b.lu, [])
+    byFaceUse.get(b.lu).push({ outer: b.ring, holes: [] })
+  }
+
+  // Non-street chains (alleys + path types) — V2 doesn't model these as
+  // bands; emit pavement-only strips, mirroring V1's path block in
+  // ribbonsGeometry.js. `kind` selects the bake group (alley/footway/
+  // cycleway/steps/path).
+  const nonStreet = (ribbons.paths || [])
+    .concat((ribbons.alleys || []).map(a => ({ ...a, kind: 'alley' })))
+  for (const p of nonStreet) {
+    if (!p.points || p.points.length < 2) continue
+    const hw = (p.pavedWidth || 3) / 2
+    const perps = computePerpsForPath(p.points)
+    const left  = p.points.map((pt, i) => [pt[0] - perps[i][0] * hw, pt[1] - perps[i][1] * hw])
+    const right = p.points.map((pt, i) => [pt[0] + perps[i][0] * hw, pt[1] + perps[i][1] * hw])
+    pushMat(p.kind || 'footway', [...left, ...right.slice().reverse()])
+  }
+
+  return { byMaterial, byFaceUse }
+}
+
 // Triangulate one polygon (outer ring + optional hole rings). Returns
 // indices referencing the merged buffer. ShapeUtils.triangulateShape
 // honors holes — feed it the contour and an array of holes and the result
@@ -253,15 +422,33 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
   const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
   const designLayerColors = design.layerColors || {}
   const designLuColors    = design.luColors    || {}
-  const cornerRadiusScale = Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1
-  const cornerRadiusOverrides = (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {}
-  const cornerCornerRadiusOverrides = (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {}
-  const { byMaterial, byFaceUse } = buildRibbonGeometry(ribbons, {
-    stencilPolygon: STENCIL_POLYGON,
-    cornerRadiusScale,
-    cornerRadiusOverrides,
-    cornerCornerRadiusOverrides,
-  })
+  // V1 vs V2 source-of-geometry switch. `design.useV2Geometry === true`
+  // routes through `buildBlockGeometryV2` (rounded-block-clip model);
+  // anything else stays on V1 (`buildRibbonGeometry`). Default off during
+  // the A/B period so flipping it per-Look is a deliberate operator act.
+  // Once V2 is the default, remove the V1 branch + the buildV2BakeShape
+  // shim and consume V2's named outputs directly here.
+  const useV2 = design.useV2Geometry === true
+  let byMaterial, byFaceUse
+  if (useV2) {
+    const v2Out = buildV2BakeShape(ribbons, design, STENCIL_POLYGON)
+    byMaterial = v2Out.byMaterial
+    byFaceUse  = v2Out.byFaceUse
+    console.log(`[bake-ground] geometry source: V2 (rounded-block-clip)`)
+  } else {
+    const cornerRadiusScale = Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1
+    const cornerRadiusOverrides = (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {}
+    const cornerCornerRadiusOverrides = (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {}
+    const v1Out = buildRibbonGeometry(ribbons, {
+      stencilPolygon: STENCIL_POLYGON,
+      cornerRadiusScale,
+      cornerRadiusOverrides,
+      cornerCornerRadiusOverrides,
+    })
+    byMaterial = v1Out.byMaterial
+    byFaceUse  = v1Out.byFaceUse
+    console.log(`[bake-ground] geometry source: V1 (face-clip)`)
+  }
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group

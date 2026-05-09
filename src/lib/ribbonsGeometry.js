@@ -437,16 +437,53 @@ export function clipAllToStencil(byMaterial, byFaceUse, stencilPolygon) {
 
   for (const [mat, rings] of byMaterial) {
     const out = []
-    for (const ring of rings) {
-      if (!ring || ring.length < 3) continue
-      const c = new Clipper()
-      c.AddPath(ring.map(toClipper), PolyType.ptSubject, true)
-      c.AddPath(stencilC,            PolyType.ptClip,    true)
-      const sol = new Paths()
-      c.Execute(ClipType.ctIntersection, sol, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-      for (const path of sol) {
-        const w = toWorld(path)
-        if (w.length >= 3) out.push(w)
+    for (const item of rings) {
+      if (!item) continue
+      // Polymorphic: byMaterial entries may be bare rings (V1, paths, OSM
+      // overlays) OR {outer, holes} polygons (V2's Clipper output via the
+      // bake adapter). Holed polygons go through the same PolyTree path
+      // byFaceUse uses below so the result preserves outer/hole topology.
+      if (Array.isArray(item)) {
+        if (item.length < 3) continue
+        const c = new Clipper()
+        c.AddPath(item.map(toClipper), PolyType.ptSubject, true)
+        c.AddPath(stencilC,            PolyType.ptClip,    true)
+        const sol = new Paths()
+        c.Execute(ClipType.ctIntersection, sol, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+        for (const path of sol) {
+          const w = toWorld(path)
+          if (w.length >= 3) out.push(w)
+        }
+      } else if (item.outer && item.outer.length >= 3) {
+        const subj = new Paths()
+        subj.push(item.outer.map(toClipper))
+        for (const h of (item.holes || [])) {
+          if (h.length >= 3) subj.push(h.map(toClipper))
+        }
+        const c = new Clipper()
+        c.AddPaths(subj,    PolyType.ptSubject, true)
+        c.AddPath(stencilC, PolyType.ptClip,    true)
+        const tree = new PolyTree()
+        c.Execute(ClipType.ctIntersection, tree, PolyFillType.pftEvenOdd, PolyFillType.pftNonZero)
+        const stack = tree.Childs().slice()
+        while (stack.length) {
+          const node = stack.shift()
+          if (!node.IsHole()) {
+            const outer = toWorld(node.Contour())
+            if (outer.length < 3) { for (const c2 of node.Childs()) stack.push(c2); continue }
+            const holes = []
+            for (const child of node.Childs()) {
+              if (child.IsHole()) {
+                const h = toWorld(child.Contour())
+                if (h.length >= 3) holes.push(h)
+                for (const gc of child.Childs()) stack.push(gc)
+              }
+            }
+            out.push({ outer, holes })
+          } else {
+            for (const c2 of node.Childs()) stack.push(c2)
+          }
+        }
       }
     }
     byMaterial.set(mat, out)

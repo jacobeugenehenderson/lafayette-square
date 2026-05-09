@@ -469,5 +469,6 @@
       "species": "platanus_acerifolia",
       "variantId": 1
     }
-  ]
+  ],
+  "useV2Geometry": true
 }

@@ -1027,7 +1027,6 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   if (faces.length) {
     for (const face of faces) {
       if (!face?.ring || face.ring.length < 3) continue
-      if (face.use === 'park') continue
       const clipped = ribbonUnion.length
         ? differenceRings([face.ring], ribbonUnion)
         : [face.ring]
