@@ -772,7 +772,7 @@ export default function CartographApp() {
               flat={inDesigner}
               measureActive={tool === 'measure' && inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner}
-              hideLandUse={toolAerialFocus} />
+              hideLandUse={designAerialOnly || toolAerialFocus} />
           </R3FErrorBoundary>
 
           {/* ── Corner-edit handles — surface only in Designer mode, in
