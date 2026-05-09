@@ -36,6 +36,7 @@ import PreviewPostFx from '../preview/PreviewPostFx.jsx'
 // Toy scene fixtures (single 4-way corner for shader/shadow R&D)
 import toyRibbons from '../data/toy/toy-ribbons.json'
 import ribbonsRaw from '../data/ribbons.json'
+import lsNeighborhoodBoundary from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
 import toyLamps from '../data/toy/toy-lamps.json'
 import ToyBuildings from '../toy/ToyBuildings.jsx'
 import ToyTrees from '../toy/ToyTrees.jsx'
@@ -536,6 +537,23 @@ function useLoadData() {
 // don't pass one (V2 emits asphalt + bands without block-fill).
 const TOY_STENCIL = [[-180, -180], [180, -180], [180, 180], [-180, 180]]
 
+// LS stencil = the neighborhood boundary polygon, scaled outward to the
+// streetFade.outer + buffer band. Mirrors bake-ground.js's STENCIL_POLYGON
+// derivation so V2's blockRounded comes out the same shape Designer-side
+// as bake-side. Without this, V2's `blockRounded = stencil − asphaltRounded`
+// is empty, which kills cornerSidewalkPads (clipped against blockRounded
+// and lands at zero rings) and any other stencil-bound clip.
+const LS_STENCIL = (() => {
+  const poly = lsNeighborhoodBoundary?.boundary
+  const center = lsNeighborhoodBoundary?.center
+  const radius = lsNeighborhoodBoundary?.radius
+  if (!poly?.length || !center || !radius) return null
+  const targetR = (lsNeighborhoodBoundary?.streetFade?.outer ?? radius) + 50
+  const scale = targetR / radius
+  const cx = center[0], cz = center[1]
+  return poly.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
+})()
+
 // Per-scene configuration. The single source of truth for "what's
 // different about this scene" — components above this line should not
 // branch on scene names. New scenes register here; capabilities default
@@ -547,7 +565,7 @@ const TOY_STENCIL = [[-180, -180], [180, -180], [180, 180], [-180, 180]]
 const SCENE_REGISTRY = {
   'lafayette-square': {
     ribbons: ribbonsRaw,
-    stencil: null,
+    stencil: LS_STENCIL,
     useBoundary: true,
     hasAerial: true,
     hasHero: true,
