@@ -18,9 +18,9 @@
  * Coord convention follows StreetRibbons: ShapeGeometry built from
  * Vector2(x, z), then per-vertex remap to (x, 0, z) flips XY→XZ.
  */
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
-import { buildBlockGeometryV2 } from '../lib/buildBlockGeometryV2.js'
+import { buildBlockGeometryV2, buildChainBandsLive } from '../lib/buildBlockGeometryV2.js'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
@@ -208,20 +208,43 @@ export default function BlockGeometryV2Debug({
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
+  // Debounce V2's heavy inputs so the full neighborhood pass doesn't
+  // run on every drag tick. The fast path (`liveSelectedRings` below)
+  // updates the SELECTED chain's bands at 60fps directly from live
+  // store state; V2 catches up after the operator pauses or releases.
+  // Without this debounce, V2 still runs synchronously on every store
+  // update and freezes the main thread for ~2.5s per drag, which makes
+  // the live overlay update useless because the UI is blocked.
+  const v2DebounceMs = 250
+  const [debouncedInputs, setDebouncedInputs] = useState({
+    blockCustoms, vertexSmoothing, cornerRadiusScale,
+    cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse,
+  })
+  const debounceRef = useRef(null)
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null
+      setDebouncedInputs({
+        blockCustoms, vertexSmoothing, cornerRadiusScale,
+        cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse,
+      })
+    }, v2DebounceMs)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [blockCustoms, vertexSmoothing, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse])
+
   const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, cornerAsphaltPlugs, cornerSidewalkPads, byChain, corners } = useMemo(() => {
     const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], cornerAsphaltPlugs: [], cornerSidewalkPads: [], byChain: [], corners: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
-        cornerRadiusScale, stencil,
-        cornerRadiusOverrides, cornerCornerRadiusOverrides,
-        curbWidth, blockCustoms, vertexSmoothing, blockLandUse,
+        stencil, ...debouncedInputs,
       })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
       return empty
     }
-  }, [liveRibbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockCustoms, vertexSmoothing, blockLandUse])
+  }, [liveRibbons, stencil, debouncedInputs])
 
   // Stash the rounded block rings into the store so MeasureOverlay's
   // drag path can resolve block adjacency at drag time without re-running
@@ -273,20 +296,45 @@ export default function BlockGeometryV2Debug({
   // the chains' ped-zone bands don't connect. Sits at sidewalk priority,
   // shared between chains, always opaque.
   const cornerSidewalkGeo = useMemo(() => ringsToFlatGeo(cornerSidewalkPads, 0.028, true), [cornerSidewalkPads])
-  // Per-chain band geometries so the selected chain's meshes can swap to
-  // the translucent material variant while every other chain stays
-  // opaque. Block + curb stay unified above (block-level surfaces).
+  // Live overlay for the SELECTED chain. While the operator drags
+  // measure handles on chain X, V2's full pass takes ~2.5s — so the
+  // bands can't follow handles in real time. `buildChainBandsLive`
+  // emits chain X's bands directly from chain.measure ⊕
+  // blockCustoms[X], no Clipper, ~1ms. We replace V2's `byChain[X]`
+  // entry with this live version so the rendered bands track the
+  // handles at 60fps. Other chains keep their cached V2 output. On
+  // drag release, V2's next full pass overwrites with the rounded /
+  // unioned / corner-padded version.
+  const liveSelectedRings = useMemo(() => {
+    if (selectedStreet == null) return null
+    const chain = liveRibbons?.streets?.[selectedStreet]
+    if (!chain) return null
+    return buildChainBandsLive(
+      chain,
+      blockCustoms?.[selectedStreet],
+      vertexSmoothing?.[selectedStreet],
+      { curbWidth }
+    )
+  }, [selectedStreet, liveRibbons, blockCustoms, vertexSmoothing, curbWidth])
+
+  // Per-chain band geometries so the selected chain's meshes can swap
+  // to the translucent material variant. The selected chain pulls from
+  // `liveSelectedRings` instead of V2's byChain entry — gives the
+  // operator a real-time response to handle drags without waiting for
+  // V2's heavy global pass.
   const perChainGeo = useMemo(() => {
     const out = []
     for (const entry of byChain || []) {
       if (!entry) continue
-      const ag = entry.asphaltRings.length  ? ringsToFlatGeo(entry.asphaltRings,  0.04, true) : null
-      const tg = entry.treelawnRings.length ? ringsToFlatGeo(entry.treelawnRings, 0.02, true) : null
-      const sg = entry.sidewalkRings.length ? ringsToFlatGeo(entry.sidewalkRings, 0.03, true) : null
+      const useLive = liveSelectedRings && entry.chainIdx === selectedStreet
+      const rings = useLive ? liveSelectedRings : entry
+      const ag = rings.asphaltRings.length  ? ringsToFlatGeo(rings.asphaltRings,  0.04, true) : null
+      const tg = rings.treelawnRings.length ? ringsToFlatGeo(rings.treelawnRings, 0.02, true) : null
+      const sg = rings.sidewalkRings.length ? ringsToFlatGeo(rings.sidewalkRings, 0.03, true) : null
       if (ag || tg || sg) out.push({ chainIdx: entry.chainIdx, asphalt: ag, treelawn: tg, sidewalk: sg })
     }
     return out
-  }, [byChain])
+  }, [byChain, liveSelectedRings, selectedStreet])
 
   // Stripe edges — opaque strokes drawn on the SELECTED chain only when
   // Measure is active. They mark where boundary handles attach. The

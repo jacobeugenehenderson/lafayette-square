@@ -1081,3 +1081,66 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     corners: allCorners,
   }
 }
+
+// Fast per-chain band emitter — builds asphalt rectangles + treelawn /
+// sidewalk strip bands for ONE chain with NO Clipper booleans. Mirrors
+// buildBlockGeometryV2's per-segment loop, restricted to a single chain
+// + minus the global union/intersect/round-corners/curb-stroke/face-clip
+// passes. ~1ms instead of 2.5s.
+//
+// Returns { asphaltRings, treelawnRings, sidewalkRings } in the same
+// shape buildBlockGeometryV2's `byChain[i]` carries — drop-in for the
+// per-chain-render path.
+//
+// Tradeoffs: rectangles have square ends at IX vertices (no corner
+// rounding), no curb stroke, no per-chain clip against asphaltRounded.
+// Use this for the SELECTED chain during interactive drag, where the
+// operator needs the bands to follow handles in real time. The full V2
+// pass is still authoritative on release.
+export function buildChainBandsLive(chain, blockCustomsForChain, vertexSmoothingForChain, opts = {}) {
+  const cw = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
+  const out = { asphaltRings: [], treelawnRings: [], sidewalkRings: [] }
+  if (!chain || chain.disabled) return out
+  const pts = chain.points
+  const m = chain.measure
+  if (!pts || pts.length < 2 || !m) return out
+  const perps = computePerps(pts)
+  const segments = naturalSegments(chain)
+  for (let segOrd = 0; segOrd < segments.length; segOrd++) {
+    const seg = segments[segOrd]
+    const rawSegPts = pts.slice(seg.start, seg.end + 1)
+    const segChainMap = vertexSmoothingForChain || null
+    const segPts = segChainMap
+      ? applyChainSmoothing(rawSegPts, (i) => segChainMap[seg.start + i])
+      : rawSegPts
+    const segPerps = (segPts === rawSegPts) ? perps.slice(seg.start, seg.end + 1) : computePerps(segPts)
+    if (segPts.length < 2) continue
+    const effL = (blockCustomsForChain?.[segOrd]?.left)  || m.left  || {}
+    const effR = (blockCustomsForChain?.[segOrd]?.right) || m.right || {}
+    const hwL = effL.pavementHW || 0
+    const hwR = effR.pavementHW || 0
+    if (hwL > 0 || hwR > 0) {
+      const leftEdge  = segPts.map((p, i) => [p[0] - segPerps[i][0] * hwL, p[1] - segPerps[i][1] * hwL])
+      const rightEdge = segPts.map((p, i) => [p[0] + segPerps[i][0] * hwR, p[1] + segPerps[i][1] * hwR])
+      const ring = [...leftEdge, ...rightEdge.slice().reverse()]
+      out.asphaltRings.push(ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse())
+    }
+    for (const sideKey of ['left', 'right']) {
+      const sideSign = sideKey === 'left' ? -1 : +1
+      const eff = sideKey === 'left' ? effL : effR
+      if (!eff || eff.terminal !== 'sidewalk') continue
+      const hw = eff.pavementHW || 0
+      const tl = eff.treelawn || 0
+      const sw = eff.sidewalk || 0
+      if (tl > 0) {
+        const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
+        if (ring) out.treelawnRings.push(ring)
+      }
+      if (sw > 0) {
+        const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
+        if (ring) out.sidewalkRings.push(ring)
+      }
+    }
+  }
+  return out
+}
