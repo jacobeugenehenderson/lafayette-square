@@ -139,7 +139,7 @@ function CornersSubsection() {
   return (
     <>
       <div className="carto-row carto-row--wrap">
-        <label className="carto-label-fixed" title="Multiplies every IX corner radius (default 1 = AASHTO baseline). Crank up for a bubblier neighborhood; down to 0 for square corners.">
+        <label className="carto-label-fixed" title="Multiplies every IX corner radius (1 = AASHTO baseline). Crank up for a bubblier neighborhood; down to 0 for square corners. Per-IX/per-corner authored values are preserved as the slider moves.">
           Corners
         </label>
         <input type="range" className="carto-input"
@@ -153,25 +153,49 @@ function CornersSubsection() {
             scheduleCommit(v)
           }}
           onKeyUp={finalCommit} />
-        <span className="carto-meta carto-meta--value">
-          {Number(draft).toFixed(2)}×
-        </span>
+        <input type="number"
+          className="carto-meta carto-meta--value carto-meta--editable"
+          value={Number(draft).toFixed(2)}
+          min="0" max="11" step="0.1"
+          onFocus={() => { draggingRef.current = true }}
+          onBlur={finalCommit}
+          onChange={e => {
+            const v = Math.max(0, Math.min(11, parseFloat(e.target.value) || 0))
+            setDraft(v)
+            scheduleCommit(v)
+          }}
+          onKeyDown={e => {
+            // Shift+Arrow = ±1.0; plain Arrow uses the input's native step (0.1).
+            // Native handler fires the ±0.1 case on its own; we only intercept
+            // shift to amplify, and Enter to commit immediately.
+            if (e.key === 'Enter') { finalCommit(); e.currentTarget.blur(); return }
+            if (!e.shiftKey) return
+            if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+            e.preventDefault()
+            const delta = e.key === 'ArrowUp' ? 1 : -1
+            const v = Math.max(0, Math.min(11, +(draft + delta).toFixed(2)))
+            setDraft(v)
+            scheduleCommit(v)
+          }} />
+        <span className="carto-meta carto-meta--unit">×</span>
       </div>
-      <div className="carto-row">
+      <div className="carto-row carto-corner-buttons">
         <button
-          className={`carto-btn carto-btn--grow${cornerEditMode ? ' is-active' : ''}`}
+          className={`carto-btn carto-btn--icon${cornerEditMode ? ' is-active' : ''}`}
           onClick={() => setCornerEditMode(!cornerEditMode)}
-          title="Show draggable handles at every intersection center. Drag a handle: world distance from cursor to IX = new corner radius. Release to commit.">
-          {cornerEditMode ? '● Edit corners' : '○ Edit corners'}
+          title="Edit corners: show per-IX center handles + per-corner cyan dots. Drag = world distance from cursor sets that radius.">
+          <span className="carto-btn-glyph" aria-hidden="true">{cornerEditMode ? '●' : '○'}</span>
+          <span className="carto-btn-text">Edit</span>
         </button>
         <button
-          className="carto-btn"
+          className="carto-btn carto-btn--icon"
           onClick={clearAllIxCornerRadii}
-          disabled={overrideCount === 0}
+          disabled={overrideCount === 0 && draft === 1}
           title={overrideCount
-            ? `Clear ${overrideCount} per-IX override${overrideCount === 1 ? '' : 's'} — every corner reverts to its default radius (the AASHTO/data-table baseline). Global scale is unaffected.`
-            : 'No per-IX overrides to revert.'}>
-          Revert{overrideCount ? ` (${overrideCount})` : ''}
+            ? `Revert: clear ${overrideCount} authored override${overrideCount === 1 ? '' : 's'} and reset scale to 1. Every corner returns to its AASHTO/data-table default.`
+            : 'Revert: reset scale to 1. (No authored overrides to clear.)'}>
+          <span className="carto-btn-glyph" aria-hidden="true">↺</span>
+          <span className="carto-btn-text">Revert{overrideCount ? ` (${overrideCount})` : ''}</span>
         </button>
       </div>
     </>

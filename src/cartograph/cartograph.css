@@ -343,11 +343,56 @@
   min-width: 40px;
   text-align: right;
 }
+/* Editable variant — looks like the read-only span until focused. Strips
+   the browser's number-input chrome (spinner, border) so it sits flush
+   in a panel row. Arrow keys still work natively for ±step. */
+.carto-meta--editable {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  padding: 1px 3px;
+  width: 48px;
+  -moz-appearance: textfield;
+}
+.carto-meta--editable:hover { border-color: var(--carto-border); }
+.carto-meta--editable:focus {
+  outline: none;
+  border-color: var(--carto-accent, #5a8);
+  background: rgba(255,255,255,0.04);
+}
+.carto-meta--editable::-webkit-inner-spin-button,
+.carto-meta--editable::-webkit-outer-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+/* Suffix unit ("×", "m", etc.) tucked next to the editable readout so the
+   number itself stays a clean numeric. */
+.carto-meta--unit {
+  color: var(--carto-text-dim);
+  margin-left: -2px;
+}
 /* Button utility — let a button claim the remaining row width. Used in
    pairs (active button grows, secondary "Revert" stays auto-sized). */
 .carto-btn--grow {
   flex: 1;
 }
+/* Side-by-side icon-button row (e.g., Edit corners + Revert). Each button
+   shares equal width and stacks a glyph above its label so the row reads
+   as a graphical group, not a wall of text. */
+.carto-corner-buttons { gap: 6px; }
+.carto-btn--icon {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 4px;
+  min-height: 40px;
+}
+.carto-btn-glyph { font-size: 14px; line-height: 1; }
+.carto-btn-text { font-size: 11px; line-height: 1; }
 
 .carto-label {
   font-size: 12px;

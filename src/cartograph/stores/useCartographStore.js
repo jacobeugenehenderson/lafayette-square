@@ -417,16 +417,16 @@ const useCartographStore = create((set, get) => ({
   setCornerRadiusScale: (v) => {
     // Cap matches the per-IX setter cap (50m) divided by the residential
     // baseline (4.5m) so the global slider's range matches what an operator
-    // can author with a per-IX center handle. Round up for a generous
-    // headroom + nicer slider tick math.
+    // can author with a per-IX center handle.
     const n = Math.max(0, Math.min(11, Number(v) || 0))
-    // Slider RESETS authored overrides. Operator's mental model: "drag the
-    // slider → all corners scale together to this value × default-R." Any
-    // per-IX or per-corner authored values would otherwise produce
-    // non-uniform scaling that defeats the slider's intent. After this
-    // reset, the operator re-authors per-IX / per-corner from the new
-    // scaled baseline.
-    set({ cornerRadiusScale: n, cornerRadiusOverrides: {}, cornerCornerRadiusOverrides: {} })
+    // Slider preserves authored overrides. Render-time R = override × scale,
+    // so authored values participate in the global multiplier without being
+    // wiped when the operator dials the slider. Operator workflow: author
+    // per-IX / per-corner radii to taste, "Save as 1×" to freeze that as
+    // the baseline, then dial the slider for global variations from that
+    // baseline. With no baseline saved and no overrides, the slider acts
+    // on AASHTO/data-table defaults (the original pre-baseline behavior).
+    set({ cornerRadiusScale: n })
     get()._saveDesignDebounced()
   },
   // Transient UI toggle — drives whether CornerEditHandles render.
@@ -466,12 +466,16 @@ const useCartographStore = create((set, get) => ({
     })
     get()._saveDesignDebounced()
   },
-  // Wipe ALL per-IX overrides — the "revert corners to default" action.
-  // Phase 3: clears per-corner overrides too so a single Revert click
-  // returns the active Look to its data-file baseline (× any global
-  // cornerRadiusScale).
+  // Revert corners to default — wipes per-IX + per-corner overrides AND
+  // resets the global scale to 1. With overrides empty and scale=1, every
+  // corner renders at its AASHTO/data-table default (cornerRadiusFor
+  // keyed on highway class). Operator's "back to a clean slate" action.
   clearAllIxCornerRadii: () => {
-    set({ cornerRadiusOverrides: {}, cornerCornerRadiusOverrides: {} })
+    set({
+      cornerRadiusScale: 1,
+      cornerRadiusOverrides: {},
+      cornerCornerRadiusOverrides: {},
+    })
     get()._saveDesignDebounced()
   },
   // Stable identifier for one leg of an IX. dir = 'b' (back from V toward
