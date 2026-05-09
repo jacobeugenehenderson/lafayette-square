@@ -2334,6 +2334,12 @@ export function deriveLayers(highways) {
       oneway: !!s.oneway,
       skelId: s.id,
       phase: s.phase || null,
+      // OSM highway class carried through from skeleton.js so V2 corner
+      // radii (and any other class-conditional logic) can resolve to
+      // the right AASHTO/NACTO defaults. Falls back to 'residential'
+      // when missing — matches mapHighwayToStreetType's default.
+      highway: s.highway || 'residential',
+      type: mapHighwayToStreetType(s.highway),
     }
     // Skel owns geometric couplers; overlay-authored couplers override.
     if (ov?.couplers) street.couplers = ov.couplers
@@ -2842,6 +2848,8 @@ export function deriveLayers(highways) {
       anchor: st.anchor || 'center',
       innerSign: st.innerSign || 0,
       pairId: st.pairId || null,
+      highway: st.highway || 'residential',
+      type: st.type || 'residential',
       // Operator-intent fields the bake's face-clip helper consumes. Live
       // render's `clippedFaces` useMemo passes these from the overlay; if
       // we strip them here, the bake's `buildRibbonGeometry` call sees a

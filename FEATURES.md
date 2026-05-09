@@ -217,6 +217,19 @@ Decisions that affect how to think about new work:
 
 **Diagnostic:** compare the carto server's process start time (`ps aux | grep cartograph/serve`) to `serve.js`'s mtime (`stat -f %Sm cartograph/serve.js`). If file mtime > process start time, the server is stale — restart it. This bit us 2026-05-04 *twice in one session*; if the symptom is "my Designer edit doesn't appear after Bake," check process age before going on a tour of dirty-checks and cache-busts.
 
+### `ribbons.streets[].highway` carries OSM class through (2026-05-09)
+
+Every emitted street entry in `ribbons.json` now carries two class fields:
+
+- `highway` — the raw OSM tag (`motorway`, `motorway_link`, `trunk`, `primary`, `secondary`, `tertiary_link`, `residential`, `service`, `unclassified`, …). This is the value any AASHTO/NACTO-keyed lookup should use (e.g., `intersectionGeometry.js:cornerRadiusFor` keys on raw class).
+- `type` — the normalized streetProfiles vocabulary (`motorway` / `motorway_link` / `trunk` / `primary` / `secondary` / `service` / `footway` / `cycleway` / `pedestrian` / `steps` / `residential`). This is what `streetProfiles.defaultMeasure` and width-default code paths consume.
+
+Both fall back to `'residential'` when the source tag is missing, so any consumer can rely on a defined value. The mapping lives in `derive.js:mapHighwayToStreetType`.
+
+LS distribution as of this writing: 143 residential, 32 motorway_link, 23 motorway (I-44 main), 17 primary, 17 secondary, plus assorted tertiary/service/unclassified. Future neighborhoods will shift the mix; no class is assumed to be present.
+
+Before this fix, both fields were absent from output and every chain fell through to residential corner-radius defaults — motorway crossings rendered with 4.5m corners. If a downstream consumer ever stops seeing the field, the most likely regression is in `derive.js`'s output-serialization map (`streets: ribbonStreets.map(st => ({...}))`) — fields that aren't whitelisted there get stripped.
+
 ### Survey/Measure operator-intent flows through `overlay.json`, not `centerlines.json`
 
 This is the bug-magnet that's burned hours twice now. Survey + Measure tools save to `cartograph/data/clean/overlay.json` (skelId-keyed: `measure`, `segmentMeasures`, `capStart`/`capEnd`, `anchor`, `couplers`). The Designer runtime merges overlay into the live street list via `useCartographStore.js:_loadCenterlines`. The bake pipeline (`derive.js`) reads skeleton + raw/centerlines + raw/measurements + osm/elevation — and as of 2026-05-04 *also reads `overlay.json`* (after a fix). If the bake ever stops reflecting Designer Preview edits, the first thing to check is whether `derive.js`'s overlay merge is still in place. Legacy `cartograph/data/raw/centerlines.json` is fallback only (matched by name, used to seed older streets that don't have skelId entries yet).

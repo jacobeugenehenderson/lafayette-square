@@ -152,8 +152,12 @@ These bite when the *defaults* are wrong; V2 itself works fine on
 whatever data it gets. All already in this BACKLOG under
 "2026-05-06 — Data pipeline":
 
-- Highway class is `undefined` on all 242 LS chains → corner radii
-  fall through to residential default everywhere.
+- ~~Highway class is `undefined` on all 242 LS chains.~~ **Resolved
+  2026-05-09:** `derive.js` now carries `highway` (raw OSM tag) and
+  `type` (mapped streetProfiles vocabulary) onto every emitted
+  `ribbons.streets[]` entry. LS distribution: 143 residential, 23
+  motorway (I-44 main), 32 motorway_link (ramps), 17 primary, 17
+  secondary, plus assorted tertiary/service/unclassified.
 - 190/252 IX entries in `ribbons.intersections` are
   divided-road continuation joints, not real corners. Mitigated
   client-side; better fix is in `derive.js`.
@@ -435,19 +439,12 @@ Surfaced during the neighborhood roll-out. Both fall outside the
 corner-authoring kit itself (the kit handles whatever the data hands it)
 but limit how well the kit lands on LS until they're addressed.
 
-- **`highway` field is `undefined` on all 242 chains in
-  `src/data/ribbons.json`.** `derive.js` is supposed to carry the OSM
-  highway class through, and `cornerRadiusFor` (in `intersectionGeometry.js`)
-  has a full AASHTO/NACTO table keyed by `(classA | classB)` —
-  residential/residential = 4.5m, motorway/motorway = 15m, etc. Today
-  every IX falls through to the 4.5m residential default × scale,
-  so motorway crossings render at toy-residential corner radii.
-  Fix: either fix the highway-class carry in `derive.js` so chains
-  arrive with `highway: '<class>'`, or write a synthesis pass that
-  reconstructs class from `name` patterns (e.g., "Ozark Expressway" /
-  "motorway_link 16" → motorway/motorway_link). Then have `getR` /
-  `buildCornerPadClips` consult `cornerRadiusFor` as the per-class
-  default before falling back to 4.5m.
+- ~~**`highway` field undefined on all 242 chains.**~~ **Resolved
+  2026-05-09** — `derive.js` now carries `highway` (raw OSM tag) and
+  `type` (mapped streetProfiles vocabulary) onto every emitted
+  `ribbons.streets[]` entry. `cornerRadiusFor` and any other
+  class-conditional logic can now consult per-class defaults instead
+  of falling through to residential everywhere.
 
 - **Divided-road continuation joints pollute the IX list.** 190 of the
   252 entries in `ribbons.intersections` only have 2 chain refs, and
