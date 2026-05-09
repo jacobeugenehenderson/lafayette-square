@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-09 (9.2° steam-clean landed; next: V2 on LS — bake-side parity)
+Last updated: 2026-05-09 (V2 on LS landed: bake adapter + corner pads + handles + aerial + measure + per-layer toggles; next: perf)
 
 ## 2026-05-09 — Designer panel restructure (LANDED)
 
@@ -120,31 +120,24 @@ Designer in toy AND Stage publishes what Designer shows":
   authoring would survive geometry edits more cleanly. Optional
   polish — bbox-key is fine until it isn't.
 
-### Gap 2 — Stage / Preview parity (~2-3 sessions, load-bearing)
+### Gap 2 — Stage / Preview parity (LANDED 2026-05-09)
 
-The big one. Operator edits in V2 (Designer) but Stage renders
-`BakedGround` from `bake-ground.js`, which is V1 geometry. Today an
-LS bake produces V1 per-side curb stripes, V1 corner pads, no
-honor of corner-radius authoring. Face fills already use authentic
-LU so that part matches.
+V2 bake adapter (`cartograph/bake-ground.js#buildV2BakeShape`) flattens
+V2's per-chain output and named globals into the same
+`{ byMaterial, byFaceUse }` shape the bake walks. Routed through a
+`design.useV2Geometry` flag; `lafayette-square` is currently flipped
+to V2 and validated visually. Adapter handles park face emission,
+highway-class split, hole-aware partitioning of Clipper output.
+`clipAllToStencil` taught to handle holed polygons in byMaterial.
 
-To close:
-- **Port `buildBlockGeometryV2` into the bake**, replacing
-  `buildRibbonGeometry` in `bake-ground.js`. The bake already
-  reads `design.json`; thread the same `cornerRadiusOverrides /
-  cornerCornerRadiusOverrides / blockCustoms / blockLandUse /
-  vertexSmoothing / cornerRadiusScale` opts the live render uses.
-  Output schema for `ground.bin` stays the same; only the source
-  of geometry changes.
-- **Retire V1 face-clip code** in `ribbonsGeometry.js` and the
-  legacy corner-pad pass in `StreetRibbons.jsx` once the bake
-  switches over. The retirements are pre-staged in BACKLOG
-  "2026-05-06 — Effluvium cleanup."
-- **Re-bake LS** and verify Stage/Preview match Designer
-  pixel-for-pixel modulo material/lighting.
+Effluvium cleanup landed (commit `0286cb1`): `buildCornerPlug`,
+`buildCurbAnnulus`, gated-false call-sites, `intersectionGeometry.js`
+all deleted (−474 lines).
 
-This is the FEATURES.md "retire StreetRibbons" line item — well-shaped
-because V2 is a single helper with a clean contract.
+V1 face-clip path in `ribbonsGeometry.js` (~700 lines) and
+`StreetRibbons.jsx` (~2100 lines, public-app live render) survive
+behind `useV2Geometry: false` for revert-safety. Retire once
+operator confirms V2 is stable across all Looks (separate sprint).
 
 ### Gap 3 — LS-only data-quality items (async, separate)
 
@@ -167,12 +160,13 @@ whatever data it gets. All already in this BACKLOG under
 
 ### Honest framing
 
-Gap 2 is load-bearing: until the bake matches V2, "Stage publishes
-what Designer shows" isn't true on LS. Gap 1 polish is nice but
-doesn't block LS from looking right. Gap 3 is fix-when-you-trip-on-it.
+Gap 2 is the load-bearing item and it landed in one session — V2 bake
+adapter behind a flag, design.useV2Geometry=true on lafayette-square,
+visually verified against Designer (corner pads, ribbons, faces all
+matching). Gap 1 polish remains. Gap 3 is fix-when-you-trip-on-it.
 
-**Estimate**: one session for Gap 1, two for Gap 2 + re-bake
-validation, Gap 3 ad-hoc.
+After today: full V2 stack — Designer authoring + bake → Stage/Preview
+— rendering consistently on LS. Next sprint: V1 retirement, perf.
 
 ---
 
@@ -401,37 +395,14 @@ both override maps.
   all (the post-FX / fade pipeline drops opaque meshes from the final
   framebuffer).
 
-## 2026-05-06 — Effluvium cleanup: retired corner-management code paths
+## 2026-05-06 — Effluvium cleanup: retired corner-management code paths (LANDED 2026-05-09)
 
-Multiple prior attempts at corner geometry have accumulated as dead code
-in `StreetRibbons.jsx` (and one dead import). Each was retired correctly
-at the time but kept in-place behind `if (false &&...)` gates or as
-unreferenced functions for revert-safety. After Phase 3 lands and the
-neighborhood roll-out is verified, do a focused cleanup pass and remove:
-
-- `buildCornerPlug` function (~lines 989–1041) — "canonical 90° corner
-  template" approach. Never called (gated false at the call site).
-- `buildCurbAnnulus` function (~lines 716–828) — Clipper-offset
-  uniform-R rounding trick. Replaced by per-corner emission in
-  `buildSidewalkPads` as of Phase 3.
-- `if (false && hasSwA && hasSwB)` block (~line 1571) — call site for
-  `buildCornerPlug`.
-- `if (false && cornerBoundaries.length)` block (~line 1593) — legacy
-  curb stroke pass.
-- `cornerBoundaries` array (~line 1252) — only populated by the dead
-  `buildCornerPlug` call.
-- `corner_sw` / `corner_asph` entries in `MAT`, `CORNER_PRIORITY`, and
-  `CORNER_SRC` — these material groups are never populated post-retirement.
-  (`corner_curb` may also be legacy; verify before removing — the
-  Phase 3 path uses `corner_plug_curb` distinctly.)
-- The `import { buildIntersectionPolygon } from '../lib/intersectionGeometry.js'`
-  line in `StreetRibbons.jsx` — the import is dead (the function is
-  never called). `intersectionGeometry.js` itself stays — it carries
-  the IP-rule helpers used by `ribbonsGeometry.js`.
-
-Risk of cleanup: low. All gated/unused. Each removal is local. Drop in
-one commit titled "Retire dead corner-management paths" once Phase 3 is
-locked in by neighborhood QA.
+Removed 474 lines of dead V1 corner geometry: `buildCornerPlug`,
+`buildCurbAnnulus`, gated-false call-sites, `cornerBoundaries` array,
+`corner_sw`/`corner_asph` material entries, dead import. Whole file
+`src/lib/intersectionGeometry.js` deleted — all four exports
+(`CORNER_RADIUS_M`, `cornerRadiusFor`, `offsetArcStrip`,
+`buildIntersectionPolygon`) had zero importers. Commit `0286cb1`.
 
 ## 2026-05-06 — Data pipeline: classification gaps in `ribbons.json`
 
