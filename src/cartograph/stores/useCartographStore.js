@@ -1249,21 +1249,37 @@ const useCartographStore = create((set, get) => ({
         const ov = overlayById[s.id]
         const legacy = ov ? null : byName.get(s.name)
         const rb = ribbonById.get(s.id)
+        // Prefer ribbons.json's points + intersections over skeleton's.
+        // derive.js INSERTS extra vertices at every detected IX, so a
+        // chain that has 21 points in skeleton can have 34 in ribbons.json
+        // (the IX-vertex insertions split each segment). MeasureOverlay
+        // reads centerlineData; V2 reads ribbons.json. If centerlineData
+        // uses skeleton's 21-point polyline, segI / natural-segment math
+        // diverges from V2's 34-point math — drag a handle and the
+        // override lands on the wrong segment. Use ribbons.json's points
+        // when available so both consumers walk the same polyline.
+        const rbPoints = rb?.points
+        const points = (rbPoints && rbPoints.length >= 2)
+          ? rbPoints.map(p => Array.isArray(p) ? [p[0], p[1]] : [p.x, p.z])
+          : (s.points || []).map(p => [p.x, p.z])
+        const rbIntersections = rb?.intersections
         return {
           id: s.id,
           name: s.name,
           type: s.highway || 'residential',
           oneway: !!s.oneway,
-          points: (s.points || []).map(p => [p.x, p.z]),
+          points,
           divided: !!s.divided,
-          // IX vertex indices on this chain (the points where it crosses
-          // another chain). Drives the "natural segment" partition used
-          // by Measure handles + V2's per-segment band emission. Both
-          // sides MUST agree on the partition or the per-block override
-          // applies to the wrong segment.
-          intersections: Array.isArray(s.intersections)
-            ? s.intersections.map(ix => ({ ix: ix.ix, withStreets: ix.withStreets }))
-            : (rb?.intersections || []),
+          // IX vertex indices on this chain. Indices reference `points`
+          // above — must come from the SAME source the points came from
+          // (ribbons.json's intersections.ix index into ribbons' point
+          // array). Falling back to skeleton's intersections only if we
+          // had to fall back to skeleton's points too.
+          intersections: rbPoints && rbPoints.length >= 2 && Array.isArray(rbIntersections)
+            ? rbIntersections.map(ix => ({ ix: ix.ix, withStreets: ix.withStreets }))
+            : (Array.isArray(s.intersections)
+              ? s.intersections.map(ix => ({ ix: ix.ix, withStreets: ix.withStreets }))
+              : []),
           // Operator can hide individual chains (echo hunting, suppress OSM
           // junk centerlines). Hidden chains still appear in Measure (dim,
           // re-selectable) so you can toggle them back on.
