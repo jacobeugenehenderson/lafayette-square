@@ -2,7 +2,6 @@ import { useMemo, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildRibbonGeometry } from '../lib/ribbonsGeometry.js'
-import { buildIntersectionPolygon } from '../lib/intersectionGeometry.js'
 import clipperLib from 'clipper-lib'
 import ribbonsRaw from '../data/ribbons.json'
 import { streetInBoundary, faceInBoundary, pointInBoundary } from '../cartograph/boundary.js'
@@ -50,7 +49,7 @@ const LAND_USE_COLORS = {
 // building corner bands so a custom palette flows through.
 const LEGACY_COLORS = {
   asphalt: MAT.asphalt, treelawn: MAT.treelawn, sidewalk: MAT.sidewalk, curb: MAT.curb,
-  corner_sw: MAT.sidewalk, corner_curb: MAT.curb, corner_asph: MAT.asphalt,
+  corner_curb: MAT.curb,
 }
 
 // Priority ordering (only matters at intersections where same-material rings
@@ -68,9 +67,10 @@ const BAND_PRIORITY = {
   asphalt:            8,
 }
 // corner_curb is a STROKE (constant-width painted on the asph/sw boundary)
-// that needs to render above both asph and sw fills. Priority is therefore
-// higher than corner_asph; it's the topmost band-level layer.
-const CORNER_PRIORITY = { corner_sw: 7, corner_asph: 10, corner_curb: 11, corner_plug_asph: 11.5, corner_plug_sidewalk: 11.7, corner_plug_curb: 12 }
+// that needs to render above both asph and sw fills. corner_plug_* layers
+// (asphalt-mouth, sidewalk pad, curb annulus) sit above so the rounded
+// curb-driven corners overpaint the leg ribbons.
+const CORNER_PRIORITY = { corner_curb: 11, corner_plug_asph: 11.5, corner_plug_sidewalk: 11.7, corner_plug_curb: 12 }
 const FACE_FILL_PRIORITY = 1  // lowest — underneath everything
 // Match streetProfiles' CURB_WIDTH (6" = 0.1524 m) — the value sideToStripes
 // uses for the leg's curb stripe. The face-clip below offsets the ribbon's
@@ -659,118 +659,6 @@ function buildSidewalkPads(ribbonsData, getR, curbW, getCornerR = null) {
   return { pads, asphaltFills, curbAnnuli }
 }
 
-function buildCurbAnnulus(ribbonsData, getR, curbW) {
-  const { Clipper, ClipperOffset, JoinType, EndType, PolyType, ClipType, PolyFillType, Paths, PolyTree } = clipperLib
-  const toClipperI = (x, z) => ({ X: Math.round(x * CURB_CLIP_SCALE), Y: Math.round(z * CURB_CLIP_SCALE) })
-  const toWorld = (path) => path.map(p => [p.X / CURB_CLIP_SCALE, p.Y / CURB_CLIP_SCALE])
-
-  // Three concentric layers per corner: asphalt fill (rounded interior),
-  // curb annulus (CURB_WIDTH stroke), sidewalk pad annulus (concrete pad
-  // between curb-outer and property line).
-  const asphaltFills = []
-  const annuli = []
-  const sidewalkPads = []
-
-  // Build the global asphalt polygon (= union of per-chain leg-rectangles
-  // at width pavementHW per side). One polygon, one Clipper-offset trick
-  // applied, rounds all concave corners (= intersection vertices) at
-  // uniform R. In-chain bends never become corners because chains are
-  // straight rectangles between vertices. Per-intersection R via this
-  // approach would require per-vertex sub-construction; uniform R is the
-  // current shipping form.
-  const R = (() => {
-    if (!ribbonsData.intersections?.length) return 0
-    return getR(ribbonsData.intersections[0], ribbonsData.intersections[0].point) || 0
-  })()
-  if (R <= 0) return { asphaltFills, annuli }
-
-  const chainRings = []
-  for (const st of ribbonsData.streets) {
-    if (st.disabled) continue
-    if (!st.points || st.points.length < 2) continue
-    const m = st.measure
-    if (!m?.left?.pavementHW || !m?.right?.pavementHW) continue
-    const perps = computePerps(st.points)
-    const left = [], right = []
-    for (let i = 0; i < st.points.length; i++) {
-      const [x, z] = st.points[i], [nx, nz] = perps[i]
-      left.push([x + nx * m.left.pavementHW, z + nz * m.left.pavementHW])
-      right.push([x - nx * m.right.pavementHW, z - nz * m.right.pavementHW])
-    }
-    const ring = []
-    for (const p of left) ring.push(toClipperI(p[0], p[1]))
-    for (let i = right.length - 1; i >= 0; i--) ring.push(toClipperI(right[i][0], right[i][1]))
-    chainRings.push(ring)
-  }
-  if (!chainRings.length) return { asphaltFills, annuli }
-
-  // 1. Sharp asphalt polygon = leg-rectangle union. Concave corners at
-  //    every intersection vertex.
-  const u = new Clipper()
-  u.AddPaths(chainRings, PolyType.ptSubject, true)
-  const sharp = new Paths()
-  u.Execute(ClipType.ctUnion, sharp, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-  if (!sharp.length) return { asphaltFills, annuli }
-
-  // 2. Outer offset by +R (jtMiter) + inner offset by -R (jtRound) =
-  //    standard Clipper trick to round concave corners with radius R.
-  //    Convex corners (leg far ends) restore to original. No fillet
-  //    wedges, no cusp degeneracies.
-  const off1 = new ClipperOffset(); off1.ArcTolerance = 50
-  off1.AddPaths(sharp, JoinType.jtMiter, EndType.etClosedPolygon)
-  const grown = new Paths(); off1.Execute(grown, R * CURB_CLIP_SCALE)
-
-  const off2 = new ClipperOffset(); off2.ArcTolerance = 50
-  off2.AddPaths(grown, JoinType.jtRound, EndType.etClosedPolygon)
-  const innerRounded = new Paths(); off2.Execute(innerRounded, -R * CURB_CLIP_SCALE)
-  if (!innerRounded.length) return { asphaltFills, annuli }
-
-  // 3. Curb-outer = innerRounded offset outward by curbW with round joins
-  //    (preserves the rounded corners — concentric).
-  const off3 = new ClipperOffset(); off3.ArcTolerance = 50
-  off3.AddPaths(innerRounded, JoinType.jtRound, EndType.etClosedPolygon)
-  const outer = new Paths(); off3.Execute(outer, curbW * CURB_CLIP_SCALE)
-
-  // 4. Asphalt fill = curb-outer polygon (covers per-leg curb stripes
-  //    that cross intersections). Push as {outer, holes:[]}.
-  for (const p of outer) {
-    if (!Clipper.Orientation(p)) continue
-    const ring = toWorld(p)
-    if (ring.length >= 3) asphaltFills.push({ outer: ring, holes: [] })
-  }
-
-  // 5. Curb annulus = outer ⊖ innerRounded, as PolyTree {outer, holes}.
-  const diff = new Clipper()
-  diff.AddPaths(outer, PolyType.ptSubject, true)
-  diff.AddPaths(innerRounded, PolyType.ptClip, true)
-  const tree = new PolyTree()
-  diff.Execute(ClipType.ctDifference, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-  const stack = tree.Childs().slice()
-  while (stack.length) {
-    const node = stack.shift()
-    if (!node.IsHole()) {
-      const o = toWorld(node.Contour())
-      if (o.length >= 3) {
-        const holes = []
-        for (const c of node.Childs()) {
-          if (c.IsHole()) {
-            const h = toWorld(c.Contour())
-            if (h.length >= 3) holes.push(h)
-            for (const gc of c.Childs()) stack.push(gc)
-          }
-        }
-        annuli.push({ outer: o, holes })
-      } else {
-        for (const c of node.Childs()) stack.push(c)
-      }
-    } else {
-      for (const c of node.Childs()) stack.push(c)
-    }
-  }
-
-  return { asphaltFills, annuli }
-}
-
 function halfRingRaw(pts, innerHW, outerHW, perps, side) {
   const n = pts.length; if (n < 2) return null
   const positions = [], normals = [], indices = []
@@ -932,74 +820,6 @@ function bezierBandRaw(P0o, P1o, ctrlO, P0i, P1i, ctrlI, segments = 16) {
 // asph/sidewalk boundary polyline (for the curb stroke pass). Curb is not
 // part of the plug — it's a stroke applied on top of the boundary curve
 // at constant world width.
-function buildCornerPlug(IX, edA, edB, sA, sB, refA, refB) {
-  const R_A = refA.propertyLine - refA.curbOuter
-  const R_B = refB.propertyLine - refB.curbOuter
-  const R = Math.min(R_A, R_B)
-  if (R <= 0) return null
-  const curbOA = refA.curbOuter, curbOB = refB.curbOuter
-  const swOA = refA.propertyLine, swOB = refB.propertyLine
-  // cross = edA × edB. Degenerate (parallel legs) if near zero.
-  const cross = edA[0]*edB[1] - edA[1]*edB[0]
-  if (Math.abs(cross) < 1e-6) return null
-  // Canonical → world mapping. Derived from the constraints:
-  //   (point − IX) · perpA = sA · cy   (perp distance from leg A on +sA side)
-  //   (point − IX) · perpB = sB · cx   (perp distance from leg B on +sB side)
-  // Solving gives T(cx, cy) = IX + (sA·cy·edB − sB·cx·edA) / cross.
-  const T = (cx, cy) => [
-    IX[0] + (sA * cy * edB[0] - sB * cx * edA[0]) / cross,
-    IX[1] + (sA * cy * edB[1] - sB * cx * edA[1]) / cross,
-  ]
-  // Canonical key points (90° frame, x = leg B perp distance, y = leg A perp distance).
-  // Arc center stays at the curb-outer corner (curbOB+R, curbOA+R). The arc
-  // RADIUS is bumped by curb-half so that the boundary curve runs along
-  // each leg's CURB-STRIPE CENTER, not its curb-outer edge. With the curb
-  // rendered as a constant-width stroke CENTERED on this curve, the stroke
-  // perpendicular range exactly equals [asphOuter, curbOuter] on each leg.
-  // Per-leg curb half is derived from refEdges' (curbOuter − curbInner) so
-  // chains with non-default curb widths render correctly. When legs differ,
-  // each tangent uses its own leg's half; the arc radius bump uses the
-  // average so the seam blends gracefully.
-  const curbHalfA = Math.max(0, (refA.curbOuter - refA.curbInner) / 2)
-  const curbHalfB = Math.max(0, (refB.curbOuter - refB.curbInner) / 2)
-  const curbHalfAvg = (curbHalfA + curbHalfB) / 2
-  const arcCx = curbOB + R, arcCy = curbOA + R
-  const arcR = R + curbHalfAvg
-  const asphOA = refA.curbInner    // = curbOA − leg A curb (leg A asphalt-outer line)
-  const asphOB = refB.curbInner
-  // Arc tangent perp positions: curb-stripe-center on each leg.
-  const tangentA_y = curbOA - curbHalfA
-  const tangentB_x = curbOB - curbHalfB
-  const ARC_SEGS = 16
-  const arcWorld = []
-  for (let i = 0; i <= ARC_SEGS; i++) {
-    const t = i / ARC_SEGS
-    const angle = -Math.PI/2 - t * (Math.PI/2)  // -π/2 → -π, sweep -π/2 (CW)
-    const cx = arcCx + arcR * Math.cos(angle)
-    const cy = arcCy + arcR * Math.sin(angle)
-    arcWorld.push(T(cx, cy))
-  }
-  // Asphalt fill polygon: extends DOWN to the asph-outer corner so the plug
-  // masks the leg curb stripes in the IX area. Polygon vertices CCW:
-  //   asph_corner → (Tangent_A.x, asphOA) → Tangent_A → arc → Tangent_B
-  //                → (asphOB, Tangent_B.y) → asph_corner.
-  const asphCorner = T(asphOB, asphOA)
-  const asphLegA = T(arcCx, asphOA)             // leg A asph-outer at tangent edA-pos
-  const asphLegB = T(asphOB, arcCy)             // leg B asph-outer at tangent edB-pos
-  const asphRing = [asphLegA, ...arcWorld, asphLegB]
-  const asphFill = fanRaw(asphCorner, asphRing)
-  // Sidewalk pad polygon: extends UP to property-line corner; covers the
-  // leg sidewalk overlap area in the IX.
-  const oo = T(swOB, swOA)
-  const swLegB = T(swOB, arcCy)
-  const swLegA = T(arcCx, swOA)
-  const swRing = [swLegB, ...arcWorld.slice().reverse(), swLegA]
-  const swFill = fanRaw(oo, swRing)
-  // curbStrokeWidth carries the average of the two legs' curbs so the
-  // corner curb-stroke pass renders at the same thickness as the legs.
-  return { asphFill, swFill, boundary: arcWorld, curbStrokeWidth: curbHalfAvg * 2 }
-}
-
 function fanRaw(apex, ringWorld) {
   const positions = [], normals = [], indices = []
   positions.push(apex[0], 0, apex[1]); normals.push(0, 1, 0)
@@ -1191,9 +1011,6 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
     // pollute every IX. Rendered last with renderOrder 99 so they sit
     // above all ribbons. Remove this block once green-tongue is fixed.
     const diagMarkers = { red: [], orange: [], yellow: [], cyan: [], magenta: [], blue: [], green: [] }
-    // Per-corner asph/sidewalk boundary polylines (world coords) for the
-    // curb-stroke pass. Each entry is the arc samples from one corner plug.
-    const cornerBoundaries = []
     // The active group is chosen per-street based on corridor selection:
     // when the current street's name is in selectedCorridorNames, its
     // geometry routes into groupsSelected, which renders translucent so
@@ -1442,8 +1259,8 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
               // See project_corner_plug_rules.md and
               // project_corner_plug_open_problem.md.
               //   - Both legs have sidewalk → full plug (all three arcs)
-              //   - Either leg lacks sidewalk → skip corner_sw; keep
-              //     corner_curb + corner_asph (curb still needs to arc).
+              //   - Either leg lacks sidewalk → skip the concrete pad;
+              //     curb still arcs.
               //   - Both legs lack sidewalk → still generate curb arc.
               const hasSwA = refA.hasSidewalk
               const hasSwB = refB.hasSidewalk
@@ -1502,44 +1319,9 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
                 selectedCorridorNames.has(stB_ref.name)
               )) ? groupsSelected : groups
 
-              // ── Canonical 90° corner + per-quadrant affine matrix ──
-              // RETIRED 2026-05-06: buildCornerPlug derived its R from leg
-              // sidewalk widths (~1.5m), independent of `ix.cornerRadius` and
-              // the Look-level `cornerRadiusScale`. Its corner_sw / corner_asph
-              // fills were painted UNDER the new buildCurbAnnulus +
-              // buildSidewalkPads layers (priorities 11.5 / 11.7 vs legacy 7 /
-              // 10), so dropping the global scale to 0 removed the new layers
-              // but left the legacy ones visible — slider appeared dead. The
-              // newer pipeline covers everything this branch did. Code kept
-              // (function defs above) for easy revert if regressions surface.
-              if (false && hasSwA && hasSwB) {
-                const plug = buildCornerPlug(IX, edA, edB, sA, sB, refA, refB)
-                if (plug) {
-                  ensure('corner_sw')
-                  activeGroups['corner_sw'].push(ensureCCW(plug.swFill))
-                  ensure('corner_asph')
-                  activeGroups['corner_asph'].push(ensureCCW(plug.asphFill))
-                  // boundary curve collected for stroke pass below; carry
-                  // the plug's curb width so the stroke matches the legs.
-                  cornerBoundaries.push({ boundary: plug.boundary, width: plug.curbStrokeWidth })
-                }
-              }
             }
           }
         }
-      }
-    }
-
-    // ── Curb stroke pass: paint a thin band on each corner plug's
-    // asph/sidewalk boundary curve. Stroke width is per-plug — average of
-    // the two meeting legs' curbs (carried on each entry as `width`) — so
-    // chains with non-default curbs render with matching corners. ──
-    if (false && cornerBoundaries.length) {
-      if (!groups['corner_curb']) groups['corner_curb'] = []
-      for (const { boundary, width } of cornerBoundaries) {
-        const w = width > 0 ? width : 0.15  // fallback when two zero-curb legs meet
-        const stroke = strokePolylineRaw(boundary, w)
-        if (stroke) groups['corner_curb'].push(ensureCCW(stroke))
       }
     }
 
@@ -1646,7 +1428,7 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
 
     // Corner-plug materials inherit color from the underlying band material:
     // sidewalk plug uses sidewalk color, curb plug uses curb color, etc.
-    const CORNER_SRC = { corner_sw: 'sidewalk', corner_curb: 'curb', corner_asph: 'asphalt', corner_plug_asph: 'asphalt', corner_plug_sidewalk: 'sidewalk', corner_plug_curb: 'curb' }
+    const CORNER_SRC = { corner_curb: 'curb', corner_plug_asph: 'asphalt', corner_plug_sidewalk: 'sidewalk', corner_plug_curb: 'curb' }
     function buildMeshes(groupMap, selectedFlag) {
       return Object.entries(groupMap).map(([id, parts]) => {
         const isCorner = id.startsWith('corner_')
@@ -2230,11 +2012,11 @@ export default function StreetRibbons({ hiddenLayers, flat = false, luColors, li
   const hide = hiddenLayers || {}
 
   const LAYER_MAP = {
-    asphalt: 'street', corner_asph: 'street',
+    asphalt: 'street',
     highway: 'highway',
     gutter: 'street',
     'parking-parallel': 'street', 'parking-angled': 'street',
-    sidewalk: 'sidewalk', corner_sw: 'sidewalk',
+    sidewalk: 'sidewalk',
     curb: 'curb', corner_curb: 'curb',
     treelawn: 'treelawn',
     lawn: 'treelawn',

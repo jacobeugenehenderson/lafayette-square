@@ -8,7 +8,7 @@
     "lot": true,
     "curb": true,
     "sidewalk": true,
-    "treelawn": false,
+    "treelawn": true,
     "building": false,
     "parking_lot": false,
     "garden": false,
@@ -19,20 +19,20 @@
     "wood": false,
     "scrub": false,
     "tree_row": false,
-    "alley": false,
-    "footway": false,
-    "cycleway": false,
-    "steps": false,
+    "alley": true,
+    "footway": true,
+    "cycleway": true,
+    "steps": true,
     "path": true,
     "park": true,
     "water": false,
     "tree": false,
     "lamp": false,
     "fence": false,
-    "wall": true,
+    "wall": false,
     "retaining_wall": false,
     "hedge": false,
-    "labels": true,
+    "labels": false,
     "centerline": false
   },
   "layerColors": {
@@ -80,11 +80,15 @@
     "recreation": "#6EA03E",
     "industrial": "#8E7060"
   },
-  "cornerRadiusScale": 0,
+  "cornerRadiusScale": 1,
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
-  "vertexSmoothing": {},
-  "curbWidth": 0.1524,
+  "vertexSmoothing": {
+    "32": {
+      "2": 19.361949080581677
+    }
+  },
+  "curbWidth": 0.381,
   "labels": {
     "size": 4,
     "weight": 500,
@@ -95,7 +99,34 @@
     "haloWidth": 0,
     "opacity": 1
   },
-  "blockCustoms": {},
+  "blockCustoms": {
+    "18": {
+      "0": {
+        "left": {
+          "pavementHW": 7.470142842797157,
+          "treelawn": 1.9037021553519873,
+          "sidewalk": 3.48044158466136,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.190105979129703,
+          "treelawn": 0.8654940208702975,
+          "sidewalk": 4.1268325663291066,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "31": {
+      "0": {
+        "right": {
+          "pavementHW": 13.873886628110942,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
+          "terminal": "sidewalk"
+        }
+      }
+    }
+  },
   "blockLandUse": {},
   "materialColors": {},
   "materialPhysics": {},
@@ -405,7 +436,7 @@
   },
   "openSections": {
     "Streets": false,
-    "Blocks": true,
+    "Blocks": false,
     "Paths": false,
     "Features": false,
     "Labels": false,
@@ -471,6 +502,5 @@
       "species": "platanus_acerifolia",
       "variantId": 1
     }
-  ],
-  "useV2Geometry": true
+  ]
 }
