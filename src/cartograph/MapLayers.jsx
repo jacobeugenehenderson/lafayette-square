@@ -773,31 +773,48 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
 }
 
 // ── Label sprite: canvas-textured plane ─────────────────────
+// Reads `labels` style from the cartograph store so Designer's Labels
+// section drives every glyph live. fontSize is fixed at 32px (canvas
+// resolution); world-space height comes from `size`. haloWidth>0 paints
+// a glyph stroke; bgAlpha>0 paints the chip rectangle.
 function LabelSprite({ label }) {
+  const style = useCartographStore(s => s.labels)
   const { texture, width, height } = useMemo(() => {
     const cvs = document.createElement('canvas')
     const ctx = cvs.getContext('2d')
     const fontSize = 32
-    ctx.font = `600 ${fontSize}px -apple-system, sans-serif`
+    const padX = 8
+    const padY = 4
+    const font = `${style.weight ?? 600} ${fontSize}px -apple-system, sans-serif`
+    ctx.font = font
     const metrics = ctx.measureText(label.name)
-    const w = Math.ceil(metrics.width + 16)
-    const h = fontSize + 8
+    // Halo widens the glyph footprint — pad the canvas so strokes don't clip.
+    const haloW = Math.max(0, style.haloWidth ?? 0)
+    const w = Math.ceil(metrics.width + padX * 2 + haloW * 2)
+    const h = fontSize + padY * 2 + haloW * 2
     cvs.width = w; cvs.height = h
-    // Background
-    ctx.fillStyle = '#3a3a38'
-    ctx.fillRect(0, 0, w, h)
-    // Text
-    ctx.font = `600 ${fontSize}px -apple-system, sans-serif`
-    ctx.fillStyle = '#ffffff'
+    if ((style.bgAlpha ?? 1) > 0) {
+      ctx.globalAlpha = style.bgAlpha ?? 1
+      ctx.fillStyle = style.bg ?? '#3a3a38'
+      ctx.fillRect(0, 0, w, h)
+      ctx.globalAlpha = 1
+    }
+    ctx.font = font
     ctx.textBaseline = 'middle'
-    ctx.fillText(label.name, 8, h / 2)
+    if (haloW > 0) {
+      ctx.lineWidth = haloW * 2  // half the stroke is inside the glyph
+      ctx.strokeStyle = style.halo ?? '#000000'
+      ctx.lineJoin = 'round'
+      ctx.strokeText(label.name, padX + haloW, h / 2)
+    }
+    ctx.fillStyle = style.fill ?? '#ffffff'
+    ctx.fillText(label.name, padX + haloW, h / 2)
     const tex = new THREE.CanvasTexture(cvs)
     tex.minFilter = THREE.LinearFilter
-    // World-space size: ~5m tall
-    const worldH = 4
+    const worldH = style.size ?? 4
     const worldW = worldH * (w / h)
     return { texture: tex, width: worldW, height: worldH }
-  }, [label.name])
+  }, [label.name, style.size, style.weight, style.fill, style.bg, style.bgAlpha, style.halo, style.haloWidth])
 
   // Bail out if measurement returned NaN (font load failure etc.).
   // A NaN-sized plane becomes a NaN-positioned BufferGeometry and
@@ -814,6 +831,7 @@ function LabelSprite({ label }) {
       <planeGeometry args={[width, height]} />
       <meshBasicMaterial
         map={texture} transparent
+        opacity={style.opacity ?? 1}
         depthTest={false}
         toneMapped={false}
       />

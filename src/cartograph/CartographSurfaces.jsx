@@ -83,6 +83,7 @@ const TABS = [
     label: 'Streets',
     items: [
       { id: 'street',   label: 'Asphalt',        kind: 'layer' },
+      { id: 'ground',   label: 'Ground',         kind: 'layer' },
       { id: 'highway',  label: 'Highway',        kind: 'layer' },
       { id: 'stripe',   label: 'Center Stripes', kind: 'layer' },
       { id: 'edgeline', label: 'Edge Lines',     kind: 'layer' },
@@ -93,7 +94,7 @@ const TABS = [
     key: 'blocks',
     label: 'Blocks',
     items: [
-      { id: 'lot',           label: 'Block',         kind: 'layer' },
+      { id: 'lot',           label: 'Parcel',        kind: 'layer' },
       { id: 'curb',          label: 'Curb',          kind: 'layer' },
       { id: 'sidewalk',      label: 'Sidewalk',      kind: 'layer' },
       { id: 'treelawn',      label: 'Treelawn',      kind: 'layer' },
@@ -101,12 +102,7 @@ const TABS = [
       { id: 'parking_lot',   label: 'Parking Lots',  kind: 'layer' },
       { id: 'garden',        label: 'Gardens',       kind: 'layer' },
       { id: 'playground',    label: 'Playgrounds',   kind: 'layer' },
-      { id: 'swimming_pool', label: 'Pools',         kind: 'layer' },
-      { id: 'pitch',         label: 'Pitches',       kind: 'layer' },
       { id: 'sports_centre', label: 'Sports Ctrs',   kind: 'layer' },
-      { id: 'wood',          label: 'Woods',         kind: 'layer' },
-      { id: 'scrub',         label: 'Scrub',         kind: 'layer' },
-      { id: 'tree_row',      label: 'Tree Rows',     kind: 'layer' },
     ],
   },
   {
@@ -135,10 +131,20 @@ const TABS = [
     ],
   },
   {
-    key: 'features',
-    label: 'Features',
+    key: 'land_cover',
+    label: 'Land Cover',
     items: [
-      { id: 'water',          label: 'Water',           kind: 'layer' },
+      { id: 'water',         label: 'Water',    kind: 'layer' },
+      { id: 'swimming_pool', label: 'Pools',    kind: 'layer' },
+      { id: 'pitch',         label: 'Pitches',  kind: 'layer' },
+      { id: 'wood',          label: 'Woods',    kind: 'layer' },
+      { id: 'scrub',         label: 'Scrub',    kind: 'layer' },
+    ],
+  },
+  {
+    key: 'furniture',
+    label: 'Furniture',
+    items: [
       { id: 'tree',           label: 'Trees',           kind: 'layer' },
       { id: 'lamp',           label: 'Lamps',           kind: 'layer' },
       { id: 'fence',          label: 'Fences',          kind: 'layer' },

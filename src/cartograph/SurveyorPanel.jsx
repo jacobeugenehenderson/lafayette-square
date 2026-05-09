@@ -1,10 +1,49 @@
+import { useMemo } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
+import landmarksData from '../data/landmarks.json'
 
 const TYPES = [
   ['residential', 'Residential'], ['secondary', 'Secondary'], ['primary', 'Primary'],
   ['service', 'Service/Alley'], ['footway', 'Footway'], ['cycleway', 'Cycleway'],
   ['pedestrian', 'Pedestrian'], ['steps', 'Steps'],
 ]
+
+// Hero subject picker — lives in Survey because picking the scene's hero
+// subject is a survey act (you're identifying a real-world building/landmark
+// as the privileged subject). Stage and Browse read heroSubject for camera
+// anchoring; Designer doesn't need to expose it.
+function HeroSubjectPicker() {
+  const heroSubject = useCartographStore(s => s.heroSubject)
+  const setHeroSubject = useCartographStore(s => s.setHeroSubject)
+  const options = useMemo(() => {
+    const landmarks = (landmarksData.landmarks || [])
+      .map(l => ({ kind: 'landmark', id: l.id, label: l.name }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+    return [{ kind: 'arch', id: 'arch', label: 'Gateway Arch' }, ...landmarks]
+  }, [])
+  const currentKey = heroSubject ? `${heroSubject.kind}:${heroSubject.id}` : ''
+  return (
+    <div className="carto-section">
+      <h2>Hero</h2>
+      <div className="carto-row">
+        <select
+          className="carto-select"
+          value={currentKey}
+          onChange={(e) => {
+            const v = e.target.value
+            if (!v) { setHeroSubject(null); return }
+            const [kind, ...rest] = v.split(':')
+            setHeroSubject({ kind, id: rest.join(':') })
+          }}
+        >
+          {options.map(o => (
+            <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  )
+}
 
 export default function SurveyorPanel() {
   const selectedStreet = useCartographStore(s => s.selectedStreet)
@@ -15,12 +54,15 @@ export default function SurveyorPanel() {
 
   if (selectedStreet === null) {
     return (
-      <div className="carto-section">
-        <h2>Survey</h2>
-        <div className="carto-hint">
-          Click a street to select it.
+      <>
+        <HeroSubjectPicker />
+        <div className="carto-section">
+          <h2>Survey</h2>
+          <div className="carto-hint">
+            Click a street to select it.
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -28,8 +70,10 @@ export default function SurveyorPanel() {
   if (!st) return null
 
   return (
-    <div className="carto-section">
-      <h2>Survey</h2>
+    <>
+      <HeroSubjectPicker />
+      <div className="carto-section">
+        <h2>Survey</h2>
 
       <div className="carto-row">
         <label className="carto-label-fixed">Name</label>
@@ -103,10 +147,11 @@ export default function SurveyorPanel() {
         </span>
       </div>
 
-      <div className="carto-meta">
-        {st.points.length} nodes
-        {selectedNode !== null ? ' · node ' + selectedNode : ''}
+        <div className="carto-meta">
+          {st.points.length} nodes
+          {selectedNode !== null ? ' · node ' + selectedNode : ''}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

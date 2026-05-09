@@ -11,10 +11,9 @@
  *    hide here is hidden everywhere. Toggling visibility stales the bake
  *    (it's a real Look edit); re-exposing a layer requires a re-bake.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import SurveyorPanel from './SurveyorPanel.jsx'
-import landmarksData from '../data/landmarks.json'
 import MeasurePanel from './MeasurePanel.jsx'
 
 const STREETS_DEFS = [
@@ -25,7 +24,7 @@ const STREETS_DEFS = [
   { id: 'bikelane', label: 'Bike Lanes' },
 ]
 const BLOCKS_DEFS = [
-  { id: 'lot',           label: 'Block' },
+  { id: 'lot',           label: 'Parcel' },
   { id: 'curb',          label: 'Curb' },
   { id: 'sidewalk',      label: 'Sidewalks' },
   { id: 'treelawn',      label: 'Treelawn' },
@@ -33,12 +32,7 @@ const BLOCKS_DEFS = [
   { id: 'parking_lot',   label: 'Parking' },
   { id: 'garden',        label: 'Gardens' },
   { id: 'playground',    label: 'Playgrounds' },
-  { id: 'swimming_pool', label: 'Pools' },
-  { id: 'pitch',         label: 'Pitches' },
   { id: 'sports_centre', label: 'Sports Centres' },
-  { id: 'wood',          label: 'Woods' },
-  { id: 'scrub',         label: 'Scrub' },
-  { id: 'tree_row',      label: 'Tree Rows' },
 ]
 const PATHS_DEFS = [
   { id: 'alley',    label: 'Alleys' },
@@ -47,8 +41,20 @@ const PATHS_DEFS = [
   { id: 'steps',    label: 'Steps' },
   { id: 'path',     label: 'Dirt Paths' },
 ]
-const FEATURES_DEFS = [
-  { id: 'water',          label: 'Water' },
+// Ground-plane fills that aren't parcel-bound. Pool sits here too — same
+// material/treatment as Water, just a smaller polygon.
+const LAND_COVER_DEFS = [
+  { id: 'water',         label: 'Water' },
+  { id: 'swimming_pool', label: 'Pools' },
+  { id: 'pitch',         label: 'Pitches' },
+  { id: 'wood',          label: 'Woods' },
+  { id: 'scrub',         label: 'Scrub' },
+]
+// Furniture = formerly "Features". Point/line scene props (was a junk-drawer
+// catch-all). Trees here also drives `tree_row` visibility — they're the
+// same conceptual layer, the linear/point split is a data-shape detail the
+// panel doesn't expose.
+const FURNITURE_DEFS = [
   { id: 'tree',           label: 'Trees' },
   { id: 'lamp',           label: 'Lamps' },
   { id: 'fence',          label: 'Fences' },
@@ -56,6 +62,11 @@ const FEATURES_DEFS = [
   { id: 'retaining_wall', label: 'Retaining Walls' },
   { id: 'hedge',          label: 'Hedges' },
 ]
+// Layers a single panel row controls together. Toggling `tree` flips
+// `tree_row` to match; section eye-state aggregates across all linked ids.
+const LAYER_LINKS = {
+  tree: ['tree', 'tree_row'],
+}
 const LABELS_DEFS = [
   { id: 'labels', label: 'Labels' },
 ]
@@ -65,8 +76,7 @@ function Section({ name, open, onToggle, children, visState, onToggleVis }) {
     <div className="carto-section">
       <h2 className="carto-section-header">
         <span className="carto-section-title" onClick={() => onToggle(name)}>
-          <span className="carto-section-caret"
-            style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>▸</span>
+          <span className={`carto-section-caret${open ? ' is-open' : ''}`}>▸</span>
           {name}
         </span>
         {onToggleVis && (
@@ -83,12 +93,12 @@ function Section({ name, open, onToggle, children, visState, onToggleVis }) {
   )
 }
 
-// Corners subsection — lives inside the Streets section and exposes the
-// Look-level corner-radius controls. Phase 1 of 3: global scale slider.
-// Phase 2 will add a "Corner edit mode" toggle that surfaces draggable
-// per-IX center handles; phase 3 the per-corner handles. The whole
-// authoring stack lands here, not in a sibling section, so all
-// corner-shaping lives in one place inside the Streets menu.
+// Corners subsection — lives in the Blocks section's "Shape" group.
+// Corner radius shapes the rounded-block-clip that derives every block
+// polygon, so it's a block-shape concern, not a streets one (despite
+// "corners" being intuitively about intersections). Exposes the
+// Look-level corner-radius controls: global scale, edit-mode toggle for
+// per-IX handles, and a Revert button that wipes per-IX overrides.
 function CornersSubsection() {
   const stored = useCartographStore(s => s.cornerRadiusScale ?? 1)
   const setStored = useCartographStore(s => s.setCornerRadiusScale)
@@ -127,7 +137,7 @@ function CornersSubsection() {
   }
   return (
     <>
-      <div className="carto-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+      <div className="carto-row carto-row--wrap">
         <label className="carto-label-fixed" title="Multiplies every IX corner radius (default 1 = AASHTO baseline). Crank up for a bubblier neighborhood; down to 0 for square corners.">
           Corners
         </label>
@@ -146,33 +156,18 @@ function CornersSubsection() {
           {Number(draft).toFixed(2)}×
         </span>
       </div>
-      <div className="carto-row" style={{ gap: 6 }}>
+      <div className="carto-row">
         <button
-          className="carto-button"
+          className={`carto-btn${cornerEditMode ? ' is-active' : ''}`}
+          style={{ flex: 1 }}
           onClick={() => setCornerEditMode(!cornerEditMode)}
-          style={{
-            background: cornerEditMode ? 'var(--vic-gold, #ffaa00)' : 'transparent',
-            color: cornerEditMode ? '#000' : 'var(--on-surface, #ddd)',
-            border: '1px solid var(--outline-variant, #555)',
-            padding: '4px 10px',
-            cursor: 'pointer',
-            flex: 1,
-          }}
           title="Show draggable handles at every intersection center. Drag a handle: world distance from cursor to IX = new corner radius. Release to commit.">
           {cornerEditMode ? '● Edit corners' : '○ Edit corners'}
         </button>
         <button
-          className="carto-button"
+          className="carto-btn"
           onClick={clearAllIxCornerRadii}
           disabled={overrideCount === 0}
-          style={{
-            background: 'transparent',
-            color: overrideCount ? 'var(--on-surface, #ddd)' : 'var(--on-surface-disabled, #555)',
-            border: '1px solid var(--outline-variant, #555)',
-            padding: '4px 10px',
-            cursor: overrideCount ? 'pointer' : 'default',
-            opacity: overrideCount ? 1 : 0.4,
-          }}
           title={overrideCount
             ? `Clear ${overrideCount} per-IX override${overrideCount === 1 ? '' : 's'} — every corner reverts to its default radius (the AASHTO/data-table baseline). Global scale is unaffected.`
             : 'No per-IX overrides to revert.'}>
@@ -215,7 +210,7 @@ function CurbSubsection() {
     setStored(targetRef.current)
   }
   return (
-    <div className="carto-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+    <div className="carto-row carto-row--wrap">
       <label className="carto-label-fixed" title="Width of the curb band that traces every block's asphalt boundary. Default 6&quot; (0.1524 m); 0 hides the curb entirely.">
         Curb
       </label>
@@ -247,57 +242,81 @@ function VisRow({ id, label, hidden, onToggle }) {
   )
 }
 
-function HeroSubjectPicker({ open, onToggle }) {
-  const heroSubject = useCartographStore(s => s.heroSubject)
-  const setHeroSubject = useCartographStore(s => s.setHeroSubject)
-
-  // Roster: every landmark in Lafayette Square. Wiring is academic for now;
-  // the operator-visible roster matches the public Landmarks list.
-  const options = useMemo(() => {
-    const landmarks = (landmarksData.landmarks || [])
-      .map(l => ({ kind: 'landmark', id: l.id, label: l.name }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-    // Gateway Arch is the titular hero — pinned to the top, kept separate
-    // from the landmark roster so its identity (and the camera anchor) stay
-    // distinct from the dining/listings data.
-    return [{ kind: 'arch', id: 'arch', label: 'Gateway Arch' }, ...landmarks]
-  }, [])
-
-  const currentKey = heroSubject ? `${heroSubject.kind}:${heroSubject.id}` : ''
-  const currentLabel =
-    options.find(o => `${o.kind}:${o.id}` === currentKey)?.label || '—'
-
+// Labels parametric subsection — drives the Look-level `labels` style.
+// One class for now (every label uses the same values); when a second
+// neighborhood ships and per-class control is needed, this same control
+// schema iterates over a `byClass` roster.
+function LabelsSubsection() {
+  const style = useCartographStore(s => s.labels) || {}
+  const setLabelStyle = useCartographStore(s => s.setLabelStyle)
+  const get = (k, fb) => (style[k] !== undefined ? style[k] : fb)
   return (
-    <div className="carto-section">
-      <h2 className="carto-section-header">
-        <span className="carto-section-title" onClick={onToggle}>
-          <span className="carto-section-caret"
-            style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>▸</span>
-          Hero
+    <>
+      <div className="carto-row carto-row--wrap">
+        <label className="carto-label-fixed" title="World-space height of each label, in meters.">Size</label>
+        <input type="range" className="carto-input"
+          min="1" max="12" step="0.25"
+          value={get('size', 4)}
+          onChange={e => setLabelStyle({ size: parseFloat(e.target.value) })} />
+        <span className="carto-meta" style={{ minWidth: 40, textAlign: 'right' }}>
+          {Number(get('size', 4)).toFixed(2)} m
         </span>
-        {!open && (
-          <span className="carto-section-meta" title={currentLabel}>{currentLabel}</span>
-        )}
-      </h2>
-      {open && (
-        <div className="carto-row">
-          <select
-            className="carto-select"
-            value={currentKey}
-            onChange={(e) => {
-              const v = e.target.value
-              if (!v) { setHeroSubject(null); return }
-              const [kind, ...rest] = v.split(':')
-              setHeroSubject({ kind, id: rest.join(':') })
-            }}
-          >
-            {options.map(o => (
-              <option key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id}`}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-      )}
-    </div>
+      </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed">Weight</label>
+        <select className="carto-select"
+          value={get('weight', 600)}
+          onChange={e => setLabelStyle({ weight: parseInt(e.target.value, 10) })}>
+          <option value={300}>Light (300)</option>
+          <option value={400}>Regular (400)</option>
+          <option value={500}>Medium (500)</option>
+          <option value={600}>Semibold (600)</option>
+          <option value={700}>Bold (700)</option>
+        </select>
+      </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed">Fill</label>
+        <input type="color" className="carto-input"
+          value={get('fill', '#ffffff')}
+          onChange={e => setLabelStyle({ fill: e.target.value })} />
+      </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed" title="Chip background. Set alpha to 0 to drop the chip and use a halo instead.">Chip</label>
+        <input type="color" className="carto-input"
+          value={get('bg', '#3a3a38')}
+          onChange={e => setLabelStyle({ bg: e.target.value })} />
+        <input type="range" className="carto-input"
+          min="0" max="1" step="0.05"
+          value={get('bgAlpha', 1)}
+          onChange={e => setLabelStyle({ bgAlpha: parseFloat(e.target.value) })} />
+        <span className="carto-meta" style={{ minWidth: 32, textAlign: 'right' }}>
+          {Number(get('bgAlpha', 1)).toFixed(2)}
+        </span>
+      </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed" title="Glyph stroke. 0 px = no halo (use the chip instead). Try chip alpha 0 + halo width 2–3 px for a haloed-only look.">Halo</label>
+        <input type="color" className="carto-input"
+          value={get('halo', '#000000')}
+          onChange={e => setLabelStyle({ halo: e.target.value })} />
+        <input type="range" className="carto-input"
+          min="0" max="6" step="0.5"
+          value={get('haloWidth', 0)}
+          onChange={e => setLabelStyle({ haloWidth: parseFloat(e.target.value) })} />
+        <span className="carto-meta" style={{ minWidth: 36, textAlign: 'right' }}>
+          {Number(get('haloWidth', 0)).toFixed(1)} px
+        </span>
+      </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed">Opacity</label>
+        <input type="range" className="carto-input"
+          min="0" max="1" step="0.05"
+          value={get('opacity', 1)}
+          onChange={e => setLabelStyle({ opacity: parseFloat(e.target.value) })} />
+        <span className="carto-meta" style={{ minWidth: 32, textAlign: 'right' }}>
+          {Number(get('opacity', 1)).toFixed(2)}
+        </span>
+      </div>
+    </>
   )
 }
 
@@ -339,7 +358,6 @@ function ToolPill() {
 export default function Panel() {
   const tool = useCartographStore(s => s.tool)
   const layerVis = useCartographStore(s => s.layerVis)
-  const toggleLayerVis = useCartographStore(s => s.toggleLayerVis)
   const setLayersVis = useCartographStore(s => s.setLayersVis)
   const openSections = useCartographStore(s => s.openSections)
   const setOpenSections = useCartographStore(s => s.setOpenSections)
@@ -347,29 +365,40 @@ export default function Panel() {
   // layerVis convention: unset or true = visible; false = hidden.
   const isHidden = (id) => layerVis[id] === false
 
+  // Resolve a row id to every underlying layer it controls (Trees → tree+tree_row).
+  const idsFor = (id) => LAYER_LINKS[id] || [id]
+
+  // A linked row is hidden iff all its underlying layers are hidden.
+  const rowHidden = (id) => idsFor(id).every(isHidden)
+
+  const toggleRow = (id) => {
+    const ids = idsFor(id)
+    setLayersVis(ids, rowHidden(id))  // if all hidden, show all; else hide all
+  }
+
   const sectionState = (defs) => {
     let on = 0, off = 0
-    for (const L of defs) (isHidden(L.id) ? off++ : on++)
+    for (const L of defs) for (const id of idsFor(L.id)) (isHidden(id) ? off++ : on++)
     if (on === 0) return 'off'
     if (off === 0) return 'on'
     return 'mixed'
   }
   const toggleSectionVis = (defs) => {
     const state = sectionState(defs)
-    // If anything is currently visible (state !== 'off'), hide all.
-    // Otherwise show all.
-    setLayersVis(defs.map(L => L.id), state === 'off')
+    const ids = defs.flatMap(L => idsFor(L.id))
+    setLayersVis(ids, state === 'off')
   }
   const toggleSection = (name) => {
     setOpenSections(prev => ({ ...prev, [name]: !prev[name] }))
   }
 
   const sections = [
-    ['Streets',  STREETS_DEFS],
-    ['Blocks',   BLOCKS_DEFS],
-    ['Paths',    PATHS_DEFS],
-    ['Features', FEATURES_DEFS],
-    ['Labels',   LABELS_DEFS],
+    ['Streets',     STREETS_DEFS],
+    ['Blocks',      BLOCKS_DEFS],
+    ['Paths',       PATHS_DEFS],
+    ['Land Cover',  LAND_COVER_DEFS],
+    ['Furniture',   FURNITURE_DEFS],
+    ['Labels',      LABELS_DEFS],
   ]
 
   return (
@@ -379,20 +408,26 @@ export default function Panel() {
       {tool === 'surveyor' && <SurveyorPanel />}
       {tool === 'measure' && <MeasurePanel />}
 
-      <HeroSubjectPicker
-        open={!!openSections['HeroSubject']}
-        onToggle={() => toggleSection('HeroSubject')} />
-
       {sections.map(([name, defs]) => (
         <Section key={name} name={name}
           open={openSections[name]} onToggle={toggleSection}
           visState={sectionState(defs)}
           onToggleVis={() => toggleSectionVis(defs)}>
+          {/* Block-shape controls live above the visibility list — corner
+              radius and curb width shape every block's silhouette, which
+              is conceptually upstream of "what do I render". */}
+          {name === 'Blocks' && (
+            <div className="carto-subsection">
+              <div className="carto-subsection-header">Shape</div>
+              <CornersSubsection />
+              <CurbSubsection />
+            </div>
+          )}
           {defs.map(L => (
             <VisRow key={L.id} id={L.id} label={L.label}
-              hidden={isHidden(L.id)} onToggle={toggleLayerVis} />
+              hidden={rowHidden(L.id)} onToggle={toggleRow} />
           ))}
-          {name === 'Streets' && <><CornersSubsection /><CurbSubsection /></>}
+          {name === 'Labels' && <LabelsSubsection />}
         </Section>
       ))}
     </div>

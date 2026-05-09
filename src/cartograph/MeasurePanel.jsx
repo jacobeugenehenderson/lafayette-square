@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
-import { defaultMeasure, CURB_WIDTH, BAND_COLORS, segmentRangesForCouplers, measureForSegment } from './streetProfiles.js'
+import { defaultMeasure, CURB_WIDTH, BAND_COLORS } from './streetProfiles.js'
 import ribbonsRaw from '../data/ribbons.json'
 
 const FT_PER_M = 3.28084
@@ -30,8 +30,17 @@ function chainMeasure(st) {
   return defaultMeasure(st.type || 'residential')
 }
 
-function getMeasure(st, ordinal) {
-  return (Number.isFinite(ordinal) && measureForSegment(st, ordinal)) || chainMeasure(st)
+// Effective per-side measure for a segment in the V2 model:
+// blockCustoms[chainIdx][segOrd][side] wins over chain.measure[side].
+// Symmetric flag rides on chain.measure (per-side blockCustoms inherit it).
+function effectiveMeasure(st, chainIdx, segOrd, blockCustoms) {
+  const chain = chainMeasure(st)
+  const customs = blockCustoms?.[chainIdx]?.[segOrd]
+  return {
+    left:  customs?.left  || chain.left,
+    right: customs?.right || chain.right,
+    symmetric: chain.symmetric !== false,
+  }
 }
 
 // Infer terminal from numeric values so the operator never has to set it.
@@ -119,11 +128,15 @@ function SideBlock({ sideKey, side, onChange, single }) {
 }
 
 export default function MeasurePanel() {
-  const selectedStreet = useCartographStore(s => s.selectedStreet)
-  const selectedOrdinal = useCartographStore(s => s.selectedSegmentOrdinal)
-  const centerlineData = useCartographStore(s => s.centerlineData)
-  const setSegmentMeasure = useCartographStore(s => s.setSegmentMeasure)
-  const setStreetDisabled = useCartographStore(s => s.setStreetDisabled)
+  const selectedStreet     = useCartographStore(s => s.selectedStreet)
+  const selectedOrdinal    = useCartographStore(s => s.selectedSegmentOrdinal)
+  const centerlineData     = useCartographStore(s => s.centerlineData)
+  const blockCustoms       = useCartographStore(s => s.blockCustoms)
+  const measureMode        = useCartographStore(s => s.measureMode)
+  const setStreetMeasure   = useCartographStore(s => s.setStreetMeasure)
+  const setBlockCustom     = useCartographStore(s => s.setBlockCustomMeasure)
+  const clearCustomsForChain = useCartographStore(s => s.clearBlockCustomsForChain)
+  const setStreetDisabled  = useCartographStore(s => s.setStreetDisabled)
 
   if (selectedStreet === null) {
     return (
@@ -136,39 +149,57 @@ export default function MeasurePanel() {
   const st = centerlineData.streets[selectedStreet]
   if (!st) return null
 
-  const allRanges = segmentRangesForCouplers(st.points, st.couplers || [])
-  const ordinal = Number.isFinite(selectedOrdinal) && selectedOrdinal >= 0 && selectedOrdinal < allRanges.length
-    ? selectedOrdinal : 0
+  const ordinal = Number.isFinite(selectedOrdinal) && selectedOrdinal >= 0 ? selectedOrdinal : 0
+  const isWholeChain = measureMode?.type === 'global'
 
-  const measure = getMeasure(st, ordinal)
-  const hasMeasured = !!(st.segmentMeasures && st.segmentMeasures[String(ordinal)])
+  const measure = effectiveMeasure(st, selectedStreet, ordinal, blockCustoms)
   const symmetric = measure.symmetric !== false
+  const hasCustom = !!(blockCustoms?.[selectedStreet]?.[ordinal])
 
-  function modify(updater) {
-    setSegmentMeasure(selectedStreet, ordinal, updater, getMeasure(st, ordinal))
-  }
-
+  // Persist a side's new measure. Whole-chain mode targets chain.measure
+  // (every segment without a custom inherits it). Per-block mode writes
+  // blockCustoms[chainIdx][segOrd][side] so only this segment shifts.
+  // Symmetric mirrors the value to the other side in the same write.
   function updateSide(sideKey, newSide) {
-    modify(m => {
-      m[sideKey] = newSide
+    if (isWholeChain) {
+      setStreetMeasure(selectedStreet, m => {
+        m[sideKey] = newSide
+        if (symmetric) {
+          const other = sideKey === 'left' ? 'right' : 'left'
+          m[other] = { ...newSide }
+        }
+      }, chainMeasure(st))
+    } else {
+      setBlockCustom(selectedStreet, ordinal, sideKey, newSide)
       if (symmetric) {
         const other = sideKey === 'left' ? 'right' : 'left'
-        m[other] = { ...newSide }
+        setBlockCustom(selectedStreet, ordinal, other, { ...newSide })
       }
-    })
+    }
   }
 
   function toggleAsymmetric() {
-    modify(m => { m.symmetric = !symmetric })
+    // Symmetric flag is a chain-level property; always write to chain.measure.
+    setStreetMeasure(selectedStreet, m => { m.symmetric = !symmetric }, chainMeasure(st))
   }
 
   function resetToDefault() {
-    const sm = { ...(st.segmentMeasures || {}) }
-    delete sm[String(ordinal)]
-    const streets = centerlineData.streets.map((s, i) =>
-      i === selectedStreet ? { ...s, segmentMeasures: sm } : s)
-    useCartographStore.setState({ centerlineData: { ...centerlineData, streets } })
-    useCartographStore.getState()._saveOverlay()
+    // Per-block reset: drop the custom for THIS (chain, segment), leaving
+    // chain.measure as the visible value. Whole-chain reset wipes every
+    // custom on the chain (matches the "Edit whole chain" toggle's wipe).
+    if (isWholeChain) {
+      clearCustomsForChain(selectedStreet)
+    } else {
+      const cur = blockCustoms?.[selectedStreet]
+      if (!cur) return
+      const next = { ...cur }
+      delete next[ordinal]
+      const all = { ...(blockCustoms || {}) }
+      if (Object.keys(next).length === 0) delete all[selectedStreet]
+      else all[selectedStreet] = next
+      useCartographStore.setState({ blockCustoms: all })
+      useCartographStore.getState()._saveDesignDebounced?.()
+    }
   }
 
   return (
@@ -205,13 +236,14 @@ export default function MeasurePanel() {
       )}
 
       <div className="carto-meta">
-        {st.type || 'residential'} · {st.points.length} nodes · {hasMeasured ? 'measured' : 'default'}
-        {allRanges.length > 1 ? ` · segment ${ordinal + 1} of ${allRanges.length}` : ''}
+        {st.type || 'residential'} · {st.points.length} nodes · {isWholeChain ? 'whole-chain' : (hasCustom ? 'custom block' : 'inherits chain')}
       </div>
 
-      {hasMeasured && (
+      {((!isWholeChain && hasCustom) || (isWholeChain && blockCustoms?.[selectedStreet])) && (
         <div className="carto-actions">
-          <button className="carto-btn-sm" onClick={resetToDefault}>Reset to default</button>
+          <button className="carto-btn-sm" onClick={resetToDefault}>
+            {isWholeChain ? 'Wipe per-block customs' : 'Reset block to chain default'}
+          </button>
         </div>
       )}
     </div>

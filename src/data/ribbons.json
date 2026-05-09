@@ -210,36 +210,36 @@
       "couplers": [
         {
           "kind": "split",
-          "pointIdx": 6,
-          "x": 228.98,
-          "z": -158.91
+          "pointIdx": 14,
+          "x": 165.59,
+          "z": 218.47
         }
       ],
       "segmentMeasures": {
         "0": {
           "left": {
-            "pavementHW": 7.162800000000001,
-            "treelawn": 1.2192,
-            "sidewalk": 1.0668,
+            "pavementHW": 7.203172199626125,
+            "treelawn": 1.2026416547120755,
+            "sidewalk": 1,
             "terminal": "sidewalk"
           },
           "right": {
-            "pavementHW": 8.077200000000001,
-            "treelawn": 1.6825190476935354,
-            "sidewalk": 1.524,
+            "pavementHW": 12.663941234736832,
+            "treelawn": 1.7304098259152152,
+            "sidewalk": 1.4240582415582725,
             "terminal": "sidewalk"
           },
           "symmetric": false
         },
         "1": {
           "left": {
-            "pavementHW": 7.203172199626125,
+            "pavementHW": 3.189557196749914,
             "treelawn": 1.2026416547120755,
-            "sidewalk": 1.1820823776392864,
+            "sidewalk": 1,
             "terminal": "sidewalk"
           },
           "right": {
-            "pavementHW": 11.935685596920893,
+            "pavementHW": 5.51671319746067,
             "treelawn": 1.7304098259152152,
             "sidewalk": 1.4240582415582725,
             "terminal": "sidewalk"
@@ -567,23 +567,6 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 2,
-            "treelawn": 1.2456,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 5.080001426855457,
-            "treelawn": 4.3856,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "intersections": [
         {
           "ix": 9,
@@ -672,7 +655,7 @@
         "symmetric": false
       },
       "capEnds": {
-        "start": "round",
+        "start": null,
         "end": "round"
       },
       "anchor": "inner-edge",
@@ -1035,23 +1018,6 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 5.5863880777692065,
-            "treelawn": 0,
-            "sidewalk": 1.499671747011015,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 7.462568635487003,
-            "treelawn": 0,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "intersections": []
     },
     {
@@ -1113,23 +1079,6 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 0.5,
-            "treelawn": 0,
-            "sidewalk": 0.9144000000000001,
-            "terminal": "lawn"
-          },
-          "right": {
-            "pavementHW": 8.011132961219227,
-            "treelawn": 2.3125350666523836,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "intersections": [
         {
           "ix": 0,
@@ -1388,8 +1337,8 @@
         "source": "survey-default"
       },
       "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
+        "start": null,
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -2077,8 +2026,8 @@
         "symmetric": false
       },
       "capEnds": {
-        "start": null,
-        "end": "round"
+        "start": "blunt",
+        "end": "blunt"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -2199,28 +2148,11 @@
       },
       "capEnds": {
         "start": null,
-        "end": "blunt"
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 8.385853030132012,
-            "treelawn": 3.020838982094821,
-            "sidewalk": 2.1981373336350476,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 8.73105352144237,
-            "treelawn": 3.1519828488643356,
-            "sidewalk": 2.345906370814321,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "intersections": [
         {
           "ix": 0,
@@ -2290,7 +2222,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": "blunt"
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -2350,7 +2282,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -2681,23 +2613,6 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 6.1736277012960485,
-            "treelawn": 0,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 6.1736277012960485,
-            "treelawn": 0,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "symmetric": true
-        }
-      },
       "intersections": [
         {
           "ix": 21,
@@ -2934,29 +2849,12 @@
         "source": "survey-default"
       },
       "capEnds": {
-        "start": "round",
-        "end": null
+        "start": null,
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 6.5496067509266265,
-            "treelawn": 0,
-            "sidewalk": 2.259990691489394,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 6.5496067509266265,
-            "treelawn": 0,
-            "sidewalk": 2.259990691489394,
-            "terminal": "sidewalk"
-          },
-          "symmetric": true
-        }
-      },
       "intersections": [
         {
           "ix": 0,
@@ -3478,7 +3376,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": "round"
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,
@@ -3527,23 +3425,6 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 4.6329921094074775,
-            "treelawn": 1.326821815429419,
-            "sidewalk": 1.5780182514950747,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 4.6329921094074775,
-            "treelawn": 1.326821815429419,
-            "sidewalk": 1.5780182514950747,
-            "terminal": "sidewalk"
-          },
-          "symmetric": true
-        }
-      },
       "intersections": [
         {
           "ix": 1,
@@ -3864,7 +3745,7 @@
         "source": "survey-default"
       },
       "capEnds": {
-        "start": "round",
+        "start": null,
         "end": null
       },
       "anchor": "center",
@@ -4290,8 +4171,8 @@
         "source": "default"
       },
       "capEnds": {
-        "start": "round",
-        "end": "blunt"
+        "start": null,
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,
@@ -5012,7 +4893,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": "round"
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,
@@ -5076,7 +4957,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": null
+        "end": "round"
       },
       "anchor": "center",
       "innerSign": 0,
@@ -5277,8 +5158,8 @@
         "source": "survey-default"
       },
       "capEnds": {
-        "start": null,
-        "end": "round"
+        "start": "round",
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,
@@ -5410,7 +5291,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": "round"
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,
@@ -5457,7 +5338,7 @@
         "symmetric": true
       },
       "capEnds": {
-        "start": "round",
+        "start": null,
         "end": null
       },
       "anchor": "center",
@@ -5533,6 +5414,23 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 4.430562030291696,
+            "treelawn": 0,
+            "sidewalk": 3.5883893575836754,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 4.430562030291696,
+            "treelawn": 0,
+            "sidewalk": 3.5883893575836754,
+            "terminal": "sidewalk"
+          },
+          "symmetric": true
+        }
+      },
       "intersections": [
         {
           "ix": 0,
@@ -5849,23 +5747,6 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 5.670990216168103,
-            "treelawn": 1,
-            "sidewalk": 1,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 5.5098468288217335,
-            "treelawn": 1.0330239630137168,
-            "sidewalk": 1,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "intersections": [
         {
           "ix": 1,
@@ -6435,7 +6316,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": "round"
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,
@@ -6484,6 +6365,23 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 5,
+            "treelawn": 1.3756000000000004,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 2.0668687137866986,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": [
         {
           "ix": 0,
@@ -6567,7 +6465,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": "round"
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,
@@ -7317,7 +7215,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": "round"
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,
@@ -10266,6 +10164,23 @@
       "anchor": "inner-edge",
       "innerSign": -1,
       "pairId": "truman-parkway-4",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 2,
+            "treelawn": 12.775599999999999,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 3.653654832258035,
+            "treelawn": 1.3928497159166802,
+            "sidewalk": 7.345507118045882,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": [
         {
           "ix": 0,
@@ -10341,6 +10256,23 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 2,
+            "treelawn": 12.775599999999999,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 3.914538405396091,
+            "treelawn": 1,
+            "sidewalk": 1.6841500461269705,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": [
         {
           "ix": 1,
@@ -11008,23 +10940,6 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 11.303906235018816,
-            "treelawn": 2.8291134223958565,
-            "sidewalk": 2.3761291708518986,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 7.899666800734073,
-            "treelawn": 3.756012002197112,
-            "sidewalk": 1.524,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "intersections": [
         {
           "ix": 7,
@@ -11989,7 +11904,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12007,6 +11922,23 @@
       "anchor": "inner-edge",
       "innerSign": -1,
       "pairId": "park-avenue-3",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 10.658029338233407,
+            "treelawn": 1,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 6.06749156059035,
+            "treelawn": 1,
+            "sidewalk": 3.693069658822573,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": [
         {
           "ix": 5,
@@ -12095,7 +12027,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12113,23 +12045,6 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
-      "segmentMeasures": {
-        "0": {
-          "left": {
-            "pavementHW": 10.820400000000001,
-            "treelawn": 2.5908,
-            "sidewalk": 2.501589037695112,
-            "terminal": "sidewalk"
-          },
-          "right": {
-            "pavementHW": 11.877409860672952,
-            "treelawn": 1.3716000000000002,
-            "sidewalk": 2.2655361043349114,
-            "terminal": "sidewalk"
-          },
-          "symmetric": false
-        }
-      },
       "intersections": [
         {
           "ix": 0,
@@ -12224,7 +12139,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12242,6 +12157,23 @@
       "anchor": "inner-edge",
       "innerSign": -1,
       "pairId": "park-avenue-5",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 5.645715395972545,
+            "treelawn": 1,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 6.06749156059035,
+            "treelawn": 2.108890869059252,
+            "sidewalk": 1.4410721984077526,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": [
         {
           "ix": 6,
@@ -12300,7 +12232,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12381,7 +12313,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12470,7 +12402,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12554,7 +12486,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12608,7 +12540,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12667,7 +12599,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12731,7 +12663,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -12795,7 +12727,7 @@
         "left": {
           "pavementHW": 5.645715395972545,
           "treelawn": 1,
-          "sidewalk": 3.693069658822573,
+          "sidewalk": 1,
           "terminal": "sidewalk"
         },
         "right": {
@@ -13373,6 +13305,23 @@
       "anchor": "inner-edge",
       "innerSign": -1,
       "pairId": "south-jefferson-avenue-3",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 17.326844270907745,
+            "treelawn": 1.3465742279243145,
+            "sidewalk": 13.076746307501956,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 58.5415576539413,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": [
         {
           "ix": 9,
@@ -13568,7 +13517,7 @@
             "terminal": "sidewalk"
           },
           "right": {
-            "pavementHW": 5.731403056680612,
+            "pavementHW": 5.247069279339259,
             "treelawn": 0,
             "sidewalk": 1.524,
             "terminal": "sidewalk"
@@ -14026,6 +13975,23 @@
       "anchor": "inner-edge",
       "innerSign": -1,
       "pairId": "south-jefferson-avenue-5",
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 7.716508745489069,
+            "treelawn": 1,
+            "sidewalk": 6.1114835070073115,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 9.163045461963636,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": [
         {
           "ix": 2,
@@ -14347,6 +14313,23 @@
       "anchor": "center",
       "innerSign": 0,
       "pairId": null,
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 1.872042185323237,
+            "treelawn": 3.8445590562926664,
+            "sidewalk": 1.7742262088979173,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 1.991465053681122,
+            "treelawn": 0,
+            "sidewalk": 1.8517267807718945,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
       "intersections": []
     },
     {

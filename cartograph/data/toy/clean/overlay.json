@@ -100,20 +100,39 @@
       "name": "VW2",
       "measure": {
         "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
+          "pavementHW": 4.258903631284923,
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 8.445722399109272,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
+          "pavementHW": 9.66048280990605,
+          "treelawn": 1,
+          "sidewalk": 4.696599578204427,
           "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 15.900076486013983,
+            "treelawn": 0,
+            "sidewalk": 0.3,
+            "terminal": "lawn",
+            "curb": 0.6096
+          },
+          "right": {
+            "pavementHW": 5,
+            "treelawn": 1.5,
+            "sidewalk": 1.5,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
         }
       },
-      "capStart": "blunt",
-      "capEnd": "blunt"
+      "capStart": null,
+      "capEnd": "round"
     },
     "VW3": {
       "name": "VW3",

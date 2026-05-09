@@ -80,9 +80,62 @@
     "recreation": "#6EA03E",
     "industrial": "#8E7060"
   },
-  "cornerRadiusScale": 0,
+  "cornerRadiusScale": 0.2,
   "cornerRadiusOverrides": {},
-  "cornerCornerRadiusOverrides": {},
+  "cornerCornerRadiusOverrides": {
+    "40.000,-40.000|HW2:f|VW3:b": 15.748971337381496,
+    "40.000,-40.000|HW2:b|VW3:f": 50
+  },
+  "vertexSmoothing": {
+    "2": {
+      "3": 11.24134810411473
+    }
+  },
+  "curbWidth": 0.3302,
+  "blockCustoms": {
+    "0": {
+      "5": {
+        "left": {
+          "pavementHW": 18.77094972067039,
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 8.445722399109272,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "5": {
+      "0": {
+        "left": {
+          "pavementHW": 15.530289804469273,
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 8.445722399109272,
+          "terminal": "sidewalk"
+        }
+      },
+      "2": {
+        "left": {
+          "pavementHW": 10.069383741258733,
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 8.445722399109272,
+          "terminal": "sidewalk"
+        }
+      },
+      "4": {
+        "left": {
+          "pavementHW": 6.826240166083942,
+          "treelawn": 1.00584,
+          "sidewalk": 2.4384,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.783489947552418,
+          "treelawn": 1,
+          "sidewalk": 2.4384,
+          "terminal": "sidewalk"
+        }
+      }
+    }
+  },
   "materialColors": {},
   "materialPhysics": {},
   "buildingPalette": [
@@ -394,9 +447,10 @@
     "Blocks": false,
     "Paths": false,
     "Features": false,
-    "Labels": false,
+    "Labels": true,
     "HeroSubject": false,
-    "Look": false
+    "Look": false,
+    "Land Cover": false
   },
   "trees": [
     {

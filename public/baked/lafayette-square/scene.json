@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "generatedAt": 1778116264806,
+  "generatedAt": 1778256197488,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -65,9 +65,9 @@
   "layerVis": {
     "street": true,
     "highway": true,
-    "stripe": false,
-    "edgeline": false,
-    "bikelane": false,
+    "stripe": true,
+    "edgeline": true,
+    "bikelane": true,
     "lot": true,
     "curb": true,
     "sidewalk": true,
@@ -82,11 +82,11 @@
     "wood": true,
     "scrub": true,
     "tree_row": true,
-    "alley": false,
-    "footway": false,
-    "cycleway": false,
-    "steps": false,
-    "path": false,
+    "alley": true,
+    "footway": true,
+    "cycleway": true,
+    "steps": true,
+    "path": true,
     "park": true,
     "water": true,
     "tree": true,
@@ -95,7 +95,7 @@
     "wall": true,
     "retaining_wall": true,
     "hedge": true,
-    "labels": false,
+    "labels": true,
     "centerline": false
   },
   "lampGlow": {

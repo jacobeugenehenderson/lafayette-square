@@ -170,6 +170,9 @@
   font-size: 10px;
   transition: transform 120ms;
 }
+.carto-section-caret.is-open {
+  transform: rotate(90deg);
+}
 .carto-section-eye {
   background: none;
   border: 1px solid transparent;
@@ -329,6 +332,22 @@
   margin-bottom: 6px;
   min-height: 28px;
 }
+/* Multi-line row — used when a row stacks a label + slider + read-out
+   that would otherwise overflow the panel's narrow width. */
+.carto-row--wrap {
+  flex-wrap: wrap;
+}
+/* Trailing-value read-out inside a row (e.g. "2.50×", "6.0″"). Right-
+   aligned + a min-width so consecutive rows align their decimal point. */
+.carto-meta--value {
+  min-width: 40px;
+  text-align: right;
+}
+/* Button utility — let a button claim the remaining row width. Used in
+   pairs (active button grows, secondary "Revert" stays auto-sized). */
+.carto-btn--grow {
+  flex: 1;
+}
 
 .carto-label {
   font-size: 12px;
@@ -425,6 +444,45 @@
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.18);
   color: var(--carto-text);
+}
+
+.carto-btn.is-active {
+  background: var(--vic-gold, #ffaa00);
+  border-color: var(--vic-gold, #ffaa00);
+  color: #000;
+}
+.carto-btn.is-active:hover {
+  background: var(--vic-gold, #ffaa00);
+  color: #000;
+}
+.carto-btn:disabled,
+.carto-btn[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+.carto-btn:disabled:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--carto-text-dim);
+}
+
+/* Subsection — a visually demarcated group inside a .carto-section, used
+   when a section bundles a few different concerns (e.g. Blocks: Shape
+   controls vs. visibility list). Subtle bottom rule + small uppercase
+   header; sits flush at the top of the section so the rule reads as a
+   divider into the rows below. */
+.carto-subsection {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.carto-subsection-header {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--carto-text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
 .carto-btn-muted {

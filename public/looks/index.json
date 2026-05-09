@@ -7,14 +7,15 @@
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
       "bakedAt": 1778256228272,
-      "updatedAt": 1778221554249
+      "updatedAt": 1778308451678
     },
     {
       "id": "toy",
       "name": "Toy Neighborhood",
       "scene": "toy",
       "createdAt": 1778253900000,
-      "bakedAt": 1778256281465
+      "bakedAt": 1778261965919,
+      "updatedAt": 1778307397825
     }
   ]
 }
