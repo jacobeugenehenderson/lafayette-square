@@ -765,15 +765,21 @@ export default function CartographApp() {
               the asphalt out of a residential rectangle; LS lets V2
               emit asphalt + bands without block-fill). Will retire
               legacy StreetRibbons once Measure visuals reach parity. ── */}
-          <R3FErrorBoundary name="BlockGeometryV2Debug">
-            <BlockGeometryV2Debug
-              ribbons={sceneCfg.ribbons}
-              stencil={sceneCfg.stencil}
-              flat={inDesigner}
-              measureActive={tool === 'measure' && inDesigner}
-              surveyActive={tool === 'surveyor' && inDesigner}
-              hideLandUse={designAerialOnly || toolAerialFocus} />
-          </R3FErrorBoundary>
+          {/* In pure-aerial Designer mode (no tool, aerial on), skip V2
+              entirely so the photo shows uncovered. Tool-focus mode keeps
+              V2 mounted with hideLandUse so ribbon bands stay as
+              measurement targets over the photo. */}
+          {!designAerialOnly && (
+            <R3FErrorBoundary name="BlockGeometryV2Debug">
+              <BlockGeometryV2Debug
+                ribbons={sceneCfg.ribbons}
+                stencil={sceneCfg.stencil}
+                flat={inDesigner}
+                measureActive={tool === 'measure' && inDesigner}
+                surveyActive={tool === 'surveyor' && inDesigner}
+                hideLandUse={toolAerialFocus} />
+            </R3FErrorBoundary>
+          )}
 
           {/* ── Corner-edit handles — surface only in Designer mode, in
               whichever scene is active. Toggle lives in Streets > Corners
