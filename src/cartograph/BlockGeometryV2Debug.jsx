@@ -264,11 +264,15 @@ export default function BlockGeometryV2Debug({
   // that the per-chain asphalt rectangles don't cover. Without this, the
   // ground/horizon shows through the corner. Sits at asphalt priority,
   // shared between chains, always opaque (no per-chain translucency).
-  const cornerAsphaltGeo = useMemo(() => ringsToFlatGeo(cornerAsphaltPlugs, 0.038, false), [cornerAsphaltPlugs])
+  // Clipper-output rings — must go through asPolygonWithHoles=true so CW
+  // holes pair with their CCW outers instead of rendering as filled
+  // polygons over their parent's interior. Same partition the bake
+  // adapter applies in cartograph/bake-ground.js.
+  const cornerAsphaltGeo = useMemo(() => ringsToFlatGeo(cornerAsphaltPlugs, 0.038, true), [cornerAsphaltPlugs])
   // Concrete corner pad — sidewalk-color wedge at each IX corner where
   // the chains' ped-zone bands don't connect. Sits at sidewalk priority,
   // shared between chains, always opaque.
-  const cornerSidewalkGeo = useMemo(() => ringsToFlatGeo(cornerSidewalkPads, 0.028, false), [cornerSidewalkPads])
+  const cornerSidewalkGeo = useMemo(() => ringsToFlatGeo(cornerSidewalkPads, 0.028, true), [cornerSidewalkPads])
   // Per-chain band geometries so the selected chain's meshes can swap to
   // the translucent material variant while every other chain stays
   // opaque. Block + curb stay unified above (block-level surfaces).
