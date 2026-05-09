@@ -225,6 +225,15 @@ export default function MeasureOverlay() {
   const { camera, gl } = useThree()
   const active = tool === 'measure'
   const dragRef = useRef(null)
+  // rAF-throttle the store commit during a handle drag. The pointermove
+  // handler fires 60-120Hz, and each store write triggers a full V2
+  // rebuild (Clipper booleans across 242 chains, 200-500ms on LS) which
+  // queues up faster than it can complete and stutters the drag. Buffer
+  // the latest drag args here, flush at most once per animation frame.
+  // pointerup flushes any pending value so the persisted measure matches
+  // where the operator released.
+  const dragRafRef = useRef(null)
+  const pendingDragRef = useRef(null)
 
   // Hit-test data for every street (for click-to-select).
   const streetData = useMemo(() => {
@@ -537,10 +546,19 @@ export default function MeasureOverlay() {
       const st = cd.streets[streetIdx]
       if (!st) return
       const r = Math.max(0.3, distToPolyline(st.points, p.x, p.z))
-      applyDrag(streetIdx, ordinal, side, kind, r)
+      // Status bar update is cheap, do it every move for live readout.
       useCartographStore.setState({
         status: kind + ': ' + (r * 3.28084).toFixed(1) + 'ft',
       })
+      // Buffer the drag's intent; coalesce to one applyDrag per frame.
+      pendingDragRef.current = { streetIdx, ordinal, side, kind, r }
+      if (dragRafRef.current == null) {
+        dragRafRef.current = requestAnimationFrame(() => {
+          dragRafRef.current = null
+          const pending = pendingDragRef.current
+          if (pending) applyDrag(pending.streetIdx, pending.ordinal, pending.side, pending.kind, pending.r)
+        })
+      }
       return
     }
 
@@ -568,8 +586,18 @@ export default function MeasureOverlay() {
   const onPointerUp = useCallback(() => {
     if (!dragRef.current) return
     dragRef.current = null
+    // Flush any pending rAF-buffered drag so the persisted measure matches
+    // where the operator released (otherwise the last 16ms of motion may be
+    // dropped if the rAF never fired before pointerup).
+    if (dragRafRef.current != null) {
+      cancelAnimationFrame(dragRafRef.current)
+      dragRafRef.current = null
+    }
+    const pending = pendingDragRef.current
+    pendingDragRef.current = null
+    if (pending) applyDrag(pending.streetIdx, pending.ordinal, pending.side, pending.kind, pending.r)
     useCartographStore.setState({ status: '' })
-  }, [])
+  }, [applyDrag])
 
   // Ctrl/Cmd-click or right-click on a handle → delete that boundary
   // (collapse stripe). Same gesture in an empty band → insert a boundary
