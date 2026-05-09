@@ -539,87 +539,44 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const streets = ribbons?.streets || []
   const intersections = ribbons?.intersections || []
 
-  // Per-chain rendering data. Each entry holds the rings that belong to
-  // a single chain (asphalt, treelawn, sidewalk). Block + curb stay
-  // unified across the scene because they're block-level surfaces. The
-  // per-chain split is what lets BlockGeometryV2Debug dim a single
-  // chain's bands when the operator selects it in Measure mode.
+  // Per-chain rendering data, populated below. Each entry holds the
+  // rings that belong to a single chain (asphalt, treelawn, sidewalk).
   const byChain = []
   for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
     const street = streets[chainIdx]
     if (street?.disabled) { byChain.push(null); continue }
-    const pavementRing = chainPavementRing(street)
     byChain.push({
       chainIdx,
       name: street.name,
-      asphaltRings:  pavementRing ? [pavementRing] : [],
+      asphaltRings:  [],
       treelawnRings: [],
       sidewalkRings: [],
     })
   }
-  const asphaltRings = byChain.flatMap(c => (c?.asphaltRings) || [])
-  const asphaltSharp = unionRings(asphaltRings)
 
-  // Multi-value name map — LS has 35 names spanning 164 chain entries (a
-  // single-valued Map silently picks the wrong chain ~68% of the time).
-  const streetsByName = new Map()
-  for (const s of streets) {
-    if (!s.name) continue
-    const list = streetsByName.get(s.name)
-    if (list) list.push(s); else streetsByName.set(s.name, [s])
-  }
-  const allCorners = []
-  for (const ix of intersections) {
-    allCorners.push(...cornersAtIx(ix, streetsByName, cornerRadiusOverrides, cornerCornerRadiusOverrides))
-  }
-
-  const asphaltRounded = asphaltSharp.map(ring =>
-    applyRoundCornersToRing(ring, allCorners, cornerRadiusScale)
-  )
-
-  // Block = stencil − asphaltRounded. Stencil is optional (debug overlays
-  // can run asphalt-only). When provided, we get the rounded-block clipping
-  // path with the asphalt's mouths inverted into the block as concave arcs.
-  let blockRounded = []
-  if (stencil && stencil.length >= 3) {
-    blockRounded = differenceRings([stencil], asphaltRounded)
-  }
-
-  // ── Strip bands (treelawn, sidewalk) per chain side. v0 scope: emit raw
-  // rectangles and let render order resolve overlaps (sidewalk on top of
-  // treelawn implicitly satisfies the case-2 rule for sw/tl+sw corners).
-  // The case-3 corner cap (concrete square at tl+sw/tl+sw) is a separate
-  // pass — not implemented yet.
-  // ── Curb: the unifying stroked boundary that ties every side + corner
-  // into one contiguous polygon. NOT a per-side band — it's the rounded
-  // asphalt boundary dilated outward by CURB_WIDTH, with the asphalt void
-  // subtracted out. The result is a single closed ring per asphalt
-  // component, riding the same rounded corners the block geometry uses.
-  // This is the clipping-mask-as-stroke architecture: curb width is
-  // global, so a single offset op produces a constant-width band that
-  // wraps every block edge without seams. (Per-side curb overrides aren't
-  // supported in this model — if a real cross-section needs them we'd
-  // emit separate per-side bands and union them with the global stroke.)
-  const curbDilated = dilateRings(asphaltRounded, curbWidth)
-  const curbBands   = differenceRings(curbDilated, asphaltRounded)
-
-  // ── Treelawn + sidewalk strip bands per chain side. v0 scope: emit raw
-  // rectangles starting past the curb (perp distance hw+CURB_WIDTH from
-  // centerline) and let render order resolve overlaps; the unified curb
-  // covers the inner-edge seams where adjacent chains meet at an IX.
-  //
-  // Stripe edges: per-chain (per-segment) offset polylines at every band
-  // transition. The Measure tool surfaces them as opaque strokes on the
-  // SELECTED chain only — they mark where boundary handles attach.
-  // Per-chain provenance keeps them in entry.stripeEdges so the renderer
-  // picks the right one.
+  // ── Per-segment per-chain emission. Each natural segment of each
+  // chain can have its own per-side measure (when blockCustoms has an
+  // entry for it). The segment's ASPHALT rectangle uses eff.pavementHW
+  // per side; ped-zone bands use eff.treelawn / eff.sidewalk. Asphalt
+  // segments butt at IXs; clipper's union step merges them. Round caps
+  // at chain endpoints get a half-disc arc baked into the segment ring.
   const offsetPoly = (pts, perps, sideSign, r) =>
     pts.map((p, i) => [p[0] + perps[i][0] * sideSign * r, p[1] + perps[i][1] * sideSign * r])
-  // Per-chain edges, split by which band's outer they mark — so the
-  // renderer can color them after that band's color. The asphalt|curb
-  // and curb|treelawn boundaries don't need strokes (the curb stripe
-  // itself is the visible boundary stroke between asphalt and treelawn).
   for (const e of byChain) { if (e) { e.treelawnEdges = []; e.sidewalkEdges = [] } }
+  const cw = curbWidth   // global curb width; per-side curb overrides aren't supported in V2
+  const ARC_SEGS = 16
+  const halfArc = (c, r, fromPt, toPt) => {
+    const a0 = Math.atan2(fromPt[1] - c[1], fromPt[0] - c[0])
+    const a1 = Math.atan2(toPt[1] - c[1], toPt[0] - c[0])
+    let delta = a1 - a0
+    while (delta < 0) delta += 2 * Math.PI
+    const out = []
+    for (let k = 1; k < ARC_SEGS; k++) {
+      const a = a0 + delta * (k / ARC_SEGS)
+      out.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)])
+    }
+    return out
+  }
   for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
     const street = streets[chainIdx]
     const entry = byChain[chainIdx]
@@ -629,7 +586,70 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     if (!pts || pts.length < 2 || !m) continue
     const n = pts.length
     const perps = computePerps(pts)
-    // Use max ped-zone of the two sides for cap-extension annulus widths.
+    const segments = naturalSegments(street)
+    const capStart = street.capStart || street.capEnds?.start
+    const capEnd   = street.capEnd   || street.capEnds?.end
+
+    for (let segOrd = 0; segOrd < segments.length; segOrd++) {
+      const seg = segments[segOrd]
+      const segPts = pts.slice(seg.start, seg.end + 1)
+      const segPerps = perps.slice(seg.start, seg.end + 1)
+      const segLen = segPts.length
+      if (segLen < 2) continue
+
+      // Effective per-side measure for this segment (custom override
+      // wins; otherwise chain default). Both sides resolved up-front so
+      // the asphalt rectangle gets per-side pavementHW and the ped-zone
+      // bands inherit the same hw used for their inner-edge perp.
+      const effL = (blockCustoms?.[chainIdx]?.[segOrd]?.left)  || m.left  || {}
+      const effR = (blockCustoms?.[chainIdx]?.[segOrd]?.right) || m.right || {}
+      const hwL = effL.pavementHW || 0
+      const hwR = effR.pavementHW || 0
+
+      // Asphalt rectangle for this segment. Walks the centerline at
+      // -perp*hwL on the left and +perp*hwR on the right (V1 sign
+      // convention). End-cap arc only on the LAST segment of the chain
+      // when capEnd === 'round'; start-cap on the FIRST segment.
+      if (hwL > 0 || hwR > 0) {
+        const leftEdge  = segPts.map((p, i) => [p[0] - segPerps[i][0] * hwL, p[1] - segPerps[i][1] * hwL])
+        const rightEdge = segPts.map((p, i) => [p[0] + segPerps[i][0] * hwR, p[1] + segPerps[i][1] * hwR])
+        const radius = Math.max(hwL, hwR)
+        const isFirst = segOrd === 0
+        const isLast  = segOrd === segments.length - 1
+        const endArc = (isLast && capEnd === 'round')
+          ? halfArc(segPts[segLen - 1], radius, leftEdge[segLen - 1], rightEdge[segLen - 1])
+          : []
+        const startArc = (isFirst && capStart === 'round')
+          ? halfArc(segPts[0], radius, rightEdge[0], leftEdge[0])
+          : []
+        entry.asphaltRings.push([...leftEdge, ...endArc, ...rightEdge.slice().reverse(), ...startArc])
+      }
+
+      // Per-side ped-zone bands. Inner edge sits at the segment's own
+      // hw + curb (matches the asphalt outer edge for THIS segment).
+      for (const sideKey of ['left', 'right']) {
+        const sideSign = sideKey === 'left' ? -1 : +1
+        const eff = sideKey === 'left' ? effL : effR
+        if (!eff || eff.terminal !== 'sidewalk') continue
+        const hw = eff.pavementHW || 0
+        const tl = eff.treelawn || 0
+        const sw = eff.sidewalk || 0
+        if (tl > 0) {
+          const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
+          if (ring) entry.treelawnRings.push(ring)
+        }
+        if (sw > 0) {
+          const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
+          if (ring) entry.sidewalkRings.push(ring)
+        }
+        if (tl > 0) entry.treelawnEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
+        if (sw > 0) entry.sidewalkEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
+      }
+    }
+    // For the chain endpoints' max ped-zone (cap annulus widths): use
+    // the FIRST segment's left/right for the start cap, LAST segment's
+    // for the end cap. (The half-annulus extension wraps around the
+    // round endpoint and matches THAT segment's widths.)
     let maxHw = 0, maxTl = 0, maxSw = 0
     for (const sideKey of ['left', 'right']) {
       const s = m[sideKey]
@@ -638,52 +658,9 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       maxTl = Math.max(maxTl, s.treelawn || 0)
       maxSw = Math.max(maxSw, s.sidewalk || 0)
     }
-    const cw = curbWidth   // global; per-side overrides defer to a future kit feature
-    // Natural segments — IX-bounded vertex ranges. Each segment can have
-    // its own per-side ped-zone measure if the adjacent block is custom.
-    // Asphalt stays chain-wide (its width drives the curb stroke; varying
-    // it per segment would make the unified curb impossible).
-    const segments = naturalSegments(street)
-    for (let segOrd = 0; segOrd < segments.length; segOrd++) {
-      const seg = segments[segOrd]
-      const segPts = pts.slice(seg.start, seg.end + 1)
-      const segPerps = perps.slice(seg.start, seg.end + 1)
-      for (const sideKey of ['left', 'right']) {
-        // Sign convention matches V1: 'left' = -perp (north of an east-
-        // bound chain), 'right' = +perp (south). See chainPavementRing
-        // comment above. Drag 'right' handle → +perp band grows.
-        const sideSign = sideKey === 'left' ? -1 : +1
-        const chainSide = m[sideKey]
-        if (!chainSide || chainSide.terminal !== 'sidewalk') continue
-        const hw = chainSide.pavementHW || 0
-        // Per-segment override lookup. Keyed by (chainIdx, segOrd, side):
-        // each natural segment between IXs is one block edge.
-        const eff = (blockCustoms?.[chainIdx]?.[segOrd]?.[sideKey]) || chainSide
-        const tl = eff.treelawn || 0
-        const sw = eff.sidewalk || 0
-        if (tl > 0 && segPts.length >= 2) {
-          const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
-          if (ring) entry.treelawnRings.push(ring)
-        }
-        if (sw > 0 && segPts.length >= 2) {
-          const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
-          if (ring) entry.sidewalkRings.push(ring)
-        }
-        // Stripe edges per segment so the operator's edge-line overlay
-        // reflects the per-block widths in Measure mode.
-        // Treelawn outer edge — only when treelawn exists. Colored green
-        // (= treelawn band's color) by the renderer.
-        if (tl > 0) entry.treelawnEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
-        // Sidewalk outer edge — the property line. Colored white
-        // (= sidewalk band's color) by the renderer.
-        if (sw > 0) entry.sidewalkEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
-      }
-    }
     // Round-cap band extensions for treelawn + sidewalk. Curb's cap is
     // already handled by the unified stroke (asphaltRounded includes the
-    // round endpoint).
-    const capStart = street.capStart || street.capEnds?.start
-    const capEnd   = street.capEnd   || street.capEnds?.end
+    // round endpoint). Reuse capStart/capEnd from the segment loop above.
     const emitCapAnnuli = (center, T) => {
       if (maxTl > 0) {
         const ring = roundCapHalfAnnulus(center, T, maxHw + cw, maxHw + cw + maxTl)
@@ -708,15 +685,37 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     }
   }
 
+  // ── Now that every per-chain per-segment ring is in byChain, build
+  // the global asphalt + corner + block + curb derivatives off them.
+  const allAsphaltRings = byChain.flatMap(c => c?.asphaltRings || [])
+  const asphaltSharp = unionRings(allAsphaltRings)
+
+  // Multi-value name map — LS has 35 names spanning 164 chain entries.
+  const streetsByName = new Map()
+  for (const s of streets) {
+    if (!s.name) continue
+    const list = streetsByName.get(s.name)
+    if (list) list.push(s); else streetsByName.set(s.name, [s])
+  }
+  const allCorners = []
+  for (const ix of intersections) {
+    allCorners.push(...cornersAtIx(ix, streetsByName, cornerRadiusOverrides, cornerCornerRadiusOverrides))
+  }
+  const asphaltRounded = asphaltSharp.map(ring =>
+    applyRoundCornersToRing(ring, allCorners, cornerRadiusScale)
+  )
+
+  let blockRounded = []
+  if (stencil && stencil.length >= 3) {
+    blockRounded = differenceRings([stencil], asphaltRounded)
+  }
+  const curbDilated = dilateRings(asphaltRounded, curbWidth)
+  const curbBands   = differenceRings(curbDilated, asphaltRounded)
+
   // Per-chain clipping. Asphalt clips to the rounded asphalt polygon so
-  // the per-chain meshes inherit the corner smoothing without each chain
-  // having to know about its IXs. Treelawn/sidewalk clip to blockRounded
-  // (= stencil − asphalt), the loose "outside-of-asphalt" area. They
-  // trim at chain endpoints and at corner arcs where the rounded asphalt
-  // has bulged into the block. (Note: blockRounded is later refined into
-  // a tighter `blockFill` below, but the LOOSE shape is what we clip
-  // bands against — they need to extend through the parcel area before
-  // the block-fill carve-out happens.)
+  // the per-chain meshes inherit the corner smoothing. Treelawn/sidewalk
+  // clip to blockRounded (= stencil − asphalt), the loose "outside-of-
+  // asphalt" area.
   for (const entry of byChain) {
     if (!entry) continue
     if (entry.asphaltRings.length && asphaltRounded.length) {
