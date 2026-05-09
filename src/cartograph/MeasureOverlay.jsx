@@ -414,9 +414,6 @@ export default function MeasureOverlay() {
       if (!anchor) { if (window.__customDebug) console.log('  bail: no anchor'); return }
       const frame = frameAtPoint(st.points, anchor.x, anchor.z)
       const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0)
-      if (window.__customDebug) {
-        console.log('  segOrd:', segOrd, 'segI:', frame.segI, 'streetIdx:', streetIdx, 'side:', side)
-      }
       const existing = useCartographStore.getState().blockCustoms?.[streetIdx]?.[segOrd]?.[side]
       const seed = existing || st.measure?.[side] || { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
       const next = { ...seed }

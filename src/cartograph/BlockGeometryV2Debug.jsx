@@ -309,17 +309,12 @@ export default function BlockGeometryV2Debug({
     if (selectedStreet == null) return null
     const chain = liveRibbons?.streets?.[selectedStreet]
     if (!chain) return null
-    const r = buildChainBandsLive(
+    return buildChainBandsLive(
       chain,
       blockCustoms?.[selectedStreet],
       vertexSmoothing?.[selectedStreet],
       { curbWidth }
     )
-    // TEMP DEBUG: confirm this re-runs per drag and produces fresh rings
-    const sw = r?.sidewalkRings?.[8]
-    console.log(`[live] sel=${selectedStreet} sw.lens=${r?.sidewalkRings?.length} sw[8].v0=`, sw?.[0],
-      'customs=', blockCustoms?.[selectedStreet] ? Object.keys(blockCustoms[selectedStreet]).map(k => `${k}:R.sw=${blockCustoms[selectedStreet][k]?.right?.sidewalk?.toFixed?.(2)}`).join(' ') : 'none')
-    return r
   }, [selectedStreet, liveRibbons, blockCustoms, vertexSmoothing, curbWidth])
 
   // Per-chain band geometries so the selected chain's meshes can swap
