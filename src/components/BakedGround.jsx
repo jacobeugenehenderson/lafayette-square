@@ -193,10 +193,6 @@ function GrassMesh({ group, geometry, lightmap, fade }) {
       const built = makeGrassMaterial({
         color: group.color,
         lampLightmap: getLampLightmap(),
-        // BakedGround mounts at world origin with no parent rotation in
-        // both Stage and Preview. The lamp lightmap is sampled in world
-        // space, so identity (cos=1, sin=0).
-        lampMapRotation: [1, 0],
         fade,
       })
       // Same parity move as FadeMesh — every BakedGround material rises

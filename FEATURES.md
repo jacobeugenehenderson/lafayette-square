@@ -130,10 +130,8 @@ The rule: **no rotation constants in the math/data layer.** Local visual or geom
 
 1. `LafayettePark.parkAxisToCompass(px, pz)` — a one-helper authoring shortcut for placing the four fence corners as axis-aligned `±a` and rotating them into their actual compass-frame positions. Could be replaced with hardcoded GPS lookups.
 2. The Browse shot's `up` vector (Heading slider) — cosmetic screen orientation only.
-3. `grassMaterial.js` `lampMapRotation` — texture-sampling rotation inside the grass shader so blade orientation aligns with the park grid. Visual-only, scoped to the material; does not move geometry.
-4. `GroundExport.jsx` `isInsidePark` — point-in-rotated-rectangle test for the 350m park footprint (projects a world point into the rectangle's axis-aligned frame for a cheap AABB check). Local implementation detail of this test, not a frame transform. (`GroundExport` is currently unimported; preserved for now.)
 
-If you find any *other* `9.2`, `-9.2`, `0.1605` (rad), `Math.PI/19.57`, or `GRID_ROTATION`-shaped constant in the math/data layer (bake scripts, store actions, runtime mounts, geometry builders), it is almost certainly vestigial from the de-parking episode and should be removed, not preserved. **This number has cost many hours; precision in this list is the firebreak.**
+If you find any *other* `9.2`, `-9.2`, `0.1605` (rad), `Math.PI/19.57`, or `GRID_ROTATION`-shaped constant in the math/data layer (bake scripts, store actions, runtime mounts, geometry builders, shaders), it is almost certainly vestigial from the de-parking episode and should be removed, not preserved. **This number has cost many hours; precision in this list is the firebreak.**
 
 History: there was a long "de-parking" episode in May 2026 that tried to introduce a parallel "world frame" duality. It was misdiagnosed; the screen-orientation desire was a camera concern, not a data concern. The duality is removed. If you find yourself reaching for a second frame, stop and read the `project_compass_only_camera_heading` memory entry.
 

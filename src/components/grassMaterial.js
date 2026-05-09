@@ -20,12 +20,6 @@ import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 export function makeGrassMaterial({
   lampLightmap = null, clipMask = null, clipMin = null, clipSize = null,
   color = '#2d5a2d',
-  // Lamp lightmap lives in raw world XZ. If the grass mesh's parent
-  // group already rotates the model matrix (cartograph wraps in a
-  // -GRID_ROTATION group), the shader must unrotate before sampling.
-  // Preview mounts at world origin with no rotation, so it should pass
-  // [1, 0] (cos, sin) for identity. Default = cartograph's +9.2°.
-  lampMapRotation = [0.9871, 0.1599],
   // Optional radial alpha fade — soft neighborhood-stencil edge.
   // { center: [x,z], inner, outer } ; alpha → 0 at outer.
   fade = null,
@@ -42,7 +36,6 @@ export function makeGrassMaterial({
     shader.uniforms.uHasClip   = { value: clipMask ? 1.0 : 0.0 }
     shader.uniforms.uLampMap   = { value: lampLightmap }
     shader.uniforms.uHasLamp   = { value: lampLightmap ? 1.0 : 0.0 }
-    shader.uniforms.uLampMapRotCS = { value: new THREE.Vector2(lampMapRotation[0], lampMapRotation[1]) }
     shader.uniforms.uLampGlow = _lampGlow.grassUniform
     shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade?.center?.[0] ?? 0, fade?.center?.[1] ?? 0) }
     shader.uniforms.uFadeInner  = { value: fade?.inner ?? 0 }
@@ -71,7 +64,6 @@ export function makeGrassMaterial({
        uniform float uHasClip;
        uniform sampler2D uLampMap;
        uniform float uHasLamp;
-       uniform vec2 uLampMapRotCS;
        uniform float uLampGlow;
        uniform vec2 uFadeCenter;
        uniform float uFadeInner;
@@ -130,10 +122,7 @@ export function makeGrassMaterial({
        grass = mix(grass * nightTint, grass, dayBright) * brightness;
 
        if (uHasLamp > 0.5) {
-         vec2 grassWorld = vec2(
-           vGrassPos.x * uLampMapRotCS.x + vGrassPos.z * uLampMapRotCS.y,
-          -vGrassPos.x * uLampMapRotCS.y + vGrassPos.z * uLampMapRotCS.x);
-         vec2 grassLampUV = (grassWorld + 200.0) / 400.0;
+         vec2 grassLampUV = (vGrassPos.xz + 200.0) / 400.0;
          float grassLampI = texture2D(uLampMap, grassLampUV).r;
          float grassLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
          // Warm incandescent tint (less green, more amber) at modest

@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-09 (Designer panel restructure landed; 9.2° steam-clean queued)
+Last updated: 2026-05-09 (9.2° steam-clean landed; next: V2 on LS — bake-side parity)
 
 ## 2026-05-09 — Designer panel restructure (LANDED)
 
@@ -75,20 +75,6 @@ second neighborhood since LSQ has only one label class today.
 - **Persisted `openSections` keyed on "Features"** won't auto-carry
   to "Furniture" — section starts closed on first reload after the
   rename. One-time UX blip, not a regression.
-
-
-
-## Steam-clean residual 9.2° references (queued 2026-05-09)
-
-Trinity audit confirmed buildings are correctly compass-aligned and the data/math layer is clean. Two residual references remain that are harmless today but are exactly the kind of cruft that re-confused us last time. Resolve both, then this number stops being a recurring tax.
-
-1. **`src/components/grassMaterial.js:23-28`** — `lampMapRotation` defaults to `[0.9871, 0.1599]` (cos/sin of 9.2°) with a comment claiming "cartograph wraps in a -GRID_ROTATION group, the shader must unrotate before sampling." Per de-parking, that wrapping group should no longer exist. Either (a) the default is stale and should be `[1, 0]` (identity), or (b) the wrapping survives somewhere de-parking missed. Park looks correct in practice today, so one of these is true; figure out which, then fix. Grep for callers of `makeGrassMaterial` and any group-level `rotation` ancestor of grass meshes; verify lamp lightmap actually samples correctly with the chosen value (turn a lamp on, check whether its lit halo lands on grass blades under it).
-
-2. **`src/components/GroundExport.jsx:42-55`** — `isInsidePark` uses 9.2° for a point-in-rotated-rectangle test of the 350m park footprint. The file's own comment says it's "currently unimported; preserved for now." If still unimported next time we touch this area, delete the file outright (`git mv` it to history). If something has started importing it, lift the rectangle test to use the same fence-corner data `LafayettePark.parkAxisToCompass` uses, so the rotation constant lives in one place.
-
-After both: the only legitimate 9.2° uses in the codebase should be `parkAxisToCompass` (authoring shortcut) and `Browse.up` (camera). FEATURES.md §"Frame discipline" already enumerates all four current uses — update that list when grass + GroundExport are cleaned.
-
----
 
 
 
@@ -271,43 +257,6 @@ sufficient for the cases that matter to them.
 
 ---
 
-## Toolbar Looks `<select>` reads taller than `<button>` peers (queued 2026-05-08)
-
-The Looks dropdown in the Designer toolbar renders larger than the Aerial
-and Stage buttons next to it, even after several attempted CSS fixes.
-What's been tried (still didn't take):
-
-- Explicit `line-height: 1.2` + `box-sizing: border-box` on both peers.
-- `font: inherit` shorthand reset followed by re-applied font-family /
-  font-size / font-weight.
-- Explicit `height: 28px`.
-- Most-recent attempt: dropped the `font` shorthand entirely; set
-  font-family, font-size, font-weight, font-style, letter-spacing,
-  line-height as individual sub-properties on a shared rule
-  (`.carto-toolgroup > button, .carto-toolgroup > .carto-looks-select`).
-  Bumped to panel-pill geometry (13px / 8px 14px padding / 8px radius).
-  Look still reads larger.
-
-Likely cause: macOS UA stylesheet for `<select>` is harder to neutralize
-than expected. Possibilities to try next session:
-
-1. Inspect the Looks `<select>` in DevTools. Check **computed** font-size
-   and box height. If computed font-size is the value we set (13px) but
-   the box is still taller, something about UA padding/baseline is the
-   culprit. If computed font-size is *not* what we set, find the rule
-   that's winning the cascade.
-2. Replace the native `<select>` with a custom dropdown (a `<button>` +
-   listbox) that uses the same DOM/CSS as its peers. Removes the UA
-   surface entirely.
-3. Try `appearance: none` + explicit `font-size` with `!important`. Crude
-   but tells us if it's a specificity issue vs. an appearance-control
-   issue.
-4. As a last resort, target macOS Safari/Chrome with a feature query
-   override.
-
-Files: `src/cartograph/cartograph.css` (`.carto-toolgroup` rules),
-`src/cartograph/Toolbar.jsx` (LooksMenu component).
-
 ## Lesson logged 2026-05-07: stop parallel-piping toy
 
 While iterating V2 in toy this session, the next operator (me) added a
@@ -355,27 +304,6 @@ Open work tracked here:
 
 Once the above land, V2 carries Measure visuals end-to-end and legacy
 StreetRibbons retires from non-toy scenes too.
-
-## Corner controls — known broken (queued for next-session fix before refactor)
-
-State going into next session:
-- Global `cornerRadiusScale` slider IS wired to V2 (`useSurfaceMaterial`-
-  hook day landed both LS and toy reading the store value).
-- Per-IX overrides (`cornerRadiusOverrides`, keyed by `ixKey(V)`) — NOT
-  applied in `buildBlockGeometryV2.cornersAtIx`. Helper now produces
-  `legKey` per leg as scaffolding (mid-edit at session end), but the
-  override-application call is not wired.
-- Per-corner overrides (`cornerCornerRadiusOverrides`, keyed by
-  `ixKey(V)|legKeyA|legKeyB`) — same; scaffolding present, no
-  application logic.
-- `CornerEditHandles` dots/circles render whenever the component mounts.
-  They should only show when the operator has flipped "Edit corners"
-  (`cornerEditMode` is true). Today's render path doesn't gate the
-  visual output even though pointer setup is gated.
-
-Working from the same V2 helper context, fix all three before
-touching the Phase 0 refactor — they're cheap once you're in the
-file and the user has high signal that the kit is close to working.
 
 ## Data-pipeline truths surfaced 2026-05-06
 
@@ -500,34 +428,6 @@ neighborhood roll-out is verified, do a focused cleanup pass and remove:
 Risk of cleanup: low. All gated/unused. Each removal is local. Drop in
 one commit titled "Retire dead corner-management paths" once Phase 3 is
 locked in by neighborhood QA.
-
-## 2026-05-06 — Authoring need: street splitting / IX insertion
-
-Surfaced repeatedly during the LS roll-out, advocated multiple times by
-Jacob: there's no operator-facing way to split a chain into two
-segments at a chosen point, or to insert a new IX where one is missing
-from derive.js's output. Today the IX list is what derive.js produces;
-operators can't add to it or split existing chains to create new ones.
-
-Concrete cases this would resolve:
-- **Dog-legs.** A street that jogs a few meters east at a crossing —
-  ideally modeled as two adjacent T-intersections, not one X with a
-  bent leg. Dog-legs are common in older urban grids and currently
-  render as a single bent geometry that misaligns the corner pads.
-- **Missing intersections.** Real visible crossings where derive.js's
-  IX-detection didn't fire. Operator could insert manually.
-- **Divided-pair joints.** Where two carriageways of one corridor meet
-  end-to-end and shouldn't be a real intersection — operator could
-  flag (today the kit filters these client-side via distinctNames < 2).
-
-UI: a "split chain" Survey-tool action — click a chain at the desired
-point, get two chains plus a fresh IX between them. Persists into
-`overlay.json`. Bake-pipeline-side, derive.js would need to honor
-operator splits (or the merge step downstream would).
-
-Out of scope for the corner-authoring kit; tracked here as the
-recurrent ask. Many of the "IX classification" symptoms in the
-neighborhood roll-out chain back to this.
 
 ## 2026-05-06 — Data pipeline: classification gaps in `ribbons.json`
 
