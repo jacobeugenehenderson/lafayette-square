@@ -169,11 +169,24 @@ export default function BlockGeometryV2Debug({
   const vertexSmoothing           = useCartographStore(s => s.vertexSmoothing)
   const layerColors               = useCartographStore(s => s.layerColors)
   const luColors                  = useCartographStore(s => s.luColors)
-  // Per-layer visibility — Surfaces panel writes `false` to hide. Same
+  // Per-layer visibility — Designer panel writes `false` to hide. Same
   // map used by MapLayers / Stage so the toggle is unified across the
-  // app. Default (undefined) = visible.
+  // app. Default (undefined) = visible. Each ribbon-band material has
+  // its own row in the Designer panel; gate every renderer here on its
+  // matching layer key so the toggles actually take effect on V2's live
+  // output (toggles previously only flipped V1 / MapLayers).
   const layerVis                  = useCartographStore(s => s.layerVis)
-  const asphaltVisible            = layerVis?.street !== false
+  const asphaltVisible            = layerVis?.street    !== false
+  const highwayVisible            = layerVis?.highway   !== false
+  const curbVisible               = layerVis?.curb      !== false
+  const sidewalkVisible           = layerVis?.sidewalk  !== false
+  const treelawnVisible           = layerVis?.treelawn  !== false
+  const lotVisible                = layerVis?.lot       !== false
+  // Highway-class chains route through the `highway` toggle row; everything
+  // else through `street` (Asphalt). Same split the bake adapter does
+  // — keep both in sync so toggling Highway in Designer matches Stage.
+  const HIGHWAY_CLASSES = useMemo(() => new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link']), [])
+  const isHighwayChain = (chainIdx) => HIGHWAY_CLASSES.has(liveRibbons?.streets?.[chainIdx]?.highway)
   // Live operator intent — Survey caps, Measure overrides, smooth, anchor.
   // Merged onto the static `ribbons` prop so V2 reflects edits without
   // waiting for a re-bake. Structural data (chain points, IX positions,
@@ -318,7 +331,7 @@ export default function BlockGeometryV2Debug({
 
   return (
     <group>
-      {!hideLandUse && blockGroups.map(g => g.geo && (
+      {!hideLandUse && lotVisible && blockGroups.map(g => g.geo && (
         <mesh key={g.lu} geometry={g.geo} renderOrder={PRI.residential} receiveShadow
           material={makeMaterial(g.color, PRI.residential, null, { surveyActive })} />
       ))}
@@ -326,22 +339,29 @@ export default function BlockGeometryV2Debug({
           (matching V1). Selected chain → selectedCorridor:true → opacity
           0.55. Order: treelawn (3) → sidewalk (5) → curb (6, unified)
           → asphalt (8). */}
-      {perChainGeo.map(g => g.treelawn && (
+      {treelawnVisible && perChainGeo.map(g => g.treelawn && (
         <mesh key={`t${g.chainIdx}`} geometry={g.treelawn} renderOrder={PRI.treelawn} receiveShadow
           material={makeMaterial(treelawnCol, PRI.treelawn, null, { measureActive, surveyActive, selectedCorridor: g.chainIdx === selectedStreet })} />
       ))}
-      {perChainGeo.map(g => g.sidewalk && (
+      {sidewalkVisible && perChainGeo.map(g => g.sidewalk && (
         <mesh key={`s${g.chainIdx}`} geometry={g.sidewalk} renderOrder={PRI.sidewalk} receiveShadow
           material={makeMaterial(sidewalkCol, PRI.sidewalk, null, { measureActive, surveyActive, selectedCorridor: g.chainIdx === selectedStreet })} />
       ))}
-      {curbGeo && (
+      {curbVisible && curbGeo && (
         <mesh geometry={curbGeo} renderOrder={PRI.curb} receiveShadow material={curbMat} />
       )}
-      {asphaltVisible && perChainGeo.map(g => g.asphalt && (
-        <mesh key={`a${g.chainIdx}`} geometry={g.asphalt} renderOrder={PRI.asphalt} receiveShadow
-          material={makeMaterial(asphaltCol, PRI.asphalt, null, { measureActive, surveyActive, selectedCorridor: g.chainIdx === selectedStreet })} />
-      ))}
-      {asphaltVisible && cornerAsphaltGeo && (
+      {perChainGeo.map(g => {
+        if (!g.asphalt) return null
+        const visible = isHighwayChain(g.chainIdx) ? highwayVisible : asphaltVisible
+        if (!visible) return null
+        return (
+          <mesh key={`a${g.chainIdx}`} geometry={g.asphalt} renderOrder={PRI.asphalt} receiveShadow
+            material={makeMaterial(asphaltCol, PRI.asphalt, null, { measureActive, surveyActive, selectedCorridor: g.chainIdx === selectedStreet })} />
+        )
+      })}
+      {/* Corner asphalt plugs are shared between chains (no per-chain class),
+          so they hide only when BOTH asphalt and highway are off. */}
+      {(asphaltVisible || highwayVisible) && cornerAsphaltGeo && (
         <mesh geometry={cornerAsphaltGeo} renderOrder={PRI.asphalt} receiveShadow
           material={makeMaterial(asphaltCol, PRI.asphalt, null, { surveyActive })} />
       )}
@@ -349,8 +369,9 @@ export default function BlockGeometryV2Debug({
           the same blockRounded mask that shapes the bands and block fill.
           Renders UNDER treelawn/sidewalk so chain bands paint over it;
           pad shows only in the gap where neither band reaches (the
-          rounded wedge between the curb arc and the band-zone). */}
-      {cornerSidewalkGeo && (
+          rounded wedge between the curb arc and the band-zone). Hides
+          with the sidewalk toggle since the pad reads as concrete. */}
+      {sidewalkVisible && cornerSidewalkGeo && (
         <mesh geometry={cornerSidewalkGeo} renderOrder={PRI.residential + 0.5} receiveShadow
           material={makeMaterial(sidewalkCol, PRI.residential + 0.5, null, { surveyActive })} />
       )}
