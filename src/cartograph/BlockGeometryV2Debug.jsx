@@ -327,24 +327,48 @@ export default function BlockGeometryV2Debug({
     )
   }, [selectedStreet, liveRibbons, blockCustoms, vertexSmoothing, curbWidth])
 
-  // Per-chain band geometries so the selected chain's meshes can swap
-  // to the translucent material variant. The selected chain pulls from
-  // `liveSelectedRings` instead of V2's byChain entry — gives the
-  // operator a real-time response to handle drags without waiting for
-  // V2's heavy global pass.
-  const perChainGeo = useMemo(() => {
+  // Per-chain BufferGeometries split into two passes for drag perf:
+  //
+  // • `nonSelectedChainGeo` — every chain EXCEPT the selected one,
+  //   triangulated from V2's frozen byChain snapshot. Cached on byChain
+  //   alone, so a drag tick (which doesn't change byChain — V2 is
+  //   frozen during selection) doesn't re-triangulate all 241 chains
+  //   every frame. ~700 ShapeGeometry calls become a one-time cost
+  //   per chain selection instead of per drag tick.
+  //
+  // • `selectedChainGeo` — just the selected chain, triangulated from
+  //   `liveSelectedRings`. Rebuilds every drag tick (~4 quads), ~1ms.
+  //
+  // Render mounts both. Selected chain's meshes are layered separately
+  // and pull from the cached pair (translucent vs opaque material).
+  const nonSelectedChainGeo = useMemo(() => {
     const out = []
     for (const entry of byChain || []) {
       if (!entry) continue
-      const useLive = liveSelectedRings && entry.chainIdx === selectedStreet
-      const rings = useLive ? liveSelectedRings : entry
-      const ag = rings.asphaltRings.length  ? ringsToFlatGeo(rings.asphaltRings,  0.04, true) : null
-      const tg = rings.treelawnRings.length ? ringsToFlatGeo(rings.treelawnRings, 0.02, true) : null
-      const sg = rings.sidewalkRings.length ? ringsToFlatGeo(rings.sidewalkRings, 0.03, true) : null
+      if (entry.chainIdx === selectedStreet) continue
+      const ag = entry.asphaltRings.length  ? ringsToFlatGeo(entry.asphaltRings,  0.04, true) : null
+      const tg = entry.treelawnRings.length ? ringsToFlatGeo(entry.treelawnRings, 0.02, true) : null
+      const sg = entry.sidewalkRings.length ? ringsToFlatGeo(entry.sidewalkRings, 0.03, true) : null
       if (ag || tg || sg) out.push({ chainIdx: entry.chainIdx, asphalt: ag, treelawn: tg, sidewalk: sg })
     }
     return out
-  }, [byChain, liveSelectedRings, selectedStreet])
+  }, [byChain, selectedStreet])
+
+  const selectedChainGeo = useMemo(() => {
+    if (selectedStreet == null || !liveSelectedRings) return null
+    const ag = liveSelectedRings.asphaltRings.length  ? ringsToFlatGeo(liveSelectedRings.asphaltRings,  0.04, true) : null
+    const tg = liveSelectedRings.treelawnRings.length ? ringsToFlatGeo(liveSelectedRings.treelawnRings, 0.02, true) : null
+    const sg = liveSelectedRings.sidewalkRings.length ? ringsToFlatGeo(liveSelectedRings.sidewalkRings, 0.03, true) : null
+    if (!ag && !tg && !sg) return null
+    return { chainIdx: selectedStreet, asphalt: ag, treelawn: tg, sidewalk: sg }
+  }, [liveSelectedRings, selectedStreet])
+
+  // Composite array kept for downstream code that still expects a flat
+  // perChainGeo list. Selected chain's geo (if any) tacked on at end.
+  const perChainGeo = useMemo(
+    () => selectedChainGeo ? [...nonSelectedChainGeo, selectedChainGeo] : nonSelectedChainGeo,
+    [nonSelectedChainGeo, selectedChainGeo]
+  )
 
   // Stripe edges — opaque strokes drawn on the SELECTED chain only when
   // Measure is active. They mark where boundary handles attach. The
