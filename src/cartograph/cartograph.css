@@ -446,17 +446,21 @@
   color: var(--carto-text);
 }
 
-.carto-btn.is-active {
+.carto-btn.is-active,
+.carto-btn-sm.is-active {
   background: var(--vic-gold, #ffaa00);
   border-color: var(--vic-gold, #ffaa00);
   color: #000;
 }
-.carto-btn.is-active:hover {
+.carto-btn.is-active:hover,
+.carto-btn-sm.is-active:hover {
   background: var(--vic-gold, #ffaa00);
   color: #000;
 }
 .carto-btn:disabled,
-.carto-btn[disabled] {
+.carto-btn[disabled],
+.carto-btn-sm:disabled,
+.carto-btn-sm[disabled] {
   opacity: 0.4;
   cursor: default;
 }
@@ -778,6 +782,8 @@
   border-radius: 3px;
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.15);
+  /* Color is data-driven; the row sets `--swatch` per band. */
+  background: var(--swatch, #888);
 }
 
 .carto-band-width {

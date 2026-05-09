@@ -2,7 +2,81 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-09 (9.2° steam-clean queued)
+Last updated: 2026-05-09 (Designer panel restructure landed; 9.2° steam-clean queued)
+
+## 2026-05-09 — Designer panel restructure (LANDED)
+
+Reclassified the Designer panel section structure, moved block-shape
+controls into Blocks, relocated Hero into Survey, and added a
+parametric label-style block. All inline `style={…}` props in
+`Panel.jsx` / `SurveyorPanel.jsx` / `MeasurePanel.jsx` were
+consolidated to CSS classes (`.carto-row--wrap`, `.carto-meta--value`,
+`.carto-btn--grow`, `.carto-section-caret.is-open`,
+`.carto-btn(-sm).is-active/:disabled`, `.carto-subsection*`); the
+phantom `carto-button` className (referenced inline-styled, no CSS
+rule) is gone. Stage's `CartographSurfaces` mirrored the same renames
+so labels don't drift between Designer and Stage.
+
+**Section roster (Designer + Stage Surfaces):**
+Streets / Blocks / Paths / **Land Cover** (new) / **Furniture** (was
+"Features") / Labels. "Block" → "Parcel" everywhere. Tree Rows merged
+into Trees via a `LAYER_LINKS` map in `Panel.jsx` — the linear/point
+data split is hidden from the operator; toggling Trees flips both
+`tree` and `tree_row` visibility. Land Cover holds Water, Pools,
+Pitches, Woods, Scrub (ground-material polygons that aren't
+parcel-bound). Gardens / Playgrounds stay in Blocks because they're
+identity-bearing — Lafayette Square has *specific* gardens and a
+*specific* playground that may someday get bespoke treatment, same as
+Buildings.
+
+**Block-shape subsection.** Corners (slider + Edit corners + Revert)
+and Curb-width moved out of Streets into a "Shape" subsection at the
+top of Blocks, since both shape the rounded-block-clip — corner radius
+shapes `asphaltRounded`, curb traces it. CSS class
+`.carto-subsection` provides the visual nesting (subtle bottom rule +
+small uppercase header).
+
+**Hero → Survey.** `HeroSubjectPicker` moved from `Panel.jsx` into
+`SurveyorPanel.jsx`. Picking the scene's hero subject is a survey act
+(identifying a real-world building/landmark as the privileged
+subject); Designer doesn't need to expose it. Renders unconditionally
+at the top of the Survey panel — visible whether or not a street is
+selected.
+
+**Labels parametric.** New Look-level `labels` field on the store
+(`{ size, weight, fill, bg, bgAlpha, halo, haloWidth, opacity }`) with
+hydration in both load paths and persistence in `_buildDesign` (same
+shape as `cornerRadiusScale` / `curbWidth`). Defaults reproduce the
+pre-parametric look; setter is `setLabelStyle(patch)` (merge +
+autosave). `MapLayers.LabelSprite` reads from store and re-renders
+canvas on store change; chip drawn when `bgAlpha > 0`, glyph stroke
+when `haloWidth > 0`, plane material `opacity` driven by store. Six
+control rows in Designer: Size / Weight / Fill / Chip+alpha /
+Halo+width / Opacity. Schema is shaped for a future per-class roster
+(`labels.byClass.street | district | landmark`); UI waits for a
+second neighborhood since LSQ has only one label class today.
+
+### Deferred follow-ups
+
+- **Label scale-mode** (constant-screen-px vs world-fixed) — needs
+  sprite vs plane swap in `LabelSprite`.
+- **Label zoom-fade** — per-frame distance check or shader uniform.
+- **Label y-offset** — trivial; add when needed.
+- **Highway shader treatment** (Stage-side: distinct material so it
+  reads as context, not eligible roadway). Designer-side it's already
+  its own visibility row; this is a Stage Surfaces concern.
+- **Highway tour/ground-cam ineligibility** — routing/tour-system
+  concern. Highway should not be eligible for walking tours or ground
+  camera action.
+- **Stage `tree_row` color knob.** Removing the row from Stage's
+  Surfaces panel means `tree_row`'s default color from
+  `m3Colors.js` is no longer panel-editable. Decide: unify with
+  `tree`'s color (full merge) or restore an admin-only knob.
+- **Persisted `openSections` keyed on "Features"** won't auto-carry
+  to "Furniture" — section starts closed on first reload after the
+  rename. One-time UX blip, not a regression.
+
+
 
 ## Steam-clean residual 9.2° references (queued 2026-05-09)
 
@@ -351,8 +425,9 @@ day one or the same hours of confusion repeat.
 All three layers of the corner-radius authoring stack are live and tested
 on the toy fixture:
 
-- **Phase 1 — Look-level `cornerRadiusScale` slider.** Streets > Corners
-  in Panel. Range 0–11× (matches per-IX 50m cap). Persists to
+- **Phase 1 — Look-level `cornerRadiusScale` slider.** Blocks > Shape
+  in Panel (moved from Streets > Corners during the 2026-05-09
+  Designer panel restructure). Range 0–11× (matches per-IX 50m cap). Persists to
   `design.json`. Threaded through `buildCornerPadClips` (bake + face
   clip) and `getR` in `StreetRibbons.jsx` (live render). rAF-throttled
   commit so the heavy useMemo doesn't choke the slider thumb.

@@ -77,7 +77,7 @@ function NumberRow({ label, swatch, valueM, onCommit, readOnly }) {
   return (
     <div className="carto-row carto-band-row">
       <span className="carto-band-swatch"
-        style={{ background: swatch || '#888' }} />
+        style={{ '--swatch': swatch || '#888' }} />
       <label className="carto-label">{label}</label>
       {readOnly ? (
         <span className="carto-band-width">{text}</span>
@@ -274,18 +274,10 @@ function ModeToggle() {
     }
   }
   return (
-    <div className="carto-row" style={{ gap: 6, marginTop: 4 }}>
+    <div className="carto-row">
       <button
-        className="carto-btn-sm"
+        className={`carto-btn-sm carto-btn--grow${isWholeChain ? ' is-active' : ''}`}
         onClick={click}
-        style={{
-          background: isWholeChain ? 'var(--vic-gold, #ffaa00)' : 'transparent',
-          color: isWholeChain ? '#000' : 'var(--on-surface, #ddd)',
-          border: '1px solid var(--outline-variant, #555)',
-          padding: '4px 10px',
-          cursor: 'pointer',
-          flex: 1,
-        }}
         title={isWholeChain
           ? 'Whole-chain mode: drag edits the chain default for every block. Click to return to per-block authoring.'
           : 'Per-block mode (default): drag edits the block at the click anchor. Click to switch to whole-chain — that wipes any per-block customs on this chain.'}>

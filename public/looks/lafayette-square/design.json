@@ -85,7 +85,18 @@
   "cornerCornerRadiusOverrides": {},
   "vertexSmoothing": {},
   "curbWidth": 0.1524,
+  "labels": {
+    "size": 4,
+    "weight": 500,
+    "fill": "#ffffff",
+    "bg": "#3a3a38",
+    "bgAlpha": 1,
+    "halo": "#000000",
+    "haloWidth": 0,
+    "opacity": 1
+  },
   "blockCustoms": {},
+  "blockLandUse": {},
   "materialColors": {},
   "materialPhysics": {},
   "buildingPalette": [

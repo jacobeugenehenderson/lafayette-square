@@ -152,14 +152,13 @@ function CornersSubsection() {
             scheduleCommit(v)
           }}
           onKeyUp={finalCommit} />
-        <span className="carto-meta" style={{ minWidth: 34, textAlign: 'right' }}>
+        <span className="carto-meta carto-meta--value">
           {Number(draft).toFixed(2)}×
         </span>
       </div>
       <div className="carto-row">
         <button
-          className={`carto-btn${cornerEditMode ? ' is-active' : ''}`}
-          style={{ flex: 1 }}
+          className={`carto-btn carto-btn--grow${cornerEditMode ? ' is-active' : ''}`}
           onClick={() => setCornerEditMode(!cornerEditMode)}
           title="Show draggable handles at every intersection center. Drag a handle: world distance from cursor to IX = new corner radius. Release to commit.">
           {cornerEditMode ? '● Edit corners' : '○ Edit corners'}
@@ -225,7 +224,7 @@ function CurbSubsection() {
           scheduleCommit(v)
         }}
         onKeyUp={finalCommit} />
-      <span className="carto-meta" style={{ minWidth: 40, textAlign: 'right' }}>
+      <span className="carto-meta carto-meta--value">
         {(draft * 39.3701).toFixed(1)}″
       </span>
     </div>
@@ -258,7 +257,7 @@ function LabelsSubsection() {
           min="1" max="12" step="0.25"
           value={get('size', 4)}
           onChange={e => setLabelStyle({ size: parseFloat(e.target.value) })} />
-        <span className="carto-meta" style={{ minWidth: 40, textAlign: 'right' }}>
+        <span className="carto-meta carto-meta--value">
           {Number(get('size', 4)).toFixed(2)} m
         </span>
       </div>
@@ -289,7 +288,7 @@ function LabelsSubsection() {
           min="0" max="1" step="0.05"
           value={get('bgAlpha', 1)}
           onChange={e => setLabelStyle({ bgAlpha: parseFloat(e.target.value) })} />
-        <span className="carto-meta" style={{ minWidth: 32, textAlign: 'right' }}>
+        <span className="carto-meta carto-meta--value">
           {Number(get('bgAlpha', 1)).toFixed(2)}
         </span>
       </div>
@@ -302,7 +301,7 @@ function LabelsSubsection() {
           min="0" max="6" step="0.5"
           value={get('haloWidth', 0)}
           onChange={e => setLabelStyle({ haloWidth: parseFloat(e.target.value) })} />
-        <span className="carto-meta" style={{ minWidth: 36, textAlign: 'right' }}>
+        <span className="carto-meta carto-meta--value">
           {Number(get('haloWidth', 0)).toFixed(1)} px
         </span>
       </div>
@@ -312,7 +311,7 @@ function LabelsSubsection() {
           min="0" max="1" step="0.05"
           value={get('opacity', 1)}
           onChange={e => setLabelStyle({ opacity: parseFloat(e.target.value) })} />
-        <span className="carto-meta" style={{ minWidth: 32, textAlign: 'right' }}>
+        <span className="carto-meta carto-meta--value">
           {Number(get('opacity', 1)).toFixed(2)}
         </span>
       </div>
