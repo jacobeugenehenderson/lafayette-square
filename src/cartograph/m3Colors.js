@@ -81,6 +81,8 @@ export const DEFAULT_LU_COLORS = {
   institutional:      '#7E8AA8',  // cool slate
   recreation:         '#6EA03E',  // athletic-turf green
   industrial:         '#8E7060',  // warm rust
+  island:             '#7A7A6E',  // road-island concrete
+  unknown:            '#888888',  // neutral fallback
 }
 
 // OSM overlay defaults — one color per (category, subtype). Keys are

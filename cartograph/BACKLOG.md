@@ -2,7 +2,21 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-08 (EOD, parallel-pipeline lesson reiterated)
+Last updated: 2026-05-09 (9.2° steam-clean queued)
+
+## Steam-clean residual 9.2° references (queued 2026-05-09)
+
+Trinity audit confirmed buildings are correctly compass-aligned and the data/math layer is clean. Two residual references remain that are harmless today but are exactly the kind of cruft that re-confused us last time. Resolve both, then this number stops being a recurring tax.
+
+1. **`src/components/grassMaterial.js:23-28`** — `lampMapRotation` defaults to `[0.9871, 0.1599]` (cos/sin of 9.2°) with a comment claiming "cartograph wraps in a -GRID_ROTATION group, the shader must unrotate before sampling." Per de-parking, that wrapping group should no longer exist. Either (a) the default is stale and should be `[1, 0]` (identity), or (b) the wrapping survives somewhere de-parking missed. Park looks correct in practice today, so one of these is true; figure out which, then fix. Grep for callers of `makeGrassMaterial` and any group-level `rotation` ancestor of grass meshes; verify lamp lightmap actually samples correctly with the chosen value (turn a lamp on, check whether its lit halo lands on grass blades under it).
+
+2. **`src/components/GroundExport.jsx:42-55`** — `isInsidePark` uses 9.2° for a point-in-rotated-rectangle test of the 350m park footprint. The file's own comment says it's "currently unimported; preserved for now." If still unimported next time we touch this area, delete the file outright (`git mv` it to history). If something has started importing it, lift the rectangle test to use the same fence-corner data `LafayettePark.parkAxisToCompass` uses, so the rotation constant lives in one place.
+
+After both: the only legitimate 9.2° uses in the codebase should be `parkAxisToCompass` (authoring shortcut) and `Browse.up` (camera). FEATURES.md §"Frame discipline" already enumerates all four current uses — update that list when grass + GroundExport are cleaned.
+
+---
+
+
 
 ## STOP. Read this before touching toy.
 
@@ -19,6 +33,169 @@ If you are about to:
 — **stop**. Find the canonical version, make IT scene-parametric (route, file path, store key all keyed by `:scene`), and route toy through it. The Phase 0 plan in `cartograph/TOY_AUTHORING_PLAN.md` describes the right shape.
 
 When debugging "feature X doesn't work in toy", the answer is almost never "build a parallel toy version." It's "make the canonical scene-parametric." If you can't do that in the time available, the right move is to revert your shortcuts and document the gap, not pile on another shortcut.
+
+## LS / Toy parity — three gaps (framed 2026-05-09)
+
+Designer-side V2 already mounts in both scenes (CartographApp:768);
+LS Designer goes through the same V2 path as toy. Per-block land use
+just landed for both (LS reads `ribbons.faces[].use`, toy hashes
+weighted-random). What's left to reach "Designer in LS feels like
+Designer in toy AND Stage publishes what Designer shows":
+
+### Gap 1 — Designer parity (~1 session)
+
+- **Block↔chain relations.** Each block needs
+  `frontageChains: [{ chainIdx, segOrd }]` so authoring can address
+  "the block on Oak between 1st and 2nd" instead of an opaque
+  blockKey. Computable from `byChain[i]` segment midpoints +
+  point-in-polygon against each block ring (same shape as the
+  existing `adjacentBlockId` helper, inverted). ~50 LOC in
+  `buildBlockGeometryV2`.
+- **LU authoring UI.** Right-click a block → menu of LU types →
+  `setBlockLandUse(blockKey, lu)`. Setter + persistence already
+  wired; needs a `<BlockEditMenu>` and a click handler on the
+  per-LU block group meshes in `BlockGeometryV2Debug`.
+- **OSM-tied block identity for LS.** Today bbox-key works for
+  rendering. If `derive.js` could emit a stable `face.id`, LS
+  authoring would survive geometry edits more cleanly. Optional
+  polish — bbox-key is fine until it isn't.
+
+### Gap 2 — Stage / Preview parity (~2-3 sessions, load-bearing)
+
+The big one. Operator edits in V2 (Designer) but Stage renders
+`BakedGround` from `bake-ground.js`, which is V1 geometry. Today an
+LS bake produces V1 per-side curb stripes, V1 corner pads, no
+honor of corner-radius authoring. Face fills already use authentic
+LU so that part matches.
+
+To close:
+- **Port `buildBlockGeometryV2` into the bake**, replacing
+  `buildRibbonGeometry` in `bake-ground.js`. The bake already
+  reads `design.json`; thread the same `cornerRadiusOverrides /
+  cornerCornerRadiusOverrides / blockCustoms / blockLandUse /
+  vertexSmoothing / cornerRadiusScale` opts the live render uses.
+  Output schema for `ground.bin` stays the same; only the source
+  of geometry changes.
+- **Retire V1 face-clip code** in `ribbonsGeometry.js` and the
+  legacy corner-pad pass in `StreetRibbons.jsx` once the bake
+  switches over. The retirements are pre-staged in BACKLOG
+  "2026-05-06 — Effluvium cleanup."
+- **Re-bake LS** and verify Stage/Preview match Designer
+  pixel-for-pixel modulo material/lighting.
+
+This is the FEATURES.md "retire StreetRibbons" line item — well-shaped
+because V2 is a single helper with a clean contract.
+
+### Gap 3 — LS-only data-quality items (async, separate)
+
+These bite when the *defaults* are wrong; V2 itself works fine on
+whatever data it gets. All already in this BACKLOG under
+"2026-05-06 — Data pipeline":
+
+- Highway class is `undefined` on all 242 LS chains → corner radii
+  fall through to residential default everywhere.
+- 190/252 IX entries in `ribbons.intersections` are
+  divided-road continuation joints, not real corners. Mitigated
+  client-side; better fix is in `derive.js`.
+- `ix.streets[].ix` indices stale on ~36% of LS IX-refs.
+  Workaround in place via `resolveIxRef`.
+- Loop street designation hardcoded by name in `derive.js`.
+
+### Honest framing
+
+Gap 2 is load-bearing: until the bake matches V2, "Stage publishes
+what Designer shows" isn't true on LS. Gap 1 polish is nice but
+doesn't block LS from looking right. Gap 3 is fix-when-you-trip-on-it.
+
+**Estimate**: one session for Gap 1, two for Gap 2 + re-bake
+validation, Gap 3 ad-hoc.
+
+---
+
+## Blunt / none cap geometry (queued 2026-05-09)
+
+Round cap is done — per-side per-band quarter-discs wrap each band 90°
+around the endpoint (`quarterCap` in `buildBlockGeometryV2.js`). Blunt
+and none currently fall through to V2's default square segment end (no
+extra geometry), which matches V1 but not the operator's intent. Three
+explicit modes wanted:
+
+- **Round** — per-side quarter-discs (existing, done).
+- **Blunt** — perpendicular ped-zone band CROSSING the chain end. A
+  rectangle of length = full chain width (asphalt + curb + ped on both
+  sides), thickness = ped depth (treelawn + sidewalk), centered on the
+  chain endpoint and oriented perpendicular to T. Reads as a "terminal
+  concrete strip" — the visual cue for a real dead-end.
+- **None** — square cut-off, no extra geometry. The chain just ends.
+  Used at IX-handoff endpoints where another chain picks up.
+
+Should fit alongside `quarterCap` as a sibling `perpEndBand` helper,
+called from the same `if (capEnd === '...')` switch in the per-segment
+loop. Per-segment effective widths apply (operator can author asymmetric
+or per-side-different cap dimensions via `blockCustoms` at the endpoint
+segment). Geometry must close as a polygon analogous to the round cap so
+the `unionRings` / `intersectRings` / clip pipeline downstream works
+unchanged.
+
+---
+
+## Concrete corner pad geometry — LANDED 2026-05-09
+
+Per-corner parallelogram anchored at V, sides T_A·L_A and T_B·L_B, sized
+flush to the **opposite** leg's band-outer perpendicular distance:
+`L_A = outerL_B + cw + leftDepth_B`, `L_B = outerR_A + cw + rightDepth_A`.
+Quads union'd (winding normalization), then intersected with the same
+`blockRounded` mask the bands and block-fill use. Rendered at
+`PRI.residential + 0.5` so chain treelawn/sidewalk paint over the pad
+in their band-zones; pad shows only in the rounded wedge where neither
+band reaches.
+
+The clipping mask does the geometry; the pad is just a quad. No arc
+math, no R lookup, no Boolean-subtract bands/curb. Files:
+`src/lib/buildBlockGeometryV2.js` (`buildCornerPadQuad`),
+`src/cartograph/BlockGeometryV2Debug.jsx` (renderOrder).
+
+---
+
+## Per-vertex smoothing UX rethink (queued 2026-05-08)
+
+The v0 implementation works geometrically — purple dots on the obtuse
+side of each non-IX bend, drag radial = R, tap to clear — but the visual
+language doesn't read well. User feedback: "vestigial concentric rings,"
+the feature is "working but I really don't like it." Idle dots already
+clutter at LS density; the preview ring around each authored bend
+stacked further. Stripped both rings and added tap-to-reset as a stop-gap.
+
+Open questions for the rethink:
+- Should idle dots even render? Maybe surface them only on chain hover.
+- Is per-vertex authoring the right granularity? Maybe per-chain
+  smoothing radius (one slider per chain) covers ~80% of intent.
+- Drag-radial is conceptually fine but visually meaningless — needs
+  some kind of in-scene preview that doesn't read as a fingerprint.
+- Could fold into an "edit chain shape" mode that surfaces chain points
+  + bend dots together (Illustrator pen-tool framing).
+
+Files touched: `buildBlockGeometryV2.js` (`filletChainVertex`,
+`applyChainSmoothing`), `CornerEditHandles.jsx` (`computeSmoothLayout`
++ render), `useCartographStore.js` (`vertexSmoothing` +
+`setVertexSmoothing`). Geometry side is correct and reusable; the
+rethink is purely UX.
+
+---
+
+## Auto-smooth threshold for near-straight chain bends (queued 2026-05-08)
+
+Per-vertex smoothing dots ship with manual control: the operator picks
+which bends to fillet. Add an auto-smooth threshold so any non-IX bend
+with interior angle > N° (proposal: ~170°) gets a small implicit fillet
+without requiring an authored radius. Implementation idea: in
+`buildBlockGeometryV2.js`'s `applyChainSmoothing`, fall through to a
+small default R (perhaps tied to the band's outer offset) when the
+turn is below threshold. Look-level toggle so operators can opt out.
+User opted to skip this for now — manual per-vertex authoring is
+sufficient for the cases that matter to them.
+
+---
 
 ## Toolbar Looks `<select>` reads taller than `<button>` peers (queued 2026-05-08)
 

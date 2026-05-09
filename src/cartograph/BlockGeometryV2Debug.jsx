@@ -165,8 +165,15 @@ export default function BlockGeometryV2Debug({
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
+  const blockLandUse              = useCartographStore(s => s.blockLandUse)
+  const vertexSmoothing           = useCartographStore(s => s.vertexSmoothing)
   const layerColors               = useCartographStore(s => s.layerColors)
   const luColors                  = useCartographStore(s => s.luColors)
+  // Per-layer visibility — Surfaces panel writes `false` to hide. Same
+  // map used by MapLayers / Stage so the toggle is unified across the
+  // app. Default (undefined) = visible.
+  const layerVis                  = useCartographStore(s => s.layerVis)
+  const asphaltVisible            = layerVis?.street !== false
   // Live operator intent — Survey caps, Measure overrides, smooth, anchor.
   // Merged onto the static `ribbons` prop so V2 reflects edits without
   // waiting for a re-bake. Structural data (chain points, IX positions,
@@ -184,26 +191,24 @@ export default function BlockGeometryV2Debug({
   const curbCol     = colorFor('curb')
   const treelawnCol = colorFor('treelawn')
   const sidewalkCol = colorFor('sidewalk')
-  const blockCol    = residentialColor || (luColors && luColors.residential) || DEFAULT_LU_COLORS.residential
-
   const liveRibbons = useMemo(
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
-  const { asphaltRounded, blockRounded, blockFill, curbBands, byChain, corners } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], curbBands: [], byChain: [], corners: [] }
+  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, cornerAsphaltPlugs, cornerSidewalkPads, byChain, corners } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], cornerAsphaltPlugs: [], cornerSidewalkPads: [], byChain: [], corners: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
         cornerRadiusScale, stencil,
         cornerRadiusOverrides, cornerCornerRadiusOverrides,
-        curbWidth, blockCustoms,
+        curbWidth, blockCustoms, vertexSmoothing, blockLandUse,
       })
     } catch (e) {
       console.error('[BlockGeometryV2Debug] build failed:', e)
       return empty
     }
-  }, [liveRibbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockCustoms])
+  }, [liveRibbons, stencil, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockCustoms, vertexSmoothing, blockLandUse])
 
   // Stash the rounded block rings into the store so MeasureOverlay's
   // drag path can resolve block adjacency at drag time without re-running
@@ -225,8 +230,32 @@ export default function BlockGeometryV2Debug({
   // The loose blockRounded (stencil − asphalt) stays available for
   // adjacency lookups (_setV2Blocks below) where the wider area better
   // identifies "which block is on this side of the chain".
-  const blockGeo    = useMemo(() => ringsToFlatGeo(blockFill, 0.01, true), [blockFill])
+  // Group blocks by land use → one mesh per LU type, each colored from
+  // luColors[lu] || DEFAULT_LU_COLORS[lu]. The hash-fallback assignment
+  // happens inside buildBlockGeometryV2 (deterministic per blockKey).
+  const blockGroups = useMemo(() => {
+    const byLu = new Map()
+    for (const b of (blocks || [])) {
+      if (!byLu.has(b.lu)) byLu.set(b.lu, [])
+      byLu.get(b.lu).push(b.ring)
+    }
+    const out = []
+    for (const [lu, rings] of byLu) {
+      const color = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || DEFAULT_LU_COLORS.residential
+      out.push({ lu, color, geo: ringsToFlatGeo(rings, 0.01, true) })
+    }
+    return out
+  }, [blocks, luColors])
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
+  // Asphalt corner plug — fills the rounded fillet wedges at IX corners
+  // that the per-chain asphalt rectangles don't cover. Without this, the
+  // ground/horizon shows through the corner. Sits at asphalt priority,
+  // shared between chains, always opaque (no per-chain translucency).
+  const cornerAsphaltGeo = useMemo(() => ringsToFlatGeo(cornerAsphaltPlugs, 0.038, false), [cornerAsphaltPlugs])
+  // Concrete corner pad — sidewalk-color wedge at each IX corner where
+  // the chains' ped-zone bands don't connect. Sits at sidewalk priority,
+  // shared between chains, always opaque.
+  const cornerSidewalkGeo = useMemo(() => ringsToFlatGeo(cornerSidewalkPads, 0.028, false), [cornerSidewalkPads])
   // Per-chain band geometries so the selected chain's meshes can swap to
   // the translucent material variant while every other chain stays
   // opaque. Block + curb stay unified above (block-level surfaces).
@@ -282,10 +311,6 @@ export default function BlockGeometryV2Debug({
   // stay opaque always — block-level surfaces, never selectedCorridor.
   // Asphalt + treelawn + sidewalk get selectedCorridor: true on the
   // selected chain → useSurfaceMaterial returns opacity 0.55 in Measure.
-  const blockMat = useMemo(
-    () => makeMaterial(blockCol, PRI.residential, null, { surveyActive }),
-    [makeMaterial, blockCol, surveyActive]
-  )
   const curbMat = useMemo(
     () => makeMaterial(curbCol, PRI.curb, null, { measureActive, surveyActive }),
     [makeMaterial, curbCol, measureActive, surveyActive]
@@ -293,9 +318,10 @@ export default function BlockGeometryV2Debug({
 
   return (
     <group>
-      {blockGeo && !hideLandUse && (
-        <mesh geometry={blockGeo} renderOrder={PRI.residential} receiveShadow material={blockMat} />
-      )}
+      {!hideLandUse && blockGroups.map(g => g.geo && (
+        <mesh key={g.lu} geometry={g.geo} renderOrder={PRI.residential} receiveShadow
+          material={makeMaterial(g.color, PRI.residential, null, { surveyActive })} />
+      ))}
       {/* Per-chain band meshes. Material built fresh per mesh per render
           (matching V1). Selected chain → selectedCorridor:true → opacity
           0.55. Order: treelawn (3) → sidewalk (5) → curb (6, unified)
@@ -311,10 +337,23 @@ export default function BlockGeometryV2Debug({
       {curbGeo && (
         <mesh geometry={curbGeo} renderOrder={PRI.curb} receiveShadow material={curbMat} />
       )}
-      {perChainGeo.map(g => g.asphalt && (
+      {asphaltVisible && perChainGeo.map(g => g.asphalt && (
         <mesh key={`a${g.chainIdx}`} geometry={g.asphalt} renderOrder={PRI.asphalt} receiveShadow
           material={makeMaterial(asphaltCol, PRI.asphalt, null, { measureActive, surveyActive, selectedCorridor: g.chainIdx === selectedStreet })} />
       ))}
+      {asphaltVisible && cornerAsphaltGeo && (
+        <mesh geometry={cornerAsphaltGeo} renderOrder={PRI.asphalt} receiveShadow
+          material={makeMaterial(asphaltCol, PRI.asphalt, null, { surveyActive })} />
+      )}
+      {/* Concrete corner pad — quad covering the corner wedge, clipped by
+          the same blockRounded mask that shapes the bands and block fill.
+          Renders UNDER treelawn/sidewalk so chain bands paint over it;
+          pad shows only in the gap where neither band reaches (the
+          rounded wedge between the curb arc and the band-zone). */}
+      {cornerSidewalkGeo && (
+        <mesh geometry={cornerSidewalkGeo} renderOrder={PRI.residential + 0.5} receiveShadow
+          material={makeMaterial(sidewalkCol, PRI.residential + 0.5, null, { surveyActive })} />
+      )}
       {treelawnEdgeGeo && (
         <lineSegments geometry={treelawnEdgeGeo} renderOrder={PRI.asphalt + 1}>
           <lineBasicMaterial color={treelawnCol} transparent opacity={1} depthWrite={false} />

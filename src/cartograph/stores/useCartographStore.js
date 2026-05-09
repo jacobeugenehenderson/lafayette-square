@@ -163,6 +163,23 @@ const useCartographStore = create((set, get) => ({
   // dial. Persists in design.json; consumed by StreetRibbons.jsx (live)
   // and ribbonsGeometry.js#buildCornerPadClips (bake / face clip).
   cornerRadiusScale: 1,
+  // Look-level label style. Drives the canvas-sprite renderer in
+  // MapLayers.LabelSprite. One class for now (every label uses the same
+  // values); the schema is shaped so a future per-class roster — e.g.
+  // labels.byClass.street / .district / .landmark — can layer on top
+  // without changing the renderer's read path. Defaults reproduce the
+  // pre-parametric hardcoded look (white #fff on #3a3a38 chip, weight
+  // 600, ~4 m tall).
+  labels: {
+    size:       4,           // world-space height in meters
+    weight:     600,         // 300 | 400 | 500 | 600 | 700
+    fill:       '#ffffff',   // glyph color
+    bg:         '#3a3a38',   // chip background
+    bgAlpha:    1,           // 0 = chip disappears, halo takes over
+    halo:       '#000000',   // glyph stroke color
+    haloWidth:  0,           // px; 0 = no halo
+    opacity:    1,           // sprite opacity
+  },
   // Look-level global curb width (meters). V2 emits the curb as a single
   // unified stroke around the rounded asphalt boundary, so width is
   // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
@@ -182,6 +199,13 @@ const useCartographStore = create((set, get) => ({
   // override. Editing the chain's global measure clears the chain's
   // customs (globals are truth; customs are local deviations).
   blockCustoms: {},
+  // Per-block land-use overrides. Keyed by stable centroid hash
+  // (`${cx.toFixed(2)},${cy.toFixed(2)}` of the block's outer ring).
+  // Empty by default → buildBlockGeometryV2 falls through to a weighted
+  // deterministic hash of the centroid for variety in toy. Real LS
+  // blocks would seed this map from `ribbons.faces[].use`.
+  //   blockLandUse[blockKey] = 'residential' | 'commercial' | …
+  blockLandUse: {},
   // Measure tool's edit mode.
   //   'block' (default) — drag writes a per-segment-per-side override in
   //     blockCustoms keyed by (chainIdx, segOrd, side). Operator-time
@@ -217,6 +241,18 @@ const useCartographStore = create((set, get) => ({
   // legs is removed from the IX — the explicit point of leg-pair keys
   // over CCW-ordinal indices. Resolved before the per-IX map.
   cornerCornerRadiusOverrides: {},
+  // Per-vertex smoothing radius for non-IX chain bends. Illustrator-style:
+  // the operator drops a dot on a bent chain vertex and drags away from
+  // it to fillet the bend. Storage:
+  //   vertexSmoothing[chainIdx][vertexIdx] = R (meters)
+  // chainIdx = index in centerlineData.streets; vertexIdx = index in that
+  // chain's points array. Keyed by *index* rather than world-coords because
+  // chain points are stable for a given chain (the SurveyorPanel rewires
+  // the array on insert/split and would invalidate spatial keys anyway —
+  // these overrides clear when that happens). IX vertices (segment
+  // boundaries) are excluded; their corner authoring lives in
+  // cornerCornerRadiusOverrides.
+  vertexSmoothing: {},
   // Transient UI mode — when true, the Corner-edit handles surface in the
   // 3D scene. Not persisted (operators don't want a Look to load in edit
   // mode); toggled from the Streets > Corners subsection in Panel.
@@ -327,6 +363,13 @@ const useCartographStore = create((set, get) => ({
     set({ curbWidth: n })
     get()._saveDesignDebounced()
   },
+  // Patch-merge into labels. Caller passes a partial like { size: 6 } or
+  // { fill: '#ff8800', haloWidth: 2 }; missing keys keep their current value.
+  setLabelStyle: (patch) => {
+    if (!patch || typeof patch !== 'object') return
+    set(s => ({ labels: { ...(s.labels || {}), ...patch } }))
+    get()._saveDesignDebounced()
+  },
   _setV2Blocks: (blocks) => set({ _v2Blocks: Array.isArray(blocks) ? blocks : [] }),
   // Measure-mode setter. 'block' is the default; 'global' is the
   // whole-chain authoring mode (= edit chain.measure).
@@ -349,6 +392,18 @@ const useCartographStore = create((set, get) => ({
   // Clear every block custom on this chain. Called from the global-edit
   // drag path so editing the chain default wipes its locals (the
   // "globals are truth" semantics).
+  setBlockLandUse: (blockKey, lu) => {
+    if (!blockKey) return
+    const next = { ...(get().blockLandUse || {}) }
+    if (lu == null) delete next[blockKey]
+    else next[blockKey] = String(lu)
+    set({ blockLandUse: next })
+    get()._saveDesignDebounced()
+  },
+  clearBlockLandUse: () => {
+    set({ blockLandUse: {} })
+    get()._saveDesignDebounced()
+  },
   clearBlockCustomsForChain: (chainIdx) => {
     const cur = get().blockCustoms || {}
     if (!cur[chainIdx]) return
@@ -444,6 +499,25 @@ const useCartographStore = create((set, get) => ({
         next[key] = Math.max(0, Math.min(50, +r))
       }
       return { cornerCornerRadiusOverrides: next }
+    })
+    get()._saveDesignDebounced()
+  },
+  // Write a per-vertex smoothing radius. Pass null/undefined for r to
+  // clear (revert that vertex to a sharp bend). Clamped to [0, 50] m to
+  // keep authoring sane and avoid pathological geometry.
+  setVertexSmoothing: (chainIdx, vertexIdx, r) => {
+    if (chainIdx == null || vertexIdx == null) return
+    set(s => {
+      const next = { ...(s.vertexSmoothing || {}) }
+      const chainMap = { ...(next[chainIdx] || {}) }
+      if (r == null || !Number.isFinite(r) || r <= 0) {
+        delete chainMap[vertexIdx]
+      } else {
+        chainMap[vertexIdx] = Math.max(0, Math.min(50, +r))
+      }
+      if (Object.keys(chainMap).length === 0) delete next[chainIdx]
+      else next[chainIdx] = chainMap
+      return { vertexSmoothing: next }
     })
     get()._saveDesignDebounced()
   },
@@ -866,9 +940,12 @@ const useCartographStore = create((set, get) => ({
         luColors:       design.luColors       || {},
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
         curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
+        labels: { ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) },
         blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
+        blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
         cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
+        vertexSmoothing: (design.vertexSmoothing && typeof design.vertexSmoothing === 'object') ? design.vertexSmoothing : {},
         materialColors: design.materialColors || {},
         materialPhysics: design.materialPhysics || {},
         buildingPalette: design.buildingPalette || get().buildingPalette,
@@ -1269,9 +1346,12 @@ const useCartographStore = create((set, get) => ({
         luColors:       design.luColors       || {},
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
         curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
+        labels: { ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) },
         blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
+        blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
         cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
+        vertexSmoothing: (design.vertexSmoothing && typeof design.vertexSmoothing === 'object') ? design.vertexSmoothing : {},
         materialColors: design.materialColors || {},
         materialPhysics: design.materialPhysics || {},
         buildingPalette: design.buildingPalette || get().buildingPalette,
@@ -1381,8 +1461,11 @@ const useCartographStore = create((set, get) => ({
           cornerRadiusScale: s.cornerRadiusScale,
           cornerRadiusOverrides: s.cornerRadiusOverrides,
           cornerCornerRadiusOverrides: s.cornerCornerRadiusOverrides,
+          vertexSmoothing: s.vertexSmoothing,
           curbWidth: s.curbWidth,
+          labels: s.labels,
           blockCustoms: s.blockCustoms,
+          blockLandUse: s.blockLandUse,
           materialColors: s.materialColors,
           materialPhysics: s.materialPhysics,
           buildingPalette: s.buildingPalette,

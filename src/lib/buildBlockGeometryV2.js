@@ -21,6 +21,57 @@ const SCALE = 1000
 const ARC_N = 16
 const RAD = Math.PI / 180
 
+// Weighted random LU palette for unauthored blocks. Distribution tuned to
+// read as "a real neighborhood with anomalies" — residential dominant,
+// commercial secondary, edge cases sparse. Sums to 100.
+const LU_WEIGHTS = [
+  ['residential',         50],
+  ['commercial',          15],
+  ['vacant',               8],
+  ['vacant-commercial',    5],
+  ['parking',              7],
+  ['institutional',        5],
+  ['recreation',           7],
+  ['industrial',           3],
+]
+const LU_CUM = (() => {
+  const out = []
+  let acc = 0
+  for (const [name, w] of LU_WEIGHTS) { acc += w; out.push([name, acc]) }
+  return out
+})()
+function pickLuFromHash(h) {
+  const r = (h % 100 + 100) % 100
+  for (const [name, c] of LU_CUM) { if (r < c) return name }
+  return 'residential'
+}
+// xmur3-style deterministic 32-bit hash from a key string. Stable across
+// runs; same key → same bucket.
+function hashKey(s) {
+  let h = 1779033703 ^ s.length
+  for (let i = 0; i < s.length; i++) {
+    h = Math.imul(h ^ s.charCodeAt(i), 3432918353)
+    h = (h << 13) | (h >>> 19)
+  }
+  h = Math.imul(h ^ (h >>> 16), 2246822507)
+  h = Math.imul(h ^ (h >>> 13), 3266489909)
+  return (h ^ (h >>> 16)) >>> 0
+}
+// Stable per-block key from a ring's bounding-box center, snapped to 0.5m.
+// Bbox is more drift-tolerant than centroid when chain widths change —
+// the visible bbox of a block barely moves when a sidewalk widens by 1m,
+// whereas the centroid can shift several meters.
+function blockKeyFromRing(ring) {
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity
+  for (const p of ring) {
+    if (p[0]<minX)minX=p[0]; if (p[0]>maxX)maxX=p[0]
+    if (p[1]<minY)minY=p[1]; if (p[1]>maxY)maxY=p[1]
+  }
+  const cx = Math.round(((minX + maxX) / 2) * 2) / 2
+  const cy = Math.round(((minY + maxY) / 2) * 2) / 2
+  return `${cx.toFixed(1)},${cy.toFixed(1)}`
+}
+
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 
@@ -315,13 +366,50 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
 
     corners.push({
       point: Vc,
+      V,                       // IX vertex (same for all corners at this IX)
       theta,
       d_min,
       R_class: R_CLASS_DEFAULT,
       R_authored,
+      // Leg data for downstream pad polygon construction. T_A/T_B point
+      // OUT from V along each leg; outerR/outerL are the leg's pavementHW
+      // facing this corner; rightDepth_A/leftDepth_B are the per-side
+      // ped-zone depths (treelawn + sidewalk on a 'sidewalk' terminal,
+      // 0 otherwise) facing this corner.
+      T_A: A.T, T_B: B.T,
+      outerR_A: A.outerR, outerL_B: B.outerL,
+      rightDepth_A: A.rightDepth, leftDepth_B: B.leftDepth,
     })
   }
   return corners
+}
+
+// Concrete corner pad — a flat quadrilateral covering the wedge between
+// two adjacent legs of an IX, anchored at V. NO arc math, no R lookup.
+// The same blockRounded clipping mask that already shapes the green
+// block and clips chain bands shapes this pad too — the rounded curb
+// boundary falls out of the clip for free, identical to how the asphalt
+// mouth carves block-fill. "Put a quad in the smart object, put the
+// clipping mask over the whole thing." Render order under treelawn so
+// bands paint over the pad in the band-zone, leaving pad visible only
+// in the gap area near V.
+function buildCornerPadQuad(corner, cw) {
+  const { V, T_A, T_B, outerR_A, outerL_B, rightDepth_A, leftDepth_B } = corner
+  if (rightDepth_A <= 0 || leftDepth_B <= 0) return null
+  // The pad's edge along T_A sits perpendicular-distance L_A from chain B
+  // (not chain A — T_A is parallel to chain A, so it's perpendicular to
+  // T_B's chain when θ=90°). Size L_A off B's facing-side metadata so
+  // the pad ends exactly at B's band outer edge; same for L_B/A. Flush,
+  // no slack — the chain band paints over any pad pixel that sneaks
+  // past, which would otherwise read as an "internal bump."
+  const L_A = outerL_B + cw + leftDepth_B
+  const L_B = outerR_A + cw + rightDepth_A
+  return [
+    [V[0], V[1]],
+    [V[0] + T_A[0] * L_A, V[1] + T_A[1] * L_A],
+    [V[0] + T_A[0] * L_A + T_B[0] * L_B, V[1] + T_A[1] * L_A + T_B[1] * L_B],
+    [V[0] + T_B[0] * L_B, V[1] + T_B[1] * L_B],
+  ]
 }
 
 // Replace polygon vertex at `cur` with an arc of radius R tangent to
@@ -334,13 +422,24 @@ function arcReplaceVertex(prev, cur, next, R, theta) {
   const halfTheta = theta / 2
   const tanH = Math.tan(halfTheta)
   if (tanH <= 1e-6) return [cur]
-  const inset = R / tanH
+  // Cap inset at 49% of the shorter adjacent segment so a too-large R
+  // (e.g., from a maxed cornerRadiusScale slider) doesn't overshoot the
+  // segment endpoints and produce a degenerate ring. When clamped,
+  // recompute the effective R = clampedInset * tanH so the arc still
+  // closes tangentially. Mirrors filletChainVertex's clamp.
+  let inset = R / tanH
+  const maxInset = Math.min(
+    Math.hypot(cur[0] - prev[0], cur[1] - prev[1]),
+    Math.hypot(next[0] - cur[0], next[1] - cur[1]),
+  ) * 0.49
+  let actualR = R
+  if (inset > maxInset) { inset = maxInset; actualR = inset * tanH }
   const tA = [cur[0] - inset * inDir[0], cur[1] - inset * inDir[1]]
   const tB = [cur[0] + inset * outDir[0], cur[1] + inset * outDir[1]]
   // Right-turn convention: arc center is to the right of inDir.
   // Right-perp of inDir = (inDir.y, -inDir.x).
   const normalA = [inDir[1], -inDir[0]]
-  const center = [tA[0] + R * normalA[0], tA[1] + R * normalA[1]]
+  const center = [tA[0] + actualR * normalA[0], tA[1] + actualR * normalA[1]]
   const a1 = Math.atan2(tA[1] - center[1], tA[0] - center[0])
   const a2 = Math.atan2(tB[1] - center[1], tB[0] - center[0])
   let da = a2 - a1
@@ -350,10 +449,81 @@ function arcReplaceVertex(prev, cur, next, R, theta) {
   const out = [tA]
   for (let k = 1; k < ARC_N; k++) {
     const a = a1 + (da * k / ARC_N)
-    out.push([center[0] + R * Math.cos(a), center[1] + R * Math.sin(a)])
+    out.push([center[0] + actualR * Math.cos(a), center[1] + actualR * Math.sin(a)])
   }
   out.push(tB)
   return out
+}
+
+// Fillet a chain bend at `cur` with radius R. Unlike arcReplaceVertex
+// (which assumes block-convex right turns and is used for IX corners),
+// this handles BOTH turn directions — the centerline can bend either way
+// and the fillet should follow. Tangent inset is capped at 49% of the
+// shorter adjacent segment so the arc never overshoots into the next
+// vertex; if R is too large, the actual arc radius is reduced to fit.
+// Returns an array of points that replace `cur`. Returns [cur] for
+// near-collinear vertices (no usable fillet).
+function filletChainVertex(prev, cur, next, R) {
+  const inDir = unit([cur[0] - prev[0], cur[1] - prev[1]])
+  const outDir = unit([next[0] - cur[0], next[1] - cur[1]])
+  const cross = inDir[0] * outDir[1] - inDir[1] * outDir[0]
+  if (Math.abs(cross) < 1e-4) return [cur]
+  const dot = inDir[0] * outDir[0] + inDir[1] * outDir[1]
+  const turn = Math.atan2(cross, dot)   // signed deflection ∈ (-π, π)
+  const tanH = Math.tan(Math.abs(turn) / 2)
+  if (tanH <= 1e-6) return [cur]
+  let inset = R * tanH
+  const maxInset = Math.min(
+    Math.hypot(cur[0] - prev[0], cur[1] - prev[1]),
+    Math.hypot(next[0] - cur[0], next[1] - cur[1]),
+  ) * 0.49
+  let actualR = R
+  if (inset > maxInset) { inset = maxInset; actualR = inset / tanH }
+  const T_in  = [cur[0] - inset * inDir[0],  cur[1] - inset * inDir[1]]
+  const T_out = [cur[0] + inset * outDir[0], cur[1] + inset * outDir[1]]
+  // Inside of the turn: left of inDir for left turns (cross > 0),
+  // right of inDir for right turns (cross < 0).
+  const sign = cross > 0 ? +1 : -1
+  const normal = [-inDir[1] * sign, inDir[0] * sign]
+  const center = [T_in[0] + actualR * normal[0], T_in[1] + actualR * normal[1]]
+  const a1 = Math.atan2(T_in[1]  - center[1], T_in[0]  - center[0])
+  const a2 = Math.atan2(T_out[1] - center[1], T_out[0] - center[0])
+  let da = a2 - a1
+  if (da > Math.PI) da -= 2 * Math.PI
+  if (da < -Math.PI) da += 2 * Math.PI
+  const out = [T_in]
+  for (let k = 1; k < ARC_N; k++) {
+    const a = a1 + (da * k / ARC_N)
+    out.push([center[0] + actualR * Math.cos(a), center[1] + actualR * Math.sin(a)])
+  }
+  out.push(T_out)
+  return out
+}
+
+// Apply per-vertex smoothing to a chain's points. Walks vertices 1..n-2
+// and replaces any with a configured radius by an arc fillet. Endpoints
+// (which are either chain ends or IX boundaries owned by the segment
+// loop's caller) are NEVER touched. `vertexIndexAt(i)` maps a local
+// segment-vertex index to the chain-vertex index used for the override
+// lookup. Returns the (possibly resampled) points array; if no overrides
+// applied, returns `pts` unchanged.
+function applyChainSmoothing(pts, smoothingForVertex) {
+  const n = pts.length
+  if (n < 3) return pts
+  let any = false
+  const out = [pts[0]]
+  for (let i = 1; i < n - 1; i++) {
+    const R = smoothingForVertex(i)
+    if (Number.isFinite(R) && R > 0.01) {
+      const arc = filletChainVertex(pts[i - 1], pts[i], pts[i + 1], R)
+      for (const p of arc) out.push(p)
+      if (arc.length !== 1) any = true
+    } else {
+      out.push(pts[i])
+    }
+  }
+  out.push(pts[n - 1])
+  return any ? out : pts
 }
 
 function applyRoundCornersToRing(ring, corners, scale = 1) {
@@ -526,13 +696,45 @@ function chainStripBand(pts, perps, side, dInner, dOuter) {
   return [...outer, ...inner.slice().reverse()]
 }
 
-// Round-cap band extension: a half-annulus around a chain endpoint that
-// lets the strip bands wrap continuously around the cap (concentric arcs at
-// dInner/dOuter, sweeping 180° through the FORWARD direction off the chain
-// end). Returned as a closed polygon.
-//   `center` = chain endpoint (pts[0] or pts[n-1])
-//   `T_out`  = unit tangent pointing OFF the chain at this end
-//              (= forward at end, = -forward at start)
+// V1-style per-side per-band quarter cap around a chain endpoint. Sweeps
+// 90° from `sideSign·perp(T_out)` (a=0) through `T_out` (a=π/2) at radii
+// [innerR, outerR]. With innerR≤0 returns a pie slice (closed back to
+// `center`) for the asphalt cap; otherwise returns a quarter-annulus for
+// treelawn / sidewalk wrap-around.
+//   `sideSign` follows V2's chain convention relative to T_out:
+//     +1 = +perp(T_out) (south-of-east-bound), -1 = -perp(T_out)
+//   At the END cap, T_out = chain forward, so chain.left→sideSign=-1,
+//   chain.right→+1. At the START cap, T_out = chain backward, so the
+//   mapping flips: chain.left→+1, chain.right→-1.
+//
+// V1's quarter-cap approach (vs. V2's prior 180° half-annulus) keeps each
+// side's band radially independent, so asymmetric measures and per-segment
+// custom widths produce a clean lemon-shaped cap instead of a circle that
+// doesn't match either side's band.
+function quarterCap(center, T_out, sideSign, innerR, outerR) {
+  if (outerR <= Math.max(0, innerR) + 1e-9) return null
+  // V2 perps come from computePerps which yields right-perp of forward T,
+  // i.e. perp = (-Tz, Tx). We replicate that here so sideSign matches the
+  // segment-rectangle sign convention.
+  const px = -T_out[1] * sideSign
+  const py =  T_out[0] * sideSign
+  const ARC = 12
+  const outer = []
+  const inner = []
+  for (let k = 0; k <= ARC; k++) {
+    const a = (k / ARC) * (Math.PI / 2)
+    const c = Math.cos(a), s = Math.sin(a)
+    const dx = c * px + s * T_out[0]
+    const dy = c * py + s * T_out[1]
+    outer.push([center[0] + outerR * dx, center[1] + outerR * dy])
+    if (innerR > 1e-9) inner.push([center[0] + innerR * dx, center[1] + innerR * dy])
+  }
+  if (innerR <= 1e-9) return [center, ...outer]
+  return [...outer, ...inner.slice().reverse()]
+}
+
+// (Legacy 180° half-annulus retained as dead reference; superseded by
+// quarterCap above.)
 function roundCapHalfAnnulus(center, T_out, dInner, dOuter) {
   if (dOuter <= dInner || dInner <= 0) return null
   const ARC = 16
@@ -556,7 +758,8 @@ function roundCapHalfAnnulus(center, T_out, dInner, dOuter) {
 export function buildBlockGeometryV2(ribbons, opts = {}) {
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
-    curbWidth = CURB_WIDTH, blockCustoms = null } = opts
+    curbWidth = CURB_WIDTH, blockCustoms = null, vertexSmoothing = null,
+    blockLandUse = null } = opts
   const streets = ribbons?.streets || []
   const intersections = ribbons?.intersections || []
 
@@ -613,8 +816,18 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 
     for (let segOrd = 0; segOrd < segments.length; segOrd++) {
       const seg = segments[segOrd]
-      const segPts = pts.slice(seg.start, seg.end + 1)
-      const segPerps = perps.slice(seg.start, seg.end + 1)
+      const rawSegPts = pts.slice(seg.start, seg.end + 1)
+      // Per-vertex smoothing — fillet any non-IX interior bend with a
+      // recorded radius. IX vertices (segment boundaries) are excluded
+      // from the smoothing pass: smoothing ops there belong to
+      // applyRoundCornersToRing on the asphalt void. After smoothing
+      // we recompute perps because the resampled point set has new
+      // tangent directions at the inserted arc points.
+      const segChainMap = vertexSmoothing?.[chainIdx] || null
+      const segPts = segChainMap
+        ? applyChainSmoothing(rawSegPts, (i) => segChainMap[seg.start + i])
+        : rawSegPts
+      const segPerps = (segPts === rawSegPts) ? perps.slice(seg.start, seg.end + 1) : computePerps(segPts)
       const segLen = segPts.length
       if (segLen < 2) continue
 
@@ -629,21 +842,14 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 
       // Asphalt rectangle for this segment. Walks the centerline at
       // -perp*hwL on the left and +perp*hwR on the right (V1 sign
-      // convention). End-cap arc only on the LAST segment of the chain
-      // when capEnd === 'round'; start-cap on the FIRST segment.
+      // convention). Square ends — round caps are handled externally
+      // by per-side quarter pie slices unioned with this rect (V1
+      // approach), so asymmetric widths produce a lemon-shaped cap
+      // that matches each side's band cleanly.
       if (hwL > 0 || hwR > 0) {
         const leftEdge  = segPts.map((p, i) => [p[0] - segPerps[i][0] * hwL, p[1] - segPerps[i][1] * hwL])
         const rightEdge = segPts.map((p, i) => [p[0] + segPerps[i][0] * hwR, p[1] + segPerps[i][1] * hwR])
-        const radius = Math.max(hwL, hwR)
-        const isFirst = segOrd === 0
-        const isLast  = segOrd === segments.length - 1
-        const endArc = (isLast && capEnd === 'round')
-          ? halfArc(segPts[segLen - 1], radius, leftEdge[segLen - 1], rightEdge[segLen - 1])
-          : []
-        const startArc = (isFirst && capStart === 'round')
-          ? halfArc(segPts[0], radius, rightEdge[0], leftEdge[0])
-          : []
-        entry.asphaltRings.push([...leftEdge, ...endArc, ...rightEdge.slice().reverse(), ...startArc])
+        entry.asphaltRings.push([...leftEdge, ...rightEdge.slice().reverse()])
       }
 
       // Per-side ped-zone bands. Inner edge sits at the segment's own
@@ -667,42 +873,49 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         if (sw > 0) entry.sidewalkEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
       }
     }
-    // For the chain endpoints' max ped-zone (cap annulus widths): use
-    // the FIRST segment's left/right for the start cap, LAST segment's
-    // for the end cap. (The half-annulus extension wraps around the
-    // round endpoint and matches THAT segment's widths.)
-    let maxHw = 0, maxTl = 0, maxSw = 0
-    for (const sideKey of ['left', 'right']) {
-      const s = m[sideKey]
-      if (!s || s.terminal !== 'sidewalk') continue
-      maxHw = Math.max(maxHw, s.pavementHW || 0)
-      maxTl = Math.max(maxTl, s.treelawn || 0)
-      maxSw = Math.max(maxSw, s.sidewalk || 0)
+    // V1-style per-side per-band quarter caps at round-cap endpoints.
+    // Each side emits up to 3 quarter rings (asphalt pie + treelawn
+    // annulus + sidewalk annulus). Per-segment custom widths apply:
+    // start-cap reads the FIRST segment, end-cap reads the LAST.
+    // `t` = +1 at the end (T_out = chain forward) or -1 at the start
+    // (T_out = chain backward); flips chain.left/right → sideSign so
+    // the radial bands sit on the visually correct side after the flip.
+    const emitQuarterCaps = (endpoint, T_out, segIdx, t) => {
+      const segCustom = blockCustoms?.[chainIdx]?.[segIdx]
+      const effL = segCustom?.left  || m.left  || {}
+      const effR = segCustom?.right || m.right || {}
+      const sides = [
+        { eff: effL, sideSign: -t },
+        { eff: effR, sideSign: +t },
+      ]
+      for (const { eff, sideSign } of sides) {
+        const hw = eff.pavementHW || 0
+        if (hw <= 0) continue
+        // Asphalt pie slice fills out from the chain endpoint to hw.
+        const aRing = quarterCap(endpoint, T_out, sideSign, 0, hw)
+        if (aRing) entry.asphaltRings.push(aRing)
+        if (eff.terminal !== 'sidewalk') continue
+        const tl = eff.treelawn || 0
+        const sw = eff.sidewalk || 0
+        if (tl > 0) {
+          const r = quarterCap(endpoint, T_out, sideSign, hw + cw, hw + cw + tl)
+          if (r) entry.treelawnRings.push(r)
+        }
+        if (sw > 0) {
+          const r = quarterCap(endpoint, T_out, sideSign, hw + cw + tl, hw + cw + tl + sw)
+          if (r) entry.sidewalkRings.push(r)
+        }
+      }
     }
-    // Round-cap band extensions for treelawn + sidewalk. Curb's cap is
-    // already handled by the unified stroke (asphaltRounded includes the
-    // round endpoint). Reuse capStart/capEnd from the segment loop above.
-    const emitCapAnnuli = (center, T) => {
-      if (maxTl > 0) {
-        const ring = roundCapHalfAnnulus(center, T, maxHw + cw, maxHw + cw + maxTl)
-        if (ring) entry.treelawnRings.push(ring)
-      }
-      if (maxSw > 0) {
-        const ring = roundCapHalfAnnulus(center, T, maxHw + cw + maxTl, maxHw + cw + maxTl + maxSw)
-        if (ring) entry.sidewalkRings.push(ring)
-      }
+    if (capEnd === 'round' && n >= 2) {
+      const dx = pts[n-1][0] - pts[n-2][0], dz = pts[n-1][1] - pts[n-2][1]
+      const L = Math.hypot(dx, dz)
+      if (L > 1e-6) emitQuarterCaps(pts[n-1], [dx/L, dz/L], segments.length - 1, +1)
     }
-    if (maxHw > 0) {
-      if (capEnd === 'round' && n >= 2) {
-        const dx = pts[n-1][0] - pts[n-2][0], dz = pts[n-1][1] - pts[n-2][1]
-        const L = Math.hypot(dx, dz)
-        if (L > 1e-6) emitCapAnnuli(pts[n-1], [dx/L, dz/L])
-      }
-      if (capStart === 'round' && n >= 2) {
-        const dx = pts[1][0] - pts[0][0], dz = pts[1][1] - pts[0][1]
-        const L = Math.hypot(dx, dz)
-        if (L > 1e-6) emitCapAnnuli(pts[0], [-dx/L, -dz/L])
-      }
+    if (capStart === 'round' && n >= 2) {
+      const dx = pts[1][0] - pts[0][0], dz = pts[1][1] - pts[0][1]
+      const L = Math.hypot(dx, dz)
+      if (L > 1e-6) emitQuarterCaps(pts[0], [-dx/L, -dz/L], 0, -1)
     }
   }
 
@@ -757,28 +970,95 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     }
   }
 
-  // Block fill = stencil minus the union of every ribbon area (asphalt +
-  // curb + treelawn + sidewalk). What's left is "land-use" — the parcel
-  // proper, beyond the sidewalk's outer edge. Rendered opaque green so
-  // the translucent ribbons read against the aerial photo / graph paper
-  // backdrop instead of bleeding the block color through.
+  // Asphalt corner plugs — `asphaltRounded − union(per-chain asphalt)`.
+  // Each chain emits per-segment rectangles with square ends at IX
+  // vertices; the round-corners op then ADDS a fillet wedge to the
+  // unioned asphalt (asphaltRounded ⊃ per-chain rectangles at corners).
+  // That extra fillet area is part of asphaltRounded but NOT covered
+  // by any chain's asphaltRings, so it would render as ground/horizon
+  // through the gap. Plug it explicitly with an asphalt-colored mesh,
+  // shared between chains and always opaque (structural surface, no
+  // per-chain translucency). Computed AFTER per-chain clipping above
+  // so the union is final.
+  const allChainAsphalt = unionRings(byChain.flatMap(c => c?.asphaltRings || []))
+  const cornerAsphaltPlugs = differenceRings(asphaltRounded, allChainAsphalt)
+
+  // Concrete corner pads — the wedge between the rounded curb-outer arc
+  // (radius R+cw concentric with the asphalt fillet arc) and the two
+  // band-inner half-planes that meet at the linear-curb-outer corner Q.
+  // For 90°/symmetric this is "square minus quarter-disc"; the operator's
+  // "basically a square" mental model. Built directly as a closed polygon
+  // — no Boolean subtraction — because the arc tangent points coincide
+  // with where the chain ped-bands' straight inner edges begin, so there
+  // is no overlap with bands or curb to cancel out.
+  const cornerPadQuads = []
+  for (const corner of allCorners) {
+    const q = buildCornerPadQuad(corner, curbWidth)
+    if (q) cornerPadQuads.push(q)
+  }
+  // Union normalizes winding (parallelograms in different quadrants have
+  // mixed CW/CCW orientation), then intersect with the same blockRounded
+  // mask the bands and block-fill use.
+  const cornerPadUnion = cornerPadQuads.length ? unionRings(cornerPadQuads) : []
+  const cornerSidewalkPads = (cornerPadUnion.length && blockRounded.length)
+    ? intersectRings(cornerPadUnion, blockRounded)
+    : []
+
+  // Block fill — two source paths feed the same per-block output.
+  //   1. ribbons.faces[] (LS): each OSM-derived face has authentic
+  //      `use` from derive.js. Clip each face against ribbonUnion so the
+  //      parcel doesn't bleed under bands/curb/asphalt. blockLandUse can
+  //      still override per-block; default LU comes from face.use.
+  //   2. stencil (toy): derive blocks from stencil − ribbonUnion. No
+  //      OSM data — LU falls through to weighted hash by centroid.
+  // Each output block carries `{ ring, blockKey, lu }`. The renderer
+  // groups by lu and colors from luColors[lu] || DEFAULT_LU_COLORS[lu].
+  // `park` faces are skipped — LafayettePark renders that area separately.
+  const ribbonUnion = unionRings([
+    ...asphaltRounded,
+    ...curbBands,
+    ...byChain.flatMap(c => c?.treelawnRings || []),
+    ...byChain.flatMap(c => c?.sidewalkRings || []),
+    ...cornerSidewalkPads,
+  ])
   let blockFill = []
-  if (stencil && stencil.length >= 3) {
-    const ribbonUnion = unionRings([
-      ...asphaltRounded,
-      ...curbBands,
-      ...byChain.flatMap(c => c?.treelawnRings || []),
-      ...byChain.flatMap(c => c?.sidewalkRings || []),
-    ])
+  let blocks = []
+  const faces = ribbons?.faces || []
+  if (faces.length) {
+    for (const face of faces) {
+      if (!face?.ring || face.ring.length < 3) continue
+      if (face.use === 'park') continue
+      const clipped = ribbonUnion.length
+        ? differenceRings([face.ring], ribbonUnion)
+        : [face.ring]
+      for (const ring of clipped) {
+        if (!ring || ring.length < 3) continue
+        const blockKey = blockKeyFromRing(ring)
+        const lu = (blockLandUse && blockLandUse[blockKey]) || face.use || 'unknown'
+        blocks.push({ ring, blockKey, lu })
+        blockFill.push(ring)
+      }
+    }
+  } else if (stencil && stencil.length >= 3) {
     blockFill = differenceRings([stencil], ribbonUnion)
+    for (const ring of blockFill) {
+      if (!ring || ring.length < 3) continue
+      const blockKey = blockKeyFromRing(ring)
+      const lu = (blockLandUse && blockLandUse[blockKey])
+        || pickLuFromHash(hashKey(blockKey))
+      blocks.push({ ring, blockKey, lu })
+    }
   }
 
   return {
     asphaltSharp,
     asphaltRounded,
-    blockRounded,    // loose: stencil − asphalt; used for adjacency + band clipping
-    blockFill,       // tight: stencil − all ribbons; rendered as the parcel fill
+    blockRounded,         // loose: stencil − asphalt; used for adjacency + band clipping
+    blockFill,            // tight: stencil − all ribbons; rendered as the parcel fill
+    blocks,               // per-block { ring, blockKey, lu } for LU-aware rendering
     curbBands,
+    cornerAsphaltPlugs,   // asphalt fillet wedges at IX corners not covered by per-chain rects
+    cornerSidewalkPads,   // concrete wedges between rounded curb and chain ped-zone outer edges
     byChain,
     corners: allCorners,
   }
