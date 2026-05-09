@@ -96,7 +96,18 @@ const sortedCornerKey = (V, legKeyA, legKeyB) => {
 function computeIxLayout(ribbons) {
   if (!ribbons?.intersections?.length) return []
   const TWO_PI = Math.PI * 2
-  const streetByName = new Map((ribbons.streets || []).map(s => [s.name, s]))
+  // Multi-value name map. LS has many same-named chains (Park Ave×2,
+  // Russell×5, Hickory×4, Rutger×5, etc.) and a single-value get() returns
+  // only the first, so most IXs ended up matching one chain and bailing
+  // out at legs.length < 2 → empty corners → no dots. Iterate all entries
+  // with the matching name and pick the chain whose points[sref.ix] is
+  // closest to V (mirrors V2 cornersAtIx#resolveIxRef).
+  const streetsByName = new Map()
+  for (const s of (ribbons.streets || [])) {
+    if (!s?.name) continue
+    const list = streetsByName.get(s.name)
+    if (list) list.push(s); else streetsByName.set(s.name, [s])
+  }
   const out = []
   for (let ixIdx = 0; ixIdx < ribbons.intersections.length; ixIdx++) {
     const ix = ribbons.intersections[ixIdx]
@@ -105,7 +116,14 @@ function computeIxLayout(ribbons) {
     const V = ix.point
     const legs = []
     for (const sref of ix.streets) {
-      const chain = streetByName.get(sref.name)
+      const candidates = streetsByName.get(sref.name) || []
+      let chain = null, bestD = Infinity
+      for (const c of candidates) {
+        const v = c.points?.[sref.ix]
+        if (!v) continue
+        const d = Math.hypot(v[0] - V[0], v[1] - V[1])
+        if (d < bestD) { bestD = d; chain = c }
+      }
       if (!chain) continue
       const m = chain.measure
       if (!m?.left?.pavementHW || !m?.right?.pavementHW) continue
