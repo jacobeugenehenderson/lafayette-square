@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "generatedAt": 1778256197290,
+  "generatedAt": 1778310450477,
   "bbox": {
     "min": [
       -1065,
@@ -125,7 +125,7 @@
     {
       "kind": "face",
       "id": "island",
-      "color": "#5E8A3A",
+      "color": "#7A7A6E",
       "renderOrder": 8,
       "polygonOffsetUnits": -9,
       "vertexCount": 280,
@@ -136,7 +136,7 @@
     {
       "kind": "face",
       "id": "unknown",
-      "color": "#666666",
+      "color": "#888888",
       "renderOrder": 9,
       "polygonOffsetUnits": -10,
       "vertexCount": 156,

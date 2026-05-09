@@ -440,21 +440,42 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   }, [])
 
   // ── Labels (boundary-clipped) ──────────────────────────────
+  // Placement algorithm: for each unique name, find the longest straight
+  // segment across all chains carrying that name. OSM densifies vertices
+  // around curves and leaves long gaps along straight runs, so segment
+  // length is itself a strong proxy for "straightness." Centering the
+  // label on the longest segment keeps it on the street's most readable
+  // stretch and gives us the best chance of fitting the full name without
+  // running off into a curve. Angle is normalized to [-π/2, π/2] so text
+  // always reads left-to-right (a street running E→W and one running
+  // W→E render with the same orientation, no upside-down labels).
   const labelData = useMemo(() => {
-    const seen = new Set()
-    const labels = []
+    const byName = new Map()
     for (const st of ribbonsData.streets) {
-      if (!st.name || seen.has(st.name)) continue
-      if (st.points.length < 2) continue
-      const midIdx = Math.floor(st.points.length / 2)
-      const p = st.points[midIdx]
-      if (!pointInBoundary(p[0], p[1])) continue
-      seen.add(st.name)
-      // Direction for rotation
-      const p0 = st.points[Math.max(0, midIdx - 1)]
-      const p1 = st.points[Math.min(st.points.length - 1, midIdx + 1)]
-      const angle = Math.atan2(p1[1] - p0[1], p1[0] - p0[0])
-      labels.push({ name: st.name, x: p[0], z: p[1], angle })
+      if (!st.name || !st.points || st.points.length < 2) continue
+      if (!byName.has(st.name)) byName.set(st.name, [])
+      byName.get(st.name).push(st)
+    }
+    const labels = []
+    for (const [name, chains] of byName) {
+      let best = null
+      for (const st of chains) {
+        const pts = st.points
+        for (let i = 0; i < pts.length - 1; i++) {
+          const ax = pts[i][0],     ay = pts[i][1]
+          const bx = pts[i + 1][0], by = pts[i + 1][1]
+          const cx = (ax + bx) / 2, cy = (ay + by) / 2
+          if (!pointInBoundary(cx, cy)) continue
+          const len = Math.hypot(bx - ax, by - ay)
+          if (best && len <= best.len) continue
+          let angle = Math.atan2(by - ay, bx - ax)
+          if (angle >  Math.PI / 2) angle -= Math.PI
+          if (angle < -Math.PI / 2) angle += Math.PI
+          best = { cx, cy, len, angle }
+        }
+      }
+      if (!best) continue
+      labels.push({ name, x: best.cx, z: best.cy, angle: best.angle, segLen: best.len })
     }
     return labels
   }, [])
@@ -823,16 +844,27 @@ function LabelSprite({ label }) {
       !Number.isFinite(label.x) || !Number.isFinite(label.z) ||
       !Number.isFinite(label.angle)) return null
 
+  // Render layering:
+  //  - renderOrder PRI.labels (16) puts the sprite at the top of the
+  //    transparent queue, so terrain-displaced ground or median grass
+  //    can't paint over it during transparent sorting.
+  //  - depthTest=false means the sprite ignores the depth buffer (won't
+  //    be hidden behind tall geometry) and depthWrite=false keeps it
+  //    from blocking anything painted after it.
+  //  - y=2.5 lifts above plausible terrain displacement so a hilly
+  //    chunk of ground doesn't clip through the plane visually.
   return (
     <mesh
-      position={[label.x, 0.3, label.z]}
+      position={[label.x, 2.5, label.z]}
       rotation={[-Math.PI / 2, 0, -label.angle]}
+      renderOrder={PRI.labels}
     >
       <planeGeometry args={[width, height]} />
       <meshBasicMaterial
         map={texture} transparent
         opacity={style.opacity ?? 1}
         depthTest={false}
+        depthWrite={false}
         toneMapped={false}
       />
     </mesh>
