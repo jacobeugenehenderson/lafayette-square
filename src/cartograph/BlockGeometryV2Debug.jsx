@@ -314,41 +314,54 @@ export default function BlockGeometryV2Debug({
     return polysToLineGeo((byChain || [])[selectedStreet]?.sidewalkEdges)
   }, [byChain, measureActive, selectedStreet])
 
-  // Materials. Mirroring V1's pattern (StreetRibbons.jsx:2297) of building
-  // a fresh material inline per mesh per render, no caching — `useMemo`
-  // caching plus prop-swap on the mesh dropped state somewhere when the
-  // selectedCorridor flag flipped. V1 has been working this way; V2
-  // matches.
-  //
-  // Block (residential land-use) and curb (unified boundary stroke)
-  // stay opaque always — block-level surfaces, never selectedCorridor.
-  // Asphalt + treelawn + sidewalk get selectedCorridor: true on the
-  // selected chain → useSurfaceMaterial returns opacity 0.55 in Measure.
-  const curbMat = useMemo(
-    () => makeMaterial(curbCol, PRI.curb, null, { measureActive, surveyActive }),
-    [makeMaterial, curbCol, measureActive, surveyActive]
-  )
+  // Materials. We mount ~700+ per-chain meshes on LS (242 chains × 3
+  // bands + corner geometries), and `makeMaterial(...)` allocates a new
+  // THREE.Material every call. Calling it inline per mesh per render
+  // (the previous V1-style pattern) is what made Designer sluggish — at
+  // LS scale that's hundreds of new materials and uniform uploads every
+  // frame. Cache one material per (band, selected) pair and reuse them
+  // across all chains. Two materials per band — one normal, one
+  // selectedCorridor (opacity 0.55 in Measure) — lets us do an O(1) ref
+  // lookup per chain instead of O(N) allocations per render.
+  const bandMats = useMemo(() => ({
+    asphalt:           makeMaterial(asphaltCol,  PRI.asphalt,  null, { measureActive, surveyActive }),
+    asphaltSelected:   makeMaterial(asphaltCol,  PRI.asphalt,  null, { measureActive, surveyActive, selectedCorridor: true }),
+    treelawn:          makeMaterial(treelawnCol, PRI.treelawn, null, { measureActive, surveyActive }),
+    treelawnSelected:  makeMaterial(treelawnCol, PRI.treelawn, null, { measureActive, surveyActive, selectedCorridor: true }),
+    sidewalk:          makeMaterial(sidewalkCol, PRI.sidewalk, null, { measureActive, surveyActive }),
+    sidewalkSelected:  makeMaterial(sidewalkCol, PRI.sidewalk, null, { measureActive, surveyActive, selectedCorridor: true }),
+    curb:              makeMaterial(curbCol,     PRI.curb,     null, { measureActive, surveyActive }),
+    cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, null, { surveyActive }),
+    cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  null, { surveyActive }),
+  }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, measureActive, surveyActive])
+  // LU block-fill materials cached per land-use color. Same N→1 win:
+  // ~10 LU groups × 1 material each instead of one per render.
+  const blockMats = useMemo(() => {
+    const out = {}
+    for (const g of blockGroups) out[g.lu] = makeMaterial(g.color, PRI.residential, null, { surveyActive })
+    return out
+  }, [makeMaterial, blockGroups, surveyActive])
 
   return (
     <group>
       {!hideLandUse && lotVisible && blockGroups.map(g => g.geo && (
         <mesh key={g.lu} geometry={g.geo} renderOrder={PRI.residential} receiveShadow
-          material={makeMaterial(g.color, PRI.residential, null, { surveyActive })} />
+          material={blockMats[g.lu]} />
       ))}
-      {/* Per-chain band meshes. Material built fresh per mesh per render
-          (matching V1). Selected chain → selectedCorridor:true → opacity
-          0.55. Order: treelawn (3) → sidewalk (5) → curb (6, unified)
-          → asphalt (8). */}
+      {/* Per-chain band meshes. Material picked from the cached pair
+          (normal vs selectedCorridor). Selected chain gets opacity 0.55
+          in Measure. Order: treelawn (3) → sidewalk (5) → curb (6,
+          unified) → asphalt (8). */}
       {treelawnVisible && perChainGeo.map(g => g.treelawn && (
         <mesh key={`t${g.chainIdx}`} geometry={g.treelawn} renderOrder={PRI.treelawn} receiveShadow
-          material={makeMaterial(treelawnCol, PRI.treelawn, null, { measureActive, surveyActive, selectedCorridor: g.chainIdx === selectedStreet })} />
+          material={g.chainIdx === selectedStreet ? bandMats.treelawnSelected : bandMats.treelawn} />
       ))}
       {sidewalkVisible && perChainGeo.map(g => g.sidewalk && (
         <mesh key={`s${g.chainIdx}`} geometry={g.sidewalk} renderOrder={PRI.sidewalk} receiveShadow
-          material={makeMaterial(sidewalkCol, PRI.sidewalk, null, { measureActive, surveyActive, selectedCorridor: g.chainIdx === selectedStreet })} />
+          material={g.chainIdx === selectedStreet ? bandMats.sidewalkSelected : bandMats.sidewalk} />
       ))}
       {curbVisible && curbGeo && (
-        <mesh geometry={curbGeo} renderOrder={PRI.curb} receiveShadow material={curbMat} />
+        <mesh geometry={curbGeo} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
       )}
       {perChainGeo.map(g => {
         if (!g.asphalt) return null
@@ -356,14 +369,14 @@ export default function BlockGeometryV2Debug({
         if (!visible) return null
         return (
           <mesh key={`a${g.chainIdx}`} geometry={g.asphalt} renderOrder={PRI.asphalt} receiveShadow
-            material={makeMaterial(asphaltCol, PRI.asphalt, null, { measureActive, surveyActive, selectedCorridor: g.chainIdx === selectedStreet })} />
+            material={g.chainIdx === selectedStreet ? bandMats.asphaltSelected : bandMats.asphalt} />
         )
       })}
       {/* Corner asphalt plugs are shared between chains (no per-chain class),
           so they hide only when BOTH asphalt and highway are off. */}
       {(asphaltVisible || highwayVisible) && cornerAsphaltGeo && (
         <mesh geometry={cornerAsphaltGeo} renderOrder={PRI.asphalt} receiveShadow
-          material={makeMaterial(asphaltCol, PRI.asphalt, null, { surveyActive })} />
+          material={bandMats.cornerAsphalt} />
       )}
       {/* Concrete corner pad — quad covering the corner wedge, clipped by
           the same blockRounded mask that shapes the bands and block fill.
@@ -373,7 +386,7 @@ export default function BlockGeometryV2Debug({
           with the sidewalk toggle since the pad reads as concrete. */}
       {sidewalkVisible && cornerSidewalkGeo && (
         <mesh geometry={cornerSidewalkGeo} renderOrder={PRI.residential + 0.5} receiveShadow
-          material={makeMaterial(sidewalkCol, PRI.residential + 0.5, null, { surveyActive })} />
+          material={bandMats.cornerSidewalk} />
       )}
       {treelawnEdgeGeo && (
         <lineSegments geometry={treelawnEdgeGeo} renderOrder={PRI.asphalt + 1}>
