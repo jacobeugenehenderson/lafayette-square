@@ -1268,7 +1268,15 @@ const useCartographStore = create((set, get) => ({
           // junk centerlines). Hidden chains still appear in Measure (dim,
           // re-selectable) so you can toggle them back on.
           disabled: !!ov?.disabled,
-          measure: ov?.measure ?? legacy?.measure,
+          // Measure resolution: operator overlay > legacy centerlines.json >
+          // derive.js's ribbons.json baseline. The third tier was missing,
+          // so chains the operator hadn't touched ended up with `undefined`
+          // measure on the live store — MeasureOverlay's sideBoundaries
+          // returns [] for an undefined side and renders no handles, even
+          // though the chain became selectable + translucent. V2 already
+          // does this fallback inside mergeLiveRibbons; this keeps the
+          // live store's per-chain measure consistent with what V2 sees.
+          measure: ov?.measure ?? legacy?.measure ?? rb?.measure,
           segmentMeasures: ov?.segmentMeasures ?? legacy?.segmentMeasures,
           // Effective cap = overlay (operator) > legacy (centerlines.json) >
           // ribbons.json (what derive.js actually rendered). The fallback
