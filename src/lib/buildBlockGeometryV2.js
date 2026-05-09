@@ -203,7 +203,11 @@ function sortedCornerKey(V, legKeyA, legKeyB) {
 // `ixOverrides` (map<ixKey, R>) and `cornerOverrides` (map<sortedCornerKey, R>)
 // carry operator-authored radii from the active Look's design — applied with
 // per-corner > per-IX > default-R-rule precedence, all × cornerRadiusScale.
-function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides) {
+// `blockCustoms` + `chainIdxByChain` thread per-segment overrides into the
+// leg width math: a leg coming OFF an IX uses the segment ENDING at the IX
+// (BACK direction) or STARTING from it (FORWARD direction); whichever
+// segment's per-side override applies.
+function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCustoms, chainIdxByChain) {
   const V = ix.point
   if (!ix.streets || ix.streets.length < 2) return []
   const legs = []
@@ -218,6 +222,17 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides) {
     const m = chain.measure
     if (!m) continue
     const skel = chain.skelId || chain.name || '?'
+    const chainIdx = chainIdxByChain ? chainIdxByChain.get(chain) : null
+    // Find which natural segment is adjacent to this IX in `dir`.
+    const segments = naturalSegments(chain)
+    const segmentForLeg = (dir) => {
+      for (let k = 0; k < segments.length; k++) {
+        const s = segments[k]
+        if (dir === -1 && s.end === ixIdx) return k
+        if (dir === +1 && s.start === ixIdx) return k
+      }
+      return null
+    }
     const buildLeg = (dir) => {
       const ni = ixIdx + dir
       if (ni < 0 || ni >= pts.length) return null
@@ -225,10 +240,16 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides) {
       const L = Math.hypot(dx, dz)
       if (L < 1e-6) return null
       const isBack = dir === -1
+      // Per-segment override for this leg's adjacent segment, if any.
+      const segOrd = segmentForLeg(dir)
+      const segCustom = (chainIdx != null && segOrd != null)
+        ? blockCustoms?.[chainIdx]?.[segOrd] : null
+      const effL = segCustom?.left  || m.left
+      const effR = segCustom?.right || m.right
       // When walking BACK from V (dir=-1), the chain's "left" becomes
       // our right (we're facing the opposite direction along the chain).
-      const left  = isBack ? m.right : m.left
-      const right = isBack ? m.left  : m.right
+      const left  = isBack ? effR : effL
+      const right = isBack ? effL : effR
       return {
         T: [dx / L, dz / L],
         outerL: left?.pavementHW || 0,
@@ -691,15 +712,24 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const asphaltSharp = unionRings(allAsphaltRings)
 
   // Multi-value name map — LS has 35 names spanning 164 chain entries.
+  // chainIdxByChain pairs each chain object with its index in `streets`
+  // so cornersAtIx can resolve per-segment customs for each leg.
   const streetsByName = new Map()
-  for (const s of streets) {
+  const chainIdxByChain = new Map()
+  for (let i = 0; i < streets.length; i++) {
+    const s = streets[i]
+    if (!s) continue
+    chainIdxByChain.set(s, i)
     if (!s.name) continue
     const list = streetsByName.get(s.name)
     if (list) list.push(s); else streetsByName.set(s.name, [s])
   }
   const allCorners = []
   for (const ix of intersections) {
-    allCorners.push(...cornersAtIx(ix, streetsByName, cornerRadiusOverrides, cornerCornerRadiusOverrides))
+    allCorners.push(...cornersAtIx(
+      ix, streetsByName, cornerRadiusOverrides, cornerCornerRadiusOverrides,
+      blockCustoms, chainIdxByChain,
+    ))
   }
   const asphaltRounded = asphaltSharp.map(ring =>
     applyRoundCornersToRing(ring, allCorners, cornerRadiusScale)
