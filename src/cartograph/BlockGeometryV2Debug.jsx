@@ -309,12 +309,17 @@ export default function BlockGeometryV2Debug({
     if (selectedStreet == null) return null
     const chain = liveRibbons?.streets?.[selectedStreet]
     if (!chain) return null
-    return buildChainBandsLive(
+    const r = buildChainBandsLive(
       chain,
       blockCustoms?.[selectedStreet],
       vertexSmoothing?.[selectedStreet],
       { curbWidth }
     )
+    // TEMP DEBUG: confirm this re-runs per drag and produces fresh rings
+    const sw = r?.sidewalkRings?.[8]
+    console.log(`[live] sel=${selectedStreet} sw.lens=${r?.sidewalkRings?.length} sw[8].v0=`, sw?.[0],
+      'customs=', blockCustoms?.[selectedStreet] ? Object.keys(blockCustoms[selectedStreet]).map(k => `${k}:R.sw=${blockCustoms[selectedStreet][k]?.right?.sidewalk?.toFixed?.(2)}`).join(' ') : 'none')
+    return r
   }, [selectedStreet, liveRibbons, blockCustoms, vertexSmoothing, curbWidth])
 
   // Per-chain band geometries so the selected chain's meshes can swap
@@ -412,7 +417,13 @@ export default function BlockGeometryV2Debug({
         <mesh key={`s${g.chainIdx}`} geometry={g.sidewalk} renderOrder={PRI.sidewalk} receiveShadow
           material={g.chainIdx === selectedStreet ? bandMats.sidewalkSelected : bandMats.sidewalk} />
       ))}
-      {curbVisible && curbGeo && (
+      {/* While a chain is selected (drag in flight), the global curb
+          stroke is sized to the PREVIOUS V2 pass's asphaltRounded —
+          it's stale relative to the live-band overlay. Hide it during
+          selection so the selected chain's bands aren't masked by an
+          old curb position. V2's next pass (after 250ms idle) refreshes
+          the curb to the correct silhouette. */}
+      {curbVisible && curbGeo && selectedStreet == null && (
         <mesh geometry={curbGeo} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
       )}
       {perChainGeo.map(g => {
@@ -425,8 +436,10 @@ export default function BlockGeometryV2Debug({
         )
       })}
       {/* Corner asphalt plugs are shared between chains (no per-chain class),
-          so they hide only when BOTH asphalt and highway are off. */}
-      {(asphaltVisible || highwayVisible) && cornerAsphaltGeo && (
+          so they hide only when BOTH asphalt and highway are off. Also
+          hidden while a chain is selected — the plugs were sized to the
+          previous V2 pass and would mask the live-overlay bands at IXs. */}
+      {(asphaltVisible || highwayVisible) && cornerAsphaltGeo && selectedStreet == null && (
         <mesh geometry={cornerAsphaltGeo} renderOrder={PRI.asphalt} receiveShadow
           material={bandMats.cornerAsphalt} />
       )}
@@ -436,7 +449,7 @@ export default function BlockGeometryV2Debug({
           pad shows only in the gap where neither band reaches (the
           rounded wedge between the curb arc and the band-zone). Hides
           with the sidewalk toggle since the pad reads as concrete. */}
-      {sidewalkVisible && cornerSidewalkGeo && (
+      {sidewalkVisible && cornerSidewalkGeo && selectedStreet == null && (
         <mesh geometry={cornerSidewalkGeo} renderOrder={PRI.residential + 0.5} receiveShadow
           material={bandMats.cornerSidewalk} />
       )}
