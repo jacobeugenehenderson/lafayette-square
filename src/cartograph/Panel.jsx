@@ -109,30 +109,31 @@ function CornersSubsection() {
   const clearAllIxCornerRadii = useCartographStore(s => s.clearAllIxCornerRadii)
   const overrideCount = Object.keys(overrides).length + Object.keys(cornerOverrides).length
   // Local draft tracks the slider thumb at input rate so the UI feels
-  // responsive even though the store→geometry rebuild is heavy (Clipper
-  // booleans + ShapeGeometry triangulation in StreetRibbons run synchronously
-  // on every store change). Commits to the store are rAF-throttled and
-  // always finalized on pointer-up so the persisted value matches the thumb.
+  // responsive even though the store→geometry rebuild is heavy (V2's
+  // Clipper booleans + ShapeGeometry triangulation in BlockGeometryV2Debug
+  // run synchronously on every store change — 100ms+ on LS). rAF-throttling
+  // (16ms) used to queue commits faster than the rebuild completes; we
+  // now debounce trailing-edge with a 200ms idle window so geometry only
+  // rebuilds when the user pauses or lifts. Pointer-up always commits the
+  // final value so the persisted store matches the thumb.
   const [draft, setDraft] = useState(stored)
-  const rafRef = useRef(null)
+  const idleRef = useRef(null)
   const targetRef = useRef(stored)
   const draggingRef = useRef(false)
-  // Resync the slider when the store changes externally (Look switch, etc.)
-  // but not mid-drag — that would clobber the user's in-progress motion.
   useEffect(() => {
     if (!draggingRef.current) setDraft(stored)
   }, [stored])
   const scheduleCommit = (v) => {
     targetRef.current = v
-    if (rafRef.current != null) return
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null
+    if (idleRef.current != null) clearTimeout(idleRef.current)
+    idleRef.current = setTimeout(() => {
+      idleRef.current = null
       setStored(targetRef.current)
-    })
+    }, 200)
   }
   const finalCommit = () => {
     draggingRef.current = false
-    if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    if (idleRef.current != null) { clearTimeout(idleRef.current); idleRef.current = null }
     setStored(targetRef.current)
   }
   return (
