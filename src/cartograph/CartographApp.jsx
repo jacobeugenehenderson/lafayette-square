@@ -842,7 +842,12 @@ export default function CartographApp() {
               64 aerial tiles or the gateway-arch decoration. Mounting
               only in Designer keeps these out of Stage shots. */}
           {inDesigner && <>
-            {sceneCfg.hasAerial && <AerialTiles visible={!!tool || aerialVisible} />}
+            {/* Aerial tiles fetch + GPU-upload eagerly on mount (~64 tiles at
+                z=20, several MB). Mount only when needed — when a tool is
+                active or Aerial is toggled — so Designer pays nothing for
+                the photo unless it's actually being used. ~200ms cache hit
+                / 2-5s cold the first time the operator clicks Aerial. */}
+            {sceneCfg.hasAerial && (!!tool || aerialVisible) && <AerialTiles visible={true} />}
             {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && <DesignerArch />}
             <SurveyorOverlay />
             {tool === 'measure' && <MeasureOverlay />}
