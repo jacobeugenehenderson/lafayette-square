@@ -802,9 +802,10 @@ export default function CartographApp() {
           {/* ── Map layers (flat ground geometry — neighborhood only).
               In shots, layers with 3D equivalents (park, buildings, trees,
               lamps, water) are suppressed so the 3D components own them.
-              In Designer's tool+aerial focus mode, hidden entirely so the
-              authoring overlay is unblocked against the aerial photo. */}
-          {scene === 'lafayette-square' && !toolAerialFocus && (
+              In Designer, any time aerial is on (tool focus OR pure design
+              with aerial), hide entirely so the photo isn't covered by
+              buildings/parcels/water/parking-lots/etc. */}
+          {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && (
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner}
               measureActive={tool === 'measure' && inDesigner} />
@@ -818,7 +819,7 @@ export default function CartographApp() {
               only in Designer keeps these out of Stage shots. */}
           {inDesigner && <>
             {sceneCfg.hasAerial && <AerialTiles visible={!!tool || aerialVisible} />}
-            {scene === 'lafayette-square' && !toolAerialFocus && <DesignerArch />}
+            {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && <DesignerArch />}
             <SurveyorOverlay />
             {tool === 'measure' && <MeasureOverlay />}
           </>}
