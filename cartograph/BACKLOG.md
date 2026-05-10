@@ -2,7 +2,85 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-09 (V2 on LS landed; live overlay + drag-perf done; in-line vertex smoothing removed in favor of Survey-time arc smoothing; next: block-edge-owned ribbons per NOTES.md PM-2)
+Last updated: 2026-05-10 (V1 corpus retired across all surfaces; Phase D plan groomed against NOTES.md PM-2 spec — D.1 frontageEdges is next)
+
+## 2026-05-10 EOD — Session-end pin (read first if picking up Phase D)
+
+Big day. The V1→V2 migration completed across every consumer; the
+production runtime now reads the same per-Look slab Designer authors
+against. Five clean commits on `cartograph-looks-pass-ab`:
+
+- **`66e6969` Snapshot baseline** — operator authoring + fresh bake
+  before the migration started.
+- **`d5b055e` Phase 0** — `useV2Geometry` flag retired, V1 branch in
+  `bake-ground.js` deleted; V2 unconditional in the bake.
+- **`6f118e2` Phase A** — Stage shots (cartograph.html non-Designer)
+  consume `BakedGround` for ALL scenes (Toy now has full Stage shot
+  support). `BlockGeometryV2Debug` gated to Designer only.
+- **`1fb456f` Phase B** — Production runtime (`Scene.jsx`) reads
+  `BakedGround`; `VectorStreets` + `StreetRibbons` mounts removed.
+  The marriage leap landed.
+- **`053f13b` Phase C** — Excised V1 corpus: `StreetRibbons.jsx`
+  (2110 lines), `VectorStreets.jsx` (447), `cartograph/render.js`
+  (2368), `cartograph/smooth.js`, `cartograph/diagnose-corners.js`,
+  `CORNER_DEBUG.md` + `CORNER_HANDOFF.md`. Trimmed
+  `ribbonsGeometry.js` 706 → 140 lines (kept `clipAllToStencil` +
+  `LAND_USE_COLORS` for the bake's overlay clip + face-color
+  fallback). Net −5,951 lines.
+- **`aaf74d5` D.2 partial rollback** — A first attempt at block-edge
+  ownership using per-chain-segment merging via `adjacentBlockId`
+  probing (the same shape as the 2026-05-09 reverted attempt).
+  Wrong primitive — the polygons exist already in `blockRounded`;
+  the spec is in `cartograph/NOTES.md` 2026-05-06 PM-2. Rolled
+  back to clean Phase-C state.
+
+**Next session — Phase D, spec-faithful, sub-phased:**
+
+Read `cartograph/NOTES.md` 2026-05-06 PM-2 in full BEFORE coding —
+the architecture is "block as positive space, asphalt as void;
+bands run to the SHARP block corner; round-corner is a CLIP applied
+to the block ring; corner geometry emerges from strip composition
+rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
+
+1. **D.1 — `frontageEdges` per block** (Gap 1, ~50 LOC). Inverse of
+   `adjacentBlockId`: for each block ring, identify which chain
+   segments face it on which side, group consecutive same-block-
+   same-side segments into block-edges. Output
+   `frontageEdges: [{points, chainIdx, segOrds[], side, blockKey,
+   edgeOrd}]`. Pure additive; no render change. Foundation.
+2. **D.2 — `blockSharp = stencil − asphaltSharp`** (~10 LOC). The
+   primitive bands run to per the spec. `blockRounded` stays as
+   the clip applied at render.
+3. **D.3 — Per-block-edge band emission with strip composition
+   rules** (the visible Mississippi/Park fix). For each block,
+   walk `blockSharp`; for each frontageEdge, emit treelawn +
+   sidewalk corner-to-corner of the SHARP block. Apply NOTES.md
+   PM-2 strip composition rules at corners (`sw↔sw` no cap;
+   `sw↔(tl+sw)` no cap with sw leg running full length;
+   `(tl+sw)↔(tl+sw)` concrete cap emerges). Bands clipped to
+   `blockRounded` at end. **KEEP `cornerSidewalkPads` +
+   `cornerAsphaltPlugs` mounted alongside** per
+   `feedback_corner_pad_retirement_caution`.
+4. **D.4 — Visual parity verification + corner pad retirement**
+   per surface (Designer / Stage / Preview). Jacob signs off
+   surface-by-surface before pads go.
+5. **D.5 — `blockCustoms` keying** `[chainIdx][segOrd][side]` →
+   `[blockKey][edgeOrd]`. One-shot data migration.
+6. **D.6 — Measure UI addresses by block-edge.**
+7. **D.7 — Cleanup.** Delete legacy chain-segment customs paths.
+
+Sized at 4–6 focused sessions. Each lands a clean intermediate
+commit; at no point does the system regress.
+
+**Mistake from this session, logged for next operator:** I
+implemented a per-chain-segment merge approach based on inferring
+the algorithm from current emitter code + a 4-bullet sketch in
+BACKLOG. The full spec was sitting in NOTES.md PM-2 the whole
+time, with strip composition rules, the Default-R formula, and an
+explicit `frontageChains` Gap 1 description. Lesson logged in
+memory `feedback_notes_md_holds_architecture`.
+
+---
 
 ## 2026-05-09 EOD — Session-end pin (read first if picking up the migration)
 
