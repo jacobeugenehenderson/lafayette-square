@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "generatedAt": 1778385675876,
+  "generatedAt": 1778387017958,
   "bbox": {
     "min": [
       -1065,
@@ -419,5 +419,11 @@
       "indexCount": 6051,
       "indexByteOffset": 1751256
     }
-  ]
+  ],
+  "lightmap": {
+    "image": "ground.lightmap.png",
+    "size": 1024,
+    "rays": 24,
+    "floor": 0.35
+  }
 }

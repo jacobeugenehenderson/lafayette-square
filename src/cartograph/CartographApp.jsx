@@ -758,12 +758,14 @@ export default function CartographApp() {
           <SkyStateTicker />
 
 
-          {/* ── Live ribbon mesh: Designer (any scene) and any non-Designer
-              shot consume ribbons.json + the live centerline store
-              directly. Stage neighborhood shots consume the per-Look
-              pure-Three.js bake via <BakedGround/> — the same component
-              Preview mounts, so what Stage shows is what Preview shows
-              is what Publish ships. ── */}
+          {/* ── Ground:
+              - Designer (any scene) → V2 live render via
+                <BlockGeometryV2Debug/>. Reads centerlines + intersections
+                + blockCustoms from the live store so authoring edits
+                show without re-baking.
+              - Any non-Designer shot (any scene) → <BakedGround/>. Same
+                component Preview mounts, same per-Look slab Publish
+                ships. ↻ / Stage→ refresh via cache-bust on bakeLastMs. ── */}
           {inDesigner && <ambientLight intensity={1} />}
 
           {/* Designer-mode backdrop. LS uses aerial tiles (gated lower);
@@ -776,18 +778,16 @@ export default function CartographApp() {
           )}
 
 
-          {/* ── Rounded-block-clip V2 ground render.
-              Mounted in every scene; reads live centerlines from the
-              store (scene-aware) and intersections from the per-scene
-              static ribbons artifact. Stencil is per-scene (toy carves
-              the asphalt out of a residential rectangle; LS lets V2
-              emit asphalt + bands without block-fill). Will retire
-              legacy StreetRibbons once Measure visuals reach parity. ── */}
-          {/* In pure-aerial Designer mode (no tool, aerial on), skip V2
-              entirely so the photo shows uncovered. Tool-focus mode keeps
-              V2 mounted with hideLandUse so ribbon bands stay as
-              measurement targets over the photo. */}
-          {!designAerialOnly && (
+          {/* ── Rounded-block-clip V2 ground render — Designer only.
+              Live render driven by the store (centerlines, blockCustoms,
+              corner overrides) so authoring edits show without a re-bake.
+              Stage shots consume <BakedGround/> below — same V2 emitter
+              that produces the slab, just frozen at bake time. Pure-
+              aerial Designer mode (no tool, aerial on) skips V2 so the
+              photo shows uncovered; tool-focus mode keeps V2 mounted
+              with hideLandUse so ribbon bands stay as measurement
+              targets over the photo. ── */}
+          {inDesigner && !designAerialOnly && (
             <R3FErrorBoundary name="BlockGeometryV2Debug">
               <BlockGeometryV2Debug
                 ribbons={sceneCfg.ribbons}
@@ -810,10 +810,11 @@ export default function CartographApp() {
             </R3FErrorBoundary>
           )}
 
-          {/* ── Baked Three.js ground for Stage shots (neighborhood scene).
+          {/* ── Baked Three.js ground for Stage shots — every scene.
               Same component Preview mounts; cache-busts on bakeLastMs so
-              the Stage button's re-bake refreshes the artifact in place. ── */}
-          {!inDesigner && scene === 'lafayette-square' && (
+              ↻ / Stage→ refresh the artifact in place. The slab is the
+              single rendered ground in shot mode (no V2 overlay). ── */}
+          {!inDesigner && (
             <R3FErrorBoundary name="BakedGround">
               <BakedGround
                 lookId={activeLookId}

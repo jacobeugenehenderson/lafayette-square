@@ -1,11 +1,13 @@
 /**
- * Stage — 3D environment preview for art direction.
+ * Stage — shared utility module for cartograph-hosted Stage.
  *
- * Same lighting rig and post-processing as production Scene.jsx,
- * but with no VectorStreets SVG, no user dots, no idle timeouts.
- * Ground = Terrain mesh + StreetRibbons + face fills.
+ * Exports the post-FX (FilmGrade / FilmGrain / AerialPerspective),
+ * environment + arch defaults, the SHOTS table, StageShadows, the
+ * Hero preview helpers, and the StagePanel UI. Consumed by
+ * CartographApp.jsx (the real Stage host) and PreviewApp.jsx.
  *
- * This is where we dial in the "look" before migrating to production.
+ * The standalone /stage route was retired 2026-05-02 — this file
+ * has no default export. See feedback_stage_standalone_should_die.md.
  */
 
 import { useRef, useEffect, useMemo, forwardRef, useState, useCallback } from 'react'
@@ -21,7 +23,6 @@ import LafayettePark from '../components/LafayettePark'
 import StreetLights from '../components/StreetLights'
 import GatewayArch from './StageArch'
 import CloudDome from '../components/CloudDome'
-import StreetRibbons from '../components/StreetRibbons'
 import Terrain from '../components/Terrain'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 
