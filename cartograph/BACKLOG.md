@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 (V1 corpus retired across all surfaces; Phase D plan groomed against NOTES.md PM-2 spec — D.1 frontageEdges is next)
+Last updated: 2026-05-10 (V1 corpus retired across all surfaces; Phase D.1 frontageEdges shipped — D.2 blockSharp is next)
 
 ## 2026-05-10 EOD — Session-end pin (read first if picking up Phase D)
 
@@ -42,12 +42,16 @@ bands run to the SHARP block corner; round-corner is a CLIP applied
 to the block ring; corner geometry emerges from strip composition
 rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
 
-1. **D.1 — `frontageEdges` per block** (Gap 1, ~50 LOC). Inverse of
-   `adjacentBlockId`: for each block ring, identify which chain
-   segments face it on which side, group consecutive same-block-
-   same-side segments into block-edges. Output
-   `frontageEdges: [{points, chainIdx, segOrds[], side, blockKey,
-   edgeOrd}]`. Pure additive; no render change. Foundation.
+1. **D.1 — `frontageEdges` per block** ✅ shipped `059cc4c`
+   (`buildFrontageEdges` in `src/lib/buildBlockGeometryV2.js`,
+   returned as `frontageEdges` on the geometry result). Inverse of
+   `adjacentBlockId`: per (chain, segOrd, side) probe → group
+   consecutive same-(blockId, side) runs per chain →
+   `{points, chainIdx, segOrds, side, blockKey, edgeOrd}`. `points`
+   is the chain centerline polyline over the merged span (D.3
+   derives offsets); `edgeOrd` is encounter-order within `blockKey`
+   (D.3/D.6 may re-order to ring-walk). Additive only — no
+   consumer yet, no render change.
 2. **D.2 — `blockSharp = stencil − asphaltSharp`** (~10 LOC). The
    primitive bands run to per the spec. `blockRounded` stays as
    the clip applied at render.
