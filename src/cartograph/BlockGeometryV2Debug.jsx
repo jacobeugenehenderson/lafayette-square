@@ -243,8 +243,8 @@ export default function BlockGeometryV2Debug({
     // chain's customs.
   }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse])
 
-  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, cornerAsphaltPlugs, cornerSidewalkPads, byChain, corners, frontageBands, frontageCaps } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], cornerAsphaltPlugs: [], cornerSidewalkPads: [], byChain: [], corners: [], frontageBands: [], frontageCaps: [] }
+  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, cornerAsphaltPlugs, cornerSidewalkPads, byChain, corners, frontageEdges, frontageBands, frontageCaps } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], cornerAsphaltPlugs: [], cornerSidewalkPads: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -262,6 +262,11 @@ export default function BlockGeometryV2Debug({
   useEffect(() => {
     useCartographStore.getState()._setV2Blocks(blockRounded)
   }, [blockRounded])
+  // D.5: Stash frontageEdges so MeasureOverlay can resolve a clicked
+  // chain point → (blockKey, edgeOrd) for per-block-edge customs.
+  useEffect(() => {
+    useCartographStore.getState()._setV2FrontageEdges(frontageEdges)
+  }, [frontageEdges])
 
   // Tiny y-lifts keep coplanar layers from z-fighting; polygonOffset (driven
   // by pri in makeMaterial) is the authoritative depth resolver.

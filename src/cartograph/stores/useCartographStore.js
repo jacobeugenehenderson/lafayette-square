@@ -226,6 +226,7 @@ const useCartographStore = create((set, get) => ({
   // the drag path can do block adjacency at drag time without
   // re-running buildBlockGeometryV2. Not persisted.
   _v2Blocks: [],
+  _v2FrontageEdges: [],
   // Per-IX corner-radius overrides, keyed by quantized point ("x.xxx,z.zzz").
   // Operator-authored via the Corner-edit center handles. Per-Look (lives in
   // design.json) so duplicating a Look carries the operator's IX-by-IX work
@@ -359,15 +360,33 @@ const useCartographStore = create((set, get) => ({
     get()._saveDesignDebounced()
   },
   _setV2Blocks: (blocks) => set({ _v2Blocks: Array.isArray(blocks) ? blocks : [] }),
+  // D.5: Designer pushes the latest frontageEdges array here so the
+  // Measure UI can resolve a clicked chain point → (blockKey, edgeOrd)
+  // for per-block-edge customs authoring.
+  _setV2FrontageEdges: (fes) => set({ _v2FrontageEdges: Array.isArray(fes) ? fes : [] }),
   // Measure-mode setter. 'block' is the default; 'global' is the
   // whole-chain authoring mode (= edit chain.measure).
   setMeasureMode: (mode) => {
     const t = mode?.type === 'global' ? 'global' : 'block'
     set({ measureMode: { type: t } })
   },
-  // Write a per-segment per-side measure override. Called by the drag
-  // path when measureMode === 'custom'. The (chainIdx, segOrd, side)
-  // composite key uniquely identifies one block edge along the chain.
+  // D.5: Write a per-block-edge measure override. Called by the
+  // Measure UI's drag path. (blockKey, edgeOrd) uniquely identifies
+  // one block-edge in the polygon-walking architecture; side is
+  // implicit (each block-edge has one adjacent chain on one side).
+  // The measure shape mirrors chain.measure[side]:
+  //   { terminal, treelawn, sidewalk, pavementHW }
+  setBlockEdgeCustom: (blockKey, edgeOrd, measure) => {
+    if (!blockKey || edgeOrd == null) return
+    const next = { ...(get().blockCustoms || {}) }
+    next[blockKey] = { ...(next[blockKey] || {}) }
+    next[blockKey][edgeOrd] = { ...measure }
+    set({ blockCustoms: next })
+    get()._saveDesignDebounced()
+  },
+  // Legacy [chainIdx][segOrd][side] setter — retained for the
+  // MeasureOverlay until D.6 routes its drag handlers through
+  // setBlockEdgeCustom. Once D.6 lands this can be deleted.
   setBlockCustomMeasure: (chainIdx, segOrd, side, measure) => {
     if (chainIdx == null || segOrd == null || (side !== 'left' && side !== 'right')) return
     const next = { ...(get().blockCustoms || {}) }
