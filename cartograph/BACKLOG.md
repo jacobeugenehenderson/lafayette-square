@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1 byChain band/cap split shipped; D.3b.2 per-segment customs is next)
+Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1 + D.3b.2 shipped; D.3b.3 sharp-corner extension is next)
 
 ## 2026-05-10 EOD-2 — Session-end pin (read first; supersedes the EOD pin below for D.3 plan)
 
@@ -123,11 +123,15 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
      visual output is identical to pre-split. A later renderer swap
      (D.3c) can drop band consumption without taking caps.
      **Visible-bug coverage:** none (foundation).
-   - **D.3b.2 — pending. Per-segment customs within a frontage.**
-     Replace D.3a's first-segOrd-customs caveat with a piecewise
-     emitter: the band's inner edge tracks the actual asphalt curb
-     across variable hw within a merged frontage. Still data-only
-     on `frontageBands`. ~80 LOC.
+   - **D.3b.2 ✅ Per-segment customs within a frontage.**
+     Replaced D.3a's first-segOrd-customs caveat with a piecewise
+     emitter: each segOrd in a run resolves its own eff from
+     `blockCustoms[chainIdx][segOrd][side]`; the band's inner edge
+     tracks variable hw across the run. Schema change (still
+     unconsumed): `frontageBands[fe].{treelawnRing,sidewalkRing}`
+     (singular) → `{treelawnRings,sidewalkRings}` (plural arrays
+     of one ring per segOrd) + a `perSeg` array carrying the
+     resolved eff and rings per segOrd for D.3b.3/4 to consume.
      **Visible-bug coverage:** would fix variable-column/row
      asymmetry (after D.3c).
    - **D.3b.3 — pending. Sharp-corner extension only.** Build

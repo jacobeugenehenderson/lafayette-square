@@ -677,21 +677,23 @@ function buildFrontageEdges(streets, blockRounded, blockCustoms) {
   return out
 }
 
-// D.3a — per-frontageEdge treelawn + sidewalk band primitive. For each
-// edge from buildFrontageEdges, emit one treelawn ring + one sidewalk
-// ring spanning the merged segment run along the chain centerline.
+// D.3a/b.2 — per-frontageEdge treelawn + sidewalk band primitive. For
+// each edge from buildFrontageEdges, emit one treelawn + one sidewalk
+// band PER segOrd in the run, all anchored to the same blockKey/edgeOrd.
 // This collapses the "Mississippi west sidewalk cuts off at Kennett"
 // class of bugs at the geometry-source level — same-block-same-side
-// segments produce ONE band, not N. NOT YET CONSUMED: render still
-// emits per natural-segment via byChain.{treelawn,sidewalk}Rings; this
-// output sits alongside as data only. D.3b extends bands to the SHARP
-// block corner + applies strip-composition rules; D.3c switches the
-// production render to consume from here. See NOTES.md 2026-05-06 PM-2.
+// segments produce ONE block-edge with N piecewise rings, not N
+// disconnected edges. NOT YET CONSUMED: render still emits per natural-
+// segment via byChain.{treelawn,sidewalk}Rings; this output sits
+// alongside as data only. D.3b.3 extends bands to the SHARP block
+// corner; D.3b.4 applies pullback + caps; D.3c switches the production
+// render to consume from here. See NOTES.md 2026-05-06 PM-2.
 //
-// Caveat (resolved by D.5): per-segment customs collapse to the FIRST
-// segOrd's customs as the edge measure. Operators typically set these
-// uniformly across a frontage run; D.5 re-keys customs to
-// [blockKey][edgeOrd] so the model becomes correct by construction.
+// D.3b.2: per-segment customs within a frontage. Each segOrd in the run
+// resolves its own eff from blockCustoms[chainIdx][segOrd][side] (or
+// chain default), so the band's inner edge tracks variable hw across the
+// run. A segOrd with terminal !== 'sidewalk' or hw <= 0 emits no ring
+// for itself; adjacent segOrds in the same run still emit independently.
 function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
   if (!frontageEdges?.length) return []
   const cw = curbWidth
@@ -710,33 +712,46 @@ function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
     if (!segments) { segments = naturalSegments(street); segsByChain.set(fe.chainIdx, segments) }
     const segOrds = fe.segOrds
     if (!segOrds?.length) continue
-    const segStart = segments[segOrds[0]].start
-    const segEnd = segments[segOrds[segOrds.length - 1]].end
-    if (segEnd <= segStart) continue
-    const segPts = pts.slice(segStart, segEnd + 1)
-    const segPerps = perps.slice(segStart, segEnd + 1)
-    const eff = (blockCustoms?.[fe.chainIdx]?.[segOrds[0]]?.[fe.side]) || m[fe.side] || {}
-    if (eff.terminal !== 'sidewalk') continue
-    const hw = eff.pavementHW || 0
-    const tl = eff.treelawn || 0
-    const sw = eff.sidewalk || 0
-    if (hw <= 0) continue
     const sideSign = fe.side === 'left' ? -1 : +1
-    const treelawnRing = tl > 0
-      ? chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
-      : null
-    const sidewalkRing = sw > 0
-      ? chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
-      : null
-    if (!treelawnRing && !sidewalkRing) continue
+    const treelawnRings = []
+    const sidewalkRings = []
+    const perSeg = []
+    for (const segOrd of segOrds) {
+      const seg = segments[segOrd]
+      if (!seg || seg.end <= seg.start) continue
+      const segPts = pts.slice(seg.start, seg.end + 1)
+      const segPerps = perps.slice(seg.start, seg.end + 1)
+      const eff = (blockCustoms?.[fe.chainIdx]?.[segOrd]?.[fe.side]) || m[fe.side] || {}
+      const hw = eff.pavementHW || 0
+      if (eff.terminal !== 'sidewalk' || hw <= 0) {
+        perSeg.push({ segOrd, eff, treelawnRing: null, sidewalkRing: null })
+        continue
+      }
+      const tl = eff.treelawn || 0
+      const sw = eff.sidewalk || 0
+      const treelawnRing = tl > 0
+        ? chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
+        : null
+      const sidewalkRing = sw > 0
+        ? chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
+        : null
+      if (treelawnRing) treelawnRings.push(treelawnRing)
+      if (sidewalkRing) sidewalkRings.push(sidewalkRing)
+      perSeg.push({ segOrd, eff, treelawnRing, sidewalkRing })
+    }
+    if (!treelawnRings.length && !sidewalkRings.length) continue
     out.push({
       blockKey: fe.blockKey,
       edgeOrd: fe.edgeOrd,
       chainIdx: fe.chainIdx,
       side: fe.side,
       segOrds: segOrds.slice(),
-      treelawnRing,
-      sidewalkRing,
+      // Per-segOrd rings + resolved eff. D.3b.3 extends end vertices to
+      // the perp curb intersection; D.3b.4 pulls inner/outer ends back
+      // per composition rule and emits frontageCaps from these endpoints.
+      perSeg,
+      treelawnRings,
+      sidewalkRings,
     })
   }
   return out
