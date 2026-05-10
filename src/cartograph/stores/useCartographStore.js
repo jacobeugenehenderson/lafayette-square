@@ -160,8 +160,8 @@ const useCartographStore = create((set, get) => ({
   // (sponsored-event "retro" mode); <1 → tighter / more square. Applies on
   // top of per-IX cornerRadius overrides AND the default-table value, so
   // operators can still author specific corners without losing the global
-  // dial. Persists in design.json; consumed by StreetRibbons.jsx (live)
-  // and ribbonsGeometry.js#buildCornerPadClips (bake / face clip).
+  // dial. Persists in design.json; consumed by `buildBlockGeometryV2`
+  // (Designer live render + the bake) via the corner-radius authoring kit.
   cornerRadiusScale: 1,
   // Look-level label style. Drives the canvas-sprite renderer in
   // MapLayers.LabelSprite. One class for now (every label uses the same

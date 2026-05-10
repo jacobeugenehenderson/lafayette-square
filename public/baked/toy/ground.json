@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "toy",
-  "generatedAt": 1778385682838,
+  "generatedAt": 1778388314926,
   "bbox": {
     "min": [
       -1065,
@@ -254,11 +254,5 @@
       "indexCount": 792,
       "indexByteOffset": 1320732
     }
-  ],
-  "lightmap": {
-    "image": "ground.lightmap.png",
-    "size": 1024,
-    "rays": 24,
-    "floor": 0.35
-  }
+  ]
 }

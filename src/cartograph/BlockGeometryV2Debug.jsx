@@ -1,22 +1,23 @@
 /**
- * BlockGeometryV2Debug — visual probe for the rounded-block-clip prototype.
+ * BlockGeometryV2Debug — Designer's V2 live ground render.
  *
- * Renders the V2 helper's output through the shared cartograph surface
- * pipeline (useSurfaceMaterial) so colors, terrain displacement, shadow
- * tinting, and post-FX match the legacy StreetRibbons render exactly.
+ * Calls `buildBlockGeometryV2` against live store state (centerlines,
+ * blockCustoms, corner overrides, curb width) and renders the output
+ * through the shared cartograph surface pipeline (`useSurfaceMaterial`)
+ * so colors, terrain displacement, shadow tinting, and post-FX match
+ * the bake's V2 output. Designer authoring edits show without re-baking.
  *
  * Layers (back-to-front via BAND_PRIORITY):
- *   - treelawn bands  (#5a6e42, pri 3)
- *   - sidewalk bands  (#a89e8e, pri 5)
- *   - asphalt rounded (#3e3e3c, pri 8)
- *   - yellow IX-corner dots (debug overlay, plain basic material)
+ *   - treelawn bands  (pri 3)
+ *   - sidewalk bands  (pri 5)
+ *   - curb stroke     (pri 6)
+ *   - asphalt rounded (pri 8)
  *
- * Strip bands are emitted raw by the helper (no stencil clip in toy v0).
- * The rounded asphalt paints on top at IX corners, which produces the
- * correct visual rounding without an explicit block-polygon clip.
+ * Coord convention: ShapeGeometry built from Vector2(x, z), then
+ * per-vertex remap to (x, 0, z) flips XY→XZ.
  *
- * Coord convention follows StreetRibbons: ShapeGeometry built from
- * Vector2(x, z), then per-vertex remap to (x, 0, z) flips XY→XZ.
+ * Name is historical — this was a debug probe during the V2 prototype;
+ * promote to its proper name when convenient.
  */
 import { useEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'

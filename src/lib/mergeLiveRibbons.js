@@ -3,10 +3,10 @@
 //
 // Static ribbons own structural data: chain points, IX positions, face
 // rings, skelIds. The live store owns operator intent: measure values,
-// caps, couplers, segmentMeasures, anchor, smooth, disabled. A consumer
-// that wants live behavior (V1 StreetRibbons, V2 BlockGeometryV2Debug)
-// merges the two before building geometry; baked-only consumers (the
-// pre-bake static render) skip this step.
+// caps, couplers, segmentMeasures, anchor, smooth, disabled. The V2
+// Designer overlay merges the two before building geometry; the bake's
+// V2 path reads ribbons.json which derive.js has already merged, so it
+// skips this step.
 //
 // Returns a NEW ribbons object — does not mutate inputs. Streets that
 // don't have a live counterpart pass through unchanged.

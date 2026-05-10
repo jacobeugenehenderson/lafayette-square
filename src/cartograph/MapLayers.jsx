@@ -84,10 +84,10 @@ function injectRadialFade(mat, { rigidCentroid = false } = {}) {
   return mat
 }
 
-// ── Flat material (same shader as StreetRibbons) ────────────
-// polygonOffset matches StreetRibbons (factor=-pri, units=-pri*4). The old
-// values (factor=-pri*4, units=-pri*50) pushed layers too aggressively
-// toward the camera and caused alley z-fighting once terrain displacement
+// ── Flat material (mirrors V2's surface shader) ─────────────
+// polygonOffset (factor=-pri, units=-pri*4). The earlier values
+// (factor=-pri*4, units=-pri*50) pushed layers too aggressively toward
+// the camera and caused alley z-fighting once terrain displacement
 // lifted everything simultaneously.
 export function makeFlatMat(color, pri, opts = {}) {
   const { rigidCentroid = false, ...matOpts } = opts

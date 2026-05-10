@@ -1,13 +1,8 @@
 /**
  * useSurfaceMaterial — shared factory for any ground-plane surface that
- * needs to participate in the cartograph fade + terrain-displacement +
- * shadow-tinting pipeline.
- *
- * Lifted unchanged from StreetRibbons.jsx#makeMaterial. Both StreetRibbons
- * (legacy ribbon model) and BlockGeometryV2Debug (rounded-block-clip
- * prototype) consume this so V2 surfaces match the legacy fade-shader +
- * post-FX exactly. When StreetRibbons is eventually retired, the hook
- * stays.
+ * participates in the cartograph fade + terrain-displacement + shadow-
+ * tinting pipeline. Consumed by `BlockGeometryV2Debug` (Designer V2
+ * live render).
  *
  * Returns a `makeMaterial(color, pri, fade, opts)` factory:
  *   - color: hex/THREE.Color base palette tone
@@ -22,7 +17,7 @@ import {
   TERRAIN_DECL, TERRAIN_DISPLACE, TERRAIN_NORMAL,
 } from '../utils/terrainShader'
 
-export const ARCH_BLUE = '#2250E8'
+const ARCH_BLUE = '#2250E8'
 
 const TERRAIN_CLIP_VARYING_DECL = `varying vec3 vWorldPos;`
 const TERRAIN_CLIP_VERTEX = `vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`

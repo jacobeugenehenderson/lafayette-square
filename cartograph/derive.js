@@ -2850,11 +2850,11 @@ export function deriveLayers(highways) {
       pairId: st.pairId || null,
       highway: st.highway || 'residential',
       type: st.type || 'residential',
-      // Operator-intent fields the bake's face-clip helper consumes. Live
-      // render's `clippedFaces` useMemo passes these from the overlay; if
-      // we strip them here, the bake's `buildRibbonGeometry` call sees a
-      // narrower per-side ped zone than Designer Preview and faces extend
-      // past the curb. Keep shape parity with `_loadCenterlines` output.
+      // Operator-intent fields the V2 emitter consumes. Designer reads
+      // these from the live store via `_loadCenterlines`; if we strip
+      // them here, the bake's V2 call sees a narrower per-side ped
+      // zone than Designer and faces extend past the curb. Keep shape
+      // parity with `_loadCenterlines` output.
       ...(st.couplers ? { couplers: st.couplers } : {}),
       ...(st.segmentMeasures ? { segmentMeasures: st.segmentMeasures } : {}),
       ...(st.disabled ? { disabled: true } : {}),

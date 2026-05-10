@@ -707,9 +707,9 @@ export default function CartographApp() {
 
   // Tool + Aerial = focus mode. Drops the visual noise that competes
   // with the aerial photo for align-to-photo authoring:
-  //   - StreetRibbons keeps ribbon bands (asphalt/sidewalk/curb — the
-  //     measurement targets) but drops `hideFaceFills` so the colored
-  //     block faces (residential/commercial/park) stop tinting the
+  //   - V2 keeps the ribbon bands (asphalt / curb / sidewalk / treelawn —
+  //     the measurement targets) but takes `hideLandUse` so the colored
+  //     block faces (residential / commercial / park) stop tinting the
   //     aerial.
   //   - MapLayers (buildings, landscape overlays, parking lots, lamps,
   //     trees, water, labels, barriers) hides entirely.

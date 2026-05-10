@@ -63,8 +63,8 @@ const SNAP_R = 0.7
 // we treat the gesture as a click (toggles the origin marker) instead of
 // a drag (commits a radius).
 const TAP_THRESHOLD = 0.25
-// Y offset above ground so dots sit above the ribbon stack (which tops out
-// around Y=0.020 for corner_plug_sidewalk).
+// Y offset above ground so dots sit above the ribbon stack (which tops
+// out around Y=0.020 for V2's `cornerSidewalkPads`).
 const Y_DOTS = 0.05
 // Color logic — corner default + shared override / drag colors so the
 // modal state is unambiguous.
@@ -80,8 +80,9 @@ const sortedCornerKey = (V, legKeyA, legKeyB) => {
 
 // Compute every corner's geometric anchor (Q = where leg-A's left curb-outer
 // meets leg-B's right curb-outer) plus stable leg keys, for each IX in
-// `ribbons`. Same math as buildCornerPadClips; if you change either, change
-// both — the per-corner UI handles MUST land at the same Q the geometry uses.
+// `ribbons`. Same math as the V2 emitter's corner-Q derivation; if you
+// change either, change both — the per-corner UI handles MUST land at
+// the same Q the geometry uses.
 function computeIxLayout(ribbons) {
   if (!ribbons?.intersections?.length) return []
   const TWO_PI = Math.PI * 2

@@ -6,7 +6,7 @@
  * Survey + Measure produce). Runs the same intersection-detection +
  * IX-vertex-splicing logic as `derive.js`, just on a tighter input
  * surface. Emits `src/data/toy/toy-ribbons.json` in the shape that
- * Designer's StreetRibbons + the bake's buildRibbonGeometry expect.
+ * Designer's V2 emitter (`buildBlockGeometryV2`) + the bake expect.
  *
  * Why a separate script: derive.js's main flow expects the full LS data
  * surface (skeleton + raw OSM + parcels + lamps + elevation + ...). For
