@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 (V1 corpus retired across all surfaces; Phase D.1 frontageEdges shipped — D.2 blockSharp is next)
+Last updated: 2026-05-10 (V1 corpus retired across all surfaces; Phase D.1 + D.2 shipped — D.3 per-block-edge band emission is next)
 
 ## 2026-05-10 EOD — Session-end pin (read first if picking up Phase D)
 
@@ -52,9 +52,12 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
    derives offsets); `edgeOrd` is encounter-order within `blockKey`
    (D.3/D.6 may re-order to ring-walk). Additive only — no
    consumer yet, no render change.
-2. **D.2 — `blockSharp = stencil − asphaltSharp`** (~10 LOC). The
-   primitive bands run to per the spec. `blockRounded` stays as
-   the clip applied at render.
+2. **D.2 — `blockSharp = stencil − asphaltSharp`** ✅ shipped
+   (8 LOC in `buildBlockGeometryV2`, returned alongside
+   `blockRounded`). The sharp-corner figure-ground inverse of the
+   unioned per-segment asphalt rectangles, BEFORE round-corner.
+   Bands will run to its corners in D.3; `blockRounded` stays the
+   render-time clipping mask. Additive only — no consumer yet.
 3. **D.3 — Per-block-edge band emission with strip composition
    rules** (the visible Mississippi/Park fix). For each block,
    walk `blockSharp`; for each frontageEdge, emit treelawn +

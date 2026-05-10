@@ -990,8 +990,15 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     applyRoundCornersToRing(ring, allCorners, cornerRadiusScale)
   )
 
+  // D.2 — blockSharp = stencil − asphaltSharp. The figure-ground inverse
+  // of the unioned per-segment asphalt rectangles, BEFORE round-corner is
+  // applied. Bands run to its corners (sharp, pointy at IXs); blockRounded
+  // is the same shape with the corner-clip arc applied and stays the
+  // render-time clipping mask. See NOTES.md 2026-05-06 PM-2.
+  let blockSharp = []
   let blockRounded = []
   if (stencil && stencil.length >= 3) {
+    blockSharp   = differenceRings([stencil], asphaltSharp)
     blockRounded = differenceRings([stencil], asphaltRounded)
   }
   // D.1 — frontageEdges: per-block list of (chain, side, segment-run) →
@@ -1119,6 +1126,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   return {
     asphaltSharp,
     asphaltRounded,
+    blockSharp,           // D.2: stencil − asphaltSharp; sharp-corner figure for D.3 band emission
     blockRounded,         // loose: stencil − asphalt; used for adjacency + band clipping
     blockFill,            // tight: stencil − all ribbons; rendered as the parcel fill
     blocks,               // per-block { ring, blockKey, lu } for LU-aware rendering
