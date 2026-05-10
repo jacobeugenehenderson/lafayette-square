@@ -182,22 +182,19 @@ function unionRings(rings) {
   return out.map(path => path.map(fromClipper))
 }
 
-// Strip depth = treelawn + sidewalk. Permissive: returns the sum
-// whenever EITHER terminal === 'sidewalk' OR widths are present
-// (treelawn > 0 || sidewalk > 0). The width fields ARE the geometric
-// truth; terminal is a labelling concern that's been a regression
-// vector — any pipeline change that dropped/misrouted `terminal` while
-// preserving widths previously nuked the corner-pad emission silently
-// (depthForSide → 0 → pad construction returns null). Defensive sum
-// stops that class of regression.
-//
-// Memory: feedback_corner_pad_continuity_first +
-// feedback_load_bearing_corner_pads.
+// Strip depth = treelawn + sidewalk (only when terminal=='sidewalk', else 0).
+// terminal is the labelling field that distinguishes "this side has a
+// sidewalk band" from "this side is curb-only / lawn-only". A permissive
+// fallback (treat width-presence as terminal='sidewalk') was tried and
+// rolled back 2026-05-10: it produced visible regressions where some IX
+// legs had widths set without intending a sidewalk band, causing pads
+// to emit at the wrong corners and visually invert (asphalt-color where
+// concrete should be, alpha 0 where asphalt should be). The runtime
+// canary just below catches the OPPOSITE regression (pads missing where
+// they should be) and is the safer defense.
 function depthForSide(s) {
-  const tl = s?.treelawn || 0
-  const sw = s?.sidewalk || 0
-  if (s?.terminal === 'sidewalk') return tl + sw
-  return (tl > 0 || sw > 0) ? tl + sw : 0
+  if (s?.terminal !== 'sidewalk') return 0
+  return (s?.treelawn || 0) + (s?.sidewalk || 0)
 }
 
 // Default-R rule (k = 0.5 pinch tolerance). See NOTES.md 2026-05-07.
@@ -676,7 +673,45 @@ function adjacentBlockId(pts, perps, segStart, segEnd, sideSign, hw, blockRounde
 //                (V1 sign convention preserved: 'left' → sideSign=-1)
 //   blockKey  — bbox-center key of this block ring
 //   edgeOrd   — sequential ordinal of this edge within its block ring
-function buildFrontageEdges(streets, blockSharp) {
+// Spatial index over chain segments. Cell size matches the adjacency
+// probe radius so a point in cell (cx,cz) is within PROBE_MAX of any
+// segment whose bbox touches cells (cx±1, cz±1). One-shot build per V2
+// pass; queries inside findAdjacentChainForBlockEdge drop the inner
+// scan from O(streets × segs) to O(few candidates per probe cell).
+const CHAIN_INDEX_CELL = 30  // meters — must match PROBE_MAX below
+
+function buildChainSegmentIndex(streets) {
+  const cells = new Map()
+  const cs = CHAIN_INDEX_CELL
+  const push = (cx, cz, entry) => {
+    const k = cx * 100000 + cz  // assumes |cx|,|cz| < 50000 cells (1500km)
+    let bucket = cells.get(k)
+    if (!bucket) { bucket = []; cells.set(k, bucket) }
+    bucket.push(entry)
+  }
+  for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
+    const s = streets[chainIdx]
+    if (!s || s.disabled || !s.points || s.points.length < 2 || !s.measure) continue
+    const cps = s.points
+    for (let i = 0; i < cps.length - 1; i++) {
+      const ca = cps[i], cb = cps[i + 1]
+      const cdx = cb[0] - ca[0], cdz = cb[1] - ca[1]
+      const cL2 = cdx * cdx + cdz * cdz
+      if (cL2 < 1e-9) continue
+      const minX = Math.min(ca[0], cb[0]), maxX = Math.max(ca[0], cb[0])
+      const minZ = Math.min(ca[1], cb[1]), maxZ = Math.max(ca[1], cb[1])
+      const cx0 = Math.floor(minX / cs), cx1 = Math.floor(maxX / cs)
+      const cz0 = Math.floor(minZ / cs), cz1 = Math.floor(maxZ / cs)
+      const entry = { chainIdx, ca, cb, cdx, cdz, cL2 }
+      for (let cx = cx0; cx <= cx1; cx++) {
+        for (let cz = cz0; cz <= cz1; cz++) push(cx, cz, entry)
+      }
+    }
+  }
+  return { cells, cellSize: cs }
+}
+
+function buildFrontageEdges(streets, blockSharp, chainIndex) {
   if (!streets?.length || !blockSharp?.length) return []
   const out = []
   const CORNER_TURN_DEG = 30  // single-vertex turn threshold for block corners
@@ -721,7 +756,7 @@ function buildFrontageEdges(streets, blockSharp) {
         idx = (idx + 1) % N
       }
       if (points.length < 2) continue
-      const adj = findAdjacentChainForBlockEdge(points, ccw, streets)
+      const adj = findAdjacentChainForBlockEdge(points, ccw, streets, chainIndex)
       if (!adj) continue  // not asphalt-facing (parcel-internal edge)
       // Map block-edge → which chain segOrds run alongside it.
       // This is the bridge that lets cornersAtIx (chainIdx + segOrd
@@ -782,7 +817,7 @@ function chainSegOrdsAlongEdge(chain, edgePoints) {
 // (and which side of that chain the block-edge sits on, in the V1 sign
 // convention). Returns null if no chain is within range — that block
 // edge is parcel-internal, not asphalt-facing.
-function findAdjacentChainForBlockEdge(edgePoints, ringCcw, streets) {
+function findAdjacentChainForBlockEdge(edgePoints, ringCcw, streets, chainIndex) {
   const N = edgePoints.length
   if (N < 2) return null
   // Use the vertex pair around the polyline midpoint to define the
@@ -803,24 +838,54 @@ function findAdjacentChainForBlockEdge(edgePoints, ringCcw, streets) {
   let bestDist = Infinity
   let bestChainIdx = -1
   let bestSegA = null, bestSegB = null
+  // Spatial-index path: query 3×3 cells around each probe point.
+  // Falls back to full scan if no index supplied (preserves caller
+  // contract).
+  const cs = chainIndex?.cellSize
+  const cellMap = chainIndex?.cells
+  const seen = cellMap ? new Set() : null
+  const checkEntry = (entry, px, pz) => {
+    const { ca, cb, cdx, cdz, cL2 } = entry
+    const t = Math.max(0, Math.min(1, ((px - ca[0]) * cdx + (pz - ca[1]) * cdz) / cL2))
+    const qx = ca[0] + t * cdx, qz = ca[1] + t * cdz
+    const dist = Math.hypot(px - qx, pz - qz)
+    if (dist < bestDist) {
+      bestDist = dist
+      bestChainIdx = entry.chainIdx
+      bestSegA = ca; bestSegB = cb
+    }
+  }
   for (let probe = 1; probe <= PROBE_MAX; probe += 2) {
     const px = mx + nx * probe, pz = mz + nz * probe
-    for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
-      const s = streets[chainIdx]
-      if (!s || s.disabled || !s.points || s.points.length < 2 || !s.measure) continue
-      const cps = s.points
-      for (let i = 0; i < cps.length - 1; i++) {
-        const ca = cps[i], cb = cps[i + 1]
-        const cdx = cb[0] - ca[0], cdz = cb[1] - ca[1]
-        const cL2 = cdx * cdx + cdz * cdz
-        if (cL2 < 1e-9) continue
-        const t = Math.max(0, Math.min(1, ((px - ca[0]) * cdx + (pz - ca[1]) * cdz) / cL2))
-        const qx = ca[0] + t * cdx, qz = ca[1] + t * cdz
-        const dist = Math.hypot(px - qx, pz - qz)
-        if (dist < bestDist) {
-          bestDist = dist
-          bestChainIdx = chainIdx
-          bestSegA = ca; bestSegB = cb
+    if (cellMap) {
+      const cx = Math.floor(px / cs), cz = Math.floor(pz / cs)
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          const bucket = cellMap.get((cx + dx) * 100000 + (cz + dz))
+          if (!bucket) continue
+          for (let k = 0; k < bucket.length; k++) {
+            const entry = bucket[k]
+            // Dedup: a segment that spans multiple cells appears in
+            // each. Same entry reference is pushed into every cell it
+            // covers, so object-identity dedup is exact.
+            if (seen.has(entry)) continue
+            seen.add(entry)
+            checkEntry(entry, px, pz)
+          }
+        }
+      }
+      seen.clear()
+    } else {
+      for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
+        const s = streets[chainIdx]
+        if (!s || s.disabled || !s.points || s.points.length < 2 || !s.measure) continue
+        const cps = s.points
+        for (let i = 0; i < cps.length - 1; i++) {
+          const ca = cps[i], cb = cps[i + 1]
+          const cdx = cb[0] - ca[0], cdz = cb[1] - ca[1]
+          const cL2 = cdx * cdx + cdz * cdz
+          if (cL2 < 1e-9) continue
+          checkEntry({ chainIdx, ca, cb, cdx, cdz, cL2 }, px, pz)
         }
       }
     }
@@ -1283,7 +1348,10 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // provides band depths. ONE ring per band per frontage edge, no
   // internal seams. cornerSidewalkPads + cornerAsphaltPlugs fill the
   // corner concrete (unchanged from prior architecture).
-  const frontageEdges = buildFrontageEdges(streets, blockSharp)
+  // Spatial index over chain segments. Drops the adjacency probe from
+  // O(streets × segs × probe-steps) to O(few candidates per probe cell).
+  const chainIndex = buildChainSegmentIndex(streets)
+  const frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex)
   // feLookup[chainIdx][segOrd][sideKey] → fe. Inverse of fe.segOrds.
   // Used by cornersAtIx to find each leg's block-edge for D.5 customs.
   const feLookup = {}
