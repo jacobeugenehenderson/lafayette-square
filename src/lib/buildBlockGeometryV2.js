@@ -258,7 +258,7 @@ function sortedCornerKey(V, legKeyA, legKeyB) {
 // leg width math: a leg coming OFF an IX uses the segment ENDING at the IX
 // (BACK direction) or STARTING from it (FORWARD direction); whichever
 // segment's per-side override applies.
-function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCustoms, chainIdxByChain) {
+function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCustoms, chainIdxByChain, feLookup) {
   const V = ix.point
   if (!ix.streets || ix.streets.length < 2) return []
   const legs = []
@@ -291,12 +291,21 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       const L = Math.hypot(dx, dz)
       if (L < 1e-6) return null
       const isBack = dir === -1
-      // Per-segment override for this leg's adjacent segment, if any.
+      // D.5 customs lookup: the leg's left/right physical sides each
+      // belong to one block-edge (one frontage edge per side per
+      // segOrd). For each side, find the fe in feLookup, then resolve
+      // blockCustoms[fe.blockKey][fe.edgeOrd] (if present) or fall
+      // back to chain.measure[side]. Side orientation is in chain
+      // coordinates; the leg-side flip for back legs happens below.
       const segOrd = segmentForLeg(dir)
-      const segCustom = (chainIdx != null && segOrd != null)
-        ? blockCustoms?.[chainIdx]?.[segOrd] : null
-      const effL = segCustom?.left  || m.left
-      const effR = segCustom?.right || m.right
+      const feL = (chainIdx != null && segOrd != null)
+        ? feLookup?.[chainIdx]?.[segOrd]?.left : null
+      const feR = (chainIdx != null && segOrd != null)
+        ? feLookup?.[chainIdx]?.[segOrd]?.right : null
+      const customL = feL ? blockCustoms?.[feL.blockKey]?.[feL.edgeOrd] : null
+      const customR = feR ? blockCustoms?.[feR.blockKey]?.[feR.edgeOrd] : null
+      const effL = customL || m.left
+      const effR = customR || m.right
       // When walking BACK from V (dir=-1), the chain's "left" becomes
       // our right (we're facing the opposite direction along the chain).
       const left  = isBack ? effR : effL
@@ -702,11 +711,59 @@ function buildFrontageEdges(streets, blockSharp) {
       if (points.length < 2) continue
       const adj = findAdjacentChainForBlockEdge(points, ccw, streets)
       if (!adj) continue  // not asphalt-facing (parcel-internal edge)
+      // Map block-edge → which chain segOrds run alongside it.
+      // This is the bridge that lets cornersAtIx (chainIdx + segOrd
+      // + side data) look up its containing block-edge for D.5
+      // [blockKey][edgeOrd]-keyed customs.
+      const segOrds = chainSegOrdsAlongEdge(streets[adj.chainIdx], points)
       out.push({ points, blockKey, edgeOrd: k,
-                 chainIdx: adj.chainIdx, side: adj.side, ringCcw: ccw })
+                 chainIdx: adj.chainIdx, side: adj.side, ringCcw: ccw,
+                 segOrds })
     }
   }
   return out
+}
+
+// For a chain and a block-edge polyline, return the natural-segment
+// ordinals whose chain.points fall close enough to the block-edge to
+// be considered "running alongside" it. Used to back-resolve which
+// block-edge a (chainIdx, segOrd, side) tuple belongs to.
+function chainSegOrdsAlongEdge(chain, edgePoints) {
+  if (!chain?.points || chain.points.length < 2) return []
+  const cps = chain.points
+  const segments = naturalSegments(chain)
+  // Threshold: chain.points sit roughly hw + cw away from the block-edge
+  // perpendicularly. For LS/toy hw ranges, 12m generously covers it.
+  const ALONG_TOL = 12
+  const ALONG_TOL2 = ALONG_TOL * ALONG_TOL
+  // Distance² from chain vertex p to nearest point on block-edge polyline.
+  const distToEdge2 = (p) => {
+    let best = Infinity
+    for (let j = 0; j < edgePoints.length - 1; j++) {
+      const a = edgePoints[j], b = edgePoints[j + 1]
+      const dx = b[0] - a[0], dz = b[1] - a[1]
+      const L2 = dx * dx + dz * dz
+      if (L2 < 1e-9) continue
+      const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2))
+      const qx = a[0] + t * dx, qz = a[1] + t * dz
+      const d2 = (p[0] - qx) ** 2 + (p[1] - qz) ** 2
+      if (d2 < best) best = d2
+    }
+    return best
+  }
+  const matching = new Set()
+  for (let segOrd = 0; segOrd < segments.length; segOrd++) {
+    const s = segments[segOrd]
+    if (s.end <= s.start) continue
+    // Sample multiple chain.points indices along this segment; if any
+    // are within ALONG_TOL of the block-edge, the segment runs alongside.
+    let any = false
+    for (let i = s.start; i <= s.end; i++) {
+      if (distToEdge2(cps[i]) <= ALONG_TOL2) { any = true; break }
+    }
+    if (any) matching.add(segOrd)
+  }
+  return [...matching].sort((a, b) => a - b)
 }
 
 // Probe outward from a block-edge midpoint and return the closest chain
@@ -798,7 +855,7 @@ function findAdjacentChainForBlockEdge(edgePoints, ringCcw, streets) {
 // Bands are clipped to blockRounded so they don't bleed past the
 // rounded block silhouette at corners (where the round-corners op cut
 // into the sharp polygon).
-function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded) {
+function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms) {
   if (!frontageEdges?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
   const out = []
@@ -806,7 +863,12 @@ function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded) {
   for (const fe of frontageEdges) {
     const street = streets[fe.chainIdx]
     if (!street?.measure) continue
-    const eff = street.measure[fe.side] || {}
+    // D.5 customs: block-edge override wins, else chain default. The
+    // override is keyed by (blockKey, edgeOrd) and shaped like a
+    // chain.measure[side] entry: { terminal, treelawn, sidewalk,
+    // pavementHW }. side is implicit in the block-edge identity.
+    const blockOverride = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
+    const eff = blockOverride || street.measure[fe.side] || {}
     if (eff.terminal !== 'sidewalk') continue
     const tl = eff.treelawn || 0
     const sw = eff.sidewalk || 0
@@ -1193,27 +1255,14 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     const list = streetsByName.get(s.name)
     if (list) list.push(s); else streetsByName.set(s.name, [s])
   }
-  const allCorners = []
-  for (const ix of intersections) {
-    allCorners.push(...cornersAtIx(
-      ix, streetsByName, cornerRadiusOverrides, cornerCornerRadiusOverrides,
-      blockCustoms, chainIdxByChain,
-    ))
-  }
-  const asphaltRounded = asphaltSharp.map(ring =>
-    applyRoundCornersToRing(ring, allCorners, cornerRadiusScale)
-  )
-
-  // D.2 — blockSharp = stencil − asphaltSharp. The figure-ground inverse
-  // of the unioned per-segment asphalt rectangles, BEFORE round-corner is
-  // applied. Bands run to its corners (sharp, pointy at IXs); blockRounded
-  // is the same shape with the corner-clip arc applied and stays the
-  // render-time clipping mask. See NOTES.md 2026-05-06 PM-2.
+  // Reordered for D.5: compute blockSharp + frontageEdges BEFORE
+  // cornersAtIx so the corner pass can resolve each leg's adjacent
+  // block-edge for [blockKey][edgeOrd]-keyed customs lookup. This is
+  // the bridge between chain-segment-keyed cornersAtIx legs and
+  // block-edge-keyed customs.
   let blockSharp = []
-  let blockRounded = []
   if (stencil && stencil.length >= 3) {
-    blockSharp   = differenceRings([stencil], asphaltSharp)
-    blockRounded = differenceRings([stencil], asphaltRounded)
+    blockSharp = differenceRings([stencil], asphaltSharp)
   }
   // D.3 — Block-edge frontages (polygon-walking, per PM-2 spec).
   // For each block ring in blockSharp, walk vertices, find block corners
@@ -1223,7 +1272,37 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // internal seams. cornerSidewalkPads + cornerAsphaltPlugs fill the
   // corner concrete (unchanged from prior architecture).
   const frontageEdges = buildFrontageEdges(streets, blockSharp)
-  const { frontageBands, frontageCaps } = buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded)
+  // feLookup[chainIdx][segOrd][sideKey] → fe. Inverse of fe.segOrds.
+  // Used by cornersAtIx to find each leg's block-edge for D.5 customs.
+  const feLookup = {}
+  for (const fe of frontageEdges) {
+    if (!fe.segOrds?.length) continue
+    if (!feLookup[fe.chainIdx]) feLookup[fe.chainIdx] = {}
+    for (const segOrd of fe.segOrds) {
+      if (!feLookup[fe.chainIdx][segOrd]) feLookup[fe.chainIdx][segOrd] = {}
+      feLookup[fe.chainIdx][segOrd][fe.side] = fe
+    }
+  }
+  const allCorners = []
+  for (const ix of intersections) {
+    allCorners.push(...cornersAtIx(
+      ix, streetsByName, cornerRadiusOverrides, cornerCornerRadiusOverrides,
+      blockCustoms, chainIdxByChain, feLookup,
+    ))
+  }
+  const asphaltRounded = asphaltSharp.map(ring =>
+    applyRoundCornersToRing(ring, allCorners, cornerRadiusScale)
+  )
+
+  // D.2 — blockRounded = stencil − asphaltRounded. The render-time
+  // clipping mask, with corner round-clip arcs applied. blockSharp
+  // (computed above) feeds buildFrontageEdges; blockRounded clips the
+  // emitted bands so they don't bleed past the rounded silhouette.
+  let blockRounded = []
+  if (stencil && stencil.length >= 3) {
+    blockRounded = differenceRings([stencil], asphaltRounded)
+  }
+  const { frontageBands, frontageCaps } = buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms)
   const curbDilated = dilateRings(asphaltRounded, curbWidth)
   const curbBands   = differenceRings(curbDilated, asphaltRounded)
 
