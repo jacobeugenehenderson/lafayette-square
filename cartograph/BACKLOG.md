@@ -4,6 +4,66 @@
 
 Last updated: 2026-05-09 (V2 on LS landed; live overlay + drag-perf done; in-line vertex smoothing removed in favor of Survey-time arc smoothing; next: block-edge-owned ribbons per NOTES.md PM-2)
 
+## 2026-05-09 EOD — Session-end pin (read first if picking up the migration)
+
+Toy was stabilized at a clean baseline this session and the
+block-edge-owned-ribbons migration is unblocked. Four commits on
+`cartograph-looks-pass-ab` carry the prep work — read `git log -p
+dc77068..HEAD` for the full story. In order:
+
+1. **`88db3e0` Trinity-doc reality-check.** NOTES + BACKLOG + FEATURES
+   updated to reflect that Phase 0 parallel-pipeline collapse landed
+   via SCENE_REGISTRY, V2 prototype shipped, and Toy is the canonical
+   pipeline test rig (with the three authored irregularities — VW3
+   bend, HW3 saw-tooth jog, dead-end stub — explicitly called out as
+   the failure modes the next emitter has to handle).
+2. **`76e7aec` Remove in-line vertex smoothing from Measure.** The
+   per-vertex `vertexSmoothing` store field, `filletChainVertex` /
+   `applyChainSmoothing` / `computeSmoothLayout` / `setVertexSmoothing`,
+   and the smoothing dots in `CornerEditHandles` are gone.
+   Replacement is Survey-time arc smoothing (entry below); don't
+   reintroduce a render-time fillet pass on the centerline.
+3. **`38199ea` V2 round-cap CCW normalization.** `quarterCap` rings
+   were emitted with mixed winding; Clipper's NonZero union was
+   cancelling the cap against the matching asphalt rectangle and
+   leaving a hole at dead-ends. Fix is the same shape as the
+   per-segment-rectangle CCW guard.
+4. **`460cc7c` V2 face emission: per-output-ring blockKey + hash-LU
+   fallback.** Toy lost its mixed-LU parcel grid because
+   toy-ribbons.json carries one envelope-shaped face for the entire
+   ±180 stencil. Per-output-ring keying restores the 3×3 grid's
+   varied palette via `pickLuFromHash`. LS face.use still dominates
+   when set.
+
+Toy currently renders cleanly: asphalt corridors with rounded
+mouths, treelawn + sidewalk bands, curb stroke, concrete corner
+pads at IXs, a clean half-disc round-cap on the HW3 dead-end stub,
+mixed-LU parcels in the 3×3 grid, working corner-radius authoring
+(global slider + per-corner cyan dots).
+
+**Load-bearing context for the migration carrier:**
+
+- The migration target is the block-edge entry below ("2026-05-09 —
+  Block-edge-owned ribbons"). Toy is the right place to develop it;
+  the `buildChainBandsLive` per-chain emitter at the bottom of
+  `src/lib/buildBlockGeometryV2.js` proves per-chain stroking is
+  ~ms-per-chain, so the rewrite isn't a perf risk.
+- Concrete corner pads (`cornerSidewalkPads` / `buildCornerPadQuad`)
+  are still load-bearing visible geometry under the *current*
+  emission strategy. They fill the wedge between the rounded curb
+  arc and chain ped-band edges. **Do not remove pre-emptively.**
+  Block-edge ownership erases their need *structurally* (block-edge
+  stroke reaches its own corner) — verify the rewrite renders the
+  corner zone correctly before deleting them.
+- `cornerAsphaltPlugs` are similarly load-bearing today. Same logic:
+  let the new emitter prove it doesn't need them before deleting.
+- Smoothing has been removed from the geometry path entirely. If
+  you reintroduce a smoothing pass anywhere downstream of Survey,
+  reread the "Survey-time arc smoothing" entry and the commit
+  message on `76e7aec` first.
+
+---
+
 ## 2026-05-09 — Block-edge-owned ribbons (NEXT — load-bearing)
 
 **See `cartograph/NOTES.md` 2026-05-06 PM-2: "Corner geometry retired
