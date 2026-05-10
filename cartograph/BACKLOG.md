@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1 + D.3b.2 shipped; D.3b.3 sharp-corner extension is next)
+Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1/2/3 shipped; D.3b.4 pullback + caps is next)
 
 ## 2026-05-10 EOD-2 — Session-end pin (read first; supersedes the EOD pin below for D.3 plan)
 
@@ -134,10 +134,16 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
      resolved eff and rings per segOrd for D.3b.3/4 to consume.
      **Visible-bug coverage:** would fix variable-column/row
      asymmetry (after D.3c).
-   - **D.3b.3 — pending. Sharp-corner extension only.** Build
-     adjacency lookup; extend bands to the line-line intersection
-     of this curb and the perp curb (90°-exact, oblique
-     approximate). NO pullback, NO caps yet. Still data-only. ~60 LOC.
+   - **D.3b.3 ✅ Sharp-corner extension only.** Built vertex-rounded
+     adjacency lookup over `frontageEdges`; for each run-boundary IX
+     with a unique perp partner on the same blockKey, computed
+     line-line intersections of this curb / treelawnOuter / swOuter
+     with the perp's matching offset and pushed those points into
+     the boundary segOrd's band ring as override endpoints (new
+     `chainStripBandExt` helper). NO pullback, NO caps yet. Each
+     `frontageBands[fe]` now carries `startExt` / `endExt` data for
+     D.3b.4 to consume. Near-parallel / ambiguous IXs leave the
+     boundary square. Still data-only.
      **Visible-bug coverage:** none directly; foundation for D.3b.4.
    - **D.3b.4 — pending. Pullback + spec caps from band ends.**
      Apply per-end pullback per composition rule (`sw` legs run

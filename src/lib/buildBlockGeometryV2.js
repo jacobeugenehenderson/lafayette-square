@@ -677,46 +677,163 @@ function buildFrontageEdges(streets, blockRounded, blockCustoms) {
   return out
 }
 
-// D.3a/b.2 — per-frontageEdge treelawn + sidewalk band primitive. For
-// each edge from buildFrontageEdges, emit one treelawn + one sidewalk
-// band PER segOrd in the run, all anchored to the same blockKey/edgeOrd.
-// This collapses the "Mississippi west sidewalk cuts off at Kennett"
-// class of bugs at the geometry-source level — same-block-same-side
-// segments produce ONE block-edge with N piecewise rings, not N
-// disconnected edges. NOT YET CONSUMED: render still emits per natural-
+// D.3a/b.2/b.3 — per-frontageEdge treelawn + sidewalk band primitive.
+// For each edge from buildFrontageEdges, emit one treelawn + one
+// sidewalk band PER segOrd in the run, all anchored to the same
+// blockKey/edgeOrd. NOT YET CONSUMED: render still emits per natural-
 // segment via byChain.{treelawn,sidewalk}Rings; this output sits
-// alongside as data only. D.3b.3 extends bands to the SHARP block
-// corner; D.3b.4 applies pullback + caps; D.3c switches the production
-// render to consume from here. See NOTES.md 2026-05-06 PM-2.
+// alongside as data only. D.3b.4 applies pullback + emits frontageCaps;
+// D.3c switches the production render to consume from here. See
+// NOTES.md 2026-05-06 PM-2.
 //
-// D.3b.2: per-segment customs within a frontage. Each segOrd in the run
+// D.3b.2: per-segOrd customs within a frontage. Each segOrd in the run
 // resolves its own eff from blockCustoms[chainIdx][segOrd][side] (or
-// chain default), so the band's inner edge tracks variable hw across the
-// run. A segOrd with terminal !== 'sidewalk' or hw <= 0 emits no ring
-// for itself; adjacent segOrds in the same run still emit independently.
+// chain default), so the band's inner edge tracks variable hw across
+// the run.
+//
+// D.3b.3: sharp-corner extension. At each run-boundary IX (vertex
+// shared with a perpendicular frontage edge on the same blockKey), the
+// boundary segOrd's band end-vertices are pushed along this curb's
+// direction to the line-line intersection with the perp curb at the
+// matching offset. NO pullback yet — both the curb (treelawn inner)
+// and sidewalk-outer ends extend to their own line-line corners.
+// Composition rules + caps land in D.3b.4.
 function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
   if (!frontageEdges?.length) return []
   const cw = curbWidth
   const perpsByChain = new Map()
   const segsByChain = new Map()
-  const out = []
+  // Collect per-fe metadata in pass 1 so the adjacency pass can find
+  // perp partners by IX vertex. Round to 1 cm to absorb float jitter.
+  const VERT_RES = 100
+  const vertKey = (p) => `${Math.round(p[0] * VERT_RES)}|${Math.round(p[1] * VERT_RES)}`
+  const meta = []
   for (const fe of frontageEdges) {
     const street = streets[fe.chainIdx]
-    if (!street) continue
+    if (!street) { meta.push(null); continue }
     const pts = street.points
     const m = street.measure
-    if (!pts || pts.length < 2 || !m) continue
+    if (!pts || pts.length < 2 || !m || !fe.segOrds?.length) { meta.push(null); continue }
     let perps = perpsByChain.get(fe.chainIdx)
     if (!perps) { perps = computePerps(pts); perpsByChain.set(fe.chainIdx, perps) }
     let segments = segsByChain.get(fe.chainIdx)
     if (!segments) { segments = naturalSegments(street); segsByChain.set(fe.chainIdx, segments) }
-    const segOrds = fe.segOrds
-    if (!segOrds?.length) continue
     const sideSign = fe.side === 'left' ? -1 : +1
+    const segStartIdx = segments[fe.segOrds[0]].start
+    const segEndIdx = segments[fe.segOrds[fe.segOrds.length - 1]].end
+    meta.push({ fe, street, pts, perps, segments, sideSign, m,
+                segStartIdx, segEndIdx,
+                startKey: vertKey(pts[segStartIdx]),
+                endKey: vertKey(pts[segEndIdx]) })
+  }
+
+  // Vertex → list of (feIdx, end). Two fe's at the same vertex with the
+  // same blockKey form a sharp-corner pair.
+  const vertMap = new Map()
+  meta.forEach((md, idx) => {
+    if (!md) return
+    const push = (k, end) => {
+      if (!vertMap.has(k)) vertMap.set(k, [])
+      vertMap.get(k).push({ feIdx: idx, end })
+    }
+    push(md.startKey, 'start')
+    push(md.endKey, 'end')
+  })
+
+  // For each fe end, find unique perp partner with same blockKey.
+  // (0 partners → chain endpoint cap, no extension; >1 partner →
+  // ambiguous IX, leave it square.)
+  const partnerOf = (idx, end) => {
+    const md = meta[idx]
+    if (!md) return null
+    const key = end === 'start' ? md.startKey : md.endKey
+    const cands = (vertMap.get(key) || []).filter(c => {
+      if (c.feIdx === idx) return false
+      const otherMd = meta[c.feIdx]
+      return otherMd && otherMd.fe.blockKey === md.fe.blockKey
+    })
+    return cands.length === 1 ? cands[0] : null
+  }
+
+  // Effective per-end measure (resolved from boundary segOrd's customs).
+  const endEff = (idx, end) => {
+    const md = meta[idx]
+    const segOrd = end === 'start' ? md.fe.segOrds[0] : md.fe.segOrds[md.fe.segOrds.length - 1]
+    return (blockCustoms?.[md.fe.chainIdx]?.[segOrd]?.[md.fe.side]) || md.m[md.fe.side] || {}
+  }
+
+  // Outward unit tangent at this end (away from run interior).
+  const endTangent = (idx, end) => {
+    const md = meta[idx]
+    const i = end === 'start' ? md.segStartIdx : md.segEndIdx
+    const j = end === 'start' ? i + 1 : i - 1
+    if (j < 0 || j >= md.pts.length) return null
+    const tx = md.pts[i][0] - md.pts[j][0]
+    const tz = md.pts[i][1] - md.pts[j][1]
+    const L = Math.hypot(tx, tz)
+    return L < 1e-9 ? null : [tx / L, tz / L]
+  }
+
+  // Line-line intersect: A0 + t·T_a = B0 + s·T_b → return point, or null
+  // if near-parallel (the oblique-collinear case D.3b.3 leaves square).
+  const lineLineIntersect = (A0, T_a, B0, T_b) => {
+    const det = T_a[0] * (-T_b[1]) - T_a[1] * (-T_b[0])
+    if (Math.abs(det) < 1e-9) return null
+    const dx = B0[0] - A0[0], dy = B0[1] - A0[1]
+    const t = (dx * (-T_b[1]) - dy * (-T_b[0])) / det
+    return [A0[0] + t * T_a[0], A0[1] + t * T_a[1]]
+  }
+
+  // Per-fe-end extension data for the three band-edge offsets we care
+  // about (curb = inner of treelawn = outer of asphalt; tlOuter = outer
+  // of treelawn = inner of sidewalk; swOuter = outer of sidewalk).
+  const computeEndExt = (idx, end) => {
+    const part = partnerOf(idx, end)
+    if (!part) return null
+    const md = meta[idx]
+    const T_a = endTangent(idx, end)
+    if (!T_a) return null
+    const pMd = meta[part.feIdx]
+    const T_b = endTangent(part.feIdx, part.end)
+    if (!T_b) return null
+    const ea = endEff(idx, end)
+    const eb = endEff(part.feIdx, part.end)
+    if (ea.terminal !== 'sidewalk' || !(ea.pavementHW > 0)) return null
+    if (eb.terminal !== 'sidewalk' || !(eb.pavementHW > 0)) return null
+    const segIdx_a = end === 'start' ? md.segStartIdx : md.segEndIdx
+    const segIdx_b = part.end === 'start' ? pMd.segStartIdx : pMd.segEndIdx
+    const P_a = md.pts[segIdx_a]
+    const P_b = pMd.pts[segIdx_b]
+    const N_a = md.perps[segIdx_a]
+    const N_b = pMd.perps[segIdx_b]
+    const hw_a = ea.pavementHW, tl_a = ea.treelawn || 0, sw_a = ea.sidewalk || 0
+    const hw_b = eb.pavementHW, tl_b = eb.treelawn || 0, sw_b = eb.sidewalk || 0
+    const isect = (d_a, d_b) => {
+      const A0 = [P_a[0] + N_a[0] * md.sideSign * d_a, P_a[1] + N_a[1] * md.sideSign * d_a]
+      const B0 = [P_b[0] + N_b[0] * pMd.sideSign * d_b, P_b[1] + N_b[1] * pMd.sideSign * d_b]
+      return lineLineIntersect(A0, T_a, B0, T_b)
+    }
+    return {
+      curbPt:    isect(hw_a + cw,                      hw_b + cw),
+      tlOuterPt: isect(hw_a + cw + tl_a,               hw_b + cw + tl_b),
+      swOuterPt: isect(hw_a + cw + tl_a + sw_a,        hw_b + cw + tl_b + sw_b),
+    }
+  }
+
+  // Emit bands using overrides on the run-boundary segOrds.
+  const out = []
+  for (let idx = 0; idx < meta.length; idx++) {
+    const md = meta[idx]
+    if (!md) continue
+    const { fe, pts, perps, segments, sideSign, m } = md
+    const startExt = computeEndExt(idx, 'start')
+    const endExt = computeEndExt(idx, 'end')
     const treelawnRings = []
     const sidewalkRings = []
     const perSeg = []
-    for (const segOrd of segOrds) {
+    const lastK = fe.segOrds.length - 1
+    for (let k = 0; k < fe.segOrds.length; k++) {
+      const segOrd = fe.segOrds[k]
       const seg = segments[segOrd]
       if (!seg || seg.end <= seg.start) continue
       const segPts = pts.slice(seg.start, seg.end + 1)
@@ -729,11 +846,28 @@ function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
       }
       const tl = eff.treelawn || 0
       const sw = eff.sidewalk || 0
+      // Override endpoints on the run-boundary segOrds only. Interior
+      // segOrd boundaries inside a run share vertices with adjacent
+      // segOrds in the same run; those don't get extended.
+      const ovTL = {}
+      const ovSW = {}
+      if (k === 0 && startExt) {
+        if (startExt.curbPt)    ovTL.startInner = startExt.curbPt
+        if (startExt.tlOuterPt) ovTL.startOuter = startExt.tlOuterPt
+        if (startExt.tlOuterPt) ovSW.startInner = startExt.tlOuterPt
+        if (startExt.swOuterPt) ovSW.startOuter = startExt.swOuterPt
+      }
+      if (k === lastK && endExt) {
+        if (endExt.curbPt)    ovTL.endInner = endExt.curbPt
+        if (endExt.tlOuterPt) ovTL.endOuter = endExt.tlOuterPt
+        if (endExt.tlOuterPt) ovSW.endInner = endExt.tlOuterPt
+        if (endExt.swOuterPt) ovSW.endOuter = endExt.swOuterPt
+      }
       const treelawnRing = tl > 0
-        ? chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
+        ? chainStripBandExt(segPts, segPerps, sideSign, hw + cw, hw + cw + tl, ovTL)
         : null
       const sidewalkRing = sw > 0
-        ? chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
+        ? chainStripBandExt(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw, ovSW)
         : null
       if (treelawnRing) treelawnRings.push(treelawnRing)
       if (sidewalkRing) sidewalkRings.push(sidewalkRing)
@@ -745,13 +879,16 @@ function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
       edgeOrd: fe.edgeOrd,
       chainIdx: fe.chainIdx,
       side: fe.side,
-      segOrds: segOrds.slice(),
-      // Per-segOrd rings + resolved eff. D.3b.3 extends end vertices to
-      // the perp curb intersection; D.3b.4 pulls inner/outer ends back
-      // per composition rule and emits frontageCaps from these endpoints.
+      segOrds: fe.segOrds.slice(),
       perSeg,
       treelawnRings,
       sidewalkRings,
+      // D.3b.3: extension data per end. D.3b.4 reads these to compute
+      // pullback + frontageCaps; null end → chain endpoint or ambiguous
+      // IX, leave the boundary square (D.3b.4 may emit a round/blunt
+      // cap from byChain.*CapRings instead).
+      startExt,
+      endExt,
     })
   }
   return out
@@ -812,9 +949,25 @@ function ringSignedArea2D(r) {
 // CCW rings of the same chain at IX overlaps and produces empty bands.
 // Forcing CCW means every ring contributes positively to the union.
 function chainStripBand(pts, perps, side, dInner, dOuter) {
+  return chainStripBandExt(pts, perps, side, dInner, dOuter, null)
+}
+
+// Like chainStripBand but accepts optional override endpoints on the
+// run-boundary vertices. Used by D.3b.3 to extend the boundary segOrd's
+// inner/outer ends to a sharp-corner intersection point.
+//   override = { startInner, startOuter, endInner, endOuter } (any subset)
+function chainStripBandExt(pts, perps, side, dInner, dOuter, override) {
   if (dOuter <= dInner) return null
+  const n = pts.length
+  if (n < 2) return null
   const inner = pts.map((p, i) => [p[0] + side * perps[i][0] * dInner, p[1] + side * perps[i][1] * dInner])
   const outer = pts.map((p, i) => [p[0] + side * perps[i][0] * dOuter, p[1] + side * perps[i][1] * dOuter])
+  if (override) {
+    if (override.startInner) inner[0] = override.startInner
+    if (override.startOuter) outer[0] = override.startOuter
+    if (override.endInner)   inner[n - 1] = override.endInner
+    if (override.endOuter)   outer[n - 1] = override.endOuter
+  }
   const ring = [...outer, ...inner.slice().reverse()]
   return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
 }
