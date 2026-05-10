@@ -115,17 +115,25 @@
     "5": {
       "0": {
         "left": {
-          "pavementHW": 15.530289804469273,
+          "pavementHW": 5.258160735370765,
           "treelawn": 3.0818657342657296,
-          "sidewalk": 8.445722399109272,
+          "sidewalk": 3.5622841499694218,
+          "terminal": "sidewalk"
+        }
+      },
+      "1": {
+        "left": {
+          "pavementHW": 4.258903631284923,
+          "treelawn": 3.0818657342657296,
+          "sidewalk": 4.664848690793168,
           "terminal": "sidewalk"
         }
       },
       "2": {
         "left": {
-          "pavementHW": 10.069383741258733,
-          "treelawn": 4.735662138629543,
-          "sidewalk": 6.791925994745458,
+          "pavementHW": 5.770602101268835,
+          "treelawn": 3.2613357906667204,
+          "sidewalk": 3.8766475078163154,
           "terminal": "sidewalk"
         }
       },

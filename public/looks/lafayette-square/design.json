@@ -494,7 +494,7 @@
   "openSections": {
     "Streets": false,
     "Blocks": false,
-    "Paths": false,
+    "Paths": true,
     "Features": false,
     "Labels": false,
     "HeroSubject": false,
