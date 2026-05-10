@@ -221,6 +221,19 @@ export default function MeasureOverlay() {
   const deselectStreet = useCartographStore(s => s.deselectStreet)
   const measureMode = useCartographStore(s => s.measureMode)
   const blockCustoms = useCartographStore(s => s.blockCustoms)
+  // D.5/D.6: frontageEdges from the V2 build — used to resolve a
+  // (chainIdx, segOrd, sideKey) tuple to its containing block-edge
+  // (blockKey + edgeOrd) for per-block-edge customs authoring.
+  const v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
+  const findFeForSide = useCallback((chainIdx, segOrd, sideKey) => {
+    if (chainIdx == null || segOrd == null || !v2FrontageEdges?.length) return null
+    for (const fe of v2FrontageEdges) {
+      if (fe.chainIdx !== chainIdx) continue
+      if (fe.side !== sideKey) continue
+      if (fe.segOrds?.includes(segOrd)) return fe
+    }
+    return null
+  }, [v2FrontageEdges])
 
   const { camera, gl } = useThree()
   const active = tool === 'measure'
@@ -288,17 +301,19 @@ export default function MeasureOverlay() {
       : midAndPerp(st.points)
     const { cx, cz, nx, nz, segI } = anchor
     const ordinal = naturalSegmentOrdinal(st, segI ?? 0)
-    // Effective measure for handle positioning. Per-side override from
-    // blockCustoms[streetIdx][ordinal] wins over chain.measure[side].
-    // This is what makes handles stick to the BAND boundaries when the
-    // operator drags in per-block mode — without it, handles read the
-    // chain default while the bands reshape per-segment, and the
-    // handles look "inert" because they don't follow the cursor.
-    const customs = blockCustoms?.[selectedStreet]?.[ordinal]
+    // D.5/D.6: Per-side override from the block-edge containing this
+    // segOrd. Each side has its own fe (one block-edge per side per
+    // segOrd). blockCustoms[fe.blockKey][fe.edgeOrd] wins over
+    // chain.measure[side]. This is what makes handles stick to the
+    // band boundaries when the operator drags in per-block mode.
+    const feLeft = findFeForSide(selectedStreet, ordinal, 'left')
+    const feRight = findFeForSide(selectedStreet, ordinal, 'right')
+    const customLeft = feLeft ? blockCustoms?.[feLeft.blockKey]?.[feLeft.edgeOrd] : null
+    const customRight = feRight ? blockCustoms?.[feRight.blockKey]?.[feRight.edgeOrd] : null
     const chainM = st.measure || {}
     const baseMeasure = {
-      left:  customs?.left  || chainM.left,
-      right: customs?.right || chainM.right,
+      left:  customLeft  || chainM.left,
+      right: customRight || chainM.right,
       symmetric: chainM.symmetric,
     }
     // For inner-edge chains, zero out the inboard ped zone so its handles
@@ -352,7 +367,7 @@ export default function MeasureOverlay() {
       }
     }
     return { streetIdx: selectedStreet, measure, ordinal, mid: { cx, cz, nx, nz }, handles }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms])
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide])
 
   // Mirror selection.ordinal to the store so MeasurePanel shows the right segment.
   useEffect(() => {
@@ -361,9 +376,8 @@ export default function MeasureOverlay() {
   }, [selection])
 
   // Whole-chain measure write — global Measure-mode drags target chain.measure
-  // directly. Per-block divergence routes through setBlockCustomMeasure on
-  // the custom branch in applyDrag (block-customs model — Survey couplers
-  // and segmentMeasures retire).
+  // directly. Per-block divergence routes through setBlockEdgeCustom (D.6) on
+  // the custom branch in applyDrag, keyed by (blockKey, edgeOrd).
   const modifyMeasure = useCallback((streetIdx, _ordinal, updater) => {
     const cd = useCartographStore.getState().centerlineData
     const st = cd.streets[streetIdx]
@@ -399,11 +413,11 @@ export default function MeasureOverlay() {
     const MAX_PAVEMENT_HW = 30
     const MAX_STRIPE = 20
 
-    // Per-block mode (default): write to blockCustoms. Each natural
-    // segment of the chain (between two IXs) is one block-edge; the
-    // segment is identified from the click anchor's polyline-segment
-    // index. Operator clicks the block they want to author, drags
-    // handles → only that block-edge changes.
+    // D.6: Per-block mode (default) writes to blockCustoms keyed by
+    // (blockKey, edgeOrd). The operator clicks at point P on chain X;
+    // the click resolves to a (chainIdx, segOrd) tuple; the dragged
+    // side determines which block-edge (left or right of chain) we're
+    // authoring. blockCustoms[fe.blockKey][fe.edgeOrd] = next.
     const mode = useCartographStore.getState().measureMode
     if (window.__customDebug) console.log('[applyDrag] mode:', mode, 'side:', side, 'kind:', kind)
     if (mode?.type !== 'global') {
@@ -414,7 +428,15 @@ export default function MeasureOverlay() {
       if (!anchor) { if (window.__customDebug) console.log('  bail: no anchor'); return }
       const frame = frameAtPoint(st.points, anchor.x, anchor.z)
       const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0)
-      const existing = useCartographStore.getState().blockCustoms?.[streetIdx]?.[segOrd]?.[side]
+      // Find the block-edge for this side. If no fe is found (operator
+      // clicked on a chain segment that isn't asphalt-facing on this
+      // side, e.g. an internal edge), bail — there's nothing to author.
+      const fe = findFeForSide(streetIdx, segOrd, side)
+      if (!fe) {
+        if (window.__customDebug) console.log('  bail: no fe for', { streetIdx, segOrd, side })
+        return
+      }
+      const existing = useCartographStore.getState().blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
       const seed = existing || st.measure?.[side] || { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
       const next = { ...seed }
       const cw = Number.isFinite(next.curb) ? next.curb : CURB_WIDTH
@@ -437,8 +459,8 @@ export default function MeasureOverlay() {
         const inner = curbEnd + next.treelawn
         next.sidewalk = Math.min(MAX_STRIPE, Math.max(STRIPE_MIN, r - inner))
       }
-      if (window.__customDebug) console.log('  → write segCustom[chain', streetIdx, '][seg', segOrd, '][', side, '] =', next)
-      useCartographStore.getState().setBlockCustomMeasure(streetIdx, segOrd, side, next)
+      if (window.__customDebug) console.log('  → write blockEdge[', fe.blockKey, '][', fe.edgeOrd, '] =', next)
+      useCartographStore.getState().setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, next)
       return
     }
 
@@ -488,7 +510,7 @@ export default function MeasureOverlay() {
         }
       }
     })
-  }, [modifyMeasure])
+  }, [modifyMeasure, findFeForSide])
 
   const onPointerDown = useCallback((e) => {
     if (!active || spaceDown || e.button !== 0) return
