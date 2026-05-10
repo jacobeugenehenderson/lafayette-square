@@ -308,6 +308,8 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
         leftDepth:  depthForSide(left),
         rightDepth: depthForSide(right),
         legKey: `${skel}:${dir === -1 ? 'b' : 'f'}`,
+        skel,
+        name: chain.name || null,
       }
     }
     if (ixIdx > 0) { const l = buildLeg(-1); if (l) legs.push(l) }
@@ -324,6 +326,29 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
     while (theta < 0) theta += 2 * Math.PI
     while (theta >= 2 * Math.PI) theta -= 2 * Math.PI
     if (theta < 5 * RAD || theta > 355 * RAD) continue
+    // Skip the angular wedge between two legs of the same NAMED street
+    // ONLY when the wedge is near-180° — the through-street at a
+    // T-intersection where the chain continues straight. Real corners
+    // along a same-named chain (skeleton.js splits at sharp folds, so
+    // two halves of one named street can meet at e.g. 90°) have small
+    // theta and MUST keep emitting a corner pad — those are real block
+    // corners. Per the pad load-bearing memo: pad fills the wedge
+    // between rounded curb arc and the two STRAIGHT ped-band inner
+    // edges meeting at a corner; only the through-T phantom (theta≈180°)
+    // has no two inner edges meeting.
+    const theta_deg = theta * 180 / Math.PI
+    // Skip the angular wedge between two legs of the same NAMED street
+    // when the wedge is near-180° (the through-street at a T-intersection
+    // where the chain continues straight). Per the pad memo: pad fills the
+    // wedge between rounded curb arc and the two STRAIGHT ped-band inner
+    // edges meeting at a corner; with one street wrapping both legs there
+    // are no two inner edges meeting here. theta in (150°, 210°) bounds
+    // the through-T case while preserving any real fold-corners (which
+    // have theta well below 150°). Polygon-walking band emission makes
+    // this filter redundant for bands, but it's still needed because
+    // round-corners on asphalt and per-IX corner records also feed off
+    // cornersAtIx output.
+    if (A.name && B.name && A.name === B.name && theta_deg > 150 && theta_deg < 210) continue
 
     // Block corner = intersection of A's RIGHT curb-outer and B's LEFT
     // curb-outer. Legs are sorted CCW; the wedge between two adjacent
@@ -599,376 +624,248 @@ function adjacentBlockId(pts, perps, segStart, segEnd, sideSign, hw, blockRounde
   return null
 }
 
-// D.1 — Inverse of adjacentBlockId. For each block (ring in blockRounded),
-// identify which chain segments face it on which side, and group runs of
-// consecutive same-(blockId, side) segments within a single chain into
-// block-edges. Pure additive: foundation for D.3 per-block-edge band
-// emission. See cartograph/NOTES.md 2026-05-06 PM-2 + BACKLOG D.1.
+// D.1/D.3 — Block-edge frontages (polygon-walking, per PM-2 spec).
 //
-// Output: [{ points, chainIdx, segOrds, side, blockKey, edgeOrd }]
-//   points    — chain centerline polyline spanning the merged segments
-//                (D.3 derives curb/treelawn/sidewalk offsets from this)
-//   side      — 'left' | 'right' (V1 sign convention: left = -perp)
-//   blockKey  — bbox-center key of the matched blockRounded ring
-//   edgeOrd   — sequential ordinal of this edge within its block
-//                (encounter order; D.3/D.6 may re-order to ring-walk order)
-function buildFrontageEdges(streets, blockRounded, blockCustoms) {
-  if (!streets?.length || !blockRounded?.length) return []
-  const blockKeys = blockRounded.map(blockKeyFromRing)
-  const adj = []
-  for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
-    const street = streets[chainIdx]
-    if (!street || street.disabled) continue
-    const pts = street.points
-    const m = street.measure
-    if (!pts || pts.length < 2 || !m) continue
-    const perps = computePerps(pts)
-    const segments = naturalSegments(street)
-    for (let segOrd = 0; segOrd < segments.length; segOrd++) {
-      const seg = segments[segOrd]
-      if (seg.end <= seg.start) continue
-      for (const sideKey of ['left', 'right']) {
-        const sideSign = sideKey === 'left' ? -1 : +1
-        const eff = (blockCustoms?.[chainIdx]?.[segOrd]?.[sideKey]) || m[sideKey] || {}
-        const hw = eff.pavementHW || 0
-        if (hw <= 0) continue
-        const blockId = adjacentBlockId(pts, perps, seg.start, seg.end, sideSign, hw, blockRounded)
-        if (blockId == null) continue
-        adj.push({ chainIdx, segOrd, side: sideKey, blockId, segStart: seg.start, segEnd: seg.end })
-      }
-    }
-  }
-  // Group consecutive same-(chain, side, blockId) segments into runs.
-  const runs = []
-  const byChainSide = new Map()
-  for (const a of adj) {
-    const k = `${a.chainIdx}|${a.side}`
-    let list = byChainSide.get(k)
-    if (!list) { list = []; byChainSide.set(k, list) }
-    list.push(a)
-  }
-  for (const list of byChainSide.values()) {
-    list.sort((x, y) => x.segOrd - y.segOrd)
-    let run = null
-    for (const a of list) {
-      const contig = run && run.blockId === a.blockId
-        && a.segOrd === run.segOrds[run.segOrds.length - 1] + 1
-      if (contig) { run.segOrds.push(a.segOrd); run.segEnd = a.segEnd }
-      else {
-        if (run) runs.push(run)
-        run = { chainIdx: a.chainIdx, side: a.side, blockId: a.blockId,
-                segOrds: [a.segOrd], segStart: a.segStart, segEnd: a.segEnd }
-      }
-    }
-    if (run) runs.push(run)
-  }
-  runs.sort((x, y) => x.chainIdx - y.chainIdx || x.segOrds[0] - y.segOrds[0])
-  const ordCounters = new Map()
+// **The architecture: block is positive space.** Each block ring in
+// `blockSharp` (= stencil − asphaltSharp, sharp-cornered figure-ground
+// inverse of asphalt) is walked; vertices whose local turn exceeds the
+// corner threshold mark real block corners; vertices below the threshold
+// are colinear interior points along a single block-edge (typically
+// chain-IX vertices where the chain crosses but the BLOCK continues
+// straight through). Each contiguous run of vertices between two
+// consecutive corners is ONE block-edge — the spec's "leg ribbon
+// running corner-to-corner of the BLOCK, independent of how the chain
+// on the other side is segmented."
+//
+// For each block-edge, the adjacent chain is identified by probing
+// outward (away from block interior) to find the closest chain
+// centerline. That chain's `measure[side]` provides the band depths
+// (treelawn / sidewalk). When operator-authored customs migrate to
+// `[blockKey][edgeOrd]` keying (D.5), they override here; for now
+// we use chain.measure default — per-segOrd customs aren't honored
+// at the block-edge level (architectural correctness over operator
+// convenience until D.5 lands).
+//
+// Output: [{ points, blockKey, edgeOrd, chainIdx, side }]
+//   points    — block-edge polyline (slice of blockSharp ring vertices),
+//                INCLUDING both block corners. At curb position
+//                (perpendicular distance ≈hw from chain centerline).
+//   chainIdx  — index of adjacent chain in `streets` (for measure lookup)
+//   side      — 'left' | 'right' relative to chain's forward direction
+//                (V1 sign convention preserved: 'left' → sideSign=-1)
+//   blockKey  — bbox-center key of this block ring
+//   edgeOrd   — sequential ordinal of this edge within its block ring
+function buildFrontageEdges(streets, blockSharp) {
+  if (!streets?.length || !blockSharp?.length) return []
   const out = []
-  for (const r of runs) {
-    const street = streets[r.chainIdx]
-    const points = street.points.slice(r.segStart, r.segEnd + 1)
-    const blockKey = blockKeys[r.blockId]
-    const edgeOrd = ordCounters.get(blockKey) || 0
-    ordCounters.set(blockKey, edgeOrd + 1)
-    out.push({ points, chainIdx: r.chainIdx, segOrds: r.segOrds.slice(),
-               side: r.side, blockKey, edgeOrd })
+  const CORNER_TURN_DEG = 30  // single-vertex turn threshold for block corners
+  const CORNER_TURN_COS = Math.cos(CORNER_TURN_DEG * Math.PI / 180)
+
+  for (const ring of blockSharp) {
+    if (!ring || ring.length < 4) continue
+    const N = ring.length
+    const blockKey = blockKeyFromRing(ring)
+    const ccw = ringSignedArea2D(ring) >= 0  // standard winding flag
+
+    // Find block corners. A corner is a single vertex with a sharp turn
+    // (dot product of incoming and outgoing edges < CORNER_TURN_COS).
+    // Smooth arcs (cul-de-sac round caps embedded in the asphalt mouth)
+    // and chain-IX vertices where the block runs through (~180° turn
+    // = ~+1 dot, no corner) both fall through correctly.
+    const cornerIdxs = []
+    for (let i = 0; i < N; i++) {
+      const prev = ring[(i - 1 + N) % N]
+      const cur = ring[i]
+      const next = ring[(i + 1) % N]
+      const inX = cur[0] - prev[0], inZ = cur[1] - prev[1]
+      const outX = next[0] - cur[0], outZ = next[1] - cur[1]
+      const inLen = Math.hypot(inX, inZ), outLen = Math.hypot(outX, outZ)
+      if (inLen < 1e-6 || outLen < 1e-6) continue
+      const dot = (inX * outX + inZ * outZ) / (inLen * outLen)
+      if (dot < CORNER_TURN_COS) cornerIdxs.push(i)
+    }
+    if (cornerIdxs.length < 3) continue  // degenerate block
+
+    // For each block-edge between two consecutive corners, slice out the
+    // block-edge polyline (corner → ... → next corner), find the
+    // adjacent chain, emit a frontage record.
+    for (let k = 0; k < cornerIdxs.length; k++) {
+      const c1 = cornerIdxs[k]
+      const c2 = cornerIdxs[(k + 1) % cornerIdxs.length]
+      const points = []
+      let idx = c1
+      while (true) {
+        points.push(ring[idx])
+        if (idx === c2) break
+        idx = (idx + 1) % N
+      }
+      if (points.length < 2) continue
+      const adj = findAdjacentChainForBlockEdge(points, ccw, streets)
+      if (!adj) continue  // not asphalt-facing (parcel-internal edge)
+      out.push({ points, blockKey, edgeOrd: k,
+                 chainIdx: adj.chainIdx, side: adj.side, ringCcw: ccw })
+    }
   }
   return out
 }
 
-// D.3a/b.2/b.3 — per-frontageEdge treelawn + sidewalk band primitive.
-// For each edge from buildFrontageEdges, emit one treelawn + one
-// sidewalk band PER segOrd in the run, all anchored to the same
-// blockKey/edgeOrd. NOT YET CONSUMED: render still emits per natural-
-// segment via byChain.{treelawn,sidewalk}Rings; this output sits
-// alongside as data only. D.3b.4 applies pullback + emits frontageCaps;
-// D.3c switches the production render to consume from here. See
-// NOTES.md 2026-05-06 PM-2.
-//
-// D.3b.2: per-segOrd customs within a frontage. Each segOrd in the run
-// resolves its own eff from blockCustoms[chainIdx][segOrd][side] (or
-// chain default), so the band's inner edge tracks variable hw across
-// the run.
-//
-// D.3b.3: sharp-corner extension. At each run-boundary IX (vertex
-// shared with a perpendicular frontage edge on the same blockKey), the
-// boundary segOrd's band end-vertices are pushed along this curb's
-// direction to the line-line intersection with the perp curb at the
-// matching offset. NO pullback yet — both the curb (treelawn inner)
-// and sidewalk-outer ends extend to their own line-line corners.
-// Composition rules + caps land in D.3b.4.
-function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth, blockRounded) {
-  if (!frontageEdges?.length) return { frontageBands: [], frontageCaps: [] }
-  const cw = curbWidth
-  const perpsByChain = new Map()
-  const segsByChain = new Map()
-  // Collect per-fe metadata in pass 1 so the adjacency pass can find
-  // perp partners by IX vertex. Round to 1 cm to absorb float jitter.
-  const VERT_RES = 100
-  const vertKey = (p) => `${Math.round(p[0] * VERT_RES)}|${Math.round(p[1] * VERT_RES)}`
-  const meta = []
-  for (const fe of frontageEdges) {
-    const street = streets[fe.chainIdx]
-    if (!street) { meta.push(null); continue }
-    const pts = street.points
-    const m = street.measure
-    if (!pts || pts.length < 2 || !m || !fe.segOrds?.length) { meta.push(null); continue }
-    let perps = perpsByChain.get(fe.chainIdx)
-    if (!perps) { perps = computePerps(pts); perpsByChain.set(fe.chainIdx, perps) }
-    let segments = segsByChain.get(fe.chainIdx)
-    if (!segments) { segments = naturalSegments(street); segsByChain.set(fe.chainIdx, segments) }
-    const sideSign = fe.side === 'left' ? -1 : +1
-    const segStartIdx = segments[fe.segOrds[0]].start
-    const segEndIdx = segments[fe.segOrds[fe.segOrds.length - 1]].end
-    meta.push({ fe, street, pts, perps, segments, sideSign, m,
-                segStartIdx, segEndIdx,
-                startKey: vertKey(pts[segStartIdx]),
-                endKey: vertKey(pts[segEndIdx]) })
-  }
+// Probe outward from a block-edge midpoint and return the closest chain
+// (and which side of that chain the block-edge sits on, in the V1 sign
+// convention). Returns null if no chain is within range — that block
+// edge is parcel-internal, not asphalt-facing.
+function findAdjacentChainForBlockEdge(edgePoints, ringCcw, streets) {
+  const N = edgePoints.length
+  if (N < 2) return null
+  // Use the vertex pair around the polyline midpoint to define the
+  // local edge direction (avoids issues with corner-side endpoints).
+  const mid = Math.floor(N / 2)
+  const a = edgePoints[Math.max(0, mid - 1)]
+  const b = edgePoints[Math.min(N - 1, mid)]
+  const tx = b[0] - a[0], tz = b[1] - a[1]
+  const tL = Math.hypot(tx, tz)
+  if (tL < 1e-6) return null
+  // Outward normal = right of walk direction for CCW (interior on left).
+  // Right perp of (tx, tz) = (tz, -tx). For CW, flip.
+  const sign = ringCcw ? +1 : -1
+  const nx = sign * tz / tL, nz = sign * (-tx) / tL
+  const mx = (a[0] + b[0]) * 0.5, mz = (a[1] + b[1]) * 0.5
 
-  // Vertex → list of (feIdx, end). Two fe's at the same vertex with the
-  // same blockKey form a sharp-corner pair.
-  const vertMap = new Map()
-  meta.forEach((md, idx) => {
-    if (!md) return
-    const push = (k, end) => {
-      if (!vertMap.has(k)) vertMap.set(k, [])
-      vertMap.get(k).push({ feIdx: idx, end })
-    }
-    push(md.startKey, 'start')
-    push(md.endKey, 'end')
-  })
-
-  // For each fe end, find unique perp partner with same blockKey.
-  // (0 partners → chain endpoint cap, no extension; >1 partner →
-  // ambiguous IX, leave it square.)
-  const partnerOf = (idx, end) => {
-    const md = meta[idx]
-    if (!md) return null
-    const key = end === 'start' ? md.startKey : md.endKey
-    const cands = (vertMap.get(key) || []).filter(c => {
-      if (c.feIdx === idx) return false
-      const otherMd = meta[c.feIdx]
-      return otherMd && otherMd.fe.blockKey === md.fe.blockKey
-    })
-    return cands.length === 1 ? cands[0] : null
-  }
-
-  // Effective per-end measure (resolved from boundary segOrd's customs).
-  const endEff = (idx, end) => {
-    const md = meta[idx]
-    const segOrd = end === 'start' ? md.fe.segOrds[0] : md.fe.segOrds[md.fe.segOrds.length - 1]
-    return (blockCustoms?.[md.fe.chainIdx]?.[segOrd]?.[md.fe.side]) || md.m[md.fe.side] || {}
-  }
-
-  // Outward unit tangent at this end (away from run interior).
-  const endTangent = (idx, end) => {
-    const md = meta[idx]
-    const i = end === 'start' ? md.segStartIdx : md.segEndIdx
-    const j = end === 'start' ? i + 1 : i - 1
-    if (j < 0 || j >= md.pts.length) return null
-    const tx = md.pts[i][0] - md.pts[j][0]
-    const tz = md.pts[i][1] - md.pts[j][1]
-    const L = Math.hypot(tx, tz)
-    return L < 1e-9 ? null : [tx / L, tz / L]
-  }
-
-  // Line-line intersect: A0 + t·T_a = B0 + s·T_b → return point, or null
-  // if near-parallel (the oblique-collinear case D.3b.3 leaves square).
-  const lineLineIntersect = (A0, T_a, B0, T_b) => {
-    const det = T_a[0] * (-T_b[1]) - T_a[1] * (-T_b[0])
-    if (Math.abs(det) < 1e-9) return null
-    const dx = B0[0] - A0[0], dy = B0[1] - A0[1]
-    const t = (dx * (-T_b[1]) - dy * (-T_b[0])) / det
-    return [A0[0] + t * T_a[0], A0[1] + t * T_a[1]]
-  }
-
-  // Per-fe-end extension data for the three band-edge offsets we care
-  // about (curb = inner of treelawn = outer of asphalt; tlOuter = outer
-  // of treelawn = inner of sidewalk; swOuter = outer of sidewalk).
-  // Also carries D.3b.4 pullback inputs: T_in (unit vector into this
-  // fe's run interior), thisIsTlSw / partnerIsTlSw (composition flags),
-  // and pullback (= partner.totalDepth when this leg is tl+sw, else 0).
-  const computeEndExt = (idx, end) => {
-    const part = partnerOf(idx, end)
-    if (!part) return null
-    const md = meta[idx]
-    const T_a = endTangent(idx, end)
-    if (!T_a) return null
-    const pMd = meta[part.feIdx]
-    const T_b = endTangent(part.feIdx, part.end)
-    if (!T_b) return null
-    const ea = endEff(idx, end)
-    const eb = endEff(part.feIdx, part.end)
-    if (ea.terminal !== 'sidewalk' || !(ea.pavementHW > 0)) return null
-    if (eb.terminal !== 'sidewalk' || !(eb.pavementHW > 0)) return null
-    const segIdx_a = end === 'start' ? md.segStartIdx : md.segEndIdx
-    const segIdx_b = part.end === 'start' ? pMd.segStartIdx : pMd.segEndIdx
-    const P_a = md.pts[segIdx_a]
-    const P_b = pMd.pts[segIdx_b]
-    const N_a = md.perps[segIdx_a]
-    const N_b = pMd.perps[segIdx_b]
-    const hw_a = ea.pavementHW, tl_a = ea.treelawn || 0, sw_a = ea.sidewalk || 0
-    const hw_b = eb.pavementHW, tl_b = eb.treelawn || 0, sw_b = eb.sidewalk || 0
-    const isect = (d_a, d_b) => {
-      const A0 = [P_a[0] + N_a[0] * md.sideSign * d_a, P_a[1] + N_a[1] * md.sideSign * d_a]
-      const B0 = [P_b[0] + N_b[0] * pMd.sideSign * d_b, P_b[1] + N_b[1] * pMd.sideSign * d_b]
-      return lineLineIntersect(A0, T_a, B0, T_b)
-    }
-    const thisIsTlSw = tl_a > 0
-    const partnerIsTlSw = tl_b > 0
-    // T_in_a points INTO this fe's run interior (opposite T_a, which is
-    // the outward tangent at this end). D.3b.4 pullback applies as
-    // override + T_in_a * pullback to slide the boundary endpoint
-    // inward along the band's curb-line direction.
-    const T_in_a = [-T_a[0], -T_a[1]]
-    return {
-      curbPt:    isect(hw_a + cw,                      hw_b + cw),
-      tlOuterPt: isect(hw_a + cw + tl_a,               hw_b + cw + tl_b),
-      swOuterPt: isect(hw_a + cw + tl_a + sw_a,        hw_b + cw + tl_b + sw_b),
-      T_in_a,
-      thisIsTlSw,
-      partnerIsTlSw,
-      pullback: thisIsTlSw ? (tl_b + sw_b) : 0,
-    }
-  }
-
-  // Slide a point P inward along T_in by `d`. Returns null if either
-  // input is missing (so override fields naturally fall through).
-  const slideIn = (P, T_in, d) => P && T_in ? [P[0] + T_in[0] * d, P[1] + T_in[1] * d] : null
-
-  // Emit bands using overrides on the run-boundary segOrds. D.3b.4
-  // pullback: when this leg is tl+sw, slide its boundary endpoints
-  // inward along T_in by partner.totalDepth so the cap (or the
-  // partner's sidewalk strip in the sw↔(tl+sw) case) fills the corner.
-  // Cap polygon emitted only at (tl+sw)↔(tl+sw) corners — composition
-  // rules from NOTES.md 2026-05-06 PM-2 §"Strip composition near the
-  // corner".
-  const out = []
-  const frontageCaps = []
-  // Cap quad for this fe's strip half at one corner. Corners taken
-  // from D.3b.3's exact line-line intersections (curbPt, swOuterPt) +
-  // their pulled-back counterparts. This fixes the rollback bug 1
-  // (orthogonal-basis approximation `S+N_in*b` was exact only for 90°
-  // X with consistent depths).
-  const buildCapQuad = (ext) => {
-    if (!ext || !ext.thisIsTlSw || !ext.partnerIsTlSw) return null
-    if (!ext.curbPt || !ext.swOuterPt || !(ext.pullback > 0)) return null
-    const V0 = ext.curbPt
-    const V1 = ext.swOuterPt
-    const V2 = slideIn(ext.swOuterPt, ext.T_in_a, ext.pullback)
-    const V3 = slideIn(ext.curbPt,    ext.T_in_a, ext.pullback)
-    if (!V2 || !V3) return null
-    const ring = [V0, V1, V2, V3]
-    return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
-  }
-  for (let idx = 0; idx < meta.length; idx++) {
-    const md = meta[idx]
-    if (!md) continue
-    const { fe, pts, perps, segments, sideSign, m } = md
-    const startExt = computeEndExt(idx, 'start')
-    const endExt = computeEndExt(idx, 'end')
-    const treelawnRings = []
-    const sidewalkRings = []
-    const perSeg = []
-    const lastK = fe.segOrds.length - 1
-    for (let k = 0; k < fe.segOrds.length; k++) {
-      const segOrd = fe.segOrds[k]
-      const seg = segments[segOrd]
-      if (!seg || seg.end <= seg.start) continue
-      const segPts = pts.slice(seg.start, seg.end + 1)
-      const segPerps = perps.slice(seg.start, seg.end + 1)
-      const eff = (blockCustoms?.[fe.chainIdx]?.[segOrd]?.[fe.side]) || m[fe.side] || {}
-      const hw = eff.pavementHW || 0
-      if (eff.terminal !== 'sidewalk' || hw <= 0) {
-        perSeg.push({ segOrd, eff, treelawnRing: null, sidewalkRing: null })
-        continue
-      }
-      const tl = eff.treelawn || 0
-      const sw = eff.sidewalk || 0
-      // Override endpoints on the run-boundary segOrds only. Interior
-      // segOrd boundaries inside a run share vertices with adjacent
-      // segOrds in the same run; those don't get extended/pulled-back.
-      const ovTL = {}
-      const ovSW = {}
-      // Override at run-start: prefer pulled-back point when this leg
-      // is tl+sw and pullback > 0; otherwise use the raw extension.
-      // (sw legs run to corner — pullback = 0, raw extension wins.)
-      const applyOverride = (ext, slot) => {
-        if (!ext) return
-        const d = ext.thisIsTlSw ? ext.pullback : 0
-        const slid = (P) => d > 0 ? slideIn(P, ext.T_in_a, d) : P
-        const curb = slid(ext.curbPt)
-        const tlOut = slid(ext.tlOuterPt)
-        const swOut = slid(ext.swOuterPt)
-        if (slot === 'start') {
-          if (curb)  ovTL.startInner = curb
-          if (tlOut) { ovTL.startOuter = tlOut; ovSW.startInner = tlOut }
-          if (swOut) ovSW.startOuter = swOut
-        } else {
-          if (curb)  ovTL.endInner = curb
-          if (tlOut) { ovTL.endOuter = tlOut; ovSW.endInner = tlOut }
-          if (swOut) ovSW.endOuter = swOut
+  const PROBE_MAX = 30  // meters — past any reasonable hw + cw
+  let bestDist = Infinity
+  let bestChainIdx = -1
+  let bestSegA = null, bestSegB = null
+  for (let probe = 1; probe <= PROBE_MAX; probe += 2) {
+    const px = mx + nx * probe, pz = mz + nz * probe
+    for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
+      const s = streets[chainIdx]
+      if (!s || s.disabled || !s.points || s.points.length < 2 || !s.measure) continue
+      const cps = s.points
+      for (let i = 0; i < cps.length - 1; i++) {
+        const ca = cps[i], cb = cps[i + 1]
+        const cdx = cb[0] - ca[0], cdz = cb[1] - ca[1]
+        const cL2 = cdx * cdx + cdz * cdz
+        if (cL2 < 1e-9) continue
+        const t = Math.max(0, Math.min(1, ((px - ca[0]) * cdx + (pz - ca[1]) * cdz) / cL2))
+        const qx = ca[0] + t * cdx, qz = ca[1] + t * cdz
+        const dist = Math.hypot(px - qx, pz - qz)
+        if (dist < bestDist) {
+          bestDist = dist
+          bestChainIdx = chainIdx
+          bestSegA = ca; bestSegB = cb
         }
       }
-      if (k === 0)     applyOverride(startExt, 'start')
-      if (k === lastK) applyOverride(endExt,   'end')
-      const treelawnRing = tl > 0
-        ? chainStripBandExt(segPts, segPerps, sideSign, hw + cw, hw + cw + tl, ovTL)
-        : null
-      const sidewalkRing = sw > 0
-        ? chainStripBandExt(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw, ovSW)
-        : null
-      if (treelawnRing) treelawnRings.push(treelawnRing)
-      if (sidewalkRing) sidewalkRings.push(sidewalkRing)
-      perSeg.push({ segOrd, eff, treelawnRing, sidewalkRing })
     }
-    // Cap halves: each fe contributes its own strip half at each
-    // (tl+sw)↔(tl+sw) corner. The two halves overlap; downstream
-    // unions them implicitly via Clipper / pftNonZero.
-    const startCap = buildCapQuad(startExt)
-    const endCap = buildCapQuad(endExt)
-    if (startCap) frontageCaps.push({ ring: startCap, blockKey: fe.blockKey, edgeOrd: fe.edgeOrd,
-                                      chainIdx: fe.chainIdx, side: fe.side, end: 'start' })
-    if (endCap)   frontageCaps.push({ ring: endCap,   blockKey: fe.blockKey, edgeOrd: fe.edgeOrd,
-                                      chainIdx: fe.chainIdx, side: fe.side, end: 'end' })
-    if (!treelawnRings.length && !sidewalkRings.length && !startCap && !endCap) continue
+    if (bestDist < 3) break  // close enough
+  }
+  if (bestChainIdx < 0 || bestDist > PROBE_MAX) return null
+
+  // Determine side: project (mx - ca, mz - ca) onto chain's LEFT perp.
+  // computePerps returns LEFT perp for forward T; per the existing V1
+  // convention, sideKey='left' → sideSign=-1 → band emitted in -leftPerp
+  // direction. So a block-edge in +leftPerp direction from the chain
+  // corresponds to sideKey='right' (sideSign=+1), and -leftPerp → 'left'.
+  const cdx = bestSegB[0] - bestSegA[0], cdz = bestSegB[1] - bestSegA[1]
+  const leftPx = -cdz, leftPz = cdx
+  const projL = (mx - bestSegA[0]) * leftPx + (mz - bestSegA[1]) * leftPz
+  const side = projL > 0 ? 'right' : 'left'
+  return { chainIdx: bestChainIdx, side }
+}
+
+// D.3 — Block-edge bands (polygon-walking, per PM-2 spec).
+//
+// For each frontage edge from `buildFrontageEdges` (= one block-edge of
+// one block, with adjacent chain identified), emit treelawn + sidewalk
+// rings by parallel-offsetting the block-edge polyline INWARD into the
+// block. The block-edge polyline IS the curb edge (at perpendicular
+// distance ≈hw from the chain's centerline, on the block side of the
+// asphalt). Band depths come from chain.measure[side].
+//
+//   inner of treelawn (= curb-side) = block-edge offset inward by cw
+//   outer of treelawn               = inward by cw + tl
+//   outer of sidewalk               = inward by cw + tl + sw
+//
+// "Inward" = into block interior. For CCW block ring (interior on
+// left of walking direction), inward = +leftPerp. For CW, inward =
+// -leftPerp. computePerps returns the LEFT perp of forward direction,
+// so the offset sign is +1 / −1 for CCW / CW respectively.
+//
+// One ring per band per frontage edge. NO internal seams at chain-IX
+// vertices (those are interior to the block-edge polyline, not block
+// corners). NO frontageCaps emitted — the existing `cornerSidewalkPads`
+// + `cornerAsphaltPlugs` (cornersAtIx-derived, load-bearing per the
+// pad memo) fill the corner concrete at block corners.
+//
+// Bands are clipped to blockRounded so they don't bleed past the
+// rounded block silhouette at corners (where the round-corners op cut
+// into the sharp polygon).
+function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded) {
+  if (!frontageEdges?.length) return { frontageBands: [], frontageCaps: [] }
+  const cw = curbWidth
+  const out = []
+
+  for (const fe of frontageEdges) {
+    const street = streets[fe.chainIdx]
+    if (!street?.measure) continue
+    const eff = street.measure[fe.side] || {}
+    if (eff.terminal !== 'sidewalk') continue
+    const tl = eff.treelawn || 0
+    const sw = eff.sidewalk || 0
+    if (tl <= 0 && sw <= 0) continue
+
+    const points = fe.points
+    if (!points || points.length < 2) continue
+    const perps = computePerps(points)
+    const inwardSign = fe.ringCcw ? +1 : -1
+
+    const offsetPolyline = (r) =>
+      points.map((p, i) => [
+        p[0] + perps[i][0] * inwardSign * r,
+        p[1] + perps[i][1] * inwardSign * r,
+      ])
+
+    // Three offset polylines bounding the two bands.
+    const innerEdge = offsetPolyline(cw)              // band's curb-side
+    const tlOuterEdge = offsetPolyline(cw + tl)       // tl outer = sw inner
+    const swOuterEdge = offsetPolyline(cw + tl + sw)  // sw outer
+
+    const closeRing = (outerEdge, innerEdge_) => {
+      if (outerEdge.length < 2 || innerEdge_.length < 2) return null
+      const ring = [...outerEdge, ...innerEdge_.slice().reverse()]
+      return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
+    }
+
+    const treelawnRings = []
+    const sidewalkRings = []
+    if (tl > 0) {
+      const r = closeRing(tlOuterEdge, innerEdge)
+      if (r) treelawnRings.push(r)
+    }
+    if (sw > 0) {
+      const r = closeRing(swOuterEdge, tlOuterEdge)
+      if (r) sidewalkRings.push(r)
+    }
+    if (!treelawnRings.length && !sidewalkRings.length) continue
+
     out.push({
       blockKey: fe.blockKey,
       edgeOrd: fe.edgeOrd,
       chainIdx: fe.chainIdx,
       side: fe.side,
-      segOrds: fe.segOrds.slice(),
-      perSeg,
+      points,
       treelawnRings,
       sidewalkRings,
-      startExt,
-      endExt,
-      startCap,
-      endCap,
     })
   }
-  // D.3b.4: clip the flat band + cap rings to blockRounded so they
-  // don't bleed past the block silhouette. perSeg rings are left
-  // unclipped (they're internal D.3b.* metadata; D.3c consumers should
-  // walk the flat arrays). intersectRings can collapse or split rings,
-  // so the per-segOrd 1:1 mapping doesn't survive the clip — that's
-  // why perSeg keeps the raw rings and the flat arrays carry the
-  // post-clip output.
+
+  // Clip to blockRounded so bands don't bleed past the rounded block
+  // silhouette at corners where round-corners cut into the sharp polygon.
   if (blockRounded?.length) {
     for (const fe of out) {
       if (fe.treelawnRings.length) fe.treelawnRings = intersectRings(fe.treelawnRings, blockRounded)
       if (fe.sidewalkRings.length) fe.sidewalkRings = intersectRings(fe.sidewalkRings, blockRounded)
     }
-    if (frontageCaps.length) {
-      for (const cap of frontageCaps) {
-        const clipped = intersectRings([cap.ring], blockRounded)
-        cap.ringClipped = clipped
-      }
-    }
   }
-  return { frontageBands: out, frontageCaps }
+  return { frontageBands: out, frontageCaps: [] }
 }
 
 // Outward polygon offset (Minkowski sum with a disc of radius `delta`).
@@ -1318,14 +1215,15 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     blockSharp   = differenceRings([stencil], asphaltSharp)
     blockRounded = differenceRings([stencil], asphaltRounded)
   }
-  // D.1 — frontageEdges: per-block list of (chain, side, segment-run) →
-  // block-edge. Foundation for D.3 block-edge-owned ribbon emission.
-  // Additive only; nothing in this pipeline consumes it yet.
-  const frontageEdges = buildFrontageEdges(streets, blockRounded, blockCustoms)
-  // D.3a — per-frontageEdge tl+sw band rings. Foundation for D.3b/c.
-  // Not yet consumed by the renderer; legacy per-segment bands in
-  // byChain.{treelawn,sidewalk}Rings still drive the visual.
-  const { frontageBands, frontageCaps } = buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth, blockRounded)
+  // D.3 — Block-edge frontages (polygon-walking, per PM-2 spec).
+  // For each block ring in blockSharp, walk vertices, find block corners
+  // (sharp turns), and emit one frontage edge per (block, block-edge).
+  // The adjacent chain is identified by spatial probe; its measure
+  // provides band depths. ONE ring per band per frontage edge, no
+  // internal seams. cornerSidewalkPads + cornerAsphaltPlugs fill the
+  // corner concrete (unchanged from prior architecture).
+  const frontageEdges = buildFrontageEdges(streets, blockSharp)
+  const { frontageBands, frontageCaps } = buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded)
   const curbDilated = dilateRings(asphaltRounded, curbWidth)
   const curbBands   = differenceRings(curbDilated, asphaltRounded)
 

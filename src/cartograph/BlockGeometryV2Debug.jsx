@@ -243,8 +243,8 @@ export default function BlockGeometryV2Debug({
     // chain's customs.
   }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse])
 
-  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, cornerAsphaltPlugs, cornerSidewalkPads, byChain, corners } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], cornerAsphaltPlugs: [], cornerSidewalkPads: [], byChain: [], corners: [] }
+  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, cornerAsphaltPlugs, cornerSidewalkPads, byChain, corners, frontageBands, frontageCaps } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], cornerAsphaltPlugs: [], cornerSidewalkPads: [], byChain: [], corners: [], frontageBands: [], frontageCaps: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -340,23 +340,53 @@ export default function BlockGeometryV2Debug({
   //
   // Render mounts both. Selected chain's meshes are layered separately
   // and pull from the cached pair (translucent vs opaque material).
+  // D.3c: per-chain treelawn/sidewalk now sources from frontageBands
+  // (block-edge-owned, extended + pulled-back, clipped to blockRounded)
+  // instead of the per-chain-segment byChain.{tl,sw}Rings. Round
+  // dead-end caps still come from byChain.{tl,sw}CapRings (split out
+  // in D.3b.1 so this swap leaves them in place). Group frontage
+  // rings by chainIdx so the existing per-chain mesh structure (and
+  // the selected-chain drag perf split) keeps working.
+  const frontageByChain = useMemo(() => {
+    const m = new Map()
+    for (const fe of frontageBands || []) {
+      let entry = m.get(fe.chainIdx)
+      if (!entry) { entry = { treelawn: [], sidewalk: [] }; m.set(fe.chainIdx, entry) }
+      if (fe.treelawnRings?.length) entry.treelawn.push(...fe.treelawnRings)
+      if (fe.sidewalkRings?.length) entry.sidewalk.push(...fe.sidewalkRings)
+    }
+    return m
+  }, [frontageBands])
+
   const nonSelectedChainGeo = useMemo(() => {
     const out = []
     for (const entry of byChain || []) {
       if (!entry) continue
       if (entry.chainIdx === selectedStreet) continue
       const ag = entry.asphaltRings.length  ? ringsToFlatGeo(entry.asphaltRings,  0.04, true) : null
-      // D.3b.1: chain-endpoint round caps live in {treelawn,sidewalk}CapRings
-      // (split from per-segment band rings). Concat for triangulation so
-      // the visual is identical to pre-split.
-      const tlAll = (entry.treelawnRings || []).concat(entry.treelawnCapRings || [])
-      const swAll = (entry.sidewalkRings || []).concat(entry.sidewalkCapRings || [])
+      const fb = frontageByChain.get(entry.chainIdx)
+      const tlAll = (fb?.treelawn || []).concat(entry.treelawnCapRings || [])
+      const swAll = (fb?.sidewalk || []).concat(entry.sidewalkCapRings || [])
       const tg = tlAll.length ? ringsToFlatGeo(tlAll, 0.02, true) : null
       const sg = swAll.length ? ringsToFlatGeo(swAll, 0.03, true) : null
       if (ag || tg || sg) out.push({ chainIdx: entry.chainIdx, asphalt: ag, treelawn: tg, sidewalk: sg })
     }
     return out
-  }, [byChain, selectedStreet])
+  }, [byChain, frontageByChain, selectedStreet])
+
+  // D.3c keeps cornerSidewalkPads mounted as the corner concrete; no
+  // frontageCaps mesh is mounted (extendCorners=false default leaves
+  // frontageCaps empty anyway). The hook below stays as a no-op so the
+  // mesh slot exists if extendCorners is ever enabled.
+  const frontageCapsGeo = useMemo(() => {
+    if (!frontageCaps || !frontageCaps.length) return null
+    const rings = []
+    for (const cap of frontageCaps) {
+      const src = cap.ringClipped?.length ? cap.ringClipped : (cap.ring ? [cap.ring] : [])
+      if (src.length) rings.push(...src)
+    }
+    return rings.length ? ringsToFlatGeo(rings, 0.029, true) : null
+  }, [frontageCaps])
 
   const selectedChainGeo = useMemo(() => {
     if (selectedStreet == null || !liveSelectedRings) return null
@@ -484,6 +514,13 @@ export default function BlockGeometryV2Debug({
           with the sidewalk toggle since the pad reads as concrete. */}
       {sidewalkVisible && cornerSidewalkGeo && selectedStreet == null && (
         <mesh geometry={cornerSidewalkGeo} renderOrder={PRI.residential + 0.5} receiveShadow
+          material={bandMats.cornerSidewalk} />
+      )}
+      {/* D.3c: frontageCaps — concrete cap quads at (tl+sw)↔(tl+sw)
+          corners. Sits at sidewalk priority over the corner pads.
+          Hides with the sidewalk toggle. */}
+      {sidewalkVisible && frontageCapsGeo && selectedStreet == null && (
+        <mesh geometry={frontageCapsGeo} renderOrder={PRI.sidewalk} receiveShadow
           material={bandMats.cornerSidewalk} />
       )}
       {treelawnEdgeGeo && (

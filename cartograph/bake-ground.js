@@ -306,10 +306,21 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
     const cls = streets[c.chainIdx]?.highway
     const asphaltKey = HIGHWAY_CLASSES.has(cls) ? 'highway' : 'asphalt'
     pushClipperRings(asphaltKey,  c.asphaltRings)
-    pushClipperRings('treelawn',  c.treelawnRings)
+    // D.3c: per-chain-segment treelawn/sidewalk bands no longer
+    // consumed — frontageBands (block-edge-owned, extended +
+    // pulled-back, clipped to blockRounded) take over below. Round
+    // dead-end caps still come from byChain.{tl,sw}CapRings (split
+    // out in D.3b.1 specifically so this swap leaves them in place).
     pushClipperRings('treelawn',  c.treelawnCapRings)
-    pushClipperRings('sidewalk',  c.sidewalkRings)
     pushClipperRings('sidewalk',  c.sidewalkCapRings)
+  }
+  // D.3c: frontageBands feed treelawn/sidewalk groups. Bands are
+  // square-ended at run-boundary IXs (extendCorners=false default);
+  // the existing cornerSidewalkPads fill the corner wedge as before.
+  // No frontageCaps consumed — pads do the corner concrete.
+  for (const fe of (v2.frontageBands || [])) {
+    if (fe.treelawnRings?.length) pushClipperRings('treelawn', fe.treelawnRings)
+    if (fe.sidewalkRings?.length) pushClipperRings('sidewalk', fe.sidewalkRings)
   }
   pushClipperRings('asphalt',  v2.cornerAsphaltPlugs)
   pushClipperRings('sidewalk', v2.cornerSidewalkPads)
