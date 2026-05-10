@@ -3,31 +3,31 @@
     "street": true,
     "highway": true,
     "stripe": true,
-    "edgeline": true,
+    "edgeline": false,
     "bikelane": true,
     "lot": true,
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": false,
-    "parking_lot": false,
-    "garden": false,
-    "playground": false,
-    "swimming_pool": false,
+    "building": true,
+    "parking_lot": true,
+    "garden": true,
+    "playground": true,
+    "swimming_pool": true,
     "pitch": false,
     "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": false,
+    "tree_row": true,
     "alley": true,
     "footway": true,
     "cycleway": true,
     "steps": true,
     "path": true,
     "park": true,
-    "water": false,
-    "tree": false,
-    "lamp": false,
+    "water": true,
+    "tree": true,
+    "lamp": true,
     "fence": false,
     "wall": false,
     "retaining_wall": false,
@@ -83,16 +83,6 @@
   "cornerRadiusScale": 1,
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
-  "vertexSmoothing": {
-    "32": {
-      "2": 19.361949080581677
-    },
-    "167": {
-      "3": 8.647361602295431,
-      "4": 27.881328883692532,
-      "5": 7.658374165310675
-    }
-  },
   "curbWidth": 0.381,
   "labels": {
     "size": 4,
@@ -124,7 +114,7 @@
         "right": {
           "pavementHW": 8.656221051582422,
           "treelawn": 1.7304098259152152,
-          "sidewalk": 16.221570770169308,
+          "sidewalk": 8.517501446109172,
           "terminal": "sidewalk"
         }
       }
@@ -148,9 +138,15 @@
     "31": {
       "0": {
         "right": {
-          "pavementHW": 13.873886628110942,
+          "pavementHW": 16.568155178201053,
           "treelawn": 3.1519828488643356,
           "sidewalk": 4.24441045954833,
+          "terminal": "sidewalk"
+        },
+        "left": {
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.5291284592360714,
           "terminal": "sidewalk"
         }
       }
@@ -500,7 +496,7 @@
     "Blocks": false,
     "Paths": false,
     "Features": false,
-    "Labels": true,
+    "Labels": false,
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,

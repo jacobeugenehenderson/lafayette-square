@@ -24,7 +24,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
-import { buildRibbonGeometry, clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
+import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { buildBlockGeometryV2 } from '../src/lib/buildBlockGeometryV2.js'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
@@ -174,14 +174,13 @@ function lateralOffset(coords, offset, side) {
   return out
 }
 
-// ── V2 → bake-shape translation (transitional) ──────────────────────
-// While V1 (`buildRibbonGeometry`) and V2 (`buildBlockGeometryV2`) coexist
-// during the LS rollout, this function flattens V2's natural per-chain
-// output into the same `{ byMaterial, byFaceUse }` shape the rest of
-// `bakeGround` walks. When V1 retires, this folds away — bakeGround can
-// consume V2's named outputs (`asphaltRounded`, `curbBands`, `blocks`,
-// per-chain rings) directly, and the paint-order/triangulation/.bin
-// emission below stays. The translation is the temporary step, not a
+// ── V2 → bake-shape translation ─────────────────────────────────────
+// Flattens V2's natural per-chain output into the `{ byMaterial,
+// byFaceUse }` shape the rest of `bakeGround` walks. When the bake
+// is rewritten to consume V2's named outputs (`asphaltRounded`,
+// `curbBands`, `blocks`, per-chain rings) directly, this folds away
+// and the paint-order/triangulation/.bin emission below stays. The
+// translation is a temporary shim, not a
 // permanent abstraction.
 // Clipper boolean output is a multi-ring polygon with CCW outers and CW
 // holes mixed in one array. Pushing them as independent rings paints each
@@ -421,33 +420,7 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
   const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
   const designLayerColors = design.layerColors || {}
   const designLuColors    = design.luColors    || {}
-  // V1 vs V2 source-of-geometry switch. `design.useV2Geometry === true`
-  // routes through `buildBlockGeometryV2` (rounded-block-clip model);
-  // anything else stays on V1 (`buildRibbonGeometry`). Default off during
-  // the A/B period so flipping it per-Look is a deliberate operator act.
-  // Once V2 is the default, remove the V1 branch + the buildV2BakeShape
-  // shim and consume V2's named outputs directly here.
-  const useV2 = design.useV2Geometry === true
-  let byMaterial, byFaceUse
-  if (useV2) {
-    const v2Out = buildV2BakeShape(ribbons, design, STENCIL_POLYGON)
-    byMaterial = v2Out.byMaterial
-    byFaceUse  = v2Out.byFaceUse
-    console.log(`[bake-ground] geometry source: V2 (rounded-block-clip)`)
-  } else {
-    const cornerRadiusScale = Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1
-    const cornerRadiusOverrides = (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {}
-    const cornerCornerRadiusOverrides = (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {}
-    const v1Out = buildRibbonGeometry(ribbons, {
-      stencilPolygon: STENCIL_POLYGON,
-      cornerRadiusScale,
-      cornerRadiusOverrides,
-      cornerCornerRadiusOverrides,
-    })
-    byMaterial = v1Out.byMaterial
-    byFaceUse  = v1Out.byFaceUse
-    console.log(`[bake-ground] geometry source: V1 (face-clip)`)
-  }
+  const { byMaterial, byFaceUse } = buildV2BakeShape(ribbons, design, STENCIL_POLYGON)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -507,9 +480,9 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
     }
   }
 
-  // Re-clip to the stencil — buildRibbonGeometry already clipped its own
-  // output, but our injected overlays haven't seen the clipper yet. Run
-  // it again so nothing leaks past the silhouette.
+  // Re-clip to the stencil — V2 already clipped its own output, but
+  // our injected overlays haven't seen the clipper yet. Run it again
+  // so nothing leaks past the silhouette.
   clipAllToStencil(byMaterial, byFaceUse, STENCIL_POLYGON)
 
   // Build groups in paint order. Each group = one merged BufferGeometry.
