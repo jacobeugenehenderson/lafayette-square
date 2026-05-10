@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 (V1 corpus retired across all surfaces; Phase D.1 + D.2 shipped — D.3 per-block-edge band emission is next)
+Last updated: 2026-05-10 (V1 corpus retired across all surfaces; Phase D.1 + D.2 + D.3a shipped — D.3b sharp-corner extension + composition rules is next)
 
 ## 2026-05-10 EOD — Session-end pin (read first if picking up Phase D)
 
@@ -59,15 +59,24 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
    Bands will run to its corners in D.3; `blockRounded` stays the
    render-time clipping mask. Additive only — no consumer yet.
 3. **D.3 — Per-block-edge band emission with strip composition
-   rules** (the visible Mississippi/Park fix). For each block,
-   walk `blockSharp`; for each frontageEdge, emit treelawn +
-   sidewalk corner-to-corner of the SHARP block. Apply NOTES.md
-   PM-2 strip composition rules at corners (`sw↔sw` no cap;
-   `sw↔(tl+sw)` no cap with sw leg running full length;
-   `(tl+sw)↔(tl+sw)` concrete cap emerges). Bands clipped to
-   `blockRounded` at end. **KEEP `cornerSidewalkPads` +
-   `cornerAsphaltPlugs` mounted alongside** per
-   `feedback_corner_pad_retirement_caution`.
+   rules** (the visible Mississippi/Park fix). Sub-phased:
+   - **D.3a ✅** `buildFrontageBands` in
+     `src/lib/buildBlockGeometryV2.js`, exposed as `frontageBands`
+     on the geometry result. Per-frontageEdge tl+sw rings spanning
+     the merged segment run along chain centerline. Additive only;
+     not consumed by the renderer; bands DON'T yet extend to sharp
+     block corners. Caveat: per-segment customs collapse to first
+     segOrd's customs (D.5 re-keys to per-block-edge to fix).
+   - **D.3b — pending.** Extend bands to the SHARP block corner;
+     apply NOTES.md PM-2 strip composition rules (`sw↔sw` no cap;
+     `sw↔(tl+sw)` no cap with sw leg running full length;
+     `(tl+sw)↔(tl+sw)` concrete cap emerges). Bands clipped to
+     `blockRounded` at end. Still data-only.
+   - **D.3c — pending.** Production swap: renderer consumes
+     `frontageBands` instead of `byChain.{treelawn,sidewalk}Rings`.
+     Mississippi/Park cutoff bug becomes visibly fixed. **KEEP
+     `cornerSidewalkPads` + `cornerAsphaltPlugs` mounted alongside**
+     per `feedback_corner_pad_retirement_caution`.
 4. **D.4 — Visual parity verification + corner pad retirement**
    per surface (Designer / Stage / Preview). Jacob signs off
    surface-by-surface before pads go.

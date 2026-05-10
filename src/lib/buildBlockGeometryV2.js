@@ -677,6 +677,71 @@ function buildFrontageEdges(streets, blockRounded, blockCustoms) {
   return out
 }
 
+// D.3a — per-frontageEdge treelawn + sidewalk band primitive. For each
+// edge from buildFrontageEdges, emit one treelawn ring + one sidewalk
+// ring spanning the merged segment run along the chain centerline.
+// This collapses the "Mississippi west sidewalk cuts off at Kennett"
+// class of bugs at the geometry-source level — same-block-same-side
+// segments produce ONE band, not N. NOT YET CONSUMED: render still
+// emits per natural-segment via byChain.{treelawn,sidewalk}Rings; this
+// output sits alongside as data only. D.3b extends bands to the SHARP
+// block corner + applies strip-composition rules; D.3c switches the
+// production render to consume from here. See NOTES.md 2026-05-06 PM-2.
+//
+// Caveat (resolved by D.5): per-segment customs collapse to the FIRST
+// segOrd's customs as the edge measure. Operators typically set these
+// uniformly across a frontage run; D.5 re-keys customs to
+// [blockKey][edgeOrd] so the model becomes correct by construction.
+function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
+  if (!frontageEdges?.length) return []
+  const cw = curbWidth
+  const perpsByChain = new Map()
+  const segsByChain = new Map()
+  const out = []
+  for (const fe of frontageEdges) {
+    const street = streets[fe.chainIdx]
+    if (!street) continue
+    const pts = street.points
+    const m = street.measure
+    if (!pts || pts.length < 2 || !m) continue
+    let perps = perpsByChain.get(fe.chainIdx)
+    if (!perps) { perps = computePerps(pts); perpsByChain.set(fe.chainIdx, perps) }
+    let segments = segsByChain.get(fe.chainIdx)
+    if (!segments) { segments = naturalSegments(street); segsByChain.set(fe.chainIdx, segments) }
+    const segOrds = fe.segOrds
+    if (!segOrds?.length) continue
+    const segStart = segments[segOrds[0]].start
+    const segEnd = segments[segOrds[segOrds.length - 1]].end
+    if (segEnd <= segStart) continue
+    const segPts = pts.slice(segStart, segEnd + 1)
+    const segPerps = perps.slice(segStart, segEnd + 1)
+    const eff = (blockCustoms?.[fe.chainIdx]?.[segOrds[0]]?.[fe.side]) || m[fe.side] || {}
+    if (eff.terminal !== 'sidewalk') continue
+    const hw = eff.pavementHW || 0
+    const tl = eff.treelawn || 0
+    const sw = eff.sidewalk || 0
+    if (hw <= 0) continue
+    const sideSign = fe.side === 'left' ? -1 : +1
+    const treelawnRing = tl > 0
+      ? chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
+      : null
+    const sidewalkRing = sw > 0
+      ? chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
+      : null
+    if (!treelawnRing && !sidewalkRing) continue
+    out.push({
+      blockKey: fe.blockKey,
+      edgeOrd: fe.edgeOrd,
+      chainIdx: fe.chainIdx,
+      side: fe.side,
+      segOrds: segOrds.slice(),
+      treelawnRing,
+      sidewalkRing,
+    })
+  }
+  return out
+}
+
 // Outward polygon offset (Minkowski sum with a disc of radius `delta`).
 // Uses miter joins so the result preserves the vertex structure of the
 // input — corners that are already smooth polyline arcs (asphaltRounded)
@@ -1005,6 +1070,10 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // block-edge. Foundation for D.3 block-edge-owned ribbon emission.
   // Additive only; nothing in this pipeline consumes it yet.
   const frontageEdges = buildFrontageEdges(streets, blockRounded, blockCustoms)
+  // D.3a — per-frontageEdge tl+sw band rings. Foundation for D.3b/c.
+  // Not yet consumed by the renderer; legacy per-segment bands in
+  // byChain.{treelawn,sidewalk}Rings still drive the visual.
+  const frontageBands = buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth)
   const curbDilated = dilateRings(asphaltRounded, curbWidth)
   const curbBands   = differenceRings(curbDilated, asphaltRounded)
 
@@ -1136,6 +1205,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     byChain,
     corners: allCorners,
     frontageEdges,        // D.1: per-block-edge runs of chain segments (foundation; not yet consumed)
+    frontageBands,        // D.3a: per-frontageEdge tl+sw rings (foundation; not yet consumed)
   }
 }
 
