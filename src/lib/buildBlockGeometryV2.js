@@ -182,10 +182,22 @@ function unionRings(rings) {
   return out.map(path => path.map(fromClipper))
 }
 
-// Strip depth = treelawn + sidewalk (only when terminal=='sidewalk', else 0).
+// Strip depth = treelawn + sidewalk. Permissive: returns the sum
+// whenever EITHER terminal === 'sidewalk' OR widths are present
+// (treelawn > 0 || sidewalk > 0). The width fields ARE the geometric
+// truth; terminal is a labelling concern that's been a regression
+// vector — any pipeline change that dropped/misrouted `terminal` while
+// preserving widths previously nuked the corner-pad emission silently
+// (depthForSide → 0 → pad construction returns null). Defensive sum
+// stops that class of regression.
+//
+// Memory: feedback_corner_pad_continuity_first +
+// feedback_load_bearing_corner_pads.
 function depthForSide(s) {
-  if (s?.terminal !== 'sidewalk') return 0
-  return (s?.treelawn || 0) + (s?.sidewalk || 0)
+  const tl = s?.treelawn || 0
+  const sw = s?.sidewalk || 0
+  if (s?.terminal === 'sidewalk') return tl + sw
+  return (tl > 0 || sw > 0) ? tl + sw : 0
 }
 
 // Default-R rule (k = 0.5 pinch tolerance). See NOTES.md 2026-05-07.
@@ -1358,6 +1370,21 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const cornerSidewalkPads = (cornerPadUnion.length && blockRounded.length)
     ? intersectRings(cornerPadUnion, blockRounded)
     : []
+  // ⚠ PAD INVARIANT (load-bearing per the pad memo). Pads MUST emit at
+  // real corners. If the corners list is non-trivial but pads come out
+  // empty, something upstream silently dropped the width/terminal data
+  // that depthForSide reads — Designer will lose its concrete corner
+  // landings without warning. Loud one-line console.error so the
+  // regression surfaces the moment it happens, instead of being noticed
+  // visually a session later.
+  if (allCorners.length > 0 && cornerSidewalkPads.length === 0 && blockRounded.length > 0) {
+    console.error(
+      '[V2] PAD INVARIANT TRIPPED — corners=' + allCorners.length +
+      ' but cornerSidewalkPads=0. Likely cause: chain.measure[side].terminal ' +
+      'or treelawn/sidewalk widths missing on the legs facing real corners. ' +
+      'See feedback_load_bearing_corner_pads + feedback_corner_pad_continuity_first.'
+    )
+  }
 
   // Block fill — two source paths feed the same per-block output.
   //   1. ribbons.faces[] (LS): each OSM-derived face has authentic
