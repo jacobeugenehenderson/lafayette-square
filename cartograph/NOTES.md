@@ -8,6 +8,19 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ## 2026-05-07 (PM session) — V2 lands in toy; parallel-pipeline lesson logged
 
+> **Status update 2026-05-09:** Phase 0 collapse landed. Toy now routes
+> through `SCENE_REGISTRY` in `src/cartograph/CartographApp.jsx` —
+> same V2 emitter, same Survey/Measure tools, same Designer panel,
+> same bake adapter as LS. The parallel-pipeline drift described
+> below has been resolved structurally; the only residue is a static
+> `import toyRibbons from '../data/toy/toy-ribbons.json'` plus a
+> hardcoded `TOY_STENCIL` constant (Phase 0e — scene-keyed routes
+> `/api/cartograph/:scene/...` is the remaining cleanup, not load-bearing).
+> Corner controls (per-IX + per-corner R) shipped. V2 also cut over
+> on LS (`design.useV2Geometry: true`). The active extension is
+> block-edge-owned ribbons (BACKLOG 2026-05-09) — see also "Toy is
+> the test rig for the next emitter" below.
+
 V2 (rounded-block-clip) now renders live in toy through the shared cartograph
 surface pipeline: residential block fills + asphalt corridors + treelawn /
 sidewalk strips + corner-rounded asphalt mouths. Look palette (`layerColors`,
@@ -36,6 +49,19 @@ Detailed punch list in `cartograph/BACKLOG.md` (sections "Lesson logged
 ---
 
 ## 2026-05-06 (PM-2) — Corner geometry retired & rebuilt: rounded-block-clip plan
+
+> **Status update 2026-05-09:** The V2 prototype this entry plans
+> shipped (`src/lib/buildBlockGeometryV2.js` +
+> `src/cartograph/BlockGeometryV2Debug.jsx`), and the corner authoring
+> kit (per-IX + per-corner R, smoothing, curb-width) is wired through
+> Designer + bake. What this entry describes as the *target* model
+> (block-as-figure, asphalt-as-void, ribbons owned by block edges)
+> is **not yet** the shipped emission strategy: V2 still emits
+> per-chain-segment rectangles and reaches the rounded-block-clip
+> via union + round-corners + difference + corner-plug patches. The
+> active migration is to flip emission to walk block edges directly
+> — see `BACKLOG.md` 2026-05-09 "Block-edge-owned ribbons (NEXT —
+> load-bearing)".
 
 Long planning conversation with Jacob. After weeks of corner-plug
 construction (per-corner annular sectors, then the IP-rule concentric

@@ -135,21 +135,67 @@ second neighborhood since LSQ has only one label class today.
 
 
 
-## STOP. Read this before touching toy.
+## Toy is the test rig for the next emitter
 
-**Toy is a scene, not a parallel pipeline.** It's a different *dataset* (a small artificial neighborhood of nodes + line segments) that must run through the **exact same pipeline** as the canonical neighborhood. Same server endpoints (scene-parametric), same store loaders, same render components, same Survey/Measure tools. Slot a new scene into existing structures. Do not add toy-only code paths.
+**What Toy demonstrates today (full V2 stack, structurally clean):**
 
-If you are about to:
+- Routes through `SCENE_REGISTRY` in `src/cartograph/CartographApp.jsx` —
+  same `buildBlockGeometryV2` emitter, same Survey/Measure tools, same
+  Designer panel, same bake adapter, same per-block LU pipeline as LS.
+  No `if (scene === 'toy')` branches in the rendering path.
+- Has its own `StageEnvironment` (ToyTerrain/Buildings/Trees/StreetLights)
+  and a `DesignerBackdrop` (procedural grid) registered as scene
+  capabilities, not branched in components.
+- Per-block LU via hash-fallback (LS reads `face.use` from OSM); corner
+  authoring kit (per-IX + per-corner R, scale slider, smoothing); curb
+  width control; vertex smoothing — all live in toy.
+- Free of LS-only data-quality noise: no stale `ix.streets[].ix` indices,
+  no divided-road continuation joints, no undefined highway tags. The
+  shortest possible iter loop for emitter work.
 
-- write `if (scene === 'toy')` in a store action / loader / render component
-- create a `ToyX` / `NeighborhoodX` sibling wrapper because props differ
-- import `toyRibbons` directly into anything other than a one-time seed
-- mount or hide a component conditionally on scene name in `CartographApp`
-- swap legacy ↔ V2 based on tool state for toy only
+**Authored irregularities in `src/data/toy/toy-ribbons.json`** (3×3 grid
+of 9 fully-bounded blocks plus deliberate test cases — re-run
+`cartograph/derive-toy.js` after editing the input):
 
-— **stop**. Find the canonical version, make IT scene-parametric (route, file path, store key all keyed by `:scene`), and route toy through it. The Phase 0 plan in `cartograph/TOY_AUTHORING_PLAN.md` describes the right shape.
+- **VW3 bends NE** from (40,60) to (60,160) — top-right blocks become
+  trapezoidal, exercises bent-chain regression on per-segment emission.
+- **HW3 jogs up** from z=40 to z=60 between x=0 and x=20 — saw-tooth
+  top edge on middle blocks; probes IX-on-one-side splitting (the
+  Mississippi-Kennett bug class).
+- **Dead-end stub** branches N off HW3 at (25,60), tip at (25,90) —
+  exercises round/blunt cap modes and concave block edges.
 
-When debugging "feature X doesn't work in toy", the answer is almost never "build a parallel toy version." It's "make the canonical scene-parametric." If you can't do that in the time available, the right move is to revert your shortcuts and document the gap, not pile on another shortcut.
+**Why this matters for block-edge-owned ribbons.** The migration named
+in "Block-edge-owned ribbons (NEXT — load-bearing)" above should land in
+Toy first. The three irregularities are exactly the failure modes the
+new emitter has to handle, and any visible regression in Toy is read
+without LS's data-quality noise interfering. After Toy validates, LS
+cuts over by changing one emitter call site.
+
+**Phase 0e (small residual cleanup, not load-bearing).** Two static
+references survive in `CartographApp.jsx`: `import toyRibbons from
+'../data/toy/toy-ribbons.json'` and the hardcoded `TOY_STENCIL`
+constant. Phase 0e of `TOY_AUTHORING_PLAN.md` would replace these
+with scene-keyed routes (`/api/cartograph/:scene/ribbons`,
+`/api/cartograph/:scene/stencil`). Worth tidying when convenient;
+not blocking anything.
+
+### Lesson logged (2026-05-07): no parallel pipelines for new scenes
+
+The original violation that prompted the rule — a parallel toy data
+pipeline (static `toy-ribbons.json` import in `_loadCenterlines`,
+toy-only branch in `_saveOverlay`, sibling `ToyV2`/`NeighborhoodV2`
+wrappers) — was resolved by the SCENE_REGISTRY pattern. The rule
+itself stays load-bearing for **future** scenes:
+
+- Don't write `if (scene === 'X')` in a store action / loader / render
+  component. Register the scene's capability in `SCENE_REGISTRY`.
+- Don't create `SceneX` / `NeighborhoodX` sibling wrappers because props
+  differ. Make the canonical wrapper accept the difference as a prop.
+- Don't import scene-specific JSON directly anywhere outside the
+  scene-registry seed. Route through scene-keyed loaders.
+
+Memory entry: `feedback_no_parallel_pipeline_for_scenes`.
 
 ## LS / Toy parity — three gaps (framed 2026-05-09)
 
