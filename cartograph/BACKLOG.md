@@ -2,7 +2,49 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 (V1 corpus retired across all surfaces; Phase D.1 + D.2 + D.3a shipped — D.3b sharp-corner extension + composition rules is next)
+Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1 split byChain band/cap rings is next)
+
+## 2026-05-10 EOD-2 — Session-end pin (read first; supersedes the EOD pin below for D.3 plan)
+
+A second session today. Three clean shipped commits on
+`cartograph-looks-pass-ab` for D.1/D.2/D.3a, then a bundled D.3b+D.3c
+attempt was rolled back uncommitted after Jacob caught four stacked
+failure modes. No code regression.
+
+Shipped (since last EOD):
+- **`059cc4c` Phase D.1** — `buildFrontageEdges` (~50 LOC, +
+  comments). Per-block list of (chain, side, segment-run) →
+  frontage-edge runs returned as `frontageEdges` on the geometry
+  result. Additive; no consumer.
+- **`d113f1f` Phase D.2** — `blockSharp = stencil − asphaltSharp`
+  (~10 LOC). Sharp-corner figure-ground inverse, returned alongside
+  `blockRounded`. Additive; no consumer.
+- **`fa929d3` Phase D.3a** — `buildFrontageBands` (~70 LOC). Per-
+  frontageEdge tl+sw rings spanning merged segment runs along chain
+  centerline. Additive; no consumer. Caveat: collapses per-segment
+  customs to the first segOrd's customs in a run.
+
+Aborted (uncommitted, restored to `fa929d3`):
+- A bundled D.3b geometry + D.3c production swap touching
+  `buildBlockGeometryV2.js` (+293/−68), `bake-ground.js` (+16/−4),
+  `BlockGeometryV2Debug.jsx` (+46/−5). HMR-loaded into Designer.
+  Jacob caught four stacked symptoms: (1) lost dead-end round
+  quarter caps (renderer dropped a `byChain` consumer that carried
+  them); (2) cap mis-shape on asymmetric/oblique corners (orthogonal-
+  basis approximation insufficient); (3) "parcel shape change → LU
+  lost + bands hidden" — likely `blockKey` (bbox-center) staleness
+  pre-existing; (4) variable hw within a frontage (D.3a caveat made
+  visible). Rolled back via `git restore`. Lesson saved as
+  `feedback_d3_bundling_failure_modes`.
+
+**Next session — start with D.3b.1 (split `byChain` band/cap rings, ~30 LOC, no visual change).** Full re-planned sub-phasing is in the D.3 entry of the previous EOD pin (below). Per the new memory: do NOT bundle a renderer/consumer swap with new producer geometry in the same commit; sub-phase those layers separately.
+
+Open carry-overs to investigate independently of D.3:
+- `blockKey` staleness on parcel-shape edits (orphaned
+  `blockLandUse` / `blockCustoms`). Diagnose with a small repro
+  before D.3c lights it up.
+
+---
 
 ## 2026-05-10 EOD — Session-end pin (read first if picking up Phase D)
 
@@ -59,24 +101,65 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
    Bands will run to its corners in D.3; `blockRounded` stays the
    render-time clipping mask. Additive only — no consumer yet.
 3. **D.3 — Per-block-edge band emission with strip composition
-   rules** (the visible Mississippi/Park fix). Sub-phased:
-   - **D.3a ✅** `buildFrontageBands` in
+   rules** (the visible Mississippi/Park fix). Re-planned into
+   five sub-phases after the 2026-05-10 EOD-2 attempt at bundled
+   D.3b+D.3c surfaced four stacked failure modes (lost dead-end
+   quarter caps, asymmetric-corner cap mis-shape, parcel-shape
+   blockKey staleness, variable-hw within a frontage). Rolled
+   back uncommitted; lesson logged as
+   `feedback_d3_bundling_failure_modes`. New plan:
+   - **D.3a ✅** (`fa929d3`) `buildFrontageBands` in
      `src/lib/buildBlockGeometryV2.js`, exposed as `frontageBands`
      on the geometry result. Per-frontageEdge tl+sw rings spanning
      the merged segment run along chain centerline. Additive only;
      not consumed by the renderer; bands DON'T yet extend to sharp
      block corners. Caveat: per-segment customs collapse to first
-     segOrd's customs (D.5 re-keys to per-block-edge to fix).
-   - **D.3b — pending.** Extend bands to the SHARP block corner;
-     apply NOTES.md PM-2 strip composition rules (`sw↔sw` no cap;
-     `sw↔(tl+sw)` no cap with sw leg running full length;
-     `(tl+sw)↔(tl+sw)` concrete cap emerges). Bands clipped to
-     `blockRounded` at end. Still data-only.
-   - **D.3c — pending.** Production swap: renderer consumes
-     `frontageBands` instead of `byChain.{treelawn,sidewalk}Rings`.
-     Mississippi/Park cutoff bug becomes visibly fixed. **KEEP
-     `cornerSidewalkPads` + `cornerAsphaltPlugs` mounted alongside**
-     per `feedback_corner_pad_retirement_caution`.
+     segOrd's customs.
+   - **D.3b.1 — pending. Split `byChain` band rings vs cap rings.**
+     `emitQuarterCaps` currently pushes chain-endpoint round caps
+     into `byChain.{treelawn,sidewalk}Rings` alongside per-segment
+     bands. Move them to dedicated `byChain.{treelawn,sidewalk}CapRings`
+     so a later renderer swap can drop band consumption without
+     dropping caps. Pure refactor, ~30 LOC, no visual change.
+     **Visible-bug coverage:** none (foundation).
+   - **D.3b.2 — pending. Per-segment customs within a frontage.**
+     Replace D.3a's first-segOrd-customs caveat with a piecewise
+     emitter: the band's inner edge tracks the actual asphalt curb
+     across variable hw within a merged frontage. Still data-only
+     on `frontageBands`. ~80 LOC.
+     **Visible-bug coverage:** would fix variable-column/row
+     asymmetry (after D.3c).
+   - **D.3b.3 — pending. Sharp-corner extension only.** Build
+     adjacency lookup; extend bands to the line-line intersection
+     of this curb and the perp curb (90°-exact, oblique
+     approximate). NO pullback, NO caps yet. Still data-only. ~60 LOC.
+     **Visible-bug coverage:** none directly; foundation for D.3b.4.
+   - **D.3b.4 — pending. Pullback + spec caps from band ends.**
+     Apply per-end pullback per composition rule (`sw` legs run
+     to corner, `tl+sw` legs pull back by perpDepth); emit
+     `frontageCaps` polygon for `(tl+sw)↔(tl+sw)` corners with
+     corners derived from the actual pulled-back band endpoints
+     (not orthogonal-basis approximation). Clip bands+caps to
+     `blockRounded`. Still data-only. ~100 LOC.
+     **Visible-bug coverage:** none; ALL D.3b.* are data-only —
+     visible only after D.3c.
+   - **D.3c — pending. Production swap.** Bake (`bake-ground.js`)
+     and Designer (`BlockGeometryV2Debug.jsx`) consume
+     `frontageBands` for treelawn/sidewalk + `frontageCaps` for
+     concrete corners. CONTINUE consuming
+     `byChain.{treelawn,sidewalk}CapRings` from D.3b.1 so dead-end
+     round caps stay. Asphalt stays per-chain-segment via byChain.
+     **KEEP `cornerSidewalkPads` + `cornerAsphaltPlugs` mounted
+     alongside** per `feedback_corner_pad_retirement_caution`.
+     ~50 LOC.
+     **Visible-bug coverage:** Mississippi/Park sidewalk cutoff
+     becomes one continuous band; corners spec-correct under the
+     mounted pads (pads retire in D.4 after sign-off).
+   - **Open carry-over:** "parcel-shape change → land-use lost +
+     bands hidden" surfaced during the failed bundle. Likely
+     pre-existing `blockKey` (bbox-center) staleness — reshaping
+     orphans `blockLandUse` / `blockCustoms` entries. Diagnose
+     independently; not on the D.3 critical path.
 4. **D.4 — Visual parity verification + corner pad retirement**
    per surface (Designer / Stage / Preview). Jacob signs off
    surface-by-surface before pads go.

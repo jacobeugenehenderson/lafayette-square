@@ -6,6 +6,124 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-10 (EOD-2) — D.1/D.2/D.3a shipped; bundled D.3b+D.3c attempt rolled back; D.3 re-planned
+
+Picking up from the 2026-05-10 EOD pin. Three small additive commits
+landed cleanly on `cartograph-looks-pass-ab`:
+
+- `059cc4c` **D.1 `buildFrontageEdges`** — inverse of `adjacentBlockId`.
+  Per-block runs of (chain, side, segment) grouped into block-edges.
+  Output `frontageEdges: [{ points, chainIdx, segOrds, side, blockKey, edgeOrd }]`
+  on the geometry result. Pure additive; no consumer.
+- `d113f1f` **D.2 `blockSharp`** — `stencil − asphaltSharp`. Sharp-corner
+  figure-ground inverse, returned alongside `blockRounded` (which stays
+  the render-time clip mask).
+- `fa929d3` **D.3a `buildFrontageBands`** — per-frontageEdge tl+sw rings
+  spanning the merged segment run along the chain centerline. Additive;
+  no consumer. Caveat: per-segment customs collapse to the first
+  segOrd's customs in a run.
+
+### The bundled D.3b+D.3c attempt that didn't ship
+
+Jacob asked for "two so the blast radius is medium" after the D.3a +
+production-swap option discussion. I read that as bundle D.3b
+(geometry: sharp-corner extension + composition-rule pullback +
+`(tl+sw)↔(tl+sw)` caps + clip to `blockRounded`) with D.3c (production
+swap: `bake-ground.js` and `BlockGeometryV2Debug.jsx` consume
+`frontageBands` + `frontageCaps`; `cornerSidewalkPads` +
+`cornerAsphaltPlugs` stay mounted per
+`feedback_corner_pad_retirement_caution`). Wrote ~290 LOC across
+three files; HMR-loaded into Designer.
+
+Jacob inspected and reported four distinct symptoms:
+
+1. **Concrete plugs mis-shaped on asymmetric/variable corners.** My
+   cap polygon was `[S, S+Nin*b, S+Nin*b−T*a, S−T*a]` with
+   `a = perp.totalDepth` and `b = this.totalDepth` — exact only for
+   90° X with consistent depths. Variable column/row → cap doesn't
+   land on the actual band-pullback edges. Fix needs cap corners
+   derived from the *actual* pulled-back band end-vertices, not from
+   an orthogonal basis.
+
+2. **Round/end caps disrupted at chain endpoints.** Lost. Root cause:
+   `emitQuarterCaps` in `buildBlockGeometryV2.js` pushes treelawn
+   quarter-cap rings into `byChain.[chainIdx].treelawnRings` and
+   sidewalk into `.sidewalkRings` — same arrays as the per-segment
+   bands. The D.3c renderer swap stopped consuming
+   `byChain.{treelawn,sidewalk}Rings` entirely, taking the round caps
+   with it. Fix is structural: split the byChain rings into
+   `bandRings` vs `capRings`; bake/Designer consume both, but D.3c
+   only swaps the band consumer.
+
+3. **"Changed parcel shape → lost land-use, treelawn/sidewalk
+   absorbed/hidden."** `blockKey` is bbox-center keyed
+   (`blockKeyFromRing`), so reshaping a parcel shifts the key and
+   any `blockLandUse` / `blockCustoms` entries pinned to the OLD key
+   become orphans. Pre-existing latent issue; D.3 made it visible by
+   routing more state through `blockKey`. Diagnose independently of
+   D.3 — possibly key by face-id or persist a
+   `blockKey-canonicalization` map.
+
+4. **"Blunt/flat end caps aren't perfect."** Same root as (2) — the
+   half-disc round cap geometry exists in `byChain.*Rings` and got
+   dropped along with the band consumer.
+
+Rolled back via `git restore src/lib/buildBlockGeometryV2.js
+cartograph/bake-ground.js src/cartograph/BlockGeometryV2Debug.jsx`.
+Tree clean at `fa929d3`. Memory saved as
+`feedback_d3_bundling_failure_modes`.
+
+### Re-planned D.3 sub-phasing (canonical going forward)
+
+Each sub-phase lands without a known regression. **Never** bundle a
+renderer/consumer swap with new producer geometry — symptoms compose
+and you can't isolate.
+
+- **D.3b.1 — Split `byChain` band rings vs cap rings.** ~30 LOC, no
+  visual change. `byChain[i]` gains `treelawnCapRings` +
+  `sidewalkCapRings`; `emitQuarterCaps` writes there; bake + Designer
+  push both into the same material groups they push today. Pure
+  refactor. Foundation for D.3c.
+- **D.3b.2 — Per-segment customs within a frontage.** ~80 LOC. Make
+  `buildFrontageBands` piecewise across segOrds in a run so the
+  band's inner edge tracks variable hw. Removes the D.3a first-segOrd
+  caveat. Still data-only.
+- **D.3b.3 — Sharp-corner extension only.** ~60 LOC. Build adjacency
+  lookup (per fe-end, find perp fe at same chain-IX with same
+  blockKey). Extend bands by `perp.hw + cw` along this curb direction
+  (90°-exact, oblique approximate via line-line intersection if we
+  want it precise). NO pullback, NO caps yet. Still data-only.
+- **D.3b.4 — Pullback + spec caps from band ends.** ~100 LOC. Per-end
+  pullback per composition rule (`sw` legs run to corner; `tl+sw`
+  legs pull back by `perp.totalDepth`). Cap polygon corners come
+  from the *actual* pulled-back band end-vertices on each leg, not
+  from an orthogonal basis — this fixes (1). Clip bands + caps to
+  `blockRounded`. Still data-only.
+- **D.3c — Production swap.** ~50 LOC. Bake + Designer consume
+  `frontageBands` for treelawn/sidewalk + `frontageCaps` for concrete
+  corners. CONTINUE consuming `byChain.{treelawn,sidewalk}CapRings`
+  from D.3b.1 so dead-end caps stay — fixes (2)/(4). Asphalt stays
+  per-chain-segment via `byChain` (correct per V2 spec).
+  `cornerSidewalkPads` + `cornerAsphaltPlugs` stay mounted alongside
+  per `feedback_corner_pad_retirement_caution`. After Jacob signs
+  off per surface (Designer / Stage / Preview), D.4 retires the
+  pads. **Visible-bug coverage of D.3c:** Mississippi/Park sidewalk
+  cutoff becomes one continuous band; corners are spec-correct under
+  the still-mounted pads.
+
+### Open carry-overs
+
+- **`blockKey` staleness.** Symptom (3) above. Reshaping a parcel
+  orphans `blockLandUse` / `blockCustoms`. Investigate independently
+  of D.3 (small repro: change a face's outer ring vertex; observe
+  stored customs detach). Possible fixes: (a) key by stable face-id
+  rather than bbox-center; (b) maintain a `blockKey`-rewrite map at
+  reshape time; (c) bbox-center with a tolerance-based nearest-key
+  resolver. Pick after diagnosing the actual edit path (Survey?
+  derive? Designer face-edit?).
+
+---
+
 ## 2026-05-07 (PM session) — V2 lands in toy; parallel-pipeline lesson logged
 
 > **Status update 2026-05-09:** Phase 0 collapse landed. Toy now routes
