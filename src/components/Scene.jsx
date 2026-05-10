@@ -6,7 +6,7 @@ import { Effect } from 'postprocessing'
 import * as THREE from 'three'
 import LafayetteScene from './LafayetteScene'
 import CelestialBodies from './CelestialBodies'
-import VectorStreets from './VectorStreets'
+import BakedGround from './BakedGround.jsx'
 import LafayettePark from './LafayettePark'
 import StreetLights from './StreetLights'
 import GatewayArch from './GatewayArch'
@@ -19,7 +19,6 @@ import useUserLocation from '../hooks/useUserLocation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import R3FErrorBoundary from './R3FErrorBoundary'
-import StreetRibbons from './StreetRibbons'
 import Terrain from './Terrain'
 
 // ── Film grade — naturalistic tone mapping with time-of-day color ─────────────
@@ -897,23 +896,12 @@ function DeferredStreetLights() {
 function Scene() {
   const viewMode = useCamera((s) => s.viewMode)
 
-  // Portal div for CSS3D SVG ground — rendered BEHIND the transparent WebGL canvas.
-  // See VectorStreets.jsx header comment for full architecture explanation.
-  // useState (not useRef) so the state change propagates into the R3F reconciler —
-  // a ref object is referentially stable, so R3F wouldn't detect the .current update.
-  const [svgPortalEl, setSvgPortalEl] = useState(null)
-
   return (
     <div role="img" aria-label="3D visualization of Lafayette Square neighborhood" style={{
       position: 'relative', width: '100%', height: '100%', background: '#000',
     }}>
-      {/* SVG ground portal — behind the canvas (z-index: 0) */}
-      <div
-        ref={setSvgPortalEl}
-        style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}
-      />
     <Canvas
-      style={{ position: 'relative', zIndex: 1 }}
+      style={{ position: 'relative' }}
       frameloop="demand"
       camera={{
         position: PRESETS.hero.position,
@@ -951,8 +939,7 @@ function Scene() {
       <CelestialBodies />
       <CloudDome />
       <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
-      <R3FErrorBoundary name="VectorStreets"><VectorStreets svgPortal={svgPortalEl} /></R3FErrorBoundary>
-      <R3FErrorBoundary name="StreetRibbons"><StreetRibbons /></R3FErrorBoundary>
+      <R3FErrorBoundary name="BakedGround"><BakedGround lookId="lafayette-square" /></R3FErrorBoundary>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <CourierDots />}
