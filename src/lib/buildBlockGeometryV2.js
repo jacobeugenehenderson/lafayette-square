@@ -1046,12 +1046,22 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   if (faces.length) {
     for (const face of faces) {
       if (!face?.ring || face.ring.length < 3) continue
-      const clipped = ribbonUnion.length
-        ? differenceRings([face.ring], ribbonUnion)
+      // Clip faces against `asphaltRounded` only, NOT against bands. Bands
+      // (treelawn, sidewalk, curb stroke) render ON TOP of the face fill,
+      // so the face can extend all the way to the asphalt edge — bands
+      // paint over the band-zone pixels, face shows in the lawn area
+      // beyond. This is what makes the parcel/lawn boundary update LIVE
+      // when an operator drags a sidewalk handle in Measure: V2's face
+      // snapshot stays valid for the whole band zone instead of being
+      // clipped at the band's previous outer edge.
+      // blockKey from face.ring (parcel boundary) for stable identity —
+      // the LU override key shouldn't shift when band geometry changes.
+      const blockKey = blockKeyFromRing(face.ring)
+      const clipped = asphaltRounded.length
+        ? differenceRings([face.ring], asphaltRounded)
         : [face.ring]
       for (const ring of clipped) {
         if (!ring || ring.length < 3) continue
-        const blockKey = blockKeyFromRing(ring)
         const lu = (blockLandUse && blockLandUse[blockKey]) || face.use || 'unknown'
         blocks.push({ ring, blockKey, lu })
         blockFill.push(ring)
