@@ -976,15 +976,22 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       // when an operator drags a sidewalk handle in Measure: V2's face
       // snapshot stays valid for the whole band zone instead of being
       // clipped at the band's previous outer edge.
-      // blockKey from face.ring (parcel boundary) for stable identity —
-      // the LU override key shouldn't shift when band geometry changes.
-      const blockKey = blockKeyFromRing(face.ring)
       const clipped = asphaltRounded.length
         ? differenceRings([face.ring], asphaltRounded)
         : [face.ring]
       for (const ring of clipped) {
         if (!ring || ring.length < 3) continue
-        const lu = (blockLandUse && blockLandUse[blockKey]) || face.use || 'unknown'
+        // blockKey from each OUTPUT ring (not the source face). For LS
+        // each face is already one parcel, so face-ring and output-ring
+        // bbox-centers coincide and the override key is stable. For toy
+        // a single envelope-face is carved by the asphalt union into
+        // many output rings (the 3×3 grid blocks), and per-output-ring
+        // keying is what makes pickLuFromHash give the grid its varied
+        // LU palette instead of one uniform face.use across all blocks.
+        const blockKey = blockKeyFromRing(ring)
+        const lu = (blockLandUse && blockLandUse[blockKey])
+          || face.use
+          || pickLuFromHash(hashKey(blockKey))
         blocks.push({ ring, blockKey, lu })
         blockFill.push(ring)
       }
