@@ -48,13 +48,21 @@ mixed-LU parcels in the 3×3 grid, working corner-radius authoring
   the `buildChainBandsLive` per-chain emitter at the bottom of
   `src/lib/buildBlockGeometryV2.js` proves per-chain stroking is
   ~ms-per-chain, so the rewrite isn't a perf risk.
-- Concrete corner pads (`cornerSidewalkPads` / `buildCornerPadQuad`)
-  are still load-bearing visible geometry under the *current*
-  emission strategy. They fill the wedge between the rounded curb
-  arc and chain ped-band edges. **Do not remove pre-emptively.**
-  Block-edge ownership erases their need *structurally* (block-edge
-  stroke reaches its own corner) — verify the rewrite renders the
-  corner zone correctly before deleting them.
+- ⚠ **Concrete corner pads (`cornerSidewalkPads` / `buildCornerPadQuad`)
+  are LOAD-BEARING. DO NOT REMOVE.** This is a hard-won feature
+  that previous sessions have removed twice on the theory that they
+  are centerline-regime cruft. They are not. They fill the visible
+  wedge between the rounded curb arc and the chain ped-band edges
+  at every IX corner; removing them leaves a parcel-green triangle
+  where concrete should be. Block-edge ownership *will* erase
+  their need structurally (block-edge stroke reaches its own
+  corner) — but only after the new emitter is shipped AND verified
+  at LS scale. A corresponding ⚠ guard sits above
+  `buildCornerPadQuad` in `src/lib/buildBlockGeometryV2.js`. If
+  you find yourself wanting to delete the pad: stop, reread this
+  entry and the function-level guard, render the corner zone with
+  the new emitter, confirm the visual is intact, and only then
+  remove. **Default = keep.**
 - `cornerAsphaltPlugs` are similarly load-bearing today. Same logic:
   let the new emitter prove it doesn't need them before deleting.
 - Smoothing has been removed from the geometry path entirely. If

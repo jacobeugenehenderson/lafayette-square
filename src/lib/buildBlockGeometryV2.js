@@ -384,6 +384,20 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
   return corners
 }
 
+// ⚠ LOAD-BEARING — DO NOT REMOVE.
+//
+// The concrete corner pad is a hard-won feature; previous sessions have
+// misclassified it as "centerline-regime cruft" and removed it on the
+// theory that block-edge-owned ribbons will erase its need structurally.
+// That is true *in principle* and *in the future*, but until block-edge
+// ownership is shipped and verified at LS scale, this pad is what
+// fills the visible wedge between the rounded curb arc and the chain
+// ped-band edges at every IX corner. Removing it leaves a parcel-green
+// triangle where concrete should be. See BACKLOG entry "Concrete corner
+// pad geometry — LANDED 2026-05-09" and the EOD pin's load-bearing
+// note. If you are tempted to delete this — STOP, reread that entry,
+// and verify the new emitter renders the corner zone correctly first.
+//
 // Concrete corner pad — a flat quadrilateral covering the wedge between
 // two adjacent legs of an IX, anchored at V. NO arc math, no R lookup.
 // The same blockRounded clipping mask that already shapes the green
