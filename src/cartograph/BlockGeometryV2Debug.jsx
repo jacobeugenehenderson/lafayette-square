@@ -324,12 +324,18 @@ export default function BlockGeometryV2Debug({
     if (selectedStreet == null) return null
     const chain = liveRibbons?.streets?.[selectedStreet]
     if (!chain) return null
+    // D.5/D.6: blockCustoms keyed by (blockKey, edgeOrd). Pass the full
+    // map + frontageEdges so buildChainBandsLive can resolve each
+    // segOrd-side → fe → customs entry. Falls through to chain.measure
+    // when no fe matches (chain endpoints, parcel-internal sides).
     return buildChainBandsLive(
       chain,
-      blockCustoms?.[selectedStreet],
+      selectedStreet,
+      blockCustoms,
+      frontageEdges,
       { curbWidth }
     )
-  }, [selectedStreet, liveRibbons, blockCustoms, curbWidth])
+  }, [selectedStreet, liveRibbons, blockCustoms, frontageEdges, curbWidth])
 
   // Per-chain BufferGeometries split into two passes for drag perf:
   //

@@ -1456,13 +1456,36 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 // Use this for the SELECTED chain during interactive drag, where the
 // operator needs the bands to follow handles in real time. The full V2
 // pass is still authoritative on release.
-export function buildChainBandsLive(chain, blockCustomsForChain, opts = {}) {
+// D.5/D.6: blockCustoms is keyed by [blockKey][edgeOrd]. To resolve
+// per-segOrd customs for this chain during drag preview, pass in the
+// chain's index (so we can filter frontageEdges) and the full
+// frontageEdges list (so we can map each segOrd-side → fe → customs
+// entry). With empty blockCustoms or no matching fe, falls through
+// to chain.measure[side].
+export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges, opts = {}) {
   const cw = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
   const out = { asphaltRings: [], treelawnRings: [], sidewalkRings: [] }
   if (!chain || chain.disabled) return out
   const pts = chain.points
   const m = chain.measure
   if (!pts || pts.length < 2 || !m) return out
+  // Build a per-segOrd-side lookup for THIS chain so we can resolve
+  // each segment's customs without re-scanning frontageEdges per call.
+  const feBySegSide = {}
+  if (frontageEdges?.length && chainIdx != null) {
+    for (const fe of frontageEdges) {
+      if (fe.chainIdx !== chainIdx || !fe.segOrds?.length) continue
+      for (const segOrd of fe.segOrds) {
+        if (!feBySegSide[segOrd]) feBySegSide[segOrd] = {}
+        feBySegSide[segOrd][fe.side] = fe
+      }
+    }
+  }
+  const customForSegSide = (segOrd, sideKey) => {
+    const fe = feBySegSide[segOrd]?.[sideKey]
+    if (!fe) return null
+    return blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
+  }
   const perps = computePerps(pts)
   const segments = naturalSegments(chain)
   for (let segOrd = 0; segOrd < segments.length; segOrd++) {
@@ -1470,8 +1493,8 @@ export function buildChainBandsLive(chain, blockCustomsForChain, opts = {}) {
     const segPts = pts.slice(seg.start, seg.end + 1)
     const segPerps = perps.slice(seg.start, seg.end + 1)
     if (segPts.length < 2) continue
-    const effL = (blockCustomsForChain?.[segOrd]?.left)  || m.left  || {}
-    const effR = (blockCustomsForChain?.[segOrd]?.right) || m.right || {}
+    const effL = customForSegSide(segOrd, 'left')  || m.left  || {}
+    const effR = customForSegSide(segOrd, 'right') || m.right || {}
     const hwL = effL.pavementHW || 0
     const hwR = effR.pavementHW || 0
     if (hwL > 0 || hwR > 0) {
