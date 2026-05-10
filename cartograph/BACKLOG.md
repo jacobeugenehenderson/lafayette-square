@@ -2,7 +2,64 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-09 (V2 on LS landed: bake adapter + corner pads + handles + aerial + measure + per-layer toggles; next: perf)
+Last updated: 2026-05-09 (V2 on LS landed; live overlay + drag-perf done; next: block-edge-owned ribbons per NOTES.md PM-2)
+
+## 2026-05-09 — Block-edge-owned ribbons (NEXT — load-bearing)
+
+**See `cartograph/NOTES.md` 2026-05-06 PM-2: "Corner geometry retired
+& rebuilt: rounded-block-clip plan."** That note is the architecture.
+What's currently shipped is a centerline-driven approximation that
+diverges from the documented model in measurable ways:
+
+- **Documented model:** block is positive space. Each block's edge
+  along an asphalt corridor owns ONE leg ribbon (treelawn / sidewalk
+  composition), running corner-to-corner of the BLOCK — independent
+  of how the chain on the other side is segmented.
+- **Currently shipped:** chain-segment-owned ribbons. V2 emits per
+  natural-segment of each chain; bands break at every chain IX. This
+  causes the visible "Mississippi west sidewalk cuts off at Kennett"
+  bug — Kennett T's into Mississippi from the east, splits Mississippi's
+  chain mid-block, and V2 splits BOTH of Mississippi's sides instead of
+  just the east. Park Avenue south side has the same failure between
+  Mississippi and Missouri.
+
+A first attempt today added per-side IX classification (`classifyIxSides`
++ `naturalSegmentsForSide` + `chainStripBandVarying`) to filter out
+opposite-side IXs from a side's segmentation — reverted because it's
+still centerline-driven, and per-block customs don't have a stable
+identity in that model. The real fix is to migrate ribbon emission to
+walk block edges, not chain segments.
+
+**Migration shape (sketch):**
+1. V2 already emits `blocks` with rings clipped against `asphaltRounded`.
+   Each block ring is a polygon whose edges are either parcel-frontage
+   (touches asphalt) or parcel-internal (between two parcels).
+2. For each block, identify its asphalt-facing edges. Each such edge is
+   a leg ribbon: emit treelawn / sidewalk strips spanning the edge from
+   block-corner to block-corner.
+3. blockCustoms migrates from `[chainIdx][segOrd][side]` to
+   `[blockKey][edgeOrd]` — operator-edited measure attaches to a
+   specific block's specific edge, stable across chain re-segmentation.
+4. Asphalt rectangle stays per-chain-segment (asphalt always splits at
+   every IX — that's correct). Bands move to per-block-edge.
+
+**Why this is the right move:** beyond the visible-cutoff bug, it
+collapses the centerline-driven recompute loop. Today every drag goes
+chain.measure → centerline+perp → polygon → render. With block-edge
+ownership, the polygon IS the data. Drag a handle → modify the polygon
+vertex directly → render. No centerline references after initial
+construction. Naturally per-edge customs.
+
+**Estimate:** 1-2 focused sessions. Touches V2 emission, blockCustoms
+data model, MeasureOverlay's segOrd → blockEdge lookup, and the bake
+adapter (which reads V2 output unchanged — block-keyed customs flow
+through cleanly).
+
+Today's working-baseline state covers the simple use cases (Mississippi
+drag works, perf is good with the live overlay) but won't scale until
+this lands.
+
+
 
 ## 2026-05-09 — Designer panel restructure (LANDED)
 
