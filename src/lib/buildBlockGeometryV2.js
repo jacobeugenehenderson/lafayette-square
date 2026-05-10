@@ -822,23 +822,26 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         { eff: effL, sideSign: -t },
         { eff: effR, sideSign: +t },
       ]
+      // Quarter-cap geometry is generated CCW on one side and CW on the
+      // other depending on sideSign (the perp basis flips). Without
+      // normalizing, Clipper's NonZero union cancels mixed-winding caps
+      // against the matching asphalt rectangle and leaves a hole at the
+      // dead-end. Normalize every emitted cap ring to CCW, same pattern
+      // as the segment-asphalt emission above.
+      const pushCcw = (arr, ring) => {
+        if (!ring) return
+        arr.push(ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse())
+      }
       for (const { eff, sideSign } of sides) {
         const hw = eff.pavementHW || 0
         if (hw <= 0) continue
         // Asphalt pie slice fills out from the chain endpoint to hw.
-        const aRing = quarterCap(endpoint, T_out, sideSign, 0, hw)
-        if (aRing) entry.asphaltRings.push(aRing)
+        pushCcw(entry.asphaltRings, quarterCap(endpoint, T_out, sideSign, 0, hw))
         if (eff.terminal !== 'sidewalk') continue
         const tl = eff.treelawn || 0
         const sw = eff.sidewalk || 0
-        if (tl > 0) {
-          const r = quarterCap(endpoint, T_out, sideSign, hw + cw, hw + cw + tl)
-          if (r) entry.treelawnRings.push(r)
-        }
-        if (sw > 0) {
-          const r = quarterCap(endpoint, T_out, sideSign, hw + cw + tl, hw + cw + tl + sw)
-          if (r) entry.sidewalkRings.push(r)
-        }
+        if (tl > 0) pushCcw(entry.treelawnRings, quarterCap(endpoint, T_out, sideSign, hw + cw, hw + cw + tl))
+        if (sw > 0) pushCcw(entry.sidewalkRings, quarterCap(endpoint, T_out, sideSign, hw + cw + tl, hw + cw + tl + sw))
       }
     }
     if (capEnd === 'round' && n >= 2) {
