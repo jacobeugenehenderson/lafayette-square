@@ -186,7 +186,8 @@
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
-        }
+        },
+        "symmetric": false
       },
       "capStart": "blunt",
       "capEnd": "round"

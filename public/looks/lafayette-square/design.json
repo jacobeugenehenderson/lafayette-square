@@ -32,7 +32,7 @@
     "wall": false,
     "retaining_wall": false,
     "hedge": false,
-    "labels": false,
+    "labels": true,
     "centerline": false
   },
   "layerColors": {
@@ -86,6 +86,11 @@
   "vertexSmoothing": {
     "32": {
       "2": 19.361949080581677
+    },
+    "167": {
+      "3": 8.647361602295431,
+      "4": 27.881328883692532,
+      "5": 7.658374165310675
     }
   },
   "curbWidth": 0.381,
@@ -100,6 +105,30 @@
     "opacity": 1
   },
   "blockCustoms": {
+    "1": {
+      "4": {
+        "left": {
+          "pavementHW": 5.614025837656785,
+          "treelawn": 1.2026416547120755,
+          "sidewalk": 2.635159536909512,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.656221051582422,
+          "treelawn": 1.7304098259152152,
+          "sidewalk": 3.0129631312206957,
+          "terminal": "sidewalk"
+        }
+      },
+      "5": {
+        "right": {
+          "pavementHW": 8.656221051582422,
+          "treelawn": 1.7304098259152152,
+          "sidewalk": 16.221570770169308,
+          "terminal": "sidewalk"
+        }
+      }
+    },
     "18": {
       "0": {
         "left": {
@@ -121,7 +150,39 @@
         "right": {
           "pavementHW": 13.873886628110942,
           "treelawn": 3.1519828488643356,
-          "sidewalk": 2.345906370814321,
+          "sidewalk": 4.24441045954833,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "91": {
+      "0": {
+        "left": {
+          "pavementHW": 7.115830620475635,
+          "treelawn": 3.413597509572906,
+          "sidewalk": 4.305929018560233,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.216335294041112,
+          "treelawn": 0,
+          "sidewalk": 4.302710206132303,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "167": {
+      "2": {
+        "right": {
+          "pavementHW": 10.586915150237694,
+          "treelawn": 2.2720885324451405,
+          "sidewalk": 2.1159141457231314,
+          "terminal": "sidewalk"
+        },
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 20,
           "terminal": "sidewalk"
         }
       }
@@ -439,7 +500,7 @@
     "Blocks": false,
     "Paths": false,
     "Features": false,
-    "Labels": false,
+    "Labels": true,
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,

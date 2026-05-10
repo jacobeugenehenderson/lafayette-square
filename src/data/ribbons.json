@@ -1414,10 +1414,10 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
-        "start": "round",
+        "start": null,
         "end": "round"
       },
       "anchor": "center",
@@ -2210,7 +2210,7 @@
       },
       "capEnds": {
         "start": null,
-        "end": "round"
+        "end": null
       },
       "anchor": "center",
       "innerSign": 0,

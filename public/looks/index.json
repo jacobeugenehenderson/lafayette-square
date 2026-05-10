@@ -6,8 +6,8 @@
       "name": "Lafayette Square",
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
-      "bakedAt": 1778310486757,
-      "updatedAt": 1778350828386
+      "bakedAt": 1778378341372,
+      "updatedAt": 1778375805028
     },
     {
       "id": "toy",
@@ -15,7 +15,7 @@
       "scene": "toy",
       "createdAt": 1778253900000,
       "bakedAt": 1778261965919,
-      "updatedAt": 1778307397825
+      "updatedAt": 1778383660950
     }
   ]
 }
