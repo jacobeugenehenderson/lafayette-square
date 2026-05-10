@@ -2,7 +2,88 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1/2/3/4 shipped; D.3c production swap is next)
+Last updated: 2026-05-10 EOD-3 (D.3c shipped via polygon-walking rewrite; D.3b.3/D.3b.4 retired as superseded; D.5 + D.6 shipped together — blockCustoms keyed by `[blockKey][edgeOrd]` and Measure UI authors per block-edge. Architecture matches PM-2 spec. Performance regressed at LS scale — dedicated perf pass next.)
+
+## 2026-05-10 EOD-3 — Session-end pin (read first; supersedes EOD-2)
+
+D.3c landed — but not via the originally-planned D.3b.3 + D.3b.4
+extension/pullback path. Those were "stop pretending and walk
+polygons" the wrong way: they patched a chain-driven approximation
+to look like polygon-walking. The replacement IS polygon-walking,
+straight off the spec.
+
+Shipped (since EOD-2):
+- **`5dfda2c` Phase D.3c** — polygon-walking `buildFrontageEdges` +
+  `buildFrontageBands`. Walks `blockSharp` rings, finds block corners
+  via per-vertex turn angle (>30° = corner), emits one fe per
+  block-edge. Adjacent chain identified by spatial probe. Bands
+  emitted by parallel-offsetting the block-edge polyline INWARD by
+  cw / cw+tl / cw+tl+sw. ONE ring per band per fe — no internal
+  seams at chain-IX vertices that don't change block direction.
+  Mississippi-Kennett class of bugs structurally impossible.
+  Supersedes D.3b.3 + D.3b.4 (extension + pullback + frontageCaps);
+  the PM-2 strip-composition spec they encoded was correct, but
+  cornerSidewalkPads already deliver that visual via the
+  load-bearing pad geometry — no separate cap geometry needed.
+  Net −54 LOC.
+- **`43f8d47` Phase D.5a** — consumers read blockCustoms by
+  `[blockKey][edgeOrd]` instead of `[chainIdx][segOrd][side]`.
+  Reorder: blockSharp + buildFrontageEdges run BEFORE cornersAtIx
+  so the corner pass can use a feLookup map (chainIdx → segOrd →
+  side → fe). frontageEdges output now includes `segOrds: number[]`
+  derived by projecting chain.points onto the block-edge polyline.
+- **`f27d889` Phase D.5b** — store action `setBlockEdgeCustom(
+  blockKey, edgeOrd, measure)` writes the new shape. Legacy
+  `setBlockCustomMeasure([chainIdx][segOrd][side])` retained for
+  one transition step (now unused). `_v2FrontageEdges` exposed via
+  store so the Measure UI can resolve a clicked chain point →
+  containing (blockKey, edgeOrd) per side.
+- **`f13827a` Phase D.6** — Measure UI's per-block-mode drag handler
+  writes to `setBlockEdgeCustom(blockKey, edgeOrd, ...)`. Resolution
+  via `findFeForSide(streetIdx, segOrd, sideKey)`. Handle-positioning
+  reads from the new shape live.
+- **`5a62701` Phase D.5c** — `buildChainBandsLive` (drag-preview
+  emitter) consumes `[blockKey][edgeOrd]` keying. Closes the loop:
+  cornersAtIx, buildFrontageBands, buildChainBandsLive, and
+  Measure UI all use the same customs identity. No more
+  "band moved, plug stayed" mismatches possible.
+
+**Architecturally complete.** PM-2 "block as positive space" spec is
+the canonical implementation. Operator authors per block-edge;
+bands and plugs render off the same identity; live drag preview
+matches post-release V2 pass.
+
+**Performance regressed at LS scale** — `findAdjacentChainForBlockEdge`
+in `buildFrontageEdges` probes outward and iterates every chain ×
+every chain-segment per probe step. ~4M distance checks per V2 full
+pass on LS. Designer feels sticky on click-to-select / deselect.
+Toy is fine (4 chains, 4 blocks). See memory
+`feedback_polygon_walking_needs_spatial_index`. Next sprint is a
+dedicated perf pass — Jacob is taking that on directly.
+
+**D.7 cleanup** (deferred; not blocking — anything using the legacy
+shape was already removed in this sprint):
+- Remove dead `adjacentBlockId` helper (no callers).
+- Remove dead `setBlockCustomMeasure` setter (no callers).
+- Remove dead per-chain `byChain.{tl,sw}Rings` emission (rendered
+  pre-D.3c; unused since). Per-chain asphalt + capRings still emit
+  and are still consumed.
+- Remove `chainStripBandExt`'s override params (no callers pass
+  overrides).
+
+**Memories saved this session:**
+- `feedback_polygon_walking_needs_spatial_index` — adjacency probes
+  over all chains scale O(N²); spatial bbox prefilter is mandatory
+  before LS scale.
+- `feedback_customs_identity_must_unify_across_consumers` — when
+  migrating data shapes, audit ALL THREE visible-geometry
+  consumers (cornersAtIx, bands, drag preview) in one commit or
+  partial migrations produce regressions worse than the original
+  problem.
+
+---
+
+
 
 ## 2026-05-10 — Loop streets (L.0 through L.6, in flight)
 
@@ -29,10 +110,20 @@ carriageways enclosing a face, Waverly), Type C pure ring (none yet).
    list + denormalized per-chain hint), auto-detect + override semantics,
    smooth-preview bundled scope, ribbon-control inner/outer scope. See
    NOTES.md.
-2. **L.1 — Toy fixtures.** Type A: stem off VW3, body in SE quadrant.
-   Type B: couplet replacing HW4 + parallel chain. Edits land in
-   `cartograph/data/toy/raw/centerlines.json` (the toy "OSM" equivalent).
-   Both topologies committed before any emitter work.
+2. **L.1 — Toy fixtures.** Type A (Benton-toy teardrop): BENT-STEM off
+   VW3 at (40,-80) → joint at (60,-80); BENT-BODY 12-pt closed circle
+   centered (85,-80) r=25. Type B (Waverly-toy couplet): split HW4 at
+   (-40,120) and (52,120) into HW4-W + HW4-E; insert WV-S (oneway east,
+   bows south to z=125), WV-N (oneway west, bows north to z=115),
+   WV-CUT (bare cross-thru at x=5). Edits land in
+   `src/data/toy/toy-input.json` (the canonical toy "OSM" equivalent
+   — derive-toy.js re-derives to `src/data/toy/toy-ribbons.json` which
+   CartographApp.jsx imports statically). NOTE: don't be fooled by the
+   second file at `cartograph/data/toy/raw/centerlines.json`; it's
+   vestigial from TOY_AUTHORING_PLAN.md and nothing reads from it.
+   Both topologies committed before any emitter work; loop/oneway
+   fields are operator-intent annotations only at this stage —
+   derive-toy.js doesn't propagate them yet (L.2 wires propagation).
 3. **L.2 — V2 emitter + smooth bake-into-points.** `buildBlockGeometryV2`
    honors `chain.loop.role` for asymmetric ped-zone emission (`body` inner =
    no sidewalk; `cut-thru` = bare profile). Median emerges as park-LU
@@ -204,43 +295,37 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
      resolved eff and rings per segOrd for D.3b.3/4 to consume.
      **Visible-bug coverage:** would fix variable-column/row
      asymmetry (after D.3c).
-   - **D.3b.3 ✅ Sharp-corner extension only.** Built vertex-rounded
-     adjacency lookup over `frontageEdges`; for each run-boundary IX
-     with a unique perp partner on the same blockKey, computed
-     line-line intersections of this curb / treelawnOuter / swOuter
-     with the perp's matching offset and pushed those points into
-     the boundary segOrd's band ring as override endpoints (new
-     `chainStripBandExt` helper). NO pullback, NO caps yet. Each
-     `frontageBands[fe]` now carries `startExt` / `endExt` data for
-     D.3b.4 to consume. Near-parallel / ambiguous IXs leave the
-     boundary square. Still data-only.
-     **Visible-bug coverage:** none directly; foundation for D.3b.4.
-   - **D.3b.4 ✅ Pullback + spec caps from band ends.**
-     Per-end pullback applied per composition rule: `sw` legs run
-     to corner (zero pullback); `tl+sw` legs pull back by
-     `partner.totalDepth` along T_in. `frontageCaps` quads emitted
-     ONLY at `(tl+sw)↔(tl+sw)` corners, with corners taken from
-     D.3b.3's exact line-line intersection points (curbPt,
-     swOuterPt) plus their pulled-back counterparts — fixes the
-     rollback-bug-1 orthogonal-basis approximation. Each cap is
-     a per-fe strip half; opposite fe at the same corner emits
-     the matching half; downstream Clipper unions the two halves.
-     Bands + caps clipped to `blockRounded` (caps stored as both
-     `cap.ring` raw and `cap.ringClipped`). Still data-only on
-     `frontageBands` + new `frontageCaps`.
-     **Visible-bug coverage:** none; visible only after D.3c.
-   - **D.3c — pending. Production swap.** Bake (`bake-ground.js`)
-     and Designer (`BlockGeometryV2Debug.jsx`) consume
-     `frontageBands` for treelawn/sidewalk + `frontageCaps` for
-     concrete corners. CONTINUE consuming
-     `byChain.{treelawn,sidewalk}CapRings` from D.3b.1 so dead-end
-     round caps stay. Asphalt stays per-chain-segment via byChain.
-     **KEEP `cornerSidewalkPads` + `cornerAsphaltPlugs` mounted
-     alongside** per `feedback_corner_pad_retirement_caution`.
-     ~50 LOC.
-     **Visible-bug coverage:** Mississippi/Park sidewalk cutoff
-     becomes one continuous band; corners spec-correct under the
-     mounted pads (pads retire in D.4 after sign-off).
+   - **D.3b.3 ⚰️ Superseded by D.3c polygon-walking.** Shipped as
+     `27760e6` but its mechanism (sharp-corner extension via
+     line-line intersections on chain-driven bands) was patching
+     a chain-driven approximation. Polygon-walking (D.3c) makes
+     extension structural — the block-edge polyline IS the curb
+     line, no extension needed. The `chainStripBandExt` helper
+     remains in the codebase but its override parameters are
+     unused (D.7 cleanup will inline).
+   - **D.3b.4 ⚰️ Superseded by D.3c polygon-walking.** Shipped as
+     `914eca0`. The PM-2 strip-composition spec it encoded
+     (pullback + cap geometry at (tl+sw)↔(tl+sw) corners) is
+     correct in principle, but `cornerSidewalkPads` (load-bearing
+     per the pad memo) already deliver that visual through the
+     pad's depth-aware quad construction. Emitting separate
+     `frontageCaps` produced visible artifacts on LS asymmetric/
+     oblique IXs (overlap with pads). The polygon-walking D.3c
+     drops `frontageCaps` emission entirely; pads do the corner
+     concrete.
+   - **D.3c ✅ Production swap (polygon-walking).** Shipped as
+     `5dfda2c`. Replaces chain-driven `buildFrontageEdges` +
+     `buildFrontageBands` with polygon-walking versions per the
+     PM-2 spec. Walks `blockSharp` rings, finds block corners via
+     per-vertex turn angle, emits ONE fe per block-edge. Bands
+     emit via parallel offset of the block-edge polyline. No
+     internal seams at chain-IX vertices that don't change block
+     direction. The Mississippi-Kennett-class bug is structurally
+     impossible. `cornerSidewalkPads` + `cornerAsphaltPlugs`
+     unchanged (load-bearing). `frontageCaps` always empty (pad
+     handles corner concrete). Net −54 LOC.
+     **Visible-bug coverage:** ✅ Mississippi/Park sidewalk runs
+     continuous; pads handle corners as before.
    - **Open carry-over:** "parcel-shape change → land-use lost +
      bands hidden" surfaced during the failed bundle. Likely
      pre-existing `blockKey` (bbox-center) staleness — reshaping
@@ -249,10 +334,25 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
 4. **D.4 — Visual parity verification + corner pad retirement**
    per surface (Designer / Stage / Preview). Jacob signs off
    surface-by-surface before pads go.
-5. **D.5 — `blockCustoms` keying** `[chainIdx][segOrd][side]` →
-   `[blockKey][edgeOrd]`. One-shot data migration.
-6. **D.6 — Measure UI addresses by block-edge.**
-7. **D.7 — Cleanup.** Delete legacy chain-segment customs paths.
+5. **D.5 ✅ `blockCustoms` keying** `[chainIdx][segOrd][side]` →
+   `[blockKey][edgeOrd]`. Shipped as `43f8d47` (D.5a consumers),
+   `f27d889` (D.5b store + frontageEdges exposure), `5a62701`
+   (D.5c live drag preview). Three visible-geometry consumers
+   (cornersAtIx, buildFrontageBands, buildChainBandsLive) all read
+   the new shape; Measure UI writes it (D.6). No legacy data
+   migration needed — operator started fresh.
+6. **D.6 ✅ Measure UI addresses by block-edge.** Shipped as
+   `f13827a`. Drag handler resolves `(streetIdx, segOrd, sideKey)`
+   → frontage edge → `(blockKey, edgeOrd)` and writes via
+   `setBlockEdgeCustom`. Handle-positioning reads the new shape
+   live.
+7. **D.7 — Cleanup.** Pending. Specifically:
+   - Remove dead `adjacentBlockId` helper (no callers post-D.3c).
+   - Remove dead `setBlockCustomMeasure` setter (no callers post-D.6).
+   - Remove dead per-chain `byChain.{tl,sw}Rings` emission (rendered
+     pre-D.3c via Designer + bake; unused since D.3c routes through
+     `frontageBands`). Per-chain asphalt + capRings still emit.
+   - Inline `chainStripBandExt`'s override parameters (no callers).
 
 Sized at 4–6 focused sessions. Each lands a clean intermediate
 commit; at no point does the system regress.

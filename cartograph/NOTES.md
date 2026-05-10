@@ -6,6 +6,98 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-10 (EOD-3) — D.3c polygon-walking + D.5/D.6 customs migration shipped
+
+The D-phase block-edge migration is architecturally complete. The
+canonical implementation of the PM-2 "block as positive space" spec
+ships in `src/lib/buildBlockGeometryV2.js`:
+
+**`buildFrontageEdges(streets, blockSharp)`** — for each ring in
+`blockSharp`, walks vertices, classifies each as a block corner if
+the per-vertex turn angle exceeds 30°, and emits one frontage edge
+per (block, block-edge). Adjacent chain identified by spatial probe
+(`findAdjacentChainForBlockEdge` — outward from edge midpoint, find
+the chain whose centerline is parallel and closest). Output:
+`{ points, blockKey, edgeOrd, chainIdx, side, segOrds, ringCcw }`.
+`points` is a slice of the block ring vertices (the block-edge
+polyline, INCLUDING both block corners). `segOrds` is which chain
+natural segments run alongside the edge (computed by projecting
+chain.points onto the block-edge polyline).
+
+**`buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms)`**
+— for each fe, parallel-offsets the block-edge polyline INWARD into
+the block by `cw / cw + tl / cw + tl + sw` to produce treelawn +
+sidewalk rings. Inward direction = +leftPerp for CCW block ring,
+-leftPerp for CW. Customs lookup: `blockCustoms[fe.blockKey]?.[fe.edgeOrd]`
+overrides chain default. ONE ring per band per fe. Bands clipped to
+`blockRounded` so they don't bleed past the rounded silhouette.
+`frontageCaps` always returned empty — `cornerSidewalkPads` (load-
+bearing per the pad memo) handle corner concrete.
+
+**Why polygon-walking instead of chain-walking:** chain-walking
+emits per natural segment, square-ending at every IX. At interior
+IXs where the cross-street T's into a through chain but the BLOCK
+on the through-chain's far side is continuous, the chain emits two
+band rings butting at the IX vertex. With variable hw across
+segments (operator-authored customs), the rings step at the IX —
+visible perpendicular slash mid-block-face. This is the "Mississippi
+sidewalk cuts off at Kennett" canonical bug. Polygon-walking
+recognizes that the IX vertex is INTERIOR to the block-edge polyline
+(no turn there) and emits one continuous band.
+
+**Customs identity (D.5).** `blockCustoms` re-keyed from
+`[chainIdx][segOrd][side]` → `[blockKey][edgeOrd]`. Three visible-
+geometry consumers all read the new shape:
+
+1. `buildFrontageBands` — direct lookup at each fe.
+2. `cornersAtIx` — for each leg, looks up its containing fe via a
+   `feLookup[chainIdx][segOrd][sideKey]` map (built once per V2
+   build from `frontageEdges.segOrds`), then reads
+   `blockCustoms[fe.blockKey]?.[fe.edgeOrd]`.
+3. `buildChainBandsLive` (drag preview) — same fe-lookup pattern,
+   filtered to the selected chain.
+
+If any one consumer reads a different keying than the others, you
+get the "band moved, plug stayed" mismatch (memory:
+`feedback_customs_identity_must_unify_across_consumers`).
+
+**Authoring (D.6).** The Measure UI's per-block-mode drag handler
+resolves `(streetIdx, segOrd, sideKey)` → frontage edge via
+`findFeForSide` (a small helper that scans the cached
+`_v2FrontageEdges` from the store) → `(blockKey, edgeOrd)` →
+`setBlockEdgeCustom(blockKey, edgeOrd, measure)`. Handle-positioning
+reads the same shape so handles track the operator's edits live.
+
+**What's preserved unchanged.** Per-chain asphalt rectangles, round
+endcaps at chain endpoints (`byChain.{tl,sw}CapRings`),
+`cornerSidewalkPads`, `cornerAsphaltPlugs`, `applyRoundCornersToRing`
+on the asphalt union — none of these change. Polygon-walking only
+replaces the BAND emission; everything else flows through the same
+pipeline as before.
+
+**Performance regression at LS scale.** `findAdjacentChainForBlockEdge`
+iterates `streets × chain.points × probe-steps` per fe. On LS that's
+~4M distance computations per V2 full pass. Toy hides the cost (4
+chains, 4 blocks). Designer feels sticky on click-to-select / deselect.
+Memory `feedback_polygon_walking_needs_spatial_index` records the
+fix shape: spatial bbox prefilter on chains before iterating.
+Dedicated perf pass is the next sprint.
+
+**Superseded:** D.3b.3 (sharp-corner extension) and D.3b.4 (pullback
++ frontageCaps) shipped as commits `27760e6` and `914eca0` but were
+patches on the chain-driven approximation. The D.3c polygon-walking
+rewrite makes them structurally unnecessary — the block-edge
+polyline IS the curb, no extension needed; pads (load-bearing) do
+the corner concrete, no separate cap quad needed. The
+`chainStripBandExt` helper persists in the codebase but its
+override parameters are dead code (D.7 cleanup will inline).
+
+**Trinity status:** FEATURES.md unchanged this session (still
+correct re: per-Look bake artifacts, cap memo, scene-routing).
+BACKLOG.md updated. NOTES.md (this entry).
+
+---
+
 ## 2026-05-10 — Loop streets: L.0 architecture lock
 
 In-flight architecture for the loop-street effort (BACKLOG entry "Loop
@@ -145,9 +237,12 @@ for inner side reflect the cross-section table above. Everything else
 
 ### Phasing (matches BACKLOG entry)
 
-L.0 (this spec) → L.1 toy fixtures (Type A + Type B in
-`cartograph/data/toy/raw/centerlines.json` — the toy "OSM"
-equivalent) → L.2 V2 emitter (asymmetric ped zones for body chains,
+L.0 (this spec) → L.1 toy fixtures (Type A + Type B added to
+`src/data/toy/toy-input.json` — the canonical toy "OSM" equivalent;
+re-derived to `src/data/toy/toy-ribbons.json` via
+`cartograph/derive-toy.js`. NOTE: there is also a vestigial file at
+`cartograph/data/toy/raw/centerlines.json` from `TOY_AUTHORING_PLAN.md`
+that nothing reads — do NOT edit it.) → L.2 V2 emitter (asymmetric ped zones for body chains,
 bare profile for cut-thru, median-face park-LU classification) +
 smooth bake-into-points → L.3 Survey UI (loop card + auto-detect +
 smooth-preview overlay) → L.4 Measure inner/outer relabel → L.5 LS
