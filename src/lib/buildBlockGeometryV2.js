@@ -384,19 +384,32 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
   return corners
 }
 
-// ⚠ LOAD-BEARING — DO NOT REMOVE.
+// ⚠ PERMANENT FEATURE — DO NOT REMOVE.
 //
-// The concrete corner pad is a hard-won feature; previous sessions have
-// misclassified it as "centerline-regime cruft" and removed it on the
-// theory that block-edge-owned ribbons will erase its need structurally.
-// That is true *in principle* and *in the future*, but until block-edge
-// ownership is shipped and verified at LS scale, this pad is what
-// fills the visible wedge between the rounded curb arc and the chain
-// ped-band edges at every IX corner. Removing it leaves a parcel-green
-// triangle where concrete should be. See BACKLOG entry "Concrete corner
-// pad geometry — LANDED 2026-05-09" and the EOD pin's load-bearing
-// note. If you are tempted to delete this — STOP, reread that entry,
-// and verify the new emitter renders the corner zone correctly first.
+// The concrete corner pad is a hard-won feature that has been removed
+// twice on the false theory that "block-edge-owned ribbons will erase
+// it structurally." That theory is wrong. The pad fills the wedge
+// between the ROUNDED CURB ARC and the two STRAIGHT ped-band inner
+// edges that meet at the block's corner. Leg ribbons are straight
+// strips parallel to straight block edges; they don't follow the arc.
+// The wedge between the arc and the leg-ribbon ends is therefore
+// always present, regardless of emission strategy (chain-derived OR
+// block-edge-derived). The pad maps to a real-world thing: an ADA
+// corner landing / concrete corner apron.
+//
+// **Principle.** Visible geometry is permanent; how it's *derived*
+// can change with the emitter, but the visual region must always be
+// filled. A migration to block-edge ribbons should produce the same
+// pad geometry through a cleaner derivation
+// (`block_polygon's_corner_arc − (leg_ribbon_A ∪ leg_ribbon_B)`),
+// not delete it. The same principle applies to `cornerAsphaltPlugs`
+// just below: today they patch the rounded fillet that per-chain
+// rectangles don't cover; under block-edge ownership the asphalt
+// would be a single unioned shape and the plug becomes part of that
+// shape — but the visual region (rounded asphalt mouth at every IX)
+// must always be filled. Never remove either pre-emptively. Designer
+// + bake + Preview + Stage all consume the same V2 output; any
+// visible regression in Designer cascades straight to Preview.
 //
 // Concrete corner pad — a flat quadrilateral covering the wedge between
 // two adjacent legs of an IX, anchored at V. NO arc math, no R lookup.
