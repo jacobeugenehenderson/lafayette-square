@@ -49,22 +49,26 @@ mixed-LU parcels in the 3×3 grid, working corner-radius authoring
   `src/lib/buildBlockGeometryV2.js` proves per-chain stroking is
   ~ms-per-chain, so the rewrite isn't a perf risk.
 - ⚠ **Concrete corner pads (`cornerSidewalkPads` / `buildCornerPadQuad`)
-  are LOAD-BEARING. DO NOT REMOVE.** This is a hard-won feature
-  that previous sessions have removed twice on the theory that they
-  are centerline-regime cruft. They are not. They fill the visible
-  wedge between the rounded curb arc and the chain ped-band edges
-  at every IX corner; removing them leaves a parcel-green triangle
-  where concrete should be. Block-edge ownership *will* erase
-  their need structurally (block-edge stroke reaches its own
-  corner) — but only after the new emitter is shipped AND verified
-  at LS scale. A corresponding ⚠ guard sits above
-  `buildCornerPadQuad` in `src/lib/buildBlockGeometryV2.js`. If
-  you find yourself wanting to delete the pad: stop, reread this
-  entry and the function-level guard, render the corner zone with
-  the new emitter, confirm the visual is intact, and only then
-  remove. **Default = keep.**
-- `cornerAsphaltPlugs` are similarly load-bearing today. Same logic:
-  let the new emitter prove it doesn't need them before deleting.
+  AND asphalt corner plugs (`cornerAsphaltPlugs`) are PERMANENT
+  LOAD-BEARING geometry. DO NOT REMOVE.** Both fill real geometric
+  regions that exist in any emission strategy. The sidewalk pad
+  fills the wedge between the rounded curb arc and the two straight
+  ped-band inner edges at the block's corner — leg ribbons are
+  straight strips and don't follow the arc, so the wedge is
+  geometric, not derivation-dependent. The asphalt plug fills the
+  rounded fillet at every IX mouth — a real visible region.
+  **Principle: visible geometry is permanent; how it's *derived*
+  can change with the emitter, but the visual region must always
+  be filled.** Block-edge ownership doesn't erase either; it
+  produces the same geometry through a cleaner derivation
+  (e.g. `block_polygon's_corner_arc − (leg_ribbon_A ∪ leg_ribbon_B)`
+  for the pad). Producing nothing in the corner zone is never a
+  valid replacement. A corresponding ⚠ guard sits above
+  `buildCornerPadQuad` in `src/lib/buildBlockGeometryV2.js`.
+  Designer + bake + Preview + Stage all consume the same V2 output;
+  any visible regression in Designer cascades straight to Preview.
+  **Default = keep.** Removal is only correct if the new emitter
+  visibly produces the same corner geometry AND Jacob has signed off.
 - Smoothing has been removed from the geometry path entirely. If
   you reintroduce a smoothing pass anywhere downstream of Survey,
   reread the "Survey-time arc smoothing" entry and the commit
