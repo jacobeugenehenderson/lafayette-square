@@ -698,8 +698,8 @@ function buildFrontageEdges(streets, blockRounded, blockCustoms) {
 // matching offset. NO pullback yet — both the curb (treelawn inner)
 // and sidewalk-outer ends extend to their own line-line corners.
 // Composition rules + caps land in D.3b.4.
-function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
-  if (!frontageEdges?.length) return []
+function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth, blockRounded) {
+  if (!frontageEdges?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
   const perpsByChain = new Map()
   const segsByChain = new Map()
@@ -787,6 +787,9 @@ function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
   // Per-fe-end extension data for the three band-edge offsets we care
   // about (curb = inner of treelawn = outer of asphalt; tlOuter = outer
   // of treelawn = inner of sidewalk; swOuter = outer of sidewalk).
+  // Also carries D.3b.4 pullback inputs: T_in (unit vector into this
+  // fe's run interior), thisIsTlSw / partnerIsTlSw (composition flags),
+  // and pullback (= partner.totalDepth when this leg is tl+sw, else 0).
   const computeEndExt = (idx, end) => {
     const part = partnerOf(idx, end)
     if (!part) return null
@@ -813,15 +816,53 @@ function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
       const B0 = [P_b[0] + N_b[0] * pMd.sideSign * d_b, P_b[1] + N_b[1] * pMd.sideSign * d_b]
       return lineLineIntersect(A0, T_a, B0, T_b)
     }
+    const thisIsTlSw = tl_a > 0
+    const partnerIsTlSw = tl_b > 0
+    // T_in_a points INTO this fe's run interior (opposite T_a, which is
+    // the outward tangent at this end). D.3b.4 pullback applies as
+    // override + T_in_a * pullback to slide the boundary endpoint
+    // inward along the band's curb-line direction.
+    const T_in_a = [-T_a[0], -T_a[1]]
     return {
       curbPt:    isect(hw_a + cw,                      hw_b + cw),
       tlOuterPt: isect(hw_a + cw + tl_a,               hw_b + cw + tl_b),
       swOuterPt: isect(hw_a + cw + tl_a + sw_a,        hw_b + cw + tl_b + sw_b),
+      T_in_a,
+      thisIsTlSw,
+      partnerIsTlSw,
+      pullback: thisIsTlSw ? (tl_b + sw_b) : 0,
     }
   }
 
-  // Emit bands using overrides on the run-boundary segOrds.
+  // Slide a point P inward along T_in by `d`. Returns null if either
+  // input is missing (so override fields naturally fall through).
+  const slideIn = (P, T_in, d) => P && T_in ? [P[0] + T_in[0] * d, P[1] + T_in[1] * d] : null
+
+  // Emit bands using overrides on the run-boundary segOrds. D.3b.4
+  // pullback: when this leg is tl+sw, slide its boundary endpoints
+  // inward along T_in by partner.totalDepth so the cap (or the
+  // partner's sidewalk strip in the sw↔(tl+sw) case) fills the corner.
+  // Cap polygon emitted only at (tl+sw)↔(tl+sw) corners — composition
+  // rules from NOTES.md 2026-05-06 PM-2 §"Strip composition near the
+  // corner".
   const out = []
+  const frontageCaps = []
+  // Cap quad for this fe's strip half at one corner. Corners taken
+  // from D.3b.3's exact line-line intersections (curbPt, swOuterPt) +
+  // their pulled-back counterparts. This fixes the rollback bug 1
+  // (orthogonal-basis approximation `S+N_in*b` was exact only for 90°
+  // X with consistent depths).
+  const buildCapQuad = (ext) => {
+    if (!ext || !ext.thisIsTlSw || !ext.partnerIsTlSw) return null
+    if (!ext.curbPt || !ext.swOuterPt || !(ext.pullback > 0)) return null
+    const V0 = ext.curbPt
+    const V1 = ext.swOuterPt
+    const V2 = slideIn(ext.swOuterPt, ext.T_in_a, ext.pullback)
+    const V3 = slideIn(ext.curbPt,    ext.T_in_a, ext.pullback)
+    if (!V2 || !V3) return null
+    const ring = [V0, V1, V2, V3]
+    return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
+  }
   for (let idx = 0; idx < meta.length; idx++) {
     const md = meta[idx]
     if (!md) continue
@@ -848,21 +889,31 @@ function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
       const sw = eff.sidewalk || 0
       // Override endpoints on the run-boundary segOrds only. Interior
       // segOrd boundaries inside a run share vertices with adjacent
-      // segOrds in the same run; those don't get extended.
+      // segOrds in the same run; those don't get extended/pulled-back.
       const ovTL = {}
       const ovSW = {}
-      if (k === 0 && startExt) {
-        if (startExt.curbPt)    ovTL.startInner = startExt.curbPt
-        if (startExt.tlOuterPt) ovTL.startOuter = startExt.tlOuterPt
-        if (startExt.tlOuterPt) ovSW.startInner = startExt.tlOuterPt
-        if (startExt.swOuterPt) ovSW.startOuter = startExt.swOuterPt
+      // Override at run-start: prefer pulled-back point when this leg
+      // is tl+sw and pullback > 0; otherwise use the raw extension.
+      // (sw legs run to corner — pullback = 0, raw extension wins.)
+      const applyOverride = (ext, slot) => {
+        if (!ext) return
+        const d = ext.thisIsTlSw ? ext.pullback : 0
+        const slid = (P) => d > 0 ? slideIn(P, ext.T_in_a, d) : P
+        const curb = slid(ext.curbPt)
+        const tlOut = slid(ext.tlOuterPt)
+        const swOut = slid(ext.swOuterPt)
+        if (slot === 'start') {
+          if (curb)  ovTL.startInner = curb
+          if (tlOut) { ovTL.startOuter = tlOut; ovSW.startInner = tlOut }
+          if (swOut) ovSW.startOuter = swOut
+        } else {
+          if (curb)  ovTL.endInner = curb
+          if (tlOut) { ovTL.endOuter = tlOut; ovSW.endInner = tlOut }
+          if (swOut) ovSW.endOuter = swOut
+        }
       }
-      if (k === lastK && endExt) {
-        if (endExt.curbPt)    ovTL.endInner = endExt.curbPt
-        if (endExt.tlOuterPt) ovTL.endOuter = endExt.tlOuterPt
-        if (endExt.tlOuterPt) ovSW.endInner = endExt.tlOuterPt
-        if (endExt.swOuterPt) ovSW.endOuter = endExt.swOuterPt
-      }
+      if (k === 0)     applyOverride(startExt, 'start')
+      if (k === lastK) applyOverride(endExt,   'end')
       const treelawnRing = tl > 0
         ? chainStripBandExt(segPts, segPerps, sideSign, hw + cw, hw + cw + tl, ovTL)
         : null
@@ -873,7 +924,16 @@ function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
       if (sidewalkRing) sidewalkRings.push(sidewalkRing)
       perSeg.push({ segOrd, eff, treelawnRing, sidewalkRing })
     }
-    if (!treelawnRings.length && !sidewalkRings.length) continue
+    // Cap halves: each fe contributes its own strip half at each
+    // (tl+sw)↔(tl+sw) corner. The two halves overlap; downstream
+    // unions them implicitly via Clipper / pftNonZero.
+    const startCap = buildCapQuad(startExt)
+    const endCap = buildCapQuad(endExt)
+    if (startCap) frontageCaps.push({ ring: startCap, blockKey: fe.blockKey, edgeOrd: fe.edgeOrd,
+                                      chainIdx: fe.chainIdx, side: fe.side, end: 'start' })
+    if (endCap)   frontageCaps.push({ ring: endCap,   blockKey: fe.blockKey, edgeOrd: fe.edgeOrd,
+                                      chainIdx: fe.chainIdx, side: fe.side, end: 'end' })
+    if (!treelawnRings.length && !sidewalkRings.length && !startCap && !endCap) continue
     out.push({
       blockKey: fe.blockKey,
       edgeOrd: fe.edgeOrd,
@@ -883,15 +943,32 @@ function buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth) {
       perSeg,
       treelawnRings,
       sidewalkRings,
-      // D.3b.3: extension data per end. D.3b.4 reads these to compute
-      // pullback + frontageCaps; null end → chain endpoint or ambiguous
-      // IX, leave the boundary square (D.3b.4 may emit a round/blunt
-      // cap from byChain.*CapRings instead).
       startExt,
       endExt,
+      startCap,
+      endCap,
     })
   }
-  return out
+  // D.3b.4: clip the flat band + cap rings to blockRounded so they
+  // don't bleed past the block silhouette. perSeg rings are left
+  // unclipped (they're internal D.3b.* metadata; D.3c consumers should
+  // walk the flat arrays). intersectRings can collapse or split rings,
+  // so the per-segOrd 1:1 mapping doesn't survive the clip — that's
+  // why perSeg keeps the raw rings and the flat arrays carry the
+  // post-clip output.
+  if (blockRounded?.length) {
+    for (const fe of out) {
+      if (fe.treelawnRings.length) fe.treelawnRings = intersectRings(fe.treelawnRings, blockRounded)
+      if (fe.sidewalkRings.length) fe.sidewalkRings = intersectRings(fe.sidewalkRings, blockRounded)
+    }
+    if (frontageCaps.length) {
+      for (const cap of frontageCaps) {
+        const clipped = intersectRings([cap.ring], blockRounded)
+        cap.ringClipped = clipped
+      }
+    }
+  }
+  return { frontageBands: out, frontageCaps }
 }
 
 // Outward polygon offset (Minkowski sum with a disc of radius `delta`).
@@ -1248,7 +1325,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // D.3a — per-frontageEdge tl+sw band rings. Foundation for D.3b/c.
   // Not yet consumed by the renderer; legacy per-segment bands in
   // byChain.{treelawn,sidewalk}Rings still drive the visual.
-  const frontageBands = buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth)
+  const { frontageBands, frontageCaps } = buildFrontageBands(streets, frontageEdges, blockCustoms, curbWidth, blockRounded)
   const curbDilated = dilateRings(asphaltRounded, curbWidth)
   const curbBands   = differenceRings(curbDilated, asphaltRounded)
 
@@ -1382,7 +1459,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     byChain,
     corners: allCorners,
     frontageEdges,        // D.1: per-block-edge runs of chain segments (foundation; not yet consumed)
-    frontageBands,        // D.3a: per-frontageEdge tl+sw rings (foundation; not yet consumed)
+    frontageBands,        // D.3a/b.2/b.3/b.4: per-frontageEdge tl+sw rings, extended + pulled-back, clipped to blockRounded (foundation; not yet consumed)
+    frontageCaps,         // D.3b.4: (tl+sw)↔(tl+sw) corner cap halves, clipped to blockRounded via cap.ringClipped (foundation; not yet consumed)
   }
 }
 

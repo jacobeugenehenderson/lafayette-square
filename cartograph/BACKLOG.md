@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1/2/3 shipped; D.3b.4 pullback + caps is next)
+Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1/2/3/4 shipped; D.3c production swap is next)
 
 ## 2026-05-10 EOD-2 — Session-end pin (read first; supersedes the EOD pin below for D.3 plan)
 
@@ -145,15 +145,20 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
      D.3b.4 to consume. Near-parallel / ambiguous IXs leave the
      boundary square. Still data-only.
      **Visible-bug coverage:** none directly; foundation for D.3b.4.
-   - **D.3b.4 — pending. Pullback + spec caps from band ends.**
-     Apply per-end pullback per composition rule (`sw` legs run
-     to corner, `tl+sw` legs pull back by perpDepth); emit
-     `frontageCaps` polygon for `(tl+sw)↔(tl+sw)` corners with
-     corners derived from the actual pulled-back band endpoints
-     (not orthogonal-basis approximation). Clip bands+caps to
-     `blockRounded`. Still data-only. ~100 LOC.
-     **Visible-bug coverage:** none; ALL D.3b.* are data-only —
-     visible only after D.3c.
+   - **D.3b.4 ✅ Pullback + spec caps from band ends.**
+     Per-end pullback applied per composition rule: `sw` legs run
+     to corner (zero pullback); `tl+sw` legs pull back by
+     `partner.totalDepth` along T_in. `frontageCaps` quads emitted
+     ONLY at `(tl+sw)↔(tl+sw)` corners, with corners taken from
+     D.3b.3's exact line-line intersection points (curbPt,
+     swOuterPt) plus their pulled-back counterparts — fixes the
+     rollback-bug-1 orthogonal-basis approximation. Each cap is
+     a per-fe strip half; opposite fe at the same corner emits
+     the matching half; downstream Clipper unions the two halves.
+     Bands + caps clipped to `blockRounded` (caps stored as both
+     `cap.ring` raw and `cap.ringClipped`). Still data-only on
+     `frontageBands` + new `frontageCaps`.
+     **Visible-bug coverage:** none; visible only after D.3c.
    - **D.3c — pending. Production swap.** Bake (`bake-ground.js`)
      and Designer (`BlockGeometryV2Debug.jsx`) consume
      `frontageBands` for treelawn/sidewalk + `frontageCaps` for
