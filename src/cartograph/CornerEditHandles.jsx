@@ -56,17 +56,8 @@ function screenToWorld(clientX, clientY, camera, domElement) {
 const HIT_R_CORNER = 1.2
 // Visual radius for the per-corner dot.
 const DOT_R_CORNER = 0.5
-// Per-vertex smoothing dot — slightly smaller than the corner dot so the
-// two layers read as distinct without crowding when both surface.
-const HIT_R_SMOOTH = 1.0
-const DOT_R_SMOOTH = 0.4
-// Minimum offset of the smoothing dot from its vertex, in meters. When R=0
-// (no override), the dot sits at this distance along the outward bisector
-// so it's visible and grabbable; when R>0 the dot tracks the radius.
-const SMOOTH_DOT_MIN_OFFSET = 0.9
-// Drag this close to a dot's "origin" (IX center for corners, chain
-// vertex for smoothing) and the gesture snaps + clears the override on
-// release. World meters.
+// Drag this close to the IX center and the gesture snaps + clears the
+// override on release. World meters.
 const SNAP_R = 0.7
 // Tap threshold — if the cursor moves less than this between down and up,
 // we treat the gesture as a click (toggles the origin marker) instead of
@@ -76,10 +67,8 @@ const TAP_THRESHOLD = 0.25
 // around Y=0.020 for corner_plug_sidewalk).
 const Y_DOTS = 0.05
 // Color logic — corner default + shared override / drag colors so the
-// modal state is unambiguous. Smoothing dots get a distinct purple so the
-// two handle layers read as different at a glance.
+// modal state is unambiguous.
 const COLOR_CORNER_DEFAULT = '#22D3EE'  // cyan
-const COLOR_SMOOTH_DEFAULT = '#C084FC'  // light purple
 const COLOR_OVERRIDE = '#ffaa00'        // gold (all layers)
 const COLOR_DRAG = '#ffffff'            // white
 
@@ -186,69 +175,20 @@ function computeIxLayout(ribbons) {
   return out
 }
 
-// One smoothing layout entry per non-IX interior bend vertex on every
-// chain. We exclude IX vertices (their corners are owned by the per-corner
-// dots) and any near-collinear vertex (no visible bend, nothing useful to
-// fillet). `outBis` points from the vertex into the OBTUSE side of the
-// bend — the side where the dot belongs Illustrator-style.
-function computeSmoothLayout(ribbons) {
-  if (!ribbons?.streets?.length) return []
-  const out = []
-  for (let chainIdx = 0; chainIdx < ribbons.streets.length; chainIdx++) {
-    const chain = ribbons.streets[chainIdx]
-    if (!chain || chain.disabled) continue
-    const pts = chain.points
-    const n = pts?.length || 0
-    if (n < 3) continue
-    const ixSet = new Set(
-      (chain.intersections || []).map(r => r.ix).filter(Number.isInteger)
-    )
-    for (let i = 1; i < n - 1; i++) {
-      if (ixSet.has(i)) continue
-      const prev = pts[i - 1], cur = pts[i], next = pts[i + 1]
-      const ix = cur[0] - prev[0], iz = cur[1] - prev[1]
-      const ox = next[0] - cur[0], oz = next[1] - cur[1]
-      const lin = Math.hypot(ix, iz), lon = Math.hypot(ox, oz)
-      if (lin < 1e-6 || lon < 1e-6) continue
-      const inX = ix / lin, inZ = iz / lin
-      const ouX = ox / lon, ouZ = oz / lon
-      const cross = inX * ouZ - inZ * ouX
-      if (Math.abs(cross) < 1e-3) continue   // collinear-ish: no bend
-      // Outward bisector = unit(inDir - outDir). Points away from the
-      // arc center for either turn direction (the OBTUSE side of the
-      // bend), so the dot sits on the side that gets cut off as R grows.
-      const bx = inX - ouX, bz = inZ - ouZ
-      const bl = Math.hypot(bx, bz)
-      if (bl < 1e-6) continue
-      out.push({
-        chainIdx,
-        vertexIdx: i,
-        vertex: cur,
-        outBis: [bx / bl, bz / bl],
-      })
-    }
-  }
-  return out
-}
-
 export default function CornerEditHandles({ ribbons }) {
   const cornerEditMode = useCartographStore(s => s.cornerEditMode)
   const ixOverrides = useCartographStore(s => s.cornerRadiusOverrides) || {}
   const cornerOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides) || {}
   const cornerRadiusScale = useCartographStore(s => s.cornerRadiusScale ?? 1)
   const setCornerCornerRadius = useCartographStore(s => s.setCornerCornerRadius)
-  const vertexSmoothing = useCartographStore(s => s.vertexSmoothing) || {}
-  const setVertexSmoothing = useCartographStore(s => s.setVertexSmoothing)
   const { camera, gl } = useThree()
 
   const dragRef = useRef(null)
   const [dragState, setDragState] = useState(null)
   // Tap on a dot toggles a non-destructive "origin marker" — a tiny
-  // crosshair at the radius origin (IX center for corners, chain vertex
-  // for smoothing). Reveals where to drag to reset without disturbing the
-  // current arc. Cleared automatically when a drag commits.
+  // crosshair at the IX center. Reveals where to drag to reset without
+  // disturbing the current arc. Cleared automatically when a drag commits.
   //   { kind: 'corner', key: `${ixIdx}:${cornerIdx}` }
-  //   { kind: 'smooth', key: `${chainIdx}:${vertexIdx}` }
   const [originHint, setOriginHint] = useState(null)
   // rAF-throttle the heavy store commit so the dot tracks the cursor
   // smoothly even at neighborhood density (~252 IXs / ~600 corners). The
@@ -262,11 +202,10 @@ export default function CornerEditHandles({ ribbons }) {
   const pendingCommitRef = useRef(null)
 
   const layout = useMemo(() => computeIxLayout(ribbons), [ribbons])
-  const smoothLayout = useMemo(() => computeSmoothLayout(ribbons), [ribbons])
 
   useEffect(() => {
     if (!cornerEditMode) return
-    if (!layout.length && !smoothLayout.length) return
+    if (!layout.length) return
 
     const dom = gl.domElement
 
@@ -306,51 +245,18 @@ export default function CornerEditHandles({ ribbons }) {
       // (IX center handle retired — per-IX bulk authoring lives in the
        // global cornerRadiusScale slider; per-corner dots own everything
        // local.)
-      // Second-pass: per-vertex smoothing dots. Anchored a fixed offset
-      // off each non-IX bend vertex; hit-test against the dot's CURRENT
-      // anchor position (which moves with R when authored).
-      for (const sm of smoothLayout) {
-        const cur = vertexSmoothing?.[sm.chainIdx]?.[sm.vertexIdx] || 0
-        const offset = Math.max(SMOOTH_DOT_MIN_OFFSET, cur)
-        const ax = sm.vertex[0] + sm.outBis[0] * offset
-        const az = sm.vertex[1] + sm.outBis[1] * offset
-        const dx = p.x - ax, dz = p.z - az
-        if (Math.hypot(dx, dz) < HIT_R_SMOOTH) {
-          dragRef.current = {
-            kind: 'smooth',
-            chainIdx: sm.chainIdx,
-            vertexIdx: sm.vertexIdx,
-            vertex: sm.vertex.slice(),
-            downPos: p,
-          }
-          setDragState({
-            kind: 'smooth',
-            chainIdx: sm.chainIdx, vertexIdx: sm.vertexIdx,
-            cursor: p,
-            r: Math.hypot(p.x - sm.vertex[0], p.z - sm.vertex[1]),
-          })
-          dom.setPointerCapture?.(e.pointerId)
-          e.stopPropagation()
-          return
-        }
-      }
     }
 
     const flushCommit = (drag, baseR) => {
-      if (drag.kind === 'smooth') {
-        // setVertexSmoothing already clears for r ≤ 0.
-        setVertexSmoothing(drag.chainIdx, drag.vertexIdx, baseR)
+      // Pass null/undefined to setCornerCornerRadius to clear the
+      // override (vs. storing a sharp-corner override of 0). Anything
+      // smaller than the snap threshold counts as "drag onto origin →
+      // reset" — the dot snapped visually, so the persisted state
+      // should match the visible reset.
+      if (drag.snapping || baseR < (SNAP_R / Math.max(0.0001, cornerRadiusScale))) {
+        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, null)
       } else {
-        // Pass null/undefined to setCornerCornerRadius to clear the
-        // override (vs. storing a sharp-corner override of 0). Anything
-        // smaller than the snap threshold counts as "drag onto origin →
-        // reset" — the dot snapped visually, so the persisted state
-        // should match the visible reset.
-        if (drag.snapping || baseR < (SNAP_R / Math.max(0.0001, cornerRadiusScale))) {
-          setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, null)
-        } else {
-          setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, baseR)
-        }
+        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, baseR)
       }
     }
 
@@ -358,23 +264,18 @@ export default function CornerEditHandles({ ribbons }) {
       const drag = dragRef.current
       if (!drag) return
       const p = screenToWorld(e.clientX, e.clientY, camera, dom)
-      // Smoothing drags measure cursor → vertex; corner drags measure
-      // cursor → V (IX point). Store the appropriate base radius.
-      const anchor = drag.kind === 'smooth' ? drag.vertex : drag.V
+      // Corner drags measure cursor → V (IX point); store the base radius.
+      const anchor = drag.V
       const dx = p.x - anchor[0], dz = p.z - anchor[1]
       const r = Math.hypot(dx, dz)
       // Snap-to-reset: when the cursor is within SNAP_R of the origin,
       // the dot pins visually to the origin and the gesture commits as
       // a clear. The drag.snapping flag persists into flushCommit so the
-      // commit path knows to send `null` (corner) regardless of baseR
-      // wobble.
+      // commit path knows to send `null` regardless of baseR wobble.
       const snapping = r < SNAP_R
       drag.snapping = snapping
-      // Corner radii get multiplied by cornerRadiusScale at render time;
-      // smoothing radii are stored absolute (no scale layer for bends).
-      const baseR = drag.kind === 'smooth'
-        ? r
-        : r / Math.max(0.0001, cornerRadiusScale)
+      // Corner radii get multiplied by cornerRadiusScale at render time.
+      const baseR = r / Math.max(0.0001, cornerRadiusScale)
       const cursorForVisual = snapping
         ? { x: anchor[0], z: anchor[1] }
         : p
@@ -415,10 +316,8 @@ export default function CornerEditHandles({ ribbons }) {
         const upP = screenToWorld(e.clientX, e.clientY, camera, dom)
         const moved = Math.hypot(upP.x - drag.downPos.x, upP.z - drag.downPos.z)
         if (moved < TAP_THRESHOLD) {
-          const key = drag.kind === 'smooth'
-            ? `${drag.chainIdx}:${drag.vertexIdx}`
-            : `${drag.ixIdx}:${drag.cornerIdx}`
-          setOriginHint(prev => (prev?.kind === drag.kind && prev.key === key) ? null : { kind: drag.kind, key })
+          const key = `${drag.ixIdx}:${drag.cornerIdx}`
+          setOriginHint(prev => (prev?.kind === 'corner' && prev.key === key) ? null : { kind: 'corner', key })
           pendingCommitRef.current = null
           dragRef.current = null
           setDragState(null)
@@ -458,10 +357,10 @@ export default function CornerEditHandles({ ribbons }) {
       dom.removeEventListener('pointerup', onUp, opts)
       dom.removeEventListener('pointercancel', onUp, opts)
     }
-  }, [cornerEditMode, layout, smoothLayout, camera, gl, setCornerCornerRadius, setVertexSmoothing, cornerRadiusScale, vertexSmoothing])
+  }, [cornerEditMode, layout, camera, gl, setCornerCornerRadius, cornerRadiusScale])
 
   if (!cornerEditMode) return null
-  if (!layout.length && !smoothLayout.length) return null
+  if (!layout.length) return null
 
   return (
     <group>
@@ -546,64 +445,6 @@ export default function CornerEditHandles({ ribbons }) {
               )
             })}
 
-          </group>
-        )
-      })}
-      {/* Per-vertex smoothing dots — one per non-IX bend. Sits on the
-          obtuse side of the bend at SMOOTH_DOT_MIN_OFFSET (or at R if
-          larger), tracking the cursor during a drag. Cyan/purple by
-          default → gold when authored → white during drag. Anchored
-          well above the ribbon stack so it stays clickable. */}
-      {smoothLayout.map((sm) => {
-        const cur = vertexSmoothing?.[sm.chainIdx]?.[sm.vertexIdx]
-        const hasOverride = Number.isFinite(cur) && cur > 0
-        const dragging = dragState?.kind === 'smooth'
-          && dragState.chainIdx === sm.chainIdx
-          && dragState.vertexIdx === sm.vertexIdx
-        const color = dragging ? COLOR_DRAG : hasOverride ? COLOR_OVERRIDE : COLOR_SMOOTH_DEFAULT
-        const offset = Math.max(SMOOTH_DOT_MIN_OFFSET, hasOverride ? cur : 0)
-        const dotPos = dragging
-          ? [dragState.cursor.x, Y_DOTS + 0.003, dragState.cursor.z]
-          : [
-              sm.vertex[0] + sm.outBis[0] * offset,
-              Y_DOTS + 0.003,
-              sm.vertex[1] + sm.outBis[1] * offset,
-            ]
-        const smKey = `${sm.chainIdx}:${sm.vertexIdx}`
-        const showOriginMarker = (originHint?.kind === 'smooth' && originHint.key === smKey)
-          || dragging
-        return (
-          <group key={`sm-${sm.chainIdx}-${sm.vertexIdx}`}>
-            {/* Origin marker — appears on tap or while dragging. Sits at
-                the bend vertex itself. Drop the dot within SNAP_R of
-                this marker to clear the smoothing on this vertex. */}
-            {showOriginMarker && (
-              <>
-                <mesh position={[sm.vertex[0], Y_DOTS + 0.001, sm.vertex[1]]}
-                      rotation={[-Math.PI / 2, 0, 0]} renderOrder={208}>
-                  <circleGeometry args={[0.18, 16]} />
-                  <meshBasicMaterial color="#ffffff" transparent opacity={1.0}
-                    depthTest={false} depthWrite={false} />
-                </mesh>
-                <mesh position={[sm.vertex[0], Y_DOTS + 0.0015, sm.vertex[1]]}
-                      rotation={[-Math.PI / 2, 0, 0]} renderOrder={209}>
-                  <circleGeometry args={[0.10, 16]} />
-                  <meshBasicMaterial color={hasOverride ? COLOR_OVERRIDE : COLOR_SMOOTH_DEFAULT}
-                    transparent opacity={1.0}
-                    depthTest={false} depthWrite={false} />
-                </mesh>
-              </>
-            )}
-            <mesh position={dotPos} rotation={[-Math.PI / 2, 0, 0]} renderOrder={211}>
-              <circleGeometry args={[DOT_R_SMOOTH, 20]} />
-              <meshBasicMaterial color={color} transparent opacity={1.0}
-                depthTest={false} depthWrite={false} />
-            </mesh>
-            <mesh position={dotPos} rotation={[-Math.PI / 2, 0, 0]} renderOrder={212}>
-              <ringGeometry args={[DOT_R_SMOOTH - 0.06, DOT_R_SMOOTH, 20]} />
-              <meshBasicMaterial color="#ffffff" transparent opacity={1.0}
-                depthTest={false} depthWrite={false} />
-            </mesh>
           </group>
         )
       })}

@@ -241,18 +241,6 @@ const useCartographStore = create((set, get) => ({
   // legs is removed from the IX — the explicit point of leg-pair keys
   // over CCW-ordinal indices. Resolved before the per-IX map.
   cornerCornerRadiusOverrides: {},
-  // Per-vertex smoothing radius for non-IX chain bends. Illustrator-style:
-  // the operator drops a dot on a bent chain vertex and drags away from
-  // it to fillet the bend. Storage:
-  //   vertexSmoothing[chainIdx][vertexIdx] = R (meters)
-  // chainIdx = index in centerlineData.streets; vertexIdx = index in that
-  // chain's points array. Keyed by *index* rather than world-coords because
-  // chain points are stable for a given chain (the SurveyorPanel rewires
-  // the array on insert/split and would invalidate spatial keys anyway —
-  // these overrides clear when that happens). IX vertices (segment
-  // boundaries) are excluded; their corner authoring lives in
-  // cornerCornerRadiusOverrides.
-  vertexSmoothing: {},
   // Transient UI mode — when true, the Corner-edit handles surface in the
   // 3D scene. Not persisted (operators don't want a Look to load in edit
   // mode); toggled from the Streets > Corners subsection in Panel.
@@ -503,25 +491,6 @@ const useCartographStore = create((set, get) => ({
         next[key] = Math.max(0, Math.min(50, +r))
       }
       return { cornerCornerRadiusOverrides: next }
-    })
-    get()._saveDesignDebounced()
-  },
-  // Write a per-vertex smoothing radius. Pass null/undefined for r to
-  // clear (revert that vertex to a sharp bend). Clamped to [0, 50] m to
-  // keep authoring sane and avoid pathological geometry.
-  setVertexSmoothing: (chainIdx, vertexIdx, r) => {
-    if (chainIdx == null || vertexIdx == null) return
-    set(s => {
-      const next = { ...(s.vertexSmoothing || {}) }
-      const chainMap = { ...(next[chainIdx] || {}) }
-      if (r == null || !Number.isFinite(r) || r <= 0) {
-        delete chainMap[vertexIdx]
-      } else {
-        chainMap[vertexIdx] = Math.max(0, Math.min(50, +r))
-      }
-      if (Object.keys(chainMap).length === 0) delete next[chainIdx]
-      else next[chainIdx] = chainMap
-      return { vertexSmoothing: next }
     })
     get()._saveDesignDebounced()
   },
@@ -949,7 +918,6 @@ const useCartographStore = create((set, get) => ({
         blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
         cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
-        vertexSmoothing: (design.vertexSmoothing && typeof design.vertexSmoothing === 'object') ? design.vertexSmoothing : {},
         materialColors: design.materialColors || {},
         materialPhysics: design.materialPhysics || {},
         buildingPalette: design.buildingPalette || get().buildingPalette,
@@ -1379,7 +1347,6 @@ const useCartographStore = create((set, get) => ({
         blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
         cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
-        vertexSmoothing: (design.vertexSmoothing && typeof design.vertexSmoothing === 'object') ? design.vertexSmoothing : {},
         materialColors: design.materialColors || {},
         materialPhysics: design.materialPhysics || {},
         buildingPalette: design.buildingPalette || get().buildingPalette,
@@ -1489,7 +1456,6 @@ const useCartographStore = create((set, get) => ({
           cornerRadiusScale: s.cornerRadiusScale,
           cornerRadiusOverrides: s.cornerRadiusOverrides,
           cornerCornerRadiusOverrides: s.cornerCornerRadiusOverrides,
-          vertexSmoothing: s.vertexSmoothing,
           curbWidth: s.curbWidth,
           labels: s.labels,
           blockCustoms: s.blockCustoms,

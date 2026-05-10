@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-09 (V2 on LS landed; live overlay + drag-perf done; next: block-edge-owned ribbons per NOTES.md PM-2)
+Last updated: 2026-05-09 (V2 on LS landed; live overlay + drag-perf done; in-line vertex smoothing removed in favor of Survey-time arc smoothing; next: block-edge-owned ribbons per NOTES.md PM-2)
 
 ## 2026-05-09 — Block-edge-owned ribbons (NEXT — load-bearing)
 
@@ -318,43 +318,40 @@ math, no R lookup, no Boolean-subtract bands/curb. Files:
 
 ---
 
-## Per-vertex smoothing UX rethink (queued 2026-05-08)
+## Survey-time arc smoothing (replaces per-vertex Measure smoothing 2026-05-09)
 
-The v0 implementation works geometrically — purple dots on the obtuse
-side of each non-IX bend, drag radial = R, tap to clear — but the visual
-language doesn't read well. User feedback: "vestigial concentric rings,"
-the feature is "working but I really don't like it." Idle dots already
-clutter at LS density; the preview ring around each authored bend
-stacked further. Stripped both rings and added tap-to-reset as a stop-gap.
+In-line per-vertex smoothing in Measure (purple dots on non-IX
+bends, drag-to-fillet R) was removed. The previous implementation —
+`vertexSmoothing[chainIdx][vertexIdx]`, `filletChainVertex`,
+`applyChainSmoothing`, `computeSmoothLayout`, `setVertexSmoothing`,
+the smoothing dots in `CornerEditHandles` — applied a render-time
+fillet to the centerline before per-segment ribbon emission. Wrong
+layer: a smoothed centerline is a Survey-time *shape* concern, not
+a Measure-time *width* concern.
 
-Open questions for the rethink:
-- Should idle dots even render? Maybe surface them only on chain hover.
-- Is per-vertex authoring the right granularity? Maybe per-chain
-  smoothing radius (one slider per chain) covers ~80% of intent.
-- Drag-radial is conceptually fine but visually meaningless — needs
-  some kind of in-scene preview that doesn't read as a fingerprint.
-- Could fold into an "edit chain shape" mode that surfaces chain points
-  + bend dots together (Illustrator pen-tool framing).
+The right place is Survey: when an operator authors a chain that
+should be a smooth arc (a curving residential street, a roundabout
+approach), the centerline should *be* a smooth arc — sampled to a
+dense polyline at Survey time, persisted as `street.points`. After
+that, every downstream pass (V2 emission, IX corner round-corners,
+bake) gets correct geometry from the source data, no per-vertex
+fillet pass needed.
 
-Files touched: `buildBlockGeometryV2.js` (`filletChainVertex`,
-`applyChainSmoothing`), `CornerEditHandles.jsx` (`computeSmoothLayout`
-+ render), `useCartographStore.js` (`vertexSmoothing` +
-`setVertexSmoothing`). Geometry side is correct and reusable; the
-rethink is purely UX.
+Survey already has `street.smooth: 0..1` + `subdividePolyline`
+(Catmull-Rom) wired through `streetProfiles.js`. Two things to
+make this complete:
 
----
+1. **Bake the smoothed sample into `street.points`** instead of
+   sampling at render time — so the persisted shape is what every
+   consumer sees.
+2. **Per-vertex authoring on the Survey side** if the operator needs
+   it (Illustrator pen tool model: drag a chain vertex into an arc
+   handle). Optional polish; the per-chain `smooth` slider covers
+   ~80% of intent.
 
-## Auto-smooth threshold for near-straight chain bends (queued 2026-05-08)
-
-Per-vertex smoothing dots ship with manual control: the operator picks
-which bends to fillet. Add an auto-smooth threshold so any non-IX bend
-with interior angle > N° (proposal: ~170°) gets a small implicit fillet
-without requiring an authored radius. Implementation idea: in
-`buildBlockGeometryV2.js`'s `applyChainSmoothing`, fall through to a
-small default R (perhaps tied to the band's outer offset) when the
-turn is below threshold. Look-level toggle so operators can opt out.
-User opted to skip this for now — manual per-vertex authoring is
-sufficient for the cases that matter to them.
+When this lands, near-straight bends get smooth handling for free
+(the auto-smooth-threshold proposal also retired with this entry —
+a good Survey representation makes the threshold unnecessary).
 
 ---
 

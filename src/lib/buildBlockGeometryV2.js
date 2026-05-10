@@ -426,7 +426,7 @@ function arcReplaceVertex(prev, cur, next, R, theta) {
   // (e.g., from a maxed cornerRadiusScale slider) doesn't overshoot the
   // segment endpoints and produce a degenerate ring. When clamped,
   // recompute the effective R = clampedInset * tanH so the arc still
-  // closes tangentially. Mirrors filletChainVertex's clamp.
+  // closes tangentially.
   let inset = R / tanH
   const maxInset = Math.min(
     Math.hypot(cur[0] - prev[0], cur[1] - prev[1]),
@@ -453,77 +453,6 @@ function arcReplaceVertex(prev, cur, next, R, theta) {
   }
   out.push(tB)
   return out
-}
-
-// Fillet a chain bend at `cur` with radius R. Unlike arcReplaceVertex
-// (which assumes block-convex right turns and is used for IX corners),
-// this handles BOTH turn directions — the centerline can bend either way
-// and the fillet should follow. Tangent inset is capped at 49% of the
-// shorter adjacent segment so the arc never overshoots into the next
-// vertex; if R is too large, the actual arc radius is reduced to fit.
-// Returns an array of points that replace `cur`. Returns [cur] for
-// near-collinear vertices (no usable fillet).
-function filletChainVertex(prev, cur, next, R) {
-  const inDir = unit([cur[0] - prev[0], cur[1] - prev[1]])
-  const outDir = unit([next[0] - cur[0], next[1] - cur[1]])
-  const cross = inDir[0] * outDir[1] - inDir[1] * outDir[0]
-  if (Math.abs(cross) < 1e-4) return [cur]
-  const dot = inDir[0] * outDir[0] + inDir[1] * outDir[1]
-  const turn = Math.atan2(cross, dot)   // signed deflection ∈ (-π, π)
-  const tanH = Math.tan(Math.abs(turn) / 2)
-  if (tanH <= 1e-6) return [cur]
-  let inset = R * tanH
-  const maxInset = Math.min(
-    Math.hypot(cur[0] - prev[0], cur[1] - prev[1]),
-    Math.hypot(next[0] - cur[0], next[1] - cur[1]),
-  ) * 0.49
-  let actualR = R
-  if (inset > maxInset) { inset = maxInset; actualR = inset / tanH }
-  const T_in  = [cur[0] - inset * inDir[0],  cur[1] - inset * inDir[1]]
-  const T_out = [cur[0] + inset * outDir[0], cur[1] + inset * outDir[1]]
-  // Inside of the turn: left of inDir for left turns (cross > 0),
-  // right of inDir for right turns (cross < 0).
-  const sign = cross > 0 ? +1 : -1
-  const normal = [-inDir[1] * sign, inDir[0] * sign]
-  const center = [T_in[0] + actualR * normal[0], T_in[1] + actualR * normal[1]]
-  const a1 = Math.atan2(T_in[1]  - center[1], T_in[0]  - center[0])
-  const a2 = Math.atan2(T_out[1] - center[1], T_out[0] - center[0])
-  let da = a2 - a1
-  if (da > Math.PI) da -= 2 * Math.PI
-  if (da < -Math.PI) da += 2 * Math.PI
-  const out = [T_in]
-  for (let k = 1; k < ARC_N; k++) {
-    const a = a1 + (da * k / ARC_N)
-    out.push([center[0] + actualR * Math.cos(a), center[1] + actualR * Math.sin(a)])
-  }
-  out.push(T_out)
-  return out
-}
-
-// Apply per-vertex smoothing to a chain's points. Walks vertices 1..n-2
-// and replaces any with a configured radius by an arc fillet. Endpoints
-// (which are either chain ends or IX boundaries owned by the segment
-// loop's caller) are NEVER touched. `vertexIndexAt(i)` maps a local
-// segment-vertex index to the chain-vertex index used for the override
-// lookup. Returns the (possibly resampled) points array; if no overrides
-// applied, returns `pts` unchanged.
-function applyChainSmoothing(pts, smoothingForVertex) {
-  const n = pts.length
-  if (n < 3) return pts
-  let any = false
-  const out = [pts[0]]
-  for (let i = 1; i < n - 1; i++) {
-    const R = smoothingForVertex(i)
-    if (Number.isFinite(R) && R > 0.01) {
-      const arc = filletChainVertex(pts[i - 1], pts[i], pts[i + 1], R)
-      for (const p of arc) out.push(p)
-      if (arc.length !== 1) any = true
-    } else {
-      out.push(pts[i])
-    }
-  }
-  out.push(pts[n - 1])
-  return any ? out : pts
 }
 
 function applyRoundCornersToRing(ring, corners, scale = 1) {
@@ -767,7 +696,7 @@ function roundCapHalfAnnulus(center, T_out, dInner, dOuter) {
 export function buildBlockGeometryV2(ribbons, opts = {}) {
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
-    curbWidth = CURB_WIDTH, blockCustoms = null, vertexSmoothing = null,
+    curbWidth = CURB_WIDTH, blockCustoms = null,
     blockLandUse = null } = opts
   const streets = ribbons?.streets || []
   const intersections = ribbons?.intersections || []
@@ -825,18 +754,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 
     for (let segOrd = 0; segOrd < segments.length; segOrd++) {
       const seg = segments[segOrd]
-      const rawSegPts = pts.slice(seg.start, seg.end + 1)
-      // Per-vertex smoothing — fillet any non-IX interior bend with a
-      // recorded radius. IX vertices (segment boundaries) are excluded
-      // from the smoothing pass: smoothing ops there belong to
-      // applyRoundCornersToRing on the asphalt void. After smoothing
-      // we recompute perps because the resampled point set has new
-      // tangent directions at the inserted arc points.
-      const segChainMap = vertexSmoothing?.[chainIdx] || null
-      const segPts = segChainMap
-        ? applyChainSmoothing(rawSegPts, (i) => segChainMap[seg.start + i])
-        : rawSegPts
-      const segPerps = (segPts === rawSegPts) ? perps.slice(seg.start, seg.end + 1) : computePerps(segPts)
+      const segPts = pts.slice(seg.start, seg.end + 1)
+      const segPerps = perps.slice(seg.start, seg.end + 1)
       const segLen = segPts.length
       if (segLen < 2) continue
 
@@ -1107,7 +1026,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 // Use this for the SELECTED chain during interactive drag, where the
 // operator needs the bands to follow handles in real time. The full V2
 // pass is still authoritative on release.
-export function buildChainBandsLive(chain, blockCustomsForChain, vertexSmoothingForChain, opts = {}) {
+export function buildChainBandsLive(chain, blockCustomsForChain, opts = {}) {
   const cw = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
   const out = { asphaltRings: [], treelawnRings: [], sidewalkRings: [] }
   if (!chain || chain.disabled) return out
@@ -1118,12 +1037,8 @@ export function buildChainBandsLive(chain, blockCustomsForChain, vertexSmoothing
   const segments = naturalSegments(chain)
   for (let segOrd = 0; segOrd < segments.length; segOrd++) {
     const seg = segments[segOrd]
-    const rawSegPts = pts.slice(seg.start, seg.end + 1)
-    const segChainMap = vertexSmoothingForChain || null
-    const segPts = segChainMap
-      ? applyChainSmoothing(rawSegPts, (i) => segChainMap[seg.start + i])
-      : rawSegPts
-    const segPerps = (segPts === rawSegPts) ? perps.slice(seg.start, seg.end + 1) : computePerps(segPts)
+    const segPts = pts.slice(seg.start, seg.end + 1)
+    const segPerps = perps.slice(seg.start, seg.end + 1)
     if (segPts.length < 2) continue
     const effL = (blockCustomsForChain?.[segOrd]?.left)  || m.left  || {}
     const effR = (blockCustomsForChain?.[segOrd]?.right) || m.right || {}

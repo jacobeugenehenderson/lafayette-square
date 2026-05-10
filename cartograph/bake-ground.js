@@ -269,7 +269,6 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
     cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
     cornerCornerRadiusOverrides: (design.cornerCornerRadiusOverrides && typeof design.cornerCornerRadiusOverrides === 'object') ? design.cornerCornerRadiusOverrides : {},
     blockCustoms:    design.blockCustoms    || null,
-    vertexSmoothing: design.vertexSmoothing || null,
     blockLandUse:    design.blockLandUse    || null,
     curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH,
   })

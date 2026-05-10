@@ -166,7 +166,6 @@ export default function BlockGeometryV2Debug({
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
   const blockLandUse              = useCartographStore(s => s.blockLandUse)
-  const vertexSmoothing           = useCartographStore(s => s.vertexSmoothing)
   const layerColors               = useCartographStore(s => s.layerColors)
   const luColors                  = useCartographStore(s => s.luColors)
   // Per-layer visibility — Designer panel writes `false` to hide. Same
@@ -219,7 +218,7 @@ export default function BlockGeometryV2Debug({
   // everything else stays cached at last V2 output.
   const v2DebounceMs = 250
   const [debouncedInputs, setDebouncedInputs] = useState({
-    blockCustoms, vertexSmoothing, cornerRadiusScale,
+    blockCustoms, cornerRadiusScale,
     cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse,
   })
   const debounceRef = useRef(null)
@@ -228,7 +227,7 @@ export default function BlockGeometryV2Debug({
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null
       setDebouncedInputs({
-        blockCustoms, vertexSmoothing, cornerRadiusScale,
+        blockCustoms, cornerRadiusScale,
         cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse,
       })
     }, v2DebounceMs)
@@ -241,7 +240,7 @@ export default function BlockGeometryV2Debug({
     // input. On selection change the snapshot picks up whatever
     // blockCustoms looks like at that moment, including the just-edited
     // chain's customs.
-  }, [selectedStreet, vertexSmoothing, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse])
+  }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse])
 
   const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, cornerAsphaltPlugs, cornerSidewalkPads, byChain, corners } = useMemo(() => {
     const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], cornerAsphaltPlugs: [], cornerSidewalkPads: [], byChain: [], corners: [] }
@@ -322,10 +321,9 @@ export default function BlockGeometryV2Debug({
     return buildChainBandsLive(
       chain,
       blockCustoms?.[selectedStreet],
-      vertexSmoothing?.[selectedStreet],
       { curbWidth }
     )
-  }, [selectedStreet, liveRibbons, blockCustoms, vertexSmoothing, curbWidth])
+  }, [selectedStreet, liveRibbons, blockCustoms, curbWidth])
 
   // Per-chain BufferGeometries split into two passes for drag perf:
   //
