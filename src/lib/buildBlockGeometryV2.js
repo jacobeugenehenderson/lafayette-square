@@ -883,6 +883,13 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       asphaltRings:  [],
       treelawnRings: [],
       sidewalkRings: [],
+      // D.3b.1: chain-endpoint round quarter caps live in their own
+      // arrays so a future renderer/consumer swap (D.3c) can drop the
+      // per-segment band consumer without taking dead-end caps with it.
+      // Bake + Designer concatenate band + cap rings into the same
+      // material groups — visual output is identical to pre-split.
+      treelawnCapRings: [],
+      sidewalkCapRings: [],
     })
   }
 
@@ -1010,8 +1017,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         if (eff.terminal !== 'sidewalk') continue
         const tl = eff.treelawn || 0
         const sw = eff.sidewalk || 0
-        if (tl > 0) pushCcw(entry.treelawnRings, quarterCap(endpoint, T_out, sideSign, hw + cw, hw + cw + tl))
-        if (sw > 0) pushCcw(entry.sidewalkRings, quarterCap(endpoint, T_out, sideSign, hw + cw + tl, hw + cw + tl + sw))
+        if (tl > 0) pushCcw(entry.treelawnCapRings, quarterCap(endpoint, T_out, sideSign, hw + cw, hw + cw + tl))
+        if (sw > 0) pushCcw(entry.sidewalkCapRings, quarterCap(endpoint, T_out, sideSign, hw + cw + tl, hw + cw + tl + sw))
       }
     }
     if (capEnd === 'round' && n >= 2) {
@@ -1144,7 +1151,9 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     ...asphaltRounded,
     ...curbBands,
     ...byChain.flatMap(c => c?.treelawnRings || []),
+    ...byChain.flatMap(c => c?.treelawnCapRings || []),
     ...byChain.flatMap(c => c?.sidewalkRings || []),
+    ...byChain.flatMap(c => c?.sidewalkCapRings || []),
     ...cornerSidewalkPads,
   ])
   let blockFill = []

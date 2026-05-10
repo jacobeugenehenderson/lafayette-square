@@ -2,7 +2,7 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1 split byChain band/cap rings is next)
+Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1 byChain band/cap split shipped; D.3b.2 per-segment customs is next)
 
 ## 2026-05-10 EOD-2 — Session-end pin (read first; supersedes the EOD pin below for D.3 plan)
 
@@ -115,12 +115,13 @@ rules." Resolutions 2026-05-07 + Default-R rule sit alongside.
      not consumed by the renderer; bands DON'T yet extend to sharp
      block corners. Caveat: per-segment customs collapse to first
      segOrd's customs.
-   - **D.3b.1 — pending. Split `byChain` band rings vs cap rings.**
-     `emitQuarterCaps` currently pushes chain-endpoint round caps
-     into `byChain.{treelawn,sidewalk}Rings` alongside per-segment
-     bands. Move them to dedicated `byChain.{treelawn,sidewalk}CapRings`
-     so a later renderer swap can drop band consumption without
-     dropping caps. Pure refactor, ~30 LOC, no visual change.
+   - **D.3b.1 ✅ Split `byChain` band rings vs cap rings.**
+     `emitQuarterCaps` now writes chain-endpoint round caps into
+     dedicated `byChain.{treelawn,sidewalk}CapRings`. Bake
+     (`bake-ground.js`) and Designer (`BlockGeometryV2Debug.jsx`)
+     concatenate band + cap rings into the same material groups, so
+     visual output is identical to pre-split. A later renderer swap
+     (D.3c) can drop band consumption without taking caps.
      **Visible-bug coverage:** none (foundation).
    - **D.3b.2 — pending. Per-segment customs within a frontage.**
      Replace D.3a's first-segOrd-customs caveat with a piecewise

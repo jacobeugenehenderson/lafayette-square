@@ -307,7 +307,9 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
     const asphaltKey = HIGHWAY_CLASSES.has(cls) ? 'highway' : 'asphalt'
     pushClipperRings(asphaltKey,  c.asphaltRings)
     pushClipperRings('treelawn',  c.treelawnRings)
+    pushClipperRings('treelawn',  c.treelawnCapRings)
     pushClipperRings('sidewalk',  c.sidewalkRings)
+    pushClipperRings('sidewalk',  c.sidewalkCapRings)
   }
   pushClipperRings('asphalt',  v2.cornerAsphaltPlugs)
   pushClipperRings('sidewalk', v2.cornerSidewalkPads)

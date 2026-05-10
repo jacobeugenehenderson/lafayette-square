@@ -346,8 +346,13 @@ export default function BlockGeometryV2Debug({
       if (!entry) continue
       if (entry.chainIdx === selectedStreet) continue
       const ag = entry.asphaltRings.length  ? ringsToFlatGeo(entry.asphaltRings,  0.04, true) : null
-      const tg = entry.treelawnRings.length ? ringsToFlatGeo(entry.treelawnRings, 0.02, true) : null
-      const sg = entry.sidewalkRings.length ? ringsToFlatGeo(entry.sidewalkRings, 0.03, true) : null
+      // D.3b.1: chain-endpoint round caps live in {treelawn,sidewalk}CapRings
+      // (split from per-segment band rings). Concat for triangulation so
+      // the visual is identical to pre-split.
+      const tlAll = (entry.treelawnRings || []).concat(entry.treelawnCapRings || [])
+      const swAll = (entry.sidewalkRings || []).concat(entry.sidewalkCapRings || [])
+      const tg = tlAll.length ? ringsToFlatGeo(tlAll, 0.02, true) : null
+      const sg = swAll.length ? ringsToFlatGeo(swAll, 0.03, true) : null
       if (ag || tg || sg) out.push({ chainIdx: entry.chainIdx, asphalt: ag, treelawn: tg, sidewalk: sg })
     }
     return out
