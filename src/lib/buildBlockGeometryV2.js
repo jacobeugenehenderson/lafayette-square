@@ -599,6 +599,84 @@ function adjacentBlockId(pts, perps, segStart, segEnd, sideSign, hw, blockRounde
   return null
 }
 
+// D.1 — Inverse of adjacentBlockId. For each block (ring in blockRounded),
+// identify which chain segments face it on which side, and group runs of
+// consecutive same-(blockId, side) segments within a single chain into
+// block-edges. Pure additive: foundation for D.3 per-block-edge band
+// emission. See cartograph/NOTES.md 2026-05-06 PM-2 + BACKLOG D.1.
+//
+// Output: [{ points, chainIdx, segOrds, side, blockKey, edgeOrd }]
+//   points    — chain centerline polyline spanning the merged segments
+//                (D.3 derives curb/treelawn/sidewalk offsets from this)
+//   side      — 'left' | 'right' (V1 sign convention: left = -perp)
+//   blockKey  — bbox-center key of the matched blockRounded ring
+//   edgeOrd   — sequential ordinal of this edge within its block
+//                (encounter order; D.3/D.6 may re-order to ring-walk order)
+function buildFrontageEdges(streets, blockRounded, blockCustoms) {
+  if (!streets?.length || !blockRounded?.length) return []
+  const blockKeys = blockRounded.map(blockKeyFromRing)
+  const adj = []
+  for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
+    const street = streets[chainIdx]
+    if (!street || street.disabled) continue
+    const pts = street.points
+    const m = street.measure
+    if (!pts || pts.length < 2 || !m) continue
+    const perps = computePerps(pts)
+    const segments = naturalSegments(street)
+    for (let segOrd = 0; segOrd < segments.length; segOrd++) {
+      const seg = segments[segOrd]
+      if (seg.end <= seg.start) continue
+      for (const sideKey of ['left', 'right']) {
+        const sideSign = sideKey === 'left' ? -1 : +1
+        const eff = (blockCustoms?.[chainIdx]?.[segOrd]?.[sideKey]) || m[sideKey] || {}
+        const hw = eff.pavementHW || 0
+        if (hw <= 0) continue
+        const blockId = adjacentBlockId(pts, perps, seg.start, seg.end, sideSign, hw, blockRounded)
+        if (blockId == null) continue
+        adj.push({ chainIdx, segOrd, side: sideKey, blockId, segStart: seg.start, segEnd: seg.end })
+      }
+    }
+  }
+  // Group consecutive same-(chain, side, blockId) segments into runs.
+  const runs = []
+  const byChainSide = new Map()
+  for (const a of adj) {
+    const k = `${a.chainIdx}|${a.side}`
+    let list = byChainSide.get(k)
+    if (!list) { list = []; byChainSide.set(k, list) }
+    list.push(a)
+  }
+  for (const list of byChainSide.values()) {
+    list.sort((x, y) => x.segOrd - y.segOrd)
+    let run = null
+    for (const a of list) {
+      const contig = run && run.blockId === a.blockId
+        && a.segOrd === run.segOrds[run.segOrds.length - 1] + 1
+      if (contig) { run.segOrds.push(a.segOrd); run.segEnd = a.segEnd }
+      else {
+        if (run) runs.push(run)
+        run = { chainIdx: a.chainIdx, side: a.side, blockId: a.blockId,
+                segOrds: [a.segOrd], segStart: a.segStart, segEnd: a.segEnd }
+      }
+    }
+    if (run) runs.push(run)
+  }
+  runs.sort((x, y) => x.chainIdx - y.chainIdx || x.segOrds[0] - y.segOrds[0])
+  const ordCounters = new Map()
+  const out = []
+  for (const r of runs) {
+    const street = streets[r.chainIdx]
+    const points = street.points.slice(r.segStart, r.segEnd + 1)
+    const blockKey = blockKeys[r.blockId]
+    const edgeOrd = ordCounters.get(blockKey) || 0
+    ordCounters.set(blockKey, edgeOrd + 1)
+    out.push({ points, chainIdx: r.chainIdx, segOrds: r.segOrds.slice(),
+               side: r.side, blockKey, edgeOrd })
+  }
+  return out
+}
+
 // Outward polygon offset (Minkowski sum with a disc of radius `delta`).
 // Uses miter joins so the result preserves the vertex structure of the
 // input — corners that are already smooth polyline arcs (asphaltRounded)
@@ -916,6 +994,10 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   if (stencil && stencil.length >= 3) {
     blockRounded = differenceRings([stencil], asphaltRounded)
   }
+  // D.1 — frontageEdges: per-block list of (chain, side, segment-run) →
+  // block-edge. Foundation for D.3 block-edge-owned ribbon emission.
+  // Additive only; nothing in this pipeline consumes it yet.
+  const frontageEdges = buildFrontageEdges(streets, blockRounded, blockCustoms)
   const curbDilated = dilateRings(asphaltRounded, curbWidth)
   const curbBands   = differenceRings(curbDilated, asphaltRounded)
 
@@ -1045,6 +1127,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     cornerSidewalkPads,   // concrete wedges between rounded curb and chain ped-zone outer edges
     byChain,
     corners: allCorners,
+    frontageEdges,        // D.1: per-block-edge runs of chain segments (foundation; not yet consumed)
   }
 }
 
