@@ -4,6 +4,76 @@
 
 Last updated: 2026-05-10 EOD-2 (D.3a shipped; bundled D.3b+D.3c attempted and rolled back uncommitted; D.3 re-planned as five sub-phases — D.3b.1/2/3/4 shipped; D.3c production swap is next)
 
+## 2026-05-10 — Loop streets (L.0 through L.6, in flight)
+
+L.0 spec locked in `cartograph/NOTES.md` 2026-05-10 "Loop streets: L.0
+architecture lock" — read that BEFORE coding. Per
+`feedback_notes_md_holds_architecture`, NOTES holds the algorithm; this
+entry tracks status.
+
+**The problem in one paragraph:** `LOOP_STREET_NAMES = ['Benton Place',
+'Mackay Place']` in `cartograph/derive.js:1297` is hardcoded, wrong
+(Mackay isn't a loop street — Waverly is), and dead in production
+(post-V2 migration the V1 loop-cut/median-creation paths in derive.js
+land in `map.json` which the V2 bake doesn't read for blocks). Result:
+loop streets render with no special handling today — Benton's interior
+falls through to the random-LU palette, Waverly has no median concept
+at all. Three loop topologies need first-class support: Type A teardrop
+(stem + closed body, Benton), Type B couplet (parallel one-way
+carriageways enclosing a face, Waverly), Type C pure ring (none yet).
+
+**Phases:**
+
+1. **L.0 — Spec lock** ✅ (this commit). Definition, topologies A/B/C,
+   per-role cross-section table, `overlay.loops` data shape (canonical
+   list + denormalized per-chain hint), auto-detect + override semantics,
+   smooth-preview bundled scope, ribbon-control inner/outer scope. See
+   NOTES.md.
+2. **L.1 — Toy fixtures.** Type A: stem off VW3, body in SE quadrant.
+   Type B: couplet replacing HW4 + parallel chain. Edits land in
+   `cartograph/data/toy/raw/centerlines.json` (the toy "OSM" equivalent).
+   Both topologies committed before any emitter work.
+3. **L.2 — V2 emitter + smooth bake-into-points.** `buildBlockGeometryV2`
+   honors `chain.loop.role` for asymmetric ped-zone emission (`body` inner =
+   no sidewalk; `cut-thru` = bare profile). Median emerges as park-LU
+   enclosed face via `stencil − asphalt`. `derive.js` calls
+   `subdividePolyline` before emitting `ribbons.json` so persisted points
+   are smoothed (closes BACKLOG Phase 7's open ½-hour task). Producer
+   change only — no UI yet. Verify on toy first, then on LS.
+4. **L.3 — Survey UI.** Loop-streets section in SurveyorPanel (detected +
+   authored, with thumbnails + member chains + enable toggle). Marquee
+   "mark as loop" override path. Live smooth-preview overlay in
+   SurveyorOverlay (faint solid subdivided polyline under dashed control
+   polyline whenever `smooth > 0`).
+5. **L.4 — Measure inner/outer.** When chain `loop.role ∈ {body, outer}`,
+   swap "Left / Right" labels for "Outer / Inner" (resolved from role +
+   chain orientation relative to loop centroid). Default profiles match
+   cross-section table.
+6. **L.5 — LS migration + `*Place` audit.** Mark Benton + Waverly in
+   `lafayette-square` overlay.json. Run `detectLoops` over the 12
+   `*Place` streets (Oregon, Henrietta, Vail, Preston, Simpson,
+   Nicholson, Whittemore, Kennett, Albion, Park, Mackay, Waverly),
+   surface candidates for operator confirmation. Per Jacob: most are
+   "places by dint of alleys + walkways" not real loops; the audit is
+   to *check, not assume*.
+7. **L.6 — Cleanup.** Delete `LOOP_STREET_NAMES` + dead V1 loop-cut /
+   median-creation in `derive.js` (8 references). Migrate spec from
+   NOTES + BACKLOG into `FEATURES.md` (new "Loop streets" section) +
+   `ARCHITECTURE.md` (data flow note). Update memory.
+
+**Sequencing rules:**
+
+- Toy is the iteration surface; LS is the verification target. Both ship
+  in the same phase. Per `feedback_no_parallel_pipeline_for_scenes`, no
+  scene-specific branches — toy and LS share the same emitter code path.
+- Per `feedback_d3_bundling_failure_modes`, keep producer changes (V2
+  emitter) separately commit-able from consumer changes (renderer, UI).
+  Do not bundle L.2 producer work with L.3 UI work in one commit.
+- Per `feedback_phase_scope_explicitness`, each phase's commit message
+  states which user-visible symptoms it does and doesn't fix.
+
+---
+
 ## 2026-05-10 EOD-2 — Session-end pin (read first; supersedes the EOD pin below for D.3 plan)
 
 A second session today. Three clean shipped commits on

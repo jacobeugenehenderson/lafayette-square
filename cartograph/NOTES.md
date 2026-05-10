@@ -6,6 +6,175 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-10 — Loop streets: L.0 architecture lock
+
+In-flight architecture for the loop-street effort (BACKLOG entry "Loop
+streets — L.0 through L.6"). Read this BEFORE touching anything related
+to Benton Place, Waverly Place, `LOOP_STREET_NAMES`, or the V2 emitter's
+treatment of closed-body chains. Per `feedback_notes_md_holds_architecture`,
+this is the canonical algorithm description; the BACKLOG entry just
+tracks status.
+
+### Why this exists
+
+The V1 codebase identifies loop streets via
+`LOOP_STREET_NAMES = new Set(['Benton Place', 'Mackay Place'])` in
+`cartograph/derive.js:1297`, referenced in 8 places (block-cut skip,
+dead-end skip, frontage-gap patch, median creation, SPIKE skip,
+sidewalk skip, alley/ROW skip). Three problems compound:
+
+1. **Mackay is misclassified.** It is just a normal street; the constant
+   is wrong on top of being hardcoded.
+2. **Waverly Place is missing.** Waverly is a real loop street with a
+   completely different OSM topology than Benton (divided one-way
+   couplet, not stem+closed-body) and the V1 code path can't represent
+   it at all.
+3. **All of this V1 code is dead in production.** Post the V2 migration
+   (commits `1fb456f` / `053f13b`), block geometry comes from
+   `buildBlockGeometryV2` reading `ribbons.streets`. `derive.js`'s
+   `allBlockPaths` / `blockMeta` / `isMedian` land in `map.json`, which
+   `bake-ground.js` reads only for sub-block overlays — not for the
+   loop-cut or median-creation logic. Whatever Benton or Waverly looks
+   like in production today is whatever V2 falls through to with no
+   loop-awareness.
+
+### Definition
+
+A **loop street** is a connected set of same-named street chains in
+OSM that bound an enclosed face the operator wants painted as median
+(green, no sidewalk). The set is identified by a `loopId`; each
+member chain carries a `role` describing how it participates.
+
+A single `chain.isClosed` test is insufficient — Waverly's loop body
+exists only as the face *between* its two carriageways, not as any
+single closed chain. The real definition is **topological**: a
+connected same-named subgraph that encloses a face we want as median.
+
+### Topologies in initial scope
+
+- **Type A "Teardrop"** (Benton Place pattern). Members: 1 stem chain
+  + 1 closed body chain, sharing an endpoint at the loop joint.
+  Auto-detect: a chain `c` where `points[0] == points[points.length-1]`
+  AND another chain shares its name AND has an endpoint coincident
+  with `c`'s closure point.
+- **Type B "Couplet"** (Waverly Place pattern). Members: ≥2 parallel
+  one-way carriageways meeting at endpoints, optionally with cross
+  connectors. Auto-detect: ≥2 chains with the same name, all
+  `oneway: true`, sharing endpoints to form a planar cycle. Connectors
+  are flagged `cut-thru` (bare-street profile through the median) or
+  `connector` (ordinary residential piece grouped only for naming).
+- **Type C "Pure ring"** (none observed in LS yet) — closed body, no
+  stem. Same body geometry as Type A without the stem.
+
+### Per-role visual cross-section
+
+| Role | Outer side | Inner side |
+|---|---|---|
+| `body` (Type A closed loop) | lawn + sidewalk + treelawn + curb + asphalt (full ROW) | asphalt + curb + treelawn (no sidewalk; treelawn flows into median continuously) |
+| `stem` (Type A entering chain) | normal residential ROW both sides | normal residential ROW both sides |
+| `outer` (Type B carriageway) | full residential ROW (treelawn + sidewalk) | full residential ROW (treelawn + sidewalk) — *unchanged from a normal street* |
+| `cut-thru` (Type B bare cross-street through median) | curb + asphalt only (no treelawn, no sidewalk) | curb + asphalt only |
+| `connector` (same-name chain that's just a normal piece of street) | full ROW | full ROW — flagged for grouping only |
+
+The median itself is **emergent**: `stencil − asphalt` produces a
+positive block, painted `lu='park'` whenever it's enclosed by chains
+belonging to the same `loopId`. There is no separate "median polygon"
+emission — the rounded-block-clip model already produces the face.
+
+### Data shape
+
+`overlay.loops` is canonical; `chains[].loop` is denormalized for
+hot-path emitter reads. The writer keeps the two in lockstep on save;
+the reader trusts whichever it consults.
+
+```jsonc
+// overlay.json (per-scene)
+{
+  "loops": [
+    { "id": "loop-benton-place", "name": "Benton Place", "type": "teardrop",
+      "members": [
+        { "chainId": "benton-place-1", "role": "body" },
+        { "chainId": "benton-place-0", "role": "stem" }
+      ] },
+    { "id": "loop-waverly-place", "name": "Waverly Place", "type": "couplet",
+      "members": [
+        { "chainId": "waverly-place-0", "role": "outer" },
+        { "chainId": "waverly-place-1", "role": "outer" },
+        { "chainId": "waverly-place-2", "role": "outer" },
+        { "chainId": "waverly-place-3", "role": "cut-thru" }
+      ] }
+  ],
+  "chains": {
+    "benton-place-1": { "loop": { "loopId": "loop-benton-place", "role": "body" } /* ... */ }
+  }
+}
+```
+
+### Auto-detect + override
+
+Pipeline runs `detectLoops(skeleton)` after chain emission. Output
+candidates by the topology rules above. Survey panel surfaces a
+"Loop streets" section: each detected loop is a card with thumbnail,
+type label, member chain list, enable/disable toggle. Operator can
+also "Mark selected chains as loop" from a marquee selection (override
+path). `overlay.loops` writes the operator's final intent;
+auto-detect output is merged at load time but operator wins on conflict.
+
+### Smooth-preview (bundled scope)
+
+Loop bodies (especially Benton's 29 polyline points) read as faceted
+polygons today because smoothing happens at render time only. To land:
+
+1. **Survey-time bake into `street.points`**: `derive.js` calls
+   `subdividePolyline(pts, smooth)` when emitting `ribbons.json` so
+   the persisted points are smoothed (BACKLOG Phase 7's open ½-hour
+   task; necessary because V2 reads only `ribbons.json`).
+2. **Live preview overlay** in SurveyorOverlay: when a chain has
+   `smooth > 0`, render the subdivided polyline as a faint solid
+   line *under* the original dashed control polyline. No toggle —
+   always on when `smooth > 0`. Drag the smooth slider, see the curve
+   update in place.
+
+### Ribbon controls — inner/outer authoring
+
+Measure mode on a chain whose `loop.role ∈ {body, outer}` swaps the
+"Left / Right" labels for "Outer / Inner" (resolved from `role` +
+chain orientation relative to the loop centroid). Default profiles
+for inner side reflect the cross-section table above. Everything else
+(per-segment customs, treelawn/sidewalk widths) works as today.
+
+### Phasing (matches BACKLOG entry)
+
+L.0 (this spec) → L.1 toy fixtures (Type A + Type B in
+`cartograph/data/toy/raw/centerlines.json` — the toy "OSM"
+equivalent) → L.2 V2 emitter (asymmetric ped zones for body chains,
+bare profile for cut-thru, median-face park-LU classification) +
+smooth bake-into-points → L.3 Survey UI (loop card + auto-detect +
+smooth-preview overlay) → L.4 Measure inner/outer relabel → L.5 LS
+migration (Benton + Waverly) + sweep of the 12 `*Place` streets to
+catch hidden loops → L.6 cleanup (`LOOP_STREET_NAMES` deletion, dead
+V1 paths in `derive.js`, docs migration BACKLOG/NOTES → FEATURES +
+ARCHITECTURE).
+
+Toy is the iteration surface (per
+`feedback_no_parallel_pipeline_for_scenes` and FEATURES.md "Toy is
+the canonical pipeline test rig"); LS is the verification target.
+Both ship in the same phase — toy fixtures stay committed as
+regression coverage. Per `feedback_d3_bundling_failure_modes`,
+keep producer changes (V2 emitter) separately commit-able from
+consumer changes (renderer, UI).
+
+### Out of scope for this effort
+
+- Other neighborhoods' loop topologies — anything beyond Type A/B/C
+  surfaces in a future deployment.
+- Roundabouts, traffic circles, cul-de-sac bulbs — these are not loop
+  streets; they're single-chain features with cap geometry.
+- Cosmetic tuning of the median's `lu='park'` palette — that's a Stage
+  Surfaces concern, orthogonal to this work.
+
+---
+
 ## 2026-05-10 (EOD-2) — D.1/D.2/D.3a shipped; bundled D.3b+D.3c attempt rolled back; D.3 re-planned
 
 Picking up from the 2026-05-10 EOD pin. Three small additive commits
