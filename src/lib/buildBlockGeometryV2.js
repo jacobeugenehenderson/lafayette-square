@@ -998,10 +998,22 @@ function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blo
 
   // Clip to blockRounded so bands don't bleed past the rounded block
   // silhouette at corners where round-corners cut into the sharp polygon.
+  // Each fe lives entirely inside its OWN block (bands are inset inward
+  // from the block edge), so we only need to clip against that one
+  // block ring — not the global blockRounded (~80 rings on LS). Per-
+  // block lookup turns ~500 Clipper ops × 80-ring clip into ~500 Clipper
+  // ops × 1-ring clip. Dominant cost in the V2 build at LS scale.
   if (blockRounded?.length) {
+    const ringByKey = new Map()
+    for (const ring of blockRounded) {
+      ringByKey.set(blockKeyFromRing(ring), ring)
+    }
     for (const fe of out) {
-      if (fe.treelawnRings.length) fe.treelawnRings = intersectRings(fe.treelawnRings, blockRounded)
-      if (fe.sidewalkRings.length) fe.sidewalkRings = intersectRings(fe.sidewalkRings, blockRounded)
+      const ring = ringByKey.get(fe.blockKey)
+      if (!ring) continue
+      const clip = [ring]
+      if (fe.treelawnRings.length) fe.treelawnRings = intersectRings(fe.treelawnRings, clip)
+      if (fe.sidewalkRings.length) fe.sidewalkRings = intersectRings(fe.sidewalkRings, clip)
     }
   }
   return { frontageBands: out, frontageCaps: [] }
@@ -1144,7 +1156,20 @@ function roundCapHalfAnnulus(center, T_out, dInner, dOuter) {
   return [...outer, ...inner.slice().reverse()]
 }
 
+// Set to true to log per-step timings each V2 build. Useful when chasing
+// performance regressions; silent by default to avoid console spam.
+const V2_PROFILE = false
+
 export function buildBlockGeometryV2(ribbons, opts = {}) {
+  const __t0 = V2_PROFILE ? performance.now() : 0
+  const __times = V2_PROFILE ? {} : null
+  const __mark = V2_PROFILE
+    ? (label) => {
+      const now = performance.now()
+      __times[label] = now - (__times.__last || __t0)
+      __times.__last = now
+    }
+    : () => {}
   const { cornerRadiusScale = 1, stencil = null,
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
     curbWidth = CURB_WIDTH, blockCustoms = null,
@@ -1175,40 +1200,50 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   }
 
   // ── Per-segment per-chain emission. Each natural segment of each
-  // chain can have its own per-side measure (when blockCustoms has an
-  // entry for it). The segment's ASPHALT rectangle uses eff.pavementHW
+  // chain can have its own per-side measure (when a block-customs
+  // override applies). The segment's ASPHALT rectangle uses eff.pavementHW
   // per side; ped-zone bands use eff.treelawn / eff.sidewalk. Asphalt
   // segments butt at IXs; clipper's union step merges them. Round caps
   // at chain endpoints get a half-disc arc baked into the segment ring.
+  //
+  // Customs are keyed by [blockKey][edgeOrd] (D.5/D.6). Resolving them
+  // requires a (chainIdx, segOrd, sideKey) → (blockKey, edgeOrd) lookup,
+  // which is itself derived from the block geometry (and therefore from
+  // the asphalt emission output). To break this circular dependency we
+  // emit twice: pass 1 uses chain defaults only (resolver = null) to
+  // establish a frontage-edge lookup; pass 2 re-emits affected chains
+  // with the resolver pointed at feLookup. blockKey is bbox-stable to
+  // width changes (see blockKeyFromRing), so pass-1 keys remain valid.
   const offsetPoly = (pts, perps, sideSign, r) =>
     pts.map((p, i) => [p[0] + perps[i][0] * sideSign * r, p[1] + perps[i][1] * sideSign * r])
-  for (const e of byChain) { if (e) { e.treelawnEdges = []; e.sidewalkEdges = [] } }
   const cw = curbWidth   // global curb width; per-side curb overrides aren't supported in V2
-  const ARC_SEGS = 16
-  const halfArc = (c, r, fromPt, toPt) => {
-    const a0 = Math.atan2(fromPt[1] - c[1], fromPt[0] - c[0])
-    const a1 = Math.atan2(toPt[1] - c[1], toPt[0] - c[0])
-    let delta = a1 - a0
-    while (delta < 0) delta += 2 * Math.PI
-    const out = []
-    for (let k = 1; k < ARC_SEGS; k++) {
-      const a = a0 + delta * (k / ARC_SEGS)
-      out.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)])
-    }
-    return out
-  }
-  for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) {
+
+  const emitChain = (chainIdx, customsResolver) => {
     const street = streets[chainIdx]
     const entry = byChain[chainIdx]
-    if (!entry) continue
+    if (!entry) return
     const pts = street.points
     const m = street.measure
-    if (!pts || pts.length < 2 || !m) continue
+    if (!pts || pts.length < 2 || !m) return
+
+    // Reset (re-entry safe — pass 2 calls this again for chains touched
+    // by customs).
+    entry.asphaltRings.length = 0
+    entry.treelawnRings.length = 0
+    entry.sidewalkRings.length = 0
+    entry.treelawnCapRings.length = 0
+    entry.sidewalkCapRings.length = 0
+    entry.treelawnEdges = []
+    entry.sidewalkEdges = []
+
     const n = pts.length
     const perps = computePerps(pts)
     const segments = naturalSegments(street)
     const capStart = street.capStart || street.capEnds?.start
     const capEnd   = street.capEnd   || street.capEnds?.end
+
+    const resolveSide = (segOrd, sideKey) =>
+      (customsResolver && customsResolver(chainIdx, segOrd, sideKey)) || m[sideKey] || {}
 
     for (let segOrd = 0; segOrd < segments.length; segOrd++) {
       const seg = segments[segOrd]
@@ -1217,12 +1252,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       const segLen = segPts.length
       if (segLen < 2) continue
 
-      // Effective per-side measure for this segment (custom override
-      // wins; otherwise chain default). Both sides resolved up-front so
-      // the asphalt rectangle gets per-side pavementHW and the ped-zone
-      // bands inherit the same hw used for their inner-edge perp.
-      const effL = (blockCustoms?.[chainIdx]?.[segOrd]?.left)  || m.left  || {}
-      const effR = (blockCustoms?.[chainIdx]?.[segOrd]?.right) || m.right || {}
+      const effL = resolveSide(segOrd, 'left')
+      const effR = resolveSide(segOrd, 'right')
       const hwL = effL.pavementHW || 0
       const hwR = effR.pavementHW || 0
 
@@ -1273,9 +1304,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     // (T_out = chain backward); flips chain.left/right → sideSign so
     // the radial bands sit on the visually correct side after the flip.
     const emitQuarterCaps = (endpoint, T_out, segIdx, t) => {
-      const segCustom = blockCustoms?.[chainIdx]?.[segIdx]
-      const effL = segCustom?.left  || m.left  || {}
-      const effR = segCustom?.right || m.right || {}
+      const effL = resolveSide(segIdx, 'left')
+      const effR = resolveSide(segIdx, 'right')
       const sides = [
         { eff: effL, sideSign: -t },
         { eff: effR, sideSign: +t },
@@ -1314,10 +1344,17 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     }
   }
 
+  // Pass 1: emit every chain with chain.measure defaults only. Customs
+  // resolver is null here; the resulting asphaltSharp + blockSharp +
+  // frontageEdges + feLookup are accurate enough that pass-1 blockKeys
+  // match the (bbox-stable) blockKeys that customs are written against.
+  for (let chainIdx = 0; chainIdx < streets.length; chainIdx++) emitChain(chainIdx, null)
+
+  __mark('perChainEmit')
   // ── Now that every per-chain per-segment ring is in byChain, build
   // the global asphalt + corner + block + curb derivatives off them.
-  const allAsphaltRings = byChain.flatMap(c => c?.asphaltRings || [])
-  const asphaltSharp = unionRings(allAsphaltRings)
+  let asphaltSharp = unionRings(byChain.flatMap(c => c?.asphaltRings || []))
+  __mark('asphaltSharpUnion')
 
   // Multi-value name map — LS has 35 names spanning 164 chain entries.
   // chainIdxByChain pairs each chain object with its index in `streets`
@@ -1341,6 +1378,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   if (stencil && stencil.length >= 3) {
     blockSharp = differenceRings([stencil], asphaltSharp)
   }
+  __mark('blockSharpDiff')
   // D.3 — Block-edge frontages (polygon-walking, per PM-2 spec).
   // For each block ring in blockSharp, walk vertices, find block corners
   // (sharp turns), and emit one frontage edge per (block, block-edge).
@@ -1351,18 +1389,56 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // Spatial index over chain segments. Drops the adjacency probe from
   // O(streets × segs × probe-steps) to O(few candidates per probe cell).
   const chainIndex = buildChainSegmentIndex(streets)
-  const frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex)
+  __mark('chainIndexBuild')
+  let frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex)
+  __mark('frontageEdges')
   // feLookup[chainIdx][segOrd][sideKey] → fe. Inverse of fe.segOrds.
-  // Used by cornersAtIx to find each leg's block-edge for D.5 customs.
-  const feLookup = {}
-  for (const fe of frontageEdges) {
-    if (!fe.segOrds?.length) continue
-    if (!feLookup[fe.chainIdx]) feLookup[fe.chainIdx] = {}
-    for (const segOrd of fe.segOrds) {
-      if (!feLookup[fe.chainIdx][segOrd]) feLookup[fe.chainIdx][segOrd] = {}
-      feLookup[fe.chainIdx][segOrd][fe.side] = fe
+  // Used by cornersAtIx to find each leg's block-edge for D.5 customs,
+  // and (during pass 2 below) by the per-chain emission resolver to map
+  // (chainIdx, segOrd, sideKey) → (blockKey, edgeOrd) custom.
+  const buildFeLookup = (fes) => {
+    const out = {}
+    for (const fe of fes) {
+      if (!fe.segOrds?.length) continue
+      if (!out[fe.chainIdx]) out[fe.chainIdx] = {}
+      for (const segOrd of fe.segOrds) {
+        if (!out[fe.chainIdx][segOrd]) out[fe.chainIdx][segOrd] = {}
+        out[fe.chainIdx][segOrd][fe.side] = fe
+      }
+    }
+    return out
+  }
+  let feLookup = buildFeLookup(frontageEdges)
+
+  // D.7a — pass 2. With pass-1's feLookup we can now resolve every
+  // (chainIdx, segOrd, sideKey) → (blockKey, edgeOrd) and pull the
+  // matching block-edge custom. Re-emit only chains that have any
+  // custom applied; rebuild asphaltSharp + blockSharp + frontageEdges
+  // + feLookup off the corrected per-chain rings. cornersAtIx (below)
+  // then reads the rebuilt feLookup so corner geometry tracks
+  // per-block-edge overrides too.
+  const chainsWithCustoms = new Set()
+  if (blockCustoms) {
+    for (const fe of frontageEdges) {
+      if (blockCustoms[fe.blockKey]?.[fe.edgeOrd]) chainsWithCustoms.add(fe.chainIdx)
     }
   }
+  if (chainsWithCustoms.size > 0) {
+    const customsResolver = (chainIdx, segOrd, sideKey) => {
+      const fe = feLookup[chainIdx]?.[segOrd]?.[sideKey]
+      if (!fe) return null
+      return blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
+    }
+    for (const chainIdx of chainsWithCustoms) emitChain(chainIdx, customsResolver)
+    asphaltSharp = unionRings(byChain.flatMap(c => c?.asphaltRings || []))
+    blockSharp = (stencil && stencil.length >= 3)
+      ? differenceRings([stencil], asphaltSharp)
+      : []
+    frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex)
+    feLookup = buildFeLookup(frontageEdges)
+  }
+  __mark('pass2Reemit')
+
   const allCorners = []
   for (const ix of intersections) {
     allCorners.push(...cornersAtIx(
@@ -1370,9 +1446,11 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       blockCustoms, chainIdxByChain, feLookup,
     ))
   }
+  __mark('cornersAtIx')
   const asphaltRounded = asphaltSharp.map(ring =>
     applyRoundCornersToRing(ring, allCorners, cornerRadiusScale)
   )
+  __mark('applyRoundCorners')
 
   // D.2 — blockRounded = stencil − asphaltRounded. The render-time
   // clipping mask, with corner round-clip arcs applied. blockSharp
@@ -1382,9 +1460,12 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   if (stencil && stencil.length >= 3) {
     blockRounded = differenceRings([stencil], asphaltRounded)
   }
+  __mark('blockRoundedDiff')
   const { frontageBands, frontageCaps } = buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms)
+  __mark('frontageBands')
   const curbDilated = dilateRings(asphaltRounded, curbWidth)
   const curbBands   = differenceRings(curbDilated, asphaltRounded)
+  __mark('curbBands')
 
   // Per-chain clipping. Asphalt clips to the rounded asphalt polygon so
   // the per-chain meshes inherit the corner smoothing. Treelawn/sidewalk
@@ -1398,12 +1479,25 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // by curb width so they don't bleed into roadway area; the outer
   // stencil clip in clipAllToStencil still bounds them to the
   // neighborhood silhouette. Restore once V2 root cause is fixed.
-  for (const entry of byChain) {
-    if (!entry) continue
-    if (entry.asphaltRings.length && asphaltRounded.length) {
-      entry.asphaltRings = intersectRings(entry.asphaltRings, asphaltRounded)
+  // Phase 1 perf: skip the per-chain asphalt clip in Designer. Each
+  // chain's rectangle asphalt rings overshoot asphaltRounded by 1-2m at
+  // IX corners (square ends vs rounded silhouette). The clip trimmed
+  // those overshoots, costing ~10s per V2 build on LS. Bake / Stage /
+  // Preview render from asphaltRounded directly so they're unaffected;
+  // only Designer's authoring overlay sees the overshoots. If the
+  // overshoot is visible enough to bother authoring, switch to
+  // rendering asphalt from asphaltRounded as a single mesh and emit
+  // per-chain rings only for the selected chain (Phase 2).
+  const PHASE1_SKIP_PERCHAIN_CLIP = true
+  if (!PHASE1_SKIP_PERCHAIN_CLIP) {
+    for (const entry of byChain) {
+      if (!entry) continue
+      if (entry.asphaltRings.length && asphaltRounded.length) {
+        entry.asphaltRings = intersectRings(entry.asphaltRings, asphaltRounded)
+      }
     }
   }
+  __mark('perChainAsphaltClip')
 
   // Asphalt corner plugs — `asphaltRounded − union(per-chain asphalt)`.
   // Each chain emits per-segment rectangles with square ends at IX
@@ -1417,6 +1511,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // so the union is final.
   const allChainAsphalt = unionRings(byChain.flatMap(c => c?.asphaltRings || []))
   const cornerAsphaltPlugs = differenceRings(asphaltRounded, allChainAsphalt)
+  __mark('cornerAsphaltPlugs')
 
   // Concrete corner pads — the wedge between the rounded curb-outer arc
   // (radius R+cw concentric with the asphalt fillet arc) and the two
@@ -1438,6 +1533,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const cornerSidewalkPads = (cornerPadUnion.length && blockRounded.length)
     ? intersectRings(cornerPadUnion, blockRounded)
     : []
+  __mark('cornerSidewalkPads')
   // ⚠ PAD INVARIANT (load-bearing per the pad memo). Pads MUST emit at
   // real corners. If the corners list is non-trivial but pads come out
   // empty, something upstream silently dropped the width/terminal data
@@ -1473,9 +1569,29 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     ...byChain.flatMap(c => c?.sidewalkCapRings || []),
     ...cornerSidewalkPads,
   ])
+  __mark('ribbonUnion')
   let blockFill = []
   let blocks = []
   const faces = ribbons?.faces || []
+  // Map face → owning blockRounded ring via centroid-in-ring test.
+  // (face ∩ ownBlockRing) ≡ (face − asphaltRounded) when face ⊂ stencil
+  // and asphaltRounded ⊂ stencil — which holds for LS OSM faces. Lets
+  // each face clip against ONE ring instead of the whole asphaltRounded
+  // (the global asphalt network). Falls back to differenceRings if no
+  // unique containing ring is found (handles toy's single envelope face).
+  const findOwningBlockRing = (faceRing) => {
+    let cx = 0, cy = 0
+    for (const p of faceRing) { cx += p[0]; cy += p[1] }
+    cx /= faceRing.length; cy /= faceRing.length
+    let match = null
+    for (const ring of blockRounded) {
+      if (pointInRing(cx, cy, ring)) {
+        if (match) return null  // ambiguous — face spans multiple blocks
+        match = ring
+      }
+    }
+    return match
+  }
   if (faces.length) {
     for (const face of faces) {
       if (!face?.ring || face.ring.length < 3) continue
@@ -1487,9 +1603,10 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       // when an operator drags a sidewalk handle in Measure: V2's face
       // snapshot stays valid for the whole band zone instead of being
       // clipped at the band's previous outer edge.
-      const clipped = asphaltRounded.length
-        ? differenceRings([face.ring], asphaltRounded)
-        : [face.ring]
+      const owning = blockRounded.length ? findOwningBlockRing(face.ring) : null
+      const clipped = owning
+        ? intersectRings([face.ring], [owning])
+        : (asphaltRounded.length ? differenceRings([face.ring], asphaltRounded) : [face.ring])
       for (const ring of clipped) {
         if (!ring || ring.length < 3) continue
         // blockKey from each OUTPUT ring (not the source face). For LS
@@ -1516,6 +1633,14 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         || pickLuFromHash(hashKey(blockKey))
       blocks.push({ ring, blockKey, lu })
     }
+  }
+  __mark('blockFill')
+  if (V2_PROFILE) {
+    delete __times.__last
+    const __total = performance.now() - __t0
+    const __sorted = Object.entries(__times).sort((a, b) => b[1] - a[1])
+    console.log(`[V2] total=${__total.toFixed(0)}ms — by step:`,
+      Object.fromEntries(__sorted.map(([k, v]) => [k, +v.toFixed(0)])))
   }
 
   return {
