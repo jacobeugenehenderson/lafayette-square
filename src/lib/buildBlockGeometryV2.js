@@ -682,30 +682,6 @@ export function resolveChainSegmentation(streets) {
   return out
 }
 
-// For a chain segment and a side (sideSign = +1 left, -1 right), return
-// the index of the block in blockRounded that's adjacent on that side, or
-// null if no block contains the perp-offset midpoint. Probe distance is
-// hw + 1 m so the test point lands solidly inside the adjacent block
-// (past the asphalt + curb).
-function adjacentBlockId(pts, perps, segStart, segEnd, sideSign, hw, blockRounded) {
-  if (!blockRounded?.length) return null
-  const midI = Math.floor((segStart + segEnd) / 2)
-  // Use the segment midpoint between two vertices for stability — perps at
-  // an IX vertex can swing wildly when the chain bends sharply.
-  const aI = midI, bI = Math.min(midI + 1, segEnd)
-  const mx = (pts[aI][0] + pts[bI][0]) * 0.5
-  const mz = (pts[aI][1] + pts[bI][1]) * 0.5
-  const px = (perps[aI][0] + perps[bI][0]) * 0.5
-  const pz = (perps[aI][1] + perps[bI][1]) * 0.5
-  const probeR = hw + 1.0
-  const tx = mx + px * sideSign * probeR
-  const tz = mz + pz * sideSign * probeR
-  for (let i = 0; i < blockRounded.length; i++) {
-    if (pointInRing(tx, tz, blockRounded[i])) return i
-  }
-  return null
-}
-
 // D.1/D.3 — Block-edge frontages (polygon-walking, per PM-2 spec).
 //
 // **The architecture: block is positive space.** Each block ring in
@@ -1194,25 +1170,10 @@ function ringSignedArea2D(r) {
 // CCW rings of the same chain at IX overlaps and produces empty bands.
 // Forcing CCW means every ring contributes positively to the union.
 function chainStripBand(pts, perps, side, dInner, dOuter) {
-  return chainStripBandExt(pts, perps, side, dInner, dOuter, null)
-}
-
-// Like chainStripBand but accepts optional override endpoints on the
-// run-boundary vertices. Used by D.3b.3 to extend the boundary segOrd's
-// inner/outer ends to a sharp-corner intersection point.
-//   override = { startInner, startOuter, endInner, endOuter } (any subset)
-function chainStripBandExt(pts, perps, side, dInner, dOuter, override) {
   if (dOuter <= dInner) return null
-  const n = pts.length
-  if (n < 2) return null
+  if (pts.length < 2) return null
   const inner = pts.map((p, i) => [p[0] + side * perps[i][0] * dInner, p[1] + side * perps[i][1] * dInner])
   const outer = pts.map((p, i) => [p[0] + side * perps[i][0] * dOuter, p[1] + side * perps[i][1] * dOuter])
-  if (override) {
-    if (override.startInner) inner[0] = override.startInner
-    if (override.startOuter) outer[0] = override.startOuter
-    if (override.endInner)   inner[n - 1] = override.endInner
-    if (override.endOuter)   outer[n - 1] = override.endOuter
-  }
   const ring = [...outer, ...inner.slice().reverse()]
   return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
 }
@@ -1313,13 +1274,13 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       chainIdx,
       name: street.name,
       asphaltRings:  [],
-      treelawnRings: [],
-      sidewalkRings: [],
-      // D.3b.1: chain-endpoint round quarter caps live in their own
-      // arrays so a future renderer/consumer swap (D.3c) can drop the
-      // per-segment band consumer without taking dead-end caps with it.
-      // Bake + Designer concatenate band + cap rings into the same
-      // material groups — visual output is identical to pre-split.
+      // Chain-endpoint round quarter caps live in their own arrays.
+      // Per-chain treelawn/sidewalk band emission retired in D.7d —
+      // frontageBands (polygon-walking output, per-block-edge) is the
+      // sole source of ped-zone band geometry. byChain still carries
+      // asphalt rings (chain identity matters for the corner-plug diff)
+      // and the round-cap rings (no fe equivalent — chain endpoints
+      // don't belong to a block-edge polyline).
       treelawnCapRings: [],
       sidewalkCapRings: [],
     })
@@ -1340,8 +1301,6 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // establish a frontage-edge lookup; pass 2 re-emits affected chains
   // with the resolver pointed at feLookup. blockKey is bbox-stable to
   // width changes (see blockKeyFromRing), so pass-1 keys remain valid.
-  const offsetPoly = (pts, perps, sideSign, r) =>
-    pts.map((p, i) => [p[0] + perps[i][0] * sideSign * r, p[1] + perps[i][1] * sideSign * r])
   const cw = curbWidth   // global curb width; per-side curb overrides aren't supported in V2
 
   const emitChain = (chainIdx, customsResolver) => {
@@ -1355,12 +1314,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     // Reset (re-entry safe — pass 2 calls this again for chains touched
     // by customs).
     entry.asphaltRings.length = 0
-    entry.treelawnRings.length = 0
-    entry.sidewalkRings.length = 0
     entry.treelawnCapRings.length = 0
     entry.sidewalkCapRings.length = 0
-    entry.treelawnEdges = []
-    entry.sidewalkEdges = []
 
     const n = pts.length
     const perps = computePerps(pts)
@@ -1401,26 +1356,10 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
         entry.asphaltRings.push(ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse())
       }
 
-      // Per-side ped-zone bands. Inner edge sits at the segment's own
-      // hw + curb (matches the asphalt outer edge for THIS segment).
-      for (const sideKey of ['left', 'right']) {
-        const sideSign = sideKey === 'left' ? -1 : +1
-        const eff = sideKey === 'left' ? effL : effR
-        if (!eff || eff.terminal !== 'sidewalk') continue
-        const hw = eff.pavementHW || 0
-        const tl = eff.treelawn || 0
-        const sw = eff.sidewalk || 0
-        if (tl > 0) {
-          const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
-          if (ring) entry.treelawnRings.push(ring)
-        }
-        if (sw > 0) {
-          const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
-          if (ring) entry.sidewalkRings.push(ring)
-        }
-        if (tl > 0) entry.treelawnEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl))
-        if (sw > 0) entry.sidewalkEdges.push(offsetPoly(segPts, segPerps, sideSign, hw + cw + tl + sw))
-      }
+      // Per-side ped-zone bands are emitted by buildFrontageBands from
+      // the polygon-walked block-edge polylines (D.3c, D.7d). The
+      // per-chain emission used to do this in parallel; that path has
+      // been retired — frontageBands is now the sole source.
     }
     // V1-style per-side per-band quarter caps at round-cap endpoints.
     // Each side emits up to 3 quarter rings (asphalt pie + treelawn
@@ -1706,12 +1645,16 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // Each output block carries `{ ring, blockKey, lu }`. The renderer
   // groups by lu and colors from luColors[lu] || DEFAULT_LU_COLORS[lu].
   // `park` faces are skipped — LafayettePark renders that area separately.
+  // D.7d: ped-zone coverage comes from frontageBands (per-block-edge,
+  // polygon-walked) plus byChain's chain-endpoint caps. Pre-D.7d this
+  // path used byChain.{treelawn,sidewalk}Rings, which duplicated
+  // frontageBands geometrically; the duplicate emission has been retired.
   const ribbonUnion = unionRings([
     ...asphaltRounded,
     ...curbBands,
-    ...byChain.flatMap(c => c?.treelawnRings || []),
+    ...frontageBands.flatMap(fb => fb?.treelawnRings || []),
+    ...frontageBands.flatMap(fb => fb?.sidewalkRings || []),
     ...byChain.flatMap(c => c?.treelawnCapRings || []),
-    ...byChain.flatMap(c => c?.sidewalkRings || []),
     ...byChain.flatMap(c => c?.sidewalkCapRings || []),
     ...cornerSidewalkPads,
   ])

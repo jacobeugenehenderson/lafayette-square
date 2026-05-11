@@ -384,21 +384,6 @@ const useCartographStore = create((set, get) => ({
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
-  // Legacy [chainIdx][segOrd][side] setter — retained for the
-  // MeasureOverlay until D.6 routes its drag handlers through
-  // setBlockEdgeCustom. Once D.6 lands this can be deleted.
-  setBlockCustomMeasure: (chainIdx, segOrd, side, measure) => {
-    if (chainIdx == null || segOrd == null || (side !== 'left' && side !== 'right')) return
-    const next = { ...(get().blockCustoms || {}) }
-    next[chainIdx] = { ...(next[chainIdx] || {}) }
-    next[chainIdx][segOrd] = { ...(next[chainIdx][segOrd] || {}) }
-    next[chainIdx][segOrd][side] = { ...measure }
-    set({ blockCustoms: next })
-    get()._saveDesignDebounced()
-  },
-  // Clear every block custom on this chain. Called from the global-edit
-  // drag path so editing the chain default wipes its locals (the
-  // "globals are truth" semantics).
   setBlockLandUse: (blockKey, lu) => {
     if (!blockKey) return
     const next = { ...(get().blockLandUse || {}) }

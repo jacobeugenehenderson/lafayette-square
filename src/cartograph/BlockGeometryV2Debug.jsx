@@ -481,23 +481,18 @@ export default function BlockGeometryV2Debug({
     g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
     return g
   }
-  // Source the selected chain's edge strokes from `liveSelectedRings`
-  // when available — that path tracks the live drag. Fall back to V2's
-  // frozen byChain.{tl,sw}Edges so non-drag selections still highlight.
+  // Selected chain's edge strokes come exclusively from `liveSelectedRings`
+  // (D.7c). The pre-D.7d byChain.{tl,sw}Edges fallback was redundant —
+  // liveSelectedRings is always built whenever a chain is selected, with
+  // identical edge polylines.
   const treelawnEdgeGeo = useMemo(() => {
-    if (!measureActive || selectedRibbonsChainIdx < 0) return null
-    const source = liveSelectedRings?.treelawnEdges?.length
-      ? liveSelectedRings.treelawnEdges
-      : (byChain || [])[selectedRibbonsChainIdx]?.treelawnEdges
-    return polysToLineGeo(source)
-  }, [liveSelectedRings, byChain, measureActive, selectedRibbonsChainIdx])
+    if (!measureActive || !liveSelectedRings?.treelawnEdges?.length) return null
+    return polysToLineGeo(liveSelectedRings.treelawnEdges)
+  }, [liveSelectedRings, measureActive])
   const sidewalkEdgeGeo = useMemo(() => {
-    if (!measureActive || selectedRibbonsChainIdx < 0) return null
-    const source = liveSelectedRings?.sidewalkEdges?.length
-      ? liveSelectedRings.sidewalkEdges
-      : (byChain || [])[selectedRibbonsChainIdx]?.sidewalkEdges
-    return polysToLineGeo(source)
-  }, [liveSelectedRings, byChain, measureActive, selectedRibbonsChainIdx])
+    if (!measureActive || !liveSelectedRings?.sidewalkEdges?.length) return null
+    return polysToLineGeo(liveSelectedRings.sidewalkEdges)
+  }, [liveSelectedRings, measureActive])
 
   // Materials. We mount ~700+ per-chain meshes on LS (242 chains × 3
   // bands + corner geometries), and `makeMaterial(...)` allocates a new
