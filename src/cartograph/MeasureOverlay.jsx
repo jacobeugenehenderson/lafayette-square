@@ -433,7 +433,17 @@ export default function MeasureOverlay() {
       // side, e.g. an internal edge), bail — there's nothing to author.
       const fe = findFeForSide(streetIdx, segOrd, side)
       if (!fe) {
-        if (window.__customDebug) console.log('  bail: no fe for', { streetIdx, segOrd, side })
+        if (window.__customDebug) {
+          const all = useCartographStore.getState()._v2FrontageEdges || []
+          const forChain = all.filter(f => f.chainIdx === streetIdx)
+            .map(f => ({ side: f.side, edgeOrd: f.edgeOrd, blockKey: f.blockKey, segOrds: f.segOrds }))
+          const st = useCartographStore.getState().centerlineData?.streets?.[streetIdx]
+          console.log('  bail: no fe for', { streetIdx, segOrd, side },
+            '\n    chainName:', st?.name, 'npts:', st?.points?.length,
+            'ixs:', (st?.intersections || []).map(r => r.ix),
+            '\n    feCount(total):', all.length, 'feCount(thisChain):', forChain.length,
+            '\n    fesForChain:', JSON.stringify(forChain))
+        }
         return
       }
       const existing = useCartographStore.getState().blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
