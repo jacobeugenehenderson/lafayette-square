@@ -83,15 +83,40 @@ const sortedCornerKey = (V, legKeyA, legKeyB) => {
 // `ribbons`. Same math as the V2 emitter's corner-Q derivation; if you
 // change either, change both — the per-corner UI handles MUST land at
 // the same Q the geometry uses.
+// Resolve an IX street-ref to (chain, vertexIdx). Tries `sref.ix` first;
+// falls back to nearest-vertex scan when the index is stale (~36% of LS
+// IXs per the data-pipeline memo). Mirrors V2's `resolveIxRef` in
+// `buildBlockGeometryV2.js` exactly — if behavior diverges, corners
+// disappear on LS while staying intact on toy (which has no stale ix).
+function resolveSrefChain(sref, V, candidates) {
+  const TOL = 0.5
+  let best = null
+  for (const chain of candidates) {
+    const pts = chain.points
+    if (!pts || pts.length < 2) continue
+    const i = sref.ix
+    if (i != null && i >= 0 && i < pts.length) {
+      const d = Math.hypot(pts[i][0] - V[0], pts[i][1] - V[1])
+      if (d < TOL && (!best || d < best.d)) best = { chain, vertexIdx: i, d }
+    }
+    if (best && best.d < 1e-3) continue  // near-perfect; skip fallback.
+    let bi = -1, bd = Infinity
+    for (let k = 0; k < pts.length; k++) {
+      const d = Math.hypot(pts[k][0] - V[0], pts[k][1] - V[1])
+      if (d < bd) { bd = d; bi = k }
+    }
+    if (bd < TOL && (!best || bd < best.d)) best = { chain, vertexIdx: bi, d: bd }
+  }
+  return best
+}
+
 function computeIxLayout(ribbons) {
   if (!ribbons?.intersections?.length) return []
   const TWO_PI = Math.PI * 2
   // Multi-value name map. LS has many same-named chains (Park Ave×2,
-  // Russell×5, Hickory×4, Rutger×5, etc.) and a single-value get() returns
-  // only the first, so most IXs ended up matching one chain and bailing
-  // out at legs.length < 2 → empty corners → no dots. Iterate all entries
-  // with the matching name and pick the chain whose points[sref.ix] is
-  // closest to V (mirrors V2 cornersAtIx#resolveIxRef).
+  // Russell×5, Hickory×4, Rutger×5, etc.); single-value get() would
+  // return only one entry. Iterate all entries with the matching name
+  // and let resolveSrefChain pick the best by proximity to V.
   const streetsByName = new Map()
   for (const s of (ribbons.streets || [])) {
     if (!s?.name) continue
@@ -107,23 +132,15 @@ function computeIxLayout(ribbons) {
     const legs = []
     for (const sref of ix.streets) {
       const candidates = streetsByName.get(sref.name) || []
-      let chain = null, bestD = Infinity
-      for (const c of candidates) {
-        const v = c.points?.[sref.ix]
-        if (!v) continue
-        const d = Math.hypot(v[0] - V[0], v[1] - V[1])
-        if (d < bestD) { bestD = d; chain = c }
-      }
-      if (!chain) continue
+      const resolved = resolveSrefChain(sref, V, candidates)
+      if (!resolved) continue
+      const { chain, vertexIdx } = resolved
       const m = chain.measure
       if (!m?.left?.pavementHW || !m?.right?.pavementHW) continue
       const pts = chain.points
-      const v = pts[sref.ix]
-      if (!v) continue
-      if (Math.hypot(v[0] - V[0], v[1] - V[1]) >= 0.5) continue
       const skel = chain.skelId || chain.name
       const tryDir = (direction) => {
-        const ni = sref.ix + direction
+        const ni = vertexIdx + direction
         if (ni < 0 || ni >= pts.length) return
         const dx = pts[ni][0] - V[0], dz = pts[ni][1] - V[1]
         const L = Math.hypot(dx, dz)
@@ -138,8 +155,8 @@ function computeIxLayout(ribbons) {
           legKey: `${skel || '?'}:${direction === -1 ? 'b' : 'f'}`,
         })
       }
-      if (sref.ix > 0) tryDir(-1)
-      if (sref.ix < pts.length - 1) tryDir(+1)
+      if (vertexIdx > 0) tryDir(-1)
+      if (vertexIdx < pts.length - 1) tryDir(+1)
     }
     if (legs.length < 2) { out.push({ ixIdx, V, ix, corners: [] }); continue }
     legs.sort((a, b) => Math.atan2(a.T[1], a.T[0]) - Math.atan2(b.T[1], b.T[0]))
