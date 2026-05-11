@@ -754,8 +754,9 @@ function buildChainSegmentIndex(streets) {
 function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
   if (!streets?.length || !blockSharp?.length) return []
   const out = []
-  // ixByChain is threaded through here ONLY for chainSegOrdsAlongEdge's
-  // naturalSegments call below; corner detection uses chain-ownership
+  // ixByChain is threaded through here purely for downstream consumers
+  // (segOrd assignment runs as a post-pass via assignSegOrdsToFes which
+  // also takes ixByChain); corner detection here uses chain-ownership
   // probe and does not consult it.
 
   // Fallback angle threshold for stencil/parcel-boundary vertices where
@@ -825,88 +826,124 @@ function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
       if (points.length < 2) continue
       const adj = findAdjacentChainForBlockEdge(points, ccw, streets, chainIndex)
       if (!adj) continue  // not asphalt-facing (parcel-internal edge)
-      // Map block-edge → which chain segOrds run alongside it.
-      // This is the bridge that lets cornersAtIx (chainIdx + segOrd
-      // + side data) look up its containing block-edge for D.5
-      // [blockKey][edgeOrd]-keyed customs.
-      const segOrds = chainSegOrdsAlongEdge(streets[adj.chainIdx], points, ixByChain)
+      // segOrds left empty here; filled in a single post-pass by
+      // assignSegOrdsToFes which attributes each natural segment to its
+      // closest fe per (chainIdx, side). See comment block above
+      // assignSegOrdsToFes for why this is post-passed rather than
+      // computed per-fe.
       out.push({ points, blockKey, edgeOrd: k,
                  chainIdx: adj.chainIdx, side: adj.side, ringCcw: ccw,
-                 segOrds })
+                 segOrds: [] })
     }
   }
   return out
 }
 
-// For a chain and a block-edge polyline, return the natural-segment
-// ordinals whose chain.points fall close enough to the block-edge to
-// be considered "running alongside" it. Used to back-resolve which
-// block-edge a (chainIdx, segOrd, side) tuple belongs to.
-function chainSegOrdsAlongEdge(chain, edgePoints, ixByChain) {
-  if (!chain?.points || chain.points.length < 2) return []
-  const cps = chain.points
-  const segments = naturalSegments(chain, ixByChain?.get(chain))
-  // Threshold: chain.points sit `pavementHW + cw` perpendicular from the
-  // block-edge polyline. With per-block-edge custom widths the pavement
-  // can be much wider than chain.measure default, so size the tolerance
-  // off the chain's MAX possible perpendicular distance (chain default
-  // hw plus a generous slack for customs) rather than a fixed 12m.
-  // Underflowing this is the failure mode that empties segOrds and
-  // orphans blockCustoms keys (custom write target diverges from
-  // chain-identity-resolved fe).
-  const hwMax = Math.max(
-    chain.measure?.left?.pavementHW || 0,
-    chain.measure?.right?.pavementHW || 0,
-    0,
-  )
-  // 30m headroom matches PROBE_MAX in findAdjacentChainForBlockEdge —
-  // any chain wider than that loses its frontage adjacency anyway.
-  const ALONG_TOL = Math.max(12, hwMax + 25)
-  const ALONG_TOL2 = ALONG_TOL * ALONG_TOL
-  // Perpendicular distance² from p to the polyline, ONLY counting
-  // segments where the projection lies within the segment's extent
-  // (t ∈ [0, 1]). Out-of-range matches via clamping let chain points
-  // beyond the polyline's z/x range register as "alongside" via their
-  // distance to a clamped endpoint — those points actually belong to
-  // the next block-edge, not this one. Adjacent-block leakage is the
-  // mechanism that produced overlapping segOrds (same fe claimed by
-  // multiple natural segments) before this guard was added.
-  const distToEdge2 = (p) => {
+// Assign chain natural-segment ordinals to the frontage edges (fes)
+// that own them. SINGLE-PASS, per (chainIdx, sideKey) group: every
+// natural segment is attributed to EXACTLY ONE fe — the fe whose
+// polyline midpoint is closest to the segment's midpoint (within a
+// generous radius). This eliminates both:
+//
+//   (a) Adjacent-block leakage: each segment goes to its unique
+//       closest fe, so no two fes share a segOrd.
+//
+//   (b) The corner-coverage gap that the prior t∈[0,1] guard caused:
+//       when a segment's midpoint sat just past an fe's polyline end
+//       (across a corner), both neighbouring fes rejected it and the
+//       segOrd ended up in nobody's list, breaking findFeForSide /
+//       feBySegSide back-resolution. With single-fe assignment and a
+//       clamped perpendicular metric, the segment naturally lands in
+//       whichever neighbour is structurally closer.
+//
+// Writes fe.segOrds in place. Ties broken by edgeOrd ascending so
+// behaviour is deterministic.
+function assignSegOrdsToFes(fes, streets, ixByChain) {
+  // Group fes by (chainIdx, sideKey).
+  const groups = new Map()  // chainIdx → side → fe[]
+  for (const fe of fes) {
+    fe.segOrds = []
+    if (fe.chainIdx == null) continue
+    let bySide = groups.get(fe.chainIdx)
+    if (!bySide) { bySide = new Map(); groups.set(fe.chainIdx, bySide) }
+    let arr = bySide.get(fe.side)
+    if (!arr) { arr = []; bySide.set(fe.side, arr) }
+    arr.push(fe)
+  }
+  // Perpendicular distance² from p to fe.points, with t CLAMPED to
+  // [0, 1]. Clamping is safe under single-fe assignment: a point past
+  // the polyline's extent is only credited to a fe if no other fe has
+  // a closer in-range projection, so no leakage. Without clamping a
+  // chain segment whose midpoint sits across a corner has no in-range
+  // projection on any fe and ends up unassigned (the bug).
+  const distToFe2 = (fe, p) => {
     let best = Infinity
-    for (let j = 0; j < edgePoints.length - 1; j++) {
-      const a = edgePoints[j], b = edgePoints[j + 1]
+    const pts = fe.points
+    for (let j = 0; j < pts.length - 1; j++) {
+      const a = pts[j], b = pts[j + 1]
       const dx = b[0] - a[0], dz = b[1] - a[1]
       const L2 = dx * dx + dz * dz
       if (L2 < 1e-9) continue
-      const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2
-      if (t < 0 || t > 1) continue
+      let t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2
+      if (t < 0) t = 0
+      else if (t > 1) t = 1
       const qx = a[0] + t * dx, qz = a[1] + t * dz
       const d2 = (p[0] - qx) ** 2 + (p[1] - qz) ** 2
       if (d2 < best) best = d2
     }
     return best
   }
-  const matching = new Set()
-  for (let segOrd = 0; segOrd < segments.length; segOrd++) {
-    const s = segments[segOrd]
-    if (s.end <= s.start) continue
-    // Probe by segment MIDPOINT, not by any point in the segment.
-    // Endpoints sit at IX corners which coincide with block-edge polyline
-    // endpoints (distance 0) — testing them lets adjacent natural
-    // segments claim overlapping segOrds across multiple fes, which then
-    // produces first-wins / last-wins disagreement between MeasureOverlay's
-    // findFeForSide (write site) and buildChainBandsLive's feBySegSide
-    // (read site). Midpoint is well inside the segment's interior, far
-    // from those corners, so each (chain, side, segOrd) resolves to
-    // exactly one fe.
-    const midI = (s.start + s.end) / 2
-    const lo = Math.floor(midI), hi = Math.ceil(midI)
-    const mp = (lo === hi)
-      ? cps[lo]
-      : [(cps[lo][0] + cps[hi][0]) * 0.5, (cps[lo][1] + cps[hi][1]) * 0.5]
-    if (distToEdge2(mp) <= ALONG_TOL2) matching.add(segOrd)
+  for (const [chainIdx, bySide] of groups) {
+    const chain = streets[chainIdx]
+    if (!chain?.points || chain.points.length < 2) continue
+    const cps = chain.points
+    const segments = naturalSegments(chain, ixByChain?.get(chain))
+    // Threshold off chain's max possible perpendicular distance, same
+    // rationale as the prior code: pavement can be much wider than the
+    // default measure under per-block-edge customs. 30m matches the
+    // PROBE_MAX in findAdjacentChainForBlockEdge.
+    const hwMax = Math.max(
+      chain.measure?.left?.pavementHW || 0,
+      chain.measure?.right?.pavementHW || 0,
+      0,
+    )
+    const ALONG_TOL = Math.max(12, hwMax + 25)
+    const ALONG_TOL2 = ALONG_TOL * ALONG_TOL
+    for (const [, feArr] of bySide) {
+      if (feArr.length === 0) continue
+      for (let segOrd = 0; segOrd < segments.length; segOrd++) {
+        const s = segments[segOrd]
+        if (s.end <= s.start) continue
+        // Probe by segment MIDPOINT (well inside segment interior, far
+        // from IX corners where multiple fe polylines coincide).
+        const midI = (s.start + s.end) / 2
+        const lo = Math.floor(midI), hi = Math.ceil(midI)
+        const mp = (lo === hi)
+          ? cps[lo]
+          : [(cps[lo][0] + cps[hi][0]) * 0.5, (cps[lo][1] + cps[hi][1]) * 0.5]
+        let bestFe = null
+        let bestD2 = ALONG_TOL2
+        for (const fe of feArr) {
+          const d2 = distToFe2(fe, mp)
+          if (d2 < bestD2) {
+            bestD2 = d2
+            bestFe = fe
+          } else if (d2 === bestD2 && bestFe && fe.edgeOrd < bestFe.edgeOrd) {
+            // Deterministic tie-break: lower edgeOrd wins.
+            bestFe = fe
+          }
+        }
+        if (bestFe) bestFe.segOrds.push(segOrd)
+      }
+    }
   }
-  return [...matching].sort((a, b) => a - b)
+  // Sort+dedup each fe's segOrds (push order is segOrd-ascending already,
+  // but be defensive).
+  for (const fe of fes) {
+    if (fe.segOrds.length > 1) {
+      fe.segOrds = [...new Set(fe.segOrds)].sort((a, b) => a - b)
+    }
+  }
 }
 
 // Probe outward from a block-edge midpoint and return the closest chain
@@ -1456,6 +1493,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const chainIndex = buildChainSegmentIndex(streets)
   __mark('chainIndexBuild')
   let frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain)
+  assignSegOrdsToFes(frontageEdges, streets, ixByChain)
   __mark('frontageEdges')
   // feLookup[chainIdx][segOrd][sideKey] → fe. Inverse of fe.segOrds.
   // Used by cornersAtIx to find each leg's block-edge for D.5 customs,
@@ -1509,6 +1547,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       ? differenceRings([stencil], asphaltSharp)
       : []
     frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain)
+    assignSegOrdsToFes(frontageEdges, streets, ixByChain)
     // Carry pass-1 (blockKey, edgeOrd) onto pass-2 fees by matching on
     // (chainIdx, segOrds[0], side). segOrd is coord-match-stable (see
     // resolveChainSegmentation) so the join is reliable.
