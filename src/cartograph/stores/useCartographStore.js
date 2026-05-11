@@ -413,7 +413,10 @@ const useCartographStore = create((set, get) => ({
   clearBlockEdgeCustomsForChain: (streetIdx) => {
     const st = get().centerlineData?.streets?.[streetIdx]
     if (!st) return
-    const idKey = st.skelId || null
+    // Match MeasureOverlay/MeasurePanel: centerlineData carriageway
+    // identity lives on .id (sometimes .skelId). Fall through both so
+    // divided-road wipes hit every per-carriageway fe.
+    const idKey = st.skelId || st.id || null
     const nameKey = st.name || null
     const fes = get()._v2FrontageEdges || []
     const cur = get().blockCustoms || {}

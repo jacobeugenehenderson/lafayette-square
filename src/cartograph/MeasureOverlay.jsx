@@ -255,7 +255,12 @@ export default function MeasureOverlay() {
     if (streetIdx == null || segOrd == null || !v2FrontageEdges?.length) return null
     const st = useCartographStore.getState().centerlineData?.streets?.[streetIdx]
     if (!st) return null
-    const idKey = st.skelId || null
+    // centerlineData chains carry carriageway identity on `.id`; some
+    // also carry `.skelId`. fes use chainSkelId built from the source
+    // chain's id. Prefer skelId, fall back to id — without this, divided
+    // roads (LS Park Avenue) fall through to name-match and pick a fe
+    // on the wrong carriageway.
+    const idKey = st.skelId || st.id || null
     const nameKey = st.name || null
     for (const fe of v2FrontageEdges) {
       if (fe.side !== sideKey) continue

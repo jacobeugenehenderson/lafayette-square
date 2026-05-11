@@ -37,7 +37,10 @@ function chainMeasure(st) {
 // in MeasureOverlay.jsx — keep the two in sync until extracted.
 function findFeForSide(v2FrontageEdges, st, segOrd, sideKey) {
   if (!st || segOrd == null || !v2FrontageEdges?.length) return null
-  const idKey = st.skelId || null
+  // See MeasureOverlay's matching helper — centerlineData chains carry
+  // carriageway identity on .id (sometimes also .skelId); fall through
+  // both or divided roads' name-match picks the wrong carriageway.
+  const idKey = st.skelId || st.id || null
   const nameKey = st.name || null
   for (const fe of v2FrontageEdges) {
     if (fe.side !== sideKey) continue
@@ -75,7 +78,7 @@ function effectiveMeasure(st, segOrd, v2FrontageEdges, blockCustoms) {
 // "Wipe per-block customs" button gate in whole-chain mode.
 function hasAnyChainCustom(v2FrontageEdges, st, blockCustoms) {
   if (!st || !v2FrontageEdges?.length || !blockCustoms) return false
-  const idKey = st.skelId || null
+  const idKey = st.skelId || st.id || null
   const nameKey = st.name || null
   for (const fe of v2FrontageEdges) {
     const idMatches = idKey && fe.chainSkelId === idKey
