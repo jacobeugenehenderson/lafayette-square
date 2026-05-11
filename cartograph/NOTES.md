@@ -6,6 +6,128 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-11 (EOD-2) — D.7 walker identity-driven + D.7a customs flow through corners
+
+The walker no longer detects corners by turn-angle threshold. It uses
+**chain-ownership-per-segment** as the corner signal, and threads a
+stable `(chain, side, segOrd)` identity into D.7a's customs flow so
+operator drags propagate to corner pads, adjacent legs, and the
+unified curb stroke after release/deselect.
+
+### Walker — chain-ownership-per-segment
+
+`buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain)` walks
+`blockSharp` rings. For each ring **segment** (consecutive vertex pair)
+it probes outward with `findAdjacentChainForBlockEdge` to identify the
+owning chain. A vertex is then classified as a block corner iff the
+owning chain on the segment BEFORE it differs from the one AFTER it.
+Two different chains meeting = real corner; same chain on both sides
+= chain interior bend (e.g. HW3 saw-tooth's 45° jogs in toy) — keep
+the polyline whole. Stencil/parcel-only vertices (both sides null-
+owned) fall back to a 30° angle test so the ring still partitions at
+parcel-side turns.
+
+This replaces the prior purely-geometric 30° angle test, which
+conflated "chain bends" with "two chains meeting at an IX." Toy's HW3
+saw-tooth has 45° turns at non-IX vertices that the old walker
+fragmented into multiple frontage edges with butted band caps; the
+new walker keeps that block-edge as one polyline and `computePerps`
+miters the bend interior cleanly.
+
+### IX identity — coordinate-match, not stale `intersections[].ix`
+
+`resolveChainSegmentation(streets)` (exported) returns
+`Map<street, Set<pointIdx>>` of IX vertices identified by
+coordinate-match: a chain point is an IX iff its coordinate is shared
+by ≥2 distinct chains within 0.5m. Single source of truth — used by
+`naturalSegments`, the walker, `chainSegOrdsAlongEdge`, `cornersAtIx`,
+`buildChainBandsLive`, and `MeasureOverlay.naturalSegmentOrdinal`.
+Stale `intersections[].ix` integers (~36% stale on LS per
+`feedback_customs_identity_must_unify_across_consumers`) are no
+longer trusted.
+
+### Index translation — centerlineData vs liveRibbons
+
+Two arrays, different orderings, both indexed against:
+
+- `centerlineData.streets` — skeleton order (N entries).
+  `MeasureOverlay`'s `selectedStreet` indexes this.
+- `liveRibbons.streets` — ribbons order (M ≥ N entries; `derive.js`
+  inserts extra carriageways for divided roads). V2's `chainIdx`,
+  `byChain`, and `frontageEdges.chainIdx` index this.
+
+Toy hits this hard (M=15 vs N=9; VW2 at index 5 in centerlineData,
+index 11 in liveRibbons). Pre-fix, every drag bailed at `findFeForSide`
+because `streetIdx === chainIdx` matched the wrong chain. Fix:
+
+- `BlockGeometryV2Debug.jsx` enriches each fe with `chainSkelId` and
+  `chainName` before stashing into `_v2FrontageEdges`.
+- `MeasureOverlay.findFeForSide` matches by `chainSkelId` (with name
+  fallback), not by chainIdx.
+- A `selectedRibbonsChainIdx` memo translates `selectedStreet` →
+  liveRibbons index for every `byChain[...]` consumer in
+  `BlockGeometryV2Debug.jsx`.
+
+When threading new state across these two consumers, identity (skelId,
+sometimes name) is the source of truth. Array indices are not.
+
+### segOrd uniqueness — midpoint + projection-in-range
+
+`chainSegOrdsAlongEdge(chain, edgePoints, ixByChain)` resolves which
+natural-segment ordinals run alongside a block-edge polyline. Three
+guards together make `(chain, side, segOrd) → fe` unique:
+
+1. Probe by natural-segment **midpoint only** — endpoints sit at IX
+   corners shared with adjacent block-edges and overcount.
+2. Require projection `t ∈ [0, 1]` on each polyline segment — no
+   clamping. Out-of-range projections register the chain point as
+   "near a clamped endpoint" of the wrong block-edge, which lets
+   adjacent natural segments leak into another block's `segOrds`.
+3. Tolerance is `max(12, hwMax + 25)` — adaptive to the chain's
+   default pavementHW so wide customs (operator dragged to e.g.
+   pavementHW=18) don't push the midpoint past a fixed band.
+
+Pre-fix, `findFeForSide` (first-wins) and `buildChainBandsLive`'s
+`feBySegSide` (last-wins, overwrite loop) disagreed when multiple
+fees matched — operator wrote to one block's custom, live overlay
+read from another. Structurally impossible now: one fe per
+`(chain, side, segOrd)`.
+
+### D.7a customs identity preservation across pass-2 rebuild
+
+D.7a's two-pass emitter runs pass-1 with chain defaults, detects
+which chains have any custom via `blockCustoms[fe.blockKey]?.[fe.edgeOrd]`,
+re-emits those with `customsResolver`, then rebuilds
+`asphaltSharp / blockSharp / frontageEdges / feLookup` so bands and
+corner geometry track the new asphalt silhouette.
+
+The bug pre-fix: `blockKeyFromRing` rounds the block bbox center to
+0.5m. When asphalt widens by 2m+ (a normal drag), the block bbox
+center shifts > 0.5m and the rounded blockKey flips. The pass-2
+`frontageEdges` have NEW `(blockKey, edgeOrd)` keys; the operator
+wrote customs against pass-1 keys. `cornersAtIx` (which uses the
+rebuilt feLookup) reads pass-2 keys → blockCustoms misses → corner
+legs fall back to default widths. Visible symptom: asphalt expands,
+corner pads stay at default widths.
+
+Fix: after the pass-2 `buildFrontageEdges` call, iterate the new fees
+and match each one back to its pass-1 counterpart by the stable
+triple `(chainIdx, segOrds[0], side)`. Copy `(blockKey, edgeOrd)`
+forward onto the pass-2 fe. cornersAtIx now resolves the same
+blockCustoms entry the operator wrote against; the stashed
+`_v2FrontageEdges` (= pass-2 fees with pass-1 keys) preserves stable
+keys so the operator's NEXT drag also writes against pass-1 keys.
+Geometry is pass-2 (new positions); identity is pass-1 (stable).
+
+**Why this is a pattern, not a one-off:** `blockLandUse` is keyed by
+`blockKey` too. Same drift applies — a wide custom shifts the block's
+bbox center, the operator's authored LU lookup misses, the block
+falls through to the hash-default LU and visually flips color. Same
+preservation pattern would fix it (carry pass-1 blockKey onto pass-2
+block records). Not done in this pass; tracked in BACKLOG follow-ups.
+
+---
+
 ## 2026-05-10 (EOD-3) — D.3c polygon-walking + D.5/D.6 customs migration shipped
 
 The D-phase block-edge migration is architecturally complete. The

@@ -5,6 +5,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import { defaultMeasure, sideToStripes, CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
 import { polylineRibbon } from './overlayGeom.js'
 import ribbonsRaw from '../data/ribbons.json'
+import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 
 // Lookup of survey-derived measure by street name — used when the operator
 // selects a street that has never been edited. Clicking it for the first
@@ -199,12 +200,25 @@ const HANDLE_BORDER = 0.35
 // vertices (and the chain endpoints). Ordinals: [0..ixs[0]] = 0,
 // [ixs[0]..ixs[1]] = 1, etc. Mirrors buildBlockGeometryV2.naturalSegments
 // but exposes the ordinal directly given a polyline `segI` index.
-function naturalSegmentOrdinal(street, segI) {
+//
+// IX identity: when `ixSet` is provided (coord-match from
+// resolveChainSegmentation), use it. Otherwise fall back to
+// `intersections[].ix` — stale on LS / toy-bend chains, kept only as
+// a safety net. The walker, emitter, and this overlay MUST agree on
+// the partition or findFeForSide will resolve to a different fe than
+// the bands were emitted against.
+function naturalSegmentOrdinal(street, segI, ixSet) {
   const n = (street.points || []).length
   if (n < 2) return 0
-  const ixs = (street.intersections || [])
-    .map(r => r.ix).filter(i => Number.isInteger(i) && i > 0 && i < n - 1)
-    .sort((a, b) => a - b)
+  let ixs
+  if (ixSet) {
+    ixs = [...ixSet].filter(i => Number.isInteger(i) && i > 0 && i < n - 1)
+                    .sort((a, b) => a - b)
+  } else {
+    ixs = (street.intersections || [])
+      .map(r => r.ix).filter(i => Number.isInteger(i) && i > 0 && i < n - 1)
+      .sort((a, b) => a - b)
+  }
   if (!ixs.length) return 0
   for (let k = 0; k < ixs.length; k++) {
     if (segI < ixs[k]) return k
@@ -225,11 +239,29 @@ export default function MeasureOverlay() {
   // (chainIdx, segOrd, sideKey) tuple to its containing block-edge
   // (blockKey + edgeOrd) for per-block-edge customs authoring.
   const v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
-  const findFeForSide = useCallback((chainIdx, segOrd, sideKey) => {
-    if (chainIdx == null || segOrd == null || !v2FrontageEdges?.length) return null
+  // Coord-match IX identity per chain — single source of truth shared
+  // with buildBlockGeometryV2 + buildChainBandsLive. naturalSegmentOrdinal
+  // below uses this so the operator's drag resolves segOrds against the
+  // same partition the walker / emitter used.
+  const ixByChain = useMemo(
+    () => resolveChainSegmentation(centerlineData?.streets || []),
+    [centerlineData]
+  )
+  // findFeForSide takes a streetIdx into centerlineData.streets, but
+  // fe.chainIdx is into liveRibbons.streets (different ordering). Match
+  // by chain identity (skelId, with name as a fallback for legacy data
+  // missing skelId) so the two indexings don't have to agree.
+  const findFeForSide = useCallback((streetIdx, segOrd, sideKey) => {
+    if (streetIdx == null || segOrd == null || !v2FrontageEdges?.length) return null
+    const st = useCartographStore.getState().centerlineData?.streets?.[streetIdx]
+    if (!st) return null
+    const idKey = st.skelId || null
+    const nameKey = st.name || null
     for (const fe of v2FrontageEdges) {
-      if (fe.chainIdx !== chainIdx) continue
       if (fe.side !== sideKey) continue
+      const feIdMatches = idKey && fe.chainSkelId === idKey
+      const feNameMatches = !idKey && nameKey && fe.chainName === nameKey
+      if (!feIdMatches && !feNameMatches) continue
       if (fe.segOrds?.includes(segOrd)) return fe
     }
     return null
@@ -300,7 +332,7 @@ export default function MeasureOverlay() {
       ? frameAtPoint(st.points, selectedMeasurePoint.x, selectedMeasurePoint.z)
       : midAndPerp(st.points)
     const { cx, cz, nx, nz, segI } = anchor
-    const ordinal = naturalSegmentOrdinal(st, segI ?? 0)
+    const ordinal = naturalSegmentOrdinal(st, segI ?? 0, ixByChain?.get(st))
     // D.5/D.6: Per-side override from the block-edge containing this
     // segOrd. Each side has its own fe (one block-edge per side per
     // segOrd). blockCustoms[fe.blockKey][fe.edgeOrd] wins over
@@ -367,7 +399,7 @@ export default function MeasureOverlay() {
       }
     }
     return { streetIdx: selectedStreet, measure, ordinal, mid: { cx, cz, nx, nz }, handles }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide])
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, ixByChain])
 
   // Mirror selection.ordinal to the store so MeasurePanel shows the right segment.
   useEffect(() => {
@@ -427,7 +459,7 @@ export default function MeasureOverlay() {
       const anchor = useCartographStore.getState().selectedMeasurePoint
       if (!anchor) { if (window.__customDebug) console.log('  bail: no anchor'); return }
       const frame = frameAtPoint(st.points, anchor.x, anchor.z)
-      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0)
+      const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
       // Find the block-edge for this side. If no fe is found (operator
       // clicked on a chain segment that isn't asphalt-facing on this
       // side, e.g. an internal edge), bail — there's nothing to author.
@@ -435,11 +467,15 @@ export default function MeasureOverlay() {
       if (!fe) {
         if (window.__customDebug) {
           const all = useCartographStore.getState()._v2FrontageEdges || []
-          const forChain = all.filter(f => f.chainIdx === streetIdx)
-            .map(f => ({ side: f.side, edgeOrd: f.edgeOrd, blockKey: f.blockKey, segOrds: f.segOrds }))
           const st = useCartographStore.getState().centerlineData?.streets?.[streetIdx]
-          console.log('  bail: no fe for', { streetIdx, segOrd, side },
-            '\n    chainName:', st?.name, 'npts:', st?.points?.length,
+          const idKey = st?.skelId || null
+          const nameKey = st?.name || null
+          const forChain = all.filter(f =>
+            (idKey && f.chainSkelId === idKey) ||
+            (!idKey && nameKey && f.chainName === nameKey)
+          ).map(f => ({ side: f.side, edgeOrd: f.edgeOrd, blockKey: f.blockKey, segOrds: f.segOrds }))
+          console.log('  bail: no fe for', { streetIdx, segOrd, side, skelId: idKey, name: nameKey },
+            '\n    npts:', st?.points?.length,
             'ixs:', (st?.intersections || []).map(r => r.ix),
             '\n    feCount(total):', all.length, 'feCount(thisChain):', forChain.length,
             '\n    fesForChain:', JSON.stringify(forChain))
@@ -520,7 +556,7 @@ export default function MeasureOverlay() {
         }
       }
     })
-  }, [modifyMeasure, findFeForSide])
+  }, [modifyMeasure, findFeForSide, ixByChain])
 
   const onPointerDown = useCallback((e) => {
     if (!active || spaceDown || e.button !== 0) return

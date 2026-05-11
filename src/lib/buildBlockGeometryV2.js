@@ -267,7 +267,7 @@ function sortedCornerKey(V, legKeyA, legKeyB) {
 // leg width math: a leg coming OFF an IX uses the segment ENDING at the IX
 // (BACK direction) or STARTING from it (FORWARD direction); whichever
 // segment's per-side override applies.
-function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCustoms, chainIdxByChain, feLookup) {
+function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCustoms, chainIdxByChain, feLookup, ixByChain) {
   const V = ix.point
   if (!ix.streets || ix.streets.length < 2) return []
   const legs = []
@@ -284,7 +284,7 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
     const skel = chain.skelId || chain.name || '?'
     const chainIdx = chainIdxByChain ? chainIdxByChain.get(chain) : null
     // Find which natural segment is adjacent to this IX in `dir`.
-    const segments = naturalSegments(chain)
+    const segments = naturalSegments(chain, ixByChain?.get(chain))
     const segmentForLeg = (dir) => {
       for (let k = 0; k < segments.length; k++) {
         const s = segments[k]
@@ -601,12 +601,26 @@ function pointInRing(px, pz, ring) {
 // bounded by IX vertices. Returns [{ start, end }] inclusive ranges that
 // together cover the full chain. A chain with no IXs returns one segment
 // spanning the whole chain.
-function naturalSegments(street) {
+//
+// IX-identity source: when `ixSet` (Set<pointIdx>) is provided, those
+// indices are the IX vertices. When omitted, falls back to trusting
+// `street.intersections[].ix` integers — historical behavior, retained
+// for safety but known to be stale (~36% on LS, and on toy when a chain
+// has interior bends preceding an IX). The walker and emitter share
+// `resolveChainSegmentation`-produced ixSets so segOrd↔edgeOrd
+// mappings stay consistent.
+function naturalSegments(street, ixSet) {
   const n = (street.points || []).length
   if (n < 2) return []
-  const ixs = (street.intersections || [])
-    .map(r => r.ix).filter(i => Number.isInteger(i) && i > 0 && i < n - 1)
-    .sort((a, b) => a - b)
+  let ixs
+  if (ixSet) {
+    ixs = [...ixSet].filter(i => Number.isInteger(i) && i > 0 && i < n - 1)
+                    .sort((a, b) => a - b)
+  } else {
+    ixs = (street.intersections || [])
+      .map(r => r.ix).filter(i => Number.isInteger(i) && i > 0 && i < n - 1)
+      .sort((a, b) => a - b)
+  }
   if (!ixs.length) return [{ start: 0, end: n - 1 }]
   const segs = []
   let prev = 0
@@ -616,6 +630,56 @@ function naturalSegments(street) {
   }
   if (prev < n - 1) segs.push({ start: prev, end: n - 1 })
   return segs
+}
+
+// Resolve true IX identity per chain by COORDINATE-MATCH rather than
+// trusting `street.intersections[].ix` integers (which are stale on LS
+// ~36% and broken on toy where chain interior bends shift point indices).
+//
+// Returns: Map<street, Set<pointIdx>> — for each chain, the set of point
+// indices whose coordinate is shared by ≥2 distinct chains within EPS.
+// Coordinate-shared = real IX. Index-only matches without coord-sharing =
+// chain interior bend (saw-tooth jog, gentle curve, etc) — NOT an IX.
+//
+// Consumed by:
+//   - buildFrontageEdges (walker): demote interior-bend block-ring
+//     vertices from corner-detection regardless of turn angle.
+//   - naturalSegments: partition chains by true IXs, not stale indices.
+//   - cornersAtIx (via chain lookups inside naturalSegments): leg→segOrd
+//     resolution uses the same partition that emitChain uses.
+//
+// Single source of truth for "what is an IX on this chain" — the contract
+// the D.7a coordination note named.
+export function resolveChainSegmentation(streets) {
+  const EPS = 0.5  // meters — same scale as resolveIxRef tolerance
+  const posKey = (x, z) => `${Math.round(x / EPS)}|${Math.round(z / EPS)}`
+  // First pass: bucket every chain.point coord → which chains own it.
+  const ownersByPos = new Map()
+  for (let ci = 0; ci < streets.length; ci++) {
+    const s = streets[ci]
+    if (!s?.points) continue
+    for (const p of s.points) {
+      const k = posKey(p[0], p[1])
+      let owners = ownersByPos.get(k)
+      if (!owners) { owners = new Set(); ownersByPos.set(k, owners) }
+      owners.add(ci)
+    }
+  }
+  // Second pass: for each chain, mark indices whose coord is shared by
+  // ≥2 distinct chains. Endpoints are eligible (T-intersection where one
+  // chain terminates into another's middle).
+  const out = new Map()
+  for (let ci = 0; ci < streets.length; ci++) {
+    const s = streets[ci]
+    if (!s?.points) { out.set(s, new Set()); continue }
+    const ix = new Set()
+    for (let pi = 0; pi < s.points.length; pi++) {
+      const k = posKey(s.points[pi][0], s.points[pi][1])
+      if ((ownersByPos.get(k)?.size ?? 0) >= 2) ix.add(pi)
+    }
+    out.set(s, ix)
+  }
+  return out
 }
 
 // For a chain segment and a side (sideSign = +1 left, -1 right), return
@@ -711,11 +775,19 @@ function buildChainSegmentIndex(streets) {
   return { cells, cellSize: cs }
 }
 
-function buildFrontageEdges(streets, blockSharp, chainIndex) {
+function buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain) {
   if (!streets?.length || !blockSharp?.length) return []
   const out = []
-  const CORNER_TURN_DEG = 30  // single-vertex turn threshold for block corners
-  const CORNER_TURN_COS = Math.cos(CORNER_TURN_DEG * Math.PI / 180)
+  // ixByChain is threaded through here ONLY for chainSegOrdsAlongEdge's
+  // naturalSegments call below; corner detection uses chain-ownership
+  // probe and does not consult it.
+
+  // Fallback angle threshold for stencil/parcel-boundary vertices where
+  // neither adjacent segment has a chain owner. Chain-identity transitions
+  // are the PRIMARY corner signal (below); this only fires when both sides
+  // are non-asphalt and we still need to partition the ring sensibly.
+  const FALLBACK_TURN_DEG = 30
+  const FALLBACK_TURN_COS = Math.cos(FALLBACK_TURN_DEG * Math.PI / 180)
 
   for (const ring of blockSharp) {
     if (!ring || ring.length < 4) continue
@@ -723,22 +795,41 @@ function buildFrontageEdges(streets, blockSharp, chainIndex) {
     const blockKey = blockKeyFromRing(ring)
     const ccw = ringSignedArea2D(ring) >= 0  // standard winding flag
 
-    // Find block corners. A corner is a single vertex with a sharp turn
-    // (dot product of incoming and outgoing edges < CORNER_TURN_COS).
-    // Smooth arcs (cul-de-sac round caps embedded in the asphalt mouth)
-    // and chain-IX vertices where the block runs through (~180° turn
-    // = ~+1 dot, no corner) both fall through correctly.
+    // Per-segment owning chain. Segment i = ring[i] → ring[(i+1) % N].
+    // Probe outward (away from block interior) to find nearest chain
+    // running alongside this segment. -1 means no chain in range (parcel-
+    // internal or stencil-boundary segment).
+    const ownerOf = new Array(N)
+    for (let i = 0; i < N; i++) {
+      const a = ring[i], b = ring[(i + 1) % N]
+      const adj = findAdjacentChainForBlockEdge([a, b], ccw, streets, chainIndex)
+      ownerOf[i] = adj ? adj.chainIdx : -1
+    }
+
+    // Corner detection: identity-driven. A vertex is a block corner iff
+    // the owning chain changes between the segment BEFORE it and the
+    // segment AFTER it. Two different chains meeting = real corner. Same
+    // chain on both sides = chain interior bend (e.g. HW3 saw-tooth
+    // 45° jog at (0,40)) — keep the polyline whole. Stencil/parcel-only
+    // vertices (-1 → -1) fall back to a 30° angle test so the ring still
+    // partitions at sharp parcel-side turns.
     const cornerIdxs = []
     for (let i = 0; i < N; i++) {
-      const prev = ring[(i - 1 + N) % N]
-      const cur = ring[i]
-      const next = ring[(i + 1) % N]
-      const inX = cur[0] - prev[0], inZ = cur[1] - prev[1]
-      const outX = next[0] - cur[0], outZ = next[1] - cur[1]
-      const inLen = Math.hypot(inX, inZ), outLen = Math.hypot(outX, outZ)
-      if (inLen < 1e-6 || outLen < 1e-6) continue
-      const dot = (inX * outX + inZ * outZ) / (inLen * outLen)
-      if (dot < CORNER_TURN_COS) cornerIdxs.push(i)
+      const beforeOwner = ownerOf[(i - 1 + N) % N]
+      const afterOwner  = ownerOf[i]
+      if (beforeOwner !== afterOwner) { cornerIdxs.push(i); continue }
+      if (beforeOwner === -1) {
+        // Both sides non-asphalt → use geometric fallback.
+        const prev = ring[(i - 1 + N) % N]
+        const cur = ring[i]
+        const next = ring[(i + 1) % N]
+        const inX = cur[0] - prev[0], inZ = cur[1] - prev[1]
+        const outX = next[0] - cur[0], outZ = next[1] - cur[1]
+        const inLen = Math.hypot(inX, inZ), outLen = Math.hypot(outX, outZ)
+        if (inLen < 1e-6 || outLen < 1e-6) continue
+        const dot = (inX * outX + inZ * outZ) / (inLen * outLen)
+        if (dot < FALLBACK_TURN_COS) cornerIdxs.push(i)
+      }
     }
     if (cornerIdxs.length < 3) continue  // degenerate block
 
@@ -762,7 +853,7 @@ function buildFrontageEdges(streets, blockSharp, chainIndex) {
       // This is the bridge that lets cornersAtIx (chainIdx + segOrd
       // + side data) look up its containing block-edge for D.5
       // [blockKey][edgeOrd]-keyed customs.
-      const segOrds = chainSegOrdsAlongEdge(streets[adj.chainIdx], points)
+      const segOrds = chainSegOrdsAlongEdge(streets[adj.chainIdx], points, ixByChain)
       out.push({ points, blockKey, edgeOrd: k,
                  chainIdx: adj.chainIdx, side: adj.side, ringCcw: ccw,
                  segOrds })
@@ -775,15 +866,35 @@ function buildFrontageEdges(streets, blockSharp, chainIndex) {
 // ordinals whose chain.points fall close enough to the block-edge to
 // be considered "running alongside" it. Used to back-resolve which
 // block-edge a (chainIdx, segOrd, side) tuple belongs to.
-function chainSegOrdsAlongEdge(chain, edgePoints) {
+function chainSegOrdsAlongEdge(chain, edgePoints, ixByChain) {
   if (!chain?.points || chain.points.length < 2) return []
   const cps = chain.points
-  const segments = naturalSegments(chain)
-  // Threshold: chain.points sit roughly hw + cw away from the block-edge
-  // perpendicularly. For LS/toy hw ranges, 12m generously covers it.
-  const ALONG_TOL = 12
+  const segments = naturalSegments(chain, ixByChain?.get(chain))
+  // Threshold: chain.points sit `pavementHW + cw` perpendicular from the
+  // block-edge polyline. With per-block-edge custom widths the pavement
+  // can be much wider than chain.measure default, so size the tolerance
+  // off the chain's MAX possible perpendicular distance (chain default
+  // hw plus a generous slack for customs) rather than a fixed 12m.
+  // Underflowing this is the failure mode that empties segOrds and
+  // orphans blockCustoms keys (custom write target diverges from
+  // chain-identity-resolved fe).
+  const hwMax = Math.max(
+    chain.measure?.left?.pavementHW || 0,
+    chain.measure?.right?.pavementHW || 0,
+    0,
+  )
+  // 30m headroom matches PROBE_MAX in findAdjacentChainForBlockEdge —
+  // any chain wider than that loses its frontage adjacency anyway.
+  const ALONG_TOL = Math.max(12, hwMax + 25)
   const ALONG_TOL2 = ALONG_TOL * ALONG_TOL
-  // Distance² from chain vertex p to nearest point on block-edge polyline.
+  // Perpendicular distance² from p to the polyline, ONLY counting
+  // segments where the projection lies within the segment's extent
+  // (t ∈ [0, 1]). Out-of-range matches via clamping let chain points
+  // beyond the polyline's z/x range register as "alongside" via their
+  // distance to a clamped endpoint — those points actually belong to
+  // the next block-edge, not this one. Adjacent-block leakage is the
+  // mechanism that produced overlapping segOrds (same fe claimed by
+  // multiple natural segments) before this guard was added.
   const distToEdge2 = (p) => {
     let best = Infinity
     for (let j = 0; j < edgePoints.length - 1; j++) {
@@ -791,7 +902,8 @@ function chainSegOrdsAlongEdge(chain, edgePoints) {
       const dx = b[0] - a[0], dz = b[1] - a[1]
       const L2 = dx * dx + dz * dz
       if (L2 < 1e-9) continue
-      const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2))
+      const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2
+      if (t < 0 || t > 1) continue
       const qx = a[0] + t * dx, qz = a[1] + t * dz
       const d2 = (p[0] - qx) ** 2 + (p[1] - qz) ** 2
       if (d2 < best) best = d2
@@ -802,13 +914,21 @@ function chainSegOrdsAlongEdge(chain, edgePoints) {
   for (let segOrd = 0; segOrd < segments.length; segOrd++) {
     const s = segments[segOrd]
     if (s.end <= s.start) continue
-    // Sample multiple chain.points indices along this segment; if any
-    // are within ALONG_TOL of the block-edge, the segment runs alongside.
-    let any = false
-    for (let i = s.start; i <= s.end; i++) {
-      if (distToEdge2(cps[i]) <= ALONG_TOL2) { any = true; break }
-    }
-    if (any) matching.add(segOrd)
+    // Probe by segment MIDPOINT, not by any point in the segment.
+    // Endpoints sit at IX corners which coincide with block-edge polyline
+    // endpoints (distance 0) — testing them lets adjacent natural
+    // segments claim overlapping segOrds across multiple fes, which then
+    // produces first-wins / last-wins disagreement between MeasureOverlay's
+    // findFeForSide (write site) and buildChainBandsLive's feBySegSide
+    // (read site). Midpoint is well inside the segment's interior, far
+    // from those corners, so each (chain, side, segOrd) resolves to
+    // exactly one fe.
+    const midI = (s.start + s.end) / 2
+    const lo = Math.floor(midI), hi = Math.ceil(midI)
+    const mp = (lo === hi)
+      ? cps[lo]
+      : [(cps[lo][0] + cps[hi][0]) * 0.5, (cps[lo][1] + cps[hi][1]) * 0.5]
+    if (distToEdge2(mp) <= ALONG_TOL2) matching.add(segOrd)
   }
   return [...matching].sort((a, b) => a - b)
 }
@@ -1177,6 +1297,12 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   const streets = ribbons?.streets || []
   const intersections = ribbons?.intersections || []
 
+  // Single source of truth for IX identity per chain (coord-shared with
+  // ≥2 chains). Used by naturalSegments + buildFrontageEdges so emitter
+  // and walker partition by the SAME boundaries. Stale `intersections.ix`
+  // integers are no longer trusted.
+  const ixByChain = resolveChainSegmentation(streets)
+
   // Per-chain rendering data, populated below. Each entry holds the
   // rings that belong to a single chain (asphalt, treelawn, sidewalk).
   const byChain = []
@@ -1238,7 +1364,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 
     const n = pts.length
     const perps = computePerps(pts)
-    const segments = naturalSegments(street)
+    const segments = naturalSegments(street, ixByChain.get(street))
     const capStart = street.capStart || street.capEnds?.start
     const capEnd   = street.capEnd   || street.capEnds?.end
 
@@ -1390,7 +1516,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // O(streets × segs × probe-steps) to O(few candidates per probe cell).
   const chainIndex = buildChainSegmentIndex(streets)
   __mark('chainIndexBuild')
-  let frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex)
+  let frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain)
   __mark('frontageEdges')
   // feLookup[chainIdx][segOrd][sideKey] → fe. Inverse of fe.segOrds.
   // Used by cornersAtIx to find each leg's block-edge for D.5 customs,
@@ -1414,9 +1540,17 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // (chainIdx, segOrd, sideKey) → (blockKey, edgeOrd) and pull the
   // matching block-edge custom. Re-emit only chains that have any
   // custom applied; rebuild asphaltSharp + blockSharp + frontageEdges
-  // + feLookup off the corrected per-chain rings. cornersAtIx (below)
-  // then reads the rebuilt feLookup so corner geometry tracks
-  // per-block-edge overrides too.
+  // off the corrected per-chain rings so bands track the new asphalt
+  // silhouette. BUT preserve pass-1's (blockKey, edgeOrd) identity on
+  // the rebuilt fees — those are the keys blockCustoms is indexed
+  // against (operator wrote against the pass-1 keys via the previous
+  // V2 output stashed in _v2FrontageEdges). Pass-2 polylines drift
+  // (asphalt expansion shifts block bbox centers ≥0.5m, flipping
+  // blockKey rounding) but the (chainIdx, segOrd, side) tuple is
+  // stable, so we match pass-2 fees back to pass-1 fees on that tuple
+  // and copy the keys forward. cornersAtIx (below) then reads
+  // feLookup_2 and the lookup resolves to the same blockCustoms
+  // entry the operator wrote against.
   const chainsWithCustoms = new Set()
   if (blockCustoms) {
     for (const fe of frontageEdges) {
@@ -1424,8 +1558,9 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     }
   }
   if (chainsWithCustoms.size > 0) {
+    const pass1Lookup = feLookup
     const customsResolver = (chainIdx, segOrd, sideKey) => {
-      const fe = feLookup[chainIdx]?.[segOrd]?.[sideKey]
+      const fe = pass1Lookup[chainIdx]?.[segOrd]?.[sideKey]
       if (!fe) return null
       return blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
     }
@@ -1434,7 +1569,18 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     blockSharp = (stencil && stencil.length >= 3)
       ? differenceRings([stencil], asphaltSharp)
       : []
-    frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex)
+    frontageEdges = buildFrontageEdges(streets, blockSharp, chainIndex, ixByChain)
+    // Carry pass-1 (blockKey, edgeOrd) onto pass-2 fees by matching on
+    // (chainIdx, segOrds[0], side). segOrd is coord-match-stable (see
+    // resolveChainSegmentation) so the join is reliable.
+    for (const fe of frontageEdges) {
+      if (!fe.segOrds?.length) continue
+      const p1 = pass1Lookup[fe.chainIdx]?.[fe.segOrds[0]]?.[fe.side]
+      if (p1) {
+        fe.blockKey = p1.blockKey
+        fe.edgeOrd  = p1.edgeOrd
+      }
+    }
     feLookup = buildFeLookup(frontageEdges)
   }
   __mark('pass2Reemit')
@@ -1443,7 +1589,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   for (const ix of intersections) {
     allCorners.push(...cornersAtIx(
       ix, streetsByName, cornerRadiusOverrides, cornerCornerRadiusOverrides,
-      blockCustoms, chainIdxByChain, feLookup,
+      blockCustoms, chainIdxByChain, feLookup, ixByChain,
     ))
   }
   __mark('cornersAtIx')
@@ -1707,7 +1853,12 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
     return blockCustoms?.[fe.blockKey]?.[fe.edgeOrd] || null
   }
   const perps = computePerps(pts)
-  const segments = naturalSegments(chain)
+  // ixByChain (optional) lets the live-drag path use the same IX-by-
+  // coord-match identity the full V2 pass uses. Falls through to stale
+  // `intersections.ix` if caller doesn't supply it; the resulting
+  // misalignment with the full-pass partition would show as drag-preview
+  // bands snapping to different boundaries than the post-drag bake.
+  const segments = naturalSegments(chain, opts.ixByChain?.get(chain))
   for (let segOrd = 0; segOrd < segments.length; segOrd++) {
     const seg = segments[segOrd]
     const segPts = pts.slice(seg.start, seg.end + 1)

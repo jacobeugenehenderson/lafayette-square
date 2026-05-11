@@ -21,7 +21,7 @@
  */
 import { useEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
-import { buildBlockGeometryV2, buildChainBandsLive } from '../lib/buildBlockGeometryV2.js'
+import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
@@ -193,6 +193,12 @@ export default function BlockGeometryV2Debug({
   // face rings) still comes from the static artifact.
   const liveStreets               = useCartographStore(s => s.centerlineData?.streets)
   const selectedStreet            = useCartographStore(s => s.selectedStreet)
+  // selectedStreet indexes centerlineData.streets (skeleton order, N
+  // entries). V2's `byChain` and `frontageEdges.chainIdx` index
+  // liveRibbons.streets (ribbons order, M entries — derive.js inserts
+  // extra carriageways for divided roads). Toy hits this hard
+  // (M=15 vs N=9). Translate once by skelId; use this everywhere
+  // byChain or chainIdx is indexed against `selectedStreet`.
   // Color resolution: Look-level overrides (layerColors / luColors from the
   // active design) win over BAND_COLORS / DEFAULT_LU_COLORS defaults.
   // BAND_TO_LAYER maps band → layer key (e.g., "asphalt" → "street").
@@ -208,6 +214,31 @@ export default function BlockGeometryV2Debug({
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
   )
+  // Coord-match IX identity per chain. Memoized on liveRibbons so the
+  // drag-tick path doesn't re-resolve. Passed into buildChainBandsLive
+  // so naturalSegments partitions on the same boundaries the full V2
+  // pass uses (otherwise drag-preview bands would snap to different
+  // segment edges than the post-drag bake).
+  const liveIxByChain = useMemo(
+    () => resolveChainSegmentation(liveRibbons?.streets || []),
+    [liveRibbons]
+  )
+  // Translation: selectedStreet (skeleton-order index) → ribbons-order
+  // index. -1 if no match. See comment above on the two arrays.
+  const selectedRibbonsChainIdx = useMemo(() => {
+    if (selectedStreet == null) return -1
+    const sel = liveStreets?.[selectedStreet]
+    if (!sel) return -1
+    const skelId = sel.id
+    const name = sel.name
+    const streets = liveRibbons?.streets || []
+    for (let i = 0; i < streets.length; i++) {
+      const s = streets[i]
+      if (skelId && s?.skelId === skelId) return i
+      if (!skelId && name && s?.name === name) return i
+    }
+    return -1
+  }, [selectedStreet, liveStreets, liveRibbons])
   // V2 input snapshot. While a chain is selected, the operator's drag
   // edits route exclusively through `liveSelectedRings` below — V2 stays
   // frozen at the snapshot taken when the chain was first selected, so
@@ -264,9 +295,23 @@ export default function BlockGeometryV2Debug({
   }, [blockRounded])
   // D.5: Stash frontageEdges so MeasureOverlay can resolve a clicked
   // chain point → (blockKey, edgeOrd) for per-block-edge customs.
+  //
+  // Identity translation: V2's `chainIdx` indexes `liveRibbons.streets`
+  // (ordered like the static ribbons artifact). MeasureOverlay's
+  // `streetIdx` indexes `centerlineData.streets` (live-store order) —
+  // a different ordering on toy + LS. Enrich each fe with `chainSkelId`
+  // so consumers can match by identity instead of array index.
+  const enrichedFrontageEdges = useMemo(() => {
+    const streets = liveRibbons?.streets || []
+    return frontageEdges.map(fe => ({
+      ...fe,
+      chainSkelId: streets[fe.chainIdx]?.skelId,
+      chainName:   streets[fe.chainIdx]?.name,
+    }))
+  }, [frontageEdges, liveRibbons])
   useEffect(() => {
-    useCartographStore.getState()._setV2FrontageEdges(frontageEdges)
-  }, [frontageEdges])
+    useCartographStore.getState()._setV2FrontageEdges(enrichedFrontageEdges)
+  }, [enrichedFrontageEdges])
 
   // Tiny y-lifts keep coplanar layers from z-fighting; polygonOffset (driven
   // by pri in makeMaterial) is the authoritative depth resolver.
@@ -321,8 +366,8 @@ export default function BlockGeometryV2Debug({
   // drag release, V2's next full pass overwrites with the rounded /
   // unioned / corner-padded version.
   const liveSelectedRings = useMemo(() => {
-    if (selectedStreet == null) return null
-    const chain = liveRibbons?.streets?.[selectedStreet]
+    if (selectedRibbonsChainIdx < 0) return null
+    const chain = liveRibbons?.streets?.[selectedRibbonsChainIdx]
     if (!chain) return null
     // D.5/D.6: blockCustoms keyed by (blockKey, edgeOrd). Pass the full
     // map + frontageEdges so buildChainBandsLive can resolve each
@@ -330,12 +375,12 @@ export default function BlockGeometryV2Debug({
     // when no fe matches (chain endpoints, parcel-internal sides).
     return buildChainBandsLive(
       chain,
-      selectedStreet,
+      selectedRibbonsChainIdx,
       blockCustoms,
       frontageEdges,
-      { curbWidth }
+      { curbWidth, ixByChain: liveIxByChain }
     )
-  }, [selectedStreet, liveRibbons, blockCustoms, frontageEdges, curbWidth])
+  }, [selectedRibbonsChainIdx, liveRibbons, blockCustoms, frontageEdges, curbWidth, liveIxByChain])
 
   // Per-chain BufferGeometries split into two passes for drag perf:
   //
@@ -373,7 +418,7 @@ export default function BlockGeometryV2Debug({
     const out = []
     for (const entry of byChain || []) {
       if (!entry) continue
-      if (entry.chainIdx === selectedStreet) continue
+      if (entry.chainIdx === selectedRibbonsChainIdx) continue
       const ag = entry.asphaltRings.length  ? ringsToFlatGeo(entry.asphaltRings,  0.04, true) : null
       const fb = frontageByChain.get(entry.chainIdx)
       const tlAll = (fb?.treelawn || []).concat(entry.treelawnCapRings || [])
@@ -383,7 +428,7 @@ export default function BlockGeometryV2Debug({
       if (ag || tg || sg) out.push({ chainIdx: entry.chainIdx, asphalt: ag, treelawn: tg, sidewalk: sg })
     }
     return out
-  }, [byChain, frontageByChain, selectedStreet])
+  }, [byChain, frontageByChain, selectedRibbonsChainIdx])
 
   // D.3c keeps cornerSidewalkPads mounted as the corner concrete; no
   // frontageCaps mesh is mounted (extendCorners=false default leaves
@@ -405,8 +450,8 @@ export default function BlockGeometryV2Debug({
     const tg = liveSelectedRings.treelawnRings.length ? ringsToFlatGeo(liveSelectedRings.treelawnRings, 0.02, true) : null
     const sg = liveSelectedRings.sidewalkRings.length ? ringsToFlatGeo(liveSelectedRings.sidewalkRings, 0.03, true) : null
     if (!ag && !tg && !sg) return null
-    return { chainIdx: selectedStreet, asphalt: ag, treelawn: tg, sidewalk: sg }
-  }, [liveSelectedRings, selectedStreet])
+    return { chainIdx: selectedRibbonsChainIdx, asphalt: ag, treelawn: tg, sidewalk: sg }
+  }, [liveSelectedRings, selectedRibbonsChainIdx])
 
   // Composite array kept for downstream code that still expects a flat
   // perChainGeo list. Selected chain's geo (if any) tacked on at end.
@@ -437,13 +482,13 @@ export default function BlockGeometryV2Debug({
     return g
   }
   const treelawnEdgeGeo = useMemo(() => {
-    if (!measureActive || selectedStreet == null) return null
-    return polysToLineGeo((byChain || [])[selectedStreet]?.treelawnEdges)
-  }, [byChain, measureActive, selectedStreet])
+    if (!measureActive || selectedRibbonsChainIdx < 0) return null
+    return polysToLineGeo((byChain || [])[selectedRibbonsChainIdx]?.treelawnEdges)
+  }, [byChain, measureActive, selectedRibbonsChainIdx])
   const sidewalkEdgeGeo = useMemo(() => {
-    if (!measureActive || selectedStreet == null) return null
-    return polysToLineGeo((byChain || [])[selectedStreet]?.sidewalkEdges)
-  }, [byChain, measureActive, selectedStreet])
+    if (!measureActive || selectedRibbonsChainIdx < 0) return null
+    return polysToLineGeo((byChain || [])[selectedRibbonsChainIdx]?.sidewalkEdges)
+  }, [byChain, measureActive, selectedRibbonsChainIdx])
 
   // Materials. We mount ~700+ per-chain meshes on LS (242 chains × 3
   // bands + corner geometries), and `makeMaterial(...)` allocates a new
@@ -485,11 +530,11 @@ export default function BlockGeometryV2Debug({
           unified) → asphalt (8). */}
       {treelawnVisible && perChainGeo.map(g => g.treelawn && (
         <mesh key={`t${g.chainIdx}`} geometry={g.treelawn} renderOrder={PRI.treelawn} receiveShadow
-          material={g.chainIdx === selectedStreet ? bandMats.treelawnSelected : bandMats.treelawn} />
+          material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.treelawnSelected : bandMats.treelawn} />
       ))}
       {sidewalkVisible && perChainGeo.map(g => g.sidewalk && (
         <mesh key={`s${g.chainIdx}`} geometry={g.sidewalk} renderOrder={PRI.sidewalk} receiveShadow
-          material={g.chainIdx === selectedStreet ? bandMats.sidewalkSelected : bandMats.sidewalk} />
+          material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.sidewalkSelected : bandMats.sidewalk} />
       ))}
       {/* While a chain is selected (drag in flight), the global curb
           stroke is sized to the PREVIOUS V2 pass's asphaltRounded —
@@ -506,7 +551,7 @@ export default function BlockGeometryV2Debug({
         if (!visible) return null
         return (
           <mesh key={`a${g.chainIdx}`} geometry={g.asphalt} renderOrder={PRI.asphalt} receiveShadow
-            material={g.chainIdx === selectedStreet ? bandMats.asphaltSelected : bandMats.asphalt} />
+            material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.asphaltSelected : bandMats.asphalt} />
         )
       })}
       {/* Corner asphalt plugs are shared between chains (no per-chain class),

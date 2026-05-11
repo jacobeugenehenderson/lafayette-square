@@ -2,9 +2,193 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-10 EOD-3 (D.3c shipped via polygon-walking rewrite; D.3b.3/D.3b.4 retired as superseded; D.5 + D.6 shipped together — blockCustoms keyed by `[blockKey][edgeOrd]` and Measure UI authors per block-edge. Architecture matches PM-2 spec. Performance regressed at LS scale — dedicated perf pass next.)
+Last updated: 2026-05-11 EOD-2 (D.7 walker + customs flow shipped: chain-interior-bend seam fixed via chain-ownership corner detection; D.7a per-chain customs now propagate to corners + adjacent legs + curb stroke after release/deselect. Coord-match IX identity + skelId-based fe routing + pass-1 (blockKey, edgeOrd) preservation across pass-2 rebuild. Perf pass from EOD-1 still current.)
 
-## 2026-05-10 EOD-3 — Session-end pin (read first; supersedes EOD-2)
+## 2026-05-11 EOD-2 — Session-end pin (read first; supersedes EOD-1 on walker semantics)
+
+V2 walker corner detection swapped from purely-geometric (30° angle
+threshold) to identity-driven (chain-ownership-per-segment). This was
+the bug behind the HW3 saw-tooth seam in toy and — more critically —
+the upstream blocker behind D.7a's observability gap. Once the walker
+produced stable (chain, side, segOrd) identity, D.7a's customs flow
+through to corner geometry and adjacent legs after release/deselect.
+
+**Shipped:**
+
+- **Walker: chain-ownership-per-segment corner detection**
+  (`buildFrontageEdges` in `src/lib/buildBlockGeometryV2.js`).
+  For each block-ring segment, probe outward for the owning chain.
+  Vertex is a corner iff owning chain differs across it. Old 30°
+  angle test retained ONLY as fallback for stencil/parcel-only
+  vertices (both sides null-owned). Chain interior bends — HW3
+  saw-tooth's 45° jogs, VW3's NE bend — now flow through as one
+  continuous block-edge instead of splitting into per-bend frontage
+  edges. The band seam at the bend goes away because `computePerps`
+  miters cleanly inside one polyline.
+
+- **`resolveChainSegmentation(streets)`** — exported helper, returns
+  `Map<street, Set<pointIdx>>` of IX vertices identified by
+  coordinate-match (≥2 chains share a point within 0.5m). Single
+  source of truth for IX identity per chain. Used by `naturalSegments`,
+  walker, `chainSegOrdsAlongEdge`, `cornersAtIx`, `buildChainBandsLive`,
+  and `MeasureOverlay.naturalSegmentOrdinal`. All sites route through
+  this resolver; stale `intersections[].ix` integers no longer trusted.
+
+- **Index-translation fix: fees enriched with `chainSkelId` + `chainName`**
+  in `BlockGeometryV2Debug.jsx` before stash. `MeasureOverlay`'s
+  `findFeForSide` now matches by skelId (with name fallback), not by
+  chainIdx — required because `centerlineData.streets` (skeleton
+  order, N entries) ≠ `liveRibbons.streets` (ribbons order, M entries
+  with divided carriageways). Toy hits this hard (M=15 vs N=9). The
+  same translation (`selectedRibbonsChainIdx` memo) threads to every
+  `byChain[selectedStreet]` consumer in `BlockGeometryV2Debug.jsx`.
+  This was the upstream "every drag bails at findFeForSide" symptom
+  the D.7a author noted.
+
+- **segOrd uniqueness in `chainSegOrdsAlongEdge`** — probe by natural-
+  segment MIDPOINT only (not by any point in segment); tolerance
+  adaptive to chain's pavementHW (`max(12, hwMax + 25)`) so wide
+  customs don't push the midpoint out of a fixed band; AND require
+  projection `t ∈ [0, 1]` (no clamping) so adjacent natural segments
+  don't leak in via clamped-endpoint distance. Each (chain, side,
+  segOrd) now resolves to exactly ONE fe. Previously first-wins
+  (`findFeForSide`) and last-wins (`buildChainBandsLive`'s
+  `feBySegSide` overwrite loop) disagreed when multiple fees matched,
+  so the operator wrote to one block and the live overlay read from
+  another. Structurally impossible now.
+
+- **D.7a customs identity preservation across pass-2 rebuild**
+  (`buildBlockGeometryV2.js` main pass). After pass-2 widens chains
+  with customs, the rebuilt `frontageEdges` have NEW polylines AND
+  NEW `(blockKey, edgeOrd)` keys — block bbox center shifts as
+  asphalt expands; `blockKeyFromRing` rounds to 0.5m so a 2m+
+  pavementHW change flips the key. The operator wrote customs
+  against pass-1 keys. Without preservation, `cornersAtIx` reads
+  pass-2 feLookup and the lookup misses what the operator wrote;
+  corners stay at defaults even after V2 rebuilds. Fix: after the
+  pass-2 rebuild, match each pass-2 fe to its pass-1 counterpart by
+  `(chainIdx, segOrds[0], side)` (stable triple) and copy
+  `(blockKey, edgeOrd)` forward. cornersAtIx + the stashed
+  `_v2FrontageEdges` both route through stable identity; render
+  geometry tracks pass-2 positions.
+
+**Verified:** VW2 mid-segment curb drag — band moves during drag,
+corners + curb + side legs update after release/deselect, no key drift
+across repeated drags (no orphan accumulation in `blockCustoms`).
+
+**Known follow-ups (not blocking):**
+
+- **`MeasurePanel.jsx:200` still writes legacy `blockCustoms[chainIdx][segOrd][side]`
+  schema** — produces orphan-format entries that new (blockKey, edgeOrd)
+  consumers ignore but don't break on. The D.7c migration to
+  `setBlockEdgeCustom` should land before the panel is exercised
+  heavily.
+- **`blockLandUse[blockKey]` lookup also shifts when customs widen asphalt**
+  — same root cause as the D.7a key drift the pass-1 preservation now
+  papers over for fees. Symptom: a block changes color after a wide
+  custom because `blockLandUse[old_key]` is set but the rebuild
+  produces `new_key`, falls through to hash default. Same preservation
+  pattern would fix it: carry pass-1 blockKey onto pass-2 block records.
+- **HW3 saw-tooth visual eyeball check** in toy — the walker fix
+  should make treelawn / sidewalk / curb continuous through both
+  45° bends. Quick visual confirmation outstanding.
+- **D.7b (retire `selectedStreet == null` gates on curb / cornerAsphalt /
+  cornerSidewalkPads)** and **D.7c (migrate MeasurePanel.jsx to
+  `setBlockEdgeCustom`)** — both originally queued behind walker fix.
+  Walker is landed; those are unblocked.
+
+**Memories saved this session:**
+- `feedback_walker_corner_detection_is_identity_not_angle`
+- `feedback_index_mismatch_centerline_vs_ribbons`
+- `feedback_d7a_blockkey_drift`
+- `feedback_segord_uniqueness_via_midpoint_test`
+
+---
+
+## 2026-05-11 EOD-1 — Session-end pin (perf pass — still current)
+
+V2 build perf pass landed. Cartograph was unusable for tool work — every
+click-to-select triggered a 50-70s V2 rebuild. Six wins, ~33× speedup
+total. Doc trinity is current; Phase 2 of authoring-asphalt is the
+follow-up.
+
+**Shipped:**
+- **Spatial index over chain segments** (`src/lib/buildBlockGeometryV2.js`
+  `buildChainSegmentIndex` + threaded into `findAdjacentChainForBlockEdge`).
+  30m uniform-grid; object-identity dedup. Drops the adjacency probe
+  from O(streets × segs × probe-steps) to O(few candidates per probe
+  cell). Memory `feedback_polygon_walking_needs_spatial_index` resolved.
+- **`buildFrontageBands` clip narrowed** — instead of intersecting each
+  band ring with the global `blockRounded` (~80 rings), look up the
+  fe's owning block ring via `fe.blockKey` and intersect against that
+  one ring only. **33s → ~30ms.**
+- **`blockFill` clip narrowed** — for each OSM face, centroid-in-ring
+  lookup picks its owning `blockRounded` ring; intersect against that
+  instead of differencing against global `asphaltRounded`. Falls back
+  to old path when no unique owning ring (toy's single envelope face).
+  6.6s → 0.84s.
+- **Phase 1: `perChainAsphaltClip` skipped behind `PHASE1_SKIP_PERCHAIN_CLIP
+  = true`.** This clip is authoring-only (bake + Stage + Preview read
+  `asphaltRounded` directly; only Designer's per-chain selection overlay
+  consumed the clipped rings). 10s → 0ms. **Visible cost:** per-chain
+  asphalt rectangles in Designer overshoot the rounded silhouette by
+  1-2m at IX corners. Jacob confirmed acceptable for authoring; corners
+  noted as "not broken, just rough."
+- **Environment pumps gated `!inDesigner`** (`src/cartograph/CartographApp.jsx`
+  lines 757-758, 893-896). LightingPump, SkyPump, NeonPump, LampGlowPump,
+  TimeTicker, SkyStateTicker no longer tick per-frame in Designer (where
+  the 3D environment is gated invisible already). Panel previews
+  re-resolve locally; no functional change. Comment at line 488 ("shot-
+  only") matched intent.
+- **AerialTiles zoom + cull** (`src/cartograph/AerialTiles.jsx`,
+  `CartographApp.jsx:851`). Default zoom 20 → 18 (~16× fewer tiles).
+  Measure passes z=20 for cropped-in detail. `tileTouchesFade()` culls
+  tiles fully outside the `FADE_OUTER` circle (~22% savings on top of
+  zoom). LS at z=18: ~150 tiles, was ~3000.
+
+**Net:** V2 cold start 50s → 1.5s. Click-to-select rebuild ~1.5s.
+
+**Phase 2 — authoring asphalt rework** (deferred; resolves Phase 1 corner
+overshoots cleanly):
+
+`BlockGeometryV2Debug.jsx` currently renders asphalt as N per-chain
+meshes (one per `byChain[i].asphaltRings`). Without the per-chain clip
+those rectangles overshoot rounded corners. Phase 2 changes the
+rendering, not the V2 build:
+
+1. Add a single asphalt mesh in `BlockGeometryV2Debug.jsx` rendered
+   from `asphaltRounded` directly. One smooth polygon, no overshoots
+   possible.
+2. Skip the per-chain asphalt mesh emission loop (currently around
+   `BlockGeometryV2Debug.jsx:374-386`) for **unselected** chains.
+3. Keep the existing live-overlay path for the **selected** chain
+   (`liveSelectedRings`) — it already computes per-chain asphalt clipped
+   to `asphaltRounded` on selection. That's the translucent highlight.
+4. Leave `cornerAsphaltPlugs` computed + rendered. It becomes a subset
+   of the new global mesh's coverage (harmless overlap), but pads are
+   load-bearing per `feedback_load_bearing_corner_pads` — retire only
+   under the corner-pad retirement protocol.
+
+~30 LOC change. Selection semantics unchanged. Cold start stays ~1.5s.
+Removes the IX-corner overshoot artifact Phase 1 leaves.
+
+**Tooling still in place from this session:**
+- `V2_PROFILE = false` flag in `buildBlockGeometryV2.js` — flip true to
+  log per-step timings each build. Useful for future regressions.
+- All `__mark()` instrumentation is inert when `V2_PROFILE = false`.
+
+**Memories saved this session:**
+- `feedback_clipper_narrow_the_mask` — when clipping N small polygons
+  against a global Clipper mask, narrow per-item via owning-key /
+  centroid lookup. Same pattern saved 39s across `buildFrontageBands`
+  and `blockFill`. The cost of `intersectRings` scales with subject ×
+  clip vertices, so per-item narrowing of the clip side is the lever.
+- `project_v2_authoring_asphalt_phase2` — Phase 2 plan, pointer to
+  this BACKLOG entry.
+
+---
+
+## 2026-05-10 EOD-3 — Session-end pin (superseded by 2026-05-11 on perf; otherwise current)
 
 D.3c landed — but not via the originally-planned D.3b.3 + D.3b.4
 extension/pullback path. Those were "stop pretending and walk
@@ -53,13 +237,12 @@ the canonical implementation. Operator authors per block-edge;
 bands and plugs render off the same identity; live drag preview
 matches post-release V2 pass.
 
-**Performance regressed at LS scale** — `findAdjacentChainForBlockEdge`
-in `buildFrontageEdges` probes outward and iterates every chain ×
-every chain-segment per probe step. ~4M distance checks per V2 full
-pass on LS. Designer feels sticky on click-to-select / deselect.
-Toy is fine (4 chains, 4 blocks). See memory
-`feedback_polygon_walking_needs_spatial_index`. Next sprint is a
-dedicated perf pass — Jacob is taking that on directly.
+**Performance regression — RESOLVED 2026-05-11.** Was: `findAdjacentChainForBlockEdge`
+probed outward and iterated every chain × every chain-segment per probe
+step (~4M distance checks per V2 pass on LS). Designer was sticky on
+click-to-select. Resolution: spatial index + clip-narrowing pattern.
+See 2026-05-11 session-end pin above for the full perf pass — that
+work also exposed and retired three other multi-second hotspots.
 
 **D.7 cleanup** (deferred; not blocking — anything using the legacy
 shape was already removed in this sprint):
