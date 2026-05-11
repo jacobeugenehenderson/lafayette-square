@@ -419,6 +419,35 @@ const useCartographStore = create((set, get) => ({
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
+  // D.7c: chain-wide wipe in the [blockKey][edgeOrd] shape. Walks the
+  // published v2FrontageEdges for any fe whose chain identity matches
+  // the given streetIdx (centerlineData order) and deletes the matching
+  // blockCustoms entry. Replaces clearBlockCustomsForChain at MeasurePanel
+  // call sites — that legacy setter operates on the old [chainIdx][segOrd]
+  // top-level key, which no consumer reads post-D.6.
+  clearBlockEdgeCustomsForChain: (streetIdx) => {
+    const st = get().centerlineData?.streets?.[streetIdx]
+    if (!st) return
+    const idKey = st.skelId || null
+    const nameKey = st.name || null
+    const fes = get()._v2FrontageEdges || []
+    const cur = get().blockCustoms || {}
+    const next = { ...cur }
+    let changed = false
+    for (const fe of fes) {
+      const idMatches = idKey && fe.chainSkelId === idKey
+      const nameMatches = !idKey && nameKey && fe.chainName === nameKey
+      if (!idMatches && !nameMatches) continue
+      if (!next[fe.blockKey]?.[fe.edgeOrd]) continue
+      next[fe.blockKey] = { ...next[fe.blockKey] }
+      delete next[fe.blockKey][fe.edgeOrd]
+      if (Object.keys(next[fe.blockKey]).length === 0) delete next[fe.blockKey]
+      changed = true
+    }
+    if (!changed) return
+    set({ blockCustoms: next })
+    get()._saveDesignDebounced()
+  },
   // Look-level corner-radius multiplier. Clamp at 0 (square) and a
   // generous upper bound to keep the slider sane.
   setCornerRadiusScale: (v) => {

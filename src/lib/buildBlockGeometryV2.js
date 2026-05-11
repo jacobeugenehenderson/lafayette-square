@@ -1830,7 +1830,14 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
 // to chain.measure[side].
 export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges, opts = {}) {
   const cw = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
-  const out = { asphaltRings: [], treelawnRings: [], sidewalkRings: [] }
+  const out = {
+    asphaltRings: [], treelawnRings: [], sidewalkRings: [],
+    // Outer-edge polylines for the live-drag overlay's colored edge
+    // strokes (green = treelawn outer, white = sidewalk outer). Mirror
+    // the per-chain emission's entry.{treelawn,sidewalk}Edges shape so
+    // BlockGeometryV2Debug's polysToLineGeo can consume either source.
+    treelawnEdges: [], sidewalkEdges: [],
+  }
   if (!chain || chain.disabled) return out
   const pts = chain.points
   const m = chain.measure
@@ -1884,10 +1891,16 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
       if (tl > 0) {
         const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw, hw + cw + tl)
         if (ring) out.treelawnRings.push(ring)
+        out.treelawnEdges.push(
+          segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl)])
+        )
       }
       if (sw > 0) {
         const ring = chainStripBand(segPts, segPerps, sideSign, hw + cw + tl, hw + cw + tl + sw)
         if (ring) out.sidewalkRings.push(ring)
+        out.sidewalkEdges.push(
+          segPts.map((p, i) => [p[0] + segPerps[i][0] * sideSign * (hw + cw + tl + sw), p[1] + segPerps[i][1] * sideSign * (hw + cw + tl + sw)])
+        )
       }
     }
   }

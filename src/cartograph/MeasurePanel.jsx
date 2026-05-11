@@ -30,16 +30,40 @@ function chainMeasure(st) {
   return defaultMeasure(st.type || 'residential')
 }
 
-// Effective per-side measure for a segment in the V2 model:
-// blockCustoms[chainIdx][segOrd][side] wins over chain.measure[side].
-// Symmetric flag rides on chain.measure (per-side blockCustoms inherit it).
-function effectiveMeasure(st, chainIdx, segOrd, blockCustoms) {
+// D.7c: resolve (streetIdx, segOrd, sideKey) → fe in v2FrontageEdges.
+// streetIdx is centerlineData order; fe.chainIdx is liveRibbons order
+// (see feedback_index_mismatch_centerline_vs_ribbons). Match by chain
+// identity (skelId, name fallback) rather than index. Mirrors the helper
+// in MeasureOverlay.jsx — keep the two in sync until extracted.
+function findFeForSide(v2FrontageEdges, st, segOrd, sideKey) {
+  if (!st || segOrd == null || !v2FrontageEdges?.length) return null
+  const idKey = st.skelId || null
+  const nameKey = st.name || null
+  for (const fe of v2FrontageEdges) {
+    if (fe.side !== sideKey) continue
+    const idMatches = idKey && fe.chainSkelId === idKey
+    const nameMatches = !idKey && nameKey && fe.chainName === nameKey
+    if (!idMatches && !nameMatches) continue
+    if (fe.segOrds?.includes(segOrd)) return fe
+  }
+  return null
+}
+
+// Effective per-side measure for a segment. D.7c — block-edge customs are
+// keyed by (blockKey, edgeOrd); each side resolves through its own fe.
+// blockCustoms[fe.blockKey][fe.edgeOrd] wins over chain.measure[side].
+// Symmetric flag rides on chain.measure (per-side customs inherit it).
+function effectiveMeasure(st, segOrd, v2FrontageEdges, blockCustoms) {
   const chain = chainMeasure(st)
-  const customs = blockCustoms?.[chainIdx]?.[segOrd]
+  const feL = findFeForSide(v2FrontageEdges, st, segOrd, 'left')
+  const feR = findFeForSide(v2FrontageEdges, st, segOrd, 'right')
+  const customL = feL ? blockCustoms?.[feL.blockKey]?.[feL.edgeOrd] : null
+  const customR = feR ? blockCustoms?.[feR.blockKey]?.[feR.edgeOrd] : null
   return {
-    left:  customs?.left  || chain.left,
-    right: customs?.right || chain.right,
+    left:  customL || chain.left,
+    right: customR || chain.right,
     symmetric: chain.symmetric !== false,
+    feL, feR,
   }
 }
 
@@ -47,6 +71,21 @@ function effectiveMeasure(st, chainIdx, segOrd, blockCustoms) {
 //   treelawn > 0 → 'sidewalk' (asphalt + curb + treelawn + sidewalk band)
 //   only sidewalk → 'lawn'    (asphalt + curb + sidewalk band, no treelawn)
 //   nothing → 'none'          (asphalt + curb, no ped zone)
+// Does ANY fe belonging to this chain have a custom written? Used by the
+// "Wipe per-block customs" button gate in whole-chain mode.
+function hasAnyChainCustom(v2FrontageEdges, st, blockCustoms) {
+  if (!st || !v2FrontageEdges?.length || !blockCustoms) return false
+  const idKey = st.skelId || null
+  const nameKey = st.name || null
+  for (const fe of v2FrontageEdges) {
+    const idMatches = idKey && fe.chainSkelId === idKey
+    const nameMatches = !idKey && nameKey && fe.chainName === nameKey
+    if (!idMatches && !nameMatches) continue
+    if (blockCustoms[fe.blockKey]?.[fe.edgeOrd]) return true
+  }
+  return false
+}
+
 function inferTerminal(side) {
   const tl = side.treelawn || 0
   const sw = side.sidewalk || 0
@@ -132,10 +171,11 @@ export default function MeasurePanel() {
   const selectedOrdinal    = useCartographStore(s => s.selectedSegmentOrdinal)
   const centerlineData     = useCartographStore(s => s.centerlineData)
   const blockCustoms       = useCartographStore(s => s.blockCustoms)
+  const v2FrontageEdges    = useCartographStore(s => s._v2FrontageEdges)
   const measureMode        = useCartographStore(s => s.measureMode)
   const setStreetMeasure   = useCartographStore(s => s.setStreetMeasure)
-  const setBlockCustom     = useCartographStore(s => s.setBlockCustomMeasure)
-  const clearCustomsForChain = useCartographStore(s => s.clearBlockCustomsForChain)
+  const setBlockEdgeCustom = useCartographStore(s => s.setBlockEdgeCustom)
+  const clearCustomsForChain = useCartographStore(s => s.clearBlockEdgeCustomsForChain)
   const setStreetDisabled  = useCartographStore(s => s.setStreetDisabled)
 
   if (selectedStreet === null) {
@@ -152,14 +192,21 @@ export default function MeasurePanel() {
   const ordinal = Number.isFinite(selectedOrdinal) && selectedOrdinal >= 0 ? selectedOrdinal : 0
   const isWholeChain = measureMode?.type === 'global'
 
-  const measure = effectiveMeasure(st, selectedStreet, ordinal, blockCustoms)
+  const measure = effectiveMeasure(st, ordinal, v2FrontageEdges, blockCustoms)
   const symmetric = measure.symmetric !== false
-  const hasCustom = !!(blockCustoms?.[selectedStreet]?.[ordinal])
+  const { feL, feR } = measure
+  const hasCustom = !!(
+    (feL && blockCustoms?.[feL.blockKey]?.[feL.edgeOrd]) ||
+    (feR && blockCustoms?.[feR.blockKey]?.[feR.edgeOrd])
+  )
 
   // Persist a side's new measure. Whole-chain mode targets chain.measure
   // (every segment without a custom inherits it). Per-block mode writes
-  // blockCustoms[chainIdx][segOrd][side] so only this segment shifts.
-  // Symmetric mirrors the value to the other side in the same write.
+  // blockCustoms[fe.blockKey][fe.edgeOrd] via setBlockEdgeCustom — the
+  // same identity the handle drag uses. Symmetric mirrors the value to
+  // the other side in the same write. If the resolved fe is missing for
+  // a side (no block adjacency on that side for this segment), the write
+  // for that side is a no-op — same bail semantics as MeasureOverlay.
   function updateSide(sideKey, newSide) {
     if (isWholeChain) {
       setStreetMeasure(selectedStreet, m => {
@@ -169,12 +216,13 @@ export default function MeasurePanel() {
           m[other] = { ...newSide }
         }
       }, chainMeasure(st))
-    } else {
-      setBlockCustom(selectedStreet, ordinal, sideKey, newSide)
-      if (symmetric) {
-        const other = sideKey === 'left' ? 'right' : 'left'
-        setBlockCustom(selectedStreet, ordinal, other, { ...newSide })
-      }
+      return
+    }
+    const fe = sideKey === 'left' ? feL : feR
+    if (fe) setBlockEdgeCustom(fe.blockKey, fe.edgeOrd, newSide)
+    if (symmetric) {
+      const otherFe = sideKey === 'left' ? feR : feL
+      if (otherFe) setBlockEdgeCustom(otherFe.blockKey, otherFe.edgeOrd, { ...newSide })
     }
   }
 
@@ -184,22 +232,27 @@ export default function MeasurePanel() {
   }
 
   function resetToDefault() {
-    // Per-block reset: drop the custom for THIS (chain, segment), leaving
-    // chain.measure as the visible value. Whole-chain reset wipes every
-    // custom on the chain (matches the "Edit whole chain" toggle's wipe).
+    // Per-block reset: drop the customs at THIS segment's resolved fes
+    // (one per side), leaving chain.measure as the visible value.
+    // Whole-chain reset wipes every custom on the chain (matches the
+    // "Edit whole chain" toggle's wipe).
     if (isWholeChain) {
       clearCustomsForChain(selectedStreet)
-    } else {
-      const cur = blockCustoms?.[selectedStreet]
-      if (!cur) return
-      const next = { ...cur }
-      delete next[ordinal]
-      const all = { ...(blockCustoms || {}) }
-      if (Object.keys(next).length === 0) delete all[selectedStreet]
-      else all[selectedStreet] = next
-      useCartographStore.setState({ blockCustoms: all })
-      useCartographStore.getState()._saveDesignDebounced?.()
+      return
     }
+    const all = { ...(blockCustoms || {}) }
+    let changed = false
+    for (const fe of [feL, feR]) {
+      if (!fe) continue
+      if (!all[fe.blockKey]?.[fe.edgeOrd]) continue
+      all[fe.blockKey] = { ...all[fe.blockKey] }
+      delete all[fe.blockKey][fe.edgeOrd]
+      if (Object.keys(all[fe.blockKey]).length === 0) delete all[fe.blockKey]
+      changed = true
+    }
+    if (!changed) return
+    useCartographStore.setState({ blockCustoms: all })
+    useCartographStore.getState()._saveDesignDebounced?.()
   }
 
   return (
@@ -239,7 +292,7 @@ export default function MeasurePanel() {
         {st.type || 'residential'} · {st.points.length} nodes · {isWholeChain ? 'whole-chain' : (hasCustom ? 'custom block' : 'inherits chain')}
       </div>
 
-      {((!isWholeChain && hasCustom) || (isWholeChain && blockCustoms?.[selectedStreet])) && (
+      {((!isWholeChain && hasCustom) || (isWholeChain && hasAnyChainCustom(v2FrontageEdges, st, blockCustoms))) && (
         <div className="carto-actions">
           <button className="carto-btn-sm" onClick={resetToDefault}>
             {isWholeChain ? 'Wipe per-block customs' : 'Reset block to chain default'}
@@ -262,7 +315,7 @@ function ModeToggle() {
   const mode = useCartographStore(s => s.measureMode)
   const setMode = useCartographStore(s => s.setMeasureMode)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
-  const clearCustomsForChain = useCartographStore(s => s.clearBlockCustomsForChain)
+  const clearCustomsForChain = useCartographStore(s => s.clearBlockEdgeCustomsForChain)
   const isWholeChain = mode?.type === 'global'
   const click = () => {
     if (isWholeChain) {
