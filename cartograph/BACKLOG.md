@@ -2,9 +2,93 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-12 EOD-2 (Designer silhouette + LU coverage shipped: V2 ground meshes route through the same FACE_FADE / BAND_FADE bands BakedGround uses, so Designer's "Design" view now shows the same soft-circle silhouette as Stage / Preview. clipPolylineToBoundary helper clips MapLayers debug centerlines + barrier lines at the boundary. V2 blockFill face-straddle fallback recovered 23 LU rings (48% of ribbons.faces were being silently truncated). EOD-1 still current on Measure tooling.)
+Last updated: 2026-05-13 (Bake pipeline scene-parametric on the ground bake; LS Stage routed through baked lamps so Stage + Preview consume the same artifact. LS pipeline end-to-end: operator authors in Designer → Bake button runs the full chain → Stage and Preview both render from the slab. Toy bakes structurally clean but is deferred to its own session — it needs dummy data authored first (it's a constituent neighborhood, not a placeholder environment).)
 
-## 2026-05-12 EOD-2 — Session-end pin (read first; EOD-1 below is also current, different concern)
+## 2026-05-13 — Session-end pin (read first)
+
+LS is **up and running** end-to-end through the canonical pipeline. The
+ground bake is scene-parametric, LS Stage's lamps consume the bake
+artifact (matching Preview), and the slab actually proves the slab.
+Toy bakes structurally clean but renders empty because it has no
+dummy data authored yet — separate session.
+
+**Shipped:**
+
+- **bake-ground.js scene-parametric** — `loadSceneStencil(scene)`
+  replaces the module-top `_stencil = JSON.parse(...lafayette-square...)`
+  read; the scene's `neighborhood_boundary.json` drives clip polygon,
+  AO bbox, and the manifest's `stencil` block. When no `fade` /
+  `streetFade` fields are authored, `manifest.stencil = null` — BakedGround
+  already handled null cleanly, so no runtime change. Ribbons input
+  also scene-keyed: LS keeps `src/data/ribbons.json` (promote-ribbons
+  target); other scenes read `src/data/<scene>/<scene>-ribbons.json`.
+  LS regression-clean (35 groups, 1.7MB, soft-circle preserved);
+  toy bakes (9 groups, 184KB, rectangular silhouette, no fade).
+
+- **`cartograph/data/toy/neighborhood_boundary.json` authored** —
+  rectangular 360×360 boundary at origin, no `fade` / `streetFade`
+  fields. The "absent fade" signal is what tells the bake to emit
+  `manifest.stencil = null`. Mirrors Designer-side `TOY_STENCIL` from
+  `CartographApp.jsx` SCENE_REGISTRY (kept in sync; if you change one,
+  change both — a future cleanup would have Designer read the JSON too).
+
+- **BakedLamps promoted to `src/components/`** — was preview-only;
+  now shared between Stage and Preview. Mirrors `InstancedTrees`'
+  resolution pattern (`look` prop → cartograph-store `activeLookId`
+  → URL `?look=` → `'lafayette-square'`), re-fetches on store
+  `bakeLastMs` change so Stage's "↻" propagates without hard reload.
+  LS Stage now mounts `<BakedLamps />` instead of `<StreetLights />`.
+  Toy Stage retains its placeholder `<StreetLights lamps={toyLamps.lamps} />`
+  pending the toy-data session.
+
+**Architectural decision (logged for next reader):**
+
+- **Buildings deferred from baked-on-Stage swap.** Stage's
+  `LafayetteScene` reads live `_allBuildings` for per-building
+  interactivity (place state, neon, click handlers — downstream LS-app
+  concerns). The bake's `buildings.json` is a merged opaque mesh with
+  no per-building IDs — built for Preview's GPU-perf proof, not for
+  interaction. Both consume the same authored source
+  (`src/data/buildings.json`); they're not divergent content, just
+  different runtime shapes for different roles. **Future work IF it
+  becomes load-bearing:** bake per-building groups preserving IDs so
+  Stage can consume baked geometry + an interactivity overlay.
+
+**Memory saved this session:**
+
+- `feedback_preview_uses_production_pipeline` — Preview/Stage MUST
+  consume baked artifacts (arborist trees, bake-buildings, bake-lamps,
+  water canonical source); scene-only placeholders like ToyTrees /
+  ToyBuildings are Designer aids, NOT what Preview should see. When
+  publishing a new scene, every visible asset class must round-trip
+  through its canonical pipeline.
+
+**Known follow-ups (not blocking LS):**
+
+- `bake-buildings.js` and `bake-lamps.js` accept `--scene` but capture
+  to `_scene` (unused) with `TODO(0e-followup)` markers. For the toy
+  publish session, both need scene-keyed source paths (`toy-buildings.json`
+  and `toy-lamps.json` already exist at `src/data/toy/`).
+- Toy publish needs dummy data authored first: elevation, labels,
+  buildings, trees, street markings, possibly water. Toy is a
+  constituent neighborhood, not a placeholder — same shape of inputs
+  as LS, scaled down.
+- Arborist's tree bake writes `public/baked/default.json` — scene-shared
+  today. For multi-scene publish, arborist needs scene-keying or a
+  parallel toy-trees bake step.
+
+**Next session direction: Toy publish (data first).** With LS proving
+the canonical pipeline works end-to-end, toy can be authored as a real
+neighborhood dataset and routed through the same Bake button. Likely
+sub-phases: (1) dummy elevation + buildings + trees + lamps fixtures
+under `src/data/toy/`, (2) wire `bake-buildings`/`bake-lamps`/arborist
+trees to read scene-keyed inputs, (3) replace toy's React placeholders
+(`ToyBuildings`, `ToyTrees`) with the canonical bake-consuming
+components, (4) Preview toy and prove the slab.
+
+---
+
+## 2026-05-12 EOD-2 — Session-end pin (superseded by 2026-05-13 on the Stage/Preview parity question; EOD-1 below also current on Measure)
 
 Designer's "Design" view now renders the same soft-circle silhouette
 Stage and Preview show, and V2 blockFill no longer drops faces that

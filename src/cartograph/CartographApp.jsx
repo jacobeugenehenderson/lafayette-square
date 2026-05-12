@@ -22,6 +22,7 @@ import LafayetteScene from '../components/LafayetteScene'
 import LafayettePark from '../components/LafayettePark'
 import InstancedTrees from '../components/InstancedTrees'
 import StreetLights from '../components/StreetLights'
+import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../stage/StageArch'
 import CelestialBodies from '../stage/StageSky'
 import CloudDome from '../components/CloudDome'
@@ -576,7 +577,7 @@ const SCENE_REGISTRY = {
       )}
       <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
       {!hiddenLayers.lamp && (
-        <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>
+        <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>
       )}
       <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
     </>,

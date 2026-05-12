@@ -112,9 +112,10 @@ The runtime is the public app at `/`. It mounts the rendered neighborhood, loads
 Key runtime entry points:
 
 - `src/components/Scene.jsx` — main app scene tree
-- `src/components/BakedGround.jsx` — consumes a Look's slab (`public/baked/<id>/ground.{json,bin}` + `ground.lightmap.png`), renders as a single fortified mesh with baked AO
+- `src/components/BakedGround.jsx` — consumes a Look's slab (`public/baked/<id>/ground.{json,bin}` + `ground.lightmap.png`), renders as a single fortified mesh with baked AO. Honors `manifest.stencil = null` (toy / scenes without a soft-circle silhouette) by skipping the radial-fade shader.
 - `src/components/StreetRibbons.jsx` — live-render path for Designer/Stage authoring; uses shared `src/lib/ribbonsGeometry.js:buildRibbonGeometry()` so its face-clip output matches the bake structurally
-- `src/components/InstancedTrees.jsx` — consumes Arborist's `public/baked/default.json` + GLB variant atlas
+- `src/components/InstancedTrees.jsx` — consumes Arborist's `public/baked/default.json` + GLB variant atlas. Look resolution: explicit `lookId` prop → cartograph-store `activeLookId` → `'lafayette-square'`.
+- `src/components/BakedLamps.jsx` — consumes `public/baked/<look>/lamps.json` and wraps `StreetLights`. Shared between Stage and Preview (was preview-only before 2026-05-13). Same look-resolution pattern as `InstancedTrees`; re-fetches on store `bakeLastMs` change.
 
 The runtime also re-renders live edits in Designer/Stage during authoring sessions — color changes in Stage Surfaces show on screen *immediately*, not on next bake. The bake then captures a snapshot for handoff.
 

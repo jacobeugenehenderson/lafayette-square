@@ -1,0 +1,11 @@
+{
+  "_comment": "Toy stencil — rectangular 360x360 at origin. No fade/streetFade fields: signals 'no soft-circle silhouette' to bake-ground.js and BakedGround. Mirrors src/cartograph/CartographApp.jsx:TOY_STENCIL (kept in sync; if you change one, change both).",
+  "center": [0, 0],
+  "radius": 180,
+  "boundary": [
+    [-180, -180],
+    [ 180, -180],
+    [ 180,  180],
+    [-180,  180]
+  ]
+}

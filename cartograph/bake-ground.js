@@ -32,33 +32,42 @@ import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/c
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 
-// Canonical stencil — same artifact every consumer reads. The bake bbox
-// is derived from skirtExtent ± center here so AO baker rays + UV map
-// stay locked to the silhouette regardless of where ribbon positions
-// happen to fall this run.
-// LS-specific (its neighborhood-boundary stencil drives the bake bbox).
-// Toy bakes don't go through this top-level read today; when toy bake is
-// wired (Phase 0e-followup) this becomes a function of the active scene.
-const _stencil = JSON.parse(readFileSync(
-  join(ROOT, 'cartograph', 'data', 'lafayette-square', 'neighborhood_boundary.json'),
-  'utf-8'
-))
-const STENCIL_CENTER = _stencil.center || [0, 0]
-const STENCIL_RADIUS = _stencil.radius || 1
-const STENCIL_FACE_FADE   = _stencil.fade       || { inner: STENCIL_RADIUS - 134, outer: STENCIL_RADIUS }
-const STENCIL_STREET_FADE = _stencil.streetFade || { inner: STENCIL_RADIUS - 92,  outer: STENCIL_RADIUS + 108 }
-
-// Bake-time geometry clip polygon — the stencil polygon scaled outward
-// to streetFade.outer + a small buffer. Ribbons + faces get intersected
-// against this so nothing extends past the silhouette.
-const STENCIL_POLYGON = (() => {
-  const poly = _stencil.boundary || []
-  if (!poly.length) return null
-  const cx = STENCIL_CENTER[0], cz = STENCIL_CENTER[1]
-  const targetR = STENCIL_STREET_FADE.outer + 50
-  const scale = targetR / STENCIL_RADIUS
-  return poly.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
-})()
+// Scene stencil loader. Reads cartograph/data/<scene>/neighborhood_boundary.json
+// and derives the four bake-side stencil values:
+//   - center, radius                — manifest emission + AO bbox anchor
+//   - faceFade, streetFade          — runtime radial fade bands (BakedGround
+//                                     shader uniforms via manifest.stencil)
+//   - clipPolygon                   — Clipper mask for face/ribbon intersection,
+//                                     scaled outward to streetFade.outer + 50
+//
+// No-boundary fallback (file absent / no `boundary` field): returns nulls
+// across the board. clipPolygon=null disables stencil clipping; faceFade=null
+// signals manifest.stencil=null so BakedGround skips the radial fade shader.
+//
+// "fade authored?" gate: if the file has a `boundary` polygon but no `fade`
+// field, we use the polygon to clip but emit manifest.stencil=null so the
+// runtime renders flat (no soft-circle). Toy uses this — rectangular clip,
+// no radial dissolve. Mirrors the Designer-side `useBoundary` flag in
+// SCENE_REGISTRY by reading the same data signal.
+function loadSceneStencil(scene) {
+  const path = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
+  if (!existsSync(path)) return { center: [0, 0], radius: 1, faceFade: null, streetFade: null, clipPolygon: null }
+  const s = JSON.parse(readFileSync(path, 'utf-8'))
+  const center = s.center || [0, 0]
+  const radius = s.radius || 1
+  const faceFade   = s.fade || null
+  const streetFade = s.streetFade || null
+  let clipPolygon = null
+  if (s.boundary?.length) {
+    // Scale outward to streetFade.outer + 50 when fade is authored (LS).
+    // Without fade, no scaling needed — clip exactly at the authored polygon.
+    const targetR = streetFade ? streetFade.outer + 50 : radius
+    const scale = radius > 0 ? targetR / radius : 1
+    const cx = center[0], cz = center[1]
+    clipPolygon = s.boundary.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
+  }
+  return { center, radius, faceFade, streetFade, clipPolygon }
+}
 
 // Paint order (deepest = drawn first). The pure-Three.js bake bundle is
 // the canonical runtime artifact.
@@ -422,18 +431,27 @@ function itemsToBuffers(items) {
 }
 
 export async function bakeGround({ look = 'default', scene = 'lafayette-square' } = {}) {
-  const ribbonsPath = join(ROOT, 'src', 'data', 'ribbons.json')
+  // Ribbons input is scene-keyed. LS still publishes to the canonical
+  // src/data/ribbons.json (promote-ribbons.js writes there); other scenes
+  // author/derive their own ribbon fixture under src/data/<scene>/.
+  // When promote-ribbons becomes fully scene-keyed (Phase 0e), this can
+  // collapse to a single path template.
+  const ribbonsPath = scene === 'lafayette-square'
+    ? join(ROOT, 'src', 'data', 'ribbons.json')
+    : join(ROOT, 'src', 'data', scene, `${scene}-ribbons.json`)
   const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   const designPath  = join(ROOT, 'public', 'looks', look, 'design.json')
   const outDir      = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
+
+  const stencil = loadSceneStencil(scene)
 
   const ribbons = JSON.parse(readFileSync(ribbonsPath, 'utf-8'))
   const mapData = existsSync(mapPath) ? JSON.parse(readFileSync(mapPath, 'utf-8')) : { layers: {} }
   const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
   const designLayerColors = design.layerColors || {}
   const designLuColors    = design.luColors    || {}
-  const { byMaterial, byFaceUse } = buildV2BakeShape(ribbons, design, STENCIL_POLYGON)
+  const { byMaterial, byFaceUse } = buildV2BakeShape(ribbons, design, stencil.clipPolygon)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -495,8 +513,9 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
 
   // Re-clip to the stencil — V2 already clipped its own output, but
   // our injected overlays haven't seen the clipper yet. Run it again
-  // so nothing leaks past the silhouette.
-  clipAllToStencil(byMaterial, byFaceUse, STENCIL_POLYGON)
+  // so nothing leaks past the silhouette. No-op when stencil.clipPolygon
+  // is null (toy / unmigrated scenes).
+  if (stencil.clipPolygon) clipAllToStencil(byMaterial, byFaceUse, stencil.clipPolygon)
 
   // Build groups in paint order. Each group = one merged BufferGeometry.
   const groups = []
@@ -576,31 +595,35 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
     off += c.byteLength
   }
 
-  // Bake bbox derived from the canonical stencil, NOT the positions union.
-  // Anchored to STENCIL_CENTER so the AO baker's texel→world map and
-  // BakedGround's UV2 are both concentric with face/street fades.
-  // Half-extent = streetFade.outer + small buffer so all visible ground
-  // geometry stays inside the bbox at full UV resolution; oversize would
-  // waste lightmap texels.
-  const _bakeHalf = (_stencil.streetFade?.outer ?? 1000) + 50
-  const bx0 = STENCIL_CENTER[0] - _bakeHalf
-  const bx1 = STENCIL_CENTER[0] + _bakeHalf
-  const bz0 = STENCIL_CENTER[1] - _bakeHalf
-  const bz1 = STENCIL_CENTER[1] + _bakeHalf
+  // Bake bbox anchored to stencil.center so the AO baker's texel→world
+  // map and BakedGround's UV2 stay concentric with face/street fades.
+  // Half-extent prefers streetFade.outer + 50 (LS); falls back to the
+  // stencil radius + 50 when fade isn't authored (toy, where the
+  // boundary IS the bbox). Final fallback: 1000m, matches the prior
+  // hardcoded default.
+  const _bakeHalf = (stencil.streetFade?.outer ?? stencil.radius ?? 1000) + 50
+  const bx0 = stencil.center[0] - _bakeHalf
+  const bx1 = stencil.center[0] + _bakeHalf
+  const bz0 = stencil.center[1] - _bakeHalf
+  const bz1 = stencil.center[1] + _bakeHalf
+
+  // manifest.stencil = null when the scene didn't author a soft-circle
+  // fade (toy). BakedGround already handles null → skip radial fade shader.
+  // When fade IS authored (LS), emit the full block so the runtime can
+  // patch the shader uniforms without a side import.
+  const manifestStencil = stencil.faceFade && stencil.streetFade ? {
+    center: stencil.center,
+    radius: stencil.radius,
+    fade: stencil.faceFade,
+    streetFade: stencil.streetFade,
+  } : null
 
   const manifest = {
     version: 1,
     look,
     generatedAt: Date.now(),
     bbox: { min: [bx0, 0, bz0], max: [bx1, 0, bz1] },
-    // Canonical stencil values, frozen into the artifact so the runtime
-    // BakedGround can compute its radial fade without a side import.
-    stencil: {
-      center: STENCIL_CENTER,
-      radius: STENCIL_RADIUS,
-      fade: STENCIL_FACE_FADE,
-      streetFade: STENCIL_STREET_FADE,
-    },
+    stencil: manifestStencil,
     bin: 'ground.bin',
     positionFormat: 'float32',
     indexFormat: 'uint32',
