@@ -118,7 +118,7 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 |---|---|---|
 | `src/components/FacadeElements.jsx` + `FacadeBillboards.jsx` | Dropped facade-decor system | Deleted 2026-05-12 |
 | `src/data/facadeElements.json` + `public/models/facade/` (400 MB) + `public/model-viewer.html` + `decor`/`decor-icons` symlinks | Only consumed by FacadeElements | Deleted 2026-05-12 |
-| `src/data/{block_shapes,blocks,blocks_clean,ground_layers,landuse,nps-building-matches,park_species_map}.json` | Zero JS/JSON refs after V2 / Arborist migrations | Quarantined to `_quarantine/src-data/` 2026-05-12 — confirm clean session before delete |
+| ~~`src/data/{block_shapes,blocks,blocks_clean,ground_layers,landuse,nps-building-matches,park_species_map}.json`~~ | ~~Zero JS/JSON refs~~ — orphan classification was wrong (grep missed `arborist/`, `meteorologist/`, `.mjs`/`.cjs`/`.py`) | **RESTORED 2026-05-12.** Cleanup reframed: each L1.x migration retires its own input post-verification, no bulk pass. See `feedback_orphan_audit_full_repo`. |
 | `src/data/ribbons.json.backup-*` (40 files) | Pipeline-snapshot backups, gitignored | Deleted 2026-05-12 |
 | `ARCH.md` (Gateway Arch handoff) | No references anywhere | Moved to `_archive/handoffs/GATEWAY_ARCH.md` 2026-05-12 |
 

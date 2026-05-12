@@ -83,14 +83,9 @@ Production never touches these — they're for authoring sessions.
 | `public/model-viewer.html` | (debug tool only) | **Deleted 2026-05-12** |
 | `public/models/facade/{decor,decor-icons}` symlinks | broken — pointed at unmounted `/Volumes/Today/` | **Deleted 2026-05-12** (was breaking `npm run build`) |
 | `src/data/ribbons.json.backup-*` (40 files) | none — pipeline snapshots, gitignored | **Deleted 2026-05-12** |
-| `src/data/block_shapes.json` | pre-V2 block geometry | **Quarantined** to `_quarantine/src-data/` |
-| `src/data/blocks.json` + `blocks_clean.json` | pre-V2 derived blocks | **Quarantined** |
-| `src/data/ground_layers.json` | pre-slab ground composition | **Quarantined** |
-| `src/data/landuse.json` | pre-overlay land-use | **Quarantined** |
-| `src/data/nps-building-matches.json` | NPS dataset cross-ref | **Quarantined** |
-| `src/data/park_species_map.json` | pre-Arborist species mapping | **Quarantined** |
+| ~~`src/data/{block_shapes,blocks,blocks_clean,ground_layers,landuse,nps-building-matches,park_species_map}.json`~~ | ~~Zero refs~~ (grep was wrong) | **RESTORED 2026-05-12.** `park_species_map.json` broke `arborist/bake-trees.js` first; user caught it. `blocks.json` + `landuse.json` are referenced by `src/cartograph/CartographSurfaces.jsx` (live Designer); `block_shapes.json` + `blocks_clean.json` by cartograph backend; others by helper bake CLIs + scripts. Cleanup reframed — each L1.x migration retires its own input. See `feedback_orphan_audit_full_repo`. |
 
-Quarantine policy: confirmed-clean session before delete. Restore by `git mv _quarantine/src-data/<file> src/data/<file>`.
+**Reframe** (2026-05-12): bulk orphan classification was a false bucket. Migration is the only honest orphan test. Each L1.x slab migration retires the specific `src/data/X.json` it bypasses, in the same commit, after browser verification. No more bulk passes.
 
 ---
 

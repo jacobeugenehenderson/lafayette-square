@@ -4,21 +4,30 @@ The v1 punchlist for the LS consumer app. Triaged: slab migrations, route strips
 
 > Part of the **LS trinity** (`ls/FEATURES.md` / `ls/ARCHITECTURE.md` / `ls/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. The cartograph trinity under `cartograph/` covers authoring; this is the consumer side.
 
-Last updated: 2026-05-12 (trinity populated; reference docs landed under `ls/reference/`; `SLAB-CONTRACT.md` at root; facade-decor ripped; orphan data quarantined; rollback tag pushed)
+Last updated: 2026-05-12 (trinity populated; reference docs landed; `SLAB-CONTRACT.md` at root; L1.1 shipped; quarantine restored; cleanup order reframed)
 
 ---
 
 ## Session-end pin (read first)
 
-The LS trinity (`ls/{FEATURES,ARCHITECTURE,BACKLOG}.md`) is **scaffolded but not yet populated**. The skeleton sections marked `[TO BE FILLED]` are the next session's work — the live-data inventory and runtime composition map produce the content. Until they're filled, treat any FEATURES/ARCHITECTURE claim as provisional.
+**Cleanup order: migration FIRST, cleanup AFTER, per-step.** The 2026-05-12 "spring cleaning" pass tried to bulk-classify `src/data/*.json` files as orphans before the migrations had happened. The classification was wrong — files that look unreferenced from one angle are still load-bearing from another that hasn't moved yet. `park_species_map.json` broke the bake; all seven quarantined files were restored.
 
-Last spring-cleaning pass removed:
-- 40 ribbons.json.backup files (gitignored anyway)
-- 7 orphan `src/data/*.json` files → `_quarantine/src-data/`
-- Facade-decor system end-to-end: `FacadeElements.jsx`, `FacadeBillboards.jsx`, `facadeElements.json`, `public/models/facade/` (400M), `public/model-viewer.html`, broken `decor`/`decor-icons` symlinks
-- `ARCH.md` (Gateway Arch handoff, orphan) → `_archive/handoffs/`
+Going forward, cleanup attaches to each migration as its closing step:
+- **L1.1 (BakedLamps swap)** → after verification, `street_lamps.json` can be assessed for retirement (currently still needed by `lampLightmap.js` → L1.1b)
+- **L1.2 (park water/paths)** → only after `LafayettePark` no longer imports `park_water.json` + `park_paths.json` can those be removed
+- **L1.3 (buildings strategy)** → outcome dictates whether `src/data/buildings.json` is retired, kept, or hybridized
 
-Build (`npm run build`) succeeds again post-rip.
+No bulk orphan pass. Each consumer migration earns the right to retire its specific input. See memory `feedback_orphan_audit_full_repo`.
+
+**Shipped this session:**
+- LS trinity at `ls/` + cartograph trinity moved to `cartograph/`
+- Reference catalogs: `ls/reference/{INVENTORY-DATA,INVENTORY-API}.md`
+- `SLAB-CONTRACT.md` at repo root
+- Facade-decor system end-to-end removal (400 MB freed, `npm run build` unblocked)
+- 40 `ribbons.json.backup-*` files deleted
+- `ARCH.md` → `_archive/handoffs/GATEWAY_ARCH.md`
+- L1.1: production lamps via `BakedLamps`
+- Rollback tag `v1-pre-cartograph-merge` on `origin/main`
 
 ---
 
@@ -41,7 +50,7 @@ Build (`npm run build`) succeeds again post-rip.
 
 ## L1 — v1 slab migration (LS consumes the slab, not live data)
 
-The bake exists; LS production doesn't yet trust it. Migrate consumer-side.
+The bake exists; LS production doesn't yet trust it. Migrate consumer-side. **Each L1.x item carries its own cleanup closing step (retire the now-orphaned live data source).** No bulk orphan pass; the migration is what proves the file is no longer needed.
 
 | ID | Item | Notes |
 |---|---|---|
