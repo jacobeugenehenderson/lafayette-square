@@ -375,7 +375,16 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
   // inner edge, no trespass on ped zone OR curb. block.ring extends to
   // the asphalt edge (curb + ped-zone bands paint on top), so
   //   parcelInteriors = block.ring − curbBands − (treelawn ∪ sidewalk).
-  const blockRings = v2.blocks.map(b => b.ring).filter(r => r?.length >= 3)
+  //
+  // Park blocks excluded from the path-eligible set: LafayettePark.jsx's
+  // ParkPaths renders the park's gravel-shaded paths from park_paths.json,
+  // and a baked duplicate of those same OSM polylines (via this block,
+  // unshaded via FadeMesh) would poke through whenever the water mesh's
+  // depth sort flakes out at certain camera heights. Carving the park
+  // out keeps the gravel-shaded version as the sole park-path renderer.
+  const blockRings = v2.blocks
+    .filter(b => b?.ring?.length >= 3 && b.lu !== 'park')
+    .map(b => b.ring)
   const subtract = []
   for (const r of (v2.curbBands || [])) if (r?.length >= 3) subtract.push(r)
   for (const fb of (v2.frontageBands || [])) {
