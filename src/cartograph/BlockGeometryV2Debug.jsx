@@ -76,6 +76,20 @@ function pointInRing(p, ring) {
   return inside
 }
 
+// Find which block ring contains a point; returns its lu (or null).
+// Mirrors the bake's adjacent-parcel attribution for treelawn so
+// Designer and Stage agree on which LU drives each treelawn ring's
+// color. Coordinate-based on purpose — fee.blockKey (pass-1) drifts
+// from v2.blocks blockKey (pass-2) when asphalt widens.
+function blockLuAtPoint(point, blocks) {
+  if (!point || !blocks) return null
+  for (const b of blocks) {
+    if (!b?.ring || b.ring.length < 3) continue
+    if (pointInRing(point, b.ring)) return b.lu || 'unknown'
+  }
+  return null
+}
+
 // Find an interior probe point for a hole ring (CW from Clipper). Holes
 // share their boundary with surrounding outers, so a probe at a vertex is
 // AT the boundary and lands ambiguously by point-in-polygon. Instead, take
@@ -557,6 +571,36 @@ export default function BlockGeometryV2Debug({
     return m
   }, [frontageBands])
 
+  // Per-LU treelawn aggregation for non-selected chains. Each fe is
+  // attributed to its adjacent parcel via a coordinate probe (same logic
+  // as bake-ground.js's bake-side split), then bucketed by that LU.
+  // Selected-chain treelawn is excluded here and rendered separately by
+  // the per-chain path so the live drag preserves its translucent
+  // material. Result: ~10 per-LU meshes instead of ~80 per-chain meshes
+  // — net draw-count REDUCTION while landing the per-parcel coloring.
+  const treelawnByLuGeo = useMemo(() => {
+    const buckets = new Map()
+    for (const fe of frontageBands || []) {
+      if (!fe.treelawnRings?.length) continue
+      if (fe.chainIdx === selectedRibbonsChainIdx) continue
+      const probe = ringInteriorProbe(fe.treelawnRings[0])
+      const lu = probe ? blockLuAtPoint(probe, blocks) : null
+      const luKey = lu || '_unattributed'
+      if (!buckets.has(luKey)) buckets.set(luKey, [])
+      buckets.get(luKey).push(...fe.treelawnRings)
+    }
+    const out = []
+    for (const [lu, rings] of buckets) {
+      const geo = ringsToFlatGeo(rings, 0.02, true)
+      if (!geo) continue
+      const color = lu === '_unattributed'
+        ? treelawnCol
+        : (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || treelawnCol
+      out.push({ lu, geo, color })
+    }
+    return out
+  }, [frontageBands, blocks, selectedRibbonsChainIdx, luColors, treelawnCol])
+
   const nonSelectedChainGeo = useMemo(() => {
     const out = []
     for (const entry of byChain || []) {
@@ -564,9 +608,13 @@ export default function BlockGeometryV2Debug({
       if (entry.chainIdx === selectedRibbonsChainIdx) continue
       const ag = entry.asphaltRings.length  ? ringsToFlatGeo(entry.asphaltRings,  0.04, true) : null
       const fb = frontageByChain.get(entry.chainIdx)
-      const tlAll = (fb?.treelawn || []).concat(entry.treelawnCapRings || [])
+      // Treelawn for non-selected chains is rendered globally per-LU via
+      // treelawnByLuGeo above; only dead-end caps (which don't have a
+      // single adjacent parcel) flow through the per-chain path.
       const swAll = (fb?.sidewalk || []).concat(entry.sidewalkCapRings || [])
-      const tg = tlAll.length ? ringsToFlatGeo(tlAll, 0.02, true) : null
+      const tg = (entry.treelawnCapRings?.length)
+        ? ringsToFlatGeo(entry.treelawnCapRings, 0.02, true)
+        : null
       const sg = swAll.length ? ringsToFlatGeo(swAll, 0.03, true) : null
       if (ag || tg || sg) out.push({ chainIdx: entry.chainIdx, asphalt: ag, treelawn: tg, sidewalk: sg })
     }
@@ -661,12 +709,28 @@ export default function BlockGeometryV2Debug({
     asphaltSelected:   makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, selectedCorridor: true }),
     treelawn:          makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive }),
     treelawnSelected:  makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
+    // Per-LU treelawn materials — opaque variants keyed by LU so each
+    // non-selected treelawn mesh paints in its adjacent parcel's color.
+    // Selected-chain treelawn still uses `treelawnSelected` (translucent
+    // during Measure drag) regardless of LU.
+    treelawnByLu: new Map((function buildLuMats() {
+      const out = []
+      const luSet = new Set([
+        ...Object.keys(luColors || {}),
+        ...Object.keys(DEFAULT_LU_COLORS),
+      ])
+      for (const lu of luSet) {
+        const color = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || treelawnCol
+        out.push([lu, makeMaterial(color, PRI.treelawn, bandFade, { measureActive, surveyActive })])
+      }
+      return out
+    })()),
     sidewalk:          makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive }),
     sidewalkSelected:  makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
     curb:              makeMaterial(curbCol,     PRI.curb,     bandFade, { measureActive, surveyActive }),
     cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, bandFade, { surveyActive }),
     cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { surveyActive }),
-  }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, measureActive, surveyActive, bandFade])
+  }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, luColors, measureActive, surveyActive, bandFade])
 
   // Non-street ribbons (alley/footway/cycleway/steps/path). Pavement-only
   // strips buffered from each ribbon's pavedWidth via the shared helper
@@ -741,6 +805,18 @@ export default function BlockGeometryV2Debug({
           (normal vs selectedCorridor). Selected chain gets opacity 0.55
           in Measure. Order: treelawn (3) → sidewalk (5) → curb (6,
           unified) → asphalt (8). */}
+      {/* Per-LU treelawn meshes (non-selected chains). Each LU paints in
+          its adjacent parcel's authored color so the treelawn reads as a
+          frontage extension of the block rather than a uniform green
+          strip. Bake side splits the same way. */}
+      {treelawnVisible && treelawnByLuGeo.map(({ lu, geo }) => (
+        <mesh key={`tlu:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow
+          material={bandMats.treelawnByLu.get(lu) || bandMats.treelawn} />
+      ))}
+      {/* Per-chain treelawn — now only carries dead-end caps for non-
+          selected chains (per-LU global mesh above covers the frontage
+          portion) plus the SELECTED chain's full treelawn so its
+          translucent material still wins during Measure drag. */}
       {treelawnVisible && perChainGeo.map(g => g.treelawn && (
         <mesh key={`t${g.chainIdx}`} geometry={g.treelawn} renderOrder={PRI.treelawn} receiveShadow
           material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.treelawnSelected : bandMats.treelawn} />
