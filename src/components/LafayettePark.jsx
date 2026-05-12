@@ -177,6 +177,50 @@ function ParkGround() {
 // using the same polylines — no more SVG rasterization. See
 // `feedback_designer_is_canonical.md`.
 const PATH_WIDTH_M = 2.8
+const PATH_LAND_Y = 0.4    // float just above the park face
+const PATH_BRIDGE_Y = 0.5  // clear water (0.35) + island top (0.4)
+
+// Ray-cast point-in-polygon test (compass-frame coords [x, z]).
+function pointInRing(p, ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], zi = ring[i][1]
+    const xj = ring[j][0], zj = ring[j][1]
+    if (((zi > p[1]) !== (zj > p[1])) &&
+        (p[0] < (xj - xi) * (p[1] - zi) / (zj - zi) + xi)) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
+// Water = lake.outer minus lake.island (island is land), plus grotto.
+function pointInWater(p, water) {
+  if (water.lake?.outer && pointInRing(p, water.lake.outer)) {
+    if (water.lake.island && pointInRing(p, water.lake.island)) return false
+    return true
+  }
+  if (Array.isArray(water.grotto) && pointInRing(p, water.grotto)) return true
+  if (water.grotto?.outer && pointInRing(p, water.grotto.outer)) return true
+  return false
+}
+
+// Auto-detect bridges: a path is a "bridge" if the majority of its segment
+// midpoints fall over water. No park_paths.json authoring needed — the
+// geometry is the source of truth. (Manual override could be added via
+// `bridge: true` per path later.)
+function classifyBridgePath(path, water) {
+  const pts = path.points || path
+  if (!pts || pts.length < 2) return false
+  let inWater = 0, total = 0
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, az] = pts[i]
+    const [bx, bz] = pts[i + 1]
+    if (pointInWater([(ax + bx) / 2, (az + bz) / 2], water)) inWater++
+    total++
+  }
+  return inWater > total / 2
+}
 
 function buildPathRibbons(paths, width) {
   const positions = [], indices = []
@@ -222,17 +266,35 @@ function buildPathRibbons(paths, width) {
 function ParkPaths() {
   const pathShaderRef = useRef()
 
-  const pathGeo = useMemo(
-    () => buildPathRibbons(parkPathData.paths || [], PATH_WIDTH_M),
-    []
-  )
+  // Auto-bridge: split park paths into "land" and "bridge" sets based on
+  // overlap with park water. Bridge paths render at a higher Y so they
+  // clear water and the lake island. Land paths stay at the canonical
+  // path Y. See classifyBridgePath above.
+  const { landGeo, bridgeGeo } = useMemo(() => {
+    const all = parkPathData.paths || []
+    const bridges = [], lands = []
+    for (const p of all) {
+      (classifyBridgePath(p, parkWaterData) ? bridges : lands).push(p)
+    }
+    return {
+      landGeo: buildPathRibbons(lands, PATH_WIDTH_M),
+      bridgeGeo: buildPathRibbons(bridges, PATH_WIDTH_M),
+    }
+  }, [])
 
   // Gravel material — same pebble/voronoi shader as before, minus the
   // SVG-clip uniforms since the geometry IS the path shape now.
+  //
+  // polygonOffset: paths win over any coplanar surface they touch (lake
+  // island at y=0.4 coplanar with land paths; bank meshes near the water
+  // edge). Negative factor/units pulls fragments toward camera.
   const pathMat = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
       roughness: 0.95,
       color: '#928a7c',
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
     })
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunAltitude = { value: 0.5 }
@@ -332,9 +394,14 @@ function ParkPaths() {
   })
 
   return (
-    <group position={[0, 0.4, 0]}>
-      <mesh geometry={pathGeo} material={pathMat} receiveShadow frustumCulled={false} />
-    </group>
+    <>
+      <group position={[0, PATH_LAND_Y, 0]}>
+        <mesh geometry={landGeo} material={pathMat} receiveShadow frustumCulled={false} />
+      </group>
+      <group position={[0, PATH_BRIDGE_Y, 0]}>
+        <mesh geometry={bridgeGeo} material={pathMat} receiveShadow frustumCulled={false} />
+      </group>
+    </>
   )
 }
 
