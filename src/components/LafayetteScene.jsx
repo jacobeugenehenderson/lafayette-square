@@ -13,8 +13,6 @@ import usePlaceState from '../hooks/usePlaceState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
-// import FacadeBillboards from './FacadeBillboards'  // shelved — future street-level facade rendering
-import FacadeElements from './FacadeElements'
 import { patchTerrain } from '../utils/terrainShader'
 import { getElevation } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
@@ -1270,27 +1268,22 @@ function LafayetteScene() {
 
   // On mobile, stagger browse-only content across several seconds so the GPU
   // can compile shaders and upload textures in batches instead of all at once.
-  // Mounting SDF text + Html MapPins + facade geo simultaneously crashes mobile.
   // Desktop mounts everything immediately.
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
   const [labelsReady, setLabelsReady] = useState(false)
   const [markersReady, setMarkersReady] = useState(false)
-  const [facadesReady, setFacadesReady] = useState(false)
   useEffect(() => {
     if (viewMode !== 'hero') {
       if (isMobile) {
         const t1 = setTimeout(() => setLabelsReady(true), 2000)
         const t2 = setTimeout(() => setMarkersReady(true), 3500)
-        // No facades on mobile — too small to see, saves ~10MB GPU memory
         return () => { clearTimeout(t1); clearTimeout(t2) }
       }
       setLabelsReady(true)
       setMarkersReady(true)
-      setFacadesReady(true)
     } else {
       setLabelsReady(false)
       setMarkersReady(false)
-      setFacadesReady(false)
     }
   }, [viewMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1420,12 +1413,6 @@ function LafayetteScene() {
 
       {/* Landmark markers */}
       {markersReady && <LandmarkMarkers />}
-
-      {/* 3D facade elements — last batch (heaviest: geometry + shaders) */}
-      {facadesReady && <FacadeElements />}
-
-      {/* Facade photos — billboard planes on building fronts (shelved for future) */}
-      {/* {viewMode !== 'hero' && <FacadeBillboards />} */}
     </group>
   )
 }

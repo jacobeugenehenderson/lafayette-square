@@ -54,7 +54,24 @@ The project is organized as a **public-facing runtime app** plus a small set of 
 | **Arborist** (`/arborist`)       | `src/arborist/` + `arborist/`          | `public/trees/<species>/{skeleton-N.glb, tips-N.json, manifest.json}` | Runtime `InstancedTrees` (planned) |
 | **Meteorologist** (in Stage)     | `meteorologist/` + `src/cartograph/` (UI inline) + `src/components/Atmosphere.jsx` (planned) | `public/clouds/{presets,almanac}.json` | Runtime `<Atmosphere />` (planned) |
 
-Read [`ARCHITECTURE.md`](ARCHITECTURE.md) for the publish-loop pattern, the Looks model (per-Look styling vs. shared geometry), and the Designer/Stage role split. Each helper has its own README documenting its inputs, outputs, and command surface:
+This codebase carries **two parallel trinities** — one per app — under `cartograph/` and `ls/`:
+
+| Trinity | What it documents |
+|---|---|
+| [`cartograph/FEATURES.md`](cartograph/FEATURES.md) / [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) / [`cartograph/BACKLOG.md`](cartograph/BACKLOG.md) | Designer / Stage / Preview / bake pipeline. The map-making toolkit. |
+| [`ls/FEATURES.md`](ls/FEATURES.md) / [`ls/ARCHITECTURE.md`](ls/ARCHITECTURE.md) / [`ls/BACKLOG.md`](ls/BACKLOG.md) | The Lafayette Square consumer app. Runtime mount tree, slab consumption, place cards, residence, guardians, Cary. |
+
+Cartograph and LS are **standalone yet completely overlapped** — cartograph could pour slabs for other neighborhoods; LS could surface different operators' slabs. Read whichever trinity is relevant to your session; flag mid-session contradictions; update at session end.
+
+The boundary between them is formal: [`SLAB-CONTRACT.md`](SLAB-CONTRACT.md) at the repo root specifies what cartograph publishes and LS consumes (the slab format). It's owned by neither app.
+
+Partner-facing reference catalogs live under [`ls/reference/`](ls/reference/):
+
+- [`ls/reference/INVENTORY-DATA.md`](ls/reference/INVENTORY-DATA.md) — every data source LS touches (slab artifacts, bundled JSON, live backends, asset weights, bundle sizes)
+- [`ls/reference/INVENTORY-API.md`](ls/reference/INVENTORY-API.md) — every backend endpoint (50+ GAS endpoints, Supabase tables/RPCs/functions, Cloudflare Worker, open-meteo)
+
+
+Each helper also has its own README documenting its inputs, outputs, and command surface:
 
 - [`cartograph/README.md`](cartograph/README.md)
 - [`arborist/README.md`](arborist/README.md) (scaffold — see [`arborist/SPEC.md`](arborist/SPEC.md) for the build plan)

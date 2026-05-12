@@ -7,7 +7,7 @@ Build the **Meteorologist**: the project's atmospheric authoring system + runtim
 Read first, in order:
 
 1. [`./README.md`](./README.md) — orientation, current status, what's done vs. not yet
-2. [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — Designer / Stage split, Looks model
+2. [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — Designer / Stage split, Looks model
 3. [`../arborist/SPEC.md`](../arborist/SPEC.md) — sibling helper this borrows shape from (the **runtime artifact** + **schema validation** pattern, not the helper-app shell — Meteorologist has no separate app shell, see below)
 4. [`./CANON.md`](./CANON.md) — what's in the Teapot today, what's not, why
 5. [`./STAGE_MIGRATION.md`](./STAGE_MIGRATION.md) — the precise list of file edits in the cleanup commit

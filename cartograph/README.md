@@ -2,7 +2,7 @@
 
 The neighborhood-ground helper app. Authors the cartograph (streets, blocks, paths, sidewalks, treelawn, lawn, land-use faces) and publishes one canonical bake bundle per Look that the runtime renders as the city's ground plane.
 
-Read [`../ARCHITECTURE.md`](../ARCHITECTURE.md) first for the publish-loop pattern, the Designer/Stage split, and the Looks model. This README is the contract specific to Cartograph.
+Read [`./ARCHITECTURE.md`](./ARCHITECTURE.md) first for the publish-loop pattern, the Designer/Stage split, and the Looks model. This README is the contract specific to Cartograph.
 
 ---
 
@@ -151,7 +151,7 @@ Stage and Preview mount the **same component** with the same artifact. The bundl
 
 ## Cross-references
 
-- [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — project-wide patterns (publish loop, Looks model, Designer/Stage split)
+- [`./ARCHITECTURE.md`](./ARCHITECTURE.md) — project-wide patterns (publish loop, Looks model, Designer/Stage split)
 - `../memory/project_baked_ground_runtime.md` — runtime contract for BakedGround.jsx (parity rule)
 - `../memory/project_bake_pipeline_pure_threejs.md` — bake bundle architecture
 - `../memory/project_bake_face_clip.md` — face fills are clipped against ribbon footprint at bake time; outer + holes structure

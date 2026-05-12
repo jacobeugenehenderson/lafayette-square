@@ -2,7 +2,7 @@
 
 Build the **Arborist**, a standalone helper app that authors per-species tree assets and publishes them as artifacts the runtime consumes. Modeled directly on the existing **Cartograph** helper. Read these first, in this order:
 
-1. [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — publish-loop pattern, Looks model, Designer/Stage split.
+1. [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — publish-loop pattern, Looks model, Designer/Stage split.
 2. [`../cartograph/README.md`](../cartograph/README.md) — the canonical helper this Arborist mirrors.
 3. [`../memory/project_tree_lidar_pipeline.md`](../memory/project_tree_lidar_pipeline.md) — tree-pipeline architecture, dataset notes, runtime memory budget, why this approach.
 4. [`../memory/project_tree_model_sourcing.md`](../memory/project_tree_model_sourcing.md) — researched paid + free options; sets context for why we're building this rather than buying.
@@ -90,7 +90,7 @@ Both the Arborist's workstage canvas and the runtime's `InstancedTrees.jsx` impo
 
 ## Architectural placement
 
-Mirror Cartograph's directory shape exactly. Pattern from [`../ARCHITECTURE.md` § 4](../ARCHITECTURE.md):
+Mirror Cartograph's directory shape exactly. Pattern from [`../cartograph/ARCHITECTURE.md` § 4](../cartograph/ARCHITECTURE.md):
 
 ```
 arborist/                        # build-side
@@ -570,7 +570,7 @@ The build is complete for v1 when **all** of these are true with `acer_saccharum
 | Preview material sharing | `src/components/tree-materials.js` factory used by both Arborist preview and runtime InstancedTrees. NOT a shared panel. | Conversation 2026-04-27 |
 | Workstage shape | One workstage. Pickers at top (species / specimen / variant), 3D viewport center, tune panel side. Tune controls disabled until specimen is promoted to seedling. | Conversation 2026-04-27 |
 | Plaques in Street view | Future feature, not part of Arborist | `memory/project_tree_lidar_pipeline.md` |
-| Per-Look tree composition | Out of scope; Looks vary styling, not which trees exist | `ARCHITECTURE.md` § 2 |
+| Per-Look tree composition | Out of scope; Looks vary styling, not which trees exist | `../cartograph/ARCHITECTURE.md` § 2 |
 | Park-scanning fieldwork | Deferred indefinitely; not part of v1 | `memory/project_tree_lidar_pipeline.md` |
 | Repo layout | Arborist lives inside `lafayette-square` repo, not separate | Conversation 2026-04-27 |
 
@@ -610,7 +610,7 @@ Each step is a commit. Branch off the operator's current working branch (`cartog
 
 ## Cross-references
 
-- [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — project-wide patterns
+- [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — project-wide patterns
 - [`../cartograph/README.md`](../cartograph/README.md) — the helper template
 - [`../memory/project_tree_lidar_pipeline.md`](../memory/project_tree_lidar_pipeline.md) — full pipeline rationale + dataset notes
 - [`../memory/project_tree_model_sourcing.md`](../memory/project_tree_model_sourcing.md) — research on alternatives

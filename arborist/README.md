@@ -4,7 +4,7 @@ The species-asset library producer. Authors per-species tree skeletons + leaf/ba
 
 Read in order:
 
-1. [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — publish-loop pattern.
+1. [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — publish-loop pattern.
 2. [`../cartograph/README.md`](../cartograph/README.md) — the helper template Arborist mirrors.
 3. [`SPEC.md`](SPEC.md) — full v1 build specification, decisions, acceptance criteria.
 
@@ -117,7 +117,7 @@ Stage's Surfaces.Trees panel rebinds to a dynamic species list from `index.json`
 ## Cross-references
 
 - [`SPEC.md`](SPEC.md) — full build spec
-- [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — project-wide patterns
+- [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — project-wide patterns
 - [`../cartograph/README.md`](../cartograph/README.md) — the helper template
 - [`../memory/project_tree_lidar_pipeline.md`](../memory/project_tree_lidar_pipeline.md) — pipeline rationale, dataset notes
 - FOR-species20K: https://zenodo.org/records/13255198
