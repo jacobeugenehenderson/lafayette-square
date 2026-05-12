@@ -329,19 +329,126 @@ export default function BlockGeometryV2Debug({
   // Group blocks by land use → one mesh per LU type, each colored from
   // luColors[lu] || DEFAULT_LU_COLORS[lu]. The hash-fallback assignment
   // happens inside buildBlockGeometryV2 (deterministic per blockKey).
-  const blockGroups = useMemo(() => {
-    const byLu = new Map()
+  // Adjacent-block resolution for the selected chain. While Measure is
+  // active and a chain is selected, block-fill polygons within the
+  // chain's authoring scope go translucent so the aerial reads through
+  // every layer (asphalt + treelawn + sidewalk + lot).
+  //
+  // Scope per measureMode:
+  //   - 'global' (whole-chain, default): every block whose ring shares
+  //     an edge with the selected chain's centerline. Geometric
+  //     proximity test (chain.points within hw+cw+tl+sw+slack of any
+  //     block-edge segment) — robust to walker fe-coverage gaps that
+  //     can appear on complex multi-carriageway corridors (Park Ave,
+  //     Truman) where some chain↔block pairs lose their fe.
+  //   - 'block' (per-segment): narrow to just the two blocks on either
+  //     side of the centerline at `selectedMeasurePoint` — the anchor
+  //     the drag will actually write to.
+  const measureMode = useCartographStore(s => s.measureMode)
+  const selectedMeasurePoint = useCartographStore(s => s.selectedMeasurePoint)
+  const selectedAdjacentBlockKeys = useMemo(() => {
+    if (!measureActive || selectedRibbonsChainIdx < 0) return null
+    const chain = liveRibbons?.streets?.[selectedRibbonsChainIdx]
+    if (!chain?.points || chain.points.length < 2) return null
+    const m = chain.measure || {}
+    const hwL = m.left?.pavementHW || 0
+    const hwR = m.right?.pavementHW || 0
+    const tlL = m.left?.treelawn || 0,  swL = m.left?.sidewalk || 0
+    const tlR = m.right?.treelawn || 0, swR = m.right?.sidewalk || 0
+    // Slack covers per-block customs that widen beyond the chain default.
+    const PROBE_SLACK = 10
+    const probeR = Math.max(hwL + tlL + swL, hwR + tlR + swR) + curbWidth + PROBE_SLACK
+    const probeR2 = probeR * probeR
+
+    // Probe by chain SEGMENT MIDPOINTS, not chain.points. Endpoints
+    // (chain.points[0] and points[n-1]) sit at the IX where the chain
+    // terminates; the blocks across that IX are physically close but
+    // the chain doesn't run ALONGSIDE them — they're end-on, not side-
+    // adjacent. Segment midpoints sit inside the chain's run, so probing
+    // from them excludes end-on blocks while still catching every block
+    // the chain genuinely runs alongside.
+    const segMids = []
+    for (let i = 0; i < chain.points.length - 1; i++) {
+      const a = chain.points[i], b = chain.points[i + 1]
+      segMids.push([(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5])
+    }
+    const minDist2 = (ring) => {
+      let best = Infinity
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i], b = ring[(i + 1) % ring.length]
+        const dx = b[0] - a[0], dz = b[1] - a[1]
+        const L2 = dx * dx + dz * dz
+        if (L2 < 1e-9) continue
+        for (const p of segMids) {
+          const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2))
+          const qx = a[0] + t * dx, qz = a[1] + t * dz
+          const d2 = (p[0] - qx) ** 2 + (p[1] - qz) ** 2
+          if (d2 < best) { best = d2; if (best <= 1) return best }
+        }
+      }
+      return best
+    }
+    const keys = new Set()
     for (const b of (blocks || [])) {
-      if (!byLu.has(b.lu)) byLu.set(b.lu, [])
-      byLu.get(b.lu).push(b.ring)
+      if (!b?.ring || !b.blockKey) continue
+      if (minDist2(b.ring) <= probeR2) keys.add(b.blockKey)
+    }
+
+    // Per-block mode: narrow to the two blocks at the anchor. Probe a
+    // point at perp ±(hw+cw+1) from the anchor on each side and check
+    // which block ring contains it.
+    if (measureMode?.type === 'block' && selectedMeasurePoint && keys.size > 1) {
+      const pts = chain.points
+      const ap = selectedMeasurePoint
+      // Nearest segment of chain to the anchor for the perp basis.
+      let bestI = 0, bestD2 = Infinity
+      for (let i = 0; i < pts.length - 1; i++) {
+        const ax = pts[i][0], az = pts[i][1], bx = pts[i+1][0], bz = pts[i+1][1]
+        const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz
+        if (L2 < 1e-9) continue
+        const t = Math.max(0, Math.min(1, ((ap.x - ax) * dx + (ap.z - az) * dz) / L2))
+        const qx = ax + t * dx, qz = az + t * dz
+        const d2 = (ap.x - qx) ** 2 + (ap.z - qz) ** 2
+        if (d2 < bestD2) { bestD2 = d2; bestI = i }
+      }
+      const ax = pts[bestI][0], az = pts[bestI][1]
+      const bx = pts[bestI + 1][0], bz = pts[bestI + 1][1]
+      const tx = bx - ax, tz = bz - az
+      const tL = Math.hypot(tx, tz) || 1
+      const lnx = -tz / tL, lnz = tx / tL  // left perp
+      const probeL = hwL + curbWidth + 1
+      const probeR2dist = hwR + curbWidth + 1
+      const pL = [ap.x + lnx * probeL, ap.z + lnz * probeL]
+      const pR = [ap.x - lnx * probeR2dist, ap.z - lnz * probeR2dist]
+      const narrowed = new Set()
+      for (const b of (blocks || [])) {
+        if (!b?.ring || !b.blockKey || !keys.has(b.blockKey)) continue
+        if (pointInRing(pL, b.ring) || pointInRing(pR, b.ring)) narrowed.add(b.blockKey)
+      }
+      return narrowed.size ? narrowed : keys
+    }
+    return keys.size ? keys : null
+  }, [measureActive, selectedRibbonsChainIdx, liveRibbons, blocks, curbWidth, measureMode, selectedMeasurePoint])
+
+  // Group blocks by (lu, selected). Selected blocks render through the
+  // `selectedCorridor` material variant (opacity 0.55 in Measure, same
+  // as the chain's bands); unselected blocks render opaque.
+  const blockGroups = useMemo(() => {
+    const byKey = new Map()
+    for (const b of (blocks || [])) {
+      const selected = !!(selectedAdjacentBlockKeys && selectedAdjacentBlockKeys.has(b.blockKey))
+      const key = `${b.lu}|${selected ? 1 : 0}`
+      let entry = byKey.get(key)
+      if (!entry) { entry = { lu: b.lu, selected, rings: [] }; byKey.set(key, entry) }
+      entry.rings.push(b.ring)
     }
     const out = []
-    for (const [lu, rings] of byLu) {
-      const color = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || DEFAULT_LU_COLORS.residential
-      out.push({ lu, color, geo: ringsToFlatGeo(rings, 0.01, true) })
+    for (const [key, entry] of byKey) {
+      const color = (luColors && luColors[entry.lu]) || DEFAULT_LU_COLORS[entry.lu] || DEFAULT_LU_COLORS.residential
+      out.push({ key, lu: entry.lu, selected: entry.selected, color, geo: ringsToFlatGeo(entry.rings, 0.01, true) })
     }
     return out
-  }, [blocks, luColors])
+  }, [blocks, luColors, selectedAdjacentBlockKeys])
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
   // Asphalt corner plug — fills the rounded fillet wedges at IX corners
   // that the per-chain asphalt rectangles don't cover. Without this, the
@@ -493,6 +600,16 @@ export default function BlockGeometryV2Debug({
     if (!measureActive || !liveSelectedRings?.sidewalkEdges?.length) return null
     return polysToLineGeo(liveSelectedRings.sidewalkEdges)
   }, [liveSelectedRings, measureActive])
+  // Asphalt outer-edge stroke — curb-colored line at the asphalt|curb
+  // boundary on the selected chain. The curb mesh itself is hidden during
+  // selection (its silhouette is stale relative to the live overlay), but
+  // the operator still needs a precise asphalt-boundary line to align
+  // against the aerial during a drag. Mirrors the treelawn/sidewalk
+  // outer-edge strokes.
+  const asphaltEdgeGeo = useMemo(() => {
+    if (!measureActive || !liveSelectedRings?.asphaltEdges?.length) return null
+    return polysToLineGeo(liveSelectedRings.asphaltEdges)
+  }, [liveSelectedRings, measureActive])
 
   // Materials. We mount ~700+ per-chain meshes on LS (242 chains × 3
   // bands + corner geometries), and `makeMaterial(...)` allocates a new
@@ -514,19 +631,25 @@ export default function BlockGeometryV2Debug({
     cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, null, { surveyActive }),
     cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  null, { surveyActive }),
   }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, measureActive, surveyActive])
-  // LU block-fill materials cached per land-use color. Same N→1 win:
-  // ~10 LU groups × 1 material each instead of one per render.
+  // LU block-fill materials cached per (lu, selected) key. Selected
+  // adjacent blocks route through the `selectedCorridor` variant so the
+  // parcel translucency matches the chain's band translucency (0.55 in
+  // Measure). Same N→1 caching win as before; ~10 LU × 2 selected-states.
   const blockMats = useMemo(() => {
     const out = {}
-    for (const g of blockGroups) out[g.lu] = makeMaterial(g.color, PRI.residential, null, { surveyActive })
+    for (const g of blockGroups) {
+      out[g.key] = makeMaterial(g.color, PRI.residential, null, {
+        measureActive, surveyActive, selectedCorridor: g.selected,
+      })
+    }
     return out
-  }, [makeMaterial, blockGroups, surveyActive])
+  }, [makeMaterial, blockGroups, measureActive, surveyActive])
 
   return (
     <group>
       {!hideLandUse && lotVisible && blockGroups.map(g => g.geo && (
-        <mesh key={g.lu} geometry={g.geo} renderOrder={PRI.residential} receiveShadow
-          material={blockMats[g.lu]} />
+        <mesh key={g.key} geometry={g.geo} renderOrder={PRI.residential} receiveShadow
+          material={blockMats[g.key]} />
       ))}
       {/* Per-chain band meshes. Material picked from the cached pair
           (normal vs selectedCorridor). Selected chain gets opacity 0.55
@@ -591,6 +714,15 @@ export default function BlockGeometryV2Debug({
       {sidewalkEdgeGeo && (
         <lineSegments geometry={sidewalkEdgeGeo} renderOrder={PRI.asphalt + 1}>
           <lineBasicMaterial color={sidewalkCol} transparent opacity={1} depthWrite={false} />
+        </lineSegments>
+      )}
+      {/* Asphalt outer-edge — curb-colored line at the asphalt|curb
+          boundary on the selected chain. Replaces the visual role of the
+          (hidden-during-selection) curb mesh during a drag, while staying
+          handle-tracked via liveSelectedRings. */}
+      {asphaltEdgeGeo && (
+        <lineSegments geometry={asphaltEdgeGeo} renderOrder={PRI.asphalt + 1}>
+          <lineBasicMaterial color={curbCol} transparent opacity={1} depthWrite={false} />
         </lineSegments>
       )}
       {showCornerDots && corners.map((c, i) => (

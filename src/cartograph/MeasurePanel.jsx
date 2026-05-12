@@ -306,14 +306,12 @@ export default function MeasurePanel() {
   )
 }
 
-// Measure-mode toggle — block (per-segment) vs whole-chain.
-// "Edit whole chain" toggles the universal authoring mode. Pressing it
-// ON IMMEDIATELY wipes the chain's existing per-block customs — going
-// global is the commit to "this is the universal width" and the
-// per-block deviations don't survive that. Pressing OFF returns to
-// per-block authoring with no side effect (chain.measure stays).
-// Default is OFF: most authoring time is per-block; operators set the
-// universal once at survey time and spend the rest refining blocks.
+// Measure-mode toggle — whole-chain (default) vs per-block.
+// "Edit whole chain" is the universal authoring mode and the default
+// on selection. Toggling OFF enters per-block mode (drag edits the
+// block at the click anchor without touching the chain default).
+// Toggling BACK ON wipes the chain's per-block customs — going
+// universal is the commit to "this is the chain default everywhere."
 function ModeToggle() {
   const mode = useCartographStore(s => s.measureMode)
   const setMode = useCartographStore(s => s.setMeasureMode)
@@ -335,8 +333,8 @@ function ModeToggle() {
         className={`carto-btn-sm carto-btn--grow${isWholeChain ? ' is-active' : ''}`}
         onClick={click}
         title={isWholeChain
-          ? 'Whole-chain mode: drag edits the chain default for every block. Click to return to per-block authoring.'
-          : 'Per-block mode (default): drag edits the block at the click anchor. Click to switch to whole-chain — that wipes any per-block customs on this chain.'}>
+          ? 'Whole-chain mode (default): drag edits the chain default for every block. Click to switch to per-block authoring.'
+          : 'Per-block mode: drag edits the block at the click anchor. Click to switch back to whole-chain — that wipes any per-block customs on this chain.'}>
         {isWholeChain ? '● Edit whole chain' : '○ Edit whole chain'}
       </button>
     </div>

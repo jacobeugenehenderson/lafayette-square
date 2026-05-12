@@ -1819,6 +1819,13 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
     // the per-chain emission's entry.{treelawn,sidewalk}Edges shape so
     // BlockGeometryV2Debug's polysToLineGeo can consume either source.
     treelawnEdges: [], sidewalkEdges: [],
+    // Asphalt outer-edge polylines (perp ±hw from centerline) — added so
+    // the live-drag overlay can render a curb-colored stroke at the
+    // asphalt|curb boundary on the selected chain. While the curb mesh
+    // is hidden during selection (it lies about the live asphalt extent),
+    // this stroke gives the operator the precise asphalt boundary to
+    // align against the aerial.
+    asphaltEdges: [],
   }
   if (!chain || chain.disabled) return out
   const pts = chain.points
@@ -1862,6 +1869,11 @@ export function buildChainBandsLive(chain, chainIdx, blockCustoms, frontageEdges
       const rightEdge = segPts.map((p, i) => [p[0] + segPerps[i][0] * hwR, p[1] + segPerps[i][1] * hwR])
       const ring = [...leftEdge, ...rightEdge.slice().reverse()]
       out.asphaltRings.push(ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse())
+      // Emit per-side asphalt outer-edge polylines. Mirrors treelawnEdges/
+      // sidewalkEdges shape (polyline per segment per side) so the
+      // overlay's polysToLineGeo can consume them identically.
+      if (hwL > 0) out.asphaltEdges.push(leftEdge)
+      if (hwR > 0) out.asphaltEdges.push(rightEdge)
     }
     for (const sideKey of ['left', 'right']) {
       const sideSign = sideKey === 'left' ? -1 : +1

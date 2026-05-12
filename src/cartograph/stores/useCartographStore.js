@@ -220,7 +220,11 @@ const useCartographStore = create((set, get) => ({
   // Default is per-block because that's the bulk of authoring time;
   // operators set the universal value once per chain at survey time and
   // spend the rest of the session refining individual blocks.
-  measureMode: { type: 'block' },
+  // Whole-chain is the canonical authoring mode: drag a handle and the
+  // change propagates to every block-edge the chain borders. Operators
+  // set the universal cross-section first, then opt INTO per-block
+  // (`{ type: 'block' }`) when a specific block diverges.
+  measureMode: { type: 'global' },
   // Transient cache of V2's rounded block rings — written by
   // BlockGeometryV2Debug on every recompute, read by MeasureOverlay so
   // the drag path can do block adjacency at drag time without
