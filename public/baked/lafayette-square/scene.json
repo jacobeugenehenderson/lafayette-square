@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "generatedAt": 1778559460179,
+  "generatedAt": 1778562102114,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -64,7 +64,7 @@
   },
   "layerVis": {
     "street": true,
-    "highway": false,
+    "highway": true,
     "stripe": true,
     "edgeline": false,
     "bikelane": true,

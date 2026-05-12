@@ -1,7 +1,7 @@
 {
   "layerVis": {
     "street": true,
-    "highway": false,
+    "highway": true,
     "stripe": true,
     "edgeline": false,
     "bikelane": true,
