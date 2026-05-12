@@ -30,7 +30,7 @@ import SpriteClouds from '../components/SpriteClouds'
 import Terrain from '../components/Terrain'
 import { V_EXAG } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { StageCamera, SHOTS, StageShadows, computeBrowseAltitude, HeroPreview, resolveHeroSubject, PostProcessing, StageFog } from '../stage/StageApp.jsx'
+import { SHOTS, StageShadows, computeBrowseAltitude, HeroPreview, resolveHeroSubject, PostProcessing, StageFog } from '../stage/StageApp.jsx'
 import { buildings as _allBuildings } from '../data/buildings'
 import PreviewPostFx from '../preview/PreviewPostFx.jsx'
 
@@ -264,40 +264,25 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         const cam = perspRef.current
         const s = SHOTS[shot]
         if (!cam || !s) return
-        // Coming from Designer into Browse: copy x/z + derive altitude from
-        // ortho zoom so the perspective view frames the same ground patch.
-        if (shot === 'browse' && prevShot.current === 'designer' && orthoRef.current) {
-          const ortho = orthoRef.current
-          const fovRad = (s.fov * Math.PI) / 180
-          const visibleH = size.height / Math.max(ortho.zoom, 1e-6)
-          const altitude = visibleH / (2 * Math.tan(fovRad / 2))
-          cam.position.set(ortho.position.x, altitude, ortho.position.z)
-          cam.up.set(...(s.up || [0, 1, 0]))
-          cam.fov = s.fov
-          cam.lookAt(ortho.position.x, 0, ortho.position.z)
-          cam.updateProjectionMatrix()
-          if (ctl) { ctl.target.set(ortho.position.x, 0, ortho.position.z); ctl.update() }
-        } else if (shot === 'browse') {
-          // All non-Designer entries to Browse: aspect-fit altitude so all
-          // buildings stay framed (mirrors Preview's ShotCamera). The static
-          // SHOTS.browse.position[1] is just a default; real altitude is
-          // computed per-aspect.
+        // All non-Designer entries land on the canonical shot framing —
+        // SHOTS[shot].position for hero/street, aspect-fit altitude for
+        // browse (mirrors Preview's ShotCamera). Previously, Designer→Browse
+        // copied the ortho camera's pan x/z so the perspective view would
+        // frame the operator's last-edited patch; that landed at random,
+        // off-center positions and post-bake felt unmoored. Workflow is
+        // cleaner returning to the canonical view each time.
+        if (shot === 'browse') {
           const aspect = size.width / Math.max(size.height, 1)
           const y = computeBrowseAltitude(aspect, s.fov)
           cam.position.set(s.position[0], y, s.position[2])
-          cam.up.set(...(s.up || [0, 1, 0]))
-          cam.fov = s.fov
-          cam.lookAt(...s.target)
-          cam.updateProjectionMatrix()
-          if (ctl) { ctl.target.set(...s.target); ctl.update() }
         } else {
           cam.position.set(...s.position)
-          cam.up.set(...(s.up || [0, 1, 0]))
-          cam.fov = s.fov
-          cam.lookAt(...s.target)
-          cam.updateProjectionMatrix()
-          if (ctl) { ctl.target.set(...s.target); ctl.update() }
         }
+        cam.up.set(...(s.up || [0, 1, 0]))
+        cam.fov = s.fov
+        cam.lookAt(...s.target)
+        cam.updateProjectionMatrix()
+        if (ctl) { ctl.target.set(...s.target); ctl.update() }
       }
       prevShot.current = shot
     }
@@ -340,8 +325,8 @@ function Controls({ controlsRef }) {
 
   const inDesigner = shot === 'designer'
   // Designer: no rotate, pan enabled unless hovering an editable target.
-  // Non-Designer shots: StageCamera owns the controls via its own setup; here
-  // we only need basic orbit.
+  // Non-Designer shots: BrowseControls / OrbitControlsShot below own the
+  // controls; their basic orbit is all we need for shot viewing.
   const panEnabled = !inDesigner || spaceDown
     || (!tool && !markerActive)
     || ((tool === 'surveyor' || tool === 'measure') && !hoverTarget && !markerActive)
