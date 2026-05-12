@@ -6,6 +6,68 @@ Last updated: 2026-05-13 (afternoon session — see "2026-05-13 PM" pin below)
 
 ## 2026-05-13 PM — Session-end pin (read first)
 
+LHF pass off the 2026-05-13 v1 punchlist. Fourteen commits on
+`cartograph-looks-pass-ab` covering bake speed, camera framing, park
+rendering, treelawn-by-LU, and a project-wide depth-precision fix
+with accompanying layering canon.
+
+**Late-session arc** (after the eight initial commits below):
+
+- **`cfa6b01` + `5dbf4b6`** — Treelawn matches adjacent parcel LU,
+  bake + Designer V2 parity. Per-LU keys (`treelawn:residential`,
+  `treelawn:park`, etc.); grass-LUs route through `GrassMesh`,
+  others through `FadeMesh`; adjacent-block lookup is coordinate-
+  based (ringInteriorProbe + point-in-polygon) since
+  `fe.blockKey` (pass-1) drifts from `b.blockKey` (pass-2) when
+  asphalt widens via Measure customs.
+- **`bfff852`** — Trinity update capturing the dirty-skip + grass
+  polygonOffset + park-bridge + treelawn architectural rules.
+- **`f14a5af`** — Bake excludes park-LU blocks from path-eligible
+  parcels. `LafayettePark.jsx`'s `ParkPaths` (gravel shader) is the
+  sole park-path renderer; baked `footway`/`path` duplicates that
+  were poking through water at certain camera heights are gone.
+- **`052b9d3` (reverted by `e341cf6`)** — Naive per-material
+  `patchTerrain` on park materials caused Browse depth-precision
+  snap-off at high altitude even though `terrainExag=0` in Browse
+  meant displacement was functionally zero. Wrapping per-vertex
+  terrain shader code interacts with depth precision in subtle
+  ways. Replaced with rigid uniform lift below.
+- **`e341cf6`** — Park rides terrain as a rigid body via
+  `group.position.y = getElevation(0, 0) * terrainExag.value` per
+  frame. Hero/Street sinking fixed; Browse depth precision left
+  alone.
+- **`4c53f19`** — **`logarithmicDepthBuffer: true`** on Cartograph
+  and Preview Canvases. The real fix for "water disappears at
+  altitude" — redistributes 24-bit depth precision so sub-meter
+  separations remain resolvable at any reasonable distance. ~5%
+  perf cost, acceptable. Paired with a new
+  **"Layering / coplanar stacking / depth precision" canon** in
+  `cartograph/FEATURES.md` codifying the four mechanisms
+  (geometric Y / polygonOffset / Designer Y-lift / renderOrder)
+  plus the fifth axis (depth-buffer precision) and decision rules.
+
+**Memory adds this arc:**
+
+- `feedback_orphan_audit_full_repo` (user-authored) — orphan-data
+  audits must grep arborist/ + meteorologist/ + apps-script/ and
+  .mjs/.cjs/.py too. Got bit when `park_species_map.json` was
+  quarantined in a docs-fortification pass and bake-trees ENOENT'd.
+  Always quarantine before delete, audit the full repo first.
+
+**Trinity housekeeping:**
+
+- Trinity moved to `cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` /
+  `cartograph/BACKLOG.md` (user's docs-fortification pass). Memory
+  paths updated; LS consumer trinity in `ls/` referenced via root
+  README.
+- FEATURES.md gained sections for: async bake handler, content-aware
+  writes (dirty-skip), treelawn-by-LU, GrassMesh polygonOffset
+  parity, park-path auto-bridge, and the layering canon.
+- ARCHITECTURE.md gained a `writeIfChanged + patch-output-ordering`
+  convention entry.
+
+---
+
 LHF pass off the 2026-05-13 v1 punchlist. Eight commits, all on
 `cartograph-looks-pass-ab`:
 
