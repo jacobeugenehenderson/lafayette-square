@@ -195,6 +195,31 @@ Designer and Browse share the same overhead view; the operator's pan/zoom carrie
 
 Resolved 2026-05-04. If a round-trip (Designer→Browse→Hero→Designer) starts losing state again, check `useFrame` in CameraRig — the persist hook needs to fire for both `'designer'` and `'browse'`.
 
+## Layering / coplanar stacking / depth precision
+
+Four orthogonal mechanisms keep surfaces from fighting each other. They solve different problems — picking the wrong one is the most common source of "the X is missing in Stage" / "the Y looks weird at distance" bugs. Use this table to decide before reaching for a fix:
+
+| Mechanism | What it handles | Where it works | Cost / failure mode |
+|---|---|---|---|
+| **Geometric Y separation** — meshes at genuinely different heights (water 0.35m above ground, paths 0.4m, trees on top) | Surfaces that ARE at different heights in reality | All distances; robust under depth-buffer precision (with logarithmic depth on, see below) | Visible vertical gap if too aggressive — fine for top-down, gets noticeable in Hero/Street |
+| **`polygonOffset` per renderOrder** — `polygonOffsetFactor: 0, polygonOffsetUnits: -renderOrder` per material | Coplanar surfaces (face fill + ribbon bands + paint stripes, all geometrically at y=0) | All distances within reason | Depth-buffer-precision-relative; the cumulative offset across many groups can run out of useful range at extreme distances |
+| **Tiny Y-lift (0.01m increments)** — `block 0.01 → asphalt 0.04 → paths 0.05` per `BlockGeometryV2Debug.jsx` | **Designer ortho view only** | Top-down ortho; falls apart immediately in perspective at angle | Cheap but fragile — never use for Stage/Preview |
+| **`renderOrder` + transparent material** — explicit paint order regardless of depth | Transparent overlays where you know the geometric relationship is monotonic (selected-chain band overlays, soft-circle silhouette fades) | Forces draw order; bypasses depth test for sort but not for occlusion | Wrong if surfaces aren't genuinely "in front of" each other — produces "this should be hidden but isn't" bugs |
+
+**Plus a fifth axis the table doesn't cover: depth-buffer precision at distance.** The Canvas uses `logarithmicDepthBuffer: true` (added 2026-05-13). Without it, the 24-bit depth buffer's precision is non-uniformly distributed across `near=1, far=60000` — 90%+ of precision lives in the first few meters. At Browse altitude (1300m+) looking down, the 35cm water-above-ground gap was at the edge of resolvable precision and water would intermittently sort INTO the ground or get culled. Logarithmic mode redistributes precision so the gap remains resolvable at any reasonable distance. ~5% perf cost; acceptable on mobile budget.
+
+**Decision rule for new ground layers:**
+1. Does the layer have a real physical height different from the surface below it (water surface above lake floor, sidewalk curb above asphalt)? → **Geometric Y**, ≥1cm.
+2. Is the layer coplanar with what it sits on (parking-lot fill on top of residential face, paint stripe on top of asphalt)? → **polygonOffset** per its renderOrder slot in `PAINT_ORDER` (bake) / `PRI` constants (Designer V2).
+3. Is this a Designer-only authoring overlay (translucent selected-chain bands during Measure drag)? → **Tiny Y-lift OR `transparent opacity={1}` + renderOrder**. Not for Stage/Preview.
+4. Is this an explicit "always draw on top of everything below, regardless of geometry" overlay (Aerial tiles when toggled, sky disc)? → **`renderOrder` + `depthTest: false`** if needed.
+
+**Counter-rules:**
+- Never stack two coplanar surfaces by tiny Y-lift in Stage/Preview; use polygonOffset. The Y-lift only survives in Designer ortho because the view is parallel-projection.
+- Never assume a sub-meter Y separation will survive at Browse altitude without `logarithmicDepthBuffer`. Now that we have it, it does.
+- If you write a custom shader (`makeGrassMaterial`, water ripples, gravel paths), set a unique `customProgramCacheKey` on the material BEFORE any `patchTerrain` or other wrapper — otherwise three's program cache can silently collapse it onto another patched material's compiled shader. Saw this 2026-05-13 with the gravel path shader.
+- Per-vertex `patchTerrain` adds depth-precision-sensitive shader code; wrapping a material with it can subtly affect distance-dependent sort even when `terrainExag = 0`. For features that should ride the terrain rigidly (the whole Lafayette Park group), prefer a single per-frame group-position lift (`group.position.y = getElevation(x, z) * terrainExag.value`) over patching individual materials.
+
 ## Known live architecture issues / load-bearing decisions
 
 Decisions that affect how to think about new work:

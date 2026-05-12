@@ -725,6 +725,12 @@ export default function CartographApp() {
             powerPreference: 'high-performance',
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 0.95,
+            // Logarithmic depth buffer — redistributes 24-bit precision
+            // logarithmically so distance-dependent sort failures (water
+            // sinking into ground, treelawn snapping at high altitude)
+            // resolve cleanly across the scene's full near/far range. See
+            // FEATURES.md §"Layering / coplanar stacking / depth precision".
+            logarithmicDepthBuffer: true,
           }}
           onCreated={({ gl }) => { gl.setClearColor(0x2a2a26, 1) }}
           dpr={[1, 1.5]}

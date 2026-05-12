@@ -491,6 +491,9 @@ export default function PreviewApp() {
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 0.95,
+        // Logarithmic depth buffer — parity with Cartograph Stage. See
+        // cartograph/FEATURES.md §"Layering / coplanar stacking".
+        logarithmicDepthBuffer: true,
       }}
       dpr={[1, 1.5]}
       shadows="soft"
