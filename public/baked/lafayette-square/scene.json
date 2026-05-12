@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "generatedAt": 1778387018198,
+  "generatedAt": 1778559460179,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -64,7 +64,7 @@
   },
   "layerVis": {
     "street": true,
-    "highway": true,
+    "highway": false,
     "stripe": true,
     "edgeline": false,
     "bikelane": true,
@@ -85,7 +85,7 @@
     "alley": true,
     "footway": true,
     "cycleway": true,
-    "steps": true,
+    "steps": false,
     "path": true,
     "park": true,
     "water": true,

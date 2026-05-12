@@ -58,6 +58,18 @@ function tileToLonLat(x, y, z) {
   return [lon, latRad * 180 / Math.PI]
 }
 
+// Cull tiles whose rect is entirely outside the FADE_OUTER circle —
+// the fragment shader already alpha-fades them to zero. The rectangular
+// bbox over-covers a circular fade by ~22%; skipping fully-outside
+// tiles saves that many texture loads.
+function tileTouchesFade(x, z, w, h) {
+  const cx = BOUNDARY_CENTER_XZ[0], cz = BOUNDARY_CENTER_XZ[1]
+  const qx = Math.max(x, Math.min(cx, x + w))
+  const qz = Math.max(z, Math.min(cz, z + h))
+  const d2 = (cx - qx) ** 2 + (cz - qz) ** 2
+  return d2 <= FADE_OUTER * FADE_OUTER
+}
+
 function buildTiles(z) {
   const [xMin, yMin] = lonLatToTile(BBOX.minLon, BBOX.maxLat, z)
   const [xMax, yMax] = lonLatToTile(BBOX.maxLon, BBOX.minLat, z)
@@ -68,8 +80,10 @@ function buildTiles(z) {
       const [seLon, seLat] = tileToLonLat(tx + 1, ty + 1, z)
       const [x0, z0] = wgs84ToLocal(nwLon, nwLat)
       const [x1, z1] = wgs84ToLocal(seLon, seLat)
+      const w = x1 - x0, h = z1 - z0
+      if (!tileTouchesFade(x0, z0, w, h)) continue
       tiles.push({
-        x: x0, z: z0, w: x1 - x0, h: z1 - z0,
+        x: x0, z: z0, w, h,
         url: `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`,
       })
     }
@@ -103,10 +117,12 @@ function TileMesh({ tile }) {
   )
 }
 
-// z=20 gives 2× the pixel density of z=19 (4× tile count). ArcGIS
-// World_Imagery serves z=20 in most areas including St. Louis. Drop to
-// z=19 or z=18 if dark/missing tiles recur.
-export default function AerialTiles({ zoom = 20, visible = true }) {
+// z=18 is the default (~190 tiles after circle cull at LS). Measure
+// passes zoom=20 for its very-cropped-in views (~750 tiles). Each step
+// up in z = 4× tile count, so this is a load-time-vs-pixel-density
+// trade. ArcGIS World_Imagery serves z=20 in most areas including
+// St. Louis.
+export default function AerialTiles({ zoom = 18, visible = true }) {
   const tiles = useMemo(() => buildTiles(zoom), [zoom])
 
   return (

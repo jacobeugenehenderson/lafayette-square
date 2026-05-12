@@ -100,15 +100,15 @@
       "name": "VW2",
       "measure": {
         "left": {
-          "pavementHW": 4.258903631284923,
+          "pavementHW": 17.434450046086596,
           "treelawn": 3.0818657342657296,
-          "sidewalk": 8.445722399109272,
+          "sidewalk": 4.7244,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 9.66048280990605,
+          "pavementHW": 1.7378727120418702,
           "treelawn": 1,
-          "sidewalk": 4.696599578204427,
+          "sidewalk": 4.7244,
           "terminal": "sidewalk"
         },
         "symmetric": false

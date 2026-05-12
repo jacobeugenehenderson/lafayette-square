@@ -1,7 +1,7 @@
 {
   "layerVis": {
     "street": true,
-    "highway": true,
+    "highway": false,
     "stripe": true,
     "edgeline": false,
     "bikelane": true,
@@ -22,7 +22,7 @@
     "alley": true,
     "footway": true,
     "cycleway": true,
-    "steps": true,
+    "steps": false,
     "path": true,
     "park": true,
     "water": true,
@@ -114,8 +114,48 @@
         "right": {
           "pavementHW": 8.656221051582422,
           "treelawn": 1.7304098259152152,
-          "sidewalk": 8.517501446109172,
+          "sidewalk": 11.371684139908538,
           "terminal": "sidewalk"
+        }
+      },
+      "6": {
+        "right": {
+          "pavementHW": 8.656221051582422,
+          "treelawn": 1.7304098259152152,
+          "sidewalk": 20,
+          "terminal": "sidewalk"
+        },
+        "left": {
+          "pavementHW": 7.203172199626125,
+          "treelawn": 1.2026416547120755,
+          "sidewalk": 6.629828035727803,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "12": {
+      "0": {
+        "left": {
+          "pavementHW": 0.5,
+          "treelawn": 0,
+          "sidewalk": 1,
+          "terminal": "lawn"
+        }
+      }
+    },
+    "15": {
+      "0": {
+        "right": {
+          "pavementHW": 22.011034185493354,
+          "treelawn": 2.3125350666523836,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "left": {
+          "pavementHW": 30,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
         }
       }
     },
@@ -149,6 +189,20 @@
           "sidewalk": 2.5291284592360714,
           "terminal": "sidewalk"
         }
+      },
+      "1": {
+        "left": {
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.286,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.73105352144237,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.286,
+          "terminal": "sidewalk"
+        }
       }
     },
     "91": {
@@ -167,10 +221,20 @@
         }
       }
     },
+    "153": {
+      "3": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 20,
+          "terminal": "sidewalk"
+        }
+      }
+    },
     "167": {
       "2": {
         "right": {
-          "pavementHW": 10.586915150237694,
+          "pavementHW": 11.542647309123844,
           "treelawn": 2.2720885324451405,
           "sidewalk": 2.1159141457231314,
           "terminal": "sidewalk"
@@ -181,6 +245,86 @@
           "sidewalk": 20,
           "terminal": "sidewalk"
         }
+      }
+    },
+    "-131.0,265.0": {
+      "4": {
+        "pavementHW": 7.899666800734073,
+        "treelawn": 3.756012002197112,
+        "sidewalk": 9.956382837579529,
+        "terminal": "sidewalk"
+      },
+      "11": {
+        "pavementHW": 8.589636177399044,
+        "treelawn": 3.756012002197112,
+        "sidewalk": 1.9309145475285643,
+        "terminal": "sidewalk"
+      },
+      "16": {
+        "pavementHW": 8.656221051582422,
+        "treelawn": 1.7304098259152152,
+        "sidewalk": 5.6726479796317335,
+        "terminal": "sidewalk"
+      }
+    },
+    "5.0,-2.0": {
+      "1": {
+        "pavementHW": 15.691000972773095,
+        "treelawn": 3.5560120021971127,
+        "sidewalk": 8.39759713209095,
+        "terminal": "sidewalk"
+      },
+      "2": {
+        "pavementHW": 11.811249050933394,
+        "treelawn": 3.020838982094821,
+        "sidewalk": 11.054079837829217,
+        "terminal": "sidewalk"
+      },
+      "3": {
+        "pavementHW": 10.683076898537028,
+        "treelawn": 2.448502202088072,
+        "sidewalk": 2.381373706863819,
+        "terminal": "sidewalk"
+      }
+    },
+    "382.0,114.5": {
+      "9": {
+        "pavementHW": 7.203172199626125,
+        "treelawn": 1.2026416547120755,
+        "sidewalk": 2.8453744762317097,
+        "terminal": "sidewalk"
+      }
+    },
+    "7.0,-4.5": {
+      "0": {
+        "pavementHW": 11.012742378427271,
+        "treelawn": 1.7304098259152152,
+        "sidewalk": 1.4240582415582725,
+        "terminal": "sidewalk"
+      }
+    },
+    "854.5,16.5": {
+      "22": {
+        "pavementHW": 13.485148012300577,
+        "treelawn": 1,
+        "sidewalk": 3.693069658822573,
+        "terminal": "sidewalk"
+      }
+    },
+    "118.0,-296.5": {
+      "5": {
+        "pavementHW": 11.293003613698033,
+        "treelawn": 1,
+        "sidewalk": 3.693069658822573,
+        "terminal": "sidewalk"
+      }
+    },
+    "-297.0,22.0": {
+      "0": {
+        "pavementHW": 7.06337253274063,
+        "treelawn": 3.1519828488643356,
+        "sidewalk": 2.345906370814321,
+        "terminal": "sidewalk"
       }
     }
   },
@@ -493,8 +637,8 @@
   },
   "openSections": {
     "Streets": false,
-    "Blocks": false,
-    "Paths": true,
+    "Blocks": true,
+    "Paths": false,
     "Features": false,
     "Labels": false,
     "HeroSubject": false,

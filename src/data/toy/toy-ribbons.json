@@ -1,7 +1,7 @@
 {
   "meta": {
     "source": "toy",
-    "description": "Rounded-block-clip prototype fixture. 4 horizontal + 4 vertical residential streets form a 3×3 grid of 9 fully-bounded blocks. Irregularities: VW3 bends NE from (40,60) to (60,160) (top-right blocks become trapezoidal + bent-chain regression); HW3 jogs up from z=40 to z=60 between x=0 and x=20 (saw-tooth top edge on middle blocks); a dead-end stub branches N off HW3 at (25,60), tip at (25,90). Re-run cartograph/derive-toy.js after editing."
+    "description": "Rounded-block-clip prototype fixture. 4 horizontal + 4 vertical residential streets form a 3×3 grid of 9 fully-bounded blocks. Irregularities: VW3 bends NE from (40,60) to (60,160) (top-right blocks become trapezoidal + bent-chain regression); HW3 jogs up from z=40 to z=60 between x=0 and x=20 (saw-tooth top edge on middle blocks); a dead-end stub branches N off HW3 at (25,60), tip at (25,90). L.1 loop-street fixtures: Type A (Benton-toy teardrop) — BENT-STEM branches off VW3 at (40,-80), BENT-BODY is a closed 12-pt circle centered at (85,-80) r=25. Type B (Waverly-toy couplet) — original HW4 split at the middle IXs (HW4-W + HW4-E) to make room for WV-S (south carriageway, z=125 bow) + WV-N (north carriageway, z=115 bow) + WV-CUT (bare cross-thru at x=5). Re-run cartograph/derive-toy.js after editing."
   },
   "streets": [
     {
@@ -249,7 +249,7 @@
     },
     {
       "name": "HW4",
-      "skelId": "HW4",
+      "skelId": "HW4-W",
       "points": [
         [
           -160,
@@ -262,7 +262,47 @@
         [
           -40,
           120
-        ],
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 1,
+          "withStreets": [
+            "VW1"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "Waverly-toy",
+            "VW2"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "blunt",
+        "end": "none"
+      }
+    },
+    {
+      "name": "HW4",
+      "skelId": "HW4-E",
+      "points": [
         [
           52,
           120
@@ -292,25 +332,14 @@
       },
       "intersections": [
         {
-          "ix": 1,
+          "ix": 0,
           "withStreets": [
-            "VW1"
-          ]
-        },
-        {
-          "ix": 2,
-          "withStreets": [
-            "VW2"
-          ]
-        },
-        {
-          "ix": 3,
-          "withStreets": [
+            "Waverly-toy",
             "VW3"
           ]
         },
         {
-          "ix": 4,
+          "ix": 1,
           "withStreets": [
             "VW4"
           ]
@@ -318,8 +347,328 @@
       ],
       "highway": "residential",
       "capEnds": {
-        "start": "blunt",
+        "start": "none",
         "end": "blunt"
+      }
+    },
+    {
+      "name": "Benton-toy",
+      "skelId": "BENT-STEM",
+      "points": [
+        [
+          40,
+          -80
+        ],
+        [
+          60,
+          -80
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 0,
+          "withStreets": [
+            "VW3"
+          ]
+        },
+        {
+          "ix": 1,
+          "withStreets": [
+            "Benton-toy"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "none",
+        "end": "none"
+      }
+    },
+    {
+      "name": "Benton-toy",
+      "skelId": "BENT-BODY",
+      "points": [
+        [
+          60,
+          -80
+        ],
+        [
+          63.35,
+          -92.5
+        ],
+        [
+          72.5,
+          -101.65
+        ],
+        [
+          85,
+          -105
+        ],
+        [
+          97.5,
+          -101.65
+        ],
+        [
+          106.65,
+          -92.5
+        ],
+        [
+          110,
+          -80
+        ],
+        [
+          106.65,
+          -67.5
+        ],
+        [
+          97.5,
+          -58.35
+        ],
+        [
+          85,
+          -55
+        ],
+        [
+          72.5,
+          -58.35
+        ],
+        [
+          63.35,
+          -67.5
+        ],
+        [
+          60,
+          -80
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 4,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4,
+          "treelawn": 1.5,
+          "sidewalk": 0,
+          "terminal": "treelawn"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 0,
+          "withStreets": [
+            "Benton-toy"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "none",
+        "end": "none"
+      },
+      "smooth": 1
+    },
+    {
+      "name": "Waverly-toy",
+      "skelId": "WV-S",
+      "points": [
+        [
+          -40,
+          120
+        ],
+        [
+          -30,
+          125
+        ],
+        [
+          5,
+          125
+        ],
+        [
+          40,
+          125
+        ],
+        [
+          52,
+          120
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 4,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 0,
+          "withStreets": [
+            "HW4",
+            "Waverly-toy",
+            "VW2"
+          ]
+        },
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4",
+            "Waverly-toy",
+            "VW3"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "Waverly-toy"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "none",
+        "end": "none"
+      },
+      "smooth": 1
+    },
+    {
+      "name": "Waverly-toy",
+      "skelId": "WV-N",
+      "points": [
+        [
+          52,
+          120
+        ],
+        [
+          40,
+          115
+        ],
+        [
+          5,
+          115
+        ],
+        [
+          -30,
+          115
+        ],
+        [
+          -40,
+          120
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 4,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 4,
+          "withStreets": [
+            "HW4",
+            "Waverly-toy",
+            "VW2"
+          ]
+        },
+        {
+          "ix": 0,
+          "withStreets": [
+            "HW4",
+            "Waverly-toy",
+            "VW3"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "Waverly-toy"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "none",
+        "end": "none"
+      },
+      "smooth": 1
+    },
+    {
+      "name": "Waverly-toy",
+      "skelId": "WV-CUT",
+      "points": [
+        [
+          5,
+          115
+        ],
+        [
+          5,
+          125
+        ]
+      ],
+      "measure": {
+        "left": {
+          "pavementHW": 3,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "right": {
+          "pavementHW": 3,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        }
+      },
+      "intersections": [
+        {
+          "ix": 0,
+          "withStreets": [
+            "Waverly-toy"
+          ]
+        },
+        {
+          "ix": 1,
+          "withStreets": [
+            "Waverly-toy"
+          ]
+        }
+      ],
+      "highway": "residential",
+      "capEnds": {
+        "start": "none",
+        "end": "none"
       }
     },
     {
@@ -462,7 +811,8 @@
         {
           "ix": 4,
           "withStreets": [
-            "HW4"
+            "HW4",
+            "Waverly-toy"
           ]
         }
       ],
@@ -483,6 +833,10 @@
         [
           40,
           -120
+        ],
+        [
+          40,
+          -80
         ],
         [
           40,
@@ -523,21 +877,28 @@
           ]
         },
         {
-          "ix": 2,
+          "ix": 3,
           "withStreets": [
             "HW2"
           ]
         },
         {
-          "ix": 3,
+          "ix": 4,
           "withStreets": [
             "HW3"
           ]
         },
         {
-          "ix": 4,
+          "ix": 5,
           "withStreets": [
-            "HW4"
+            "HW4",
+            "Waverly-toy"
+          ]
+        },
+        {
+          "ix": 2,
+          "withStreets": [
+            "Benton-toy"
           ]
         }
       ],
@@ -900,6 +1261,14 @@
           "ix": 2
         },
         {
+          "name": "Waverly-toy",
+          "ix": 0
+        },
+        {
+          "name": "Waverly-toy",
+          "ix": 3
+        },
+        {
           "name": "VW2",
           "ix": 4
         }
@@ -913,7 +1282,15 @@
       "streets": [
         {
           "name": "HW4",
+          "ix": 0
+        },
+        {
+          "name": "Waverly-toy",
           "ix": 3
+        },
+        {
+          "name": "Waverly-toy",
+          "ix": 0
         },
         {
           "name": "VW3",
@@ -929,11 +1306,75 @@
       "streets": [
         {
           "name": "HW4",
-          "ix": 4
+          "ix": 1
         },
         {
           "name": "VW4",
           "ix": 4
+        }
+      ]
+    },
+    {
+      "point": [
+        40,
+        -80
+      ],
+      "streets": [
+        {
+          "name": "Benton-toy",
+          "ix": 0
+        },
+        {
+          "name": "VW3",
+          "ix": 2
+        }
+      ]
+    },
+    {
+      "point": [
+        60,
+        -80
+      ],
+      "streets": [
+        {
+          "name": "Benton-toy",
+          "ix": 1
+        },
+        {
+          "name": "Benton-toy",
+          "ix": 0
+        }
+      ]
+    },
+    {
+      "point": [
+        5,
+        115
+      ],
+      "streets": [
+        {
+          "name": "Waverly-toy",
+          "ix": 0
+        },
+        {
+          "name": "Waverly-toy",
+          "ix": 2
+        }
+      ]
+    },
+    {
+      "point": [
+        5,
+        125
+      ],
+      "streets": [
+        {
+          "name": "Waverly-toy",
+          "ix": 1
+        },
+        {
+          "name": "Waverly-toy",
+          "ix": 2
         }
       ]
     }

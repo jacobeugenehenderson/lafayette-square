@@ -1,7 +1,7 @@
 {
   "meta": {
     "source": "toy",
-    "description": "Rounded-block-clip prototype fixture. 4 horizontal + 4 vertical residential streets form a 3\u00d73 grid of 9 fully-bounded blocks. Irregularities: VW3 bends NE from (40,60) to (60,160) (top-right blocks become trapezoidal + bent-chain regression); HW3 jogs up from z=40 to z=60 between x=0 and x=20 (saw-tooth top edge on middle blocks); a dead-end stub branches N off HW3 at (25,60), tip at (25,90). Re-run cartograph/derive-toy.js after editing."
+    "description": "Rounded-block-clip prototype fixture. 4 horizontal + 4 vertical residential streets form a 3\u00d73 grid of 9 fully-bounded blocks. Irregularities: VW3 bends NE from (40,60) to (60,160) (top-right blocks become trapezoidal + bent-chain regression); HW3 jogs up from z=40 to z=60 between x=0 and x=20 (saw-tooth top edge on middle blocks); a dead-end stub branches N off HW3 at (25,60), tip at (25,90). L.1 loop-street fixtures: Type A (Benton-toy teardrop) \u2014 BENT-STEM branches off VW3 at (40,-80), BENT-BODY is a closed 12-pt circle centered at (85,-80) r=25. Type B (Waverly-toy couplet) \u2014 original HW4 split at the middle IXs (HW4-W + HW4-E) to make room for WV-S (south carriageway, z=125 bow) + WV-N (north carriageway, z=115 bow) + WV-CUT (bare cross-thru at x=5). Re-run cartograph/derive-toy.js after editing."
   },
   "_measure_template": {
     "comment": "Symmetric residential measure \u2014 both sides have treelawn + sidewalk so V2 strip-band rendering exercises both rails.",
@@ -179,53 +179,138 @@
       }
     },
     {
-      "id": "HW4",
+      "_comment": "L.1 Type B fixture: HW4 split at the (-40,120) and (52,120) IXs into HW4-W (west) + HW4-E (east) to make room for the Waverly-toy couplet (WV-S + WV-N + WV-CUT) in the middle span.",
+      "id": "HW4-W",
       "name": "HW4",
       "highway": "residential",
       "points": [
-        [
-          -160,
-          120
-        ],
-        [
-          -120,
-          120
-        ],
-        [
-          -40,
-          120
-        ],
-        [
-          52,
-          120
-        ],
-        [
-          120,
-          120
-        ],
-        [
-          160,
-          120
-        ]
+        [-160, 120],
+        [-120, 120],
+        [-40, 120]
       ],
       "measure": {
-        "left": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        },
-        "right": {
-          "pavementHW": 5,
-          "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "sidewalk"
-        }
+        "left":  { "pavementHW": 5, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" },
+        "right": { "pavementHW": 5, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" }
       },
-      "capEnds": {
-        "start": "blunt",
-        "end": "blunt"
-      }
+      "capEnds": { "start": "blunt", "end": "none" }
+    },
+    {
+      "id": "HW4-E",
+      "name": "HW4",
+      "highway": "residential",
+      "points": [
+        [52, 120],
+        [120, 120],
+        [160, 120]
+      ],
+      "measure": {
+        "left":  { "pavementHW": 5, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" },
+        "right": { "pavementHW": 5, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" }
+      },
+      "capEnds": { "start": "none", "end": "blunt" }
+    },
+    {
+      "_comment": "L.1 Type A fixture: stem of Benton-toy. Branches off VW3 at (40,-80), runs east 20m to the loop joint at (60,-80) where BENT-BODY closes back on itself. Operator-intent: loop.role=stem, loopId=loop-benton-toy. The `loop` and `oneway` fields are not yet propagated by derive-toy.js (L.2 work) — they live here as authoring intent.",
+      "id": "BENT-STEM",
+      "name": "Benton-toy",
+      "highway": "residential",
+      "oneway": false,
+      "loop": { "loopId": "loop-benton-toy", "role": "stem" },
+      "points": [
+        [40, -80],
+        [60, -80]
+      ],
+      "measure": {
+        "left":  { "pavementHW": 5, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" },
+        "right": { "pavementHW": 5, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" }
+      },
+      "capEnds": { "start": "none", "end": "none" }
+    },
+    {
+      "_comment": "L.1 Type A fixture: closed loop body of Benton-toy. 12-pt approximation of a circle centered at (85,-80) radius 25. First==last point (60,-80) is the joint where BENT-STEM meets the body. oneway=true (vehicles travel one direction around the loop). Operator-intent: loop.role=body. Per L.0 spec the outer side gets full ROW (treelawn + sidewalk) and the inner side gets treelawn + curb only (no sidewalk; treelawn flows continuously into the median).",
+      "id": "BENT-BODY",
+      "name": "Benton-toy",
+      "highway": "residential",
+      "oneway": true,
+      "smooth": 1,
+      "loop": { "loopId": "loop-benton-toy", "role": "body" },
+      "points": [
+        [60, -80],
+        [63.35, -92.5],
+        [72.5, -101.65],
+        [85, -105],
+        [97.5, -101.65],
+        [106.65, -92.5],
+        [110, -80],
+        [106.65, -67.5],
+        [97.5, -58.35],
+        [85, -55],
+        [72.5, -58.35],
+        [63.35, -67.5],
+        [60, -80]
+      ],
+      "measure": {
+        "left":  { "pavementHW": 4, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" },
+        "right": { "pavementHW": 4, "treelawn": 1.5, "sidewalk": 0,   "terminal": "treelawn" }
+      },
+      "capEnds": { "start": "none", "end": "none" }
+    },
+    {
+      "_comment": "L.1 Type B fixture: south carriageway of Waverly-toy. One-way eastbound. Bows south to z=125 between the IX endpoints (-40,120) and (52,120). Per L.0 spec the carriageway gets full residential ROW on BOTH sides (treelawn + sidewalk) — what makes Waverly a loop street is the green face enclosed between the two carriageways, not any asymmetry on the carriageways themselves. Operator-intent: loop.role=outer.",
+      "id": "WV-S",
+      "name": "Waverly-toy",
+      "highway": "residential",
+      "oneway": true,
+      "smooth": 1,
+      "loop": { "loopId": "loop-waverly-toy", "role": "outer" },
+      "points": [
+        [-40, 120],
+        [-30, 125],
+        [40, 125],
+        [52, 120]
+      ],
+      "measure": {
+        "left":  { "pavementHW": 4, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" },
+        "right": { "pavementHW": 4, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" }
+      },
+      "capEnds": { "start": "none", "end": "none" }
+    },
+    {
+      "_comment": "L.1 Type B fixture: north carriageway of Waverly-toy. One-way westbound. Bows north to z=115 between the IX endpoints (52,120) and (-40,120). Same per-side cross-section as WV-S.",
+      "id": "WV-N",
+      "name": "Waverly-toy",
+      "highway": "residential",
+      "oneway": true,
+      "smooth": 1,
+      "loop": { "loopId": "loop-waverly-toy", "role": "outer" },
+      "points": [
+        [52, 120],
+        [40, 115],
+        [-30, 115],
+        [-40, 120]
+      ],
+      "measure": {
+        "left":  { "pavementHW": 4, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" },
+        "right": { "pavementHW": 4, "treelawn": 1.5, "sidewalk": 1.5, "terminal": "sidewalk" }
+      },
+      "capEnds": { "start": "none", "end": "none" }
+    },
+    {
+      "_comment": "L.1 Type B fixture: bare cross-thru between the WV-N (z=115) and WV-S (z=125) carriageways at x=5. Per L.0 spec a cut-thru gets curb+asphalt only on both sides (no treelawn, no sidewalk). Splits the median face into two enclosed park faces. Operator-intent: loop.role=cut-thru.",
+      "id": "WV-CUT",
+      "name": "Waverly-toy",
+      "highway": "residential",
+      "oneway": false,
+      "loop": { "loopId": "loop-waverly-toy", "role": "cut-thru" },
+      "points": [
+        [5, 115],
+        [5, 125]
+      ],
+      "measure": {
+        "left":  { "pavementHW": 3, "treelawn": 0, "sidewalk": 0, "terminal": "none" },
+        "right": { "pavementHW": 3, "treelawn": 0, "sidewalk": 0, "terminal": "none" }
+      },
+      "capEnds": { "start": "none", "end": "none" }
     },
     {
       "id": "VW1",

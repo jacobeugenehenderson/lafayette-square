@@ -82,14 +82,7 @@
   },
   "cornerRadiusScale": 1,
   "cornerRadiusOverrides": {},
-  "cornerCornerRadiusOverrides": {
-    "25.000,60.000|HW3:f|STUB-N:f": 5.927263996800866,
-    "40.000,60.000|HW3:b|VW3:f": 3.359148402119572,
-    "40.000,60.000|HW3:b|VW3:b": 2.6136197933374183,
-    "-40.000,40.000|HW3:f|VW2:f": 1.821505128348476,
-    "-40.000,40.000|HW3:f|VW2:b": 1.170327640169826,
-    "-40.000,-40.000|HW2:f|VW2:f": 13.26940495983767
-  },
+  "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.3302,
   "labels": {
     "size": 4,
@@ -158,6 +151,90 @@
           "sidewalk": 2.4384,
           "terminal": "sidewalk"
         }
+      }
+    },
+    "5.0,79.0": {
+      "4": {
+        "pavementHW": 17.434450046086596,
+        "treelawn": 3.0818657342657296,
+        "sidewalk": 8.445722399109272,
+        "terminal": "sidewalk"
+      }
+    },
+    "-0.5,10.0": {
+      "0": {
+        "pavementHW": 5,
+        "treelawn": 1.5,
+        "sidewalk": 3.4500753030844287,
+        "terminal": "sidewalk"
+      },
+      "1": {
+        "pavementHW": 14.204480582332497,
+        "treelawn": 3.0818657342657296,
+        "sidewalk": 4.018471708949441,
+        "terminal": "sidewalk"
+      },
+      "2": {
+        "pavementHW": 16.056810998735838,
+        "treelawn": 1.5,
+        "sidewalk": 1.5,
+        "terminal": "sidewalk"
+      }
+    },
+    "-82.5,0.0": {
+      "3": {
+        "pavementHW": 1.9721871049304625,
+        "treelawn": 1.0668,
+        "sidewalk": 4.696599578204427,
+        "terminal": "sidewalk"
+      }
+    },
+    "-0.5,-80.0": {
+      "1": {
+        "pavementHW": 10.939934788692518,
+        "treelawn": 3.0818657342657296,
+        "sidewalk": 1.6913619949919116,
+        "terminal": "sidewalk"
+      }
+    },
+    "-82.5,-80.0": {
+      "3": {
+        "pavementHW": 20.287220164694233,
+        "treelawn": 1,
+        "sidewalk": 4.696599578204427,
+        "terminal": "sidewalk"
+      }
+    },
+    "-82.5,80.0": {
+      "3": {
+        "pavementHW": 1.7378727120418702,
+        "treelawn": 1,
+        "sidewalk": 4.696599578204427,
+        "terminal": "sidewalk"
+      }
+    },
+    "80.0,-80.0": {
+      "1": {
+        "pavementHW": 10.864214601769895,
+        "treelawn": 1.5,
+        "sidewalk": 1.5,
+        "terminal": "sidewalk"
+      }
+    },
+    "-78.5,80.0": {
+      "3": {
+        "pavementHW": 6.2484,
+        "treelawn": 11.263722578889858,
+        "sidewalk": 9.279459719103926,
+        "terminal": "sidewalk"
+      }
+    },
+    "11.5,79.0": {
+      "4": {
+        "pavementHW": 6.2484,
+        "treelawn": 3.0818657342657296,
+        "sidewalk": 4.7244,
+        "terminal": "sidewalk"
       }
     }
   },
@@ -469,11 +546,11 @@
     "easing": "sine"
   },
   "openSections": {
-    "Streets": false,
-    "Blocks": true,
+    "Streets": true,
+    "Blocks": false,
     "Paths": false,
     "Features": false,
-    "Labels": true,
+    "Labels": false,
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false
