@@ -2,9 +2,85 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-11 EOD-2 (D.7 walker + customs flow shipped: chain-interior-bend seam fixed via chain-ownership corner detection; D.7a per-chain customs now propagate to corners + adjacent legs + curb stroke after release/deselect. Coord-match IX identity + skelId-based fe routing + pass-1 (blockKey, edgeOrd) preservation across pass-2 rebuild. Perf pass from EOD-1 still current.)
+Last updated: 2026-05-12 EOD-1 (Measure tool end-to-end shipped on LS: D.7c MeasurePanel migrated to `setBlockEdgeCustom`, D.7d dead-code pruned, walker `assignSegOrdsToFes` eliminated `segOrds:[]` coverage gaps, CornerEditHandles stale-ix fallback restored LS corner dots, parcel translucency by geometric chain-polyline proximity, default measureMode flipped to whole-chain, asphalt-edge curb-colored stroke. Identity match accepts `.id || .skelId`. Walker fix from EOD-2 still current; perf pass from EOD-1 still current.)
 
-## 2026-05-11 EOD-2 — Session-end pin (read first; supersedes EOD-1 on walker semantics)
+## 2026-05-12 EOD-1 — Session-end pin (read first)
+
+Closes Measure end-to-end on LS. Walker + customs identity + UI all
+read and write the same `[blockKey][edgeOrd]` shape; "band moved, plug
+stayed" mismatches structurally impossible.
+
+**Shipped (in commit order):**
+
+- **D.7a `249e3cf`** — per-chain asphalt emission consumes
+  `[blockKey][edgeOrd]` customs via a two-pass `emitChain` helper.
+  Pass 1 with chain defaults builds the feLookup; pass 2 re-emits any
+  chain whose fes have a custom and rebuilds asphalt + block + feLookup.
+- **D.7c `1f6b7b5`** — `MeasurePanel.jsx` numeric input + reset paths
+  migrated from `setBlockCustomMeasure` (legacy `[chainIdx][segOrd]`)
+  to `setBlockEdgeCustom([blockKey][edgeOrd])`. New store action
+  `clearBlockEdgeCustomsForChain` walks `_v2FrontageEdges` by chain
+  identity to drop the right entries. `buildChainBandsLive` extended
+  with treelawn/sidewalk edge polylines so the selected chain's
+  colored edge strokes track live drag.
+- **D.7d `7da1cb7`** — deleted `setBlockCustomMeasure`,
+  `adjacentBlockId`, per-chain `byChain.{tl,sw}Rings + Edges` emission
+  (replaced by frontageBands), and inlined `chainStripBandExt`.
+  ribbonUnion's ped-zone coverage swapped to `frontageBands.flatMap`.
+- **Identity match `8594b2f`** — `findFeForSide`,
+  `hasAnyChainCustom`, and `clearBlockEdgeCustomsForChain` accept
+  `st.skelId || st.id || null` (was: skelId only). Symptom this
+  resolved: divided-style chains (LS Park Avenue) falling through to
+  name-match and picking a fe on the wrong carriageway.
+- **Walker `assignSegOrdsToFes` `9567664`** — single-pass per-chain
+  segOrd assignment: every natural segment goes to its unique closest
+  fe (clamped `t ∈ [0, 1]`, tie-break by edgeOrd). Eliminates both
+  leakage and `segOrds:[]` gaps. Park Avenue's previously-bailing
+  segOrd 2 now resolves cleanly.
+- **CornerEditHandles `3b804c1`** — `resolveSrefChain` helper with
+  nearest-vertex fallback when `sref.ix` is stale (~36% of LS IXs).
+  Mirrors V2's `resolveIxRef` exactly. Restores LS corner dots that
+  silently vanished on stale-ix chains.
+- **Measure visualization `db0228e`** — three coupled UX changes:
+  (a) default `measureMode` flipped to `'global'` (whole-chain);
+  (b) `selectedAdjacentBlockKeys` rewritten as geometric proximity
+  via chain SEGMENT MIDPOINTS (not chain.points) against block-edge
+  perpendicular distance — robust to walker fe-coverage gaps and
+  excludes end-on blocks across terminal IXs by construction;
+  (c) per-block mode narrows translucency to the two blocks at the
+  click anchor; asphalt-edge curb-colored stroke routes through
+  `buildChainBandsLive.asphaltEdges` so the pavementHW handle has a
+  visible boundary line while the curb mesh stays hidden.
+
+**Architectural rules saved as memories this session:**
+- `feedback_stale_opaque_overlay_worse_than_hidden` — during spatial
+  authoring, hide elements that can't track the live drag rather than
+  show stale geometry; stale opaque overlays compete with the
+  translucency-on-aerial alignment workflow.
+
+**Known follow-ups (not blocking):**
+
+- `blockLandUse[blockKey]` shifts when customs widen asphalt (same
+  root cause D.7a's pass-1 preservation papers over for fees). Symptom:
+  block changes color after a wide custom because the new `blockKey`
+  doesn't match the operator's stored entry. Same preservation pattern
+  would fix it: carry pass-1 blockKey onto pass-2 block records.
+- D.7b ("retire `selectedStreet == null` gates on curb + corner plugs")
+  deliberately NOT shipped. Per `feedback_stale_opaque_overlay_worse_than_hidden`,
+  retiring the gates without making curb/plugs track the live drag would
+  show stale geometry during selection — worse than hidden. Real fix:
+  extend `buildChainBandsLive` to also emit a live curb + corner plug
+  for the selected chain. Queued.
+- The diagnostic verbose bail log on `findFeForSide` miss (commit
+  `f114a24`) lives on. Gated on `window.__customDebug`, no runtime
+  cost. Strip in a release-prep cleanup pass.
+
+**Next session: bake for Stage + Preview.** Measure authoring is in;
+move to Stage QA + the slab pour.
+
+---
+
+## 2026-05-11 EOD-2 — Session-end pin (walker semantics — superseded by 2026-05-12 on Measure UI surface)
 
 V2 walker corner detection swapped from purely-geometric (30° angle
 threshold) to identity-driven (chain-ownership-per-segment). This was
@@ -1001,26 +1077,6 @@ Net code goes down: collapse the toy branch in `_loadCenterlines`,
 drop `ToyV2`/`NeighborhoodV2` distinction, drop the toy gate in
 `_saveOverlay`. The static `toyRibbons` import retires.
 
-## V2 Measure-mode visualization (in progress)
-
-Spec landed in memory: see `project_v2_measure_translucency_strokes.md`.
-Single source of truth — rebuild from it, not from V1 code or screenshots.
-
-Open work tracked here:
-- Asphalt translucency on selected chain isn't rendering visibly even
-  though the per-chain mesh + selectedCorridor material variant is wired
-  the same as treelawn/sidewalk (which DO dim). Likely an overlap or
-  occlusion bug specific to asphalt's mesh.
-- Stripe edge strokes need the colored treatment (treelawn-outer green,
-  sidewalk-outer white). Currently emitting white for all four.
-- Corner geometry on edited chains: rounded corners don't update when
-  the chain's `measure` changes. asphaltRounded comes from the asphalt
-  union which DOES rebuild on measure change, so the corners SHOULD
-  follow — investigate why they don't visually.
-
-Once the above land, V2 carries Measure visuals end-to-end and legacy
-StreetRibbons retires from non-toy scenes too.
-
 ## Data-pipeline truths surfaced 2026-05-06
 
 Diagnosed during the IP-rule attempt + LS-rollout debugging session. These
@@ -1029,12 +1085,16 @@ the next operator picks — wire them into block-polygon derivation from
 day one or the same hours of confusion repeat.
 
 1. **`ix.streets[].ix` indices in `src/data/ribbons.json` are STALE on
-   most LS IXs.** Chain points were re-coordinated upstream but IX
+   ~36% of LS IXs.** Chain points were re-coordinated upstream but IX
    references weren't updated. Symptom: `chain.points[sref.ix]` is
-   either `undefined` or hundreds of meters from `ix.point`. Workaround:
-   trust `ix.point` (V), find the chain's nearest point, ignore
-   `sref.ix`. The 0.5m tolerance is a reasonable cutoff for "this chain
-   actually passes through this IX."
+   either `undefined` or hundreds of meters from `ix.point`. Mitigated
+   (2026-05-12): both V2's `resolveIxRef` and `CornerEditHandles`'s
+   `resolveSrefChain` try `sref.ix` first then fall back to nearest-
+   vertex scan within 0.5m of `V`. Also routed through
+   `resolveChainSegmentation` (2026-05-11) which computes IX identity
+   by coord-match across chains, so `naturalSegments` and the walker
+   no longer trust the integer either. Walker fix removed this as a
+   user-visible bug; index column kept as eventual-truth derive fix.
 
 2. **Multiple chains share a street name.** Rutger Street has 5 entries
    (`rutger-street-0..4`), Park Avenue has 2, Hickory has 4, etc. A
