@@ -10,6 +10,7 @@ import { getElevation } from '../utils/elevation'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
+import { patchTerrain } from '../utils/terrainShader'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin.
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
@@ -384,6 +385,10 @@ function ParkPaths() {
          diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
       )
     }
+    // Ride the terrain like BakedGround does — otherwise non-Browse shots
+    // (where terrainExag > 0) elevate the ground out from under the static
+    // park paths and they sink below the surface.
+    patchTerrain(mat, { perVertex: true })
     return mat
   }, [])
 
@@ -652,6 +657,9 @@ function ParkWater() {
          diffuseColor.a = mix(0.72, 0.88, smoothstep(0.3, 0.6, ripple));`
       )
     }
+    // Ride the terrain like BakedGround — otherwise the water sits at its
+    // authored Y while the elevated ground rises out of view from under it.
+    patchTerrain(mat, { perVertex: true })
     return mat
   }, [])
 
@@ -664,13 +672,19 @@ function ParkWater() {
     }
   })
 
-  // Simple island grass material
-  const islandMat = useMemo(() =>
-    new THREE.MeshStandardMaterial({ color: '#2a5528', roughness: 0.9 }), [])
+  // Simple island grass material (rides terrain).
+  const islandMat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({ color: '#2a5528', roughness: 0.9 })
+    patchTerrain(m, { perVertex: true })
+    return m
+  }, [])
 
-  // Shoreline bank material
-  const bankMat = useMemo(() =>
-    new THREE.MeshStandardMaterial({ color: '#5a5040', roughness: 0.95 }), [])
+  // Shoreline bank material (rides terrain).
+  const bankMat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({ color: '#5a5040', roughness: 0.95 })
+    patchTerrain(m, { perVertex: true })
+    return m
+  }, [])
 
   if (waterHidden) return null
 
@@ -709,12 +723,25 @@ function PerimeterFence() {
     return { posts, rails }
   }, [])
 
+  // Shared materials — posts translate rigidly with terrain (small unit),
+  // rails warp per-vertex so they follow ground contour across their
+  // ~85m span instead of floating at midpoint elevation.
+  const postMat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({ color: '#2a2a2a', roughness: 0.7, metalness: 0.3 })
+    patchTerrain(m, { perVertex: false })
+    return m
+  }, [])
+  const railMat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.6, metalness: 0.4 })
+    patchTerrain(m, { perVertex: true })
+    return m
+  }, [])
+
   return (
     <group>
       {posts.map((pos, i) => (
-        <mesh key={`p${i}`} position={[pos[0], FENCE_HEIGHT / 2, pos[2]]} castShadow>
+        <mesh key={`p${i}`} position={[pos[0], FENCE_HEIGHT / 2, pos[2]]} castShadow material={postMat}>
           <boxGeometry args={[0.15, FENCE_HEIGHT, 0.15]} />
-          <meshStandardMaterial color="#2a2a2a" roughness={0.7} metalness={0.3} />
         </mesh>
       ))}
       {rails.map((rail, i) => {
@@ -725,13 +752,11 @@ function PerimeterFence() {
         const angle = Math.atan2(dx, dz)
         return (
           <group key={`r${i}`}>
-            <mesh position={[mx, FENCE_HEIGHT * 0.9, mz]} rotation={[0, angle, 0]}>
+            <mesh position={[mx, FENCE_HEIGHT * 0.9, mz]} rotation={[0, angle, 0]} material={railMat}>
               <boxGeometry args={[0.08, 0.08, len]} />
-              <meshStandardMaterial color="#1a1a1a" roughness={0.6} metalness={0.4} />
             </mesh>
-            <mesh position={[mx, FENCE_HEIGHT * 0.3, mz]} rotation={[0, angle, 0]}>
+            <mesh position={[mx, FENCE_HEIGHT * 0.3, mz]} rotation={[0, angle, 0]} material={railMat}>
               <boxGeometry args={[0.08, 0.08, len]} />
-              <meshStandardMaterial color="#1a1a1a" roughness={0.6} metalness={0.4} />
             </mesh>
           </group>
         )
