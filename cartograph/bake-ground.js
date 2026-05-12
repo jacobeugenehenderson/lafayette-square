@@ -25,6 +25,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
+import { writeIfChanged } from './io.js'
 import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
@@ -610,7 +611,6 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
   const manifest = {
     version: 1,
     look,
-    generatedAt: Date.now(),
     bbox: { min: [bx0, 0, bz0], max: [bx1, 0, bz1] },
     stencil: manifestStencil,
     bin: 'ground.bin',
@@ -620,8 +620,10 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
     groups,
   }
 
-  writeFileSync(join(outDir, 'ground.json'), JSON.stringify(manifest, null, 2))
-  writeFileSync(join(outDir, 'ground.bin'), Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength))
+  // Content-aware writes so ground-ao (which depends on ground.json mtime)
+  // can skip its 25s pass when the geometry is unchanged.
+  writeIfChanged(join(outDir, 'ground.json'), JSON.stringify(manifest, null, 2))
+  writeIfChanged(join(outDir, 'ground.bin'), Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

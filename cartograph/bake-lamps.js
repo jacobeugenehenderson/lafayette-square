@@ -11,6 +11,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { writeIfChanged } from './io.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -25,13 +26,12 @@ export async function bakeLamps({ look = 'default' } = {}) {
   const out = {
     version: 1,
     look,
-    generatedAt: Date.now(),
     count: lamps.length,
     lamps,
   }
   const outPath = join(outDir, 'lamps.json')
-  writeFileSync(outPath, JSON.stringify(out, null, 2))
-  console.log(`[bake-lamps] wrote ${outPath} (${lamps.length} lamps)`)
+  const wrote = writeIfChanged(outPath, JSON.stringify(out, null, 2))
+  console.log(`[bake-lamps] ${wrote ? 'wrote' : 'unchanged'} ${outPath} (${lamps.length} lamps)`)
 }
 
 async function main() {

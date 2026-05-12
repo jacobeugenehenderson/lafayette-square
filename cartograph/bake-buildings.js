@@ -22,6 +22,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../src/lib/foundationGeometry.js'
+import { writeIfChanged } from './io.js'
 import { makeElevationSampler } from '../src/lib/terrainCommon.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -726,7 +727,6 @@ export async function bakeBuildings({ look = 'default' } = {}) {
   const manifest = {
     version: 1,
     look,
-    generatedAt: Date.now(),
     bbox: { min: [bx0, by0, bz0], max: [bx1, by1, bz1] },
     bin: 'buildings.bin',
     positionFormat: 'float32',
@@ -742,8 +742,8 @@ export async function bakeBuildings({ look = 'default' } = {}) {
     groups,
   }
 
-  writeFileSync(join(outDir, 'buildings.json'), JSON.stringify(manifest, null, 2))
-  writeFileSync(join(outDir, 'buildings.bin'), Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength))
+  writeIfChanged(join(outDir, 'buildings.json'), JSON.stringify(manifest, null, 2))
+  writeIfChanged(join(outDir, 'buildings.bin'), Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength))
 
   const sizeKb = (buf.byteLength / 1024).toFixed(1)
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)

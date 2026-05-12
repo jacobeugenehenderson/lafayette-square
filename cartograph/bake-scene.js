@@ -18,6 +18,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { writeIfChanged } from './io.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -43,7 +44,6 @@ export async function bakeScene({ look = 'default' } = {}) {
   const scene = {
     version: 1,
     look,
-    generatedAt: Date.now(),
     palette:         design.buildingPalette || DEFAULT_PALETTE,
     materialPhysics: design.materialPhysics || {},
     materialColors:  design.materialColors  || {},
@@ -54,8 +54,8 @@ export async function bakeScene({ look = 'default' } = {}) {
   }
 
   const outPath = join(outDir, 'scene.json')
-  writeFileSync(outPath, JSON.stringify(scene, null, 2))
-  console.log(`[bake-scene] wrote ${outPath}`)
+  const wrote = writeIfChanged(outPath, JSON.stringify(scene, null, 2))
+  console.log(`[bake-scene] ${wrote ? 'wrote' : 'unchanged'} ${outPath}`)
   return scene
 }
 

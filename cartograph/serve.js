@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync
 import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
 import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
+import { writeIfChanged } from './io.js'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
 // command-string semantics + timeout option, but the event loop keeps
@@ -102,7 +103,10 @@ function readJsonOrNull(path) {
   try { return JSON.parse(readFileSync(path, 'utf-8')) } catch { return null }
 }
 function writeJson(path, obj) {
-  writeFileSync(path, JSON.stringify(obj, null, 2))
+  // Content-aware: skip the write (and the mtime bump) when bytes match.
+  // Critical for the bake chain's incremental dirty-skip — a "save with
+  // no changes" must NOT invalidate downstream artifacts.
+  writeIfChanged(path, JSON.stringify(obj, null, 2))
 }
 function lookDir(id) { return join(LOOKS_DIR, id) }
 function lookDesignPath(id) { return join(lookDir(id), 'design.json') }
@@ -312,7 +316,9 @@ createServer(async (req, res) => {
         try {
           const parsed = JSON.parse(body)
           mkdirSync(dirname(filePath), { recursive: true })
-          writeFileSync(filePath, JSON.stringify(parsed, null, 2))
+          // Content-aware: a save-with-no-changes must not bump mtime,
+          // or the bake chain treats every downstream artifact as stale.
+          writeIfChanged(filePath, JSON.stringify(parsed, null, 2))
           res.writeHead(200, { 'Content-Type': 'application/json' })
           res.end('{"ok":true}')
         } catch (err) {

@@ -4,9 +4,10 @@
 //
 // Run after every `node pipeline.js` whose output should reach the React app.
 
-import { readFileSync, writeFileSync, copyFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { join } from 'path'
 import { DEFAULT_SCENE, sceneCleanDir } from './config.js'
+import { writeIfChanged } from './io.js'
 
 // CLI: --scene=<name> chooses which scene's map.json to read. The output
 // path is currently fixed at src/data/ribbons.json (the default-scene
@@ -25,13 +26,11 @@ const map = JSON.parse(readFileSync(MAP_PATH, 'utf-8'))
 const ribbons = map.layers?.ribbons
 if (!ribbons) throw new Error('map.json has no layers.ribbons')
 
-const stamp = Date.now()
-const backupPath = BUNDLED_PATH + `.backup-${stamp}`
-copyFileSync(BUNDLED_PATH, backupPath)
-console.log(`Backup: ${backupPath}`)
-
-writeFileSync(BUNDLED_PATH, JSON.stringify(ribbons, null, 2))
-console.log(`Wrote: ${BUNDLED_PATH}`)
+// Content-aware: skip the write (and the mtime bump) when bytes match,
+// so a no-op pipeline run doesn't cascade-invalidate every downstream
+// bake step. Backup snapshots dropped — git is the source of truth.
+const wrote = writeIfChanged(BUNDLED_PATH, JSON.stringify(ribbons, null, 2))
+console.log(`${wrote ? 'Wrote' : 'Unchanged'}: ${BUNDLED_PATH}`)
 console.log(`  streets: ${ribbons.streets?.length || 0}`)
 console.log(`  corridors: ${ribbons.corridors?.length || 0}`)
 console.log(`  medians: ${ribbons.medians?.length || 0}`)

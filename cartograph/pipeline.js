@@ -11,6 +11,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR } from './config.js'
+import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
 import { deriveLayers, deriveBuildings, _lotPaths } from './derive.js'
 import { fetchElevationGrid, interpolateElevation } from './elevation.js'
@@ -151,13 +152,16 @@ async function main() {
     buildings,
   }
 
-  writeFileSync(join(CLEAN_DIR, 'map.json'), JSON.stringify(output, null, 2))
-  const sizeKb = Math.round(JSON.stringify(output).length / 1024)
-  console.log(`\n  Output: ${join(CLEAN_DIR, 'map.json')} (${sizeKb} KB)`)
+  // Content-aware so a no-op pipeline run doesn't cascade-invalidate
+  // ground / buildings / lamps / scene / ground-ao downstream.
+  const mapJson = JSON.stringify(output, null, 2)
+  const wrote = writeIfChanged(join(CLEAN_DIR, 'map.json'), mapJson)
+  const sizeKb = Math.round(mapJson.length / 1024)
+  console.log(`\n  Output: ${join(CLEAN_DIR, 'map.json')} (${sizeKb} KB)${wrote ? '' : ' [unchanged]'}`)
   console.log(`  Buildings: ${buildings.length}`)
 
   if (elevationGrid) {
-    writeFileSync(join(CLEAN_DIR, 'elevation.json'), JSON.stringify(elevationGrid, null, 2))
+    writeIfChanged(join(CLEAN_DIR, 'elevation.json'), JSON.stringify(elevationGrid, null, 2))
   }
 
   console.log('='.repeat(60))
