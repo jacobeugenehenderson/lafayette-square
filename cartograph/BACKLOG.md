@@ -2038,9 +2038,6 @@ below) — not punchlist-gating.
   overlay → resolved street list." One shared resolver eliminates a
   whole class of drift. Pair with the shared `buildRibbonGeometry`
   helper for end-to-end structural parity.
-- [ ] **Bake handler async** — `cartograph/serve.js`'s POST
-  `/looks/:id/bake` uses `execSync`, blocking *all* `/api/cartograph/*`
-  requests during the bake. Switch to `spawn`/`execFile` + Promises.
 - [ ] **Measure: final for-real pass** across every measured street.
 - [ ] **Measure: confirm file persistence** (save → reload → same state).
 - [ ] **Measure: confirm Divided Traffic + emergent median end-to-end.**
@@ -2064,8 +2061,6 @@ below) — not punchlist-gating.
 - [ ] **Real water texture** — replace today's flat fill.
 
 ### Atmosphere + Sky & Light
-- [ ] **Remove Sun info from TOD in Preview** — Sun readout currently
-  surfaces in Preview's TOD UI; pull it out.
 - [ ] **QC Neon** — perfect on toy fixture + migrate to LS
   (`project_neon_bands_runtime.md`, `HANDOFF-neon.md`).
 - [ ] **Sky & Light + Post card polish** — per-channel polish, promote

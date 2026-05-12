@@ -203,15 +203,11 @@ Decisions that affect how to think about new work:
 
 `BakedGround` and `InstancedTrees` fetch `/baked/<look>/{ground,buildings,scene}.json` and `default.json` with `?t=${bakeLastMs}`. If the same `bakeLastMs` value is reused across bakes, the browser hits its HTTP cache and serves stale geometry — the bake artifacts on disk update, but the page doesn't see them. **`bakeLastMs` must be set to `Date.now()` on every bake completion**, not to the bake's duration. (Historical bug: `useCartographStore.js:runBake` used `r.ms` (duration) as the cache-bust signal; incremental no-op bakes returned identical small durations and the browser cached them. Symptom: "I edited X days ago, Designer shows it, Stage doesn't." Fixed 2026-05-04.)
 
-### Bake handler blocks the cartograph event loop
+### Bake handler runs async (fixed 2026-05-13)
 
-`cartograph/serve.js`'s POST `/looks/:id/bake` runs each step via `execSync` — synchronous. The Node event loop is blocked for the entire duration of the bake. *No* other API request to the cartograph server (centerlines, overlay, measurements, anything) can be served while a bake is running. If a step hangs, the whole server hangs.
+`cartograph/serve.js`'s POST `/looks/:id/bake` runs each step via `runShell` (Promise wrapper around `spawn` with `shell: true` + timeout). The Node event loop keeps serving other API requests while a bake child process runs. A per-look `_bakesInFlight` set rejects concurrent bake requests against the same Look with `409 { error: 'bake already in progress' }` so a double-click on the Stage button can't race two bakes writing to the same `public/baked/<id>/` directory.
 
-**Symptom:** every `/api/cartograph/*` request shows "Pending" in DevTools, including subsequent bake requests. Backlogged requests pile up and never resolve until the server is killed and restarted.
-
-**Workaround today:** kill `node cartograph/serve.js` (the `carto` process) and restart `npm run dev`. Loses any in-flight bake progress.
-
-**Real fix (task #23):** switch to `spawn` / `execFile` with Promises so the server keeps handling other requests during a bake.
+Historical state (pre-2026-05-13): each step ran via `execSync`, blocking the Node event loop for the bake's entire duration. Every `/api/cartograph/*` request pended; if a step hung, the whole server hung. Workaround was to kill + restart `carto`. The async conversion removed both failure modes.
 
 ### Server changes require a `cartograph/serve.js` restart
 

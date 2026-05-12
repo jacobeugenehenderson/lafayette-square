@@ -2,8 +2,44 @@
 import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs'
 import { join, extname, dirname } from 'path'
-import { execSync } from 'child_process'
+import { spawn } from 'child_process'
 import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
+
+// Promise wrapper around spawn with shell: true. Matches execSync's
+// command-string semantics + timeout option, but the event loop keeps
+// serving other requests while the child runs — so `/api/cartograph/*`
+// requests don't pend during a long bake.
+function runShell(cmd, opts = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, {
+      shell: true,
+      stdio: 'inherit',
+      cwd: opts.cwd,
+      env: opts.env,
+    })
+    let timer = null
+    if (opts.timeout) {
+      timer = setTimeout(() => {
+        child.kill('SIGKILL')
+        reject(new Error(`Command timed out after ${opts.timeout}ms: ${cmd}`))
+      }, opts.timeout)
+    }
+    child.on('error', (err) => {
+      if (timer) clearTimeout(timer)
+      reject(err)
+    })
+    child.on('close', (code, signal) => {
+      if (timer) clearTimeout(timer)
+      if (code === 0) resolve()
+      else reject(new Error(`Command failed (code=${code}, signal=${signal}): ${cmd}`))
+    })
+  })
+}
+
+// Per-look bake lock. A double-click on the Stage button would otherwise
+// kick off two simultaneous bakes against the same `public/baked/<id>/`
+// directory; the second loses races against the first's writes.
+const _bakesInFlight = new Set()
 
 // Per-scene file resolver. Phase 0a only wires the default scene
 // (lafayette-square) and toy through here; further scenes follow the same
@@ -216,7 +252,7 @@ function analyzeMarkers() {
   return result
 }
 
-createServer((req, res) => {
+createServer(async (req, res) => {
   // Strip query string for route matching. Clients add cache-busting
   // ?t=... that would otherwise miss exact-equality checks.
   const path = (req.url || '').split('?')[0]
@@ -412,8 +448,10 @@ createServer((req, res) => {
     return
   }
 
-  // POST /looks/<id>/bake — re-render the SVG for this Look from its
-  // design.json. Synchronous; client shows a modal during the round-trip.
+  // POST /looks/<id>/bake — re-bake this Look's bundle (ground / buildings
+  // / lamps / scene / trees / ground-ao) from its design.json. Steps run
+  // via `runShell` (async spawn) so other API requests keep flowing during
+  // the bake. Per-look lock rejects concurrent bakes against the same Look.
   if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/bake$/))) {
     const id = m[1]
     const idx = readLooksIndex()
@@ -422,6 +460,12 @@ createServer((req, res) => {
       res.end(JSON.stringify({ error: 'unknown look' }))
       return
     }
+    if (_bakesInFlight.has(id)) {
+      res.writeHead(409, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'bake already in progress for this look', lookId: id }))
+      return
+    }
+    _bakesInFlight.add(id)
     try {
       const t0 = Date.now()
       // Full bake chain — every step the operator might forget rolled into
@@ -478,9 +522,9 @@ createServer((req, res) => {
       const sceneFlag = `--scene=${bakeScene}`
       const ranSteps = []
       const skipped = []
-      const runIfDirty = (label, inputs, outputs, cmd, opts) => {
+      const runIfDirty = async (label, inputs, outputs, cmd, opts) => {
         if (!force && !needsRebuild(inputs, outputs)) { skipped.push(label); return }
-        execSync(cmd, opts)
+        await runShell(cmd, opts)
         ranSteps.push(label)
       }
 
@@ -488,12 +532,12 @@ createServer((req, res) => {
       // For toy we skip — the toy fixture is hand-authored centerlines +
       // overlay; a future toy-pipeline.js will derive map.json from those.
       if (isDefaultScene) {
-        runIfDirty('pipeline',
+        await runIfDirty('pipeline',
           [...RAW_PATHS, ...PIPELINE_SRC],
           [MAP_JSON],
           `node pipeline.js`,
           { cwd: here, timeout: 120000 })
-        runIfDirty('promote-ribbons',
+        await runIfDirty('promote-ribbons',
           [MAP_JSON, join(here, 'promote-ribbons.js')],
           [RIBBONS],
           `node promote-ribbons.js ${sceneFlag}`,
@@ -502,22 +546,22 @@ createServer((req, res) => {
         skipped.push('pipeline (scene-specific pipeline not yet implemented)')
         skipped.push('promote-ribbons (depends on pipeline)')
       }
-      runIfDirty('ground',
+      await runIfDirty('ground',
         [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js')],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 60000 })
-      runIfDirty('buildings',
+      await runIfDirty('buildings',
         [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
         [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
         `node bake-buildings.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 60000 })
-      runIfDirty('lamps',
+      await runIfDirty('lamps',
         [STREET_LAMPS, DESIGN, join(here, 'bake-lamps.js')],
         [join(LOOK_DIR, 'lamps.json')],
         `node bake-lamps.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 30000 })
-      runIfDirty('scene',
+      await runIfDirty('scene',
         [DESIGN, join(here, 'bake-scene.js')],
         [join(LOOK_DIR, 'scene.json')],
         `node bake-scene.js --look=${id} ${sceneFlag}`,
@@ -527,7 +571,7 @@ createServer((req, res) => {
       // Toy has its own ToyTrees component fed by a static JSON; no bake
       // step is needed for it yet.
       if (isDefaultScene) {
-        runIfDirty('trees',
+        await runIfDirty('trees',
           [PARK_TREES, PARK_WATER, MAP_JSON, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
           [join(REPO_ROOT, 'public', 'baked', 'default.json')],
           `node arborist/bake-trees.js --look default`,
@@ -536,7 +580,7 @@ createServer((req, res) => {
         skipped.push('trees (LS-only today; toy uses its own static fixture)')
       }
       // AO bake last — slowest, benefits from updated geometry.
-      runIfDirty('ground-ao',
+      await runIfDirty('ground-ao',
         [MAP_JSON, DESIGN, join(LOOK_DIR, 'ground.json'), join(here, 'bake-ground-ao.js')],
         [join(LOOK_DIR, 'ground.lightmap.png')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
@@ -550,6 +594,8 @@ createServer((req, res) => {
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))
+    } finally {
+      _bakesInFlight.delete(id)
     }
     return
   }
@@ -621,7 +667,7 @@ createServer((req, res) => {
   // POST /rebuild — re-run render.js and reload preview
   if (req.method === 'POST' && path === '/rebuild') {
     try {
-      execSync('node render.js', { cwd: import.meta.dirname, timeout: 30000 })
+      await runShell('node render.js', { cwd: import.meta.dirname, timeout: 30000 })
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end('{"ok":true}')
     } catch (err) {
