@@ -2,9 +2,9 @@
 
 Read this first if you're new (human or agent). It's the product orientation doc — what the thing is, what each part is for, and the load-bearing decisions that shape why the code looks the way it does.
 
-> Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; flag contradictions during work; update at session end. Goal: keep this doc pristine and current. Stale claims are worse than no claims — they actively mistrain readers.
+> Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; flag contradictions during work; update at session end. Goal: keep this doc pristine and current. Stale claims are worse than no claims — they actively mistrain readers. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
-For *file layout* and the publish-loop pattern, see `ARCHITECTURE.md`. For *dev setup*, see `README.md`. This doc is conceptual.
+For *file layout* and the publish-loop pattern, see `ARCHITECTURE.md` (this directory). For *dev setup*, see the root `README.md`. This doc is conceptual.
 
 ---
 
@@ -209,6 +209,30 @@ Decisions that affect how to think about new work:
 
 Historical state (pre-2026-05-13): each step ran via `execSync`, blocking the Node event loop for the bake's entire duration. Every `/api/cartograph/*` request pended; if a step hung, the whole server hung. Workaround was to kill + restart `carto`. The async conversion removed both failure modes.
 
+### Bake-chain dirty-skip: content-aware writes that ALSO touch mtime (2026-05-13)
+
+The bake's per-step `needsRebuild` compares input mtimes (raw data + script source) to output mtimes. To make incremental bakes truly skip when nothing changed, two coupled rules must hold:
+
+1. **Skip the disk write when bytes are byte-identical.** `cartograph/io.js`'s `writeIfChanged(path, content)` reads the existing file, compares, and skips `writeFileSync` on match. Avoids rewriting `map.json` / `ground.json` etc. on every authoring save.
+
+2. **Touch the output's mtime on a no-op write.** This is canonical `make` behavior: a successful build verifies the output is up-to-date *as of now*, so the next dirty-check sees the chain as stable. Without (2), editing a source script (e.g., `pipeline.js`) permanently invalidates its downstream artifact — `pipeline.js > map.json` forever — and `needsRebuild` reruns every step on every bake. Verified on LS: first bake after a fix takes the usual ~40s to stamp the chain; subsequent no-op bakes return in 1 millisecond.
+
+**Output-write ordering rule.** Any bake script that writes an OUTPUT file AND patches another step's output (e.g., `bake-ground-ao.js` writes `ground.lightmap.png` and ALSO patches `ground.json` to add the lightmap reference) must write the patched file BEFORE its own output. Otherwise the patched file ends up with a strictly newer mtime than the step's output, and `needsRebuild` reruns the step every bake. `bake-ground-ao.js` learned this the hard way 2026-05-13.
+
+**To apply for any new bake step:** use `writeIfChanged` from `./io.js` for every output. If the step patches another step's output, patch first, output last.
+
+### Treelawn matches adjacent parcel land-use (2026-05-13)
+
+The treelawn strip between curb and sidewalk paints in the color of the **land-use block it abuts**, not a uniform green. Bake emits per-LU groups (`treelawn:residential`, `treelawn:park`, etc.); Designer's V2 live render does the same per-LU bucketing for parity. Each variant inherits the parcel's authored `luColors[lu]`; grass-LU variants (residential / park / recreation) route through `GrassMesh` and visually merge with the parcel face's procedural grass texture; non-grass-LU variants (commercial / parking / institutional / etc.) render flat via `FadeMesh` in that parcel's authored color so the frontage doesn't read green next to a brown block.
+
+Adjacent-block lookup is **coordinate-based** (point-in-polygon on `ringInteriorProbe(fe.treelawnRings[0])` against `v2.blocks`), not a `blockKey` join. The reason: pass-1 frontage-edge `blockKey`s drift from pass-2 `blocks[].blockKey`s when asphalt widens via Measure customs (`blockKeyFromRing` rounds bbox center to 0.5m; wider asphalt shifts the center; key flips). A key-join misses ~80% of fees on LS; the coordinate probe attributes ~70% on the first pass with the remainder being legitimate edge cases (dead-end caps, stencil edges) that fall through to a bare `treelawn` group.
+
+Designer toggle `treelawn` hides all per-LU variants together — the runtime visibility check strips the `:<lu>` suffix before `BAND_TO_LAYER` lookup.
+
+### `BakedGround.GrassMesh` needs polygonOffset parity with `FadeMesh` (2026-05-13)
+
+Both `FadeMesh` and `GrassMesh` in `src/components/BakedGround.jsx` render face / material groups; the bake assigns per-group `polygonOffsetUnits = -renderOrder` so coplanar fragments stack in paint order. `FadeMesh` honors this; `GrassMesh` historically didn't, and grass-shaded faces (residential / park / recreation; lawn / treelawn / median) z-fought with adjacent `FadeMesh` faces and rendered invisibly in Stage. The fix is one block in `GrassMesh`'s material build: `material.polygonOffset = true; material.polygonOffsetFactor = 0; material.polygonOffsetUnits = group.polygonOffsetUnits`. Any new material path in BakedGround needs the same parity.
+
 ### Server changes require a `cartograph/serve.js` restart
 
 `cartograph/serve.js` runs as a long-lived Node process (`carto` in `npm run dev`). Edits to its bake-endpoint chain, dirty-check logic, or any other server code are *not* picked up until the process restarts. The browser-side and the bake scripts (`derive.js`, `bake-ground.js`, etc.) are loaded fresh on each request / each `node X.js` invocation, so they auto-pick-up edits — but `serve.js` is the exception. If you change `serve.js` and don't restart, the Bake button keeps running yesterday's chain.
@@ -276,6 +300,12 @@ Because curb width is global (one `CURB_WIDTH` constant — per-side `side.curb`
 **Don't rebuild this as per-side rectangles.** If a future task ever needs to vary curb width per side, the right move is to emit per-side curb sectors and *union* them with the global stroke, not replace it.
 
 The principle in plain words: in V2, the silhouette of the asphalt — wherever it goes, however the corners and caps are shaped — IS the curb's path. Survey + Measure author the silhouette; the corner editor refines it; the curb traces it.
+
+### Park paths auto-detect over-water bridges (2026-05-13)
+
+`park_paths.json` has no `bridge` tag — every path is a flat polygon. `LafayettePark.jsx`'s `ParkPaths` partitions paths at mount-time: for each path, sample segment midpoints; if a majority fall over water (`lake.outer` minus `lake.island`, or `grotto`), classify the path as a bridge and render it at `PATH_BRIDGE_Y` (0.5) — clears the water surface (0.35) and the lake island top (0.4). Non-bridge paths render at `PATH_LAND_Y` (0.4). Path material carries `polygonOffset: factor=-1, units=-1` so the lake-perimeter path stops z-fighting with the bank at the shoreline.
+
+A manual `bridge: true` per-path flag could ride on top of this later if auto-detection ever guesses wrong; no current path needs it.
 
 ### Two sources of water/lamps existed; deduped
 

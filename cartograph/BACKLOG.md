@@ -1,10 +1,123 @@
 # Cartograph Backlog
 
-> Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
+> Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
-Last updated: 2026-05-13 (LS end-to-end through the canonical pipeline. Designer authors → Bake button → Stage + Preview both render from the slab. Ground bake is scene-parametric; lamps consume the baked artifact on both Stage and Preview. Non-street ribbons (alleys + footways + cycleways + steps + dirt paths) now rendered live in Designer via a shared `buildPathRibbons` helper that bake-ground also consumes — no algorithm drift possible. Paths clip to parcel interiors (block.ring minus curb + ped frontageBands) so they terminate at the sidewalk's inner edge. Operator has a universal alley-cap dial in the Designer Panel's Paths section: square / rounded / round.)
+Last updated: 2026-05-13 (afternoon session — see "2026-05-13 PM" pin below)
 
-## 2026-05-13 — Session-end pin (read first)
+## 2026-05-13 PM — Session-end pin (read first)
+
+LHF pass off the 2026-05-13 v1 punchlist. Eight commits, all on
+`cartograph-looks-pass-ab`:
+
+**Shipped (in commit order):**
+
+- **Async bake handler + per-look in-flight lock** (`61eea3f`) —
+  `cartograph/serve.js`'s POST `/looks/:id/bake` swapped from
+  `execSync` to a `runShell` Promise wrapper around `spawn`; the
+  Node event loop keeps serving `/api/cartograph/*` requests during
+  a bake. `_bakesInFlight` Set rejects concurrent bakes against the
+  same Look with `409`.
+
+- **Stage button respects `lastStageShot`; canonical post-bake
+  framing** (`f45cda2`) — `Toolbar.jsx`'s Stage → button reads
+  `lastStageShot` from the store (already persisted to localStorage)
+  instead of hardcoded `'browse'`. `CartographApp.jsx`'s
+  Designer→Stage camera transition drops the ortho-pan-preserve
+  branch — all non-Designer entries land at canonical
+  `SHOTS[shot].position` (was producing random off-center framing
+  post-bake). Vestigial `StageCamera` import + stale comment
+  cleaned up. Browse→Designer reverse pan-preserve is intentionally
+  kept (different workflow: "I was just looking at this in Stage,
+  drop me at the authoring view of THIS patch").
+
+- **Content-aware writes for bake chain** (`7bbef54` + `766fe37`) —
+  Two-commit fix. `cartograph/io.js` exports `writeIfChanged(path,
+  content)`: skip the write on byte-identical content AND touch the
+  output's mtime to "now" so `needsRebuild` sees the chain as stable
+  after a no-op build. Without the mtime touch, editing a source
+  script (`pipeline.js`, etc.) permanently invalidated downstream
+  artifacts. Wired through `serve.js`, `pipeline.js`, `bake-ground`,
+  `-buildings`, `-lamps`, `-scene`, `-ground-ao`, and
+  `promote-ribbons.js`. Dead `generatedAt: Date.now()` fields
+  stripped from cartograph bake outputs (nothing read them; they
+  defeated byte-equality). `promote-ribbons.js` backup snapshots
+  retired (39 .backup-* files on disk; gitignored; git is the
+  source of truth). `bake-ground-ao.js` reorders patch-then-output
+  so the manifest patch isn't strictly newer than the lightmap PNG.
+  **Verified on LS: first bake ~50s (stamps the chain), subsequent
+  no-op bake returns in 1ms with everything in `skipped`.**
+
+- **Park paths: auto-bridge + polygonOffset** (`23cc128`) —
+  `LafayettePark.jsx`'s `ParkPaths` partitions paths at mount time:
+  for each path, sample segment midpoints; majority over water
+  (lake.outer minus lake.island, or grotto) → bridge, render at
+  `PATH_BRIDGE_Y` (0.5) above water and island top; otherwise
+  `PATH_LAND_Y` (0.4). Path material gains `polygonOffset
+  factor/units = -1` so the lake-perimeter path stops z-fighting
+  with the bank. No `park_paths.json` authoring needed; manual
+  override flag (`bridge: true`) could ride on top later.
+
+- **BakedGround grass material gets per-group polygonOffset**
+  (`c20b706`) — `GrassMesh` was missing the polygonOffset that
+  `FadeMesh` had, so grass-shaded faces (residential, park,
+  recreation; lawn, treelawn, median) z-fought with adjacent
+  FadeMesh faces and rendered invisibly in Stage. One-block fix
+  in BakedGround mirroring the FadeMesh material setup.
+
+- **Treelawn matches adjacent parcel LU — bake side** (`cfa6b01`) +
+  **Designer side** (`5dbf4b6`) — Bake emits treelawn under per-LU
+  keys (`treelawn:residential`, `treelawn:park`, etc.); each
+  variant inherits the parcel's authored `luColors[lu]`. Grass-LU
+  variants (residential / park / recreation) route through
+  `GrassMesh`; others through `FadeMesh`. Designer V2 does the
+  same per-LU bucketing for parity. Adjacent-block lookup is
+  **coordinate-based** (point-in-polygon on
+  `ringInteriorProbe(fe.treelawnRings[0])` against `v2.blocks`)
+  rather than a `blockKey` join — pass-1 fee keys drift from
+  pass-2 block keys when asphalt widens via Measure customs (the
+  key join missed ~80% of fees on LS; coordinate probe attributes
+  ~70% on the first pass, remainder are legitimate caps/edges).
+
+**Memories saved this session:**
+
+- `project_doped_artifact_placecard_edit_pattern` — system-wide
+  rule: cartograph seeds best-guess defaults (heuristic /
+  source-data import); end-user refines per-entity via PlaceCard.
+  Never propose bulk heuristic flatten or operator one-off authoring
+  in cartograph dev tooling — duplicates PlaceCard infrastructure
+  that already exists.
+- `project_writeifchanged_touches_mtime` — content-aware writes
+  MUST also `utimesSync` on the byte-identical branch, or every
+  script edit cascades into permanent rebuilds. Plus the ordering
+  rule: bake scripts that patch another step's output must write
+  the patch FIRST, their own output LAST.
+
+**Known follow-ups (not blocking LS):**
+
+- **Roofs damaged-subset fix** tabled pending the PlaceCard
+  elaboration + data-route session. Investigation found 0 authored
+  `roof_shape` fields on any building; every roof shape today is
+  heuristic output. Surgical one-offs rejected (grueling, per
+  past sessions); heuristic-wide flatten rejected (kills correct
+  mansards/hips). Correct route: dope the artifact with heuristic
+  seed, end-user refines per-building via PlaceCard. Holds until
+  the PlaceCard data route is stood up.
+- **Heading slider on cartograph Browse** — `CartographApp.jsx`'s
+  Designer→Browse transition uses static `SHOTS.browse.up = [0, 0,
+  -1]` and ignores the Heading slider. StageCamera in /preview does
+  honor it via `browseUpFromHeading(getBrowseHeading())`. Cartograph
+  side wasn't observed broken this session (user had heading=null)
+  but the gap is real; queue if heading authoring ever moves into
+  cartograph.
+
+**Next session direction.** Lane-spawn for divided traffic
+(symmetric expansion despite `anchor: inner edge`), corner revert
+two-tier, or bake-time arc smoothing (Phase 7's bake-propagation
+TODO). All Tier-2 LHF.
+
+---
+
+## 2026-05-13 — Session-end pin (LS end-to-end pipeline, superseded by PM pin above)
 
 LS is **up and running** end-to-end through the canonical pipeline. The
 ground bake is scene-parametric, Stage and Preview consume the same
@@ -1931,12 +2044,16 @@ below) — not punchlist-gating.
   - When unblocked: roofs becomes a Stage/Preview fix-up authored
     per-building in PlaceCard, not a cartograph-side bulk change.
 
-### Designer Panel — IA pass
-- [ ] **Walk the panel top-to-bottom and re-order controls into a logical
-  sequence.** Specific call-outs: the **park** section, **frontage / secondary-
-  highway road** controls. Output: re-ordered panel, possibly some
-  renaming. *Distinct* from the Y-offset → polygonOffset coplanar sweep
-  (which lives under Designer/Preview UX below).
+### Designer Panel — IA pass (render stack order)
+- [x] **Render stack order pass — addressed 2026-05-13 PM.** Re-interpreted
+  as the *paint order* of overlapping surfaces (the original phrasing
+  "logic order of everything therein" meant Z-order, not section
+  ordering). Park-side stack audited and fixed: park paths now auto-detect
+  bridges over water (raised to clear water + island), polygonOffset
+  added to path material to stop lake-perimeter z-fight at the bank.
+  Designer V2 / bake stacks confirmed coherent. Separate **Y-offset →
+  polygonOffset coplanar sweep** remains open under Designer/Preview UX
+  below.
 
 ### Trees — SpeedTree
 - [ ] **Stand up the SpeedTree library.** Buy/grab `.spm` starter kits;
@@ -1964,11 +2081,14 @@ below) — not punchlist-gating.
   pay the full-population cost everywhere.
 
 ### Treelawn color follows land-use
-- [ ] **Treelawn color matches the adjacent land-use polygon.** Color
-  (and possibly treatment) of the treelawn band tracks the land-use it
-  abuts — park → park green, residential → residential, etc. Land-use-
-  driven, not centerline-classification-driven; we're moving away from
-  the centerline regime at this stage of the pipeline.
+- [x] **Shipped 2026-05-13 PM** (`cfa6b01` bake, `5dbf4b6` Designer).
+  Per-LU treelawn keys (`treelawn:residential`, `treelawn:park`, …);
+  each variant inherits the parcel's authored `luColors[lu]`. Grass-LU
+  variants route through `GrassMesh` (procedural green, visually merges
+  with the parcel face); non-grass-LU variants render flat via
+  `FadeMesh`. Adjacent-block lookup is point-in-polygon on the treelawn
+  ring's interior probe (not `blockKey` join — pass-1/pass-2 drift).
+  See FEATURES.md §"Treelawn matches adjacent parcel land-use".
 
 ### Bake-time arc smoothing
 - [ ] **Curved streets must be smooth in the bake.** Benton Place and
@@ -2012,8 +2132,25 @@ below) — not punchlist-gating.
     when whole-IX edits and per-corner edits coexist, who wins? Needs
     a decision before coding the editor.
 
-### Bake Bounce
-- [ ] **Fix the Stage-button routing race once and for all.** Symptom:
+### Bake Bounce + post-bake camera skew — RESOLVED 2026-05-13 PM
+- [x] **Stage button** now navigates via `lastStageShot` from the store
+  (was hardcoded `'browse'`); `runBake({ navigateTo: lastStageShot })`
+  fires after the bake completes (`f45cda2`). Per-look in-flight lock
+  in `serve.js` (`61eea3f`) rejects concurrent bakes with `409`, so a
+  double-click can't race. With the async bake + fast no-op skip
+  (`766fe37`) the "long bake then bounce" race condition surfaced
+  briefly and resolved.
+- [x] **Post-bake camera skew** — initial diagnosis (pan-preserve into
+  ortho's x/z) landed in `f45cda2` and was correct framing-wise, but the
+  user-perceived "skew" turned out to be missing green LU surfaces from
+  a grass-shader z-fight against FadeMesh fragments. Fixed by mirroring
+  FadeMesh's per-group `polygonOffset` onto `GrassMesh`'s material
+  (`c20b706`). See FEATURES.md §"BakedGround.GrassMesh needs
+  polygonOffset parity".
+
+### Bake Bounce (historical, pre-resolution)
+- (kept here as a tombstone — the original symptom description
+  follows in case the route-transition race ever resurfaces.) Symptom:
   hit Stage (= Bake) → bake runs long → user is returned to the **Design**
   view instead of Stage. Second click opens Stage correctly. Likely
   the route transition fires before the bake completes, or the
