@@ -14,6 +14,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { writeIfChanged } from './io.js'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
@@ -239,23 +240,29 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
     }
   }
 
-  // Write PNG
-  const png = new PNG({ width: size, height: size })
-  png.data = Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength)
-  const outPath = join(lookDir, 'ground.lightmap.png')
-  writeFileSync(outPath, PNG.sync.write(png))
-
-  const elapsed = ((Date.now() - t0) / 1000).toFixed(1)
-  console.log(`[bake-ao] wrote ${outPath} (${size}², ${rays} rays/texel, ${elapsed}s)`)
-
-  // Patch manifest with lightmap reference
+  // Patch manifest with lightmap reference FIRST, then write the PNG.
+  // ground.json is an input to needsRebuild('ground-ao'); ground.lightmap.png
+  // is the output. If the manifest write happened last, ground.json would
+  // end up with a strictly newer mtime than ground.lightmap.png, and
+  // needsRebuild would rerun ground-ao on every bake. Manifest first =
+  // output is the freshest file on disk.
   manifest.lightmap = {
     image: 'ground.lightmap.png',
     size,
     rays,
     floor: 0.35,
   }
-  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+  writeIfChanged(manifestPath, JSON.stringify(manifest, null, 2))
+
+  // Write PNG (content-aware so a deterministic re-bake doesn't bump
+  // mtime when bytes match — needsRebuild stays stable).
+  const png = new PNG({ width: size, height: size })
+  png.data = Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength)
+  const outPath = join(lookDir, 'ground.lightmap.png')
+  writeIfChanged(outPath, PNG.sync.write(png))
+
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1)
+  console.log(`[bake-ao] ${outPath} (${size}², ${rays} rays/texel, ${elapsed}s)`)
 }
 
 // CLI
