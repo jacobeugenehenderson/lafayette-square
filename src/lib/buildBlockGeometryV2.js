@@ -1720,6 +1720,20 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     }
     return match
   }
+  // Multi-block faces (rare on LS, but present — e.g. faces 5, 6, 117
+  // are large residential/park faces spanning many blocks). The fast
+  // path assumes `face ⊂ ownBlockRing`; when that fails the intersect
+  // drops all of the face that lies outside the centroid-owning ring.
+  // Detect by sampling vertices: if any vertex lies outside `owning`,
+  // the face straddles and we must use the global asphaltRounded
+  // fallback. Cheap (O(face.ring.length × ring.length)) and only runs
+  // for faces that passed the centroid test.
+  const faceStraddles = (faceRing, owning) => {
+    for (const p of faceRing) {
+      if (!pointInRing(p[0], p[1], owning)) return true
+    }
+    return false
+  }
   if (faces.length) {
     for (const face of faces) {
       if (!face?.ring || face.ring.length < 3) continue
@@ -1731,7 +1745,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       // when an operator drags a sidewalk handle in Measure: V2's face
       // snapshot stays valid for the whole band zone instead of being
       // clipped at the band's previous outer edge.
-      const owning = blockRounded.length ? findOwningBlockRing(face.ring) : null
+      let owning = blockRounded.length ? findOwningBlockRing(face.ring) : null
+      if (owning && faceStraddles(face.ring, owning)) owning = null
       const clipped = owning
         ? intersectRings([face.ring], [owning])
         : (asphaltRounded.length ? differenceRings([face.ring], asphaltRounded) : [face.ring])
