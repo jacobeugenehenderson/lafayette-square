@@ -33,10 +33,18 @@ const GRASS_MATERIALS = new Set(['lawn', 'treelawn', 'median'])
 // makeGrassMaterial in LS, so Stage/Preview must follow.
 const GRASS_FACES = new Set(['park', 'residential', 'recreation'])
 
+// Per-LU treelawn variants ('treelawn:residential', 'treelawn:park', etc.)
+// inherit the parcel's material treatment: grass-LU variants route through
+// GrassMesh (procedural green); other LU variants render flat via
+// FadeMesh in the LU's authored color. Bare 'treelawn' is always grass.
 function isGrassGroup(group) {
-  return group.kind === 'face'
-    ? GRASS_FACES.has(group.id)
-    : GRASS_MATERIALS.has(group.id)
+  if (group.kind === 'face') return GRASS_FACES.has(group.id)
+  const colonIdx = group.id.indexOf(':')
+  if (colonIdx < 0) return GRASS_MATERIALS.has(group.id)
+  const bareKind = group.id.slice(0, colonIdx)
+  if (!GRASS_MATERIALS.has(bareKind)) return false
+  const variant = group.id.slice(colonIdx + 1)
+  return GRASS_FACES.has(variant)
 }
 
 // Resolve a group's effective layer-visibility from scene.json. Material
@@ -51,7 +59,11 @@ function isGroupVisible(group, layerVis) {
     const key = 'lu-' + group.id
     return layerVis[key] !== false
   }
-  const layerId = BAND_TO_LAYER[group.id] || group.id
+  // Per-LU material variants (e.g., 'treelawn:residential') resolve
+  // visibility against the bare layer toggle ('treelawn').
+  const colonIdx = group.id.indexOf(':')
+  const bareId = colonIdx < 0 ? group.id : group.id.slice(0, colonIdx)
+  const layerId = BAND_TO_LAYER[bareId] || bareId
   return layerVis[layerId] !== false
 }
 

@@ -74,6 +74,16 @@ function loadSceneStencil(scene) {
 // Paint order (deepest = drawn first). The pure-Three.js bake bundle is
 // the canonical runtime artifact.
 // renderOrder ascends with paint order so the runtime composites correctly.
+//
+// Treelawn is split into per-LU variants ('treelawn:residential',
+// 'treelawn:park', etc.) so each treelawn ring picks up the color of the
+// land-use block it abuts — visually extending the parcel across its
+// frontage. Bare 'treelawn' is kept for chain dead-end caps + corner
+// pads where there's no single adjacent block to attribute.
+const TREELAWN_LU_VARIANTS = [
+  'residential', 'commercial', 'vacant', 'vacant-commercial', 'parking',
+  'institutional', 'recreation', 'industrial', 'park', 'island', 'unknown',
+]
 const PAINT_ORDER = [
   // Faces (land-use) at the bottom
   ['face', 'residential'],
@@ -100,6 +110,9 @@ const PAINT_ORDER = [
   ['mat', 'tree_row'],
   // Ribbons stacked from outside → inside
   ['mat', 'lawn'],
+  // Per-LU treelawn variants (treelawn:<lu>) — match adjacent parcel
+  // colour. Bare 'treelawn' kept for fallback (dead-end caps, etc.).
+  ...TREELAWN_LU_VARIANTS.map(lu => ['mat', `treelawn:${lu}`]),
   ['mat', 'treelawn'],
   ['mat', 'sidewalk'],
   ['mat', 'curb'],
@@ -232,6 +245,17 @@ function ringInteriorProbe(ring) {
   }
   return ring[0]
 }
+// Find which block ring contains a given point; returns its lu, or null.
+// Used to attribute frontage rings (treelawn, etc.) to their adjacent
+// parcel when blockKey joins would drift across pass-1 / pass-2.
+function blockLuAtPoint(point, blocks) {
+  if (!point || !blocks) return null
+  for (const b of blocks) {
+    if (!b?.ring || b.ring.length < 3) continue
+    if (pointInRing(point, b.ring)) return b.lu || 'unknown'
+  }
+  return null
+}
 function ringsToHoledPolys(rings) {
   const outers = [], holes = []
   for (const r of rings) {
@@ -311,8 +335,25 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
   // square-ended at run-boundary IXs (extendCorners=false default);
   // the existing cornerSidewalkPads fill the corner wedge as before.
   // No frontageCaps consumed — pads do the corner concrete.
+  //
+  // Treelawn now routes per-LU: each fe's treelawn is emitted under
+  // 'treelawn:<lu>' keyed by the LU of the block the fe abuts, so the
+  // ring picks up that LU's authored color and material (grass texture
+  // for residential/park/recreation; flat color for commercial/etc).
+  // Sidewalk stays uniform.
+  //
+  // Adjacent-block lookup is coordinate-based (point-in-polygon) rather
+  // than fe.blockKey lookup: pass-1 fee blockKeys drift from pass-2
+  // block blockKeys when asphalt widens via Measure customs, so a key
+  // join mis-attributes ~80% of fees. The treelawn ring sits inside the
+  // block, so its centroid is a safe probe.
   for (const fe of (v2.frontageBands || [])) {
-    if (fe.treelawnRings?.length) pushClipperRings('treelawn', fe.treelawnRings)
+    if (fe.treelawnRings?.length) {
+      const probe = ringInteriorProbe(fe.treelawnRings[0])
+      const lu = probe ? blockLuAtPoint(probe, v2.blocks) : null
+      const key = lu ? `treelawn:${lu}` : 'treelawn'
+      pushClipperRings(key, fe.treelawnRings)
+    }
     if (fe.sidewalkRings?.length) pushClipperRings('sidewalk', fe.sidewalkRings)
   }
   pushClipperRings('asphalt',  v2.cornerAsphaltPlugs)
@@ -535,6 +576,10 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
     let color
     if (kind === 'face') {
       color = designLuColors[key] || DEFAULT_LU_COLORS[key] || LAND_USE_COLORS[key] || LAND_USE_COLORS.unknown
+    } else if (key.startsWith('treelawn:')) {
+      // Per-LU treelawn variants inherit the adjacent parcel's LU color.
+      const lu = key.slice('treelawn:'.length)
+      color = designLuColors[lu] || DEFAULT_LU_COLORS[lu] || LAND_USE_COLORS[lu] || LAND_USE_COLORS.unknown
     } else {
       const layerKey = BAND_TO_LAYER[key] || key
       color = designLayerColors[layerKey]
