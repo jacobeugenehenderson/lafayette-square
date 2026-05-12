@@ -1908,12 +1908,28 @@ below) — not punchlist-gating.
   16-rule Almanac) continues evolving and lands when ready, not as a v1
   blocker. See `meteorologist/SPEC.md`.
 
-### Roofs
-- [ ] **Flat-by-default roofs.** Any building without an explicit
-  historical roof tag → flat. Per-building richness is authored via
-  PlaceCards (user-defined elements being augmented), not heuristic.
-  Supersedes the old "damaged roofs" parity gap + per-corner
-  foundation-blocks work.
+### Roofs — TABLED pending PlaceCards data route
+- [⏸] **Damaged roofs fix waits on PlaceCards user-edit route.**
+  Investigation 2026-05-13: `src/data/buildings.json` has **0** authored
+  `roof_shape` fields; `src/data/buildingOverrides.json` is empty. Every
+  roof shape today is a heuristic output (`classifyRoof()` in
+  `src/components/LafayetteScene.jsx` + `classifyRoofFor()` in
+  `cartograph/bake-buildings.js` — both year/stories/footprint rules).
+  The "damaged" roofs are the subset where that heuristic emits a
+  non-flat shape that renders broken.
+  - Per-building one-off overrides rejected: tried in past sessions,
+    grueling and ineffective.
+  - Heuristic-wide flat-default rejected: kills correct-looking mansards
+    and hips along with the broken ones.
+  - **Correct route:** match the rest of the system — dope the artifact
+    with a best-guess seed (existing heuristic OR baked-into-data field)
+    and let the end-user edit via PlaceCard. Roofs become one of the
+    user-defined elements on the elaborated PlaceCard.
+  - **Blocker:** dedicated session to plan the PlaceCard elaboration +
+    stand up the data route from PlaceCard edits → building record →
+    bake. Not load-bearing right now; fine to hold.
+  - When unblocked: roofs becomes a Stage/Preview fix-up authored
+    per-building in PlaceCard, not a cartograph-side bulk change.
 
 ### Designer Panel — IA pass
 - [ ] **Walk the panel top-to-bottom and re-order controls into a logical
