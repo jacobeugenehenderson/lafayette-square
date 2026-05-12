@@ -150,5 +150,13 @@ export function makeGrassMaterial({
     )
   }
 
+  // Unique cache key so this grass program doesn't collapse onto any
+  // other patched-terrain material's compiled shader (three caches by
+  // customProgramCacheKey; without a unique key here the procedural-
+  // grass shader can silently get replaced by an earlier-compiled
+  // plain-MeshStandardMaterial program from the same scene).
+  material.customProgramCacheKey = () =>
+    `grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${lampLightmap ? 'lamp' : 'nolamp'}`
+
   return { material, shaderRef }
 }

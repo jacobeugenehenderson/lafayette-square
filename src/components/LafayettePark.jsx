@@ -10,7 +10,7 @@ import { getElevation } from '../utils/elevation'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
-import { patchTerrain } from '../utils/terrainShader'
+import { terrainExag } from '../utils/terrainShader'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin.
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
@@ -385,10 +385,6 @@ function ParkPaths() {
          diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
       )
     }
-    // Ride the terrain like BakedGround does — otherwise non-Browse shots
-    // (where terrainExag > 0) elevate the ground out from under the static
-    // park paths and they sink below the surface.
-    patchTerrain(mat, { perVertex: true })
     return mat
   }, [])
 
@@ -657,9 +653,6 @@ function ParkWater() {
          diffuseColor.a = mix(0.72, 0.88, smoothstep(0.3, 0.6, ripple));`
       )
     }
-    // Ride the terrain like BakedGround — otherwise the water sits at its
-    // authored Y while the elevated ground rises out of view from under it.
-    patchTerrain(mat, { perVertex: true })
     return mat
   }, [])
 
@@ -672,19 +665,13 @@ function ParkWater() {
     }
   })
 
-  // Simple island grass material (rides terrain).
-  const islandMat = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({ color: '#2a5528', roughness: 0.9 })
-    patchTerrain(m, { perVertex: true })
-    return m
-  }, [])
+  // Simple island grass material
+  const islandMat = useMemo(() =>
+    new THREE.MeshStandardMaterial({ color: '#2a5528', roughness: 0.9 }), [])
 
-  // Shoreline bank material (rides terrain).
-  const bankMat = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({ color: '#5a5040', roughness: 0.95 })
-    patchTerrain(m, { perVertex: true })
-    return m
-  }, [])
+  // Shoreline bank material
+  const bankMat = useMemo(() =>
+    new THREE.MeshStandardMaterial({ color: '#5a5040', roughness: 0.95 }), [])
 
   if (waterHidden) return null
 
@@ -723,19 +710,14 @@ function PerimeterFence() {
     return { posts, rails }
   }, [])
 
-  // Shared materials — posts translate rigidly with terrain (small unit),
-  // rails warp per-vertex so they follow ground contour across their
-  // ~85m span instead of floating at midpoint elevation.
-  const postMat = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({ color: '#2a2a2a', roughness: 0.7, metalness: 0.3 })
-    patchTerrain(m, { perVertex: false })
-    return m
-  }, [])
-  const railMat = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.6, metalness: 0.4 })
-    patchTerrain(m, { perVertex: true })
-    return m
-  }, [])
+  // Shared materials across all posts / rails (reused for HMR stability;
+  // patchTerrain deferred until a dedicated Hero-sinking pass since
+  // wrapping it in Browse with terrainExag=0 had no functional benefit
+  // and caused depth-precision snap-off at high altitude).
+  const postMat = useMemo(() =>
+    new THREE.MeshStandardMaterial({ color: '#2a2a2a', roughness: 0.7, metalness: 0.3 }), [])
+  const railMat = useMemo(() =>
+    new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.6, metalness: 0.4 }), [])
 
   return (
     <group>
@@ -766,9 +748,23 @@ function PerimeterFence() {
 }
 
 // ── Main Park Component ────────────────────────────────────────────────
+// Rigid lift of the entire park group by the park-center elevation × the
+// shared terrainExag uniform. BakedGround's `park` face rises with terrain
+// via per-vertex patchTerrain; the live park items (water/paths/fence/labels)
+// would otherwise sit at static Y while the ground rises out from under
+// them. Lifting the whole group rigidly avoids per-vertex shader
+// interactions (per-mesh patchTerrain caused Browse depth-precision
+// snap-off at high altitude) and accepts a small mismatch where the
+// terrain varies across the park's 350m extent — fine at LS scale.
+const PARK_CENTER_ELEV = getElevation(0, 0)
 function LafayettePark() {
+  const groupRef = useRef()
+  useFrame(() => {
+    if (!groupRef.current) return
+    groupRef.current.position.y = PARK_CENTER_ELEV * terrainExag.value
+  })
   return (
-    <group>
+    <group ref={groupRef}>
       {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
       <ParkWater />
       <ParkPaths />
