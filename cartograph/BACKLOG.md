@@ -1893,74 +1893,200 @@ MVP = A + B (~5 days). Markings (C–E) follow once A+B prove stable.
 - [ ] **Persist Browse target/altitude/FOV** alongside Heading. Today only the heading is persisted to localStorage (`stage.browse.heading`); the rest of the Browse panel's sliders push live but reset to `SHOTS.browse` defaults on shot transition.
 - [ ] **Fence corner authoring from real GPS** in `LafayettePark.jsx`. The `parkAxisToCompass(±a, ±a)` helper is concise but bakes a hardcoded -9.2° tilt; a kit version would pull the four real corner GPS points through `wgs84ToLocal` for an honest source-of-truth.
 
-## 2026-05-03 — v1 punchlist
+## 2026-05-13 — v1 punchlist (supersedes 2026-05-03)
 
-The final blocker list for v1 of the visual stack. Once this clears, the
+The current blocker list for v1 of the visual stack. Once this clears, the
 **LS base-map swap** (the marriage leap — see `project_ls_basemap_swap.md`)
-is the last move before returning to the consumer app proper.
+is the last move before returning to the consumer app proper. Weather pack
+and arborist continue evolving on their own tracks (see their sections
+below) — not punchlist-gating.
 
-The pipeline is conceived (`project_pipeline_is_conceived.md`). Most items
-collapse to hours; estimate at integration rate, not waterfall rate.
+### Clouds
+- [ ] **Ship v1 clouds; Meteorologist runs as a separate track.** Old
+  noise-based `CloudDome.jsx` (v1) is the v1 shipper — get it back to a
+  working state. Meteorologist (volumetric raymarch, 52-preset Teapot,
+  16-rule Almanac) continues evolving and lands when ready, not as a v1
+  blocker. See `meteorologist/SPEC.md`.
 
-### Arch (LS hero subject)
-- [x] **Fade Arch feet** (2026-05-03). Apex-pivot relocation (`position.y = archYOffset + PEAK_HEIGHT × (1 − archScale)`) + true alpha foot fade replacing the old discard/paintColor hack. New "Foot Fade" slider; archScale max bumped 2.5 → 5.0. Commit `4dfeccc`.
-- [x] **Fix Arch scale/position** (2026-05-03). Apex-pivot semantics: scaling holds the keystone in place, Y Offset translates the apex directly, slider range expanded to ±200. Same commit as above.
-- [x] **Create Arch lighting** (2026-05-03). Cross-aimed uplights L+R per `Option C` shader simulation in StageArch's onBeforeCompile. Group-of-4 per side (intensity, color, cone, reach) + derived aim toward 60% up the opposite leg — beam intersection mid-arch is automatic, hot spot lands on opposite leg, surface-facing test gives correct backside falloff. Defaults match today (intensity 0). **Pending promotion** to Sky & Light TodChannels — see `project_panel_reorg_set_umbrella.md` for the bundled re-org.
+### Roofs
+- [ ] **Flat-by-default roofs.** Any building without an explicit
+  historical roof tag → flat. Per-building richness is authored via
+  PlaceCards (user-defined elements being augmented), not heuristic.
+  Supersedes the old "damaged roofs" parity gap + per-corner
+  foundation-blocks work.
 
-### Floor wash + ground spill (Arch lighting follow-up)
-- [ ] **Reapproach floor spill if/when revisited.** Tried 2026-05-03 as two literal circular pools on the horizon disc centered at each foot world XZ (radius scaling with archScale). Rejected: too geometric, read as "lights placed on a disc" rather than ambient brightening near the arch. The IRL phenomenon is subtle; my literal approach was not. If revisited, try: (a) much wider single soft gradient centered between the feet, no distinct circles; (b) drive the disc's own `uColor` warmer near arch, no additive; (c) skip entirely — at Hero camera distance, ground spill is too small to register. The `archFootWorld` module-scope plumbing in StageArch.jsx is preserved (cheap, may be useful for other purposes).
+### Designer Panel — IA pass
+- [ ] **Walk the panel top-to-bottom and re-order controls into a logical
+  sequence.** Specific call-outs: the **park** section, **frontage / secondary-
+  highway road** controls. Output: re-ordered panel, possibly some
+  renaming. *Distinct* from the Y-offset → polygonOffset coplanar sweep
+  (which lives under Designer/Preview UX below).
 
-### Buildings + roofs
-- [→] **Roofs + damaged-roof fix MOVED to LS-side work** (2026-05-03). Belongs as a new tab on Residential PlaceCards, not cartograph dev tooling. PlaceCard infrastructure + ADMIN/GUARDIAN edit permissions already exist; building a cartograph click-tool would duplicate them. See `project_house_personalization_via_placecards.md`. Pick up post-clouds during the LS-app sprint phase.
-- [→] **Foundation blocks parity MOVED to LS-side work** (2026-05-03). Same routing as roofs — per-house authored data, not heuristic.
-- [ ] **Add buildings + businesses on W Lafayette.** Fill in the W Lafayette frontage in `buildings.json` + `landmarks.json`. (Stays here — bulk authoring, not per-house personalization.)
+### Trees — SpeedTree
+- [ ] **Stand up the SpeedTree library.** Buy/grab `.spm` starter kits;
+  tune a London Plane + generic deciduous + generic conifer; export
+  glTF at 4–5 LODs + 1-click billboard bake from the same source.
+  Replace hand-modeled trees in the arborist roster. The billboard
+  impostor tier comes for free from SpeedTree's baker — solves the
+  mobile triangle budget without a separate impostor pass. Open-source
+  fallbacks (`proctree.js`, `tree-js`, `Arbaro`) if SpeedTree route
+  doesn't pan out.
+- [ ] **Per-shot tree-scale slider (Stage-side, camera-connected).** Hero
+  defaults to ~2× for romance; Browse + Street stay 1.0. Lives on the
+  Stage panel (camera-connected), not arborist.
 
-### Cartograph authoring (Survey + Measure)
-- [ ] **Extract `resolveStreets()` to unify Designer + bake operator-intent merge.** Today Designer's `useCartographStore.js:_loadCenterlines` and the bake's `derive.js` overlay merge each implement their own version of "raw centerlines + overlay → resolved street list." This was the source of the 2026-05-04 face-clip drift bug (derive's serializer dropped `couplers`/`segmentMeasures`/`disabled`). One shared resolver eliminates the whole class of drift. Pair with the shared `buildRibbonGeometry` helper for end-to-end structural parity.
-- [ ] **Bake handler should spawn async, not block the event loop.** `cartograph/serve.js`'s POST `/looks/:id/bake` runs each step via `execSync`, blocking *all* other API requests for the duration of the bake. Symptom: every `/api/cartograph/*` request shows "Pending" until the server is killed and restarted. Fix: switch to `spawn`/`execFile` with Promises so the server keeps handling requests during a bake. Documented in FEATURES.md §"Bake handler blocks the cartograph event loop."
-- [→] **(RETIRED 2026-05-08)** Survey couplers retired with the V2 block-customs migration. Per-block-edge divergence is authored via right-click → "Adjust this block" in Measure mode; per-segment couplers no longer apply.
-- [ ] **Measure: do final for-real pass.** End-to-end Measure across every measured street.
-- [ ] **Measure: confirm file persistence once again.** Save → reload → same state.
-- [ ] **Measure: confirm 'Divided Traffic'.** Divided-carriageway behavior + emergent median (`project_positive_carriageway_model.md`).
-- [→] **Measure: fix corners — SUPERSEDED 2026-05-04 by whole-intersection plugs.** Per-corner plug geometry retired in favor of one polygon per intersection node. See the intersection-plugs project plan (in flight). The "plug shape still wrong/fragile at oblique intersections" symptom dissolves because there are no longer 4 corners to misshape — oblique intersections just produce a different-shaped single polygon. Original notes preserved at `project_corner_plug_open_problem.md` for context.
-- [ ] **Ribbon-to-ribbon profile stitching.** Where two streets with different cross-section profiles meet, stitch ribbons cleanly across the join. Phase 5 ribbon-knit / merge-plug; `corridors[].transitions[]` already marks the seams.
-- [ ] **Fix final land uses.** Close out remaining land-use polygon authoring gaps.
+### Windows + doors — parked, post-v1
+- [→] Per-building facade detail. Likely surfaces in the **user manifest**
+  at release. Not a v1 blocker; placeholder line for future work.
 
-### Trees
-- [🅿️] **PARKED 2026-05-04: Trees shelved pending platform completion.** Spent significant time on the arborist (atlas, LOD, culling, magnolia removal, draw-budget); diminishing returns vs. unshipped Designer/Stage/Preview surface area. Decision: trees are dressing, neighborhood is the hero — finish the authoring loop first, return to trees when product surface is settled. Pickup path when revisited:
-    1. **Billboard impostor tier first** (load-bearing for mobile budget). Octahedral or 8-angle billboard atlas; runtime swaps near→far via per-instance distance LOD. Solves the 9.4M-tri overage regardless of source asset. ~1-2 days. Wind on impostors: option (a) skip — invisible past ~50m at Browse altitude; option (b) cheap vertex-shader sway on the quad's top corners. Both acceptable; option (a) is the default.
-    2. **SpeedTree for near trees** (quality lift, post-budget-fix). Indie-tier license. Don't start from blank — buy/grab `.spm` project files (SpeedTree's own Asset Store, $5–30/tree; bundled Library if on UE/Unity sub; free starter pack). Tweak proportions/leaf density on a "London Plane" + generic deciduous + generic conifer, export glTF at 4–5 LODs + bake billboards from the same source (SpeedTree's killer feature: one-click billboard baker — matches the full mesh exactly). Replace hand-modeled trees in arborist roster. Leaf-cards-not-leaf-geo alone is a 5–10× per-tree triangle reduction. Learning curve was the blocker on first look; balks once, then becomes a weekend with `.spm` starter kits.
-    3. **Open-source fallback** if SpeedTree route doesn't pan out: `proctree.js` (port of Proctree, ~600 lines, three.js-friendly), `tree-js` / `three.js-tree-generator` (parametric, GUI-tunable, glTF export), or `Arbaro` for offline Weber-Penn baking.
-    4. Existing 🚨 LOD-by-distance task below is **strictly billboard-impostor-first**, not generic LOD reshuffling. The LOD ratio knobs (`[0.85, 0.40, 0.10]` → `[…, 0.04]`) are a sidecar optimization; only the impostor tier solves the budget.
-- [x] **Confirm: tree atlas repack** (2026-05-03). Atlas at 4040×2072 = 64 MB color+normal VRAM (~25% of 256MB phone budget). Packing currently leaf-width-bound (4040), can't snap to 2048×2048 without reducing per-classification leaf cap (512→384px = quality hit). Acceptable for now; revisit if memory pressure surfaces.
-- [x] **Confirm: per-tile tree culling** (2026-05-03). 4×4 spatial grid is engaged, frustumCulled = true. Working — off-screen tiles cull correctly on Browse/Street.
-- [x] **Per-frame draw budget for trees** (2026-05-03). After magnolia removal + primitive merge + shadow-pass disabled, trees consume **212 of 296 total draws** (1.48× budget). Real ~6× reduction from worst-case 1232. Manageable.
-- [ ] **🚨 LOD-by-distance + billboard tier (CRITICAL for mobile).** Elevated 2026-05-03 from `project_tree_lod_strategy.md`. Tris are the fatal mobile-budget overage: trees alone draw **9.85M of 10.6M** per frame (10.6× over 1M budget). With 627 placements at ~15K tris/tree avg even at lod2, the 1M budget is unreachable without distance-LOD swapping + an actual billboard impostor LOD for far trees. Bake side: extend `publish-glb.js` LODS from `[0.85, 0.40, 0.10]` ratios to add `lodImpostor` (camera-aligned billboard quad with baked color+normal). Runtime side: add per-instance distance-LOD selection in `InstancedTrees`/`VariantInstances` — substitute mesh per (camera distance × view mode). Until this lands the LS scene is mobile-uncertifiable on tris alone.
-- [ ] **Stop emitting unused split atlas PNGs.** `trees-atlas-{bark,leaves}-{color,normal,viz}.png` total 33 MB on disk; only the unified `trees-atlas-color/normal.png` is loaded by runtime. Bake should write the splits to a separate `_diagnostic/` dir or skip them entirely. Pure bundle-size cleanup.
-- [ ] **Repair LOD ladder for London Plane skeletons 6/7/8/9.** `meshoptimizer.simplify` produces zero reduction (lod0=lod1=lod2=755KB identical). Likely needs `weld()` + `dedup()` upstream in publish-glb.js or input mesh has degenerate topology. Quiet now (small files), will matter when LOD-by-distance lands.
-- [ ] **Per-shot tree-scale slider.** Hero defaults to 2× tree scale (for the romance — sparse-looking neighborhood gets visual lushness from larger crowns). Slider 1.0–3.0 in the Hero panel; persists per-Look. Browse + Street stay 1.0 (1:1 with reality). Cheap; instance-matrix scale only.
-- [ ] **Stochastic per-instance variation pass** (scale jitter ±10%, mirror flip, hue shift, slight bend). Adds visual variety from the same handful of variants without authoring more species. Bake-time pass over `default.json` placements; runtime reads the perturbed per-instance transforms unchanged.
-- [ ] **Replace magnolia source models** when a slimmer asset is sourced. Removed from LS roster 2026-05-03 because lod2 was 50–150K tris each; substitution path now shows London Planes in the formerly-magnolia placements, which reads green and reasonable. See `project_arborist_grove.md`.
+### Buildings — Designer ↔ Stage/Preview population parity
+- [ ] **Designer must render the same building set Stage + Preview render.**
+  Stage/Preview bake the correct, full population; Designer renders a
+  subset. The canonical building data exists somewhere in the pipeline
+  — find it, preserve it, do NOT overwrite, and wire Designer to read
+  it. Pair with the cull logic Stage already runs so Designer doesn't
+  pay the full-population cost everywhere.
+
+### Treelawn color follows land-use
+- [ ] **Treelawn color matches the adjacent land-use polygon.** Color
+  (and possibly treatment) of the treelawn band tracks the land-use it
+  abuts — park → park green, residential → residential, etc. Land-use-
+  driven, not centerline-classification-driven; we're moving away from
+  the centerline regime at this stage of the pipeline.
+
+### Bake-time arc smoothing
+- [ ] **Curved streets must be smooth in the bake.** Benton Place and
+  similar arcs render as visible segments in Designer — that's fine,
+  Designer is a preview environment. The **bake** MUST produce smooth
+  arcs across all curves. Likely the unfinished bake-propagation TODO
+  from Phase 7 Smooth-made-real (`cartograph/derive.js` reads the
+  smoothing overlay but doesn't yet propagate it through geometry
+  build).
+
+### Big park intersections
+- [ ] **Author an answer for the big park intersections.** Multi-way
+  intersections at the park corners are currently a mess with no
+  canonical resolution. Needs a dedicated geometry + authoring pass.
+  Pairs with the whole-intersection corner editor restore below.
+
+### Labels on all surfaces
+- [ ] **Close out label rendering + authoring across every surface kind**
+  — street names, business labels, landmark labels, park labels.
+
+### Aerial tile LOD — attention-driven
+- [ ] **Memory-aware aerial tiling.** High-res aerial is expensive; the
+  base map is large. New behavior: load **lo-res along the route of the
+  selected street**. When zoomed in, only tiles **adjacent to the active
+  handles** (the live editing/attention area) swap to full resolution.
+  Attention-driven LOD, not blanket high-res.
+
+### Corner revert UX — two-tier
+- [ ] **Single tap = "revert this session"** (undo session-local
+  overrides). **Second tap = "revert to factory"** (nuke all overrides,
+  restore default geometry). Tap → tap → tap escalates. Replaces today's
+  unreliable single-button revert.
+
+### Whole-intersection corner editor — RESTORE
+- [ ] **Bring back the whole-intersection editor** on top of today's
+  rounded-block-clip geometry — NOT a regression to per-corner IP
+  fillets. Single polygon per IX node, draggable as one unit. See
+  `project_intersection_plug_geometry.md` for the rounded-block-clip
+  rule that must be preserved.
+  - [ ] **Sub-task — drill the primacy rules** (separate session):
+    when whole-IX edits and per-corner edits coexist, who wins? Needs
+    a decision before coding the editor.
+
+### Bake Bounce
+- [ ] **Fix the Stage-button routing race once and for all.** Symptom:
+  hit Stage (= Bake) → bake runs long → user is returned to the **Design**
+  view instead of Stage. Second click opens Stage correctly. Likely
+  the route transition fires before the bake completes, or the
+  navigation gets popped on bake-complete. Tracks back through
+  `cartograph/serve.js`'s POST `/looks/:id/bake` + the Stage-button
+  click handler.
+
+### Lane-spawn for divided traffic — skeleton-side
+- [ ] **Honor `anchor: inner edge` for split-median traffic.** Today
+  each carriageway's lane ribbon expands **symmetrically** across its
+  centerline even when the lane is marked `anchor: inner edge`.
+  Skeleton-level fix: the lane ribbon needs to grow only outward from
+  the inner edge (away from the median), not symmetrically.
+
+---
+
+### Cartograph authoring carry-overs (still real)
+- [ ] **Extract shared `resolveStreets()`** to unify Designer + bake
+  operator-intent merge. Today Designer's
+  `useCartographStore.js:_loadCenterlines` and the bake's `derive.js`
+  overlay merge each implement their own version of "raw centerlines +
+  overlay → resolved street list." One shared resolver eliminates a
+  whole class of drift. Pair with the shared `buildRibbonGeometry`
+  helper for end-to-end structural parity.
+- [ ] **Bake handler async** — `cartograph/serve.js`'s POST
+  `/looks/:id/bake` uses `execSync`, blocking *all* `/api/cartograph/*`
+  requests during the bake. Switch to `spawn`/`execFile` + Promises.
+- [ ] **Measure: final for-real pass** across every measured street.
+- [ ] **Measure: confirm file persistence** (save → reload → same state).
+- [ ] **Measure: confirm Divided Traffic + emergent median end-to-end.**
+  Broader confirm pass; the lane-anchor bug above is one specific
+  symptom (`project_positive_carriageway_model.md`).
+- [ ] **Ribbon-to-ribbon profile stitching.** Phase 5 ribbon-knit /
+  merge-plug; `corridors[].transitions[]` already marks the seams.
+- [ ] **Fix final land uses** — close out remaining land-use polygon
+  authoring gaps.
+
+### Buildings + data integrity
+- [ ] **Add buildings + businesses on W Lafayette** (bulk authoring in
+  `buildings.json` + `landmarks.json`).
+- [ ] **Audit other buildings for the `building_sqft` slip pattern.**
+  Any entry whose `building_sqft` exceeds plausible footprint × stories
+  likely has the same source-data error.
+
+### Park (non-intersection)
+- [ ] **Build park fence** as a first-class element.
+- [ ] **Add community park** at the vacant lot at Dolman + Park.
+- [ ] **Real water texture** — replace today's flat fill.
 
 ### Atmosphere + Sky & Light
-- [ ] **Remove Sun info from TOD in Preview.** Sun readout currently surfaces in Preview's TOD UI; pull it out.
-- [ ] **QC Neon.** Toy fixture is live; perfect behavior + migrate to LS (`project_neon_bands_runtime.md`, `HANDOFF-neon.md`).
-- [ ] **Build Meteorologist** (atmospheric authoring + runtime). Replaces "finish clouds" — full architecture + 52-preset Teapot scaffold landed 2026-05-04; build order step 1 is the volumetric raymarch shader. See `meteorologist/README.md`, `meteorologist/SPEC.md`. (`HANDOFF-clouds-day2.md` retired 2026-05-05; `HANDOFF-clouds-day3-clouddome-v2.md` kept until `<Atmosphere />` ships — its "tune to principles" guidance is still authoritative.)
-- [ ] **Add luminance to surfaces (off by default).** New surface-level luminance channel; defaults match today (off); operator opts in per material.
-
-### Park
-- [ ] **Build park fence.** Lafayette Square perimeter fence as a first-class element.
-- [ ] **Add community park** at the vacant lot at Dolman + Park. Treat as a neighborhood community-park entity.
-- [ ] **Add water texture.** Park water gets a real texture; today's flat fill replaced.
+- [ ] **Remove Sun info from TOD in Preview** — Sun readout currently
+  surfaces in Preview's TOD UI; pull it out.
+- [ ] **QC Neon** — perfect on toy fixture + migrate to LS
+  (`project_neon_bands_runtime.md`, `HANDOFF-neon.md`).
+- [ ] **Sky & Light + Post card polish** — per-channel polish, promote
+  single-channel emissives (`HANDOFF-sky-and-light.md`).
+- [ ] **Hero pan QC** — verify swing cadence/amplitude/ease in the new
+  `src/preview/heroAnim.js` against legacy
+  `src/components/Scene.jsx:312` `heroPanSwing` side-by-side
+  (`project_hero_pan_needs_qc.md`).
+- [ ] **Add luminance to surfaces (off by default).** New surface-level
+  luminance channel; operator opts in per material.
+- [ ] **Per-event sky overrides** (events overlay layer; base sky
+  gradient grid already shipped).
+- [ ] **Milky Way re-enable** (parked; needs 16K+ equirect or cubemap-
+  per-face source — `project_milkyway_parked.md`).
+- [ ] **Floor wash reapproach** (Arch lighting follow-up; prior literal-
+  pools attempt rejected 2026-05-03).
 
 ### Designer / Preview UX
-- [ ] **Restyle "Look" in Designer.** Visual restyle of the Look selector / cards.
-- [ ] **Update Preview interface** (small refresh; not a big deal).
-- [ ] **Stack order.** Coplanar stacking sweep — replace remaining Y-offsets with polygonOffset (`project_backlog_y_offset_sweep.md`, `feedback_never_y_offsets.md`).
-- [ ] **Fix labels.** Close out remaining label rendering / authoring issues.
+- [ ] **Restyle "Look"** in Designer (visual restyle of selector/cards).
+- [ ] **Update Preview interface** (small refresh).
+- [ ] **Y-offset → polygonOffset coplanar-stacking sweep**
+  (`project_backlog_y_offset_sweep.md`,
+  `feedback_never_y_offsets.md`). Distinct from the Designer Panel IA
+  pass above.
 
 ### Mobile
-- [ ] **Successfully complete + test full functionality on the mobile environment via Preview.** Phone mode is the canary; budget = ~200 calls / 1M tris / 256MB GPU (`feedback_mobile_first_preview.md`, `project_preview_phone_mode.md`).
+- [ ] **Full-functionality test on mobile via Preview.** Phone mode is
+  the canary; budget = ~200 calls / 1M tris / 256 MB GPU
+  (`feedback_mobile_first_preview.md`,
+  `project_preview_phone_mode.md`).
+
+### Post-punchlist
+- [ ] **LS base-map swap (the marriage leap)** — final move before
+  returning to the consumer app (`project_ls_basemap_swap.md`).
+- [ ] **Pre-public cleanout + security audit** — whitelist build,
+  sterilize bake, strip authoring code/data
+  (`project_pre_public_cleanout_security_audit.md`).
 
 ---
 
@@ -1976,33 +2102,24 @@ Memory entries are the source of truth; this is the index.
 - ✅ **Per-tile InstancedMesh tree culling + tighter atlas packing** (2026-05-02 → 2026-05-03). 4×4 spatial grid, skyline rect packer, `frustumCulled` on. See `project_per_look_tree_atlas.md`.
 - ✅ **Library / runtime split** (2026-05-03). `public/trees/` moved to `.gitignore` — Arborist authoring library is multi-GB, regenerable, never read by runtime. Runtime consumes `public/baked/<look>/` only. The publish-loop seam is now also enforced by git.
 
-## 2026-05-03 — In flight
+## 2026-05-03 — In flight / Upcoming (consolidated 2026-05-13)
 
-- [→] **Cloud renderer upgrade — promoted to Meteorologist.** Day-2 sprite tuning + day-3 CloudDome v2 noise-shader spike both retired in favor of the volumetric raymarched approach. Architecture, schemas, 52-preset Teapot canon, and 16-rule starter Almanac landed 2026-05-04. See `meteorologist/SPEC.md`. Build order step 1 (the shader) is tomorrow's first task.
-- [ ] **Neon Bands — testing + perfecting.** Live in toy as R&D fixture (NeonBands shader + Sky & Light group-of-3 channel + NeonPump). Behavior is in; needs shake-out and LS migration. See `HANDOFF-neon.md`, `project_neon_bands_runtime.md`.
-- [ ] **Hero pan port — needs QC.** Structural port done (`src/preview/heroAnim.js` + `HeroCamera` + `heroKeyframes` persisted in design.json). Verify swing cadence/amplitude/ease against legacy `src/components/Scene.jsx:312` `heroPanSwing` side-by-side before declaring shipped. See `project_hero_pan_needs_qc.md`.
-- [ ] **Sky & Light + Post card polish.** Cards scaffolded; remaining work is per-channel polish + promoting single-channel emissives. See `HANDOFF-sky-and-light.md`.
+Neon Bands testing + LS migration, Hero pan QC, Sky & Light + Post polish,
+LS base-map swap, Pre-public cleanout — all migrated to the 2026-05-13 v1
+punchlist above. Cloud renderer upgrade retired in favor of v1
+`CloudDome.jsx` (ship) + Meteorologist (separate track). Roofs parity gap
+retired — superseded by flat-by-default + PlaceCards authoring.
 
-## 2026-05-03 — Upcoming
+## 2026-05-02 — Weather pack (own track, post-Meteorologist)
 
-- [ ] **LS base-map swap (the marriage leap).** LS at ~90% pending one move — replace the legacy base-map render path with the cartograph→Preview bake bundle. Final build sweep/sprint to follow. See `project_ls_basemap_swap.md`.
-- [ ] **Roofs parity gap** (OPEN 2026-04-30, still not fixed). "Damaged" roofs render non-flat in Stage/Preview though data probably says flat. Concrete parity audit ticket. See `project_roofs_parity_gap.md`.
-- [ ] **Pre-public cleanout + security audit.** Whitelist build, sterilize the bake, strip authoring code/data. Bake architecture supports inertness; build pipeline must enforce it. See `project_pre_public_cleanout_security_audit.md`.
+Ongoing track — not punchlist-gating. The product vision: Lafayette Square
+as a living place, today's actual weather + scheduled event Looks. Real
+weather data is already wired (`useWeather.js` → `useSkyState` → existing
+shaders); what's missing is visual fidelity. Clouds for v1 ship via the
+existing `CloudDome.jsx`; Meteorologist (volumetric raymarch) replaces it
+when ready. See `project_weather_and_events_vision.md`,
+`meteorologist/SPEC.md`.
 
-## 2026-05-02 — Weather pack (in flight: clouds first)
-
-The product vision crystallized this session: Lafayette Square as a living
-place, today's actual weather + scheduled event Looks. Real weather data is
-already wired (`useWeather.js` → `useSkyState` → existing shaders). What's
-missing is visual fidelity. See `project_weather_and_events_vision.md`.
-
-- [ ] **Cloud renderer upgrade** (in flight). Current `CloudDome.jsx` is
-  noise-based; needs to clear "people would set this as their desktop home
-  screen" quality bar. Options to evaluate: drei `<Cloud>` sprites
-  (cheap-medium), 2D textured layer parallax (medium), volumetric
-  raymarching (heavy but stunning), pre-baked cloud sprite cubemaps per
-  weather state (free at runtime, expensive to author). Desktop-quality
-  tier acceptable; mobile gets a downgraded variant.
 - [ ] **Wind effects.** Tree sway shader uniform (affects all instanced
   trees), cloud movement direction + speed (CloudDome shader), audio
   (wind, leaves, distant thunder).
@@ -2016,34 +2133,12 @@ missing is visual fidelity. See `project_weather_and_events_vision.md`.
 - [ ] **Audio integration.** Wind/rain/birdsong/distant city sounds tied
   to weather + TOD.
 
-## 2026-05-02 — Sky gradient editor: events overlay queued
+## 2026-05-02 — Sky gradient events overlay + Milky Way (consolidated 2026-05-13)
 
-The base sky gradient grid **shipped 2026-05-02 and looks great** — see the
-"Recently shipped" section above and `project_sky_gradient_grid.md`. What
-remains is the Events overlay layer:
-
-- [ ] **Per-event sky overrides.** When Events-as-product-surface is real,
-  per-event palettes will overlay the base grid as one of many bundled
-  tweaks (Bastille Day = R/W/B horizon/mid/high + dusk variants;
-  Cardinals red; holidays). Rendered via the same patterns as Mist/Halo
-  (color fields). 4–8 strategic swatches per event likely sufficient —
-  no need for a 50-swatch editor.
-
-## 2026-05-02 — Milky Way parked
-
-- [ ] **Milky Way (Sky & Light, CELESTIAL) — re-enable.** Hidden from
-  operator UI + runtime mount on 2026-05-02 after Brunier panorama
-  showed visible JPEG block artifacting + stretched/oversized stars at
-  Hero/Street FOV. All scaffolding preserved: channel state in
-  `useCartographStore`, store actions via factory, `MilkyWaySphere`
-  component in `src/stage/StageSky.jsx`, 12000×6000 panorama at
-  `public/textures/milky_way.jpg`. Mounts commented at
-  `src/cartograph/CartographSkyLight.jsx` and `src/stage/StageSky.jsx`.
-  When returning, the real fix is one of: 16K+ equirectangular source,
-  cubemap with 4096×4096 per face, or a different MW source with
-  naked-eye-style star brightness instead of long-exposure photography
-  (Brunier's panorama is gorgeous data but optimized for print, not
-  real-time rendering at our FOV). See `project_milkyway_parked.md`.
+Per-event sky overrides and Milky Way re-enable both migrated to the
+2026-05-13 v1 punchlist (Atmosphere + Sky & Light section). Milky Way
+context preserved in `project_milkyway_parked.md` (needs 16K+ equirect or
+cubemap-per-face source).
 
 ## 2026-05-01 — open items
 
