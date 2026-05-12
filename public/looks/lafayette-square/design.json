@@ -84,6 +84,7 @@
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.381,
+  "alleyCap": "rounded",
   "labels": {
     "size": 4,
     "weight": 500,
@@ -638,7 +639,7 @@
   "openSections": {
     "Streets": false,
     "Blocks": true,
-    "Paths": false,
+    "Paths": true,
     "Features": false,
     "Labels": false,
     "HeroSubject": false,

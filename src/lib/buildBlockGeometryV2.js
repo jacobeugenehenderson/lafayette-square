@@ -563,7 +563,7 @@ function applyRoundCornersToRing(ring, corners, scale = 1) {
 
 // Block = stencil − asphalt. Each input is an array of rings (from
 // Clipper-union output for asphalt, single-ring array for stencil).
-function differenceRings(subjectRings, clipRings) {
+export function differenceRings(subjectRings, clipRings) {
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
   const c = new Clipper()
   let added = 0
@@ -1171,7 +1171,7 @@ function dilateRings(rings, delta) {
 }
 
 // Intersection of subject rings with clip rings.
-function intersectRings(subjectRings, clipRings) {
+export function intersectRings(subjectRings, clipRings) {
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
   const c = new Clipper()
   let addedS = 0, addedC = 0

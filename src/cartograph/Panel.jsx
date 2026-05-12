@@ -256,6 +256,38 @@ function CurbSubsection() {
   )
 }
 
+// Universal alley end-cap dial. One Look-level mode — every alley
+// terminates the same way (rounded semicircle / square pad / flat butt).
+// Other path kinds keep their per-kind defaults in buildPathRibbons.
+function AlleyCapSubsection() {
+  const alleyCap = useCartographStore(s => s.alleyCap ?? 'square')
+  const setAlleyCap = useCartographStore(s => s.setAlleyCap)
+  // Order: increasing softness. Square (flush) → Rounded (rounded-
+  // rectangle pad, with filleted corners) → Round (full semicircle).
+  const MODES = ['square', 'rounded', 'round']
+  return (
+    <div className="carto-row carto-row--wrap">
+      <label className="carto-label-fixed" title="End-cap silhouette for every alley in this Look. Other path kinds (footways, dirt paths, etc.) use built-in defaults.">
+        Alley caps
+      </label>
+      <div className="flex gap-0.5" style={{ flex: 1 }}>
+        {MODES.map(mode => (
+          <button key={mode}
+            onClick={() => setAlleyCap(mode)}
+            className="flex-1 px-1.5 py-0.5 rounded text-caption cursor-pointer transition-colors"
+            style={{
+              background: alleyCap === mode ? 'var(--surface-container-highest)' : 'transparent',
+              color:      alleyCap === mode ? 'var(--on-surface)' : 'var(--on-surface-subtle)',
+              textTransform: 'capitalize',
+            }}>
+            {mode}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function VisRow({ id, label, hidden, onToggle }) {
   return (
     <div className="carto-row">
@@ -445,6 +477,12 @@ export default function Panel() {
               <div className="carto-subsection-header">Shape</div>
               <CornersSubsection />
               <CurbSubsection />
+            </div>
+          )}
+          {name === 'Paths' && (
+            <div className="carto-subsection">
+              <div className="carto-subsection-header">Shape</div>
+              <AlleyCapSubsection />
             </div>
           )}
           {defs.map(L => (

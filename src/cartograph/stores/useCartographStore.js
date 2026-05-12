@@ -185,6 +185,13 @@ const useCartographStore = create((set, get) => ({
   // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
   // operator can dial up/down via the Streets > Curb slider.
   curbWidth: 0.1524,
+  // Universal alley end-cap mode. One global dial — every alley in the
+  // Look terminates the same way:
+  //   - 'square'  flush butt cut at the endpoint
+  //   - 'rounded' squared pad with filleted corners (rounded-rectangle)
+  //   - 'round'   true semicircle
+  // Other path kinds use per-kind defaults in buildPathRibbons (all 'round').
+  alleyCap: 'square',
   // Per-segment per-side measure overrides — the "block-customs" model
   // that replaces V1's couplers/segmentMeasures authoring. The OPERATOR
   // model is per-block ("Adjust this block"); the storage is keyed by
@@ -354,6 +361,12 @@ const useCartographStore = create((set, get) => ({
   setCurbWidth: (v) => {
     const n = Math.max(0, Math.min(1.0, Number(v) || 0))
     set({ curbWidth: n })
+    get()._saveDesignDebounced()
+  },
+  setAlleyCap: (v) => {
+    const ALLEY_CAPS = ['square', 'rounded', 'round']
+    if (!ALLEY_CAPS.includes(v)) return
+    set({ alleyCap: v })
     get()._saveDesignDebounced()
   },
   // Patch-merge into labels. Caller passes a partial like { size: 6 } or
@@ -953,6 +966,7 @@ const useCartographStore = create((set, get) => ({
         luColors:       design.luColors       || {},
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
         curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
+        alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
         labels: { ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) },
         blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
         blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
@@ -1382,6 +1396,7 @@ const useCartographStore = create((set, get) => ({
         luColors:       design.luColors       || {},
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
         curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
+        alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
         labels: { ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) },
         blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
         blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
@@ -1497,6 +1512,7 @@ const useCartographStore = create((set, get) => ({
           cornerRadiusOverrides: s.cornerRadiusOverrides,
           cornerCornerRadiusOverrides: s.cornerCornerRadiusOverrides,
           curbWidth: s.curbWidth,
+          alleyCap: s.alleyCap,
           labels: s.labels,
           blockCustoms: s.blockCustoms,
           blockLandUse: s.blockLandUse,

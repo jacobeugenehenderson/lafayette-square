@@ -21,7 +21,8 @@
  */
 import { useEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
-import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
+import { buildBlockGeometryV2, buildChainBandsLive, resolveChainSegmentation, differenceRings } from '../lib/buildBlockGeometryV2.js'
+import { buildPathRibbons } from '../lib/buildPathRibbons.js'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
@@ -191,6 +192,7 @@ export default function BlockGeometryV2Debug({
   const cornerRadiusOverrides     = useCartographStore(s => s.cornerRadiusOverrides)
   const cornerCornerRadiusOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides)
   const curbWidth                 = useCartographStore(s => s.curbWidth ?? 0.1524)
+  const alleyCap                  = useCartographStore(s => s.alleyCap ?? 'square')
   const blockCustoms              = useCartographStore(s => s.blockCustoms)
   const blockLandUse              = useCartographStore(s => s.blockLandUse)
   const layerColors               = useCartographStore(s => s.layerColors)
@@ -208,6 +210,14 @@ export default function BlockGeometryV2Debug({
   const sidewalkVisible           = layerVis?.sidewalk  !== false
   const treelawnVisible           = layerVis?.treelawn  !== false
   const lotVisible                = layerVis?.lot       !== false
+  // Non-street ribbon visibility. Five kinds with one row each in the
+  // Stage Surfaces panel; all default-visible. Routed through buildPathRibbons
+  // (same helper bake-ground.js consumes), so Designer + slab cannot drift.
+  const alleyVisible              = layerVis?.alley     !== false
+  const footwayVisible            = layerVis?.footway   !== false
+  const cyclewayVisible           = layerVis?.cycleway  !== false
+  const stepsVisible              = layerVis?.steps     !== false
+  const pathVisible               = layerVis?.path      !== false
   // Highway-class chains route through the `highway` toggle row; everything
   // else through `street` (Asphalt). Same split the bake adapter does
   // — keep both in sync so toggling Highway in Designer matches Stage.
@@ -657,6 +667,56 @@ export default function BlockGeometryV2Debug({
     cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, bandFade, { surveyActive }),
     cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { surveyActive }),
   }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, measureActive, surveyActive, bandFade])
+
+  // Non-street ribbons (alley/footway/cycleway/steps/path). Pavement-only
+  // strips buffered from each ribbon's pavedWidth via the shared helper
+  // bake-ground.js also consumes. We want paths clipped to PARCEL
+  // interiors — stop at the sidewalk's inner edge, no trespass on the
+  // ped zone OR curb. block.ring extends all the way to the asphalt
+  // edge (curb stroke + ped-zone bands paint on top), so
+  //   parcelInteriors = block.ring − curbBands − (treelawn ∪ sidewalk).
+  // Y-lift 0.05 sits paths above asphalt (0.04) — Designer stacks
+  // ground layers by tiny Y increments.
+  const parcelInteriors = useMemo(() => {
+    const blockRings = (blocks || []).map(b => b.ring).filter(r => r?.length >= 3)
+    const subtract = []
+    for (const r of (curbBands || [])) if (r?.length >= 3) subtract.push(r)
+    for (const fb of (frontageBands || [])) {
+      for (const r of (fb.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
+      for (const r of (fb.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
+    }
+    if (!blockRings.length) return []
+    if (!subtract.length) return blockRings
+    return differenceRings(blockRings, subtract)
+  }, [blocks, curbBands, frontageBands])
+  const pathGeoByKind = useMemo(() => {
+    const ringsByKind = buildPathRibbons(liveRibbons, { intersect: parcelInteriors, alleyCap })
+    const out = {}
+    for (const [kind, rings] of ringsByKind) {
+      const geo = ringsToFlatGeo(rings, 0.05, true)
+      if (geo) out[kind] = geo
+    }
+    return out
+  }, [liveRibbons, parcelInteriors, alleyCap])
+  // Per-kind materials. PRI.asphalt + 1 sits these above asphalt + curb
+  // but below paint/barriers, matching bake-ground.js's PAINT_ORDER slot
+  // for paths.
+  const PATH_KINDS = ['alley', 'footway', 'cycleway', 'steps', 'path']
+  const pathMats = useMemo(() => {
+    const out = {}
+    for (const kind of PATH_KINDS) {
+      const col = colorFor(kind)
+      out[kind] = makeMaterial(col, PRI.asphalt + 1, bandFade, { measureActive, surveyActive })
+    }
+    return out
+    // colorFor depends on layerColors + DEFAULT_LAYER_COLORS via closure;
+    // re-derive when those change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [makeMaterial, layerColors, measureActive, surveyActive, bandFade])
+  const PATH_VISIBLE = {
+    alley: alleyVisible, footway: footwayVisible, cycleway: cyclewayVisible,
+    steps: stepsVisible, path: pathVisible,
+  }
   // LU block-fill materials cached per (lu, selected) key. Selected
   // adjacent blocks route through the `selectedCorridor` variant so the
   // parcel translucency matches the chain's band translucency (0.55 in
@@ -715,6 +775,16 @@ export default function BlockGeometryV2Debug({
         <mesh geometry={cornerAsphaltGeo} renderOrder={PRI.asphalt} receiveShadow
           material={bandMats.cornerAsphalt} />
       )}
+      {/* Non-street ribbons (alleys, footways, cycleways, steps, paths).
+          Same geometry the bake emits via buildPathRibbons — shared helper
+          guarantees Designer and slab don't drift. Each kind has its own
+          Stage Surfaces visibility row + color. */}
+      {PATH_KINDS.map(kind => (
+        PATH_VISIBLE[kind] && pathGeoByKind[kind] && (
+          <mesh key={`path-${kind}`} geometry={pathGeoByKind[kind]}
+            renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
+        )
+      ))}
       {/* Concrete corner pad — quad covering the corner wedge, clipped by
           the same blockRounded mask that shapes the bands and block fill.
           Renders UNDER treelawn/sidewalk so chain bands paint over it;

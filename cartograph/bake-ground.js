@@ -25,7 +25,8 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
-import { buildBlockGeometryV2 } from '../src/lib/buildBlockGeometryV2.js'
+import { buildBlockGeometryV2, differenceRings } from '../src/lib/buildBlockGeometryV2.js'
+import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 
@@ -252,24 +253,6 @@ function ringsToHoledPolys(rings) {
   return outers.map((o, i) => ({ outer: o, holes: holesByOuter[i] }))
 }
 
-function computePerpsForPath(pts) {
-  const n = pts.length
-  return pts.map((_, i) => {
-    let nx = 0, nz = 0
-    if (i < n - 1) {
-      const dx = pts[i + 1][0] - pts[i][0], dz = pts[i + 1][1] - pts[i][1]
-      const l = Math.hypot(dx, dz)
-      if (l > 1e-9) { nx -= dz / l; nz += dx / l }
-    }
-    if (i > 0) {
-      const dx = pts[i][0] - pts[i - 1][0], dz = pts[i][1] - pts[i - 1][1]
-      const l = Math.hypot(dx, dz)
-      if (l > 1e-9) { nx -= dz / l; nz += dx / l }
-    }
-    const l = Math.hypot(nx, nz)
-    return l > 1e-9 ? [nx / l, nz / l] : [0, 1]
-  })
-}
 function buildV2BakeShape(ribbons, design, stencilPolygon) {
   const v2 = buildBlockGeometryV2(ribbons, {
     stencil: stencilPolygon,
@@ -344,19 +327,25 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
     byFaceUse.get(b.lu).push({ outer: b.ring, holes: [] })
   }
 
-  // Non-street chains (alleys + path types) — V2 doesn't model these as
-  // bands; emit pavement-only strips, mirroring V1's path block in
-  // ribbonsGeometry.js. `kind` selects the bake group (alley/footway/
-  // cycleway/steps/path).
-  const nonStreet = (ribbons.paths || [])
-    .concat((ribbons.alleys || []).map(a => ({ ...a, kind: 'alley' })))
-  for (const p of nonStreet) {
-    if (!p.points || p.points.length < 2) continue
-    const hw = (p.pavedWidth || 3) / 2
-    const perps = computePerpsForPath(p.points)
-    const left  = p.points.map((pt, i) => [pt[0] - perps[i][0] * hw, pt[1] - perps[i][1] * hw])
-    const right = p.points.map((pt, i) => [pt[0] + perps[i][0] * hw, pt[1] + perps[i][1] * hw])
-    pushMat(p.kind || 'footway', [...left, ...right.slice().reverse()])
+  // Non-street ribbons (alleys + footway/cycleway/steps/path). Shared
+  // helper so Designer's live render and the bake consume identical
+  // geometry. Paths clip to PARCEL interiors — stop at the sidewalk's
+  // inner edge, no trespass on ped zone OR curb. block.ring extends to
+  // the asphalt edge (curb + ped-zone bands paint on top), so
+  //   parcelInteriors = block.ring − curbBands − (treelawn ∪ sidewalk).
+  const blockRings = v2.blocks.map(b => b.ring).filter(r => r?.length >= 3)
+  const subtract = []
+  for (const r of (v2.curbBands || [])) if (r?.length >= 3) subtract.push(r)
+  for (const fb of (v2.frontageBands || [])) {
+    for (const r of (fb.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
+    for (const r of (fb.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
+  }
+  const parcelInteriors = subtract.length ? differenceRings(blockRings, subtract) : blockRings
+  for (const [kind, rings] of buildPathRibbons(ribbons, {
+    intersect: parcelInteriors,
+    alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
+  })) {
+    pushClipperRings(kind, rings)
   }
 
   return { byMaterial, byFaceUse }
