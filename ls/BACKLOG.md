@@ -45,7 +45,8 @@ The bake exists; LS production doesn't yet trust it. Migrate consumer-side.
 
 | ID | Item | Notes |
 |---|---|---|
-| L1.1 | `Scene.jsx` mounts `BakedLamps` instead of `StreetLights` for production | Stage + Preview already do; production hasn't been ported. Trivial swap; verify lampLightmap path still works. |
+| ~~L1.1~~ | ~~`Scene.jsx` mounts `BakedLamps` instead of `StreetLights` for production~~ | ✅ **Shipped 2026-05-12.** Three-line swap in Scene.jsx; both desktop mount and `DeferredStreetLights` mobile wrapper now use `BakedLamps`. |
+| L1.1b | Migrate `lampLightmap.js` from live `street_lamps.json` to slab `/baked/<look>/lamps.json` | `lampLightmap.js` computes a 256² gaussian-splat DataTexture for shader glow (grass / bark / foliage / paths) and is the second consumer of `street_lamps.json`. Currently sync at module-init; slab fetch is async — touches shader-uniform timing. Sub-phase separately from L1.1 (D.3-bundling rule). |
 | L1.2 | Park water / park paths → slab | `LafayettePark` reads `park_water.json` + `park_paths.json` live. Bake into ground slab (already partial via `bake-ground`?) — verify, complete, then remove live import. |
 | L1.3 | Audit `LafayetteScene`'s live `_allBuildings` consumption | FEATURES marks this "side-burner until product port" — that's now. Decide: keep live (load-bearing for neon + place state) and confirm in docs, or design a hybrid (merged slab mesh + per-id lookup index). |
 | L1.4 | `Terrain.jsx` → slab or freeze | `terrain.json` is currently live. Static data, no reason to be live. |

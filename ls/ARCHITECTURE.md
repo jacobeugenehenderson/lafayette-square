@@ -83,7 +83,7 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 | `/baked/default.json` (arborist tree placements) + GLB variants in `/baked/<look>/trees/` + tree atlas textures | `InstancedTrees.jsx` | ✅ Production |
 | `/baked/<look>/trees-atlas.json` | `treeAtlasMaterial.js` | ✅ Production |
 | `/baked/<look>/scene.json` | `LafayettePark.jsx` (for bake-aware offsets/lifts) | ✅ Production |
-| `/baked/<look>/lamps.json` | `BakedLamps.jsx` | ⚠ Stage + Preview only — production `Scene.jsx` still mounts `StreetLights` reading live `street_lamps.json` |
+| `/baked/<look>/lamps.json` | `BakedLamps.jsx` | ✅ Production + Stage + Preview (production switched 2026-05-12, L1.1) |
 | `/baked/<look>/buildings.{json,bin}` | `src/preview/BakedBuildings.jsx` | ⚠ Preview-only — production `LafayetteScene` reads live `src/data/buildings.json` |
 
 ### Consumed live — load-bearing (won't bake; dynamic by nature)

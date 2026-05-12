@@ -8,7 +8,7 @@ import LafayetteScene from './LafayetteScene'
 import CelestialBodies from './CelestialBodies'
 import BakedGround from './BakedGround.jsx'
 import LafayettePark from './LafayettePark'
-import StreetLights from './StreetLights'
+import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import CloudDome from './CloudDome'
 import WeatherPoller from './WeatherPoller'
@@ -890,7 +890,7 @@ function DeferredStreetLights() {
     return () => clearTimeout(id)
   }, [])
   if (!ready) return null
-  return <StreetLights />
+  return <BakedLamps />
 }
 
 function Scene() {
@@ -944,7 +944,7 @@ function Scene() {
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <CourierDots />}
       {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>}
-      {!IS_GROUND && !IS_MOBILE && <R3FErrorBoundary name="StreetLights"><StreetLights /></R3FErrorBoundary>}
+      {!IS_GROUND && !IS_MOBILE && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       <CameraRig />
       {!IS_GROUND && <PostProcessing viewMode={viewMode} />}

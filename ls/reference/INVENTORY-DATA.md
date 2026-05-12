@@ -16,7 +16,7 @@ Last verified: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. For narr
 | Tree placements | `public/baked/default.json` | `src/components/InstancedTrees.jsx` | ✅ |
 | Tree GLB variants | `public/baked/<look>/trees/*.glb` | `InstancedTrees.jsx` | ✅ |
 | Tree atlas manifest + textures | `public/baked/<look>/trees-atlas.json` + atlas PNGs | `src/components/treeAtlasMaterial.js` | ✅ |
-| Lamps | `public/baked/<look>/lamps.json` | `src/components/BakedLamps.jsx` | ⚠ Stage + Preview only — production `Scene.jsx` mounts `StreetLights` live |
+| Lamps | `public/baked/<look>/lamps.json` | `src/components/BakedLamps.jsx` | ✅ Production + Stage + Preview (production switched 2026-05-12, L1.1) |
 | Buildings (merged mesh) | `public/baked/<look>/buildings.json` + `buildings.bin` | `src/preview/BakedBuildings.jsx` | ⚠ Preview only — production reads live `src/data/buildings.json` |
 | Cloud presets + almanac | `public/clouds/presets.json` + `almanac.json` | (no runtime consumer wired) | ❌ Published by meteorologist, not consumed |
 
@@ -36,7 +36,7 @@ Imported at JS module load, bundled into the JS chunk. No HTTP fetch; immutable 
 | Facade mapping (photos + descriptions) | `src/data/facade_mapping.json` | `PlaceCard.jsx` | **Keep live** — consumer-surface catalog (~2600 lines), no perf benefit to baking |
 | Park water polygons | `src/data/park_water.json` | `LafayettePark` | Already in ground bake; **retire live import** |
 | Park paths | `src/data/park_paths.json` | `LafayettePark` | Already in ground bake (path ribbons); **retire live import** |
-| Street lamps | `src/data/street_lamps.json` | `StreetLights`, `lampLightmap.js` | Already in `lamps.json` slab; **switch production to `BakedLamps`** |
+| Street lamps | `src/data/street_lamps.json` | `lampLightmap.js` (shader glow `DataTexture`) | Production `BakedLamps` no longer reads this (2026-05-12, L1.1). `lampLightmap.js` still imports live → **L1.1b** to migrate the shader-glow source to `/baked/<look>/lamps.json`. |
 | Terrain elevation | `src/data/terrain.json` | `Terrain.jsx`, `utils/elevation.js`, `utils/terrainShader.js` | **Freeze** or bake into ground |
 | Bright stars catalog | `src/data/bright_stars.json` | `CelestialBodies`, `src/stage/StageSky.jsx` | **Freeze** — astronomical constant |
 | Constellations | `src/data/planetarium/constellations.json` | `CelestialBodies`, `PlanetariumOverlay`, `StageSky` | **Freeze** |
