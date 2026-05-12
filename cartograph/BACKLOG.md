@@ -2,9 +2,59 @@
 
 > Part of the **trinity of working docs** (`FEATURES.md` / `ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it.
 
-Last updated: 2026-05-12 EOD-1 (Measure tool end-to-end shipped on LS: D.7c MeasurePanel migrated to `setBlockEdgeCustom`, D.7d dead-code pruned, walker `assignSegOrdsToFes` eliminated `segOrds:[]` coverage gaps, CornerEditHandles stale-ix fallback restored LS corner dots, parcel translucency by geometric chain-polyline proximity, default measureMode flipped to whole-chain, asphalt-edge curb-colored stroke. Identity match accepts `.id || .skelId`. Walker fix from EOD-2 still current; perf pass from EOD-1 still current.)
+Last updated: 2026-05-12 EOD-2 (Designer silhouette + LU coverage shipped: V2 ground meshes route through the same FACE_FADE / BAND_FADE bands BakedGround uses, so Designer's "Design" view now shows the same soft-circle silhouette as Stage / Preview. clipPolylineToBoundary helper clips MapLayers debug centerlines + barrier lines at the boundary. V2 blockFill face-straddle fallback recovered 23 LU rings (48% of ribbons.faces were being silently truncated). EOD-1 still current on Measure tooling.)
 
-## 2026-05-12 EOD-1 — Session-end pin (read first)
+## 2026-05-12 EOD-2 — Session-end pin (read first; EOD-1 below is also current, different concern)
+
+Designer's "Design" view now renders the same soft-circle silhouette
+Stage and Preview show, and V2 blockFill no longer drops faces that
+straddle multiple blocks. Operator marker-tool gaps resolved.
+
+**Shipped (in commit order):**
+
+- **Soft-circle silhouette `3dddf39`** — `BlockGeometryV2Debug.jsx`
+  routes per-material fade through module-level `FACE_FADE`
+  (758..892, face band) and `BAND_FADE` (800..1000, street band)
+  sourced from `boundary.js`. `useBoundary` prop gates per-scene —
+  LS turns it on, toy stays rectangular. `CartographApp.jsx` passes
+  `useBoundary={sceneCfg.useBoundary}` through. `boundary.js` gains
+  `clipPolylineToBoundary(points)` — segment-level clip helper
+  reused by `MapLayers.jsx` for the debug centerlines and barrier
+  lines (LineBasicMaterial doesn't accept the radial-fade shader,
+  so polygon-clip is the right tool).
+
+- **V2 blockFill face-straddle fallback `af39cc8`** — in
+  `buildBlockGeometryV2.js`, the `findOwningBlockRing` fast path
+  assumed `face ⊂ ownBlockRing`. 85 of 178 ribbons.faces (48%) on
+  LS violated that (faces spanning two blockRounded rings, corner
+  slivers eaten by asphalt union, multi-block faces). Centroid
+  attribution emitted only the owning ring's portion; the rest were
+  silently dropped, leaving the transparent LU gaps the operator
+  flagged with the marker tool. Added `faceStraddles` per-vertex
+  check; falls back to global `differenceRings([face.ring], asphaltRounded)`
+  when any vertex falls outside the centroid-owning ring.
+  `out.blocks` count: 145 → 168 (+23 rings recovered). Fast path
+  preserved for the common single-block-face case per the
+  `feedback_clipper_narrow_the_mask` memory.
+
+**Architectural rules saved as memories this session:**
+- `feedback_stencil_work_needs_stronger_gates` — enumerate the
+  alpha-composite stack across radially-faded layers before any
+  agent dispatch near the silhouette; renderOrder analysis is the
+  trap (transparency interactions don't follow PRI).
+- `feedback_agent_handoff_must_carry_prior_decisions` — when
+  follow-up agents chase a regression caused by an earlier agent in
+  the same session, the brief MUST cite the prior changes + the
+  user's hypothesis verbatim, not make the new agent re-derive from
+  git.
+
+**Next session direction: Stage + Preview baking.** Measure
+authoring is in; soft circle is in; LU coverage is in. Ready to
+hand the slab to Stage QA.
+
+---
+
+## 2026-05-12 EOD-1 — Session-end pin (also current)
 
 Closes Measure end-to-end on LS. Walker + customs identity + UI all
 read and write the same `[blockKey][edgeOrd]` shape; "band moved, plug
