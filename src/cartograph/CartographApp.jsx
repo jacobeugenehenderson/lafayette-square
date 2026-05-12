@@ -754,8 +754,8 @@ export default function CartographApp() {
             far={60000}
           />
           <CameraRig orthoRef={orthoRef} perspRef={perspRef} controlsRef={controlsRef} />
-          <TimeTicker />
-          <SkyStateTicker />
+          {!inDesigner && <TimeTicker />}
+          {!inDesigner && <SkyStateTicker />}
 
 
           {/* ── Ground:
@@ -793,6 +793,7 @@ export default function CartographApp() {
                 ribbons={sceneCfg.ribbons}
                 stencil={sceneCfg.stencil}
                 flat={inDesigner}
+                useBoundary={sceneCfg.useBoundary}
                 measureActive={tool === 'measure' && inDesigner}
                 surveyActive={tool === 'surveyor' && inDesigner}
                 hideLandUse={toolAerialFocus} />
@@ -848,7 +849,7 @@ export default function CartographApp() {
                 active or Aerial is toggled — so Designer pays nothing for
                 the photo unless it's actually being used. ~200ms cache hit
                 / 2-5s cold the first time the operator clicks Aerial. */}
-            {sceneCfg.hasAerial && (!!tool || aerialVisible) && <AerialTiles visible={true} />}
+            {sceneCfg.hasAerial && (!!tool || aerialVisible) && <AerialTiles visible={true} zoom={tool === 'measure' ? 20 : 18} />}
             {scene === 'lafayette-square' && !toolAerialFocus && !designAerialOnly && <DesignerArch />}
             <SurveyorOverlay />
             {tool === 'measure' && <MeasureOverlay />}
@@ -890,10 +891,10 @@ export default function CartographApp() {
               every frame); AO still off pending light-dome work. */}
           {!inDesigner && <PreviewPostFx bloom aerial grade grain />}
 
-          <LampGlowPump />
-          <NeonPump />
-          <SkyPump />
-          <LightingPump />
+          {!inDesigner && <LampGlowPump />}
+          {!inDesigner && <NeonPump />}
+          {!inDesigner && <SkyPump />}
+          {!inDesigner && <LightingPump />}
           <Controls controlsRef={controlsRef} />
           {shot === 'hero' && sceneCfg.hasHero && (
             <HeroPreview keyframes={keyframes} motion={heroMotion}

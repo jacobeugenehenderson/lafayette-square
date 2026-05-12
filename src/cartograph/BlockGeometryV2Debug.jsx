@@ -27,6 +27,27 @@ import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
 import useCartographStore from './stores/useCartographStore.js'
+import {
+  BOUNDARY_CENTER_XZ,
+  FADE_INNER, FADE_OUTER,
+  STREET_FADE_INNER, STREET_FADE_OUTER,
+} from './boundary.js'
+
+// Single source of truth for the soft-circle silhouette in Designer's
+// V2 live render. Mirrors BakedGround.fadeForGroup: face-kind layers
+// (block fill) use the inner band; ribbon-kind layers (asphalt /
+// sidewalk / treelawn / curb / corner pads/plugs) use the wider street
+// band so streets trail past the dissolved blocks.
+const FACE_FADE = {
+  center: { x: BOUNDARY_CENTER_XZ[0], z: BOUNDARY_CENTER_XZ[1] },
+  inner:  FADE_INNER,
+  outer:  FADE_OUTER,
+}
+const BAND_FADE = {
+  center: { x: BOUNDARY_CENTER_XZ[0], z: BOUNDARY_CENTER_XZ[1] },
+  inner:  STREET_FADE_INNER,
+  outer:  STREET_FADE_OUTER,
+}
 
 // Match StreetRibbons' BAND_PRIORITY for the bands V2 renders. Residential
 // block fill sits at face-level (pri 1) — below all street/strip layers.
@@ -155,7 +176,12 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
 export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
   measureActive = false, surveyActive = false, hideLandUse = false,
+  useBoundary = false,
 }) {
+  // Gate fade on the per-scene flag. LS turns on the soft-circle
+  // silhouette; toy stays rectangular (its stencil is a 360×360 box).
+  const faceFade = useBoundary ? FACE_FADE : null
+  const bandFade = useBoundary ? BAND_FADE : null
   const makeMaterial = useSurfaceMaterial(flat)
   // Read corner-authoring + palette state directly from the store. Keeps
   // the V2 mount simple (just `ribbons` + `stencil` as props) and lets the
@@ -621,16 +647,16 @@ export default function BlockGeometryV2Debug({
   // selectedCorridor (opacity 0.55 in Measure) — lets us do an O(1) ref
   // lookup per chain instead of O(N) allocations per render.
   const bandMats = useMemo(() => ({
-    asphalt:           makeMaterial(asphaltCol,  PRI.asphalt,  null, { measureActive, surveyActive }),
-    asphaltSelected:   makeMaterial(asphaltCol,  PRI.asphalt,  null, { measureActive, surveyActive, selectedCorridor: true }),
-    treelawn:          makeMaterial(treelawnCol, PRI.treelawn, null, { measureActive, surveyActive }),
-    treelawnSelected:  makeMaterial(treelawnCol, PRI.treelawn, null, { measureActive, surveyActive, selectedCorridor: true }),
-    sidewalk:          makeMaterial(sidewalkCol, PRI.sidewalk, null, { measureActive, surveyActive }),
-    sidewalkSelected:  makeMaterial(sidewalkCol, PRI.sidewalk, null, { measureActive, surveyActive, selectedCorridor: true }),
-    curb:              makeMaterial(curbCol,     PRI.curb,     null, { measureActive, surveyActive }),
-    cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, null, { surveyActive }),
-    cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  null, { surveyActive }),
-  }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, measureActive, surveyActive])
+    asphalt:           makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive }),
+    asphaltSelected:   makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, selectedCorridor: true }),
+    treelawn:          makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive }),
+    treelawnSelected:  makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
+    sidewalk:          makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive }),
+    sidewalkSelected:  makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
+    curb:              makeMaterial(curbCol,     PRI.curb,     bandFade, { measureActive, surveyActive }),
+    cornerSidewalk:    makeMaterial(sidewalkCol, PRI.residential + 0.5, bandFade, { surveyActive }),
+    cornerAsphalt:     makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { surveyActive }),
+  }), [makeMaterial, asphaltCol, treelawnCol, sidewalkCol, curbCol, measureActive, surveyActive, bandFade])
   // LU block-fill materials cached per (lu, selected) key. Selected
   // adjacent blocks route through the `selectedCorridor` variant so the
   // parcel translucency matches the chain's band translucency (0.55 in
@@ -638,12 +664,12 @@ export default function BlockGeometryV2Debug({
   const blockMats = useMemo(() => {
     const out = {}
     for (const g of blockGroups) {
-      out[g.key] = makeMaterial(g.color, PRI.residential, null, {
+      out[g.key] = makeMaterial(g.color, PRI.residential, faceFade, {
         measureActive, surveyActive, selectedCorridor: g.selected,
       })
     }
     return out
-  }, [makeMaterial, blockGroups, measureActive, surveyActive])
+  }, [makeMaterial, blockGroups, measureActive, surveyActive, faceFade])
 
   return (
     <group>

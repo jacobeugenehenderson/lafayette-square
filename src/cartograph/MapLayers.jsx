@@ -7,7 +7,7 @@ import ribbonsData from '../data/ribbons.json'
 import parkTreeData from '../data/park_trees.json'
 import parkWaterData from '../data/park_water.json'
 import lampData from '../data/street_lamps.json'
-import { pointInBoundary, boundaryPolygon } from './boundary.js'
+import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary } from './boundary.js'
 import useCartographStore from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import {
@@ -427,14 +427,18 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   }, [])
 
   // ── Centerlines (debug reference, hidden by default, boundary-clipped) ─
+  // Per-segment clip so chains that cross the soft-circle silhouette stop
+  // at the boundary instead of trailing off the canvas.
   const centerlineLines = useMemo(() => {
     const lines = []
     for (const st of ribbonsData.streets) {
       if (st.points.length < 2) continue
-      const mid = st.points[Math.floor(st.points.length / 2)]
-      if (!pointInBoundary(mid[0], mid[1])) continue
-      const pts = st.points.map(p => new THREE.Vector3(p[0], 0.25, p[1]))
-      lines.push(new THREE.BufferGeometry().setFromPoints(pts))
+      const pieces = clipPolylineToBoundary(st.points)
+      for (const piece of pieces) {
+        if (!piece || piece.length < 2) continue
+        const pts = piece.map(p => new THREE.Vector3(p[0], 0.25, p[1]))
+        lines.push(new THREE.BufferGeometry().setFromPoints(pts))
+      }
     }
     return lines
   }, [])
@@ -574,17 +578,25 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   }, [])
 
   // ── Barrier lines (fence, wall, hedge, retaining_wall) ──
-  // No boundary filter — the radial fade will handle edge cases. Raised Y so
-  // they sit clearly above face fills and aren't buried by ribbons.
+  // Clipped to the soft-circle silhouette: barriers render with
+  // LineBasicMaterial which doesn't accept the radial-fade shader, so
+  // they need segment-level clipping to stop at the boundary instead of
+  // trailing across the canvas. Raised Y so they sit clearly above face
+  // fills and aren't buried by ribbons.
   const barriersByKind = useMemo(() => {
     const groups = {}
     for (const item of (mapData.layers?.barrier || [])) {
       const coords = item.coords
       if (!coords || coords.length < 2) continue
-      const pts = coords.map(p => new THREE.Vector3(p.x ?? p[0], 0.5, p.z ?? p[1]))
-      const geo = new THREE.BufferGeometry().setFromPoints(pts)
-      if (!groups[item.kind]) groups[item.kind] = []
-      groups[item.kind].push(geo)
+      const flat = coords.map(p => [p.x ?? p[0], p.z ?? p[1]])
+      const pieces = clipPolylineToBoundary(flat)
+      for (const piece of pieces) {
+        if (!piece || piece.length < 2) continue
+        const pts = piece.map(p => new THREE.Vector3(p[0], 0.5, p[1]))
+        const geo = new THREE.BufferGeometry().setFromPoints(pts)
+        if (!groups[item.kind]) groups[item.kind] = []
+        groups[item.kind].push(geo)
+      }
     }
     return groups
   }, [])
