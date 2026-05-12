@@ -195,12 +195,21 @@ function GrassMesh({ group, geometry, lightmap, fade }) {
         lampLightmap: getLampLightmap(),
         fade,
       })
+      // Parity with FadeMesh: per-group polygonOffset so coplanar fragments
+      // stack in renderOrder. Without this, grass faces z-fight with
+      // adjacent FadeMesh faces (they're coplanar at y=0 and FadeMesh's
+      // polygonOffset pulls its fragments closer to camera). Symptom 2026-05-13:
+      // every green face (residential / park / recreation, plus lawn /
+      // treelawn / median) rendered invisibly in Stage.
+      built.material.polygonOffset = true
+      built.material.polygonOffsetFactor = 0
+      built.material.polygonOffsetUnits = group.polygonOffsetUnits
       // Same parity move as FadeMesh — every BakedGround material rises
       // with the shared terrain displacement.
       patchTerrain(built.material, { perVertex: true })
       return built
     },
-    [group.color, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer]
+    [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer]
   )
   useEffect(() => {
     if (lightmap) {
