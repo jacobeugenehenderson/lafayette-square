@@ -10,13 +10,14 @@
  *   - materialColors  — per-material default colors (foundation, etc.)
  *   - layerColors / luColors — kept for potential future runtime use
  *
- * Channels baked as of c333e50 (SC.1): sky, ambient, hemi, dirSun, dirMoon,
- * constellations, milkyWay. Channels still pending bake: post-FX (bloom/
- * AO/DOF/grade/grain), exposure/tonemapping, per-shot camera tuning, arch
- * tuning, meteorologist clouds (consumer side). Time-of-day defaults &
- * sun-curve overrides (SC.4) were audited empty — DawnTimeline doesn't
+ * Channels baked as of 015d8e0 (SC.1 + SC.2 + SC.3): sky, ambient, hemi,
+ * dirSun, dirMoon, constellations, milkyWay (SC.1); bloom, ao, exposure,
+ * warmth, fill, mist, halo, grade, grain, shadow (SC.2/SC.3). Channels
+ * still pending bake: per-shot camera tuning (SC.5), arch tuning (SC.7),
+ * meteorologist clouds consumer-side decision (SC.6). Time-of-day defaults
+ * & sun-curve overrides (SC.4) were audited empty — DawnTimeline doesn't
  * persist anything to bake yet. Tracked as "Slab completeness" in
- * `cartograph/BACKLOG.md` (sub-phases SC.2–SC.7 remaining); load-bearing
+ * `cartograph/BACKLOG.md` (sub-phases SC.5–SC.7 remaining); load-bearing
  * principle in `cartograph/FEATURES.md` "The slab carries the operator's
  * *full* authored product" and memory `slab-carries-full-authored-product`.
  */
