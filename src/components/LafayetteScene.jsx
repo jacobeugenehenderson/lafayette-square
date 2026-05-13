@@ -16,7 +16,7 @@ import { CATEGORY_HEX } from '../tokens/categories'
 import { patchTerrain } from '../utils/terrainShader'
 import { getElevation } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { useSceneJson } from '../lib/useSceneJson.js'
 import NeonBands from './NeonBands.jsx'
 
 // Deterministic string hash — same id always picks the same palette slot.
@@ -332,7 +332,7 @@ function getRoofPeakHeight(building) {
 
 // ============ FOUNDATIONS (single merged mesh) ============
 
-function Foundations({ buildings: buildingsProp } = {}) {
+function Foundations({ buildings: buildingsProp, materialPhysics, materialColors } = {}) {
   const source = buildingsProp || _allBuildings
   const geometry = useMemo(() => {
     const geos = []
@@ -413,24 +413,22 @@ function Foundations({ buildings: buildingsProp } = {}) {
     return mat
   }, [])
 
-  // Live wire to Surfaces panel — foundation is a single shared material
-  // across all buildings so cost is one zustand read per frame.
-  useFrame(() => {
-    const phys = useCartographStore.getState().materialPhysics?.foundation
-    const colorOv = useCartographStore.getState().materialColors?.foundation
-    if (colorOv && foundationMat.color.getHexString() !== colorOv.replace('#', '').toLowerCase()) {
-      foundationMat.color.set(colorOv)
-    }
+  // Static apply on scene load — foundation physics/color come from
+  // scene.json via props (couplers plan §1). Replaces the prior per-frame
+  // cartograph-store read; Stage operator now sees foundation updates on
+  // re-bake rather than instant slider feedback.
+  useEffect(() => {
+    const phys = materialPhysics?.foundation
+    const colorOv = materialColors?.foundation
+    if (colorOv) foundationMat.color.set(colorOv)
     if (phys) {
-      if (phys.roughness !== undefined && foundationMat.roughness !== phys.roughness) foundationMat.roughness = phys.roughness
-      if (phys.metalness !== undefined && foundationMat.metalness !== phys.metalness) foundationMat.metalness = phys.metalness
-      const ei = phys.emissiveIntensity || 0
-      if (foundationMat.emissiveIntensity !== ei) foundationMat.emissiveIntensity = ei
-      if (phys.emissive && foundationMat.emissive.getHexString() !== phys.emissive.replace('#', '').toLowerCase()) {
-        foundationMat.emissive.set(phys.emissive)
-      }
+      if (phys.roughness !== undefined) foundationMat.roughness = phys.roughness
+      if (phys.metalness !== undefined) foundationMat.metalness = phys.metalness
+      foundationMat.emissiveIntensity = phys.emissiveIntensity || 0
+      if (phys.emissive) foundationMat.emissive.set(phys.emissive)
     }
-  })
+    foundationMat.needsUpdate = true
+  }, [foundationMat, materialPhysics, materialColors])
 
   if (!geometry) return null
 
@@ -551,7 +549,7 @@ function SelectionRing({ building }) {
   )
 }
 
-function Building({ building, neonInfo }) {
+function Building({ building, neonInfo, palette, materialPhysics }) {
   const meshRef = useRef()
   const prevStateRef = useRef({ darkStep: -1, emissiveHex: 0 })
   const { selectedId, hoveredId, select, setHovered, clearHovered } = useSelectedBuilding()
@@ -571,9 +569,10 @@ function Building({ building, neonInfo }) {
   const isHovered = hoveredId === building.id
   // Effective tint: per-building override (buildingOverrides.color) wins,
   // else the active Look's 12-slot palette (deterministic by id), else
-  // the legacy `building.color` from buildings.json. Live-subscribes so
-  // palette edits in the Surfaces panel retint immediately.
-  const palette = useCartographStore(s => s.buildingPalette)
+  // the legacy `building.color` from buildings.json. Palette comes from
+  // scene.json (frozen-at-bake) in production; Stage's mount in
+  // CartographApp passes a live-subscribed paletteOverride through
+  // LafayetteScene so the Surfaces panel still retints in real time.
   const colorOverride = getOverride(building.id, 'color')
   const wallTintHex = effectiveBuildingColor(building, palette, colorOverride)
   const baseColor = useMemo(() => new THREE.Color(wallTintHex), [wallTintHex])
@@ -817,6 +816,38 @@ function Building({ building, neonInfo }) {
     return mat
   }, [baseColor, wallTex, roofTex, roofTintColor, hasTextures, foundationY, building])
 
+  // Static apply on scene load — materialPhysics comes from scene.json via
+  // prop (couplers plan §1). Replaces the prior per-frame cartograph-store
+  // read; Stage operator now sees physics updates on re-bake rather than
+  // instant slider feedback. Re-runs when the wall/roof material assignments
+  // change (which they do per-Look, via scene.materialPhysics).
+  useEffect(() => {
+    const mat = meshRef.current?.material
+    if (!mat) return
+    const wallPhys = materialPhysics?.[building.wall_material]
+    if (wallPhys) {
+      if (wallPhys.roughness !== undefined) mat.roughness = wallPhys.roughness
+      if (wallPhys.metalness !== undefined) mat.metalness = wallPhys.metalness
+      if (shaderRef.current) {
+        if (wallPhys.textureStrength !== undefined) {
+          const s = shaderRef.current.uniforms.uTexStrength
+          if (s) s.value = wallPhys.textureStrength
+        }
+        if (wallPhys.textureScale !== undefined) {
+          const s = shaderRef.current.uniforms.uWallTexScale
+          if (s) s.value = wallPhys.textureScale
+        }
+      }
+    }
+    const roofKey = `roof_${building.roof_material || 'flat'}`
+    const roofPhys = materialPhysics?.[roofKey]
+    if (roofPhys && shaderRef.current && roofPhys.textureScale !== undefined) {
+      const s = shaderRef.current.uniforms.uRoofTexScale
+      if (s) s.value = roofPhys.textureScale
+    }
+    mat.needsUpdate = true
+  }, [materialPhysics, building.wall_material, building.roof_material])
+
   useFrame(() => {
     if (!meshRef.current) return
     const mat = meshRef.current.material
@@ -832,40 +863,6 @@ function Building({ building, neonInfo }) {
     // comparison has already cached the current value, leaving roofs bright at night.
     if (shaderRef.current) {
       shaderRef.current.uniforms.uDarkFactor.value = darkFactor
-    }
-
-    // Live wire to Surfaces panel — read materialPhysics for this
-    // building's wall material and mutate the shared per-building
-    // material. Cheap (one zustand read + a few property writes).
-    const physics = useCartographStore.getState().materialPhysics
-    const wallPhys = physics?.[building.wall_material]
-    if (wallPhys) {
-      if (wallPhys.roughness !== undefined && mat.roughness !== wallPhys.roughness) {
-        mat.roughness = wallPhys.roughness
-      }
-      if (wallPhys.metalness !== undefined && mat.metalness !== wallPhys.metalness) {
-        mat.metalness = wallPhys.metalness
-      }
-      if (shaderRef.current && wallPhys.textureStrength !== undefined) {
-        const s = shaderRef.current.uniforms.uTexStrength
-        if (s) s.value = wallPhys.textureStrength
-      }
-      if (shaderRef.current && wallPhys.textureScale !== undefined) {
-        const s = shaderRef.current.uniforms.uWallTexScale
-        if (s) s.value = wallPhys.textureScale
-      }
-    }
-    // Roof material physics — only the texture-side knobs apply here
-    // (mat.roughness/metalness are wall-driven since they're material-
-    // level not shader uniforms; a proper split needs separate roof
-    // submaterial, follow-up).
-    const roofKey = `roof_${building.roof_material || 'flat'}`
-    const roofPhys = physics?.[roofKey]
-    if (roofPhys && shaderRef.current) {
-      if (roofPhys.textureScale !== undefined) {
-        const s = shaderRef.current.uniforms.uRoofTexScale
-        if (s) s.value = roofPhys.textureScale
-      }
     }
 
     // Emissive for selection/hover
@@ -1176,7 +1173,23 @@ function LandmarkMarkers() {
 }
 
 // ============ MAIN ============
-function LafayetteScene() {
+function resolveLookId(propLookId) {
+  if (propLookId) return propLookId
+  if (typeof window === 'undefined') return 'lafayette-square'
+  const m = window.location.search.match(/look=([^&]+)/)
+  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+}
+
+function LafayetteScene({ lookId, bakeLastMs, paletteOverride } = {}) {
+  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  // Palette: Stage's mount in CartographApp passes a live-subscribed
+  // paletteOverride from the cartograph store so Surfaces panel drags
+  // retint instantly (couplers plan §1 carve-out). Production omits the
+  // override and reads frozen scene.palette.
+  const palette = paletteOverride ?? scene?.palette
+  const materialPhysics = scene?.materialPhysics
+  const materialColors = scene?.materialColors
+
   const deselect = useSelectedBuilding((state) => state.deselect)
   const listings = useListings((s) => s.listings)
   const viewMode = useCamera((s) => s.viewMode)
@@ -1363,11 +1376,11 @@ function LafayetteScene() {
     <group>
       <ClickCatcher />
 
-      <Foundations />
+      <Foundations materialPhysics={materialPhysics} materialColors={materialColors} />
 
       {/* Buildings — per-id mount; neon is one merged mesh below. */}
       {_allBuildings.map(b => (
-        <Building key={b.id} building={b} neonInfo={visibleNeonIds.has(b.id) ? neonLookup[b.id] : undefined} />
+        <Building key={b.id} building={b} neonInfo={visibleNeonIds.has(b.id) ? neonLookup[b.id] : undefined} palette={palette} materialPhysics={materialPhysics} />
       ))}
 
       {/* Neon — single Path B mesh over all currently-open places, with

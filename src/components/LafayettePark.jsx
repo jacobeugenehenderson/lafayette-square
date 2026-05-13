@@ -7,7 +7,7 @@ import useSkyState from '../hooks/useSkyState'
 import parkWaterData from '../data/park_water.json'
 import parkPathData from '../data/park_paths.json'
 import { getElevation } from '../utils/elevation'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { useSceneJson } from '../lib/useSceneJson.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
 import { terrainExag } from '../utils/terrainShader'
@@ -406,28 +406,18 @@ function ParkPaths() {
   )
 }
 
-// Resolve the active Look from the URL (`?look=...`) for scene.json fetch.
-// Mirrors the pattern in BakedGround / BakedLamps so ParkWater can honor
-// the Look's `layerVis.water` toggle without depending on the cartograph
-// store (which isn't populated in production).
-function _lookFromQuery() {
+function resolveLookId(propLookId) {
+  if (propLookId) return propLookId
   if (typeof window === 'undefined') return 'lafayette-square'
   const m = window.location.search.match(/look=([^&]+)/)
   return m ? decodeURIComponent(m[1]) : 'lafayette-square'
 }
 
 // ── Park Water Features (Lake + Grotto Pond) ─────────────────────────
-function ParkWater() {
-  const [waterHidden, setWaterHidden] = useState(false)
-  useEffect(() => {
-    let cancelled = false
-    const look = _lookFromQuery()
-    fetch(`${import.meta.env.BASE_URL}baked/${look}/scene.json?t=${Date.now()}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(j => { if (!cancelled) setWaterHidden(j?.layerVis?.water === false) })
-      .catch(() => { /* scene.json optional */ })
-    return () => { cancelled = true }
-  }, [])
+function ParkWater({ lookId, bakeLastMs }) {
+  const resolvedLookId = resolveLookId(lookId)
+  const scene = useSceneJson(resolvedLookId, bakeLastMs)
+  const waterHidden = scene?.layerVis?.water === false
   const waterShaderRef = useRef()
 
   // Build water + island + bank geometries from polygon data
@@ -757,7 +747,7 @@ function PerimeterFence() {
 // snap-off at high altitude) and accepts a small mismatch where the
 // terrain varies across the park's 350m extent — fine at LS scale.
 const PARK_CENTER_ELEV = getElevation(0, 0)
-function LafayettePark() {
+function LafayettePark({ lookId, bakeLastMs } = {}) {
   const groupRef = useRef()
   useFrame(() => {
     if (!groupRef.current) return
@@ -766,7 +756,7 @@ function LafayettePark() {
   return (
     <group ref={groupRef}>
       {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
-      <ParkWater />
+      <ParkWater lookId={lookId} bakeLastMs={bakeLastMs} />
       <ParkPaths />
       <PerimeterFence />
 

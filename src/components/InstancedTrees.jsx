@@ -20,7 +20,14 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useTreeAtlas, treeSwayUniforms } from './treeAtlasMaterial'
-import useCartographStore from '../cartograph/stores/useCartographStore'
+import { useSceneJson } from '../lib/useSceneJson.js'
+
+function resolveLookId(propLookId) {
+  if (propLookId) return propLookId
+  if (typeof window === 'undefined') return 'lafayette-square'
+  const m = window.location.search.match(/look=([^&]+)/)
+  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+}
 
 // Trees are baked once globally (not per-Look) since species placement
 // is data, not styling. Path stays at /baked/default.json for now —
@@ -190,39 +197,25 @@ function SwayDriver() {
   return null
 }
 
-function ParkPopulation({ maxVariants, lookId: propLookId, bakeUrl = BAKE_URL }) {
+function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl = BAKE_URL }) {
+  // Active Look: explicit prop wins; otherwise URL `?look=` fallback; final
+  // default 'lafayette-square'. Cartograph passes the active Look explicitly
+  // via the StageEnvironment thread; Preview reads ?look= from the URL.
+  const lookName = resolveLookId(propLookId)
+  const scene = useSceneJson(lookName, bakeLastMs)
+  const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
+
   const [bake, setBake] = useState(null)
-  const [sceneLayerVis, setSceneLayerVis] = useState(null)
   useEffect(() => {
+    if (cacheBust == null) return
     let cancelled = false
-    fetch(bakeUrl + '?t=' + Date.now())
+    fetch(bakeUrl + '?t=' + cacheBust)
       .then(r => r.ok ? r.json() : null)
       .then(j => { if (!cancelled) setBake(j) })
       .catch(e => console.warn('[InstancedTrees] bake fetch failed:', e))
     return () => { cancelled = true }
-  }, [bakeUrl])
+  }, [bakeUrl, cacheBust])
 
-  // Honor the Look's per-layer visibility from scene.json. Cartograph also
-  // gates this component externally via store hiddenLayers, so this fetch
-  // is mainly the path for Preview / standalone surfaces.
-  useEffect(() => {
-    if (!propLookId) return
-    let cancelled = false
-    fetch(`${import.meta.env.BASE_URL}baked/${propLookId}/scene.json?t=${Date.now()}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(j => { if (!cancelled) setSceneLayerVis(j?.layerVis || null) })
-      .catch(() => { /* optional */ })
-    return () => { cancelled = true }
-  }, [propLookId])
-
-  // Active Look + atlas: filter placement instances to species/variants in
-  // this Look's roster, swap GLB URLs to the per-Look rewritten paths, and
-  // hand atlas materials to each VariantInstances. Look resolution:
-  //   1. explicit prop `lookId` (caller-provided) — used by Preview which
-  //      reads `?look=` from URL.
-  //   2. cartograph store activeLookId — used by cartograph Stage.
-  const storeLookId = useCartographStore(s => s.activeLookId)
-  const lookName = propLookId || storeLookId
   const atlas = useTreeAtlas(lookName)
 
   // Group bake instances by URL. Instances whose (species, variantId) is
@@ -326,7 +319,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeUrl = BAKE_URL })
   }, [bake, maxVariants, atlas, lookName])
 
   if (!groups || atlas.status !== 'ready') return null
-  if (sceneLayerVis?.tree === false) return null
+  if (scene?.layerVis?.tree === false) return null
 
   return (
     <>
@@ -346,8 +339,8 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeUrl = BAKE_URL })
   )
 }
 
-export default function InstancedTrees({ maxVariants, lookId, bakeUrl } = {}) {
+export default function InstancedTrees({ maxVariants, lookId, bakeLastMs, bakeUrl } = {}) {
   // No default maxVariants — atlas collapses materials to 2 shared instances,
   // so unbounded variant count is now safe.
-  return <ParkPopulation maxVariants={maxVariants} lookId={lookId} bakeUrl={bakeUrl} />
+  return <ParkPopulation maxVariants={maxVariants} lookId={lookId} bakeLastMs={bakeLastMs} bakeUrl={bakeUrl} />
 }

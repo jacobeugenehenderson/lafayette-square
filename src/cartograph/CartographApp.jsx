@@ -555,17 +555,25 @@ const SCENE_REGISTRY = {
     useBoundary: true,
     hasAerial: true,
     hasHero: true,
-    StageEnvironment: ({ hiddenLayers }) => <>
-      <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
-      {!hiddenLayers.tree && (
-        <R3FErrorBoundary name="InstancedTrees"><InstancedTrees /></R3FErrorBoundary>
-      )}
-      <R3FErrorBoundary name="LafayetteScene"><LafayetteScene /></R3FErrorBoundary>
-      {!hiddenLayers.lamp && (
-        <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>
-      )}
-      <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
-    </>,
+    StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => {
+      // Stage live-wire for buildingPalette per couplers plan §1 carve-out:
+      // production reads scene.json palette (frozen-at-bake); Stage retains
+      // live-subscribed palette so Surfaces panel drags retint instantly.
+      // Contained here in the cartograph chunk so LafayetteScene itself
+      // never imports useCartographStore.
+      const paletteOverride = useCartographStore(s => s.buildingPalette)
+      return <>
+        <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
+        {!hiddenLayers.tree && (
+          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
+        )}
+        <R3FErrorBoundary name="LafayetteScene"><LafayetteScene lookId={lookId} bakeLastMs={bakeLastMs} paletteOverride={paletteOverride} /></R3FErrorBoundary>
+        {!hiddenLayers.lamp && (
+          <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
+        )}
+        <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
+      </>
+    },
   },
   'toy': {
     ribbons: toyRibbons,
@@ -874,7 +882,11 @@ export default function CartographApp() {
                 expensive useMemos from running). They mount as soon as a
                 shot is active. */}
             {!inDesigner && sceneCfg.StageEnvironment && (
-              <sceneCfg.StageEnvironment hiddenLayers={hiddenLayers} />
+              <sceneCfg.StageEnvironment
+                hiddenLayers={hiddenLayers}
+                lookId={activeLookId}
+                bakeLastMs={bakeLastMs}
+              />
             )}
           </group>
           {/* Post-FX: same chain Preview ships with so Stage and Preview

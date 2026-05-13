@@ -22,6 +22,7 @@ import { makeGrassMaterial } from './grassMaterial'
 import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { terrainExag, patchTerrain, V_EXAG } from '../utils/terrainShader'
+import { useSceneJson } from '../lib/useSceneJson.js'
 
 // Material-kind groups that render with the noise-based grass shader
 // (lawn = block interior, treelawn = curb→sidewalk strip, median = between
@@ -273,42 +274,54 @@ function resolveLookId(propLookId) {
 /**
  * @param {object} props
  * @param {string} [props.lookId]      — explicit Look id; falls back to URL param.
- * @param {number} [props.bakeLastMs]  — cache-bust signal; pass the store's
- *                                       `bakeLastMs` so Stage re-fetches when
- *                                       a new bake completes.
+ * @param {number} [props.bakeLastMs]  — Stage-authoring cache-bust override.
+ *                                       Pass the cartograph store's `bakeLastMs`
+ *                                       so the slab re-fetches when ↻ completes.
+ *                                       Production omits this; the component
+ *                                       falls back to `scene.bakedAt` (baked
+ *                                       into scene.json per couplers plan CC.7).
  * @param {number} [props.targetExag]  — terrain exaggeration target. Defaults
  *                                       to V_EXAG (~Hero/Browse drama). Pass 1
  *                                       for street-level, 0 for flat top-down.
  */
 export default function BakedGround({ lookId, bakeLastMs, targetExag = V_EXAG } = {}) {
   const [data, setData] = useState(null)
-  const [scene, setScene] = useState(null)
-
   const resolvedLookId = resolveLookId(lookId)
 
+  // Scene.json comes through the slab data adapter (couplers plan §1).
+  // Passing bakeLastMs as cacheBust makes Stage authoring reactive to ↻
+  // rebakes; production passes undefined, so the hook uses its MODE-keyed
+  // default and the module-scope memo keeps the fetch warm within a session.
+  const scene = useSceneJson(resolvedLookId, bakeLastMs)
+
+  // Effective cache-bust for the heavy artifacts (manifest, bin, lightmap):
+  // Stage's explicit bakeLastMs wins; production falls back to scene.bakedAt
+  // (the bake's completion epoch, baked into scene.json per CC.7). This
+  // replaces the previous Date.now() fallback that defeated browser caching
+  // on every page load.
+  const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
+
   useEffect(() => {
+    if (cacheBust == null) return
     let cancelled = false
     ;(async () => {
       try {
-        const t = bakeLastMs ?? Date.now()
-        const manifestUrl = `${import.meta.env.BASE_URL}baked/${resolvedLookId}/ground.json?t=${t}`
+        const manifestUrl = `${import.meta.env.BASE_URL}baked/${resolvedLookId}/ground.json?t=${cacheBust}`
         const m = await fetch(manifestUrl).then(r => r.json())
-        const bin = await fetch(import.meta.env.BASE_URL + 'baked/' + m.look + '/' + m.bin + '?t=' + t)
+        const bin = await fetch(import.meta.env.BASE_URL + 'baked/' + m.look + '/' + m.bin + '?t=' + cacheBust)
           .then(r => r.arrayBuffer())
-        const sc = await fetch(import.meta.env.BASE_URL + 'baked/' + m.look + '/scene.json?t=' + t)
-          .then(r => r.ok ? r.json() : null).catch(() => null)
-        if (!cancelled) { setData({ manifest: m, bin }); setScene(sc) }
+        if (!cancelled) setData({ manifest: m, bin })
       } catch (e) {
         console.warn('[BakedGround] load failed:', e)
       }
     })()
     return () => { cancelled = true }
-  }, [resolvedLookId, bakeLastMs])
+  }, [resolvedLookId, cacheBust])
 
   return (
     <>
       <TerrainExagDriver target={targetExag} />
-      {data && <GroundMeshes manifest={data.manifest} bin={data.bin} scene={scene} bakeLastMs={bakeLastMs} />}
+      {data && scene && <GroundMeshes manifest={data.manifest} bin={data.bin} scene={scene} bakeLastMs={cacheBust} />}
     </>
   )
 }

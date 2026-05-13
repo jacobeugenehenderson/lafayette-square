@@ -5,8 +5,15 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import lampData from '../data/street_lamps.json'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { useSceneJson } from '../lib/useSceneJson.js'
 import { patchTerrainInstanced, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
+
+function _resolveLookId(propLookId) {
+  if (propLookId) return propLookId
+  if (typeof window === 'undefined') return 'lafayette-square'
+  const m = window.location.search.match(/look=([^&]+)/)
+  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+}
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -35,7 +42,7 @@ const POOL_RADIUS = _IS_MOBILE ? 10 : 15
 const POOL_Y = 0.0
 const SHADOW_RADIUS = 1.5 // AO contact shadow at lamp base
 
-function StreetLights({ lamps: lampsProp } = {}) {
+function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
   const lampRef = useRef()
   const glowRef = useRef()
   const bulbRef = useRef()
@@ -45,11 +52,13 @@ function StreetLights({ lamps: lampsProp } = {}) {
   const lampMatRef = useRef(null)
   const glowMatRef = useRef(null)
   const getLightingPhase = useTimeOfDay(s => s.getLightingPhase)
-  // Panel-driven lamp tint. Wired but not troubleshot — may clash with the
-  // warm-incandescent emission tuning when pushed away from #fff2e0.
-  // Applied via useEffect (not useFrame) — per-frame overwrite of the
-  // instanced material's emissive caused lamps to vanish at daytime.
-  const panelLampColor = useCartographStore(s => s.layerColors?.lamp)
+  // Panel-driven lamp tint, sourced from scene.json (frozen-at-bake) per
+  // couplers plan §1. Stage panel writes layerColors.lamp into design.json
+  // → bake → scene.json.layerColors.lamp; runtime applies via useEffect
+  // (not useFrame) — per-frame overwrite of the instanced material's
+  // emissive caused lamps to vanish at daytime.
+  const scene = useSceneJson(_resolveLookId(lookId), bakeLastMs)
+  const panelLampColor = scene?.layerColors?.lamp
 
   // Effect that re-applies tint lives below the lampModel useState so the
   // dep array can include it (re-runs when the GLB finishes loading).
