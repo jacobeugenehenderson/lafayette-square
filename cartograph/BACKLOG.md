@@ -4,6 +4,89 @@
 
 Last updated: 2026-05-13 (loop streets L.0 + L.1 shipped; L.2 emitter is next — see "Loop streets" pin below for state, then "Neon LS-scale visibility" pin)
 
+## v2+ — Hosted bake service with auth (post-marriage, post-v1)
+
+**Premise.** v1 is single-operator (Jacob, local machine, git-write
+access to the kit repo). The bake button runs on `localhost:3333`; the
+"Publish" step is `git commit + git push` from the operator's terminal.
+This is structurally safe — the deployed LS runtime has zero write
+paths back to a helper, because helpers are localhost-only and the
+slab is consumed read-only as static files.
+
+The moment a *non-maintainer operator* wants to publish their own
+neighborhood instance — a content partner editing `cary` or a future
+`<otherhood>` — the localhost+git model breaks. They don't have git
+write access, they shouldn't need it, and Jacob shouldn't be the
+bottleneck on every external bake. So v2+ grows a hosted bake service.
+
+**Shape (sketch — not specced).**
+
+- **Service** runs the existing bake chain (`cartograph/serve.js`'s
+  POST `/looks/:id/bake` route, scene-parametric) on a hosted runtime
+  (Cloud Run / Lambda / similar). Same scripts as today; just deployed.
+- **Per-operator auth.** Operators log in (Supabase OAuth / Clerk /
+  whatever Cary settles on for its courier path — see CC.1 below).
+  Each operator carries an instance scope: operator A can publish
+  `lafayette-square`, operator B can publish `cary`, etc. Scope is
+  enforced server-side on the bake endpoint; an operator never
+  authenticates as "all instances."
+- **Publish path.** Service writes the slab to a per-instance asset
+  bucket (or to the kit repo's `public/baked/<look>/` on a scoped
+  service-account branch + auto-merge). Either way the deployed LS app
+  reads from the same URL pattern (`/baked/<look>/...`); no consumer
+  change.
+- **Service-account git, not operator git.** The service holds the
+  write credential, not the operator. So an operator only ever needs
+  a login, not a GitHub seat. Compromise of one operator account
+  scopes blast radius to their instance.
+- **No reverse access expansion.** The deployed LS runtime still
+  doesn't call the bake service. Bake remains operator-initiated
+  through the cartograph helper UI; the helper UI itself is hosted
+  (so non-maintainer operators can reach it) but its API surface only
+  accepts authenticated mutations within scope. Same publish-loop
+  shape as v1; just with auth on the producer side.
+
+**Why this is v2+, not v1.**
+
+v1 ships LS as a single instance with Jacob as the one operator.
+That's enough to prove the kit + slab pattern in production. A hosted
+bake service is the structural move from "kit Jacob uses" → "kit
+others use" — it's load-bearing for the multi-instance future
+(`feedback_beautiful_first_lightweight_51`'s "be more clever" doctrine
+applies: the right v2 move is hosting, not letting v1 sprawl into
+multi-tenant complexity prematurely).
+
+**Cross-cutting concerns to spec when this kicks off.**
+
+1. **Auth shared with Cary.** Cary's hosted courier flow is the kit's
+   first hosted-auth surface (Supabase phone-OTP per
+   `ls/ARCHITECTURE.md §3`). The bake service's operator auth should
+   reuse the same identity infra rather than introducing a parallel
+   one. Couplers plan §4 (Courier) already accepts the kit-instance
+   boundary; the bake service is the producer-side analog.
+2. **Instance scope == coupler scope.** The set of things an operator
+   can edit (their `INSTANCE.lookId`, their geography, their listings
+   GAS, their courier Supabase project) is exactly the set of things
+   their auth token gates. Couplers plan §6 (Place coupler) defines
+   the bag; the bake service consumes it as auth scope.
+3. **Service-account git vs. asset bucket.** Two viable publish
+   targets. Git keeps everything in one repo (good for the kit-as-one-
+   build deploy model); bucket decouples instances (good for scale).
+   Decision pending demand.
+4. **Audit trail.** Every published bake gets an attribution entry
+   (operator id, timestamp, look id) baked into `scene.json.bakedAt`'s
+   neighborhood (`scene.json.bakedBy`?). Forward-compatible per
+   couplers plan CC.7's amendment pattern.
+5. **Rollback.** Each operator's instance retains its last N bakes
+   server-side; UI exposes "publish previous bake" without re-running
+   the chain. Cheap insurance against bad bakes shipped to live.
+
+**Not blocking anything in flight.** No work here until after the
+marriage leap merges and v1 ships stable. Item lives at the top of
+the BACKLOG as the v2+ northstar, not as queued execution.
+
+---
+
 ## 2026-05-13 — Loop streets L.0 + L.1 shipped; L.2 emitter is next
 
 L.0 spec lock (definition, three topologies, per-role cross-section,

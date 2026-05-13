@@ -37,7 +37,7 @@ The codebase is a **public-facing runtime app** plus a small set of **standalone
 
 - **Helpers are decoupled.** Cartograph never imports Arborist's code; the runtime never imports a helper's editor surfaces. They only know about each other through the artifacts.
 - **Artifacts are pristine.** No helper-specific scaffolding gets baked in. An artifact is a clean handoff format that any consumer (this app, a future kiosk, an embedded preview) can read without owning the producer.
-- **Helpers are dev-time tools.** They run locally. They're not deployed alongside the runtime.
+- **Helpers are dev-time tools (v1).** They run locally. They're not deployed alongside the runtime. The deployed LS app has zero write paths back to a helper — the slab is consumed read-only as static files. *v2+ direction:* a hosted bake service with per-operator auth so non-maintainer operators can publish their own instances without git write access to the kit repo. Tracked in `cartograph/BACKLOG.md` "Hosted bake service with auth (v2+)".
 - **One artifact per helper, per concern.** If you ever feel like a helper should publish two artifacts, that's usually two helpers.
 
 When adding a new helper, follow this pattern verbatim: standalone editor app → one published artifact → runtime consumer that reads it. See `cartograph/README.md` for the established template.
