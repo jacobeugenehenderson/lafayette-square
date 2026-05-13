@@ -836,33 +836,220 @@ carriageways enclosing a face, Waverly), Type C pure ring (none yet).
    derive-toy.js doesn't propagate them yet (L.2 wires propagation).
    Visible-bug coverage: none yet; the new fixtures render as ordinary
    residential ribbons because the emitter is still loop-unaware.
-3. **L.2 — V2 emitter + smooth bake-into-points.** `buildBlockGeometryV2`
-   honors `chain.loop.role` for asymmetric ped-zone emission (`body` inner =
-   no sidewalk; `cut-thru` = bare profile). Median emerges as park-LU
-   enclosed face via `stencil − asphalt`. `derive.js` calls
-   `subdividePolyline` before emitting `ribbons.json` so persisted points
-   are smoothed (closes BACKLOG Phase 7's open ½-hour task). Producer
-   change only — no UI yet. Verify on toy first, then on LS.
-4. **L.3 — Survey UI.** Loop-streets section in SurveyorPanel (detected +
-   authored, with thumbnails + member chains + enable toggle). Marquee
-   "mark as loop" override path. Live smooth-preview overlay in
-   SurveyorOverlay (faint solid subdivided polyline under dashed control
-   polyline whenever `smooth > 0`).
-5. **L.4 — Measure inner/outer.** When chain `loop.role ∈ {body, outer}`,
-   swap "Left / Right" labels for "Outer / Inner" (resolved from role +
-   chain orientation relative to loop centroid). Default profiles match
-   cross-section table.
-6. **L.5 — LS migration + `*Place` audit.** Mark Benton + Waverly in
-   `lafayette-square` overlay.json. Run `detectLoops` over the 12
-   `*Place` streets (Oregon, Henrietta, Vail, Preston, Simpson,
-   Nicholson, Whittemore, Kennett, Albion, Park, Mackay, Waverly),
-   surface candidates for operator confirmation. Per Jacob: most are
-   "places by dint of alleys + walkways" not real loops; the audit is
-   to *check, not assume*.
-7. **L.6 — Cleanup.** Delete `LOOP_STREET_NAMES` + dead V1 loop-cut /
-   median-creation in `derive.js` (8 references). Migrate spec from
-   NOTES + BACKLOG into `FEATURES.md` (new "Loop streets" section) +
-   `ARCHITECTURE.md` (data flow note). Update memory.
+3. **L.2 — V2 emitter + smooth bake-into-points.** Producer-only
+   change; no UI. Toy is iteration surface; LS is verification target.
+   Per `feedback_d3_bundling_failure_modes`, do NOT bundle with L.3.
+
+   - **L.2a — Propagate `loop` + `oneway` through derive-toy + derive.**
+     Files: `cartograph/derive-toy.js` (lines ~178-185 + ~230-247 — the
+     `if (s.field) out.field = s.field` allowlists) and
+     `cartograph/derive.js` (the per-street output map near
+     "ribbonStreets.map(st => ({...}))" — currently whitelists
+     `highway` + `type` per the 2026-05-09 fix). Add `loop`
+     (object pass-through) + `oneway` (boolean pass-through) so
+     `ribbons.json` carries them per chain.
+     **Acceptance:** node REPL on `src/data/toy/toy-ribbons.json`
+     confirms BENT-BODY.loop.role === 'body', WV-CUT.loop.role ===
+     'cut-thru'. No visible change yet.
+
+   - **L.2b — `chain.smooth` baked into `street.points`.** Closes
+     BACKLOG "Phase 7 — Smooth, made real (Designer-side shipped
+     2026-05-04)" open ½-hour task. Files: `cartograph/derive-toy.js`
+     (after IX-splice, before the output map) + `cartograph/derive.js`
+     (same point in pipeline). For each chain with `smooth > 0`, call
+     `subdividePolyline(chain.points, chain.smooth)` from
+     `src/cartograph/streetProfiles.js`. **Preserve** the IX vertex
+     positions exactly (subdivide between IX-keyed points only, or
+     re-snap IXs after subdivision; per memory
+     `feedback_corner_pad_continuity_first` corners must stay derived
+     from same source as legs).
+     **Acceptance:** Benton-toy body renders as a smooth ellipse, not
+     a faceted dodecagon, in Designer. Visible-bug coverage: Benton
+     LS body smoothness (after L.5 marks it `smooth > 0`).
+
+   - **L.2c — `buildBlockGeometryV2` loop-aware band emission.**
+     File: `src/lib/buildBlockGeometryV2.js`. Today the per-segment
+     asphalt emission, frontageBands, and `cornerSidewalkPads` all
+     treat chains symmetrically. Loop-awareness changes:
+
+     1. **Per-side measure resolution** consults `chain.loop?.role`:
+        - `body` (Type A): inner side eff = `{ pavementHW,
+          treelawn, sidewalk: 0, terminal: 'treelawn' }` regardless
+          of authored measure. Outer side honors authored measure.
+          The "inner side" is whichever side of the chain faces the
+          loop centroid (compute once at chain entry as the cross
+          product sign).
+        - `outer` (Type B): both sides honor authored measure (no
+          override). Couplets get normal residential cross-section.
+        - `cut-thru` (Type B): both sides eff = `{ pavementHW,
+          treelawn: 0, sidewalk: 0, terminal: 'none' }`. Asphalt-only
+          bare strip per L.0 spec.
+        - `stem` (Type A) and `connector`: no change (normal
+          residential).
+     2. **Median emergence is free** — `blockRounded = stencil −
+        asphaltRounded` already produces the enclosed loop interior
+        as a positive block. Add a `blockMeta[i].loopMedian = true`
+        marker for blocks whose centroid lies inside a loop ring
+        (point-in-polygon against `loop.body` chains' interior); the
+        bake reads this to paint `lu='park'` instead of the random
+        residential palette. Hint: build the lookup as a list of
+        `{ loopId, interiorPolygon }` from the `loop.role==='body'`
+        chains (Type A) and the planar cycles of `loop.role==='outer'`
+        chains (Type B — needs a small face-finder).
+     3. **Smooth/orientation:** loop body chains are typically
+        oneway, so the "inner side" maps to `right` when traversal
+        direction is CCW around the centroid and `left` when CW.
+        Resolve this once at entry; don't re-derive per segment.
+
+     **Acceptance:**
+     - Benton-toy: outer ring renders with full ROW (treelawn +
+       sidewalk); inner ring renders with treelawn only (no
+       sidewalk strip); interior face paints as green park, not
+       residential.
+     - Waverly-toy: both carriageways render with normal residential
+       ROW; the WV-CUT cross is a bare asphalt strip with no
+       treelawn/sidewalk; the two interior faces between the
+       carriageways paint as green park.
+     - Existing toy chains (HW1-3, VW1-4, STUB-N, HW4-W/E) render
+       unchanged.
+     - LS Benton + Waverly: same after L.5 marks them.
+
+   - **L.2d — Bake adapter.** File: `cartograph/bake-ground.js`. The
+     `buildV2BakeShape` shim reads `v2.blocks[i].lu` to route into
+     `byFaceUse`. Confirm the new `loopMedian` blocks emit with
+     `lu='park'`. May need to add `loopMedian → park` mapping if V2
+     doesn't already overload `lu` directly. Verify ground.json has
+     the expected park face for Benton-toy's interior post-bake.
+
+   **L.2 sub-phasing:** L.2a (propagation) and L.2b (smooth) are
+   independent and can ship as one commit each. L.2c (emitter) is the
+   big one — sub-phase further if it grows past ~200 LOC: (i) per-side
+   eff resolution behind a `chain.loop` lookup, no median yet;
+   (ii) loop-interior face-finder + `loopMedian` flag; (iii) cut-thru
+   bare profile. Each sub-sub-phase its own commit. L.2d is glue,
+   ships with whichever piece needs it.
+
+4. **L.3 — Survey UI.** Consumer-side; depends on L.2 producer changes
+   landing. Two pieces.
+
+   - **L.3a — Smooth-preview overlay.** File:
+     `src/cartograph/SurveyorOverlay.jsx`. For any selected chain with
+     `chain.smooth > 0`, render the subdivided polyline (via
+     `subdividePolyline` from streetProfiles) as a faint solid line at
+     30% opacity, sitting *under* the existing dashed control
+     polyline. No toggle — always on when smooth > 0. The smooth
+     slider in SurveyorPanel already exists; this just makes its
+     effect visible at author time. Per memory
+     `project_overlay_meshes_must_be_transparent` use `transparent
+     opacity={0.3}`. **Acceptance:** dragging the smooth slider in
+     SurveyorPanel shows a live curving polyline overlay in the
+     Designer canvas.
+
+   - **L.3b — Loop-streets section in SurveyorPanel.** File:
+     `src/cartograph/SurveyorPanel.jsx`. New section between Smooth
+     and Caps. Contents per loop in `overlay.loops`: small thumbnail
+     (top-down trace of the member chains), name, type label
+     ("teardrop" | "couplet" | "ring"), member chain count, enable
+     toggle (defaults on for auto-detected; operator can disable for
+     false-positives). Plus a "Mark selected chains as loop" button
+     that's active when ≥2 chains are selected via marquee. The
+     marquee tool itself lives in `src/cartograph/SurveyorOverlay.jsx`
+     and may need a small enhancement to multi-select (BACKLOG
+     "Phase 3 — Marquee select" already plans this; coordinate with
+     that effort or land it as a precondition). **Acceptance:** at
+     LS the Benton + Waverly auto-detected loops appear as cards with
+     correct member counts and thumbnails; toggle-off makes the loop
+     render as ordinary residential.
+
+   - **L.3c — `detectLoops` helper.** File:
+     `cartograph/detectLoops.js` (new) or fold into `derive.js`
+     post-IX-splice. Two passes per L.0 spec:
+     - Type A: for each chain `c` where `points[0]==points[-1]` (or
+       within IX_VERTEX_SNAP), find another chain with same `name`
+       whose endpoint coincides with `c`'s closure point. Emit
+       `{ id, name, type:'teardrop', members:[stem,body] }`.
+     - Type B: build a same-name subgraph keyed by endpoint
+       coincidence; find planar cycles; if all chains in the cycle
+       are `oneway:true`, emit `{ id, name, type:'couplet', members:
+       [...] }`. Any non-oneway in the cycle is a `connector`; any
+       chain whose endpoints lie on the interior of two opposing
+       sides is a `cut-thru`.
+     Output writes to `overlay.loops` as auto-detected entries (with
+     `_auto: true` so operator overrides can be distinguished). The
+     auto-detect rerun-on-save semantics: re-run after any chain
+     edit; if a member chain disappears, mark the loop `_stale: true`
+     and surface in the Loop-streets section for review.
+
+5. **L.4 — Measure inner/outer.** File: `src/cartograph/MeasurePanel.jsx`
+   (and any wider Measure side-bar). When the selected chain has
+   `loop.role ∈ {'body', 'outer'}`, swap the "Left" / "Right" labels
+   for "Outer" / "Inner". Resolution: at chain entry, compute the
+   centroid of the loop's `body` chain (Type A) or of the union of
+   `outer` chains (Type B). For each chain segment, the inner side is
+   whichever side's perpendicular vector points toward that centroid.
+   Cache the inner-side mapping per `(skelId, loopId)` to avoid
+   recomputing every render frame. Default profiles when the operator
+   first edits an inner side preload the cross-section-table values
+   (`pavementHW` kept, `treelawn` kept, `sidewalk: 0` for `body`).
+   **Acceptance:** opening Measure on BENT-BODY shows "Outer" /
+   "Inner" labels; the Inner side defaults to sidewalk=0; dragging
+   Outer-side sidewalk changes only the outer-ring sidewalk width in
+   Designer + bake. No effect on non-loop chains.
+
+6. **L.5 — LS migration + `*Place` audit.** Two pieces.
+
+   - **L.5a — Run `detectLoops` over LS overlay.** Output is a JSON
+     report listing each candidate: `{ name, type, members, score }`.
+     Confidence score: 1.0 for textbook teardrop (one closed chain
+     + one open chain, same name); 0.7 for couplet (2+ oneway chains
+     sharing endpoints, planar cycle); 0.3 for any same-name pair
+     that's structurally suggestive but doesn't pass the strict
+     rules. Operator confirms each candidate via terminal prompt or
+     a Survey-panel checklist (no need to build full UI for the
+     one-time migration; a JSON-edit pass is fine).
+   - **L.5b — Commit `overlay.loops` entries** for confirmed Benton
+     + Waverly + any others the audit surfaces. Per Jacob most
+     `*Place` streets (Oregon, Henrietta, Vail, Preston, Simpson,
+     Nicholson, Whittemore, Kennett, Albion, Park, Mackay) are
+     "places by dint of alleys + walkways" not real loops — the
+     audit is to *check, not assume*. Expected outcome: Benton +
+     Waverly land as loops; Mackay confirmed normal; others
+     confirmed normal.
+   **Acceptance:** Benton's interior renders as green median in
+   Stage/Preview with no sidewalk on the inner ring; Waverly's
+   interior faces render as green medians with the cut-thru showing
+   as a bare asphalt strip. Visible-bug coverage: the original
+   "super bust" from session start (Benton's interior not green,
+   Waverly's median nonexistent).
+
+7. **L.6 — Cleanup.** Three pieces, separate commits.
+
+   - **L.6a — Delete dead V1 paths.** File: `cartograph/derive.js`.
+     Remove `LOOP_STREET_NAMES = new Set(['Benton Place', 'Mackay
+     Place'])` + all 8 references (block-cut skip ~L1297-1320,
+     dead-end skip ~L1492, frontage gap patch ~L1593-1665, median
+     creation ~L1817-1839, SPIKE skip ~L1876, sidewalk skip ~L1941,
+     alley/ROW skip ~L1997, plus the channel-area comment ~L1745).
+     Per memory `feedback_load_bearing_corner_pads` + `feedback_
+     no_speculative_cruft_lists`: visually verify in Designer/
+     Stage/Preview before deletion that no LS surface still depends
+     on the V1 path. The blockMeta `isMedian` flag goes too; check
+     downstream consumers in `bake-ground.js` and `map.json` ingest.
+   - **L.6b — Migrate spec from NOTES + BACKLOG to FEATURES +
+     ARCHITECTURE.** New FEATURES section "Loop streets" with the
+     L.0 spec body (definition, three topologies, per-role
+     cross-section table, data shape). New ARCHITECTURE data-flow
+     note for `overlay.loops` and the auto-detect → operator-
+     override → emitter chain. The NOTES.md 2026-05-10 section + the
+     BACKLOG L.0–L.6 entry get pruned to a short pointer per
+     `feedback_features_md_is_a_working_doc` (NOTES is archival but
+     load-bearing-for-in-flight sections retire when the work
+     lands; BACKLOG entries retire entirely).
+   - **L.6c — Update memory.** Save a `project_loop_streets.md`
+     entry covering the three topologies + the role table so
+     future sessions don't re-derive it. Retire any memory entries
+     that referenced the V1 `LOOP_STREET_NAMES` pattern if they
+     exist.
 
 **Sequencing rules:**
 
