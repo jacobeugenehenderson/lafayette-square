@@ -8,7 +8,7 @@ For the *publisher side* of the slab boundary (what cartograph emits, the bake c
 
 **Pasteable references:** [`reference/INVENTORY-DATA.md`](reference/INVENTORY-DATA.md) (data inventory), [`reference/INVENTORY-API.md`](reference/INVENTORY-API.md) (backend endpoints).
 
-Last verified: 2026-05-12 (inventory walk against actual code; corrections vs. earlier sketches noted inline).
+Last verified: 2026-05-13 (Phase B plans landed; staging URL live; BASE_URL invariant codified — see SLAB-CONTRACT §10.6).
 
 ---
 
@@ -186,6 +186,8 @@ All four HTML entries build into `dist/`. Authoring HTML files (`cartograph.html
 | `public/looks` | 508 KB | Per-Look design.json files |
 | `public/clouds` | 28 KB | Meteorologist `presets.json` + `almanac.json` — **published but not consumed by runtime today** |
 
+**Staging URL** (auto-deploys on push to `cartograph-looks-pass-ab` via `.github/workflows/staging.yml`): [`https://jacobeugenehenderson.github.io/lafayette-square-staging/`](https://jacobeugenehenderson.github.io/lafayette-square-staging/). Slab renders end-to-end as of `a1ebe1b`. The staging build passes `--base=/lafayette-square-staging/` to Vite; all runtime asset fetches route through `import.meta.env.BASE_URL` (memory `project_kit_deploy_path_agnostic`, SLAB-CONTRACT §10.6, couplers plan CC.8). Production builds with default `BASE_URL='/'` for apex-domain deploy.
+
 **Rollback floor:** `v1-pre-cartograph-merge` tags `origin/main` HEAD as of 2026-05-12 (`20866ef`). Push `git push --force-with-lease origin v1-pre-cartograph-merge:main` to restore the last-known-good live deploy.
 
 ---
@@ -219,19 +221,20 @@ Authoring HTMLs (`/cartograph.html`, `/arborist.html`, `/preview.html`) bypass `
 - **Device hash identity.** Every end-user action is keyed by `getDeviceHash()` (deterministic from browser fingerprint). Accounts are device-scoped, not email-scoped.
 - **Time-of-day is live, frame-by-frame.** `useTimeOfDay` + `useSkyState` + `CelestialBodies` + `CloudDome` compute continuously from real time + St. Louis lat/lon. No baked time-of-day data anywhere.
 - **Per-building neon stays live.** `LafayetteScene` reads `buildings.json` lazily; per-building `NeonBand` mount is gated on listing hours from `useListings` and ticks every 60s. The merged-mesh `bake-buildings` artifact is a perf proof in Preview but doesn't replace this consumer.
-- **Hardcoded LS look ID at runtime.** `Scene.jsx:942` mounts `<BakedGround lookId="lafayette-square">`. Other Looks (`valentines`, etc.) exist in `public/looks/` but production doesn't expose a switcher today.
-- **St. Louis lat/lon is hardcoded** in `useWeather.js` and elsewhere; the LS-as-v1-instance pattern (kit ambition per `cartograph/FEATURES.md`) means future neighborhoods need this to become scene-parametric on the LS side too.
+- **Hardcoded LS look ID at runtime.** `Scene.jsx:942` mounts `<BakedGround lookId="lafayette-square">`. Other Looks (`valentines`, etc.) exist in `public/looks/` but production doesn't expose a switcher today. **Phase C migrates this to `INSTANCE.lookId`** per couplers plan §1 + §6.
+- **St. Louis lat/lon is hardcoded** in `useWeather.js`, `useTimeOfDay.js`, `CelestialBodies.jsx`, `SidePanel.jsx`. **Phase C migrates these to `INSTANCE.geography.{lat,lon}`** per couplers plan §6 (Place coupler).
+- **All runtime asset paths route through `import.meta.env.BASE_URL`.** Slab fetches (`BakedGround`, `BakedLamps`, `InstancedTrees`, `LafayettePark`, `treeAtlasMaterial`, `BakedBuildings`, `StageArch`, `CartographApp`) — landed `f871a9d`. JSX asset paths (`PlaceCard.assetUrl()`, `GlassSearch.resolveLogoUrl()`, `LafayetteScene` MapPin) — already kit-portable from prior work. Same build deploys to root (production) or subpath (staging) without code changes. Memory: `project_kit_deploy_path_agnostic`.
 
 ---
 
 ## 7. Pending verifications
 
-Items the inventory walk surfaced but didn't fully resolve:
+Items the inventory walk surfaced. Status reflects Phase B resolution where applicable.
 
-1. **`PlanetariumOverlay` mount.** `Scene.jsx` has `viewMode === 'planetarium'` infrastructure (camera shots, ESC handling, idle timeout) but the `PlanetariumOverlay` component isn't imported in `Scene.jsx` / `LafayetteScene.jsx` / `App.jsx`. Either lazy-imported elsewhere or dead UI plumbing.
-2. **Vite's `copyPublicDir` selectivity.** `public/trees` is 4.9 GB; `public/models` is 255 MB. Need to inspect `dist/` post-build to confirm what actually ships vs. what's dev-only.
-3. **Meteorologist `clouds/{presets,almanac}.json` consumer.** Files exist on disk; `CloudDome` is procedural. The publish-loop is half-wired — either the runtime consumer hasn't shipped yet, or these artifacts are vestigial.
-4. **Cartograph trinity stale claims.** `cartograph/FEATURES.md:259,275` + `cartograph/ARCHITECTURE.md:116,136` reference `src/components/StreetRibbons.jsx` which no longer exists. Needs correction in the cartograph trinity (not this session — flagged for next cartograph session).
+1. **`PlanetariumOverlay` mount** — RUNTIME-DELTA K.3 / RD.3. Phase C's Phase 3 staging walk confirms dead-or-live; strip if confirmed dead.
+2. **Vite's `copyPublicDir` selectivity** — RESOLVED by cleanout plan §S3: production build moves to `copyPublicDir: false` + named allow-list plugin. Phase C executes.
+3. **Meteorologist `clouds/{presets,almanac}.json` consumer** — RESOLVED by couplers plan §3 (strip in v1, defer wire to v1.1 concurrent track). Phase C executes the strip via cleanout §S3.
+4. **Cartograph trinity stale `StreetRibbons.jsx` claims** — partially addressed 2026-05-13 (`cartograph/FEATURES.md L286`). `cartograph/ARCHITECTURE.md L116, L136` still need rewriting; flagged for next cartograph session (ls/BACKLOG K.1).
 
 ---
 
