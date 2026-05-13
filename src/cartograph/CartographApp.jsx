@@ -556,18 +556,26 @@ const SCENE_REGISTRY = {
     hasAerial: true,
     hasHero: true,
     StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => {
-      // Stage live-wire for buildingPalette per couplers plan §1 carve-out:
-      // production reads scene.json palette (frozen-at-bake); Stage retains
-      // live-subscribed palette so Surfaces panel drags retint instantly.
-      // Contained here in the cartograph chunk so LafayetteScene itself
-      // never imports useCartographStore.
-      const paletteOverride = useCartographStore(s => s.buildingPalette)
+      // Stage live-wire for every authored channel — drag a slider, see it
+      // retint instantly. Production omits these overrides and reads
+      // scene.json frozen-at-bake. Contained here in the cartograph chunk
+      // so LafayetteScene itself never imports useCartographStore.
+      // Doctrine: project_authoring_is_live_production_is_static.
+      const paletteOverride         = useCartographStore(s => s.buildingPalette)
+      const materialPhysicsOverride = useCartographStore(s => s.materialPhysics)
+      const materialColorsOverride  = useCartographStore(s => s.materialColors)
       return <>
         <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         {!hiddenLayers.tree && (
           <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         )}
-        <R3FErrorBoundary name="LafayetteScene"><LafayetteScene lookId={lookId} bakeLastMs={bakeLastMs} paletteOverride={paletteOverride} /></R3FErrorBoundary>
+        <R3FErrorBoundary name="LafayetteScene"><LafayetteScene
+          lookId={lookId}
+          bakeLastMs={bakeLastMs}
+          paletteOverride={paletteOverride}
+          materialPhysicsOverride={materialPhysicsOverride}
+          materialColorsOverride={materialColorsOverride}
+        /></R3FErrorBoundary>
         {!hiddenLayers.lamp && (
           <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         )}

@@ -1180,15 +1180,15 @@ function resolveLookId(propLookId) {
   return m ? decodeURIComponent(m[1]) : 'lafayette-square'
 }
 
-function LafayetteScene({ lookId, bakeLastMs, paletteOverride } = {}) {
+function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride } = {}) {
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
-  // Palette: Stage's mount in CartographApp passes a live-subscribed
-  // paletteOverride from the cartograph store so Surfaces panel drags
-  // retint instantly (couplers plan §1 carve-out). Production omits the
-  // override and reads frozen scene.palette.
-  const palette = paletteOverride ?? scene?.palette
-  const materialPhysics = scene?.materialPhysics
-  const materialColors = scene?.materialColors
+  // Stage's mount in CartographApp passes live-subscribed overrides from
+  // the cartograph store so Surfaces panel drags retint instantly.
+  // Production omits the overrides and reads scene.json frozen-at-bake.
+  // Doctrine: project_authoring_is_live_production_is_static.
+  const palette         = paletteOverride         ?? scene?.palette
+  const materialPhysics = materialPhysicsOverride ?? scene?.materialPhysics
+  const materialColors  = materialColorsOverride  ?? scene?.materialColors
 
   const deselect = useSelectedBuilding((state) => state.deselect)
   const listings = useListings((s) => s.listings)
