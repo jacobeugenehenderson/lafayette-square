@@ -2,7 +2,71 @@
 
 > Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
-Last updated: 2026-05-13 (afternoon session — see "2026-05-13 PM" pin below)
+Last updated: 2026-05-13 (evening — neon visibility provisional fix; see "Neon LS-scale visibility" pin below)
+
+## 2026-05-13 evening — Neon LS-scale visibility (provisional fix landed, authoring pass queued)
+
+Background: commit `20ef7b1` swapped LS production's per-Building inline
+`NeonBand` (MeshStandardMaterial, `emissiveIntensity=4.0`, visible-but-ugly)
+for the new shared `<NeonBands>` shader (ShaderMaterial + AdditiveBlending +
+Gaussian core/tube/bleed masks, beautiful-but-thin). The new shader was only
+validated in **toy** (~36m × 68m, camera ~70m away, log-depth + close
+framing); at LS Browse/Hero/Street it was invisible.
+
+**`6aef522` — Provisional shader constants pumped to guarantee LS-scale visibility:**
+- `TUBE_RADIUS`: 0.06 → 0.20m (~8" — thinner went sub-pixel from Browse altitude)
+- `ROOF_LIFT`: 0.05 → 0.30m (clears parapet + 24-bit z-noise; production Canvas does NOT have `logarithmicDepthBuffer` — only Cartograph + Preview do, per `4c53f19`)
+- Frag-shader emissive `* 4.0` multiplier matching the OLD inline `emissiveIntensity`
+- Reverts the magenta-bypass + `alpha=1` diag from `33dcbf0`; restores real Gaussian path
+- `[neon-diag]` and `[neon-pump]` console logs intentionally left in place pending authoring pass
+
+**Toy is not a proving ground for LS-scale visibility.** Same pattern as
+[[feedback_preview_uses_production_pipeline]] but pointed at the *aesthetic*
+side: toy's small scene + close camera made the shader look right while
+hiding two LS-scale failure modes (sub-pixel tube coverage, 24-bit z-fight
+against rooftops without log-depth). Next time a visual-quality shader
+lands via toy, exercise it in Cartograph Stage on the **LS scene** at
+Browse/Hero/Street before declaring it "looks good." Logged as
+[[feedback_toy_not_proving_ground_for_ls_visibility]].
+
+**Open question (deferred):** production `src/components/Scene.jsx`'s Canvas
+does not set `logarithmicDepthBuffer`. `4c53f19` only enabled it on
+Cartograph + Preview. With production at `near=1 / far=60000` and Browse
+altitudes 200–600m, the same z-precision tax that motivated log-depth
+elsewhere is still in play. Audit + decide whether to flip production on,
+separately from neon.
+
+### Tomorrow — Neon authoring controls
+
+Replace the provisional hard-coded constants with Cartograph authoring
+surfaces so visual tuning happens in-tool without redeploys:
+
+1. **Cartograph store extension** — add `neonTube` channel (or extend
+   `neon` itself) with three values: `radius`, `roofLift`, `emissive`.
+   Defaults match the provisional values (0.20 / 0.30 / 4.0).
+2. **`NeonBands.jsx`** — accept the three values via uniforms
+   (`uTubeRadius`, `uRoofLift` are actually CPU-side — radius needs to
+   rebuild geometry on change, lift can be uniform; emissive is pure
+   uniform). Wire `uEmissive` through `_neonUniforms` alongside
+   core/tube/bleed; geometry rebuild driven by `radius` + `roofLift`
+   changes via `useMemo` deps.
+3. **`NeonPump`** — write the three values per-frame (or the new ones
+   that aren't already pumped).
+4. **Sky & Light panel** — new section next to the existing Neon
+   group-of-3 channel: three single-value sliders for tube physics.
+5. **"Force Neon On (test)" toggle** — Designer/Stage authoring aid so
+   neon shows regardless of TOD + business hours. Drives the existing
+   `forceOn` prop path or a new test-only uniform. Off by default;
+   never persisted.
+6. **Strip diagnostics** — `[neon-diag]` (LafayetteScene openPlaces),
+   `[neon-pump]` (NeonBands useEffect), and the PROVISIONAL inline
+   comments in NeonBands.jsx come out once the authoring loop is
+   verified at LS Stage Browse/Hero/Street.
+
+Acceptance: operator can scrub the Force-On toggle, see neon appear
+on all 14 LS places, drag the three sliders, see live shader response,
+and Publish the look — bake captures the values into `scene.json.neon`
+just like the existing core/tube/bleed triple.
 
 ## 2026-05-13 PM — Session-end pin (read first)
 
