@@ -325,8 +325,10 @@ const useCartographStore = create((set, get) => ({
   // (horizon/low/mid/high) + sun-glow row × 7 TOD slots (Dawn 4 cols,
   // Sunrise 4, Noon 1, Golden 4, Sunset 4, Dusk 4, Night 1) = 22
   // columns total. Defaults seeded to match CelestialBodies.jsx's hardcoded
-  // keyframe ladder so unauthored Looks render unchanged. SkyPump in
-  // CartographApp resolves this each frame and writes RGB to skyState.
+  // keyframe ladder so unauthored Looks render unchanged. The cartograph
+  // chunk threads this channel as `skyOverride` into CelestialBodies via
+  // CartographApp.StageEnvironment; production omits the override and
+  // reads scene.sky frozen-at-bake (SC.1, commit c333e50).
   sky:            { values: { ...SKY_DEFAULTS } },
   // The single object the Hero shot frames around. Camera target locks to
   // its centroid every frame. { kind, id } resolved at runtime to a 3D point.
