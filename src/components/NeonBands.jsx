@@ -215,11 +215,18 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   // this useEffect with a per-frame pump in this same place.
   const scene = useSceneJson(lookId || '')
   useEffect(() => {
+    console.log('[neon-pump]', { lookId, sceneIsNull: scene === null, hasNeon: !!scene?.neon, values: scene?.neon?.values })
     if (!lookId || !scene?.neon?.values) return
     const v = scene.neon.values
     _neonUniforms.coreUniform.value  = v.core  ?? 0
     _neonUniforms.tubeUniform.value  = v.tube  ?? 0
     _neonUniforms.bleedUniform.value = v.bleed ?? 0
+    console.log('[neon-pump] uniforms written:', {
+      core: _neonUniforms.coreUniform.value,
+      tube: _neonUniforms.tubeUniform.value,
+      bleed: _neonUniforms.bleedUniform.value,
+    })
+    if (typeof window !== 'undefined') window.__neon = _neonUniforms
   }, [lookId, scene])
 
   const geometry = useMemo(() => {
