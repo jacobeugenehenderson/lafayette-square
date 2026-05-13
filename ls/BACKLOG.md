@@ -39,10 +39,13 @@ Phase C is the entire marriage leap operation, sequenced by `plans/ls_basemap_sw
 - ✅ Couplers plan §1 — `src/lib/useSceneJson.js` landed (the "minimal slab-side data hook" the plan specified) (commit `24efb58`).
 - ✅ Couplers plan §3 (Meteorologist) — partial: bake-scene emits `neon` from design.json. Cloud-artifacts strip stays queued for cleanout exec.
 - ✅ Neon Path B swap (production-side first consumer of `useSceneJson`) — `LafayetteScene` retired inline `NeonBand`, mounted `<NeonBands>` (commit `20ef7b1`). Y-fix shipped (`a0a109a`).
-- ⏳ **Neon visibility bug** — geometry rasterizes correctly (verified hot-magenta override) but original shader output is invisible at production scale. Baby-agent investigation queued; see brief on conversation thread (boost shader emissive intensity, restore tube radius to 0.075m, restore from diag overrides).
-- ⏳ Three diagnostic commits to revert as part of the visibility fix: `c6eea07`, `9906b58`, `33dcbf0`.
-- ⏳ Couplers plan §1 remaining migrations (BakedGround, BakedLamps, InstancedTrees, LafayettePark, LafayetteScene palette pull) — queued.
-- ⏳ Couplers plan §6 `INSTANCE` module — queued; will flip `lookId="lafayette-square"` hardcode in NeonBands + Scene.jsx.
+- ✅ Couplers plan §1 remaining migrations — BakedGround / BakedLamps / LafayettePark / LafayetteScene / InstancedTrees / StreetLights (transitive leak) shipped (commit `bad6b72`). Cartograph store contained to cartograph chunk only; production bundles structurally clean.
+- ⏳ **Slab completeness SC.1–SC.7 — NEW MERGE GATE (added 2026-05-13 after §1 surfaced the gap).** Sky / post-FX / exposure / time / per-shot camera / clouds / arch all authored in cartograph but not yet in `scene.json`. SC.1–SC.7 ship as one unit per `cartograph/BACKLOG.md` "Slab completeness" — Option C, locked. Merge to `main` is gated on this landing. Execution order: SC.4+SC.1 (time + sky) → SC.3+SC.2 (exposure + post-FX) → SC.5 → SC.7 → SC.6. Each sub-phase = persist → bake → consume contract per Couplers §1.
+- ⏳ **Neon visibility bug** — geometry rasterizes correctly (verified hot-magenta override) but original shader output is invisible at production scale. Provisional fix landed (`6aef522`: tube 0.20m / lift 0.30m / ×4 emissive). Authoring controls pass queued — `cartograph/BACKLOG.md` "Neon LS-scale visibility" pin.
+- ⏳ Three diagnostic commits to revert as part of the visibility fix: `c6eea07`, `9906b58`, `33dcbf0` (`33dcbf0` reverted by `6aef522`; `c6eea07` + `9906b58` may still be live — audit).
+- ⏳ Couplers plan §6 `INSTANCE` module — queued; will flip `lookId="lafayette-square"` hardcode in NeonBands + Scene.jsx + St. Louis lat/lon hardcodes in `useWeather` / `useTimeOfDay` / `CelestialBodies` / `SidePanel`.
+- ⏳ Cleanout plan execution — mode-conditional `rollupOptions.input` (drops 4.5 MB cartograph chunk from prod), `copyPublicDir: false` + allow-list, deployment-ID audit script in `deploy.yml`, two verified orphan deletions, CARY-BRIEF relocation.
+- ⏳ RUNTIME-DELTA §3 exhaustive staging walk on real cellular — hard merge gate.
 
 ---
 

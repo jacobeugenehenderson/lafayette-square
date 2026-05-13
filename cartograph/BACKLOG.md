@@ -37,7 +37,15 @@ For each missing channel:
 
 Per-sub-phase verification gate: (1) operator authors a value in Stage, hits Bake (or ↻); (2) `scene.json` shows the value; (3) production staging URL renders with the authored value, defaults otherwise.
 
-**Priority placement.** This sits BETWEEN the v1 marriage leap (in flight — `ls/BACKLOG.md` Phase C) and v2+ hosted bake service (below). Whether SC.1–SC.7 are pre-merge blockers or v1.x concurrent track depends on whether ship-day defaults are acceptable for the missing channels. Sky is probably the load-bearing one — Jacob's Sky & Light authoring is what makes LS LOOK like LS, not generic-3D-neighborhood. Confirm at next session.
+**Priority placement — LOCKED 2026-05-13: SC.1–SC.7 are all pre-merge.** Decided after the slab-completeness gap surfaced during the Couplers §1 staging verification. The seven sub-phases ship as one unit, not seven independent items: bloom + AO + grade + grain + exposure + sun curves + atmosphere all interact aesthetically, so shipping any subset would produce an inconsistent look — "operator-authored sky with default post-FX" reads no more right than "default sky with operator-authored post-FX." There is no SC.1 without SC.2–SC.7. The Phase C merge to `main` is gated on the full slab-completeness sweep landing.
+
+**Suggested execution order (each sub-phase = three-step contract: persist → bake → consume):**
+
+1. **SC.4 + SC.1 together** — time first (sky depends on TOD curves), then sky/atmosphere. Most visible authored layer; biggest "this looks like LS now" win.
+2. **SC.3 + SC.2 together** — exposure first (post-FX thresholds depend on exposure), then bloom/AO/DOF/grade/grain.
+3. **SC.5** — per-shot camera (Hero/Street positions; Browse heading slider already half-routed).
+4. **SC.7** — arch tuning.
+5. **SC.6** — clouds. Re-evaluate strip-vs-wire decision per the slab-completeness principle. If clouds are part of the authored product, wire `<Atmosphere />`; if not, strip the authoring panel (don't ship authored-but-unconsumed UI).
 
 **Why not just keep live-wire from Stage to production?** Because the marriage leap explicitly severed that path (Couplers §1). The whole point of the slab is "production can't reach back into authoring." Live-wire across the seam would unravel §1 and the §1-shipped caching/perf wins with it. The correct path is bake-then-consume, with Stage's live preview retained via the per-channel override-prop pattern §1 established.
 
