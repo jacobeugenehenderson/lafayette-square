@@ -164,15 +164,21 @@ Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `
 {
   "version": 1,
   "look": "lafayette-square",
+  "bakedAt":          1778644947675,
   "palette":          [ "#dcdcdc", "#a0522d", … ],
   "materialPhysics":  { … },
   "materialColors":   { … },
   "layerColors":      { "street": "#4A4A48", "curb": "#A8826A", … },
   "luColors":         { "residential": "#5A8A3A", "commercial": "#A87D3E", … },
   "layerVis":         { "street": true, "edgeline": false, … },
-  "lampGlow":         { … }
+  "lampGlow":         { … },
+  "neon":             { "values": { "core": 1, "tube": 1, "bleed": 1 } }
 }
 ```
+
+`bakedAt` is the bake's completion timestamp (epoch ms) written by `cartograph/bake-scene.js`. Consumer-side: this is the canonical `?t=<bakedAt>` cache-bust seed for production fetches of slab artifacts, decoupling production from the in-memory `useCartographStore.bakeLastMs`. Authoring contexts may continue to use the store's value; both should agree by construction (store seeds itself from `Date.now()` on bake completion; the bake writes the same epoch into `scene.json`). Per couplers plan CC.7.
+
+`neon` carries the per-Look neon-pipeline curve. Today: `{values: {core, tube, bleed}}` — three static 0-1 floats per the HANDOFF-neon Path B render model. The `NeonBands` shader's three Gaussian masks (`uCore`, `uTube`, `uBleed`) read these values once at mount. Future TOD-animated curves will replace `values` with a TOD-keyed structure parallel to `lampGlow`'s animated mode.
 
 | Field | Meaning |
 |---|---|

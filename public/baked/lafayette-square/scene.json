@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "generatedAt": 1778568652917,
+  "bakedAt": 1778644947675,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -85,14 +85,14 @@
     "alley": true,
     "footway": true,
     "cycleway": true,
-    "steps": false,
+    "steps": true,
     "path": true,
     "park": true,
     "water": true,
     "tree": true,
     "lamp": true,
-    "fence": false,
-    "wall": false,
+    "fence": true,
+    "wall": true,
     "retaining_wall": false,
     "hedge": false,
     "labels": true,
@@ -113,6 +113,13 @@
         "trees": 0.06,
         "pool": 0.25
       }
+    }
+  },
+  "neon": {
+    "values": {
+      "core": 1,
+      "tube": 1,
+      "bleed": 1
     }
   }
 }

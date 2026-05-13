@@ -44,6 +44,7 @@ export async function bakeScene({ look = 'default' } = {}) {
   const scene = {
     version: 1,
     look,
+    bakedAt:         Date.now(),
     palette:         design.buildingPalette || DEFAULT_PALETTE,
     materialPhysics: design.materialPhysics || {},
     materialColors:  design.materialColors  || {},
@@ -51,6 +52,7 @@ export async function bakeScene({ look = 'default' } = {}) {
     luColors:        design.luColors        || {},
     layerVis:        design.layerVis        || {},
     lampGlow:        design.lampGlow        || { grass: 0.06, trees: 0.40, pool: 1.0 },
+    neon:            design.neon            || { values: { core: 0, tube: 0, bleed: 0 } },
   }
 
   const outPath = join(outDir, 'scene.json')
