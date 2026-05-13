@@ -29,9 +29,16 @@ import { useSceneJson } from '../lib/useSceneJson.js'
  * group-of-3 channel in Sky & Light.
  */
 
-const TUBE_RADIUS      = 1.0    // DIAG: huge (was 0.06) — to rule out sub-pixel-scale invisibility
+// PROVISIONAL (pre-authoring): chunky values picked to guarantee visibility
+// at LS Browse/Hero/Street distances. Real-neon-realistic radius (~0.06) goes
+// sub-pixel from 200-600m altitude and bloom can't grab the coverage. Tomorrow:
+// parameterize TUBE_RADIUS + ROOF_LIFT + emissive multiplier as Cartograph
+// authoring controls (Sky & Light panel sits next to the existing Neon channel)
+// + add a "Force Neon On (test)" toggle so the shader can be tuned without
+// scrubbing TOD to find an open hour.
+const TUBE_RADIUS      = 0.20   // ~8" diameter — visibly chunky from Browse altitude
 const OFFSET_OUT       = 0.08   // meters past the footprint edge (~3" — real neon mounts close to the wall)
-const ROOF_LIFT        = 2.0    // DIAG: lifted (was 0.05) — to clear any roof / overhang occlusion
+const ROOF_LIFT        = 0.30   // clear roof / parapet / depth noise at LS scale
 const CORNER_ARC_SEGS  = 2      // arc segments per convex corner (K=2 → 3 rings, 45°/seg for a 90° corner)
 const CORNER_ARC_MIN   = 15 * Math.PI / 180  // turn smaller than this stays a single mitred ring
 
@@ -178,13 +185,14 @@ void main() {
   emissive += mix(vColor, vec3(1.0), 0.7) * coreMask  * uCore;
   emissive += vColor                       * tubeMask  * uTube;
   emissive += vColor * 0.4                 * bleedMask * uBleed;
-  emissive *= uForceOn;
+  // PROVISIONAL: matches OLD inline NeonBand's emissiveIntensity=4.0 so the
+  // shader peak clears bloom threshold at LS Browse/Hero/Street. Tomorrow
+  // this becomes a Cartograph-authored multiplier.
+  emissive *= 4.0 * uForceOn;
 
   float alpha = max(coreMask * uCore, max(tubeMask * uTube, bleedMask * uBleed));
   alpha *= uForceOn;
-  // DIAG: bypass discard + force flat emissive so any rasterized fragment is visible
-  emissive = vec3(2.0, 0.0, 2.0); // hot magenta — impossible to miss
-  alpha = 1.0;
+  if (alpha < 0.01) discard;
 
   gl_FragColor = vec4(emissive, alpha);
 }
