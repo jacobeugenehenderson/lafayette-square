@@ -1,131 +1,110 @@
 # Lafayette Square — Backlog
 
-The v1 punchlist for the LS consumer app. Triaged: slab migrations, route strips, mobile-perf gates, doc updates.
+The path from where we are (branch `cartograph-looks-pass-ab`) to where we're going (clean LS app deployed on the cartograph slab at `lafayette-square.com`).
 
-> Part of the **LS trinity** (`ls/FEATURES.md` / `ls/ARCHITECTURE.md` / `ls/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. The cartograph trinity under `cartograph/` covers authoring; this is the consumer side.
+> Part of the **LS trinity** (`ls/FEATURES.md` / `ls/ARCHITECTURE.md` / `ls/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. The cartograph trinity under `cartograph/` covers authoring; this is the consumer side.
 
-Last updated: 2026-05-12 (trinity populated; reference docs landed; `SLAB-CONTRACT.md` at root; L1.1 shipped; quarantine restored; cleanup order reframed)
+Last updated: 2026-05-12 (BACKLOG reframed — Phase A/B/C structure replaces speculative L1/L2 sketch)
 
 ---
 
 ## Session-end pin (read first)
 
-**Cleanup order: migration FIRST, cleanup AFTER, per-step.** The 2026-05-12 "spring cleaning" pass tried to bulk-classify `src/data/*.json` files as orphans before the migrations had happened. The classification was wrong — files that look unreferenced from one angle are still load-bearing from another that hasn't moved yet. `park_species_map.json` broke the bake; all seven quarantined files were restored.
+**The end state is one thing: LS app running stably on the cartograph slab at `lafayette-square.com`.** Mobile-stable, error-free, secure, beautiful, lightweight. Cartograph polish continues on its own track (`cartograph/BACKLOG.md`); we don't wait for it.
 
-Going forward, cleanup attaches to each migration as its closing step:
-- **L1.1 (BakedLamps swap)** → after verification, `street_lamps.json` can be assessed for retirement (currently still needed by `lampLightmap.js` → L1.1b)
-- **L1.2 (park water/paths)** → only after `LafayettePark` no longer imports `park_water.json` + `park_paths.json` can those be removed
-- **L1.3 (buildings strategy)** → outcome dictates whether `src/data/buildings.json` is retired, kept, or hybridized
+**The product doctrine** (see `feedback_beautiful_first_lightweight_51` memory): beautiful + stable are co-equal; stability wins forced tradeoffs 51/49; **never resolve a tradeoff by making the product look cheaper.** The fix to "we can't do both" is always to be more clever.
 
-No bulk orphan pass. Each consumer migration earns the right to retire its specific input. See memory `feedback_orphan_audit_full_repo`.
+**Main is fully pre-slab.** Production today renders via `VectorStreets` + `StreetRibbons` (live) — no `public/baked/`, no `BakedGround.jsx`. The branch ships a complete rendering-architecture switchover, not an incremental migration. That's why this is a three-phase operation, not a flat punchlist.
 
-**Shipped this session:**
-- LS trinity at `ls/` + cartograph trinity moved to `cartograph/`
-- Reference catalogs: `ls/reference/{INVENTORY-DATA,INVENTORY-API}.md`
-- `SLAB-CONTRACT.md` at repo root
-- Facade-decor system end-to-end removal (400 MB freed, `npm run build` unblocked)
-- 40 `ribbons.json.backup-*` files deleted
-- `ARCH.md` → `_archive/handoffs/GATEWAY_ARCH.md`
-- L1.1: production lamps via `BakedLamps`
-- Rollback tag `v1-pre-cartograph-merge` on `origin/main`
+**Three named operations** stand between here and merge-to-main:
 
----
+### Phase A — Diagnostic
+**Reason for the season.** Produce `ls/reference/RUNTIME-DELTA.md` (or equivalent): the canonical document of what changes when this branch lands on main. Three sub-catalogs:
+1. **Architecture diffs** — old VectorStreets/StreetRibbons path vs. new slab path. Per-component what changed and why.
+2. **What ships now that didn't** — authoring surfaces (`/cartograph.html`, `/arborist.html`, `/preview.html`, `src/cartograph/`, `src/arborist/`, `src/preview/`, `src/stage/`, `src/toy/`), the new cross-imports (`useCartographStore` reached from production runtime), bundle deltas, asset volume. Each item gets a verdict: keep / strip / gate / parametrize.
+3. **What stops working or changes for users** — behavioral delta on the consumer surface (place cards, neon, click handling, mobile interactions). Do the nerves still smile?
 
-## L0 — Documentation regime (this session)
+**Phase A writes no code.** Pure read + reason + document. Cleverness pass happens in Phase B against Phase A's findings.
 
-| ID | Item | Status |
-|---|---|---|
-| L0.1 | LS trinity scaffolded under `ls/` | ✅ |
-| L0.2 | Cartograph trinity moved into `cartograph/` | ✅ |
-| L0.3 | Root `README.md` updated as the two-trinity index + reference + slab-contract pointers | ✅ |
-| L0.4 | Live-data inventory → `ls/ARCHITECTURE.md §2` + `ls/reference/INVENTORY-DATA.md` | ✅ |
-| L0.5 | Runtime composition map → `ls/ARCHITECTURE.md §1` | ✅ |
-| L0.6 | API reference → `ls/reference/INVENTORY-API.md` (50+ GAS endpoints, Supabase tables/RPCs/functions, Cloudflare Worker, open-meteo) | ✅ |
-| L0.7 | `SLAB-CONTRACT.md` at root — boundary spec between cartograph and LS | ✅ |
-| L0.8 | Last-known-good tag `v1-pre-cartograph-merge` on `origin/main @ 20866ef` | ✅ pushed |
-| L0.9 | **End-user experience writeup** — populate `ls/FEATURES.md §"The end-user experience"` (Browse / Hero / Street / PlaceCard / Bulletin / Cary / check-in / residence / handles) | Pending — next session |
-| L0.10 | **`SECURITY.md` reference doc** — device-hash identity, admin passphrase scope, GAS PropertiesService, Supabase RLS posture, guardian/claim secret flow, what's mutable by whom | Pending — next session |
+### Phase B — Plan
+Author the two operations from cartograph's v1 punchlist:
+- `project_ls_basemap_swap.md` — the marriage leap. How the rendering-architecture switchover actually ships.
+- `project_pre_public_cleanout_security_audit.md` — excise authoring code/data from prod, sterilize bake, whitelist build. Probably splits into engineering + parametrize + security audit as three documents.
+
+**Parametrize** the LS-as-place from LS-as-kit. Hardcoded `lookId="lafayette-square"`, hardcoded St. Louis lat/lon, hardcoded place names, identity flow assumptions, etc. The consumer-app shell becomes neighborhood-parametric so the kit can serve other instances. Cary's data layer is part of the per-instance config (property IDs, courier scope, Supabase project); Cary the system travels with the kit.
+
+**Plan is surgical.** Each excise/parametrize move identifies the nerves it must reconnect before the next move starts.
+
+### Phase C — Execute
+When absolutely prepared and there will be no surprises. One excise, one parametrize at a time, each in its own commit, each with browser-eyeball verification (mobile + desktop) before the next. The marriage leap = the merge to main once everything passes.
 
 ---
 
-## L1 — v1 slab migration (LS consumes the slab, not live data)
+## Concurrent / non-blocking
 
-The bake exists; LS production doesn't yet trust it. Migrate consumer-side. **Each L1.x item carries its own cleanup closing step (retire the now-orphaned live data source).** No bulk orphan pass; the migration is what proves the file is no longer needed.
+These don't gate the marriage leap; they progress on their own tracks.
 
-| ID | Item | Notes |
-|---|---|---|
-| ~~L1.1~~ | ~~`Scene.jsx` mounts `BakedLamps` instead of `StreetLights` for production~~ | ✅ **Shipped 2026-05-12.** Three-line swap in Scene.jsx; both desktop mount and `DeferredStreetLights` mobile wrapper now use `BakedLamps`. |
-| L1.1b | Migrate `lampLightmap.js` from live `street_lamps.json` to slab `/baked/<look>/lamps.json` | `lampLightmap.js` computes a 256² gaussian-splat DataTexture for shader glow (grass / bark / foliage / paths) and is the second consumer of `street_lamps.json`. Currently sync at module-init; slab fetch is async — touches shader-uniform timing. Sub-phase separately from L1.1 (D.3-bundling rule). |
-| L1.2 | Park water / park paths → slab | `LafayettePark` reads `park_water.json` + `park_paths.json` live. Bake into ground slab (already partial via `bake-ground`?) — verify, complete, then remove live import. |
-| L1.3 | Audit `LafayetteScene`'s live `_allBuildings` consumption | FEATURES marks this "side-burner until product port" — that's now. Decide: keep live (load-bearing for neon + place state) and confirm in docs, or design a hybrid (merged slab mesh + per-id lookup index). |
-| L1.4 | `Terrain.jsx` → slab or freeze | `terrain.json` is currently live. Static data, no reason to be live. |
-| L1.5 | Verify `CloudDome` actually consumes meteorologist artifacts | `public/clouds/{presets,almanac}.json` exist; runtime wiring TO VERIFY per ARCHITECTURE §2. |
-
----
-
-## L2 — Bundle + asset hygiene (mobile first-paint)
-
-| ID | Item | Notes |
-|---|---|---|
-| L2.1 | **Strip authoring routes from prod bundle** | `cartograph` chunk is 4.5 MB minified / 1.1 MB gzipped, shipping to end users. Strip `/cartograph.html`, `/arborist.html`, `/stage`, `/preview.html` from the production Vite build (mode-conditional `rollupOptions.input`?). High win. |
-| L2.2 | Audit `public/` for what `dist/` actually carries | 4.9 GB `public/trees` and 255 MB `public/models` — verify Vite's `copyPublicDir` isn't shipping all of it. Use vite's `publicDir: false` + manual `copy` plugin if needed for selectivity. |
-| L2.3 | `main` chunk (1.2 MB) + `index` chunk (966 KB) review | Split routes (`pages/*.jsx`) via dynamic import; lazy-load modals. |
-| L2.4 | Fix pre-existing build blocker: dead symlinks | `public/models/facade/{decor,decor-icons}` symlinks pointed at unmounted `/Volumes/Today/`. Removed with facade-decor rip; verify no other dangling symlinks in `public/`. |
+| Item | Notes |
+|---|---|
+| **Cartograph evergreen** | Visual stack refinements (`cartograph/BACKLOG.md`) continue. Each bake produces a fresher slab; the deployed site picks up new slab data as you ship. |
+| **Arborist roster swap** | Trees library upgrade post-stability. Hot-swappable into `public/baked/<look>/trees/` + `default.json`; no LS app code changes needed. |
+| **Cary v1 status decision** | Ship behind placeholder vs. wire up Supabase live. Affects bundle weight + secrets. Resolution lands in Phase B's parametrize plan (Cary's data layer is the kit-instance boundary). |
+| **`ls/FEATURES.md` end-user experience writeup** | Browse / Hero / Street / PlaceCard / Bulletin / residence / handles. Doc work, lags execution opportunistically. |
+| **`ls/reference/SECURITY.md`** | Device-hash identity, admin passphrase, Supabase RLS posture. Lands as part of Phase B's security audit doc. |
 
 ---
 
-## L3 — Safety perimeter (don't break the live site)
+## Doc work already done (this session)
 
-Light-touch. The site has no users today but must never be left in a "nothing up there" state.
-
-| ID | Item | Notes |
-|---|---|---|
-| L3.1 | Tag `v1-pre-cartograph-merge` on `main` HEAD before any structural merge | One-command rollback floor |
-| L3.2 | Mobile-aspect smoke check (Preview phone frame) before merging anything touching the runtime mount tree | Informal, not a CI gate |
-| L3.3 | Verify GAS deployment ID unchanged across merge | Per `PUBLISH.md §"Single source of truth"`; drift = "Unknown-action" errors |
-
----
-
-## L4 — Cary status
-
-Cary is alive — keep it functional, not on the chopping block.
-
-| ID | Item | Notes |
-|---|---|---|
-| L4.1 | Document Cary's current state in `ls/FEATURES.md §"Cary"` | Behind "coming soon" placeholders per `PUBLISH.md §5`; architected but not yet phone-OTP'd. `CARY-BRIEF.md` is the source spec. |
-| L4.2 | Decide: ship Cary in v1, or keep behind placeholders | Affects bundle (Supabase client weight), env vars, GitHub Secrets requirement |
+| Item | Where |
+|---|---|
+| LS trinity scaffolded | `ls/{FEATURES,ARCHITECTURE,BACKLOG}.md` |
+| Cartograph trinity moved | `cartograph/{FEATURES,ARCHITECTURE,BACKLOG}.md` |
+| Two-trinity index | Root `README.md` |
+| Live-data inventory | `ls/ARCHITECTURE.md §2` + `ls/reference/INVENTORY-DATA.md` |
+| Runtime composition map | `ls/ARCHITECTURE.md §1` |
+| API reference (50+ GAS endpoints + Supabase + Worker + open-meteo) | `ls/reference/INVENTORY-API.md` |
+| Slab boundary spec | `SLAB-CONTRACT.md` (root) |
+| Rollback floor | Tag `v1-pre-cartograph-merge` on `origin/main @ 20866ef` |
+| Spring cleaning | 400 MB facade-decor + 40 ribbons backups + ARCH.md archived |
+| L1.1 BakedLamps swap | Shipped (production parity with Stage/Preview) |
 
 ---
 
-## L4.5 — Mid-session contradictions surfaced (not yet fixed)
+## Mid-session contradictions (carry-overs)
 
-Items the inventory + slab-contract walks flagged. None affect runtime; all should be resolved in their respective trinity at next touch.
+Items the inventory + slab-contract walks flagged. None affect runtime; all should be resolved at next touch of the relevant trinity.
 
 | ID | Item | Where | Owner |
 |---|---|---|---|
-| L4.5.1 | `cartograph/FEATURES.md:259,275` + `cartograph/ARCHITECTURE.md:116,136` reference `src/components/StreetRibbons.jsx` which no longer exists | Cartograph trinity | Next cartograph session |
-| L4.5.2 | `CloudDome` is procedural — `public/clouds/{presets,almanac}.json` are published but have no runtime consumer. Either wire `CloudDome` to consume or remove the artifacts. | LS runtime + meteorologist scope | Either app |
-| L4.5.3 | `PlanetariumOverlay` has `viewMode === 'planetarium'` infrastructure in `Scene.jsx` but the component is never imported in Scene / LafayetteScene / App. Verify it's not dead infrastructure. | LS runtime | LS session |
-| L4.5.4 | `SLAB-CONTRACT.md §3` claims ground lightmap UVs are bbox-derived; not verified in `BakedGround.jsx`. Could be that UVs travel in `ground.bin` (manifest has no `uvFormat` field for ground, only buildings). | Doc accuracy | Slab-contract update |
-| L4.5.5 | `SLAB-CONTRACT.md §4` calls `scene.json` `layerVis` "redundant" — not verified against `bake-ground.js`. If `layerVis` also drives Designer toggle visibility, it's not redundant. | Doc accuracy | Slab-contract update |
-| L4.5.6 | Cartograph helper docs cross-link to `../cartograph/ARCHITECTURE.md` from `cartograph/README.md` self-reference path was rewritten to `./ARCHITECTURE.md` — verify cartograph README's links still resolve correctly from inside `cartograph/` | Cartograph trinity | Next cartograph session |
+| K.1 | `cartograph/FEATURES.md:259,275` + `cartograph/ARCHITECTURE.md:116,136` reference `src/components/StreetRibbons.jsx` which no longer exists | Cartograph trinity | Next cartograph session |
+| K.2 | `CloudDome` is procedural — `public/clouds/{presets,almanac}.json` are published but have no runtime consumer. Either wire `CloudDome` to consume or remove the artifacts. | LS runtime + meteorologist | Phase A surfaces it; Phase B decides |
+| K.3 | `PlanetariumOverlay` has `viewMode === 'planetarium'` infrastructure in `Scene.jsx` but the component isn't imported anywhere in production. Verify it's not dead infrastructure. | LS runtime | Phase A |
+| K.4 | `SLAB-CONTRACT.md §3` claims ground lightmap UVs are bbox-derived; not verified in `BakedGround.jsx`. (Manifest has no `uvFormat` for ground, only buildings.) | Doc accuracy | Slab-contract update |
+| K.5 | `SLAB-CONTRACT.md §4` calls `scene.json` `layerVis` "redundant" — not verified against `bake-ground.js`. If `layerVis` also drives Designer toggle visibility, it's not redundant. | Doc accuracy | Slab-contract update |
 
-## L5 — Stale handoff docs (kept, with explicit retire conditions)
+---
 
-These were *not* archived because they have live references — but they should retire eventually.
+## Stale handoff docs (kept, with explicit retire conditions)
 
-| ID | Item | Retire when |
-|---|---|---|
-| L5.1 | `HANDOFF-clouds-day3-clouddome-v2.md` | `<Atmosphere />` ships and supersedes the shader tuning rubric (per `meteorologist/README.md` line 33) |
-| L5.2 | `HANDOFF-neon.md` | NeonBands lifts its decision history into `ls/FEATURES.md §"Neon"`; refs in BACKLOG / source comments get rewritten |
-| L5.3 | `HANDOFF-sky-and-light.md` | Sky/light pipeline gets lifted into `cartograph/FEATURES.md` (Stage half) + `ls/FEATURES.md` (runtime half) |
-| L5.4 | `cartograph/SHADOW_HANDOFF.md` | Cartograph BACKLOG item C.4 (Shadow post-pass) lands; doc is ingested into ARCHITECTURE |
-| L5.5 | `_quarantine/src-data/*.json` | Confirm a full session passes without anything missing them; then delete |
+These have live references — they retire when their successor lands.
+
+| Item | Retire when |
+|---|---|
+| `HANDOFF-clouds-day3-clouddome-v2.md` | `<Atmosphere />` ships and supersedes the shader tuning rubric (per `meteorologist/README.md`) |
+| `HANDOFF-neon.md` | NeonBands lifts decision history into `ls/FEATURES.md §"Neon"`; refs in source comments rewritten |
+| `HANDOFF-sky-and-light.md` | Sky/light pipeline gets lifted into both trinities |
+| `cartograph/SHADOW_HANDOFF.md` | Cartograph BACKLOG item C.4 (Shadow post-pass) lands; doc is ingested into ARCHITECTURE |
 
 ---
 
 ## Pointers
 
-- `ls/FEATURES.md` — product orientation
-- `ls/ARCHITECTURE.md` — runtime composition + live-data inventory
-- `cartograph/BACKLOG.md` — authoring-side punchlist
+- [`ls/FEATURES.md`](FEATURES.md) — product orientation
+- [`ls/ARCHITECTURE.md`](ARCHITECTURE.md) — runtime composition + live-data inventory
+- [`ls/reference/INVENTORY-DATA.md`](reference/INVENTORY-DATA.md) — data catalog (partner-pasteable)
+- [`ls/reference/INVENTORY-API.md`](reference/INVENTORY-API.md) — backend catalog (partner-pasteable)
+- [`../SLAB-CONTRACT.md`](../SLAB-CONTRACT.md) — boundary spec between cartograph and LS
+- [`../cartograph/BACKLOG.md`](../cartograph/BACKLOG.md) — authoring-side punchlist (the visual stack v1)
+- Memory: `feedback_beautiful_first_lightweight_51` — product doctrine
+- Memory: `feedback_orphan_audit_full_repo` — orphan-classification rule
