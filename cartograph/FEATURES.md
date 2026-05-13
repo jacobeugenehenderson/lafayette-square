@@ -346,9 +346,11 @@ The cartograph derive pulls OSM water and street lamps; the Python ETLs also pro
 
 The pre-JSX SVG-rendered Designer (`cartograph/render.js`) still exists and contains authoring controls — most notably the `sv-smooth` slider (`render.js:1339`) plus tension/Catmull-Rom plumbing (`smoothPolyD`, `smoothLineD`, `smoothPolyline`). These are dead code from the live authoring path's perspective: the JSX Designer (`src/cartograph/`) does not read them. If you see "Smooth" referenced in render.js and assume it's wired through to current authoring, you will be wrong. The JSX path needs a parallel implementation. Tracked via Survey polish Phase 7.
 
-### Loop street designation is hardcoded by name in `derive.js`
+### Loop streets — in-flight L.0–L.6 (see BACKLOG)
 
-`cartograph/derive.js:1297` defines `LOOP_STREET_NAMES = new Set(['Benton Place', 'Mackay Place'])` and references it in 7+ places (block cutting at L1307/L1492, frontage gap patching at L1597/L1621, median generation at L1821, etc.). There is **no operator-facing affordance** to add a loop street; new ones require a code edit. Pending lift to `overlay.json` `isLoopStreet` flag (Survey polish Phase 5).
+The V1 `LOOP_STREET_NAMES = new Set(['Benton Place', 'Mackay Place'])` at `cartograph/derive.js:1297` is wrong on two counts and dead on a third: **Mackay is not a loop street** (just a normal residential), **Waverly Place is** (and the V1 code path can't represent its divided-couplet topology at all), and **all of derive.js's loop-cut + median-creation paths are dead in production** post the V2 migration — `bake-ground.js` reads block geometry from `buildBlockGeometryV2` against `ribbons.json` and only consults `map.json` for sub-block overlays.
+
+Full spec + phasing in `cartograph/BACKLOG.md` "Loop streets (L.0 through L.6, in flight)"; canonical algorithm in `cartograph/NOTES.md` 2026-05-10 "Loop streets: L.0 architecture lock". Three topologies in scope: Type A teardrop (stem + closed body — Benton), Type B couplet (parallel one-way carriageways enclosing a face, with optional bare cut-thru — Waverly), Type C pure ring (none observed yet). Per-chain `loop: { loopId, role }` flag denormalizes the canonical `overlay.loops[]` list; auto-detect runs in the pipeline, operator override via Survey UI is the safety valve. L.6 deletes `LOOP_STREET_NAMES` + dead V1 paths and migrates this section into a full FEATURES entry.
 
 ### The bake is for mobile delivery
 

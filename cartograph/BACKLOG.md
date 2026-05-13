@@ -2,7 +2,43 @@
 
 > Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
-Last updated: 2026-05-13 (evening — neon visibility provisional fix; see "Neon LS-scale visibility" pin below)
+Last updated: 2026-05-13 (loop streets L.0 + L.1 shipped; L.2 emitter is next — see "Loop streets" pin below for state, then "Neon LS-scale visibility" pin)
+
+## 2026-05-13 — Loop streets L.0 + L.1 shipped; L.2 emitter is next
+
+L.0 spec lock (definition, three topologies, per-role cross-section,
+`overlay.loops` + denormalized per-chain hint data shape, auto-detect +
+operator-override semantics, smooth-preview bundled scope, ribbon-control
+inner/outer scope) landed in `cartograph/NOTES.md` 2026-05-10 "Loop streets:
+L.0 architecture lock". L.1 toy fixtures (Benton-toy teardrop + Waverly-toy
+couplet) landed in `src/data/toy/toy-input.json` with re-derived
+`toy-ribbons.json`; the two new chain sets render as ordinary residential
+ribbons because the emitter is not yet loop-aware (visible-bug coverage
+expected only after L.2).
+
+**State entering L.2:**
+- V1 `LOOP_STREET_NAMES = ['Benton Place', 'Mackay Place']` at
+  `derive.js:1297` is wrong (Mackay is not a loop; Waverly is) and dead
+  in production post-V2 (the loop-cut + median-creation paths land in
+  `map.json` which `bake-ground.js` doesn't read for blocks).
+- Toy carries one Type-A and one Type-B fixture for the emitter to
+  validate against; loop role + oneway annotations are on the input
+  chains but derive-toy.js doesn't propagate them — L.2 wires that and
+  teaches `buildBlockGeometryV2` to honor `chain.loop.role`.
+- Sequencing rule per `feedback_d3_bundling_failure_modes`: keep
+  producer (V2 emitter) and consumer (renderer/UI) changes commit-able
+  separately; do not bundle L.2 emitter work with L.3 UI.
+
+**Open question for the L.2 author:** smooth bake-into-points
+(BACKLOG Phase 7's open ½-hour task) bundled into L.2 or split? Per
+L.0 spec it's bundled — loop bodies make the smoothness gap visible
+fastest. Confirm at session start with Jacob if uncertain.
+
+See "Loop streets (L.0 through L.6, in flight)" entry below for full
+phasing + sequencing rules + LS migration plan (Benton + Waverly +
+`*Place` audit sweep).
+
+---
 
 ## 2026-05-13 evening — Neon LS-scale visibility (provisional fix landed, authoring pass queued)
 
@@ -783,20 +819,23 @@ carriageways enclosing a face, Waverly), Type C pure ring (none yet).
    list + denormalized per-chain hint), auto-detect + override semantics,
    smooth-preview bundled scope, ribbon-control inner/outer scope. See
    NOTES.md.
-2. **L.1 — Toy fixtures.** Type A (Benton-toy teardrop): BENT-STEM off
-   VW3 at (40,-80) → joint at (60,-80); BENT-BODY 12-pt closed circle
-   centered (85,-80) r=25. Type B (Waverly-toy couplet): split HW4 at
-   (-40,120) and (52,120) into HW4-W + HW4-E; insert WV-S (oneway east,
-   bows south to z=125), WV-N (oneway west, bows north to z=115),
-   WV-CUT (bare cross-thru at x=5). Edits land in
-   `src/data/toy/toy-input.json` (the canonical toy "OSM" equivalent
-   — derive-toy.js re-derives to `src/data/toy/toy-ribbons.json` which
-   CartographApp.jsx imports statically). NOTE: don't be fooled by the
-   second file at `cartograph/data/toy/raw/centerlines.json`; it's
-   vestigial from TOY_AUTHORING_PLAN.md and nothing reads from it.
-   Both topologies committed before any emitter work; loop/oneway
-   fields are operator-intent annotations only at this stage —
+2. **L.1 — Toy fixtures.** ✅ landed in `src/data/toy/toy-input.json`
+   (committed via `4319737` "Refresh slabs + authoring state after
+   pipeline refactor"; re-derived `toy-ribbons.json` carries the new
+   chains). Type A (Benton-toy teardrop): BENT-STEM off VW3 at (40,-80)
+   → joint at (60,-80); BENT-BODY 12-pt closed circle centered (85,-80)
+   r=25. Type B (Waverly-toy couplet): split HW4 at (-40,120) and
+   (52,120) into HW4-W + HW4-E; insert WV-S (oneway east, bows south
+   to z=125), WV-N (oneway west, bows north to z=115), WV-CUT (bare
+   cross-thru at x=5). All 7 expected IXs detect cleanly in
+   derive-toy.js. NOTE: don't be fooled by the second file at
+   `cartograph/data/toy/raw/centerlines.json` — it's vestigial from
+   TOY_AUTHORING_PLAN.md and nothing reads from it (see memory
+   `project_toy_canonical_input_path`). Loop/oneway fields on the new
+   chains are operator-intent annotations only at this stage —
    derive-toy.js doesn't propagate them yet (L.2 wires propagation).
+   Visible-bug coverage: none yet; the new fixtures render as ordinary
+   residential ribbons because the emitter is still loop-unaware.
 3. **L.2 — V2 emitter + smooth bake-into-points.** `buildBlockGeometryV2`
    honors `chain.loop.role` for asymmetric ped-zone emission (`body` inner =
    no sidewalk; `cut-thru` = bare profile). Median emerges as park-LU
