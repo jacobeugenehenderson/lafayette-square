@@ -9,9 +9,7 @@ import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import { EffectComposer, Bloom, N8AO } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
-import {
-  AerialPerspective, FilmGrade, FilmGrain, envState,
-} from '../stage/StageApp.jsx'
+import { AerialPerspective, FilmGrade, FilmGrain } from '../components/PostProcessing.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'

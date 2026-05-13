@@ -133,6 +133,41 @@ export const NEON_FIELDS = [
 export const NEON_FLAT_DEFAULTS = { core: 0, tube: 0, bleed: 0 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
+// Grade (Post card) — FilmGrade's grade-side knobs that ride on top of
+// the time-of-day color physics. Promoted from envState 2026-05-13
+// (SC.2 follow-up) so the operator's grade authoring rounds-trips
+// through bake → scene.json into production. Defaults match the legacy
+// envState.grade* values verbatim, so unauthored Looks are unchanged.
+// `toe` is the literal FilmGrade uniform; the operator-facing Fill
+// channel (FILL_FIELDS) is a separate piecewise mapping that overrides
+// toe at apply time for the "distinct ↔ soft shadows" axis.
+export const GRADE_FIELDS = [
+  { key: 'contrast',   label: 'Contrast',   min: 0,   max: 1,   step: 0.02 },
+  { key: 'toe',        label: 'Toe',        min: 0,   max: 0.6, step: 0.02 },
+  { key: 'saturation', label: 'Saturation', min: 0.5, max: 1.5, step: 0.05 },
+  { key: 'vignette',   label: 'Vignette',   min: 0,   max: 2,   step: 0.1  },
+]
+export const GRADE_FLAT_DEFAULTS = { contrast: 0.42, toe: 0.28, saturation: 1.1, vignette: 1.0 }
+export const GRADE_FIELD_KEYS = GRADE_FIELDS.map(f => f.key)
+
+// Grain (Post card) — single-value scale multiplier on the FilmGrain
+// noise. Default 1.0 matches the legacy envState.grainScale.
+export const GRAIN_FIELDS = [
+  { key: 'scale', label: 'Scale', min: 0, max: 3, step: 0.1 },
+]
+export const GRAIN_FLAT_DEFAULTS = { scale: 1.0 }
+export const GRAIN_FIELD_KEYS = ['scale']
+
+// Shadow (Post card) — SoftShadows parameters. Promoted from envState.
+// Size is the kernel radius; samples is the per-pixel sample count.
+// Defaults match the legacy envState.shadowSize / shadowSamples.
+export const SHADOW_FIELDS = [
+  { key: 'size',    label: 'Size',    min: 10, max: 100, step: 1 },
+  { key: 'samples', label: 'Samples', min: 4,  max: 32,  step: 1 },
+]
+export const SHADOW_FLAT_DEFAULTS = { size: 52, samples: 16 }
+export const SHADOW_FIELD_KEYS = SHADOW_FIELDS.map(f => f.key)
+
 // Milky Way (Sky & Light, CELESTIAL group) — binary on/off. Cross-slot
 // fade comes from the resolver's lerp between authored slots, not from
 // dialing a slider. Runtime multiplies by nightFactor so it's hidden

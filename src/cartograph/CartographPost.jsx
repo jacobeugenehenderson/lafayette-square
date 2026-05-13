@@ -21,6 +21,9 @@ import {
   FILL_FIELDS, FILL_FLAT_DEFAULTS,
   EXPOSURE_FIELDS, EXPOSURE_FLAT_DEFAULTS,
   AO_FIELDS, AO_FLAT_DEFAULTS,
+  GRADE_FIELDS, GRADE_FLAT_DEFAULTS,
+  GRAIN_FIELDS, GRAIN_FLAT_DEFAULTS,
+  SHADOW_FIELDS, SHADOW_FLAT_DEFAULTS,
 } from './skyLightChannels.js'
 
 // Generic store-bound TodChannel mount. Reads channel + 6 actions by
@@ -90,6 +93,14 @@ export default function CartographPost() {
       <SectionLabel label="Soften" />
       <StoreChannel name="bloom" label="Bloom"
         fields={BLOOM_FIELDS} flatDefaults={BLOOM_FLAT_DEFAULTS} />
+
+      <SectionLabel label="Finish" />
+      <StoreChannel name="grade" label="Grade"
+        fields={GRADE_FIELDS} flatDefaults={GRADE_FLAT_DEFAULTS} />
+      <StoreChannel name="grain" label="Grain"
+        fields={GRAIN_FIELDS} flatDefaults={GRAIN_FLAT_DEFAULTS} />
+      <StoreChannel name="shadow" label="Shadow"
+        fields={SHADOW_FIELDS} flatDefaults={SHADOW_FLAT_DEFAULTS} />
     </div>
   )
 }

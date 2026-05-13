@@ -1,20 +1,21 @@
 /**
  * Stage — shared utility module for cartograph-hosted Stage.
  *
- * Exports the post-FX (FilmGrade / FilmGrain / AerialPerspective),
- * environment + arch defaults, the SHOTS table, StageShadows, the
- * Hero preview helpers, and the StagePanel UI. Consumed by
- * CartographApp.jsx (the real Stage host) and PreviewApp.jsx.
+ * Exports arch defaults, the SHOTS table, Hero preview helpers, and the
+ * StagePanel UI. Consumed by CartographApp.jsx (the real Stage host)
+ * and PreviewApp.jsx. Post-FX (FilmGrade / FilmGrain / AerialPerspective
+ * / PostProcessing / StageFog / StageShadows) live in
+ * src/components/PostProcessing.jsx (SC.2 + SC.3, 2026-05-13). The
+ * legacy envState DOM↔R3F bridge is retired — grade / grain / shadow
+ * are now full TOD channels mounted in CartographPost.
  *
  * The standalone /stage route was retired 2026-05-02 — this file
  * has no default export. See feedback_stage_standalone_should_die.md.
  */
 
-import { useRef, useEffect, useMemo, forwardRef, useState, useCallback } from 'react'
+import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, SoftShadows } from '@react-three/drei'
-import { EffectComposer, Bloom, N8AO } from '@react-three/postprocessing'
-import { Effect, BlendFunction } from 'postprocessing'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
 import LafayetteScene from '../components/LafayetteScene'
@@ -29,183 +30,9 @@ import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { catmullRom, EASINGS } from '../preview/heroAnim'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
-import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import {
-  BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
-  WARMTH_FLAT_DEFAULTS,
-  FILL_FLAT_DEFAULTS,
-  EXPOSURE_FLAT_DEFAULTS,
-  AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
-  MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, MIST_DENSITY_SCALE,
-  HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
-} from '../cartograph/skyLightChannels.js'
 import useSkyState from '../hooks/useSkyState'
 import DawnTimeline from '../components/DawnTimeline'
 
-// ── Post-processing effects (copied from Scene.jsx) ─────────────────────────
-
-class FilmGradeEffect extends Effect {
-  constructor() {
-    super('FilmGrade', /* glsl */`
-      uniform float uSunAlt;
-      uniform float uContrast;
-      uniform float uToe;
-      uniform float uSat;
-      uniform float uVignette;
-      uniform float uExposure;
-      uniform float uWarmth;
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        vec3 c = inputColor.rgb * uExposure;
-        float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
-        vec3 curved = c * c * (3.0 - 2.0 * c);
-        c = mix(c, curved, uContrast);
-        float toe = smoothstep(0.0, 0.25, lum);
-        c *= mix(uToe, 1.0, toe);
-        float shadowSat = 1.0 + (1.0 - toe) * 0.3;
-        vec3 gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
-        c = mix(gray, c, shadowSat);
-        float midBell = 4.0 * lum * (1.0 - lum);
-        c *= 1.0 + midBell * 0.15;
-        vec3 warmTint = vec3(1.04, 0.98, 0.92);
-        vec3 coolTint = vec3(0.96, 0.98, 1.04);
-        vec3 splitTone = mix(warmTint, coolTint, smoothstep(0.3, 0.7, lum));
-        c *= splitTone;
-        float goldenT = exp(-pow((uSunAlt - 0.08) / 0.12, 2.0));
-        float nightT = smoothstep(0.05, -0.15, uSunAlt);
-        c *= mix(vec3(1.0), vec3(1.06, 1.0, 0.88), goldenT * 0.5);
-        c *= mix(vec3(1.0), vec3(0.88, 0.92, 1.08), nightT * 0.4);
-        // Operator Warmth — Photo Filter math: tint then re-normalize
-        // luminosity so adding warmth doesn't change brightness. Density
-        // 0.6 max (cool/warm tint at the extremes is overt but not
-        // hue-rotating). Acts on every pixel — Photoshop "Photo Filter
-        // adjustment layer" analog, not a Hue/Saturation hue shift.
-        float warmthBias = (uWarmth - 0.5) * 2.0;
-        vec3 photoTint = warmthBias >= 0.0
-          ? vec3(1.10, 1.00, 0.84)   // warm reference (sodium)
-          : vec3(0.86, 0.94, 1.12);  // cool reference (moonlight)
-        float photoDensity = abs(warmthBias) * 0.6;
-        vec3 tinted = c * mix(vec3(1.0), photoTint, photoDensity);
-        float lumIn  = dot(c,      vec3(0.2126, 0.7152, 0.0722));
-        float lumOut = dot(tinted, vec3(0.2126, 0.7152, 0.0722));
-        c = tinted * (lumIn / max(lumOut, 1e-4));
-        gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
-        c = mix(gray, c, uSat);
-        c = mix(c, inputColor.rgb, smoothstep(0.7, 1.0, lum));
-        vec2 center = uv - 0.5;
-        float vignette = 1.0 - dot(center, center) * uVignette;
-        vignette = smoothstep(0.0, 1.0, clamp(vignette, 0.0, 1.0));
-        c *= vignette;
-        outputColor = vec4(c, inputColor.a);
-      }
-    `, {
-      uniforms: new Map([
-        ['uSunAlt', new THREE.Uniform(0.5)],
-        ['uContrast', new THREE.Uniform(0.42)],
-        ['uToe', new THREE.Uniform(0.28)],
-        ['uSat', new THREE.Uniform(1.1)],
-        ['uVignette', new THREE.Uniform(1.0)],
-        ['uExposure', new THREE.Uniform(0.95)],
-        ['uWarmth', new THREE.Uniform(0.5)],
-      ])
-    })
-  }
-  update() {
-    const tod = useTimeOfDay.getState()
-    this.uniforms.get('uSunAlt').value = tod.getLightingPhase().sunAltitude
-    this.uniforms.get('uContrast').value = envState.gradeContrast
-    this.uniforms.get('uSat').value = envState.gradeSaturation
-    this.uniforms.get('uVignette').value = envState.gradeVignette
-    // Operator-authored channels (Post card): exposure, warmth, fill.
-    // Resolved at the current TOD minute from the cartograph store.
-    const slotMins = getTodSlotMinutes(tod.currentTime)
-    const minute   = tod.getMinuteOfDay()
-    const cs = useCartographStore.getState()
-    const expVal    = resolveGroupAtMinute(cs.exposure, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
-    const warmthVal = resolveGroupAtMinute(cs.warmth,   minute, slotMins, ['value'], WARMTH_FLAT_DEFAULTS).value
-    const fillVal   = resolveGroupAtMinute(cs.fill,     minute, slotMins, ['value'], FILL_FLAT_DEFAULTS).value
-    // Fill → uToe piecewise: 0..1 maps 0→0.28 (current default),
-    // 1..2 maps 0.28→1.0 (lifted shadows). Identity at fill = 1.
-    const toeMapped = fillVal <= 1
-      ? fillVal * 0.28
-      : 0.28 + (fillVal - 1) * 0.72
-    this.uniforms.get('uExposure').value = expVal
-    this.uniforms.get('uWarmth').value   = warmthVal
-    this.uniforms.get('uToe').value      = toeMapped
-  }
-}
-export const FilmGrade = forwardRef((_, ref) => {
-  const effect = useMemo(() => new FilmGradeEffect(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
-
-class FilmGrainEffect extends Effect {
-  constructor() {
-    super('FilmGrain', /* glsl */`
-      uniform float uSeed; uniform float uScale;
-      float grainHash(vec2 p) { vec3 p3=fract(vec3(p.xyx)*0.1031); p3+=dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        float lum=dot(inputColor.rgb,vec3(0.2126,0.7152,0.0722));
-        float darkSuppress=smoothstep(0.0,0.08,lum);
-        float strength=mix(0.007,0.002,smoothstep(0.0,0.5,lum))*uScale*darkSuppress;
-        float grain=(grainHash(uv*1000.0+uSeed)-0.5)*strength;
-        outputColor=vec4(inputColor.rgb+grain,inputColor.a);
-      }
-    `, { uniforms: new Map([['uSeed', new THREE.Uniform(0)], ['uScale', new THREE.Uniform(1)]]) })
-  }
-  update() {
-    this.uniforms.get('uSeed').value = Math.random() * 1000
-    const alt = useTimeOfDay.getState().getLightingPhase().sunAltitude
-    const day = alt > 0.1 ? 1 : alt < -0.15 ? 0 : (alt + 0.15) / 0.25
-    this.uniforms.get('uScale').value = (0.4 + day * 0.6) * envState.grainScale
-  }
-}
-export const FilmGrain = forwardRef((_, ref) => {
-  const effect = useMemo(() => new FilmGrainEffect(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
-
-class AerialPerspectiveEffect extends Effect {
-  constructor() {
-    super('AerialPerspective', /* glsl */`
-      uniform float uHazeStrength; uniform vec3 uHazeColor;
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        float horizonBand=smoothstep(0.15,0.55,uv.y)*smoothstep(0.85,0.55,uv.y);
-        float lum=dot(inputColor.rgb,vec3(0.2126,0.7152,0.0722));
-        float contrastLoss=smoothstep(0.05,0.4,lum)*smoothstep(0.9,0.4,lum);
-        float haze=horizonBand*contrastLoss*uHazeStrength;
-        outputColor=vec4(mix(inputColor.rgb,uHazeColor,haze),inputColor.a);
-      }
-    `, { uniforms: new Map([['uHazeStrength', new THREE.Uniform(0)], ['uHazeColor', new THREE.Uniform(new THREE.Vector3(0.7, 0.75, 0.82))]]) })
-  }
-}
-class AerialPerspectiveWithEnv extends AerialPerspectiveEffect {
-  update() {
-    // Halo channel (Sky & Light) → AerialPerspective uniforms. Strength
-    // resolved from the operator-authored channel; sun-altitude
-    // dayFactor still rides on top so halo doesn't fire at night
-    // (physics modifier per project_celestial_physics_not_authored).
-    const tod = useTimeOfDay.getState()
-    const alt = tod.getLightingPhase().sunAltitude
-    const dayFactor = alt > 0.1 ? 1 : alt < -0.05 ? 0 : (alt + 0.05) / 0.15
-    const slotMins = getTodSlotMinutes(tod.currentTime)
-    const halo = resolveGroupAtMinute(
-      useCartographStore.getState().halo,
-      tod.getMinuteOfDay(), slotMins,
-      HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
-    )
-    this.uniforms.get('uHazeStrength').value = dayFactor * halo.strength
-    _haloC.set(halo.color)
-    this.uniforms.get('uHazeColor').value.set(_haloC.r, _haloC.g, _haloC.b)
-  }
-}
-const _haloC = new THREE.Color()
-export const AerialPerspective = forwardRef((_, ref) => {
-  const effect = useMemo(() => new AerialPerspectiveWithEnv(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
-
-// (bloom is driven directly in PostProcessing's useFrame)
 
 // ── Tickers ─────────────────────────────────────────────────────────────────
 
@@ -225,43 +52,10 @@ function FrameLimiter() {
   return null
 }
 
-// ── Environment state (DOM ↔ R3F bridge) ────────────────────────────────────
-
-export const ENV_DEFAULTS = {
-  // Exposure, AO, and Bloom moved to the cartograph store as TOD-
-  // authored channels (Post card). FilmGrade resolves them per frame
-  // from the store; the legacy envState fields are gone.
-  // Haze
-  // hazeStrength moved to the cartograph store as a TOD-authored Halo
-  // channel (Sky & Light card).
-  // Film Grade
-  gradeContrast: 0.42,
-  gradeToe: 0.28,
-  gradeSaturation: 1.1,
-  gradeVignette: 1.0,
-  // Film Grain
-  grainScale: 1.0,           // multiplier on base grain
-  // Shadows
-  shadowSize: 52,
-  shadowSamples: 16,
-}
-
-export const envState = { ...ENV_DEFAULTS }
-let envListeners = new Set()
-function subscribeEnv(fn) { envListeners.add(fn); return () => envListeners.delete(fn) }
-function notifyEnv() { for (const fn of envListeners) fn() }
-
-function useEnvState() {
-  const [env, _setEnv] = useState({ ...envState })
-  useEffect(() => subscribeEnv(() => _setEnv({ ...envState })), [])
-  return env
-}
-
-export function setEnv(updates) {
-  Object.assign(envState, updates)
-  console.log('[env]', Object.keys(updates).join(','), '→', JSON.stringify(updates))
-  notifyEnv()
-}
+// ── Environment state retired ──────────────────────────────────────────────
+// The grade/grain/shadow envState sliders were promoted to TOD channels
+// 2026-05-13 (SC.2 follow-up). All Stage authoring now flows through the
+// cartograph store + scene.json bake pipeline. `envState.js` deleted.
 
 // ── Arch & Horizon authoring state ─────────────────────────────────────────
 // The gateway arch is a landmark, not literal geography. Its distance,
@@ -313,114 +107,6 @@ export function setArch(updates) {
   notifyArch()
 }
 
-// ── Post-processing ─────────────────────────────────────────────────────────
-// EffectComposer children are static — never re-render.
-// All env-driven params are set imperatively per-frame via refs.
-
-export function PostProcessing() {
-  const bloomRef = useRef()
-  const aoRef = useRef()
-  const { gl, invalidate } = useThree()
-
-  // Stage uses frameloop="demand". Slider edits mutate envState but don't
-  // change any Three prop, so R3F never re-renders and the per-frame
-  // driver below stops running. Subscribe to env changes and force one
-  // frame so the new values land.
-  useEffect(() => subscribeEnv(invalidate), [invalidate])
-
-  useFrame(() => {
-    // Exposure (applied via FilmGrade uExposure uniform, not gl.toneMappingExposure)
-    // gl.toneMappingExposure is overridden by EffectComposer
-
-    // AO — N8AOPostPass params resolved from the Post card's `ao`
-    // channel (group of 3: radius/intensity/distanceFalloff).
-    const ao = aoRef.current
-    if (ao?.configuration) {
-      const tod = useTimeOfDay.getState()
-      const slotMins = getTodSlotMinutes(tod.currentTime)
-      const aoTriple = resolveGroupAtMinute(
-        useCartographStore.getState().ao,
-        tod.getMinuteOfDay(), slotMins,
-        AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
-      )
-      ao.configuration.aoRadius = aoTriple.radius
-      ao.configuration.intensity = aoTriple.intensity
-      ao.configuration.distanceFalloff = aoTriple.distanceFalloff
-    }
-
-    // Bloom — base values now resolved from the cartograph store's
-    // `bloom` TOD channel; sun-altitude `dk` adaptive bump rides on top.
-    // `intensity` is a real setter on BloomEffect; threshold/smoothing
-    // must be set on `luminanceMaterial`, not on the effect (the latter
-    // are constructor-only options that silently no-op if mutated).
-    const bloom = bloomRef.current
-    if (bloom) {
-      const tod = useTimeOfDay.getState()
-      const alt = tod.getLightingPhase().sunAltitude
-      const dk = alt > 0.1 ? 0 : alt < -0.15 ? 1 : 1 - (alt + 0.15) / 0.25
-      const bch = useCartographStore.getState().bloom
-      const slotMins = getTodSlotMinutes(tod.currentTime)
-      const base = resolveGroupAtMinute(
-        bch, tod.getMinuteOfDay(), slotMins,
-        BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
-      )
-      bloom.intensity = base.intensity + dk * 0.5
-      const lm = bloom.luminanceMaterial
-      if (lm) {
-        lm.threshold = base.threshold - dk * 0.5
-        lm.smoothing = base.smoothing + dk * 0.4
-      }
-    }
-
-    // Haze, Grade, Grain driven by their own update() methods reading envState
-  })
-
-  return (
-    <EffectComposer>
-      <N8AO ref={aoRef} halfRes={false} aoRadius={15} intensity={2.5}
-        distanceFalloff={0.3} quality="medium" />
-      <Bloom ref={bloomRef} intensity={0.5} luminanceThreshold={0.85}
-        luminanceSmoothing={0.4}
-        blendFunction={BlendFunction.SCREEN} />
-      <AerialPerspective />
-      <FilmGrade />
-      <FilmGrain />
-    </EffectComposer>
-  )
-}
-
-// ── Atmospheric fog (blends ground into sky at horizon) ─────────────────────
-
-export function StageFog() {
-  const { scene } = useThree()
-  const fogRef = useRef()
-
-  useEffect(() => {
-    scene.fog = new THREE.FogExp2(MIST_FLAT_DEFAULTS.color, MIST_FLAT_DEFAULTS.density * MIST_DENSITY_SCALE)
-    fogRef.current = scene.fog
-    return () => { scene.fog = null }
-  }, [scene])
-
-  // Mist channel (Sky & Light) → scene.fog. Density slider is normalized
-  // 0–1; runtime maps to FogExp2 density via MIST_DENSITY_SCALE. Color
-  // pushes directly. Replaces the previous "fog tracks horizonColor"
-  // behavior — operator now owns mist color authoring.
-  useFrame(() => {
-    if (!fogRef.current) return
-    const tod = useTimeOfDay.getState()
-    const slotMins = getTodSlotMinutes(tod.currentTime)
-    const m = resolveGroupAtMinute(
-      useCartographStore.getState().mist,
-      tod.getMinuteOfDay(), slotMins,
-      MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS,
-    )
-    fogRef.current.density = m.density * MIST_DENSITY_SCALE
-    fogRef.current.color.set(m.color)
-  })
-
-  return null
-}
-
 // ── Scene diagnostic (temporary) ────────────────────────────────────────────
 
 function SceneDiag() {
@@ -437,14 +123,14 @@ function SceneDiag() {
   return null
 }
 
-// ── Reactive soft shadows ───────────────────────────────────────────────────
-
-export function StageShadows() {
-  const env = useEnvState()
-  return <SoftShadows size={env.shadowSize} samples={env.shadowSamples} focus={0.35} />
-}
-
-// ── Environment controls ────────────────────────────────────────────────────
+// ── StageShadows + EnvironmentControls retired ──────────────────────────────
+// StageShadows moved to src/components/PostProcessing.jsx (shadow channel,
+// SC.2 follow-up 2026-05-13). EnvironmentControls's grade/grain/shadow
+// sliders are now standard TodChannels mounted by CartographPost; the
+// arch + horizon authoring surface promoted to its own top-level
+// "Hero & Horizon" card (no Environment wrapper). Kit-generic phrasing —
+// "Hero" is the shot subject role; "Arch" is reserved for SC.7's
+// LS-specific consolidation inside this card.
 
 function ToggleRow({ label, value, onChange }) {
   return (
@@ -458,55 +144,6 @@ function ToggleRow({ label, value, onChange }) {
         <div className="absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all"
           style={{ left: value ? 16 : 2 }} />
       </button>
-    </div>
-  )
-}
-
-function EnvironmentControls() {
-  const env = useEnvState()
-
-  return (
-    <div className="space-y-2">
-      {/* Exposure, AO, Bloom moved to the Post card (TOD-authored).
-          Aerial Haze moved to the Sky & Light card as "Halo". */}
-
-<Collapsible label="Film Grade">
-        <div className="space-y-1">
-          <SliderRow label="Contrast" value={env.gradeContrast} min={0} max={1} step={0.02}
-            onChange={(v) => setEnv({ gradeContrast: v })} />
-          <SliderRow label="Toe (blacks)" value={env.gradeToe} min={0} max={0.6} step={0.02}
-            onChange={(v) => setEnv({ gradeToe: v })} />
-          <SliderRow label="Saturation" value={env.gradeSaturation} min={0.5} max={1.5} step={0.05}
-            onChange={(v) => setEnv({ gradeSaturation: v })} />
-          <SliderRow label="Vignette" value={env.gradeVignette} min={0} max={2} step={0.1}
-            onChange={(v) => setEnv({ gradeVignette: v })} />
-        </div>
-      </Collapsible>
-
-      <Collapsible label="Film Grain">
-        <div className="space-y-1">
-          <SliderRow label="Scale" value={env.grainScale} min={0} max={3} step={0.1}
-            onChange={(v) => setEnv({ grainScale: v })} />
-        </div>
-      </Collapsible>
-
-      <Collapsible label="Shadows">
-        <div className="space-y-1">
-          <SliderRow label="Size" value={env.shadowSize} min={10} max={100}
-            onChange={(v) => setEnv({ shadowSize: v })} />
-          <SliderRow label="Samples" value={env.shadowSamples} min={4} max={32} step={1}
-            onChange={(v) => setEnv({ shadowSamples: v })} />
-        </div>
-      </Collapsible>
-
-      <ArchHorizonControls />
-
-      <button
-        className="w-full py-1 rounded-lg text-caption font-medium cursor-pointer transition-colors"
-        style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)',
-          border: '1px solid var(--outline-variant)' }}
-        onClick={() => setEnv({ ...ENV_DEFAULTS })}
-      >Reset to defaults</button>
     </div>
   )
 }
@@ -540,7 +177,7 @@ function UplightControls({ side, a }) {
 function ArchHorizonControls() {
   const a = useArchState()
   return (
-    <Collapsible label="Arch & Horizon">
+    <Collapsible label="Hero & Horizon">
       <div className="space-y-1">
         <SliderRow label="Arch Distance" value={a.archDistance} min={400} max={2000} step={10}
           onChange={(v) => setArch({ archDistance: v })} />
@@ -1730,11 +1367,10 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         </Collapsible>
       </div>
 
-      {/* Environment — ambient/world */}
+      {/* Hero & Horizon — Hero subject placement + sky horizon. SC.7
+          will fold arch-specific consolidation in as LS's Hero subject. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <Collapsible label="Environment">
-          <EnvironmentControls />
-        </Collapsible>
+        <ArchHorizonControls />
       </div>
 
       {/* Surfaces — defaults to the standalone /stage mockup gallery; the

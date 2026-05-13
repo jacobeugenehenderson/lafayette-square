@@ -30,6 +30,10 @@ import {
   AMBIENT_FLAT_DEFAULTS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FLAT_DEFAULTS, DIRMOON_FLAT_DEFAULTS,
   CONSTELLATIONS_FLAT_DEFAULTS, MILKYWAY_FLAT_DEFAULTS,
+  BLOOM_FLAT_DEFAULTS, AO_FLAT_DEFAULTS, EXPOSURE_FLAT_DEFAULTS,
+  WARMTH_FLAT_DEFAULTS, FILL_FLAT_DEFAULTS,
+  MIST_FLAT_DEFAULTS, HALO_FLAT_DEFAULTS,
+  GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS,
 } from '../src/cartograph/skyLightChannels.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -75,6 +79,20 @@ export async function bakeScene({ look = 'default' } = {}) {
     dirMoon:        design.dirMoon        || { values: { ...DIRMOON_FLAT_DEFAULTS } },
     constellations: design.constellations || { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
     milkyWay:       design.milkyWay       || { values: { ...MILKYWAY_FLAT_DEFAULTS } },
+    // SC.2 + SC.3 — post-FX channels (Post card + Sky & Light). Operator
+    // authors via cartograph sliders; defaults seeded from
+    // skyLightChannels.js so an unauthored Look renders identically to
+    // today's hardcoded post-FX literals.
+    bloom:    design.bloom    || { values: { ...BLOOM_FLAT_DEFAULTS } },
+    ao:       design.ao       || { values: { ...AO_FLAT_DEFAULTS } },
+    exposure: design.exposure || { values: { ...EXPOSURE_FLAT_DEFAULTS } },
+    warmth:   design.warmth   || { values: { ...WARMTH_FLAT_DEFAULTS } },
+    fill:     design.fill     || { values: { ...FILL_FLAT_DEFAULTS } },
+    mist:     design.mist     || { values: { ...MIST_FLAT_DEFAULTS } },
+    halo:     design.halo     || { values: { ...HALO_FLAT_DEFAULTS } },
+    grade:    design.grade    || { values: { ...GRADE_FLAT_DEFAULTS } },
+    grain:    design.grain    || { values: { ...GRAIN_FLAT_DEFAULTS } },
+    shadow:   design.shadow   || { values: { ...SHADOW_FLAT_DEFAULTS } },
     // SC.4 — time defaults / sun-curve overrides. DawnTimeline today is
     // purely a Stage-scrub UI (calls setTime on useTimeOfDay directly);
     // no design.time or sun-curve override is persisted. Field omitted

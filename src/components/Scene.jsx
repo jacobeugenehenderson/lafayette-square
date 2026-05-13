@@ -1,8 +1,6 @@
-import { useRef, useEffect, Suspense, useMemo, forwardRef, useState } from 'react'
+import { useRef, useEffect, Suspense, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, SoftShadows } from '@react-three/drei'
-import { EffectComposer, Bloom, N8AO, DepthOfField } from '@react-three/postprocessing'
-import { Effect } from 'postprocessing'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import LafayetteScene from './LafayetteScene'
 import CelestialBodies from './CelestialBodies'
@@ -20,277 +18,8 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import Terrain from './Terrain'
+import { PostProcessing, StageShadows } from './PostProcessing.jsx'
 
-// ── Film grade — naturalistic tone mapping with time-of-day color ─────────────
-
-class FilmGradeEffect extends Effect {
-  constructor() {
-    super('FilmGrade', /* glsl */`
-      uniform float uSunAlt;
-
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        vec3 c = inputColor.rgb;
-        float lum = dot(c, vec3(0.2126, 0.7152, 0.0722));
-
-        // S-curve contrast
-        vec3 curved = c * c * (3.0 - 2.0 * c);
-        c = mix(c, curved, 0.42);
-
-        // Toe — cinematic blacks with readable shadow detail
-        float toe = smoothstep(0.0, 0.25, lum);
-        c *= mix(0.28, 1.0, toe);
-
-        // Shadow saturation boost — keeps color in the lowlights instead of mud
-        float shadowSat = 1.0 + (1.0 - toe) * 0.3;
-        vec3 gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
-        c = mix(gray, c, shadowSat);
-
-        // Midtone lift
-        float midBell = 4.0 * lum * (1.0 - lum);
-        c *= 1.0 + midBell * 0.15;
-
-        // Split-tone: warm shadows, cool highlights
-        // Shadows → warm amber push
-        vec3 warmTint = vec3(1.04, 0.98, 0.92);
-        // Highlights → cool blue push
-        vec3 coolTint = vec3(0.96, 0.98, 1.04);
-        vec3 splitTone = mix(warmTint, coolTint, smoothstep(0.3, 0.7, lum));
-        c *= splitTone;
-
-        // Time-of-day color temperature
-        // Golden hour (sun near horizon): warm amber wash
-        // Twilight (sun below): cool blue wash
-        // Midday: neutral
-        float goldenT = exp(-pow((uSunAlt - 0.08) / 0.12, 2.0)); // peaks near sunset
-        float nightT = smoothstep(0.05, -0.15, uSunAlt);
-        vec3 goldenWash = vec3(1.06, 1.0, 0.88);
-        vec3 twilightWash = vec3(0.88, 0.92, 1.08);
-        c *= mix(vec3(1.0), goldenWash, goldenT * 0.5);
-        c *= mix(vec3(1.0), twilightWash, nightT * 0.4);
-
-        // Overall saturation — slight boost
-        gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
-        c = mix(gray, c, 1.1);
-
-        // Protect bright areas
-        c = mix(c, inputColor.rgb, smoothstep(0.7, 1.0, lum));
-
-        // Gentle vignette
-        vec2 center = uv - 0.5;
-        float vignette = 1.0 - dot(center, center) * 1.0;
-        vignette = smoothstep(0.0, 1.0, clamp(vignette, 0.0, 1.0));
-        c *= vignette;
-
-        outputColor = vec4(c, inputColor.a);
-      }
-    `, {
-      uniforms: new Map([
-        ['uSunAlt', new THREE.Uniform(0.5)],
-      ])
-    })
-  }
-
-  update() {
-    const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
-    this.uniforms.get('uSunAlt').value = sunAltitude
-  }
-}
-
-const FilmGrade = forwardRef((props, ref) => {
-  const effect = useMemo(() => new FilmGradeEffect(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
-
-// ── Film grain (organic noise wash) ──────────────────────────────────────────
-// Breaks up mathematically perfect CG gradients on walls, sky, and flat surfaces.
-// Stronger in shadows (like real film stock), subtle in highlights.
-
-class FilmGrainEffect extends Effect {
-  constructor() {
-    super('FilmGrain', /* glsl */`
-      uniform float uSeed;
-      uniform float uScale;
-
-      float grainHash(vec2 p) {
-        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-        p3 += dot(p3, p3.yzx + 33.33);
-        return fract((p3.x + p3.y) * p3.z);
-      }
-
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        float lum = dot(inputColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-        // Suppress grain on near-black pixels (prevents sparkle on dark reflective surfaces)
-        float darkSuppress = smoothstep(0.0, 0.08, lum);
-        float strength = mix(0.007, 0.002, smoothstep(0.0, 0.5, lum)) * uScale * darkSuppress;
-        float grain = (grainHash(uv * 1000.0 + uSeed) - 0.5) * strength;
-        outputColor = vec4(inputColor.rgb + grain, inputColor.a);
-      }
-    `, {
-      uniforms: new Map([
-        ['uSeed', new THREE.Uniform(0)],
-        ['uScale', new THREE.Uniform(1.0)],
-      ])
-    })
-  }
-
-  update() {
-    this.uniforms.get('uSeed').value = Math.random() * 1000
-    const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
-    const dayFactor = sunAltitude > 0.1 ? 1 : sunAltitude < -0.15 ? 0 : (sunAltitude + 0.15) / 0.25
-    const viewMode = useCamera.getState().viewMode
-    const modeScale = viewMode === 'hero' ? 1.0 : 0.25
-    this.uniforms.get('uScale').value = (0.4 + dayFactor * 0.6) * modeScale
-  }
-}
-
-const FilmGrain = forwardRef((props, ref) => {
-  const effect = useMemo(() => new FilmGrainEffect(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
-
-// ── Lens character — very subtle hexagonal iris blur across the whole scene ───
-// 7-tap hex kernel simulates a real lens without depth-based falloff.
-// uStrength controls blur radius; 0 = no-op.
-
-class LensSoftnessEffect extends Effect {
-  constructor() {
-    super('LensSoftness', /* glsl */`
-      uniform float uStrength;
-      uniform vec2 uResolution;
-
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        if (uStrength < 0.01) { outputColor = inputColor; return; }
-
-        vec2 texel = uStrength / uResolution;
-
-        // Hexagonal kernel — 6 points at 60° intervals + center
-        // Mimics a 6-blade iris aperture
-        vec3 sum = inputColor.rgb * 0.28; // center weight
-        float a60 = 1.0472; // 60 degrees in radians
-        for (int i = 0; i < 6; i++) {
-          float angle = float(i) * a60;
-          vec2 offset = vec2(cos(angle), sin(angle)) * texel;
-          sum += texture2D(inputBuffer, uv + offset).rgb * 0.12;
-        }
-
-        outputColor = vec4(sum, inputColor.a);
-      }
-    `, {
-      uniforms: new Map([
-        ['uStrength', new THREE.Uniform(0)],
-        ['uResolution', new THREE.Uniform(new THREE.Vector2(1920, 1080))],
-      ])
-    })
-  }
-}
-
-const LensSoftness = forwardRef((props, ref) => {
-  const effect = useMemo(() => new LensSoftnessEffect(), [])
-  return <primitive ref={ref} object={effect} dispose={null} />
-})
-
-// ── Adaptive bloom — time-of-day driven ──────────────────────────────────────
-// Simulates real camera lens behavior: minimal diffusion in daylight,
-// soft halation at twilight, pronounced halos on point sources at night.
-// Updates bloom directly via ref (no React re-renders — critical for smooth hero pan).
-
-function useAdaptiveBloom(bloomRef, viewMode) {
-  useFrame(() => {
-    const bloom = bloomRef.current
-    if (!bloom) return
-    const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
-
-    let intensity, threshold, smoothing
-    if (viewMode === 'planetarium') {
-      intensity = 1.8; threshold = 0.15; smoothing = 0.9
-    } else {
-      const darkness = sunAltitude > 0.1
-        ? 0
-        : sunAltitude < -0.15
-          ? 1
-          : 1 - (sunAltitude + 0.15) / 0.25
-      // Day: higher intensity but high threshold — only genuinely bright surfaces bloom
-      // Night: lower threshold lets point sources glow
-      intensity = 0.5 + darkness * 0.5
-      threshold = 0.85 - darkness * 0.5
-      smoothing = 0.4 + darkness * 0.4
-    }
-
-    bloom.intensity = intensity
-    bloom.luminanceMaterial.threshold = threshold
-    bloom.luminanceMaterial.smoothing = smoothing
-  })
-}
-
-// ── Aerial perspective — telephoto atmospheric haze ──────────────────────────
-// Real atmosphere scatters light between camera and subject. Telephoto lenses
-// compress this, making distant objects appear milkier and lower contrast.
-// Uses gl_FragCoord depth to blend toward a haze color that shifts with time.
-
-class AerialPerspectiveEffect extends Effect {
-  constructor() {
-    super('AerialPerspective', /* glsl */`
-      uniform float uHazeStrength;
-      uniform vec3 uHazeColor;
-
-      void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-        // Vertical gradient: more haze near horizon (lower screen), less in sky (upper)
-        // The horizon sits roughly at the vertical midpoint in our telephoto framing
-        float horizonBand = smoothstep(0.15, 0.55, uv.y) * smoothstep(0.85, 0.55, uv.y);
-
-        // Distance approximation from luminance contrast — dark distant objects
-        // lose contrast more than bright nearby ones
-        float lum = dot(inputColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-        float contrastLoss = smoothstep(0.05, 0.4, lum) * smoothstep(0.9, 0.4, lum);
-
-        float haze = horizonBand * contrastLoss * uHazeStrength;
-
-        // Blend toward haze color — desaturate and lift slightly
-        vec3 hazed = mix(inputColor.rgb, uHazeColor, haze);
-        outputColor = vec4(hazed, inputColor.a);
-      }
-    `, {
-      uniforms: new Map([
-        ['uHazeStrength', new THREE.Uniform(0.0)],
-        ['uHazeColor', new THREE.Uniform(new THREE.Vector3(0.7, 0.75, 0.82))],
-      ])
-    })
-  }
-}
-
-const AerialPerspective = forwardRef((props, ref) => {
-  const effect = useMemo(() => new AerialPerspectiveEffect(), [])
-  const internalRef = useRef()
-
-  useFrame(() => {
-    const e = internalRef.current
-    if (!e) return
-    const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
-
-    // Haze is strongest during day, fades at night (no atmospheric scatter in darkness)
-    const dayFactor = sunAltitude > 0.1
-      ? 1
-      : sunAltitude < -0.05
-        ? 0
-        : (sunAltitude + 0.05) / 0.15
-
-    e.uniforms.get('uHazeStrength').value = dayFactor * 0.12
-
-    // Haze color from actual sky horizon — matches whatever the sky is doing
-    const hc = useSkyState.getState().horizonColor
-    if (hc) {
-      // Slightly desaturated and lifted version of the horizon
-      const avg = (hc.r + hc.g + hc.b) / 3
-      e.uniforms.get('uHazeColor').value.set(
-        hc.r * 0.7 + avg * 0.3,
-        hc.g * 0.7 + avg * 0.3,
-        hc.b * 0.7 + avg * 0.3
-      )
-    }
-  })
-
-  return <primitive ref={internalRef} object={effect} dispose={null} />
-})
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -835,51 +564,6 @@ function CameraRig() {
 const IS_GROUND = window.location.search.includes('ground')
 const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
-// Unified post-processing — always mounted once to avoid render target leaks
-// from N8AO mount/unmount cycles. On mobile: FilmGrade + FilmGrain only.
-// On desktop: N8AO + Bloom + AerialPerspective + FilmGrade + FilmGrain.
-function PostProcessing({ viewMode }) {
-  const bloomRef = useRef()
-  const softnessRef = useRef()
-  const size = useThree((s) => s.size)
-  if (!IS_MOBILE) useAdaptiveBloom(bloomRef, viewMode)
-
-  // Drive lens softness uniform per-frame
-  useFrame(() => {
-    const fx = softnessRef.current
-    if (!fx) return
-    // Very subtle lens character — uniform across scene, no depth falloff
-    fx.uniforms.get('uStrength').value = 0
-    fx.uniforms.get('uResolution').value.set(size.width, size.height)
-  })
-
-  return (
-    <EffectComposer>
-      {!IS_MOBILE && (
-        <N8AO
-          halfRes={viewMode !== 'hero'}
-          aoRadius={viewMode === 'hero' ? 15 : 12}
-          intensity={viewMode === 'hero' ? 2.5 : 3}
-          distanceFalloff={0.3}
-          quality="medium"
-        />
-      )}
-      {!IS_MOBILE && (
-        <Bloom
-          ref={bloomRef}
-          intensity={0.3}
-          luminanceThreshold={0.75}
-          luminanceSmoothing={0.5}
-          mipmapBlur
-        />
-      )}
-      {!IS_MOBILE && <AerialPerspective />}
-      {!IS_MOBILE && <LensSoftness ref={softnessRef} />}
-      <FilmGrade />
-      <FilmGrain />
-    </EffectComposer>
-  )
-}
 
 
 // Defer street lights on mobile — let hero settle before GLB fetch + 641 instances
@@ -915,7 +599,12 @@ function Scene() {
         stencil: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 0.95,
+        // toneMappingExposure now derives from scene.exposure (SC.3,
+        // 2026-05-13). PostProcessing's useFrame writes gl.toneMappingExposure
+        // each tick from the authored channel; EffectComposer's FilmGrade
+        // pass also applies uExposure. The previous hardcoded 0.95 was the
+        // hardwired counterpart of the exposure channel — installed, so
+        // out per doctrine `hardwires-come-out-when-channels-install`.
       }}
       onCreated={({ gl }) => {
         gl.setClearColor(0x1a1a18, 1)
@@ -931,7 +620,7 @@ function Scene() {
       dpr={IS_MOBILE ? 1 : [1, 1.5]}
       shadows={IS_GROUND || IS_MOBILE ? false : 'soft'}
     >
-      {!IS_GROUND && !IS_MOBILE && <SoftShadows size={52} samples={16} focus={0.35} />}
+      {!IS_GROUND && !IS_MOBILE && <StageShadows />}
       <FrameLimiter />
       <TimeTicker />
       <SkyStateTicker />

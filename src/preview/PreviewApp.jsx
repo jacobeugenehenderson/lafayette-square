@@ -26,6 +26,7 @@ import DawnTimeline from '../components/DawnTimeline'
 import { V_EXAG } from '../utils/terrainShader'
 import BakedBuildings from './BakedBuildings'
 import PreviewPostFx from './PreviewPostFx'
+import { ExposureTicker } from '../components/PostProcessing.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
@@ -490,7 +491,8 @@ export default function PreviewApp() {
         alpha: false, antialias: true, stencil: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 0.95,
+        // toneMappingExposure now derives from scene.exposure (SC.3,
+        // 2026-05-13) via the shared PostProcessing consumer.
         // Logarithmic depth buffer — parity with Cartograph Stage. See
         // cartograph/FEATURES.md §"Layering / coplanar stacking".
         logarithmicDepthBuffer: true,
@@ -547,6 +549,7 @@ function CanvasContents({ layers, shot }) {
       <SkyStateTicker />
       <ForceDaytimeOnMount />
       <GpuMonitorTicker />
+      <ExposureTicker />
 
       {layers.celestial
         ? <R3FErrorBoundary name="CelestialBodies"><CelestialBodies /></R3FErrorBoundary>

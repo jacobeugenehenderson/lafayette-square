@@ -30,9 +30,9 @@ import SpriteClouds from '../components/SpriteClouds'
 import Terrain from '../components/Terrain'
 import { V_EXAG } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { SHOTS, StageShadows, computeBrowseAltitude, HeroPreview, resolveHeroSubject, PostProcessing, StageFog } from '../stage/StageApp.jsx'
+import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject } from '../stage/StageApp.jsx'
+import { PostProcessing, StageFog, StageShadows } from '../components/PostProcessing.jsx'
 import { buildings as _allBuildings } from '../data/buildings'
-import PreviewPostFx from '../preview/PreviewPostFx.jsx'
 
 // Toy scene fixtures (single 4-way corner for shader/shadow R&D)
 import toyRibbons from '../data/toy/toy-ribbons.json'
@@ -622,6 +622,20 @@ export default function CartographApp() {
   const constellationsOverride = useCartographStore(s => s.constellations)
   const milkyWayOverride       = useCartographStore(s => s.milkyWay)
 
+  // SC.2 + SC.3 — post-FX channels threaded as overrides into the shared
+  // PostProcessing + StageFog consumers. Production passes no overrides
+  // and reads scene.json frozen-at-bake.
+  const bloomOverride    = useCartographStore(s => s.bloom)
+  const aoOverride       = useCartographStore(s => s.ao)
+  const exposureOverride = useCartographStore(s => s.exposure)
+  const warmthOverride   = useCartographStore(s => s.warmth)
+  const fillOverride     = useCartographStore(s => s.fill)
+  const mistOverride     = useCartographStore(s => s.mist)
+  const haloOverride     = useCartographStore(s => s.halo)
+  const gradeOverride    = useCartographStore(s => s.grade)
+  const grainOverride    = useCartographStore(s => s.grain)
+  const shadowOverride   = useCartographStore(s => s.shadow)
+
   // Hero keyframes + authored motion live in the store (persisted to design.json).
   // preview + speed are transient runtime UI only.
   const keyframes = storeKeyframes
@@ -710,7 +724,9 @@ export default function CartographApp() {
             alpha: false, antialias: true, stencil: true,
             powerPreference: 'high-performance',
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 0.95,
+            // toneMappingExposure now derives from scene.exposure (SC.3,
+            // 2026-05-13) via the shared PostProcessing consumer reading
+            // useCartographStore.exposure as the live override.
             // Logarithmic depth buffer — redistributes 24-bit precision
             // logarithmically so distance-dependent sort failures (water
             // sinking into ground, treelawn snapping at high altitude)
@@ -834,9 +850,28 @@ export default function CartographApp() {
           </>}
 
           {/* ── Shot-only (environment paint — must exactly mirror runtime) ── */}
-          {!inDesigner && <StageShadows />}
-          {!inDesigner && <StageFog />}
-          {!inDesigner && <PostProcessing />}
+          {!inDesigner && <StageShadows
+            lookId={activeLookId}
+            bakeLastMs={bakeLastMs}
+            shadowOverride={shadowOverride}
+          />}
+          {!inDesigner && <StageFog
+            lookId={activeLookId}
+            bakeLastMs={bakeLastMs}
+            mistOverride={mistOverride}
+          />}
+          {!inDesigner && <PostProcessing
+            lookId={activeLookId}
+            bakeLastMs={bakeLastMs}
+            bloomOverride={bloomOverride}
+            aoOverride={aoOverride}
+            exposureOverride={exposureOverride}
+            warmthOverride={warmthOverride}
+            fillOverride={fillOverride}
+            haloOverride={haloOverride}
+            gradeOverride={gradeOverride}
+            grainOverride={grainOverride}
+          />}
           <group visible={!inDesigner}>
             <R3FErrorBoundary name="CelestialBodies"><CelestialBodies
               debugLevel={0}
@@ -878,11 +913,13 @@ export default function CartographApp() {
               />
             )}
           </group>
-          {/* Post-FX: same chain Preview ships with so Stage and Preview
-              read identically. Bloom on so the Stage Bloom panel sliders
-              actually drive a live effect (PreviewPostFx mutates envState
-              every frame); AO still off pending light-dome work. */}
-          {!inDesigner && <PreviewPostFx bloom aerial grade grain />}
+          {/* SC.2 (2026-05-13): the duplicate `<PreviewPostFx>` mount that
+              used to live here was a workaround for the StageApp-vs-Scene
+              PostProcessing fork — Stage doubled up the chain so its
+              Bloom panel sliders would drive a live effect. Now that the
+              shared consumer above takes per-channel overrides, Stage
+              gets live retint via the single mount and the doubled
+              EffectComposer is gone. */}
 
           {!inDesigner && <LampGlowPump />}
           {!inDesigner && <NeonPump />}
