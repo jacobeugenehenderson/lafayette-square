@@ -29,9 +29,9 @@ import { useSceneJson } from '../lib/useSceneJson.js'
  * group-of-3 channel in Sky & Light.
  */
 
-const TUBE_RADIUS      = 0.06   // meters
+const TUBE_RADIUS      = 1.0    // DIAG: huge (was 0.06) — to rule out sub-pixel-scale invisibility
 const OFFSET_OUT       = 0.08   // meters past the footprint edge (~3" — real neon mounts close to the wall)
-const ROOF_LIFT        = 0.05   // meters above roof
+const ROOF_LIFT        = 2.0    // DIAG: lifted (was 0.05) — to clear any roof / overhang occlusion
 const CORNER_ARC_SEGS  = 2      // arc segments per convex corner (K=2 → 3 rings, 45°/seg for a 90° corner)
 const CORNER_ARC_MIN   = 15 * Math.PI / 180  // turn smaller than this stays a single mitred ring
 
@@ -182,7 +182,9 @@ void main() {
 
   float alpha = max(coreMask * uCore, max(tubeMask * uTube, bleedMask * uBleed));
   alpha *= uForceOn;
-  if (alpha < 0.01) discard;
+  // DIAG: bypass discard + force flat emissive so any rasterized fragment is visible
+  emissive = vec3(2.0, 0.0, 2.0); // hot magenta — impossible to miss
+  alpha = 1.0;
 
   gl_FragColor = vec4(emissive, alpha);
 }
