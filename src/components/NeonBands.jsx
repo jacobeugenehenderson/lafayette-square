@@ -96,7 +96,10 @@ function buildRingPath(footprint) {
 function buildTubeFor(building) {
   const fp = building.footprint
   if (!fp || fp.length < 3) return null
-  const baseY = (building.size?.[1] ?? 0) + ROOF_LIFT
+  // Rooftop world Y. Callers should pass `baseY` when foundationHeight
+  // (period-pedestal lift) is non-zero — see LafayetteScene's openPlaces
+  // construction. Toy / flat-grade scenes fall back to size[1].
+  const baseY = (building.baseY ?? building.size?.[1] ?? 0) + ROOF_LIFT
   const r = TUBE_RADIUS
   const rings = buildRingPath(fp)
   const m = rings.length

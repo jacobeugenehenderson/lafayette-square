@@ -1262,7 +1262,12 @@ function LafayetteScene() {
       const on = info.forceOn || _isWithinHours(info.hours, now)
       if (!on) continue
       openByHours++
-      places.push({ ...b, neon: { category: info.category } })
+      // baseY = world Y of the rooftop. Foundation pedestal lift
+      // (pre-1900: +1.2m, pre-1920: +0.8m, else 0) shifts the
+      // building's mounted position; the neon tube must sit at the
+      // same rooftop. NeonBands.buildTubeFor reads place.baseY.
+      const baseY = getFoundationHeight(b) + b.size[1]
+      places.push({ ...b, baseY, neon: { category: info.category } })
     }
     // DIAGNOSTIC: ship-temp. Remove once neon pipeline verified on staging.
     console.log('[neon-diag]', {
