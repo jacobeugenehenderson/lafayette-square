@@ -4,6 +4,52 @@
 
 Last updated: 2026-05-13 (loop streets L.0 + L.1 shipped; L.2 emitter is next — see "Loop streets" pin below for state, then "Neon LS-scale visibility" pin)
 
+## 2026-05-13 — Slab completeness: ship the full authored product through the bake
+
+**Principle (load-bearing — see FEATURES.md "The slab carries the operator's *full* authored product" + memory `slab-carries-full-authored-product`).** Everything an operator authors in cartograph must travel through the bake into `scene.json` (or another baked artifact). The deployed LS runtime trusts the slab unconditionally and cannot reach back into the cartograph store. Anything authored-but-not-baked is silently invisible to deployed users — the deployed product degrades to "operator-authored geometry + procedural-default optics," which isn't the product.
+
+**State today (the gap inventory).** Couplers §1 routed geometry-adjacent state through `scene.json` (palette, materialPhysics, materialColors, layerColors, luColors, layerVis, lampGlow, neon, bakedAt). The OPTICAL half of the authored product is still in the cartograph store only, never baked, never reachable by the deployed runtime. Specifically missing from `scene.json` as of this writing:
+
+- **Sky & atmosphere** — atmosphere uniforms, sun curve overrides, milky way visibility, constellation channel, planetarium settings. Authored via Sky & Light panel; consumed only by `StageSky.jsx` in Stage shots. Production `CelestialBodies.jsx` + `CloudDome.jsx` run purely procedural off `useTimeOfDay` + St. Louis lat/lon. **Operator's authored sky never reaches production today.**
+- **Post-FX** — bloom intensity, N8AO knobs, DOF, film grade, film grain. Authored via Post-processing panel; consumed by `PreviewPostFx.jsx` and Stage's effect chain only. Production `PostProcessing` runs default-tuned. Authored post-FX state lost on publish.
+- **Exposure / tone-mapping** — Canvas-level exposure settings authored in Stage; default everywhere else.
+- **Time-of-day defaults & overrides** — Stage's DawnTimeline lets the operator pin a default hour or override the sun curve. Production reads real time only; never picks up authored defaults.
+- **Per-shot camera tuning** — Browse `up` (Heading slider), Hero/Street positions, FOV per-shot. The Heading slider is already half-routed (cosmetic, Browse-only); the rest stays Stage-local.
+- **Meteorologist clouds** — `public/clouds/{presets,almanac}.json` published, never consumed in production (RUNTIME-DELTA K.2 / couplers §3). The cleanout plan strips the artifacts in v1; wire-or-rewrite is a separate concurrent track. **Confirm scope: is "stripped in v1" still the call now that we're elevating slab-completeness, or does Meteorologist get re-prioritized into this track?**
+- **Arch tuning** — `StageArch.jsx` distance/scale per-shot. Authored Stage-side, defaults in production.
+
+**Sequencing — same three-step contract as Couplers §1, applied per channel.**
+
+For each missing channel:
+1. **Persist** in `design.json` (most are already there — Stage's autosave wires the panel inputs to `useCartographStore.set...` actions that write `design.json`). Audit each channel's autosave path; close gaps.
+2. **Bake** into `scene.json` (or a dedicated artifact for non-trivial structured data — e.g., clouds keep `public/clouds/{presets,almanac}.json`). Extend `cartograph/bake-scene.js` to read from `design` and emit the field. Forward-compatible per couplers plan CC.7 — existing consumers ignore unknown fields.
+3. **Consume** in production via `useSceneJson(lookId)` per Couplers §1. Move the consumer from `useCartographStore` (Stage-only) or hardcoded defaults (procedural) over to the slab. Apply the §1 carve-out pattern: production reads frozen-at-bake; Stage retains live-wire via a `paletteOverride`-shaped override prop if the authoring UX needs instant feedback.
+
+**Tracking.** A channel-by-channel matrix lands here on first execution session. Suggested sub-phases:
+
+- **SC.1 — Sky & atmosphere** (highest leverage; Stage's most visible authored layer). Bake: sky channel into `scene.sky`. Consume: `CelestialBodies` + `CloudDome` accept `scene.sky` as their atmosphere/sun-curve seed, falling back to procedural defaults when null.
+- **SC.2 — Post-FX**. Bake: `scene.postFx`. Consume: production `PostProcessing` reads it; Preview already reads same source.
+- **SC.3 — Exposure / tonemapping**. Bake: `scene.canvas` (or fold into `scene.postFx`). Consume: Canvas-level `gl` prop reads the value.
+- **SC.4 — Time defaults & overrides**. Bake: `scene.time`. Consume: `useTimeOfDay` initializer accepts authored hour / sun curve.
+- **SC.5 — Per-shot camera**. Bake: `scene.shots` (Browse/Hero/Street). Consume: `Scene.jsx`'s shot table reads authored positions where present, defaults otherwise.
+- **SC.6 — Meteorologist clouds**. Re-evaluate strip-vs-wire decision per principle: if clouds are part of the authored product (Sky & Light's clouds panel writes presets), they belong in the slab; wire `<Atmosphere />` per `meteorologist/README.md`'s direction. Otherwise drop the panel entirely; don't ship authored-but-unconsumed UI.
+- **SC.7 — Arch tuning**. Bake: `scene.arch`. Consume: production `GatewayArch` reads it.
+
+Per-sub-phase verification gate: (1) operator authors a value in Stage, hits Bake (or ↻); (2) `scene.json` shows the value; (3) production staging URL renders with the authored value, defaults otherwise.
+
+**Priority placement.** This sits BETWEEN the v1 marriage leap (in flight — `ls/BACKLOG.md` Phase C) and v2+ hosted bake service (below). Whether SC.1–SC.7 are pre-merge blockers or v1.x concurrent track depends on whether ship-day defaults are acceptable for the missing channels. Sky is probably the load-bearing one — Jacob's Sky & Light authoring is what makes LS LOOK like LS, not generic-3D-neighborhood. Confirm at next session.
+
+**Why not just keep live-wire from Stage to production?** Because the marriage leap explicitly severed that path (Couplers §1). The whole point of the slab is "production can't reach back into authoring." Live-wire across the seam would unravel §1 and the §1-shipped caching/perf wins with it. The correct path is bake-then-consume, with Stage's live preview retained via the per-channel override-prop pattern §1 established.
+
+**Cross-references.**
+- Memory: `slab-carries-full-authored-product` (the principle).
+- `cartograph/FEATURES.md` "The Bake is the slab pour" + "The slab carries the operator's *full* authored product."
+- `cartograph/bake-scene.js` header comment — has a partial gap list ("env (post-FX, exposure), arch (distance/scale), time...") that this section supersedes and formalizes.
+- Couplers plan §1 — the pattern to follow per channel.
+- `ls/BACKLOG.md` Phase C — the marriage-leap track this complements.
+
+---
+
 ## v2+ — Hosted bake service with auth (post-marriage, post-v1)
 
 **Premise.** v1 is single-operator (Jacob, local machine, git-write

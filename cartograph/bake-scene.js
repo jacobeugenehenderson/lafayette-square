@@ -10,9 +10,14 @@
  *   - materialColors  — per-material default colors (foundation, etc.)
  *   - layerColors / luColors — kept for potential future runtime use
  *
- * Future fields (not yet authored as state, will be added once Stage
- * persists them): env (post-FX, exposure), arch (distance/scale), time
- * (default hour, sun curve overrides), surfaces (per-material extra).
+ * Channels not yet baked: sky/atmosphere, post-FX (bloom/AO/DOF/grade/grain),
+ * exposure/tonemapping, time-of-day defaults & sun-curve overrides, per-shot
+ * camera tuning, arch tuning, meteorologist clouds (consumer side). These
+ * are authored in cartograph but never reach the deployed product today.
+ * Tracked as "Slab completeness" in `cartograph/BACKLOG.md` (sub-phases
+ * SC.1–SC.7); load-bearing principle in `cartograph/FEATURES.md` "The slab
+ * carries the operator's *full* authored product" and memory
+ * `slab-carries-full-authored-product`.
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'

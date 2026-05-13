@@ -29,6 +29,8 @@ Cartograph is recursive. Each authoring step makes a truth-claim that the next b
 
 **The Bake is the slab pour.** It IS the publish moment for cartograph — but the artifact ships to the LS app, not directly to end users. Live deployment is downstream, bundling the slab with the LS app shell.
 
+**The slab carries the operator's *full* authored product.** This is load-bearing. Anything an operator authors in cartograph — geometry AND optics: sky, atmosphere, post-FX, exposure, time-of-day overrides, per-shot camera, materials, neon, lamp glow, everything — must travel through the bake into `scene.json` (or another baked artifact). The deployed LS runtime trusts the slab unconditionally and cannot reach back into the cartograph authoring store. So anything authored-but-not-baked is invisible to the deployed product; the deployed product silently degrades to "operator-authored geometry + procedural-default optics," which isn't the product. The product is what the operator sees in Stage. See `BACKLOG.md` "Slab completeness" for the current gap inventory and the remediation track.
+
 **Preview is the slab inspection environment.** Walks the slab with a GPU monitor strapped on — phone-aspect frame, per-layer cost readouts, post-FX toggle matrix. If the slab holds at acceptable mobile cost, it's ready for the LS app to build on.
 
 **Authoring is linear-but-concurrent.** Survey → Measure → Stage is the canonical flow, but mid-Stage realizations frequently bounce back to Survey/Measure. Tool-switching is cheap; map state (zoom, position) persists across tools when feasible.
