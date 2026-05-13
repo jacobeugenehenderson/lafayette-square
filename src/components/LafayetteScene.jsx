@@ -1252,13 +1252,27 @@ function LafayetteScene() {
   const openPlaces = useMemo(() => {
     const places = []
     const now = useTimeOfDay.getState().currentTime
+    const eligibleCount = Object.keys(neonLookup).length
+    let withFootprint = 0
+    let openByHours = 0
     for (const b of _allBuildings) {
       const info = neonLookup[b.id]
       if (!info) continue
+      if (b.footprint) withFootprint++
       const on = info.forceOn || _isWithinHours(info.hours, now)
       if (!on) continue
+      openByHours++
       places.push({ ...b, neon: { category: info.category } })
     }
+    // DIAGNOSTIC: ship-temp. Remove once neon pipeline verified on staging.
+    console.log('[neon-diag]', {
+      now: now.toISOString(),
+      eligible: eligibleCount,
+      withFootprint,
+      openByHours,
+      placesLen: places.length,
+      sample: places.slice(0, 3).map(p => ({ id: p.id, cat: p.neon.category, fpLen: p.footprint?.length })),
+    })
     return places
   }, [neonLookup, neonTick])
 
