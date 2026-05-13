@@ -17,6 +17,7 @@ import { patchTerrain } from '../utils/terrainShader'
 import { getElevation } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import NeonBands from './NeonBands.jsx'
 
 // Deterministic string hash — same id always picks the same palette slot.
 function hashStr(s) {
@@ -453,92 +454,13 @@ function _isWithinHours(hours, time) {
   return mins >= oh * 60 + om && mins < ch * 60 + cm
 }
 
-function NeonBand({ building, categoryHex, hours, forceOn = false }) {
-  const bandRef = useRef()
-  const prevStateRef = useRef({ glowFactor: -1, isOpen: null })
-  const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
-  const baseColor = useMemo(() => new THREE.Color(categoryHex), [categoryHex])
-  const foundationY = getBuildingY(building)
-
-  const bandGeometry = useMemo(() => {
-    const height = building.size[1]
-    const bandRadius = 0.075
-    const footprint = building.footprint
-
-    let points = []
-    if (!footprint || footprint.length < 3) {
-      const [w, , d] = building.size
-      const hw = w / 2, hd = d / 2
-      points = [
-        new THREE.Vector3(-hw, height, -hd),
-        new THREE.Vector3(hw, height, -hd),
-        new THREE.Vector3(hw, height, hd),
-        new THREE.Vector3(-hw, height, hd),
-        new THREE.Vector3(-hw, height, -hd),
-      ]
-    } else {
-      points = footprint.map(([x, z]) =>
-        new THREE.Vector3(x - building.position[0], height, z - building.position[2])
-      )
-      points.push(points[0].clone())
-    }
-
-    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0)
-    return new THREE.TubeGeometry(curve, points.length * 8, bandRadius, 8, false)
-  }, [building])
-
-  const bandMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: baseColor,
-      emissive: baseColor,
-      emissiveIntensity: 0,
-      roughness: 0.3,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0,
-    })
-    patchTerrain(mat)
-    return mat
-  }, [baseColor])
-
-  useFrame(() => {
-    if (!bandRef.current) return
-    const mat = bandRef.current.material
-    const { sunAltitude } = getLightingPhase()
-    const currentTime = useTimeOfDay.getState().currentTime
-    const isOpen = forceOn || _isWithinHours(hours, currentTime)
-
-    // Glow ramps from subtle daytime accent to full neon at dusk
-    // sunAltitude ~0.2 = bright day, ~0.05 = dusk, < -0.12 = night
-    const rawGlow = Math.min(1, Math.max(0, (0.2 - sunAltitude) / 0.35))
-    const glowFactor = Math.round(rawGlow * 20) / 20 // quantize to avoid per-frame thrash
-
-    const prev = prevStateRef.current
-    if (prev.isOpen !== isOpen || prev.glowFactor !== glowFactor) {
-      prev.isOpen = isOpen
-      prev.glowFactor = glowFactor
-
-      if (isOpen) {
-        mat.opacity = 1
-        mat.emissiveIntensity = 4.0
-        mat.color.copy(baseColor)
-        mat.emissive.copy(baseColor)
-      } else {
-        mat.opacity = 0
-        mat.emissiveIntensity = 0
-      }
-    }
-  })
-
-  return (
-    <mesh
-      ref={bandRef}
-      position={[building.position[0], foundationY, building.position[2]]}
-      geometry={bandGeometry}
-      material={bandMaterial}
-    />
-  )
-}
+// (NeonBand — the inline per-Building TubeGeometry+CatmullRom mount —
+// was retired during the Path B migration. Production now mounts a
+// single <NeonBands> in LafayetteScene's render: one merged mesh +
+// shader covering every open place, with scene.json.neon driving
+// the uCore/uTube/uBleed uniforms via useSceneJson. See
+// src/components/NeonBands.jsx + HANDOFF-neon.md +
+// plans/kit_couplers_parametrize.md §1.)
 
 // ============ SIM COLOR ============
 // Deterministic Victorian palette color for buildings without a real listing.
@@ -974,7 +896,9 @@ function Building({ building, neonInfo }) {
         onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
         onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(building.id) }}
       />
-      {showNeon && <NeonBand building={building} categoryHex={effectiveHex} hours={listingHours} forceOn={isSimOpen || neonForceOn} />}
+      {/* Neon retired from per-Building mount — see <NeonBands /> at the
+          LafayetteScene render block. One merged mesh covers all open
+          places; per-place hour gating happens at the caller's filter. */}
       {isSelected && <SelectionRing building={building} />}
     </group>
   )
@@ -1304,18 +1228,39 @@ function LafayetteScene() {
       const bid = l.building_id || l.id
       const hex = CATEGORY_HEX[l.category]
       if (!bid || !hex) return
-      // Mount neon for any listing with hours — on/off checked per-frame inside NeonBand
+      // Eligible if the listing has hours OR the Society Pages filter
+      // tags this listing — `_isWithinHours` decides on/off at the
+      // openPlaces filter below; NeonBands itself renders binary
+      // (one merged mesh, all-or-nothing per uniform).
       if (l.hours) {
-        map[bid] = { hex, hours: l.hours }
+        map[bid] = { hex, hours: l.hours, category: l.category }
       }
-      // Filter-based glow (Society Pages category selection)
       if (activeTags.size > 0 && (activeTags.has(l.subcategory) || activeTags.has(l.category))) {
-        if (!map[bid]) map[bid] = { hex, hours: null, forceOn: true }
+        if (!map[bid]) map[bid] = { hex, hours: null, forceOn: true, category: l.category }
         else map[bid] = { ...map[bid], forceOn: true }
       }
     })
     return map
   }, [listings, neonTick, activeTags])
+
+  // openPlaces — buildings whose neonLookup entry resolves "on" at the
+  // current time (or is force-on from a Society Pages filter). Drives
+  // the single <NeonBands> mesh in the render block. Refreshed on
+  // neonTick (60s) + activeTags + listings; geometry rebuilds at that
+  // cadence. Per-instance aIsOpen is the HANDOFF-neon §"Instancing"
+  // amendment, deferred to v1.1.
+  const openPlaces = useMemo(() => {
+    const places = []
+    const now = useTimeOfDay.getState().currentTime
+    for (const b of _allBuildings) {
+      const info = neonLookup[b.id]
+      if (!info) continue
+      const on = info.forceOn || _isWithinHours(info.hours, now)
+      if (!on) continue
+      places.push({ ...b, neon: { category: info.category } })
+    }
+    return places
+  }, [neonLookup, neonTick])
 
   // Frustum-cull neon: only mount NeonBand for buildings the camera can actually see.
   // Checks every 30 frames (~0.5s) to avoid per-frame churn.
@@ -1401,10 +1346,15 @@ function LafayetteScene() {
 
       <Foundations />
 
-      {/* Buildings — neon only mounts for open places in camera frustum */}
+      {/* Buildings — per-id mount; neon is one merged mesh below. */}
       {_allBuildings.map(b => (
         <Building key={b.id} building={b} neonInfo={visibleNeonIds.has(b.id) ? neonLookup[b.id] : undefined} />
       ))}
+
+      {/* Neon — single Path B mesh over all currently-open places, with
+          scene.json.neon driving the uCore/uTube/uBleed uniforms. Note:
+          lookId is hardcoded pending couplers §6 INSTANCE (Phase C). */}
+      {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId="lafayette-square" />}
 
       {/* Street labels */}
       {labelsReady && streetLabels.map((label, i) => (

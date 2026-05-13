@@ -2,6 +2,7 @@ import { useMemo, useEffect } from 'react'
 import * as THREE from 'three'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { neon as _neonUniforms } from '../preview/neonState.js'
+import { useSceneJson } from '../lib/useSceneJson.js'
 
 /**
  * NeonBands — Path B runtime renderer per HANDOFF-neon.md.
@@ -184,7 +185,40 @@ void main() {
 }
 `
 
-export default function NeonBands({ places, forceOn = true }) {
+/**
+ * NeonBands — Path B runtime renderer per HANDOFF-neon.md.
+ *
+ * Props:
+ * @param {Array} places — buildings eligible for neon. Each must have
+ *   `neon.category` (or it's skipped), plus `footprint` + position.
+ * @param {boolean} [forceOn=true] — single uniform multiplier;
+ *   when paired with per-place caller-side filtering of `places`,
+ *   keep this true. When unspecified caller uses lookId pump (below).
+ * @param {string} [lookId] — when provided, fetches the per-Look
+ *   scene.json via `useSceneJson` and writes its `neon.values` into
+ *   the shared `_neonUniforms` module once per fetch resolution.
+ *   This is the production-side driver of the three masks (uCore /
+ *   uTube / uBleed) — see SLAB-CONTRACT §4 + couplers plan §1.
+ *   Authoring contexts (Cartograph Designer / Stage) skip the prop
+ *   so CartographApp's per-frame `NeonPump` (which pulls from the
+ *   cartograph store's TOD-animated curve) remains the authoritative
+ *   writer in those contexts.
+ */
+export default function NeonBands({ places, forceOn = true, lookId }) {
+  // Production-side uniform driver: when a lookId is passed, fetch
+  // the slab's scene.json once and apply scene.neon.values to the
+  // shared uniforms. No per-frame work — production curve is static
+  // under current design.json. Future TOD-animated curves replace
+  // this useEffect with a per-frame pump in this same place.
+  const scene = useSceneJson(lookId || '')
+  useEffect(() => {
+    if (!lookId || !scene?.neon?.values) return
+    const v = scene.neon.values
+    _neonUniforms.coreUniform.value  = v.core  ?? 0
+    _neonUniforms.tubeUniform.value  = v.tube  ?? 0
+    _neonUniforms.bleedUniform.value = v.bleed ?? 0
+  }, [lookId, scene])
+
   const geometry = useMemo(() => {
     const positions = []
     const normals   = []
