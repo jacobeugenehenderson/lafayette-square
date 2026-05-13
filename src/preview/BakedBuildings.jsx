@@ -21,8 +21,8 @@ function getLookId() {
   return m ? decodeURIComponent(m[1]) : 'lafayette-square'
 }
 const LOOK_ID = getLookId()
-const MANIFEST_URL = `/baked/${LOOK_ID}/buildings.json`
-const TEXTURE_BASE = '/textures/buildings/'
+const MANIFEST_URL = `${import.meta.env.BASE_URL}baked/${LOOK_ID}/buildings.json`
+const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
 
 // Cache textures across renders — they're heavy (~4MB each) and shared
 // across all instances of a material.
@@ -65,10 +65,10 @@ export default function BakedBuildings() {
       try {
         const t = Date.now()
         const m = await fetch(MANIFEST_URL + '?t=' + t).then(r => r.json())
-        const bin = await fetch('/baked/' + m.look + '/' + m.bin + '?t=' + t)
+        const bin = await fetch(import.meta.env.BASE_URL + 'baked/' + m.look + '/' + m.bin + '?t=' + t)
           .then(r => r.arrayBuffer())
         // scene.json is optional; failing fetch is fine (no overrides applied).
-        const sc = await fetch('/baked/' + m.look + '/scene.json?t=' + t)
+        const sc = await fetch(import.meta.env.BASE_URL + 'baked/' + m.look + '/scene.json?t=' + t)
           .then(r => r.ok ? r.json() : null).catch(() => null)
         if (!cancelled) { setData({ manifest: m, bin }); setScene(sc) }
       } catch (e) {

@@ -470,7 +470,7 @@ function GroundDisc() {
     if (!activeLookId) return
     let cancelled = false
     const t = bakeLastMs ?? Date.now()
-    fetch(`/baked/${activeLookId}/ground.json?t=${t}`)
+    fetch(`${import.meta.env.BASE_URL}baked/${activeLookId}/ground.json?t=${t}`)
       .then(r => r.ok ? r.json() : null)
       .then(m => {
         if (!cancelled && m?.stencil?.center) {

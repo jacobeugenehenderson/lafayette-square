@@ -123,8 +123,8 @@ function loadNormalTexture(url) {
 }
 
 async function buildMaterials(lookName) {
-  const manifestUrl = `/baked/${lookName}/trees-atlas.json?t=${Date.now()}`
-  const designUrl = `/looks/${lookName}/design.json?t=${Date.now()}`
+  const manifestUrl = `${import.meta.env.BASE_URL}baked/${lookName}/trees-atlas.json?t=${Date.now()}`
+  const designUrl = `${import.meta.env.BASE_URL}looks/${lookName}/design.json?t=${Date.now()}`
   const [manifestRes, designRes] = await Promise.all([
     fetch(manifestUrl),
     fetch(designUrl),

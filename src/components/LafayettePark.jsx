@@ -422,7 +422,7 @@ function ParkWater() {
   useEffect(() => {
     let cancelled = false
     const look = _lookFromQuery()
-    fetch(`/baked/${look}/scene.json?t=${Date.now()}`)
+    fetch(`${import.meta.env.BASE_URL}baked/${look}/scene.json?t=${Date.now()}`)
       .then(r => r.ok ? r.json() : null)
       .then(j => { if (!cancelled) setWaterHidden(j?.layerVis?.water === false) })
       .catch(() => { /* scene.json optional */ })

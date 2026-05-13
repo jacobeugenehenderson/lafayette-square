@@ -86,7 +86,7 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   // painted on the new geometry — the operator sees stale shadows that look
   // like the edit "didn't take" even though ground.bin is fresh.
   const lightmapUrl = manifest.lightmap
-    ? '/baked/' + manifest.look + '/' + manifest.lightmap.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    ? import.meta.env.BASE_URL + 'baked/' + manifest.look + '/' + manifest.lightmap.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
     : null
   const lightmap = lightmapUrl ? useLoader(THREE.TextureLoader, lightmapUrl) : null
 
@@ -291,11 +291,11 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = V_EXAG } 
     ;(async () => {
       try {
         const t = bakeLastMs ?? Date.now()
-        const manifestUrl = `/baked/${resolvedLookId}/ground.json?t=${t}`
+        const manifestUrl = `${import.meta.env.BASE_URL}baked/${resolvedLookId}/ground.json?t=${t}`
         const m = await fetch(manifestUrl).then(r => r.json())
-        const bin = await fetch('/baked/' + m.look + '/' + m.bin + '?t=' + t)
+        const bin = await fetch(import.meta.env.BASE_URL + 'baked/' + m.look + '/' + m.bin + '?t=' + t)
           .then(r => r.arrayBuffer())
-        const sc = await fetch('/baked/' + m.look + '/scene.json?t=' + t)
+        const sc = await fetch(import.meta.env.BASE_URL + 'baked/' + m.look + '/scene.json?t=' + t)
           .then(r => r.ok ? r.json() : null).catch(() => null)
         if (!cancelled) { setData({ manifest: m, bin }); setScene(sc) }
       } catch (e) {

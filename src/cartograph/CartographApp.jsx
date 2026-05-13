@@ -665,7 +665,7 @@ export default function CartographApp() {
   useEffect(() => {
     if (!activeLookId) return
     let cancelled = false
-    fetch(`/baked/${activeLookId}/scene.json?t=${Date.now()}`)
+    fetch(`${import.meta.env.BASE_URL}baked/${activeLookId}/scene.json?t=${Date.now()}`)
       .then(r => r.ok ? r.json() : null)
       .then(j => { if (!cancelled) setBakedLayerVis(j?.layerVis || {}) })
       .catch(() => { if (!cancelled) setBakedLayerVis({}) })

@@ -25,7 +25,7 @@ import useCartographStore from '../cartograph/stores/useCartographStore'
 // Trees are baked once globally (not per-Look) since species placement
 // is data, not styling. Path stays at /baked/default.json for now —
 // Arborist's auto-bake hook writes there.
-const BAKE_URL = '/baked/default.json'
+const BAKE_URL = `${import.meta.env.BASE_URL}baked/default.json`
 
 function VariantInstances({ url, instances, treeMaterial }) {
   const { scene } = useGLTF(url)
@@ -208,7 +208,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeUrl = BAKE_URL })
   useEffect(() => {
     if (!propLookId) return
     let cancelled = false
-    fetch(`/baked/${propLookId}/scene.json?t=${Date.now()}`)
+    fetch(`${import.meta.env.BASE_URL}baked/${propLookId}/scene.json?t=${Date.now()}`)
       .then(r => r.ok ? r.json() : null)
       .then(j => { if (!cancelled) setSceneLayerVis(j?.layerVis || null) })
       .catch(() => { /* optional */ })
@@ -295,7 +295,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeUrl = BAKE_URL })
       // open Preview/Stage tab picks up rewritten UVs after a rebake instead
       // of holding drei's useGLTF cache for the same path indefinitely.
       const lookUrl = url.startsWith('/trees/')
-        ? `/baked/${lookName}${url}${atlasVersion}`
+        ? `${import.meta.env.BASE_URL}baked/${lookName}${url}${atlasVersion}`
         : url
       let byTile = m.get(lookUrl)
       if (!byTile) {
