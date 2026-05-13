@@ -22,7 +22,7 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run build
+      - run: npm run build -- --base=/lafayette-square-staging/
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
