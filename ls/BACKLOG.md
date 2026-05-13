@@ -4,7 +4,7 @@ The path from where we are (branch `cartograph-looks-pass-ab`) to where we're go
 
 > Part of the **LS trinity** (`ls/FEATURES.md` / `ls/ARCHITECTURE.md` / `ls/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. The cartograph trinity under `cartograph/` covers authoring; this is the consumer side.
 
-Last updated: 2026-05-13 EOD (Phase B complete — three plans canonical at `plans/`; staging URL live with slab rendering; BASE_URL invariant codified across plans + slab contract + memory)
+Last updated: 2026-05-13 late EOD (Phase C started — couplers §1 `useSceneJson` hook landed at `src/lib/useSceneJson.js`; first consumer `NeonBands` swap shipped via three commits; `scene.json.bakedAt` + `neon` fields baked per CC.7 / SLAB-CONTRACT §4; neon visibility bug deferred to baby-agent investigation — see `feedback_toy_hides_instance_data_bugs` memory for the canonical example surfaced during the chase)
 
 ---
 
@@ -32,6 +32,17 @@ Three canonical plans, all shipped 2026-05-13:
 Phase C is the entire marriage leap operation, sequenced by `plans/ls_basemap_swap.md`. Each commit lands on the branch, auto-deploys to the staging URL via `.github/workflows/staging.yml`, gets verified there before the next commit. Phase 3's exhaustive RUNTIME-DELTA §3 walk on real cellular is the hard gate before merge to `main`.
 
 **Staging URL:** [`https://jacobeugenehenderson.github.io/lafayette-square-staging/`](https://jacobeugenehenderson.github.io/lafayette-square-staging/) — slab renders end-to-end as of `a1ebe1b`.
+
+**Phase C — work in flight (2026-05-13 night):**
+
+- ✅ Couplers plan CC.7 — `scene.json.bakedAt` field emitted by `cartograph/bake-scene.js`; SLAB-CONTRACT §4 amended (commit `c0406e6`).
+- ✅ Couplers plan §1 — `src/lib/useSceneJson.js` landed (the "minimal slab-side data hook" the plan specified) (commit `24efb58`).
+- ✅ Couplers plan §3 (Meteorologist) — partial: bake-scene emits `neon` from design.json. Cloud-artifacts strip stays queued for cleanout exec.
+- ✅ Neon Path B swap (production-side first consumer of `useSceneJson`) — `LafayetteScene` retired inline `NeonBand`, mounted `<NeonBands>` (commit `20ef7b1`). Y-fix shipped (`a0a109a`).
+- ⏳ **Neon visibility bug** — geometry rasterizes correctly (verified hot-magenta override) but original shader output is invisible at production scale. Baby-agent investigation queued; see brief on conversation thread (boost shader emissive intensity, restore tube radius to 0.075m, restore from diag overrides).
+- ⏳ Three diagnostic commits to revert as part of the visibility fix: `c6eea07`, `9906b58`, `33dcbf0`.
+- ⏳ Couplers plan §1 remaining migrations (BakedGround, BakedLamps, InstancedTrees, LafayettePark, LafayetteScene palette pull) — queued.
+- ⏳ Couplers plan §6 `INSTANCE` module — queued; will flip `lookId="lafayette-square"` hardcode in NeonBands + Scene.jsx.
 
 ---
 
