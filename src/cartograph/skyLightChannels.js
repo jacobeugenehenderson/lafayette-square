@@ -22,13 +22,13 @@ export const BLOOM_FLAT_DEFAULTS = { intensity: 0.5, threshold: 0.85, smoothing:
 export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 
 // Lighting floor — operator-facing mood axes, not mechanical knobs.
-// Sun + moon stay physics-driven (PrimaryOrb/SecondaryOrb in StageSky).
+// Sun + moon stay physics-driven (PrimaryOrb/SecondaryOrb in CelestialBodies).
 // These two channels bias the *atmosphere between bodies*: ambient color
 // + ambient/hemi intensity. See HANDOFF-sky-and-light.md.
 
 // Warmth: 0 = cool, 1 = warm, 0.5 = neutral. Biases ambient + hemi-sky
 // color toward a warm or cool reference; physics baseline still drives
-// most of the color. Max bias depth is bounded inside StageSky.
+// most of the color. Max bias depth is bounded inside CelestialBodies.
 export const WARMTH_FIELDS = [
   { key: 'value', label: 'Warmth (cool ↔ warm)', min: 0, max: 1, step: 0.02 },
 ]
@@ -102,7 +102,7 @@ export const CONSTELLATIONS_FLAT_DEFAULTS = { value: 0 }
 export const CONSTELLATIONS_FIELD_KEYS = ['value']
 
 // Lighting unit — 4 single-value channels that act as TOD-driven
-// intensity multipliers on the existing scene lights in StageSky.jsx.
+// intensity multipliers on the existing scene lights in CelestialBodies.jsx.
 // Defaults = 1.0 (no modulation; current behavior preserved). Operator
 // authors 0 at Night to drop world lighting; existing color physics
 // (sun/moon temperature, hemi gradient) stay untouched.

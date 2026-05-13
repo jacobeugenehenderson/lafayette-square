@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
-import { LATITUDE, LONGITUDE } from './StageSky'
+import { LATITUDE, LONGITUDE } from '../components/CelestialBodies'
 import { archState, useArchState } from './StageApp.jsx'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 

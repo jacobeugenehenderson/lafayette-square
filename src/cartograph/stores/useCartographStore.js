@@ -314,7 +314,7 @@ const useCartographStore = create((set, get) => ({
   // the physics. See HANDOFF-neon.md.
   neon:           { values: { ...NEON_FLAT_DEFAULTS } },
   // Lighting unit — 4 single-value channels, intensity multipliers on
-  // the existing scene lights in StageSky. Defaults 1.0 = current
+  // the existing scene lights in CelestialBodies. Defaults 1.0 = current
   // behavior. Author 0 at Night to drop world lighting (fixes "bright
   // sidewalks at night").
   ambient:        { values: { ...AMBIENT_FLAT_DEFAULTS } },
@@ -324,7 +324,7 @@ const useCartographStore = create((set, get) => ({
   // Sky gradient — 2D color matrix, see skyGrid.js. 4 vertical bands
   // (horizon/low/mid/high) + sun-glow row × 7 TOD slots (Dawn 4 cols,
   // Sunrise 4, Noon 1, Golden 4, Sunset 4, Dusk 4, Night 1) = 22
-  // columns total. Defaults seeded to match StageSky.jsx's hardcoded
+  // columns total. Defaults seeded to match CelestialBodies.jsx's hardcoded
   // keyframe ladder so unauthored Looks render unchanged. SkyPump in
   // CartographApp resolves this each frame and writes RGB to skyState.
   sky:            { values: { ...SKY_DEFAULTS } },

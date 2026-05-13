@@ -18,7 +18,7 @@ import { Effect, BlendFunction } from 'postprocessing'
 import * as THREE from 'three'
 
 import LafayetteScene from '../components/LafayetteScene'
-import CelestialBodies from './StageSky'
+import CelestialBodies from '../components/CelestialBodies'
 import LafayettePark from '../components/LafayettePark'
 import StreetLights from '../components/StreetLights'
 import GatewayArch from './StageArch'

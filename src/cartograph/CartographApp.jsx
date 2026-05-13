@@ -24,7 +24,7 @@ import InstancedTrees from '../components/InstancedTrees'
 import StreetLights from '../components/StreetLights'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../stage/StageArch'
-import CelestialBodies from '../stage/StageSky'
+import CelestialBodies from '../components/CelestialBodies'
 import CloudDome from '../components/CloudDome'
 import SpriteClouds from '../components/SpriteClouds'
 import Terrain from '../components/Terrain'
@@ -52,17 +52,10 @@ import CartographSkyLight from './CartographSkyLight.jsx'
 import CartographPost from './CartographPost.jsx'
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState.js'
 import { neon as _neonUniforms } from '../preview/neonState.js'
-import { sky as _skyUniforms } from '../preview/skyState.js'
-import { lighting as _lightingState } from '../preview/lightingState.js'
 import { resolveLampGlowAtMinute, resolveGroupAtMinute, getTodSlotMinutes } from './animatedParam.js'
 import {
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
-  AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS,
-  HEMI_FIELD_KEYS, HEMI_FLAT_DEFAULTS,
-  DIRSUN_FIELD_KEYS, DIRSUN_FLAT_DEFAULTS,
-  DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS,
 } from './skyLightChannels.js'
-import { resolveSkyAtMinute } from './skyGrid.js'
 import BakeModal from './BakeModal.jsx'
 import CartographSurfaces from './CartographSurfaces.jsx'
 
@@ -86,50 +79,12 @@ useTimeOfDay.getState().setHour(12)
 // Neon pump — same shape as LampGlowPump. Resolves the per-Look neon
 // channel (group of 3: core/tube/bleed) at the current TOD minute and
 // writes into the module-scoped uniforms NeonBands' shader holds.
-// Lighting unit pump — resolves 4 single-value channels (ambient, hemi,
-// dirSun, dirMoon) each frame and writes scalar multipliers into
-// lightingState. StageSky's CelestialBodies multiplies into existing
-// physics. Defaults = 1.0 (no modulation).
-function LightingPump() {
-  useFrame(() => {
-    const s = useCartographStore.getState()
-    const tod = useTimeOfDay.getState()
-    const minute = tod.getMinuteOfDay()
-    const slotMinutes = getTodSlotMinutes(tod.currentTime)
-    const slotsAmb = s.ambient?.animated ? slotMinutes : null
-    const slotsHemi = s.hemi?.animated ? slotMinutes : null
-    const slotsSun = s.dirSun?.animated ? slotMinutes : null
-    const slotsMoon = s.dirMoon?.animated ? slotMinutes : null
-    _lightingState.ambient = resolveGroupAtMinute(s.ambient, minute, slotsAmb,  AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS).value ?? 1
-    _lightingState.hemi    = resolveGroupAtMinute(s.hemi,    minute, slotsHemi, HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS).value    ?? 1
-    _lightingState.dirSun  = resolveGroupAtMinute(s.dirSun,  minute, slotsSun,  DIRSUN_FIELD_KEYS,  DIRSUN_FLAT_DEFAULTS).value  ?? 1
-    _lightingState.dirMoon = resolveGroupAtMinute(s.dirMoon, minute, slotsMoon, DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS).value ?? 1
-  })
-  return null
-}
-
-// Sky pump — resolves the per-Look sky-gradient channel (4-band × N-col
-// matrix) at the current minute and writes RGB into skyState. GradientSky
-// reads from skyState each frame and applies weather/planetarium
-// modifiers on top.
-function SkyPump() {
-  useFrame(() => {
-    const { sky } = useCartographStore.getState()
-    if (!sky) return
-    const tod = useTimeOfDay.getState()
-    const minute = tod.getMinuteOfDay()
-    const slotMinutes = getTodSlotMinutes(tod.currentTime)
-    const resolved = resolveSkyAtMinute(sky, minute, slotMinutes)
-    if (!resolved) return
-    _skyUniforms.bandHorizonRGB = resolved.horizon
-    _skyUniforms.bandLowRGB     = resolved.low
-    _skyUniforms.bandMidRGB     = resolved.mid
-    _skyUniforms.bandHighRGB    = resolved.high
-    _skyUniforms.sunGlowRGB     = resolved.sunGlow
-    _skyUniforms.hasAuthored    = true
-  })
-  return null
-}
+// Sky / lighting / celestial channels flow into CelestialBodies via
+// `<channel>Override` props (threaded from the store below). The
+// consumer resolves per-frame internally — no module-scope pump
+// intermediary needed. LampGlow + Neon still pump because their
+// consumers (NeonBands + grass/lamp shaders) read from module-scoped
+// uniforms — different surface, intentionally unchanged.
 
 function NeonPump() {
   useFrame(() => {
@@ -652,6 +607,21 @@ export default function CartographApp() {
   const storeMotion = useCartographStore(s => s.heroMotion)
   const setStoreMotion = useCartographStore(s => s.setHeroMotion)
 
+  // Stage live-wire for sky / lighting / celestial — threaded into the
+  // single shared CelestialBodies consumer via `<channel>Override` props.
+  // Drag a slider in Sky & Light → Stage retints instantly. Production
+  // mounts the same consumer without these props and reads scene.json
+  // frozen-at-bake. Store reach is contained here in the cartograph chunk;
+  // CelestialBodies itself never imports useCartographStore.
+  // Doctrine: project_stage_consumer_parity, project_authoring_is_live_production_is_static.
+  const skyOverride            = useCartographStore(s => s.sky)
+  const ambientOverride        = useCartographStore(s => s.ambient)
+  const hemiOverride           = useCartographStore(s => s.hemi)
+  const dirSunOverride         = useCartographStore(s => s.dirSun)
+  const dirMoonOverride        = useCartographStore(s => s.dirMoon)
+  const constellationsOverride = useCartographStore(s => s.constellations)
+  const milkyWayOverride       = useCartographStore(s => s.milkyWay)
+
   // Hero keyframes + authored motion live in the store (persisted to design.json).
   // preview + speed are transient runtime UI only.
   const keyframes = storeKeyframes
@@ -868,7 +838,18 @@ export default function CartographApp() {
           {!inDesigner && <StageFog />}
           {!inDesigner && <PostProcessing />}
           <group visible={!inDesigner}>
-            <R3FErrorBoundary name="CelestialBodies"><CelestialBodies debugLevel={0} /></R3FErrorBoundary>
+            <R3FErrorBoundary name="CelestialBodies"><CelestialBodies
+              debugLevel={0}
+              lookId={activeLookId}
+              bakeLastMs={bakeLastMs}
+              skyOverride={skyOverride}
+              ambientOverride={ambientOverride}
+              hemiOverride={hemiOverride}
+              dirSunOverride={dirSunOverride}
+              dirMoonOverride={dirMoonOverride}
+              constellationsOverride={constellationsOverride}
+              milkyWayOverride={milkyWayOverride}
+            /></R3FErrorBoundary>
             <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>
             {/* SpriteClouds parked 2026-05-03 — drei sprite Clouds approach
                 produces stylized cartoon puffs, not the photoreal-stylized
@@ -905,8 +886,6 @@ export default function CartographApp() {
 
           {!inDesigner && <LampGlowPump />}
           {!inDesigner && <NeonPump />}
-          {!inDesigner && <SkyPump />}
-          {!inDesigner && <LightingPump />}
           <Controls controlsRef={controlsRef} />
           {shot === 'hero' && sceneCfg.hasHero && (
             <HeroPreview keyframes={keyframes} motion={heroMotion}

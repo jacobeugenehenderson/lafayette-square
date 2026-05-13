@@ -13,7 +13,7 @@ import * as THREE from 'three'
 
 import InstancedTrees from '../components/InstancedTrees'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import CelestialBodies from '../stage/StageSky'
+import CelestialBodies from '../components/CelestialBodies'
 import CloudDome from '../components/CloudDome'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../stage/StageArch'

@@ -14,7 +14,7 @@
  * slot center → halfway-to-next slot center.  Resolver finds the two
  * adjacent columns by minute-of-day and lerps.
  *
- * Defaults seed-match the canonical hardcoded keyframes in StageSky.jsx
+ * Defaults seed-match the canonical hardcoded keyframes in CelestialBodies.jsx
  * so unauthored Looks render identically to today.
  */
 
@@ -36,7 +36,7 @@ export const SKY_SLOT_COLUMNS = {
 
 const C = (h) => h  // colors stored as hex strings; runtime resolves to THREE.Color
 
-// Defaults — one column-tuple per cell. Seeded from StageSky.jsx's
+// Defaults — one column-tuple per cell. Seeded from CelestialBodies.jsx's
 // hardcoded keyframes (night / dawnDeep / dawnPeak / dawnEarlyGolden /
 // dawnGolden / day / duskGolden / duskEarlyGolden / duskPeak / duskDeep).
 // Values match the existing shader's output at corresponding altitudes
