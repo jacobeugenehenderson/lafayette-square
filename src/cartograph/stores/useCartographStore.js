@@ -1756,38 +1756,45 @@ const useCartographStore = create((set, get) => ({
     const { centerlineData } = get()
     const st = centerlineData.streets[streetIdx]
     if (!st) return
-    // Pair-aware: if this chain has a divided-pair mate (pairId set), flip
-    // its anchor too. Keeps both carriageways in lockstep so the operator
-    // can't leave one orphaned to symmetric spawn.
+    // Pair-aware: if this chain has a divided-pair mate, flip its anchor
+    // too. `pairId` carries the MATE's skelId (not a shared pair-group
+    // identifier), so look up by skelId match.
     const mateIdx = st.pairId
-      ? centerlineData.streets.findIndex((s, i) => i !== streetIdx && s.pairId === st.pairId)
+      ? centerlineData.streets.findIndex(s => s.skelId === st.pairId)
       : -1
-    // Inner-edge anchor is the operator's opt-in to "paired-with-median"
-    // authoring: flips `measure.symmetric` off (so outboard drag stops
-    // mirroring inboard) and seeds `inboard.pavementHW` to 0 — that's
-    // the operator's "I'm now in inner-edge mode; widen inboard if you
-    // want to eat into the median" starting state. Un-flipping mirrors
-    // outboard back onto inboard and restores symmetric.
+    // Inner-edge and Asymmetric are INDEPENDENT operator concepts (park-edge
+    // streets are a common asymmetric-center case). setAnchor never clobbers
+    // operator-authored asymmetric values.
+    //   - Flip TO inner-edge from symmetric: force `symmetric = false`, seed
+    //     `inboard.pavementHW = 0` (visible feedback; operator widens inboard
+    //     to eat into the median).
+    //   - Flip TO inner-edge from asymmetric: anchor only; leave measure alone
+    //     (operator's per-side authoring is intentional).
+    //   - Un-flip TO center: detect the unmodified inner-edge footprint
+    //     (symmetric=false AND inboard pavementHW exactly 0) and clean it up
+    //     by restoring symmetric=true + mirroring outboard onto inboard.
+    //     Anything else (operator widened inboard from zero, or had asymmetric
+    //     pre-existing) → leave measure alone.
     const flipMeasure = (m, innerSign, newAnchor) => {
-      if (!m) return m
-      if (newAnchor === 'inner-edge' && innerSign) {
-        const inboardKey = innerSign === +1 ? 'right' : 'left'
+      if (!m || !innerSign) return m
+      const wasSymmetric = m.symmetric !== false
+      const inboardKey = innerSign === +1 ? 'right' : 'left'
+      const outboardKey = inboardKey === 'left' ? 'right' : 'left'
+      if (newAnchor === 'inner-edge' && wasSymmetric) {
         return {
           ...m,
           symmetric: false,
           [inboardKey]: { ...(m[inboardKey] || {}), pavementHW: 0 },
         }
       }
-      if (innerSign) {
-        const inboardKey = innerSign === +1 ? 'right' : 'left'
-        const outboardKey = inboardKey === 'left' ? 'right' : 'left'
+      if (newAnchor === 'center' && !wasSymmetric && (m[inboardKey]?.pavementHW || 0) === 0) {
         return {
           ...m,
           symmetric: true,
           [inboardKey]: { ...(m[outboardKey] || {}) },
         }
       }
-      return { ...m, symmetric: true }
+      return m
     }
     const flipStreet = (s) => {
       const updates = { ...s, anchor }
