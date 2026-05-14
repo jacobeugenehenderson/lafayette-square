@@ -9,6 +9,7 @@ import parkWaterData from '../data/park_water.json'
 import lampData from '../data/street_lamps.json'
 import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary } from './boundary.js'
 import useCartographStore from './stores/useCartographStore.js'
+import SceneLabel from '../components/SceneLabel.jsx'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import {
   assignTerrainUniforms,
@@ -871,88 +872,19 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         <mesh geometry={waterGeo} material={mats.water} />
       )}
 
-      {/* Labels — canvas texture sprites */}
-      {!hide.labels && labelData.map((lbl, i) => (
-        <LabelSprite key={i} label={lbl} />
-      ))}
+      {/* Labels — SceneLabel (TroikaText/SDF, screen-space pixel sizing) */}
+      {!hide.labels && labelData.map((lbl, i) => {
+        if (!Number.isFinite(lbl.x) || !Number.isFinite(lbl.z) || !Number.isFinite(lbl.angle)) return null
+        return (
+          <SceneLabel
+            key={i}
+            text={lbl.name}
+            tier="street"
+            position={[lbl.x, 2.5, lbl.z]}
+            rotation={[-Math.PI / 2, 0, -lbl.angle]}
+          />
+        )
+      })}
     </group>
-  )
-}
-
-// ── Label sprite: canvas-textured plane ─────────────────────
-// Reads `labels` style from the cartograph store so Designer's Labels
-// section drives every glyph live. fontSize is fixed at 32px (canvas
-// resolution); world-space height comes from `size`. haloWidth>0 paints
-// a glyph stroke; bgAlpha>0 paints the chip rectangle.
-function LabelSprite({ label }) {
-  const style = useCartographStore(s => s.labels)
-  const { texture, width, height } = useMemo(() => {
-    const cvs = document.createElement('canvas')
-    const ctx = cvs.getContext('2d')
-    const fontSize = 32
-    const padX = 8
-    const padY = 4
-    const font = `${style.weight ?? 600} ${fontSize}px -apple-system, sans-serif`
-    ctx.font = font
-    const metrics = ctx.measureText(label.name)
-    // Halo widens the glyph footprint — pad the canvas so strokes don't clip.
-    const haloW = Math.max(0, style.haloWidth ?? 0)
-    const w = Math.ceil(metrics.width + padX * 2 + haloW * 2)
-    const h = fontSize + padY * 2 + haloW * 2
-    cvs.width = w; cvs.height = h
-    if ((style.bgAlpha ?? 1) > 0) {
-      ctx.globalAlpha = style.bgAlpha ?? 1
-      ctx.fillStyle = style.bg ?? '#3a3a38'
-      ctx.fillRect(0, 0, w, h)
-      ctx.globalAlpha = 1
-    }
-    ctx.font = font
-    ctx.textBaseline = 'middle'
-    if (haloW > 0) {
-      ctx.lineWidth = haloW * 2  // half the stroke is inside the glyph
-      ctx.strokeStyle = style.halo ?? '#000000'
-      ctx.lineJoin = 'round'
-      ctx.strokeText(label.name, padX + haloW, h / 2)
-    }
-    ctx.fillStyle = style.fill ?? '#ffffff'
-    ctx.fillText(label.name, padX + haloW, h / 2)
-    const tex = new THREE.CanvasTexture(cvs)
-    tex.minFilter = THREE.LinearFilter
-    const worldH = style.size ?? 4
-    const worldW = worldH * (w / h)
-    return { texture: tex, width: worldW, height: worldH }
-  }, [label.name, style.size, style.weight, style.fill, style.bg, style.bgAlpha, style.halo, style.haloWidth])
-
-  // Bail out if measurement returned NaN (font load failure etc.).
-  // A NaN-sized plane becomes a NaN-positioned BufferGeometry and
-  // breaks the entire scene's frustum culling.
-  if (!Number.isFinite(width) || !Number.isFinite(height) ||
-      !Number.isFinite(label.x) || !Number.isFinite(label.z) ||
-      !Number.isFinite(label.angle)) return null
-
-  // Render layering:
-  //  - renderOrder PRI.labels (16) puts the sprite at the top of the
-  //    transparent queue, so terrain-displaced ground or median grass
-  //    can't paint over it during transparent sorting.
-  //  - depthTest=false means the sprite ignores the depth buffer (won't
-  //    be hidden behind tall geometry) and depthWrite=false keeps it
-  //    from blocking anything painted after it.
-  //  - y=2.5 lifts above plausible terrain displacement so a hilly
-  //    chunk of ground doesn't clip through the plane visually.
-  return (
-    <mesh
-      position={[label.x, 2.5, label.z]}
-      rotation={[-Math.PI / 2, 0, -label.angle]}
-      renderOrder={PRI.labels}
-    >
-      <planeGeometry args={[width, height]} />
-      <meshBasicMaterial
-        map={texture} transparent
-        opacity={style.opacity ?? 1}
-        depthTest={false}
-        depthWrite={false}
-        toneMapped={false}
-      />
-    </mesh>
   )
 }
