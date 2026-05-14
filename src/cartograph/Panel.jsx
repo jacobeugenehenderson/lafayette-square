@@ -340,6 +340,42 @@ function DraftRangeInput({ value, onCommit, min, max, step, formatLabel }) {
   )
 }
 
+// Module-scope cache for the fontsource catalog. The list is ~2k entries
+// and changes daily at most — fetch once per page load.
+let _fontsourceCache = null
+let _fontsourcePromise = null
+function loadFontsourceList() {
+  if (_fontsourceCache) return Promise.resolve(_fontsourceCache)
+  if (_fontsourcePromise) return _fontsourcePromise
+  _fontsourcePromise = fetch('https://api.fontsource.org/v1/fonts')
+    .then(r => r.ok ? r.json() : [])
+    .then(d => {
+      const google = Array.isArray(d) ? d.filter(f => f && f.type === 'google') : []
+      google.sort((a, b) => a.family.localeCompare(b.family))
+      _fontsourceCache = google
+      return google
+    })
+    .catch(() => { _fontsourcePromise = null; return [] })
+  return _fontsourcePromise
+}
+
+function FontFamilySelect({ value, onChange }) {
+  const [fonts, setFonts] = useState(_fontsourceCache || [])
+  useEffect(() => {
+    let cancelled = false
+    loadFontsourceList().then(list => { if (!cancelled) setFonts(list) })
+    return () => { cancelled = true }
+  }, [])
+  return (
+    <select className="carto-select"
+      value={value}
+      onChange={e => onChange(e.target.value)}>
+      <option value="">Default (Roboto)</option>
+      {fonts.map(f => <option key={f.id} value={f.id}>{f.family}</option>)}
+    </select>
+  )
+}
+
 function LabelsSubsection() {
   const style = useCartographStore(s => s.labels) || {}
   const setLabelStyle = useCartographStore(s => s.setLabelStyle)
@@ -406,12 +442,11 @@ function LabelsSubsection() {
           <option value="lower">lower</option>
         </select>
       </div>
-      <div className="carto-row carto-row--wrap">
-        <label className="carto-label-fixed" title="TTF/OTF/WOFF URL. Leave empty for the Troika default (Roboto). Quick try: https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.ttf">Font</label>
-        <input type="text" className="carto-input"
-          placeholder="(default)"
-          value={get('font', '')}
-          onChange={e => setLabelStyle({ font: e.target.value })} />
+      <div className="carto-row">
+        <label className="carto-label-fixed" title="Google Fonts catalog via fontsource. URL is built from family + Weight at render time.">Font</label>
+        <FontFamilySelect
+          value={get('fontFamily', '')}
+          onChange={v => setLabelStyle({ fontFamily: v })} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed">Opacity</label>

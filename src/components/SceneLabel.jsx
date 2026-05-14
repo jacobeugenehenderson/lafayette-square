@@ -60,7 +60,15 @@ export default function SceneLabel({ position, rotation, text, tier = 'street' }
   const displayText = caseMode === 'upper' ? String(text).toUpperCase()
                     : caseMode === 'lower' ? String(text).toLowerCase()
                     : text
-  const fontUrl = (style.font || '').trim() || undefined
+  // Derive Troika `font` URL from fontsource id + weight. Empty family
+  // = Troika's built-in default (Roboto). If the chosen family doesn't
+  // publish the chosen weight, the load fails and Troika falls back —
+  // not worth pre-checking on every render.
+  const family = (style.fontFamily || '').trim()
+  const weight = style.weight || 400
+  const fontUrl = family
+    ? `https://cdn.jsdelivr.net/fontsource/fonts/${family}@latest/latin-${weight}-normal.ttf`
+    : undefined
   return (
     <group ref={groupRef} position={position} rotation={rotation || [0, 0, 0]}>
       <Text

@@ -197,7 +197,7 @@ const useCartographStore = create((set, get) => ({
     letterSpacing: 0.05,         // fontSize units (TroikaText letterSpacing)
     opacity:       1,
     case:          'mixed',      // 'mixed' | 'upper' | 'lower' — applied at render time
-    font:          '',           // TTF/OTF/WOFF URL; empty = Troika default (Roboto)
+    fontFamily:    '',           // fontsource id (e.g. 'inter'); empty = Troika default (Roboto)
   },
   // Look-level global curb width (meters). V2 emits the curb as a single
   // unified stroke around the rounded asphalt boundary, so width is
