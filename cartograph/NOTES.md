@@ -6,6 +6,92 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-14 — Procedural-trees fallback: design memorial (in flight)
+
+**Status:** designed end-to-end, not yet coded. Implementation handoff is a separate baby-agent session per [[feedback_user_spawns_baby_agents]]. This entry is the architecture record per [[feedback_notes_md_holds_architecture]] — read end-to-end before touching code.
+
+### Why this exists
+
+Current `lafayette-square` Look roster carries 14 hand-modeled/scanned variants (`platanus_acerifolia` ×9, `alaskan_cedar_2`, `broadleaf_rt3`, three generics). Total 138 MB baked GLBs + 10 MB atlas — too heavy for the mobile target per [[feedback_beautiful_first_lightweight_51]]. SpeedTree is the eventual destination (cards + LODs + impostor baker) but it carries a learning-curve cost. Procedurals are the v1 stopgap per [[project_v1_no_trees]].
+
+The wiring to remove the old procedural component was already done at commit `43c4aa3` (Arborist library split); `{false && <ParkTrees />}` and its dependencies are gone from `src/`. Only stale doc-comment residue remains (`src/components/R3FErrorBoundary.jsx`, `arborist/SPEC.md:16`). The deployed live site still mounts those procedurals because it ships from a pre-`43c4aa3` build.
+
+### Design: roster mix, not generator-only
+
+The decisive insight: **procedural and hand-authored trees coexist in the same roster.** InstancedTrees' substitution pool is keyed by category, ranked by `quality` (0=Untouched/excluded, 1=Trash, 2=Fill, 3=Mid, 4=Hero). One roster can carry:
+
+- `procedural_broadleaf` ×3 variants at `quality=2`
+- `platanus_acerifolia` ×9 variants at `quality=4`
+- `procedural_ornamental` ×2 variants at `quality=2`
+- vendor `dogwood` ×4 variants at `quality=4`
+
+All four pool into their category bucket; per-placement hash picks deterministically. Operator tunes mix via the Grove's quality slider alone — no rebake of placements, no code touch. SpeedTree replaces by raising its ratings; procedurals stay in roster at low rating as a permanent floor. This is [[project_doped_artifact_placecard_edit_pattern]] applied to trees: roster carries options, runtime samples by category × rating, operator refines.
+
+**The Grove becomes the tree experiment surface.** Each Look has its own roster mix; an operator can author a `lafayette-square-procedural-only` Look (zero SpeedTrees rated), a `lafayette-square-cinematic` Look (all hand-authored, full quality), and any combination, without ever changing tree placements.
+
+### Pipeline: reuse, don't fork
+
+Generator emits a multi-node source GLB (one top-level node per variant, named `procedural_<morph>_1..N`). `publish-glb.js`'s existing variant detection (`namesSuggestVariants` / `nodesSpatiallySeparated`) splits it; LOD simplification, manifest emission, helper-mesh filtering, `normalizeScale` from approxHeightM — all unchanged. `bake-look.js` atlas-packs procedural leaf-card PNGs (already present in `public/textures/leaves/`) + a 1×1 solid-color bark swatch into the unified Look atlas. No fork of `publish-glb` / `atlas-pack` / `bake-look` / `bake-trees`. No `src/components/` edits beyond the 2-line stale-residue cleanup.
+
+`InstancedTrees` consumes the published artifacts unchanged. The runtime sees one uniform tree-publishing channel.
+
+### Generator: parameter-first, UI-additive
+
+`arborist/generate-procedural.js` exposes one pure function:
+
+```
+generateTreeGLB({
+  preset,          // 'broad' | 'conifer' | 'ornamental' | 'columnar' | 'weeping'
+  seed,            // integer for deterministic regen
+  dbh,             // trunk size driver (matches old ParkTrees signature)
+  canopyR, canopyH,
+  branching: { maxGen, primaryN, childN, spread, droopPerGen, ... },
+  leafMorph,       // 'palmate' | 'lobed' | 'ovate_large' | ... (from leafTypes.json)
+  barkPalette,     // array of 5 hex strings
+}) → GLB buffer
+```
+
+The v1 commit ships a CLI wrapper iterating a small hardcoded preset table (one config per morphology × 1–2 seed variants). The eventual Arborist UI (top-level mode alongside scan-import per Jacob 2026-05-14) binds sliders to the same parameter object — same function, no algorithm change. **Discipline:** every variant in v1 must be expressible as a `params` object. No hardcoded shortcuts that bypass the parameter contract.
+
+Algorithm resurrection target: commit `43c4aa3~1`, `src/components/LafayettePark.jsx` lines 450–880. Lift `growBranch`, `addLeaf`, `makeBranch`, `paint`, the per-shape branching configs (`conifer` whorl logic, `weeping` droop, `columnar` upright, `broad`/`ornamental` recursive crown). Drop the runtime-only bits: `useEffect` instance-matrix wiring, `onBeforeCompile` shaders, panel-color reactivity — those live in `treeAtlasMaterial.js` (atlas side) or are obviated by the per-instance pipeline.
+
+### Species model: one per morphology
+
+Five published species in `public/trees/`: `procedural_broadleaf` / `procedural_conifer` / `procedural_ornamental` / `procedural_columnar` / `procedural_weeping`. Mirrors `src/data/leafTypes.json` morphology axis; the eventual UI species-picker maps cleanly; bake substitution stays per-category.
+
+(Rejected alternatives: one catch-all `procedural` species — wrong shape for UI; mirroring real species names like `procedural_acer_saccharum` — maximally substitutable but bloats state for a v1 stopgap.)
+
+### Eventual UI (deferred, ~1 day on top)
+
+Top-level mode toggle in the Arborist app: `[Scan] | [Procedural]`. Procedural mode owns the viewport. Right-pane tune panel mirrors the existing voxelSize/minRadius/tipRadius scan-panel pattern, with params instead:
+
+- Shape preset dropdown
+- Trunk: dbh, lean
+- Crown: canopyR, canopyH
+- Branching: maxGen, primaryN, childN, spread, droopPerGen
+- Leaf morphology dropdown (sourced from `leafTypes.json`)
+- Bark palette: 5 swatches
+- Seed: integer + dice button
+
+`POST /procedural/generate` endpoint on `arborist/serve.js` returns a GLB buffer; viewport renders it via `SpecimenViewport.jsx`. "Adopt as seedling" writes to `arborist/state/procedural_<morph>/seedlings.json` and triggers `publish-glb.js`. Not v1-blocking; build the function now with the API the UI will need.
+
+### Constraints carried into the brief
+
+- [[feedback_stash_isolate_per_file]] — the procedural commit must NOT bundle the 23 unrelated dirty files in the tree
+- [[project_kit_helpers_pattern]] — Arborist owns trees end-to-end; cartograph never imports tree code
+- [[feedback_no_parallel_pipeline_for_scenes]] — no procedural-only mount path bypassing InstancedTrees; the fallback is roster entries, not parallel renderers
+- [[project_slab_is_the_instance_identity]] — procedurals travel through bake into the slab artifact like everything else; deployed runtime sees one uniform tree channel
+- [[project_writeifchanged_touches_mtime]] — if the generator or pipeline writes files conditionally, mtime touches on no-op
+
+### Acceptance for the v1 commit
+
+- `node arborist/generate-procedural.js` + `node arborist/bake-trees.js --look lafayette-square` produces a `trees-atlas.json` whose roster includes all 5 procedural species at authored quality rating
+- LS Stage / Preview / production render trees via `InstancedTrees` substituting procedurals into every park placement
+- No `procedural` token appears in `src/` (only in `arborist/`, `public/trees/`, `public/baked/<look>/`)
+- 2-line stale-residue cleanup (`R3FErrorBoundary.jsx` doc-comment, `arborist/SPEC.md:16`) lands in same commit
+
+---
+
 ## 2026-05-14 — Corner kit restored to 3 tiers (per-IX dot was the drift)
 
 The corner-authoring kit had silently collapsed from 3 tiers to 2: `CornerEditHandles.jsx` had a dead-comment retiring the per-IX center handle, leaving the operator with only the global slider + per-corner cyan dots. The middle tier — "tune all four corners at one IX with one drag" — was missing, even though FEATURES line 72–76 still documented it as live and `cornerRadiusOverrides` was still consumed by the V2 emitter. The map was dormant, not gone.
