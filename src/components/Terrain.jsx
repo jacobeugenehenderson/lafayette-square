@@ -1,11 +1,9 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import terrainData from '../data/terrain.json'
-import { terrainExag, patchTerrain } from '../utils/terrainShader'
+import { width, height, bounds, data, terrainExag, patchTerrain } from '../utils/terrainShader'
 
 function Terrain() {
   const geometry = useMemo(() => {
-    const { width, height, bounds, data } = terrainData
     const spanX = bounds.maxX - bounds.minX
     const spanZ = bounds.maxZ - bounds.minZ
 
@@ -63,10 +61,10 @@ function Terrain() {
 
   // Center mesh on data bounds (PlaneGeometry is centered at origin,
   // but terrain data covers an asymmetric region)
-  const center = useMemo(() => {
-    const { bounds } = terrainData
-    return [(bounds.minX + bounds.maxX) / 2, -0.1, (bounds.minZ + bounds.maxZ) / 2]
-  }, [])
+  const center = useMemo(
+    () => [(bounds.minX + bounds.maxX) / 2, -0.1, (bounds.minZ + bounds.maxZ) / 2],
+    []
+  )
 
   return (
     <mesh geometry={geometry} position={center} receiveShadow material={material} />

@@ -40,6 +40,7 @@
     "clipper-lib": "^6.4.2",
     "concurrently": "^9.2.1",
     "fbx2gltf": "^0.9.7-p1",
+    "geotiff": "^3.0.5",
     "meshoptimizer": "^1.1.1",
     "node-unrar-js": "^2.0.2",
     "pngjs": "^7.0.0",

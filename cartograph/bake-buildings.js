@@ -32,8 +32,12 @@ const ROOT = join(__dirname, '..')
 // per-vertex attribute; BakedBuildings multiplies by `uExag` (the same
 // uniform driving ground displacement) so buildings rise/fall in lockstep
 // with the ground. Hence we use getElevationRaw, NOT getElevation.
-const _terrain = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
-const { getElevationRaw } = makeElevationSampler(_terrain)
+const _terrainMeta = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'terrain.json'), 'utf-8'))
+const _terrainBin  = readFileSync(join(ROOT, 'src', 'data', 'terrain.bin'))
+const _terrainData = new Float32Array(
+  _terrainBin.buffer, _terrainBin.byteOffset, _terrainBin.byteLength / 4
+)
+const { getElevationRaw } = makeElevationSampler({ ..._terrainMeta, data: _terrainData })
 
 // Material palette. Wall + roof + foundation. Roughness is reasonable.
 const WALL_MATERIALS = {

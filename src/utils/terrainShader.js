@@ -12,11 +12,19 @@
  */
 
 import * as THREE from 'three'
-import terrainData from '../data/terrain.json'
+import terrainMeta from '../data/terrain.json'
+import terrainBinUrl from '../data/terrain.bin?url'
 
 export { V_EXAG } from './elevation'
 
-const { width, height, bounds, data } = terrainData
+// Bin = raw Float32 heightmap, row-major (width * height samples).
+// Vite ships it as a static asset; top-level await blocks the import
+// graph until it arrives. Same one-shot cost as a static import; the
+// payload is just outside the JS chunk so it gzips on its own.
+export const { width, height, bounds } = terrainMeta
+export const data = new Float32Array(
+  await fetch(terrainBinUrl).then(r => r.arrayBuffer())
+)
 const spanX = bounds.maxX - bounds.minX
 const spanZ = bounds.maxZ - bounds.minZ
 
