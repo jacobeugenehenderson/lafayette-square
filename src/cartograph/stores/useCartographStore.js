@@ -193,7 +193,7 @@ const useCartographStore = create((set, get) => ({
     weight:        600,          // 300 | 400 | 500 | 600 | 700 — TroikaText `fontWeight`
     fill:          '#e8e8f0',
     halo:          '#14141c',
-    haloWidth:     0.07,         // fontSize units (TroikaText outlineWidth)
+    haloWidth:     0.3,          // world meters; SceneLabel divides by fontSize for Troika's outlineWidth
     letterSpacing: 0.05,         // fontSize units (TroikaText letterSpacing)
     opacity:       1,
     case:          'mixed',      // 'mixed' | 'upper' | 'lower' — applied at render time
@@ -1746,8 +1746,14 @@ const useCartographStore = create((set, get) => ({
     const { centerlineData } = get()
     const st = centerlineData.streets[streetIdx]
     if (!st) return
+    // Pair-aware: if this chain has a divided-pair mate (pairId set), flip
+    // its anchor too. Keeps both carriageways in lockstep so the operator
+    // can't leave one orphaned to symmetric spawn.
+    const mateIdx = st.pairId
+      ? centerlineData.streets.findIndex((s, i) => i !== streetIdx && s.pairId === st.pairId)
+      : -1
     const streets = centerlineData.streets.map((s, i) =>
-      i === streetIdx ? { ...s, anchor } : s
+      i === streetIdx || i === mateIdx ? { ...s, anchor } : s
     )
     set({ centerlineData: { ...centerlineData, streets } })
     get()._saveOverlay()
