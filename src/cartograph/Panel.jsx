@@ -302,6 +302,44 @@ function VisRow({ id, label, hidden, onToggle }) {
 // One class for now (every label uses the same values); when a second
 // neighborhood ships and per-class control is needed, this same control
 // schema iterates over a `byClass` roster.
+// Draft slider used across LabelsSubsection: commits to the store only
+// after a 150ms idle window or on pointer-up, so dragging stays fluid
+// even though Troika SDF text re-bakes glyph atlases on every prop
+// change. Same pattern as CornersSubsection — extracted so the half-
+// dozen label sliders don't each duplicate it.
+function DraftRangeInput({ value, onCommit, min, max, step, formatLabel }) {
+  const [draft, setDraft] = useState(value)
+  const idleRef = useRef(null)
+  const draggingRef = useRef(false)
+  useEffect(() => { if (!draggingRef.current) setDraft(value) }, [value])
+  const schedule = (v) => {
+    if (idleRef.current != null) clearTimeout(idleRef.current)
+    idleRef.current = setTimeout(() => { idleRef.current = null; onCommit(v) }, 150)
+  }
+  const finalCommit = () => {
+    draggingRef.current = false
+    if (idleRef.current != null) { clearTimeout(idleRef.current); idleRef.current = null }
+    onCommit(draft)
+  }
+  const parse = (s) => {
+    // Integer step => parseInt; fractional => parseFloat.
+    const stepN = Number(step ?? 1)
+    return Number.isInteger(stepN) ? parseInt(s, 10) : parseFloat(s)
+  }
+  return (
+    <>
+      <input type="range" className="carto-input"
+        min={min} max={max} step={step}
+        value={draft}
+        onPointerDown={() => { draggingRef.current = true }}
+        onPointerUp={finalCommit}
+        onChange={e => { const v = parse(e.target.value); setDraft(v); schedule(v) }}
+        onKeyUp={finalCommit} />
+      <span className="carto-meta carto-meta--value">{formatLabel ? formatLabel(draft) : draft}</span>
+    </>
+  )
+}
+
 function LabelsSubsection() {
   const style = useCartographStore(s => s.labels) || {}
   const setLabelStyle = useCartographStore(s => s.setLabelStyle)
@@ -311,35 +349,31 @@ function LabelsSubsection() {
     <>
       <div className="carto-row carto-row--wrap">
         <label className="carto-label-fixed" title="Target screen height of a street label, in pixels. Clamped between Min and Max at zoom extremes.">Target</label>
-        <input type="range" className="carto-input"
-          min="10" max="64" step="1"
+        <DraftRangeInput min="10" max="64" step="1"
           value={get('targetPx', 24)}
-          onChange={e => setLabelStyle({ targetPx: parseInt(e.target.value, 10) })} />
-        <span className="carto-meta carto-meta--value">{get('targetPx', 24)} px</span>
+          onCommit={v => setLabelStyle({ targetPx: v })}
+          formatLabel={v => `${v} px`} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="Pixel floor — labels never shrink below this even when the camera pulls far back.">Min</label>
-        <input type="range" className="carto-input"
-          min="8" max="32" step="1"
+        <DraftRangeInput min="8" max="32" step="1"
           value={get('minPx', 14)}
-          onChange={e => setLabelStyle({ minPx: parseInt(e.target.value, 10) })} />
-        <span className="carto-meta carto-meta--value">{get('minPx', 14)} px</span>
+          onCommit={v => setLabelStyle({ minPx: v })}
+          formatLabel={v => `${v} px`} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="Pixel ceiling — labels never grow past this when the camera pushes in close.">Max</label>
-        <input type="range" className="carto-input"
-          min="24" max="128" step="2"
+        <DraftRangeInput min="24" max="128" step="2"
           value={get('maxPx', 48)}
-          onChange={e => setLabelStyle({ maxPx: parseInt(e.target.value, 10) })} />
-        <span className="carto-meta carto-meta--value">{get('maxPx', 48)} px</span>
+          onCommit={v => setLabelStyle({ maxPx: v })}
+          formatLabel={v => `${v} px`} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="Park-tier multiplier. 1 = same size as a street label; 2.5 = LAFAYETTE PARK title size.">Park ×</label>
-        <input type="range" className="carto-input"
-          min="1" max="4" step="0.1"
+        <DraftRangeInput min="1" max="4" step="0.1"
           value={tier.park ?? 2.5}
-          onChange={e => setLabelStyle({ tierScale: { ...tier, park: parseFloat(e.target.value) } })} />
-        <span className="carto-meta carto-meta--value">{Number(tier.park ?? 2.5).toFixed(1)}×</span>
+          onCommit={v => setLabelStyle({ tierScale: { ...tier, park: v } })}
+          formatLabel={v => `${Number(v).toFixed(1)}×`} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed">Weight</label>
@@ -364,23 +398,17 @@ function LabelsSubsection() {
         <input type="color" className="carto-input"
           value={get('halo', '#14141c')}
           onChange={e => setLabelStyle({ halo: e.target.value })} />
-        <input type="range" className="carto-input"
-          min="0" max="0.2" step="0.01"
+        <DraftRangeInput min="0" max="0.2" step="0.01"
           value={get('haloWidth', 0.07)}
-          onChange={e => setLabelStyle({ haloWidth: parseFloat(e.target.value) })} />
-        <span className="carto-meta carto-meta--value">
-          {Number(get('haloWidth', 0.07)).toFixed(2)}
-        </span>
+          onCommit={v => setLabelStyle({ haloWidth: v })}
+          formatLabel={v => Number(v).toFixed(2)} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="TroikaText letterSpacing in fontSize units.">Tracking</label>
-        <input type="range" className="carto-input"
-          min="0" max="0.3" step="0.01"
+        <DraftRangeInput min="0" max="0.3" step="0.01"
           value={get('letterSpacing', 0.05)}
-          onChange={e => setLabelStyle({ letterSpacing: parseFloat(e.target.value) })} />
-        <span className="carto-meta carto-meta--value">
-          {Number(get('letterSpacing', 0.05)).toFixed(2)}
-        </span>
+          onCommit={v => setLabelStyle({ letterSpacing: v })}
+          formatLabel={v => Number(v).toFixed(2)} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="Text case transform applied at render time.">Case</label>
@@ -401,13 +429,10 @@ function LabelsSubsection() {
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed">Opacity</label>
-        <input type="range" className="carto-input"
-          min="0" max="1" step="0.05"
+        <DraftRangeInput min="0" max="1" step="0.05"
           value={get('opacity', 1)}
-          onChange={e => setLabelStyle({ opacity: parseFloat(e.target.value) })} />
-        <span className="carto-meta carto-meta--value">
-          {Number(get('opacity', 1)).toFixed(2)}
-        </span>
+          onCommit={v => setLabelStyle({ opacity: v })}
+          formatLabel={v => Number(v).toFixed(2)} />
       </div>
     </>
   )
