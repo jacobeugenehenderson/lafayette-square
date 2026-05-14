@@ -116,8 +116,8 @@ const PAINT_ORDER = [
   ['mat', 'treelawn'],
   ['mat', 'sidewalk'],
   ['mat', 'curb'],
-  ['mat', 'asphalt'],
   ['mat', 'highway'],
+  ['mat', 'asphalt'],
   ['mat', 'median'],
   // Alley + path ribbons painted on top of streets where they cross.
   ['mat', 'alley'],
