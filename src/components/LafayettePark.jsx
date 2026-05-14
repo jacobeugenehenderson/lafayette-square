@@ -1,18 +1,17 @@
 import { useMemo, useRef, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
-import SceneLabel from './SceneLabel.jsx'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import parkWaterData from '../data/park_water.json'
 import parkPathData from '../data/park_paths.json'
-import { getElevation } from '../utils/elevation'
+import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
-import { terrainExag } from '../utils/terrainShader'
+import { terrainExag, patchTerrain } from '../utils/terrainShader'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin.
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
@@ -387,6 +386,16 @@ function ParkPaths() {
          diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
       )
     }
+    // Unique cache key MUST be set before patchTerrain wraps the material
+    // — otherwise three.js's program cache silently collapses this shader
+    // onto another `terrain-vp-std` keyed material (islandMat / bankMat /
+    // non-fade FadeMesh) and the gravel fragment never compiles. The
+    // resulting render is a flat light-gray plain MeshStandardMaterial.
+    mat.customProgramCacheKey = () => 'park-path-gravel-v1'
+    // Per-vertex terrain displacement: each gravel-path vertex rides the
+    // ground beneath it. Rigid-group lift can't work for an item spread
+    // across the park's 350 m extent — corner mismatch is meters at LS scale.
+    patchTerrain(mat, { perVertex: true })
     return mat
   }, [])
 
@@ -528,6 +537,22 @@ function ParkWater({ lookId, bakeLastMs }) {
              lakeY: 0, grottoY: 0, islandY: 0 }
   }, [])
 
+  // Pond rigid-lift anchors: mean raw heightmap value across each pond's
+  // outline. Computed once at mount — both shared materials (bank/water)
+  // can stay shared because the per-pond lift happens at the GROUP level.
+  const lakeCentroidRaw = useMemo(() => {
+    const pts = parkWaterData.lake.outer
+    let s = 0
+    for (const [x, z] of pts) s += getElevationRaw(x, z)
+    return s / pts.length
+  }, [])
+  const grottoCentroidRaw = useMemo(() => {
+    const pts = parkWaterData.grotto
+    let s = 0
+    for (const [x, z] of pts) s += getElevationRaw(x, z)
+    return s / pts.length
+  }, [])
+
   // Animated water material with ripple shader
   const waterMat = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -645,6 +670,12 @@ function ParkWater({ lookId, bakeLastMs }) {
          diffuseColor.a = mix(0.72, 0.88, smoothstep(0.3, 0.6, ripple));`
       )
     }
+    // Unique cache key so the ripple shader doesn't collapse onto a
+    // sibling material's compiled program (see pathMat note above).
+    // No patchTerrain: PondGroup lifts the whole lake rigidly by lake
+    // centroid raw × uExag, preserving the Y separation with the bank
+    // and island that per-vertex displacement was destroying.
+    mat.customProgramCacheKey = () => 'park-water-ripple-v1'
     return mat
   }, [])
 
@@ -657,28 +688,53 @@ function ParkWater({ lookId, bakeLastMs }) {
     }
   })
 
-  // Simple island grass material
+  // Simple island grass material. No patchTerrain — PondGroup wraps the
+  // island mesh and lifts the whole group rigidly by the lake's centroid
+  // raw. Per-vertex displacement here would produce a triangulated tilt
+  // that mismatches the bank/water surfaces and z-fights at the rim.
   const islandMat = useMemo(() =>
     new THREE.MeshStandardMaterial({ color: '#2a5528', roughness: 0.9 }), [])
 
-  // Shoreline bank material
+  // Shoreline bank material — see islandMat note re: rigid lift.
   const bankMat = useMemo(() =>
     new THREE.MeshStandardMaterial({ color: '#5a5040', roughness: 0.95 }), [])
 
   if (waterHidden) return null
 
   // park_water.json polygons are in compass frame; render directly with
-  // no per-mesh rotation.
+  // no per-mesh rotation. Lake/grotto each rigid-lift by a per-pond
+  // centroid sample so bank/water/island all rise together — preserving
+  // the exact 0.15 m / 0.05 m Y separations between layers. Per-vertex
+  // displacement on the bank/water/island materials (the previous
+  // approach) gave each mesh its own interpolated surface, and where the
+  // bank polygon interpolated higher than the water polygon (lake-in-a-
+  // basin geometry), the brown bank fragments won the depth test and
+  // covered the water. Rigid per-pond lift dodges that entirely.
   return (
     <group>
-      <mesh geometry={lakeBankGeo}    position={[0, lakeY   + 0.2,  0]} receiveShadow material={bankMat} />
-      <mesh geometry={grottoBankGeo}  position={[0, grottoY + 0.2,  0]} receiveShadow material={bankMat} />
-      <mesh geometry={lakeWaterGeo}   position={[0, lakeY   + 0.35, 0]} receiveShadow material={waterMat} />
-      <mesh geometry={grottoWaterGeo} position={[0, grottoY + 0.35, 0]} receiveShadow material={waterMat} />
-
-      <mesh geometry={islandGeo} position={[0, islandY + 0.4, 0]} receiveShadow material={islandMat} />
+      <PondGroup centroidRaw={lakeCentroidRaw}>
+        <mesh geometry={lakeBankGeo}  position={[0, lakeY   + 0.2,  0]} receiveShadow material={bankMat} />
+        <mesh geometry={lakeWaterGeo} position={[0, lakeY   + 0.35, 0]} receiveShadow material={waterMat} />
+        <mesh geometry={islandGeo}    position={[0, islandY + 0.4,  0]} receiveShadow material={islandMat} />
+      </PondGroup>
+      <PondGroup centroidRaw={grottoCentroidRaw}>
+        <mesh geometry={grottoBankGeo}  position={[0, grottoY + 0.2,  0]} receiveShadow material={bankMat} />
+        <mesh geometry={grottoWaterGeo} position={[0, grottoY + 0.35, 0]} receiveShadow material={waterMat} />
+      </PondGroup>
     </group>
   )
+}
+
+// Rigid per-frame lift for all meshes inside the group. centroidRaw is
+// the raw heightmap value (meters above local-min) averaged over the
+// pond's polygon vertices; terrainExag.value × centroidRaw gives the
+// world-Y the whole pond rides at, scaled with the global exag dial.
+function PondGroup({ centroidRaw, children }) {
+  const ref = useRef()
+  useFrame(() => {
+    if (ref.current) ref.current.position.y = centroidRaw * terrainExag.value
+  })
+  return <group ref={ref}>{children}</group>
 }
 
 
@@ -702,14 +758,22 @@ function PerimeterFence() {
     return { posts, rails }
   }, [])
 
-  // Shared materials across all posts / rails (reused for HMR stability;
-  // patchTerrain deferred until a dedicated Hero-sinking pass since
-  // wrapping it in Browse with terrainExag=0 had no functional benefit
-  // and caused depth-precision snap-off at high altitude).
-  const postMat = useMemo(() =>
-    new THREE.MeshStandardMaterial({ color: '#2a2a2a', roughness: 0.7, metalness: 0.3 }), [])
-  const railMat = useMemo(() =>
-    new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.6, metalness: 0.4 }), [])
+  // Shared materials across all posts / rails (reused for HMR stability).
+  // patchTerrain rigid: each post/rail is its own <mesh> with its own world
+  // position, so the rigid mode samples that position's terrain height —
+  // every post grounds at the local heightfield independently. The earlier
+  // rigid-group lift hid this but produced meters of edge mismatch once raw
+  // values stopped being near-zero.
+  const postMat = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({ color: '#2a2a2a', roughness: 0.7, metalness: 0.3 })
+    patchTerrain(mat)
+    return mat
+  }, [])
+  const railMat = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.6, metalness: 0.4 })
+    patchTerrain(mat)
+    return mat
+  }, [])
 
   return (
     <group>
@@ -740,38 +804,55 @@ function PerimeterFence() {
 }
 
 // ── Main Park Component ────────────────────────────────────────────────
-// Rigid lift of the entire park group by the park-center elevation × the
-// shared terrainExag uniform. BakedGround's `park` face rises with terrain
-// via per-vertex patchTerrain; the live park items (water/paths/fence/labels)
-// would otherwise sit at static Y while the ground rises out from under
-// them. Lifting the whole group rigidly avoids per-vertex shader
-// interactions (per-mesh patchTerrain caused Browse depth-precision
-// snap-off at high altitude) and accepts a small mismatch where the
-// terrain varies across the park's 350m extent — fine at LS scale.
-const PARK_CENTER_ELEV = getElevation(0, 0)
-function LafayettePark({ lookId, bakeLastMs } = {}) {
-  const groupRef = useRef()
+// Per-item terrain displacement: each park sub-mesh patches with its own
+// terrain sample (paths/water/banks/island per-vertex; fence posts/rails
+// rigid at each mesh's own world position). The earlier shared rigid-group
+// lift assumed near-zero raw heightmap values; with b24fce5's local-min
+// normalization the park-corner ground sits ~10 m below the park-center
+// raw, producing the "fence hovering overhead" symptom. Each item now
+// rides the heightfield directly so the joint between park feature and
+// ground is local rather than averaged.
+//
+// Labels are drei <Text> instances (TroikaText) — hard to shader-patch
+// cleanly — so each is wrapped in a useFrame'd group that lifts by its own
+// terrain sample × terrainExag.value.
+function ElevatedGroup({ at, children }) {
+  const ref = useRef()
+  const baseY = useMemo(() => getElevationRaw(at[0], at[1]), [at[0], at[1]])
   useFrame(() => {
-    if (!groupRef.current) return
-    groupRef.current.position.y = PARK_CENTER_ELEV * terrainExag.value
+    if (ref.current) ref.current.position.y = baseY * terrainExag.value
   })
+  return <group ref={ref}>{children}</group>
+}
+
+function LafayettePark({ lookId, bakeLastMs } = {}) {
   return (
-    <group ref={groupRef}>
+    <group>
       {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
       <ParkWater lookId={lookId} bakeLastMs={bakeLastMs} />
       <ParkPaths />
       <PerimeterFence />
 
-      {/* Park title routes through SceneLabel with tier="park" so the
-          Designer panel's Park × multiplier (and every other label
-          knob — fill, halo, font, case, weight) drives this glyph.
-          Case=UPPER in the panel renders the authored all-caps form. */}
-      <SceneLabel
-        text="Lafayette Park"
-        tier="park"
-        position={[LABEL_TITLE_POS[0], 0.08, LABEL_TITLE_POS[1]]}
-        rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
-      />
+      <ElevatedGroup at={LABEL_TITLE_POS}>
+        {/* Park title is intentionally a custom label, not driven by the
+            Designer Labels panel. Jacob's call: park is a singular
+            landmark; if its treatment ever changes it'll be authored
+            directly here. */}
+        <Text
+          position={[LABEL_TITLE_POS[0], 0.08, LABEL_TITLE_POS[1]]}
+          rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
+          fontSize={6}
+          color="#e8e8f0"
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.15}
+          outlineWidth={0.7}
+          outlineColor="#14141c"
+        >
+          LAFAYETTE PARK
+        </Text>
+      </ElevatedGroup>
+      <ElevatedGroup at={LABEL_SUBTITLE_POS}>
       <Text
         position={[LABEL_SUBTITLE_POS[0], 0.08, LABEL_SUBTITLE_POS[1]]}
         rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
@@ -785,6 +866,7 @@ function LafayettePark({ lookId, bakeLastMs } = {}) {
       >
         {'EST. 1851 \u00B7 ST. LOUIS, MO'}
       </Text>
+      </ElevatedGroup>
     </group>
   )
 }

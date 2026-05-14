@@ -187,22 +187,20 @@ const useCartographStore = create((set, get) => ({
   // dial. Persists in design.json; consumed by `buildBlockGeometryV2`
   // (Designer live render + the bake) via the corner-radius authoring kit.
   cornerRadiusScale: 1,
-  // Look-level label style. Drives SceneLabel (drei <Text> / SDF) for
-  // both Cartograph's Designer + Preview/LS via shared streetLabels
-  // module. World-space sizing — `size` is meters; the SceneLabel
-  // width-aware multiplier (clamped 0.5×..2× of size based on each
+  // Look-level street-label style. Drives SceneLabel (drei <Text> / SDF)
+  // for both Cartograph's Designer + Preview/LS via the shared
+  // streetLabels module. World-space sizing — `size` is meters; the
+  // SceneLabel width-aware multiplier (clamped 0.5×..2× based on each
   // chain's measured pavement width) provides per-street variation
-  // without an authoring knob. `tierScale.park` multiplies size for
-  // the LAFAYETTE PARK title (Phase C). `haloWidth` is in fontSize
-  // units (Troika `outlineWidth`) so the outline scales with the type
-  // and small/large labels share the same typographic feel. `case`
-  // applies UPPER/lower at render. `fontFamily` is a fontsource id
-  // (empty = Troika default, Roboto); SceneLabel derives the TTF URL
-  // from family + weight.
+  // without an authoring knob. `haloWidth` is in fontSize units (Troika
+  // `outlineWidth`) so the outline scales with the type. `case` applies
+  // UPPER/lower at render. `fontFamily` is a fontsource id (empty =
+  // Troika default, Roboto); SceneLabel derives the TTF URL from
+  // family + weight. Landmark labels (park title, etc.) are authored
+  // directly in their components — singular, not part of this kit.
   labels: {
     size:          4,            // meters; world-space height of a street label
-    tierScale:     { street: 1, park: 1.5 },
-    weight:        600,          // 300 | 400 | 500 | 600 | 700 — TroikaText `fontWeight`
+    weight:        600,          // 300 | 400 | 500 | 600 | 700
     fill:          '#e8e8f0',
     halo:          '#14141c',
     haloWidth:     0.07,         // fontSize units (Troika outlineWidth) — % of glyph height

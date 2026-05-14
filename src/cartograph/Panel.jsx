@@ -380,7 +380,6 @@ function LabelsSubsection() {
   const style = useCartographStore(s => s.labels) || {}
   const setLabelStyle = useCartographStore(s => s.setLabelStyle)
   const get = (k, fb) => (style[k] !== undefined ? style[k] : fb)
-  const tier = style.tierScale || { street: 1, park: 2.5 }
   return (
     <>
       <div className="carto-row carto-row--wrap">
@@ -389,13 +388,6 @@ function LabelsSubsection() {
           value={get('size', 4)}
           onCommit={v => setLabelStyle({ size: v })}
           formatLabel={v => `${Number(v).toFixed(2)} m`} />
-      </div>
-      <div className="carto-row">
-        <label className="carto-label-fixed" title="Park-tier size multiplier — applied to Size for the LAFAYETTE PARK title and other park-tier labels. 1× = same size as a street label; 1.5× = current Park title.">Park ×</label>
-        <DraftRangeInput min="1" max="4" step="0.1"
-          value={tier.park ?? 1.5}
-          onCommit={v => setLabelStyle({ tierScale: { ...tier, park: v } })}
-          formatLabel={v => `${Number(v).toFixed(1)}×`} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed">Weight</label>

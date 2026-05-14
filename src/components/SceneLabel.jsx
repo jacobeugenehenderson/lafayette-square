@@ -1,13 +1,14 @@
 import { Text } from '@react-three/drei'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 
-// Shared text label renderer. drei <Text> (TroikaText/SDF) sized in
+// Shared street label renderer. drei <Text> (TroikaText/SDF) sized in
 // world units — labels live inside the cartographic surface, scaling
-// with the map like everything else painted on the ground.
-//
-// `tier` ('street' | 'park') multiplies the base size via
-// labels.tierScale[tier]. New tiers (landmark, poi, …) add an entry
-// there — no renderer change.
+// with the map like everything else painted on the ground. Each label
+// gets a width multiplier from its chain's measured pavement width so
+// wide arterials read bigger than narrow residentials. Landmark labels
+// (e.g. LAFAYETTE PARK) are authored directly in their own components,
+// not through SceneLabel — they're singular and don't share this
+// system's parametric assumptions.
 //
 // renderOrder=16 matches MapLayers PRI.labels so labels sit at the
 // top of the transparent queue and don't get painted over by
@@ -21,16 +22,13 @@ const STREET_REFERENCE_WIDTH_M = 12
 const STREET_WIDTH_MUL_MIN = 0.5
 const STREET_WIDTH_MUL_MAX = 2.0
 
-export default function SceneLabel({ position, rotation, text, tier = 'street', widthM = null }) {
+export default function SceneLabel({ position, rotation, text, widthM = null }) {
   const style = useCartographStore(s => s.labels) || {}
   const size = style.size ?? 4
-  const tierMul = (style.tierScale && style.tierScale[tier]) ?? 1
-  // Width-aware sizing for street tier — bigger pavement, bigger label.
-  // Park (and any future fixed-size tier) ignores widthM.
-  const widthMul = (tier === 'street' && widthM)
+  const widthMul = widthM
     ? Math.max(STREET_WIDTH_MUL_MIN, Math.min(STREET_WIDTH_MUL_MAX, widthM / STREET_REFERENCE_WIDTH_M))
     : 1
-  const fontSize = size * tierMul * widthMul
+  const fontSize = size * widthMul
 
   const caseMode = style.case ?? 'mixed'
   const displayText = caseMode === 'upper' ? String(text).toUpperCase()
