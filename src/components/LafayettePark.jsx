@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
+import SceneLabel from './SceneLabel.jsx'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -761,19 +762,16 @@ function LafayettePark({ lookId, bakeLastMs } = {}) {
       <ParkPaths />
       <PerimeterFence />
 
-      <Text
+      {/* Park title routes through SceneLabel with tier="park" so the
+          Designer panel's Park × multiplier (and every other label
+          knob — fill, halo, font, case, weight) drives this glyph.
+          Case=UPPER in the panel renders the authored all-caps form. */}
+      <SceneLabel
+        text="Lafayette Park"
+        tier="park"
         position={[LABEL_TITLE_POS[0], 0.08, LABEL_TITLE_POS[1]]}
         rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
-        fontSize={6}
-        color="#e8e8f0"
-        anchorX="center"
-        anchorY="middle"
-        letterSpacing={0.15}
-        outlineWidth={0.7}
-        outlineColor="#14141c"
-      >
-        LAFAYETTE PARK
-      </Text>
+      />
       <Text
         position={[LABEL_SUBTITLE_POS[0], 0.08, LABEL_SUBTITLE_POS[1]]}
         rotation={[-Math.PI / 2, LABEL_TEXT_ROT_Y, 0]}
