@@ -1,7 +1,8 @@
 import { create } from 'zustand'
+import { INSTANCE } from '../instance.js'
 
-const CENTER_LAT = 38.6160
-const CENTER_LON = -90.2161
+const CENTER_LAT = INSTANCE.geography.lat
+const CENTER_LON = INSTANCE.geography.lon
 const LON_TO_METERS = 86774
 const LAT_TO_METERS = 111000
 const BOUNDS_RADIUS = 800 // meters from center — covers Truman/Chouteau/Jefferson/44 box

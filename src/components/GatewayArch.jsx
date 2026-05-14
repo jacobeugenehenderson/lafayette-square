@@ -31,7 +31,9 @@ import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
-import { LATITUDE, LONGITUDE } from './CelestialBodies'
+import { INSTANCE } from '../instance.js'
+const LATITUDE = INSTANCE.geography.lat
+const LONGITUDE = INSTANCE.geography.lon
 import { useSceneJson } from '../lib/useSceneJson.js'
 import {
   ARCH_FLAT_DEFAULTS,
@@ -128,9 +130,9 @@ const HORIZON_DEFAULT_CHANNEL = Object.freeze({ values: { ...HORIZON_FLAT_DEFAUL
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
-  if (typeof window === 'undefined') return 'lafayette-square'
+  if (typeof window === 'undefined') return INSTANCE.lookId
   const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
 export default function GatewayArch({

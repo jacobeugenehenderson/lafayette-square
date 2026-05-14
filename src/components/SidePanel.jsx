@@ -13,6 +13,7 @@ import useListings from '../hooks/useListings'
 import useBulletin from '../hooks/useBulletin'
 import { BrowseView, NewPostView, ThreadListView, ThreadDetailView } from './BulletinModal'
 import useSkyState from '../hooks/useSkyState'
+import { INSTANCE } from '../instance.js'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
 import { interpolateForecast } from '../lib/dawnTimeline'
 import WeatherTimeline from './WeatherTimeline'
@@ -113,9 +114,8 @@ function computeCenterOn(building) {
   }
 }
 
-// Lafayette Square, St. Louis, MO
-const LATITUDE = 38.6160
-const LONGITUDE = -90.2161
+const LATITUDE = INSTANCE.geography.lat
+const LONGITUDE = INSTANCE.geography.lon
 
 const MOON_PHASES = [
   { name: 'New Moon', icon: '\u{1F311}' },

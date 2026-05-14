@@ -1,6 +1,7 @@
 import useSkyState from './useSkyState'
+import { INSTANCE } from '../instance.js'
 
-const API_URL = 'https://api.open-meteo.com/v1/forecast?latitude=38.616&longitude=-90.2161&current=temperature_2m,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,weather_code&forecast_hours=48&temperature_unit=fahrenheit&timezone=America/Chicago'
+const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${INSTANCE.geography.lat}&longitude=${INSTANCE.geography.lon}&current=temperature_2m,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,weather_code&forecast_hours=48&temperature_unit=fahrenheit&timezone=${encodeURIComponent(INSTANCE.geography.timezone)}`
 
 /**
  * Derive storminess (0-1) from WMO weather code + precipitation amount

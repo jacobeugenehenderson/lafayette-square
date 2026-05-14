@@ -22,6 +22,7 @@ import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import BakedGround from '../components/BakedGround.jsx'
+import { INSTANCE } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { V_EXAG } from '../utils/terrainShader'
 import BakedBuildings from './BakedBuildings'
@@ -577,9 +578,9 @@ function CanvasContents({ layers, shot }) {
         {layers.buildings && <R3FErrorBoundary name="BakedBuildings"><BakedBuildings /></R3FErrorBoundary>}
         {layers.trees && <R3FErrorBoundary name="InstancedTrees">
           <InstancedTrees lookId={(() => {
-            if (typeof window === 'undefined') return 'lafayette-square'
+            if (typeof window === 'undefined') return INSTANCE.lookId
             const m = window.location.search.match(/look=([^&]+)/)
-            return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+            return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
           })()} />
         </R3FErrorBoundary>}
         {layers.park   && <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>}

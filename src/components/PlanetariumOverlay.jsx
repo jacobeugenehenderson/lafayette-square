@@ -6,10 +6,11 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import namedStarsData from '../data/planetarium/named_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import planetsData from '../data/planetarium/planets.json'
+import { INSTANCE } from '../instance.js'
 
 const DEG = Math.PI / 180
-const LATITUDE = 38.6160
-const LONGITUDE = -90.2161
+const LATITUDE = INSTANCE.geography.lat
+const LONGITUDE = INSTANCE.geography.lon
 const SKY_RADIUS = 55000
 const R = SKY_RADIUS * 0.88
 

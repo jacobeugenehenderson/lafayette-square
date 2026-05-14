@@ -10,10 +10,11 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { supabase } from '../lib/supabase'
 import useCamera from '../hooks/useCamera'
+import { INSTANCE } from '../instance.js'
 
 // Same coordinate system as useUserLocation
-const CENTER_LAT = 38.6160
-const CENTER_LON = -90.2161
+const CENTER_LAT = INSTANCE.geography.lat
+const CENTER_LON = INSTANCE.geography.lon
 const LON_TO_METERS = 86774
 const LAT_TO_METERS = 111000
 

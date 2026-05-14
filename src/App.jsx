@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import SunCalc from 'suncalc'
+import { INSTANCE } from './instance.js'
 import Scene from './components/Scene'
 import SceneBoundary from './components/SceneBoundary'
 import Controls from './components/Controls'
@@ -412,7 +413,7 @@ function CaryStandalone() {
 }
 
 // ── Splash: time-pegged sky gradient + arch mark ─────────────────────
-const SPLASH_LAT = 38.6160, SPLASH_LON = -90.2161
+const SPLASH_LAT = INSTANCE.geography.lat, SPLASH_LON = INSTANCE.geography.lon
 
 function splashSkyColors() {
   const now = new Date()

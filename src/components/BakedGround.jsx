@@ -23,6 +23,7 @@ import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { terrainExag, patchTerrain, V_EXAG } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import { INSTANCE } from '../instance.js'
 
 // Material-kind groups that render with the noise-based grass shader
 // (lawn = block interior, treelawn = curb→sidewalk strip, median = between
@@ -266,9 +267,9 @@ function TerrainExagDriver({ target }) {
 // Preview's standalone behavior is preserved when no prop is given.
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
-  if (typeof window === 'undefined') return 'lafayette-square'
+  if (typeof window === 'undefined') return INSTANCE.lookId
   const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
 /**

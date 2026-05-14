@@ -14,11 +14,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
 import { terrainExag } from '../utils/terrainShader'
+import { INSTANCE } from '../instance.js'
 
 function getLookId() {
-  if (typeof window === 'undefined') return 'lafayette-square'
+  if (typeof window === 'undefined') return INSTANCE.lookId
   const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 const LOOK_ID = getLookId()
 const MANIFEST_URL = `${import.meta.env.BASE_URL}baked/${LOOK_ID}/buildings.json`

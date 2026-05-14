@@ -33,19 +33,19 @@ const MILKYWAY_DEFAULT_CHANNEL       = { values: MILKYWAY_FLAT_DEFAULTS }
 import brightStars from '../data/bright_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
+import { INSTANCE } from '../instance.js'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
 // Production passes no `lookId`; Stage threads the operator's active Look.
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
-  if (typeof window === 'undefined') return 'lafayette-square'
+  if (typeof window === 'undefined') return INSTANCE.lookId
   const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-// Lafayette Square, St. Louis, MO coordinates
-export const LATITUDE = 38.6160
-export const LONGITUDE = -90.2161
+const LATITUDE = INSTANCE.geography.lat
+const LONGITUDE = INSTANCE.geography.lon
 
 const LIGHT_RADIUS = 600       // directional light stays close for shadow quality
 const SUN_VISUAL_RADIUS = 50000 // visual orb — far enough to eliminate parallax

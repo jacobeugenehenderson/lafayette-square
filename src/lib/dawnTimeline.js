@@ -1,8 +1,9 @@
 import SunCalc from 'suncalc'
 import { NAMED_TOD_SLOTS_BY_ID } from '../cartograph/animatedParam'
+import { INSTANCE } from '../instance.js'
 
-const LATITUDE = 38.6160
-const LONGITUDE = -90.2161
+const LATITUDE = INSTANCE.geography.lat
+const LONGITUDE = INSTANCE.geography.lon
 
 function getDawn(date) {
   return SunCalc.getTimes(date, LATITUDE, LONGITUDE).dawn

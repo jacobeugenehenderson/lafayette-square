@@ -8,6 +8,7 @@ import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { mergeBufferGeometries } from '../lib/mergeGeometries'
+import { INSTANCE } from '../instance.js'
 
 import usePlaceState from '../hooks/usePlaceState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
@@ -1175,9 +1176,9 @@ function LandmarkMarkers() {
 // ============ MAIN ============
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
-  if (typeof window === 'undefined') return 'lafayette-square'
+  if (typeof window === 'undefined') return INSTANCE.lookId
   const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
 function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride } = {}) {
@@ -1384,9 +1385,8 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       ))}
 
       {/* Neon — single Path B mesh over all currently-open places, with
-          scene.json.neon driving the uCore/uTube/uBleed uniforms. Note:
-          lookId is hardcoded pending couplers §6 INSTANCE (Phase C). */}
-      {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId="lafayette-square" />}
+          scene.json.neon driving the uCore/uTube/uBleed uniforms. */}
+      {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId={INSTANCE.lookId} />}
 
       {/* Street labels */}
       {labelsReady && streetLabels.map((label, i) => (

@@ -2,6 +2,7 @@ import { useRef, useEffect, Suspense, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
+import { INSTANCE } from '../instance.js'
 import LafayetteScene from './LafayetteScene'
 import CelestialBodies from './CelestialBodies'
 import BakedGround from './BakedGround.jsx'
@@ -191,7 +192,7 @@ function CameraRig() {
 
   // SC.5 — per-shot framing knobs come from the slab. Production passes
   // no override; the cartograph chunk's Stage live-wires via the store.
-  const scene = useSceneJson('lafayette-square')
+  const scene = useSceneJson(INSTANCE.lookId)
   const shotsV       = scene?.shots?.values || SHOTS_FLAT_DEFAULTS
   const browseFov    = shotsV.browse?.fov         ?? SHOTS_FLAT_DEFAULTS.browse.fov
   const heroFov      = shotsV.hero?.fov           ?? SHOTS_FLAT_DEFAULTS.hero.fov
@@ -690,7 +691,7 @@ function Scene() {
       <group visible={false}>
         <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
       </group>
-      <R3FErrorBoundary name="BakedGround"><BakedGround lookId="lafayette-square" /></R3FErrorBoundary>
+      <R3FErrorBoundary name="BakedGround"><BakedGround lookId={INSTANCE.lookId} /></R3FErrorBoundary>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
       {!IS_GROUND && <UserDot />}
       {!IS_GROUND && <CourierDots />}

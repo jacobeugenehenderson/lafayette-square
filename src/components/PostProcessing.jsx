@@ -36,6 +36,7 @@ import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import { INSTANCE } from '../instance.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
   AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
@@ -55,9 +56,9 @@ const IS_MOBILE = typeof navigator !== 'undefined'
 // Look id resolution — same shape as CelestialBodies / BakedGround.
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
-  if (typeof window === 'undefined') return 'lafayette-square'
+  if (typeof window === 'undefined') return INSTANCE.lookId
   const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
 // Inline flat-default envelopes for first-paint (~100ms before scene.json

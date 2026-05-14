@@ -38,9 +38,10 @@
 // Per-Look serialization stores slot ids; minutes are computed live from
 // SunCalc each frame so the envelope shifts seasonally with the real sun.
 import SunCalc from 'suncalc'
+import { INSTANCE } from '../instance.js'
 
-const LATITUDE = 38.6160
-const LONGITUDE = -90.2161
+const LATITUDE = INSTANCE.geography.lat
+const LONGITUDE = INSTANCE.geography.lon
 
 // Order matches the day's progression so filtering by attachment
 // preserves chronological order in the strip. Colors come from --tod-*

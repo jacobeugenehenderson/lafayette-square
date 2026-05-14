@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, useContext, useRef } from 'react'
+import { INSTANCE } from '../instance.js'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
 import useGuardianStatus from '../hooks/useGuardianStatus'
@@ -4090,7 +4091,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
           ) : (
             <div className="flex-1 space-y-1.5">
               <a
-                href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on Lafayette Square.`)}`}
+                href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on Lafayette Square.`)}`}
                 className="flex items-center gap-2 text-on-surface-subtle text-body-sm hover:text-on-surface-variant transition-colors"
               >
                 <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4099,7 +4100,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
                 Live here?
               </a>
               <a
-                href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, I manage ${name}. I'd love to get set up on Lafayette Square.`)}`}
+                href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I manage ${name}. I'd love to get set up on Lafayette Square.`)}`}
                 className="flex items-center gap-2 text-on-surface-disabled text-caption hover:text-on-surface-subtle transition-colors"
               >
                 <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -4114,7 +4115,7 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         {/* Residential: verified resident — manage link */}
         {isResidential && isResidentHere && (
           <a
-            href={`sms:+18773351917?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on Lafayette Square.`)}`}
+            href={`sms:${INSTANCE.cary.smsNumber}?&body=${encodeURIComponent(`Hi, I live at ${name}. I'd love to get set up on Lafayette Square.`)}`}
             className="text-caption text-on-surface-disabled hover:text-on-surface-subtle transition-colors"
           >
             Manage?

@@ -6,6 +6,7 @@
  */
 
 import { AGREEMENT_SECTIONS } from '../components/CourierOnboarding'
+import { INSTANCE } from '../instance.js'
 
 // ── Restaurant Agreement ─────────────────────────────────────
 
@@ -121,7 +122,7 @@ function LegalShell({ title, subtitle, children }) {
         <footer className="mt-16 pt-6 border-t border-[#e0ddd8]/10 text-[12px] text-[#e0ddd8]/30 space-y-1">
           <p>Jacob Henderson LLC, DBA Lafayette Square Deliveries</p>
           <p>Lafayette Square, St. Louis, Missouri</p>
-          <p>Contact: <a href="mailto:hello@lafayette-square.com" className="underline hover:text-[#e0ddd8]/50">hello@lafayette-square.com</a> · <a href="tel:+18773351917" className="underline hover:text-[#e0ddd8]/50">(877) 335-1917</a></p>
+          <p>Contact: <a href={`mailto:${INSTANCE.contact.email}`} className="underline hover:text-[#e0ddd8]/50">{INSTANCE.contact.email}</a> · <a href={`tel:${INSTANCE.cary.smsNumber}`} className="underline hover:text-[#e0ddd8]/50">{INSTANCE.cary.smsNumberDisplay}</a></p>
         </footer>
       </div>
     </div>
@@ -193,7 +194,7 @@ export function PrivacyPage() {
             <li>Delivery status updates triggered by your activity</li>
           </ul>
           <p className="mt-2">No marketing or promotional messages are sent. Message frequency varies. Message and data rates may apply. Reply STOP to opt out at any time. Reply HELP for support.</p>
-          <p className="mt-2">Contact: <a href="mailto:cary@lafayette-square.com" className="underline">cary@lafayette-square.com</a> · <a href="tel:+18773351917" className="underline">(877) 335-1917</a></p>
+          <p className="mt-2">Contact: <a href={`mailto:${INSTANCE.cary.email}`} className="underline">{INSTANCE.cary.email}</a> · <a href={`tel:${INSTANCE.cary.smsNumber}`} className="underline">{INSTANCE.cary.smsNumberDisplay}</a></p>
         </section>
 
         <section>

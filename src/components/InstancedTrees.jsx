@@ -21,12 +21,13 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useTreeAtlas, treeSwayUniforms } from './treeAtlasMaterial'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import { INSTANCE } from '../instance.js'
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
-  if (typeof window === 'undefined') return 'lafayette-square'
+  if (typeof window === 'undefined') return INSTANCE.lookId
   const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : 'lafayette-square'
+  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
 // Trees are baked once globally (not per-Look) since species placement

@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import SunCalc from 'suncalc'
+import { INSTANCE } from '../instance.js'
 
-// Lafayette Square, St. Louis, MO coordinates
-const LATITUDE = 38.6160
-const LONGITUDE = -90.2161
+const LATITUDE = INSTANCE.geography.lat
+const LONGITUDE = INSTANCE.geography.lon
 
 const useTimeOfDay = create((set, get) => ({
   currentTime: new Date(),

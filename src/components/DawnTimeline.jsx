@@ -5,9 +5,10 @@ import {
   getDawnWindow, dateToFraction, fractionToDate,
 } from '../lib/dawnTimeline'
 import { NAMED_TOD_SLOTS } from '../cartograph/animatedParam'
+import { INSTANCE } from '../instance.js'
 
-const LATITUDE = 38.6160
-const LONGITUDE = -90.2161
+const LATITUDE = INSTANCE.geography.lat
+const LONGITUDE = INSTANCE.geography.lon
 
 // Map slot ids → SunCalc time keys. Dawn is the window's left edge, not a
 // SunCalc value, so it gets its own special-case below.

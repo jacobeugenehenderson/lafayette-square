@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { BOUNDARY_CENTER_XZ, FADE_INNER, FADE_OUTER } from './boundary.js'
+import { INSTANCE } from '../instance.js'
 
 // Neighborhood circle silhouette — center + fade band imported from
 // `boundary.js` so moving the circle is a one-file edit.
@@ -27,8 +28,7 @@ function injectCircleCrop(mat) {
   return mat
 }
 
-// Lafayette Square center + coordinate conversion (from config.js)
-const CENTER = { lat: 38.6160, lon: -90.2161 }
+const CENTER = { lat: INSTANCE.geography.lat, lon: INSTANCE.geography.lon }
 const BBOX = {
   minLat: 38.6100, maxLat: 38.6230,
   minLon: -90.2290, maxLon: -90.2070,

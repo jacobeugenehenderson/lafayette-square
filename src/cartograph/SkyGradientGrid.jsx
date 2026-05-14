@@ -22,10 +22,11 @@ import {
   SKY_BANDS, SKY_SLOT_COLUMNS, SKY_DEFAULTS,
   resolveSkyAtMinute, getSkyColumnMinutes,
 } from './skyGrid.js'
+import { INSTANCE } from '../instance.js'
 
 const BAND_ORDER = ['high', 'mid', 'low', 'horizon', 'sunGlow']  // top-to-bottom
-const LAT = 38.6160
-const LON = -90.2161
+const LAT = INSTANCE.geography.lat
+const LON = INSTANCE.geography.lon
 const PREVIEW_SAMPLES = 96  // ~15 min per sample for the 24h strip
 
 function rgbCss(rgb) {
