@@ -21,6 +21,13 @@ const RENDER_ORDER = 16
 
 const _tmpVec = new THREE.Vector3()
 
+// Hardcoded pixel guardrails. Authored Looks tune Target; Min/Max are
+// here so a runaway zoom doesn't render labels as a 0.5-px smear or a
+// screen-spanning slab. Not panel knobs — if a future Look needs
+// different clamps, expose then.
+const HARD_MIN_PX = 10
+const HARD_MAX_PX = 96
+
 export default function SceneLabel({ position, rotation, text, tier = 'street' }) {
   const style = useCartographStore(s => s.labels) || {}
   const groupRef = useRef()
@@ -30,10 +37,8 @@ export default function SceneLabel({ position, rotation, text, tier = 'street' }
     const g = groupRef.current
     if (!g) return
     const targetPx = style.targetPx ?? 24
-    const minPx    = style.minPx    ?? 14
-    const maxPx    = style.maxPx    ?? 48
     const tierMul  = (style.tierScale && style.tierScale[tier]) ?? 1
-    const desiredPx = Math.max(minPx, Math.min(maxPx, targetPx * tierMul))
+    const desiredPx = Math.max(HARD_MIN_PX, Math.min(HARD_MAX_PX, targetPx * tierMul))
     // worldUnitsPerPixel depends on camera type:
     //   Perspective: 2 * dist * tan(fov/2) / viewportHeight
     //   Orthographic: viewportHeightInWorldUnits / viewportHeightInPixels

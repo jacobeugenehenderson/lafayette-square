@@ -348,24 +348,10 @@ function LabelsSubsection() {
   return (
     <>
       <div className="carto-row carto-row--wrap">
-        <label className="carto-label-fixed" title="Target screen height of a street label, in pixels. Clamped between Min and Max at zoom extremes.">Target</label>
+        <label className="carto-label-fixed" title="Screen height of a street label in pixels. Held constant across zoom; SceneLabel guardrails (10/96 px) clip at zoom extremes.">Size</label>
         <DraftRangeInput min="10" max="64" step="1"
           value={get('targetPx', 24)}
           onCommit={v => setLabelStyle({ targetPx: v })}
-          formatLabel={v => `${v} px`} />
-      </div>
-      <div className="carto-row">
-        <label className="carto-label-fixed" title="Pixel floor — labels never shrink below this even when the camera pulls far back.">Min</label>
-        <DraftRangeInput min="8" max="32" step="1"
-          value={get('minPx', 14)}
-          onCommit={v => setLabelStyle({ minPx: v })}
-          formatLabel={v => `${v} px`} />
-      </div>
-      <div className="carto-row">
-        <label className="carto-label-fixed" title="Pixel ceiling — labels never grow past this when the camera pushes in close.">Max</label>
-        <DraftRangeInput min="24" max="128" step="2"
-          value={get('maxPx', 48)}
-          onCommit={v => setLabelStyle({ maxPx: v })}
           formatLabel={v => `${v} px`} />
       </div>
       <div className="carto-row">

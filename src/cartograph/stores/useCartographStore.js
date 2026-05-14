@@ -188,9 +188,7 @@ const useCartographStore = create((set, get) => ({
   // body sizes. Legacy chip controls (bg/bgAlpha) retired with the canvas
   // sprite renderer; outline now carries the legibility job.
   labels: {
-    targetPx:      24,           // px; nominal screen height of street labels
-    minPx:         14,           // px; floor when camera pulls far back
-    maxPx:         48,           // px; ceiling when camera pushes in close
+    targetPx:      24,           // px; nominal screen height of street labels (hard-clamped 10..96 in SceneLabel)
     tierScale:     { street: 1, park: 2.5 },
     weight:        600,          // 300 | 400 | 500 | 600 | 700 — TroikaText `fontWeight`
     fill:          '#e8e8f0',
