@@ -233,6 +233,25 @@ export const SHADOW_FIELDS = [
 export const SHADOW_FLAT_DEFAULTS = { size: 52, samples: 16 }
 export const SHADOW_FIELD_KEYS = SHADOW_FIELDS.map(f => f.key)
 
+// Clouds (Sky & Light, ATMOSPHERE group — SC.6) — atmospheric state
+// channel for the future <Atmosphere /> volumetric runtime
+// (Meteorologist v3). v1 keeps the procedural CloudDome as the actual
+// renderer; this channel is forward-compat scaffolding so v3 swaps in
+// mechanically. `preset: 'auto'` means "let the Almanac decide based on
+// live weather + time-of-day" (the Meteorologist default workflow);
+// any other value pins a specific Teapot preset id from
+// public/clouds/presets.json. `overrides` is a future hook for
+// per-Look shader-level overrides on top of the chosen preset; null
+// today. No Stage UI for v1 (the Clouds TodChannel is v3-dependent
+// per meteorologist/STAGE_MIGRATION.md). Doctrine:
+// slab-carries-full-authored-product, hardwires-come-out (category 3:
+// live weather is runtime adaptation, preset selection is authored).
+export const CLOUDS_FLAT_DEFAULTS = {
+  preset: 'auto',
+  overrides: null,
+}
+export const CLOUDS_FIELD_KEYS = Object.keys(CLOUDS_FLAT_DEFAULTS)
+
 // Milky Way (Sky & Light, CELESTIAL group) — binary on/off. Cross-slot
 // fade comes from the resolver's lerp between authored slots, not from
 // dialing a slider. Runtime multiplies by nightFactor so it's hidden

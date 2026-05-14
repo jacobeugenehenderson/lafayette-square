@@ -37,6 +37,7 @@ import {
   GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
+  CLOUDS_FLAT_DEFAULTS,
 } from '../src/cartograph/skyLightChannels.js'
 
 // SC.5 — strip transient runtime-UI fields (preview, speed) off the
@@ -121,6 +122,13 @@ export async function bakeScene({ look = 'default' } = {}) {
     // across reloads and reaches production via the slab.
     arch:    design.arch    || { values: { ...ARCH_FLAT_DEFAULTS } },
     horizon: design.horizon || { values: { ...HORIZON_FLAT_DEFAULTS } },
+    // SC.6 — Meteorologist coupler scaffolding. Forward-compat field for
+    // the future <Atmosphere /> raymarched runtime. v1's CloudDome
+    // ignores `clouds`; the field round-trips through bake so Atmosphere
+    // v3 plugs in mechanically. `preset: 'auto'` defers selection to the
+    // Almanac (public/clouds/almanac.json) at render time per
+    // src/lib/almanac-eval.js.
+    clouds:  design.clouds  || { values: { ...CLOUDS_FLAT_DEFAULTS } },
     // SC.4 — time defaults / sun-curve overrides. DawnTimeline today is
     // purely a Stage-scrub UI (calls setTime on useTimeOfDay directly);
     // no design.time or sun-curve override is persisted. Field omitted

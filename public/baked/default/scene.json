@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "default",
-  "bakedAt": 1778722667291,
+  "bakedAt": 1778731432517,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -351,6 +351,12 @@
       "radius": 3750,
       "fadeInner": 900,
       "fadeOuter": 3750
+    }
+  },
+  "clouds": {
+    "values": {
+      "preset": "auto",
+      "overrides": null
     }
   }
 }

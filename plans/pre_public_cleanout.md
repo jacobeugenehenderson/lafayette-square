@@ -174,7 +174,7 @@ n/a — no files deleted.
 | `public/favicon.svg`, `public/lsq-tokens.css` | | keep — ship | First-paint metadata |
 | `public/trees/` | 4.9 GB | strip from build (stay in source) | Arborist authoring inputs; consumer is `public/baked/<look>/trees/` |
 | `public/models/` | 255 MB | strip from build (stay in source); per-file audit deferred | 400 MB facade already gone; remainder is authoring inputs |
-| `public/clouds/` | 28 KB | strip from build (stay in source) | Couplers plan §3 verdict — no runtime consumer |
+| `public/clouds/` | 28 KB | **keep — ship** | SC.6 (Meteorologist coupler scaffolding) reverses the earlier strip verdict. The Teapot (`presets.json`, 52 entries) + Almanac (`almanac.json`, 16 rules) are kit-level authored artifacts that the v3 `<Atmosphere />` raymarched runtime will fetch at runtime; `src/lib/almanac-eval.js` lands in SC.6 as the evaluator. Forward-compat shipping is the whole point. |
 | `public/looks/` | 508 KB | strip from build (stay in source) | Cartograph store-only consumer (RUNTIME-DELTA §2.5); authoring input |
 | `public/data/landmarks.json` | ~1 KB | **strip + delete** | Vestigial duplicate; runtime imports `src/data/landmarks.json` (JS module); the public copy has zero consumers and is out of date (verified by orchestrator) |
 | `public/cartograph-ground.svg` (440 KB) | | **strip + delete** | Zero consumers anywhere in repo (verified by orchestrator); RUNTIME-DELTA §1.2 noted "no runtime consumer" |
@@ -194,6 +194,7 @@ public/photos/                      → dist/photos/
 public/codedesk/                    → dist/codedesk/
 public/textures/                    → dist/textures/
 public/weather-icons/               → dist/weather-icons/
+public/clouds/                      → dist/clouds/
 public/logos/                       → dist/logos/
 public/lafayette-square.svg         → dist/lafayette-square.svg
 public/CNAME                        → dist/CNAME
@@ -202,7 +203,7 @@ public/favicon.svg                  → dist/favicon.svg
 public/lsq-tokens.css               → dist/lsq-tokens.css
 ```
 
-Excluded by virtue of not being in the allow-list (and named in the plugin's comment for future readers): `public/trees/`, `public/models/`, `public/clouds/`, `public/looks/`, `public/data/`, `public/cartograph-ground.svg`. The first four stay in source for authoring; the latter two are deleted (Part B).
+Excluded by virtue of not being in the allow-list (and named in the plugin's comment for future readers): `public/trees/`, `public/models/`, `public/looks/`, `public/data/`, `public/cartograph-ground.svg`. The first three stay in source for authoring; the latter two are deleted (Part B). `public/clouds/` is **shipped** in v1 per SC.6 (forward-compat for the Meteorologist v3 `<Atmosphere />` runtime; see the table row above).
 
 **Part B — Two verified-orphan file deletions** via the quarantine pattern:
 
@@ -240,8 +241,8 @@ The build-side strip (Part A) has no quarantine — nothing is deleted from sour
 ### Verification gate
 
 1. `npm run build`; `du -sh dist/` bounded by allow-list sum (≈ <300 MB).
-2. `ls dist/` shows no `trees/`, `models/`, `clouds/`, `looks/`, `data/`, `cartograph-ground.svg`.
-3. Mobile UA: Network panel filter for `/trees/`, `/models/`, `/clouds/`, `/looks/`, `/data/`, `cartograph-ground` returns zero requests with paths matching those (slab tree GLBs under `/baked/<look>/trees/` ARE expected and present).
+2. `ls dist/` shows no `trees/`, `models/`, `looks/`, `data/`, `cartograph-ground.svg`. `dist/clouds/` IS expected and present (SC.6 ship decision).
+3. Mobile UA: Network panel filter for `/trees/`, `/models/`, `/looks/`, `/data/`, `cartograph-ground` returns zero requests with paths matching those (slab tree GLBs under `/baked/<look>/trees/` ARE expected and present; `/clouds/presets.json` + `/clouds/almanac.json` are likewise expected once Atmosphere v3 lands and may already be fetched by future probes).
 4. Mobile + desktop visual smoke: scene renders; trees stand; lamps glow; park renders; photos load in PlaceCard; weather icons render where used; admin login (passphrase) at `/codedesk` works.
 5. Two file deletions verified: `ls public/data/landmarks.json public/cartograph-ground.svg` → "No such file or directory" for both, after the final delete commit.
 
@@ -249,11 +250,11 @@ The build-side strip (Part A) has no quarantine — nothing is deleted from sour
 
 - **`public/textures/milky_way.jpg`** ships at current 17 MB through v1 (RD.9). Future perf-gate session adds a smaller webp variant + media-query swap. Deferred.
 - **`public/models/` per-file audit** deferred to a Phase C source-hygiene pass. Build-excluded for v1; source-side cleanup is a separate operation.
-- **`public/trees/`, `public/clouds/`, `public/looks/`** source trees stay in repo through v1 (authoring inputs).
+- **`public/trees/`, `public/looks/`** source trees stay in repo through v1 (authoring inputs). `public/clouds/` ships (SC.6).
 
 ### Cross-references
 
-- Couplers plan §3 (`public/clouds/` no consumer — operationalized here).
+- Couplers plan §3 (`public/clouds/` no consumer) — **reversed** by SC.6; the Teapot + Almanac are now shipped as forward-compat for `<Atmosphere />` v3, evaluator at `src/lib/almanac-eval.js`.
 - Couplers plan §6 (CNAME — Place coupler).
 - RUNTIME-DELTA §1.2 (`cartograph-ground.svg` no consumer), §2.4 (clouds), §2.5 (asset volume).
 - INVENTORY-DATA §F.

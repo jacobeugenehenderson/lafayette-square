@@ -27,6 +27,7 @@ import {
   BROWSE_HEADING_FIELD_KEYS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS,
   HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS,
+  CLOUDS_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
@@ -327,6 +328,10 @@ const useCartographStore = create((set, get) => ({
   // module-scope archState bridge in src/stage/StageApp.jsx.
   arch:    { values: { ...ARCH_FLAT_DEFAULTS } },
   horizon: { values: { ...HORIZON_FLAT_DEFAULTS } },
+  // SC.6 — Meteorologist coupler scaffolding. v1 has no Stage UI; field
+  // round-trips through design.json → bake → scene.json so Atmosphere
+  // v3 has it ready. preset='auto' = consult the Almanac at runtime.
+  clouds:  { values: { ...CLOUDS_FLAT_DEFAULTS } },
   constellations: { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
   milkyWay:       { values: { ...MILKYWAY_FLAT_DEFAULTS } },
   // Neon — group of 3 (core / tube / bleed) sharing one TOD timeline.
@@ -794,6 +799,23 @@ const useCartographStore = create((set, get) => ({
     flatDefaults: HORIZON_FLAT_DEFAULTS,
   }, set, get),
 
+  // SC.6 — clouds hand-rolled actions. Values aren't flat scalars
+  // (preset is a string, overrides is null|object) so the
+  // createGroupChannelActions factory doesn't fit. No TOD animation —
+  // preset selection is either authored (override) or weather-driven
+  // (Almanac at runtime). v1 has no UI; these actions exist so a future
+  // Stage Clouds row plugs in without further wiring.
+  setClouds: (patch) => {
+    set(s => ({
+      clouds: { values: { ...(s.clouds?.values || CLOUDS_FLAT_DEFAULTS), ...(patch || {}) } }
+    }))
+    get()._saveDesignDebounced()
+  },
+  revertClouds: () => {
+    set({ clouds: { values: { ...CLOUDS_FLAT_DEFAULTS } } })
+    get()._saveDesignDebounced()
+  },
+
   // SC.5 — `shots` hand-rolled actions. Values are nested per-shot
   // objects so the createGroupChannelActions flat-scalar factory doesn't
   // fit. Shots is not TOD-animated (FOV doesn't change through the day),
@@ -1096,6 +1118,9 @@ const useCartographStore = create((set, get) => ({
           : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
         arch:    migrateGroupChannel(design.arch,    ARCH_FIELD_KEYS,    ARCH_FLAT_DEFAULTS),
         horizon: migrateGroupChannel(design.horizon, HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS),
+        clouds: design.clouds?.values
+          ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...design.clouds.values } }
+          : { values: { ...CLOUDS_FLAT_DEFAULTS } },
         openSections:   design.openSections   || {},
         bakeStale: !entry?.bakedAt,
       })
@@ -1540,6 +1565,9 @@ const useCartographStore = create((set, get) => ({
           : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
         arch:    migrateGroupChannel(design.arch,    ARCH_FIELD_KEYS,    ARCH_FLAT_DEFAULTS),
         horizon: migrateGroupChannel(design.horizon, HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS),
+        clouds: design.clouds?.values
+          ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...design.clouds.values } }
+          : { values: { ...CLOUDS_FLAT_DEFAULTS } },
         openSections:   design.openSections   || {},
         _designHydrated: true,
       })
@@ -1664,6 +1692,7 @@ const useCartographStore = create((set, get) => ({
           browseHeading: s.browseHeading,
           arch: s.arch,
           horizon: s.horizon,
+          clouds: s.clouds,
           openSections: s.openSections,
         }
         saveLookDesign(id, design).catch(err =>

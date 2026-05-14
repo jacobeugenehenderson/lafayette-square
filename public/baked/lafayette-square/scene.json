@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1778722667241,
+  "bakedAt": 1778731425048,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -415,9 +415,9 @@
   "heroKeyframes": [
     {
       "position": [
-        -540,
+        -400,
         55,
-        362
+        230
       ],
       "fov": 22
     },
@@ -436,12 +436,12 @@
   },
   "arch": {
     "values": {
-      "distance": 1050,
+      "distance": 1670,
       "bearingX": 0.9487,
       "bearingZ": -0.3163,
       "scale": 1.3,
       "rotation": 1.36,
-      "yOffset": 0,
+      "yOffset": 29,
       "footFade": 30,
       "uplightL_intensity": 0,
       "uplightL_color": "#ffd6a8",
@@ -458,6 +458,12 @@
       "radius": 3750,
       "fadeInner": 900,
       "fadeOuter": 3750
+    }
+  },
+  "clouds": {
+    "values": {
+      "preset": "auto",
+      "overrides": null
     }
   }
 }
