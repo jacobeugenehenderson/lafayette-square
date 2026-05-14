@@ -528,33 +528,57 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // running off into a curve. Angle is normalized to [-π/2, π/2] so text
   // always reads left-to-right (a street running E→W and one running
   // W→E render with the same orientation, no upside-down labels).
+  // Synthetic-name highway classes — skip entirely (motorway_link 13,
+  // trunk_link 7, etc.). Operators don't walk these; their names are
+  // positional indices from skeleton.js's unnamed-vehicular pass, not
+  // OSM data. Doctrine [[project_labels_encourage_walking]].
+  const NO_LABEL_HIGHWAY = new Set(['motorway_link', 'trunk_link', 'motorway'])
   const labelData = useMemo(() => {
     const byName = new Map()
     for (const st of ribbonsData.streets) {
       if (!st.name || !st.points || st.points.length < 2) continue
+      if (NO_LABEL_HIGHWAY.has(st.highway)) continue
       if (!byName.has(st.name)) byName.set(st.name, [])
       byName.get(st.name).push(st)
     }
     const labels = []
     for (const [name, chains] of byName) {
+      // For each name, pick the longest chain by total arclength and
+      // place the label at that chain's arclength midpoint. The earlier
+      // "longest single segment" pick landed Preston Place's label at
+      // the top of the chain (one long terminal segment) instead of
+      // the visual middle of the street.
       let best = null
       for (const st of chains) {
         const pts = st.points
+        const segLens = []
+        let totalLen = 0
         for (let i = 0; i < pts.length - 1; i++) {
-          const ax = pts[i][0],     ay = pts[i][1]
-          const bx = pts[i + 1][0], by = pts[i + 1][1]
-          const cx = (ax + bx) / 2, cy = (ay + by) / 2
-          if (!pointInLabelBoundary(cx, cy)) continue
-          const len = Math.hypot(bx - ax, by - ay)
-          if (best && len <= best.len) continue
-          let angle = Math.atan2(by - ay, bx - ax)
-          if (angle >  Math.PI / 2) angle -= Math.PI
-          if (angle < -Math.PI / 2) angle += Math.PI
-          best = { cx, cy, len, angle }
+          const L = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+          segLens.push(L)
+          totalLen += L
         }
+        if (totalLen === 0) continue
+        const halfLen = totalLen / 2
+        let acc = 0, segIdx = 0
+        for (; segIdx < segLens.length - 1; segIdx++) {
+          if (acc + segLens[segIdx] >= halfLen) break
+          acc += segLens[segIdx]
+        }
+        const t = segLens[segIdx] > 0 ? (halfLen - acc) / segLens[segIdx] : 0
+        const ax = pts[segIdx][0],     ay = pts[segIdx][1]
+        const bx = pts[segIdx + 1][0], by = pts[segIdx + 1][1]
+        const cx = ax + (bx - ax) * t
+        const cy = ay + (by - ay) * t
+        if (!pointInLabelBoundary(cx, cy)) continue
+        if (best && totalLen <= best.totalLen) continue
+        let angle = Math.atan2(by - ay, bx - ax)
+        if (angle >  Math.PI / 2) angle -= Math.PI
+        if (angle < -Math.PI / 2) angle += Math.PI
+        best = { cx, cy, totalLen, angle }
       }
       if (!best) continue
-      labels.push({ name, x: best.cx, z: best.cy, angle: best.angle, segLen: best.len })
+      labels.push({ name, x: best.cx, z: best.cy, angle: best.angle })
     }
     return labels
   }, [labelBoundary])
