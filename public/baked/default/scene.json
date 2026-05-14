@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "default",
-  "bakedAt": 1778731432517,
+  "bakedAt": 1778735436445,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -28,9 +28,16 @@
   },
   "neon": {
     "values": {
-      "core": 0,
-      "tube": 0,
-      "bleed": 0
+      "core": 1,
+      "tube": 1,
+      "bleed": 1
+    }
+  },
+  "neonTube": {
+    "values": {
+      "tubeRadius": 0.2,
+      "roofLift": 0.3,
+      "emissive": 4
     }
   },
   "sky": {

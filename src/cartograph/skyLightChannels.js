@@ -123,14 +123,20 @@ export const DIRMOON_FIELD_KEYS  = ['value']
 // timeline. Each is a 0–1 float multiplied into the corresponding mask in
 // NeonBands' fragment shader. Hue per place comes from the category color
 // (per-instance attribute, not animated). See HANDOFF-neon.md §"Render
-// model — three coupled emissive layers". Defaults are off (flat 0) so an
-// unauthored Look ships dark; operator dials warm-up across the day.
+// model — three coupled emissive layers". Defaults are flat-on (1/1/1)
+// per HANDOFF-neon.md: at Night the canonical curve has all three full.
+// Both shipped Looks (lafayette-square, toy) author exactly 1/1/1 flat
+// and rely on LafayetteScene's `openPlaces` business-hours filter to
+// gate visibility — neon shines all day in the shader, but only the
+// open-this-minute places enter the merged mesh. Operator can still
+// animate a slower warm-up via TOD slots; the flat default matches
+// observed authoring intent rather than the earlier "ship dark" stance.
 export const NEON_FIELDS = [
   { key: 'core',  label: 'Hot core',          min: 0, max: 1, step: 0.02 },
   { key: 'tube',  label: 'Tube glow',         min: 0, max: 1, step: 0.02 },
   { key: 'bleed', label: 'Atmospheric bleed', min: 0, max: 1, step: 0.02 },
 ]
-export const NEON_FLAT_DEFAULTS = { core: 0, tube: 0, bleed: 0 }
+export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
 // Neon tube — physical / shader properties of the NeonBands mesh.
