@@ -56,6 +56,10 @@ function screenToWorld(clientX, clientY, camera, domElement) {
 const HIT_R_CORNER = 1.2
 // Visual radius for the per-corner dot.
 const DOT_R_CORNER = 0.5
+// Per-IX dot is bigger so it reads as the bulk control. Hit + dot radii
+// scale together so the click target matches the visual.
+const HIT_R_IX = 1.9
+const DOT_R_IX = 0.95
 // Drag this close to the IX center and the gesture snaps + clears the
 // override on release. World meters.
 const SNAP_R = 0.7
@@ -66,9 +70,10 @@ const TAP_THRESHOLD = 0.25
 // Y offset above ground so dots sit above the ribbon stack (which tops
 // out around Y=0.020 for V2's `cornerSidewalkPads`).
 const Y_DOTS = 0.05
-// Color logic — corner default + shared override / drag colors so the
+// Color logic — corner + IX defaults + shared override / drag colors so the
 // modal state is unambiguous.
-const COLOR_CORNER_DEFAULT = '#22D3EE'  // cyan
+const COLOR_CORNER_DEFAULT = '#22D3EE'  // cyan (per-corner)
+const COLOR_IX_DEFAULT = '#3b82f6'      // blue (per-IX bulk)
 const COLOR_OVERRIDE = '#ffaa00'        // gold (all layers)
 const COLOR_DRAG = '#ffffff'            // white
 
@@ -199,6 +204,7 @@ export default function CornerEditHandles({ ribbons }) {
   const cornerOverrides = useCartographStore(s => s.cornerCornerRadiusOverrides) || {}
   const cornerRadiusScale = useCartographStore(s => s.cornerRadiusScale ?? 1)
   const setCornerCornerRadius = useCartographStore(s => s.setCornerCornerRadius)
+  const setIxCornerRadius = useCartographStore(s => s.setIxCornerRadius)
   const { camera, gl } = useThree()
 
   const dragRef = useRef(null)
@@ -260,21 +266,41 @@ export default function CornerEditHandles({ ribbons }) {
           }
         }
       }
-      // (IX center handle retired — per-IX bulk authoring lives in the
-       // global cornerRadiusScale slider; per-corner dots own everything
-       // local.)
+      // Second-pass: per-IX center dot. Drags the bulk radius for every
+      // corner at this IX; commit homogenizes the IX (clears per-corner
+      // overrides here — handled by `setIxCornerRadius`).
+      for (const entry of layout) {
+        const dx = p.x - entry.V[0], dz = p.z - entry.V[1]
+        if (Math.hypot(dx, dz) < HIT_R_IX) {
+          dragRef.current = {
+            kind: 'ix',
+            ixIdx: entry.ixIdx,
+            V: entry.V.slice(),
+            downPos: p,
+          }
+          setDragState({
+            kind: 'ix',
+            ixIdx: entry.ixIdx,
+            cursor: p,
+            r: Math.hypot(p.x - entry.V[0], p.z - entry.V[1]),
+          })
+          dom.setPointerCapture?.(e.pointerId)
+          e.stopPropagation()
+          return
+        }
+      }
     }
 
     const flushCommit = (drag, baseR) => {
-      // Pass null/undefined to setCornerCornerRadius to clear the
-      // override (vs. storing a sharp-corner override of 0). Anything
-      // smaller than the snap threshold counts as "drag onto origin →
-      // reset" — the dot snapped visually, so the persisted state
-      // should match the visible reset.
-      if (drag.snapping || baseR < (SNAP_R / Math.max(0.0001, cornerRadiusScale))) {
-        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, null)
+      // Pass null to the store action to clear the override (vs. storing
+      // a sharp-corner override of 0). Anything smaller than the snap
+      // threshold counts as "drag onto origin → reset" — the dot snapped
+      // visually, so the persisted state should match the visible reset.
+      const clearing = drag.snapping || baseR < (SNAP_R / Math.max(0.0001, cornerRadiusScale))
+      if (drag.kind === 'ix') {
+        setIxCornerRadius(drag.V, clearing ? null : baseR)
       } else {
-        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, baseR)
+        setCornerCornerRadius(drag.V, drag.legKeyA, drag.legKeyB, clearing ? null : baseR)
       }
     }
 
@@ -334,8 +360,9 @@ export default function CornerEditHandles({ ribbons }) {
         const upP = screenToWorld(e.clientX, e.clientY, camera, dom)
         const moved = Math.hypot(upP.x - drag.downPos.x, upP.z - drag.downPos.z)
         if (moved < TAP_THRESHOLD) {
-          const key = `${drag.ixIdx}:${drag.cornerIdx}`
-          setOriginHint(prev => (prev?.kind === 'corner' && prev.key === key) ? null : { kind: 'corner', key })
+          const hintKind = drag.kind === 'ix' ? 'ix' : 'corner'
+          const key = drag.kind === 'ix' ? `${drag.ixIdx}` : `${drag.ixIdx}:${drag.cornerIdx}`
+          setOriginHint(prev => (prev?.kind === hintKind && prev.key === key) ? null : { kind: hintKind, key })
           pendingCommitRef.current = null
           dragRef.current = null
           setDragState(null)
@@ -375,7 +402,7 @@ export default function CornerEditHandles({ ribbons }) {
       dom.removeEventListener('pointerup', onUp, opts)
       dom.removeEventListener('pointercancel', onUp, opts)
     }
-  }, [cornerEditMode, layout, camera, gl, setCornerCornerRadius, cornerRadiusScale])
+  }, [cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale])
 
   if (!cornerEditMode) return null
   if (!layout.length) return null
@@ -394,8 +421,54 @@ export default function CornerEditHandles({ ribbons }) {
           : Number.isFinite(ix.cornerRadius) ? ix.cornerRadius
           : 4.5
 
+        const ixHasOverride = Number.isFinite(ixOverrideR)
+        const draggingIx = dragState?.kind === 'ix' && dragState.ixIdx === ixIdx
+        const ixColor = draggingIx ? COLOR_DRAG : ixHasOverride ? COLOR_OVERRIDE : COLOR_IX_DEFAULT
+        const ixEffR = ixBaseR * cornerRadiusScale
+        const ixRingR = draggingIx ? dragState.r : ixEffR
+        const ixDotPos = draggingIx
+          ? [dragState.cursor.x, Y_DOTS + 0.001, dragState.cursor.z]
+          : [vx, Y_DOTS + 0.001, vz]
+        const showIxOriginMarker = (originHint?.kind === 'ix' && originHint.key === `${ixIdx}`) || draggingIx
+
         return (
           <group key={ixIdx}>
+            {/* Per-IX center dot — big blue dot anchored at V. Drag to
+                tune all corners at this IX together; right-click to
+                clear this IX's overrides (per-IX + per-corner-at-IX). */}
+            {draggingIx && ixRingR > 0.05 && (
+              <mesh position={[vx, Y_DOTS, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={200}>
+                <ringGeometry args={[Math.max(0, ixRingR - 0.05), Math.max(0.05, ixRingR + 0.05), 64]} />
+                <meshBasicMaterial color={ixColor} transparent opacity={0.85}
+                  depthTest={false} depthWrite={false} />
+              </mesh>
+            )}
+            {showIxOriginMarker && (
+              <>
+                <mesh position={[vx, Y_DOTS + 0.0003, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={206}>
+                  <circleGeometry args={[0.22, 16]} />
+                  <meshBasicMaterial color="#ffffff" transparent opacity={1.0}
+                    depthTest={false} depthWrite={false} />
+                </mesh>
+                <mesh position={[vx, Y_DOTS + 0.0006, vz]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={207}>
+                  <circleGeometry args={[0.13, 16]} />
+                  <meshBasicMaterial color={ixHasOverride ? COLOR_OVERRIDE : COLOR_IX_DEFAULT}
+                    transparent opacity={1.0}
+                    depthTest={false} depthWrite={false} />
+                </mesh>
+              </>
+            )}
+            <mesh position={ixDotPos} rotation={[-Math.PI / 2, 0, 0]} renderOrder={201}>
+              <circleGeometry args={[DOT_R_IX, 24]} />
+              <meshBasicMaterial color={ixColor} transparent opacity={1.0}
+                depthTest={false} depthWrite={false} />
+            </mesh>
+            <mesh position={ixDotPos} rotation={[-Math.PI / 2, 0, 0]} renderOrder={202}>
+              <ringGeometry args={[DOT_R_IX - 0.10, DOT_R_IX, 24]} />
+              <meshBasicMaterial color="#ffffff" transparent opacity={1.0}
+                depthTest={false} depthWrite={false} />
+            </mesh>
+
             {/* Per-corner dots at each Q point. */}
             {corners.map((c, ci) => {
               const ck = sortedCornerKey(V, c.legKeyA, c.legKeyB)
