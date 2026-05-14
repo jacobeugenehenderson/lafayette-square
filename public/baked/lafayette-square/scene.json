@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1778715517257,
+  "bakedAt": 1778722667241,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -433,5 +433,31 @@
   "heroMotion": {
     "period": 720,
     "easing": "sine"
+  },
+  "arch": {
+    "values": {
+      "distance": 1050,
+      "bearingX": 0.9487,
+      "bearingZ": -0.3163,
+      "scale": 1.3,
+      "rotation": 1.36,
+      "yOffset": 0,
+      "footFade": 30,
+      "uplightL_intensity": 0,
+      "uplightL_color": "#ffd6a8",
+      "uplightL_cone": 0.55,
+      "uplightL_reach": 200,
+      "uplightR_intensity": 0,
+      "uplightR_color": "#ffd6a8",
+      "uplightR_cone": 0.55,
+      "uplightR_reach": 200
+    }
+  },
+  "horizon": {
+    "values": {
+      "radius": 3750,
+      "fadeInner": 900,
+      "fadeOuter": 3750
+    }
   }
 }

@@ -15,7 +15,7 @@ import CornerEditHandles from './CornerEditHandles.jsx'
 import BlockGeometryV2Debug from './BlockGeometryV2Debug.jsx'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
-import { DesignerArch } from '../stage/StageArch.jsx'
+import { DesignerArch } from './DesignerArch.jsx'
 
 // Shot-only (environment paint-in)
 import LafayetteScene from '../components/LafayetteScene'
@@ -23,7 +23,7 @@ import LafayettePark from '../components/LafayettePark'
 import InstancedTrees from '../components/InstancedTrees'
 import StreetLights from '../components/StreetLights'
 import BakedLamps from '../components/BakedLamps'
-import GatewayArch from '../stage/StageArch'
+import GatewayArch from '../components/GatewayArch'
 import CelestialBodies from '../components/CelestialBodies'
 import CloudDome from '../components/CloudDome'
 import SpriteClouds from '../components/SpriteClouds'
@@ -573,6 +573,8 @@ const SCENE_REGISTRY = {
       const paletteOverride         = useCartographStore(s => s.buildingPalette)
       const materialPhysicsOverride = useCartographStore(s => s.materialPhysics)
       const materialColorsOverride  = useCartographStore(s => s.materialColors)
+      const archOverride            = useCartographStore(s => s.arch)
+      const horizonOverride         = useCartographStore(s => s.horizon)
       return <>
         <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         {!hiddenLayers.tree && (
@@ -588,7 +590,12 @@ const SCENE_REGISTRY = {
         {!hiddenLayers.lamp && (
           <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         )}
-        <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
+        <R3FErrorBoundary name="GatewayArch"><GatewayArch
+          lookId={lookId}
+          bakeLastMs={bakeLastMs}
+          archOverride={archOverride}
+          horizonOverride={horizonOverride}
+        /></R3FErrorBoundary>
       </>
     },
   },

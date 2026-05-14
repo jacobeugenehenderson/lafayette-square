@@ -36,6 +36,7 @@ import {
   MIST_FLAT_DEFAULTS, HALO_FLAT_DEFAULTS,
   GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
+  ARCH_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
 } from '../src/cartograph/skyLightChannels.js'
 
 // SC.5 — strip transient runtime-UI fields (preview, speed) off the
@@ -113,6 +114,13 @@ export async function bakeScene({ look = 'default' } = {}) {
     heroSubject:   design.heroSubject   || null,
     heroKeyframes: design.heroKeyframes || [],
     heroMotion:    stripTransientHeroMotion(design.heroMotion) || { period: 12, easing: 'easeInOut' },
+    // SC.7 — arch + horizon authoring. The Gateway Arch landmark's
+    // placement / transform / uplights and the ground disc's radius +
+    // feathering. Promoted from the module-scope `archState` bridge in
+    // src/stage/StageApp.jsx — operator's arch authoring now persists
+    // across reloads and reaches production via the slab.
+    arch:    design.arch    || { values: { ...ARCH_FLAT_DEFAULTS } },
+    horizon: design.horizon || { values: { ...HORIZON_FLAT_DEFAULTS } },
     // SC.4 — time defaults / sun-curve overrides. DawnTimeline today is
     // purely a Stage-scrub UI (calls setTime on useTimeOfDay directly);
     // no design.time or sun-curve override is persisted. Field omitted

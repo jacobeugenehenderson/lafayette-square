@@ -133,6 +133,44 @@ export const NEON_FIELDS = [
 export const NEON_FLAT_DEFAULTS = { core: 0, tube: 0, bleed: 0 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
+// Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform /
+// uplights. Single non-TOD channel. Field names drop the redundant `arch`
+// prefix that lived on the legacy archState (e.g., archDistance → distance);
+// uplight fields stay flat-scalar (uplightL_intensity etc.) so the standard
+// factory works without a hand-rolled nested setter. Defaults match the
+// legacy ARCH_DEFAULTS verbatim so unauthored Looks are byte-identical to
+// pre-SC.7.
+export const ARCH_FLAT_DEFAULTS = {
+  distance: 1050,
+  bearingX: 0.9487,
+  bearingZ: -0.3163,
+  scale: 1.3,
+  rotation: 1.36,
+  yOffset: 0,
+  // Foot fade — meters below world y=0 at which the arch alpha reaches zero.
+  footFade: 30,
+  // Cross-aimed uplights L and R. Independent so operators can desync.
+  uplightL_intensity: 0,
+  uplightL_color: '#ffd6a8',
+  uplightL_cone: 0.55,
+  uplightL_reach: 200,
+  uplightR_intensity: 0,
+  uplightR_color: '#ffd6a8',
+  uplightR_cone: 0.55,
+  uplightR_reach: 200,
+}
+export const ARCH_FIELD_KEYS = Object.keys(ARCH_FLAT_DEFAULTS)
+
+// Horizon (Hero & Horizon card — SC.7) — ground disc radius + feathering.
+// Conceptually distinct from the arch landmark itself, so a separate
+// channel. 3 fields.
+export const HORIZON_FLAT_DEFAULTS = {
+  radius: 3750,
+  fadeInner: 900,
+  fadeOuter: 3750,
+}
+export const HORIZON_FIELD_KEYS = Object.keys(HORIZON_FLAT_DEFAULTS)
+
 // Shots (Hero & Horizon — SC.5) — per-shot framing knobs that bake into
 // the slab. Authored-only knobs: FOVs, Browse bounds + padding, Street
 // eye height. Runtime inputs (Browse altitude, Hero target, Street

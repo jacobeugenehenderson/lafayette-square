@@ -25,6 +25,8 @@ import {
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS,
   BROWSE_HEADING_FIELD_KEYS, BROWSE_HEADING_FLAT_DEFAULTS,
+  ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS,
+  HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
@@ -321,6 +323,10 @@ const useCartographStore = create((set, get) => ({
   // position/target) are explicitly NOT here.
   shots:         { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
   browseHeading: { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
+  // SC.7 — arch + horizon channels (Hero & Horizon card). Replaces the
+  // module-scope archState bridge in src/stage/StageApp.jsx.
+  arch:    { values: { ...ARCH_FLAT_DEFAULTS } },
+  horizon: { values: { ...HORIZON_FLAT_DEFAULTS } },
   constellations: { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
   milkyWay:       { values: { ...MILKYWAY_FLAT_DEFAULTS } },
   // Neon — group of 3 (core / tube / bleed) sharing one TOD timeline.
@@ -777,6 +783,16 @@ const useCartographStore = create((set, get) => ({
     fieldKeys: BROWSE_HEADING_FIELD_KEYS,
     flatDefaults: BROWSE_HEADING_FLAT_DEFAULTS,
   }, set, get),
+  ...createGroupChannelActions({
+    name: 'arch',
+    fieldKeys: ARCH_FIELD_KEYS,
+    flatDefaults: ARCH_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'horizon',
+    fieldKeys: HORIZON_FIELD_KEYS,
+    flatDefaults: HORIZON_FLAT_DEFAULTS,
+  }, set, get),
 
   // SC.5 — `shots` hand-rolled actions. Values are nested per-shot
   // objects so the createGroupChannelActions flat-scalar factory doesn't
@@ -1078,6 +1094,8 @@ const useCartographStore = create((set, get) => ({
         browseHeading: design.browseHeading?.values
           ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...design.browseHeading.values } }
           : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
+        arch:    migrateGroupChannel(design.arch,    ARCH_FIELD_KEYS,    ARCH_FLAT_DEFAULTS),
+        horizon: migrateGroupChannel(design.horizon, HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS),
         openSections:   design.openSections   || {},
         bakeStale: !entry?.bakedAt,
       })
@@ -1520,6 +1538,8 @@ const useCartographStore = create((set, get) => ({
         browseHeading: design.browseHeading?.values
           ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...design.browseHeading.values } }
           : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
+        arch:    migrateGroupChannel(design.arch,    ARCH_FIELD_KEYS,    ARCH_FLAT_DEFAULTS),
+        horizon: migrateGroupChannel(design.horizon, HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS),
         openSections:   design.openSections   || {},
         _designHydrated: true,
       })
@@ -1642,6 +1662,8 @@ const useCartographStore = create((set, get) => ({
           heroMotion: s.heroMotion,
           shots: s.shots,
           browseHeading: s.browseHeading,
+          arch: s.arch,
+          horizon: s.horizon,
           openSections: s.openSections,
         }
         saveLookDesign(id, design).catch(err =>
