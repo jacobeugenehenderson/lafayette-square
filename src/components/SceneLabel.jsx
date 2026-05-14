@@ -51,10 +51,16 @@ export default function SceneLabel({ position, rotation, text, tier = 'street' }
     g.scale.setScalar(desiredPx * worldPerPx)
   })
 
+  const caseMode = style.case ?? 'mixed'
+  const displayText = caseMode === 'upper' ? String(text).toUpperCase()
+                    : caseMode === 'lower' ? String(text).toLowerCase()
+                    : text
+  const fontUrl = (style.font || '').trim() || undefined
   return (
     <group ref={groupRef} position={position} rotation={rotation || [0, 0, 0]}>
       <Text
         fontSize={1}
+        font={fontUrl}
         color={style.fill ?? '#e8e8f0'}
         outlineWidth={style.haloWidth ?? 0.07}
         outlineColor={style.halo ?? '#14141c'}
@@ -65,7 +71,7 @@ export default function SceneLabel({ position, rotation, text, tier = 'street' }
         anchorY="middle"
         renderOrder={RENDER_ORDER}
       >
-        {text}
+        {displayText}
       </Text>
     </group>
   )

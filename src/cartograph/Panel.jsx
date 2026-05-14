@@ -383,6 +383,23 @@ function LabelsSubsection() {
         </span>
       </div>
       <div className="carto-row">
+        <label className="carto-label-fixed" title="Text case transform applied at render time.">Case</label>
+        <select className="carto-select"
+          value={get('case', 'mixed')}
+          onChange={e => setLabelStyle({ case: e.target.value })}>
+          <option value="mixed">Mixed</option>
+          <option value="upper">UPPER</option>
+          <option value="lower">lower</option>
+        </select>
+      </div>
+      <div className="carto-row carto-row--wrap">
+        <label className="carto-label-fixed" title="TTF/OTF/WOFF URL. Leave empty for the Troika default (Roboto). Quick try: https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.ttf">Font</label>
+        <input type="text" className="carto-input"
+          placeholder="(default)"
+          value={get('font', '')}
+          onChange={e => setLabelStyle({ font: e.target.value })} />
+      </div>
+      <div className="carto-row">
         <label className="carto-label-fixed">Opacity</label>
         <input type="range" className="carto-input"
           min="0" max="1" step="0.05"
