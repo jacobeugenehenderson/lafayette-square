@@ -179,15 +179,25 @@ const useCartographStore = create((set, get) => ({
   // without changing the renderer's read path. Defaults reproduce the
   // pre-parametric hardcoded look (white #fff on #3a3a38 chip, weight
   // 600, ~4 m tall).
+  // SceneLabel (drei <Text> / SDF) is screen-space sized: every label
+  // targets `targetPx` pixels tall, clamped to [minPx, maxPx] at zoom
+  // extremes. `tierScale.park` is a multiplier applied to the "park"
+  // size tier so the LAFAYETTE PARK title reads as ~2.5x a street label
+  // without diverging the type system. `haloWidth` is in fontSize units
+  // (TroikaText convention) — 0.06 ≈ a 1-px-equivalent outline at typical
+  // body sizes. Legacy chip controls (bg/bgAlpha) retired with the canvas
+  // sprite renderer; outline now carries the legibility job.
   labels: {
-    size:       4,           // world-space height in meters
-    weight:     600,         // 300 | 400 | 500 | 600 | 700
-    fill:       '#ffffff',   // glyph color
-    bg:         '#3a3a38',   // chip background
-    bgAlpha:    1,           // 0 = chip disappears, halo takes over
-    halo:       '#000000',   // glyph stroke color
-    haloWidth:  0,           // px; 0 = no halo
-    opacity:    1,           // sprite opacity
+    targetPx:      24,           // px; nominal screen height of street labels
+    minPx:         14,           // px; floor when camera pulls far back
+    maxPx:         48,           // px; ceiling when camera pushes in close
+    tierScale:     { street: 1, park: 2.5 },
+    weight:        600,          // 300 | 400 | 500 | 600 | 700 — TroikaText `fontWeight`
+    fill:          '#e8e8f0',
+    halo:          '#14141c',
+    haloWidth:     0.07,         // fontSize units (TroikaText outlineWidth)
+    letterSpacing: 0.05,         // fontSize units (TroikaText letterSpacing)
+    opacity:       1,
   },
   // Look-level global curb width (meters). V2 emits the curb as a single
   // unified stroke around the rounded asphalt boundary, so width is

@@ -306,17 +306,40 @@ function LabelsSubsection() {
   const style = useCartographStore(s => s.labels) || {}
   const setLabelStyle = useCartographStore(s => s.setLabelStyle)
   const get = (k, fb) => (style[k] !== undefined ? style[k] : fb)
+  const tier = style.tierScale || { street: 1, park: 2.5 }
   return (
     <>
       <div className="carto-row carto-row--wrap">
-        <label className="carto-label-fixed" title="World-space height of each label, in meters.">Size</label>
+        <label className="carto-label-fixed" title="Target screen height of a street label, in pixels. Clamped between Min and Max at zoom extremes.">Target</label>
         <input type="range" className="carto-input"
-          min="1" max="12" step="0.25"
-          value={get('size', 4)}
-          onChange={e => setLabelStyle({ size: parseFloat(e.target.value) })} />
-        <span className="carto-meta carto-meta--value">
-          {Number(get('size', 4)).toFixed(2)} m
-        </span>
+          min="10" max="64" step="1"
+          value={get('targetPx', 24)}
+          onChange={e => setLabelStyle({ targetPx: parseInt(e.target.value, 10) })} />
+        <span className="carto-meta carto-meta--value">{get('targetPx', 24)} px</span>
+      </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed" title="Pixel floor — labels never shrink below this even when the camera pulls far back.">Min</label>
+        <input type="range" className="carto-input"
+          min="8" max="32" step="1"
+          value={get('minPx', 14)}
+          onChange={e => setLabelStyle({ minPx: parseInt(e.target.value, 10) })} />
+        <span className="carto-meta carto-meta--value">{get('minPx', 14)} px</span>
+      </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed" title="Pixel ceiling — labels never grow past this when the camera pushes in close.">Max</label>
+        <input type="range" className="carto-input"
+          min="24" max="128" step="2"
+          value={get('maxPx', 48)}
+          onChange={e => setLabelStyle({ maxPx: parseInt(e.target.value, 10) })} />
+        <span className="carto-meta carto-meta--value">{get('maxPx', 48)} px</span>
+      </div>
+      <div className="carto-row">
+        <label className="carto-label-fixed" title="Park-tier multiplier. 1 = same size as a street label; 2.5 = LAFAYETTE PARK title size.">Park ×</label>
+        <input type="range" className="carto-input"
+          min="1" max="4" step="0.1"
+          value={tier.park ?? 2.5}
+          onChange={e => setLabelStyle({ tierScale: { ...tier, park: parseFloat(e.target.value) } })} />
+        <span className="carto-meta carto-meta--value">{Number(tier.park ?? 2.5).toFixed(1)}×</span>
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed">Weight</label>
@@ -333,33 +356,30 @@ function LabelsSubsection() {
       <div className="carto-row">
         <label className="carto-label-fixed">Fill</label>
         <input type="color" className="carto-input"
-          value={get('fill', '#ffffff')}
+          value={get('fill', '#e8e8f0')}
           onChange={e => setLabelStyle({ fill: e.target.value })} />
       </div>
       <div className="carto-row">
-        <label className="carto-label-fixed" title="Chip background. Set alpha to 0 to drop the chip and use a halo instead.">Chip</label>
+        <label className="carto-label-fixed" title="Glyph outline color + width in fontSize units (TroikaText convention). 0.06 ≈ a 1-px-equivalent outline at typical body sizes.">Halo</label>
         <input type="color" className="carto-input"
-          value={get('bg', '#3a3a38')}
-          onChange={e => setLabelStyle({ bg: e.target.value })} />
+          value={get('halo', '#14141c')}
+          onChange={e => setLabelStyle({ halo: e.target.value })} />
         <input type="range" className="carto-input"
-          min="0" max="1" step="0.05"
-          value={get('bgAlpha', 1)}
-          onChange={e => setLabelStyle({ bgAlpha: parseFloat(e.target.value) })} />
+          min="0" max="0.2" step="0.01"
+          value={get('haloWidth', 0.07)}
+          onChange={e => setLabelStyle({ haloWidth: parseFloat(e.target.value) })} />
         <span className="carto-meta carto-meta--value">
-          {Number(get('bgAlpha', 1)).toFixed(2)}
+          {Number(get('haloWidth', 0.07)).toFixed(2)}
         </span>
       </div>
       <div className="carto-row">
-        <label className="carto-label-fixed" title="Glyph stroke. 0 px = no halo (use the chip instead). Try chip alpha 0 + halo width 2–3 px for a haloed-only look.">Halo</label>
-        <input type="color" className="carto-input"
-          value={get('halo', '#000000')}
-          onChange={e => setLabelStyle({ halo: e.target.value })} />
+        <label className="carto-label-fixed" title="TroikaText letterSpacing in fontSize units.">Tracking</label>
         <input type="range" className="carto-input"
-          min="0" max="6" step="0.5"
-          value={get('haloWidth', 0)}
-          onChange={e => setLabelStyle({ haloWidth: parseFloat(e.target.value) })} />
+          min="0" max="0.3" step="0.01"
+          value={get('letterSpacing', 0.05)}
+          onChange={e => setLabelStyle({ letterSpacing: parseFloat(e.target.value) })} />
         <span className="carto-meta carto-meta--value">
-          {Number(get('haloWidth', 0)).toFixed(1)} px
+          {Number(get('letterSpacing', 0.05)).toFixed(2)}
         </span>
       </div>
       <div className="carto-row">
