@@ -3,7 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import { Text, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { buildings as _allBuildings, buildingMap as _buildingMap } from '../data/buildings'
-import streetsData from '../data/streets.json'
+import getStreetLabels from '../lib/streetLabels.js'
+import SceneLabel from './SceneLabel.jsx'
 import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -947,76 +948,6 @@ function ClickCatcher() {
   )
 }
 
-// ============ STREET LABELS ============
-// Computes label placement(s) for a single street segment
-function getStreetLabelPlacements(street) {
-  if (!street.name) return []
-  const points = street.points
-  if (points.length < 2) return []
-
-  let totalLen = 0
-  for (let i = 1; i < points.length; i++) {
-    const dx = points[i][0] - points[i - 1][0]
-    const dz = points[i][1] - points[i - 1][1]
-    totalLen += Math.sqrt(dx * dx + dz * dz)
-  }
-
-  if (totalLen < 30) return []
-
-  // Place label at the midpoint of this segment
-  const targetDist = totalLen * 0.5
-  let accumulated = 0
-  let labelX = points[0][0], labelZ = points[0][1]
-  let angle = 0
-
-  for (let i = 1; i < points.length; i++) {
-    const dx = points[i][0] - points[i - 1][0]
-    const dz = points[i][1] - points[i - 1][1]
-    const segLen = Math.sqrt(dx * dx + dz * dz)
-
-    if (accumulated + segLen >= targetDist) {
-      const t = (targetDist - accumulated) / segLen
-      labelX = points[i - 1][0] + dx * t
-      labelZ = points[i - 1][1] + dz * t
-      angle = Math.atan2(dz, dx)
-      break
-    }
-    accumulated += segLen
-  }
-
-  if (angle > Math.PI / 2) angle -= Math.PI
-  if (angle < -Math.PI / 2) angle += Math.PI
-
-  return [{ x: labelX, z: labelZ, angle, len: totalLen, name: street.name, type: street.type }]
-}
-
-// Minimum distance between two labels of the same street name
-const SAME_NAME_MIN_DIST = 120
-// Minimum distance between any two labels (prevents overlap)
-const ANY_LABEL_MIN_DIST = 25
-
-function StreetLabel({ label }) {
-  const isPrimary = label.type === 'primary' || label.type === 'secondary'
-  const fontSize = isPrimary ? 5 : 3.5
-  const text = label.name.toUpperCase()
-
-  return (
-    <group position={[label.x, 0.08, label.z]} rotation={[-Math.PI / 2, 0, -label.angle]}>
-      <Text
-        fontSize={fontSize}
-        color={isPrimary ? '#c8c8d0' : '#888890'}
-        anchorX="center"
-        anchorY="middle"
-        letterSpacing={0.08}
-        outlineWidth={fontSize * 0.2}
-        outlineColor="#14141c"
-      >
-        {text}
-      </Text>
-    </group>
-  )
-}
-
 // ============ MAP PIN MARKERS ============
 
 function getInitials(name) {
@@ -1360,42 +1291,14 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [deselect])
 
-  const streetLabels = useMemo(() => {
-    // Collect candidate placements from all named street segments
-    const typeOrder = { primary: 0, secondary: 1, tertiary: 2, residential: 3 }
-    const candidates = []
-
-    streetsData.streets.forEach(s => {
-      getStreetLabelPlacements(s).forEach(p => candidates.push(p))
-    })
-
-    // Sort: primary/secondary first, then by segment length (longest first)
-    candidates.sort((a, b) => {
-      const oa = typeOrder[a.type] ?? 4, ob = typeOrder[b.type] ?? 4
-      if (oa !== ob) return oa - ob
-      return b.len - a.len
-    })
-
-    // Greedily place labels, skipping those too close to already-placed ones
-    const placed = []
-    // Streets allowed east of Truman (x > 640)
-    const EAST_OF_TRUMAN_ALLOWED = /^(Dillon|Park|Rutger|Hickory|Chouteau|Truman)/i
-    for (const c of candidates) {
-      // Filter: drop labels east of Truman unless whitelisted
-      if (c.x > 640 && !EAST_OF_TRUMAN_ALLOWED.test(c.name)) continue
-
-      let tooClose = false
-      for (const p of placed) {
-        const dx = c.x - p.x, dz = c.z - p.z
-        const dist = Math.sqrt(dx * dx + dz * dz)
-        const minDist = c.name === p.name ? SAME_NAME_MIN_DIST : ANY_LABEL_MIN_DIST
-        if (dist < minDist) { tooClose = true; break }
-      }
-      if (!tooClose) placed.push(c)
-    }
-
-    return placed
-  }, [])
+  // Street labels — shared with Cartograph's MapLayers via
+  // src/lib/streetLabels.js so Designer / Preview / LS never drift.
+  // Doctrine [[project_preview_equals_ls_literally]] — same data,
+  // same renderer (SceneLabel below). Retired with this consolidation:
+  // LS-local getStreetLabelPlacements, SAME_NAME_MIN_DIST /
+  // ANY_LABEL_MIN_DIST collision skip, and the EAST_OF_TRUMAN_ALLOWED
+  // whitelist (labelBoundary in the shared module supersedes it).
+  const streetLabels = getStreetLabels()
 
   return (
     <group>
@@ -1412,9 +1315,15 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
           scene.json.neon driving the uCore/uTube/uBleed uniforms. */}
       {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId={INSTANCE.lookId} neonTubeOverride={neonTubeOverride} />}
 
-      {/* Street labels */}
-      {labelsReady && streetLabels.map((label, i) => (
-        <StreetLabel key={`label-${i}`} label={label} />
+      {/* Street labels — SceneLabel renderer, panel-driven style. */}
+      {labelsReady && streetLabels.map((lbl, i) => (
+        <SceneLabel
+          key={`label-${i}`}
+          text={lbl.name}
+          tier="street"
+          position={[lbl.x, 0.08, lbl.z]}
+          rotation={[-Math.PI / 2, 0, -lbl.angle]}
+        />
       ))}
 
       {/* Landmark markers */}

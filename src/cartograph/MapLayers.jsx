@@ -10,6 +10,7 @@ import lampData from '../data/street_lamps.json'
 import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary } from './boundary.js'
 import useCartographStore from './stores/useCartographStore.js'
 import SceneLabel from '../components/SceneLabel.jsx'
+import getStreetLabels from '../lib/streetLabels.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import {
   assignTerrainUniforms,
@@ -444,144 +445,10 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     return lines
   }, [])
 
-  // ── Label boundary (tighter than neighborhood_boundary) ────
-  // Derived from the four boundary corridors: Jefferson / Lafayette /
-  // Truman / Chouteau. neighborhood_boundary.json is a 1.8 km circle —
-  // too generous; everything in the OSM cutout falls inside, so applying
-  // it to labels gates nothing. This polygon traces just outside the four
-  // boundary streets, formed by pairwise intersections (NW/NE/SE/SW
-  // corners) padded ~30 m outward so the boundary streets' own labels
-  // remain inside.
-  const labelBoundary = useMemo(() => {
-    const CORRIDORS = ['South Jefferson Avenue', 'Lafayette Avenue', 'Truman Parkway', 'Chouteau Avenue']
-    const byCorridor = new Map(CORRIDORS.map(c => [c, []]))
-    for (const st of ribbonsData.streets) {
-      if (byCorridor.has(st.name) && st.points?.length >= 2) byCorridor.get(st.name).push(st)
-    }
-    function segXSeg(p1, p2, p3, p4) {
-      const x1 = p1[0], y1 = p1[1], x2 = p2[0], y2 = p2[1]
-      const x3 = p3[0], y3 = p3[1], x4 = p4[0], y4 = p4[1]
-      const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-      if (Math.abs(den) < 1e-9) return null
-      const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
-      const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
-      if (t < 0 || t > 1 || u < 0 || u > 1) return null
-      return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)]
-    }
-    function findCorner(nameA, nameB) {
-      const A = byCorridor.get(nameA), B = byCorridor.get(nameB)
-      for (const sa of A) {
-        const pa = sa.points
-        for (let i = 0; i < pa.length - 1; i++) {
-          for (const sb of B) {
-            const pb = sb.points
-            for (let j = 0; j < pb.length - 1; j++) {
-              const hit = segXSeg(pa[i], pa[i + 1], pb[j], pb[j + 1])
-              if (hit) return hit
-            }
-          }
-        }
-      }
-      let best = null
-      for (const sa of A) for (const pa of [sa.points[0], sa.points[sa.points.length - 1]]) {
-        for (const sb of B) for (const pb of [sb.points[0], sb.points[sb.points.length - 1]]) {
-          const d = Math.hypot(pa[0] - pb[0], pa[1] - pb[1])
-          if (!best || d < best.d) best = { d, pt: [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2] }
-        }
-      }
-      return best?.pt || null
-    }
-    const nw = findCorner('South Jefferson Avenue', 'Lafayette Avenue')
-    const ne = findCorner('Lafayette Avenue',       'Truman Parkway')
-    const se = findCorner('Truman Parkway',         'Chouteau Avenue')
-    const sw = findCorner('Chouteau Avenue',        'South Jefferson Avenue')
-    if (!nw || !ne || !se || !sw) return null
-    const corners = [nw, ne, se, sw]
-    const cx = (nw[0] + ne[0] + se[0] + sw[0]) / 4
-    const cz = (nw[1] + ne[1] + se[1] + sw[1]) / 4
-    const PAD = 30
-    return corners.map(([x, z]) => {
-      const dx = x - cx, dz = z - cz
-      const len = Math.hypot(dx, dz) || 1
-      return [x + (dx / len) * PAD, z + (dz / len) * PAD]
-    })
-  }, [])
-
-  function pointInLabelBoundary(x, z) {
-    if (!labelBoundary) return pointInBoundary(x, z)
-    let inside = false
-    for (let i = 0, j = labelBoundary.length - 1; i < labelBoundary.length; j = i++) {
-      const xi = labelBoundary[i][0], zi = labelBoundary[i][1]
-      const xj = labelBoundary[j][0], zj = labelBoundary[j][1]
-      if (((zi > z) !== (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi)) inside = !inside
-    }
-    return inside
-  }
-
-  // ── Labels (boundary-clipped) ──────────────────────────────
-  // Placement algorithm: for each unique name, find the longest straight
-  // segment across all chains carrying that name. OSM densifies vertices
-  // around curves and leaves long gaps along straight runs, so segment
-  // length is itself a strong proxy for "straightness." Centering the
-  // label on the longest segment keeps it on the street's most readable
-  // stretch and gives us the best chance of fitting the full name without
-  // running off into a curve. Angle is normalized to [-π/2, π/2] so text
-  // always reads left-to-right (a street running E→W and one running
-  // W→E render with the same orientation, no upside-down labels).
-  // Synthetic-name highway classes — skip entirely (motorway_link 13,
-  // trunk_link 7, etc.). Operators don't walk these; their names are
-  // positional indices from skeleton.js's unnamed-vehicular pass, not
-  // OSM data. Doctrine [[project_labels_encourage_walking]].
-  const NO_LABEL_HIGHWAY = new Set(['motorway_link', 'trunk_link', 'motorway'])
-  const labelData = useMemo(() => {
-    const byName = new Map()
-    for (const st of ribbonsData.streets) {
-      if (!st.name || !st.points || st.points.length < 2) continue
-      if (NO_LABEL_HIGHWAY.has(st.highway)) continue
-      if (!byName.has(st.name)) byName.set(st.name, [])
-      byName.get(st.name).push(st)
-    }
-    const labels = []
-    for (const [name, chains] of byName) {
-      // For each name, pick the longest chain by total arclength and
-      // place the label at that chain's arclength midpoint. The earlier
-      // "longest single segment" pick landed Preston Place's label at
-      // the top of the chain (one long terminal segment) instead of
-      // the visual middle of the street.
-      let best = null
-      for (const st of chains) {
-        const pts = st.points
-        const segLens = []
-        let totalLen = 0
-        for (let i = 0; i < pts.length - 1; i++) {
-          const L = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
-          segLens.push(L)
-          totalLen += L
-        }
-        if (totalLen === 0) continue
-        const halfLen = totalLen / 2
-        let acc = 0, segIdx = 0
-        for (; segIdx < segLens.length - 1; segIdx++) {
-          if (acc + segLens[segIdx] >= halfLen) break
-          acc += segLens[segIdx]
-        }
-        const t = segLens[segIdx] > 0 ? (halfLen - acc) / segLens[segIdx] : 0
-        const ax = pts[segIdx][0],     ay = pts[segIdx][1]
-        const bx = pts[segIdx + 1][0], by = pts[segIdx + 1][1]
-        const cx = ax + (bx - ax) * t
-        const cy = ay + (by - ay) * t
-        if (!pointInLabelBoundary(cx, cy)) continue
-        if (best && totalLen <= best.totalLen) continue
-        let angle = Math.atan2(by - ay, bx - ax)
-        if (angle >  Math.PI / 2) angle -= Math.PI
-        if (angle < -Math.PI / 2) angle += Math.PI
-        best = { cx, cy, totalLen, angle }
-      }
-      if (!best) continue
-      labels.push({ name, x: best.cx, z: best.cy, angle: best.angle })
-    }
-    return labels
-  }, [labelBoundary])
+  // Street label placements — shared with LafayetteScene via
+  // src/lib/streetLabels.js so Designer / Preview / LS never drift.
+  // Module-scope computed once from ribbonsData (static import).
+  const labelData = getStreetLabels()
 
   // ── Streetlamps (dots, no boundary clip — the 641 street lamps from
   // street_lamps.json all sit in the neighborhood anyway; lamp pools gate
