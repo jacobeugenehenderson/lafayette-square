@@ -9,8 +9,9 @@ import useCartographStore from '../cartograph/stores/useCartographStore.js'
 // labels.tierScale[tier]. New tiers (landmark, poi, …) add an entry
 // there — no renderer change.
 //
-// renderOrder=16 carries over from the retired canvas-sprite
-// LabelSprite layering (matches PRI.labels in MapLayers).
+// renderOrder=16 matches MapLayers PRI.labels so labels sit at the
+// top of the transparent queue and don't get painted over by
+// terrain-displaced ground or median grass.
 const RENDER_ORDER = 16
 
 // Street-label widths typically span 4–18 m in LS (Truman one-side at 4 m
