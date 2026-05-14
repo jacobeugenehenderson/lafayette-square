@@ -416,14 +416,14 @@ function LabelsSubsection() {
           onChange={e => setLabelStyle({ fill: e.target.value })} />
       </div>
       <div className="carto-row">
-        <label className="carto-label-fixed" title="Glyph outline color + width in world meters. Absolute (not fontSize-relative) so the halo reads the same on small and large labels alike.">Halo</label>
+        <label className="carto-label-fixed" title="Glyph outline color + width as a fraction of fontSize (Troika convention). 0.07 ≈ 7% of glyph height — the halo scales with the label so big and small labels share the same typographic feel.">Halo</label>
         <input type="color" className="carto-input"
           value={get('halo', '#14141c')}
           onChange={e => setLabelStyle({ halo: e.target.value })} />
-        <DraftRangeInput min="0" max="1" step="0.025"
-          value={get('haloWidth', 0.3)}
+        <DraftRangeInput min="0" max="0.2" step="0.01"
+          value={get('haloWidth', 0.07)}
           onCommit={v => setLabelStyle({ haloWidth: v })}
-          formatLabel={v => `${Number(v).toFixed(2)} m`} />
+          formatLabel={v => `${Math.round(Number(v) * 100)}%`} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="TroikaText letterSpacing in fontSize units.">Tracking</label>

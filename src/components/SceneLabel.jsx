@@ -44,11 +44,6 @@ export default function SceneLabel({ position, rotation, text, tier = 'street', 
     ? `https://cdn.jsdelivr.net/fontsource/fonts/${family}@latest/latin-${weight}-normal.ttf`
     : undefined
 
-  // Halo is authored in absolute world meters so a 0.3 m outline reads
-  // the same on every label regardless of fontSize. Troika's
-  // outlineWidth wants fontSize-relative, so divide here.
-  const haloMeters = style.haloWidth ?? 0.3
-  const haloRel = fontSize > 0 ? haloMeters / fontSize : 0
   return (
     <Text
       position={position}
@@ -56,7 +51,7 @@ export default function SceneLabel({ position, rotation, text, tier = 'street', 
       fontSize={fontSize}
       font={fontUrl}
       color={style.fill ?? '#e8e8f0'}
-      outlineWidth={haloRel}
+      outlineWidth={style.haloWidth ?? 0.07}
       outlineColor={style.halo ?? '#14141c'}
       letterSpacing={style.letterSpacing ?? 0.05}
       fillOpacity={style.opacity ?? 1}

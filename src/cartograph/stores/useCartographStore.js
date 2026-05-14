@@ -154,17 +154,17 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
   }
 }
 
-// One-shot migration for `labels` shape changes that silently break
-// saved Looks. haloWidth flipped from fontSize-relative to absolute
-// meters (3a7ec00); a saved 0.07 used to mean a 7%-of-fontSize outline,
-// now it means 7 cm — invisible on a 4 m label. Values below the old
-// max slider (0.21) are unreachable in the new schema's typical range,
-// so promote them to the new default.
+// One-shot migration for `labels` shape churn. haloWidth has now been
+// fontSize-relative TWICE with an intervening absolute-meters epoch
+// (3a7ec00 flipped to meters, this commit flips back). Any stored
+// value > 0.21 is in the absolute-meters range and would render as a
+// massive outline (e.g. 0.3 → 30% of glyph height) when re-interpreted
+// as a percentage — reset those to the canonical default.
 function migrateLabels(labels) {
   if (!labels) return labels
   const out = { ...labels }
-  if (typeof out.haloWidth === 'number' && out.haloWidth > 0 && out.haloWidth < 0.21) {
-    out.haloWidth = 0.3
+  if (typeof out.haloWidth === 'number' && out.haloWidth > 0.21) {
+    out.haloWidth = 0.07
   }
   return out
 }
@@ -208,7 +208,7 @@ const useCartographStore = create((set, get) => ({
     weight:        600,          // 300 | 400 | 500 | 600 | 700 — TroikaText `fontWeight`
     fill:          '#e8e8f0',
     halo:          '#14141c',
-    haloWidth:     0.3,          // world meters; SceneLabel divides by fontSize for Troika's outlineWidth
+    haloWidth:     0.07,         // fontSize units (Troika outlineWidth) — % of glyph height
     letterSpacing: 0.05,         // fontSize units (TroikaText letterSpacing)
     opacity:       1,
     case:          'mixed',      // 'mixed' | 'upper' | 'lower' — applied at render time
