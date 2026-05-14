@@ -1762,8 +1762,47 @@ const useCartographStore = create((set, get) => ({
     const mateIdx = st.pairId
       ? centerlineData.streets.findIndex((s, i) => i !== streetIdx && s.pairId === st.pairId)
       : -1
+    // Inner-edge anchor is the operator's opt-in to "paired-with-median"
+    // authoring: flips `measure.symmetric` off (so outboard drag stops
+    // mirroring inboard) and seeds `inboard.pavementHW` to 0 — that's
+    // the operator's "I'm now in inner-edge mode; widen inboard if you
+    // want to eat into the median" starting state. Un-flipping mirrors
+    // outboard back onto inboard and restores symmetric.
+    const flipMeasure = (m, innerSign, newAnchor) => {
+      if (!m) return m
+      if (newAnchor === 'inner-edge' && innerSign) {
+        const inboardKey = innerSign === +1 ? 'right' : 'left'
+        return {
+          ...m,
+          symmetric: false,
+          [inboardKey]: { ...(m[inboardKey] || {}), pavementHW: 0 },
+        }
+      }
+      if (innerSign) {
+        const inboardKey = innerSign === +1 ? 'right' : 'left'
+        const outboardKey = inboardKey === 'left' ? 'right' : 'left'
+        return {
+          ...m,
+          symmetric: true,
+          [inboardKey]: { ...(m[outboardKey] || {}) },
+        }
+      }
+      return { ...m, symmetric: true }
+    }
+    const flipStreet = (s) => {
+      const updates = { ...s, anchor }
+      if (s.measure) updates.measure = flipMeasure(s.measure, s.innerSign, anchor)
+      if (s.segmentMeasures) {
+        const newSm = {}
+        for (const k of Object.keys(s.segmentMeasures)) {
+          newSm[k] = flipMeasure(s.segmentMeasures[k], s.innerSign, anchor)
+        }
+        updates.segmentMeasures = newSm
+      }
+      return updates
+    }
     const streets = centerlineData.streets.map((s, i) =>
-      i === streetIdx || i === mateIdx ? { ...s, anchor } : s
+      i === streetIdx || i === mateIdx ? flipStreet(s) : s
     )
     set({ centerlineData: { ...centerlineData, streets } })
     get()._saveOverlay()

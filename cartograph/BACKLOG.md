@@ -2759,6 +2759,13 @@ below) — not punchlist-gating.
 - [ ] **Measure: confirm Divided Traffic + emergent median end-to-end.**
   Broader confirm pass; the lane-anchor bug above is one specific
   symptom (`project_positive_carriageway_model.md`).
+- [ ] **Re-measure the 8 inner-edge chain pairs** (Truman, S 14th, Park,
+  S Jefferson — NOTES 1478–1480). Auto-survey populated wrong half-widths
+  (Truman 2m vs reality ~10m, etc.). Newly relevant after the 2026-05-14 PM
+  course-correction: inner-edge anchor now seeds inboard pavementHW = 0
+  on flip, so the operator's authored outboard width IS the visible
+  carriageway and the gap IS the median — wrong values are now obviously
+  wrong rather than masked by symmetric mirroring.
 - [ ] **Ribbon-to-ribbon profile stitching.** Phase 5 ribbon-knit /
   merge-plug; `corridors[].transitions[]` already marks the seams.
 - [ ] **Fix final land uses** — close out remaining land-use polygon

@@ -42,19 +42,30 @@ Landed across ~20 commits this session. Three related threads:
 
 ---
 
-## 2026-05-14 — Inner-edge anchor: pavement now flips too (asymmetric lane spawn)
+## 2026-05-14 PM — Inner-edge anchor: course-corrected to authoring-mode flag (NOT geometry override)
+
+Earlier today's commit (`4ed353c`) forced `inboard.pavementHW = 0` in `innerEdgeMeasure`, treating the chain as though it sits at the inner pavement edge. But skeleton positions chains at OSM way center (= carriageway center), so the geometry shifted instead of carving a median. Operator-visible failure: carriageway pavement collapsed to one side of the chain, median nowhere near correct.
+
+**Course correction.** Reverted `streetProfiles.innerEdgeMeasure` back to zeroing only the inboard ped zone (`treelawn` / `sidewalk` / `terminal`) — the original 2026-04-26 PM pivot model was right; pavement + curb stay operator-authored on both sides. The actual fix lives in `useCartographStore.setAnchor`:
+
+- Flipping anchor to `'inner-edge'` now ALSO sets `measure.symmetric = false` and seeds `inboard.pavementHW = 0` (option (b) — visible feedback that the mode took effect; operator widens inboard back to taste).
+- Flipping anchor to `'center'` restores `symmetric = true` and mirrors outboard onto inboard (returns to symmetric defaults).
+- Same transform applied to every entry of `segmentMeasures`.
+- Pair-aware mirror to the mate (`pairId`) carries the whole flip in lockstep.
+
+The drag mechanism (NOTES 2552–2553 + 2564) and the chain-at-carriageway-center model (NOTES 1609) were always right; the error was implementing the BACKLOG 2745–2750 ask as a geometry override instead of riding the existing `measure.symmetric` mechanism.
+
+**Median emerges by construction** when both paired chains carry `inner-edge` anchor and the chain-to-chain gap exceeds the sum of inboard pavement HWs. Operator widens inboard → median shrinks → at zero gap it disappears. Free per the locked positive-carriageway doctrine.
+
+The earlier Phase 2 transform at `buildBlockGeometryV2`'s entry stays in place — it now wraps the corrected (lighter) `innerEdgeMeasure` and only strips the inboard ped zone, never pavement.
+
+**Trinity touch:** FEATURES divided-road section rewritten in this same session. The 2026-04-26 PM pivot wording ("chain stays at carriageway center; cross-section authored two-sided") is once again canonical. The earlier session-entry below is superseded by this one.
+
+---
+
+## 2026-05-14 AM — Inner-edge anchor: pavement now flips too (asymmetric lane spawn) — SUPERSEDED by PM entry above
 
 Closed the symmetric-lane-spawn bug tracked in BACKLOG line 2745–2750. `streetProfiles.innerEdgeMeasure` (`src/cartograph/streetProfiles.js` ~line 398) now zeros inboard `pavementHW` in addition to the previously-zeroed `treelawn` / `sidewalk` / `terminal`. The block comment was rewritten to be the canonical reference; **supersedes** the 2026-04-26 PM pivot's "chain stays at carriageway center; pavement spans both sides as usual" wording.
-
-Three changes, one per phase:
-
-- **`streetProfiles.innerEdgeMeasure`** — added `pavementHW: 0` to the inboard side; rewrote block comment.
-- **`buildBlockGeometryV2`** (`src/lib/buildBlockGeometryV2.js` ~line 1295) — applies the transform once at function entry to `street.measure` AND each `segmentMeasures[k]` for every chain with `anchor === 'inner-edge' && innerSign`. Both consumers (`bake-ground.js`, Designer's `BlockGeometryV2Debug.jsx`) inherit. No per-call-site audit needed.
-- **`useCartographStore.setAnchor`** — pair-aware: when operator flips anchor on one chain, looks up its mate by `pairId` and flips both. Doesn't touch widths or segment measures (independence preserved per `feedback_couplers_are_segment_local`).
-
-Bake ran clean (44 groups, 407K verts). Operator visual verification on Park Ave / Truman Parkway / S Jefferson Ave is still TBD this session — flag if the 8 inner-edge chain pairs (NOTES 1478–1480) need re-measurement now that the inboard widths are no longer absorbing operator-authored values into the median.
-
-Trinity touch: BACKLOG entry retired (resolved → out of doc per "no Done section" rule); FEATURES gained a divided-road / inner-edge section between operator-intent overlay and algorithm-drift sections.
 
 ---
 

@@ -387,12 +387,18 @@ export function innerEdgeOffsetPolyline(pts, innerSign, pavementHW) {
   return offsetPolyline(pts, pavementHW, innerSign)
 }
 
-// Inner-edge anchor: chain represents the inner (median-facing) edge of
-// the carriageway pavement. Inboard cross-section is zero across the board
-// — no pavement, no curb, no treelawn, no sidewalk — so the polygon
-// between paired carriageways' chains IS the emergent median. Outboard
-// keeps the full cross-section (pavement + curb + treelawn + sidewalk).
-// Operator authors only the outboard side.
+// Inner-edge anchor: chain stays at carriageway center (skeleton's OSM
+// way center). Cross-section is authored two-sided as usual (pavement
+// + curb on BOTH sides). The anchor flag flips `measure.symmetric` off
+// in the store so outboard drag doesn't mirror inboard, and seeds the
+// inboard `pavementHW` to 0 on flip — that's the operator's "I'm now
+// in inner-edge mode; widen inboard if you want to eat into the median"
+// starting state. Here, in the resolution helper, only the inboard ped
+// zone is zeroed (no treelawn, no sidewalk, no `terminal` — there's no
+// pedestrian zone along a median). Pavement + curb stay whatever the
+// operator has authored. The polygon between paired carriageways'
+// chains, minus the two inboard pavement HWs, IS the emergent median;
+// if the gap can't accommodate one, no median renders (free).
 export function innerEdgeMeasure(baseMeasure, innerSign) {
   if (!innerSign) return baseMeasure
   const inboardKey = innerSign === +1 ? 'right' : 'left'
@@ -401,7 +407,6 @@ export function innerEdgeMeasure(baseMeasure, innerSign) {
     ...baseMeasure,
     [inboardKey]: {
       ...inboardSide,
-      pavementHW: 0,
       treelawn: 0,
       sidewalk: 0,
       terminal: 'none',
