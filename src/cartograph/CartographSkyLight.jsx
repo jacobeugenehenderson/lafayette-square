@@ -20,6 +20,7 @@ import {
   CONSTELLATIONS_FIELDS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELDS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELDS, NEON_FLAT_DEFAULTS,
+  NEON_TUBE_FIELDS, NEON_TUBE_FLAT_DEFAULTS,
   AMBIENT_FIELDS, AMBIENT_FLAT_DEFAULTS,
   HEMI_FIELDS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FIELDS, DIRSUN_FLAT_DEFAULTS,
@@ -54,6 +55,23 @@ function StoreChannel({ name, label, fields, flatDefaults }) {
   )
 }
 
+// Stage-only QA toggle — bypasses LafayetteScene's openPlaces
+// business-hours filter so the operator can preview neon visibility
+// at any TOD without scrubbing to night. Session-only state, NOT
+// serialized to design.json, NOT in scene.json. Doctrine:
+// slab-carries-full-authored-product counter-rule.
+function NeonForceOnToggle() {
+  const on  = useCartographStore(s => s.neonForceOn)
+  const set = useCartographStore(s => s.setNeonForceOn)
+  return (
+    <label className="flex items-center gap-2 py-1 pl-2"
+      style={{ fontSize: 12, color: 'var(--on-surface)' }}>
+      <input type="checkbox" checked={!!on} onChange={e => set(e.target.checked)} />
+      <span>Force Neon On (test)</span>
+    </label>
+  )
+}
+
 // Typographic sub-section label — same shape as CartographPost's.
 // NOT a folder: no expand/collapse state, no children grouping in DOM.
 function SectionLabel({ label }) {
@@ -85,6 +103,9 @@ export default function CartographSkyLight() {
         fields={HALO_FIELDS} flatDefaults={HALO_FLAT_DEFAULTS} />
       <StoreChannel name="neon" label="Neon"
         fields={NEON_FIELDS} flatDefaults={NEON_FLAT_DEFAULTS} />
+      <StoreChannel name="neonTube" label="Neon tube"
+        fields={NEON_TUBE_FIELDS} flatDefaults={NEON_TUBE_FLAT_DEFAULTS} />
+      <NeonForceOnToggle />
 
       <SectionLabel label="Lighting" />
       <StoreChannel name="ambient" label="Ambient"

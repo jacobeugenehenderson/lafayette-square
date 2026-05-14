@@ -575,6 +575,8 @@ const SCENE_REGISTRY = {
       const materialColorsOverride  = useCartographStore(s => s.materialColors)
       const archOverride            = useCartographStore(s => s.arch)
       const horizonOverride         = useCartographStore(s => s.horizon)
+      const neonTubeOverride        = useCartographStore(s => s.neonTube)
+      const forceNeonOn             = useCartographStore(s => s.neonForceOn)
       return <>
         <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         {!hiddenLayers.tree && (
@@ -586,6 +588,8 @@ const SCENE_REGISTRY = {
           paletteOverride={paletteOverride}
           materialPhysicsOverride={materialPhysicsOverride}
           materialColorsOverride={materialColorsOverride}
+          neonTubeOverride={neonTubeOverride}
+          forceNeonOn={forceNeonOn}
         /></R3FErrorBoundary>
         {!hiddenLayers.lamp && (
           <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>

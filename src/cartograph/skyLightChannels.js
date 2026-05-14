@@ -133,6 +133,24 @@ export const NEON_FIELDS = [
 export const NEON_FLAT_DEFAULTS = { core: 0, tube: 0, bleed: 0 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
+// Neon tube — physical / shader properties of the NeonBands mesh.
+// Separate channel from the existing `neon` (core/tube/bleed
+// intensities, TOD-animated) because these three are flat,
+// non-TOD-animated: tube radius and roof lift are geometry (a change
+// triggers useMemo rebuild), emissive is a static shader multiplier.
+// Defaults are byte-identical to the 6aef522 provisional hardwires
+// in NeonBands.jsx — chunky values picked to keep neon legible at LS
+// Browse/Hero/Street; operator now owns the tuning. Doctrine:
+// hardwires-come-out-when-channels-install (literals retire from the
+// runtime consumer, defaults stay here).
+export const NEON_TUBE_FIELDS = [
+  { key: 'tubeRadius', label: 'Tube radius (m)', min: 0.04, max: 0.6, step: 0.01 },
+  { key: 'roofLift',   label: 'Roof lift (m)',   min: 0,    max: 1.5, step: 0.02 },
+  { key: 'emissive',   label: 'Emissive',        min: 0.5,  max: 8,   step: 0.1 },
+]
+export const NEON_TUBE_FLAT_DEFAULTS = { tubeRadius: 0.20, roofLift: 0.30, emissive: 4.0 }
+export const NEON_TUBE_FIELD_KEYS = NEON_TUBE_FIELDS.map(f => f.key)
+
 // Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform /
 // uplights. Single non-TOD channel. Field names drop the redundant `arch`
 // prefix that lived on the legacy archState (e.g., archDistance → distance);

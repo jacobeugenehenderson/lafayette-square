@@ -1,8 +1,9 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import { NEON_TUBE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
 /**
  * NeonBands — Path B runtime renderer per HANDOFF-neon.md.
@@ -29,16 +30,11 @@ import { useSceneJson } from '../lib/useSceneJson.js'
  * group-of-3 channel in Sky & Light.
  */
 
-// PROVISIONAL (pre-authoring): chunky values picked to guarantee visibility
-// at LS Browse/Hero/Street distances. Real-neon-realistic radius (~0.06) goes
-// sub-pixel from 200-600m altitude and bloom can't grab the coverage. Tomorrow:
-// parameterize TUBE_RADIUS + ROOF_LIFT + emissive multiplier as Cartograph
-// authoring controls (Sky & Light panel sits next to the existing Neon channel)
-// + add a "Force Neon On (test)" toggle so the shader can be tuned without
-// scrubbing TOD to find an open hour.
-const TUBE_RADIUS      = 0.20   // ~8" diameter — visibly chunky from Browse altitude
+// Tube radius and roof lift are operator-tunable via the `neonTube`
+// channel (Sky & Light → Neon section): the literals that used to sit
+// here retired into NEON_TUBE_FLAT_DEFAULTS when the channel installed.
+// Per-instance resolved values flow in through `buildTubeFor`'s args.
 const OFFSET_OUT       = 0.08   // meters past the footprint edge (~3" — real neon mounts close to the wall)
-const ROOF_LIFT        = 0.30   // clear roof / parapet / depth noise at LS scale
 const CORNER_ARC_SEGS  = 2      // arc segments per convex corner (K=2 → 3 rings, 45°/seg for a 90° corner)
 const CORNER_ARC_MIN   = 15 * Math.PI / 180  // turn smaller than this stays a single mitred ring
 
@@ -99,15 +95,16 @@ function buildRingPath(footprint) {
 }
 
 // Diamond-cross-section tube along the ring chain. Returns flat arrays
-// for the caller to merge.
-function buildTubeFor(building) {
+// for the caller to merge. `tubeRadius` + `roofLift` resolved per-render
+// from the operator's `neonTube` channel (see component body).
+function buildTubeFor(building, tubeRadius, roofLift) {
   const fp = building.footprint
   if (!fp || fp.length < 3) return null
   // Rooftop world Y. Callers should pass `baseY` when foundationHeight
   // (period-pedestal lift) is non-zero — see LafayetteScene's openPlaces
   // construction. Toy / flat-grade scenes fall back to size[1].
-  const baseY = (building.baseY ?? building.size?.[1] ?? 0) + ROOF_LIFT
-  const r = TUBE_RADIUS
+  const baseY = (building.baseY ?? building.size?.[1] ?? 0) + roofLift
+  const r = tubeRadius
   const rings = buildRingPath(fp)
   const m = rings.length
   if (m < 2) return null
@@ -165,6 +162,7 @@ precision highp float;
 uniform float uCore;
 uniform float uTube;
 uniform float uBleed;
+uniform float uEmissive;
 uniform float uForceOn;
 varying vec3 vColor;
 varying vec3 vWorldNormal;
@@ -185,10 +183,7 @@ void main() {
   emissive += mix(vColor, vec3(1.0), 0.7) * coreMask  * uCore;
   emissive += vColor                       * tubeMask  * uTube;
   emissive += vColor * 0.4                 * bleedMask * uBleed;
-  // PROVISIONAL: matches OLD inline NeonBand's emissiveIntensity=4.0 so the
-  // shader peak clears bloom threshold at LS Browse/Hero/Street. Tomorrow
-  // this becomes a Cartograph-authored multiplier.
-  emissive *= 4.0 * uForceOn;
+  emissive *= uEmissive * uForceOn;
 
   float alpha = max(coreMask * uCore, max(tubeMask * uTube, bleedMask * uBleed));
   alpha *= uForceOn;
@@ -204,40 +199,42 @@ void main() {
  * Props:
  * @param {Array} places — buildings eligible for neon. Each must have
  *   `neon.category` (or it's skipped), plus `footprint` + position.
- * @param {boolean} [forceOn=true] — single uniform multiplier;
- *   when paired with per-place caller-side filtering of `places`,
- *   keep this true. When unspecified caller uses lookId pump (below).
+ * @param {boolean} [forceOn=true] — uniform render gate. Toy + Stage
+ *   pass true so the shader fires regardless; production passes true
+ *   too and gates visibility upstream via LafayetteScene's `openPlaces`
+ *   (business-hours filter). When uForceOn=0 the shader discards.
  * @param {string} [lookId] — when provided, fetches the per-Look
- *   scene.json via `useSceneJson` and writes its `neon.values` into
- *   the shared `_neonUniforms` module once per fetch resolution.
- *   This is the production-side driver of the three masks (uCore /
- *   uTube / uBleed) — see SLAB-CONTRACT §4 + couplers plan §1.
- *   Authoring contexts (Cartograph Designer / Stage) skip the prop
- *   so CartographApp's per-frame `NeonPump` (which pulls from the
- *   cartograph store's TOD-animated curve) remains the authoritative
- *   writer in those contexts.
+ *   scene.json via `useSceneJson` and applies `scene.neon.values` to
+ *   the shared `_neonUniforms` and `scene.neonTube.values` to local
+ *   geometry/uniform inputs. Production-side driver of the three
+ *   intensity masks (uCore/uTube/uBleed) and the operator-tunable
+ *   tubeRadius / roofLift / emissive. Authoring contexts (Cartograph
+ *   Stage) skip the lookId pump path and pass `*Override` props
+ *   instead — CartographApp's per-frame `NeonPump` is the
+ *   authoritative writer for the intensity triple in that context.
+ * @param {{tubeRadius, roofLift, emissive}} [neonTubeOverride] —
+ *   Stage live-retint hook. Resolved values:
+ *     override prop → scene.neonTube.values → NEON_TUBE_FLAT_DEFAULTS.
  */
-export default function NeonBands({ places, forceOn = true, lookId }) {
-  // Production-side uniform driver: when a lookId is passed, fetch
-  // the slab's scene.json once and apply scene.neon.values to the
-  // shared uniforms. No per-frame work — production curve is static
-  // under current design.json. Future TOD-animated curves replace
-  // this useEffect with a per-frame pump in this same place.
+export default function NeonBands({ places, forceOn = true, lookId, neonTubeOverride }) {
   const scene = useSceneJson(lookId || '')
   useEffect(() => {
-    console.log('[neon-pump]', { lookId, sceneIsNull: scene === null, hasNeon: !!scene?.neon, values: scene?.neon?.values })
     if (!lookId || !scene?.neon?.values) return
     const v = scene.neon.values
     _neonUniforms.coreUniform.value  = v.core  ?? 0
     _neonUniforms.tubeUniform.value  = v.tube  ?? 0
     _neonUniforms.bleedUniform.value = v.bleed ?? 0
-    console.log('[neon-pump] uniforms written:', {
-      core: _neonUniforms.coreUniform.value,
-      tube: _neonUniforms.tubeUniform.value,
-      bleed: _neonUniforms.bleedUniform.value,
-    })
-    if (typeof window !== 'undefined') window.__neon = _neonUniforms
   }, [lookId, scene])
+
+  // Resolve geometry/shader inputs: override (Stage drag) wins,
+  // else baked scene, else channel defaults. Stage operator's slider
+  // edit re-runs this resolution → geometry useMemo (deps include
+  // tubeRadius + roofLift) rebuilds the merged mesh.
+  const ov = neonTubeOverride?.values
+  const sv = scene?.neonTube?.values
+  const tubeRadius = ov?.tubeRadius ?? sv?.tubeRadius ?? NEON_TUBE_FLAT_DEFAULTS.tubeRadius
+  const roofLift   = ov?.roofLift   ?? sv?.roofLift   ?? NEON_TUBE_FLAT_DEFAULTS.roofLift
+  const emissive   = ov?.emissive   ?? sv?.emissive   ?? NEON_TUBE_FLAT_DEFAULTS.emissive
 
   const geometry = useMemo(() => {
     const positions = []
@@ -248,7 +245,7 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     let baseVert = 0
     for (const p of places) {
       if (!p.neon?.category) continue
-      const tube = buildTubeFor(p)
+      const tube = buildTubeFor(p, tubeRadius, roofLift)
       if (!tube) continue
       const rgb = categoryColorVec(p.neon.category)
       const count = tube.positions.length / 3
@@ -267,27 +264,34 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     geo.setIndex(indices)
     geo.computeBoundingSphere()
     return geo
-  }, [places])
+  }, [places, tubeRadius, roofLift])
 
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
+  // Material is stable; emissive + forceOn live updates write through
+  // the material's uniform refs so we avoid rebuilding the
+  // ShaderMaterial on each slider drag.
+  const materialRef = useRef(null)
+  if (!materialRef.current) {
+    materialRef.current = new THREE.ShaderMaterial({
       vertexShader: VERT,
       fragmentShader: FRAG,
       uniforms: {
-        uCore:    _neonUniforms.coreUniform,
-        uTube:    _neonUniforms.tubeUniform,
-        uBleed:   _neonUniforms.bleedUniform,
-        uForceOn: { value: forceOn ? 1.0 : 0.0 },
+        uCore:     _neonUniforms.coreUniform,
+        uTube:     _neonUniforms.tubeUniform,
+        uBleed:    _neonUniforms.bleedUniform,
+        uEmissive: { value: emissive },
+        uForceOn:  { value: forceOn ? 1.0 : 0.0 },
       },
       transparent: true,
       depthWrite: false,
       toneMapped: false,
       blending: THREE.AdditiveBlending,
     })
-  }, [forceOn])
+  }
+  materialRef.current.uniforms.uEmissive.value = emissive
+  materialRef.current.uniforms.uForceOn.value  = forceOn ? 1.0 : 0.0
 
   useEffect(() => () => { geometry.dispose() }, [geometry])
-  useEffect(() => () => { material.dispose() }, [material])
+  useEffect(() => () => { materialRef.current?.dispose() }, [])
 
-  return <mesh geometry={geometry} material={material} renderOrder={20} />
+  return <mesh geometry={geometry} material={materialRef.current} renderOrder={20} />
 }

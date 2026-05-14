@@ -15,7 +15,8 @@ import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { patchTerrain } from '../utils/terrainShader'
-import { getElevation } from '../utils/elevation'
+import { terrainExag } from '../utils/terrainShader'
+import { getElevation, getElevationRaw } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import NeonBands from './NeonBands.jsx'
@@ -338,23 +339,38 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
   const geometry = useMemo(() => {
     const geos = []
 
+    // Per-building raw heightmap value (meters above local-min). Each
+    // vertex of a building carries the same value so the runtime shader
+    // can lift the block rigidly by `aCentroidY * uExag`, in lockstep
+    // with the per-vertex ground (`raw * uExag`). Baking V_EXAG into the
+    // geometry — the old getElevation()-then-translate pattern — left the
+    // block stuck at V_EXAG-multiplied elevation when the runtime exag
+    // dipped (e.g. Browse → 0), which is what produced the "100 ft tall
+    // foundations" symptom.
+    const centroidYsAll = []
+    function stampCentroidY(geo, value) {
+      const n = geo.attributes.position.count
+      const arr = new Float32Array(n)
+      for (let i = 0; i < n; i++) arr[i] = value
+      geo.setAttribute('aCentroidY', new THREE.BufferAttribute(arr, 1))
+    }
+
     source.forEach(building => {
       const fh = getFoundationHeight(building)
       const footprint = building.footprint
-      // Bake terrain elevation at building centroid (matches rigid patchTerrain on building)
-      const groundY = getElevation(building.position[0], building.position[2])
-      // Every building emits a foundation block — modern buildings (fh=0)
-      // included, so they have a contact joint with the heightfield.
-      // Top of block sits at (groundY + fh); bottom extends below grade
-      // by FOUNDATION_BELOW_GRADE_M so no footprint corner can ever
-      // surface the bottom edge on a slope.
-      const top = groundY + fh
-      const depth = (top + FOUNDATION_BELOW_GRADE_M)
+      const groundYRaw = getElevationRaw(building.position[0], building.position[2])
+      // Block goes from (-FOUNDATION_BELOW_GRADE_M) to (+fh) in local Y.
+      // Runtime adds `aCentroidY * uExag` to every vertex so the top sits
+      // at (groundYRaw * uExag + fh) and the bottom at
+      // (groundYRaw * uExag - FOUNDATION_BELOW_GRADE_M).
+      const top = fh
+      const depth = top + FOUNDATION_BELOW_GRADE_M
 
       if (!footprint || footprint.length < 3) {
         const [w, , d] = building.size
         const geo = new THREE.BoxGeometry(w, depth, d)
         geo.translate(building.position[0], top - depth / 2, building.position[2])
+        stampCentroidY(geo, groundYRaw)
         geos.push(geo)
       } else {
         try {
@@ -373,13 +389,15 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
 
           const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false })
           geo.rotateX(-Math.PI / 2)
-          // Bottom at -FOUNDATION_BELOW_GRADE_M, top at (groundY + fh)
+          // Bottom at -FOUNDATION_BELOW_GRADE_M, top at +fh.
           geo.translate(building.position[0], top - depth, building.position[2])
+          stampCentroidY(geo, groundYRaw)
           geos.push(geo)
         } catch (e) {
           const [w, , d] = building.size
           const geo = new THREE.BoxGeometry(w, depth, d)
           geo.translate(building.position[0], top - depth / 2, building.position[2])
+          stampCentroidY(geo, groundYRaw)
           geos.push(geo)
         }
       }
@@ -410,7 +428,24 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
 
   const foundationMat = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({ color: '#B8A88A', roughness: 0.95 })
-    // No GPU terrain displacement — elevation baked into geometry per-building
+    // Per-vertex aCentroidY (raw heightmap, meters above local-min) lifts
+    // each building's foundation block rigidly via the shared uExag uniform,
+    // matching the per-vertex ground displacement that runs underneath.
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uExag = terrainExag
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        `#include <common>
+         attribute float aCentroidY;
+         uniform float uExag;`
+      )
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+         transformed.y += aCentroidY * uExag;`
+      )
+    }
+    mat.customProgramCacheKey = () => 'foundation-terrain-v1'
     return mat
   }, [])
 
@@ -1181,7 +1216,7 @@ function resolveLookId(propLookId) {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride } = {}) {
+function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, neonTubeOverride, forceNeonOn } = {}) {
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
   // Stage's mount in CartographApp passes live-subscribed overrides from
   // the cartograph store so Surfaces panel drags retint instantly.
@@ -1266,16 +1301,14 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
   const openPlaces = useMemo(() => {
     const places = []
     const now = useTimeOfDay.getState().currentTime
-    const eligibleCount = Object.keys(neonLookup).length
-    let withFootprint = 0
-    let openByHours = 0
     for (const b of _allBuildings) {
       const info = neonLookup[b.id]
       if (!info) continue
-      if (b.footprint) withFootprint++
-      const on = info.forceOn || _isWithinHours(info.hours, now)
+      // forceNeonOn (Stage QA toggle) bypasses the hours filter so the
+      // operator can preview neon visibility at any TOD without scrubbing
+      // to night. Production never sees it (prop omitted in Scene.jsx).
+      const on = forceNeonOn || info.forceOn || _isWithinHours(info.hours, now)
       if (!on) continue
-      openByHours++
       // baseY = world Y of the rooftop. Foundation pedestal lift
       // (pre-1900: +1.2m, pre-1920: +0.8m, else 0) shifts the
       // building's mounted position; the neon tube must sit at the
@@ -1283,17 +1316,8 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       const baseY = getFoundationHeight(b) + b.size[1]
       places.push({ ...b, baseY, neon: { category: info.category } })
     }
-    // DIAGNOSTIC: ship-temp. Remove once neon pipeline verified on staging.
-    console.log('[neon-diag]', {
-      now: now.toISOString(),
-      eligible: eligibleCount,
-      withFootprint,
-      openByHours,
-      placesLen: places.length,
-      sample: places.slice(0, 3).map(p => ({ id: p.id, cat: p.neon.category, fpLen: p.footprint?.length })),
-    })
     return places
-  }, [neonLookup, neonTick])
+  }, [neonLookup, neonTick, forceNeonOn])
 
   // Frustum-cull neon: only mount NeonBand for buildings the camera can actually see.
   // Checks every 30 frames (~0.5s) to avoid per-frame churn.
@@ -1386,7 +1410,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
 
       {/* Neon — single Path B mesh over all currently-open places, with
           scene.json.neon driving the uCore/uTube/uBleed uniforms. */}
-      {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId={INSTANCE.lookId} />}
+      {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId={INSTANCE.lookId} neonTubeOverride={neonTubeOverride} />}
 
       {/* Street labels */}
       {labelsReady && streetLabels.map((label, i) => (
