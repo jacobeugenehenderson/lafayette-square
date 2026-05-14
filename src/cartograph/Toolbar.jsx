@@ -2,6 +2,23 @@ import { useEffect, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 
 const SHOTS = ['browse', 'hero', 'street']
+
+// Navigation graph mirroring LS production gestures: Hero ↔ Browse,
+// Browse ↔ Street. There is no Hero ↔ Street edge — the end user can't
+// reach Street directly from Hero (or vice versa) via any gesture, so
+// the Stage shot-picker disables the non-adjacent button to keep
+// authoring intent-faithful to production.
+const SHOT_ADJACENCY = {
+  hero:   new Set(['browse']),
+  browse: new Set(['hero', 'street']),
+  street: new Set(['browse']),
+  // Designer is always reachable as a mode swap (handled elsewhere).
+}
+function shotEnabled(currentShot, candidateShot) {
+  if (currentShot === candidateShot) return true
+  const adj = SHOT_ADJACENCY[currentShot]
+  return !adj || adj.has(candidateShot)
+}
 const DEFAULT_LOOK_ID = 'lafayette-square'
 
 function cap(s) { return s[0].toUpperCase() + s.slice(1) }
@@ -78,7 +95,11 @@ export default function Toolbar() {
       ) : (
         <>
           <ToolGroup
-            items={SHOTS.map(id => ({ id, label: cap(id) }))}
+            items={SHOTS.map(id => ({
+              id,
+              label: cap(id),
+              disabled: !shotEnabled(shot, id),
+            }))}
             active={shot}
             onSelect={setShot}
           />
@@ -217,7 +238,9 @@ function ToolGroup({ items, active, onSelect }) {
         <button
           key={item.id}
           className={active === item.id ? 'is-active' : ''}
+          disabled={!!item.disabled}
           onClick={() => onSelect(item.id)}
+          title={item.disabled ? 'Not reachable from the current shot in production' : undefined}
         >
           {item.label}
         </button>

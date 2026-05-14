@@ -133,6 +133,33 @@ export const NEON_FIELDS = [
 export const NEON_FLAT_DEFAULTS = { core: 0, tube: 0, bleed: 0 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
+// Shots (Hero & Horizon — SC.5) — per-shot framing knobs that bake into
+// the slab. Authored-only knobs: FOVs, Browse bounds + padding, Street
+// eye height. Runtime inputs (Browse altitude, Hero target, Street
+// position/target) explicitly NOT here — those come from
+// computeBrowseAltitude(aspect) / Hero subject centroid / double-click
+// handler respectively (hardwires-come-out doctrine, category 3).
+// Single flat-value channel (not TOD-animated; FOV doesn't change
+// through the day). Defaults match the legacy module-scope SHOTS const
+// verbatim so unauthored Looks are byte-identical to pre-SC.5.
+export const SHOTS_FLAT_DEFAULTS = {
+  browse: { fov: 45, padding: 1.05, bounds: { cx: 95, cz: -158, w: 1292, h: 1025 } },
+  hero:   { fov: 22 },
+  street: { fov: 75, eyeHeight: 1.73 },
+}
+// Top-level keys for the factory's flat-tuple shape. Shots is hand-rolled
+// (not factory-driven) because its values are nested per-shot objects,
+// not the flat scalar tuples the factory assumes — flagging here for
+// future readers.
+export const SHOTS_FIELD_KEYS = ['browse', 'hero', 'street']
+
+// browseHeading (Hero & Horizon — SC.5) — site-wide cosmetic
+// screen-orientation for the overhead Browse shot. 0° = compass-N up.
+// Single scalar; previously persisted via localStorage, promoted to the
+// slab so the operator's preferred orientation transmits per-instance.
+export const BROWSE_HEADING_FLAT_DEFAULTS = { value: 0 }
+export const BROWSE_HEADING_FIELD_KEYS = ['value']
+
 // Grade (Post card) — FilmGrade's grade-side knobs that ride on top of
 // the time-of-day color physics. Promoted from envState 2026-05-13
 // (SC.2 follow-up) so the operator's grade authoring rounds-trips

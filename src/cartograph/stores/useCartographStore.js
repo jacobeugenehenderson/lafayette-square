@@ -23,6 +23,8 @@ import {
   GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS,
   GRAIN_FIELD_KEYS, GRAIN_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
+  SHOTS_FLAT_DEFAULTS,
+  BROWSE_HEADING_FIELD_KEYS, BROWSE_HEADING_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
@@ -312,6 +314,13 @@ const useCartographStore = create((set, get) => ({
   grade:    { values: { ...GRADE_FLAT_DEFAULTS } },
   grain:    { values: { ...GRAIN_FLAT_DEFAULTS } },
   shadow:   { values: { ...SHADOW_FLAT_DEFAULTS } },
+  // SC.5 — per-shot framing knobs (FOVs, Browse bounds/padding, Street
+  // eye height). Single flat-value channel; hand-rolled setShots because
+  // values are nested per-shot objects (not the factory's flat scalar
+  // tuples). Runtime inputs (Browse altitude, Hero target, Street
+  // position/target) are explicitly NOT here.
+  shots:         { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
+  browseHeading: { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
   constellations: { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
   milkyWay:       { values: { ...MILKYWAY_FLAT_DEFAULTS } },
   // Neon — group of 3 (core / tube / bleed) sharing one TOD timeline.
@@ -764,6 +773,41 @@ const useCartographStore = create((set, get) => ({
     flatDefaults: SHADOW_FLAT_DEFAULTS,
   }, set, get),
   ...createGroupChannelActions({
+    name: 'browseHeading',
+    fieldKeys: BROWSE_HEADING_FIELD_KEYS,
+    flatDefaults: BROWSE_HEADING_FLAT_DEFAULTS,
+  }, set, get),
+
+  // SC.5 — `shots` hand-rolled actions. Values are nested per-shot
+  // objects so the createGroupChannelActions flat-scalar factory doesn't
+  // fit. Shots is not TOD-animated (FOV doesn't change through the day),
+  // so we only need set + revert; no animate / addSlot / etc.
+  setShots: (patch) => {
+    set(s => {
+      const cur = s.shots?.values || {}
+      // Deep-ish merge: shallow-merge each shot's tuple so caller can pass
+      // {browse: {fov: 50}} without clobbering bounds/padding.
+      const next = { ...cur }
+      for (const k of Object.keys(patch || {})) {
+        if (k === 'browse' && patch.browse?.bounds) {
+          next.browse = {
+            ...(cur.browse || {}),
+            ...patch.browse,
+            bounds: { ...(cur.browse?.bounds || {}), ...patch.browse.bounds },
+          }
+        } else {
+          next[k] = { ...(cur[k] || {}), ...(patch[k] || {}) }
+        }
+      }
+      return { shots: { values: next } }
+    })
+    get()._saveDesignDebounced()
+  },
+  revertShots: () => {
+    set({ shots: { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) } })
+    get()._saveDesignDebounced()
+  },
+  ...createGroupChannelActions({
     name: 'constellations',
     fieldKeys: CONSTELLATIONS_FIELD_KEYS,
     flatDefaults: CONSTELLATIONS_FLAT_DEFAULTS,
@@ -1020,6 +1064,20 @@ const useCartographStore = create((set, get) => ({
         heroSubject:    design.heroSubject    || null,
         heroKeyframes:  design.heroKeyframes  || get().heroKeyframes,
         heroMotion:     { ...get().heroMotion, ...(design.heroMotion || {}) },
+        // SC.5 — shots is nested per-shot; merge shallowly against defaults
+        // so a partial author (e.g., only design.shots.values.hero.fov)
+        // still inherits the rest of the table.
+        shots: design.shots?.values
+          ? { values: {
+              browse: { ...SHOTS_FLAT_DEFAULTS.browse, ...(design.shots.values.browse || {}),
+                bounds: { ...SHOTS_FLAT_DEFAULTS.browse.bounds, ...(design.shots.values.browse?.bounds || {}) } },
+              hero:   { ...SHOTS_FLAT_DEFAULTS.hero,   ...(design.shots.values.hero   || {}) },
+              street: { ...SHOTS_FLAT_DEFAULTS.street, ...(design.shots.values.street || {}) },
+            } }
+          : { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
+        browseHeading: design.browseHeading?.values
+          ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...design.browseHeading.values } }
+          : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
         openSections:   design.openSections   || {},
         bakeStale: !entry?.bakedAt,
       })
@@ -1450,6 +1508,18 @@ const useCartographStore = create((set, get) => ({
         hemi:            migrateGroupChannel(design.hemi,    HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS),
         dirSun:          migrateGroupChannel(design.dirSun,  DIRSUN_FIELD_KEYS,  DIRSUN_FLAT_DEFAULTS),
         dirMoon:         migrateGroupChannel(design.dirMoon, DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS),
+        // SC.5 — shots / browseHeading hydrate.
+        shots: design.shots?.values
+          ? { values: {
+              browse: { ...SHOTS_FLAT_DEFAULTS.browse, ...(design.shots.values.browse || {}),
+                bounds: { ...SHOTS_FLAT_DEFAULTS.browse.bounds, ...(design.shots.values.browse?.bounds || {}) } },
+              hero:   { ...SHOTS_FLAT_DEFAULTS.hero,   ...(design.shots.values.hero   || {}) },
+              street: { ...SHOTS_FLAT_DEFAULTS.street, ...(design.shots.values.street || {}) },
+            } }
+          : { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
+        browseHeading: design.browseHeading?.values
+          ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...design.browseHeading.values } }
+          : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
         openSections:   design.openSections   || {},
         _designHydrated: true,
       })
@@ -1556,6 +1626,9 @@ const useCartographStore = create((set, get) => ({
           ao: s.ao,
           mist: s.mist,
           halo: s.halo,
+          grade: s.grade,
+          grain: s.grain,
+          shadow: s.shadow,
           constellations: s.constellations,
           milkyWay: s.milkyWay,
           neon: s.neon,
@@ -1567,6 +1640,8 @@ const useCartographStore = create((set, get) => ({
           heroSubject: s.heroSubject,
           heroKeyframes: s.heroKeyframes,
           heroMotion: s.heroMotion,
+          shots: s.shots,
+          browseHeading: s.browseHeading,
           openSections: s.openSections,
         }
         saveLookDesign(id, design).catch(err =>

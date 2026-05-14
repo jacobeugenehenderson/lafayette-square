@@ -32,6 +32,7 @@ import { V_EXAG } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject } from '../stage/StageApp.jsx'
 import { PostProcessing, StageFog, StageShadows } from '../components/PostProcessing.jsx'
+import { createCameraTween } from '../preview/cameraTween.js'
 import { buildings as _allBuildings } from '../data/buildings'
 
 // Toy scene fixtures (single 4-way corner for shader/shadow R&D)
@@ -141,6 +142,11 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   const appliedShot = useRef(null)
   const prevShot = useRef(null)
   const didInitOrtho = useRef(false)
+  // Shared camera-transition state machine — same vernacular as
+  // production Scene.jsx's CameraRig (extracted into preview/cameraTween).
+  // Hero/Browse/Street entries glide via easeInOutCubic instead of snapping.
+  const tweenRef = useRef(null)
+  if (!tweenRef.current) tweenRef.current = createCameraTween()
 
   // One-time: orient the ortho camera properly (top-down), using saved
   // position + zoom if we have them.
@@ -219,25 +225,66 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         const cam = perspRef.current
         const s = SHOTS[shot]
         if (!cam || !s) return
-        // All non-Designer entries land on the canonical shot framing —
-        // SHOTS[shot].position for hero/street, aspect-fit altitude for
-        // browse (mirrors Preview's ShotCamera). Previously, Designer→Browse
-        // copied the ortho camera's pan x/z so the perspective view would
-        // frame the operator's last-edited patch; that landed at random,
-        // off-center positions and post-bake felt unmoored. Workflow is
-        // cleaner returning to the canonical view each time.
+        // SC.5 — fov comes from the operator's authored `shots` channel
+        // (live in Stage; frozen in production+preview). position/target/up
+        // are runtime-input scaffolds — SHOTS const remains the canonical
+        // Stage shot-switch framing until per-shot position authoring lands.
+        const storeShots = useCartographStore.getState().shots?.values
+        const fov = storeShots?.[shot]?.fov ?? s.fov
+        let toPos
         if (shot === 'browse') {
           const aspect = size.width / Math.max(size.height, 1)
-          const y = computeBrowseAltitude(aspect, s.fov)
-          cam.position.set(s.position[0], y, s.position[2])
+          const y = computeBrowseAltitude(aspect, fov)
+          toPos = [s.position[0], y, s.position[2]]
         } else {
-          cam.position.set(...s.position)
+          toPos = [...s.position]
         }
-        cam.up.set(...(s.up || [0, 1, 0]))
-        cam.fov = s.fov
-        cam.lookAt(...s.target)
-        cam.updateProjectionMatrix()
-        if (ctl) { ctl.target.set(...s.target); ctl.update() }
+        const toUp = s.up || [0, 1, 0]
+        const toTarget = [...s.target]
+
+        // First entry into a perspective shot from Designer/null prev:
+        // snap. The shot family hasn't been live yet — no "from" pose to
+        // glide out of (camera is wherever Designer left it, possibly
+        // unrelated to any LS shot framing).
+        const cameFromDesigner = prevShot.current === 'designer' || prevShot.current == null
+        if (cameFromDesigner) {
+          cam.position.set(toPos[0], toPos[1], toPos[2])
+          cam.up.set(toUp[0], toUp[1], toUp[2])
+          cam.fov = fov
+          cam.lookAt(toTarget[0], toTarget[1], toTarget[2])
+          cam.updateProjectionMatrix()
+          if (ctl) { ctl.target.set(toTarget[0], toTarget[1], toTarget[2]); ctl.update() }
+        } else {
+          // Glide between perspective shots — same vernacular as production
+          // Scene.jsx (Hero entries get a longer settle; Browse/Street get
+          // the standard 1500ms drop/rise). Up snaps at the start of the
+          // tween because mid-tween up flips look bad (Preview convention).
+          cam.up.set(toUp[0], toUp[1], toUp[2])
+          const duration = shot === 'hero' ? 2500 : 1500
+          const fromTarget = ctl
+            ? [ctl.target.x, ctl.target.y, ctl.target.z]
+            : toTarget
+          if (ctl) ctl.enabled = false
+          tweenRef.current.start({
+            from: {
+              pos:    [cam.position.x, cam.position.y, cam.position.z],
+              target: fromTarget,
+              fov:    cam.fov,
+            },
+            to: { pos: toPos, target: toTarget, fov },
+            duration,
+            ease: 'easeInOutCubic',
+            label: `→${shot}`,
+            onUpdate: (p, t, f) => {
+              cam.position.copy(p)
+              cam.fov = f
+              cam.updateProjectionMatrix()
+              if (ctl) { ctl.target.copy(t); ctl.update() }
+              else     { cam.lookAt(t.x, t.y, t.z) }
+            },
+            onComplete: () => { if (ctl) ctl.enabled = true },
+          })
+        }
       }
       prevShot.current = shot
     }
@@ -247,6 +294,13 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
     return () => cancelAnimationFrame(id)
   }, [shot, sceneKey, orthoRef, perspRef, controlsRef])
+
+  // Drive the in-flight shot tween. Same vernacular as Preview's
+  // ShotCamera + production CameraRig — easeInOutCubic position/target/
+  // fov interpolation between Hero/Browse/Street perspective shots.
+  useFrame(() => {
+    if (tweenRef.current.isActive()) tweenRef.current.tick(performance.now())
+  })
 
   // Persist designer pan/zoom (ortho only). Browse-↔-Designer view sync
   // is handled by the cross-camera handoff in the shot-change useEffect

@@ -35,7 +35,16 @@ import {
   WARMTH_FLAT_DEFAULTS, FILL_FLAT_DEFAULTS,
   MIST_FLAT_DEFAULTS, HALO_FLAT_DEFAULTS,
   GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS,
+  SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
 } from '../src/cartograph/skyLightChannels.js'
+
+// SC.5 — strip transient runtime-UI fields (preview, speed) off the
+// heroMotion artifact before baking. Production has no use for them.
+function stripTransientHeroMotion(m) {
+  if (!m || typeof m !== 'object') return null
+  const { period, easing } = m
+  return { period, easing }
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -94,6 +103,16 @@ export async function bakeScene({ look = 'default' } = {}) {
     grade:    design.grade    || { values: { ...GRADE_FLAT_DEFAULTS } },
     grain:    design.grain    || { values: { ...GRAIN_FLAT_DEFAULTS } },
     shadow:   design.shadow   || { values: { ...SHADOW_FLAT_DEFAULTS } },
+    // SC.5 — per-shot camera + Hero authoring + Browse heading. Runtime
+    // inputs (Browse altitude, Hero target, Street position/target)
+    // explicitly NOT baked: they come from computeBrowseAltitude(aspect),
+    // Hero subject centroid, and the double-click handler respectively.
+    // See `hardwires-come-out-when-channels-install` category 3.
+    shots:         design.shots         || { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
+    browseHeading: design.browseHeading || { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
+    heroSubject:   design.heroSubject   || null,
+    heroKeyframes: design.heroKeyframes || [],
+    heroMotion:    stripTransientHeroMotion(design.heroMotion) || { period: 12, easing: 'easeInOut' },
     // SC.4 — time defaults / sun-curve overrides. DawnTimeline today is
     // purely a Stage-scrub UI (calls setTime on useTimeOfDay directly);
     // no design.time or sun-curve override is persisted. Field omitted

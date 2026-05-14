@@ -31,6 +31,7 @@ import { catmullRom, EASINGS } from '../preview/heroAnim'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import DawnTimeline from '../components/DawnTimeline'
 
 
@@ -239,19 +240,18 @@ let cameraListeners = new Set()
 function subscribeCameraState(fn) { cameraListeners.add(fn); return () => cameraListeners.delete(fn) }
 function notifyCameraListeners() { for (const fn of cameraListeners) fn() }
 
-// Browse heading: site-wide cosmetic screen-orientation, persisted across
-// reloads. 0° = compass-N up. Positive degrees rotate the world CCW
-// underneath the camera (= screen-up sweeps east). All spatial data is in
-// compass frame; this is purely a viewing preference.
-const BROWSE_HEADING_KEY = 'stage.browse.heading'
+// Browse heading: site-wide cosmetic screen-orientation, persisted into
+// the slab via the cartograph store + design.json (SC.5, 2026-05-13;
+// previously localStorage-only). 0° = compass-N up. Positive degrees
+// rotate the world CCW underneath the camera (= screen-up sweeps east).
+// All spatial data is in compass frame; this is purely a viewing
+// preference, but a per-instance one — it transmits through the slab.
 export function getBrowseHeading() {
-  try {
-    const v = parseFloat(localStorage.getItem(BROWSE_HEADING_KEY))
-    return Number.isFinite(v) ? v : 0
-  } catch { return 0 }
+  const v = useCartographStore.getState().browseHeading?.values?.value
+  return Number.isFinite(v) ? v : 0
 }
 export function setBrowseHeading(deg) {
-  try { localStorage.setItem(BROWSE_HEADING_KEY, String(deg)) } catch { /* ignore */ }
+  useCartographStore.getState().setBrowseHeading('value', Number(deg) || 0)
 }
 // up vector for the overhead Browse camera given a heading in degrees.
 // Camera looks down -Y; up lives in the XZ plane. heading=0 → -Z (compass-N).

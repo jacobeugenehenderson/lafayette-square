@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "default",
-  "bakedAt": 1778707579649,
+  "bakedAt": 1778713082587,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -275,5 +275,56 @@
       "strength": 0.12,
       "color": "#b8c8d8"
     }
+  },
+  "grade": {
+    "values": {
+      "contrast": 0.42,
+      "toe": 0.28,
+      "saturation": 1.1,
+      "vignette": 1
+    }
+  },
+  "grain": {
+    "values": {
+      "scale": 1
+    }
+  },
+  "shadow": {
+    "values": {
+      "size": 52,
+      "samples": 16
+    }
+  },
+  "shots": {
+    "values": {
+      "browse": {
+        "fov": 45,
+        "padding": 1.05,
+        "bounds": {
+          "cx": 95,
+          "cz": -158,
+          "w": 1292,
+          "h": 1025
+        }
+      },
+      "hero": {
+        "fov": 22
+      },
+      "street": {
+        "fov": 75,
+        "eyeHeight": 1.73
+      }
+    }
+  },
+  "browseHeading": {
+    "values": {
+      "value": 0
+    }
+  },
+  "heroSubject": null,
+  "heroKeyframes": [],
+  "heroMotion": {
+    "period": 12,
+    "easing": "easeInOut"
   }
 }

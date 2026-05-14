@@ -193,13 +193,29 @@ const TOOLBAR_SHOTS = SHOTS
 
 const APP_BAR_H = 48
 
+// Shot adjacency graph — mirrors LS production gestures: Hero ↔ Browse,
+// Browse ↔ Street. No direct Hero ↔ Street edge.
+const SHOT_ADJACENCY = {
+  hero:   new Set(['browse']),
+  browse: new Set(['hero', 'street']),
+  street: new Set(['browse']),
+}
+function shotReachable(currentShot, candidateShot) {
+  if (currentShot === candidateShot) return true
+  const adj = SHOT_ADJACENCY[currentShot]
+  return !adj || adj.has(candidateShot)
+}
+
 function TopAppBar({ shot, setShot, mode, setMode }) {
-  const btn = (k, label, active, onClick) => (
-    <button key={k} onClick={onClick}
-      className={`rounded-lg px-3 py-1 cursor-pointer ${active ? 'glass-text' : 'glass-text-secondary'}`}
+  const btn = (k, label, active, onClick, disabled = false) => (
+    <button key={k} onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      title={disabled ? 'Not reachable from the current shot in production' : undefined}
+      className={`rounded-lg px-3 py-1 ${disabled ? '' : 'cursor-pointer'} ${active ? 'glass-text' : 'glass-text-secondary'}`}
       style={{
         fontSize: 13,
         background: active ? 'rgba(255,255,255,0.18)' : 'transparent',
+        opacity: disabled ? 0.35 : 1,
       }}>{label}</button>
   )
   const divider = (key) => (
@@ -224,7 +240,7 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
       {btn('phone', 'Phone', mode === 'phone', () => { setMode('phone'); noteEvent('mode→phone') })}
       {divider('d2')}
       {Object.entries(TOOLBAR_SHOTS).map(([k, s]) =>
-        btn(k, s.label, shot === k, () => { setShot(k); noteEvent(`shot→${k}`) })
+        btn(k, s.label, shot === k, () => { setShot(k); noteEvent(`shot→${k}`) }, !shotReachable(shot, k))
       )}
     </div>
   )

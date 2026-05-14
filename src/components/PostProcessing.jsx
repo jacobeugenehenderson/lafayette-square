@@ -88,6 +88,21 @@ const _gradeSatRef       = { current: GRADE_FLAT_DEFAULTS.saturation }
 const _gradeVignetteRef  = { current: GRADE_FLAT_DEFAULTS.vignette }
 const _grainScaleRef     = { current: GRAIN_FLAT_DEFAULTS.scale }
 
+// Exposed ref bag so non-PostProcessing consumers (e.g. PreviewPostFx,
+// which mounts FilmGrade/FilmGrain/AerialPerspective without the full
+// chain) can populate the same module-level refs from their own per-
+// frame driver. Without this, Preview's effects render with boot
+// defaults regardless of authored channel values.
+export const _postFxRefs = {
+  fillToe:       _fillToeRef,
+  exposure:      _exposureRef,
+  warmth:        _warmthRef,
+  gradeContrast: _gradeContrastRef,
+  gradeSat:      _gradeSatRef,
+  gradeVignette: _gradeVignetteRef,
+  grainScale:    _grainScaleRef,
+}
+
 class FilmGradeEffect extends Effect {
   constructor() {
     super('FilmGrade', /* glsl */`
@@ -196,6 +211,9 @@ export const FilmGrain = forwardRef((_, ref) => {
 // dayFactor still rides on top so halo doesn't fire at night.
 const _haloStrengthRef = { current: HALO_FLAT_DEFAULTS.strength }
 const _haloColorRef    = { current: new THREE.Color(HALO_FLAT_DEFAULTS.color) }
+// Tack halo refs onto the export bag from above.
+_postFxRefs.haloStrength = _haloStrengthRef
+_postFxRefs.haloColor    = _haloColorRef
 
 class AerialPerspectiveEffect extends Effect {
   constructor() {

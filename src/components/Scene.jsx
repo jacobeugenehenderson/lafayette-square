@@ -19,6 +19,8 @@ import useSkyState from '../hooks/useSkyState'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import Terrain from './Terrain'
 import { PostProcessing, StageShadows } from './PostProcessing.jsx'
+import { useSceneJson } from '../lib/useSceneJson.js'
+import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -42,20 +44,21 @@ function heroPanSwing(t) {
 }
 
 // ── Camera presets ───────────────────────────────────────────────────────────
+// SC.5 (2026-05-13): FOVs + Street eye height retired from this const —
+// they now flow through scene.shots (SHOTS_FLAT_DEFAULTS for first paint).
+// What remains is the runtime-input shape for hero / browse positions +
+// targets (heroSubject / Browse user-pos centering not yet plumbed
+// through the slab in production — heroSubject channel bakes but
+// production's hero pan still rides on HERO_CENTER; follow-up).
 
 const PRESETS = {
   hero: {
     position: HERO_CENTER,
     target: HERO_TARGET,
-    fov: 22,
   },
   browse: {
     position: [0, 600, 1],        // top-down (Z=1 avoids gimbal lock)
     target: [0, 0, 0],
-    fov: 45,
-  },
-  planetarium: {
-    fov: 75,                       // wide for sky dome feel
   },
 }
 
@@ -186,6 +189,15 @@ function CameraRig() {
   const controlsRef = useRef()
   const initialized = useRef(false)
 
+  // SC.5 — per-shot framing knobs come from the slab. Production passes
+  // no override; the cartograph chunk's Stage live-wires via the store.
+  const scene = useSceneJson('lafayette-square')
+  const shotsV       = scene?.shots?.values || SHOTS_FLAT_DEFAULTS
+  const browseFov    = shotsV.browse?.fov         ?? SHOTS_FLAT_DEFAULTS.browse.fov
+  const heroFov      = shotsV.hero?.fov           ?? SHOTS_FLAT_DEFAULTS.hero.fov
+  const streetFov    = shotsV.street?.fov         ?? SHOTS_FLAT_DEFAULTS.street.fov
+  const streetEye    = shotsV.street?.eyeHeight   ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
+
   // Projection vertical offset (lens shift) for panel-aware reframe
 
   // Cinematic multi-segment queue
@@ -287,6 +299,13 @@ function CameraRig() {
       return null
     }
 
+    // Double-tap / double-click bookkeeping. End-user gesture: double-tap
+    // in Browse drops the camera to street level at the tap point.
+    // Mirrors the LS production behavior described in the navigation graph
+    // (Browse ↔ Street edge). 320ms window matches the iOS double-tap
+    // threshold; 24px slop tolerates a finger jitter on the second tap.
+    let lastTap = null
+
     const onDown = (e) => {
       useCamera.getState().resetIdle()
 
@@ -297,6 +316,25 @@ function CameraRig() {
         const g = groundHit(e.clientX, e.clientY)
         if (g) useCamera.getState().enterPlanetarium(g.x, g.z)
         return
+      }
+
+      // Double-tap in Browse → Street (planetarium). Only the primary
+      // button counts; modifier-clicks are handled above.
+      if (e.button === 0 && useCamera.getState().viewMode === 'browse') {
+        const now = performance.now()
+        if (lastTap && (now - lastTap.t) < 320
+            && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 24) {
+          e.preventDefault()
+          e.stopPropagation()
+          const g = groundHit(e.clientX, e.clientY)
+          lastTap = null
+          if (g) {
+            useCamera.getState().enterPlanetarium(g.x, g.z)
+            return
+          }
+        } else {
+          lastTap = { t: now, x: e.clientX, y: e.clientY }
+        }
       }
 
       downXY = { x: e.clientX, y: e.clientY }
@@ -408,24 +446,36 @@ function CameraRig() {
         beginTransition(
           [cx, altitude, cz + 1],
           [cx, 0, cz],
-          PRESETS.browse.fov,
+          browseFov,
           1500
         )
+        // (SC.5: authored browseHeading consumption deferred — applying
+        // `camera.up = browseUpFromHeading(...)` here flipped the lookAt
+        // mid-transition. browseHeading bakes through the slab but the
+        // production-side Up application is follow-up work.)
       } else if (entering === 'planetarium') {
-        // Street-level sky view at the clicked position
+        // Street-level sky view at the clicked position. fov + eyeHeight
+        // are authored (scene.shots.values.street); origin is a runtime
+        // input (ctrl+click target on the Browse map). Per doctrine
+        // hardwires-come-out category 3, the click-driven origin is NOT
+        // baked — only fov / eyeHeight transit the slab.
         const origin = state.planetariumOrigin || [0, 0]
-        const EYE = 1.73
         beginTransition(
-          [origin[0], EYE, origin[1]],
-          [origin[0], EYE, origin[1] - 0.5],  // look north, orbit takes over
-          PRESETS.planetarium.fov, 1500
+          [origin[0], streetEye, origin[1]],
+          [origin[0], streetEye, origin[1] - 0.5],  // look north, orbit takes over
+          streetFov, 1500
         )
       } else if (PRESETS[entering]) {
-        // Transition to mode preset
+        // Transition to mode preset. fov comes from the slab; position +
+        // target are still production's hardcoded HERO_CENTER / HERO_TARGET
+        // (heroSubject / heroKeyframes / heroMotion bake but production
+        // hero-pan animation doesn't consume them yet — flagged as
+        // follow-up).
         const p = PRESETS[entering]
+        const fov = entering === 'hero' ? heroFov : entering === 'browse' ? browseFov : p.fov
         const dur = entering === 'hero' ? 2500 : 1500
         transToHero.current = entering === 'hero'
-        beginTransition(p.position, p.target, p.fov, dur)
+        beginTransition(p.position, p.target, fov, dur)
       }
     }
 
@@ -438,7 +488,7 @@ function CameraRig() {
         beginTransition(
           ft.position,
           ft.lookAt,
-          PRESETS.browse.fov,
+          browseFov,
           1200
         )
       }
@@ -589,7 +639,10 @@ function Scene() {
       frameloop="demand"
       camera={{
         position: PRESETS.hero.position,
-        fov: PRESETS.hero.fov,
+        // Canvas's initial fov fires at mount time, before scene.json
+        // resolves. Use the flat default — CameraRig will retarget once
+        // the slab loads (~100ms).
+        fov: SHOTS_FLAT_DEFAULTS.hero.fov,
         near: 1,
         far: 60000,
       }}
@@ -627,7 +680,16 @@ function Scene() {
       <WeatherPoller />
       <CelestialBodies />
       <CloudDome />
-      <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
+      {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
+          visible ground (Cartograph convention). Terrain still mounts
+          so its `terrainExag` shader uniform stays live (drives Y
+          displacement on ribbons + buildings). Mesh itself is dark
+          #2a2a26 and centered on the elevation-data bounds — a different
+          region than the LS centroid, so it would render as a large
+          offset square if visible. */}
+      <group visible={false}>
+        <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
+      </group>
       <R3FErrorBoundary name="BakedGround"><BakedGround lookId="lafayette-square" /></R3FErrorBoundary>
       <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
       {!IS_GROUND && <UserDot />}

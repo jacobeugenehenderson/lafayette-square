@@ -13,6 +13,21 @@ import {
   setMode as setRecMode,
 } from './phoneBus'
 
+// Shot adjacency graph — mirrors LS production gestures: Hero ↔ Browse,
+// Browse ↔ Street. No direct Hero ↔ Street edge; the end user can't
+// reach Street directly from Hero (or vice versa) via any gesture, so
+// the Preview shot-picker disables the non-adjacent button.
+const SHOT_ADJACENCY = {
+  hero:   new Set(['browse']),
+  browse: new Set(['hero', 'street']),
+  street: new Set(['browse']),
+}
+function shotReachable(currentShot, candidateShot) {
+  if (currentShot === candidateShot) return true
+  const adj = SHOT_ADJACENCY[currentShot]
+  return !adj || adj.has(candidateShot)
+}
+
 const MODE_KEY = 'preview.recMode.v1'
 function loadMode() {
   if (typeof localStorage === 'undefined') return 'event'
@@ -56,11 +71,14 @@ export default function TriggerBar({ shot, setShot, onReload }) {
     }}>
       <Btn label="↻ Reload"  disabled={triggersDisabled}
         onClick={trigger('reload', () => onReload())} />
-      <Btn label="→ Hero"    disabled={triggersDisabled || shot === 'hero'}
+      <Btn label="→ Hero"
+        disabled={triggersDisabled || shot === 'hero' || !shotReachable(shot, 'hero')}
         onClick={trigger('→hero', () => setShot('hero'))} />
-      <Btn label="→ Browse"  disabled={triggersDisabled || shot === 'browse'}
+      <Btn label="→ Browse"
+        disabled={triggersDisabled || shot === 'browse' || !shotReachable(shot, 'browse')}
         onClick={trigger('→browse', () => setShot('browse'))} />
-      <Btn label="→ Street"  disabled={triggersDisabled || shot === 'street'}
+      <Btn label="→ Street"
+        disabled={triggersDisabled || shot === 'street' || !shotReachable(shot, 'street')}
         onClick={trigger('→street', () => setShot('street'))} />
       <div style={{ flex: 1 }} />
       <ModeToggle mode={recMode} setMode={switchMode} />

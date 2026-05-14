@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1778709468840,
+  "bakedAt": 1778715517257,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -50,7 +50,8 @@
     "wall": "#9A8E7E",
     "retaining_wall": "#7A6E5E",
     "hedge": "#4E6E3E",
-    "labels": "#2A2826"
+    "labels": "#2A2826",
+    "ground": "#2A2826"
   },
   "luColors": {
     "residential": "#5A8A3A",
@@ -334,7 +335,7 @@
   "ao": {
     "values": {
       "radius": 15,
-      "intensity": 2.5,
+      "intensity": 0,
       "distanceFalloff": 0.3
     }
   },
@@ -345,7 +346,7 @@
   },
   "warmth": {
     "values": {
-      "value": 0
+      "value": 0.5
     }
   },
   "fill": {
@@ -367,10 +368,10 @@
   },
   "grade": {
     "values": {
-      "contrast": 0.42,
-      "toe": 0.28,
-      "saturation": 1.1,
-      "vignette": 1
+      "contrast": 0,
+      "toe": 0.6,
+      "saturation": 1.35,
+      "vignette": 0.7
     }
   },
   "grain": {
@@ -383,5 +384,54 @@
       "size": 52,
       "samples": 16
     }
+  },
+  "shots": {
+    "values": {
+      "browse": {
+        "fov": 45,
+        "padding": 1.05,
+        "bounds": {
+          "cx": 95,
+          "cz": -158,
+          "w": 1292,
+          "h": 1025
+        }
+      },
+      "hero": {
+        "fov": 22
+      },
+      "street": {
+        "fov": 75,
+        "eyeHeight": 1.73
+      }
+    }
+  },
+  "browseHeading": {
+    "values": {
+      "value": 0
+    }
+  },
+  "heroSubject": null,
+  "heroKeyframes": [
+    {
+      "position": [
+        -540,
+        55,
+        362
+      ],
+      "fov": 22
+    },
+    {
+      "position": [
+        -260,
+        55,
+        98
+      ],
+      "fov": 22
+    }
+  ],
+  "heroMotion": {
+    "period": 720,
+    "easing": "sine"
   }
 }
