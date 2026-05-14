@@ -51,27 +51,27 @@
 
 | # | Name | Address | Category | Notes | Status |
 |---|------|---------|----------|-------|--------|
-| 34 | Have A Cow | 2742 Lafayette Ave | dining/cafes | lmk-049, no building | ✅ |
+| 34 | Have A Cow | 2742 Lafayette Ave | dining/cafes | lmk-049, bldg-1708 | ✅ |
 | 35 | Prohibition | 2017 Chouteau Ave (basement) | dining/bars | lmk-050, bldg-0086 | ✅ |
 | 36 | Four Muddy Paws | 1711 Park Ave | shopping/pets | lmk-055, bldg-0723 | ✅ |
 | 37 | CBD Kratom | 1917 Park Ave | shopping/wellness | lmk-056, no building | ✅ |
 | 38 | J. Arthurs Salon | 1920 Park Ave | services/beauty | lmk-051, bldg-0379 | ✅ |
-| 39 | Salon One Six One | 2758 Lafayette Ave | services/beauty | lmk-052, no building | ✅ |
+| 39 | Salon One Six One | 2758 Lafayette Ave | services/beauty | lmk-052, bldg-1712 | ✅ |
 | 40 | Lafayette Square Chiropractic Centre | 1013 S. 18th St | services/health | lmk-053, bldg-0022 | ✅ |
 | 41 | Associated Counseling & Assessment | 1709 Park Ave | services/health | lmk-054, bldg-0723 | ✅ |
 | 42 | Gausnell, O'Keefe & Thomas | 1717 Park Ave | professional/legal | lmk-042, bldg-0653 | ✅ |
 | 43 | Edward Jones (Ryan Ederle) | 1908 Park Ave | professional/financial | lmk-043, bldg-0379 | ✅ |
 | 44 | Modern Dollar Planning | 1807 Park Ave | professional/financial | lmk-044, bldg-0381 | ✅ |
 | 45 | McAvoy Realty | 1909 Park Ave | professional/real-estate | lmk-045, bldg-0385 | ✅ |
-| 46 | Rome West Realty | 2756 Lafayette Ave | professional/real-estate | lmk-046, no building | ✅ |
+| 46 | Rome West Realty | 2756 Lafayette Ave | professional/real-estate | lmk-046, bldg-1711 | ✅ |
 | 47 | Incite Design Studio | 1800 Lafayette Ave | professional/architecture | lmk-047, bldg-1139 | ✅ |
 | 48 | Kuhl Swaine | 1016 Mississippi Ave | professional/advertising | lmk-048, bldg-0048 | ✅ |
 | 49 | Climb So iLL | 1419 Carroll St | recreation/fitness | lmk-060, no building | ✅ |
 | 50 | Moulin Events & Meetings | 2017 Chouteau Ave | services/events | lmk-061, bldg-0086 | ✅ |
-| 51 | Comfort Inn & Suites Lafayette Square | 2625 Lafayette Ave | hospitality/hotels | lmk-062, no building | ✅ |
+| 51 | Comfort Inn & Suites Lafayette Square | 2625 Lafayette Ave | hospitality/hotels | lmk-062, bldg-1701 | ✅ |
 | 52 | Lafayette Square Restoration Committee | 2023 Lafayette Ave | community/nonprofit | lmk-057, bldg-0987 | ✅ |
 | 53 | Barr Branch Library | 1701 S. Jefferson Ave | community/library | lmk-058, no building | ✅ |
-| 54 | The Dreamer's Loft | 2710 Lafayette Ave | services/coworking | lmk-063, no building | ✅ |
+| 54 | The Dreamer's Loft | 2710 Lafayette Ave | services/coworking | lmk-063, bldg-1704 | ✅ |
 | 55 | Lofts at Lafayette Square | 1119 Mississippi Ave | residential/apartments | lmk-065, no building | ✅ |
 | 56 | Wireworks Lofts | 1435 S. 18th St | residential/apartments | lmk-066, no building | ✅ |
 | 57 | 2200 LaSalle at Lafayette Square | 2200 LaSalle St | residential/apartments | lmk-067, no building | ✅ |
@@ -80,17 +80,17 @@
 | 60 | Family Dollar | 1549 S Jefferson Ave | shopping/discount | lmk-079, no building | ✅ |
 | 61 | Fit City STL | 1601 S Jefferson Ave | recreation/fitness | lmk-080, no building | ✅ |
 | 62 | H&R Block | 1601 S Jefferson Ave Ste B | professional/tax | lmk-081, no building | ✅ |
-| 63 | RE/MAX Gold | 1900 Park Ave | professional/real-estate | lmk-082, no building | ✅ |
+| 63 | RE/MAX Gold | 1900 Park Ave | professional/real-estate | lmk-082, bldg-1726 | ✅ |
 | 64 | Care Solutions In-Home Services | 1800 Lafayette Ave | services/health | lmk-083, no building | ✅ |
 | 65 | Onyx Dagger Tattoo & Gallery | 1917 Park Ave | services/tattoo | lmk-068, no building | ✅ |
 | 66 | Lehmann House B&B | 10 Benton Place | hospitality/B&B | lmk-069, no building | ✅ |
 | 67 | Wildflowers STL | 2754 Lafayette Ave (Rear) | shopping/florist | lmk-070, no building | ✅ |
-| 68 | Rescued Furnishings | 2714 Lafayette Ave | shopping/furniture | lmk-071, no building | ✅ |
-| 69 | Sognare on Lafayette | 2714 Lafayette Ave | services/events | lmk-072, no building | ✅ |
-| 70 | Architectural Artifacts | 2711 Lafayette Ave | shopping/antiques | lmk-073, no building | ✅ |
+| 68 | Rescued Furnishings | 2714 Lafayette Ave | shopping/furniture | lmk-071, bldg-1704 | ✅ |
+| 69 | Sognare on Lafayette | 2714 Lafayette Ave | services/events | lmk-072, bldg-1704 | ✅ |
+| 70 | Architectural Artifacts | 2711 Lafayette Ave | shopping/antiques | lmk-073, bldg-1703 | ✅ |
 | 71 | Lafayette Park B&B | 1415 Missouri Ave | hospitality/B&B | lmk-074, no building | ✅ |
 | 72 | J3 Studio | 1128 S. 18th St | services/beauty | lmk-075, no building | ✅ |
 | 73 | Lafayette Square Wellness | 2327 Hickory St | services/wellness | lmk-076, no building | ✅ |
-| 74 | Grand Hall on Chouteau | 2319 Chouteau Ave | services/events | lmk-077, no building | ✅ |
-| 75 | ATSU Dental Center | 1500 Park Ave | services/health | lmk-078, no building | ✅ |
+| 74 | Grand Hall on Chouteau | 2319 Chouteau Ave | services/events | lmk-077, bldg-1724 | ✅ |
+| 75 | ATSU Dental Center | 1500 Park Ave | services/health | lmk-078, bldg-1725 | ✅ |
 | 76 | Eden Lofts | 1720 Chouteau Ave | residential/apartments | lmk-084, no building | ✅ |

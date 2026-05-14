@@ -2598,7 +2598,7 @@
       "website": "http://www.romewestrealtyllc.com",
       "category": "services",
       "subcategory": "real-estate",
-      "building_id": null,
+      "building_id": "bldg-1711",
       "hours": {
         "monday": {
           "open": "09:00",
@@ -2762,7 +2762,7 @@
       "website": "https://www.haveacow.farm",
       "category": "dining",
       "subcategory": "cafes",
-      "building_id": null,
+      "building_id": "bldg-1708",
       "hours": {
         "monday": {
           "open": "07:00",
@@ -2923,7 +2923,7 @@
       "website": "https://www.onesixonestl.com",
       "category": "services",
       "subcategory": "beauty",
-      "building_id": null,
+      "building_id": "bldg-1712",
       "hours": {
         "monday": {
           "open": "08:00",
@@ -3592,7 +3592,7 @@
       "website": "https://affiniahealthcare.org/st-louis-dental-education-and-oral-health-center-location/",
       "category": "services",
       "subcategory": "health",
-      "building_id": null,
+      "building_id": "bldg-1725",
       "hours": {
         "monday": {
           "open": "07:00",
@@ -3645,7 +3645,7 @@
       "website": "https://www.choicehotels.com/missouri/saint-louis/comfort-inn-hotels/mo575",
       "category": "services",
       "subcategory": "hotels",
-      "building_id": null,
+      "building_id": "bldg-1701",
       "hours": {
         "monday": {
           "open": "00:00",
@@ -3706,7 +3706,7 @@
       "website": "https://www.thedreamersloft.com",
       "category": "services",
       "subcategory": "coworking",
-      "building_id": null,
+      "building_id": "bldg-1704",
       "hours": {
         "monday": {
           "open": "08:00",
@@ -3894,7 +3894,7 @@
       "website": "https://gold-st-louis-mo.remax.com",
       "category": "services",
       "subcategory": "real-estate",
-      "building_id": null,
+      "building_id": "bldg-1726",
       "hours": {
         "monday": {
           "open": "09:00",
@@ -4285,7 +4285,7 @@
       "website": "https://rescuedfurnishings.com",
       "category": "shopping",
       "subcategory": "furniture",
-      "building_id": null,
+      "building_id": "bldg-1704",
       "hours": {
         "thursday": {
           "open": "11:00",
@@ -4334,7 +4334,7 @@
       "website": "https://www.sognareonlafayette.com",
       "category": "community",
       "subcategory": "events-venue",
-      "building_id": null,
+      "building_id": "bldg-1704",
       "hours": {},
       "photos": [
         "/photos/sognare/01.jpg",
@@ -4372,7 +4372,7 @@
       "website": "https://www.artifactsstl.com",
       "category": "shopping",
       "subcategory": "antiques",
-      "building_id": null,
+      "building_id": "bldg-1703",
       "hours": {
         "thursday": {
           "open": "10:00",
@@ -4588,7 +4588,7 @@
       "website": "https://orlandogardens.com/the-grand-hall-on-chouteau/",
       "category": "community",
       "subcategory": "events-venue",
-      "building_id": null,
+      "building_id": "bldg-1724",
       "hours": {},
       "photos": [
         "/photos/grand-hall/01.jpg",

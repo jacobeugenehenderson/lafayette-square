@@ -871,11 +871,26 @@
         "galleries"
       ],
       "hours": {
-        "monday": { "open": "09:00", "close": "17:00" },
-        "tuesday": { "open": "09:00", "close": "17:00" },
-        "wednesday": { "open": "09:00", "close": "17:00" },
-        "thursday": { "open": "09:00", "close": "17:00" },
-        "friday": { "open": "09:00", "close": "17:00" }
+        "monday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "17:00"
+        }
       }
     },
     {
@@ -2583,7 +2598,7 @@
       "website": "http://www.romewestrealtyllc.com",
       "category": "services",
       "subcategory": "real-estate",
-      "building_id": null,
+      "building_id": "bldg-1711",
       "hours": {
         "monday": {
           "open": "09:00",
@@ -2747,7 +2762,7 @@
       "website": "https://www.haveacow.farm",
       "category": "dining",
       "subcategory": "cafes",
-      "building_id": null,
+      "building_id": "bldg-1708",
       "hours": {
         "monday": {
           "open": "07:00",
@@ -2908,7 +2923,7 @@
       "website": "https://www.onesixonestl.com",
       "category": "services",
       "subcategory": "beauty",
-      "building_id": null,
+      "building_id": "bldg-1712",
       "hours": {
         "monday": {
           "open": "08:00",
@@ -3259,7 +3274,7 @@
       "website": "https://www.slpl.org/locations/4/",
       "category": "community",
       "subcategory": "library",
-      "building_id": null,
+      "building_id": "bldg-1574",
       "hours": {
         "monday": {
           "open": "12:00",
@@ -3363,7 +3378,7 @@
       "website": "https://climbsoill.com",
       "category": "services",
       "subcategory": "fitness",
-      "building_id": null,
+      "building_id": "bldg-0711",
       "hours": {
         "monday": {
           "open": "11:00",
@@ -3462,6 +3477,167 @@
       ]
     },
     {
+      "id": "lmk-064",
+      "name": "Walgreens",
+      "address": "1530 Lafayette Avenue",
+      "phone": "(314) 678-1039",
+      "website": "https://www.walgreens.com",
+      "category": "shopping",
+      "subcategory": "pharmacy",
+      "building_id": "bldg-1162",
+      "hours": {
+        "monday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "tuesday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "wednesday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "thursday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "friday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "saturday": {
+          "open": "07:00",
+          "close": "22:00"
+        },
+        "sunday": {
+          "open": "07:00",
+          "close": "22:00"
+        }
+      },
+      "photos": [],
+      "amenities": [
+        "Full-service pharmacy with drive-thru window",
+        "Immunizations and flu shots",
+        "Photo printing and passport photos",
+        "Health screenings and medical equipment"
+      ],
+      "history": [],
+      "description": "Full-service Walgreens drugstore and pharmacy at the corner of Lafayette Ave and S. Jefferson Ave, serving the neighborhood with prescriptions, health services, and everyday essentials.",
+      "tags": [
+        "pharmacy"
+      ]
+    },
+    {
+      "id": "lmk-079",
+      "name": "Family Dollar",
+      "address": "1549 S Jefferson Avenue",
+      "phone": "(314) 328-7176",
+      "website": "https://locations.familydollar.com/mo/st-louis/1549-s-jefferson-avenue",
+      "category": "shopping",
+      "subcategory": "discount",
+      "building_id": "bldg-1605",
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "22:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "22:00"
+        }
+      },
+      "photos": [],
+      "amenities": [
+        "EBT accepted",
+        "ATM",
+        "Tobacco products",
+        "Propane exchange",
+        "Helium balloons",
+        "Ice",
+        "Refrigerated foods",
+        "Bill pay services"
+      ],
+      "history": [],
+      "description": "National discount retail chain offering household essentials, cleaning supplies, food and beverages, health and beauty products, and seasonal items at everyday low prices.",
+      "tags": [
+        "discount"
+      ]
+    },
+    {
+      "id": "lmk-078",
+      "name": "St. Louis Dental Education & Oral Health Center",
+      "address": "1500 Park Avenue",
+      "phone": "(314) 833-2758",
+      "website": "https://affiniahealthcare.org/st-louis-dental-education-and-oral-health-center-location/",
+      "category": "services",
+      "subcategory": "health",
+      "building_id": "bldg-1725",
+      "hours": {
+        "monday": {
+          "open": "07:00",
+          "close": "19:00"
+        },
+        "tuesday": {
+          "open": "07:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "07:00",
+          "close": "19:00"
+        },
+        "thursday": {
+          "open": "07:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "07:00",
+          "close": "17:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "12:00"
+        }
+      },
+      "photos": [],
+      "amenities": [
+        "92-chair dental clinic with general and specialty care",
+        "Sliding fee scale for uninsured patients",
+        "Pediatric dentistry and special needs dental services",
+        "Full specialty care: periodontics, endodontics, prosthodontics, oral surgery"
+      ],
+      "history": [
+        {
+          "year": 2015,
+          "event": "The $24 million, 79,000 sq ft clinic opens June 15 — a partnership between A.T. Still University's Missouri School of Dentistry and Affinia Healthcare, training dental students while serving thousands of underserved St. Louis residents."
+        }
+      ],
+      "description": "A $24 million, 79,000 sq ft state-of-the-art dental clinic and teaching facility operated by Affinia Healthcare in partnership with A.T. Still University. The 92-chair clinic provides affordable general and specialty dental care to underserved communities while training the next generation of dentists.",
+      "tags": [
+        "health"
+      ]
+    },
+    {
       "id": "lmk-062",
       "name": "Comfort Inn & Suites Lafayette Square",
       "address": "2625 Lafayette Avenue",
@@ -3469,7 +3645,7 @@
       "website": "https://www.choicehotels.com/missouri/saint-louis/comfort-inn-hotels/mo575",
       "category": "services",
       "subcategory": "hotels",
-      "building_id": null,
+      "building_id": "bldg-1701",
       "hours": {
         "monday": {
           "open": "00:00",
@@ -3530,7 +3706,7 @@
       "website": "https://www.thedreamersloft.com",
       "category": "services",
       "subcategory": "coworking",
-      "building_id": null,
+      "building_id": "bldg-1704",
       "hours": {
         "monday": {
           "open": "08:00",
@@ -3584,114 +3760,6 @@
       ]
     },
     {
-      "id": "lmk-064",
-      "name": "Walgreens",
-      "address": "1530 Lafayette Avenue",
-      "phone": "(314) 678-1039",
-      "website": "https://www.walgreens.com",
-      "category": "shopping",
-      "subcategory": "pharmacy",
-      "building_id": null,
-      "hours": {
-        "monday": {
-          "open": "07:00",
-          "close": "22:00"
-        },
-        "tuesday": {
-          "open": "07:00",
-          "close": "22:00"
-        },
-        "wednesday": {
-          "open": "07:00",
-          "close": "22:00"
-        },
-        "thursday": {
-          "open": "07:00",
-          "close": "22:00"
-        },
-        "friday": {
-          "open": "07:00",
-          "close": "22:00"
-        },
-        "saturday": {
-          "open": "07:00",
-          "close": "22:00"
-        },
-        "sunday": {
-          "open": "07:00",
-          "close": "22:00"
-        }
-      },
-      "photos": [],
-      "amenities": [
-        "Full-service pharmacy with drive-thru window",
-        "Immunizations and flu shots",
-        "Photo printing and passport photos",
-        "Health screenings and medical equipment"
-      ],
-      "history": [],
-      "description": "Full-service Walgreens drugstore and pharmacy at the corner of Lafayette Ave and S. Jefferson Ave, serving the neighborhood with prescriptions, health services, and everyday essentials.",
-      "tags": [
-        "pharmacy"
-      ]
-    },
-    {
-      "id": "lmk-079",
-      "name": "Family Dollar",
-      "address": "1549 S Jefferson Avenue",
-      "phone": "(314) 328-7176",
-      "website": "https://locations.familydollar.com/mo/st-louis/1549-s-jefferson-avenue",
-      "category": "shopping",
-      "subcategory": "discount",
-      "building_id": null,
-      "hours": {
-        "monday": {
-          "open": "08:00",
-          "close": "22:00"
-        },
-        "tuesday": {
-          "open": "08:00",
-          "close": "22:00"
-        },
-        "wednesday": {
-          "open": "08:00",
-          "close": "22:00"
-        },
-        "thursday": {
-          "open": "08:00",
-          "close": "22:00"
-        },
-        "friday": {
-          "open": "08:00",
-          "close": "22:00"
-        },
-        "saturday": {
-          "open": "08:00",
-          "close": "22:00"
-        },
-        "sunday": {
-          "open": "08:00",
-          "close": "22:00"
-        }
-      },
-      "photos": [],
-      "amenities": [
-        "EBT accepted",
-        "ATM",
-        "Tobacco products",
-        "Propane exchange",
-        "Helium balloons",
-        "Ice",
-        "Refrigerated foods",
-        "Bill pay services"
-      ],
-      "history": [],
-      "description": "National discount retail chain offering household essentials, cleaning supplies, food and beverages, health and beauty products, and seasonal items at everyday low prices.",
-      "tags": [
-        "discount"
-      ]
-    },
-    {
       "id": "lmk-080",
       "name": "Fit City STL",
       "address": "1601 S Jefferson Avenue",
@@ -3699,7 +3767,7 @@
       "website": "https://fitcitystl.com",
       "category": "services",
       "subcategory": "fitness",
-      "building_id": null,
+      "building_id": "bldg-1606",
       "hours": {
         "monday": {
           "open": "05:00",
@@ -3772,7 +3840,7 @@
       "website": "https://www.hrblock.com/tax-office-near-me/missouri/st-louis/49153/",
       "category": "services",
       "subcategory": "tax",
-      "building_id": null,
+      "building_id": "bldg-1606",
       "hours": {
         "monday": {
           "open": "09:00",
@@ -3826,7 +3894,7 @@
       "website": "https://gold-st-louis-mo.remax.com",
       "category": "services",
       "subcategory": "real-estate",
-      "building_id": null,
+      "building_id": "bldg-1726",
       "hours": {
         "monday": {
           "open": "09:00",
@@ -3874,7 +3942,7 @@
       "website": "https://www.caresolutionsihs.com",
       "category": "services",
       "subcategory": "health",
-      "building_id": null,
+      "building_id": "bldg-1139",
       "hours": {
         "monday": {
           "open": "09:00",
@@ -4007,7 +4075,7 @@
       "website": "https://www.lehmannhouse.com",
       "category": "hospitality",
       "subcategory": "bed-and-breakfast",
-      "building_id": null,
+      "building_id": "bldg-0193",
       "hours": {
         "monday": {
           "open": "08:00",
@@ -4217,7 +4285,7 @@
       "website": "https://rescuedfurnishings.com",
       "category": "shopping",
       "subcategory": "furniture",
-      "building_id": null,
+      "building_id": "bldg-1704",
       "hours": {
         "thursday": {
           "open": "11:00",
@@ -4266,7 +4334,7 @@
       "website": "https://www.sognareonlafayette.com",
       "category": "community",
       "subcategory": "events-venue",
-      "building_id": null,
+      "building_id": "bldg-1704",
       "hours": {},
       "photos": [
         "/photos/sognare/01.jpg",
@@ -4304,7 +4372,7 @@
       "website": "https://www.artifactsstl.com",
       "category": "shopping",
       "subcategory": "antiques",
-      "building_id": null,
+      "building_id": "bldg-1703",
       "hours": {
         "thursday": {
           "open": "10:00",
@@ -4351,7 +4419,7 @@
       "phone": "(314) 771-7700",
       "category": "hospitality",
       "subcategory": "bed-and-breakfast",
-      "building_id": null,
+      "building_id": "bldg-0334",
       "hours": {
         "monday": {
           "open": "08:00",
@@ -4410,7 +4478,7 @@
       "website": "https://www.j3-studio.com",
       "category": "services",
       "subcategory": "beauty",
-      "building_id": null,
+      "building_id": "bldg-0531",
       "hours": {
         "tuesday": {
           "open": "10:00",
@@ -4466,7 +4534,7 @@
       "website": "https://www.lafayettesquarewellness.com",
       "category": "services",
       "subcategory": "wellness",
-      "building_id": null,
+      "building_id": "bldg-0140",
       "hours": {
         "monday": {
           "open": "09:00",
@@ -4520,7 +4588,7 @@
       "website": "https://orlandogardens.com/the-grand-hall-on-chouteau/",
       "category": "community",
       "subcategory": "events-venue",
-      "building_id": null,
+      "building_id": "bldg-1724",
       "hours": {},
       "photos": [
         "/photos/grand-hall/01.jpg",
@@ -4549,59 +4617,6 @@
         "cocktails",
         "catering",
         "events"
-      ]
-    },
-    {
-      "id": "lmk-078",
-      "name": "St. Louis Dental Education & Oral Health Center",
-      "address": "1500 Park Avenue",
-      "phone": "(314) 833-2758",
-      "website": "https://affiniahealthcare.org/st-louis-dental-education-and-oral-health-center-location/",
-      "category": "services",
-      "subcategory": "health",
-      "building_id": null,
-      "hours": {
-        "monday": {
-          "open": "07:00",
-          "close": "19:00"
-        },
-        "tuesday": {
-          "open": "07:00",
-          "close": "17:00"
-        },
-        "wednesday": {
-          "open": "07:00",
-          "close": "19:00"
-        },
-        "thursday": {
-          "open": "07:00",
-          "close": "17:00"
-        },
-        "friday": {
-          "open": "07:00",
-          "close": "17:00"
-        },
-        "saturday": {
-          "open": "08:00",
-          "close": "12:00"
-        }
-      },
-      "photos": [],
-      "amenities": [
-        "92-chair dental clinic with general and specialty care",
-        "Sliding fee scale for uninsured patients",
-        "Pediatric dentistry and special needs dental services",
-        "Full specialty care: periodontics, endodontics, prosthodontics, oral surgery"
-      ],
-      "history": [
-        {
-          "year": 2015,
-          "event": "The $24 million, 79,000 sq ft clinic opens June 15 — a partnership between A.T. Still University's Missouri School of Dentistry and Affinia Healthcare, training dental students while serving thousands of underserved St. Louis residents."
-        }
-      ],
-      "description": "A $24 million, 79,000 sq ft state-of-the-art dental clinic and teaching facility operated by Affinia Healthcare in partnership with A.T. Still University. The 92-chair clinic provides affordable general and specialty dental care to underserved communities while training the next generation of dentists.",
-      "tags": [
-        "health"
       ]
     },
     {
@@ -5102,6 +5117,37 @@
       "tags": [
         "fitness",
         "kid-friendly"
+      ]
+    },
+    {
+      "id": "lmk-124",
+      "name": "Kern Pavilion",
+      "address": "Lafayette Park",
+      "category": "parks",
+      "subcategory": "pavilions",
+      "building_id": "bldg-0924",
+      "description": "Italianate pavilion built in 1874 by architect August Beinke. One of the original Victorian-era park structures, contributing to the Lafayette Square Historic District.",
+      "amenities": [
+        "Built 1874",
+        "Italianate architecture",
+        "Architect: August Beinke",
+        "Historic district contributing"
+      ],
+      "tags": [
+        "historic",
+        "park-structure"
+      ]
+    },
+    {
+      "id": "lmk-125",
+      "name": "Betsy Cook Pavilion",
+      "address": "Lafayette Park",
+      "category": "parks",
+      "subcategory": "pavilions",
+      "building_id": "bldg-0985",
+      "description": "Park pavilion in the northeast quadrant of Lafayette Park.",
+      "tags": [
+        "park-structure"
       ]
     }
   ]

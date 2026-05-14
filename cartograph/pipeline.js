@@ -34,7 +34,7 @@ async function main() {
   //      with materials, stories, sqft, addresses). Built for the 3D app.
   //   2. data/raw/msbf.json       — Microsoft Building Footprints (fallback)
   //   3. osm.buildings            — OSM (lowest quality, historical fallback)
-  const PROJECT_ROOT = join(RAW_DIR, '..', '..', '..')
+  const PROJECT_ROOT = join(RAW_DIR, '..', '..', '..', '..')
   const projectBldgPath = join(PROJECT_ROOT, 'src', 'data', 'buildings.json')
   const msbfPath = join(RAW_DIR, 'msbf.json')
   if (existsSync(projectBldgPath)) {

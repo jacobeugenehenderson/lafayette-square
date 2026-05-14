@@ -2,6 +2,21 @@
 
 > Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
+## 2026-05-14 — Non-building landmarks need their own treatment
+
+Three Society Pages landmarks describe **places that aren't buildings** and currently have no `building_id` and no rendering treatment in the slab:
+
+- `lmk-121` Lafayette Park — the entire park (already renders as the park itself, but no landmark/PlaceCard linkage)
+- `lmk-122` Lafayette Square Community Garden — Dolman St at Park Ave
+- `lmk-123` Lafayette Square Pool & Tennis Club — 2224 Rutger St
+
+Open question: how do non-building landmarks attach to the slab? Options to evaluate:
+- A `place_id` field on landmarks that points into a separate `places.json` (parks/gardens/grounds), parallel to `building_id` → `buildings.json`
+- A polygon-region landmark type that draws its own clickable footprint on the ground layer
+- Something else (e.g., point-of-interest pins)
+
+Surfaced during the 2026-05-14 Society Pages reconciliation pass (which linked 11 landmarks to buildings and added 14 new buildings). The other 4 unlinked landmarks at end of pass: these 3 + `lmk-070` Wildflowers STL (2754 Lafayette Rear — needs back-of-lot investigation, separate concern).
+
 ## 2026-05-14 — Terrain integration sweep (b24fce5 + V_EXAG tuning + foundation rule)
 
 Big follow-up session on the b24fce5 clip-to-stencil terrain pipeline. The visible-terrain bug from 2026-05-13 ("insanely hilly, lamps lift 50 ft, ground swallows buildings") had multiple root causes; all addressed except the structural per-Look channel.
