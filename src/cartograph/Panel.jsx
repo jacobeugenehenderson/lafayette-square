@@ -384,16 +384,16 @@ function LabelsSubsection() {
   return (
     <>
       <div className="carto-row carto-row--wrap">
-        <label className="carto-label-fixed" title="Screen height of a street label in pixels. Held constant across zoom; SceneLabel guardrails (10/96 px) clip at zoom extremes.">Size</label>
-        <DraftRangeInput min="10" max="64" step="1"
-          value={get('targetPx', 24)}
-          onCommit={v => setLabelStyle({ targetPx: v })}
-          formatLabel={v => `${v} px`} />
+        <label className="carto-label-fixed" title="World-space height of a street label, in meters. Labels scale with the map — zoom in to read them, zoom out and they shrink with everything else.">Size</label>
+        <DraftRangeInput min="1" max="12" step="0.25"
+          value={get('size', 4)}
+          onCommit={v => setLabelStyle({ size: v })}
+          formatLabel={v => `${Number(v).toFixed(2)} m`} />
       </div>
       <div className="carto-row">
-        <label className="carto-label-fixed" title="Park-tier multiplier. 1 = same size as a street label; 2.5 = LAFAYETTE PARK title size.">Park ×</label>
+        <label className="carto-label-fixed" title="Park-tier size multiplier — applied to Size for the LAFAYETTE PARK title and other park-tier labels. 1× = same size as a street label; 1.5× = current Park title.">Park ×</label>
         <DraftRangeInput min="1" max="4" step="0.1"
-          value={tier.park ?? 2.5}
+          value={tier.park ?? 1.5}
           onCommit={v => setLabelStyle({ tierScale: { ...tier, park: v } })}
           formatLabel={v => `${Number(v).toFixed(1)}×`} />
       </div>
