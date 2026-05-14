@@ -145,29 +145,51 @@ History: there was a long "de-parking" episode in May 2026 that tried to introdu
 
 ```
 [Authoring inputs]
-cartograph/data/raw/
+cartograph/data/<scene>/raw/
   ├── osm.json                  ← node cartograph/fetch.js (one-time)
-  ├── elevation.json            ← cached USGS pull
+  ├── elevation.tif             ← USGS 3DEP 1°×1° 1/3 arc-second GeoTIFF, .gitignored
+  │                                (~453 MB; acquire via the staged-products S3
+  │                                 mirror, NOT EPQS — see memory
+  │                                 `reference_usgs_dem_s3_mirror`)
   ├── centerlines.json          ← legacy file (name-keyed); Survey wrote here historically
   └── measurements.json         ← Measure tool writes
-cartograph/data/clean/
+cartograph/data/<scene>/clean/
   ├── skeleton.json             ← node cartograph/skeleton.js (derived from osm.json)
   └── overlay.json              ← Survey + Measure tools write (skelId-keyed operator-intent: measure, segmentMeasures, capStart/End, anchor, couplers)
+cartograph/data/<scene>/neighborhood_boundary.json
+                                ← canonical extent (boundary polygon, center,
+                                  radius, streetFade). Single source of truth
+                                  for "where is LS"; consumed by LS_STENCIL
+                                  and bake-terrain's clip bbox.
 
 scripts/raw/
   └── lafayette_park_trees.json ← city forestry data
 
-src/data/  (some hand-authored, some Python ETL output)
+src/data/  (some hand-authored, some Python ETL output, some kit-level bakes)
   ├── park_trees.json    ← scripts/12-process-park-trees.py
   ├── park_water.json    ← hand-authored (initial commit, OSM-derived)
   ├── park_paths.json    ← scripts/14-process-park-paths.py
-  └── street_lamps.json  ← scripts/13-fetch-street-lamps.py
+  ├── street_lamps.json  ← scripts/13-fetch-street-lamps.py
+  ├── terrain.json       ← bake-terrain.js (metadata only: width, height,
+  │                        bounds, baseElev)
+  └── terrain.bin        ← bake-terrain.js (Float32Array heightmap, row-major,
+                           raw; paired with terrain.json. Kit's standard
+                           bulk-numeric pattern — see memory
+                           `kit-bin-pattern-for-bulk-numerics`)
 
 public/looks/<id>/design.json   ← Stage panels write per-Look styling
 
 [Pipeline]
 node cartograph/pipeline.js     → cartograph/data/clean/map.json
 node cartograph/promote-ribbons.js → src/data/ribbons.json
+node cartograph/bake-terrain.js → src/data/terrain.{json,bin}
+                                  (one-shot, ~0.2s. Re-run when
+                                   neighborhood_boundary.json or the raw .tif
+                                   changes. Clips the GeoTIFF to LS_STENCIL's
+                                   bbox + 5 m/sample bilinear resample +
+                                   local-min = 0 normalization. Pre-2026-05-13
+                                   used EPQS per-point fetch, ~45 min for the
+                                   same coverage.)
 
 [Bakes — POST /api/cartograph/looks/<id>/bake]
   pipeline.js                              ← only if raw inputs are dirty
@@ -177,8 +199,14 @@ node cartograph/promote-ribbons.js → src/data/ribbons.json
                                     so every Designer toggle becomes a baked
                                     group with the Look's authored color)
   bake-buildings.js              → public/baked/<id>/buildings.{json,bin}
+                                   (reads src/data/terrain.{json,bin} pair via
+                                    fs to anchor building Y to local elevation)
   bake-lamps.js                  → public/baked/<id>/lamps.json
   bake-scene.js                  → public/baked/<id>/scene.json
+                                   (per-Look authoring snapshot: sky / lighting /
+                                    post-FX / shots / hero / arch / horizon /
+                                    browseHeading / materials — every authored
+                                    channel rides the slab as of SC.7)
   arborist/bake-trees.js         → public/baked/default.json
   bake-ground-ao.js              → public/baked/<id>/ground.lightmap.png
 
@@ -219,8 +247,8 @@ Four orthogonal mechanisms keep surfaces from fighting each other. They solve di
 **Counter-rules:**
 - Never stack two coplanar surfaces by tiny Y-lift in Stage/Preview; use polygonOffset. The Y-lift only survives in Designer ortho because the view is parallel-projection.
 - Never assume a sub-meter Y separation will survive at Browse altitude without `logarithmicDepthBuffer`. Now that we have it, it does.
-- If you write a custom shader (`makeGrassMaterial`, water ripples, gravel paths), set a unique `customProgramCacheKey` on the material BEFORE any `patchTerrain` or other wrapper — otherwise three's program cache can silently collapse it onto another patched material's compiled shader. Saw this 2026-05-13 with the gravel path shader.
-- Per-vertex `patchTerrain` adds depth-precision-sensitive shader code; wrapping a material with it can subtly affect distance-dependent sort even when `terrainExag = 0`. For features that should ride the terrain rigidly (the whole Lafayette Park group), prefer a single per-frame group-position lift (`group.position.y = getElevation(x, z) * terrainExag.value`) over patching individual materials.
+- If you write a custom shader (`makeGrassMaterial`, water ripples, gravel paths), set a unique `customProgramCacheKey` on the material BEFORE any `patchTerrain` or other wrapper — otherwise three's program cache can silently collapse it onto another patched material's compiled shader. Hit this 2026-05-13 with the gravel path shader, and again 2026-05-14 with LafayettePark's `pathMat` + `waterMat` after they were chained with `patchTerrain` next to plain `MeshStandardMaterial` siblings that collapsed both onto a vanilla `terrain-vp-std` cache key. Symptom: procedural gravel/ripple disappears, mesh renders as flat default-color PBR.
+- Per-vertex `patchTerrain` adds depth-precision-sensitive shader code; wrapping a material with it can subtly affect distance-dependent sort even when `terrainExag = 0`. For pond surfaces (lake, grotto) — bank + water + island stacked with sub-meter Y separations — per-vertex displacement makes each mesh's interior interpolate independently across its own triangulation, and the larger bank polygon can rise above the smaller water polygon at the pond center. Use **rigid per-pond group lift** instead (`<PondGroup>` in `LafayettePark.jsx`: each pond's children share a single per-frame `position.y = centroidRaw × terrainExag.value` so the bank/water/island Y offsets ride together). The earlier whole-park rigid lift was the wrong granularity (corner mismatch was meters across the park's 350 m extent under b24fce5's real raw values); the right granularity is per-pond / per-feature, not per-park.
 
 ## Known live architecture issues / load-bearing decisions
 
@@ -259,6 +287,36 @@ Designer toggle `treelawn` hides all per-LU variants together — the runtime vi
 ### `BakedGround.GrassMesh` needs polygonOffset parity with `FadeMesh` (2026-05-13)
 
 Both `FadeMesh` and `GrassMesh` in `src/components/BakedGround.jsx` render face / material groups; the bake assigns per-group `polygonOffsetUnits = -renderOrder` so coplanar fragments stack in paint order. `FadeMesh` honors this; `GrassMesh` historically didn't, and grass-shaded faces (residential / park / recreation; lawn / treelawn / median) z-fought with adjacent `FadeMesh` faces and rendered invisibly in Stage. The fix is one block in `GrassMesh`'s material build: `material.polygonOffset = true; material.polygonOffsetFactor = 0; material.polygonOffsetUnits = group.polygonOffsetUnits`. Any new material path in BakedGround needs the same parity.
+
+### Terrain doctrine — every consumer reads one dial, every anchor uses corner-mean (2026-05-14)
+
+After the b24fce5 clip-to-stencil terrain pipeline (local-min = 0 normalized raw float32 in `terrain.bin`), the runtime terrain integration was tuned to a single coherent set of rules. Every consumer that participates in elevation displacement multiplies by the same shared `uExag` uniform (driven from `terrainExag.value` in `src/utils/terrainShader.js`, which `BakedGround`'s `TerrainExagDriver` lerps toward `V_EXAG` from `src/lib/terrainCommon.js`). **V_EXAG is the single dial.** Changing it rescales the whole scene coherently — ground, foundations, buildings, lamps, trees, fence posts, paths, water, banks, islands, labels. The current value is `1.5`; visible LS-wide relief is ~52 m (35 m raw × 1.5), which keeps the neighborhood gradient dramatic without making the per-footprint foundation exposure run away on slopes.
+
+**Anchor rule (foundations + walls).** Per `src/lib/foundationGeometry.js` doctrine, foundations are the contact joint between an upright rigid building and a non-flat heightfield. The "centroid Y" used for the rigid lift is the **mean of `getElevationRaw` sampled at every footprint vertex** — not a single sample at `building.position`. Both LafayetteScene's `Building` walls (via `patchTerrainAtCentroidRaw(mat, centroidRaw)` helper) and `Foundations` (via per-vertex `aCentroidY` attribute on each foundation block, preserved through `mergeBufferGeometries`) lift by this same value, so the slab top + wall bottom stay flush regardless of the slope across the footprint. Canonical reference: `cartograph/bake-buildings.js`'s `centroidY = mean(getElevationRaw(footprint[i]))` — match this anywhere a "centroid elevation" is needed. Sampling at `building.position` diverges from the rule by the convexity of the heightfield across the footprint; for LS's concave-down hill geometry, that meant ~0.5 m of extra exposure baked into every building.
+
+**Instance-scale fix.** `TERRAIN_DISPLACE_INSTANCED` divides the lift by the instance's Y-axis scale (`length(instanceMatrix[1].xyz)`) so the world-space result lands at `sample × uExag` METERS regardless of instance scale. Without it, lamps at `LAMP_SCALE ≈ 1.38` over-lifted ~38%, and arborist trees at authored per-tree scale amplified by their own factor (~50 ft "lamps in the air" symptom from the 2026-05-13 brief). The billboard ShaderMaterials (`glowMat`, `haloMat`, `bulbMat`) in `StreetLights.jsx` bypass three's standard project_vertex chain, so they pick up the lift directly in `BILLBOARD_VS_INC` (`_bbCenter.y += texture × uExag` in world space, no scale division needed) and the lantern glow tracks the lamp post.
+
+**Coverage parity.** Every ground-anchored consumer patches:
+- Ground (`BakedGround.GrassMesh` + `FadeMesh`): `patchTerrain({ perVertex: true })`.
+- Walls (`LafayetteScene.Building`, both branches): `patchTerrainAtCentroidRaw(mat, meanCornerRaw)`.
+- Foundations (`LafayetteScene.Foundations`, merged mesh): per-vertex `aCentroidY` attribute (preserved through `mergeBufferGeometries` — extended 2026-05-14 to copy aCentroidY) + onBeforeCompile that adds `aCentroidY × uExag` to `transformed.y`.
+- Lamps (`StreetLights`): `patchTerrainInstanced` on the GLB material; pool/base ShaderMaterials sample world-space; billboards lift via `BILLBOARD_VS_INC`.
+- Trees (`treeAtlasMaterial`): `patchTerrainInstanced` chained after `injectFoliageSway` (instance matrix is T×R only, scale is baked into the GLB at Arborist publish time, so the Y-scale divide is a no-op for trees).
+- Park items (`LafayettePark`): per-item terrain — paths/water/banks/island via per-pond `<PondGroup>` rigid lift; fence posts/rails via `patchTerrain` rigid (each mesh's own world origin); labels via `<ElevatedGroup>` (per-text `useFrame` lift at the label's XZ).
+
+Anything mounted at the ground and missing patchTerrain in some path will visually de-couple from the heightfield. When auditing a new mesh, the question is "what's its anchor, and does it use the shared `uExag`?"
+
+**Ground triangulation density.** Per-vertex `patchTerrain` samples the terrain texture at each baked vertex; fragments interpolate linearly between them. If a face polygon's triangulation has block-corner-only vertices (~50 m apart), the interior fragments interpolate across a span where the heightfield actually curves — and finer overlays (asphalt centerlines, foundation anchors, paths) computed against the real heightfield diverge from the face's rendered Y by however much the curve deviates from the linear interp. At LS scale that was 1–2 m of raw mismatch → 3–5 m of visible artifact under V_EXAG=1.5–1.8 (foundations "way too tall" on apparently-flat blocks, paths "in midair" relative to grass).
+
+The fix is **bake-time triangulation refinement**: `cartograph/bake-ground.js`'s `triangulateAndRefine(outer, holes, maxEdge)` iteratively splits any triangle whose longest edge exceeds `maxEdge` into 4 child triangles via midpoint subdivision (midpoint cache shared across adjacent triangles → no T-junctions). Face groups + landscape overlays (parking_lot, garden, playground, swimming_pool, pitch, sports_centre, wood, scrub) emit at `maxEdge = 15 m` (≈3× the terrain texture's 5 m spacing — caps per-fragment interpolation error around 0.45 m raw / 0.7 m visible at V_EXAG=1.5). Ribbon bands (asphalt, curb, sidewalk, treelawn variants, footway, path, alley, etc.) skip refinement — their authored centerline density already matches the texture. Total LS ground vert count went from ~50 k to ~395 k; bin from ~1 MB to ~12 MB. Higher `maxEdge` cuts size more aggressively at the cost of interpolation accuracy; `REFINE_MAX_EDGE_M` in `bake-ground.js` is the tuning point.
+
+### Frustum culling must be disabled on GPU-displaced meshes (2026-05-14)
+
+`patchTerrain*` displaces vertices in the GPU vertex shader, but three.js's frustum culler checks the geometry's `boundingSphere` — computed once at construction from the *un-displaced* positions (typically Y=0 base). Once the camera moves so the stale sphere falls outside the view frustum, the mesh gets culled even though the actual displaced geometry is still on-screen — visible as "buildings popping out as I scroll past." Fix on `LafayetteScene.jsx`'s Building + Foundations meshes is `frustumCulled={false}`. The alternative — manually updating `boundingSphere` after each `uExag` lerp — is more code for the same effect. Any new mesh that uses `patchTerrain*` and displaces meaningfully should disable frustum culling.
+
+### MapLayers `ground` mesh must NOT render in shot mode (2026-05-14)
+
+`MapLayers.jsx` renders a full-LS-bbox `ground` plane (color `layerColors.ground = '#2A2826'`, near-black) at Y=-0.08 with ~25 m segmentation per-vertex terrain. In Designer mode that's the neighborhood base. **In shot mode** (Stage, Preview), `BakedGround` paints the full slab at finer-than-25m-when-refined triangulation — the MapLayers ground plane would sit on top of grass faces at Lafayette Park (terrain bulge interpolation differential ~14 m higher than face polygon's block-corner interp) and paint matte black over the grass procedural shader. Symptom we hit 2026-05-14: at Hero, grass invisible; at Browse (uExag → 0), grass "fills in like green liquid" as both planes flatten to coplanar and renderOrder + polygonOffset put face park on top. Fix: `SHOT_SKIP` set in `MapLayers.jsx` now includes `'ground'`. Any future `MapLayers` layer that duplicates a BakedGround group needs the same skip.
 
 ### Server changes require a `cartograph/serve.js` restart
 
@@ -299,7 +357,7 @@ This is the bug-magnet that's burned hours twice now. Survey + Measure tools sav
 
 **Buildings on Stage stay live (intentionally, 2026-05-13).** `LafayetteScene` reads `_allBuildings` from `src/data/buildings` for per-building interactivity (place state, neon, click handlers — these are downstream LS-app concerns that don't survive a merged-mesh bake). Neon specifically draws from active data, so the live-data path is currently load-bearing. Preview consumes the same authored source via `bake-buildings.js`'s merged opaque mesh for GPU-perf proof. Both consume the same authored data; they project it into two runtime shapes for two roles. NOT a Stage/Preview divergence — a deliberate split. **Side-burner until product port:** revisit when porting the LS app and place-state architecture; that's when the decision becomes load-bearing.
 
-**Neon renderer — provisional tube physics (2026-05-13 evening).** `src/components/NeonBands.jsx` renders one merged shader mesh per scene (Path B, swapped in by `20ef7b1` replacing the per-Building inline `NeonBand`). Geometry: 4-facet diamond tube along the building footprint, offset `OFFSET_OUT=0.08m` outward; convex corners get arc-segment rings to keep offset uniform. Shader: AdditiveBlending, `toneMapped:false`, three Gaussian masks (core / tube / bleed) sampled by `r = 1 − dot(N, V)` and fed by `_neonUniforms.{coreUniform, tubeUniform, bleedUniform}` — the same uniforms Cartograph's `NeonPump` writes from the Sky & Light Neon channel per frame, and that production reads once via `useSceneJson(lookId)` from `scene.json.neon.values`. Toy mounts `<NeonBands forceOn />` directly; LS production mounts `<NeonBands places={openPlaces} lookId="lafayette-square" />` (open-by-hours filter on `neonTick` cadence). **Current provisional constants:** `TUBE_RADIUS=0.20m` (~8"), `ROOF_LIFT=0.30m`, frag-shader emissive `*4.0`. These guarantee LS-Browse/Hero/Street visibility while authoring controls are pending — see BACKLOG "Neon LS-scale visibility" pin. The shader's *aesthetic* was validated in toy (small + close-framed) but LS scale exposes sub-pixel coverage + 24-bit z-fight against rooftops; the chunky values clear both. `[neon-diag]` (LafayetteScene `openPlaces` console.log) and `[neon-pump]` (NeonBands useEffect console.log) are intentionally left live until the authoring pass lands.
+**Neon renderer (2026-05-13 → 2026-05-14).** `src/components/NeonBands.jsx` renders one merged shader mesh per scene (Path B, swapped in by `20ef7b1` replacing the per-Building inline `NeonBand`). Geometry: 4-facet diamond tube along the building footprint, offset `OFFSET_OUT=0.08m` outward; convex corners get arc-segment rings to keep offset uniform. Shader: AdditiveBlending, `toneMapped:false`, three Gaussian masks (core / tube / bleed) sampled by `r = 1 − dot(N, V)` and fed by `_neonUniforms.{coreUniform, tubeUniform, bleedUniform}` — the same uniforms Cartograph's `NeonPump` writes from the Sky & Light Neon channel per frame, and that production reads once via `useSceneJson(lookId)` from `scene.json.neon.values`. Toy mounts `<NeonBands forceOn />` directly; LS production mounts `<NeonBands places={openPlaces} lookId={INSTANCE.lookId} />` (open-by-hours filter on `neonTick` cadence). **Tube physics are now operator-authored** (`fba7047`): the formerly-provisional `TUBE_RADIUS` / `ROOF_LIFT` / frag-shader emissive constants live in the cartograph store as the `neonTube` channel (`{tubeRadius, roofLift, emissive}`, flat-value, non-TOD-animated). Stage Sky & Light gains three sliders + a Stage-only "Force Neon On (test)" checkbox (session-only state, not serialized) that bypasses the `openPlaces` business-hours filter for Stage QA. Operator drags → `useMemo` rebuilds the merged tube geometry on radius/lift change; emissive writes per-frame via uniform. The `[neon-diag]` and `[neon-pump]` console diagnostics + `window.__neon` global were stripped in the same commit (revert audit of `c6eea07` + `9906b58`). Defaults flipped to flat-on `{core: 1, tube: 1, bleed: 1}` (`d483151`) — both shipped Looks already authored 1/1/1; HANDOFF-neon.md documented Night as "core full, tube full, bleed full"; visibility is gated by `openPlaces`, not the intensity envelope.
 
 **Non-street ribbons via shared helper (2026-05-13).** Alleys + footways + cycleways + steps + dirt paths went missing in Designer when V2 took over the live render — MapLayers retired its alley/footway block 2026-04-22 expecting the retired `StreetRibbons` V1 to own them, but V1 isn't mounted anywhere anymore (the file is deleted). Fixed via `src/lib/buildPathRibbons.js` — Clipper-based polyline offset with `jtRound` joints (no self-intersection at sharp bends, `ArcTolerance=25` ≈ 2.5cm for visibly smooth arcs). Both `cartograph/bake-ground.js` and `src/cartograph/BlockGeometryV2Debug.jsx` consume the same helper, so Designer and slab cannot drift. Paths clip to **parcel interiors** = `blocks[].ring − curbBands − frontageBands` (treelawn ∪ sidewalk rings), so they terminate at the sidewalk's inner edge rather than riding over the ped zone or curb stroke. See `feedback_designer_ylift_stacking` and `project_v2_block_ring_extends_to_asphalt` memory entries for the two non-obvious gotchas that bit during implementation.
 
