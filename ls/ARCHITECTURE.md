@@ -93,7 +93,7 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 | Google Apps Script `getInit` batch | `hooks/useInit.js` | End-user-mutable: listings + events + handle hydrated on boot |
 | GAS individual endpoints (40+ in `lib/api.js`) | Various hooks + modals | Reviews, replies, claims, bulletins, comments, threads, qr designs, staff, residence, guardian, link tokens |
 | Supabase | `useCary`, `ChatModal`, `SmsInbox`, `ContactModal`, `CourierDots`, `useInit` | Cary realtime sessions + auth + chat |
-| open-meteo.com forecast | `hooks/useWeather.js` (called by `WeatherPoller`) | Live weather (St. Louis lat/lon hardcoded), 48-hour forecast |
+| open-meteo.com forecast | `hooks/useWeather.js` (called by `WeatherPoller`) | Live weather, 48-hour forecast; lat/lon/timezone templated from `INSTANCE.geography` |
 
 ### Consumed live — could/should bake or freeze (v1 BACKLOG candidates)
 
@@ -219,10 +219,9 @@ Authoring HTMLs (`/cartograph.html`, `/arborist.html`, `/preview.html`) bypass `
 
 - **Admin access via `?admin`.** Passphrase prompt → 6h `sessionStorage` token. `?logout` clears.
 - **Device hash identity.** Every end-user action is keyed by `getDeviceHash()` (deterministic from browser fingerprint). Accounts are device-scoped, not email-scoped.
-- **Time-of-day is live, frame-by-frame.** `useTimeOfDay` + `useSkyState` + `CelestialBodies` + `CloudDome` compute continuously from real time + St. Louis lat/lon. No baked time-of-day data anywhere.
+- **Time-of-day is live, frame-by-frame.** `useTimeOfDay` + `useSkyState` + `CelestialBodies` + `CloudDome` compute continuously from real time + `INSTANCE.geography.{lat,lon}`. No baked time-of-day data anywhere.
 - **Per-building neon stays live.** `LafayetteScene` reads `buildings.json` lazily; per-building `NeonBand` mount is gated on listing hours from `useListings` and ticks every 60s. The merged-mesh `bake-buildings` artifact is a perf proof in Preview but doesn't replace this consumer.
-- **Hardcoded LS look ID at runtime.** `Scene.jsx:942` mounts `<BakedGround lookId="lafayette-square">`. Other Looks (`valentines`, etc.) exist in `public/looks/` but production doesn't expose a switcher today. **Phase C migrates this to `INSTANCE.lookId`** per couplers plan §1 + §6.
-- **St. Louis lat/lon is hardcoded** in `useWeather.js`, `useTimeOfDay.js`, `CelestialBodies.jsx`, `SidePanel.jsx`. **Phase C migrates these to `INSTANCE.geography.{lat,lon}`** per couplers plan §6 (Place coupler).
+- **Per-instance config via `src/instance.js`** (Couplers §6, shipped). `INSTANCE.lookId` is the default Look the runtime loads (the `?look=` URL override still wins where wired — Preview's standalone path); `INSTANCE.geography.{lat,lon,timezone}` is consumed by SunCalc / weather API / planetarium / coordinate conversions; `INSTANCE.cary.{smsNumber,smsNumberDisplay,email}` and `INSTANCE.contact.email` carry Cary program endpoints. A different instance swaps `src/instance.js` and the runtime is generic. **Out of scope (still LS-literal):** UI flavor copy that uses "Lafayette Square" as crafted text, cartograph multi-scene scene-id routing (`SCENE_REGISTRY`, `DEFAULT_LOOK_ID` in cartograph store), toy fixture's lookId (shares LS tree atlas), deploy-side references (CNAME, Worker, OG meta — cleanout plan territory).
 - **All runtime asset paths route through `import.meta.env.BASE_URL`.** Slab fetches (`BakedGround`, `BakedLamps`, `InstancedTrees`, `LafayettePark`, `treeAtlasMaterial`, `BakedBuildings`, `StageArch`, `CartographApp`) — landed `f871a9d`. JSX asset paths (`PlaceCard.assetUrl()`, `GlassSearch.resolveLogoUrl()`, `LafayetteScene` MapPin) — already kit-portable from prior work. Same build deploys to root (production) or subpath (staging) without code changes. Memory: `project_kit_deploy_path_agnostic`.
 
 ---

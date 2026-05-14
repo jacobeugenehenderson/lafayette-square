@@ -15,7 +15,7 @@ import * as THREE from 'three'
 import terrainMeta from '../data/terrain.json'
 import terrainBinUrl from '../data/terrain.bin?url'
 
-export { V_EXAG } from './elevation'
+export { V_EXAG } from '../lib/terrainCommon.js'
 
 // Bin = raw Float32 heightmap, row-major (width * height samples).
 // Vite ships it as a static asset; top-level await blocks the import

@@ -114,7 +114,9 @@ export default defineConfig(({ command }) => ({
       },
     },
   },
+  assetsInclude: ['**/*.bin'],
   build: {
+    target: 'es2022',
     rollupOptions: {
       input: {
         main: 'index.html',
