@@ -44,7 +44,7 @@ index.html
         │       │   ├── Building × N
         │       │   │   ├── NeonBand        (per-building, gated by listing hours)
         │       │   │   └── SelectionRing
-        │       │   ├── StreetLabel × N     ← streetsData (streets.json)
+        │       │   ├── SceneLabel × N      ← src/lib/streetLabels.js (shared with Cartograph; reads ribbons.json)
         │       │   ├── MapPin × N          (mobile-deferred)
         │       │   └── LandmarkMarkers
         │       ├── StreetLights            ← street_lamps.json (live)
@@ -100,7 +100,7 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 | Source | Consumer(s) | Status |
 |---|---|---|
 | `src/data/buildings.js` (lazy `buildings.json`) | `LafayetteScene`, `Controls`, `GlassSearch`, `SidePanel`, `useListings`, `CheckinPage` | Load-bearing for per-building interactivity; `bake-buildings` exists but produces a merged mesh, not the per-id catalog these consumers need. Decide: keep live + freeze, or hybrid (slab mesh + per-id index). |
-| `src/data/streets.json` | `LafayetteScene` (street labels), `SidePanel` | Static label data; likely bake or freeze |
+| `src/data/streets.json` | `SidePanel` (named-street count) | Static; labels migrated to `ribbons.json` via `src/lib/streetLabels.js` (2026-05-14). Likely bake or freeze. |
 | `src/data/buildingOverrides.json` | `LafayetteScene` | Per-building overrides; static; freeze or bake into `buildings.json` |
 | `src/data/facade_mapping.json` | `PlaceCard.jsx` | Per-building photo + description; static catalog; keep live (consumer-surface data, ~2600 lines) |
 | `src/data/park_water.json` | `LafayettePark` | Already baked-into-ground for ground bake; still live for park render. Decide: retire live import. |

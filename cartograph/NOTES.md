@@ -6,6 +6,31 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-14 — Labels consolidated; ramps z-disappeared; halo % fix
+
+Landed across ~20 commits this session. Three related threads:
+
+**Z-stack: motorway-class asphalt below arterials.** `bake-ground.js` PAINT_ORDER swap (`highway` group painted *before* `asphalt` rather than after) so motorway_link ramps z-disappear behind Jefferson / Lafayette where their geometry overlaps. Eliminates the dark-on-gray seams the operator circled at the cloverleafs. One-line change; renderOrder propagates via the manifest. Sibling label-side fix: skip `highway ∈ {motorway, motorway_link, trunk_link}` in label data — those synthetic `motorway_link 13` names are positional indices from `skeleton.js`'s unnamed-vehicular pass, not walkable destinations.
+
+**SceneLabel + shared streetLabels module (consolidation).** Designer and Preview/LS used to render labels through two parallel paths — `MapLayers.LabelSprite` (canvas texture) and `LafayetteScene.StreetLabel` (drei `<Text>` with type-tier sizing) — that drifted in style and placement. Both retired. Single canonical path now:
+
+- `src/lib/streetLabels.js` — module-scope memoized compute over `ribbonsData.streets`. Longest-chain-by-arclength selection, label position at the chain's arclength midpoint (fixes Preston Place's previous "label anchored at one terminal segment" symptom), `widthM` derived from `measure.{left,right}.pavementHW`, gate via the tight 4-corridor `labelBoundary` (Jefferson/Lafayette/Truman/Chouteau corners + 30 m pad — supersedes the LS-side `EAST_OF_TRUMAN_ALLOWED` regex whitelist).
+- `src/components/SceneLabel.jsx` — drei `<Text>` (TroikaText/SDF), world-space sizing in meters, width-aware per-label multiplier (clamped 0.5×..2× of base `size` based on chain's pavement width). Designer Labels panel drives Size, Weight, Fill, Halo color+%, Tracking, Case, Font, Opacity.
+- Google Fonts: dropdown of ~1500 families fetched once from `api.fontsource.org/v1/fonts`; URL derived from family + weight at render time as `https://cdn.jsdelivr.net/fontsource/fonts/<id>@latest/latin-<weight>-normal.ttf`. No bake impact.
+
+`MapLayers.LabelSprite`, `LafayetteScene.StreetLabel`, `getStreetLabelPlacements`, `SAME_NAME_MIN_DIST` / `ANY_LABEL_MIN_DIST`, `EAST_OF_TRUMAN_ALLOWED`, the `streetsData` → labels path — all gone. `streets.json` still imported by `SidePanel.jsx` for a count display (separate consumer, intentional).
+
+**Park title is custom-authored, not panel-parametric.** Phase C briefly routed `LAFAYETTE PARK` through SceneLabel with a `tier="park"` multiplier. Jacob's call after testing: park is a singular landmark, custom direct-author beats parametric. Reverted to hardcoded drei `<Text>` in `LafayettePark.jsx`; the `tierScale` / Park × machinery came back out of the store, panel, and SceneLabel. Doctrine update in `project_labels_encourage_walking.md`: world-space sizing (not screen-space as originally drafted), uniform across all named streets, no class tier.
+
+**Surprises caught along the way:**
+- Troika's `outlineWidth` reads raw numbers as world units, not fontSize-relative; `outlineWidth={0.07}` always meant 7 cm of absolute outline, *never* 7% of glyph. Fixed by passing `"7.0%"` (string) so the halo scales with the type. The earlier "halo is reduced on small labels / overpowered on big" complaint was the same bug — *perceived* as proportional, never was.
+- Cartograph Designer uses `OrthographicCamera`; an aborted screen-space-pixel sizing iteration's perspective `worldPerPx` formula yielded NaN → invisible labels. Caught and branched on `camera.isOrthographicCamera` before the whole approach got reverted to world-space.
+- Panel sliders without draft+debounce → re-render-per-pixel-of-drag → starves the browser pointermove stream → "slider clicks but doesn't slide". `DraftRangeInput` helper (mirrors `CornersSubsection`'s pattern) now wraps every numeric label slider. Memory: `feedback_heavy_render_sliders_need_draft.md`.
+
+`labelBoundary` derivation: pairwise segment intersection between each adjacent corridor pair, fall back to nearest-endpoint pair if T-junction (no crossing). The 1.8 km `neighborhood_boundary.json` polygon is too generous to gate anything in this scene — every street in the OSM cutout sits inside.
+
+---
+
 ## 2026-05-14 — Inner-edge anchor: pavement now flips too (asymmetric lane spawn)
 
 Closed the symmetric-lane-spawn bug tracked in BACKLOG line 2745–2750. `streetProfiles.innerEdgeMeasure` (`src/cartograph/streetProfiles.js` ~line 398) now zeros inboard `pavementHW` in addition to the previously-zeroed `treelawn` / `sidewalk` / `terminal`. The block comment was rewritten to be the canonical reference; **supersedes** the 2026-04-26 PM pivot's "chain stays at carriageway center; pavement spans both sides as usual" wording.

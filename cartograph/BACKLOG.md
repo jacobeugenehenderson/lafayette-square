@@ -1666,25 +1666,20 @@ subject); Designer doesn't need to expose it. Renders unconditionally
 at the top of the Survey panel — visible whether or not a street is
 selected.
 
-**Labels parametric.** New Look-level `labels` field on the store
-(`{ size, weight, fill, bg, bgAlpha, halo, haloWidth, opacity }`) with
-hydration in both load paths and persistence in `_buildDesign` (same
-shape as `cornerRadiusScale` / `curbWidth`). Defaults reproduce the
-pre-parametric look; setter is `setLabelStyle(patch)` (merge +
-autosave). `MapLayers.LabelSprite` reads from store and re-renders
-canvas on store change; chip drawn when `bgAlpha > 0`, glyph stroke
-when `haloWidth > 0`, plane material `opacity` driven by store. Six
-control rows in Designer: Size / Weight / Fill / Chip+alpha /
-Halo+width / Opacity. Schema is shaped for a future per-class roster
-(`labels.byClass.street | district | landmark`); UI waits for a
-second neighborhood since LSQ has only one label class today.
+**Labels parametric.** New Look-level `labels` field on the store with
+hydration in both load paths and persistence in `_buildDesign`. Setter
+is `setLabelStyle(patch)`. ~~`MapLayers.LabelSprite` reads from store
+and re-renders canvas~~ — **superseded 2026-05-14**: replaced by
+`SceneLabel` (drei `<Text>` / SDF) consumed by both Cartograph and
+Preview/LS via shared `src/lib/streetLabels.js`. Chip controls and
+canvas-sprite renderer retired; current schema is `{ size, weight,
+fill, halo, haloWidth, letterSpacing, opacity, case, fontFamily }`
+with width-aware per-label sizing from `measure.pavementHW`. See NOTES
+2026-05-14 "Labels consolidated".
 
 ### Deferred follow-ups
 
-- **Label scale-mode** (constant-screen-px vs world-fixed) — needs
-  sprite vs plane swap in `LabelSprite`.
 - **Label zoom-fade** — per-frame distance check or shader uniform.
-- **Label y-offset** — trivial; add when needed.
 - **Highway shader treatment** (Stage-side: distinct material so it
   reads as context, not eligible roadway). Designer-side it's already
   its own visibility row; this is a Stage Surfaces concern.
