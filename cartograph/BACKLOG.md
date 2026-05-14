@@ -2,6 +2,15 @@
 
 > Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
+## 2026-05-14 — Corner kit: per-IX center handle restored + per-IX revert (LANDED)
+
+The IX center dot had been retired (`CornerEditHandles.jsx` carried a dead-comment to that effect), reducing the kit from the doctrinal 3 tiers (global slider → per-IX dot → per-corner dot) down to 2 — and forcing operators to choose between global Revert or per-corner cleanup with nothing in between. The dormant `cornerRadiusOverrides` map was still consumed in geometry; just unreachable from the UI.
+
+- **Phase 1** — restored the big blue per-IX dot at every IX (drag math, snap-to-reset, origin marker, tap toggle all mirror the per-corner dot). Commit homogenizes the IX via the existing `setIxCornerRadius` action (clears per-corner overrides at the IX).
+- **Phase 2** — right-click on the IX dot calls `setIxCornerRadius(point, null)` which already does the prefix-walk to drop per-corner entries at that IX. Browser context menu suppressed while corner-edit mode is active. Global Revert button untouched (still nukes everything).
+
+FEATURES line 72–76 already described this kit accurately; the staleness has been corrected by making the code match.
+
 ## 2026-05-14 — Non-building landmarks need their own treatment
 
 Three Society Pages landmarks describe **places that aren't buildings** and currently have no `building_id` and no rendering treatment in the slab:

@@ -234,8 +234,28 @@ export default function CornerEditHandles({ ribbons }) {
     const dom = gl.domElement
 
     const onDown = (e) => {
-      if (e.button !== 0) return
       const p = screenToWorld(e.clientX, e.clientY, camera, dom)
+
+      // Right-click on an IX dot → per-IX revert (clears the IX override
+      // AND any per-corner overrides at that IX). `setIxCornerRadius`
+      // with r=null already does the prefix-walk + delete on
+      // `cornerCornerRadiusOverrides`, so one call covers both maps.
+      // Cheap, common during authoring — the global Revert button stays
+      // for the "nuke everything" case.
+      if (e.button === 2) {
+        for (const entry of layout) {
+          const dx = p.x - entry.V[0], dz = p.z - entry.V[1]
+          if (Math.hypot(dx, dz) < HIT_R_IX) {
+            setIxCornerRadius(entry.V, null)
+            e.preventDefault()
+            e.stopPropagation()
+            return
+          }
+        }
+        return
+      }
+
+      if (e.button !== 0) return
 
       // First-pass: per-corner dots win over IX dots when both are nearby.
       // Per-corner dots cluster around the IX, so without this an IX dot
@@ -391,16 +411,24 @@ export default function CornerEditHandles({ ribbons }) {
       e.stopPropagation()
     }
 
+    const onContextMenu = (e) => {
+      // Suppress browser context menu while in corner-edit mode so the
+      // right-click-to-revert gesture doesn't pop a system menu.
+      e.preventDefault()
+    }
+
     const opts = { capture: true }
     dom.addEventListener('pointerdown', onDown, opts)
     dom.addEventListener('pointermove', onMove, opts)
     dom.addEventListener('pointerup', onUp, opts)
     dom.addEventListener('pointercancel', onUp, opts)
+    dom.addEventListener('contextmenu', onContextMenu, opts)
     return () => {
       dom.removeEventListener('pointerdown', onDown, opts)
       dom.removeEventListener('pointermove', onMove, opts)
       dom.removeEventListener('pointerup', onUp, opts)
       dom.removeEventListener('pointercancel', onUp, opts)
+      dom.removeEventListener('contextmenu', onContextMenu, opts)
     }
   }, [cornerEditMode, layout, camera, gl, setCornerCornerRadius, setIxCornerRadius, cornerRadiusScale])
 

@@ -6,6 +6,17 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-14 — Corner kit restored to 3 tiers (per-IX dot was the drift)
+
+The corner-authoring kit had silently collapsed from 3 tiers to 2: `CornerEditHandles.jsx` had a dead-comment retiring the per-IX center handle, leaving the operator with only the global slider + per-corner cyan dots. The middle tier — "tune all four corners at one IX with one drag" — was missing, even though FEATURES line 72–76 still documented it as live and `cornerRadiusOverrides` was still consumed by the V2 emitter. The map was dormant, not gone.
+
+Restored across two commits:
+
+- **Phase 1** — per-IX dot back in place. Big blue dot at every IX, drag math + snap-to-reset + origin marker + tap-to-toggle all mirror the per-corner pattern. Per-corner hit-test still wins on overlap so per-corner clicks aren't swallowed by an adjacent IX dot.
+- **Phase 2** — right-click on the IX dot calls `setIxCornerRadius(point, null)`, which already does the prefix-walk-and-delete on `cornerCornerRadiusOverrides` (one call clears both per-IX + per-corner entries at that IX). Browser context menu suppressed while corner-edit mode is active. Global Revert button untouched — keeps the "nuke and start over" affordance.
+
+Doctrine note: this was an Illustrator-handles-doctrine restore, not a new feature. The per-IX retirement was drift; per-IX/corner/vertex authoring belongs in the scene as draggable dots, look-level / global belongs in the panel slider. Color-coding (blue default / gold override / white drag) matches the spec.
+
 ## 2026-05-14 — Labels consolidated; ramps z-disappeared; halo % fix
 
 Landed across ~20 commits this session. Three related threads:
