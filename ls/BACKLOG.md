@@ -4,7 +4,7 @@ The path from where we are (branch `cartograph-looks-pass-ab`) to where we're go
 
 > Part of the **LS trinity** (`ls/FEATURES.md` / `ls/ARCHITECTURE.md` / `ls/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. The cartograph trinity under `cartograph/` covers authoring; this is the consumer side.
 
-Last updated: 2026-05-13 PM (Phase C deep in flight — Couplers §1 + Slab Completeness sweep SC.1 / SC.2 / SC.3 / SC.5 shipped, SC.7 underway, SC.6 pending Jacob's strip-vs-wire call; SC.4 audited empty. Remaining pre-merge after the SC sweep: Couplers §6 INSTANCE module, Neon authoring controls, Cleanout plan, RUNTIME-DELTA §3 staging walk. See `cartograph/BACKLOG.md` "Slab completeness" for per-channel state.)
+Last updated: 2026-05-13 evening (Phase C deep in flight — Slab Completeness sweep at 6/7 shipped: SC.1 / SC.2 / SC.3 / SC.5 / SC.7 all shipped + SC.4 audited empty; only SC.6 (clouds) remains pending Jacob's strip-vs-wire call. Remaining pre-merge: SC.6, Couplers §6 INSTANCE module (brief drafted), Neon authoring controls, Cleanout plan, RUNTIME-DELTA §3 staging walk. Post-merge cleanup queued: bake-button UX refactor (Stage's vestigial ↻ → "Preview" button per project_preview_equals_ls_literally). See `cartograph/BACKLOG.md` "Slab completeness" for per-channel state.)
 
 ---
 
