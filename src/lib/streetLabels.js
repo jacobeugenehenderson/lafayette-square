@@ -133,10 +133,18 @@ function compute() {
       let angle = Math.atan2(by - ay, bx - ax)
       if (angle >  Math.PI / 2) angle -= Math.PI
       if (angle < -Math.PI / 2) angle += Math.PI
-      best = { cx, cy, totalLen, angle }
+      // Pavement width of this chain (both sides of centerline). Drives
+      // per-label size scaling in SceneLabel — wide arterials get bigger
+      // labels, narrow residentials stay quieter. Divided corridors
+      // expose one carriageway per chain, so the value is half the
+      // total ROW; the chain-selection-by-longest-arclength still picks
+      // a representative geometry.
+      const m = st.measure || {}
+      const widthM = (m.left?.pavementHW || 0) + (m.right?.pavementHW || 0) || null
+      best = { cx, cy, totalLen, angle, widthM }
     }
     if (!best) continue
-    labels.push({ name, x: best.cx, z: best.cy, angle: best.angle })
+    labels.push({ name, x: best.cx, z: best.cy, angle: best.angle, widthM: best.widthM })
   }
   return labels
 }

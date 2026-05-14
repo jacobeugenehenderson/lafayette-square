@@ -13,11 +13,23 @@ import useCartographStore from '../cartograph/stores/useCartographStore.js'
 // LabelSprite layering (matches PRI.labels in MapLayers).
 const RENDER_ORDER = 16
 
-export default function SceneLabel({ position, rotation, text, tier = 'street' }) {
+// Street-label widths typically span 4–18 m in LS (Truman one-side at 4 m
+// up to Lafayette at 18 m). Reference 12 m lands a typical residential
+// (~13 m total) right at 1×, and clamps stop extremes from dominating.
+const STREET_REFERENCE_WIDTH_M = 12
+const STREET_WIDTH_MUL_MIN = 0.5
+const STREET_WIDTH_MUL_MAX = 2.0
+
+export default function SceneLabel({ position, rotation, text, tier = 'street', widthM = null }) {
   const style = useCartographStore(s => s.labels) || {}
   const size = style.size ?? 4
   const tierMul = (style.tierScale && style.tierScale[tier]) ?? 1
-  const fontSize = size * tierMul
+  // Width-aware sizing for street tier — bigger pavement, bigger label.
+  // Park (and any future fixed-size tier) ignores widthM.
+  const widthMul = (tier === 'street' && widthM)
+    ? Math.max(STREET_WIDTH_MUL_MIN, Math.min(STREET_WIDTH_MUL_MAX, widthM / STREET_REFERENCE_WIDTH_M))
+    : 1
+  const fontSize = size * tierMul * widthMul
 
   const caseMode = style.case ?? 'mixed'
   const displayText = caseMode === 'upper' ? String(text).toUpperCase()

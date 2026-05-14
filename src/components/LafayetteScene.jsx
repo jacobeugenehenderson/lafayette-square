@@ -1315,12 +1315,15 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
           scene.json.neon driving the uCore/uTube/uBleed uniforms. */}
       {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId={INSTANCE.lookId} neonTubeOverride={neonTubeOverride} />}
 
-      {/* Street labels — SceneLabel renderer, panel-driven style. */}
+      {/* Street labels — SceneLabel renderer, panel-driven style; widthM
+          carries the chain's pavement width so labels scale with the
+          street. */}
       {labelsReady && streetLabels.map((lbl, i) => (
         <SceneLabel
           key={`label-${i}`}
           text={lbl.name}
           tier="street"
+          widthM={lbl.widthM}
           position={[lbl.x, 0.08, lbl.z]}
           rotation={[-Math.PI / 2, 0, -lbl.angle]}
         />

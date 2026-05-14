@@ -763,7 +763,9 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         <mesh geometry={waterGeo} material={mats.water} />
       )}
 
-      {/* Labels — SceneLabel (TroikaText/SDF, screen-space pixel sizing) */}
+      {/* Labels — SceneLabel (TroikaText/SDF, world-space sizing). widthM
+          comes from the chain's measured pavement width so wide arterials
+          get bigger labels than narrow residentials. */}
       {!hide.labels && labelData.map((lbl, i) => {
         if (!Number.isFinite(lbl.x) || !Number.isFinite(lbl.z) || !Number.isFinite(lbl.angle)) return null
         return (
@@ -771,6 +773,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
             key={i}
             text={lbl.name}
             tier="street"
+            widthM={lbl.widthM}
             position={[lbl.x, 2.5, lbl.z]}
             rotation={[-Math.PI / 2, 0, -lbl.angle]}
           />
