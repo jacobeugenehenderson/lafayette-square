@@ -443,6 +443,80 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     return lines
   }, [])
 
+  // ── Label boundary (tighter than neighborhood_boundary) ────
+  // Derived from the four boundary corridors: Jefferson / Lafayette /
+  // Truman / Chouteau. neighborhood_boundary.json is a 1.8 km circle —
+  // too generous; everything in the OSM cutout falls inside, so applying
+  // it to labels gates nothing. This polygon traces just outside the four
+  // boundary streets, formed by pairwise intersections (NW/NE/SE/SW
+  // corners) padded ~30 m outward so the boundary streets' own labels
+  // remain inside.
+  const labelBoundary = useMemo(() => {
+    const CORRIDORS = ['South Jefferson Avenue', 'Lafayette Avenue', 'Truman Parkway', 'Chouteau Avenue']
+    const byCorridor = new Map(CORRIDORS.map(c => [c, []]))
+    for (const st of ribbonsData.streets) {
+      if (byCorridor.has(st.name) && st.points?.length >= 2) byCorridor.get(st.name).push(st)
+    }
+    function segXSeg(p1, p2, p3, p4) {
+      const x1 = p1[0], y1 = p1[1], x2 = p2[0], y2 = p2[1]
+      const x3 = p3[0], y3 = p3[1], x4 = p4[0], y4 = p4[1]
+      const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+      if (Math.abs(den) < 1e-9) return null
+      const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+      const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
+      if (t < 0 || t > 1 || u < 0 || u > 1) return null
+      return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)]
+    }
+    function findCorner(nameA, nameB) {
+      const A = byCorridor.get(nameA), B = byCorridor.get(nameB)
+      for (const sa of A) {
+        const pa = sa.points
+        for (let i = 0; i < pa.length - 1; i++) {
+          for (const sb of B) {
+            const pb = sb.points
+            for (let j = 0; j < pb.length - 1; j++) {
+              const hit = segXSeg(pa[i], pa[i + 1], pb[j], pb[j + 1])
+              if (hit) return hit
+            }
+          }
+        }
+      }
+      let best = null
+      for (const sa of A) for (const pa of [sa.points[0], sa.points[sa.points.length - 1]]) {
+        for (const sb of B) for (const pb of [sb.points[0], sb.points[sb.points.length - 1]]) {
+          const d = Math.hypot(pa[0] - pb[0], pa[1] - pb[1])
+          if (!best || d < best.d) best = { d, pt: [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2] }
+        }
+      }
+      return best?.pt || null
+    }
+    const nw = findCorner('South Jefferson Avenue', 'Lafayette Avenue')
+    const ne = findCorner('Lafayette Avenue',       'Truman Parkway')
+    const se = findCorner('Truman Parkway',         'Chouteau Avenue')
+    const sw = findCorner('Chouteau Avenue',        'South Jefferson Avenue')
+    if (!nw || !ne || !se || !sw) return null
+    const corners = [nw, ne, se, sw]
+    const cx = (nw[0] + ne[0] + se[0] + sw[0]) / 4
+    const cz = (nw[1] + ne[1] + se[1] + sw[1]) / 4
+    const PAD = 30
+    return corners.map(([x, z]) => {
+      const dx = x - cx, dz = z - cz
+      const len = Math.hypot(dx, dz) || 1
+      return [x + (dx / len) * PAD, z + (dz / len) * PAD]
+    })
+  }, [])
+
+  function pointInLabelBoundary(x, z) {
+    if (!labelBoundary) return pointInBoundary(x, z)
+    let inside = false
+    for (let i = 0, j = labelBoundary.length - 1; i < labelBoundary.length; j = i++) {
+      const xi = labelBoundary[i][0], zi = labelBoundary[i][1]
+      const xj = labelBoundary[j][0], zj = labelBoundary[j][1]
+      if (((zi > z) !== (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi)) inside = !inside
+    }
+    return inside
+  }
+
   // ── Labels (boundary-clipped) ──────────────────────────────
   // Placement algorithm: for each unique name, find the longest straight
   // segment across all chains carrying that name. OSM densifies vertices
@@ -469,7 +543,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           const ax = pts[i][0],     ay = pts[i][1]
           const bx = pts[i + 1][0], by = pts[i + 1][1]
           const cx = (ax + bx) / 2, cy = (ay + by) / 2
-          if (!pointInBoundary(cx, cy)) continue
+          if (!pointInLabelBoundary(cx, cy)) continue
           const len = Math.hypot(bx - ax, by - ay)
           if (best && len <= best.len) continue
           let angle = Math.atan2(by - ay, bx - ax)
@@ -482,7 +556,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       labels.push({ name, x: best.cx, z: best.cy, angle: best.angle, segLen: best.len })
     }
     return labels
-  }, [])
+  }, [labelBoundary])
 
   // ── Streetlamps (dots, no boundary clip — the 641 street lamps from
   // street_lamps.json all sit in the neighborhood anyway; lamp pools gate
