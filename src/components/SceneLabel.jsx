@@ -34,13 +34,20 @@ export default function SceneLabel({ position, rotation, text, tier = 'street' }
     const maxPx    = style.maxPx    ?? 48
     const tierMul  = (style.tierScale && style.tierScale[tier]) ?? 1
     const desiredPx = Math.max(minPx, Math.min(maxPx, targetPx * tierMul))
-    // worldHeight that maps to desiredPx on screen at the label's current
-    // world distance from the camera. For a perspective camera,
-    //   pixelsPerWorldUnit = viewportHeight / (2 * dist * tan(fov/2))
-    // so worldUnitsPerPixel = (2 * dist * tan(fov/2)) / viewportHeight.
-    const dist = g.getWorldPosition(_tmpVec).distanceTo(camera.position)
-    const fovRad = (camera.fov * Math.PI) / 180
-    const worldPerPx = (2 * dist * Math.tan(fovRad / 2)) / size.height
+    // worldUnitsPerPixel depends on camera type:
+    //   Perspective: 2 * dist * tan(fov/2) / viewportHeight
+    //   Orthographic: viewportHeightInWorldUnits / viewportHeightInPixels
+    //     where viewportHeightInWorldUnits = (top - bottom) / zoom
+    let worldPerPx
+    if (camera.isOrthographicCamera) {
+      const viewH = (camera.top - camera.bottom) / (camera.zoom || 1)
+      worldPerPx = viewH / size.height
+    } else {
+      const dist = g.getWorldPosition(_tmpVec).distanceTo(camera.position)
+      const fovRad = ((camera.fov ?? 50) * Math.PI) / 180
+      worldPerPx = (2 * dist * Math.tan(fovRad / 2)) / size.height
+    }
+    if (!Number.isFinite(worldPerPx) || worldPerPx <= 0) return
     g.scale.setScalar(desiredPx * worldPerPx)
   })
 
@@ -52,15 +59,11 @@ export default function SceneLabel({ position, rotation, text, tier = 'street' }
         outlineWidth={style.haloWidth ?? 0.07}
         outlineColor={style.halo ?? '#14141c'}
         letterSpacing={style.letterSpacing ?? 0.05}
-        fontWeight={style.weight ?? 600}
         fillOpacity={style.opacity ?? 1}
         outlineOpacity={style.opacity ?? 1}
         anchorX="center"
         anchorY="middle"
         renderOrder={RENDER_ORDER}
-        material-depthTest={false}
-        material-depthWrite={false}
-        material-transparent={true}
       >
         {text}
       </Text>
