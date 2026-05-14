@@ -2742,15 +2742,6 @@ below) — not punchlist-gating.
   `cartograph/serve.js`'s POST `/looks/:id/bake` + the Stage-button
   click handler.
 
-### Lane-spawn for divided traffic — skeleton-side
-- [ ] **Honor `anchor: inner edge` for split-median traffic.** Today
-  each carriageway's lane ribbon expands **symmetrically** across its
-  centerline even when the lane is marked `anchor: inner edge`.
-  Skeleton-level fix: the lane ribbon needs to grow only outward from
-  the inner edge (away from the median), not symmetrically.
-
----
-
 ### Cartograph authoring carry-overs (still real)
 - [ ] **Extract shared `resolveStreets()`** to unify Designer + bake
   operator-intent merge. Today Designer's

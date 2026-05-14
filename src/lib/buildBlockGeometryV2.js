@@ -15,7 +15,7 @@
  * center.
  */
 import clipperLib from 'clipper-lib'
-import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
+import { CURB_WIDTH, innerEdgeMeasure } from '../cartograph/streetProfiles.js'
 
 const SCALE = 1000
 const ARC_N = 16
@@ -1292,7 +1292,24 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     cornerRadiusOverrides = null, cornerCornerRadiusOverrides = null,
     curbWidth = CURB_WIDTH, blockCustoms = null,
     blockLandUse = null } = opts
-  const streets = ribbons?.streets || []
+  // Apply inner-edge anchor transform to all chains up front: every
+  // downstream consumer (street.measure, segmentMeasures via
+  // measureForSegment) sees the post-transform measure where inboard
+  // pavement+curb+ped are zero on inner-edge chains. Single source of
+  // truth — keeps Designer and bake in lockstep without auditing every
+  // street.measure read site.
+  const streets = (ribbons?.streets || []).map(s => {
+    if (s?.anchor !== 'inner-edge' || !s.innerSign) return s
+    const out = { ...s }
+    if (s.measure) out.measure = innerEdgeMeasure(s.measure, s.innerSign)
+    if (s.segmentMeasures) {
+      out.segmentMeasures = {}
+      for (const k of Object.keys(s.segmentMeasures)) {
+        out.segmentMeasures[k] = innerEdgeMeasure(s.segmentMeasures[k], s.innerSign)
+      }
+    }
+    return out
+  })
   const intersections = ribbons?.intersections || []
 
   // Single source of truth for IX identity per chain (coord-shared with

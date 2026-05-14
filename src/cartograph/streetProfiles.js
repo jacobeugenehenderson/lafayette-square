@@ -387,14 +387,12 @@ export function innerEdgeOffsetPolyline(pts, innerSign, pavementHW) {
   return offsetPolyline(pts, pavementHW, innerSign)
 }
 
-// Inner-edge anchor: chain stays at carriageway center; cross-section is
-// authored symmetrically (pavement + curb on BOTH sides). The only thing
-// inner-edge does is zero out the inboard ped zone — no treelawn, no
-// sidewalk, no `terminal` — because there's no pedestrian zone along the
-// median. The carriageway pavement spans both sides as usual; curb caps
-// the inboard pavement at the median edge. Outboard side keeps its full
-// cross-section. Operator authors per chain by dragging both pavement
-// edges (inner + outer) and the outboard treelawn/sidewalk handles.
+// Inner-edge anchor: chain represents the inner (median-facing) edge of
+// the carriageway pavement. Inboard cross-section is zero across the board
+// — no pavement, no curb, no treelawn, no sidewalk — so the polygon
+// between paired carriageways' chains IS the emergent median. Outboard
+// keeps the full cross-section (pavement + curb + treelawn + sidewalk).
+// Operator authors only the outboard side.
 export function innerEdgeMeasure(baseMeasure, innerSign) {
   if (!innerSign) return baseMeasure
   const inboardKey = innerSign === +1 ? 'right' : 'left'
@@ -403,6 +401,7 @@ export function innerEdgeMeasure(baseMeasure, innerSign) {
     ...baseMeasure,
     [inboardKey]: {
       ...inboardSide,
+      pavementHW: 0,
       treelawn: 0,
       sidewalk: 0,
       terminal: 'none',

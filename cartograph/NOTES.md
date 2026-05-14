@@ -6,6 +6,22 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-14 — Inner-edge anchor: pavement now flips too (asymmetric lane spawn)
+
+Closed the symmetric-lane-spawn bug tracked in BACKLOG line 2745–2750. `streetProfiles.innerEdgeMeasure` (`src/cartograph/streetProfiles.js` ~line 398) now zeros inboard `pavementHW` in addition to the previously-zeroed `treelawn` / `sidewalk` / `terminal`. The block comment was rewritten to be the canonical reference; **supersedes** the 2026-04-26 PM pivot's "chain stays at carriageway center; pavement spans both sides as usual" wording.
+
+Three changes, one per phase:
+
+- **`streetProfiles.innerEdgeMeasure`** — added `pavementHW: 0` to the inboard side; rewrote block comment.
+- **`buildBlockGeometryV2`** (`src/lib/buildBlockGeometryV2.js` ~line 1295) — applies the transform once at function entry to `street.measure` AND each `segmentMeasures[k]` for every chain with `anchor === 'inner-edge' && innerSign`. Both consumers (`bake-ground.js`, Designer's `BlockGeometryV2Debug.jsx`) inherit. No per-call-site audit needed.
+- **`useCartographStore.setAnchor`** — pair-aware: when operator flips anchor on one chain, looks up its mate by `pairId` and flips both. Doesn't touch widths or segment measures (independence preserved per `feedback_couplers_are_segment_local`).
+
+Bake ran clean (44 groups, 407K verts). Operator visual verification on Park Ave / Truman Parkway / S Jefferson Ave is still TBD this session — flag if the 8 inner-edge chain pairs (NOTES 1478–1480) need re-measurement now that the inboard widths are no longer absorbing operator-authored values into the median.
+
+Trinity touch: BACKLOG entry retired (resolved → out of doc per "no Done section" rule); FEATURES gained a divided-road / inner-edge section between operator-intent overlay and algorithm-drift sections.
+
+---
+
 ## 2026-05-11 (EOD-2) — D.7 walker identity-driven + D.7a customs flow through corners
 
 The walker no longer detects corners by turn-angle threshold. It uses

@@ -187,21 +187,18 @@ const useCartographStore = create((set, get) => ({
   // dial. Persists in design.json; consumed by `buildBlockGeometryV2`
   // (Designer live render + the bake) via the corner-radius authoring kit.
   cornerRadiusScale: 1,
-  // Look-level label style. Drives the canvas-sprite renderer in
-  // MapLayers.LabelSprite. One class for now (every label uses the same
-  // values); the schema is shaped so a future per-class roster — e.g.
-  // labels.byClass.street / .district / .landmark — can layer on top
-  // without changing the renderer's read path. Defaults reproduce the
-  // pre-parametric hardcoded look (white #fff on #3a3a38 chip, weight
-  // 600, ~4 m tall).
-  // SceneLabel (drei <Text> / SDF) is screen-space sized: every label
-  // targets `targetPx` pixels tall, clamped to [minPx, maxPx] at zoom
-  // extremes. `tierScale.park` is a multiplier applied to the "park"
-  // size tier so the LAFAYETTE PARK title reads as ~2.5x a street label
-  // without diverging the type system. `haloWidth` is in fontSize units
-  // (TroikaText convention) — 0.06 ≈ a 1-px-equivalent outline at typical
-  // body sizes. Legacy chip controls (bg/bgAlpha) retired with the canvas
-  // sprite renderer; outline now carries the legibility job.
+  // Look-level label style. Drives SceneLabel (drei <Text> / SDF) for
+  // both Cartograph's Designer + Preview/LS via shared streetLabels
+  // module. World-space sizing — `size` is meters; the SceneLabel
+  // width-aware multiplier (clamped 0.5×..2× of size based on each
+  // chain's measured pavement width) provides per-street variation
+  // without an authoring knob. `tierScale.park` multiplies size for
+  // the LAFAYETTE PARK title (Phase C). `haloWidth` is in fontSize
+  // units (Troika `outlineWidth`) so the outline scales with the type
+  // and small/large labels share the same typographic feel. `case`
+  // applies UPPER/lower at render. `fontFamily` is a fontsource id
+  // (empty = Troika default, Roboto); SceneLabel derives the TTF URL
+  // from family + weight.
   labels: {
     size:          4,            // meters; world-space height of a street label
     tierScale:     { street: 1, park: 1.5 },

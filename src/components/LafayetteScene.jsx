@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text, Html } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { buildings as _allBuildings, buildingMap as _buildingMap } from '../data/buildings'
 import getStreetLabels from '../lib/streetLabels.js'
