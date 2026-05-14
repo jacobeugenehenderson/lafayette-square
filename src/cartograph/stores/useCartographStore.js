@@ -154,6 +154,21 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
   }
 }
 
+// One-shot migration for `labels` shape changes that silently break
+// saved Looks. haloWidth flipped from fontSize-relative to absolute
+// meters (3a7ec00); a saved 0.07 used to mean a 7%-of-fontSize outline,
+// now it means 7 cm — invisible on a 4 m label. Values below the old
+// max slider (0.21) are unreachable in the new schema's typical range,
+// so promote them to the new default.
+function migrateLabels(labels) {
+  if (!labels) return labels
+  const out = { ...labels }
+  if (typeof out.haloWidth === 'number' && out.haloWidth > 0 && out.haloWidth < 0.21) {
+    out.haloWidth = 0.3
+  }
+  return out
+}
+
 const useCartographStore = create((set, get) => ({
   // ── Layer visibility + colors ─────────────────────────────
   // Hydrated from the active Look's design.json on _loadCenterlines.
@@ -1105,7 +1120,7 @@ const useCartographStore = create((set, get) => ({
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
         curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
         alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
-        labels: { ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) },
+        labels: migrateLabels({ ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) }),
         blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
         blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
@@ -1558,7 +1573,7 @@ const useCartographStore = create((set, get) => ({
         cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
         curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.1524,
         alleyCap: ['square', 'rounded', 'round'].includes(design.alleyCap) ? design.alleyCap : 'square',
-        labels: { ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) },
+        labels: migrateLabels({ ...get().labels, ...(design.labels && typeof design.labels === 'object' ? design.labels : {}) }),
         blockCustoms: (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : {},
         blockLandUse: (design.blockLandUse && typeof design.blockLandUse === 'object') ? design.blockLandUse : {},
         cornerRadiusOverrides: (design.cornerRadiusOverrides && typeof design.cornerRadiusOverrides === 'object') ? design.cornerRadiusOverrides : {},
