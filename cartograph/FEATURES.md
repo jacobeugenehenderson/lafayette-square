@@ -353,7 +353,12 @@ Divided roads stay as TWO separate centerlines per the locked positive-carriagew
 
 **Median emerges by construction**, never authored. The polygon between paired carriageways' chains, minus each carriageway's inboard pavement HW, IS the median (already produced by derive). If the gap can't accommodate one (operator drags inboard pavement wide enough to close the median, or the chains start too close), no median renders — free.
 
-**Pair-aware authoring.** `useCartographStore.setAnchor` mirrors the anchor flip onto the pair mate by `pairId` and applies the same `symmetric: false` + inboard-seed transform to BOTH chains' `measure` AND every entry of `segmentMeasures`. Un-flipping (back to `'center'`) restores `symmetric: true` and mirrors the outboard side onto the inboard side (returns to symmetric defaults; operator's widening is preserved on outboard). Width authoring stays per-carriageway (asymmetric real-world cases like S Jefferson 7.72 / 9.16m).
+**Pair-aware authoring.** `useCartographStore.setAnchor` mirrors the anchor flip onto the pair mate (`pairId` carries the mate's `skelId`, not a shared pair-group identifier — look up via `s.skelId === st.pairId`). The flip transform applies to BOTH chains' `measure` AND every entry of `segmentMeasures`. Width authoring stays per-carriageway (asymmetric real-world cases like S Jefferson 7.72 / 9.16m).
+
+**Asymmetric and Inner-edge are independent operator concepts** (the streets around the park are asymmetric-center-aligned — a valid combination authored via the MeasurePanel "Asymmetric" checkbox alone, no anchor change). `setAnchor` never clobbers operator-authored asymmetric values:
+- Flip TO inner-edge from symmetric: applies the `symmetric: false` + inboard-seed transform.
+- Flip TO inner-edge from asymmetric: anchor only; measure preserved (operator's per-side authoring is intentional).
+- Un-flip TO center: detects the unmodified inner-edge footprint (symmetric=false AND inboard `pavementHW` exactly 0) and cleans up by restoring `symmetric: true` + mirroring outboard onto inboard. Anything else (operator widened inboard from zero, or had pre-existing asymmetric) → measure left alone.
 
 **Single transform site for the ped-zone zero (2026-05-14).** `buildBlockGeometryV2` (`src/lib/buildBlockGeometryV2.js` ~line 1295) applies `innerEdgeMeasure` to every chain whose `anchor === 'inner-edge'` at the top of the function — `street.measure` AND each entry of `street.segmentMeasures`. Both consumers (`bake-ground.js` and Designer's `BlockGeometryV2Debug.jsx`) inherit; no per-call-site audit needed. `MeasureOverlay.jsx:360` calls `innerEdgeMeasure` separately for the operator's drag-handle preview.
 
