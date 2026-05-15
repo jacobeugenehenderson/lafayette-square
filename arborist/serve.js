@@ -12,6 +12,12 @@ import { execFile } from 'child_process'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { bakeLook } from './bake-look.js'
+import {
+  PRESETS as PROCEDURAL_PRESETS,
+  generateSingleVariantGLB,
+  readEffectiveSeedlings,
+  writeSeedlings,
+} from './generate-procedural.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
 const ROOT         = join(__dirname, '..')
@@ -496,6 +502,131 @@ const server = createServer(async (req, res) => {
         return jsonRes(res, result.ok ? 200 : 500, result)
       } catch (err) {
         return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
+      }
+    }
+
+    // ── Procedural authoring (v1.5 Phase A — dice/adopt/republish) ─────
+    //
+    // Plumbs the iteration surface for the procedural tree generator. The
+    // generator algorithm is unchanged; these endpoints expose the dice
+    // (live preview, no file write) → adopt (persist seed) → republish
+    // (rebake species, fire per-Look atlas) flow that ProceduralWorkstage
+    // binds to. Seedlings overlay lives in `arborist/state/procedural_<id>/seedlings.json`
+    // (gitignored); fresh checkouts fall back to the canonical PRESETS table.
+
+    // GET /procedural/species — list the 5 published procedural species
+    if (req.method === 'GET' && path === '/procedural/species') {
+      return jsonRes(res, 200, {
+        species: Object.entries(PROCEDURAL_PRESETS).map(([id, cfg]) => ({
+          speciesId:    id,
+          label:        cfg.label,
+          leafMorph:    cfg.leafMorph,
+          variantCount: cfg.variants.length,
+        })),
+      })
+    }
+
+    // GET /procedural/:species/seedlings — current effective seedlings
+    if (req.method === 'GET' && (m = req.url.match(/^\/procedural\/([^/]+)\/seedlings$/))) {
+      const species = m[1]
+      if (!PROCEDURAL_PRESETS[species]) {
+        return jsonRes(res, 404, { error: 'unknown procedural species', species })
+      }
+      try {
+        const variants = await readEffectiveSeedlings(species)
+        return jsonRes(res, 200, { species, variants })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // POST /procedural/:species/seedlings — body { variants: [{slot, seed, params}] }
+    if (req.method === 'POST' && (m = req.url.match(/^\/procedural\/([^/]+)\/seedlings$/))) {
+      const species = m[1]
+      if (!PROCEDURAL_PRESETS[species]) {
+        return jsonRes(res, 404, { error: 'unknown procedural species', species })
+      }
+      const body = await readBody(req)
+      const variants = Array.isArray(body.variants) ? body.variants : null
+      if (!variants) return jsonRes(res, 400, { error: 'missing variants[]' })
+      try {
+        await writeSeedlings(species, variants)
+        return jsonRes(res, 200, { ok: true, species, variants })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // POST /procedural/generate — body { species, slot, seed, params }
+    // Returns the GLB binary directly. Used by the dice live preview.
+    if (req.method === 'POST' && path === '/procedural/generate') {
+      const body = await readBody(req)
+      const { species, slot, seed, params } = body || {}
+      if (!species || !PROCEDURAL_PRESETS[species]) {
+        return jsonRes(res, 400, { error: 'unknown or missing species', species })
+      }
+      if (!Number.isInteger(slot) || slot < 1) {
+        return jsonRes(res, 400, { error: 'slot must be a positive integer' })
+      }
+      if (!Number.isFinite(seed)) {
+        return jsonRes(res, 400, { error: 'seed must be a finite number' })
+      }
+      try {
+        const buf = await generateSingleVariantGLB({ species, slot, seed, params: params || {} })
+        res.writeHead(200, {
+          'Content-Type': 'model/gltf-binary',
+          'Content-Length': buf.length,
+        })
+        res.end(buf)
+        return
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
+      }
+    }
+
+    // POST /procedural/:species/publish — rebake one species through the
+    // standard pipeline + fire the per-Look atlas auto-bake (mirrors the
+    // Grove roster save flow). Shell-out matches the v1 CLI invocation so
+    // the publish path round-trips through publish-glb.js untouched.
+    if (req.method === 'POST' && (m = req.url.match(/^\/procedural\/([^/]+)\/publish$/))) {
+      const species = m[1]
+      if (!PROCEDURAL_PRESETS[species]) {
+        return jsonRes(res, 404, { error: 'unknown procedural species', species })
+      }
+      const lookName = new URL(req.url, 'http://x').searchParams.get('look') || null
+      if (lookName && (lookName.includes('/') || lookName.includes('..') || lookName.startsWith('.'))) {
+        return jsonRes(res, 400, { error: 'invalid look name' })
+      }
+      const t0 = Date.now()
+      try {
+        const { stdout } = await execAsync('node', [
+          join(__dirname, 'generate-procedural.js'),
+          '--species', species,
+        ])
+        // Rebuild index so the new manifest is visible to the runtime picker.
+        try {
+          const { rebuildIndex } = await import('./build-index.js')
+          await rebuildIndex()
+        } catch (e) {
+          console.warn('[arborist] index rebuild failed after procedural publish:', e.message)
+        }
+        // Per-Look atlas auto-bake — fire-and-forget, same pattern as the
+        // Grove roster save (useArboristStore.js _saveLookRoster).
+        if (lookName) {
+          bakeLook(lookName).catch(err =>
+            console.warn('[arborist] atlas auto-bake after procedural publish failed for', lookName, err.message),
+          )
+        }
+        return jsonRes(res, 200, {
+          ok: true, ms: Date.now() - t0, species,
+          look: lookName, log: String(stdout).slice(-4000),
+        })
+      } catch (err) {
+        return jsonRes(res, 500, {
+          error: 'publish failed', species,
+          stderr: String(err.stderr || err.message).slice(0, 8000),
+          stdout: String(err.stdout || '').slice(0, 4000),
+        })
       }
     }
 

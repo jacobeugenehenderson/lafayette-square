@@ -2662,14 +2662,25 @@ is the cross-phase contract. Foundational pipeline
 (publish-glb / bake-look / bake-trees / atlas-pack) stays unmodified across all
 phases.
 
-- [ ] **Phase A — Procedural mode: dice + adopt.** UI iteration surface in
-  Arborist; generator unchanged. New `src/arborist/ProceduralWorkstage.jsx`;
-  mode toggle in `ArboristApp.jsx`; per-species variant slots with 🎲 dice +
-  ✓ adopt; endpoints `POST /procedural/generate` + `GET/POST /procedural/:species/seedlings`
-  + `POST /procedural/:species/publish`. Generator exports
-  `generateSingleVariantGLB(params) → Buffer` for the dice preview.
-  **Fixes:** operator iterates new variants in seconds. **Doesn't fix:** trees
-  still look like v1.
+- [x] **Phase A — Procedural mode: dice + adopt** (shipped 2026-05-15).
+  UI iteration surface in Arborist; generator algorithm unchanged.
+  `src/arborist/ProceduralWorkstage.jsx` (new) + mode toggle in
+  `ArboristApp.jsx`; per-species variant slots with 🎲 dice + ✓ adopt +
+  live SpecimenViewport thumbnail per slot (blob-URL'd GLB from the
+  generate endpoint). Endpoints `GET /procedural/species`,
+  `GET/POST /procedural/:species/seedlings`,
+  `POST /procedural/generate` (returns model/gltf-binary directly),
+  `POST /procedural/:species/publish?look=<id>` (shells out to
+  `node arborist/generate-procedural.js --species <id>` + fires per-Look
+  atlas auto-bake fire-and-forget). Generator refactored to export
+  `generateSingleVariantGLB`, `readEffectiveSeedlings`, `writeSeedlings`;
+  `main()` now consumes the seedlings overlay (`arborist/state/<species>/seedlings.json`,
+  gitignored) and falls back to the canonical PRESETS table on fresh
+  checkouts. Determinism verified: same {species, slot, seed, params} →
+  byte-identical GLB; CLI `node arborist/generate-procedural.js [--species <id>]`
+  still works end-to-end. **Fixes:** operator iterates new variants in
+  seconds via UI; no CLI round-trip. **Doesn't fix:** trees still look
+  like v1 (algorithm unchanged — Phases D/E/C/B/F/G follow).
 
 - [ ] **Phase D — SCA + tropism** (broadleaf / weeping / columnar / ornamental
   skeletons). New `arborist/spaceColonization.js` (Runions 2007). Generator

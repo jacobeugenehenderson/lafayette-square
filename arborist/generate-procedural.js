@@ -20,7 +20,14 @@
  * dropped — those live in treeAtlasMaterial.js or are obviated by the
  * per-instance baked pipeline.
  *
- * Usage:  node arborist/generate-procedural.js
+ * Usage:  node arborist/generate-procedural.js [--species procedural_<id>]
+ *
+ * Phase A note (v1.5 in-Arborist authoring, 2026-05-15): this module is also
+ * imported by `arborist/serve.js` for the dice / adopt / publish endpoints.
+ * Side-effect `main()` is therefore guarded by an `import.meta.url` check;
+ * importing the module does NOT republish. Operator-overlays land in
+ * `arborist/state/procedural_<species>/seedlings.json`; the canonical
+ * `PRESETS` table below is the fallback for fresh checkouts.
  */
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
@@ -407,7 +414,7 @@ async function readLeafPng(morph) {
 // cartograph/NOTES.md): no hardcoded shortcuts. The eventual Arborist UI
 // binds sliders to this same signature.
 
-const BARK_BY_SPECIES = {
+export const BARK_BY_SPECIES = {
   procedural_broadleaf:  '#5a4030',
   procedural_conifer:    '#4d3828',
   procedural_ornamental: '#634838',
@@ -415,7 +422,7 @@ const BARK_BY_SPECIES = {
   procedural_weeping:    '#4a3525',
 }
 
-const PRESETS = {
+export const PRESETS = {
   procedural_broadleaf: {
     leafMorph: 'ovate_large',
     label: 'Procedural Broadleaf',
@@ -551,24 +558,109 @@ async function syncSpeciesMap() {
   return touched
 }
 
+// ── Seedlings overlay (v1.5 dice/adopt) ─────────────────────────────────
+//
+// Effective seedlings per species = `arborist/state/procedural_<id>/seedlings.json`
+// if present, else synthesized from the PRESETS table. Operator's diced +
+// adopted seeds live in state/; the published GLB artifacts (which ARE
+// committed) reflect whatever was last adopted + republished. Fresh checkouts
+// with no state file fall back to PRESETS — reproducible v1 behavior.
+
+function seedlingsStatePath(species) {
+  return path.join(REPO_ROOT, 'arborist/state', species, 'seedlings.json')
+}
+
+// Returns the effective per-variant payload [{slot, seed, params}].
+// `params` is intentionally empty in Phase A; subsequent phases populate it
+// with envelope / tropism / bark / leaf fields.
+export async function readEffectiveSeedlings(species) {
+  const cfg = PRESETS[species]
+  if (!cfg) throw new Error(`unknown procedural species: ${species}`)
+  try {
+    const json = JSON.parse(await fs.readFile(seedlingsStatePath(species), 'utf8'))
+    if (Array.isArray(json.variants) && json.variants.length > 0) return json.variants
+  } catch { /* fall through to PRESETS */ }
+  return cfg.variants.map((v, i) => ({ slot: i + 1, seed: v.seedN, params: {} }))
+}
+
+export async function writeSeedlings(species, variants) {
+  if (!PRESETS[species]) throw new Error(`unknown procedural species: ${species}`)
+  const stateDir = path.dirname(seedlingsStatePath(species))
+  await fs.mkdir(stateDir, { recursive: true })
+  await fs.writeFile(seedlingsStatePath(species), JSON.stringify({
+    species, variants, savedAt: Date.now(),
+  }, null, 2))
+}
+
+// Resolve a {slot, seed, params} pair to the full params object the algorithm
+// expects. PRESETS[species].variants[(slot-1) % N] is the base; per-overlay
+// `params` lays on top; `seed` writes to `seedN`. Single source of truth so
+// the dice endpoint, the adopt-then-publish path, and main() all agree.
+function resolveVariantParams(species, { slot, seed, params }) {
+  const cfg = PRESETS[species]
+  const base = cfg.variants[(slot - 1) % cfg.variants.length]
+  return { ...base, ...(params || {}), seedN: seed }
+}
+
+// Build a single-variant GLB buffer in memory. Used by `POST /procedural/generate`
+// to stream a live preview into ProceduralWorkstage without touching the
+// committed manifest under public/trees/. Determinism: same {species, slot,
+// seed, params} → byte-identical bytes (modulo the /tmp filename, which is
+// the file off disk; the GLB contents themselves are deterministic).
+export async function generateSingleVariantGLB({ species, slot, seed, params }) {
+  const cfg = PRESETS[species]
+  if (!cfg) throw new Error(`unknown procedural species: ${species}`)
+  const effective = resolveVariantParams(species, { slot, seed, params })
+  const { barkGeo, leafGeo } = generateTreeMesh(effective)
+  const barkPng = await buildBarkPng(BARK_BY_SPECIES[species])
+  const leafPng = await readLeafPng(cfg.leafMorph)
+  const tmpPath = path.join('/tmp', `${species}-preview-${process.pid}-${Date.now()}.glb`)
+  await buildSourceGLB({
+    species,
+    variants: [{ barkGeo, leafGeo }],
+    barkPng, leafPng, outPath: tmpPath,
+  })
+  const buf = await fs.readFile(tmpPath)
+  await fs.unlink(tmpPath).catch(() => {})
+  return buf
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────
+
+function parseCliFilter(argv) {
+  const i = argv.indexOf('--species')
+  if (i === -1 || !argv[i + 1]) return null
+  return argv[i + 1]
+}
 
 async function main() {
   console.log('[generate-procedural] resurrecting pre-43c4aa3 ParkTrees algorithm')
+
+  const onlySpecies = parseCliFilter(process.argv)
+  if (onlySpecies && !PRESETS[onlySpecies]) {
+    console.error(`[generate-procedural] unknown --species ${onlySpecies}; valid: ${Object.keys(PRESETS).join(', ')}`)
+    process.exit(1)
+  }
 
   // Sync species-map BEFORE publish so publish-glb.js can read species hints.
   const mapTouched = await syncSpeciesMap()
   console.log(`[generate-procedural] species-map.json ${mapTouched ? 'updated' : 'unchanged'}`)
 
-  for (const [species, cfg] of Object.entries(PRESETS)) {
-    console.log(`\n[generate-procedural] === ${species} (${cfg.variants.length} variants) ===`)
+  const speciesToBuild = onlySpecies
+    ? [[onlySpecies, PRESETS[onlySpecies]]]
+    : Object.entries(PRESETS)
+
+  for (const [species, cfg] of speciesToBuild) {
+    const seedlings = await readEffectiveSeedlings(species)
+    console.log(`\n[generate-procedural] === ${species} (${seedlings.length} variants) ===`)
 
     const barkPng = await buildBarkPng(BARK_BY_SPECIES[species])
     const leafPng = await readLeafPng(cfg.leafMorph)
 
-    const variants = cfg.variants.map((params, i) => {
-      const { barkGeo, leafGeo, leafCount, woodCount } = generateTreeMesh(params)
-      console.log(`  variant ${i + 1}: ${woodCount} branches, ${leafCount} leaves`)
+    const variants = seedlings.map((sd, i) => {
+      const effective = resolveVariantParams(species, sd)
+      const { barkGeo, leafGeo, leafCount, woodCount } = generateTreeMesh(effective)
+      console.log(`  slot ${sd.slot} (seed ${sd.seed}): ${woodCount} branches, ${leafCount} leaves`)
       return { barkGeo, leafGeo }
     })
 
@@ -593,7 +685,8 @@ async function main() {
   }
 
   // Add published variants to the lafayette-square Look's roster.
-  const added = await syncLookRoster('lafayette-square', Object.keys(PRESETS))
+  const rosterSpecies = onlySpecies ? [onlySpecies] : Object.keys(PRESETS)
+  const added = await syncLookRoster('lafayette-square', rosterSpecies)
   console.log(`\n[generate-procedural] roster: added ${added} variant(s) to lafayette-square/design.json`)
 
   console.log('\n[generate-procedural] done. Next:')
@@ -601,7 +694,16 @@ async function main() {
   console.log('  node arborist/bake-trees.js --look lafayette-square')
 }
 
-main().catch(err => {
-  console.error('[generate-procedural] FAILED:', err)
-  process.exit(1)
-})
+// Only run the publish pipeline when invoked as a script. Importing the
+// module (e.g. from arborist/serve.js for the dice endpoint) MUST be
+// side-effect-free.
+const invokedAsScript = (() => {
+  try { return fileURLToPath(import.meta.url) === process.argv[1] }
+  catch { return false }
+})()
+if (invokedAsScript) {
+  main().catch(err => {
+    console.error('[generate-procedural] FAILED:', err)
+    process.exit(1)
+  })
+}

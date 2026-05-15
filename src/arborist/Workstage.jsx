@@ -51,7 +51,9 @@ export default function Workstage() {
   const setActiveLod     = useArboristStore(s => s.setActiveLod)
 
   const sp = species.find(s => s.id === activeSpeciesId)
-  const isGlb = sp?.source === 'glb'
+  // Procedural species are GLB-shaped (pre-baked variants, no LiDAR
+  // specimens) — same Workstage layout as glb-ingest species.
+  const isGlb = sp?.source === 'glb' || sp?.source === 'procedural'
 
   const [sortBy, setSortBy] = useState('treeH')   // 'treeH' | 'fileSize' | 'treeId'
   const [sortDir, setSortDir] = useState('asc')   // 'asc' | 'desc'
@@ -767,7 +769,7 @@ function WorkstageGlb({
       return
     }
     // Cross species boundary.
-    const speciesList = (allSpecies || []).filter(s => s.source === 'glb' && s.variants > 0)
+    const speciesList = (allSpecies || []).filter(s => (s.source === 'glb' || s.source === 'procedural') && s.variants > 0)
     const speciesSorted = [...speciesList].sort((a, b) => (a.label || a.id).localeCompare(b.label || b.id))
     const spIdx = speciesSorted.findIndex(s => s.id === sp.id)
     if (spIdx === -1) return

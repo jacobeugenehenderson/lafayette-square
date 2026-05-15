@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import Workstage from './Workstage.jsx'
 import Grove from './Grove.jsx'
+import ProceduralWorkstage from './ProceduralWorkstage.jsx'
 
 export default function ArboristApp() {
   const species         = useArboristStore(s => s.species)
@@ -21,6 +22,8 @@ export default function ArboristApp() {
   const activeSpeciesId = useArboristStore(s => s.activeSpeciesId)
   const groveOpen       = useArboristStore(s => s.groveOpen)
   const setGroveOpen    = useArboristStore(s => s.setGroveOpen)
+  const proceduralOpen     = useArboristStore(s => s.proceduralOpen)
+  const setProceduralOpen  = useArboristStore(s => s.setProceduralOpen)
   const loadSpecies     = useArboristStore(s => s.loadSpecies)
   const setActiveSpecies = useArboristStore(s => s.setActiveSpecies)
   const loadLooks       = useArboristStore(s => s.loadLooks)
@@ -35,6 +38,7 @@ export default function ArboristApp() {
     return () => window.removeEventListener('focus', onFocus)
   }, [loadLooks])
 
+  if (proceduralOpen) return <ProceduralWorkstage />
   if (groveOpen) return <Grove />
   if (activeSpeciesId) return <Workstage />
 
@@ -58,6 +62,19 @@ export default function ArboristApp() {
         <span style={{ color: '#888' }}>species library producer</span>
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
           <LookPicker />
+          <button onClick={() => setProceduralOpen(true)}
+            title="Dice + adopt procedural variants (Phase A)"
+            style={{
+              background: 'rgba(232,184,96,0.15)',
+              border: '1px solid rgba(232,184,96,0.4)',
+              color: '#e8c878',
+              padding: '5px 12px', borderRadius: 4,
+              fontFamily: 'inherit', fontSize: 12,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}>
+            Procedural →
+          </button>
           <button onClick={() => setGroveOpen(true)}
             title="See every rated variant on one ground plane"
             style={{

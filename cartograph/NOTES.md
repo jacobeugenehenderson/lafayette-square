@@ -75,13 +75,15 @@ PRESETS table in `arborist/generate-procedural.js` is the committed canonical se
 
 Each phase is a separate commit + acceptance + visible-bug coverage statement.
 
-**Phase A — Procedural mode: dice + adopt** (UI iteration surface)
-- New `src/arborist/ProceduralWorkstage.jsx`; top-level mode toggle in `ArboristApp.jsx`
-- Per-species panel: variant slots, each with 🎲 dice + ✓ adopt buttons + SpecimenViewport thumbnail
-- Endpoints: `POST /procedural/generate` (params → GLB stream), `GET/POST /procedural/:species/seedlings`, `POST /procedural/:species/publish`
-- Generator unchanged; `generate-procedural.js` refactored to export `generateSingleVariantGLB(params) → Buffer` for the dice endpoint
+**Phase A — Procedural mode: dice + adopt** (UI iteration surface) — **SHIPPED 2026-05-15**
+- New `src/arborist/ProceduralWorkstage.jsx`; top-level mode toggle in `ArboristApp.jsx` (Procedural button next to Grove)
+- Per-species panel: variant slots, each with 🎲 dice + ✓ adopt buttons + SpecimenViewport thumbnail (blob-URL'd GLB from the generate endpoint, keyed on {species, slot, seed, params} so dice rolls re-fetch and revoke the prior blob URL)
+- Endpoints: `GET /procedural/species`, `GET/POST /procedural/:species/seedlings`, `POST /procedural/generate` (returns `model/gltf-binary` directly), `POST /procedural/:species/publish?look=<id>` (shells out to `node arborist/generate-procedural.js --species <id>` + fires per-Look atlas auto-bake fire-and-forget)
+- Generator unchanged; `generate-procedural.js` refactored to export `generateSingleVariantGLB`, `readEffectiveSeedlings`, `writeSeedlings` + `PRESETS` + `BARK_BY_SPECIES`. `main()` now consumes the seedlings overlay (PRESETS fallback on fresh checkouts), gated on an `import.meta.url === argv[1]` script check so importing the module from `arborist/serve.js` is side-effect-free. CLI gained `--species procedural_<id>` flag.
+- Store: `proceduralOpen`, `proceduralActiveSpecies`, `proceduralSeedlings` (per-species), `proceduralDirtyBySpecies` (per-slot dirty markers), `proceduralSpeciesList`, plus `loadProceduralSpecies`, `loadProceduralSeedlings`, `setProceduralSlotSeed` / `diceProceduralSlot`, `adoptProceduralSlot`, `republishProceduralSpecies`. Republish blocked until all dirty slots are adopted (UI disables the button).
+- Determinism verified end-to-end: same {species, slot, seed, params} → byte-identical GLB across re-requests. Republish round-trips through publish-glb unmodified (~1.7s for a 2-variant species on a Mac).
 - **Fixes:** operator iterates in seconds via UI; no CLI round-trip for new variants
-- **Doesn't fix:** trees still look the same as v1 (no algorithm change)
+- **Doesn't fix:** trees still look the same as v1 (no algorithm change — Phases D/E/C/B/F/G follow)
 
 **Phase D — SCA + tropism** (skeleton for broadleaf / weeping / columnar / ornamental)
 - New `arborist/spaceColonization.js` (~200 LOC; Runions 2007 algorithm)

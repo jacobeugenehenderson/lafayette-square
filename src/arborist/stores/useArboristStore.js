@@ -197,6 +197,131 @@ const useArboristStore = create((set, get) => ({
       set({ groveError: String(err), groveLoading: false })
     }
   },
+  // ── Procedural authoring (v1.5 Phase A — dice + adopt) ───────────────
+  // Top-level mode mirroring Grove (mutually exclusive with the library /
+  // Workstage / Grove views). Per-species panel lets the operator dice
+  // each variant slot's seed, preview the GLB live (no file write), adopt
+  // the seed to `arborist/state/<species>/seedlings.json`, then republish
+  // the species through the standard pipeline.
+  //
+  // proceduralSeedlings is keyed by speciesId; each entry is the
+  // [{slot, seed, params}] array the operator is currently editing.
+  // proceduralDirtyBySpecies tracks which slot seeds diverge from what's
+  // persisted on disk (so we can light up the adopt button + colored seed
+  // label). Adopt clears the dirty marker for the slot.
+  proceduralOpen: false,
+  setProceduralOpen: (open) => {
+    set({ proceduralOpen: !!open })
+    if (open) {
+      get().loadProceduralSpecies()
+      const active = get().proceduralActiveSpecies
+      if (active) get().loadProceduralSeedlings(active)
+    }
+  },
+  proceduralActiveSpecies: 'procedural_broadleaf',
+  setProceduralActiveSpecies: (s) => {
+    set({ proceduralActiveSpecies: s })
+    if (s) get().loadProceduralSeedlings(s)
+  },
+  proceduralSpeciesList: [],
+  proceduralSeedlings: {},                  // { [speciesId]: [{slot, seed, params}] }
+  proceduralDirtyBySpecies: {},             // { [speciesId]: { [slot]: true } }
+  proceduralError: null,
+  proceduralPublishing: false,
+  loadProceduralSpecies: async () => {
+    try {
+      const r = await fetch(`/api/arborist/procedural/species?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set({ proceduralSpeciesList: d.species || [], proceduralError: null })
+    } catch (err) {
+      set({ proceduralError: String(err) })
+    }
+  },
+  loadProceduralSeedlings: async (speciesId) => {
+    try {
+      const r = await fetch(`/api/arborist/procedural/${encodeURIComponent(speciesId)}/seedlings?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set(s => ({
+        proceduralSeedlings: { ...s.proceduralSeedlings, [speciesId]: d.variants || [] },
+        // Loading from disk clears dirty for that species — what we just
+        // fetched IS the persisted state by definition.
+        proceduralDirtyBySpecies: { ...s.proceduralDirtyBySpecies, [speciesId]: {} },
+        proceduralError: null,
+      }))
+    } catch (err) {
+      set({ proceduralError: String(err) })
+    }
+  },
+  // Mutate a slot's seed in local state and mark it dirty. No file write —
+  // adopt persists. Pass `seed: undefined` to roll a fresh random seed.
+  setProceduralSlotSeed: (speciesId, slot, seed) => {
+    set(s => {
+      const list = s.proceduralSeedlings[speciesId] || []
+      const next = list.map(v => v.slot === slot ? { ...v, seed } : v)
+      const dirty = { ...(s.proceduralDirtyBySpecies[speciesId] || {}), [slot]: true }
+      return {
+        proceduralSeedlings: { ...s.proceduralSeedlings, [speciesId]: next },
+        proceduralDirtyBySpecies: { ...s.proceduralDirtyBySpecies, [speciesId]: dirty },
+      }
+    })
+  },
+  diceProceduralSlot: (speciesId, slot) => {
+    get().setProceduralSlotSeed(speciesId, slot, Math.floor(Math.random() * 1_000_000))
+  },
+  // Persist the FULL species seedlings array to disk, then clear the slot's
+  // dirty marker. The endpoint writes all slots in one shot — that's the
+  // shape Phase A's generator expects on republish — so adopt-one is
+  // effectively "save everything but only this slot is no-longer-dirty."
+  adoptProceduralSlot: async (speciesId, slot) => {
+    const variants = get().proceduralSeedlings[speciesId] || []
+    try {
+      const r = await fetch(`/api/arborist/procedural/${encodeURIComponent(speciesId)}/seedlings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variants }),
+      })
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      set(s => {
+        const dirty = { ...(s.proceduralDirtyBySpecies[speciesId] || {}) }
+        delete dirty[slot]
+        return {
+          proceduralDirtyBySpecies: { ...s.proceduralDirtyBySpecies, [speciesId]: dirty },
+          proceduralError: null,
+        }
+      })
+    } catch (err) {
+      set({ proceduralError: String(err) })
+    }
+  },
+  // Republish via the publish endpoint. The endpoint shells out to
+  // `node arborist/generate-procedural.js --species <id>` then fires the
+  // per-Look atlas bake fire-and-forget (matches Grove's _saveLookRoster
+  // flow). Passes the operator's currently-active Look so the atlas reflects
+  // the new GLB hashes without a manual rebake.
+  republishProceduralSpecies: async (speciesId) => {
+    set({ proceduralPublishing: true, proceduralError: null })
+    const lookId = get().activeLookId
+    const qs = lookId ? `?look=${encodeURIComponent(lookId)}` : ''
+    try {
+      const r = await fetch(
+        `/api/arborist/procedural/${encodeURIComponent(speciesId)}/publish${qs}`,
+        { method: 'POST' },
+      )
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${r.status}`)
+      }
+      // Refresh the species list (variant counts may have changed) and the
+      // seedlings (round-trips through readEffectiveSeedlings on next visit).
+      get().loadSpecies?.()
+      set({ proceduralPublishing: false })
+    } catch (err) {
+      set({ proceduralPublishing: false, proceduralError: String(err) })
+    }
+  },
+
   loadSpecies: async () => {
     try {
       // Cache-bust: the /species response can otherwise be served from
@@ -211,7 +336,10 @@ const useArboristStore = create((set, get) => ({
   },
   setActiveSpecies: (id) => {
     const sp = get().species.find(s => s.id === id)
-    const isGlb = sp?.source === 'glb'
+    // Procedural species are GLB-shaped: variants are pre-published by
+    // `arborist/generate-procedural.js` + `publish-glb.js`, no LiDAR
+    // specimens to browse. Route them through the same Workstage path.
+    const isGlb = sp?.source === 'glb' || sp?.source === 'procedural'
     set({
       activeSpeciesId: id,
       specimens: [], specimensError: null,
