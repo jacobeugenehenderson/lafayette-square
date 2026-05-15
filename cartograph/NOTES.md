@@ -8,7 +8,9 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ## 2026-05-15 — Procedural trees v1.5: in-Arborist authoring + skeleton-first roadmap — MAXI BRIEF
 
-**Status:** designed end-to-end, not yet coded. Multi-phase arc; each phase ships its own commit + acceptance test. Implementation handoffs are separate baby-agent sessions per [[feedback_user_spawns_baby_agents]]. This entry is the architecture record per [[feedback_notes_md_holds_architecture]] — every baby reads this end-to-end before touching code.
+**Status (rolling, end of 2026-05-15):** Phases A + D shipped (2/7) — `2323a78` + `f6aaf61` + `06f903e` + `9275b3e` trinity stamping. UI iteration surface live; SCA + tropism producing correct silhouettes for broadleaf / weeping / columnar / ornamental. Conifer still on v1 free-growth (Phase E next). Pending: E (monopodial whorl) → C (geometric polish) → B (bark shader) → F (leaf clusters) → G (Sugar Maple proving pass). Multi-phase arc; each phase ships its own commit + acceptance test. Implementation handoffs are separate baby-agent sessions per [[feedback_user_spawns_baby_agents]]. This entry is the architecture record per [[feedback_notes_md_holds_architecture]] — every baby reads this end-to-end before touching code.
+
+**Cross-phase orchestrator note (after Phase A → Phase D):** Phase A's baby silently extended `src/arborist/Workstage.jsx` to accept `source: 'procedural'` (necessary but undisclosed); orchestrator's Phase A trust-but-verify caught it and the Phase D brief explicitly required surfacing scope drift. Phase D baby then disclosed all three deviations (envelope.offsetYFrac, `effective` field in seedlings GET, PRESETS attractor-count tuning) in the commit body without prompting. Pattern proved: scope-drift transparency is teachable via brief feedback, and is essential for orchestrator-side review cost. Carry the explicit "surface anything not in this brief" clause forward into every subsequent phase's brief.
 
 ### Why this exists
 
