@@ -31,6 +31,7 @@
  */
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { runSCA, DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
 import { NodeIO, Document } from '@gltf-transform/core'
 import sharp from 'sharp'
 import { promises as fs } from 'node:fs'
@@ -63,6 +64,8 @@ export function generateTreeMesh({
   canopyH,
   branching,    // { primaryN, primaryVar, childN, childVar, spread, baseTilt, tiltVar, lenRatio, droopPerGen, maxGen }
   leafMorph,
+  envelope,     // Phase D — SCA envelope override (rounded_oval/umbrella/tight_column/broad_low; width/height/asymmetry/offsetYFrac)
+  sca,          // Phase D — SCA tunables override (tropism, attractorCount, influenceRadius, killRadius, stepLength, maxIters)
 }) {
   const woodGeos = []
   const leaves = []
@@ -209,32 +212,57 @@ export function generateTreeMesh({
     }
     addLeaf(0, trunkH + canopyH * 0.93, 0, canopyR * 0.2, r(300))
 
-  } else if (preset === 'weeping' || preset === 'columnar') {
-    const pN = 5 + Math.floor(r(50) * 2)
-    for (let p = 0; p < pN; p++) {
-      const az = (p / pN) * TAU + (r(p + 10) - 0.5) * 0.5
-      const attachH = trunkH * (preset === 'weeping'
-        ? 0.6 + r(p + 40) * 0.3
-        : 0.4 + r(p + 40) * 0.5)
-      const len = preset === 'weeping'
-        ? canopyR * (0.6 + r(p + 30) * 0.2)
-        : branchLen * 0.7
-      const baseTilt = branching.baseTilt + r(p + 20) * 0.3
-      growBranch(0, attachH, 0, az, baseTilt, len, branchR, 1, maxGen,
-        rBase + p * 1000, branching)
+  } else {
+    // ── Phase D (2026-05-15): SCA + tropism for the 4 non-conifer
+    // morphologies. Envelope-driven branching replaces the v1 free-growth
+    // recursion. Same generateTreeMesh() signature; new optional
+    // `envelope` + `sca` params merged onto per-preset defaults
+    // (DEFAULT_SCA_BY_PRESET). Generator algorithm is otherwise unchanged
+    // — cylinders are still plain tapered Y-aligned, leaf cards still go
+    // through addLeaf. Geometric polish (multi-seg crag, flange rings,
+    // root flare) is Phase C; bark/leaf shaders are Phases B/F.
+    const defaults = DEFAULT_SCA_BY_PRESET[preset] || DEFAULT_SCA_BY_PRESET.broadleaf
+    const env = {
+      profile:     (envelope && envelope.profile)     || defaults.envelope.profile,
+      width:       (envelope && envelope.width    !== undefined) ? envelope.width    : canopyR,
+      height:      (envelope && envelope.height   !== undefined) ? envelope.height   : canopyH,
+      asymmetry:   (envelope && envelope.asymmetry!== undefined) ? envelope.asymmetry: defaults.envelope.asymmetry,
+      offsetYFrac: (envelope && envelope.offsetYFrac !== undefined) ? envelope.offsetYFrac : defaults.envelope.offsetYFrac,
+    }
+    const scaCfg = { ...defaults.sca, ...(sca || {}) }
+
+    // SCA picks up at the trunk top (the −0.25 matches the trunk's own
+    // post-translate so the SCA root joins the visible trunk seamlessly).
+    const trunkTop = [0, trunkH - 0.25, 0]
+    const { nodes } = runSCA({
+      envelope: env,
+      sca: scaCfg,
+      seedN,
+      trunkBase: trunkTop,
+      tipRadius: 0.012,
+    })
+
+    // Emit one tapered cylinder per edge. radius from Murray's law sits
+    // on each node. We clamp the minimum radius so trunkward thin twigs
+    // don't disappear to sub-pixel after publish-glb's prune pass.
+    const branchSegs = 6
+    for (const n of nodes) {
+      if (!n.parent) continue
+      const r0 = Math.max(0.01, n.parent.radius)
+      const r1 = Math.max(0.008, n.radius)
+      const cyl = buildTaperedCylinderBetween(n.parent.pos, n.pos, r0, r1, branchSegs)
+      if (cyl) woodGeos.push(cyl)
     }
 
-  } else {
-    // broadleaf / ornamental — full recursive crown
-    const pN = Math.floor(branching.primaryN + r(50) * branching.primaryVar)
-    for (let p = 0; p < pN; p++) {
-      const az = (p / pN) * TAU + (r(p + 10) - 0.5) * 0.5
-      const attachH = trunkH * (0.55 + r(p + 40) * 0.35)
-      const scaffoldR = branchR * (1.0 + 0.3 * (1 - p / pN))
-      growBranch(0, attachH, 0, az,
-        branching.baseTilt + r(p + 20) * branching.tiltVar,
-        branchLen, scaffoldR, 1, maxGen,
-        rBase + p * 1000, branching)
+    // Leaf card at every tip. The seed stream is offset per-tip via the
+    // node's index so adjacent tips don't render identical leaf cards.
+    let tipIdx = 0
+    for (const n of nodes) {
+      if (n.children.length === 0) {
+        const leafSeed = seed(seedN * 7919 + tipIdx * 31)
+        addLeaf(n.pos[0], n.pos[1], n.pos[2], 0.5, leafSeed)
+        tipIdx++
+      }
     }
   }
 
@@ -289,6 +317,32 @@ function buildLeafGeometry(leaves) {
   geo.setAttribute('normal',   new THREE.BufferAttribute(normals, 3))
   geo.setAttribute('uv',       new THREE.BufferAttribute(uvs, 2))
   geo.setIndex(new THREE.BufferAttribute(indices, 1))
+  return geo
+}
+
+// Tapered cylinder aligned along an arbitrary edge p0→p1. THREE's
+// CylinderGeometry is Y-aligned and centered, so we translate to put the
+// base at origin, rotate the Y axis to the edge direction, then translate
+// to p0. Returns null for zero-length edges so the caller can skip them.
+//
+// Used by the SCA path (Phase D): one cylinder per node→parent edge, with
+// Murray's-law radii at each end. Conifer's free-growth path still uses
+// the original makeBranch() helper, which has its own per-segment bend
+// loop and Y-aligned cylinder primitive.
+const _bcY = new THREE.Vector3(0, 1, 0)
+const _bcDir = new THREE.Vector3()
+const _bcQuat = new THREE.Quaternion()
+function buildTaperedCylinderBetween(p0, p1, r0, r1, segs) {
+  _bcDir.set(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])
+  const len = _bcDir.length()
+  if (len < 1e-4) return null
+  _bcDir.divideScalar(len)
+  // CylinderGeometry args: (radiusTop, radiusBottom, height, radialSegs)
+  const geo = new THREE.CylinderGeometry(r1, r0, len, segs)
+  geo.translate(0, len / 2, 0)
+  _bcQuat.setFromUnitVectors(_bcY, _bcDir)
+  geo.applyQuaternion(_bcQuat)
+  geo.translate(p0[0], p0[1], p0[2])
   return geo
 }
 
@@ -427,9 +481,9 @@ export const PRESETS = {
     leafMorph: 'ovate_large',
     label: 'Procedural Broadleaf',
     variants: [
-      { preset: 'broad', seedN: 11, dbh: 18, canopyR: 7.0,  canopyH: 7.0,  branching: { primaryN: 5, primaryVar: 3, childN: 2, childVar: 2, spread: 2.2, baseTilt: 0.75, tiltVar: 0.4,  lenRatio: 0.62, droopPerGen: 0.03, maxGen: 3 } },
-      { preset: 'broad', seedN: 23, dbh: 24, canopyR: 9.0,  canopyH: 8.5,  branching: { primaryN: 5, primaryVar: 3, childN: 2, childVar: 2, spread: 2.2, baseTilt: 0.75, tiltVar: 0.4,  lenRatio: 0.62, droopPerGen: 0.03, maxGen: 3 } },
-      { preset: 'broad', seedN: 41, dbh: 30, canopyR: 11.0, canopyH: 10.0, branching: { primaryN: 6, primaryVar: 2, childN: 3, childVar: 1, spread: 2.4, baseTilt: 0.70, tiltVar: 0.45, lenRatio: 0.60, droopPerGen: 0.03, maxGen: 3 } },
+      { preset: 'broad', seedN: 11, dbh: 18, canopyR: 7.0,  canopyH: 7.0,  branching: { primaryN: 5, primaryVar: 3, childN: 2, childVar: 2, spread: 2.2, baseTilt: 0.75, tiltVar: 0.4,  lenRatio: 0.62, droopPerGen: 0.03, maxGen: 3 }, envelope: { profile: 'rounded_oval', asymmetry: 0,   offsetYFrac: 0 }, sca: { tropism: [0, 0, 0], attractorCount: 450, influenceRadius: 4.0, killRadius: 1.2, stepLength: 0.45, maxIters: 160 } },
+      { preset: 'broad', seedN: 23, dbh: 24, canopyR: 9.0,  canopyH: 8.5,  branching: { primaryN: 5, primaryVar: 3, childN: 2, childVar: 2, spread: 2.2, baseTilt: 0.75, tiltVar: 0.4,  lenRatio: 0.62, droopPerGen: 0.03, maxGen: 3 }, envelope: { profile: 'rounded_oval', asymmetry: 0.1, offsetYFrac: 0 }, sca: { tropism: [0, 0, 0], attractorCount: 500, influenceRadius: 4.2, killRadius: 1.3, stepLength: 0.5,  maxIters: 160 } },
+      { preset: 'broad', seedN: 41, dbh: 30, canopyR: 11.0, canopyH: 10.0, branching: { primaryN: 6, primaryVar: 2, childN: 3, childVar: 1, spread: 2.4, baseTilt: 0.70, tiltVar: 0.45, lenRatio: 0.60, droopPerGen: 0.03, maxGen: 3 }, envelope: { profile: 'rounded_oval', asymmetry: 0,   offsetYFrac: 0 }, sca: { tropism: [0, 0, 0], attractorCount: 600, influenceRadius: 4.5, killRadius: 1.4, stepLength: 0.55, maxIters: 180 } },
     ],
   },
   procedural_conifer: {
@@ -444,24 +498,24 @@ export const PRESETS = {
     leafMorph: 'ovate_small',
     label: 'Procedural Ornamental',
     variants: [
-      { preset: 'ornamental', seedN: 17, dbh: 8,  canopyR: 4.0, canopyH: 3.5, branching: { primaryN: 4, primaryVar: 2, childN: 2, childVar: 2, spread: 1.8, baseTilt: 0.7, tiltVar: 0.35, lenRatio: 0.62, droopPerGen: 0.03, maxGen: 3 } },
-      { preset: 'ornamental', seedN: 31, dbh: 12, canopyR: 5.5, canopyH: 4.5, branching: { primaryN: 4, primaryVar: 2, childN: 2, childVar: 2, spread: 1.8, baseTilt: 0.7, tiltVar: 0.35, lenRatio: 0.62, droopPerGen: 0.03, maxGen: 3 } },
+      { preset: 'ornamental', seedN: 17, dbh: 8,  canopyR: 4.0, canopyH: 3.5, branching: { primaryN: 4, primaryVar: 2, childN: 2, childVar: 2, spread: 1.8, baseTilt: 0.7, tiltVar: 0.35, lenRatio: 0.62, droopPerGen: 0.03, maxGen: 3 }, envelope: { profile: 'broad_low', asymmetry: 0,    offsetYFrac: 0 }, sca: { tropism: [0, -0.05, 0], attractorCount: 350, influenceRadius: 3.5, killRadius: 1.1, stepLength: 0.4,  maxIters: 160 } },
+      { preset: 'ornamental', seedN: 31, dbh: 12, canopyR: 5.5, canopyH: 4.5, branching: { primaryN: 4, primaryVar: 2, childN: 2, childVar: 2, spread: 1.8, baseTilt: 0.7, tiltVar: 0.35, lenRatio: 0.62, droopPerGen: 0.03, maxGen: 3 }, envelope: { profile: 'broad_low', asymmetry: 0.15, offsetYFrac: 0 }, sca: { tropism: [0, -0.05, 0], attractorCount: 400, influenceRadius: 3.6, killRadius: 1.2, stepLength: 0.4,  maxIters: 160 } },
     ],
   },
   procedural_columnar: {
     leafMorph: 'narrow',
     label: 'Procedural Columnar',
     variants: [
-      { preset: 'columnar', seedN: 19, dbh: 14, canopyR: 2.5, canopyH: 9.0,  branching: { primaryN: 5, primaryVar: 2, childN: 2, childVar: 1, spread: 1.2, baseTilt: 0.35, tiltVar: 0.2, lenRatio: 0.58, droopPerGen: 0.02, maxGen: 3 } },
-      { preset: 'columnar', seedN: 37, dbh: 18, canopyR: 3.0, canopyH: 11.0, branching: { primaryN: 5, primaryVar: 2, childN: 2, childVar: 1, spread: 1.2, baseTilt: 0.35, tiltVar: 0.2, lenRatio: 0.58, droopPerGen: 0.02, maxGen: 3 } },
+      { preset: 'columnar', seedN: 19, dbh: 14, canopyR: 2.5, canopyH: 9.0,  branching: { primaryN: 5, primaryVar: 2, childN: 2, childVar: 1, spread: 1.2, baseTilt: 0.35, tiltVar: 0.2, lenRatio: 0.58, droopPerGen: 0.02, maxGen: 3 }, envelope: { profile: 'tight_column', asymmetry: 0, offsetYFrac: 0 }, sca: { tropism: [0, +0.3, 0], attractorCount: 350, influenceRadius: 3.0, killRadius: 1.0, stepLength: 0.45, maxIters: 180 } },
+      { preset: 'columnar', seedN: 37, dbh: 18, canopyR: 3.0, canopyH: 11.0, branching: { primaryN: 5, primaryVar: 2, childN: 2, childVar: 1, spread: 1.2, baseTilt: 0.35, tiltVar: 0.2, lenRatio: 0.58, droopPerGen: 0.02, maxGen: 3 }, envelope: { profile: 'tight_column', asymmetry: 0, offsetYFrac: 0 }, sca: { tropism: [0, +0.3, 0], attractorCount: 400, influenceRadius: 3.2, killRadius: 1.1, stepLength: 0.45, maxIters: 200 } },
     ],
   },
   procedural_weeping: {
     leafMorph: 'narrow',
     label: 'Procedural Weeping',
     variants: [
-      { preset: 'weeping', seedN: 47, dbh: 16, canopyR: 6.0, canopyH: 5.0, branching: { primaryN: 5, primaryVar: 2, childN: 3, childVar: 1, spread: 2.0, baseTilt: 0.5, tiltVar: 0.35, lenRatio: 0.62, droopPerGen: 0.35, maxGen: 3 } },
-      { preset: 'weeping', seedN: 59, dbh: 22, canopyR: 7.5, canopyH: 6.0, branching: { primaryN: 5, primaryVar: 2, childN: 3, childVar: 1, spread: 2.0, baseTilt: 0.5, tiltVar: 0.35, lenRatio: 0.62, droopPerGen: 0.35, maxGen: 3 } },
+      { preset: 'weeping', seedN: 47, dbh: 16, canopyR: 6.0, canopyH: 5.0, branching: { primaryN: 5, primaryVar: 2, childN: 3, childVar: 1, spread: 2.0, baseTilt: 0.5, tiltVar: 0.35, lenRatio: 0.62, droopPerGen: 0.35, maxGen: 3 }, envelope: { profile: 'umbrella', asymmetry: 0,   offsetYFrac: -0.6 }, sca: { tropism: [0, -0.4, 0], attractorCount: 450, influenceRadius: 3.5, killRadius: 1.1, stepLength: 0.45, maxIters: 200 } },
+      { preset: 'weeping', seedN: 59, dbh: 22, canopyR: 7.5, canopyH: 6.0, branching: { primaryN: 5, primaryVar: 2, childN: 3, childVar: 1, spread: 2.0, baseTilt: 0.5, tiltVar: 0.35, lenRatio: 0.62, droopPerGen: 0.35, maxGen: 3 }, envelope: { profile: 'umbrella', asymmetry: 0.1, offsetYFrac: -0.6 }, sca: { tropism: [0, -0.5, 0], attractorCount: 500, influenceRadius: 3.6, killRadius: 1.2, stepLength: 0.5,  maxIters: 220 } },
     ],
   },
 }
@@ -592,14 +646,28 @@ export async function writeSeedlings(species, variants) {
   }, null, 2))
 }
 
-// Resolve a {slot, seed, params} pair to the full params object the algorithm
-// expects. PRESETS[species].variants[(slot-1) % N] is the base; per-overlay
-// `params` lays on top; `seed` writes to `seedN`. Single source of truth so
-// the dice endpoint, the adopt-then-publish path, and main() all agree.
+// Resolve a {slot, seed, params} pair to the full params object the
+// algorithm expects. PRESETS[species].variants[(slot-1) % N] is the base;
+// per-overlay `params` lays on top; `seed` writes to `seedN`. Single
+// source of truth so the dice endpoint, the adopt-then-publish path, and
+// main() all agree.
+//
+// Phase D — nested `envelope`, `sca`, and `branching` objects need a
+// one-level-deep merge so a partial overlay (e.g. operator dragging just
+// the tropism.Y slider, which writes `{sca: {tropism: [...]}}`) doesn't
+// wipe the sibling fields off the base PRESET. Top-level keys (preset,
+// dbh, canopyR, etc.) remain shallow-merged.
+const NESTED_PARAM_KEYS = ['envelope', 'sca', 'branching']
 function resolveVariantParams(species, { slot, seed, params }) {
   const cfg = PRESETS[species]
   const base = cfg.variants[(slot - 1) % cfg.variants.length]
-  return { ...base, ...(params || {}), seedN: seed }
+  const merged = { ...base, ...(params || {}), seedN: seed }
+  for (const k of NESTED_PARAM_KEYS) {
+    if (base[k] || (params && params[k])) {
+      merged[k] = { ...(base[k] || {}), ...((params && params[k]) || {}) }
+    }
+  }
+  return merged
 }
 
 // Build a single-variant GLB buffer in memory. Used by `POST /procedural/generate`

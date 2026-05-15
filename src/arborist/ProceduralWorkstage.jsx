@@ -43,6 +43,7 @@ export default function ProceduralWorkstage() {
   const dirtyByspecies           = useArboristStore(s => s.proceduralDirtyBySpecies)
   const diceSlot                 = useArboristStore(s => s.diceProceduralSlot)
   const setSlotSeed              = useArboristStore(s => s.setProceduralSlotSeed)
+  const setSlotParams            = useArboristStore(s => s.setProceduralSlotParams)
   const adoptSlot                = useArboristStore(s => s.adoptProceduralSlot)
   const republishSpecies         = useArboristStore(s => s.republishProceduralSpecies)
   const publishing               = useArboristStore(s => s.proceduralPublishing)
@@ -139,10 +140,12 @@ export default function ProceduralWorkstage() {
             slot={v.slot}
             seed={v.seed}
             params={v.params}
+            effective={v.effective}
             dirty={!!dirty[v.slot]}
             targetCategory={targetCategory}
             onDice={() => diceSlot(activeSpecies, v.slot)}
             onSeedEdit={(seed) => setSlotSeed(activeSpecies, v.slot, seed)}
+            onParams={(paramsPatch) => setSlotParams(activeSpecies, v.slot, paramsPatch)}
             onAdopt={() => adoptSlot(activeSpecies, v.slot)}
           />
         ))}
@@ -184,7 +187,12 @@ export default function ProceduralWorkstage() {
 // Owns its own preview blob URL keyed on (species, slot, seed, params).
 // Re-fetches `/api/arborist/procedural/generate` whenever the key changes;
 // revokes the previous blob URL on cleanup so we don't leak.
-function SlotCard({ species, slot, seed, params, dirty, targetCategory, onDice, onSeedEdit, onAdopt }) {
+// Phase E will mount its own conifer-specific panel here; until then we
+// hide all SCA controls for the conifer species (it routes through the
+// v1 free-growth path inside generateTreeMesh).
+const SHOW_SCA_PANEL = (species) => species !== 'procedural_conifer'
+
+function SlotCard({ species, slot, seed, params, effective, dirty, targetCategory, onDice, onSeedEdit, onParams, onAdopt }) {
   const [glbUrl, setGlbUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [previewError, setPreviewError] = useState(null)
@@ -282,6 +290,18 @@ function SlotCard({ species, slot, seed, params, dirty, targetCategory, onDice, 
           />
         )}
       </div>
+      {/* Envelope + Tropism panel (Phase D). Hidden for conifer until
+          Phase E lands its monopodial-whorl panel. Slider edits debounce
+          via DraftSlider (150ms idle commit + pointer-up final) so
+          dragging doesn't thrash the dice endpoint. */}
+      {SHOW_SCA_PANEL(species) && effective?.envelope && effective?.sca && (
+        <SCAPanel
+          envelope={effective.envelope}
+          sca={effective.sca}
+          onEnvelopeChange={(patch) => onParams({ envelope: patch })}
+          onSCAChange={(patch) => onParams({ sca: patch })}
+        />
+      )}
       <div style={{
         padding: '10px 12px',
         display: 'flex', alignItems: 'center', gap: 8,
@@ -345,4 +365,148 @@ function btnStyle() {
     letterSpacing: '0.08em', textTransform: 'uppercase',
     cursor: 'pointer',
   }
+}
+
+// ── SCA panel (Phase D) ─────────────────────────────────────────────────
+// Per-slot envelope + tropism editor. Profile is a dropdown of the 5 named
+// curves; everything else is a debounced slider. The four envelope/tropism
+// fields are the load-bearing knobs — they collectively select the
+// silhouette per [[cartograph/NOTES.md "2026-05-15 maxi-brief"]] Design
+// pillar #2. A free-form 2D-curve profile editor is a later polish.
+const ENVELOPE_PROFILE_OPTIONS = [
+  'rounded_oval',
+  'umbrella',
+  'tight_column',
+  'broad_low',
+  'asymmetric_oval',
+]
+function SCAPanel({ envelope, sca, onEnvelopeChange, onSCAChange }) {
+  const tropism = sca.tropism || [0, 0, 0]
+  return (
+    <div style={{
+      padding: '10px 12px',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      background: 'rgba(255,255,255,0.015)',
+      display: 'flex', flexDirection: 'column', gap: 8,
+      fontSize: 11, color: '#aaa',
+    }}>
+      <SectionLabel>Envelope</SectionLabel>
+      <Row label="Profile">
+        <select
+          value={envelope.profile}
+          onChange={(e) => onEnvelopeChange({ profile: e.target.value })}
+          style={selectStyle}>
+          {ENVELOPE_PROFILE_OPTIONS.map(p => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+      </Row>
+      <Row label="Width">
+        <DraftSlider min={1} max={20} step={0.1}
+          value={envelope.width ?? 7}
+          onCommit={(v) => onEnvelopeChange({ width: v })}
+          format={(v) => `${v.toFixed(1)} m`} />
+      </Row>
+      <Row label="Height">
+        <DraftSlider min={1} max={20} step={0.1}
+          value={envelope.height ?? 7}
+          onCommit={(v) => onEnvelopeChange({ height: v })}
+          format={(v) => `${v.toFixed(1)} m`} />
+      </Row>
+      <Row label="Asymmetry">
+        <DraftSlider min={0} max={1} step={0.01}
+          value={envelope.asymmetry ?? 0}
+          onCommit={(v) => onEnvelopeChange({ asymmetry: v })}
+          format={(v) => v.toFixed(2)} />
+      </Row>
+      <Row label="Y offset">
+        <DraftSlider min={-1} max={0} step={0.05}
+          value={envelope.offsetYFrac ?? 0}
+          onCommit={(v) => onEnvelopeChange({ offsetYFrac: v })}
+          format={(v) => v.toFixed(2)} />
+      </Row>
+
+      <SectionLabel>Tropism</SectionLabel>
+      <Row label="X">
+        <DraftSlider min={-0.6} max={0.6} step={0.02}
+          value={tropism[0]}
+          onCommit={(v) => onSCAChange({ tropism: [v, tropism[1], tropism[2]] })}
+          format={(v) => v.toFixed(2)} />
+      </Row>
+      <Row label="Y">
+        <DraftSlider min={-0.8} max={0.6} step={0.02}
+          value={tropism[1]}
+          onCommit={(v) => onSCAChange({ tropism: [tropism[0], v, tropism[2]] })}
+          format={(v) => v.toFixed(2)} />
+      </Row>
+      <Row label="Z">
+        <DraftSlider min={-0.6} max={0.6} step={0.02}
+          value={tropism[2]}
+          onCommit={(v) => onSCAChange({ tropism: [tropism[0], tropism[1], v] })}
+          format={(v) => v.toFixed(2)} />
+      </Row>
+    </div>
+  )
+}
+
+function SectionLabel({ children }) {
+  return (
+    <div style={{
+      fontSize: 10, color: '#888',
+      letterSpacing: '0.12em', textTransform: 'uppercase',
+      marginTop: 2,
+    }}>{children}</div>
+  )
+}
+
+function Row({ label, children }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ width: 70, color: '#888' }}>{label}</span>
+      {children}
+    </div>
+  )
+}
+
+const selectStyle = {
+  flex: 1,
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  color: '#ddd',
+  padding: '3px 6px', borderRadius: 3,
+  fontFamily: 'inherit', fontSize: 11,
+}
+
+// Debounced range slider per [[feedback_heavy_render_sliders_need_draft]].
+// Local draft state during drag; commits on 150ms idle window OR pointer-up
+// (whichever comes first). Generate endpoint is ~50–80ms per call so a
+// dragged slider without debouncing would queue dozens of stale fetches.
+function DraftSlider({ value, onCommit, min, max, step, format }) {
+  const [draft, setDraft] = useState(value)
+  const idleRef = useRef(null)
+  const draggingRef = useRef(false)
+  useEffect(() => { if (!draggingRef.current) setDraft(value) }, [value])
+  const schedule = (v) => {
+    if (idleRef.current != null) clearTimeout(idleRef.current)
+    idleRef.current = setTimeout(() => { idleRef.current = null; onCommit(v) }, 150)
+  }
+  const finalCommit = () => {
+    draggingRef.current = false
+    if (idleRef.current != null) { clearTimeout(idleRef.current); idleRef.current = null }
+    onCommit(draft)
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+      <input type="range" min={min} max={max} step={step}
+        value={draft}
+        onPointerDown={() => { draggingRef.current = true }}
+        onPointerUp={finalCommit}
+        onChange={(e) => { const v = parseFloat(e.target.value); setDraft(v); schedule(v) }}
+        onKeyUp={finalCommit}
+        style={{ flex: 1, accentColor: '#e8b860' }} />
+      <span style={{ width: 44, textAlign: 'right', color: '#bbb', fontFamily: 'monospace' }}>
+        {format ? format(draft) : draft}
+      </span>
+    </div>
+  )
 }

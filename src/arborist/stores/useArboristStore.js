@@ -270,6 +270,30 @@ const useArboristStore = create((set, get) => ({
   diceProceduralSlot: (speciesId, slot) => {
     get().setProceduralSlotSeed(speciesId, slot, Math.floor(Math.random() * 1_000_000))
   },
+  // Phase D — mutate nested params (envelope / sca / branching) for a slot.
+  // paramsPatch is one-level-deep, e.g. {envelope: {profile: 'umbrella'}} or
+  // {sca: {tropism: [0, -0.4, 0]}}; the merge preserves sibling fields on
+  // each nested object so dragging one slider doesn't wipe the others.
+  // Marks the slot dirty; the SlotCard's preview effect refetches via the
+  // existing paramsKey JSON.stringify dep — no extra wiring needed.
+  setProceduralSlotParams: (speciesId, slot, paramsPatch) => {
+    set(s => {
+      const list = s.proceduralSeedlings[speciesId] || []
+      const next = list.map(v => {
+        if (v.slot !== slot) return v
+        const params = { ...(v.params || {}) }
+        for (const k of Object.keys(paramsPatch || {})) {
+          params[k] = { ...(params[k] || {}), ...paramsPatch[k] }
+        }
+        return { ...v, params }
+      })
+      const dirty = { ...(s.proceduralDirtyBySpecies[speciesId] || {}), [slot]: true }
+      return {
+        proceduralSeedlings: { ...s.proceduralSeedlings, [speciesId]: next },
+        proceduralDirtyBySpecies: { ...s.proceduralDirtyBySpecies, [speciesId]: dirty },
+      }
+    })
+  },
   // Persist the FULL species seedlings array to disk, then clear the slot's
   // dirty marker. The endpoint writes all slots in one shot — that's the
   // shape Phase A's generator expects on republish — so adopt-one is

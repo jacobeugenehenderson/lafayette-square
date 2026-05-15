@@ -530,6 +530,12 @@ const server = createServer(async (req, res) => {
     // Match against the query-stripped `path` (the store cache-busts with
     // `?t=Date.now()`), not raw `req.url` — same bug would bite any future
     // procedural route that the store hits with a query string.
+    //
+    // Phase D: each variant also carries an `effective` field with the
+    // resolved envelope/sca/etc. (PRESETS base merged with the operator
+    // overlay). The UI binds slider positions to `effective`; adopt still
+    // POSTs back the overlay-only `{slot, seed, params}` shape so disk
+    // state stays minimal — touched fields only.
     if (req.method === 'GET' && (m = path.match(/^\/procedural\/([^/]+)\/seedlings$/))) {
       const species = m[1]
       if (!PROCEDURAL_PRESETS[species]) {
@@ -537,7 +543,30 @@ const server = createServer(async (req, res) => {
       }
       try {
         const variants = await readEffectiveSeedlings(species)
-        return jsonRes(res, 200, { species, variants })
+        const cfg = PROCEDURAL_PRESETS[species]
+        const enriched = variants.map(v => {
+          const base = cfg.variants[(v.slot - 1) % cfg.variants.length]
+          const merged = { ...base, ...(v.params || {}), seedN: v.seed }
+          for (const key of ['envelope', 'sca', 'branching']) {
+            if (base[key] || (v.params && v.params[key])) {
+              merged[key] = { ...(base[key] || {}), ...((v.params && v.params[key]) || {}) }
+            }
+          }
+          // Width/height default from canopyR/canopyH if not in envelope.
+          if (merged.envelope) {
+            if (merged.envelope.width  === undefined) merged.envelope.width  = merged.canopyR
+            if (merged.envelope.height === undefined) merged.envelope.height = merged.canopyH
+          }
+          return {
+            slot: v.slot, seed: v.seed, params: v.params || {},
+            effective: {
+              preset:   merged.preset,
+              envelope: merged.envelope || null,
+              sca:      merged.sca || null,
+            },
+          }
+        })
+        return jsonRes(res, 200, { species, variants: enriched })
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
       }

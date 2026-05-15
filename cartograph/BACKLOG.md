@@ -2682,12 +2682,33 @@ phases.
   seconds via UI; no CLI round-trip. **Doesn't fix:** trees still look
   like v1 (algorithm unchanged — Phases D/E/C/B/F/G follow).
 
-- [ ] **Phase D — SCA + tropism** (broadleaf / weeping / columnar / ornamental
-  skeletons). New `arborist/spaceColonization.js` (Runions 2007). Generator
-  swaps free-growth `growBranch` for `runSCA(envelope, tropism, params)` for
-  the 4 SCA morphologies. UI gains envelope panel + tropism XYZ sliders.
-  **Fixes:** species silhouettes finally correct (weeping recurves; columnar
-  narrows; ornamental broad-low-attached). **Doesn't fix:** conifers; per-species tuning.
+- [x] **Phase D — SCA + tropism** (broadleaf / weeping / columnar / ornamental
+  skeletons) — shipped 2026-05-15. New `arborist/spaceColonization.js`
+  (Runions 2007 SCA + tropism + envelope-as-revolution-profile + Murray's-law
+  radii). Generator's `else` branch in `generateTreeMesh()` swapped from
+  free-growth `growBranch` to `runSCA(envelope, sca, seedN, trunkBase, tipRadius)`
+  for the 4 SCA morphologies; conifer keeps its free-growth path untouched
+  (Phase E owns that). UI gains per-slot Envelope (profile dropdown +
+  width/height/asymmetry/offsetYFrac sliders) + Tropism (XYZ sliders) panel,
+  hidden for conifer. Debounced via `DraftSlider` (150ms idle + pointer-up).
+  Seedlings GET endpoint extended with an `effective` field per variant
+  (PRESETS base merged with operator overlay) so the UI binds slider
+  positions to resolved values; adopt still POSTs back the overlay-only
+  `{slot, seed, params}` shape.
+  **Tuning notes:** offset-Y-frac added to envelope schema (load-bearing for
+  weeping — without it the willow curtain has nowhere to hang); broadleaf
+  variants 2-3 + weeping variant 2 had `attractorCount` reduced and
+  `killRadius`/`stepLength` raised vs the brief's starter defaults to land
+  in a reasonable lod0 tri budget (1.8K–19K per variant; conifer unchanged
+  at ~6K).
+  **Fixes:** silhouettes diverge correctly — broadleaf W/H≈1.87 (rounded
+  oval), weeping W/H≈2.29 with 3.2m of branches draping below trunk top
+  (recurve emerges from envelope+tropism physics, not per-gen tilt hacks),
+  columnar W/H≈0.29 (narrow vertical), ornamental W/H≈1.99 (broad-low).
+  Determinism preserved (same seed → byte-identical GLB).
+  **Doesn't fix:** conifers (Phase E); bark/leaf shaders (B/F); geometric
+  polish — branches are still plain tapered cylinders (Phase C); per-species
+  tuning (G).
 
 - [ ] **Phase E — Monopodial whorl** (conifer skeleton). New
   `arborist/monopodialWhorl.js`. Conifer path swaps to

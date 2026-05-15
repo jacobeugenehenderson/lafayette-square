@@ -85,12 +85,19 @@ Each phase is a separate commit + acceptance + visible-bug coverage statement.
 - **Fixes:** operator iterates in seconds via UI; no CLI round-trip for new variants
 - **Doesn't fix:** trees still look the same as v1 (no algorithm change — Phases D/E/C/B/F/G follow)
 
-**Phase D — SCA + tropism** (skeleton for broadleaf / weeping / columnar / ornamental)
-- New `arborist/spaceColonization.js` (~200 LOC; Runions 2007 algorithm)
-- `generate-procedural.js` swaps free-growth `growBranch` for `runSCA(envelope, tropism, params)` for the 4 SCA morphologies
-- ProceduralWorkstage gains envelope panel (profile dropdown, dims, asymmetry slider) + tropism XYZ sliders
-- **Fixes:** species silhouettes finally correct. Weeping recurves naturally. Columnar narrows. Ornamental broad-low-attached.
-- **Doesn't fix:** conifers; per-species tuning
+**Phase D — SCA + tropism** (skeleton for broadleaf / weeping / columnar / ornamental) — **SHIPPED 2026-05-15**
+- New `arborist/spaceColonization.js` (~270 LOC). Runions 2007 SCA + tropism, pure kernel (no three.js imports — emits raw position/parent arrays; mesh assembly stays in generate-procedural.js). Exports `runSCA`, `ENVELOPE_PROFILES`, `DEFAULT_SCA_BY_PRESET`, `mulberry32`.
+- 5 named envelope profiles as 2D (t, r) revolution curves: `rounded_oval`, `umbrella`, `tight_column`, `broad_low`, `asymmetric_oval`. Profile r-values multiply by `envelope.width` (=canopyR semantics) to get max radius at each normalized height.
+- **`envelope.offsetYFrac` added beyond the brief.** Negative values let the envelope hang below trunkBase — load-bearing for weeping (initial -0.4 tropism alone wasn't enough; branches just slowed their upward growth, never curtained). With `offsetYFrac=-0.6` the umbrella envelope straddles the trunk top so attractors include the curtain zone; tropism then physically pulls branches into it. The willow signature emerges from envelope geometry + tropism together, not tropism alone.
+- `generateTreeMesh()` dispatch: `useSCA = preset !== 'conifer'`. Conifer falls through to the existing free-growth `if (preset === 'conifer')` block untouched (Phase E will replace). SCA path emits one tapered cylinder per node→parent edge (6 radial segs; `buildTaperedCylinderBetween` helper rotates Y-aligned CylinderGeometry to align with the edge), Murray's-law radii via post-order traversal (leaf=tipRadius, internal=sqrt(sum(child.r²))). Leaf cards at every tip via existing addLeaf.
+- `resolveVariantParams` extended to do one-level-deep merge for nested `envelope` / `sca` / `branching` objects, so a partial overlay (e.g. operator dragging just `sca.tropism.Y`) doesn't wipe sibling fields off the PRESET base.
+- PRESETS table grew `envelope` + `sca` per non-conifer variant. Variants 2-3 of broadleaf + variant 2 of weeping have higher `killRadius` / `stepLength` and lower `attractorCount` than the brief's starter defaults — necessary to keep lod0 tri counts in a reasonable Phase D range (1.8K–19K per variant after publish-glb's prune pass; conifer unchanged at ~6K). Phase C's geometric polish will absorb the silhouette quality cost.
+- Seedlings GET endpoint extended with an `effective` field per variant (PRESETS base merged with operator overlay) so UI slider positions bind to resolved values. Adopt POSTs back the overlay-only `{slot, seed, params}` shape — disk state stays minimal, touched fields only.
+- ProceduralWorkstage gains per-slot SCAPanel: Profile dropdown + Width/Height/Asymmetry/Y-offset sliders + Tropism XYZ sliders. Hidden for `procedural_conifer`. Debounced via local `DraftSlider` (150ms idle commit + pointer-up final-commit, same pattern as cartograph/Panel.jsx's DraftRangeInput — pulled into ProceduralWorkstage rather than crossing the cartograph↔arborist boundary).
+- Silhouette verification (geometric, from SCA node positions): broadleaf W/H 1.87 (rounded oval), weeping W/H 2.29 with 3.2m of branches dropping below trunk top (CURTAIN), columnar W/H 0.29 (narrow vertical), ornamental W/H 1.99 (broad-low). All four visibly distinct from each other and from conifer.
+- Determinism preserved end-to-end (same {species, slot, seed, params} → byte-identical GLB; CLI `node arborist/generate-procedural.js [--species <id>]` round-trips). Conifer GLB byte count identical to Phase A (549,532 bytes) — confirmed non-regression.
+- **Fixes:** species silhouettes finally correct. Weeping recurves from physics. Columnar narrows. Ornamental broad-low-attached.
+- **Doesn't fix:** conifers (Phase E); bark/leaf shaders (B/F); geometric polish — branches still plain tapered cylinders (C); per-species tuning (G).
 
 **Phase E — Monopodial whorl** (skeleton for conifer)
 - New `arborist/monopodialWhorl.js` (~150 LOC)
