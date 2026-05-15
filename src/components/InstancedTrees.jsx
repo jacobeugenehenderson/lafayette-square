@@ -198,15 +198,12 @@ const _barkTintTmp = new THREE.Color()
 function applyBarkUniforms(material, barkSettings) {
   const shader = material?.userData?.shader
   if (!shader) return
-  // No bark spec? Reset to identity so leaf-only draws don't carry stale
-  // tints / wrap bounds from the prior bark draw (defense in depth).
+  // No bark spec (vendor species, etc.)? Reset to identity so leaf-only
+  // draws don't carry stale tints from the prior bark draw.
   if (!barkSettings) {
     shader.uniforms.uBarkTintBase.value.set(1, 1, 1)
     shader.uniforms.uBarkTintJitterRange.value = 0
     shader.uniforms.uBarkRoughnessOverride.value = -1
-    shader.uniforms.uBarkUVScale.value.set(1, 1)
-    shader.uniforms.uBarkTileOffset.value.set(0, 0)
-    shader.uniforms.uBarkTileScale.value.set(1, 1)
     return
   }
   const tintHex = barkSettings.tintBase || '#ffffff'
@@ -214,12 +211,6 @@ function applyBarkUniforms(material, barkSettings) {
   shader.uniforms.uBarkTintBase.value.copy(_barkTintTmp)
   shader.uniforms.uBarkTintJitterRange.value = barkSettings.tintJitterRange ?? 0
   shader.uniforms.uBarkRoughnessOverride.value = barkSettings.roughnessOverride ?? -1
-  const uvScale = barkSettings.uvScale || [1, 1]
-  shader.uniforms.uBarkUVScale.value.set(uvScale[0] ?? 1, uvScale[1] ?? 1)
-  const off = barkSettings.tileOffset || [0, 0]
-  const sc  = barkSettings.tileScale  || [1, 1]
-  shader.uniforms.uBarkTileOffset.value.set(off[0], off[1])
-  shader.uniforms.uBarkTileScale.value.set(sc[0], sc[1])
 }
 
 function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings }) {
@@ -403,33 +394,19 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
   // (atlas, scene) and looked up by URL at VariantInstances mount.
   // Hook MUST run on every render (Rules of Hooks); kept above the early
   // returns so React's hook order is stable when atlas isn't ready yet.
-  //
-  // Phase B.1.a (2026-05-15): also resolves per-species bark tile bounds
-  // from manifest.tiles[].uvTransform so the fragment shader can wrap
-  // photo-bark UVs within the species's atlas tile (tighter tiling on
-  // long branches). Tile lookup is by (classification='bark', refs.species).
-  // Multiple variants of a species share one bark tile via sha1 dedup, so
-  // the first match is canonical.
+  // UV tiling is pre-baked into the atlas tile content at publish time
+  // (see arborist/generate-procedural.js preTileBark); the runtime no
+  // longer needs to know tile bounds or uvScale.
   const barkBySpeciesEffective = useMemo(() => {
     const base = atlas?.manifest?.barkBySpecies || {}
     const overrides = scene?.materialColors || {}
-    const tiles = atlas?.manifest?.tiles || []
     const out = {}
     for (const [species, spec] of Object.entries(base)) {
       const tintBase = overrides[species] || spec.tintBase || '#ffffff'
-      const tile = tiles.find(t =>
-        t.classification === 'bark' && t.refs?.some(r => r.species === species)
-      )
-      const uvT = tile?.uvTransform
-      out[species] = {
-        ...spec,
-        tintBase,
-        tileOffset: uvT ? [uvT.offsetU, uvT.offsetV] : [0, 0],
-        tileScale:  uvT ? [uvT.scaleU,  uvT.scaleV]  : [1, 1],
-      }
+      out[species] = { ...spec, tintBase }
     }
     return out
-  }, [atlas?.manifest?.barkBySpecies, atlas?.manifest?.tiles, scene?.materialColors])
+  }, [atlas?.manifest?.barkBySpecies, scene?.materialColors])
 
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null

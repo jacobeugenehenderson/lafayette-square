@@ -58,16 +58,12 @@ function injectFoliageSway(material) {
     shader.uniforms.uBarkTintBase = { value: new THREE.Color(1, 1, 1) }
     shader.uniforms.uBarkTintJitterRange = { value: 0 }
     shader.uniforms.uBarkRoughnessOverride = { value: -1 }
-    // Phase B.1.a bark UV-tiling uniforms (per-draw, set by
-    // applyBarkUniforms in InstancedTrees). uBarkUVScale controls how
-    // many times the bark tile repeats across the cylinder UV span;
-    // uBarkTileOffset/Scale carry the species's bark tile bounds in
-    // master-atlas UV space, so the fract() wrap stays strictly INSIDE
-    // the tile (no bleed into neighbor tiles). Leaves bypass the wrap
-    // via the vBark gate.
-    shader.uniforms.uBarkUVScale = { value: new THREE.Vector2(1, 1) }
-    shader.uniforms.uBarkTileOffset = { value: new THREE.Vector2(0, 0) }
-    shader.uniforms.uBarkTileScale = { value: new THREE.Vector2(1, 1) }
+    // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
+    // source texture at publish time (see arborist/generate-procedural.js
+    // → preTileBark). The atlas tile content already carries N×M tiled
+    // bark, so the runtime shader samples normally and the hardware
+    // mipmap + anisotropic filter chains work as God intended. No
+    // shader-side fract(), no per-draw wrap uniforms.
     // Stash the shader on the material so InstancedTrees can mutate the
     // uniforms per (species, draw) without redoing onBeforeCompile.
     material.userData.shader = shader
@@ -118,58 +114,21 @@ function injectFoliageSway(material) {
          uniform vec3  uBarkTintBase;
          uniform float uBarkTintJitterRange;
          uniform float uBarkRoughnessOverride;
-         uniform vec2  uBarkUVScale;
-         uniform vec2  uBarkTileOffset;
-         uniform vec2  uBarkTileScale;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
          varying vec3  vWorldXZ;`
       )
       .replace(
-        // Phase B.1.a: replace the whole <map_fragment> chunk (rather than
-        // insert before/after) because the standard chunk hardcodes
-        // `texture2D(map, vMapUv)`. To wrap bark UVs within the species's
-        // atlas tile, we need to compute a modified mapUV BEFORE the
-        // sample. Leaves pass through (vBark < 0.5 → identity branch).
-        // The wrap stays strictly inside the tile: localUV is normalized
-        // to [0,1] within the tile, multiplied by uBarkUVScale (the
-        // per-species circumferential / vertical tile-pitch), fract'd to
-        // stay in [0,1], then re-projected into atlas space using the
-        // same tile bounds. fract() introduces a gradient discontinuity
-        // at wrap lines → coarse-mip selection there is the standard
-        // tile-wrap artifact; acceptable for v1, mitigation via
-        // textureGrad() is a follow-on if visible at Hero.
+        // Phase B (revised): UV tiling is pre-baked into the bark source
+        // texture at publish time (see arborist/generate-procedural.js
+        // preTileBark) so the shader samples the atlas directly via the
+        // standard <map_fragment> chunk and hardware mipmap + aniso work
+        // as God intended. We patch AFTER the chunk to apply the
+        // per-(species, Look, instance) bark retint, gated by vBark so
+        // leaf fragments pass through identity.
         '#include <map_fragment>',
-        `
-         #ifdef USE_MAP
-           // Phase B.1.a: wrap photo bark inside the species's atlas tile.
-           // fract() introduces a derivative discontinuity at wrap lines —
-           // GPU picks the coarsest mip there → narrow blurry stripes that
-           // "crawl" slightly under tree sway at close-up Hero distance.
-           // The textureGrad mitigation we tried (passing dFdx(vMapUv) *
-           // uvScale as the gradient) eliminated the crawl but produced
-           // uniform mip-blur across the entire bark because dense tiling
-           // legitimately requires coarser sampling per pixel — that's
-           // honest GPU behavior, not a bug. The properly-no-tradeoff fix
-           // is a pipeline change (texture arrays per bark with GL_REPEAT,
-           // or pre-tiled atlas tiles); deferred to Phase B.2. For now:
-           // plain texture2D + fract wrap, sharp bark, narrow wrap-line
-           // crawl accepted as the smaller cost.
-           vec2 mapUV = vMapUv;
-           if (vBark > 0.5 && (uBarkUVScale.x != 1.0 || uBarkUVScale.y != 1.0)) {
-             vec2 localUV = (vMapUv - uBarkTileOffset) / uBarkTileScale;
-             localUV = fract(localUV * uBarkUVScale);
-             mapUV = localUV * uBarkTileScale + uBarkTileOffset;
-           }
-           vec4 sampledDiffuseColor = texture2D(map, mapUV);
-           #ifdef DECODE_VIDEO_TEXTURE
-             sampledDiffuseColor = vec4(mix(pow(sampledDiffuseColor.rgb * 0.9478672986 + vec3(0.0521327014), vec3(2.4)), sampledDiffuseColor.rgb * 0.0773993808, vec3(lessThanEqual(sampledDiffuseColor.rgb, vec3(0.04045)))), sampledDiffuseColor.w);
-           #endif
-           diffuseColor *= sampledDiffuseColor;
-         #endif
-         // Phase B per-instance + per-Look bark retint, gated by vBark so
-         // leaf fragments pass through identity.
+        `#include <map_fragment>
          {
            float jh1 = fract(sin(dot(vWorldXZ.xz, vec2(127.1, 311.7))) * 43758.5453);
            float jh2 = fract(sin(dot(vWorldXZ.xz, vec2(269.5, 183.3))) * 43758.5453);

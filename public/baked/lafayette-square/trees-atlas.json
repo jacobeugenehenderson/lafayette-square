@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-15T21:49:13.746Z",
+  "generatedAt": "2026-05-15T22:37:18.728Z",
   "lookName": "lafayette-square",
   "rosterSize": 25,
   "materialDefaults": {
@@ -8,7 +8,7 @@
   },
   "atlas": {
     "width": 4040,
-    "height": 2600,
+    "height": 2598,
     "colorPath": "/baked/lafayette-square/trees-atlas-color.png",
     "normalPath": "/baked/lafayette-square/trees-atlas-normal.png",
     "alphaMode": "MASK",
@@ -77,16 +77,16 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
       "tileIndex": 1,
-      "key": "f24561453b5f|026eed9e6935",
+      "key": "e3517fcb8e03|652ec001fabb",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
@@ -114,16 +114,16 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
       "tileIndex": 2,
-      "key": "3b7c8f7988b9|ae418d353754",
+      "key": "a17b126ca0ff|ce4c110f05d5",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
@@ -134,70 +134,38 @@
         },
         {
           "species": "procedural_conifer",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 2876,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.6015384615384615,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 3,
-      "key": "9c0dbb9fa2fa|4248af0d275f",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_ornamental",
           "variantId": 2,
           "matName": "proceduralBark"
         }
       ],
       "content": {
         "x": 3396,
-        "y": 4,
+        "y": 523,
         "w": 512,
-        "h": 512
+        "h": 510
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.8017705927636644,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
+        "scaleV": 0.19630484988452654
       },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
+      "sourceColorDims": "1024×1020",
+      "sourceNormalDims": "1024×1020"
     },
     {
-      "tileIndex": 4,
-      "key": "3d7d8613ae27|a0320064e00d",
+      "tileIndex": 3,
+      "key": "9c74f6fa80dd|edbde7d673db",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
         {
-          "species": "procedural_columnar",
+          "species": "procedural_ornamental",
           "variantId": 1,
           "matName": "proceduralBark"
         },
         {
-          "species": "procedural_columnar",
+          "species": "procedural_ornamental",
           "variantId": 2,
           "matName": "proceduralBark"
         }
@@ -206,20 +174,52 @@
         "x": 2356,
         "y": 524,
         "w": 512,
-        "h": 512
+        "h": 510
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.8015384615384615,
+        "offsetV": 0.8021555042340262,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
+        "scaleV": 0.19630484988452654
       },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
+      "sourceColorDims": "1024×1020",
+      "sourceNormalDims": "1024×1020"
+    },
+    {
+      "tileIndex": 4,
+      "key": "02642be8705e|852f053a49da",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 4,
+        "w": 512,
+        "h": 511
+      },
+      "uvTransform": {
+        "offsetU": 0.8405940594059406,
+        "offsetV": 0.6020015396458814,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19668976135488836
+      },
+      "sourceColorDims": "1024×1022",
+      "sourceNormalDims": "1024×1022"
     },
     {
       "tileIndex": 5,
-      "key": "19ec8d128907|9baa036ecb92",
+      "key": "57195e644525|7099b79147cc",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
@@ -236,15 +236,15 @@
       ],
       "content": {
         "x": 2876,
-        "y": 524,
+        "y": 4,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.8015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -269,9 +269,9 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -296,9 +296,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782177,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -323,9 +323,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -350,9 +350,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -377,9 +377,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -444,9 +444,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -491,9 +491,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -538,9 +538,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -580,9 +580,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -622,9 +622,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -664,9 +664,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -701,9 +701,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -733,9 +733,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -765,9 +765,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -792,9 +792,9 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
@@ -819,9 +819,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
@@ -846,9 +846,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -873,9 +873,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -900,9 +900,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.4015384615384615,
+        "offsetV": 0.40184757505773666,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -927,9 +927,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -954,9 +954,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -981,9 +981,9 @@
       },
       "uvTransform": {
         "offsetU": 0.06633663366336634,
-        "offsetV": 0.4015384615384615,
+        "offsetV": 0.40184757505773666,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
@@ -1008,9 +1008,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -1035,9 +1035,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -1104,16 +1104,16 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
     },
-    "f24561453b5f|026eed9e6935": {
+    "e3517fcb8e03|652ec001fabb": {
       "tileIndex": 1,
-      "key": "f24561453b5f|026eed9e6935",
+      "key": "e3517fcb8e03|652ec001fabb",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
@@ -1141,16 +1141,16 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
-    "3b7c8f7988b9|ae418d353754": {
+    "a17b126ca0ff|ce4c110f05d5": {
       "tileIndex": 2,
-      "key": "3b7c8f7988b9|ae418d353754",
+      "key": "a17b126ca0ff|ce4c110f05d5",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
@@ -1161,70 +1161,38 @@
         },
         {
           "species": "procedural_conifer",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 2876,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.6015384615384615,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    "9c0dbb9fa2fa|4248af0d275f": {
-      "tileIndex": 3,
-      "key": "9c0dbb9fa2fa|4248af0d275f",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_ornamental",
           "variantId": 2,
           "matName": "proceduralBark"
         }
       ],
       "content": {
         "x": 3396,
-        "y": 4,
+        "y": 523,
         "w": 512,
-        "h": 512
+        "h": 510
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.8017705927636644,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
+        "scaleV": 0.19630484988452654
       },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
+      "sourceColorDims": "1024×1020",
+      "sourceNormalDims": "1024×1020"
     },
-    "3d7d8613ae27|a0320064e00d": {
-      "tileIndex": 4,
-      "key": "3d7d8613ae27|a0320064e00d",
+    "9c74f6fa80dd|edbde7d673db": {
+      "tileIndex": 3,
+      "key": "9c74f6fa80dd|edbde7d673db",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
         {
-          "species": "procedural_columnar",
+          "species": "procedural_ornamental",
           "variantId": 1,
           "matName": "proceduralBark"
         },
         {
-          "species": "procedural_columnar",
+          "species": "procedural_ornamental",
           "variantId": 2,
           "matName": "proceduralBark"
         }
@@ -1233,20 +1201,52 @@
         "x": 2356,
         "y": 524,
         "w": 512,
-        "h": 512
+        "h": 510
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.8015384615384615,
+        "offsetV": 0.8021555042340262,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
+        "scaleV": 0.19630484988452654
       },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
+      "sourceColorDims": "1024×1020",
+      "sourceNormalDims": "1024×1020"
     },
-    "19ec8d128907|9baa036ecb92": {
+    "02642be8705e|852f053a49da": {
+      "tileIndex": 4,
+      "key": "02642be8705e|852f053a49da",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 4,
+        "w": 512,
+        "h": 511
+      },
+      "uvTransform": {
+        "offsetU": 0.8405940594059406,
+        "offsetV": 0.6020015396458814,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19668976135488836
+      },
+      "sourceColorDims": "1024×1022",
+      "sourceNormalDims": "1024×1022"
+    },
+    "57195e644525|7099b79147cc": {
       "tileIndex": 5,
-      "key": "19ec8d128907|9baa036ecb92",
+      "key": "57195e644525|7099b79147cc",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
@@ -1263,15 +1263,15 @@
       ],
       "content": {
         "x": 2876,
-        "y": 524,
+        "y": 4,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.8015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307695
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1296,9 +1296,9 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -1323,9 +1323,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782177,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -1350,9 +1350,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1377,9 +1377,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1404,9 +1404,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.6015384615384615,
+        "offsetV": 0.6020015396458814,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.3938461538461539
+        "scaleV": 0.39414934565050036
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1471,9 +1471,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -1518,9 +1518,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1565,9 +1565,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1607,9 +1607,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1649,9 +1649,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1691,9 +1691,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1728,9 +1728,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1760,9 +1760,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1792,9 +1792,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1819,9 +1819,9 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
@@ -1846,9 +1846,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.0015384615384615385,
+        "offsetV": 0.001539645881447267,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
@@ -1873,9 +1873,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -1900,9 +1900,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -1927,9 +1927,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.4015384615384615,
+        "offsetV": 0.40184757505773666,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -1954,9 +1954,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -1981,9 +1981,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -2008,9 +2008,9 @@
       },
       "uvTransform": {
         "offsetU": 0.06633663366336634,
-        "offsetV": 0.4015384615384615,
+        "offsetV": 0.40184757505773666,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
@@ -2035,9 +2035,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -2062,9 +2062,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.20153846153846153,
+        "offsetV": 0.20169361046959197,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.19692307692307692
+        "scaleV": 0.19707467282525018
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -2084,7 +2084,7 @@
     "procedural_conifer": {
       "materialRef": "Bark012",
       "uvScale": [
-        1.5,
+        2,
         6
       ],
       "tintBase": "#ffffff",
@@ -2104,7 +2104,7 @@
     "procedural_columnar": {
       "materialRef": "Bark004",
       "uvScale": [
-        1.5,
+        2,
         7
       ],
       "tintBase": "#ffffff",

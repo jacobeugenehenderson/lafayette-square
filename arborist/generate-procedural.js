@@ -449,12 +449,51 @@ async function buildSourceGLB({ species, variants, barkBundle, leafPng, outPath,
 // doctrine feasible at scale.
 
 const BARK_DIR = path.join(REPO_ROOT, 'public/textures/bark')
+const BARK_OUT_SIZE = 1024  // atlas-tile-friendly square target
 
-async function loadBarkBundle(materialRef) {
+// Pre-tile a source bark JPG into a BARK_OUT_SIZE×BARK_OUT_SIZE image
+// containing cols×rows repeats of the resized source. Done at publish
+// time so the runtime shader can sample directly via texture2D — hardware
+// mipmap + anisotropic filtering then work natively. Avoids the
+// atlas-tile + shader-fract tradeoff (wrap-line crawl OR uniform mip-blur)
+// that bit us in B.1.a's polish loop. uvScale rounds to nearest integer;
+// fractional values are quantized at this step (PRESETS uvScale values
+// should be integers).
+async function preTileBark(srcBytes, uvScale, mimeKind) {
+  const cols = Math.max(1, Math.round(uvScale[0] || 1))
+  const rows = Math.max(1, Math.round(uvScale[1] || 1))
+  if (cols === 1 && rows === 1) return srcBytes
+  const cellW = Math.floor(BARK_OUT_SIZE / cols)
+  const cellH = Math.floor(BARK_OUT_SIZE / rows)
+  const small = await sharp(srcBytes).resize(cellW, cellH).toBuffer()
+  const composites = []
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      composites.push({ input: small, left: c * cellW, top: r * cellH })
+    }
+  }
+  // Normal maps need flat-tangent-space backing (128, 128, 255); color
+  // can stay (0, 0, 0). sharp normalizes to RGB regardless.
+  const bg = (mimeKind === 'normal')
+    ? { r: 128, g: 128, b: 255 }
+    : { r: 0, g: 0, b: 0 }
+  return await sharp({
+    create: { width: cellW * cols, height: cellH * rows, channels: 3, background: bg },
+  })
+    .composite(composites)
+    .jpeg({ quality: 90 })
+    .toBuffer()
+}
+
+async function loadBarkBundle(materialRef, uvScale) {
   const matDir = path.join(BARK_DIR, materialRef)
-  const [colorBytes, normalBytes] = await Promise.all([
+  const [colorRaw, normalRaw] = await Promise.all([
     fs.readFile(path.join(matDir, 'color.jpg')),
     fs.readFile(path.join(matDir, 'normal.jpg')),
+  ])
+  const [colorBytes, normalBytes] = await Promise.all([
+    preTileBark(colorRaw, uvScale, 'color'),
+    preTileBark(normalRaw, uvScale, 'normal'),
   ])
   return { materialRef, colorBytes, normalBytes }
 }
@@ -491,11 +530,11 @@ async function readLeafPng(morph) {
 // trunks. Format is [circumferential, vertical]. Higher numbers = tighter
 // tiling = finer-grained bark pattern across the cylinder surface.
 export const BARK_BY_SPECIES = {
-  procedural_broadleaf:  { materialRef: 'Bark007', uvScale: [2.0, 8.0], tintBase: '#ffffff', tintJitterRange: 0.08, roughnessOverride: -1 },
-  procedural_conifer:    { materialRef: 'Bark012', uvScale: [1.5, 6.0], tintBase: '#ffffff', tintJitterRange: 0.06, roughnessOverride: -1 },
-  procedural_ornamental: { materialRef: 'Bark003', uvScale: [2.0, 5.0], tintBase: '#ffffff', tintJitterRange: 0.10, roughnessOverride: -1 },
-  procedural_columnar:   { materialRef: 'Bark004', uvScale: [1.5, 7.0], tintBase: '#ffffff', tintJitterRange: 0.05, roughnessOverride: -1 },
-  procedural_weeping:    { materialRef: 'Bark015', uvScale: [2.0, 4.0], tintBase: '#ffffff', tintJitterRange: 0.07, roughnessOverride: -1 },
+  procedural_broadleaf:  { materialRef: 'Bark007', uvScale: [2, 8], tintBase: '#ffffff', tintJitterRange: 0.08, roughnessOverride: -1 },
+  procedural_conifer:    { materialRef: 'Bark012', uvScale: [2, 6], tintBase: '#ffffff', tintJitterRange: 0.06, roughnessOverride: -1 },
+  procedural_ornamental: { materialRef: 'Bark003', uvScale: [2, 5], tintBase: '#ffffff', tintJitterRange: 0.10, roughnessOverride: -1 },
+  procedural_columnar:   { materialRef: 'Bark004', uvScale: [2, 7], tintBase: '#ffffff', tintJitterRange: 0.05, roughnessOverride: -1 },
+  procedural_weeping:    { materialRef: 'Bark015', uvScale: [2, 4], tintBase: '#ffffff', tintJitterRange: 0.07, roughnessOverride: -1 },
 }
 
 export const PRESETS = {
@@ -709,7 +748,7 @@ export async function generateSingleVariantGLB({ species, slot, seed, params }) 
   const effective = resolveVariantParams(species, { slot, seed, params })
   const { barkGeo, leafGeo } = generateTreeMesh(effective)
   const barkSpec = BARK_BY_SPECIES[species]
-  const barkBundle = await loadBarkBundle(barkSpec.materialRef)
+  const barkBundle = await loadBarkBundle(barkSpec.materialRef, barkSpec.uvScale)
   const leafPng = await readLeafPng(cfg.leafMorph)
   const tmpPath = path.join('/tmp', `${species}-preview-${process.pid}-${Date.now()}.glb`)
   await buildSourceGLB({
@@ -752,9 +791,9 @@ async function main() {
     console.log(`\n[generate-procedural] === ${species} (${seedlings.length} variants) ===`)
 
     const barkSpec = BARK_BY_SPECIES[species]
-    const barkBundle = await loadBarkBundle(barkSpec.materialRef)
+    const barkBundle = await loadBarkBundle(barkSpec.materialRef, barkSpec.uvScale)
     const leafPng = await readLeafPng(cfg.leafMorph)
-    console.log(`  bark: ${barkSpec.materialRef} (color ${(barkBundle.colorBytes.length / 1024).toFixed(0)} KB, normal ${(barkBundle.normalBytes.length / 1024).toFixed(0)} KB)`)
+    console.log(`  bark: ${barkSpec.materialRef} pre-tiled ${barkSpec.uvScale[0]}×${barkSpec.uvScale[1]} (color ${(barkBundle.colorBytes.length / 1024).toFixed(0)} KB, normal ${(barkBundle.normalBytes.length / 1024).toFixed(0)} KB)`)
 
     const variants = seedlings.map((sd, i) => {
       const effective = resolveVariantParams(species, sd)
