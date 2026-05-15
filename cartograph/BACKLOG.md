@@ -2,6 +2,14 @@
 
 > Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
+## 2026-05-14 — Polygon-graph restructure (multi-session arc, LOAD-BEARING)
+
+Multi-session migration to align V2's implementation with the FEATURES "ribbon doctrine — the stage wall" section. Today's `buildBlockGeometryV2` re-walks `chain.points` in the surface hot path on every Designer store update — doctrine-noncompliant tech debt. Migrating to a frozen polygon-graph artifact (`public/baked/<scene>/polygons.json`) that surface-stage code reads exclusively. Operator interaction moves from chain-edits (today) to polygon-attribute editing (couplers, lane offsets, drag widths) that retriggers a polygon-graph rebake.
+
+**Read the maxi-brief in `cartograph/NOTES.md`** ("2026-05-14 PM — Polygon-graph restructure (multi-session arc) — MAXI BRIEF") before touching geometry code. Four phases (A: long-run tangent extraction; B: polygon-graph schema + producer; C: surface consumer migration; D: operator interaction layer). Each phase has its own commit + acceptance test; do not bundle.
+
+Curved streets explicitly first-class — see the "Curved streets — first-class case, ground laid here" subsection in the brief.
+
 ## 2026-05-14 — Corner kit: per-IX center handle restored + per-IX revert (LANDED)
 
 The IX center dot had been retired (`CornerEditHandles.jsx` carried a dead-comment to that effect), reducing the kit from the doctrinal 3 tiers (global slider → per-IX dot → per-corner dot) down to 2 — and forcing operators to choose between global Revert or per-corner cleanup with nothing in between. The dormant `cornerRadiusOverrides` map was still consumed in geometry; just unreachable from the UI.

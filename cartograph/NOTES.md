@@ -6,6 +6,279 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-14 PM — Polygon-graph restructure (multi-session arc) — MAXI BRIEF
+
+**Status:** designed end-to-end, not yet coded. This is the canonical implementation plan for the polygon-graph restructure named in the FEATURES "ribbon doctrine — the stage wall" section. Read end-to-end before touching any geometry code per [[feedback_notes_md_holds_architecture]].
+
+This is a multi-session arc. Phases A→D land in order; each closes its own commit and acceptance test. The work is meant for baby agents in sequence — the maxi-brief format is intentional per Jacob's note: "the key is a solid plan that borders on having done most of the work for the baby." Agents executing this should be able to land their phase WITHOUT re-litigating the architecture or asking design questions.
+
+### Why this exists
+
+The ribbon doctrine establishes that **chains and points end at the bake wall (Stage 5)**; surface-stage code (Designer / Stage / Preview / bake-output consumers) reads only frozen polygons. Today's V2 implementation runs Stages 2–4 in the surface hot path: `buildBlockGeometryV2` re-walks `chain.points` on every Designer store update, builds per-chain rectangles using `pts[ni] - V` tangents, unions them into `asphaltSharp`, derives blocks as `stencil − asphalt`. Chain noise (OSM micro-bends near IXs) leaks all the way to corner geometry every render.
+
+This isn't a bug fix; it's a structural alignment. The implementation is being migrated to match the doctrine. Specifically:
+
+- Pre-bake (Stages 1–5) produces a frozen polygon graph artifact.
+- Surface stage reads only that artifact. No `chain.points` references in surface code, ever.
+- Operator interaction is polygon-attribute editing, not chain editing (Survey is the one place chains are still touched; Survey edits trigger a polygon-graph rebake).
+- Print-like UX: corners stop wobbling on widening, blocks stop re-deriving on every drag, geometry stops "looking alive."
+
+### End state
+
+| Artifact | Lives at | Read by | Written by |
+|---|---|---|---|
+| `chain.points` (raw) | `cartograph/data/<scene>/raw/centerlines.json`, OSM data | **Pipeline only** (Stages 1–4) | Survey + OSM imports |
+| Polygon graph (frozen) | `public/baked/<scene>/polygons.json` | All surface code | Pipeline at bake time |
+| Operator overlays | `cartograph/data/<scene>/clean/overlay.json` | Pipeline (merged into chain set before Stage 1) | Designer (Survey/Measure) |
+| Polygon attribute overlays | `cartograph/data/<scene>/clean/polygon-overlay.json` (NEW) | Pipeline (merged into polygons.json at Stage 5) | Designer (couplers, lane offsets, drag widths) |
+
+After this lands, Designer's hot path has zero `chain.points` references in surface emission. `buildBlockGeometryV2` becomes a `loadPolygonGraph` that reads the artifact. Drag handles operate on `polygon-overlay.json`, which retriggers a partial rebake.
+
+---
+
+### Phase A — Long-run tangent extraction (foundation, smallest)
+
+**This is also "task #2" from the 2026-05-14 PM session — folded in as Phase A because it's the foundation for the cleaner asphalt geometry that the polygon graph will freeze.**
+
+**Visible-bug coverage:** fixes the park-corner failures the operator hit at Mississippi×Lafayette (NE/SE worked because the park polygon was just authored; NW/SW failed because residential block polygons inherit chain bends). After this phase, residential corners get the same cleanliness for free.
+
+**Files:** `src/lib/buildBlockGeometryV2.js` (`cornersAtIx` ~line 273, `buildLeg` ~line 296, plus the per-chain rectangle emission upstream around line 1370–1410).
+
+**The change:**
+
+In `buildLeg(dir)`, replace:
+```js
+const ni = ixIdx + dir
+if (ni < 0 || ni >= pts.length) return null
+const dx = pts[ni][0] - V[0], dz = pts[ni][1] - V[1]
+const L = Math.hypot(dx, dz)
+```
+
+With a long-run tangent extractor:
+```js
+// Long-run tangent: walk the chain in `dir` from ixIdx, skipping vertices
+// within IX_NOISE_RADIUS of V (these are OSM micro-bends near the IX that
+// distort the leg direction); the first vertex beyond the noise zone gives
+// the leg's clean tangent. Anchor the leg at V; tangent vector = (Ps - V)/|Ps - V|
+// where Ps is the first stable vertex.
+const IX_NOISE_RADIUS = 10  // meters; tunable via NOTES + commit message
+const ps = findStableVertex(pts, ixIdx, dir, V, IX_NOISE_RADIUS)
+if (!ps) return null
+const dx = ps[0] - V[0], dz = ps[1] - V[1]
+const L = Math.hypot(dx, dz)
+```
+
+`findStableVertex` walks `pts[ixIdx + dir * k]` for k=1, 2, 3, …; for each, computes distance from V; returns the first whose distance ≥ `IX_NOISE_RADIUS`. Falls back to the chain endpoint if no vertex satisfies (short chain).
+
+**Symmetric fix:** the per-chain asphalt rectangle emission in `buildBlockGeometryV2.js:1370–1410` builds rectangles from `chain.points` segment by segment. The end of each rectangle that abuts an IX needs to use the long-run tangent at that IX (not the noisy `pts[ni] - V`). Two approaches:
+- **(preferred)** Pre-process `chain.points` once at the top of `buildBlockGeometryV2` to produce a "stable polyline" — the chain with near-IX noise stripped (replaced by a single straight segment from IX to first stable vertex). Use the stable polyline everywhere downstream. Single intervention, all consumers consistent.
+- **(fallback)** Patch each per-chain emission site to call long-run tangent helpers. More touch points; more error-prone.
+
+Use approach (preferred). New helper `stabilizeChainNearIxs(chain, ixVertices, IX_NOISE_RADIUS) → chainStabilized`. Apply at the top of `buildBlockGeometryV2` after `streets` is destructured.
+
+**Tunable params (document in NOTES at end of Phase A):**
+- `IX_NOISE_RADIUS` (default 10m) — distance from IX inside which vertices are skipped. Park's worst case had vertices 5m from IX with 5° bends; 10m clears them.
+- Edge case: chain shorter than 2× IX_NOISE_RADIUS between two IXs (small connector stub). Falls back to direct IX→IX line.
+
+**Acceptance:**
+- Run pipeline + bake; visually inspect Mississippi×Lafayette and Mississippi×Park IXs in Stage. All 4 corners at each show clean three-component plug geometry (asphalt mouth + curb arc + concrete pad). No regressions at clean rectilinear residential corners.
+- Console-log a sample IX's leg tangents pre/post stabilization at first run; verify they differ for the park corners and match for clean corners. Strip the log before commit.
+
+**Trinity touch:**
+- BACKLOG: tick off "Big park intersections" line 2746–2750 once visual passes (note now: relevant entry already retired in this restructure's parent context).
+- NOTES: append a Phase-A-shipped sub-entry to this maxi-brief.
+
+**Estimated scope:** ~50 LOC, one focused commit. Foundation for B/C/D.
+
+---
+
+### Phase B — Polygon-graph schema + producer
+
+**Goal:** define the frozen polygon graph artifact and produce it at pipeline time. No consumers yet; runs in shadow mode.
+
+**New artifact:** `public/baked/<scene>/polygons.json`. Schema:
+
+```json
+{
+  "version": 1,
+  "generatedAt": "ISO8601",
+  "scene": "lafayette-square",
+  "blocks": [
+    {
+      "id": "block-NNNN",
+      "sharp": [[x, z], ...],
+      "rounded": [[x, z], ...],
+      "use": "residential" | "park" | "commercial" | ... ,
+      "provenance": {
+        "chainIds": ["lafayette-avenue-3", ...],
+        "authoredPolygonRef": null | "park-polygon.json"
+      }
+    }
+  ],
+  "intersections": [
+    {
+      "id": "ix-NNNN",
+      "point": [x, z],
+      "corners": [
+        {
+          "id": "corner-ix-NNNN-A:dir|B:dir",
+          "Q": [x, z],
+          "rEffective": 5.0,
+          "blockId": "block-NNNN",
+          "asphaltPlugRing": [[x, z], ...] | null,
+          "concretePlugRing": [[x, z], ...] | null
+        }
+      ]
+    }
+  ],
+  "asphaltRings": [[[x, z], ...]],
+  "curbBands": [[[x, z], ...]],
+  "frontageBands": [
+    {
+      "blockId": "block-NNNN",
+      "edgeOrd": 0,
+      "treelawnRing": [[x, z], ...] | null,
+      "sidewalkRing": [[x, z], ...] | null
+    }
+  ]
+}
+```
+
+**Producer:** new file `cartograph/bake-polygons.js` (sibling to `bake-ground.js`). Reads:
+- `cartograph/data/<scene>/clean/map.json` (which already carries `ribbons.streets` etc.)
+- `cartograph/data/<scene>/clean/park-polygon.json` (authored polygon override)
+- `cartograph/data/<scene>/clean/polygon-overlay.json` (NEW — placeholder for now; empty JSON `{}`)
+
+Outputs `public/baked/<scene>/polygons.json`.
+
+**Implementation:** essentially refactor `buildBlockGeometryV2` into a function that takes `(streets, intersections, opts)` and returns the polygon-graph object. Move it from `src/lib/` (where Designer mounts it) to `src/lib/polygonGraph.js` so both Node and Vite can import it. The existing `buildBlockGeometryV2` becomes a thin wrapper that calls `polygonGraph.compute(...)` and adapts the output.
+
+**Pipeline integration:** add a step to `cartograph/pipeline.js` that runs `bake-polygons.js` after `derive.js`. Ensure `writeIfChanged` semantics + mtime touch per [[project_writeifchanged_touches_mtime]]. Output should be deterministic given identical inputs.
+
+**Acceptance:**
+- `node cartograph/pipeline.js` produces `public/baked/lafayette-square/polygons.json` (~few hundred KB; estimate based on ~250 IXs × ~4 corners + ~200 blocks).
+- Re-running with no input changes produces byte-identical output (deterministic).
+- Visual diff: Designer rendering UNCHANGED (consumers haven't migrated yet — shadow mode).
+- Console summary: "[bake-polygons] 250 IXs, 200 blocks, 800 corner records, 12 KB."
+
+**Trinity touch:**
+- BACKLOG: NEW entry "Polygon-graph restructure (Phase B shipped)" pointing back here.
+- FEATURES: add `polygons.json` to the slab artifact list.
+- NOTES: Phase-B-shipped sub-entry to this brief.
+
+**Estimated scope:** ~200 LOC (refactor + new file), one focused commit. No visible change.
+
+---
+
+### Phase C — Surface consumer migration
+
+**Goal:** every surface-stage consumer reads `polygons.json` instead of computing from chains. The wall is now structural.
+
+**Files:**
+- `src/cartograph/BlockGeometryV2Debug.jsx` — replace the `buildBlockGeometryV2(liveRibbons, ...)` call with a `loadPolygonGraph()` hook that fetches `/baked/<look>/polygons.json` and returns the graph. The component renders directly from the graph's `blocks`, `asphaltRings`, `frontageBands`, `intersections[].corners[]`.
+- `cartograph/bake-ground.js` — replace its `buildBlockGeometryV2(ribbons, ...)` call with reading the already-baked `polygons.json`. The bake becomes a polygon-graph-to-mesh translator (no recomputation).
+- Any other `buildBlockGeometryV2` consumers: grep `cd /Users/jacobhenderson/Desktop/lafayette-square.nosync && grep -rn 'buildBlockGeometryV2' src/ cartograph/ --include='*.js' --include='*.jsx'` — currently 3 sites (file itself + 2 callers); migrate both callers.
+
+**Reactivity:**
+- Survey/Measure edits trigger pipeline rerun (today's flow). Pipeline rerun produces new polygons.json. BlockGeometryV2Debug re-fetches on `bakeLastMs` change (existing pattern from `BakedLamps`). Geometry refreshes; no chain re-walk in Designer.
+- Phase D will optimize this further (partial rebake on polygon-overlay edits) but Phase C just gets the consumers off chains.
+
+**Performance check:**
+- Designer's BlockGeometryV2Debug should render fast (no Clipper booleans, no triangulation, just polygon-graph traversal + ShapeGeometry from pre-computed rings).
+- Bake-ground.js may run faster too (no V2 compute).
+
+**Acceptance:**
+- Designer renders identically to pre-Phase-C (visual regression check at Hero / Browse / Street shots; aerial-overlay alignment unchanged).
+- Bake produces identical ground.bin / scene.json (or trivially different — checksum diff acceptable if all geometry unchanged within float precision).
+- Grep `chain\.points\|street\.points` in surface-stage code returns zero hits OR documented exceptions (e.g., Survey overlay still reads chain.points for handle rendering; that's NOT surface-stage).
+
+**Trinity touch:**
+- FEATURES: ribbon doctrine "stage wall" section gets a "shipped" annotation (today's V2 `re-walks chains on every Designer store update` line is no longer true).
+- NOTES: Phase-C-shipped sub-entry.
+
+**Estimated scope:** ~200 LOC (consumer migration), one focused commit. Visible: nothing changes (correctness check).
+
+---
+
+### Phase D — Operator interaction layer
+
+**Goal:** Designer's drag handles, couplers, and per-block authoring operate on the polygon-overlay file (Stage 5 input), not on chain edits.
+
+**Files:**
+- `cartograph/data/lafayette-square/clean/polygon-overlay.json` — gains real schema. Per-corner radius overrides (already exist as `cornerRadiusOverrides` in design.json — migrate or alias). Per-block-edge widths. Coupler attachment points.
+- `src/cartograph/MeasureOverlay.jsx` — drag handles read polygon edge geometry from `polygons.json`, write to `polygon-overlay.json`.
+- `src/cartograph/CornerEditHandles.jsx` — already polygon-edge-based for Q-point computation; verify it reads from polygons.json corner records, not from `cornersAtIx`-recomputed records.
+- `src/cartograph/SurveyorPanel.jsx` — Survey tool stays chain-focused (this is the ONE allowed chain consumer in Designer; chains are Stage 1 input). Unchanged.
+
+**Behavior:**
+- Operator drags a sidewalk-width handle on Block 0042's south edge. MeasureOverlay writes `{"block-0042": {"south": {"sidewalk": 3.5}}}` to polygon-overlay.json. Pipeline reruns (debounced ~300ms). polygons.json regenerates with the new sidewalk ring on that edge. BlockGeometryV2Debug re-fetches. Geometry updates.
+- Operator drags a per-IX corner radius. CornerEditHandles writes to polygon-overlay.json. Pipeline reruns. polygons.json regenerates with the new corner geometry. Designer re-fetches.
+- The corner / drag never touches chains. Chains are Survey-only.
+
+**Reactivity tier:** debounced pipeline rerun is fine for Phase D. Phase E (future, out of scope) could add a "partial rebake" path that only recomputes the affected polygon-graph subset.
+
+**Acceptance:**
+- Drag a handle in Measure → polygon-overlay.json updates → polygons.json regen → Designer reflects new geometry within ~500ms.
+- Drag a per-corner radius → same flow.
+- Survey edits (centerline drag) → triggers full pipeline rerun (chain → polygons.json full regen).
+- All authoring round-trips (save → reload → same state).
+
+**Trinity touch:**
+- FEATURES: "operator interaction model" paragraph in the stage wall section becomes shipped reality, not aspirational.
+- BACKLOG: full polygon-graph restructure marked done; new Phase-E ticket if needed.
+- NOTES: Phase-D-shipped sub-entry; the parent maxi-brief retired.
+
+**Estimated scope:** ~300 LOC (overlay schema + drag-write rewires + reactivity), one or two commits. Visible: Designer feels different (more deliberate; corners don't wobble; drags feel "frozen and committed" rather than "live recompute"). UX win.
+
+---
+
+### Curved streets — first-class case, ground laid here
+
+Some streets are intentionally curved between IXs (Truman Parkway's S-curves, Waverly Place's loop, the slight arcing of long park-edge runs). The polygon graph + long-run tangent extraction must handle these as gracefully as straight streets. **The corner geometry contract at the IX is the same** (clean tangent → clean asphalt intersection → clean rounded corner → three plug components); what changes is the **side geometry** between corners.
+
+**Phase A clarification.** The `IX_NOISE_RADIUS=10m` skip is meant to discard OSM micro-bends near IXs (sub-degree wobbles within 5–10m of the corner). Intentional curves arc consistently over a long distance — the chain bends 30°+ over 100m of travel. The two cases are distinguishable: noise is short-distance + small-angle; intent is long-distance + cumulative-large-angle. Phase A's `findStableVertex` walks until distance from IX exceeds `IX_NOISE_RADIUS` AND returns that vertex's tangent — which IS the chain's intentional direction at the IX (curved or straight). So Phase A handles curved streets correctly **at the IX** without further work.
+
+What Phase A DOESN'T do: emit polygon-edge geometry that follows the curve between IXs. Today's V2 emits per-segment rectangles, so a curved chain produces a faceted asphalt edge (each segment its own rectangle, mitered at chain-vertex joints). That's fine visually for slight curves; bad for sharp curves. Smoothing arcs into a single polyline edge is Phase B's polygon-graph schema problem.
+
+**Phase B schema implication.** The polygon graph's block representation needs to support curved sides. Two options:
+- **(a)** `block.sides[]` where each side is a polyline `[[x,z], ...]` (chain-vertex-dense between corners). Faithful to chain shape, accepts arbitrary curvature, no spline math. Polygon-walking band emission already handles this (D.3c walks vertex-by-vertex along block rings). Recommend this.
+- **(b)** `block.sides[]` where each side has `{from: corner, to: corner, geometry: 'straight' | 'arc' | 'spline', ... }`. More semantic; requires renderer to interpret. More schema, more code, more places to break. Defer unless we hit a real need.
+
+Use (a). The polyline is the canonical representation; whether it's 2 vertices (straight) or 30 vertices (smooth curve) is just data density. Round-corners op at IX corners works on the polyline endpoints (clean tangents per Phase A). Side rendering walks the polyline. Curved streets just have denser side polylines — no special case.
+
+**Phase C/D unchanged in spirit.** Surface consumers read polygon-graph sides as polylines and render accordingly. No "if curved then …" branches.
+
+**What's NOT solved here (out of scope for this brief).** Smooth-arc INTERPOLATION of intentional curves — taking a sparse OSM polyline (5 vertices over 100m) and densifying it to a Catmull-Rom spline (30 vertices over the same arc) for visual smoothness. The chain has a `smooth` parameter today (per `subdividePolyline` in `streetProfiles.js:419`); Phase A could optionally apply it during stabilization. But that's authorial smoothing intent, separate from this brief. Phase E (future) if needed.
+
+**Concrete: Truman Parkway**. Today renders as a faceted ribbon; under this brief it'll render the same (Phase B schema preserves polyline density), with cleaner corner plugs at IXs (Phase A). If later it needs visual smoothness along the side, Phase E adds spline-densification at Stage 3 (still pre-bake; surface stage stays polygon-only).
+
+### Cross-phase watchouts
+
+- **Don't bundle phases.** Each phase has its own visible-bug coverage and acceptance test. Bundling A+B or B+C makes regression bisection impossible per [[feedback_d3_bundling_failure_modes]]. Four commits, four acceptance gates.
+- **Phase A is the only one with operator-visible improvement until D.** Phases B and C are correctness/structure changes; visual output should be identical pre and post. If a visual change appears in B or C, something is wrong.
+- **`MeasureOverlay.jsx:360` still calls `innerEdgeMeasure` directly.** That's drag-handle preview, not surface emission — allowed to read live measure (it's the operator authoring it). Distinguish carefully when auditing for chain references.
+- **Survey/Measure tools (in Designer) ARE allowed to read chains.** They author the chains. The wall is between authoring and surface emission; Survey is on the authoring side. Any "chain reference" check should exclude `src/cartograph/SurveyorOverlay.jsx`, `MeasurePanel.jsx`, `SurveyorPanel.jsx`, `useCartographStore` chain-edit actions.
+- **Determinism matters in Phase B.** Two pipeline runs with identical inputs MUST produce byte-identical polygons.json. If not, downstream `bakeLastMs` cache-bust will fire spuriously and Designer will re-fetch on every save. Worth testing explicitly.
+- **The park-polygon override pattern from `0850f3d`** (today's commit) is the template for any other authored block polygons that come along. Don't generalize prematurely; one override file per block-of-record is fine.
+- **Couplers semantics.** Per [[feedback_couplers_are_segment_local]], couplers are per-segment, not per-pair. In polygon terms: a coupler attaches to a single block-edge or corner, not to a "pair." Make sure Phase D's polygon-overlay schema reflects this — no "pair coupler" entries.
+- **Don't cargo-cult invent new geometry primitives.** Per the corner-plug section of the doctrine, the three plug components (asphalt / curb / concrete) are canonical. Don't add a fourth. The polygon-graph schema reflects only what V2 already emits.
+
+### Read order for the next baby
+
+1. `cartograph/FEATURES.md` ribbon doctrine (lines 17–79) — the why
+2. THIS entry — the how
+3. `src/lib/buildBlockGeometryV2.js` — the what-exists-today (target of refactor)
+4. `cartograph/bake-ground.js` lines 282–290 (V2 invocation site) and lines 320–330 (asphalt routing) — the bake-side consumer
+5. `src/cartograph/BlockGeometryV2Debug.jsx` — the Designer-side consumer
+6. The [[feedback_data_flow_split_first_check]] memory — generalizable pattern when something looks off mid-phase
+7. Today's commits `7854094`, `c3f13da`, `0850f3d` — the doctrine + park polygon work that motivated this brief
+
+### Memories that govern this work
+
+`project_v2_curb_is_unified_stroke`, `project_v2_block_ring_extends_to_asphalt`, `feedback_corner_pad_continuity_first`, `feedback_load_bearing_corner_pads`, `feedback_clipping_mask_does_the_geometry`, `feedback_d3_bundling_failure_modes`, `feedback_notes_md_holds_architecture`, `feedback_data_flow_split_first_check`, `project_writeifchanged_touches_mtime`, `feedback_couplers_are_segment_local`, `project_doped_artifact_placecard_edit_pattern`, `feedback_no_parallel_pipeline_for_scenes`.
+
+---
+
 ## 2026-05-14 — Procedural-trees fallback: design memorial (in flight)
 
 **Status:** designed end-to-end, not yet coded. Implementation handoff is a separate baby-agent session per [[feedback_user_spawns_baby_agents]]. This entry is the architecture record per [[feedback_notes_md_holds_architecture]] — read end-to-end before touching code.
