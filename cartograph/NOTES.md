@@ -252,6 +252,28 @@ Use (a). The polyline is the canonical representation; whether it's 2 vertices (
 
 **Concrete: Truman Parkway**. Today renders as a faceted ribbon; under this brief it'll render the same (Phase B schema preserves polyline density), with cleaner corner plugs at IXs (Phase A). If later it needs visual smoothness along the side, Phase E adds spline-densification at Stage 3 (still pre-bake; surface stage stays polygon-only).
 
+### Loop streets — first-class case, ground laid here
+
+The L.0–L.6 loop-street sprint has its own arc (see BACKLOG / NOTES 2026-05-10 "Loop streets: L.0 architecture lock"). This polygon-graph restructure does NOT take over that work — but if loop-aware geometry needs schema or Phase A handling baked in now, it should be done in round 1 to avoid retrofitting later. Per the loop-street doctrine, the median enclosed by loop members is **emergent** (`stencil − asphalt`, painted `lu='park'`); no separate median polygon primitive. So the polygon graph absorbs loops through metadata, not new geometry shapes.
+
+**What round 1 must encode:**
+
+- **Phase A — closed-chain wrap.** A Type A teardrop's body chain is `points[0] === points[points.length-1]`. `findStableVertex(pts, ixIdx, dir, V, IX_NOISE_RADIUS)` walks from `ixIdx` in `dir`; for a closed chain, `pts[ixIdx + dir]` may wrap around the end. Handle: if `ni < 0` or `ni >= pts.length` AND chain is closed, wrap to `(ni + n) % n`. Test against Benton Place (real LS data) and `BENT-BODY` (Benton-toy fixture in `src/data/toy/toy-input.json`).
+- **Phase B schema — block metadata.** Each `block` in `polygons.json` gains optional fields:
+  - `loopId: string | null` — set when this block is the interior face of a loop (e.g. `"loop-benton-place"`).
+  - `loopMedian: boolean` — marks loop-interior blocks for `lu='park'` painting (matches existing `blockMeta[i].loopMedian` doctrine in BACKLOG line 1140).
+- **Phase B preservation — loop registry.** The producer reads `overlay.json#loops` (canonical) AND `chains[].loop` (denormalized, on each chain). Carries both through to the polygon-graph artifact's chain provenance. Phase D's polygon-overlay can layer additional loop overrides.
+- **Phase B side roles.** A block-edge whose owning chain has `chain.loop.role === 'cut-thru'` emits the bare profile (curb + asphalt, no treelawn / no sidewalk). The polygon-graph schema already supports per-side measures per block-edge (Phase B's `frontageBands[]` per (blockId, edgeOrd)); cut-thru is just a measure that zeros treelawn + sidewalk on both sides. No schema addition needed beyond what's in Phase B.
+- **Phase B detection seam.** `detectLoops(skeleton)` runs at pipeline time (per the L.x plan); its output writes to `overlay.loops[]` AND populates `chains[].loop`. The polygon-graph producer (Phase B's `bake-polygons.js`) reads downstream; it does NOT need to detect loops itself. Detection is L.x sprint's owner.
+
+**What round 1 does NOT do:**
+
+- Loop-aware Survey UI (cards, enable/disable toggles, role flips) — that's L.x.
+- Auto-detection of teardrop / couplet / ring topologies — L.x.
+- The `cut-thru` profile rendering itself — falls out of Phase B's frontageBands work as long as the schema supports per-edge measure overrides; L.x sets the role.
+
+**Acceptance touch in Phase B.** Ship Benton Place's body chain as a real test case: pipeline produces a polygon-graph block with `loopId: 'loop-benton-place'`, `loopMedian: true`, ring derived from the body chain's closed loop. Bake renders it as park-green. (If L.x detection isn't in by then, hand-author the loop in `overlay.json#loops` for the test.)
+
 ### Cross-phase watchouts
 
 - **Don't bundle phases.** Each phase has its own visible-bug coverage and acceptance test. Bundling A+B or B+C makes regression bisection impossible per [[feedback_d3_bundling_failure_modes]]. Four commits, four acceptance gates.
