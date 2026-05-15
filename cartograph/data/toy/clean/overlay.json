@@ -62,17 +62,18 @@
       "name": "HW4",
       "measure": {
         "left": {
-          "pavementHW": 5,
+          "pavementHW": 11.958703523098563,
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 5,
+          "pavementHW": 12.243080875826877,
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
-        }
+        },
+        "symmetric": false
       },
       "capStart": "blunt",
       "capEnd": "blunt"

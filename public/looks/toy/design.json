@@ -80,19 +80,31 @@
     "recreation": "#6EA03E",
     "industrial": "#8E7060"
   },
-  "cornerRadiusScale": 1,
+  "cornerRadiusScale": 0.9,
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.3302,
+  "alleyCap": "square",
   "labels": {
     "size": 4,
     "weight": 500,
     "fill": "#ffffff",
-    "bg": "#3a3a38",
-    "bgAlpha": 1,
     "halo": "#000000",
     "haloWidth": 0,
-    "opacity": 1
+    "letterSpacing": 0.04,
+    "opacity": 1,
+    "case": "upper",
+    "fontFamily": "",
+    "tierScale": {
+      "street": 1,
+      "park": 2.8
+    },
+    "targetPx": 24,
+    "minPx": 8,
+    "maxPx": 128,
+    "font": "",
+    "bg": "#3a3a38",
+    "bgAlpha": 1
   },
   "blockCustoms": {
     "0": {
@@ -313,6 +325,25 @@
       "color": "#b8c8d8"
     }
   },
+  "grade": {
+    "values": {
+      "contrast": 0.42,
+      "toe": 0.28,
+      "saturation": 1.1,
+      "vignette": 1
+    }
+  },
+  "grain": {
+    "values": {
+      "scale": 1
+    }
+  },
+  "shadow": {
+    "values": {
+      "size": 52,
+      "samples": 16
+    }
+  },
   "constellations": {
     "values": {
       "value": 0
@@ -328,6 +359,13 @@
       "core": 1,
       "tube": 1,
       "bleed": 1
+    }
+  },
+  "neonTube": {
+    "values": {
+      "tubeRadius": 0.2,
+      "roofLift": 0.3,
+      "emissive": 4
     }
   },
   "sky": {
@@ -545,9 +583,67 @@
     "period": 720,
     "easing": "sine"
   },
+  "shots": {
+    "values": {
+      "browse": {
+        "fov": 45,
+        "padding": 1.05,
+        "bounds": {
+          "cx": 95,
+          "cz": -158,
+          "w": 1292,
+          "h": 1025
+        }
+      },
+      "hero": {
+        "fov": 22
+      },
+      "street": {
+        "fov": 75,
+        "eyeHeight": 1.73
+      }
+    }
+  },
+  "browseHeading": {
+    "values": {
+      "value": 0
+    }
+  },
+  "arch": {
+    "values": {
+      "distance": 1050,
+      "bearingX": 0.9487,
+      "bearingZ": -0.3163,
+      "scale": 1.3,
+      "rotation": 1.36,
+      "yOffset": 0,
+      "footFade": 30,
+      "uplightL_intensity": 0,
+      "uplightL_color": "#ffd6a8",
+      "uplightL_cone": 0.55,
+      "uplightL_reach": 200,
+      "uplightR_intensity": 0,
+      "uplightR_color": "#ffd6a8",
+      "uplightR_cone": 0.55,
+      "uplightR_reach": 200
+    }
+  },
+  "horizon": {
+    "values": {
+      "radius": 3750,
+      "fadeInner": 900,
+      "fadeOuter": 3750
+    }
+  },
+  "clouds": {
+    "values": {
+      "preset": "auto",
+      "overrides": null
+    }
+  },
   "openSections": {
     "Streets": true,
-    "Blocks": false,
+    "Blocks": true,
     "Paths": false,
     "Features": false,
     "Labels": false,
