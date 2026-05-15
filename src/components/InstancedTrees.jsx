@@ -382,13 +382,12 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     return m
   }, [bake, maxVariants, atlas, lookName])
 
-  if (!groups || atlas.status !== 'ready') return null
-  if (scene?.layerVis?.tree === false) return null
-
   // Phase B (2026-05-15): per-species bark settings carried in the atlas
   // manifest, with per-Look palette override (scene.materialColors[<species>])
   // taking precedence over the species default tintBase. Computed once per
   // (atlas, scene) and looked up by URL at VariantInstances mount.
+  // Hook MUST run on every render (Rules of Hooks); kept above the early
+  // returns so React's hook order is stable when atlas isn't ready yet.
   const barkBySpeciesEffective = useMemo(() => {
     const base = atlas?.manifest?.barkBySpecies || {}
     const overrides = scene?.materialColors || {}
@@ -399,6 +398,9 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     }
     return out
   }, [atlas?.manifest?.barkBySpecies, scene?.materialColors])
+
+  if (!groups || atlas.status !== 'ready') return null
+  if (scene?.layerVis?.tree === false) return null
 
   return (
     <>
