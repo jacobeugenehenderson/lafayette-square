@@ -210,7 +210,16 @@ function loadTexture(url) {
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace
         tex.flipY = false  // GLTF convention — matches the rewritten UVs
-        tex.anisotropy = 4
+        // Phase B.1.a: bumped 4 → 16 to handle the dense bark UV tiling.
+        // uvScale of e.g. [2, 8] introduces a 4:1 anisotropy ratio in
+        // screen-space gradient (vertical 8x, circumferential 2x). With
+        // aniso cap of 4 the sampler falls back to isotropic filtering
+        // at the LARGER gradient → averages bark grain horizontally →
+        // vertical-streak smear. 16 is clamped to GPU max internally by
+        // three.js and unlocks proper anisotropic sampling for tiled
+        // photo bark. Cost: 16x more texture taps per filtered fragment,
+        // but only on bark draw calls (a small fraction of total).
+        tex.anisotropy = 16
         resolve(tex)
       },
       undefined,
@@ -228,7 +237,16 @@ function loadNormalTexture(url) {
         // Normal maps stay in linear space
         tex.colorSpace = THREE.NoColorSpace
         tex.flipY = false
-        tex.anisotropy = 4
+        // Phase B.1.a: bumped 4 → 16 to handle the dense bark UV tiling.
+        // uvScale of e.g. [2, 8] introduces a 4:1 anisotropy ratio in
+        // screen-space gradient (vertical 8x, circumferential 2x). With
+        // aniso cap of 4 the sampler falls back to isotropic filtering
+        // at the LARGER gradient → averages bark grain horizontally →
+        // vertical-streak smear. 16 is clamped to GPU max internally by
+        // three.js and unlocks proper anisotropic sampling for tiled
+        // photo bark. Cost: 16x more texture taps per filtered fragment,
+        // but only on bark draw calls (a small fraction of total).
+        tex.anisotropy = 16
         resolve(tex)
       },
       undefined,
