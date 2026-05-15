@@ -2777,6 +2777,56 @@ jitter (Y-rotation, independent XZ + Y scale, hue shift, wind phase) does the
 diversity work. 3 variants × strong jitter = looks like 30 distinct trees in
 scene. Operator can adopt more or fewer per species as needed.
 
+#### Perf phases surfaced 2026-05-15 EOD (parked for post-Phase-F sequencing)
+
+- [ ] **Phase W — Wind animation shader** (load-bearing for Browse perceptual goal).
+  Per-leaf-card vertex displacement via `noise(worldPos + uTime + treePhase)` in
+  `src/components/treeAtlasMaterial.js`. Per-tree phase offset via `treeId` hash
+  so trees don't sync; height-based falloff so leaf-anchor vertices stay put;
+  noise frequency tuned so leaves flutter fast / branches sway slow. Single
+  uniform feed (`uWindStrength`, possibly `uWindDirection`) per Look. Same
+  shader program — uniform-driven, Bloom-stable. Lands alongside or after
+  Phase F (same vertex pipeline; leaf cards are what get displaced).
+  **Ownership question:** wind authoring (direction + speed per Look) probably
+  belongs to Meteorologist (`/cartograph.html` Stage → Sky & Light), which
+  already owns weather state. Phase W is then just the *consumer* side —
+  trees subscribe to wind uniforms that Meteorologist publishes per Look.
+  Defer ownership decision until W's brief gets written; the consumer-side
+  vertex shader work is the same either way.
+  **Why now in BACKLOG:** "trees must blow in Browse" is a hard requirement
+  surfaced 2026-05-15 (little-alive-neighborhood perceptual goal). Without
+  wind, the 600+ Browse trees read as a frozen model not a living place.
+  This kills the imposter-primary perf path (static imposters can't be made
+  to flutter convincingly at scale) — full mesh + vertex-displaced cards is
+  the only path that preserves animated foliage from directly overhead.
+  **Fixes:** Browse canopy reads alive. **Doesn't fix:** trunk lean / branch
+  sway (canopy is the dominant Browse motion; that's enough for v1.5).
+
+- [ ] **Phase H — Shell/core canopy overdraw split + A2C** (post-Phase-F
+  perf optimization). Per-leaf-cluster card carries `r/crownRadius`
+  annotation at author time. Two passes per tree: **core** (interior cards,
+  `r < ~0.75`, alpha-to-coverage with depth-write) followed by **shell**
+  (silhouette cards, `r >= ~0.75`, A2C, optionally view-dependent back-face
+  culling via `dot(viewDir, cardNormal) < 0`). Single shader program
+  preserved — **A2C is an alpha-test variant via MSAA, not a blend mode**,
+  so it's Bloom-stable per the foundational constraint. Alpha-test +
+  depth-write on the core pass restores early-Z rejection on TBDR mobile
+  GPUs (currently defeated by stacked alpha-blend cards), expected canopy
+  fragment cost drops ~5-10×.
+  **Prototype on one procedural species first behind a feature flag.** If
+  run pre-Phase-F (on today's single-leaf cards), calibration values won't
+  survive F's new cluster card layouts — preferred ordering is F lands
+  first, then H calibrates against the final card geometry.
+  **Fixes:** canopy fragment cost at Browse + near-Hero where leaf
+  overdraw dominates; mobile thermal-throttle headroom. **Doesn't fix:**
+  branch geometry overdraw (much smaller pixel count vs leaf cards),
+  trunk surface cost (Phase B), wind animation cost (Phase W).
+  **Surfaced by:** external-agent rendering-rethink brief 2026-05-15;
+  technique is standard mobile foliage perf (SpeedTree uses related
+  approach). Imposter-LOD-for-far-Hero remains a separate possible
+  optimization but is demoted to "nice to have" once W requires full mesh
+  at Browse.
+
 **Out of scope across the arc:** street-view photoreal (v2); real bark/leaf
 photographic scans (v2 / SpeedTree replacement window); per-conifer-species
 variants beyond the algorithm itself (Phase E ships one conifer correctly,
