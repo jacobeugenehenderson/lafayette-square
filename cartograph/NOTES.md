@@ -318,6 +318,156 @@ verts, 617834 tris).
 
 ---
 
+### Phase A.5 — Leg-formation at chain-endpoint IXs (divided-pair degeneracy)
+
+**Status:** designed end-to-end, not yet coded. Brief slot-in for the next baby agent — execution-ready, no architecture re-litigation needed. Read end-to-end before touching code per [[feedback_notes_md_holds_architecture]].
+
+**Visible-bug coverage:** the four park-corner IXs on LS (Lafayette × {Mississippi, Missouri}, Park × {Mississippi, Missouri}) currently render only 1 of 4 corners with the three-component plug (asphalt + curb + concrete). The other 3 corners have no plug, no control dot. Phase A's per-leg `findStableVertex` walker shipped clean leg tangents but did NOT address the visible failure because the failure isn't tangent noise — it's leg-pair degeneracy.
+
+#### Why this exists (root-cause diagnosis from 2026-05-14 PM)
+
+`cornersAtIx(ix, …)` (`src/lib/buildBlockGeometryV2.js:273`) walks each chain at the IX, calls `buildLeg(dir)` for both `dir ∈ {-1, +1}`, sorts the resulting legs CCW around V, and pairs adjacent legs into corner records. Each corner record gets a Q point (intersection of the two adjacent legs' outer edges) + a radius from the corner-authoring kit, and feeds `applyRoundCornersToRing(asphaltSharp, allCorners, scale)` plus the per-corner plug emission.
+
+At a divided-pair carriageway endpoint IX (Lafayette × Mississippi is the canonical case):
+
+- `lafayette-avenue-3` `ixIdx=7` ENDPOINT — emits one leg, west
+- `lafayette-avenue-5` `ixIdx=0` ENDPOINT — emits one leg, east
+- `lafayette-avenue-6` `ixIdx=0` ENDPOINT — emits one leg, east (divided-pair mate of `lafayette-avenue-5`)
+- `mississippi-avenue` `ixIdx=20` interior — emits two legs, north + south
+
+Five legs total. Sorted CCW around V they form 5 adjacent pairs. **`lafayette-avenue-5`'s leg and `lafayette-avenue-6`'s leg point in nearly the same direction (both east) with a ~5° angular gap** (the divided-pair mouth opening). Their CCW-adjacent pair forms a degenerate ~5° corner wedge — the corner Q is either at infinity (parallel-ish rays) or at a wildly outsized distance, the round-corners op produces nothing visible, and the plug emission silently drops the corner. Same shape applies on the west side if `lafayette-avenue-3` shares a pairId with anything else there.
+
+This is structurally identical to the Toy Waverly couplet endpoint case: `WV-S` and `WV-N` (the divided pair carriageways) both terminate at HW4-E's endpoint IX with east-pointing legs separated by the median bow gap. **Toy fixture already exercises Phase A.5's failure mode** — Toy-first iteration is on the table from line one.
+
+#### Doctrine alignment
+
+- Polygon doctrine (FEATURES "ribbon doctrine"): blocks are positive space; corners are properties of the polygon's silhouette. The fix lives in `cornersAtIx` (the polygon-graph authority for IX corner records), not in chain editing.
+- [[project_positive_carriageway_model]]: divided roads stay as TWO separate centerlines; no pair synthesis at the data layer. **Phase A.5 does NOT collapse divided pairs into a single chain.** It detects them at the IX and treats their endpoint-emitted legs as a *composite incoming side* for corner-pair purposes only. Data shape unchanged.
+- [[feedback_couplers_are_segment_local]]: corner records are per-IX, not per-pair. The composite leg is local to one IX's `cornersAtIx` call — does not propagate.
+
+#### Algorithm
+
+In `cornersAtIx` (`src/lib/buildBlockGeometryV2.js:273`), after the existing leg-build loop and before the CCW sort + pairing:
+
+```js
+// Phase A.5: detect divided-pair endpoint legs at this IX. Two chains
+// that (a) both terminate at this IX (ixIdx === 0 OR ixIdx === pts.length - 1)
+// AND (b) share a pairId AND (c) have leg tangents within COMPOSITE_ANGLE_THRESHOLD
+// (default ~30°) of each other. Both chains' legs get coalesced into a single
+// "composite" leg for corner-pair purposes. The composite's tangent is the
+// average of the two member tangents; its anchor stays at V; its outer-edge
+// offset for Q-point intersection is the OUTER half-width of the wider
+// member chain (so the Q point sits clear of both carriageway pavements).
+const COMPOSITE_ANGLE_THRESHOLD_RAD = 30 * Math.PI / 180
+
+function isEndpointLeg(leg) {
+  const n = leg.chain.points.length
+  return leg.ixIdx === 0 || leg.ixIdx === n - 1
+}
+
+const composites = []
+const claimed = new Set()
+for (let i = 0; i < legs.length; i++) {
+  if (claimed.has(i)) continue
+  const a = legs[i]
+  if (!a.chain.pairId || !isEndpointLeg(a)) continue
+  for (let j = i + 1; j < legs.length; j++) {
+    if (claimed.has(j)) continue
+    const b = legs[j]
+    if (b.chain.pairId !== a.chain.pairId || !isEndpointLeg(b)) continue
+    const angle = Math.acos(Math.max(-1, Math.min(1,
+      a.tangent[0] * b.tangent[0] + a.tangent[1] * b.tangent[1])))
+    if (angle > COMPOSITE_ANGLE_THRESHOLD_RAD) continue
+    // Coalesce a + b into a composite leg.
+    claimed.add(i); claimed.add(j)
+    composites.push(synthesizeCompositeLeg(a, b))
+    break
+  }
+}
+const finalLegs = legs.filter((_, i) => !claimed.has(i)).concat(composites)
+// Continue with CCW sort + adjacent-pair → corner Q computation, but using
+// `finalLegs` instead of `legs`.
+```
+
+`synthesizeCompositeLeg(a, b)`:
+- `tangent` = `unit(a.tangent + b.tangent)` (averaged direction)
+- `anchor` = V (the IX point)
+- `outerR` = `Math.max(a.outerR, b.outerR)` (outer half-width of the wider carriageway, so the Q point clears both pavements)
+- `outerL` = same as outerR for symmetric handling
+- `legKey` = `${a.chain.skelId}+${b.chain.skelId}` sorted (composite identity for per-corner override keying — same pattern as existing `sortedCornerKey`)
+- `chainIdx` = either member's chainIdx (used only for leg-source attribution; both members participate)
+- All other leg fields: inherit from `a` (the lexically-first member) for attribution; the composite's geometric role is what matters
+
+The `claimed` set ensures each leg participates in at most one composite. Single-direction endpoint chains (no pairId, or pairId without a matching mate at this IX) fall through the loop and stay as individual legs in `finalLegs` — no behavior change for the non-divided-pair case.
+
+#### Corner-record consequences
+
+- **Plug count:** at the LS Mississippi×Lafayette IX, `finalLegs` becomes Mississippi-N + Mississippi-S + Lafayette-east-COMPOSITE + (Lafayette-west, possibly composite if it has a pair mate at this IX). 4 legs CCW → 4 adjacent pairs → 4 corner records → 4 plugs render. Visible-bug fixed.
+- **Per-corner override keys:** the `legKey` for a composite is the sorted concat of both member skelIds. Operator authoring against a composite corner stores under that combined key. When the same IX is consulted next render, the same composite forms (same chains, same pairId), the same legKey hashes, the override resolves correctly. Stable.
+- **`cornerCornerRadiusOverrides`** keyed by `<pointKey>|<legKeyA>|<legKeyB>` (existing): composite leg keys participate naturally. No schema change.
+
+#### Files to touch
+
+`src/lib/buildBlockGeometryV2.js` — ONLY this file.
+- New helper `synthesizeCompositeLeg(a, b)` near `cornersAtIx`.
+- New constant `COMPOSITE_ANGLE_THRESHOLD_RAD = 30 * Math.PI / 180` near `IX_NOISE_RADIUS`.
+- Coalesce loop inserted in `cornersAtIx` after leg-building, before CCW sort.
+
+Estimated: ~50 LOC. Single focused commit.
+
+#### Files NOT to touch
+
+- `derive.js`, `bake-ground.js`, anything in `src/cartograph/` — Phase A.5 is internal to V2's corner-record computation. If you find yourself editing elsewhere, stop and reconsider; you're solving Phase B/C/D, not A.5.
+- `chain.points`, `chain.pairId`, `ribbons.json` — read-only inputs. Phase A.5 derives composite legs at runtime; stores nothing.
+
+#### Toy fixtures (test FIRST per [[project_features_md_is_canonical]])
+
+Toy already has the Type B Waverly couplet (`HW4-W` + `HW4-E` + `WV-S` + `WV-N` + `WV-CUT` in `src/data/toy/toy-input.json`). Specifically the IXs where `WV-S` and `WV-N` endpoints meet `HW4-E` (or `HW4-W`) are divided-pair endpoint IXs structurally identical to LS Lafayette×Mississippi.
+
+Verify after Phase A.5 lands:
+- Waverly couplet endpoint IXs render the three-component plug at all 4 corners
+- Type A teardrop pinch (BENT-STEM joining BENT-BODY) unchanged — no pairId on these chains, falls through the coalesce loop
+- 3×3 grid IXs unchanged — no pairId on HW1/HW2/VW1/VW2/etc, falls through
+- Dead-end stub (STUB-N) unchanged — no pairId, no mate
+- HW3 saw-tooth + BENT-BODY closed circle + WV-S/N bows all rendered correctly (regression check from Phase A's polyline-stabilization-broke-fixtures lesson)
+
+If Toy fails any of the above, STOP and report. Do not iterate against Toy without a hypothesis.
+
+#### LS cut-over
+
+Once Toy is clean, re-bake LS and verify all 4 park-corner IXs render the three-component plug at all 4 corners. Eyeball Geyer × Mississippi as the regression baseline (no pairId on Geyer chains; should be unchanged from pre-A.5).
+
+#### Acceptance
+
+- All 4 corners at Mississippi × Lafayette render the three-component plug + control dot.
+- Same at the other 3 park-corner IXs.
+- Toy Waverly couplet endpoints render the three-component plug.
+- No regressions at non-pair IXs (residential corners across LS, 3×3 grid in Toy).
+- Bake runs clean.
+
+#### Watchouts
+
+- **`COMPOSITE_ANGLE_THRESHOLD_RAD` tuning.** 30° is conservative — captures divided-pair carriageway endpoints (typically <10° apart) without coalescing legitimately-distinct legs (a Y-junction has legs ~120° apart). If a real-world Y-junction has chains that happen to share a pairId AND legs within 30°, Phase A.5 would over-coalesce. Unlikely, but check Toy + LS visuals.
+- **Pairs across the IX, not at it.** A divided pair where both chains pass THROUGH the IX (interior `ixIdx`, not endpoint) doesn't trigger Phase A.5 — `isEndpointLeg` filter excludes them. That's correct: through-pair chains already provide proper legs in both directions.
+- **Three-chain pair clusters.** If a divided road has a one-side cut-thru that ALSO has the same pairId (data anomaly), the coalesce loop pairs the first two it finds and leaves the third as a normal leg. Acceptable — the corner geometry stays sane and the third leg participates in CCW sort independently.
+- **Composite leg + per-corner authoring rotation.** Operator-authored per-corner radius keyed under the composite legKey survives chain-edit churn AS LONG AS the same pair survives. If the operator splits one of the divided-pair chains (Survey edit), the pairId might drop, the composite no longer forms, and the override won't resolve. Treat this as expected behavior — the operator's split changed the corner's identity.
+- **Don't try to fix the polygon-graph maxi-brief's Phase B leg-formation while you're here.** Phase A.5 makes corners FORM; it doesn't change how they FREEZE into the polygon graph (Phase B). Stay scoped.
+- **Composite outerR.** Using `Math.max(a.outerR, b.outerR)` is conservative. If the carriageways have very different widths, the wider one's offset is used for Q computation. Fine for typical divided pairs (carriageways are usually symmetric); document if a real case bites.
+
+#### Trinity touch (after acceptance)
+
+- `cartograph/NOTES.md`: append a "Phase A.5 shipped" sub-entry under THIS brief, citing commit hash + observed visible-bug coverage.
+- `cartograph/BACKLOG.md`: tick off "Big park intersections" line 2746–2750 — Phase A.5 closes it. Add a new line under polygon-graph restructure section: "Phase B (polygon-graph schema + producer) is next; Toy fixtures + Waverly couplet now ready as the structural test rig."
+
+#### Hard stops
+
+- Don't touch outside `src/lib/buildBlockGeometryV2.js`.
+- Don't modify `chain.points`, `chain.pairId`, or `ribbons.json`.
+- Don't generalize beyond the divided-pair-endpoint case (e.g., don't try to fix unpaired single-endpoint legs in this commit — that's a different problem).
+- If Toy validation fails, STOP, report. Do not iterate against LS without Toy green.
+
+---
+
 ### Phase B — Polygon-graph schema + producer
 
 **Goal:** define the frozen polygon graph artifact and produce it at pipeline time. No consumers yet; runs in shadow mode.
