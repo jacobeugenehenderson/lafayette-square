@@ -2770,6 +2770,86 @@ variants beyond the algorithm itself (Phase E ships one conifer correctly,
 per-species authoring is its own follow-on); runtime tree generation (bake is
 structurally required).
 
+#### Roster-recalibration follow-ups (parked 2026-05-15)
+
+Three items surfaced during the post-Phase-D design conversation. Not
+v1.5-blocking; carried here so they don't fall off the radar between
+Phase E and v1.6.
+
+- [ ] **Phase E priority drop — conifer is 7% of inventory.**
+  `src/data/park_trees.json` shape distribution: broad 528 (71%),
+  ornamental 139 (19%), conifer 55 (7%), columnar 31 (4%), weeping 3 (<1%).
+  Jacob's local visual mix is maple / willow / ginkgo / locust — conifer
+  conspicuously absent from his eye-level read. With 55 placements
+  representing the conifer category, Phase E's monopodial-whorl
+  algorithm is still worth shipping (those 55 trees would otherwise
+  fall back to SCA broadleaf and look wrong), but the per-conifer-
+  species authoring follow-on (Spruce vs Pine vs Fir vs Cedar vs Bald
+  Cypress as distinct species ids) drops priority — defer to v1.6
+  unless visual review at LS reveals the generic monopodial-whorl
+  conifer isn't enough.
+- [ ] **Phase G.2 — Ginkgo as a second proving species after Sugar Maple.**
+  Ginkgo is the species where the "shared morph vs per-species leaf
+  authoring" question gets answered most decisively. Bilobed fan leaves
+  + uniformly luminous gold fall = the most distinctive leaf-driven
+  silhouette in temperate forestry. If a `procedural_ginkgo` species
+  (envelope: rounded-cone variant; tropism: zero; leafMorph: `fan` with
+  a luminous gold tint ramp) reads convincingly at Hero, the v1.6 leaf
+  editor (below) moves to "nice to have." If it falls flat, ginkgo is
+  the binding case study for v1.6 — the editor brief writes itself from
+  what's missing. Ship as a separate `procedural_ginkgo` species rather
+  than substituting through `procedural_broadleaf` because the
+  silhouette (narrower than oak, fuller than columnar) doesn't sit
+  inside the existing morphology buckets.
+- [ ] **Honeylocust sparse-cluster mode for Phase F.** Bipinnately
+  compound leaves = dappled, translucent canopy. Phase F's cluster
+  compositor (`arborist/leafCluster.js`) needs a density / occupancy-
+  fraction parameter from day one, not as a follow-on. Honeylocust ~25%
+  occupancy (very sparse), oak ~70% (dense), conifer needles ~95%
+  (packed). Per-species parameter that PRESETS.leafMorph doesn't carry
+  today. Either Phase F lands with the knob, or Phase F.5 carves out
+  honeylocust-style sparse authoring as a follow-on. The
+  density-as-load-bearing-parameter belongs in the Phase F brief.
+
+#### v1.6 deferred items (parked 2026-05-15)
+
+- [ ] **Leaf editor + per-species cluster authoring.** Three escalating
+  tiers: (1) per-species leaf design (parametric: base morphology +
+  lobe count/depth + edge serration + venation density → PNG); (2)
+  per-variant cluster authoring (density, transparency, hue jitter,
+  autumn fraction); (3) per-Look palette overrides (already exists via
+  `materialColors`; surface in editor). **Motivating local species
+  (Jacob's eye-level mix at LS):** Maple (palmate, dominant inventory),
+  Willow (narrow weeping, iconic even at 3 placements), Ginkgo (fan +
+  fluorescent gold fall — generic green-fan billboard misses the
+  point), Honeylocust (bipinnately compound + dappled translucent
+  silhouette). Defer until Phase G + G.2 prove where shared morphs run
+  out. The editor is structurally a different surface from the SCA /
+  whorl panels — more like a per-species library entry than a bolt-on
+  to ProceduralWorkstage. Dice-and-adopt doctrine doesn't fit leaves
+  (you can't really dice a leaf; it's species-determined), so the UX
+  is parametric-sliders + preview.
+- [ ] **Decorative lights — Christmas / party / Halloween / etc.**
+  Self-contained micro-arc (~2 days) that leverages existing infra:
+  `src/components/lampLightmap.js` already bakes gaussian splats per
+  lamp (a string light is just a tiny lamp); Bloom already in scene
+  (bright emissive → halo automatic); `lamps.json` schema extension or
+  new `decorative_lights.json`; time-of-day gating already exists via
+  `uSunAltitude` (fade in at dusk). New work: (a) Stage authoring
+  surface to click-place waypoints + spline interpolation (reuses
+  `buildBlockGeometryV2.js` Catmull-Rom); (b) `<StringLights />`
+  runtime component — `MeshBasicMaterial` tube for the cord +
+  `InstancedMesh` of emissive bulbs with per-instance color/intensity;
+  (c) Twinkle: per-bulb sine wave + per-bulb random phase, ~5 lines of
+  GLSL; (d) Lightmap contribution: each bulb adds a tiny gaussian to
+  the per-Look lamp lightmap at bake time → grass/bark beneath strings
+  gets warm pools of light. Per-Look architecture handles seasonality
+  trivially — a "Halloween Look" pins orange-bulb strings along
+  Lafayette Avenue; "Christmas Look" pins white+warm around the gazebo;
+  "Valentine's Look" pins red bulbs in the magnolias. Demonstrates the
+  per-Look slab pattern beautifully. Doesn't block any other arc; can
+  land alongside or between any tree phase.
+
 ---
 
 ### Trees — Procedural fallback v1 (shipped 2026-05-14, commit `dbbd1ed`)
