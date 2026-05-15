@@ -75,6 +75,13 @@ function blockKeyFromRing(ring) {
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 
+// Distance (meters) inside which neighbor vertices around an IX are
+// treated as short-tangent noise (OSM micro-bends OR clustered adjacent
+// IXs along a chain). Used read-only by cornersAtIx.buildLeg to pick a
+// stable vertex for the leg's tangent direction; chain.points is never
+// mutated by V2 (Survey owns that). Tunable via NOTES.
+const IX_NOISE_RADIUS = 16
+
 function unit(v) {
   const l = Math.hypot(v[0], v[1])
   return l > 1e-9 ? [v[0] / l, v[1] / l] : [1, 0]
@@ -294,9 +301,27 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       return null
     }
     const buildLeg = (dir) => {
-      const ni = ixIdx + dir
-      if (ni < 0 || ni >= pts.length) return null
-      const dx = pts[ni][0] - V[0], dz = pts[ni][1] - V[1]
+      // Walk from the IX in `dir` until distance from V exceeds
+      // IX_NOISE_RADIUS. The first vertex beyond the radius gives the
+      // leg's clean tangent — short chain noise vertices near the IX
+      // (OSM micro-bends OR clustered adjacent IXs) get bypassed for
+      // tangent direction, but the chain's actual `points` array is
+      // untouched. naturalSegments / emitChain / buildFrontageEdges all
+      // continue to read raw chain.points so authored fixture geometry
+      // (saw-tooth jogs, bowed carriageways, closed teardrop bodies)
+      // renders intact.
+      let ni = ixIdx + dir
+      let stable = null
+      while (ni >= 0 && ni < pts.length) {
+        const ddx = pts[ni][0] - V[0], ddz = pts[ni][1] - V[1]
+        if (Math.hypot(ddx, ddz) >= IX_NOISE_RADIUS) { stable = pts[ni]; break }
+        ni += dir
+      }
+      // Fallback: short chain (dead-end stub shorter than R) — use the
+      // chain's far endpoint to recover any tangent at all.
+      if (!stable) stable = (dir > 0) ? pts[pts.length - 1] : pts[0]
+      if (stable === pts[ixIdx]) return null
+      const dx = stable[0] - V[0], dz = stable[1] - V[1]
       const L = Math.hypot(dx, dz)
       if (L < 1e-6) return null
       const isBack = dir === -1
