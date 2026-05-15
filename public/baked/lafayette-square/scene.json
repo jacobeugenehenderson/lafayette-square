@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1778735436303,
+  "bakedAt": 1778805435627,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -422,9 +422,9 @@
   "heroKeyframes": [
     {
       "position": [
-        -400,
+        -540,
         55,
-        230
+        362
       ],
       "fov": 22
     },

@@ -22,14 +22,14 @@
     "alley": true,
     "footway": true,
     "cycleway": true,
-    "steps": false,
+    "steps": true,
     "path": true,
     "park": true,
     "water": true,
     "tree": true,
     "lamp": true,
-    "fence": false,
-    "wall": false,
+    "fence": true,
+    "wall": true,
     "retaining_wall": false,
     "hedge": false,
     "labels": true,
@@ -67,7 +67,8 @@
     "wall": "#9A8E7E",
     "retaining_wall": "#7A6E5E",
     "hedge": "#4E6E3E",
-    "labels": "#2A2826"
+    "labels": "#2A2826",
+    "ground": "#2A2826"
   },
   "layerStrokes": {},
   "luColors": {
@@ -86,14 +87,25 @@
   "curbWidth": 0.381,
   "alleyCap": "rounded",
   "labels": {
-    "size": 4,
+    "size": 3.75,
     "weight": 500,
     "fill": "#ffffff",
-    "bg": "#3a3a38",
-    "bgAlpha": 1,
     "halo": "#000000",
-    "haloWidth": 0,
-    "opacity": 1
+    "haloWidth": 0.07,
+    "letterSpacing": 0.04,
+    "opacity": 0.85,
+    "case": "upper",
+    "fontFamily": "",
+    "tierScale": {
+      "street": 1,
+      "park": 2.8
+    },
+    "targetPx": 24,
+    "minPx": 8,
+    "maxPx": 128,
+    "font": "",
+    "bg": "#3a3a38",
+    "bgAlpha": 1
   },
   "blockCustoms": {
     "1": {
@@ -327,6 +339,30 @@
         "sidewalk": 2.345906370814321,
         "terminal": "sidewalk"
       }
+    },
+    "116.5,-497.0": {
+      "5": {
+        "pavementHW": 3.3461317935432247,
+        "treelawn": 3.020838982094821,
+        "sidewalk": 2.263884048165316,
+        "terminal": "sidewalk"
+      }
+    },
+    "-190.5,-453.5": {
+      "0": {
+        "pavementHW": 3.8169894794144543,
+        "treelawn": 1.8227470700872805,
+        "sidewalk": 2.1601083922874764,
+        "terminal": "sidewalk"
+      }
+    },
+    "383.0,114.5": {
+      "1": {
+        "pavementHW": 8.560504410866628,
+        "treelawn": 2.1256000000000004,
+        "sidewalk": 1.524,
+        "terminal": "sidewalk"
+      }
     }
   },
   "blockLandUse": {},
@@ -372,7 +408,7 @@
   },
   "warmth": {
     "values": {
-      "value": 0
+      "value": 0.5
     }
   },
   "fill": {
@@ -388,7 +424,7 @@
   "ao": {
     "values": {
       "radius": 15,
-      "intensity": 2.5,
+      "intensity": 0,
       "distanceFalloff": 0.3
     }
   },
@@ -402,6 +438,25 @@
     "values": {
       "strength": 0,
       "color": "#b8c8d8"
+    }
+  },
+  "grade": {
+    "values": {
+      "contrast": 0,
+      "toe": 0.6,
+      "saturation": 1.35,
+      "vignette": 0.7
+    }
+  },
+  "grain": {
+    "values": {
+      "scale": 1
+    }
+  },
+  "shadow": {
+    "values": {
+      "size": 52,
+      "samples": 16
     }
   },
   "constellations": {
@@ -419,6 +474,13 @@
       "core": 1,
       "tube": 1,
       "bleed": 1
+    }
+  },
+  "neonTube": {
+    "values": {
+      "tubeRadius": 0.2,
+      "roofLift": 0.3,
+      "emissive": 4
     }
   },
   "sky": {
@@ -636,10 +698,68 @@
     "period": 720,
     "easing": "sine"
   },
+  "shots": {
+    "values": {
+      "browse": {
+        "fov": 45,
+        "padding": 1.05,
+        "bounds": {
+          "cx": 95,
+          "cz": -158,
+          "w": 1292,
+          "h": 1025
+        }
+      },
+      "hero": {
+        "fov": 22
+      },
+      "street": {
+        "fov": 75,
+        "eyeHeight": 1.73
+      }
+    }
+  },
+  "browseHeading": {
+    "values": {
+      "value": 0
+    }
+  },
+  "arch": {
+    "values": {
+      "distance": 1670,
+      "bearingX": 0.9487,
+      "bearingZ": -0.3163,
+      "scale": 1.3,
+      "rotation": 1.36,
+      "yOffset": 29,
+      "footFade": 30,
+      "uplightL_intensity": 0,
+      "uplightL_color": "#ffd6a8",
+      "uplightL_cone": 0.55,
+      "uplightL_reach": 200,
+      "uplightR_intensity": 0,
+      "uplightR_color": "#ffd6a8",
+      "uplightR_cone": 0.55,
+      "uplightR_reach": 200
+    }
+  },
+  "horizon": {
+    "values": {
+      "radius": 3750,
+      "fadeInner": 900,
+      "fadeOuter": 3750
+    }
+  },
+  "clouds": {
+    "values": {
+      "preset": "auto",
+      "overrides": null
+    }
+  },
   "openSections": {
-    "Streets": false,
+    "Streets": true,
     "Blocks": true,
-    "Paths": true,
+    "Paths": false,
     "Features": false,
     "Labels": false,
     "HeroSubject": false,
