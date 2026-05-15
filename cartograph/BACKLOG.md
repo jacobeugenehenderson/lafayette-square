@@ -2653,6 +2653,19 @@ below) — not punchlist-gating.
 
 ### Trees — Procedural v1.5: in-Arborist authoring + skeleton-first redo (in flight 2026-05-15)
 
+**Tomorrow's first move (parked 2026-05-15 EOD):** rewrite the `cartograph/NOTES.md` 2026-05-15 maxi-brief from "5 morphologies × ~3 variants each" to **"5 heroes on top of morphology fillers, all sharing the procedural bark shader; Phase G splits into 5 proving passes."** Doctrine clarifications to incorporate (from post-Phase-D conversation):
+- Morphology buckets STAY as fillers; heroes sit on top via species-map.json preferred-species routing. Two-tier substitution already supported by `bake-trees.js:pickVariant` — heroes win their category's lottery via `quality: 4` vs filler `quality: 2`.
+- The Grove's single master atlas (bake-look's `unifyAtlases`) is the load-bearing innovation that makes adding heroes nearly free (sha1 dedup) and makes shader bark unification possible (collapse tiles across the entire roster, not just procedurals).
+- Phase B's brief expands from "procedural-trees-only" to "**roster-wide shader unification via per-species `extras.bark` + shader patches in `treeAtlasMaterial.js`**." Vendor and procedural trees both lose their bark color tiles to the same 4×4 placeholder; the shader picks pattern + colors from material extras. Vendor normal maps stay (preserve real bark-groove geometry); only the color tiles collapse. Pipeline survives SpeedTree migration unchanged.
+- Phase F becomes per-species cluster atlases (not per-morph shared); honeylocust-style sparse-cluster mode is load-bearing from day one (density / occupancy-fraction parameter in PRESETS, not a follow-on).
+- Leaf editor (was v1.6 deferred) pulls forward as Phase G's enabling tool. Probably lands as Phase F.5 — author Sugar Maple's leaves first, generalize the editor surface out of that.
+- Phase G splits into G.1 (Sugar Maple — dominant inventory, canonical broadleaf, strictest visual bar) → G.2 (Ginkgo — proves the leaf editor + per-species hero path on the most leaf-defined species) → G.3 (Willow — weeping algorithm at hero quality) → G.4 (Honeylocust — sparse-cluster validation) → G.5 (TBD 5th hero: Spruce/Pine for conifer slot, OR Pin Oak for second-broadleaf-character, OR Sycamore to close the existing-hand-modeled-roster loop).
+- Phase E (monopodial whorl conifer) priority drops — conifer is 7% of `park_trees.json` inventory. Ship the algorithm so those 55 placements don't fall back wrong, but per-conifer-species authoring follow-on defers to v1.6 unless visual review demands otherwise.
+
+Project goal sharpens from "complete 7 phases" to **"ship 5 hero species at Hero quality."** Same machinery, sharper acceptance criteria.
+
+
+
 v1 ships through the pipeline but is not visually sufficient by any metric. v1.5
 rebuilds in 7 phases per `cartograph/NOTES.md` 2026-05-15 maxi-brief — READ THAT
 ENTRY END-TO-END BEFORE TOUCHING CODE (load-bearing per
