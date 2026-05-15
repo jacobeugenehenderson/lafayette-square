@@ -526,8 +526,11 @@ const server = createServer(async (req, res) => {
       })
     }
 
-    // GET /procedural/:species/seedlings — current effective seedlings
-    if (req.method === 'GET' && (m = req.url.match(/^\/procedural\/([^/]+)\/seedlings$/))) {
+    // GET /procedural/:species/seedlings — current effective seedlings.
+    // Match against the query-stripped `path` (the store cache-busts with
+    // `?t=Date.now()`), not raw `req.url` — same bug would bite any future
+    // procedural route that the store hits with a query string.
+    if (req.method === 'GET' && (m = path.match(/^\/procedural\/([^/]+)\/seedlings$/))) {
       const species = m[1]
       if (!PROCEDURAL_PRESETS[species]) {
         return jsonRes(res, 404, { error: 'unknown procedural species', species })
@@ -541,7 +544,7 @@ const server = createServer(async (req, res) => {
     }
 
     // POST /procedural/:species/seedlings — body { variants: [{slot, seed, params}] }
-    if (req.method === 'POST' && (m = req.url.match(/^\/procedural\/([^/]+)\/seedlings$/))) {
+    if (req.method === 'POST' && (m = path.match(/^\/procedural\/([^/]+)\/seedlings$/))) {
       const species = m[1]
       if (!PROCEDURAL_PRESETS[species]) {
         return jsonRes(res, 404, { error: 'unknown procedural species', species })
@@ -588,7 +591,7 @@ const server = createServer(async (req, res) => {
     // standard pipeline + fire the per-Look atlas auto-bake (mirrors the
     // Grove roster save flow). Shell-out matches the v1 CLI invocation so
     // the publish path round-trips through publish-glb.js untouched.
-    if (req.method === 'POST' && (m = req.url.match(/^\/procedural\/([^/]+)\/publish$/))) {
+    if (req.method === 'POST' && (m = path.match(/^\/procedural\/([^/]+)\/publish$/))) {
       const species = m[1]
       if (!PROCEDURAL_PRESETS[species]) {
         return jsonRes(res, 404, { error: 'unknown procedural species', species })
