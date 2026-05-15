@@ -2779,6 +2779,18 @@ below) — not punchlist-gating.
   intersections at the park corners are currently a mess with no
   canonical resolution. Needs a dedicated geometry + authoring pass.
   Pairs with the whole-intersection corner editor restore below.
+  - [ ] **Phase A.5 — leg-formation at chain-endpoint IXs.** Polygon-graph
+    Phase A (per-leg tangent walker, commit 47f2f0a, 2026-05-15) did NOT
+    resolve the visible NW/SW/SE failure at Mississippi×Lafayette. Root
+    cause is `cornersAtIx` degenerating on near-parallel adjacent legs
+    from divided-pair carriageway endpoints — both `lafayette-avenue-5`
+    and `lafayette-avenue-6` terminate at V with their first stable
+    vertex ~east of V, producing a ~5° wedge whose corner Q is degenerate
+    → corner records not produced → no plug + no control dot. Fix:
+    deduplicate near-parallel legs OR detect them as a paired-carriageway
+    side and synthesize a single corner against the opposing chain. Needs
+    its own brief + Toy-first iteration; Waverly couplet endpoints
+    (HW4 ↔ WV junctions) in Toy likely already exercise this failure mode.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**

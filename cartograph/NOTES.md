@@ -90,6 +90,45 @@ Use approach (preferred). New helper `stabilizeChainNearIxs(chain, ixVertices, I
 
 **Estimated scope:** ~50 LOC, one focused commit. Foundation for B/C/D.
 
+**Phase A shipped — per-leg walker (2026-05-15, commits 09a276a + 47f2f0a).**
+First implementation (5559a37) used a polyline stabilizer that mutated V2's
+in-memory copy of `chain.points` — dropped non-IX, non-endpoint vertices
+within R=16m of any IX. Visibly clean in LS (silhouette simplifications
+from dropping noise) but destroyed authored fixture geometry in Toy: HW3
+saw-tooth dropped 1 vertex (saw-tooth gone), BENT-BODY dropped 2 (circle
+deformed), WV-S/WV-N dropped 2 each (carriageway bows straightened). Root
+cause: a "drop any vertex near an IX" formulation can't distinguish OSM
+micro-bend noise from authored geometry intent. Reverted in 09a276a.
+
+Replaced with a per-leg read-only walker in `cornersAtIx.buildLeg`
+(47f2f0a): walks `pts[ixIdx + dir * k]` from the IX vertex until distance
+from V ≥ `IX_NOISE_RADIUS` (=16m); the first vertex past R supplies the
+leg's tangent. Falls back to chain's far endpoint for short stubs.
+`chain.points` is NEVER mutated by V2 — `naturalSegments`, `emitChain`,
+`buildFrontageEdges` continue to read raw points, so authored geometry
+renders intact. Doctrine wall (FEATURES.md "stage wall") preserved: V2
+reads chains, never writes them.
+
+LS visible-bug coverage from Phase A is SMALL: the asphalt silhouette is
+unchanged (silhouette is a function of `chain.points` × per-segment
+rectangles, neither of which the walker touches). Only the corner-tangent
+direction at IXs changes — which is invisible in cases where the tangent
+was already approximately right. The original park-corner NW/SW/SE failure
+at Mississippi×Lafayette is NOT addressed by Phase A. Root cause is
+leg-formation at chain-endpoint IXs: Lafayette divided-pair carriageway
+endpoints (`lafayette-avenue-5` ixIdx=0/7 [ENDPOINT], `lafayette-avenue-6`
+ixIdx=0/5 [ENDPOINT]) emit near-parallel adjacent legs from V (both with
+T ≈ east), producing a degenerate ~5° wedge in `cornersAtIx`'s
+CCW-sorted pair → degenerate corner Q → corner records not produced →
+no plug + no control dot. This is **Phase A.5** territory; see BACKLOG
+"Big park intersections" → Phase A.5 sub-bullet. Phase A.5 needs its own
+brief + Toy-first iteration (Waverly couplet endpoints in Toy likely
+already exercise this).
+
+Files changed: `src/lib/buildBlockGeometryV2.js` (+28 / −3 LOC vs revert
+base). Toy fixtures Toy-validated; LS bake clean (44 groups, 371714
+verts, 617834 tris).
+
 ---
 
 ### Phase B — Polygon-graph schema + producer
