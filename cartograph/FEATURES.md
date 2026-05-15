@@ -22,6 +22,41 @@ This section is canonical and load-bearing. Anyone — human or agent — touchi
 
 **Blocks are positive space; streets are the void around them; everything visible at street level — asphalt, curb, sidewalk, treelawn, corner mouths — is a property of the block polygons' silhouettes, not of the chain centerlines that derive them.**
 
+### Print, not web — the load-bearing principle
+
+Cartograph delivers a print-like experience, not a reactive web app. The product is a **map** — a deliberate, settled surface the operator and end user trust without thinking about how it was made. Visual instability (corners that swing apart on widening, blocks that re-derive on every drag, geometry that "looks alive" because it's recomputing under the cursor) is a UX failure regardless of whether it's technically correct. Cognitive texture — the sliver of attention every operator spends every time they look at a wobbling map — is the design metric.
+
+The instinct in modern web/software vernacular is: source of truth is the lowest-level data (chain.points, OSM features); everything else is reactively recomputed. That model is wrong for this product. It produces a map that's always slightly trembling. We are a print job, not a spreadsheet — and a print job freezes layout decisions early so attention can land on content, not on geometry that won't sit still.
+
+When a design choice arises — "should this re-derive from chains every render?" "should the corner geometry react to chain edits?" — the answer is **no, freeze upstream and let downstream trust it**. Reactive recompute-from-source is the failure mode. Print-like-ness is achieved by data-shape walls, not by code discipline alone.
+
+### The stage wall — where chains end forever
+
+Chains and points exist in raw upstream data files (`cartograph/data/lafayette-square/raw/centerlines.json`, `osm.json`). They are the **provenance**, not the surface. From the operator's first interaction with the app onward, the system is **polygons**.
+
+The pre-bake is the wall:
+
+| Stage | Reads | Produces |
+|---|---|---|
+| 1. Survey (raw) | OSM ways, operator centerline edits | `chain.points`, IX vertices |
+| 2. IX extraction | chains | IX centerpoint set |
+| 3. Asphalt Intersection | chains (one-time, for long-run tangent) | per-IX leg-pair intersection points |
+| 4. Adjusted Asphalt Intersection | corner-radius authoring + Stage-3 output | clean rounded corner geometry |
+| **5. BAKE** | Stages 3–4 | **frozen polygon graph** (block polygons, asphalt edges, corner arcs, plug rings) |
+| 6+. Surface (Designer / Stage / Preview / bake-output consumers) | **only the frozen polygon graph** | rendered map |
+
+**After Stage 5, the chains are gone.** Stage 6+ code that reaches back into `chain.points` to compute leg tangents, snap endpoints, or extend rays is a **bug by definition**, even if it works. The wall is structural — surface code receives polygons, period.
+
+Today's V2 implementation runs Stages 2–4 in the same hot path as Stage 6 (`buildBlockGeometryV2` re-walks chains on every Designer store update). The doctrine says this is wrong; the implementation will be migrated to the wall over time. Until that migration lands, every surface-stage code path that touches `chain.points` is doctrine-noncompliant and treated as tech debt; new surface-stage code MUST NOT add new chain references.
+
+**Operator interaction model.** From the moment the operator opens the app, they work in polygons:
+- Couplers attach to polygon corners.
+- "Split traffic / center / left-offset" = polygon-edge attribute.
+- "Widen drag" = polygon-edge offset.
+- "Nudge in a section for parking" = sub-edge polygon edit.
+
+The operator never has practical interest in the underlying chain — and the implementation should make that invisibility a **structural fact**, not a presentational accident.
+
 ### Authority order — load-bearing
 
 1. **Polygons (block polygons)** are the authoring substrate. The park is a polygon. Each residential block is a polygon. A plaza is a polygon. Geometry decisions begin here.
