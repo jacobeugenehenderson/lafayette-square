@@ -6,9 +6,13 @@
  * (StreetRibbons drives this) and all meshes follow.
  *
  * View-mode targets:
- *   hero:        V_EXAG (10)  — dramatic telephoto terrain
+ *   hero:        V_EXAG       — dramatic telephoto terrain
  *   browse:      0            — flat map
  *   planetarium: 1            — life-size street level
+ *
+ * V_EXAG itself lives in src/lib/terrainCommon.js (currently 1.8 — sized
+ * for the b24fce5 clip-to-stencil bake whose raw values are normalized to
+ * local-min = 0).
  */
 
 import * as THREE from 'three'
@@ -188,7 +192,12 @@ export const TERRAIN_DISPLACE_INSTANCED = `
     (_iw.x - uBMinX) / uSpanX,
     (_iw.z - uBMinZ) / uSpanZ
   ), 0.0, 1.0);
-  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
+  // Divide by the instance's Y-axis scale so the lift lands as
+  // sample*uExag METERS in world space after instanceMatrix scaling
+  // (otherwise a lamp with LAMP_SCALE=1.38 lifts about 38% too far,
+  // and tree instances at authored scale amplify by their own factor).
+  float _instYScale = length(instanceMatrix[1].xyz);
+  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag / max(_instYScale, 0.0001);
 }`
 
 /**
@@ -207,6 +216,42 @@ export function patchTerrainInstanced(mat) {
   }
   const prevKey = mat.customProgramCacheKey?.bind(mat)
   mat.customProgramCacheKey = () => `terrain-inst-${prevKey ? prevKey() : 'std'}`
+}
+
+/**
+ * Patch a material to lift rigidly by a PRECOMPUTED raw heightmap value
+ * (no texture sampling). Use when the lift anchor isn't the mesh origin —
+ * e.g. building walls anchored at the mean of footprint-vertex elevations
+ * (the bake-buildings.js canonical "centroidY"). Each material carries its
+ * own `uCentroidRaw` uniform; the shared `uExag` does the exaggeration.
+ *
+ * @param {THREE.Material} mat
+ * @param {number} centroidRaw — raw heightmap value (meters above local-min)
+ *                                this material lifts by × uExag at render time.
+ */
+export function patchTerrainAtCentroidRaw(mat, centroidRaw) {
+  const prev = mat.onBeforeCompile
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uCentroidRaw = { value: centroidRaw }
+    shader.uniforms.uExag = terrainExag
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+         uniform float uCentroidRaw;
+         uniform float uExag;`
+      )
+      .replace(
+        '#include <project_vertex>',
+        `{
+           transformed.y += uCentroidRaw * uExag;
+         }
+         #include <project_vertex>`
+      )
+    if (prev) prev(shader)
+  }
+  const prevKey = mat.customProgramCacheKey?.bind(mat)
+  mat.customProgramCacheKey = () => `terrain-centroid-${prevKey ? prevKey() : 'std'}`
 }
 
 export function patchTerrain(mat, { terrainNormals = false, perVertex = false } = {}) {

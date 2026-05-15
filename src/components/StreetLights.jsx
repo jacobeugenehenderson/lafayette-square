@@ -81,8 +81,18 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
   // geometry. The plane's local position becomes a screen-space offset
   // from the instance center, so the quad ALWAYS faces the camera and
   // the fragment shader gets clean UVs to compute radial falloff.
+  //
+  // Terrain lift is added directly to _bbCenter.y in world space (the
+  // billboard custom shader bypasses three's standard project_vertex
+  // chain, so patchTerrainInstanced can't see it). Uniforms come from
+  // TERRAIN_UNIFORMS on each ShaderMaterial that consumes this snippet.
   const BILLBOARD_VS_INC = /*glsl*/`
     vec4 _bbCenter = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+    vec2 _bbTuv = clamp(vec2(
+      (_bbCenter.x - uBMinX) / uSpanX,
+      (_bbCenter.z - uBMinZ) / uSpanZ
+    ), 0.0, 1.0);
+    _bbCenter.y += texture2D(uTerrainMap, _bbTuv).r * uExag;
     vec4 _bbCenterView = viewMatrix * _bbCenter;
     // Scale recovered from instanceMatrix's first column (uniform scale).
     float _bbScale = length(vec3(instanceMatrix[0].xyz));
@@ -96,8 +106,13 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
   // does its own radial Gaussian.
   const glowMat = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uColor: { value: LAMP_COLOR_ON.clone() }, uIntensity: { value: 0 } },
+      uniforms: {
+        uColor: { value: LAMP_COLOR_ON.clone() },
+        uIntensity: { value: 0 },
+        ...TERRAIN_UNIFORMS,
+      },
       vertexShader: /*glsl*/`
+        ${TERRAIN_DECL}
         varying vec2 vUv;
         void main() {
           vUv = uv;
@@ -127,8 +142,13 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs } = {}) {
   // ── Wide soft halo (bloom substitute) — billboard, much wider/dimmer ──────
   const haloMat = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uColor: { value: LAMP_COLOR_ON.clone() }, uIntensity: { value: 0 } },
+      uniforms: {
+        uColor: { value: LAMP_COLOR_ON.clone() },
+        uIntensity: { value: 0 },
+        ...TERRAIN_UNIFORMS,
+      },
       vertexShader: /*glsl*/`
+        ${TERRAIN_DECL}
         varying vec2 vUv;
         void main() {
           vUv = uv;

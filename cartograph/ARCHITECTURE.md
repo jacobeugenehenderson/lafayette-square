@@ -117,6 +117,12 @@ Key runtime entry points:
 - `src/lib/buildPathRibbons.js` — shared helper for non-street ribbons (alleys, footways, cycleways, steps, dirt paths). Clipper-based polyline offset with `jtRound` joints and configurable end-cap mode (square / rounded / round). Consumed by both `BlockGeometryV2Debug.jsx` (Designer live render) and `cartograph/bake-ground.js` (slab emission); same input → same geometry, no drift possible.
 - `src/components/InstancedTrees.jsx` — consumes Arborist's `public/baked/default.json` + GLB variant atlas. Look resolution: explicit `lookId` prop → `?look=` URL param → `INSTANCE.lookId` (post-Couplers §6).
 - `src/components/BakedLamps.jsx` — consumes `public/baked/<look>/lamps.json` and wraps `StreetLights`. Shared between Stage and Preview (was preview-only before 2026-05-13). Same look-resolution pattern as `InstancedTrees`; re-fetches on store `bakeLastMs` change.
+- `src/utils/terrainShader.js` — shared terrain-displacement helpers. Every ground-anchored consumer reads from the same `uExag` uniform (driven from `terrainExag.value`, lerped toward `V_EXAG` from `src/lib/terrainCommon.js` by `BakedGround.TerrainExagDriver`). Helpers:
+  - `patchTerrain(mat, { perVertex, terrainNormals })` — rigid (sample at `modelMatrix[3].xz`) or per-vertex (sample at each vertex's world XZ). Used by ground, post/rail meshes, foundation paths.
+  - `patchTerrainAtCentroidRaw(mat, centroidRaw)` — rigid lift by a precomputed raw value × uExag, via per-material `uCentroidRaw` uniform. Used by building walls where the anchor isn't the mesh origin but the mean-of-footprint-vertices raw (see FEATURES.md "Terrain doctrine").
+  - `patchTerrainInstanced(mat)` — for InstancedMesh; samples at each instance's world origin and divides the lift by instance Y-scale so the world-space result is `sample × uExag` METERS regardless of per-instance scaling. Used by lamps, trees.
+  - `BILLBOARD_VS_INC` snippet (in `src/components/StreetLights.jsx`) — lifts billboard quads directly in world space inside the custom ShaderMaterial vertex shader; bypasses three's standard project_vertex chain.
+- `src/lib/terrainCommon.js` — `V_EXAG` constant + `makeElevationSampler` (bilinear). Currently `V_EXAG = 1.5`. Single dial for the whole scene; changing it rescales every consumer coherently.
 
 The runtime also re-renders live edits in Designer/Stage during authoring sessions — color changes in Stage Surfaces show on screen *immediately*, not on next bake. The bake then captures a snapshot for handoff.
 

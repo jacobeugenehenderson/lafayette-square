@@ -15,6 +15,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
+import { patchTerrainInstanced } from '../utils/terrainShader'
 
 // Module-level cache: one material set per look. Sharing materials across
 // component remounts keeps program count at 2 even if the tree component
@@ -164,6 +165,11 @@ async function buildMaterials(lookName) {
   })
   treeMaterial.name = `tree-atlas:${lookName}`
   injectFoliageSway(treeMaterial)
+  // Each tree is an instance; lift every instance to its own ground sample
+  // via the shared uExag uniform. Chains AFTER sway so the foliage
+  // begin_vertex modifications still run; terrain adds y += sample*uExag
+  // on top of the per-instance translation, sway leaves the canopy alone.
+  patchTerrainInstanced(treeMaterial)
 
   return { manifest, treeMaterial, roster }
 }

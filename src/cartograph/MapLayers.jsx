@@ -330,7 +330,16 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // Layers owned by 3D components in shots — skip from MapLayers to avoid
   // double-rendering. Keep alleys/footways/paths/parking/landscape/barriers:
   // those stay as flat ground patches in shots (the map vernacular).
-  const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'lamp', 'centerline', 'labels'])
+  //
+  // `ground` is the LS-bbox-wide dark base plane (color = layerColors.ground,
+  // typically near-black). In shots BakedGround paints the full slab over
+  // every cell of the bbox, so MapLayers' ground plane would just sit on
+  // top with a coarser 25 m segmentation than BakedGround's per-vertex
+  // detail — at terrain bulges (e.g. Lafayette Park center) it samples
+  // ~14 m higher than the face-park polygon interior interpolates to, so
+  // the dark slab wins the depth test and the grass disappears. The slab
+  // is owned by BakedGround in shots; skip the MapLayers ground here.
+  const SHOT_SKIP = new Set(['park', 'water', 'building', 'tree', 'lamp', 'centerline', 'labels', 'ground'])
   // In Survey, roadway marking layers (stripes / edge lines / bike lanes /
   // OSM centerlines) are Measure/Design-era surface paint — Survey only
   // cares about roadway silhouettes, so hide them.
@@ -713,19 +722,23 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       ))}
 
 
-      {/* Parking lots (amenity=parking overlays) — colored via Land Use: Parking */}
+      {/* Parking lots (amenity=parking overlays) — colored via Land Use: Parking.
+          Per-vertex terrain displacement so the polygon edges sit on local
+          ground; rigidCentroid leaves the polygon as a flat tilted plane
+          while the ground beneath tilts per-vertex, producing the
+          "curled paper" floating-edge artifact on uneven terrain. */}
       {!hide.parking_lot && parkingLotGeo && (
         <mesh geometry={parkingLotGeo}
-          material={makeFlatMat(luColors.parking || DEFAULT_LU_COLORS.parking || '#6A6A62', PRI.parking_lot, { rigidCentroid: true })}
+          material={makeFlatMat(luColors.parking || DEFAULT_LU_COLORS.parking || '#6A6A62', PRI.parking_lot)}
           renderOrder={PRI.parking_lot} receiveShadow />
       )}
 
-      {/* Landscape overlays (leisure + natural subtypes) — use makeFlatMat
-          so they get terrain displacement + radial fade like other layers. */}
+      {/* Landscape overlays (leisure + natural subtypes) — per-vertex
+          displacement (see parking_lot note above). */}
       {Object.entries(landscapeByKind).map(([kind, geo]) => {
         if (!geo || hide[kind]) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
-        const mat = makeFlatMat(col, PRI.landscape, { rigidCentroid: true })
+        const mat = makeFlatMat(col, PRI.landscape)
         return <mesh key={`ls-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape} receiveShadow />
       })}
 

@@ -30,9 +30,18 @@ index.html
         │       ├── WeatherPoller           → fetches open-meteo.com every N min
         │       ├── CelestialBodies         (sun/moon/stars; live, no data fetch beyond bright_stars.json + planetarium/*)
         │       ├── CloudDome               (procedural — does NOT consume meteorologist artifacts today)
-        │       ├── Terrain                 ← terrain.json (live import)
-        │       ├── BakedGround lookId="lafayette-square"
-        │       │       ↑ fetches /baked/lafayette-square/{ground.json,ground.bin,scene.json,ground.lightmap.png}
+        │       ├── Terrain                 ← src/data/terrain.{json,bin} (kit-baked
+        │       │                             pair via cartograph/bake-terrain.js;
+        │       │                             metadata static-imported, .bin fetched
+        │       │                             via Vite `?url` import + top-level
+        │       │                             await). Mesh `visible={false}` in
+        │       │                             both Cartograph and production —
+        │       │                             mount stays alive only so the
+        │       │                             `terrainExag` shader uniform keeps
+        │       │                             driving Y-displacement on ribbons +
+        │       │                             buildings + lamps.
+        │       ├── BakedGround lookId={INSTANCE.lookId}
+        │       │       ↑ fetches /baked/<lookId>/{ground.json,ground.bin,scene.json,ground.lightmap.png}
         │       ├── LafayettePark
         │       │       ↑ park_water.json + park_paths.json (live imports)
         │       │       ↑ fetches /baked/<look>/scene.json (for bake-aware lift/offsets)
@@ -48,9 +57,27 @@ index.html
         │       │   ├── MapPin × N          (mobile-deferred)
         │       │   └── LandmarkMarkers
         │       ├── StreetLights            ← street_lamps.json (live)
-        │       ├── GatewayArch             (procedural catenary, no data file)
+        │       ├── GatewayArch             (procedural catenary; placement +
+        │       │                             transform + uplights + horizon disc
+        │       │                             authored, baked into scene.arch +
+        │       │                             scene.horizon. Shared consumer at
+        │       │                             src/components/GatewayArch.jsx —
+        │       │                             cartograph Stage + production +
+        │       │                             Preview all mount this same file
+        │       │                             (SC.7 consolidation, 2026-05-13).
+        │       │                             DesignerArch plan-view silhouette
+        │       │                             lives in src/cartograph/.)
         │       ├── CameraRig
-        │       ├── PostProcessing          (EffectComposer: Bloom / N8AO desktop / DOF / FilmGrade / FilmGrain)
+        │       ├── PostProcessing          (shared consumer at src/components/
+        │       │                             PostProcessing.jsx. Operator-authored
+        │       │                             channels: bloom, ao, exposure, warmth,
+        │       │                             fill, mist, halo, grade, grain,
+        │       │                             shadow — all baked into scene.json.
+        │       │                             EffectComposer: N8AO + Bloom +
+        │       │                             AerialPerspective + FilmGrade +
+        │       │                             FilmGrain. Cartograph Stage + Preview
+        │       │                             mount the same file with override
+        │       │                             props.)
         │       └── DeferredStreetLights    (mobile fallback)
         │
         ├── Controls / CompassRose / BrowseHeader / SidePanel / EventTicker
@@ -79,10 +106,10 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 
 | Artifact | Consumer | Status |
 |---|---|---|
-| `/baked/<look>/ground.json` + `ground.bin` + `ground.lightmap.png` + `scene.json` | `BakedGround.jsx` | ✅ Production |
+| `/baked/<look>/ground.json` + `ground.bin` + `ground.lightmap.png` | `BakedGround.jsx` | ✅ Production |
+| `/baked/<look>/scene.json` | `CelestialBodies` (sky/ambient/hemi/dirSun/dirMoon/constellations/milkyWay), `PostProcessing` (bloom/ao/exposure/warmth/fill/mist/halo/grade/grain/shadow), `GatewayArch` (arch/horizon), `CameraRig` (shots/browseHeading), `LafayettePark` (bake-aware lift/offsets), `BakedGround` (palette/materials/layerVis) | ✅ Production. Per-Look authoring snapshot — every cartograph-authored channel (SC.1 / SC.2 / SC.3 / SC.5 / SC.7) reaches the runtime through this file. |
 | `/baked/default.json` (arborist tree placements) + GLB variants in `/baked/<look>/trees/` + tree atlas textures | `InstancedTrees.jsx` | ✅ Production |
 | `/baked/<look>/trees-atlas.json` | `treeAtlasMaterial.js` | ✅ Production |
-| `/baked/<look>/scene.json` | `LafayettePark.jsx` (for bake-aware offsets/lifts) | ✅ Production |
 | `/baked/<look>/lamps.json` | `BakedLamps.jsx` | ✅ Production + Stage + Preview (production switched 2026-05-12, L1.1) |
 | `/baked/<look>/buildings.{json,bin}` | `src/preview/BakedBuildings.jsx` | ⚠ Preview-only — production `LafayetteScene` reads live `src/data/buildings.json` |
 
@@ -106,7 +133,7 @@ What the LS app consumes from `public/baked/` vs. what it loads live.
 | `src/data/park_water.json` | `LafayettePark` | Already baked-into-ground for ground bake; still live for park render. Decide: retire live import. |
 | `src/data/park_paths.json` | `LafayettePark` | Same as park_water |
 | `src/data/street_lamps.json` | `StreetLights`, `lampLightmap.js` | Production hasn't switched to `BakedLamps`. Already addressed in Stage/Preview. |
-| `src/data/terrain.json` | `Terrain.jsx`, `utils/elevation.js`, `utils/terrainShader.js` | Static elevation data; freeze or bake |
+| `src/data/terrain.{json,bin}` | `Terrain.jsx`, `utils/elevation.js`, `utils/terrainShader.js` | ✅ Baked via `cartograph/bake-terrain.js` (clipped to LS_STENCIL, 5 m/sample, paired metadata.json + Float32 .bin payload). Magnitude + consumer-parity sweep landed 2026-05-14: V_EXAG=1.5; foundation/wall anchor = mean of footprint vertex raw (matches `bake-buildings.js`); `mergeBufferGeometries` preserves per-vertex `aCentroidY`; `TERRAIN_DISPLACE_INSTANCED` divides lift by instance Y-scale (lamp/tree fix); trees + glow/halo billboards now patched; LafayettePark switched from rigid-park-group lift to per-item (gravel paths per-vertex, posts/rails rigid-at-mesh-origin, lake/grotto via shared `<PondGroup>` rigid lift, labels via `<ElevatedGroup>`); `bake-ground.js` refines face polygon + landscape overlay triangulation to ≤15 m max edge. See `cartograph/FEATURES.md` "Terrain doctrine" for the full rule. Per-Look elevation-exag channel still pending. |
 | `src/data/bright_stars.json` | `CelestialBodies` | Static catalog; freeze |
 | `src/data/planetarium/{constellations,named_stars,planets}.json` | `PlanetariumOverlay` (unmounted today?), `CelestialBodies` | Static; freeze |
 | `src/data/landmarks.json` + `src/data/menus.json` | `useInit`, `useListings` | Static catalog merged with GAS state; keep live |
@@ -222,7 +249,7 @@ Authoring HTMLs (`/cartograph.html`, `/arborist.html`, `/preview.html`) bypass `
 - **Time-of-day is live, frame-by-frame.** `useTimeOfDay` + `useSkyState` + `CelestialBodies` + `CloudDome` compute continuously from real time + `INSTANCE.geography.{lat,lon}`. No baked time-of-day data anywhere.
 - **Per-building neon stays live.** `LafayetteScene` reads `buildings.json` lazily; per-building `NeonBand` mount is gated on listing hours from `useListings` and ticks every 60s. The merged-mesh `bake-buildings` artifact is a perf proof in Preview but doesn't replace this consumer.
 - **Per-instance config via `src/instance.js`** (Couplers §6, shipped). `INSTANCE.lookId` is the default Look the runtime loads (the `?look=` URL override still wins where wired — Preview's standalone path); `INSTANCE.geography.{lat,lon,timezone}` is consumed by SunCalc / weather API / planetarium / coordinate conversions; `INSTANCE.cary.{smsNumber,smsNumberDisplay,email}` and `INSTANCE.contact.email` carry Cary program endpoints. A different instance swaps `src/instance.js` and the runtime is generic. **Out of scope (still LS-literal):** UI flavor copy that uses "Lafayette Square" as crafted text, cartograph multi-scene scene-id routing (`SCENE_REGISTRY`, `DEFAULT_LOOK_ID` in cartograph store), toy fixture's lookId (shares LS tree atlas), deploy-side references (CNAME, Worker, OG meta — cleanout plan territory).
-- **All runtime asset paths route through `import.meta.env.BASE_URL`.** Slab fetches (`BakedGround`, `BakedLamps`, `InstancedTrees`, `LafayettePark`, `treeAtlasMaterial`, `BakedBuildings`, `StageArch`, `CartographApp`) — landed `f871a9d`. JSX asset paths (`PlaceCard.assetUrl()`, `GlassSearch.resolveLogoUrl()`, `LafayetteScene` MapPin) — already kit-portable from prior work. Same build deploys to root (production) or subpath (staging) without code changes. Memory: `project_kit_deploy_path_agnostic`.
+- **All runtime asset paths route through `import.meta.env.BASE_URL`.** Slab fetches (`BakedGround`, `BakedLamps`, `InstancedTrees`, `LafayettePark`, `treeAtlasMaterial`, `BakedBuildings`, `GatewayArch`, `CartographApp`) — landed `f871a9d`. JSX asset paths (`PlaceCard.assetUrl()`, `GlassSearch.resolveLogoUrl()`, `LafayetteScene` MapPin) — already kit-portable from prior work. Same build deploys to root (production) or subpath (staging) without code changes. Memory: `project_kit_deploy_path_agnostic`. (Reference updated to `GatewayArch` 2026-05-13 — `StageArch` retired in SC.7's consolidation onto the shared consumer.)
 
 ---
 

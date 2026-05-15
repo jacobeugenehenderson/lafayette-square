@@ -402,34 +402,127 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
   return { byMaterial, byFaceUse }
 }
 
-// Triangulate one polygon (outer ring + optional hole rings). Returns
-// indices referencing the merged buffer. ShapeUtils.triangulateShape
-// honors holes — feed it the contour and an array of holes and the result
-// indexes into [contour..., ...holes...] in declaration order.
+// Triangulate one polygon (outer ring + optional hole rings) and OPTIONALLY
+// refine the triangulation by iteratively splitting any triangle whose longest
+// edge exceeds `maxEdge` meters. 1-to-4 midpoint subdivision: a triangle with
+// a long edge is split into four child triangles sharing the original
+// winding (preserves CW-facing-up convention so FrontSide shading stays
+// correct). Each midpoint is added as a Steiner point inside the polygon —
+// since midpoints of edges that lie inside the polygon also lie inside, this
+// is geometrically safe for any concave land-use polygon.
+//
+// Why: per-vertex `patchTerrain` at runtime samples the terrain texture only
+// at each baked vertex; fragments interpolate between them. Face polygons
+// authored at block scale (~50 m corner-to-corner) only sample raw at four
+// places per block, so interior fragments interpolate linearly across a
+// distance where the heightfield actually curves — causing dense overlays
+// (asphalt centerlines, building foundations anchored to footprint vertices)
+// to disagree with the face's interpolated Y at the same XZ. Subdividing
+// face polygons to ~5–8 m edges matches the terrain texture resolution and
+// pulls the face's rendered surface back onto the heightfield.
 //
 // Winding: ShapeUtils emits CCW in (x, z) 2D, which is CW when mapped to
-// (x, 0, z) viewed from +Y. Flip the index order so the triangle's front
-// face is up — receives sun shadow correctly under FrontSide.
-function triangulatePolygon(outer, holes, vertexOffset) {
-  const contour = outer.map(([x, z]) => new THREE.Vector2(x, z))
-  const holeContours = holes.map(h => h.map(([x, z]) => new THREE.Vector2(x, z)))
-  const tris = THREE.ShapeUtils.triangulateShape(contour, holeContours)
-  const indices = new Uint32Array(tris.length * 3)
-  for (let i = 0; i < tris.length; i++) {
-    indices[i * 3]     = tris[i][0] + vertexOffset
-    indices[i * 3 + 1] = tris[i][2] + vertexOffset
-    indices[i * 3 + 2] = tris[i][1] + vertexOffset
+// (x, 0, z) viewed from +Y. Flip the index order at emit time.
+function triangulateAndRefine(outer, holes, maxEdge) {
+  // Build position list: contour vertices first, then each hole, in the
+  // order ShapeUtils.triangulateShape expects.
+  const posList = []
+  const pushRing = (ring) => {
+    for (const [x, z] of ring) posList.push(x, 0, z)
   }
-  return indices
+  pushRing(outer)
+  for (const h of holes) pushRing(h)
+
+  // Initial triangulation
+  const contourV = outer.map(([x, z]) => new THREE.Vector2(x, z))
+  const holesV = holes.map(h => h.map(([x, z]) => new THREE.Vector2(x, z)))
+  const tris = THREE.ShapeUtils.triangulateShape(contourV, holesV)
+  // Apply CCW→CW flip up front; refinement preserves whatever winding it
+  // starts with.
+  let triList = tris.map(t => [t[0], t[2], t[1]])
+
+  if (!maxEdge || maxEdge <= 0 || !Number.isFinite(maxEdge)) {
+    // No refinement requested — emit as-is.
+    const positions = new Float32Array(posList)
+    const indices = new Uint32Array(triList.length * 3)
+    for (let i = 0; i < triList.length; i++) {
+      indices[i * 3]     = triList[i][0]
+      indices[i * 3 + 1] = triList[i][1]
+      indices[i * 3 + 2] = triList[i][2]
+    }
+    return { positions, indices }
+  }
+
+  // Iterative 1-to-4 refinement. Midpoint cache keyed by edge ensures
+  // adjacent triangles share their midpoint vertex (no T-junctions).
+  const maxEdgeSq = maxEdge * maxEdge
+  const midCache = new Map()
+  function midpointIndex(a, b) {
+    const key = a < b ? `${a}-${b}` : `${b}-${a}`
+    let idx = midCache.get(key)
+    if (idx !== undefined) return idx
+    const ax = posList[a * 3],     az = posList[a * 3 + 2]
+    const bx = posList[b * 3],     bz = posList[b * 3 + 2]
+    idx = posList.length / 3
+    posList.push((ax + bx) * 0.5, 0, (az + bz) * 0.5)
+    midCache.set(key, idx)
+    return idx
+  }
+  function edgeSq(a, b) {
+    const dx = posList[a * 3]     - posList[b * 3]
+    const dz = posList[a * 3 + 2] - posList[b * 3 + 2]
+    return dx * dx + dz * dz
+  }
+
+  // Hard cap on iterations as a guard. log4 of (worst-case-block-side /
+  // maxEdge) ≈ 4 for LS at maxEdge=5; 8 is comfortable headroom.
+  for (let pass = 0; pass < 8; pass++) {
+    let changed = false
+    const next = []
+    for (const t of triList) {
+      const [v0, v1, v2] = t
+      const e01 = edgeSq(v0, v1)
+      const e12 = edgeSq(v1, v2)
+      const e20 = edgeSq(v2, v0)
+      if (e01 < maxEdgeSq && e12 < maxEdgeSq && e20 < maxEdgeSq) {
+        next.push(t)
+        continue
+      }
+      changed = true
+      const m01 = midpointIndex(v0, v1)
+      const m12 = midpointIndex(v1, v2)
+      const m20 = midpointIndex(v2, v0)
+      // Four sub-triangles preserving the parent's winding. Center
+      // triangle (m01, m12, m20) is co-wound with the parent — walk it
+      // in the same orientation as v0→v1→v2.
+      next.push([v0, m01, m20])
+      next.push([m01, v1, m12])
+      next.push([m20, m12, v2])
+      next.push([m01, m12, m20])
+    }
+    triList = next
+    if (!changed) break
+  }
+
+  const positions = new Float32Array(posList)
+  const indices = new Uint32Array(triList.length * 3)
+  for (let i = 0; i < triList.length; i++) {
+    indices[i * 3]     = triList[i][0]
+    indices[i * 3 + 1] = triList[i][1]
+    indices[i * 3 + 2] = triList[i][2]
+  }
+  return { positions, indices }
 }
 
 // Group input items into one material's BufferGeometry data. `items` is
 // either an array of rings (ribbon bands — simple polygons) or an array
-// of {outer, holes} faces (land-use fills, post-clip).
+// of {outer, holes} faces (land-use fills, post-clip). `opts.maxEdge`
+// triggers per-polygon refinement (face polygons + landscape overlays).
 //
-// Y per vertex = 0 today (perimeter bowl parked behind issue #19); the
-// terrain-aware variant lives behind getElevation()/V_EXAG when re-enabled.
-function itemsToBuffers(items) {
+// Y per vertex = 0; the terrain-aware lift happens at runtime in the
+// vertex shader (patchTerrain perVertex via texture sampling at each
+// vertex's world XZ).
+function itemsToBuffers(items, { maxEdge = null } = {}) {
   // Normalize to {outer, holes} so the rest of the function is uniform.
   const polys = []
   for (const it of items) {
@@ -440,33 +533,23 @@ function itemsToBuffers(items) {
       polys.push({ outer: it.outer, holes: it.holes || [] })
     }
   }
-  let totalVerts = 0
-  for (const p of polys) {
-    totalVerts += p.outer.length
-    for (const h of p.holes) totalVerts += h.length
+  if (polys.length === 0) return { positions: new Float32Array(0), indices: new Uint32Array(0) }
+
+  // Triangulate (and optionally refine) each polygon independently, then
+  // concatenate with vertex offsets.
+  const perPoly = polys.map(p => triangulateAndRefine(p.outer, p.holes, maxEdge))
+  let totalV = 0, totalI = 0
+  for (const r of perPoly) { totalV += r.positions.length / 3; totalI += r.indices.length }
+
+  const positions = new Float32Array(totalV * 3)
+  const indices = new Uint32Array(totalI)
+  let vOff = 0, iOff = 0
+  for (const r of perPoly) {
+    positions.set(r.positions, vOff * 3)
+    for (let i = 0; i < r.indices.length; i++) indices[iOff + i] = r.indices[i] + vOff
+    vOff += r.positions.length / 3
+    iOff += r.indices.length
   }
-  const positions = new Float32Array(totalVerts * 3)
-  const indexChunks = []
-  let vIdx = 0
-  const writeRing = (ring) => {
-    for (let i = 0; i < ring.length; i++) {
-      positions[vIdx * 3]     = ring[i][0]
-      positions[vIdx * 3 + 1] = 0
-      positions[vIdx * 3 + 2] = ring[i][1]
-      vIdx++
-    }
-  }
-  for (const p of polys) {
-    const base = vIdx
-    writeRing(p.outer)
-    for (const h of p.holes) writeRing(h)
-    indexChunks.push(triangulatePolygon(p.outer, p.holes, base))
-  }
-  let idxLen = 0
-  for (const c of indexChunks) idxLen += c.length
-  const indices = new Uint32Array(idxLen)
-  let off = 0
-  for (const c of indexChunks) { indices.set(c, off); off += c.length }
   return { positions, indices }
 }
 
@@ -564,6 +647,23 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
   const positionChunks = []
   const indexChunks = []
 
+  // Polygon groups (large land-use blocks + leisure/natural overlays) get
+  // refined to a per-vertex spacing that matches the terrain texture so
+  // runtime patchTerrain perVertex no longer linear-interpolates across
+  // 50 m block-corner samples. Ribbon bands (asphalt/curb/sidewalk/etc.)
+  // are already dense at the centerline so they bypass refinement —
+  // their existing vertex density captures the local heightfield fine.
+  const LANDSCAPE_OVERLAY_KEYS = new Set([
+    'parking_lot', 'garden', 'playground', 'swimming_pool',
+    'pitch', 'sports_centre', 'wood', 'scrub',
+  ])
+  // Target ~3× the terrain.bin sample spacing (5 m). At LS's ~3% gradient
+  // this caps the per-fragment interpolation error at roughly 0.45 m raw
+  // (~0.7 m visible at V_EXAG=1.5) — well below the per-footprint
+  // foundation exposure we were getting from un-refined block-corner
+  // triangulation, while keeping the bin file under ~10 MB.
+  const REFINE_MAX_EDGE_M = 15
+
   let renderOrder = 0
   for (const [kind, key] of PAINT_ORDER) {
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
@@ -571,7 +671,10 @@ export async function bakeGround({ look = 'default', scene = 'lafayette-square' 
     // time so the lawn ribbon underneath a clipped face fill stays visible.
     const items = kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key)
     if (!items || items.length === 0) continue
-    const { positions, indices } = itemsToBuffers(items)
+    const needsRefine = kind === 'face' || LANDSCAPE_OVERLAY_KEYS.has(key)
+    const { positions, indices } = itemsToBuffers(items, {
+      maxEdge: needsRefine ? REFINE_MAX_EDGE_M : null,
+    })
     if (indices.length === 0) continue
 
     // Color resolution: per-Look design.json wins, then the canonical
