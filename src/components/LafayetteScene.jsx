@@ -593,8 +593,9 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
   const foundationY = getBuildingY(building)
 
-  // Neon band: real listings always mount (hours checked inside NeonBand),
-  // simulated listings mount only when the storefront sim slider marks them open
+  // Per-building neon state — the actual mesh is one merged <NeonBands>
+  // in LafayetteScene's render; this block resolves the per-id "showNeon"
+  // hex/sim-open flags consumed elsewhere in this Building.
   const isSimOpen = usePlaceState((s) => s.openBuildings.has(building.id))
   const categoryHex = neonInfo?.hex
   const listingHours = neonInfo?.hours
@@ -1147,7 +1148,7 @@ function resolveLookId(propLookId) {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, neonTubeOverride, forceNeonOn } = {}) {
+function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn } = {}) {
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
   // Stage's mount in CartographApp passes live-subscribed overrides from
   // the cartograph store so Surfaces panel drags retint instantly.
@@ -1250,7 +1251,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     return places
   }, [neonLookup, neonTick, forceNeonOn])
 
-  // Frustum-cull neon: only mount NeonBand for buildings the camera can actually see.
+  // Frustum-cull neon: only mount NeonBands for buildings the camera can actually see.
   // Checks every 30 frames (~0.5s) to avoid per-frame churn.
   const _neonFrustum = useRef(new THREE.Frustum())
   const _neonMatrix = useRef(new THREE.Matrix4())
@@ -1313,7 +1314,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
 
       {/* Neon — single Path B mesh over all currently-open places, with
           scene.json.neon driving the uCore/uTube/uBleed uniforms. */}
-      {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId={INSTANCE.lookId} neonTubeOverride={neonTubeOverride} />}
+      {openPlaces.length > 0 && <NeonBands places={openPlaces} lookId={INSTANCE.lookId} />}
 
       {/* Street labels — SceneLabel renderer, panel-driven style; widthM
           carries the chain's pavement width so labels scale with the

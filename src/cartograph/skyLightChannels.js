@@ -131,31 +131,20 @@ export const DIRMOON_FIELD_KEYS  = ['value']
 // open-this-minute places enter the merged mesh. Operator can still
 // animate a slower warm-up via TOD slots; the flat default matches
 // observed authoring intent rather than the earlier "ship dark" stance.
+// Neon — Gaussian intensity masks (TOD-animatable) + emissive
+// brightness multiplier. The shader's three Gaussian widths
+// (core/tube/bleed) paint the realistic neon look authored in the
+// 2026-05-13 work session; `emissive` is the master brightness lever.
+// Tube geometry (radius, wall offset, roof drop) is physically
+// motivated and lives as constants in NeonBands.jsx — not authored.
 export const NEON_FIELDS = [
-  { key: 'core',  label: 'Hot core',          min: 0, max: 1, step: 0.02 },
-  { key: 'tube',  label: 'Tube glow',         min: 0, max: 1, step: 0.02 },
-  { key: 'bleed', label: 'Atmospheric bleed', min: 0, max: 1, step: 0.02 },
+  { key: 'core',     label: 'Hot core',          min: 0,   max: 1,  step: 0.02 },
+  { key: 'tube',     label: 'Tube glow',         min: 0,   max: 1,  step: 0.02 },
+  { key: 'bleed',    label: 'Atmospheric bleed', min: 0,   max: 1,  step: 0.02 },
+  { key: 'emissive', label: 'Emissive',          min: 0.5, max: 8,  step: 0.1  },
 ]
-export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1 }
+export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
-
-// Neon tube — physical / shader properties of the NeonBands mesh.
-// Separate channel from the existing `neon` (core/tube/bleed
-// intensities, TOD-animated) because these three are flat,
-// non-TOD-animated: tube radius and roof lift are geometry (a change
-// triggers useMemo rebuild), emissive is a static shader multiplier.
-// Defaults are byte-identical to the 6aef522 provisional hardwires
-// in NeonBands.jsx — chunky values picked to keep neon legible at LS
-// Browse/Hero/Street; operator now owns the tuning. Doctrine:
-// hardwires-come-out-when-channels-install (literals retire from the
-// runtime consumer, defaults stay here).
-export const NEON_TUBE_FIELDS = [
-  { key: 'tubeRadius', label: 'Tube radius (m)', min: 0.04, max: 0.6, step: 0.01 },
-  { key: 'roofLift',   label: 'Roof lift (m)',   min: 0,    max: 1.5, step: 0.02 },
-  { key: 'emissive',   label: 'Emissive',        min: 0.5,  max: 8,   step: 0.1 },
-]
-export const NEON_TUBE_FLAT_DEFAULTS = { tubeRadius: 0.20, roofLift: 0.30, emissive: 4.0 }
-export const NEON_TUBE_FIELD_KEYS = NEON_TUBE_FIELDS.map(f => f.key)
 
 // Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform /
 // uplights. Single non-TOD channel. Field names drop the redundant `arch`

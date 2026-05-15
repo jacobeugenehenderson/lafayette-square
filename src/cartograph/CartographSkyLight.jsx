@@ -20,7 +20,6 @@ import {
   CONSTELLATIONS_FIELDS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELDS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELDS, NEON_FLAT_DEFAULTS,
-  NEON_TUBE_FIELDS, NEON_TUBE_FLAT_DEFAULTS,
   AMBIENT_FIELDS, AMBIENT_FLAT_DEFAULTS,
   HEMI_FIELDS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FIELDS, DIRSUN_FLAT_DEFAULTS,
@@ -103,8 +102,6 @@ export default function CartographSkyLight() {
         fields={HALO_FIELDS} flatDefaults={HALO_FLAT_DEFAULTS} />
       <StoreChannel name="neon" label="Neon"
         fields={NEON_FIELDS} flatDefaults={NEON_FLAT_DEFAULTS} />
-      <StoreChannel name="neonTube" label="Neon tube"
-        fields={NEON_TUBE_FIELDS} flatDefaults={NEON_TUBE_FLAT_DEFAULTS} />
       <NeonForceOnToggle />
 
       <SectionLabel label="Lighting" />

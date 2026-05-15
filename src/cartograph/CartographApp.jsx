@@ -95,9 +95,10 @@ function NeonPump() {
     const minute = tod.getMinuteOfDay()
     const slotMinutes = neon.animated ? getTodSlotMinutes(tod.currentTime) : null
     const triple = resolveGroupAtMinute(neon, minute, slotMinutes, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS)
-    _neonUniforms.coreUniform.value  = triple.core  ?? 0
-    _neonUniforms.tubeUniform.value  = triple.tube  ?? 0
-    _neonUniforms.bleedUniform.value = triple.bleed ?? 0
+    _neonUniforms.coreUniform.value     = triple.core     ?? 0
+    _neonUniforms.tubeUniform.value     = triple.tube     ?? 0
+    _neonUniforms.bleedUniform.value    = triple.bleed    ?? 0
+    _neonUniforms.emissiveUniform.value = triple.emissive ?? 4
   })
   return null
 }
@@ -575,7 +576,6 @@ const SCENE_REGISTRY = {
       const materialColorsOverride  = useCartographStore(s => s.materialColors)
       const archOverride            = useCartographStore(s => s.arch)
       const horizonOverride         = useCartographStore(s => s.horizon)
-      const neonTubeOverride        = useCartographStore(s => s.neonTube)
       const forceNeonOn             = useCartographStore(s => s.neonForceOn)
       return <>
         <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
@@ -588,7 +588,6 @@ const SCENE_REGISTRY = {
           paletteOverride={paletteOverride}
           materialPhysicsOverride={materialPhysicsOverride}
           materialColorsOverride={materialColorsOverride}
-          neonTubeOverride={neonTubeOverride}
           forceNeonOn={forceNeonOn}
         /></R3FErrorBoundary>
         {!hiddenLayers.lamp && (

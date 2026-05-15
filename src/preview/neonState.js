@@ -6,7 +6,8 @@
  */
 
 export const neon = {
-  coreUniform:  { value: 0 },
-  tubeUniform:  { value: 0 },
-  bleedUniform: { value: 0 },
+  coreUniform:     { value: 0 },
+  tubeUniform:     { value: 0 },
+  bleedUniform:    { value: 0 },
+  emissiveUniform: { value: 4 },
 }

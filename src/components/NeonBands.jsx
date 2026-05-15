@@ -3,23 +3,28 @@ import * as THREE from 'three'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { NEON_TUBE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
 
 /**
  * NeonBands — Path B runtime renderer per HANDOFF-neon.md.
  *
- * One 4-facet diamond tube per place, walking the building footprint
- * offset outward by OFFSET_OUT meters. At each convex corner the tube
- * sweeps an arc (K=CORNER_ARC_SEGS extra rings) around the original
- * corner with radius OFFSET_OUT, so the offset is uniform throughout
- * including around bends. Concave corners and near-straight bends fall
- * back to a single mitred ring.
+ * Quarter-round profile (top + outer ring) walking the building
+ * footprint offset outward by OFFSET_OUT meters. At each convex corner
+ * the tube sweeps an arc (K=CORNER_ARC_SEGS extra rings) around the
+ * original corner with radius OFFSET_OUT, so the offset is uniform
+ * throughout including around bends. Concave corners and near-straight
+ * bends fall back to a single mitred ring.
  *
- * GPU economy: per ring = 4 verts (cardinal cross-section points),
- * radial smooth normals so the shader interpolates round across the
- * facet. Typical Victorian (15 corners, mostly 90°) ≈ 180 verts /
- * 360 tris. LS peak (30 places open) ≈ 5400 verts / 10800 tris. Single
- * draw, single shader (Bloom-stable).
+ * Quarter-round (vs the prior half-tube): top + outer facets only.
+ * Reads as a real wall-mounted neon tube — a glass ¼-bend sitting on
+ * the parapet edge — and additive bleed onto the roof tiles becomes a
+ * free upper-rim wash light. No bottom facet means no downward
+ * emitter, which kills the "neon glowing from under the building"
+ * artifact when the camera creeps below rooftop height.
+ *
+ * GPU economy: per ring = 2 verts. Typical Victorian (15 corners,
+ * mostly 90°) ≈ 90 verts / 60 tris. LS peak (30 places open)
+ * ≈ 2700 verts / 1800 tris. Single draw, single shader (Bloom-stable).
  *
  * The "round tube" look is shader, not geometry:
  * `r = 1 - dot(worldNormal, viewDir)` paints a hot core on front-facing
@@ -30,11 +35,16 @@ import { NEON_TUBE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
  * group-of-3 channel in Sky & Light.
  */
 
-// Tube radius and roof lift are operator-tunable via the `neonTube`
-// channel (Sky & Light → Neon section): the literals that used to sit
-// here retired into NEON_TUBE_FLAT_DEFAULTS when the channel installed.
-// Per-instance resolved values flow in through `buildTubeFor`'s args.
-const OFFSET_OUT       = 0.08   // meters past the footprint edge (~3" — real neon mounts close to the wall)
+// Placement constants. Doctrine: real neon signage mounts on the wall
+// fascia BELOW the roof eave, hanging a few decimeters out from the
+// wall face. Earlier `roofLift=0.3` parked the tube ABOVE the rooftop
+// inside the gable/hip roof volume — only visible through eave gaps,
+// giving the "peeks out from somewhere" symptom. We retire the
+// `neonTube` channel: these three are physically motivated, not
+// authored values.
+const TUBE_RADIUS      = 0.4    // ~16" — chunky enough to read at LS hero/browse distance
+const ROOF_DROP        = 0.2    // tube center sits this far below rooftop seam (wall-mounted, not roof-mounted)
+const OFFSET_OUT       = 0.35   // meters past the wall face — clears any eave overhang
 const CORNER_ARC_SEGS  = 2      // arc segments per convex corner (K=2 → 3 rings, 45°/seg for a 90° corner)
 const CORNER_ARC_MIN   = 15 * Math.PI / 180  // turn smaller than this stays a single mitred ring
 
@@ -94,63 +104,80 @@ function buildRingPath(footprint) {
   return rings
 }
 
-// Diamond-cross-section tube along the ring chain. Returns flat arrays
-// for the caller to merge. `tubeRadius` + `roofLift` resolved per-render
-// from the operator's `neonTube` channel (see component body).
-function buildTubeFor(building, tubeRadius, roofLift) {
+// Quarter-round cross-section along the ring chain (top + outer).
+// Returns flat arrays for the caller to merge.
+//
+// `centroidXZ` is the building's terrain-lift anchor: the X/Z where the
+// owning building samples the heightmap. Buildings render via
+// patchTerrain (rigid) which samples at modelMatrix[3] (=
+// b.position.xz), so neon uses the same point. Every vertex of this
+// place's tube carries the same aCentroidXZ; in the vertex shader the
+// terrain texture is sampled there and `transformed.y` gets lifted by
+// `sample * uExag`, matching the building's GPU lift exactly. Without
+// this the tube sits 10–25 m below the rooftop on LS terrain.
+function buildTubeFor(building) {
   const fp = building.footprint
   if (!fp || fp.length < 3) return null
-  // Rooftop world Y. Callers should pass `baseY` when foundationHeight
-  // (period-pedestal lift) is non-zero — see LafayetteScene's openPlaces
-  // construction. Toy / flat-grade scenes fall back to size[1].
-  const baseY = (building.baseY ?? building.size?.[1] ?? 0) + roofLift
-  const r = tubeRadius
+  // Tube center sits ROOF_DROP below the rooftop edge — wall-mounted
+  // signage, hanging OFFSET_OUT out from the wall face. GPU adds the
+  // terrain lift per-vertex via aCentroidXZ + uTerrainMap.
+  const baseY = (building.baseY ?? building.size?.[1] ?? 0) - ROOF_DROP
+  const r = TUBE_RADIUS
   const rings = buildRingPath(fp)
   const m = rings.length
   if (m < 2) return null
 
+  const cx = building.position?.[0] ?? 0
+  const cz = building.position?.[2] ?? 0
+
   const positions = []
   const normals = []
   const uvs = []
+  const centroidXZ = []
   for (let i = 0; i <= m; i++) {
     const ring = rings[i % m]
     const u = i / m
-    // top, outer, bottom, inner — radial smooth normals
+    // top, outer — radial smooth normals. Bottom + inner facets retired:
+    // bottom lit the underside (camera below rooftop saw glow with no
+    // physical emitter); inner lived inside the wall.
     positions.push(ring.x,                   baseY + r, ring.z)
-    normals.push(0, 1, 0); uvs.push(u, 0)
+    normals.push(0, 1, 0); uvs.push(u, 0);   centroidXZ.push(cx, cz)
     positions.push(ring.x + ring.nx * r,     baseY,     ring.z + ring.nz * r)
-    normals.push(ring.nx, 0, ring.nz); uvs.push(u, 0.25)
-    positions.push(ring.x,                   baseY - r, ring.z)
-    normals.push(0, -1, 0); uvs.push(u, 0.5)
-    positions.push(ring.x - ring.nx * r,     baseY,     ring.z - ring.nz * r)
-    normals.push(-ring.nx, 0, -ring.nz); uvs.push(u, 0.75)
+    normals.push(ring.nx, 0, ring.nz); uvs.push(u, 1); centroidXZ.push(cx, cz)
   }
 
-  // 4 facets per ring connection × 2 triangles = 8 tris per segment.
+  // 1 facet (top↔outer) per ring connection × 2 tris.
   const indices = []
   for (let i = 0; i < m; i++) {
-    const a = i * 4
-    const b = (i + 1) * 4
-    for (let f = 0; f < 4; f++) {
-      const v0 = a + f
-      const v1 = a + ((f + 1) % 4)
-      const v2 = b + f
-      const v3 = b + ((f + 1) % 4)
-      indices.push(v0, v2, v1)
-      indices.push(v1, v2, v3)
-    }
+    const a = i * 2
+    const b = (i + 1) * 2
+    indices.push(a + 0, b + 0, a + 1)
+    indices.push(a + 1, b + 0, b + 1)
   }
-  return { positions, normals, uvs, indices }
+  return { positions, normals, uvs, centroidXZ, indices }
 }
 
 const VERT = /* glsl */`
 attribute vec3 aColor;
+attribute vec2 aCentroidXZ;
+uniform sampler2D uTerrainMap;
+uniform float uBMinX, uBMinZ, uSpanX, uSpanZ, uExag;
 varying vec3 vColor;
 varying vec3 vWorldNormal;
 varying vec3 vWorldPos;
 void main() {
   vColor = aColor;
-  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vec3 lifted = position;
+  // Per-building terrain lift — sample at the owning building's
+  // (position.x, position.z), the same XZ buildings sample via
+  // patchTerrain (rigid). All rings of one place lift together, so the
+  // tube stays rigid relative to its rooftop.
+  vec2 _tuv = clamp(vec2(
+    (aCentroidXZ.x - uBMinX) / uSpanX,
+    (aCentroidXZ.y - uBMinZ) / uSpanZ
+  ), 0.0, 1.0);
+  lifted.y += texture2D(uTerrainMap, _tuv).r * uExag;
+  vec4 wp = modelMatrix * vec4(lifted, 1.0);
   vWorldPos = wp.xyz;
   vWorldNormal = normalize(mat3(modelMatrix) * normal);
   gl_Position = projectionMatrix * viewMatrix * wp;
@@ -205,93 +232,107 @@ void main() {
  *   (business-hours filter). When uForceOn=0 the shader discards.
  * @param {string} [lookId] — when provided, fetches the per-Look
  *   scene.json via `useSceneJson` and applies `scene.neon.values` to
- *   the shared `_neonUniforms` and `scene.neonTube.values` to local
- *   geometry/uniform inputs. Production-side driver of the three
- *   intensity masks (uCore/uTube/uBleed) and the operator-tunable
- *   tubeRadius / roofLift / emissive. Authoring contexts (Cartograph
- *   Stage) skip the lookId pump path and pass `*Override` props
- *   instead — CartographApp's per-frame `NeonPump` is the
- *   authoritative writer for the intensity triple in that context.
- * @param {{tubeRadius, roofLift, emissive}} [neonTubeOverride] —
- *   Stage live-retint hook. Resolved values:
- *     override prop → scene.neonTube.values → NEON_TUBE_FLAT_DEFAULTS.
+ *   the shared `_neonUniforms` (uCore/uTube/uBleed Gaussian intensity
+ *   masks + emissive). Authoring contexts (Cartograph Stage) skip the
+ *   lookId pump path — CartographApp's per-frame `NeonPump` is the
+ *   authoritative writer for these uniforms in that context.
+ *
+ * Geometry constants (tube radius, roof drop, wall offset) are no
+ * longer operator-authored — they're physically motivated and live as
+ * top-of-file constants. The previous `neonTube` channel retired
+ * because authoring those values offered no design value while letting
+ * the operator place the tube somewhere it would be occluded.
  */
-export default function NeonBands({ places, forceOn = true, lookId, neonTubeOverride }) {
+export default function NeonBands({ places, forceOn = true, lookId }) {
   const scene = useSceneJson(lookId || '')
   useEffect(() => {
     if (!lookId || !scene?.neon?.values) return
     const v = scene.neon.values
-    _neonUniforms.coreUniform.value  = v.core  ?? 0
-    _neonUniforms.tubeUniform.value  = v.tube  ?? 0
-    _neonUniforms.bleedUniform.value = v.bleed ?? 0
+    _neonUniforms.coreUniform.value     = v.core     ?? 0
+    _neonUniforms.tubeUniform.value     = v.tube     ?? 0
+    _neonUniforms.bleedUniform.value    = v.bleed    ?? 0
+    _neonUniforms.emissiveUniform.value = v.emissive ?? 4
   }, [lookId, scene])
 
-  // Resolve geometry/shader inputs: override (Stage drag) wins,
-  // else baked scene, else channel defaults. Stage operator's slider
-  // edit re-runs this resolution → geometry useMemo (deps include
-  // tubeRadius + roofLift) rebuilds the merged mesh.
-  const ov = neonTubeOverride?.values
-  const sv = scene?.neonTube?.values
-  const tubeRadius = ov?.tubeRadius ?? sv?.tubeRadius ?? NEON_TUBE_FLAT_DEFAULTS.tubeRadius
-  const roofLift   = ov?.roofLift   ?? sv?.roofLift   ?? NEON_TUBE_FLAT_DEFAULTS.roofLift
-  const emissive   = ov?.emissive   ?? sv?.emissive   ?? NEON_TUBE_FLAT_DEFAULTS.emissive
-
   const geometry = useMemo(() => {
-    const positions = []
-    const normals   = []
-    const uvs       = []
-    const colors    = []
-    const indices   = []
+    const positions  = []
+    const normals    = []
+    const uvs        = []
+    const colors     = []
+    const centroidXZ = []
+    const indices    = []
     let baseVert = 0
     for (const p of places) {
       if (!p.neon?.category) continue
-      const tube = buildTubeFor(p, tubeRadius, roofLift)
+      const tube = buildTubeFor(p)
       if (!tube) continue
       const rgb = categoryColorVec(p.neon.category)
       const count = tube.positions.length / 3
-      for (let i = 0; i < tube.positions.length; i++) positions.push(tube.positions[i])
-      for (let i = 0; i < tube.normals.length;   i++) normals.push(tube.normals[i])
-      for (let i = 0; i < tube.uvs.length;       i++) uvs.push(tube.uvs[i])
+      for (let i = 0; i < tube.positions.length;  i++) positions.push(tube.positions[i])
+      for (let i = 0; i < tube.normals.length;    i++) normals.push(tube.normals[i])
+      for (let i = 0; i < tube.uvs.length;        i++) uvs.push(tube.uvs[i])
+      for (let i = 0; i < tube.centroidXZ.length; i++) centroidXZ.push(tube.centroidXZ[i])
       for (let i = 0; i < count; i++) colors.push(rgb[0], rgb[1], rgb[2])
       for (let i = 0; i < tube.indices.length; i++) indices.push(baseVert + tube.indices[i])
       baseVert += count
     }
     const geo = new THREE.BufferGeometry()
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-    geo.setAttribute('normal',   new THREE.Float32BufferAttribute(normals, 3))
-    geo.setAttribute('uv',       new THREE.Float32BufferAttribute(uvs, 2))
-    geo.setAttribute('aColor',   new THREE.Float32BufferAttribute(colors, 3))
+    geo.setAttribute('position',    new THREE.Float32BufferAttribute(positions, 3))
+    geo.setAttribute('normal',      new THREE.Float32BufferAttribute(normals, 3))
+    geo.setAttribute('uv',          new THREE.Float32BufferAttribute(uvs, 2))
+    geo.setAttribute('aColor',      new THREE.Float32BufferAttribute(colors, 3))
+    geo.setAttribute('aCentroidXZ', new THREE.Float32BufferAttribute(centroidXZ, 2))
     geo.setIndex(indices)
-    geo.computeBoundingSphere()
+    // Bounding sphere intentionally NOT computed: CPU positions are in
+    // terrain-naive Y; the GPU vertex shader lifts every vertex by
+    // ~10–25m at LS scale before draw. A sphere fit on CPU positions
+    // lies meters below the actual rendered mesh and gets the whole
+    // thing frustum-culled at close range, producing the "neon
+    // flashes and disappears as I creep around" symptom. We turn
+    // off frustum culling on the mesh instead — single small draw,
+    // the cost of always submitting it is trivial.
     return geo
-  }, [places, tubeRadius, roofLift])
+  }, [places])
 
-  // Material is stable; emissive + forceOn live updates write through
-  // the material's uniform refs so we avoid rebuilding the
-  // ShaderMaterial on each slider drag.
+  // Material is stable; forceOn live updates write through the
+  // material's uniform refs so we avoid rebuilding the ShaderMaterial.
+  // Intensity + emissive uniforms are shared module-scope refs that
+  // NeonPump / the useEffect above mutate directly.
   const materialRef = useRef(null)
   if (!materialRef.current) {
     materialRef.current = new THREE.ShaderMaterial({
       vertexShader: VERT,
       fragmentShader: FRAG,
       uniforms: {
-        uCore:     _neonUniforms.coreUniform,
-        uTube:     _neonUniforms.tubeUniform,
-        uBleed:    _neonUniforms.bleedUniform,
-        uEmissive: { value: emissive },
-        uForceOn:  { value: forceOn ? 1.0 : 0.0 },
+        uCore:       _neonUniforms.coreUniform,
+        uTube:       _neonUniforms.tubeUniform,
+        uBleed:      _neonUniforms.bleedUniform,
+        uEmissive:   _neonUniforms.emissiveUniform,
+        uForceOn:    { value: forceOn ? 1.0 : 0.0 },
+        // Shared terrain uniforms — by reference, so the per-frame
+        // uExag update from StreetRibbons drives this material too.
+        uTerrainMap: TERRAIN_UNIFORMS.uTerrainMap,
+        uBMinX:      TERRAIN_UNIFORMS.uBMinX,
+        uBMinZ:      TERRAIN_UNIFORMS.uBMinZ,
+        uSpanX:      TERRAIN_UNIFORMS.uSpanX,
+        uSpanZ:      TERRAIN_UNIFORMS.uSpanZ,
+        uExag:       TERRAIN_UNIFORMS.uExag,
       },
       transparent: true,
       depthWrite: false,
       toneMapped: false,
+      side: THREE.FrontSide,
       blending: THREE.AdditiveBlending,
     })
+    // Unique program cache key — half-tube terrain-lifted neon is a
+    // distinct shader family from any other patched material.
+    // [[feedback_unique_program_cache_key_before_wrappers]]
+    materialRef.current.customProgramCacheKey = () => 'neon-bands-halftube-terrain-v1'
   }
-  materialRef.current.uniforms.uEmissive.value = emissive
-  materialRef.current.uniforms.uForceOn.value  = forceOn ? 1.0 : 0.0
+  materialRef.current.uniforms.uForceOn.value = forceOn ? 1.0 : 0.0
 
   useEffect(() => () => { geometry.dispose() }, [geometry])
   useEffect(() => () => { materialRef.current?.dispose() }, [])
 
-  return <mesh geometry={geometry} material={materialRef.current} renderOrder={20} />
+  return <mesh geometry={geometry} material={materialRef.current} renderOrder={20} frustumCulled={false} />
 }

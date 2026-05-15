@@ -2,6 +2,25 @@
 
 > Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
+## 2026-05-15 — Neon placement + occlusion (in-flight, UNVERIFIED)
+
+Worked through the original "neon at water level / underwater reflections" symptom in `src/components/NeonBands.jsx`. Code changes are in; **visual confirmation in Stage at LS scale is still pending** — Jacob saw bright neon "peek out from somewhere" intermittently at ground/roof seams and disappear as the camera approached. Latest hypothesis is roof-volume occlusion (hipped/gabled roofs swallow a tube placed above the rooftop line on Lafayette buildings); not yet confirmed.
+
+Changes landed this session:
+- **Terrain lift** — added per-vertex `aCentroidXZ` attribute and inlined `texture2D(uTerrainMap, ...) * uExag` in the vertex shader so the tube rides the same heightmap as the building it sits on. Was missing entirely; neon was rendering at terrain-naive Y (~10–25 m below the actual rooftop at LS scale).
+- **Frustum culling disabled** on the merged mesh (`frustumCulled={false}`). CPU bounding sphere was computed on un-lifted positions; three.js was culling against a sphere meters below the rendered geometry → "flashes and vanishes as I creep around."
+- **Quarter-round profile** (top + outer facets only). Down from the original 4-facet diamond. Inner facet retired (lived inside the wall); bottom facet retired (lit the underside with no physical emitter).
+- **Wall-fascia mount** — `baseY = foundation + size[1] − 0.2m`, `OFFSET_OUT = 0.35m`, `TUBE_RADIUS = 0.4m`. Tube hangs on the wall just below the rooftop seam, out from the wall face, like real signage. Previous `roofLift = 0.3m` parked it inside the gable/hip roof volume — the current best guess for why it was still hidden, not confirmed.
+- **Panel consolidation** — retired the `neonTube` channel entirely (store, bake, schema, Stage panel, override prop chain). Emissive folded into the `neon` channel as a 4th slider; `_neonUniforms.emissiveUniform` is now the shared ref `NeonPump` writes per frame. Tube radius and roof drop are physically motivated and now hardcoded constants in `NeonBands.jsx` — not authored. Reasoning: authoring those values offered no design value while letting the operator place the tube somewhere it would be occluded.
+
+**Outstanding to resolve next session:**
+1. Verify the new wall-fascia placement actually reads correctly in Stage at Browse / Hero / Street cameras around the LS perimeter. If still hidden, the occluder isn't roof geometry and the diagnosis was wrong.
+2. If still hidden, candidate next checks: per-building `getRoofPeakHeight` overhang vs. the new 0.35 m `OFFSET_OUT`; whether `b.position.xz` is actually the XZ the building's `patchTerrain` samples (wall geometry could anchor at centroid-of-footprint instead); whether `uExag` ever desyncs between the building's patched material and the shared-uniform pump.
+3. **PlaceCard "force on this place" toggle** — proposed earlier this session as the ergonomic precision instrument for QC'ing one building's tube shape / category color in isolation. ~20 LOC. Not done.
+4. **Trinity write-through** — `FEATURES.md:484` still describes the old 4-facet diamond + `neonTube` channel arrangement. Update once the visual fix is verified.
+
+`src/components/NeonBands.jsx` carries the full geometry doctrine in comments; `[[feedback_toy_not_proving_ground_for_ls_visibility]]` applies (toy hid every one of these bugs).
+
 ## 2026-05-14 — Polygon-graph restructure (multi-session arc, LOAD-BEARING)
 
 Multi-session migration to align V2's implementation with the FEATURES "ribbon doctrine — the stage wall" section. Today's `buildBlockGeometryV2` re-walks `chain.points` in the surface hot path on every Designer store update — doctrine-noncompliant tech debt. Migrating to a frozen polygon-graph artifact (`public/baked/<scene>/polygons.json`) that surface-stage code reads exclusively. Operator interaction moves from chain-edits (today) to polygon-attribute editing (couplers, lane offsets, drag widths) that retriggers a polygon-graph rebake.

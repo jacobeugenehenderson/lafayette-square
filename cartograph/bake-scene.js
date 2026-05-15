@@ -38,7 +38,7 @@ import {
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
-  NEON_FLAT_DEFAULTS, NEON_TUBE_FLAT_DEFAULTS,
+  NEON_FLAT_DEFAULTS,
 } from '../src/cartograph/skyLightChannels.js'
 
 // SC.5 — strip transient runtime-UI fields (preview, speed) off the
@@ -82,11 +82,6 @@ export async function bakeScene({ look = 'default' } = {}) {
     layerVis:        design.layerVis        || {},
     lampGlow:        design.lampGlow        || { grass: 0.06, trees: 0.40, pool: 1.0 },
     neon:            design.neon            || { values: { ...NEON_FLAT_DEFAULTS } },
-    // Retires the 6aef522 provisional hardwires (TUBE_RADIUS=0.20,
-    // ROOF_LIFT=0.30, frag-shader emissive *4.0) in NeonBands.jsx as a
-    // proper authored channel. Flat-value (not TOD-animated); operator
-    // dials chunkiness / parapet clearance / glow strength.
-    neonTube:        design.neonTube        || { values: { ...NEON_TUBE_FLAT_DEFAULTS } },
     // SC.1 — sky / lighting / celestial. Operator authors via Sky & Light
     // panel; defaults seeded from skyGrid.js + skyLightChannels.js so an
     // unauthored Look renders identically to today's hardcoded shader.

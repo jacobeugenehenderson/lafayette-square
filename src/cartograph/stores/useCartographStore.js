@@ -31,7 +31,6 @@ import {
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
-  NEON_TUBE_FIELD_KEYS, NEON_TUBE_FLAT_DEFAULTS,
   AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS,
   HEMI_FIELD_KEYS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FIELD_KEYS, DIRSUN_FLAT_DEFAULTS,
@@ -360,12 +359,6 @@ const useCartographStore = create((set, get) => ({
   // hue comes from the category palette; the Stage operator authors only
   // the physics. See HANDOFF-neon.md.
   neon:           { values: { ...NEON_FLAT_DEFAULTS } },
-  // Neon tube — flat physical/shader properties retiring the
-  // 6aef522 provisional hardwires in NeonBands.jsx. Flat-value
-  // channel (not TOD-animated); operator dials chunkiness, parapet
-  // clearance, emissive strength. Stage live-retints via override
-  // prop; production reads scene.neonTube frozen-at-bake.
-  neonTube:       { values: { ...NEON_TUBE_FLAT_DEFAULTS } },
   // Stage-only QA toggle. Bypasses LafayetteScene's openPlaces
   // business-hours filter so the operator can preview neon visibility
   // at any TOD without scrubbing to night / waiting for open hours.
@@ -895,11 +888,6 @@ const useCartographStore = create((set, get) => ({
     fieldKeys: NEON_FIELD_KEYS,
     flatDefaults: NEON_FLAT_DEFAULTS,
   }, set, get),
-  ...createGroupChannelActions({
-    name: 'neonTube',
-    fieldKeys: NEON_TUBE_FIELD_KEYS,
-    flatDefaults: NEON_TUBE_FLAT_DEFAULTS,
-  }, set, get),
   // Stage-only QA toggle. Intentionally does NOT call
   // _saveDesignDebounced — see initial-state comment on neonForceOn.
   setNeonForceOn: (on) => { set({ neonForceOn: !!on }) },
@@ -1137,7 +1125,6 @@ const useCartographStore = create((set, get) => ({
         constellations:  migrateGroupChannel(design.constellations, CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
         milkyWay:        migrateGroupChannel(design.milkyWay, MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS),
         neon:            migrateGroupChannel(design.neon, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS),
-        neonTube:        migrateGroupChannel(design.neonTube, NEON_TUBE_FIELD_KEYS, NEON_TUBE_FLAT_DEFAULTS),
         sky:             migrateSkyChannel(design.sky),
         ambient:         migrateGroupChannel(design.ambient, AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS),
         hemi:            migrateGroupChannel(design.hemi,    HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS),
@@ -1590,7 +1577,6 @@ const useCartographStore = create((set, get) => ({
         constellations:  migrateGroupChannel(design.constellations, CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
         milkyWay:        migrateGroupChannel(design.milkyWay, MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS),
         neon:            migrateGroupChannel(design.neon, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS),
-        neonTube:        migrateGroupChannel(design.neonTube, NEON_TUBE_FIELD_KEYS, NEON_TUBE_FLAT_DEFAULTS),
         sky:             migrateSkyChannel(design.sky),
         ambient:         migrateGroupChannel(design.ambient, AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS),
         hemi:            migrateGroupChannel(design.hemi,    HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS),
@@ -1725,7 +1711,6 @@ const useCartographStore = create((set, get) => ({
           constellations: s.constellations,
           milkyWay: s.milkyWay,
           neon: s.neon,
-          neonTube: s.neonTube,
           sky: s.sky,
           ambient: s.ambient,
           hemi: s.hemi,
