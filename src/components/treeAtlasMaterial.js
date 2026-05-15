@@ -144,12 +144,26 @@ function injectFoliageSway(material) {
         `
          #ifdef USE_MAP
            vec2 mapUV = vMapUv;
+           vec4 sampledDiffuseColor;
            if (vBark > 0.5 && (uBarkUVScale.x != 1.0 || uBarkUVScale.y != 1.0)) {
+             // Wrap photo bark inside the species's atlas tile. fract()
+             // would normally introduce a derivative discontinuity at wrap
+             // lines → GPU picks coarsest mip there → as sway moves the
+             // trunk those blurry stripes "swim" relative to the bark.
+             // Fix: compute the SMOOTH gradient (what the gradient would
+             // be without fract, i.e. dFdx(vMapUv) scaled by uBarkUVScale)
+             // and feed it to textureGrad so mipmap selection ignores the
+             // fract jump. Wrap line still exists but is invisible in mip
+             // selection. WebGL 2 standard.
              vec2 localUV = (vMapUv - uBarkTileOffset) / uBarkTileScale;
              localUV = fract(localUV * uBarkUVScale);
              mapUV = localUV * uBarkTileScale + uBarkTileOffset;
+             vec2 gradX = dFdx(vMapUv) * uBarkUVScale;
+             vec2 gradY = dFdy(vMapUv) * uBarkUVScale;
+             sampledDiffuseColor = textureGrad(map, mapUV, gradX, gradY);
+           } else {
+             sampledDiffuseColor = texture2D(map, mapUV);
            }
-           vec4 sampledDiffuseColor = texture2D(map, mapUV);
            #ifdef DECODE_VIDEO_TEXTURE
              sampledDiffuseColor = vec4(mix(pow(sampledDiffuseColor.rgb * 0.9478672986 + vec3(0.0521327014), vec3(2.4)), sampledDiffuseColor.rgb * 0.0773993808, vec3(lessThanEqual(sampledDiffuseColor.rgb, vec3(0.04045)))), sampledDiffuseColor.w);
            #endif

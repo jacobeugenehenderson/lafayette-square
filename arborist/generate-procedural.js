@@ -491,11 +491,11 @@ async function readLeafPng(morph) {
 // trunks. Format is [circumferential, vertical]. Higher numbers = tighter
 // tiling = finer-grained bark pattern across the cylinder surface.
 export const BARK_BY_SPECIES = {
-  procedural_broadleaf:  { materialRef: 'Bark007', uvScale: [1.5, 4.0], tintBase: '#ffffff', tintJitterRange: 0.08, roughnessOverride: -1 },
-  procedural_conifer:    { materialRef: 'Bark012', uvScale: [1.0, 3.0], tintBase: '#ffffff', tintJitterRange: 0.06, roughnessOverride: -1 },
-  procedural_ornamental: { materialRef: 'Bark003', uvScale: [1.5, 3.0], tintBase: '#ffffff', tintJitterRange: 0.10, roughnessOverride: -1 },
-  procedural_columnar:   { materialRef: 'Bark004', uvScale: [1.0, 4.0], tintBase: '#ffffff', tintJitterRange: 0.05, roughnessOverride: -1 },
-  procedural_weeping:    { materialRef: 'Bark015', uvScale: [1.5, 2.0], tintBase: '#ffffff', tintJitterRange: 0.07, roughnessOverride: -1 },
+  procedural_broadleaf:  { materialRef: 'Bark007', uvScale: [2.0, 8.0], tintBase: '#ffffff', tintJitterRange: 0.08, roughnessOverride: -1 },
+  procedural_conifer:    { materialRef: 'Bark012', uvScale: [1.5, 6.0], tintBase: '#ffffff', tintJitterRange: 0.06, roughnessOverride: -1 },
+  procedural_ornamental: { materialRef: 'Bark003', uvScale: [2.0, 5.0], tintBase: '#ffffff', tintJitterRange: 0.10, roughnessOverride: -1 },
+  procedural_columnar:   { materialRef: 'Bark004', uvScale: [1.5, 7.0], tintBase: '#ffffff', tintJitterRange: 0.05, roughnessOverride: -1 },
+  procedural_weeping:    { materialRef: 'Bark015', uvScale: [2.0, 4.0], tintBase: '#ffffff', tintJitterRange: 0.07, roughnessOverride: -1 },
 }
 
 export const PRESETS = {
