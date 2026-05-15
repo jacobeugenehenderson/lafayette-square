@@ -2662,7 +2662,7 @@ is the cross-phase contract. Foundational pipeline
 (publish-glb / bake-look / bake-trees / atlas-pack) stays unmodified across all
 phases.
 
-- [x] **Phase A — Procedural mode: dice + adopt** (shipped 2026-05-15).
+- [x] **Phase A — Procedural mode: dice + adopt** (shipped 2026-05-15, commits `2323a78` + `f6aaf61`).
   UI iteration surface in Arborist; generator algorithm unchanged.
   `src/arborist/ProceduralWorkstage.jsx` (new) + mode toggle in
   `ArboristApp.jsx`; per-species variant slots with 🎲 dice + ✓ adopt +
@@ -2683,7 +2683,7 @@ phases.
   like v1 (algorithm unchanged — Phases D/E/C/B/F/G follow).
 
 - [x] **Phase D — SCA + tropism** (broadleaf / weeping / columnar / ornamental
-  skeletons) — shipped 2026-05-15. New `arborist/spaceColonization.js`
+  skeletons) — shipped 2026-05-15, commit `06f903e`. New `arborist/spaceColonization.js`
   (Runions 2007 SCA + tropism + envelope-as-revolution-profile + Murray's-law
   radii). Generator's `else` branch in `generateTreeMesh()` swapped from
   free-growth `growBranch` to `runSCA(envelope, sca, seedN, trunkBase, tipRadius)`

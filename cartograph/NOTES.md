@@ -75,7 +75,7 @@ PRESETS table in `arborist/generate-procedural.js` is the committed canonical se
 
 Each phase is a separate commit + acceptance + visible-bug coverage statement.
 
-**Phase A — Procedural mode: dice + adopt** (UI iteration surface) — **SHIPPED 2026-05-15**
+**Phase A — Procedural mode: dice + adopt** (UI iteration surface) — **SHIPPED 2026-05-15** (commits `2323a78` + `f6aaf61` query-string fix)
 - New `src/arborist/ProceduralWorkstage.jsx`; top-level mode toggle in `ArboristApp.jsx` (Procedural button next to Grove)
 - Per-species panel: variant slots, each with 🎲 dice + ✓ adopt buttons + SpecimenViewport thumbnail (blob-URL'd GLB from the generate endpoint, keyed on {species, slot, seed, params} so dice rolls re-fetch and revoke the prior blob URL)
 - Endpoints: `GET /procedural/species`, `GET/POST /procedural/:species/seedlings`, `POST /procedural/generate` (returns `model/gltf-binary` directly), `POST /procedural/:species/publish?look=<id>` (shells out to `node arborist/generate-procedural.js --species <id>` + fires per-Look atlas auto-bake fire-and-forget)
@@ -85,7 +85,7 @@ Each phase is a separate commit + acceptance + visible-bug coverage statement.
 - **Fixes:** operator iterates in seconds via UI; no CLI round-trip for new variants
 - **Doesn't fix:** trees still look the same as v1 (no algorithm change — Phases D/E/C/B/F/G follow)
 
-**Phase D — SCA + tropism** (skeleton for broadleaf / weeping / columnar / ornamental) — **SHIPPED 2026-05-15**
+**Phase D — SCA + tropism** (skeleton for broadleaf / weeping / columnar / ornamental) — **SHIPPED 2026-05-15** (commit `06f903e`)
 - New `arborist/spaceColonization.js` (~270 LOC). Runions 2007 SCA + tropism, pure kernel (no three.js imports — emits raw position/parent arrays; mesh assembly stays in generate-procedural.js). Exports `runSCA`, `ENVELOPE_PROFILES`, `DEFAULT_SCA_BY_PRESET`, `mulberry32`.
 - 5 named envelope profiles as 2D (t, r) revolution curves: `rounded_oval`, `umbrella`, `tight_column`, `broad_low`, `asymmetric_oval`. Profile r-values multiply by `envelope.width` (=canopyR semantics) to get max radius at each normalized height.
 - **`envelope.offsetYFrac` added beyond the brief.** Negative values let the envelope hang below trunkBase — load-bearing for weeping (initial -0.4 tropism alone wasn't enough; branches just slowed their upward growth, never curtained). With `offsetYFrac=-0.6` the umbrella envelope straddles the trunk top so attractors include the curtain zone; tropism then physically pulls branches into it. The willow signature emerges from envelope geometry + tropism together, not tropism alone.
