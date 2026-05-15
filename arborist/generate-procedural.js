@@ -390,17 +390,25 @@ function geoToPrimitive(doc, buffer, geo, mat) {
   return prim
 }
 
-async function buildSourceGLB({ species, variants, barkPng, leafPng, outPath }) {
+async function buildSourceGLB({ species, variants, barkBundle, leafPng, outPath, barkExtras }) {
   const doc = new Document()
   const buffer = doc.createBuffer()
 
-  const barkTex = doc.createTexture('procedural_bark')
-    .setImage(barkPng).setMimeType('image/png')
+  // Phase B (2026-05-15): bark is photo-PBR (color + normal from
+  // public/textures/bark/<materialRef>/). Multiple species can reference the
+  // same materialRef; atlas-survey sha1-dedups by texture bytes, so the
+  // master atlas carries ONE bark tile per unique source material regardless
+  // of how many species share it.
+  const barkColorTex = doc.createTexture(`bark_${barkBundle.materialRef}_color`)
+    .setImage(barkBundle.colorBytes).setMimeType('image/jpeg')
+  const barkNormalTex = doc.createTexture(`bark_${barkBundle.materialRef}_normal`)
+    .setImage(barkBundle.normalBytes).setMimeType('image/jpeg')
   const leafTex = doc.createTexture(`procedural_leaf_${species}`)
     .setImage(leafPng).setMimeType('image/png')
 
   const barkMat = doc.createMaterial('proceduralBark')
-    .setBaseColorTexture(barkTex)
+    .setBaseColorTexture(barkColorTex)
+    .setNormalTexture(barkNormalTex)
     .setAlphaMode('OPAQUE')
     .setRoughnessFactor(0.9)
     .setMetallicFactor(0)
@@ -428,34 +436,27 @@ async function buildSourceGLB({ species, variants, barkPng, leafPng, outPath }) 
 
 // ── Bark + leaf textures ─────────────────────────────────────────────────
 //
-// Bark: a 64×64 solid-color PNG per species. Bake-look's `atlas-survey.js`
-// requires every material to have a baseColorTexture (no-texture materials
-// can't atlas — see atlas-survey.js:124). `publish-glb.js`'s
-// `fallbackColorsForUnboundMaterials` sets baseColorFactor but does not add
-// a texture, so we must author one explicitly. Vertex colors are stripped by
-// bake-look's GLB rewriter (see bake-look.js:459), so per-tree bark variation
-// from the original ParkTrees palette can't survive — settle for per-species
-// for v1. SpeedTree migration restores the per-instance bark color via tinted
-// baked-cards atlas tiles.
+// Phase B (2026-05-15): bark is photo-PBR sourced from CC0 ambientCG / Poly
+// Haven tileable materials under `public/textures/bark/<materialRef>/`. Each
+// material directory carries `color.jpg`, `normal.jpg` (NormalGL convention),
+// `roughness.jpg`, and a `LICENSE.txt`. Multiple species can reference the
+// same `materialRef` (e.g. several broadleaf species → Bark007); the master
+// atlas's sha1 dedup in `atlas-survey.js` collapses them to a single tile,
+// so adding hero species is nearly free in atlas footprint.
+//
+// Phase B pillar 0.5 (NOTES.md): the Grove's single master atlas + sha1
+// dedup is the load-bearing innovation that makes the heroes-on-fillers
+// doctrine feasible at scale.
 
-async function buildBarkPng(hex) {
-  // 32×32 noisy brown — sharp-generated, deterministic per hex.
-  const w = 32, h = 32, c = new THREE.Color(hex)
-  const r0 = Math.round(c.r * 255), g0 = Math.round(c.g * 255), b0 = Math.round(c.b * 255)
-  const buf = Buffer.alloc(w * h * 4)
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const noise = (seed(x * 7 + y * 13) - 0.5) * 40
-      const i = (y * w + x) * 4
-      buf[i]     = Math.max(0, Math.min(255, r0 + noise))
-      buf[i + 1] = Math.max(0, Math.min(255, g0 + noise))
-      buf[i + 2] = Math.max(0, Math.min(255, b0 + noise))
-      buf[i + 3] = 255
-    }
-  }
-  return await sharp(buf, { raw: { width: w, height: h, channels: 4 } })
-    .png({ compressionLevel: 9 })
-    .toBuffer()
+const BARK_DIR = path.join(REPO_ROOT, 'public/textures/bark')
+
+async function loadBarkBundle(materialRef) {
+  const matDir = path.join(BARK_DIR, materialRef)
+  const [colorBytes, normalBytes] = await Promise.all([
+    fs.readFile(path.join(matDir, 'color.jpg')),
+    fs.readFile(path.join(matDir, 'normal.jpg')),
+  ])
+  return { materialRef, colorBytes, normalBytes }
 }
 
 async function readLeafPng(morph) {
@@ -468,12 +469,28 @@ async function readLeafPng(morph) {
 // cartograph/NOTES.md): no hardcoded shortcuts. The eventual Arborist UI
 // binds sliders to this same signature.
 
+// Phase B per-species bark spec. Each entry binds a species to one of the
+// CC0 photo-PBR materials under public/textures/bark/<materialRef>/ and
+// authors the per-species defaults for the retint shader:
+//   • materialRef: directory under public/textures/bark/
+//   • uvScale: [circumferential, vertical] tile repeat on each branch cylinder
+//     (1 = atlas tile sampled once across the cylinder; >1 = tiled tighter)
+//   • tintBase: per-species default tint (hex). The Look-level
+//     `design.materialColors[<speciesId>]` override wins at runtime.
+//   • tintJitterRange: per-instance hue jitter amplitude (0..0.3 typical).
+//     Adjacent trees of the same species hash off world-XZ to vary slightly.
+//   • roughnessOverride: -1 = use the sampled roughness texture; 0..1 forces
+//     a flat per-species roughness clamp.
+//
+// Hero species (G.1-G.5) will publish their own entries here on top of the
+// 5 fillers. SpeedTree migration drops in at the same shape via material
+// extras; the retint shader path survives unchanged (NOTES.md Phase B).
 export const BARK_BY_SPECIES = {
-  procedural_broadleaf:  '#5a4030',
-  procedural_conifer:    '#4d3828',
-  procedural_ornamental: '#634838',
-  procedural_columnar:   '#554030',
-  procedural_weeping:    '#4a3525',
+  procedural_broadleaf:  { materialRef: 'Bark007', uvScale: [2.0, 1.0], tintBase: '#ffffff', tintJitterRange: 0.08, roughnessOverride: -1 },
+  procedural_conifer:    { materialRef: 'Bark012', uvScale: [2.0, 1.0], tintBase: '#ffffff', tintJitterRange: 0.06, roughnessOverride: -1 },
+  procedural_ornamental: { materialRef: 'Bark003', uvScale: [2.0, 1.0], tintBase: '#ffffff', tintJitterRange: 0.10, roughnessOverride: -1 },
+  procedural_columnar:   { materialRef: 'Bark004', uvScale: [2.0, 1.0], tintBase: '#ffffff', tintJitterRange: 0.05, roughnessOverride: -1 },
+  procedural_weeping:    { materialRef: 'Bark015', uvScale: [2.0, 1.0], tintBase: '#ffffff', tintJitterRange: 0.07, roughnessOverride: -1 },
 }
 
 export const PRESETS = {
@@ -531,6 +548,12 @@ async function patchManifestForFillTier(species) {
   const p = path.join(REPO_ROOT, 'public/trees', species, 'manifest.json')
   const m = JSON.parse(await fs.readFile(p, 'utf8'))
   for (const v of m.variants ?? []) v.qualityOverride = 2
+  // Phase B: stamp the per-species bark spec onto the published species
+  // manifest. bake-look reads this when the look's atlas is rebaked and
+  // surfaces it into trees-atlas.json#/barkBySpecies — the runtime then
+  // looks up tint+jitter+roughness uniforms per (species, draw call).
+  const bark = BARK_BY_SPECIES[species]
+  if (bark) m.bark = { ...bark }
   await fs.writeFile(p, JSON.stringify(m, null, 2))
 }
 
@@ -680,13 +703,14 @@ export async function generateSingleVariantGLB({ species, slot, seed, params }) 
   if (!cfg) throw new Error(`unknown procedural species: ${species}`)
   const effective = resolveVariantParams(species, { slot, seed, params })
   const { barkGeo, leafGeo } = generateTreeMesh(effective)
-  const barkPng = await buildBarkPng(BARK_BY_SPECIES[species])
+  const barkSpec = BARK_BY_SPECIES[species]
+  const barkBundle = await loadBarkBundle(barkSpec.materialRef)
   const leafPng = await readLeafPng(cfg.leafMorph)
   const tmpPath = path.join('/tmp', `${species}-preview-${process.pid}-${Date.now()}.glb`)
   await buildSourceGLB({
     species,
     variants: [{ barkGeo, leafGeo }],
-    barkPng, leafPng, outPath: tmpPath,
+    barkBundle, leafPng, outPath: tmpPath,
   })
   const buf = await fs.readFile(tmpPath)
   await fs.unlink(tmpPath).catch(() => {})
@@ -722,8 +746,10 @@ async function main() {
     const seedlings = await readEffectiveSeedlings(species)
     console.log(`\n[generate-procedural] === ${species} (${seedlings.length} variants) ===`)
 
-    const barkPng = await buildBarkPng(BARK_BY_SPECIES[species])
+    const barkSpec = BARK_BY_SPECIES[species]
+    const barkBundle = await loadBarkBundle(barkSpec.materialRef)
     const leafPng = await readLeafPng(cfg.leafMorph)
+    console.log(`  bark: ${barkSpec.materialRef} (color ${(barkBundle.colorBytes.length / 1024).toFixed(0)} KB, normal ${(barkBundle.normalBytes.length / 1024).toFixed(0)} KB)`)
 
     const variants = seedlings.map((sd, i) => {
       const effective = resolveVariantParams(species, sd)
@@ -733,7 +759,7 @@ async function main() {
     })
 
     const tmpGlb = path.join('/tmp', `${species}.glb`)
-    await buildSourceGLB({ species, variants, barkPng, leafPng, outPath: tmpGlb })
+    await buildSourceGLB({ species, variants, barkBundle, leafPng, outPath: tmpGlb })
     const stat = await fs.stat(tmpGlb)
     console.log(`  → ${tmpGlb} (${(stat.size / 1024).toFixed(0)} KB)`)
 

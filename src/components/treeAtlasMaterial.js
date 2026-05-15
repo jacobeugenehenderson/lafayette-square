@@ -30,6 +30,22 @@ export const treeSwayUniforms = {
   uTime: { value: 0 },
 }
 
+// Phase B (2026-05-15) — per-(species, draw) bark retint uniforms. These
+// live on the SHARED tree material; InstancedTrees mutates the values in
+// each submesh's onBeforeRender right before the draw, so bark fragments
+// in different species' draw calls see different (tintBase, jitter,
+// roughness) — but the COMPILED PROGRAM is the same one. Bloom needs a
+// single tree-fragment program (see bake-look.js:200 "non-negotiable"); we
+// honor that by driving variance through uniforms, not #define branches.
+//
+// Per-fragment gating: the vertex shader passes `aBark` (1 for bark, 0 for
+// leaf — stamped into the merged geometry by InstancedTrees at runtime)
+// through a `vBark` varying. The fragment shader mixes the retint with
+// (1,1,1) by vBark so leaf fragments pass through untouched.
+//
+// Per-instance hue jitter: hashes world-XZ to keep neighboring trees from
+// looking like color clones. World-Y is intentionally excluded so a tall
+// branch and a low one in the same tree share a tint.
 function injectFoliageSway(material) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = treeSwayUniforms.uTime
@@ -38,19 +54,30 @@ function injectFoliageSway(material) {
     // `aLampGlow` attribute (pre-baked at tree position) carries the
     // gaussian sum over nearby lamps; the uniform scales it.
     shader.uniforms.uLampGlow = _lampGlow.treesUniform
+    // Phase B bark retint uniforms (per-draw mutation pattern).
+    shader.uniforms.uBarkTintBase = { value: new THREE.Color(1, 1, 1) }
+    shader.uniforms.uBarkTintJitterRange = { value: 0 }
+    shader.uniforms.uBarkRoughnessOverride = { value: -1 }
+    // Stash the shader on the material so InstancedTrees can mutate the
+    // uniforms per (species, draw) without redoing onBeforeCompile.
+    material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
         `#include <common>
          uniform float uTime;
          attribute float aLampGlow;
+         attribute float aBark;
          varying float vLampGlow;
-         varying float vCanopyW;`
+         varying float vCanopyW;
+         varying float vBark;
+         varying vec3 vWorldXZ;`
       )
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
          vLampGlow = aLampGlow;
+         vBark = aBark;
          // Canopy weight: hard-zero on the trunk, ramping in only above
          // the canopy break. Earlier 1.5→4.0 left ~20% contribution at 2m
          // which still showed as a faint trunk stripe. 3.0→4.5 gives a
@@ -66,6 +93,11 @@ function injectFoliageSway(material) {
            float swayAmp = 0.04;
            transformed.x += sin(uTime * 0.6 + phase) * swayAmp * h;
            transformed.z += cos(uTime * 0.5 + phase * 1.3) * swayAmp * h;
+           // Per-instance world-XZ for fragment hue jitter. We sample the
+           // instance translation column (constant within a draw) so every
+           // fragment of one tree gets ONE jitter value, not noise per
+           // vertex. Y intentionally excluded so trunk and canopy share it.
+           vWorldXZ = vec3(instWorld.x, 0.0, instWorld.z);
          }`
       )
     shader.fragmentShader = shader.fragmentShader
@@ -73,8 +105,42 @@ function injectFoliageSway(material) {
         '#include <common>',
         `#include <common>
          uniform float uLampGlow;
+         uniform vec3  uBarkTintBase;
+         uniform float uBarkTintJitterRange;
+         uniform float uBarkRoughnessOverride;
          varying float vLampGlow;
-         varying float vCanopyW;`
+         varying float vCanopyW;
+         varying float vBark;
+         varying vec3  vWorldXZ;`
+      )
+      .replace(
+        // Bark retint slot: bend diffuseColor by uBarkTintBase × per-tree
+        // hash, scaled by uBarkTintJitterRange. vBark gates the retint to
+        // bark fragments only (leaf fragments pass through identity).
+        // Patched AFTER <map_fragment> (which multiplies the atlas sample
+        // into diffuseColor) so the retint operates on the photo-PBR bark
+        // sample, not on the pre-texture diffuse uniform.
+        '#include <map_fragment>',
+        `#include <map_fragment>
+         {
+           float jh1 = fract(sin(dot(vWorldXZ.xz, vec2(127.1, 311.7))) * 43758.5453);
+           float jh2 = fract(sin(dot(vWorldXZ.xz, vec2(269.5, 183.3))) * 43758.5453);
+           float jh3 = fract(sin(dot(vWorldXZ.xz, vec2(419.2, 371.9))) * 43758.5453);
+           vec3 jitter = vec3(jh1, jh2, jh3);
+           // Center jitter around 1.0 so jitterRange=0 means "no jitter".
+           vec3 perInstanceTint = mix(vec3(1.0), 0.5 + jitter, uBarkTintJitterRange);
+           vec3 barkTint = uBarkTintBase * perInstanceTint;
+           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * barkTint, vBark);
+         }`
+      )
+      .replace(
+        // Roughness override slot: clamp roughnessFactor on bark fragments
+        // when the per-species override is >= 0. Leaf fragments untouched.
+        '#include <roughnessmap_fragment>',
+        `#include <roughnessmap_fragment>
+         if (uBarkRoughnessOverride >= 0.0) {
+           roughnessFactor = mix(roughnessFactor, uBarkRoughnessOverride, vBark);
+         }`
       )
       .replace(
         // Slot the warm contribution into the standard emissive accumulator

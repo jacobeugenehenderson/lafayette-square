@@ -2740,16 +2740,47 @@ phases.
   look planted via root flare; close-up Hero craggy. **Doesn't fix:** bark
   still flat; foliage still sparse.
 
-- [ ] **Phase B — Procedural bark shader.** Material extras
-  `{barkPattern, barkDark, barkLight, barkScale, barkRoughness}`. Bark
-  texture collapses to shared 4×4 white placeholder.
-  `src/components/treeAtlasMaterial.js` `onBeforeCompile` patches: 5 bark
-  patterns (furrowed/peeling/smooth/scaly/papery) via world-space noise,
-  normal perturbation, roughness override. UI gains bark panel. Atlas size
-  ↓ ~30%; freed area enables leaf-cluster CONTENT_CAP bump.
-  **Fixes:** bark looks like bark per-species, per-instance world-space
-  variation, atlas budget unlocks. **Doesn't fix:** foliage density still
-  wrong; per-species fall colors still flat.
+- [x] **Phase B (core) — Photo-PBR bark + retint shader infra** (shipped 2026-05-15).
+  Scope pivoted post-orchestrator-conversation: the GLSL pattern-library
+  approach was DROPPED (no faith we could ship 5 convincing procedural bark
+  patterns at the visual bar). Phase B core lands as: 5 CC0 photo-PBR
+  tileable bark materials under `public/textures/bark/<materialRef>/`
+  (color + normal + roughness JPGs); `arborist/generate-procedural.js`
+  binds each procedural species to a `materialRef` via PRESETS and embeds
+  the photo bytes as `baseColorTexture` + `normalTexture` on the bark
+  material; sha1 dedup in `atlas-survey.js` already collapses repeated
+  refs to one tile (load-bearing for when G.1–G.5 heroes pile onto the
+  same materialRefs as their fillers). Per-species `bark` spec stamps onto
+  `manifest.json`; `bake-look.js` surfaces `barkBySpecies` into
+  `trees-atlas.json`. Runtime: 3 new uniforms on the shared tree material
+  (`uBarkTintBase`, `uBarkTintJitterRange`, `uBarkRoughnessOverride`);
+  fragment shader patches at `<map_fragment>` + `<roughnessmap_fragment>`,
+  gated by per-vertex `aBark` attribute baked at runtime merge time in
+  `InstancedTrees` (from per-primitive `atlasKind: 'bark'/'leaf'` that
+  `bake-look.js` now writes — was previously the constant `'unified'`).
+  `onBeforeRender` per submesh mutates uniforms per-(species, draw call)
+  so single shader program is preserved (Bloom-stable). Per-Look palette
+  override: `scene.materialColors[<species>]` wins over species default
+  `tintBase` at the manifest-effective level, no rebake required. Phase B
+  pipeline survives SpeedTree migration unchanged.
+  **Fixes:** bark looks like photo bark (not 32×32 noisy brown); per-(species,
+  Look, instance) retint via uniforms; atlas dedup path proven (no firing
+  on the 5 fillers since each picks a unique materialRef, but ready to
+  collapse when hero species share refs with fillers per G.1–G.5).
+  **Doesn't fix:** UV tiling on long branches (entire 1K tile stretches
+  across a 12m tree; tighter tiling is a follow-on); Workstage Bark panel
+  authoring (Phase B.1); Stage debug overlay (Phase B.1); UV-scale shader
+  uniform (only the manifest spec field exists today).
+- [ ] **Phase B.1 — Workstage Bark panel + Stage debug overlay**
+  (deferred from Phase B core). Adds per-species in-Workstage editing
+  (material dropdown w/ thumbnails, UV scale sliders, tint + jitter +
+  roughness controls), POST `/procedural/:species/bark` endpoint
+  writing the species manifest, GET `/procedural/bark/materials` listing
+  available CC0 materials with cached 128×128 thumbnails. Stage debug
+  overlay surfaces `renderer.info.programs.length` + active bark uniforms
+  to close acceptance criteria 5/6/7 of the original Phase B brief. UV
+  scale needs a corresponding shader uniform if/when authoring exposes it
+  (the current shader samples atlas UV unchanged; UV tiling is a follow-on).
 
 - [ ] **Phase F — Leaf cluster cards + 2-stop tint ramp.** New
   `arborist/leafCluster.js` sharp-based compositor: existing per-leaf PNGs

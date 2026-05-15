@@ -35,7 +35,17 @@ function resolveLookId(propLookId) {
 // Arborist's auto-bake hook writes there.
 const BAKE_URL = `${import.meta.env.BASE_URL}baked/default.json`
 
-function VariantInstances({ url, instances, treeMaterial }) {
+// URL → species. The rewritten GLB path is
+// `<base>/baked/<look>/trees/<species>/skeleton-<variantId>-<lod>.glb`
+// (and the cache-bust `?v=...` may trail). Parse the species segment so
+// VariantInstances can look up barkBySpecies even when out-of-roster
+// substitution rewrites inst.species away from the GLB's actual species.
+function urlToSpecies(url) {
+  const m = url.match(/\/trees\/([^/]+)\//)
+  return m ? m[1] : null
+}
+
+function VariantInstances({ url, instances, treeMaterial, barkSettings }) {
   const { scene } = useGLTF(url)
 
   // Walk the rewritten GLB, baking each primitive's world matrix into its
@@ -47,6 +57,14 @@ function VariantInstances({ url, instances, treeMaterial }) {
   // would otherwise have been (4 primitives × 154 mesh groups) ≈ 616
   // draws per frame for trees alone. Falls back to per-primitive if
   // attribute sets diverge across primitives.
+  //
+  // Phase B (2026-05-15): stamp a per-vertex `aBark` attribute on each
+  // cloned geometry based on `mesh.userData.atlasKind` (set by bake-look's
+  // rewriter — 'bark' or 'leaf' per the source material classification).
+  // After mergeGeometries this gives the fragment shader a per-fragment
+  // signal to gate the bark-retint logic — so leaf fragments pass through
+  // untouched while bark fragments pick up uBarkTintBase × per-instance
+  // jitter from the shared material's per-draw uniforms.
   const meshes = useMemo(() => {
     scene.updateMatrixWorld(true)
     const collected = []
@@ -63,6 +81,15 @@ function VariantInstances({ url, instances, treeMaterial }) {
       // the merge sees vertices already in mesh-local frame.
       const g = o.geometry.clone()
       g.applyMatrix4(o.matrixWorld)
+      // Phase B per-vertex bark gate. atlasKind is 'bark' or 'leaf'; older
+      // bakes may carry 'unified' (pre-Phase-B classification was collapsed).
+      // Default to 0 (treated as leaf — no retint) so legacy bakes
+      // gracefully no-op rather than tinting everything.
+      const atlasKind = o.userData?.atlasKind ?? o.userData?.gltfExtras?.atlasKind
+      const isBark = atlasKind === 'bark'
+      const aBarkArr = new Float32Array(pos.count)
+      if (isBark) aBarkArr.fill(1)
+      g.setAttribute('aBark', new THREE.BufferAttribute(aBarkArr, 1))
       collected.push(g)
     })
     if (collected.length === 0) return []
@@ -148,13 +175,39 @@ function VariantInstances({ url, instances, treeMaterial }) {
           localMatrix={m.localMatrix}
           placementMatrices={matrices}
           lampGlows={lampGlows}
+          barkSettings={barkSettings}
         />
       ))}
     </>
   )
 }
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows }) {
+// Phase B (2026-05-15): per-draw bark retint state. Mutates the SHARED
+// tree material's uniforms right before the draw so the GLSL program is
+// reused across every species (single compiled program for Bloom-stability,
+// per bake-look's "non-negotiable" comment). The next draw's onBeforeRender
+// overwrites these values for its own species; three.js uploads the
+// uniform block per-draw, so cross-draw bleed doesn't occur.
+const _barkTintTmp = new THREE.Color()
+function applyBarkUniforms(material, barkSettings) {
+  const shader = material?.userData?.shader
+  if (!shader) return
+  // No bark spec? Reset to identity so leaf-only draws don't carry stale
+  // tints from the prior bark draw (defense in depth).
+  if (!barkSettings) {
+    shader.uniforms.uBarkTintBase.value.set(1, 1, 1)
+    shader.uniforms.uBarkTintJitterRange.value = 0
+    shader.uniforms.uBarkRoughnessOverride.value = -1
+    return
+  }
+  const tintHex = barkSettings.tintBase || '#ffffff'
+  _barkTintTmp.set(tintHex)
+  shader.uniforms.uBarkTintBase.value.copy(_barkTintTmp)
+  shader.uniforms.uBarkTintJitterRange.value = barkSettings.tintJitterRange ?? 0
+  shader.uniforms.uBarkRoughnessOverride.value = barkSettings.roughnessOverride ?? -1
+}
+
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings }) {
   const ref = useRef(null)
   // Attach the per-instance lamp-glow attribute to the geometry. Each
   // unique GLB has a unique geometry instance, so this doesn't bleed
@@ -180,6 +233,15 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
     if (im.computeBoundingSphere) im.computeBoundingSphere()
   }, [placementMatrices, localMatrix])
 
+  // Phase B onBeforeRender — mutate the shared material's bark uniforms
+  // for THIS draw call only. Since the material is shared across every
+  // species' InstancedMesh, the prior draw's species values are still on
+  // the uniforms; we overwrite right before three.js submits the draw,
+  // and three.js uploads uniform values per draw.
+  const onBeforeRender = useMemo(() => {
+    return () => applyBarkUniforms(material, barkSettings)
+  }, [material, barkSettings])
+
   return (
     <instancedMesh
       ref={ref}
@@ -187,6 +249,7 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
       castShadow={false}
       receiveShadow={false}
       frustumCulled={true}
+      onBeforeRender={onBeforeRender}
     />
   )
 }
@@ -322,19 +385,39 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
+  // Phase B (2026-05-15): per-species bark settings carried in the atlas
+  // manifest, with per-Look palette override (scene.materialColors[<species>])
+  // taking precedence over the species default tintBase. Computed once per
+  // (atlas, scene) and looked up by URL at VariantInstances mount.
+  const barkBySpeciesEffective = useMemo(() => {
+    const base = atlas?.manifest?.barkBySpecies || {}
+    const overrides = scene?.materialColors || {}
+    const out = {}
+    for (const [species, spec] of Object.entries(base)) {
+      const tintBase = overrides[species] || spec.tintBase || '#ffffff'
+      out[species] = { ...spec, tintBase }
+    }
+    return out
+  }, [atlas?.manifest?.barkBySpecies, scene?.materialColors])
+
   return (
     <>
       <SwayDriver />
       {Array.from(groups.entries()).flatMap(([url, byTile]) =>
-        Array.from(byTile.entries()).map(([tileId, instances]) => (
-          <Suspense key={`${url}#${tileId}`} fallback={null}>
-            <VariantInstances
-              url={url}
-              instances={instances}
-              treeMaterial={atlas.treeMaterial}
-            />
-          </Suspense>
-        )),
+        Array.from(byTile.entries()).map(([tileId, instances]) => {
+          const species = urlToSpecies(url)
+          const barkSettings = species ? barkBySpeciesEffective[species] : null
+          return (
+            <Suspense key={`${url}#${tileId}`} fallback={null}>
+              <VariantInstances
+                url={url}
+                instances={instances}
+                treeMaterial={atlas.treeMaterial}
+                barkSettings={barkSettings}
+              />
+            </Suspense>
+          )
+        }),
       )}
     </>
   )

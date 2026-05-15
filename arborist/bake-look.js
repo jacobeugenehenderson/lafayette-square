@@ -430,7 +430,11 @@ async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale = 1) {
         }
       }
       prim.setMaterial(getPlaceholder())
-      prim.setExtras({ ...(prim.getExtras() || {}), atlasKind: 'unified', atlasTileIndex: tile.tileIndex })
+      // atlasKind carries the tile classification ('bark' or 'leaf') —
+      // load-bearing for Phase B's runtime bark retint (InstancedTrees stamps
+      // a per-vertex aBark attribute from this at merge time so the fragment
+      // shader can gate uBarkTintBase/jitter/roughness to bark fragments).
+      prim.setExtras({ ...(prim.getExtras() || {}), atlasKind: tile.classification, atlasTileIndex: tile.tileIndex })
       primCount++
     }
   }
@@ -527,6 +531,34 @@ export async function bakeLook(lookName, opts = {}) {
   const unified = await unifyAtlases(bark, leaves, outDir, lookName)
   const tBake = Date.now() - t1
 
+  // Phase B (2026-05-15): gather per-species bark spec from each species's
+  // manifest.json#/bark (stamped by generate-procedural → patchManifest, and
+  // eventually by the Workstage Bark panel in Phase B.1). The runtime uses
+  // these to drive per-draw uniforms on the shared tree material — same
+  // compiled shader program for every species (Bloom-friendly), different
+  // tint+jitter+roughness values uploaded per (species, draw call) via
+  // onBeforeRender. The materialColors[<speciesId>] Look-level override
+  // wins over barkBySpecies[<speciesId>].tintBase at runtime.
+  const barkBySpecies = {}
+  const speciesSeen = new Set()
+  for (const v of roster) {
+    if (speciesSeen.has(v.species)) continue
+    speciesSeen.add(v.species)
+    const mPath = path.join(TREES_DIR, v.species, 'manifest.json')
+    try {
+      const m = JSON.parse(await fs.readFile(mPath, 'utf8'))
+      if (m?.bark) {
+        barkBySpecies[v.species] = {
+          materialRef: m.bark.materialRef ?? null,
+          uvScale: m.bark.uvScale ?? [1, 1],
+          tintBase: m.bark.tintBase ?? '#ffffff',
+          tintJitterRange: typeof m.bark.tintJitterRange === 'number' ? m.bark.tintJitterRange : 0,
+          roughnessOverride: typeof m.bark.roughnessOverride === 'number' ? m.bark.roughnessOverride : -1,
+        }
+      }
+    } catch { /* species without a manifest.json — skip silently */ }
+  }
+
   // Manifest
   const tilesByKey = {}
   for (const t of unified?.tiles || []) tilesByKey[t.key] = t
@@ -546,6 +578,7 @@ export async function bakeLook(lookName, opts = {}) {
     } : null,
     tiles: unified?.tiles || [],
     tilesByKey,
+    barkBySpecies,
   }
   await fs.writeFile(path.join(outDir, 'trees-atlas.json'), JSON.stringify(manifest, null, 2))
 

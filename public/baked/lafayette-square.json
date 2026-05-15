@@ -1,5 +1,5 @@
 {
-  "generatedAt": 1778801365937,
+  "generatedAt": 1778873729573,
   "look": "lafayette-square",
   "lod": "lod2",
   "activeStyles": [
@@ -7,7 +7,7 @@
   ],
   "count": 745,
   "unmatched": 0,
-  "uniqueVariants": 34,
+  "uniqueVariants": 36,
   "tiles": {
     "cols": 4,
     "rows": 4,
@@ -4891,11 +4891,11 @@
             "x": 54.5,
             "y": 0,
             "z": 51.6,
-            "url": "/trees/quercus_alba/skeleton-2-lod2.glb",
+            "url": "/trees/procedural_weeping/skeleton-2-lod2.glb",
             "rotY": 2.9763,
-            "species": "quercus_alba",
+            "species": "procedural_weeping",
             "variantId": 2,
-            "category": "broadleaf",
+            "category": "weeping",
             "lampGlow": 0.0185
           },
           {
@@ -5953,11 +5953,11 @@
             "x": 114.4,
             "y": 0,
             "z": 90.8,
-            "url": "/trees/acer_saccharum_multistem/skeleton-1-lod2.glb",
+            "url": "/trees/procedural_weeping/skeleton-1-lod2.glb",
             "rotY": 2.2643,
-            "species": "acer_saccharum_multistem",
+            "species": "procedural_weeping",
             "variantId": 1,
-            "category": "broadleaf",
+            "category": "weeping",
             "lampGlow": 0.1235
           },
           {
@@ -11119,11 +11119,11 @@
       "x": 54.5,
       "y": 0,
       "z": 51.6,
-      "url": "/trees/quercus_alba/skeleton-2-lod2.glb",
+      "url": "/trees/procedural_weeping/skeleton-2-lod2.glb",
       "rotY": 2.9763,
-      "species": "quercus_alba",
+      "species": "procedural_weeping",
       "variantId": 2,
-      "category": "broadleaf",
+      "category": "weeping",
       "lampGlow": 0.0185
     },
     {
@@ -16432,11 +16432,11 @@
       "x": 114.4,
       "y": 0,
       "z": 90.8,
-      "url": "/trees/acer_saccharum_multistem/skeleton-1-lod2.glb",
+      "url": "/trees/procedural_weeping/skeleton-1-lod2.glb",
       "rotY": 2.2643,
-      "species": "acer_saccharum_multistem",
+      "species": "procedural_weeping",
       "variantId": 1,
-      "category": "broadleaf",
+      "category": "weeping",
       "lampGlow": 0.1235
     },
     {

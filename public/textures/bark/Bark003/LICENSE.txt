@@ -1,0 +1,7 @@
+Bark003 — ambientCG (https://ambientcg.com/view?id=Bark003)
+License: Creative Commons CC0 1.0 Universal (Public Domain Dedication)
+Source: https://ambientcg.com/get?file=Bark003_1K-JPG.zip
+Files: color.jpg (baseColor), normal.jpg (NormalGL / OpenGL Y-up), roughness.jpg
+
+No attribution required. Asset downloaded 2026-05-15 for Lafayette Square v1.5
+Phase B procedural bark.
