@@ -75,6 +75,43 @@ function blockKeyFromRing(ring) {
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 
+// Distance (meters) inside which non-IX chain vertices are treated as
+// OSM micro-bend noise near an IX and dropped from V2's in-memory copy
+// of the chain. Cleared at the doctrine wall: chain.points in ribbons.json
+// is untouched (Survey owns that); the stabilized polyline lives only
+// inside buildBlockGeometryV2's downstream pipeline. Tunable via NOTES.
+const IX_NOISE_RADIUS = 10
+
+// Drop chain.points entries that fall within IX_NOISE_RADIUS of any IX
+// vertex on the same chain (other than the IX itself or a chain endpoint).
+// Result: every IX is surrounded by neighbors at distance ≥ noiseRadius,
+// so leg tangents `pts[ixIdx ± 1] − V` reflect the chain's long-run
+// direction instead of OSM noise. Closed-chain seam (pts[0] === pts[n-1])
+// is preserved because both endpoints are kept unconditionally.
+// Returns a shallow-cloned chain when anything was dropped; otherwise
+// returns the input chain unchanged so identity-keyed maps still hit.
+function stabilizeChainNearIxs(chain, ixSet, noiseRadius) {
+  const pts = chain?.points
+  if (!pts || pts.length < 3 || !ixSet || ixSet.size === 0) return chain
+  const n = pts.length
+  const r2 = noiseRadius * noiseRadius
+  const ixPts = []
+  for (const i of ixSet) ixPts.push(pts[i])
+  const newPts = []
+  for (let i = 0; i < n; i++) {
+    if (i === 0 || i === n - 1 || ixSet.has(i)) { newPts.push(pts[i]); continue }
+    const p = pts[i]
+    let drop = false
+    for (const q of ixPts) {
+      const dx = p[0] - q[0], dz = p[1] - q[1]
+      if (dx*dx + dz*dz < r2) { drop = true; break }
+    }
+    if (!drop) newPts.push(p)
+  }
+  if (newPts.length === n) return chain
+  return { ...chain, points: newPts }
+}
+
 function unit(v) {
   const l = Math.hypot(v[0], v[1])
   return l > 1e-9 ? [v[0] / l, v[1] / l] : [1, 0]
@@ -1298,7 +1335,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // pavement+curb+ped are zero on inner-edge chains. Single source of
   // truth — keeps Designer and bake in lockstep without auditing every
   // street.measure read site.
-  const streets = (ribbons?.streets || []).map(s => {
+  const streetsAnchored = (ribbons?.streets || []).map(s => {
     if (s?.anchor !== 'inner-edge' || !s.innerSign) return s
     const out = { ...s }
     if (s.measure) out.measure = innerEdgeMeasure(s.measure, s.innerSign)
@@ -1312,10 +1349,24 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   })
   const intersections = ribbons?.intersections || []
 
+  // Stabilize each chain's polyline near IXs BEFORE any downstream
+  // consumer reads it. OSM micro-bends within IX_NOISE_RADIUS of an IX
+  // distorted leg tangents in `cornersAtIx.buildLeg` and faceted the
+  // per-segment asphalt rectangles in `emitChain` — both fed off the
+  // raw `pts[ixIdx ± 1] − V`. Phase A of the polygon-graph restructure
+  // (see cartograph/NOTES.md "2026-05-14 PM — Polygon-graph restructure"):
+  // single intervention here keeps Designer, bake, and corner geometry
+  // in lockstep without per-callsite tangent helpers. The unstabilized
+  // chain.points stays in ribbons.json (Survey owns that file).
+  const ixSetsAnchored = resolveChainSegmentation(streetsAnchored)
+  const streets = streetsAnchored.map(s =>
+    stabilizeChainNearIxs(s, ixSetsAnchored.get(s), IX_NOISE_RADIUS))
+
   // Single source of truth for IX identity per chain (coord-shared with
   // ≥2 chains). Used by naturalSegments + buildFrontageEdges so emitter
   // and walker partition by the SAME boundaries. Stale `intersections.ix`
-  // integers are no longer trusted.
+  // integers are no longer trusted. Re-derived against the stabilized
+  // polylines so segOrd↔point-index mappings match the kept vertices.
   const ixByChain = resolveChainSegmentation(streets)
 
   // Per-chain rendering data, populated below. Each entry holds the
