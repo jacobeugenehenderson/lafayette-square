@@ -529,12 +529,20 @@ async function readLeafPng(morph) {
 // weeping carry tighter circumferential repeat than the columnar / conifer
 // trunks. Format is [circumferential, vertical]. Higher numbers = tighter
 // tiling = finer-grained bark pattern across the cylinder surface.
+// uvScale = [1, 1] disables the pre-tile entirely (loadBarkBundle returns
+// the original 1024×1024 bark bytes unchanged). The B.1.a v2 pre-tile
+// produced visible chevron/aliasing artifacts at Hero distance — anisotropic
+// resize (8:1 vertical squish) crushed the bark grain into prominent
+// screen-space patterns. Reverted to B-core baseline: each cylinder samples
+// the full bark photo once across its length. Long trunks look stretched;
+// short branches look right. Phase B.2 (texture arrays or 2K/4K sources)
+// is the proper substrate fix.
 export const BARK_BY_SPECIES = {
-  procedural_broadleaf:  { materialRef: 'Bark007', uvScale: [2, 8], tintBase: '#ffffff', tintJitterRange: 0.08, roughnessOverride: -1 },
-  procedural_conifer:    { materialRef: 'Bark012', uvScale: [2, 6], tintBase: '#ffffff', tintJitterRange: 0.06, roughnessOverride: -1 },
-  procedural_ornamental: { materialRef: 'Bark003', uvScale: [2, 5], tintBase: '#ffffff', tintJitterRange: 0.10, roughnessOverride: -1 },
-  procedural_columnar:   { materialRef: 'Bark004', uvScale: [2, 7], tintBase: '#ffffff', tintJitterRange: 0.05, roughnessOverride: -1 },
-  procedural_weeping:    { materialRef: 'Bark015', uvScale: [2, 4], tintBase: '#ffffff', tintJitterRange: 0.07, roughnessOverride: -1 },
+  procedural_broadleaf:  { materialRef: 'Bark007', uvScale: [1, 1], tintBase: '#ffffff', tintJitterRange: 0.08, roughnessOverride: -1 },
+  procedural_conifer:    { materialRef: 'Bark012', uvScale: [1, 1], tintBase: '#ffffff', tintJitterRange: 0.06, roughnessOverride: -1 },
+  procedural_ornamental: { materialRef: 'Bark003', uvScale: [1, 1], tintBase: '#ffffff', tintJitterRange: 0.10, roughnessOverride: -1 },
+  procedural_columnar:   { materialRef: 'Bark004', uvScale: [1, 1], tintBase: '#ffffff', tintJitterRange: 0.05, roughnessOverride: -1 },
+  procedural_weeping:    { materialRef: 'Bark015', uvScale: [1, 1], tintBase: '#ffffff', tintJitterRange: 0.07, roughnessOverride: -1 },
 }
 
 export const PRESETS = {
