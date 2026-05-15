@@ -71,6 +71,7 @@ cartograph/data/lafayette-square/raw/*
 !cartograph/data/lafayette-square/raw/elevation.json
 cartograph/data/lafayette-square/clean/*
 !cartograph/data/lafayette-square/clean/map.json
+!cartograph/data/lafayette-square/clean/park-polygon.json
 cartograph/node_modules/
 
 # Claude Code local settings

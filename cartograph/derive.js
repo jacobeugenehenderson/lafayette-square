@@ -1006,16 +1006,30 @@ export function deriveLayers(highways) {
 
   console.log(`    Excluding ${parkParcelIds.size} park parcel(s)`)
 
-  // Load OSM data (for park polygon)
+  // Load OSM data (for park polygon fallback)
   const osmData = JSON.parse(readFileSync(join(RAW_DIR, 'osm.json'), 'utf-8'))
 
-  // Load OSM park polygon as a special lot
+  // Park polygon: prefer the authored 4-corner polygon; fall back to the
+  // OSM leisure=park trace only if the authored file is missing. Authored
+  // polygon is the canonical source per the ribbon doctrine — clean
+  // 4-corner topology means the round-corners op + the three corner-plug
+  // components (asphalt / curb / concrete) reconcile cleanly. The OSM
+  // trace's 41-vertex slow turns at each corner produce dirty plug
+  // geometry; never use it as the geometry authority when we have an
+  // authored polygon. See cartograph/FEATURES.md "The ribbon doctrine".
   let parkPolygon = null
-  const osmLeisure = osmData.ground?.leisure || []
-  const lafayettePark = osmLeisure.find(f => f.tags?.name === 'Lafayette Park' && f.isClosed)
-  if (lafayettePark) {
-    parkPolygon = lafayettePark.coords.map(c => toClipper(c.x, c.z))
-    console.log(`    Park polygon: ${lafayettePark.coords.length} pts`)
+  const authoredParkPath = join(CLEAN_DIR, 'park-polygon.json')
+  if (existsSync(authoredParkPath)) {
+    const authored = JSON.parse(readFileSync(authoredParkPath, 'utf-8'))
+    parkPolygon = authored.corners.map(([x, z]) => toClipper(x, z))
+    console.log(`    Park polygon: ${authored.corners.length} authored corners (${authored.name || 'unnamed'})`)
+  } else {
+    const osmLeisure = osmData.ground?.leisure || []
+    const lafayettePark = osmLeisure.find(f => f.tags?.name === 'Lafayette Park' && f.isClosed)
+    if (lafayettePark) {
+      parkPolygon = lafayettePark.coords.map(c => toClipper(c.x, c.z))
+      console.warn(`    [park] Using OSM 41-vertex polygon — authored 4-corner polygon expected at ${authoredParkPath}; corner plugs will degrade.`)
+    }
   }
 
   // ── Load streetlamps (used for width correction + rendering) ──
@@ -2623,6 +2637,49 @@ export function deriveLayers(highways) {
     })
   }
   console.log(`    ${faceFills.length} face fills (${osmClassified} via OSM, ${parcelClassified} via parcels)`)
+
+  // Park face polygon override: if an authored park polygon exists, replace
+  // the polygonized park face's ring with the 4 authored corners. The
+  // polygonization inherits OSM's 41-vertex slow-turn corners; the authored
+  // polygon has clean 4-corner topology so V2's round-corners op + the
+  // three corner-plug components reconcile cleanly. Targets the largest
+  // park-classified face whose centroid sits inside the authored polygon.
+  // See cartograph/FEATURES.md "The ribbon doctrine".
+  if (parkPolygon) {
+    const authoredRing = pathFromClipper(parkPolygon).map(p => [p.x, p.z])
+    function ringAreaXZ(ring) {
+      let a = 0
+      for (let i = 0; i < ring.length; i++) {
+        const p = ring[i], q = ring[(i + 1) % ring.length]
+        a += p[0] * q[1] - q[0] * p[1]
+      }
+      return Math.abs(a / 2)
+    }
+    function ringCentroid(ring) {
+      let sx = 0, sz = 0
+      for (const v of ring) { sx += v[0]; sz += v[1] }
+      return [sx / ring.length, sz / ring.length]
+    }
+    const authoredCentroid = ringCentroid(authoredRing)
+    const authoredAuthorRing = authoredRing.map(([x, z]) => ({ x, z }))
+    let bestIdx = -1, bestArea = 0
+    for (let i = 0; i < faceFills.length; i++) {
+      const f = faceFills[i]
+      if (f.use !== 'park') continue
+      const c = ringCentroid(f.ring)
+      // Centroid of the polygonized face must lie inside the authored polygon.
+      if (!pointInRing(c[0], c[1], authoredAuthorRing)) continue
+      const area = ringAreaXZ(f.ring)
+      if (area > bestArea) { bestArea = area; bestIdx = i }
+    }
+    if (bestIdx >= 0) {
+      const before = faceFills[bestIdx].ring.length
+      faceFills[bestIdx] = { ring: authoredRing, use: 'park' }
+      console.log(`    Park face overridden: ${before} polygonized vertices → ${authoredRing.length} authored corners`)
+    } else {
+      console.warn(`    [park] No polygonized park face matched authored polygon centroid; override skipped.`)
+    }
+  }
 
   // Face fills are emitted UNCLIPPED (extending to street centerlines).
   // StreetRibbons.jsx clips them at render time against the live ribbon

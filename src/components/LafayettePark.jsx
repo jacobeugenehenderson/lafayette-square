@@ -6,6 +6,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import parkWaterData from '../data/park_water.json'
 import parkPathData from '../data/park_paths.json'
+import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
 import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
@@ -17,18 +18,21 @@ import { terrainExag, patchTerrain } from '../utils/terrainShader'
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
 // Kennett Place (E). The actual fence in real life is rotated -9.2°
 // from compass-N because the whole city grid sits at that bearing.
-// All spatial data is in compass frame; the constants below author the
-// fence + labels using "park-axis" coords (axis-aligned ±a) and bake in
-// the real-world tilt to land at the correct compass-frame positions.
+// All spatial data is in compass frame; the polygon's natural axes
+// (axis-aligned ±a) bake in the real-world tilt via parkAxisToCompass
+// to land at correct compass-frame positions. Source of truth: the
+// authored 4-corner polygon at cartograph/data/lafayette-square/clean/
+// park-polygon.json — see cartograph/FEATURES.md "The ribbon doctrine"
+// for why polygons own corner geometry.
 // LABEL_TEXT_ROT_Y rotates label text to read along the fence direction.
-const _PARK_AXIS_RAD = -9.2 * Math.PI / 180
+const _PARK_AXIS_RAD = parkPolygon.tiltDegrees * Math.PI / 180
 const _C = Math.cos(_PARK_AXIS_RAD)
 const _S = Math.sin(_PARK_AXIS_RAD)
 function parkAxisToCompass(px, pz) {
   return [px * _C + pz * _S, -px * _S + pz * _C]
 }
 
-const PARK_HALF = 175  // half-width in park's natural axes
+const PARK_HALF = parkPolygon.halfWidthMeters
 const FENCE_INSET = 2
 const PARK_FENCE_CORNERS = (() => {
   const a = PARK_HALF - FENCE_INSET

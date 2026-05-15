@@ -1,0 +1,12 @@
+{
+  "_comment": "Lafayette Park — authored 4-corner polygon. Single source of truth for the park's face geometry (curb, asphalt mouths, ribbons, fence). Replaces the OSM leisure=park 41-vertex trace as the geometry authority — see cartograph/FEATURES.md 'The ribbon doctrine' for why polygons (not chains) are load-bearing for corner geometry. Corners derive from PARK_HALF=175m half-width on the park's natural axes (axis-aligned ±a), then rotate by tiltDegrees into the compass frame. Order: SW, SE, NE, NW (CCW in compass frame).",
+  "name": "Lafayette Park",
+  "tiltDegrees": -9.2,
+  "halfWidthMeters": 175,
+  "corners": [
+    [-144.77, -200.73],
+    [200.73, -144.77],
+    [144.77, 200.73],
+    [-200.73, 144.77]
+  ]
+}

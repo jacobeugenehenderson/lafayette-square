@@ -92,6 +92,26 @@ Top-level mode toggle in the Arborist app: `[Scan] | [Procedural]`. Procedural m
 
 ---
 
+## 2026-05-14 — Lafayette Park: 4-corner authored polygon replaces OSM 41-vertex trace
+
+The park's main corners were producing dirty corner plug geometry (asphalt + curb + concrete) because the polygonized park face inherited OSM's `leisure=park` 41-vertex trace, which has 5–6-vertex slow-turn clusters at each corner instead of 4 decisive corners. V2's round-corners op + per-corner plug emission inherit that noise; the three corner-plug components couldn't form cleanly.
+
+Per the ribbon doctrine just landed in FEATURES (`7854094`): polygons are the authority for corner geometry. Cleaned the polygon, the plugs reconcile.
+
+Three-part fix in this session:
+
+1. **`cartograph/data/lafayette-square/clean/park-polygon.json`** — new authored polygon. 4 corners derived from `PARK_HALF=175m` half-width on the park's natural axes, rotated `tiltDegrees=-9.2`. Single source of truth for park face geometry.
+2. **`src/components/LafayettePark.jsx`** reads from the same JSON for `PARK_HALF` + `tiltDegrees`, so the fence and the face stay in sync. Fence still inset by `FENCE_INSET=2m` inside the face polygon.
+3. **`cartograph/derive.js`** — prefers the authored polygon over OSM's 41-vertex trace for `parkPolygon`. After the faceFills loop, finds the largest park-classified face whose centroid sits inside the authored polygon and replaces its ring with the 4 authored corners. Other park faces in the neighborhood (small parks, etc.) unaffected.
+
+Pipeline + bake clean. Park face is now 4 verts (bbox 401×401, centered at origin); was 41 verts (bbox 446×443).
+
+The OSM trace was ~45m larger in each dimension than the authored polygon — divergence between OSM's loose tracing and the operator's deliberate `PARK_HALF=175m` authoring. Authored value wins per doctrine.
+
+Operator visual verification on Stage at all 4 park corners (Lafayette × Mississippi, Lafayette × Missouri, Park × Mississippi, Park × Missouri) is the next step. If any corner still looks dirty, the failure is downstream of the polygon (round-corners op, plug emission, frontage band walking) — addressable on its own merits without polygon-noise contamination.
+
+---
+
 ## 2026-05-14 — Corner kit restored to 3 tiers (per-IX dot was the drift)
 
 The corner-authoring kit had silently collapsed from 3 tiers to 2: `CornerEditHandles.jsx` had a dead-comment retiring the per-IX center handle, leaving the operator with only the global slider + per-corner cyan dots. The middle tier — "tune all four corners at one IX with one drag" — was missing, even though FEATURES line 72–76 still documented it as live and `cornerRadiusOverrides` was still consumed by the V2 emitter. The map was dormant, not gone.
