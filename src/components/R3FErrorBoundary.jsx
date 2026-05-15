@@ -7,10 +7,9 @@ import { Component } from 'react'
  * every transient render error.
  */
 // Backoff schedule (ms): retries pause progressively longer so a transient
-// OOM during load (ParkTrees waiting on aerial-tile texture upload to
-// finish, etc.) gets enough time for memory to free before the next attempt.
-// Total wait: ~16 s across 8 attempts. Then we give up — beyond that it's
-// a real bug, not transient pressure.
+// OOM during load gets enough time for memory to free before the next
+// attempt. Total wait: ~16 s across 8 attempts. Then we give up — beyond
+// that it's a real bug, not transient pressure.
 const RETRY_DELAYS_MS = [250, 500, 1000, 2000, 4000, 4000, 4000]
 
 export default class R3FErrorBoundary extends Component {

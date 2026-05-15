@@ -12,10 +12,10 @@
       "deciduous": true,
       "hasFlowers": false,
       "tints": {
-        "buds":   "#a8c870",
+        "buds": "#a8c870",
         "spring": "#7eba5e",
         "summer": "#3a7b30",
-        "fall":   "#d4801f",
+        "fall": "#d4801f",
         "winter": null
       }
     },
@@ -24,17 +24,19 @@
       "scientific": "Acer saccharum",
       "source": "glb",
       "forSpeciesName": "Acer_saccharum",
-      "inventoryNames": ["Maple, Sugar"],
+      "inventoryNames": [
+        "Maple, Sugar"
+      ],
       "tier": "exact",
       "leafMorph": "palmate",
       "barkMorph": "furrowed",
       "deciduous": true,
       "hasFlowers": false,
       "tints": {
-        "buds":   "#a8c870",
+        "buds": "#a8c870",
         "spring": "#7eba5e",
         "summer": "#3a7b30",
-        "fall":   "#d4801f",
+        "fall": "#d4801f",
         "winter": null
       }
     },
@@ -42,17 +44,19 @@
       "label": "Red Maple",
       "scientific": "Acer rubrum",
       "source": "glb",
-      "inventoryNames": ["Maple, Red"],
+      "inventoryNames": [
+        "Maple, Red"
+      ],
       "tier": "cousin",
       "leafMorph": "palmate",
       "barkMorph": "furrowed",
       "deciduous": true,
       "hasFlowers": false,
       "tints": {
-        "buds":   "#c44a4a",
+        "buds": "#c44a4a",
         "spring": "#8aba6a",
         "summer": "#3a7b30",
-        "fall":   "#c8311a",
+        "fall": "#c8311a",
         "winter": null
       }
     },
@@ -60,17 +64,19 @@
       "label": "White Oak",
       "scientific": "Quercus alba",
       "source": "glb",
-      "inventoryNames": ["Oak, White"],
+      "inventoryNames": [
+        "Oak, White"
+      ],
       "tier": "cousin",
       "leafMorph": "lobed",
       "barkMorph": "scaly",
       "deciduous": true,
       "hasFlowers": false,
       "tints": {
-        "buds":   "#9aab6a",
+        "buds": "#9aab6a",
         "spring": "#7ea760",
         "summer": "#3d6f30",
-        "fall":   "#a04020",
+        "fall": "#a04020",
         "winter": null
       }
     },
@@ -78,17 +84,19 @@
       "label": "Common Birch",
       "scientific": "Betula pendula",
       "source": "glb",
-      "inventoryNames": ["Birch, River"],
+      "inventoryNames": [
+        "Birch, River"
+      ],
       "tier": "stand-in",
       "leafMorph": "ovate",
       "barkMorph": "papery",
       "deciduous": true,
       "hasFlowers": false,
       "tints": {
-        "buds":   "#b8c878",
+        "buds": "#b8c878",
         "spring": "#88b860",
         "summer": "#4a8a3a",
-        "fall":   "#e0b840",
+        "fall": "#e0b840",
         "winter": null
       }
     },
@@ -103,10 +111,10 @@
       "deciduous": false,
       "hasFlowers": false,
       "tints": {
-        "buds":   "#3a5a30",
+        "buds": "#3a5a30",
         "spring": "#3a5a30",
         "summer": "#2a4a20",
-        "fall":   "#2a4a20",
+        "fall": "#2a4a20",
         "winter": "#2a4a20"
       }
     },
@@ -114,17 +122,20 @@
       "label": "American Linden",
       "scientific": "Tilia americana",
       "source": "glb",
-      "inventoryNames": ["Linden, American", "Basswood"],
+      "inventoryNames": [
+        "Linden, American",
+        "Basswood"
+      ],
       "tier": "stand-in",
       "leafMorph": "cordate",
       "barkMorph": "ridged",
       "deciduous": true,
       "hasFlowers": false,
       "tints": {
-        "buds":   "#a8c068",
+        "buds": "#a8c068",
         "spring": "#7ab058",
         "summer": "#3a7028",
-        "fall":   "#d8b840",
+        "fall": "#d8b840",
         "winter": null
       }
     },
@@ -132,17 +143,19 @@
       "label": "Magnolia",
       "scientific": "Magnolia sp.",
       "source": "glb",
-      "inventoryNames": ["Magnolia"],
+      "inventoryNames": [
+        "Magnolia"
+      ],
       "tier": "exact",
       "leafMorph": "ovate-large",
       "barkMorph": "smooth",
       "deciduous": true,
       "hasFlowers": true,
       "tints": {
-        "buds":   "#9ab058",
+        "buds": "#9ab058",
         "spring": "#5a8a40",
         "summer": "#2a5028",
-        "fall":   "#8a6028",
+        "fall": "#8a6028",
         "winter": null
       }
     },
@@ -150,19 +163,86 @@
       "label": "Honey Locust",
       "scientific": "Gleditsia triacanthos",
       "source": "glb",
-      "inventoryNames": ["Locust, Honey"],
+      "inventoryNames": [
+        "Locust, Honey"
+      ],
       "tier": "exact",
       "leafMorph": "pinnate",
       "barkMorph": "ridged",
       "deciduous": true,
       "hasFlowers": false,
       "tints": {
-        "buds":   "#c0c878",
+        "buds": "#c0c878",
         "spring": "#a8c068",
         "summer": "#5a8838",
-        "fall":   "#e8c050",
+        "fall": "#e8c050",
         "winter": null
       }
+    },
+    "procedural_broadleaf": {
+      "label": "Procedural Broadleaf",
+      "scientific": null,
+      "source": "procedural",
+      "inventoryNames": [],
+      "tier": "fallback",
+      "leafMorph": "ovate_large",
+      "barkMorph": null,
+      "deciduous": true,
+      "hasFlowers": false,
+      "tints": null,
+      "categoryHint": "broadleaf"
+    },
+    "procedural_conifer": {
+      "label": "Procedural Conifer",
+      "scientific": null,
+      "source": "procedural",
+      "inventoryNames": [],
+      "tier": "fallback",
+      "leafMorph": "short_needle",
+      "barkMorph": null,
+      "deciduous": false,
+      "hasFlowers": false,
+      "tints": null,
+      "categoryHint": "conifer"
+    },
+    "procedural_ornamental": {
+      "label": "Procedural Ornamental",
+      "scientific": null,
+      "source": "procedural",
+      "inventoryNames": [],
+      "tier": "fallback",
+      "leafMorph": "ovate_small",
+      "barkMorph": null,
+      "deciduous": true,
+      "hasFlowers": true,
+      "tints": null,
+      "categoryHint": "ornamental"
+    },
+    "procedural_columnar": {
+      "label": "Procedural Columnar",
+      "scientific": null,
+      "source": "procedural",
+      "inventoryNames": [],
+      "tier": "fallback",
+      "leafMorph": "narrow",
+      "barkMorph": null,
+      "deciduous": true,
+      "hasFlowers": false,
+      "tints": null,
+      "categoryHint": "columnar"
+    },
+    "procedural_weeping": {
+      "label": "Procedural Weeping",
+      "scientific": null,
+      "source": "procedural",
+      "inventoryNames": [],
+      "tier": "fallback",
+      "leafMorph": "narrow",
+      "barkMorph": null,
+      "deciduous": true,
+      "hasFlowers": false,
+      "tints": null,
+      "categoryHint": "weeping"
     }
   }
 }

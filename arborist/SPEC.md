@@ -13,7 +13,7 @@ Build the **Arborist**, a standalone helper app that authors per-species tree as
 
 ## Mission
 
-Replace the procedural `ParkTrees` component (currently muted via `{false && <ParkTrees />}` in `src/components/LafayettePark.jsx`) with a real, species-accurate, GPU-stable tree pipeline.
+Replace the procedural `ParkTrees` component (retired at commit `43c4aa3` in the Arborist library split; its branching algorithm now lives in `arborist/generate-procedural.js` as the v1 stopgap roster channel) with a real, species-accurate, GPU-stable tree pipeline.
 
 The whole neighborhood — park trees + future street trees — gets "close enough" foliage for v1: per-species LiDAR-fitted skeletons + per-species leaf atlases. **No interactive editor in v1.** Tree positions come from existing data files (`src/data/park_trees.json`). Manual placement (Plant tool) and Skip's CSV ingest are v1.1 and v1.2; **out of scope here.**
 

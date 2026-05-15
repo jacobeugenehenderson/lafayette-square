@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-05-03T21:23:16.967Z",
+  "generatedAt": "2026-05-14T23:28:16.938Z",
   "lookName": "lafayette-square",
-  "rosterSize": 14,
+  "rosterSize": 25,
   "materialDefaults": {
     "roughness": 0.85,
     "metalness": 0
   },
   "atlas": {
     "width": 4040,
-    "height": 2072,
+    "height": 2592,
     "colorPath": "/baked/lafayette-square/trees-atlas-color.png",
     "normalPath": "/baked/lafayette-square/trees-atlas-normal.png",
     "alphaMode": "MASK",
@@ -77,15 +77,180 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366335,
-        "scaleV": 0.4942084942084942
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
       "tileIndex": 1,
+      "key": "463809999151|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 3,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 2,
+      "key": "77c1c71af3a0|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_conifer",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_conifer",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2396,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.593069306930693,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 3,
+      "key": "4e3787e16e30|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2436,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.602970297029703,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 4,
+      "key": "5810fbd7470f|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2476,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.6128712871287129,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 5,
+      "key": "f74da269aaa3|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2516,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.6227722772277228,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 6,
       "key": "15c88e3d0ad6|8f0866f3e68b",
       "atlas": "unified",
       "classification": "bark",
@@ -104,15 +269,15 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366335,
-        "scaleV": 0.4942084942084942
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     {
-      "tileIndex": 2,
+      "tileIndex": 7,
       "key": "52f3b6d064a1|31382c4db848",
       "atlas": "unified",
       "classification": "bark",
@@ -131,15 +296,15 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782178,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366335,
-        "scaleV": 0.4942084942084942
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     {
-      "tileIndex": 3,
+      "tileIndex": 8,
       "key": "ef7d501fb660|68ed62827ad4",
       "atlas": "unified",
       "classification": "bark",
@@ -157,16 +322,16 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.00099009900990099,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.1267326732673267,
-        "scaleV": 0.4942084942084942
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 4,
+      "tileIndex": 9,
       "key": "42788cae31b1|44d10fcb4523",
       "atlas": "unified",
       "classification": "bark",
@@ -184,16 +349,16 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.12970297029702968,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.1267326732673267,
-        "scaleV": 0.4942084942084942
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 5,
+      "tileIndex": 10,
       "key": "c936750534a1|d8d5b8abe1ab",
       "atlas": "unified",
       "classification": "bark",
@@ -211,10 +376,10 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.25841584158415837,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.1267326732673267,
-        "scaleV": 0.4942084942084942
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -279,9 +444,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -326,9 +491,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -373,9 +538,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -415,9 +580,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -457,15 +622,158 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
       "tileIndex": 5,
+      "key": "383eadd8d437|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 2604,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6445544554455446,
+        "offsetV": 0.0015432098765432098,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19753086419753085
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 6,
+      "key": "83c3429d7bf0|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 3,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 3124,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7732673267326733,
+        "offsetV": 0.0015432098765432098,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19753086419753085
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 7,
+      "key": "415674677609|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_conifer",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_conifer",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.20216049382716048,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19753086419753085
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 8,
+      "key": "ba98615d97e8|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.20216049382716048,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19753086419753085
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    {
+      "tileIndex": 9,
       "key": "5fa47a22ede0|0cce76cc520f",
       "atlas": "unified",
       "classification": "leaf",
@@ -484,15 +792,15 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 6,
+      "tileIndex": 10,
       "key": "82efa31c1b78|44630a487d2f",
       "atlas": "unified",
       "classification": "leaf",
@@ -511,15 +819,15 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 7,
+      "tileIndex": 11,
       "key": "238d9c7235d3|08b77dbfc0a1",
       "atlas": "unified",
       "classification": "leaf",
@@ -531,22 +839,22 @@
         }
       ],
       "content": {
-        "x": 2604,
-        "y": 4,
+        "x": 1044,
+        "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.6445544554455446,
-        "offsetV": 0.0019305019305019305,
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 8,
+      "tileIndex": 12,
       "key": "415533f5f2d9|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -558,22 +866,22 @@
         }
       ],
       "content": {
-        "x": 1564,
+        "x": 3644,
         "y": 524,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.38712871287128714,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.901980198019802,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
     },
     {
-      "tileIndex": 9,
+      "tileIndex": 13,
       "key": "56cbc3829802|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -585,22 +893,22 @@
         }
       ],
       "content": {
-        "x": 1828,
-        "y": 524,
+        "x": 4,
+        "y": 1044,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.4524752475247525,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.40277777777777773,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
     },
     {
-      "tileIndex": 10,
+      "tileIndex": 14,
       "key": "524432a66f66|6e1f6d575ec1",
       "atlas": "unified",
       "classification": "leaf",
@@ -612,22 +920,22 @@
         }
       ],
       "content": {
-        "x": 3124,
-        "y": 4,
+        "x": 1564,
+        "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.7732673267326733,
-        "offsetV": 0.0019305019305019305,
+        "offsetU": 0.38712871287128714,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
     },
     {
-      "tileIndex": 11,
+      "tileIndex": 15,
       "key": "524432a66f66|c4d03f72b0d6",
       "atlas": "unified",
       "classification": "leaf",
@@ -639,22 +947,22 @@
         }
       ],
       "content": {
-        "x": 4,
+        "x": 2084,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.5158415841584159,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
     },
     {
-      "tileIndex": 12,
+      "tileIndex": 16,
       "key": "be4fc10697e8|59f3147e44d4",
       "atlas": "unified",
       "classification": "leaf",
@@ -666,22 +974,22 @@
         }
       ],
       "content": {
-        "x": 2092,
-        "y": 524,
+        "x": 268,
+        "y": 1044,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.5178217821782178,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.06633663366336634,
+        "offsetV": 0.40277777777777773,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
     },
     {
-      "tileIndex": 13,
+      "tileIndex": 17,
       "key": "13157a39ecd0|5889b08555c0",
       "atlas": "unified",
       "classification": "leaf",
@@ -693,22 +1001,22 @@
         }
       ],
       "content": {
-        "x": 524,
+        "x": 2604,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.1297029702970297,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.6445544554455446,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 14,
+      "tileIndex": 18,
       "key": "0ecef2de0d01|c84336f17870",
       "atlas": "unified",
       "classification": "leaf",
@@ -720,16 +1028,16 @@
         }
       ],
       "content": {
-        "x": 1044,
+        "x": 3124,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.2584158415841584,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.7732673267326733,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -796,15 +1104,180 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366335,
-        "scaleV": 0.4942084942084942
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
     },
-    "15c88e3d0ad6|8f0866f3e68b": {
+    "463809999151|": {
       "tileIndex": 1,
+      "key": "463809999151|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 3,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    "77c1c71af3a0|": {
+      "tileIndex": 2,
+      "key": "77c1c71af3a0|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_conifer",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_conifer",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2396,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.593069306930693,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    "4e3787e16e30|": {
+      "tileIndex": 3,
+      "key": "4e3787e16e30|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2436,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.602970297029703,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    "5810fbd7470f|": {
+      "tileIndex": 4,
+      "key": "5810fbd7470f|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2476,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.6128712871287129,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    "f74da269aaa3|": {
+      "tileIndex": 5,
+      "key": "f74da269aaa3|",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 2516,
+        "y": 4,
+        "w": 32,
+        "h": 32
+      },
+      "uvTransform": {
+        "offsetU": 0.6227722772277228,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.007920792079207921,
+        "scaleV": 0.012345679012345678
+      },
+      "sourceColorDims": "32×32",
+      "sourceNormalDims": null
+    },
+    "15c88e3d0ad6|8f0866f3e68b": {
+      "tileIndex": 6,
       "key": "15c88e3d0ad6|8f0866f3e68b",
       "atlas": "unified",
       "classification": "bark",
@@ -823,15 +1296,15 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366335,
-        "scaleV": 0.4942084942084942
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     "52f3b6d064a1|31382c4db848": {
-      "tileIndex": 2,
+      "tileIndex": 7,
       "key": "52f3b6d064a1|31382c4db848",
       "atlas": "unified",
       "classification": "bark",
@@ -850,15 +1323,15 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782178,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.06336633663366335,
-        "scaleV": 0.4942084942084942
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.06336633663366337,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
     },
     "ef7d501fb660|68ed62827ad4": {
-      "tileIndex": 3,
+      "tileIndex": 8,
       "key": "ef7d501fb660|68ed62827ad4",
       "atlas": "unified",
       "classification": "bark",
@@ -876,16 +1349,16 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.00099009900990099,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.1267326732673267,
-        "scaleV": 0.4942084942084942
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     "42788cae31b1|44d10fcb4523": {
-      "tileIndex": 4,
+      "tileIndex": 9,
       "key": "42788cae31b1|44d10fcb4523",
       "atlas": "unified",
       "classification": "bark",
@@ -903,16 +1376,16 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.12970297029702968,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.1267326732673267,
-        "scaleV": 0.4942084942084942
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
     },
     "c936750534a1|d8d5b8abe1ab": {
-      "tileIndex": 5,
+      "tileIndex": 10,
       "key": "c936750534a1|d8d5b8abe1ab",
       "atlas": "unified",
       "classification": "bark",
@@ -930,10 +1403,10 @@
         "h": 1024
       },
       "uvTransform": {
-        "offsetU": 0.25841584158415837,
-        "offsetV": 0.5038610038610039,
-        "scaleU": 0.1267326732673267,
-        "scaleV": 0.4942084942084942
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.6033950617283951,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.3950617283950617
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -998,9 +1471,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -1045,9 +1518,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1092,9 +1565,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1134,9 +1607,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1176,15 +1649,158 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
-    "5fa47a22ede0|0cce76cc520f": {
+    "383eadd8d437|": {
       "tileIndex": 5,
+      "key": "383eadd8d437|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 2604,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.6445544554455446,
+        "offsetV": 0.0015432098765432098,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19753086419753085
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    "83c3429d7bf0|": {
+      "tileIndex": 6,
+      "key": "83c3429d7bf0|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_broadleaf",
+          "variantId": 3,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 3124,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.7732673267326733,
+        "offsetV": 0.0015432098765432098,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19753086419753085
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    "415674677609|": {
+      "tileIndex": 7,
+      "key": "415674677609|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_conifer",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_conifer",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.20216049382716048,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19753086419753085
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    "ba98615d97e8|": {
+      "tileIndex": 8,
+      "key": "ba98615d97e8|",
+      "atlas": "unified",
+      "classification": "leaf",
+      "refs": [
+        {
+          "species": "procedural_ornamental",
+          "variantId": 1,
+          "matName": "proceduralLeaves"
+        },
+        {
+          "species": "procedural_ornamental",
+          "variantId": 2,
+          "matName": "proceduralLeaves"
+        }
+      ],
+      "content": {
+        "x": 524,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.1297029702970297,
+        "offsetV": 0.20216049382716048,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.19753086419753085
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": null
+    },
+    "5fa47a22ede0|0cce76cc520f": {
+      "tileIndex": 9,
       "key": "5fa47a22ede0|0cce76cc520f",
       "atlas": "unified",
       "classification": "leaf",
@@ -1203,15 +1819,15 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
     },
     "82efa31c1b78|44630a487d2f": {
-      "tileIndex": 6,
+      "tileIndex": 10,
       "key": "82efa31c1b78|44630a487d2f",
       "atlas": "unified",
       "classification": "leaf",
@@ -1230,15 +1846,15 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.0019305019305019305,
+        "offsetV": 0.0015432098765432098,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
     },
     "238d9c7235d3|08b77dbfc0a1": {
-      "tileIndex": 7,
+      "tileIndex": 11,
       "key": "238d9c7235d3|08b77dbfc0a1",
       "atlas": "unified",
       "classification": "leaf",
@@ -1250,22 +1866,22 @@
         }
       ],
       "content": {
-        "x": 2604,
-        "y": 4,
+        "x": 1044,
+        "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.6445544554455446,
-        "offsetV": 0.0019305019305019305,
+        "offsetU": 0.2584158415841584,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
     },
     "415533f5f2d9|6b23a51141b4": {
-      "tileIndex": 8,
+      "tileIndex": 12,
       "key": "415533f5f2d9|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -1277,22 +1893,22 @@
         }
       ],
       "content": {
-        "x": 1564,
+        "x": 3644,
         "y": 524,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.38712871287128714,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.901980198019802,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
     },
     "56cbc3829802|6b23a51141b4": {
-      "tileIndex": 9,
+      "tileIndex": 13,
       "key": "56cbc3829802|6b23a51141b4",
       "atlas": "unified",
       "classification": "leaf",
@@ -1304,22 +1920,22 @@
         }
       ],
       "content": {
-        "x": 1828,
-        "y": 524,
+        "x": 4,
+        "y": 1044,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.4524752475247525,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.40277777777777773,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
     },
     "524432a66f66|6e1f6d575ec1": {
-      "tileIndex": 10,
+      "tileIndex": 14,
       "key": "524432a66f66|6e1f6d575ec1",
       "atlas": "unified",
       "classification": "leaf",
@@ -1331,22 +1947,22 @@
         }
       ],
       "content": {
-        "x": 3124,
-        "y": 4,
+        "x": 1564,
+        "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.7732673267326733,
-        "offsetV": 0.0019305019305019305,
+        "offsetU": 0.38712871287128714,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
     },
     "524432a66f66|c4d03f72b0d6": {
-      "tileIndex": 11,
+      "tileIndex": 15,
       "key": "524432a66f66|c4d03f72b0d6",
       "atlas": "unified",
       "classification": "leaf",
@@ -1358,22 +1974,22 @@
         }
       ],
       "content": {
-        "x": 4,
+        "x": 2084,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.5158415841584159,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
     },
     "be4fc10697e8|59f3147e44d4": {
-      "tileIndex": 12,
+      "tileIndex": 16,
       "key": "be4fc10697e8|59f3147e44d4",
       "atlas": "unified",
       "classification": "leaf",
@@ -1385,22 +2001,22 @@
         }
       ],
       "content": {
-        "x": 2092,
-        "y": 524,
+        "x": 268,
+        "y": 1044,
         "w": 256,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.5178217821782178,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.06633663366336634,
+        "offsetV": 0.40277777777777773,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
     },
     "13157a39ecd0|5889b08555c0": {
-      "tileIndex": 13,
+      "tileIndex": 17,
       "key": "13157a39ecd0|5889b08555c0",
       "atlas": "unified",
       "classification": "leaf",
@@ -1412,22 +2028,22 @@
         }
       ],
       "content": {
-        "x": 524,
+        "x": 2604,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.1297029702970297,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.6445544554455446,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
     },
     "0ecef2de0d01|c84336f17870": {
-      "tileIndex": 14,
+      "tileIndex": 18,
       "key": "0ecef2de0d01|c84336f17870",
       "atlas": "unified",
       "classification": "leaf",
@@ -1439,16 +2055,16 @@
         }
       ],
       "content": {
-        "x": 1044,
+        "x": 3124,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.2584158415841584,
-        "offsetV": 0.2528957528957529,
+        "offsetU": 0.7732673267326733,
+        "offsetV": 0.20216049382716048,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.2471042471042471
+        "scaleV": 0.19753086419753085
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"

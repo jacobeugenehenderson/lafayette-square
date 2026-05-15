@@ -703,6 +703,50 @@
     {
       "species": "platanus_acerifolia",
       "variantId": 1
+    },
+    {
+      "species": "procedural_broadleaf",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_broadleaf",
+      "variantId": 2
+    },
+    {
+      "species": "procedural_broadleaf",
+      "variantId": 3
+    },
+    {
+      "species": "procedural_conifer",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_conifer",
+      "variantId": 2
+    },
+    {
+      "species": "procedural_ornamental",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_ornamental",
+      "variantId": 2
+    },
+    {
+      "species": "procedural_columnar",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_columnar",
+      "variantId": 2
+    },
+    {
+      "species": "procedural_weeping",
+      "variantId": 1
+    },
+    {
+      "species": "procedural_weeping",
+      "variantId": 2
     }
   ]
 }
