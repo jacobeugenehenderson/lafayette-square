@@ -2771,16 +2771,41 @@ phases.
   across a 12m tree; tighter tiling is a follow-on); Workstage Bark panel
   authoring (Phase B.1); Stage debug overlay (Phase B.1); UV-scale shader
   uniform (only the manifest spec field exists today).
-- [ ] **Phase B.1 — Workstage Bark panel + Stage debug overlay**
-  (deferred from Phase B core). Adds per-species in-Workstage editing
-  (material dropdown w/ thumbnails, UV scale sliders, tint + jitter +
-  roughness controls), POST `/procedural/:species/bark` endpoint
-  writing the species manifest, GET `/procedural/bark/materials` listing
-  available CC0 materials with cached 128×128 thumbnails. Stage debug
-  overlay surfaces `renderer.info.programs.length` + active bark uniforms
-  to close acceptance criteria 5/6/7 of the original Phase B brief. UV
-  scale needs a corresponding shader uniform if/when authoring exposes it
-  (the current shader samples atlas UV unchanged; UV tiling is a follow-on).
+- [x] **Phase B.1.a — UV-scale wiring** (shipped 2026-05-15). 3 new uniforms
+  (`uBarkUVScale`, `uBarkTileOffset`, `uBarkTileScale`) on the shared tree
+  material, set per-draw in `applyBarkUniforms` from each species's
+  manifest bark spec + the atlas tile's `uvTransform`. Fragment shader
+  replaces the entire `<map_fragment>` chunk to compute a wrap-within-
+  tile-bounds UV before the texture sample: `localUV = fract((vMapUv -
+  tileOffset) / tileScale * uvScale); mapUV = localUV * tileScale +
+  tileOffset`. Gated by `vBark > 0.5 && uvScale != (1,1)` so leaves and
+  species with identity uvScale pass through unchanged. Per-species
+  uvScale starter values: broadleaf [1.5, 4], conifer [1, 3], ornamental
+  [1.5, 3], columnar [1, 4], weeping [1.5, 2]. **B-core bug fixed in
+  passing:** GLTFLoader assigns primitive extras to `geometry.userData`
+  (not `mesh.userData` — see three's GLTFLoader.js:4649); B-core's
+  `o.userData.atlasKind` lookup was silently always undefined, so every
+  vert got `aBark = 0` and the entire retint path never fired. B.1.a's
+  UV-wrap path also rides the gate, so the fix is load-bearing here.
+  Lookup now prefers `geometry.userData.atlasKind` with legacy fallbacks.
+  Single shader program preserved. Determinism preserved (uvScale is
+  runtime, not baked). Deviation flagged: brief specified per-vertex
+  attributes for tileOffset/Scale; switched to per-draw uniforms because
+  per-vertex would have been ~30 MB of VBO at LS scale for effectively
+  per-primitive-constant data, and uniforms align with the
+  applyBarkUniforms pattern B-core established.
+- [ ] **Phase B.1.b — Workstage Bark panel** (deferred from B.1).
+  Per-species panel in `src/arborist/Workstage.jsx`: material dropdown
+  w/ thumbnails, UV scale sliders, tint + jitter + roughness controls,
+  "Apply & republish species" button. `POST /procedural/:species/bark`
+  endpoint writes `manifest.bark` and re-triggers republish + per-Look
+  atlas rebake. `GET /procedural/bark/materials` lists available CC0
+  materials under `public/textures/bark/` with cached 128×128 thumbnails.
+- [ ] **Phase B.1.c — Stage debug overlay** (deferred from B.1). Surfaces
+  `renderer.info.programs.length` + active bark uniforms for the
+  focused species; toggle-able dev surface that closes the original
+  Phase B brief's acceptance criteria 5/6/7 (WebGLProgram count check,
+  Bloom flicker test, per-instance jitter visual) mechanically.
 
 - [ ] **Phase F — Leaf cluster cards + 2-stop tint ramp.** New
   `arborist/leafCluster.js` sharp-based compositor: existing per-leaf PNGs

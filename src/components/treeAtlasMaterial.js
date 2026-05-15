@@ -58,6 +58,16 @@ function injectFoliageSway(material) {
     shader.uniforms.uBarkTintBase = { value: new THREE.Color(1, 1, 1) }
     shader.uniforms.uBarkTintJitterRange = { value: 0 }
     shader.uniforms.uBarkRoughnessOverride = { value: -1 }
+    // Phase B.1.a bark UV-tiling uniforms (per-draw, set by
+    // applyBarkUniforms in InstancedTrees). uBarkUVScale controls how
+    // many times the bark tile repeats across the cylinder UV span;
+    // uBarkTileOffset/Scale carry the species's bark tile bounds in
+    // master-atlas UV space, so the fract() wrap stays strictly INSIDE
+    // the tile (no bleed into neighbor tiles). Leaves bypass the wrap
+    // via the vBark gate.
+    shader.uniforms.uBarkUVScale = { value: new THREE.Vector2(1, 1) }
+    shader.uniforms.uBarkTileOffset = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uBarkTileScale = { value: new THREE.Vector2(1, 1) }
     // Stash the shader on the material so InstancedTrees can mutate the
     // uniforms per (species, draw) without redoing onBeforeCompile.
     material.userData.shader = shader
@@ -108,26 +118,50 @@ function injectFoliageSway(material) {
          uniform vec3  uBarkTintBase;
          uniform float uBarkTintJitterRange;
          uniform float uBarkRoughnessOverride;
+         uniform vec2  uBarkUVScale;
+         uniform vec2  uBarkTileOffset;
+         uniform vec2  uBarkTileScale;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
          varying vec3  vWorldXZ;`
       )
       .replace(
-        // Bark retint slot: bend diffuseColor by uBarkTintBase × per-tree
-        // hash, scaled by uBarkTintJitterRange. vBark gates the retint to
-        // bark fragments only (leaf fragments pass through identity).
-        // Patched AFTER <map_fragment> (which multiplies the atlas sample
-        // into diffuseColor) so the retint operates on the photo-PBR bark
-        // sample, not on the pre-texture diffuse uniform.
+        // Phase B.1.a: replace the whole <map_fragment> chunk (rather than
+        // insert before/after) because the standard chunk hardcodes
+        // `texture2D(map, vMapUv)`. To wrap bark UVs within the species's
+        // atlas tile, we need to compute a modified mapUV BEFORE the
+        // sample. Leaves pass through (vBark < 0.5 → identity branch).
+        // The wrap stays strictly inside the tile: localUV is normalized
+        // to [0,1] within the tile, multiplied by uBarkUVScale (the
+        // per-species circumferential / vertical tile-pitch), fract'd to
+        // stay in [0,1], then re-projected into atlas space using the
+        // same tile bounds. fract() introduces a gradient discontinuity
+        // at wrap lines → coarse-mip selection there is the standard
+        // tile-wrap artifact; acceptable for v1, mitigation via
+        // textureGrad() is a follow-on if visible at Hero.
         '#include <map_fragment>',
-        `#include <map_fragment>
+        `
+         #ifdef USE_MAP
+           vec2 mapUV = vMapUv;
+           if (vBark > 0.5 && (uBarkUVScale.x != 1.0 || uBarkUVScale.y != 1.0)) {
+             vec2 localUV = (vMapUv - uBarkTileOffset) / uBarkTileScale;
+             localUV = fract(localUV * uBarkUVScale);
+             mapUV = localUV * uBarkTileScale + uBarkTileOffset;
+           }
+           vec4 sampledDiffuseColor = texture2D(map, mapUV);
+           #ifdef DECODE_VIDEO_TEXTURE
+             sampledDiffuseColor = vec4(mix(pow(sampledDiffuseColor.rgb * 0.9478672986 + vec3(0.0521327014), vec3(2.4)), sampledDiffuseColor.rgb * 0.0773993808, vec3(lessThanEqual(sampledDiffuseColor.rgb, vec3(0.04045)))), sampledDiffuseColor.w);
+           #endif
+           diffuseColor *= sampledDiffuseColor;
+         #endif
+         // Phase B per-instance + per-Look bark retint, gated by vBark so
+         // leaf fragments pass through identity.
          {
            float jh1 = fract(sin(dot(vWorldXZ.xz, vec2(127.1, 311.7))) * 43758.5453);
            float jh2 = fract(sin(dot(vWorldXZ.xz, vec2(269.5, 183.3))) * 43758.5453);
            float jh3 = fract(sin(dot(vWorldXZ.xz, vec2(419.2, 371.9))) * 43758.5453);
            vec3 jitter = vec3(jh1, jh2, jh3);
-           // Center jitter around 1.0 so jitterRange=0 means "no jitter".
            vec3 perInstanceTint = mix(vec3(1.0), 0.5 + jitter, uBarkTintJitterRange);
            vec3 barkTint = uBarkTintBase * perInstanceTint;
            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * barkTint, vBark);

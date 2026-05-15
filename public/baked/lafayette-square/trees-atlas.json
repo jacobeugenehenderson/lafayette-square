@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-15T19:18:57.140Z",
+  "generatedAt": "2026-05-15T21:27:18.254Z",
   "lookName": "lafayette-square",
   "rosterSize": 25,
   "materialDefaults": {
@@ -2074,8 +2074,8 @@
     "procedural_broadleaf": {
       "materialRef": "Bark007",
       "uvScale": [
-        2,
-        1
+        1.5,
+        4
       ],
       "tintBase": "#ffffff",
       "tintJitterRange": 0.08,
@@ -2084,8 +2084,8 @@
     "procedural_conifer": {
       "materialRef": "Bark012",
       "uvScale": [
-        2,
-        1
+        1,
+        3
       ],
       "tintBase": "#ffffff",
       "tintJitterRange": 0.06,
@@ -2094,8 +2094,8 @@
     "procedural_ornamental": {
       "materialRef": "Bark003",
       "uvScale": [
-        2,
-        1
+        1.5,
+        3
       ],
       "tintBase": "#ffffff",
       "tintJitterRange": 0.1,
@@ -2104,8 +2104,8 @@
     "procedural_columnar": {
       "materialRef": "Bark004",
       "uvScale": [
-        2,
-        1
+        1,
+        4
       ],
       "tintBase": "#ffffff",
       "tintJitterRange": 0.05,
@@ -2114,8 +2114,8 @@
     "procedural_weeping": {
       "materialRef": "Bark015",
       "uvScale": [
-        2,
-        1
+        1.5,
+        2
       ],
       "tintBase": "#ffffff",
       "tintJitterRange": 0.07,
