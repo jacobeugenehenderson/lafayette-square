@@ -143,27 +143,26 @@ function injectFoliageSway(material) {
         '#include <map_fragment>',
         `
          #ifdef USE_MAP
+           // Phase B.1.a: wrap photo bark inside the species's atlas tile.
+           // fract() introduces a derivative discontinuity at wrap lines —
+           // GPU picks the coarsest mip there → narrow blurry stripes that
+           // "crawl" slightly under tree sway at close-up Hero distance.
+           // The textureGrad mitigation we tried (passing dFdx(vMapUv) *
+           // uvScale as the gradient) eliminated the crawl but produced
+           // uniform mip-blur across the entire bark because dense tiling
+           // legitimately requires coarser sampling per pixel — that's
+           // honest GPU behavior, not a bug. The properly-no-tradeoff fix
+           // is a pipeline change (texture arrays per bark with GL_REPEAT,
+           // or pre-tiled atlas tiles); deferred to Phase B.2. For now:
+           // plain texture2D + fract wrap, sharp bark, narrow wrap-line
+           // crawl accepted as the smaller cost.
            vec2 mapUV = vMapUv;
-           vec4 sampledDiffuseColor;
            if (vBark > 0.5 && (uBarkUVScale.x != 1.0 || uBarkUVScale.y != 1.0)) {
-             // Wrap photo bark inside the species's atlas tile. fract()
-             // would normally introduce a derivative discontinuity at wrap
-             // lines → GPU picks coarsest mip there → as sway moves the
-             // trunk those blurry stripes "swim" relative to the bark.
-             // Fix: compute the SMOOTH gradient (what the gradient would
-             // be without fract, i.e. dFdx(vMapUv) scaled by uBarkUVScale)
-             // and feed it to textureGrad so mipmap selection ignores the
-             // fract jump. Wrap line still exists but is invisible in mip
-             // selection. WebGL 2 standard.
              vec2 localUV = (vMapUv - uBarkTileOffset) / uBarkTileScale;
              localUV = fract(localUV * uBarkUVScale);
              mapUV = localUV * uBarkTileScale + uBarkTileOffset;
-             vec2 gradX = dFdx(vMapUv) * uBarkUVScale;
-             vec2 gradY = dFdy(vMapUv) * uBarkUVScale;
-             sampledDiffuseColor = textureGrad(map, mapUV, gradX, gradY);
-           } else {
-             sampledDiffuseColor = texture2D(map, mapUV);
            }
+           vec4 sampledDiffuseColor = texture2D(map, mapUV);
            #ifdef DECODE_VIDEO_TEXTURE
              sampledDiffuseColor = vec4(mix(pow(sampledDiffuseColor.rgb * 0.9478672986 + vec3(0.0521327014), vec3(2.4)), sampledDiffuseColor.rgb * 0.0773993808, vec3(lessThanEqual(sampledDiffuseColor.rgb, vec3(0.04045)))), sampledDiffuseColor.w);
            #endif
@@ -210,16 +209,7 @@ function loadTexture(url) {
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace
         tex.flipY = false  // GLTF convention — matches the rewritten UVs
-        // Phase B.1.a: bumped 4 → 16 to handle the dense bark UV tiling.
-        // uvScale of e.g. [2, 8] introduces a 4:1 anisotropy ratio in
-        // screen-space gradient (vertical 8x, circumferential 2x). With
-        // aniso cap of 4 the sampler falls back to isotropic filtering
-        // at the LARGER gradient → averages bark grain horizontally →
-        // vertical-streak smear. 16 is clamped to GPU max internally by
-        // three.js and unlocks proper anisotropic sampling for tiled
-        // photo bark. Cost: 16x more texture taps per filtered fragment,
-        // but only on bark draw calls (a small fraction of total).
-        tex.anisotropy = 16
+        tex.anisotropy = 4
         resolve(tex)
       },
       undefined,
@@ -237,16 +227,7 @@ function loadNormalTexture(url) {
         // Normal maps stay in linear space
         tex.colorSpace = THREE.NoColorSpace
         tex.flipY = false
-        // Phase B.1.a: bumped 4 → 16 to handle the dense bark UV tiling.
-        // uvScale of e.g. [2, 8] introduces a 4:1 anisotropy ratio in
-        // screen-space gradient (vertical 8x, circumferential 2x). With
-        // aniso cap of 4 the sampler falls back to isotropic filtering
-        // at the LARGER gradient → averages bark grain horizontally →
-        // vertical-streak smear. 16 is clamped to GPU max internally by
-        // three.js and unlocks proper anisotropic sampling for tiled
-        // photo bark. Cost: 16x more texture taps per filtered fragment,
-        // but only on bark draw calls (a small fraction of total).
-        tex.anisotropy = 16
+        tex.anisotropy = 4
         resolve(tex)
       },
       undefined,

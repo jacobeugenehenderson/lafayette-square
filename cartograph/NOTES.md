@@ -145,6 +145,37 @@ Each phase is a separate commit + acceptance + visible-bug coverage statement.
 - **Determinism preserved.** uvScale is runtime-driven (read from `trees-atlas.json` by the shader); same source manifest → byte-identical GLB output (`sha1sum public/trees/procedural_broadleaf/skeleton-1-lod0.glb` matched pre-B.1.a). Only the manifest's `barkBySpecies` block + species `manifest.bark.uvScale` updated.
 - **Single shader program preserved.** New uniforms + varyings ride the existing material via `onBeforeCompile`; no `customProgramCacheKey` divergence. Bloom-stable.
 
+**Phase B.2 — Proper bark tile wrap (atlas vs tiling tradeoff, deferred)**
+- Phase B.1.a's `fract`-inside-atlas approach has an unavoidable derivative
+  discontinuity at wrap lines: the GPU picks the coarsest mip there →
+  narrow blurry stripes that "crawl" slightly under tree sway at close-up
+  Hero distance. We tried `textureGrad` with the math-correct gradient
+  (`dFdx(vMapUv) × uBarkUVScale`) — it eliminated the crawl but produced
+  *uniform* mip-blur because dense tiling legitimately requires coarser
+  sampling per pixel. That's honest GPU mipmap math, not a bug; it's the
+  cost of atlas-tile + dense-repeat combined. Bumped anisotropy 4 → 16
+  hoping the aniso hardware would compensate; no visible difference,
+  meaning the wider gradient is already past the regime where aniso helps.
+  Reverted both polish attempts (`e77278e` textureGrad and `94519db`
+  aniso bump are no-ops in the final code path; the comments record the
+  reasoning so future babies don't re-walk this).
+- **Proper-fix paths** (pick one when B.2 lands):
+  1. **Texture arrays** — one atlas layer per unique bark `materialRef`,
+     each with `GL_REPEAT`. Sampler index from a per-draw uniform.
+     Hardware tiling, hardware mipmap, hardware aniso. Single shader
+     program preserved (one sampler binding, different layer index per
+     draw). WebGL 2 standard. Pipeline change in bake-look.
+  2. **Pre-tile in atlas** — bake-look composites an N×M-tiled version
+     of the source into the atlas tile content; shader samples directly
+     with no shader-side wrap. Atlas footprint grows N×M for bark tiles.
+     Simpler pipeline change but heavier atlas.
+  3. **Separate textures per species** — clean GL_REPEAT but breaks the
+     single-program Bloom constraint (`bake-look.js:200` "non-negotiable").
+     Not viable without re-evaluating that constraint.
+- For now: plain `texture2D` + `fract` wrap. Sharp bark away from wrap
+  lines; narrow wrap-line crawl at close Hero. Accept as the smaller cost
+  until B.2 lands.
+
 **Phase B.1.b — Workstage Bark panel** (deferred)
 - Per-species Bark panel in `src/arborist/Workstage.jsx`: material dropdown w/ 128×128 thumbnails (cached server-side), UV scale X/Y sliders, tintBase color picker, tintJitterRange + roughnessOverride sliders, "Apply & republish species" button.
 - `GET /procedural/bark/materials` lists available CC0 materials under `public/textures/bark/`; `POST /procedural/:species/bark` writes `manifest.bark` and re-triggers republish + per-Look atlas rebake.
