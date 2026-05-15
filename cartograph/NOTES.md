@@ -301,9 +301,34 @@ The L.0–L.6 loop-street sprint has its own arc (see BACKLOG / NOTES 2026-05-10
 
 ---
 
-## 2026-05-14 — Procedural-trees fallback: design memorial (in flight)
+## 2026-05-14 — Procedural-trees fallback: shipped (commit `dbbd1ed`)
 
-**Status:** designed end-to-end, not yet coded. Implementation handoff is a separate baby-agent session per [[feedback_user_spawns_baby_agents]]. This entry is the architecture record per [[feedback_notes_md_holds_architecture]] — read end-to-end before touching code.
+**Status:** v1 landed. Five procedural species (`procedural_broadleaf` ×3 / `_conifer` ×2 / `_ornamental` ×2 / `_columnar` ×2 / `_weeping` ×2) publish through the unmodified `publish-glb` → `bake-look` → `bake-trees` pipeline. ~140/745 LS park placements now substitute procedurals (procedural_weeping has no shape-match placements; sits in roster ready). The architecture record below stands as written — the design landed verbatim.
+
+### What's true post-ship that wasn't fully captured pre-ship
+
+- **Grove is the operator's roster knob.** `src/arborist/Grove.jsx` already implements per-Look roster curation: scope toggle `In Look` / `All Rated`, click-to-toggle membership, fires `/api/cartograph/looks/<id>/trees` + `/api/arborist/atlas/bake?look=<id>` automatically. The "manually edit `design.json#/trees`" path my generator uses is the script-side equivalent; in normal operation an operator opens Grove → curates → done. **The 14 heavy hand-authored variants are pruned by clicking them out in Grove, not by editing design.json.**
+- **Per-Look atlas budget unlocks once roster shrinks.** `bake-look.js`'s `CONTENT_CAP` caps tiles at `bark 512×1024 / leaf 512×512`. The 25-tree LS roster today produces a 4040×1560 unified atlas (~6 MB color PNG); pruning to ~10 trees frees ~60% of atlas area, opening room for `bark 1024×2048 / leaf 1024×1024` at no runtime cost. One-line knob in `arborist/bake-look.js:39` — defer until operator finishes Grove curation so the actual roster size drives the cap.
+- **Bark variation deferred to SpeedTree.** The original ParkTrees palette (`['#5a4030', '#4d3828', '#634838', '#554030', '#4a3525']`) drove per-tree bark color via vertex colors; bake-look's atlas rewriter strips `COLOR_0` (bake-look.js:459), so v1 procedurals get one bark texture per species (5 distinct browns across the roster). SpeedTree restores per-instance bark via tinted baked-card atlas tiles — already the SpeedTree migration plan, no new gap.
+- **`cartograph/serve.js` Bake-button chain runs `bake-trees.js --look default`** (not `--look <id>`). With procedurals at `quality=2` in `public/trees/index.json`, the default Look's placements file now substitutes procedurals — but the default Look's `design.json#/trees` doesn't include them and `bake-look` won't atlas them under `public/baked/default/`. Runtime fetches to `/baked/default/trees/procedural_*/...` will 404 when the default Look is the active one. **Risk window:** only when an operator deploys against `?look=` unset or `=default`. Mitigation when relevant: add procedurals to default's roster via Grove + per-Look atlas-bake (the same mechanism), or gate the universal `public/trees/index.json` per-Look (out of scope for v1 stopgap).
+- **The publish-glb `quality` knob: `qualityOverride: 2`, not `quality: 2`.** publish-glb writes `quality: 0` (Untouched sentinel) on every newly-published variant; the Rating UI writes `qualityOverride: <N>` and that's what `build-index.js` consults (`effQuality = v.qualityOverride ?? v.quality ?? 0`). My generator patches `qualityOverride` on each procedural variant post-publish — preserves the "operator-rated" doctrine without forking publish-glb.
+
+### Deferred: procedural authoring UI in Arborist (~1 day, no algorithm change)
+
+Designed in the "Eventual UI" block below. `generateTreeMesh()` exposes the exact params signature the UI will bind to: `{preset, seed, dbh, canopyR, canopyH, branching, leafMorph}`. Slot-in plan:
+
+1. Top-level mode toggle in `ArboristApp.jsx`: `[Scan] | [Procedural]`. Procedural mode shows the 5 species in Library; per-species detail view shows the current `PRESETS` table entries as editable variants.
+2. Right-pane tune panel mirrors Workstage's voxelSize/minRadius/tipRadius pattern, with: shape preset dropdown / dbh / canopyR / canopyH / branching dropdowns (primaryN, childN, spread, baseTilt, droopPerGen, maxGen) / leaf morphology dropdown (from leafTypes.json) / seed integer + dice button.
+3. `POST /procedural/generate` in `arborist/serve.js`: reads body params, calls `generateTreeMesh()`, packages into a single-variant GLB (the existing `buildSourceGLB` helper, refactored to accept one variant), streams the binary back. `SpecimenViewport.jsx` renders it.
+4. "Adopt as seedling" button writes the params + seed to `arborist/state/procedural_<morph>/seedlings.json` and triggers `publish-glb.js` (mirrors the scan workflow's adoption).
+
+Not v1-blocking. Carried as a BACKLOG line.
+
+---
+
+## 2026-05-14 — Procedural-trees fallback: pre-ship design memorial (archival, kept for reference)
+
+The entry below is the pre-ship architecture record per [[feedback_notes_md_holds_architecture]]. Preserved verbatim because the design landed without changes; future migrations should trace from here.
 
 ### Why this exists
 

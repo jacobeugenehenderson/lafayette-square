@@ -2651,61 +2651,84 @@ below) — not punchlist-gating.
   polygonOffset coplanar sweep** remains open under Designer/Preview UX
   below.
 
-### Trees — Procedural fallback (v1, in flight)
-- [ ] **Resurrect `ParkTrees` algorithm as an Arborist generator.** The
-  pre-`43c4aa3` `src/components/LafayettePark.jsx` carried ~500 LOC of
-  procedural branching code (multi-segment curved branches, leaf-card
-  billboards, per-species morphology lookup). Lift the `growBranch` +
-  `addLeaf` core as a pure parameterized function
-  `generateTreeGLB({preset, seed, dbh, canopyR, canopyH, branching, leafMorph, barkPalette}) → GLB buffer`
-  in `arborist/generate-procedural.js`. **Parameter-first discipline:**
-  every variant must be expressible as a `params` object (no hardcoded
-  preset shortcuts) so the eventual UI panel binds to the same signature
-  with zero algorithm change. The current commit is CLI-only (loops a
-  preset table per morphology); the UI is purely additive later.
-- [ ] **Publish through the existing pipeline.** Generator emits a
-  multi-node source GLB (one node per variant); `publish-glb.js` accepts
-  it via the same variant-detection it uses for vendor packs
-  (`namesSuggestVariants` / `nodesSpatiallySeparated`) and produces 3
-  LODs + manifest.json per species. `bake-look.js` atlas-packs the
-  procedural leaf-card PNGs + a 1×1 solid bark swatch into the
-  lafayette-square Look's unified atlas — full pipeline parity with
-  real species, no `bake-look.js` fork. Roster substitution in
-  `InstancedTrees` handles same-category fallback per the existing
-  `byCategory` pool.
-- [ ] **Species model: one species per morphology.** Five published
-  species in `public/trees/`:
-  `procedural_broadleaf` / `procedural_conifer` / `procedural_ornamental` /
-  `procedural_columnar` / `procedural_weeping`. Each carries N seedling
-  variants (different seeds + size brackets). Mirrors `leafTypes.json`
-  morphologies; the eventual UI's species-picker maps cleanly.
-- [ ] **Rip the 2-line stale residue.** Drop the `ParkTrees`
-  doc-comment line in `src/components/R3FErrorBoundary.jsx` and the
-  `{false && <ParkTrees />}` reference at `arborist/SPEC.md:16`. The
-  wiring was already removed at commit `43c4aa3` (arborist library
-  split); these are leftover documentation pointers to a vanished
-  symbol. Same commit as the procedural publish.
-- [ ] **Eventual UI: top-level mode in Arborist app** (deferred). New
-  mode toggle alongside scan-import; tune panel mirrors the existing
-  voxelSize/minRadius/tipRadius pattern with procedural params
-  (preset, dbh, canopyR/H, branching knobs, leafMorph dropdown, bark
-  palette swatches, seed + dice). `POST /procedural/generate` endpoint
-  on `arborist/serve.js` returns a GLB buffer. ~1 day on top of the
-  CLI commit; not v1-blocking.
-- **Acceptance for the v1 commit:** `node arborist/generate-procedural.js`
-  + `node arborist/bake-trees.js --look lafayette-square` produces a
-  `trees-atlas.json` whose roster includes the procedural species at
-  their authored quality rating; LS Stage / Preview / production all
-  render trees via `InstancedTrees` substituting procedurals into every
-  park placement; no `procedural` token appears in `src/`. Per
-  `feedback_stash_isolate_per_file`, the procedural commit must NOT
-  bundle the 23 unrelated dirty files in the tree (terrain doctrine
-  work, scene labels, etc.).
-- **Why now:** SpeedTree path has a learning curve; current 138 MB
-  baked-GLB roster is too heavy for the mobile target
+### Trees — Procedural fallback v1 (shipped 2026-05-14, commit `dbbd1ed`)
+- [x] **Resurrect `ParkTrees` algorithm as an Arborist generator.** Lifted
+  `growBranch` / `addLeaf` / `makeBranch` + per-shape branching configs
+  from `43c4aa3~1` into `arborist/generate-procedural.js` as a pure
+  parameterized function
+  `generateTreeMesh({preset, seed, dbh, canopyR, canopyH, branching, leafMorph}) → {barkGeo, leafGeo}`.
+  Parameter-first discipline held: every variant in the PRESETS table is
+  a plain `params` object, no hardcoded shortcuts. The eventual UI binds
+  sliders to the same signature.
+- [x] **Publish through the existing pipeline.** Generator emits a
+  multi-node source GLB (one node per variant); shells out to
+  `publish-glb.js` per species (5 invocations); variant detection splits
+  via `namesSuggestVariants`; 3 LODs + manifest.json emitted unchanged.
+  No fork of publish-glb / atlas-pack / bake-look / bake-trees.
+- [x] **Species model: one species per morphology.** Five species
+  published with 11 total variants:
+  `procedural_broadleaf` ×3 / `_conifer` ×2 / `_ornamental` ×2 /
+  `_columnar` ×2 / `_weeping` ×2. Each carries `qualityOverride: 2`
+  (Fill tier — patched post-publish since publish-glb writes the
+  Untouched sentinel `quality: 0` by default).
+- [x] **Roster sync.** Generator appends 11 entries to
+  `public/looks/lafayette-square/design.json#/trees`; bake-look atlases
+  them into the unified LS atlas (all 22 procedural material refs land
+  in `trees-atlas.json`). bake-trees substitutes ~140/745 park
+  placements onto procedurals (conifer 52, columnar 31, broadleaf 30,
+  ornamental 27; weeping 0 because no shape=weeping in `park_trees.json`).
+- [x] **2-line stale residue.** `src/components/R3FErrorBoundary.jsx`
+  comment + `arborist/SPEC.md:16` ParkTrees reference rewritten.
+- [x] **Stash-isolated commit.** 23 unrelated dirty files (terrain
+  doctrine, scene labels) left in working tree; `design.json` plumbed
+  via `git hash-object` + `update-index` to stage only the procedural
+  roster delta against HEAD without bundling Jacob's `layerVis`/`labels`
+  edits. Per [[feedback_stash_isolate_per_file]].
+
+#### Follow-ups — pick up post-Grove-curation
+
+- [ ] **Operator prunes LS roster via Grove.** Open Arborist → set active
+  Look = "Lafayette Square" → Grove → "In Look" scope → click the heavy
+  `platanus_acerifolia` ×9 / `alaskan_cedar_2` / `broadleaf_rt3` /
+  `cedar_generic` / `generic_*` tiles to remove. Per-Look atlas
+  auto-rebakes; LS atlas size drops proportionally. Manual curation
+  only — operator decides what stays.
+- [ ] **Raise atlas `CONTENT_CAP` once roster shrinks.** `bake-look.js:39`
+  caps tiles at `bark 512×1024 / leaf 512×512`. With ~10 trees in roster
+  (vs 25 today) ~60% of atlas area frees — raise to
+  `bark 1024×2048 / leaf 1024×1024` for material fidelity bump at no
+  runtime cost. One-line knob; defer until operator finishes Grove
+  curation so the actual roster size drives the cap.
+- [ ] **Default-Look procedural placement gap.** `cartograph/serve.js`'s
+  Bake-button chain runs `bake-trees.js --look default` (not the active
+  Look's id). With procedurals at `quality=2` in
+  `public/trees/index.json`, default's placements now substitute
+  procedurals — but default's `design.json#/trees` doesn't list them
+  and no per-Look atlas exists. Runtime fetches to
+  `/baked/default/trees/procedural_*/...` will 404 if any view runs
+  against `?look=` unset or `=default`. **Mitigation when relevant:**
+  add procedurals to default's roster via Grove (one click each), atlas
+  re-bakes automatically. Or gate the universal `public/trees/index.json`
+  per-Look in `build-index.js` (out of scope for v1 stopgap).
+- [ ] **Procedural authoring UI in Arborist** (deferred; designed in
+  `NOTES.md` post-ship entry). Top-level `[Scan] | [Procedural]` mode
+  toggle in ArboristApp; per-species panel exposes PRESETS-table params
+  + "Re-generate + publish" button; `POST /procedural/generate` returns
+  a GLB → SpecimenViewport renders before publish. `generateTreeMesh()`
+  already exposes the exact params signature the UI will bind to. ~1
+  day end-to-end. Worth doing once the v1 stopgap proves the visual bar.
+- [ ] **Per-instance bark color** — current v1 lands one bark texture per
+  species (5 distinct browns across the roster). The original ParkTrees
+  palette drove per-tree bark via vertex colors; bake-look's atlas
+  rewriter strips `COLOR_0`. SpeedTree restores per-instance bark via
+  tinted baked-card atlas tiles — already in the SpeedTree migration
+  plan, no new gap. No action required here.
+
+- **Why now:** SpeedTree path has a learning curve; the pre-procedural
+  138 MB baked-GLB roster is too heavy for the mobile target
   ([[feedback_beautiful_first_lightweight_51]]). Procedurals are the
-  v1 stopgap per [[project_v1_no_trees]]. SpeedTree replaces them by
-  raising roster quality ratings — zero code change at swap time.
+  v1 stopgap per [[project_v1_no_trees]]. SpeedTree will replace them
+  by raising roster quality ratings — zero code change at swap time.
 
 ### Trees — SpeedTree
 - [ ] **Stand up the SpeedTree library.** Buy/grab `.spm` starter kits;
