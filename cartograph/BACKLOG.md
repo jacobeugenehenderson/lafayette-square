@@ -2,24 +2,38 @@
 
 > Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
 
-## 2026-05-15 — Neon placement + occlusion (in-flight, UNVERIFIED)
+## 2026-05-16 — Neon rewrite as NeonBandsV2 (in-flight, partial verification)
 
-Worked through the original "neon at water level / underwater reflections" symptom in `src/components/NeonBands.jsx`. Code changes are in; **visual confirmation in Stage at LS scale is still pending** — Jacob saw bright neon "peek out from somewhere" intermittently at ground/roof seams and disappear as the camera approached. Latest hypothesis is roof-volume occlusion (hipped/gabled roofs swallow a tube placed above the rooftop line on Lafayette buildings); not yet confirmed.
+Long iteration day on `src/components/NeonBands.jsx` that ended in a fresh side-by-side rewrite at `src/components/NeonBandsV2.jsx`. v2 is currently mounted in both `LafayetteScene.jsx` and `toy/ToyBuildings.jsx`; v1 (`NeonBands.jsx`) is on disk untouched as a fallback. Live diagnostic console.log `[neonV2]` still in place in v2's geometry useMemo.
 
-Changes landed this session:
-- **Terrain lift** — added per-vertex `aCentroidXZ` attribute and inlined `texture2D(uTerrainMap, ...) * uExag` in the vertex shader so the tube rides the same heightmap as the building it sits on. Was missing entirely; neon was rendering at terrain-naive Y (~10–25 m below the actual rooftop at LS scale).
-- **Frustum culling disabled** on the merged mesh (`frustumCulled={false}`). CPU bounding sphere was computed on un-lifted positions; three.js was culling against a sphere meters below the rendered geometry → "flashes and vanishes as I creep around."
-- **Quarter-round profile** (top + outer facets only). Down from the original 4-facet diamond. Inner facet retired (lived inside the wall); bottom facet retired (lit the underside with no physical emitter).
-- **Wall-fascia mount** — `baseY = foundation + size[1] − 0.2m`, `OFFSET_OUT = 0.35m`, `TUBE_RADIUS = 0.4m`. Tube hangs on the wall just below the rooftop seam, out from the wall face, like real signage. Previous `roofLift = 0.3m` parked it inside the gable/hip roof volume — the current best guess for why it was still hidden, not confirmed.
-- **Panel consolidation** — retired the `neonTube` channel entirely (store, bake, schema, Stage panel, override prop chain). Emissive folded into the `neon` channel as a 4th slider; `_neonUniforms.emissiveUniform` is now the shared ref `NeonPump` writes per frame. Tube radius and roof drop are physically motivated and now hardcoded constants in `NeonBands.jsx` — not authored. Reasoning: authoring those values offered no design value while letting the operator place the tube somewhere it would be occluded.
+**Verified working this session (from underground / street-level views, see screenshot in chat):**
+- ~63 tubes built and merged into one mesh (matches eligibility math: ~83 landmarks × Force-On expansion).
+- Tubes positioned correctly at each building's rooftop perimeter, OFFSET_OUT outside the wall.
+- Bright vivid neon with category colors reading correctly (white, magenta, peach observed).
+- DoubleSide + bloom-friendly Gaussian shader → bands visible from the underground/street-level pass.
 
-**Outstanding to resolve next session:**
-1. Verify the new wall-fascia placement actually reads correctly in Stage at Browse / Hero / Street cameras around the LS perimeter. If still hidden, the occluder isn't roof geometry and the diagnosis was wrong.
-2. If still hidden, candidate next checks: per-building `getRoofPeakHeight` overhang vs. the new 0.35 m `OFFSET_OUT`; whether `b.position.xz` is actually the XZ the building's `patchTerrain` samples (wall geometry could anchor at centroid-of-footprint instead); whether `uExag` ever desyncs between the building's patched material and the shared-uniform pump.
-3. **PlaceCard "force on this place" toggle** — proposed earlier this session as the ergonomic precision instrument for QC'ing one building's tube shape / category color in isolation. ~20 LOC. Not done.
-4. **Trinity write-through** — `FEATURES.md:484` still describes the old 4-facet diamond + `neonTube` channel arrangement. Update once the visual fix is verified.
+**Outstanding to verify next session:**
+1. **Hero / Browse camera visibility** — Jacob hadn't tested aboveground views before stopping. If aboveground hides the tubes, the next suspect is depth-occlusion at oblique angles (far-side tube of each building hides behind that building's own silhouette). Possible escalations: bigger `TUBE_RADIUS`, or add a billboard-glow halo as a distance fallback.
+2. **`forceNeonOn` extension audit** — `LafayetteScene.jsx:1206` now grants neonLookup eligibility when `forceNeonOn` is true (not just bypass the hours gate). Verify intended.
+3. **Excise v1** — once aboveground verifies, delete `src/components/NeonBands.jsx`, rename `NeonBandsV2.jsx` → `NeonBands.jsx`, swap imports back. Remove the `[neonV2]` console.log diagnostic.
+4. **FEATURES.md §Neon write-through** — `FEATURES.md:484` still describes the old quarter-round / 4-facet diamond / `neonTube` channel arrangement. Update after v2 is excised to v1's name and verified across all cameras.
 
-`src/components/NeonBands.jsx` carries the full geometry doctrine in comments; `[[feedback_toy_not_proving_ground_for_ls_visibility]]` applies (toy hid every one of these bugs).
+**Architecture of v2** (full doctrine in the file header comment):
+- Cross-section: FULL CIRCLE, `CROSS_SEGS=8` facets in the vertical plane spanned by ŷ × n̂. Tube center at rooftop seam (`ROOF_DROP=0`), spans `baseY ± TUBE_RADIUS` vertically. Radius currently `1.0 m` for hero-distance visibility (sub-pixel at smaller values).
+- Winding: per-footprint outward direction detected via point-in-polygon probe of the first-edge midpoint offset by the raw `(e_z, -e_x)` normal. Robust to mixed CW/CCW datasets (buildings.json is ~98% CW and ~1.5% CCW).
+- Material: `DoubleSide` + AdditiveBlending, ShaderMaterial. **No `gl_FrontFacing` normal flip** in the fragment shader — back faces compute `dot(N, V) < 0` which clamps to `r=1` → bleed-only dim glow on the camera-far side. That's what produces the omnidirectional emissive look without flattening the Gaussian into a uniform ribbon (which the v1 FrontSide / quarter-arc / DoubleSide-with-flip combinations all did, in different ways).
+
+**The long iteration that informed the rewrite:**
+
+The session burned through five wrong diagnoses before landing on the V2 architecture. Captured here because the wrong turns all *looked* plausible in isolation:
+
+1. **"Tube is buried inside the wall"** — believed for hours. False; the original v1 placement was actually outside the wall most of the time. Confirmed only after `depthTest:false` diagnostic revealed many tubes appearing where expected.
+2. **Winding-flip dance** — flipped `(e_z, -e_x)` based on point-in-polygon convention reasoning. Each flip broke what was working without revealing what was hidden. Per-footprint runtime PIP probe is the only robust approach.
+3. **"Just need DoubleSide for backface culling"** — DoubleSide with the `gl_FrontFacing` normal flip in the fragment shader makes the front and back hit `coreMask≈1` at the same camera angle → tube flattens into a uniform ribbon. The flip has to come out.
+4. **Quarter-arc cross-section** — emits a single sloped panel with smoothly interpolated radial normals. Looked clever, read as a flat slab from any low-angle view because half the arc is back-face-culled and the visible half is co-planar.
+5. **Tube radius** — `0.3 m` is sub-pixel at hero distance. Bloom can't recover what the rasterizer never sampled. `1.0 m` reads, `0.3 m` is invisible past street level. Authoring this knob is anti-doctrine since the operator can't tell the difference until they're at hero camera anyway.
+
+References: `[[feedback_toy_not_proving_ground_for_ls_visibility]]` applies (toy mounts `<NeonBands forceOn />` directly so all of these bugs were latent the whole time).
 
 ## 2026-05-14 — Polygon-graph restructure (multi-session arc, LOAD-BEARING)
 
@@ -2750,14 +2764,23 @@ phases.
   whorls + skirt droop correct. **Doesn't fix:** per-conifer-species variants
   (Spruce/Pine/Fir) need authoring, not code.
 
-- [ ] **Phase C — Geometric polish on correct skeletons.** `makeBranch`
+- [ ] **Phase C — Geometric polish on correct skeletons** — **PRIORITY-ELEVATED 2026-05-16 EOD: this is the next phase.** `makeBranch`
   upgrades: 12-segment cylinders at lod0 (6 at lod1, 4 at lod2), non-linear
   taper, per-vertex radial noise displacement at lod0. Flange ring helper at
   every branch joint. Root flare + 6 buttress fins at trunk base. LOD ladder
   absorbs the extra tris.
+  **Why C now:** Phase B's photo PBR on smooth `THREE.CylinderGeometry`
+  produces visibly stretched + warped bark wraps because the tapered-cylinder
+  UV unwrap distributes texels non-uniformly across radius. The visual ceiling
+  on bark at v1.5 is GEOMETRIC, not shader-side. Phase C's per-vertex radial
+  displacement + multi-segment + flange rings + root flare break up the
+  regularity that makes the bark wrap look computer-generated. Resuming
+  skeleton-first ordering from the maxi-brief's original D → E → C → B
+  sequence — we shipped B before C and learned why C should have been first.
   **Fixes:** branches taper realistically; joints buttress smoothly; trunks
-  look planted via root flare; close-up Hero craggy. **Doesn't fix:** bark
-  still flat; foliage still sparse.
+  look planted via root flare; close-up Hero craggy; **bark stops looking
+  warped because the substrate stops being a smooth cylinder**.
+  **Doesn't fix:** foliage still sparse (Phase F); per-species hero tuning (G).
 
 - [x] **Phase B (core) — Photo-PBR bark + retint shader infra** (shipped 2026-05-15).
   Scope pivoted post-orchestrator-conversation: the GLSL pattern-library
@@ -2813,27 +2836,70 @@ phases.
   per-vertex would have been ~30 MB of VBO at LS scale for effectively
   per-primitive-constant data, and uniforms align with the
   applyBarkUniforms pattern B-core established.
-- [ ] **Phase B.1.b — Workstage Bark panel** (deferred from B.1).
-  Per-species panel in `src/arborist/Workstage.jsx`: material dropdown
-  w/ thumbnails, UV scale sliders, tint + jitter + roughness controls,
-  "Apply & republish species" button. `POST /procedural/:species/bark`
-  endpoint writes `manifest.bark` and re-triggers republish + per-Look
-  atlas rebake. `GET /procedural/bark/materials` lists available CC0
-  materials under `public/textures/bark/` with cached 128×128 thumbnails.
-- [ ] **Phase B.1.c — Stage debug overlay** (deferred from B.1). Surfaces
-  `renderer.info.programs.length` + active bark uniforms for the
-  focused species; toggle-able dev surface that closes the original
-  Phase B brief's acceptance criteria 5/6/7 (WebGLProgram count check,
-  Bloom flicker test, per-instance jitter visual) mechanically.
+- [ ] **Phase B.1.b — Workstage Bark panel** (deferred from B.1, now
+  indefinitely-deferred per 2026-05-16 EOD doctrine pivot). The bark
+  visual-quality ceiling at v1.5 is geometric (Phase C unblocks it),
+  not authoring-UI-bound. Bark authoring iteration via Workstage panel
+  would just rearrange smooth-cylinder pain. Revisit after Phase C
+  ships and per-species bark tuning becomes worthwhile.
+- [ ] **Phase B.1.c — Stage debug overlay** (deferred from B.1, now
+  indefinitely-deferred per same rationale as B.1.b). Acceptance criteria
+  5/6/7 from the original Phase B brief (WebGLProgram count, Bloom
+  flicker, per-instance jitter visual) close mechanically with a debug
+  overlay; the infra is structurally correct (single material → single
+  program per Bloom constraint; aBark per-vertex gates retint per
+  B.1.a's load-bearing fix; world-XZ hash drives per-tree jitter). The
+  overlay is operator-confidence tooling, not architectural validation.
+  Revisit if a visual regression suspected.
+- [ ] **Phase B.2 — Proper bark tile wrap** (deferred). Phase B.1.a's
+  `fract`-inside-atlas approach has unavoidable derivative discontinuity
+  at wrap lines → narrow blurry stripes that "crawl" at close-up Hero.
+  Polish attempts via `textureGrad` (`e77278e`) and 4×→16× anisotropy
+  bump (`94519db`) reverted as no-ops (`d50dd7b`); pre-tile-at-source
+  v2 (`fd187d7`) reverted in v3 (`54355a4`). Proper fixes: (1) WebGL2
+  texture arrays — one atlas layer per `materialRef` with `GL_REPEAT`;
+  hardware tiling/mipmap/aniso; single shader program preserved via
+  layer-index uniform. (2) Pre-tile in atlas at bake time — bake-look
+  composites N×M-tiled version of source into atlas tile; shader samples
+  directly. Atlas footprint grows N×M for bark. (3) Separate textures
+  per species — breaks Bloom's single-program constraint, not viable.
+  All three are pipeline changes; defer until Phase C lands and bark
+  quality re-evaluation says the wrap-line crawl is the next constraint.
 
-- [ ] **Phase F — Leaf cluster cards + 2-stop tint ramp.** New
-  `arborist/leafCluster.js` sharp-based compositor: existing per-leaf PNGs
-  → 1024×1024 cluster atlas per morph. `buildLeafGeometry` uses cluster
-  cards. Material extras carry 2-stop tint ramp (inner/outer × per-season);
-  leaf shader samples UV.y for inner-vs-outer mix.
+- [ ] **Phase F — Per-species PSD-authored leaf cluster atlases + 2-stop tint ramp + sparse occupancy** (scope reframed 2026-05-16 EOD).
+  **Scope reframe:** the original Phase F included `arborist/leafCluster.js`,
+  a sharp-based parametric cluster compositor with per-leaf rotation /
+  scale / position jitter knobs. **That infrastructure is dropped.** It
+  was designed to scale leaf authoring to all 60 inventory species; for
+  5 heroes, Photoshop is faster + better (artist controls overlap,
+  density, color, accents directly; per-season variants are additional
+  PSDs; no parametric tuning struggles like we just had with bark uvScale).
+  **New scope:** import PSD-authored cluster PNGs at
+  `public/textures/leaves/<species>/cluster.png` (per-season subfolder
+  if needed), atlas + tint + sparse-occupancy at runtime. Species
+  manifest gains `leafCluster.textureRef` field (parallels `bark.materialRef`).
+  Workstage Leaf panel = picker + tint stops + occupancy slider; NO
+  density / jitter / cluster-count sliders (those would be compositor
+  knobs; compositor is dropped). Fillers continue using shared per-morph
+  PNGs (`public/textures/leaves/<morph>.png`) via v1 single-leaf-card
+  pipeline; heroes override with PSD-authored clusters.
+  Sparse-cluster occupancy parameter (`PRESETS.leafCluster.occupancy`)
+  remains load-bearing for honeylocust ~25% / oak ~70% / conifer ~95%
+  dappled vs dense alpha-density variation.
   **Fixes:** foliage reads dense at distance; fall color has inner-to-outer
-  gradient (the species signature for Sugar Maple etc.). **Doesn't fix:**
-  per-species tuning still needed.
+  gradient (the species signature for Sugar Maple etc.); sparse-canopy
+  species (honeylocust) read correctly translucent. **Doesn't fix:**
+  per-species PSD authoring needed for each new hero beyond the 5
+  (substitution-fallback safety net covers the rest until v1.6+).
+
+- [ ] ~~**Phase F.5 — Leaf editor** (parametric leaf generator)~~ — **KILLED 2026-05-16 EOD.**
+  Parametric per-species leaf authoring (lobe count / depth / serration /
+  venation density → generated PNG) was pulled forward from v1.6 as G.1's
+  enabling tool. **Obviated by PS-authoring per the Phase F reframe above.**
+  For 5 heroes, hand-authoring in Photoshop produces better species
+  character at less engineering cost. May return at v1.6+ if the
+  PSD-authoring workflow itself becomes the bottleneck for scaling to
+  60 species; until then, the kill stands.
 
 - [ ] **Phase G — Sugar Maple proving pass.** With full stack landed, tune
   Sugar Maple specifically until it reads convincingly at Hero. Adopted
