@@ -338,9 +338,17 @@ export function generateTreeMesh({
   applyRadialNoise(trunk, 0, trunkH, 0.05, seedN * 11 + 17)
   trunk.translate(0, trunkH / 2, 0)
   const lean = (r(0) - 0.5) * 0.06
+  const leanSin = Math.sin(lean)
+  const leanCos = Math.cos(lean)
   if (Math.abs(lean) > 0.001) trunk.rotateZ(lean)
   trunk.translate(0, -0.25, 0)
   woodGeos.push(trunk)
+  // Leaned trunk top position — `trunk.rotateZ(lean)` around the origin
+  // displaces the trunk's top from (0, trunkH) to (-trunkH·sinθ, trunkH·cosθ)
+  // before the final -0.25 translate. SCA root + the trunk-to-SCA flange
+  // must use this leaned position or the entire canopy floats off-axis from
+  // the leaning trunk (single-direction X offset; 2026-05-16 review).
+  const leanedTrunkTop = [-trunkH * leanSin, trunkH * leanCos - 0.25, 0]
 
   // ── Phase C: root flare + 6 subtle buttress fins ──────────────────────
   // Replaces the prior single flat-flare cylinder. Trunk reads as PLANTED,
@@ -424,9 +432,10 @@ export function generateTreeMesh({
     }
     const scaCfg = { ...defaults.sca, ...(sca || {}) }
 
-    // SCA picks up at the trunk top (the −0.25 matches the trunk's own
-    // post-translate so the SCA root joins the visible trunk seamlessly).
-    const trunkTop = [0, trunkH - 0.25, 0]
+    // SCA picks up at the trunk top — use the LEANED position computed
+    // above so the SCA root joins the visible (leaned) trunk top, not the
+    // pre-rotation X=0 axis.
+    const trunkTop = leanedTrunkTop
     const { nodes } = runSCA({
       envelope: env,
       sca: scaCfg,
