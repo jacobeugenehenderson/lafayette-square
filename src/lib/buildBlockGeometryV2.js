@@ -82,20 +82,14 @@ const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 // mutated by V2 (Survey owns that). Tunable via NOTES.
 const IX_NOISE_RADIUS = 16
 
-// Phase A.5: divided-pair endpoint coalesce threshold. At an IX where
-// two paired chains both terminate, the two endpoint legs point
-// nearly the same way (the carriageway mouth opening — typically
-// 2–10° apart, set by median-width / IX-distance). Treated as
-// independent siblings, CCW sort places them adjacent and the
-// resulting ~5° wedge produces a degenerate corner Q (near-parallel
-// rays → intersection at near-infinity → no visible plug). Phase A.5
-// detects this case and coalesces the two legs into a single
-// "composite" leg for corner-pair purposes (data layer unchanged).
-// 15° gives headroom over the typical 2–10° spread without coalescing
-// legitimate distinct legs (a Y-junction has legs ~120° apart). If a
-// real divided pair has legs >15° apart, that's a data-quality smell;
-// investigate before widening.
-const COMPOSITE_ANGLE_THRESHOLD_RAD = 15 * Math.PI / 180
+// Polygon-edge-Q polyline depth. Each leg's facing-side offset
+// polyline walks `CORNER_Q_POLY_DEPTH` chain.points vertices outward
+// from the IX V. At LS scale the asphalt-union corner vertex is on
+// segment 0 (rectilinear) or segment 1–2 (curved chains within
+// IX_NOISE_RADIUS); 6 gives generous slack. Larger depths add
+// polyline-pair work without finding crossings polyline-cross would
+// miss at 6.
+const CORNER_Q_POLY_DEPTH = 6
 
 function unit(v) {
   const l = Math.hypot(v[0], v[1])
@@ -272,6 +266,71 @@ function resolveIxRef(sref, V, streetsByName, claimed) {
   return best
 }
 
+// Build one leg's "facing-side" offset polyline — the polyline that
+// chainPavementRing / emitChain emits as that side's outer edge of
+// the asphalt rectangle. Walks chain.points from `ixIdx` outward in
+// `dir` for up to CORNER_Q_POLY_DEPTH vertices, perpendicular-offset
+// at each vertex by `sideSign · hw · perps[k]`. perps is the chain's
+// full bisector-perp array (same construction as computePerps used by
+// emitChain) so the polyline tracks the actual asphalt-union vertex
+// at the IX corner — not the far-field tangent extrapolation.
+//
+// `sideSign`: +1 for the leg's "right curb" side (offset toward
+// +perp-LEFT, matching tangent-Q's `V + outerR · P` convention at
+// `cornersAtIx`'s corner-pair math); -1 for the leg's "left curb"
+// side. The corner-pair (A CCW-adjacent to B) reads polyA at +1 and
+// polyB at -1 — the wedge between them lives between A's +perp side
+// and B's -perp side.
+function buildLegSidePolyline(chain, ixIdx, dir, sideSign, hw, depth = CORNER_Q_POLY_DEPTH) {
+  if (hw <= 0) return null
+  const pts = chain?.points
+  if (!pts || pts.length < 2) return null
+  if (!Number.isInteger(ixIdx) || ixIdx < 0 || ixIdx >= pts.length) return null
+  const perps = computePerps(pts)
+  const poly = []
+  let k = ixIdx
+  let steps = 0
+  while (k >= 0 && k < pts.length && steps <= depth) {
+    poly.push([
+      pts[k][0] + sideSign * perps[k][0] * hw,
+      pts[k][1] + sideSign * perps[k][1] * hw,
+    ])
+    k += dir
+    steps++
+  }
+  return poly.length >= 2 ? poly : null
+}
+
+// First segment-segment intersection between two polylines, scanning
+// in polyline order from the IX-adjacent end outward. Returns the
+// crossing point closest to V (= the start of both polylines) or
+// null if none within the polylines' extent. Standard 2D
+// segment-segment with epsilon slop for vertex-coincidence cases at
+// the polyline starts (both polylines begin at the offset of V,
+// which can produce a near-coincident start segment).
+function polylineSegSegCross(a1, a2, b1, b2) {
+  const dax = a2[0] - a1[0], daz = a2[1] - a1[1]
+  const dbx = b2[0] - b1[0], dbz = b2[1] - b1[1]
+  const det = dax * (-dbz) - daz * (-dbx)
+  if (Math.abs(det) < 1e-9) return null
+  const dx = b1[0] - a1[0], dz = b1[1] - a1[1]
+  const s = (dx * (-dbz) - dz * (-dbx)) / det
+  const t = (dx * (-daz) - dz * (-dax)) / det
+  const SLOP = 1e-3
+  if (s < -SLOP || s > 1 + SLOP) return null
+  if (t < -SLOP || t > 1 + SLOP) return null
+  return [a1[0] + s * dax, a1[1] + s * daz]
+}
+function polylineCross(polyA, polyB) {
+  for (let i = 0; i < polyA.length - 1; i++) {
+    for (let j = 0; j < polyB.length - 1; j++) {
+      const Q = polylineSegSegCross(polyA[i], polyA[i + 1], polyB[j], polyB[j + 1])
+      if (Q) return Q
+    }
+  }
+  return null
+}
+
 // Stable key for an intersection point — matches CornerEditHandles' ixKey
 // so per-IX overrides keyed there are applied here.
 function ixKey(p) { return `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}` }
@@ -368,92 +427,21 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
         legKey: `${skel}:${dir === -1 ? 'b' : 'f'}`,
         skel,
         name: chain.name || null,
-        // Phase A.5 attribution: chain ref + ixIdx used only by the
-        // divided-pair endpoint coalesce loop below. Not consumed by
-        // downstream corner-record geometry.
+        // Used by polygon-edge-Q (`buildLegSidePolyline`) to build the
+        // leg's facing-side offset polyline from the chain's actual
+        // points + bisector-perps. T (above) is the far-field tangent
+        // from `findStableVertex` — still consumed by `corner.T_A` /
+        // `corner.T_B` for downstream `buildCornerPadQuad` geometry.
+        // Polygon-edge-Q only replaces the corner.point math, not T.
         chain,
         ixIdx,
+        dir,
       }
     }
     if (ixIdx > 0) { const l = buildLeg(-1); if (l) legs.push(l) }
     if (ixIdx < pts.length - 1) { const l = buildLeg(+1); if (l) legs.push(l) }
   }
   if (legs.length < 2) return []
-
-  // Phase A.5: detect divided-pair endpoint legs at this IX. Two
-  // chains that (a) both terminate at this IX, (b) cross-reference
-  // each other via chain.pairId / chain.skelId, and (c) have leg
-  // tangents within COMPOSITE_ANGLE_THRESHOLD_RAD of each other get
-  // coalesced into one "composite" leg for corner-pair purposes.
-  // pairId in this codebase is a CROSS-REFERENCE to the mate's skelId
-  // (lafayette-avenue-5.pairId === 'lafayette-avenue-6' and vice
-  // versa), NOT a shared group identifier. Match condition is
-  // therefore the symmetric assertion below — one-way pairings count
-  // as data bugs, not silent coalesces.
-  const isEndpointLeg = (leg) => {
-    const n = leg.chain?.points?.length
-    return n != null && (leg.ixIdx === 0 || leg.ixIdx === n - 1)
-  }
-  const synthesizeCompositeLeg = (a, b) => {
-    const sx = a.T[0] + b.T[0], sz = a.T[1] + b.T[1]
-    const L = Math.hypot(sx, sz) || 1
-    const T = [sx / L, sz / L]
-    // Use the wider carriageway's outer half-width on BOTH sides of
-    // the composite so the corner Q clears both pavements. Same for
-    // ped-zone depths so corner pads land flush against the wider
-    // member's bands. Typical divided pairs are symmetric so this
-    // collapses to the shared value.
-    const outerR = Math.max(a.outerR, b.outerR)
-    const outerL = Math.max(a.outerL, b.outerL)
-    const leftDepth  = Math.max(a.leftDepth,  b.leftDepth)
-    const rightDepth = Math.max(a.rightDepth, b.rightDepth)
-    const [s1, s2] = (a.skel <= b.skel) ? [a.skel, b.skel] : [b.skel, a.skel]
-    return {
-      T, outerL, outerR, leftDepth, rightDepth,
-      legKey: `${s1}+${s2}:c`,
-      skel: s1,
-      name: a.name || b.name || null,
-      // No chain/ixIdx on composites — they're not real chains and
-      // shouldn't re-enter the coalesce loop on a hypothetical second
-      // pass. Downstream consumers (corner Q + plug emission) read
-      // only T / outer* / *Depth / legKey, so this is safe.
-    }
-  }
-  const claimedIdx = new Set()
-  const composites = []
-  for (let i = 0; i < legs.length; i++) {
-    if (claimedIdx.has(i)) continue
-    const a = legs[i]
-    if (!a.chain?.pairId || !isEndpointLeg(a)) continue
-    for (let j = i + 1; j < legs.length; j++) {
-      if (claimedIdx.has(j)) continue
-      const b = legs[j]
-      if (!b.chain?.pairId) continue
-      // Symmetric cross-reference. Catches accidental one-way
-      // pairings as data-quality smells (would silently coalesce
-      // if we only checked one direction).
-      if (a.chain.pairId !== b.chain.skelId) continue
-      if (b.chain.pairId !== a.chain.skelId) continue
-      if (!isEndpointLeg(b)) continue
-      const dot = Math.max(-1, Math.min(1, a.T[0] * b.T[0] + a.T[1] * b.T[1]))
-      const angle = Math.acos(dot)
-      if (angle > COMPOSITE_ANGLE_THRESHOLD_RAD) continue
-      claimedIdx.add(i)
-      claimedIdx.add(j)
-      composites.push(synthesizeCompositeLeg(a, b))
-      break
-    }
-  }
-  if (composites.length) {
-    const survivors = []
-    for (let i = 0; i < legs.length; i++) {
-      if (!claimedIdx.has(i)) survivors.push(legs[i])
-    }
-    legs.length = 0
-    for (const l of survivors) legs.push(l)
-    for (const c of composites) legs.push(c)
-    if (legs.length < 2) return []
-  }
 
   legs.sort((a, b) => Math.atan2(a.T[1], a.T[0]) - Math.atan2(b.T[1], b.T[0]))
 
@@ -489,30 +477,40 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
     // cornersAtIx output.
     if (A.name && B.name && A.name === B.name && theta_deg > 150 && theta_deg < 210) continue
 
-    // Block corner = intersection of A's RIGHT curb-outer and B's LEFT
-    // curb-outer. Legs are sorted CCW; the wedge between two adjacent
-    // legs (CCW from A to B) sits on A's right and B's left in the V2
-    // chainPavementRing convention (left = -perp, right = +perp). The
-    // OLD convention had this inverted (left = +perp); cornersAtIx was
-    // written for that and used outerL on A and outerR on B. After the
-    // 2026-05-08 chainPavementRing flip we use outerR on A + outerL on
-    // B to match the same physical sides chainPavementRing emits the
-    // polygon edges on. Symptom of getting this wrong: corners look
-    // correct on chains with symmetric measure (point-symmetric polygon
-    // hides the side mismatch) but break the moment the operator edits
-    // one side asymmetrically. Perp-left of T = (-Ty, Tx).
-    const P_A = [-A.T[1], A.T[0]]
-    const P_B = [-B.T[1], B.T[0]]
-    // A's RIGHT curb passes through V + A.outerR · P_A, along A.T.
-    const A0 = [V[0] + A.outerR * P_A[0], V[1] + A.outerR * P_A[1]]
-    // B's LEFT curb passes through V - B.outerL · P_B, along B.T.
-    const B0 = [V[0] - B.outerL * P_B[0], V[1] - B.outerL * P_B[1]]
-    // Intersect A0 + s·A.T = B0 + t·B.T.
-    const det = A.T[0] * (-B.T[1]) - A.T[1] * (-B.T[0])
-    if (Math.abs(det) < 1e-9) continue
-    const dx = B0[0] - A0[0], dz = B0[1] - A0[1]
-    const s = (dx * (-B.T[1]) - dz * (-B.T[0])) / det
-    const Vc = [A0[0] + s * A.T[0], A0[1] + s * A.T[1]]
+    // Polygon-edge-Q: corner = first crossing of A's facing-side
+    // offset polyline with B's facing-side offset polyline. The
+    // polylines follow chain.points from V outward, perpendicular-
+    // offset at each vertex via computePerps — same construction
+    // emitChain uses for its per-segment asphalt rectangles. So the
+    // crossing lands on the actual asphaltSharp union vertex at the
+    // IX corner, not on the far-field tangent extrapolation. This is
+    // doctrine-correct per FEATURES.md "the ribbon doctrine" line 89
+    // (corner records computed off polygon edges, not extended chain
+    // tangents).
+    //
+    // Side convention matches today's tangent-Q (preserved on this
+    // line above the rewrite): A.outerR with `+perps` sign, B.outerL
+    // with `-perps` sign. P_A = perp-LEFT of T_A = [-T_y, T_x]; the
+    // rectangle's "right curb" is at +perps · outerR. With CCW-sorted
+    // legs, the wedge between A and B sits on A's +perps side and
+    // B's -perps side.
+    //
+    // On no-intersection (parallel polylines that never cross within
+    // CORNER_Q_POLY_DEPTH segments): SKIP this corner record. This
+    // occurs at divided-pair endpoint IXs (the median between two
+    // paired carriageways converging at one IX) where there is no
+    // real block corner — the median strip is its own block polygon
+    // and doesn't need a corner plug between the two pair legs.
+    // Falling back to tangent-Q here would reintroduce the
+    // near-infinity degenerate Q that retired Phase A.5 was patching.
+    // The theta<5°/>355° filter above handles the most parallel
+    // cases; this skip handles wider parallel cases that pass the
+    // angular gate.
+    const polyA = buildLegSidePolyline(A.chain, A.ixIdx, A.dir, +1, A.outerR)
+    const polyB = buildLegSidePolyline(B.chain, B.ixIdx, B.dir, -1, B.outerL)
+    if (!polyA || !polyB) continue
+    const Vc = polylineCross(polyA, polyB)
+    if (!Vc) continue
 
     const d_A = A.rightDepth   // A's RIGHT side faces this corner.
     const d_B = B.leftDepth    // B's LEFT side faces this corner.

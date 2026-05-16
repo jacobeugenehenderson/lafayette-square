@@ -400,177 +400,36 @@ verts, 617834 tris).
 
 ---
 
-### Phase A.5 — Leg-formation at chain-endpoint IXs (divided-pair degeneracy)
+### Phase A.6 — Polygon-edge corner-Q (shipped, supersedes A.5)
 
-**Status:** designed end-to-end, not yet coded. Brief slot-in for the next baby agent — execution-ready, no architecture re-litigation needed. Read end-to-end before touching code per [[feedback_notes_md_holds_architecture]].
+**Status:** SHIPPED 2026-05-16. Replaced `cornersAtIx`'s tangent-Q derivation (corner = intersection of two extrapolated tangent rays at `V ± half-width · P_T`) with polygon-edge-Q (corner = first crossing of two adjacent legs' chain-offset polylines). This is the fix `cartograph/FEATURES.md` line 89 has named verbatim all along — *"compute corner records off polygon edges, not off extended chain tangents"*. Phase A.5 (composite-leg coalesce) retires in this commit; Phase A (long-run tangent walker via `findStableVertex`) stays — its `T` output is still consumed by `corner.T_A`/`corner.T_B` for `buildCornerPadQuad` and is not load-bearing for the corner Q anymore. The A.5 brief (formerly above this entry) is stripped — the failure mode it was patching (divided-pair endpoint degeneracy) is now handled structurally by polygon-edge-Q skipping median wedges where the two offset polylines don't cross.
 
-**Visible-bug coverage:** the four park-corner IXs on LS (Lafayette × {Mississippi, Missouri}, Park × {Mississippi, Missouri}) currently render only 1 of 4 corners with the three-component plug (asphalt + curb + concrete). The other 3 corners have no plug, no control dot. Phase A's per-leg `findStableVertex` walker shipped clean leg tangents but did NOT address the visible failure because the failure isn't tangent noise — it's leg-pair degeneracy.
+**Algorithm.** Two helpers added above `cornersAtIx` in `src/lib/buildBlockGeometryV2.js`:
 
-#### Why this exists (root-cause diagnosis from 2026-05-14 PM)
+1. `buildLegSidePolyline(chain, ixIdx, dir, sideSign, hw)` walks `chain.points` from `ixIdx` outward in `dir` for up to `CORNER_Q_POLY_DEPTH=6` vertices. At each vertex it perpendicular-offsets by `sideSign · hw · perps[k]` where `perps` is the chain's full `computePerps` array — *the exact same bisector-perp construction `emitChain` uses for its per-segment asphalt rectangles*. So the polyline tracks the actual asphalt-union silhouette at the IX corner, not the far-field tangent extrapolation.
+2. `polylineCross(polyA, polyB)` iterates the two polylines' segment pairs and returns the first valid segment-segment intersection. Standard 2D crossing math with 1e-3 SLOP for vertex-coincidence at the polyline starts.
 
-`cornersAtIx(ix, …)` (`src/lib/buildBlockGeometryV2.js:273`) walks each chain at the IX, calls `buildLeg(dir)` for both `dir ∈ {-1, +1}`, sorts the resulting legs CCW around V, and pairs adjacent legs into corner records. Each corner record gets a Q point (intersection of the two adjacent legs' outer edges) + a radius from the corner-authoring kit, and feeds `applyRoundCornersToRing(asphaltSharp, allCorners, scale)` plus the per-corner plug emission.
+In the corner-pair loop, A.outerR drives polyA's offset with `sideSign=+1` and B.outerL drives polyB's offset with `sideSign=-1`. Side convention preserved exactly from today's tangent-Q line `V + A.outerR · P_A` / `V - B.outerL · P_B` (verified by inspecting the four-line tangent-Q math the rewrite replaces). On no-intersection, the corner record is **skipped** rather than falling back to tangent-Q. The skip is the structural fix that retires A.5 — see "Algorithm deviation from brief" below.
 
-At a divided-pair carriageway endpoint IX (Lafayette × Mississippi is the canonical case):
+**Pre-step audits documented in commit body.**
 
-- `lafayette-avenue-3` `ixIdx=7` ENDPOINT — emits one leg, west
-- `lafayette-avenue-5` `ixIdx=0` ENDPOINT — emits one leg, east
-- `lafayette-avenue-6` `ixIdx=0` ENDPOINT — emits one leg, east (divided-pair mate of `lafayette-avenue-5`)
-- `mississippi-avenue` `ixIdx=20` interior — emits two legs, north + south
+1. *Offset-polyline source.* Option (b) — compute fresh via `computePerps`. Option (a) "reuse per-chain rectangles" was rejected: rectangles are closed polygons in `byChain[chainIdx].asphaltRings`, and there's no near-V slice keyed by leg. Option (c) Clipper offset was overkill for the local 6-vertex polyline. (b) reuses `emitChain`'s exact perp construction in ~15 LOC; polylines land on the same asphalt-union vertex that round-corners is trying to match.
+2. *`findStableVertex` consumers (Phase A retirement audit).* `leg.T` flows through `corner.T_A`/`corner.T_B` (set at the corner-record construction site) and is consumed by `buildCornerPadQuad` (`src/lib/buildBlockGeometryV2.js:585`) for the concrete pad quad's tangent basis. **Phase A is NOT retired** — its tangent is still load-bearing for pad-quad geometry; polygon-edge-Q replaces the corner Q math only. `IX_NOISE_RADIUS=16` and the per-leg walker stay.
+3. *Per-corner kit leg-pair keys.* `legKey = ${skel}:${dir}` and `sortedCornerKey(V, legKey_A, legKey_B)` are both unchanged. Polygon-edge-Q only mutates `corner.point`; the per-corner authoring kit's keying round-trips identically.
 
-Five legs total. Sorted CCW around V they form 5 adjacent pairs. **`lafayette-avenue-5`'s leg and `lafayette-avenue-6`'s leg point in nearly the same direction (both east) with a ~5° angular gap** (the divided-pair mouth opening). Their CCW-adjacent pair forms a degenerate ~5° corner wedge — the corner Q is either at infinity (parallel-ish rays) or at a wildly outsized distance, the round-corners op produces nothing visible, and the plug emission silently drops the corner. Same shape applies on the west side if `lafayette-avenue-3` shares a pairId with anything else there.
+**Algorithm deviation from brief: no-intersection ⇒ skip, not fallback.** The brief proposed falling back to tangent-Q when `polylineCross` returns null. I made the executive call to **skip the corner record instead**. Reasoning: the canonical no-intersection case is the median wedge between two paired carriageways converging at one IX (LS's four park-corner IXs, Toy's Waverly couplet endpoint). Both legs' facing-side offset polylines are parallel-ish and never cross within 6 segments. Tangent-Q at that geometry produces near-infinity Vc — the exact degenerate that retired A.5 was patching by composite-coalesce. Skipping is structurally honest: the median between two paired carriageways isn't a block corner, so no plug belongs there. The `theta < 5° / > 355°` filter at the top of the corner-pair loop already drops the most parallel cases; the no-intersection skip handles wider parallel cases that pass the angular gate. Jacob confirmed this call before implementation. Surfaced for visual verification on the four park-corner IXs — the expectation is 2 corner records per IX (NE + SE relative to the asphalt mouth), not 4.
 
-This is structurally identical to the Toy Waverly couplet endpoint case: `WV-S` and `WV-N` (the divided pair carriageways) both terminate at HW4-E's endpoint IX with east-pointing legs separated by the median bow gap. **Toy fixture already exercises Phase A.5's failure mode** — Toy-first iteration is on the table from line one.
+**Phase A.5 retirement (deletes in this commit).** Removed: `synthesizeCompositeLeg`, the `isEndpointLeg` predicate, `COMPOSITE_ANGLE_THRESHOLD_RAD` constant, the entire `claimedIdx` + `composites` coalesce loop, the post-coalesce `legs.length = 0; push survivors; push composites` rewrite step. Leg-record `chain` + `ixIdx` fields STAY (polygon-edge-Q needs them via `buildLegSidePolyline`); added one new `dir` field for the offset-polyline walk direction. The legKey scheme is unchanged (`${skel}:f` or `${skel}:b`), so the per-corner authoring kit's keys at LS look identical pre/post commit.
 
-#### Doctrine alignment
+**Bake.** `node cartograph/bake-ground.js` clean. `look=default: 44 groups, 303889 verts, 507886 tris, 9513.0 KB`. `look=lafayette-square: 44 groups, 303401 verts, 506386 tris, 9489.7 KB`. Compared to A.5 baseline (`44 groups, 371291 verts, 617001 tris, 11581.5 KB`), `default` drops ~18% in vert/tri/size. The most likely cause is fewer corner records emitted at divided-pair-style IXs (no record → no concrete pad quad, no asphalt-plug carve target, no arc subdivision in `applyRoundCornersToRing`). The `[V2] PAD INVARIANT` console error did not trip — pads still emit at real block corners. Visual verification on the four park-corner IXs + curved-street IXs + Geyer × Mississippi regression baseline + Toy 3×3 grid / teardrop / Waverly couplet is left to Jacob — agent cannot view Designer.
 
-- Polygon doctrine (FEATURES "ribbon doctrine"): blocks are positive space; corners are properties of the polygon's silhouette. The fix lives in `cornersAtIx` (the polygon-graph authority for IX corner records), not in chain editing.
-- [[project_positive_carriageway_model]]: divided roads stay as TWO separate centerlines; no pair synthesis at the data layer. **Phase A.5 does NOT collapse divided pairs into a single chain.** It detects them at the IX and treats their endpoint-emitted legs as a *composite incoming side* for corner-pair purposes only. Data shape unchanged.
-- [[feedback_couplers_are_segment_local]]: corner records are per-IX, not per-pair. The composite leg is local to one IX's `cornersAtIx` call — does not propagate.
+**Watchouts standing post-ship.**
 
-#### Algorithm
+- *Skip vs. silent regression.* If a real block corner sits between two near-parallel legs whose offset polylines genuinely don't cross within 6 segments, polygon-edge-Q will silently skip its corner record. The degeneracy filter at `theta < 5°` already covers this in the angular domain; the polyline depth covers it in the spatial domain (curved chains can bend toward each other beyond segment 6, but that's an LS-curvature-scale edge case). If a missing corner shows up at an unexpected IX, the diagnostic is to widen `CORNER_Q_POLY_DEPTH` first (single constant at the top of the file) rather than reinstate the tangent-Q fallback.
+- *`buildCornerPadQuad` reads T_A/T_B from `findStableVertex`-stable tangents, not from the offset polylines.* The pad quad's basis vectors are still far-field. If polygon-edge-Q lands Vc significantly different from the far-field intersection (curved chain case), the pad quad and the rounded asphalt mouth could disagree visually in the inset area. Flag if a pad-vs-mouth misalignment surfaces at a curved IX — the fix would be to re-derive T_A/T_B from the local polyline segment at Vc, but I'd want Jacob's call before doing that.
+- *Bake-size delta is large (~18%).* Plausible explanations exist (see above) but the magnitude warrants a second look at Designer / Stage / Preview to make sure no class of corner geometry silently disappeared. If LS Designer comes back showing missing plugs at non-park IXs, the skip is over-firing.
 
-In `cornersAtIx` (`src/lib/buildBlockGeometryV2.js:273`), after the existing leg-build loop and before the CCW sort + pairing:
-
-```js
-// Phase A.5: detect divided-pair endpoint legs at this IX. Two chains
-// that (a) both terminate at this IX (ixIdx === 0 OR ixIdx === pts.length - 1)
-// AND (b) share a pairId AND (c) have leg tangents within COMPOSITE_ANGLE_THRESHOLD
-// (default ~30°) of each other. Both chains' legs get coalesced into a single
-// "composite" leg for corner-pair purposes. The composite's tangent is the
-// average of the two member tangents; its anchor stays at V; its outer-edge
-// offset for Q-point intersection is the OUTER half-width of the wider
-// member chain (so the Q point sits clear of both carriageway pavements).
-const COMPOSITE_ANGLE_THRESHOLD_RAD = 30 * Math.PI / 180
-
-function isEndpointLeg(leg) {
-  const n = leg.chain.points.length
-  return leg.ixIdx === 0 || leg.ixIdx === n - 1
-}
-
-const composites = []
-const claimed = new Set()
-for (let i = 0; i < legs.length; i++) {
-  if (claimed.has(i)) continue
-  const a = legs[i]
-  if (!a.chain.pairId || !isEndpointLeg(a)) continue
-  for (let j = i + 1; j < legs.length; j++) {
-    if (claimed.has(j)) continue
-    const b = legs[j]
-    if (b.chain.pairId !== a.chain.pairId || !isEndpointLeg(b)) continue
-    const angle = Math.acos(Math.max(-1, Math.min(1,
-      a.tangent[0] * b.tangent[0] + a.tangent[1] * b.tangent[1])))
-    if (angle > COMPOSITE_ANGLE_THRESHOLD_RAD) continue
-    // Coalesce a + b into a composite leg.
-    claimed.add(i); claimed.add(j)
-    composites.push(synthesizeCompositeLeg(a, b))
-    break
-  }
-}
-const finalLegs = legs.filter((_, i) => !claimed.has(i)).concat(composites)
-// Continue with CCW sort + adjacent-pair → corner Q computation, but using
-// `finalLegs` instead of `legs`.
-```
-
-`synthesizeCompositeLeg(a, b)`:
-- `tangent` = `unit(a.tangent + b.tangent)` (averaged direction)
-- `anchor` = V (the IX point)
-- `outerR` = `Math.max(a.outerR, b.outerR)` (outer half-width of the wider carriageway, so the Q point clears both pavements)
-- `outerL` = same as outerR for symmetric handling
-- `legKey` = `${a.chain.skelId}+${b.chain.skelId}` sorted (composite identity for per-corner override keying — same pattern as existing `sortedCornerKey`)
-- `chainIdx` = either member's chainIdx (used only for leg-source attribution; both members participate)
-- All other leg fields: inherit from `a` (the lexically-first member) for attribution; the composite's geometric role is what matters
-
-The `claimed` set ensures each leg participates in at most one composite. Single-direction endpoint chains (no pairId, or pairId without a matching mate at this IX) fall through the loop and stay as individual legs in `finalLegs` — no behavior change for the non-divided-pair case.
-
-#### Corner-record consequences
-
-- **Plug count:** at the LS Mississippi×Lafayette IX, `finalLegs` becomes Mississippi-N + Mississippi-S + Lafayette-east-COMPOSITE + (Lafayette-west, possibly composite if it has a pair mate at this IX). 4 legs CCW → 4 adjacent pairs → 4 corner records → 4 plugs render. Visible-bug fixed.
-- **Per-corner override keys:** the `legKey` for a composite is the sorted concat of both member skelIds. Operator authoring against a composite corner stores under that combined key. When the same IX is consulted next render, the same composite forms (same chains, same pairId), the same legKey hashes, the override resolves correctly. Stable.
-- **`cornerCornerRadiusOverrides`** keyed by `<pointKey>|<legKeyA>|<legKeyB>` (existing): composite leg keys participate naturally. No schema change.
-
-#### Files to touch
-
-`src/lib/buildBlockGeometryV2.js` — ONLY this file.
-- New helper `synthesizeCompositeLeg(a, b)` near `cornersAtIx`.
-- New constant `COMPOSITE_ANGLE_THRESHOLD_RAD = 30 * Math.PI / 180` near `IX_NOISE_RADIUS`.
-- Coalesce loop inserted in `cornersAtIx` after leg-building, before CCW sort.
-
-Estimated: ~50 LOC. Single focused commit.
-
-#### Files NOT to touch
-
-- `derive.js`, `bake-ground.js`, anything in `src/cartograph/` — Phase A.5 is internal to V2's corner-record computation. If you find yourself editing elsewhere, stop and reconsider; you're solving Phase B/C/D, not A.5.
-- `chain.points`, `chain.pairId`, `ribbons.json` — read-only inputs. Phase A.5 derives composite legs at runtime; stores nothing.
-
-#### Toy fixtures (test FIRST per [[project_features_md_is_canonical]])
-
-Toy already has the Type B Waverly couplet (`HW4-W` + `HW4-E` + `WV-S` + `WV-N` + `WV-CUT` in `src/data/toy/toy-input.json`). Specifically the IXs where `WV-S` and `WV-N` endpoints meet `HW4-E` (or `HW4-W`) are divided-pair endpoint IXs structurally identical to LS Lafayette×Mississippi.
-
-Verify after Phase A.5 lands:
-- Waverly couplet endpoint IXs render the three-component plug at all 4 corners
-- Type A teardrop pinch (BENT-STEM joining BENT-BODY) unchanged — no pairId on these chains, falls through the coalesce loop
-- 3×3 grid IXs unchanged — no pairId on HW1/HW2/VW1/VW2/etc, falls through
-- Dead-end stub (STUB-N) unchanged — no pairId, no mate
-- HW3 saw-tooth + BENT-BODY closed circle + WV-S/N bows all rendered correctly (regression check from Phase A's polyline-stabilization-broke-fixtures lesson)
-
-If Toy fails any of the above, STOP and report. Do not iterate against Toy without a hypothesis.
-
-#### LS cut-over
-
-Once Toy is clean, re-bake LS and verify all 4 park-corner IXs render the three-component plug at all 4 corners. Eyeball Geyer × Mississippi as the regression baseline (no pairId on Geyer chains; should be unchanged from pre-A.5).
-
-#### Acceptance
-
-- All 4 corners at Mississippi × Lafayette render the three-component plug + control dot.
-- Same at the other 3 park-corner IXs.
-- Toy Waverly couplet endpoints render the three-component plug.
-- No regressions at non-pair IXs (residential corners across LS, 3×3 grid in Toy).
-- Bake runs clean.
-
-#### Watchouts
-
-- **`COMPOSITE_ANGLE_THRESHOLD_RAD` tuning.** 30° is conservative — captures divided-pair carriageway endpoints (typically <10° apart) without coalescing legitimately-distinct legs (a Y-junction has legs ~120° apart). If a real-world Y-junction has chains that happen to share a pairId AND legs within 30°, Phase A.5 would over-coalesce. Unlikely, but check Toy + LS visuals.
-- **Pairs across the IX, not at it.** A divided pair where both chains pass THROUGH the IX (interior `ixIdx`, not endpoint) doesn't trigger Phase A.5 — `isEndpointLeg` filter excludes them. That's correct: through-pair chains already provide proper legs in both directions.
-- **Three-chain pair clusters.** If a divided road has a one-side cut-thru that ALSO has the same pairId (data anomaly), the coalesce loop pairs the first two it finds and leaves the third as a normal leg. Acceptable — the corner geometry stays sane and the third leg participates in CCW sort independently.
-- **Composite leg + per-corner authoring rotation.** Operator-authored per-corner radius keyed under the composite legKey survives chain-edit churn AS LONG AS the same pair survives. If the operator splits one of the divided-pair chains (Survey edit), the pairId might drop, the composite no longer forms, and the override won't resolve. Treat this as expected behavior — the operator's split changed the corner's identity.
-- **Don't try to fix the polygon-graph maxi-brief's Phase B leg-formation while you're here.** Phase A.5 makes corners FORM; it doesn't change how they FREEZE into the polygon graph (Phase B). Stay scoped.
-- **Composite outerR.** Using `Math.max(a.outerR, b.outerR)` is conservative. If the carriageways have very different widths, the wider one's offset is used for Q computation. Fine for typical divided pairs (carriageways are usually symmetric); document if a real case bites.
-
-#### Trinity touch (after acceptance)
-
-- `cartograph/NOTES.md`: append a "Phase A.5 shipped" sub-entry under THIS brief, citing commit hash + observed visible-bug coverage.
-- `cartograph/BACKLOG.md`: tick off "Big park intersections" line 2746–2750 — Phase A.5 closes it. Add a new line under polygon-graph restructure section: "Phase B (polygon-graph schema + producer) is next; Toy fixtures + Waverly couplet now ready as the structural test rig."
-
-#### Hard stops
-
-- Don't touch outside `src/lib/buildBlockGeometryV2.js`.
-- Don't modify `chain.points`, `chain.pairId`, or `ribbons.json`.
-- Don't generalize beyond the divided-pair-endpoint case (e.g., don't try to fix unpaired single-endpoint legs in this commit — that's a different problem).
-- If Toy validation fails, STOP, report. Do not iterate against LS without Toy green.
-
-#### Phase A.5 shipped — 2026-05-16
-
-Shipped in this commit. Composite-leg coalesce lands in `cornersAtIx` between leg-build and CCW sort. Visible-bug coverage: divided-pair endpoint IXs (LS park-corner IXs, Toy Waverly couplet endpoint IXs) now form corner records at all four corners instead of dropping three of four to degenerate ~5° wedges.
-
-**Leg-record shape audit (pre-step).** Actual return shape from `buildLeg` in post-Phase-A source is `{ T, outerL, outerR, leftDepth, rightDepth, legKey, skel, name }`. Two corrections vs. the brief's assumed shape:
-
-1. `T` is the unit tangent (matches brief). No `tangent` field; `T` is already unitized in-place.
-2. `skel` is a **string** (`chain.skelId || chain.name || '?'`), NOT the chain object. The orchestrator-suggested option (a) "reach through `leg.skel`" couldn't access `.pairId` / `.skelId` / `.points.length` because skel is the id string. Adapted minimally: added two private attribution fields `chain` (the source chain object) + `ixIdx` (the IX vertex index along chain.points) to the leg record. Used exclusively by the Phase A.5 coalesce loop; not consumed by downstream corner-record geometry (which reads only `T_A`, `T_B`, `outerR_A`, `outerL_B`, `rightDepth_A`, `leftDepth_B`). Phase B's polygon-graph rewrite will refactor leg shape anyway.
-
-**`pairId` semantics correction.** The brief's algorithm pseudocode used `b.chain.pairId !== a.chain.pairId` (assuming a shared group id). Actual data shape in `src/data/ribbons.json` and the data-emitting toolchain is **cross-reference**: `lafayette-avenue-5.pairId === 'lafayette-avenue-6'` and `lafayette-avenue-6.pairId === 'lafayette-avenue-5'`. Coalesce match condition is therefore the symmetric assertion `a.pairId === b.skelId && b.pairId === a.skelId`. Symmetric form catches accidental one-way pairings as data-quality smells instead of silently coalescing. Update the standalone Phase A.5 brief + this NOTES algorithm block at orchestrator's next pass so future babies don't repeat the misread.
-
-**Downstream `chainIdx` classification.** Grepped all `leg.chainIdx` / `leg.skel` / `legKey` usages downstream of `cornersAtIx`. The corner record exposes only geometric fields (`T_A`, `T_B`, `outer*`, `*Depth`) plus `legKey` (identity, used in `sortedCornerKey` override resolution — composite-safe with its `${s1}+${s2}:c` key). No data-fetch consumer of `leg.chainIdx` exists post-leg-construction. Composite leg therefore needs no `members: [...]` rewire — pure geometric synthesis is sufficient.
-
-**Toy fixture enabling work (surfaced as scope drift, per [[feedback_baby_must_surface_scope_drift]]).** Toy was missing the data to exercise Phase A.5: `src/data/toy/toy-input.json` had no `pairId` on WV-S / WV-N, and `cartograph/derive-toy.js` had no passthrough for the field. Bundle reasoning per orchestrator clarification: the three layers (algorithm, fixture authoring, fixture plumbing) are the same logical change ("composite-leg coalesce at divided-pair endpoint IXs"); splitting would force a half-tested intermediate state. Edits:
-- `src/data/toy/toy-input.json`: `WV-S` gets `"pairId": "WV-N"`; `WV-N` gets `"pairId": "WV-S"`. Mutual cross-reference per the `pairId` semantics finding above.
-- `cartograph/derive-toy.js`: one-line passthroughs in the input-normalize loop (line ~185) and the ribbons-output loop (line ~245). Regenerated `src/data/toy/toy-ribbons.json` (re-ran `node cartograph/derive-toy.js`; 15 streets, 21 IX, 1 face — same shape, +`pairId` on WV-S/WV-N records).
-
-**Acceptance hand-off.** LS re-bake completed clean (`node cartograph/bake-ground.js` → `look=default: 44 groups, 371291 verts, 617001 tris, 11581.5 KB`). No warnings, no errors. Visual verification of the four park-corner IXs (Lafayette × {Mississippi, Missouri}, Park × {Mississippi, Missouri}) + regression check on Geyer × Mississippi + Toy Waverly couplet endpoint IXs is left to the orchestrator / Jacob — agent cannot view Designer.
-
-**Watchouts standing post-ship.** Re-flagging from the brief in case visual verification surprises:
-- 15° threshold may need tuning if real LS pairs come in tighter or wider than 2–10°. If a legitimate Y-junction trips the threshold, do NOT widen — investigate the data smell.
-- Composite `legKey` is `${skelA}+${skelB}:c`. Pre-A.5 operator overrides keyed under single-chain legKeys at these IXs will not resolve to composite corners — but those corners weren't forming pre-A.5, so no existing overrides exist there.
-- Composite `outerR = outerL = max(a.outerR, b.outerR)`. Conservative; if an asymmetric-width divided pair surfaces in LS, the wider member's offset wins for both sides.
+**Trinity touch in this commit.** NOTES.md: A.5 brief + "Phase A.5 shipped" sub-entry stripped, this A.6 entry inserted. BACKLOG.md: A.6 ship line added under polygon-graph restructure. FEATURES.md: the divided-pair-endpoint-coalesce sub-bullet in V2 corner kit (line 494) stripped — divided-pair endpoints no longer need their own surface mention; polygon-edge-Q handles them via the no-intersection skip without any special case. The historical BACKLOG tick for A.5 stays (git-history archeology) but the trinity now reflects only the current state.
 
 ---
 

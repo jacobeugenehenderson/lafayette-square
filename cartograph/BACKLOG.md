@@ -3170,19 +3170,27 @@ Phase E and v1.6.
   intersections at the park corners are currently a mess with no
   canonical resolution. Needs a dedicated geometry + authoring pass.
   Pairs with the whole-intersection corner editor restore below.
-  - [x] **Phase A.5 — leg-formation at chain-endpoint IXs.** SHIPPED 2026-05-16.
-    Composite-leg coalesce in `cornersAtIx` between leg-build and CCW sort.
-    Two paired chains (cross-referenced via `chain.pairId === mate.skelId`)
-    that both terminate at this IX with leg tangents within 15° get
-    synthesized into a single composite leg for corner-pair purposes;
-    data layer unchanged. Toy now exercises the failure mode via
-    pairId on WV-S/WV-N (toy-input + derive-toy passthrough bundled in
-    the same commit). See `cartograph/NOTES.md` "Phase A.5 shipped"
-    sub-entry for the leg-record-shape audit + pairId semantics
-    correction (cross-reference, not group-id) + chainIdx classification.
-    Phase B (polygon-graph schema + producer) is next; Toy fixtures +
-    Waverly couplet are now ready as the structural test rig for
-    divided-pair endpoint geometry.
+  - [x] **Phase A.5 — leg-formation at chain-endpoint IXs.** SHIPPED 2026-05-16
+    (commit `3f3f18e`), superseded by Phase A.6 the same day. Composite-leg
+    coalesce in `cornersAtIx` between leg-build and CCW sort, gated on
+    symmetric `chain.pairId === mate.skelId` cross-reference + 15° angle.
+    Retired in A.6 — polygon-edge-Q handles divided-pair endpoints
+    structurally via no-intersection skip, no composite synthesis needed.
+  - [x] **Phase A.6 — polygon-edge corner-Q (supersedes A / A.5).** SHIPPED 2026-05-16.
+    Replaced `cornersAtIx`'s tangent-Q (intersection of extrapolated
+    chain tangent rays) with polygon-edge-Q (first crossing of two
+    legs' chain-offset polylines, built via the same `computePerps`
+    bisector-perp `emitChain` uses). Corner Q now lands at the actual
+    asphalt-union silhouette vertex — what `applyRoundCornersToRing`
+    is trying to match. Median wedges between paired carriageways
+    (where polylines never cross) skip the corner record entirely.
+    Phase A's `findStableVertex` tangent stays — still consumed by
+    `corner.T_A`/`corner.T_B` for `buildCornerPadQuad`. Doctrine
+    alignment per `cartograph/FEATURES.md` line 89 is now structural.
+    See `cartograph/NOTES.md` "Phase A.6" entry for the three pre-step
+    audits + skip-vs-fallback executive call + bake size delta.
+    Phase B (polygon-graph schema + producer) is next; the corrected
+    algorithm is what B freezes.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**
