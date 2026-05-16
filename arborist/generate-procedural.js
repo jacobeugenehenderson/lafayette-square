@@ -46,6 +46,121 @@ const TAU = Math.PI * 2
 // Deterministic hash → [0, 1). Same as the resurrected ParkTrees.
 function seed(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s) }
 
+// ── Phase C geometric polish primitives ──────────────────────────────────
+//
+// Non-linear taper, per-vertex radial noise, flange-ring helper, and a
+// triangular buttress-fin builder. All four feed the cylinder-emission
+// sites (makeBranch, buildTaperedCylinderBetween, trunk + root-flare). The
+// goal is to break the smooth-cylinder regularity that makes the Phase B
+// photo bark wrap look computer-generated, without touching the shader
+// path (see NOTES Phase C, 2026-05-16). Author at source-GLB ("lod0")
+// quality; publish-glb.js's `simplify` chain produces lod1/lod2 at fixed
+// ratios of lod0.
+const PHASE_C_RADIAL_SEGS = 12
+
+// r(0) = rBase, r(1) = rTop exactly. Slow thinning near base, fast near tip.
+// exponent = 2 is the starter; visual reads as a "real" branch instead of a
+// CAD cone. Same call signature as a linear lerp so callers swap one line.
+function nonLinearTaper(rBase, rTop, t, exponent = 2) {
+  return rTop + (rBase - rTop) * Math.pow(1 - t, exponent)
+}
+
+// Displace each cylinder vertex radially by ±displacementScale via the
+// deterministic seed() hash. Parameterized by (angle, branch-global H) so
+// adjacent segment cylinders along the same branch hash to the same noise
+// at their shared interface H — no visible seam ridges. Apply BEFORE any
+// transforms so atan2(z, x) is the local-frame angle and Y is the local
+// cylinder axis. SCA edges share a node position but their local frames
+// don't align across edges; for them the per-edge displacement still
+// breaks circular cross-section even though seam continuity is not
+// guaranteed (flagged in NOTES).
+function applyRadialNoise(geo, branchHStart, branchHLen, displacementScale, seedOffset) {
+  const pos = geo.attributes.position
+  const len = Math.max(branchHLen, 1e-6)
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i)
+    const radialDist = Math.sqrt(x * x + z * z)
+    if (radialDist < 1e-6) continue   // skip axial/cap vertices
+    const angle = Math.atan2(z, x)
+    const localFrac = (y + len * 0.5) / len      // [0, 1] across this cylinder
+    const globalH = branchHStart + localFrac * len
+    const noise = (seed(seedOffset + angle * 7.3 + globalH * 4.1) - 0.5) * 2
+    const f = 1 + noise * displacementScale
+    pos.setX(i, x * f)
+    pos.setZ(i, z * f)
+  }
+  pos.needsUpdate = true
+  geo.computeVertexNormals()
+}
+
+// Short flared frustum at the BASE of a child branch where a parent splits.
+// Bottom (at parentPos) radius = childRadius * 1.3; top (along the
+// child-direction axis, flangeLen above parentPos) radius = childRadius.
+// Hides the hard cylinder-cylinder intersection at branching joints.
+const _flY = new THREE.Vector3(0, 1, 0)
+const _flDir = new THREE.Vector3()
+const _flQuat = new THREE.Quaternion()
+function makeFlangeRing(parentPos, childPos, childRadius, segs = PHASE_C_RADIAL_SEGS, flangeRingScale = 1.3) {
+  _flDir.set(childPos[0] - parentPos[0], childPos[1] - parentPos[1], childPos[2] - parentPos[2])
+  const dist = _flDir.length()
+  if (dist < 1e-4) return null
+  _flDir.divideScalar(dist)
+  const flangeLen = Math.min(2 * childRadius, dist * 0.6)
+  if (flangeLen < 1e-3) return null
+  const cyl = new THREE.CylinderGeometry(childRadius, childRadius * flangeRingScale, flangeLen, segs)
+  cyl.translate(0, flangeLen / 2, 0)
+  _flQuat.setFromUnitVectors(_flY, _flDir)
+  cyl.applyQuaternion(_flQuat)
+  cyl.translate(parentPos[0], parentPos[1], parentPos[2])
+  return cyl
+}
+
+// Subtle triangular buttress fin: tall at trunk base, tapers to nothing at
+// the top so the silhouette stays "Midwestern broadleaf" (maple/oak/locust)
+// rather than tropical/banyan. ~6 visible faces × 2 triangles ≈ 8 tris/fin.
+// All four attributes (position/normal/uv/index) so mergeGeometries stays
+// consistent with the surrounding CylinderGeometry siblings.
+function makeButtressFin(trunkRadius, outward, height, thickness) {
+  const r = trunkRadius
+  const t = thickness / 2
+  const o = r + outward
+  const positions = new Float32Array([
+    // bottom triangle (Y=0)
+    r, 0, -t,
+    r, 0,  t,
+    o, 0,  0,
+    // top edge (Y=height): outer tip collapses to trunk surface so the fin
+    // tapers to nothing at the top
+    r, height, -t,
+    r, height,  t,
+    r, height,  0,
+  ])
+  const indices = new Uint16Array([
+    // bottom triangle, normal -Y
+    0, 1, 2,
+    // top "triangle" (degenerate, collapsed to trunk-surface line)
+    3, 5, 4,
+    // outer face (between bottom outer tip and top collapsed edge)
+    1, 5, 2,
+    1, 4, 5,
+    2, 5, 0,
+    0, 5, 3,
+    // inner face (trunk-side)
+    0, 3, 1,
+    1, 3, 4,
+  ])
+  const uvs = new Float32Array([
+    0, 0,  1, 0,  0.5, 0,
+    0, 1,  1, 1,  0.5, 1,
+  ])
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2))
+  geo.setIndex(new THREE.BufferAttribute(indices, 1))
+  geo.computeVertexNormals()
+  return geo
+}
+
 // ── Generator: pure function ─────────────────────────────────────────────
 //
 // generateTreeMesh(params) → { barkGeo, leafGeo }
@@ -82,11 +197,20 @@ export function generateTreeMesh({
     const segLen = length / n
     const geos = []
     let cx = bx, cy = by, cz = bz
+    // Phase C: 12 radial segs (publish-glb simplifies to lod1/lod2 at fixed
+    // ratios). Non-linear taper sampled at branch-global t — branch retains
+    // base thickness longer, thins fast toward the tip. Per-segment noise
+    // hashed by (angle, branchHStart+localY) so adjacent segments share the
+    // same noise at their interface H (no visible seam ridges along a
+    // straight branch's segment chain).
+    const radialSegs = PHASE_C_RADIAL_SEGS
+    const applyNoise = rBot > 0.05
     for (let s = 0; s < n; s++) {
       const t0 = s / n, t1 = (s + 1) / n
-      const r0 = rBot + (rTop - rBot) * t0
-      const r1 = rBot + (rTop - rBot) * t1
-      const geo = new THREE.CylinderGeometry(r1, r0, segLen, segs)
+      const r0 = nonLinearTaper(rBot, rTop, t0, 2)
+      const r1 = nonLinearTaper(rBot, rTop, t1, 2)
+      const geo = new THREE.CylinderGeometry(r1, r0, segLen, radialSegs)
+      if (applyNoise) applyRadialNoise(geo, s * segLen, segLen, 0.05, bSeed)
       geo.translate(0, segLen / 2, 0)
       geo.rotateZ(ti)
       geo.rotateY(az)
@@ -120,12 +244,32 @@ export function generateTreeMesh({
     })
   }
 
-  function growBranch(ox, oy, oz, az, ti, len, radius, gen, maxGen, rs, conf) {
+  function growBranch(ox, oy, oz, az, ti, len, radius, gen, maxGen, rs, conf, emitFlange = true) {
     if (len < 0.12 || radius < 0.008) return
-    const segs = gen <= 1 ? 6 : gen <= 2 ? 4 : 3
+    // Phase C: radial seg count is now uniform across gens (set inside
+    // makeBranch). nBend kept gen-aware — controls bend-count along the
+    // branch, not radial resolution.
+    const segs = PHASE_C_RADIAL_SEGS
     const nBend = gen <= 1 ? 3 : gen <= 2 ? 2 : 1
     const rTop = radius * (gen < maxGen ? 0.55 : 0.25)
     const br = makeBranch(ox, oy, oz, az, ti, len, radius, rTop, segs, nBend, rs + gen * 53)
+    // Phase C: flange ring at every sub-branch's root (including
+    // trunk-to-first-branch joints). Aimed along the first-segment exit
+    // direction so the flare blends into the branch's first cylinder.
+    if (emitFlange && radius > 0.02) {
+      // First-segment direction matches the branch's az/ti convention
+      // used by the makeBranch advance step (dx,dy,dz on segment 0).
+      const segLen0 = len / nBend
+      const dirX = -segLen0 * Math.sin(ti) * Math.cos(az)
+      const dirY =  segLen0 * Math.cos(ti)
+      const dirZ =  segLen0 * Math.sin(ti) * Math.sin(az)
+      const flange = makeFlangeRing(
+        [ox, oy, oz],
+        [ox + dirX, oy + dirY, oz + dirZ],
+        radius,
+      )
+      if (flange) woodGeos.push(flange)
+    }
     br.geos.forEach(g => woodGeos.push(g))
 
     if (gen >= maxGen) {
@@ -167,20 +311,41 @@ export function generateTreeMesh({
     }
   }
 
-  // ── Trunk ──────────────────────────────────────────────────────────────
+  // ── Trunk (Phase C: 12 radial segs + radial noise) ────────────────────
   const trunkTopVis = (preset === 'conifer' || preset === 'columnar')
     ? trunkRTop * 0.2 : trunkRTop * 0.35
-  const trunk = new THREE.CylinderGeometry(trunkTopVis, trunkRBot, trunkH, 8)
+  const trunk = new THREE.CylinderGeometry(trunkTopVis, trunkRBot, trunkH, PHASE_C_RADIAL_SEGS)
+  applyRadialNoise(trunk, 0, trunkH, 0.05, seedN * 11 + 17)
   trunk.translate(0, trunkH / 2, 0)
   const lean = (r(0) - 0.5) * 0.06
   if (Math.abs(lean) > 0.001) trunk.rotateZ(lean)
   trunk.translate(0, -0.25, 0)
   woodGeos.push(trunk)
 
-  const flare = new THREE.CylinderGeometry(trunkRBot, trunkRBot * 1.4, 0.4, 8)
-  flare.translate(0, 0.2, 0)
-  flare.translate(0, -0.25, 0)
+  // ── Phase C: root flare + 6 subtle buttress fins ──────────────────────
+  // Replaces the prior single flat-flare cylinder. Trunk reads as PLANTED,
+  // not stuck-in; subtle radial ribbing reads as Midwestern broadleaf
+  // (maple/oak/locust), not tropical/banyan. Fin parameters tuned for ~5–10 cm
+  // outward protrusion, ~10–15 cm tall, ~3–5 cm thick.
+  const flareTop = trunkRBot
+  const flareBot = trunkRBot * 1.4
+  const flareHeight = 0.4
+  const flare = new THREE.CylinderGeometry(flareTop, flareBot, flareHeight, PHASE_C_RADIAL_SEGS)
+  applyRadialNoise(flare, 0, flareHeight, 0.05, seedN * 11 + 999)
+  flare.translate(0, flareHeight / 2 - 0.25, 0)
   woodGeos.push(flare)
+
+  const finCount = 6
+  const finOutward = 0.08
+  const finHeight  = 0.12
+  const finThick   = 0.04
+  for (let f = 0; f < finCount; f++) {
+    const az = (f / finCount) * TAU + r(700 + f) * 0.4
+    const finGeo = makeButtressFin(flareBot, finOutward, finHeight, finThick)
+    finGeo.rotateY(az)
+    finGeo.translate(0, -0.25, 0)
+    woodGeos.push(finGeo)
+  }
 
   const maxGen = branching.maxGen
   const branchLen = canopyR * (0.8 + r(5) * 0.15)
@@ -189,7 +354,9 @@ export function generateTreeMesh({
 
   // ── Shape-specific branching (resurrected per-shape configs) ──────────
   if (preset === 'conifer') {
-    const leader = new THREE.CylinderGeometry(trunkRTop * 0.3, trunkRTop, canopyH * 0.9, 6)
+    const leaderH = canopyH * 0.9
+    const leader = new THREE.CylinderGeometry(trunkRTop * 0.3, trunkRTop, leaderH, PHASE_C_RADIAL_SEGS)
+    applyRadialNoise(leader, 0, leaderH, 0.05, seedN * 11 + 333)
     leader.translate(0, canopyH * 0.45, 0)
     leader.translate(0, trunkH, 0)
     woodGeos.push(leader)
@@ -245,13 +412,32 @@ export function generateTreeMesh({
     // Emit one tapered cylinder per edge. radius from Murray's law sits
     // on each node. We clamp the minimum radius so trunkward thin twigs
     // don't disappear to sub-pixel after publish-glb's prune pass.
-    const branchSegs = 6
+    //
+    // Phase C: 12 radial segs + per-vertex radial noise. Non-linear taper
+    // emerges naturally across the SCA chain because Murray's law sets
+    // each node's radius; a single edge is already "short" by stepLength
+    // (~0.4 m) so per-edge non-linear taper would buy little.
+    // Flange rings at children of TRUE branching nodes (parent has >1
+    // child) — NOT at every interior segment-to-segment edge along a
+    // single straight path; SCA emits a node per stepLength so every-edge
+    // flanging would produce hundreds of visible rings per tree.
+    const branchSegs = PHASE_C_RADIAL_SEGS
+    let edgeIdx = 0
     for (const n of nodes) {
       if (!n.parent) continue
       const r0 = Math.max(0.01, n.parent.radius)
       const r1 = Math.max(0.008, n.radius)
-      const cyl = buildTaperedCylinderBetween(n.parent.pos, n.pos, r0, r1, branchSegs)
+      // Gate noise on radius — sub-mm displacement on twigs is invisible
+      // and wastes publish time on computeVertexNormals.
+      const noise = (r0 > 0.05) ? { scale: 0.05, seedOffset: seedN * 13 + edgeIdx } : null
+      const cyl = buildTaperedCylinderBetween(n.parent.pos, n.pos, r0, r1, branchSegs, noise)
       if (cyl) woodGeos.push(cyl)
+      // Flange ring only when parent IS a branching node (>1 child).
+      if (n.parent.children.length > 1 && n.radius > 0.02) {
+        const flange = makeFlangeRing(n.parent.pos, n.pos, n.radius)
+        if (flange) woodGeos.push(flange)
+      }
+      edgeIdx++
     }
 
     // Leaf card at every tip. The seed stream is offset per-tip via the
@@ -332,13 +518,20 @@ function buildLeafGeometry(leaves) {
 const _bcY = new THREE.Vector3(0, 1, 0)
 const _bcDir = new THREE.Vector3()
 const _bcQuat = new THREE.Quaternion()
-function buildTaperedCylinderBetween(p0, p1, r0, r1, segs) {
+function buildTaperedCylinderBetween(p0, p1, r0, r1, segs, noise) {
   _bcDir.set(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])
   const len = _bcDir.length()
   if (len < 1e-4) return null
   _bcDir.divideScalar(len)
   // CylinderGeometry args: (radiusTop, radiusBottom, height, radialSegs)
   const geo = new THREE.CylinderGeometry(r1, r0, len, segs)
+  // Phase C: apply radial noise in LOCAL cylinder frame (cylinder still
+  // Y-aligned, centered at origin) before the orient-to-edge transform —
+  // atan2(z, x) gives the local angle and Y is the local axis. Each edge
+  // is its own independent noise frame; SCA nodes connect at shared world
+  // positions but local frames don't align across edges, so seam
+  // continuity across SCA edges is not guaranteed (flagged in NOTES).
+  if (noise) applyRadialNoise(geo, 0, len, noise.scale, noise.seedOffset)
   geo.translate(0, len / 2, 0)
   _bcQuat.setFromUnitVectors(_bcY, _bcDir)
   geo.applyQuaternion(_bcQuat)

@@ -2764,23 +2764,9 @@ phases.
   whorls + skirt droop correct. **Doesn't fix:** per-conifer-species variants
   (Spruce/Pine/Fir) need authoring, not code.
 
-- [ ] **Phase C — Geometric polish on correct skeletons** — **PRIORITY-ELEVATED 2026-05-16 EOD: this is the next phase.** `makeBranch`
-  upgrades: 12-segment cylinders at lod0 (6 at lod1, 4 at lod2), non-linear
-  taper, per-vertex radial noise displacement at lod0. Flange ring helper at
-  every branch joint. Root flare + 6 buttress fins at trunk base. LOD ladder
-  absorbs the extra tris.
-  **Why C now:** Phase B's photo PBR on smooth `THREE.CylinderGeometry`
-  produces visibly stretched + warped bark wraps because the tapered-cylinder
-  UV unwrap distributes texels non-uniformly across radius. The visual ceiling
-  on bark at v1.5 is GEOMETRIC, not shader-side. Phase C's per-vertex radial
-  displacement + multi-segment + flange rings + root flare break up the
-  regularity that makes the bark wrap look computer-generated. Resuming
-  skeleton-first ordering from the maxi-brief's original D → E → C → B
-  sequence — we shipped B before C and learned why C should have been first.
-  **Fixes:** branches taper realistically; joints buttress smoothly; trunks
-  look planted via root flare; close-up Hero craggy; **bark stops looking
-  warped because the substrate stops being a smooth cylinder**.
-  **Doesn't fix:** foliage still sparse (Phase F); per-species hero tuning (G).
+- [x] **Phase C — Geometric polish on correct skeletons** — **SHIPPED 2026-05-16 EOD** (this commit). All five primitives landed in `arborist/generate-procedural.js`: `nonLinearTaper(exp=2)` for makeBranch per-segment radii; `PHASE_C_RADIAL_SEGS=12` flat across every cylinder emitter; `applyRadialNoise(scale=0.05)` in LOCAL frame, gated `r > 0.05`, branch-global-H parameterized so makeBranch's per-segment chain is seam-continuous; `makeFlangeRing` at every recursive growBranch root + at children of true SCA branching nodes (NOT every SCA edge); root flare cylinder + 6 subtle buttress fins (~8 tris each) replacing the prior flat-flare block. lod0 tri counts grew ~80–115% (broadleaf-3 41.5K, weeping-2 32.6K pierce the brief's 30K advisory — flagged in NOTES; VRAM at LS dominated by atlas not source GLBs). lod1/lod2 grow proportionally because publish-glb's `simplify` runs against the single source. Determinism preserved (sha1 stable across re-publish). Zero shader / pipeline touches; single shader program preserved. **SCA-edge noise seam continuity flagged** as not-fixed (faint per-edge facet flips at Hero close-up; fix is post-merge normal computation, deferred).
+  **Fixes:** branches taper realistically; joints buttress smoothly at branching events; trunks look planted via root flare + subtle buttress fins; close-up Hero substrate is non-trivial enough that bark photo wraps stop showing the obvious tapered-cylinder-stretch artifact (the load-bearing acceptance — Phase C exists to unblock the bark visual ceiling per the 2026-05-16 skeleton-first reassertion).
+  **Doesn't fix:** SCA-edge noise seam continuity (faint per-edge facet flips at Hero close-up); foliage still sparse (Phase F); per-species hero tuning (G). Phase B.1.a's bark wrap-line crawl is unchanged — Phase C changes the substrate the shader wraps onto, not the shader itself.
 
 - [x] **Phase B (core) — Photo-PBR bark + retint shader infra** (shipped 2026-05-15).
   Scope pivoted post-orchestrator-conversation: the GLSL pattern-library
