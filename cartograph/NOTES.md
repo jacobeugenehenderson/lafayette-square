@@ -431,6 +431,18 @@ In the corner-pair loop, A.outerR drives polyA's offset with `sideSign=+1` and B
 
 **Trinity touch in this commit.** NOTES.md: A.5 brief + "Phase A.5 shipped" sub-entry stripped, this A.6 entry inserted. BACKLOG.md: A.6 ship line added under polygon-graph restructure. FEATURES.md: the divided-pair-endpoint-coalesce sub-bullet in V2 corner kit (line 494) stripped — divided-pair endpoints no longer need their own surface mention; polygon-edge-Q handles them via the no-intersection skip without any special case. The historical BACKLOG tick for A.5 stays (git-history archeology) but the trinity now reflects only the current state.
 
+#### A.6 fix — dir-sign perp flip in `buildLegSidePolyline` (2026-05-16, follow-up)
+
+Initial A.6 commit (`8249e74`) was visually broken on rectilinear residential IXs across LS: ~half the corner plugs missing in an "every other corner" pattern. Root cause: `buildLegSidePolyline` used `computePerps(chain.points)` which returns the **chain-canonical** perp-LEFT-of-chain-forward at each vertex. For a leg with `dir=-1`, the leg's tangent `T` is anti-parallel to chain-forward, so the leg's actual perp-LEFT-of-T is the *opposite sign* of the chain-canonical perp. The `sideSign` convention in `cornersAtIx` is keyed to perp-LEFT-of-T (matching the prior tangent-Q math's `V + outerR · [-T_y, T_x]`), so dir=-1 legs were producing offset polylines on the geometrically wrong side. At a clean 4-way IX (typically 2 legs dir=+1, 2 legs dir=-1), exactly half the corner-pairs had one leg's polyline on the wrong side → polylines didn't cross at the expected corner → no-intersection skip fired → no plug. Every-other-corner pattern is the structural fingerprint.
+
+Diagnosed by Jacob from the visual symptom; verified by logging `dot(perps[ixIdx], perpLeftOfT)` per leg-side polyline call at LS bake — every `dir=+1` row dotted `+1`, every `dir=-1` row dotted `-1`. The diagnostic firstPolyStep-vs-T test from Jacob's brief would NOT have caught this (firstPolyStep ≈ T_leg by edge-vector arithmetic regardless of perp sign); the tighter `dot(perps[V], perp-LEFT-of-T)` check is what isolated the perp-sign bug.
+
+Fix: `perpSign = dir === -1 ? -1 : +1`; multiply into the offset along with `sideSign`. Single-line change at the polyline-vertex push. Walk order is unchanged — the polyline still starts at V's offset and walks outward in `dir`, so `polylineCross` finds the V-nearest crossing first.
+
+**Bake post-fix.** `look=default: 44 groups, 387511 verts, 644332 tris, 12091.9 KB`. `look=lafayette-square: 44 groups, 385753 verts, 640664 tris, 12028.3 KB`. ~+4–5% over pre-A.6 A.5 baseline (`11581.5 KB`) — plausible: polygon-edge-Q now lands on the real asphalt-union vertex at curved IXs that previously fell through tangent-Q's 0.5m match, so more corners get arc-subdivided by `applyRoundCornersToRing`.
+
+**Methodological footnote.** A.6's initial commit was bake-clean and audit-clean but visually wrong because no automated visual check exists between algorithm and Jacob's eyes. The "dir=-1 means perp flips" reasoning is exactly the kind of side-convention trap [[feedback_walker_corner_detection_is_identity_not_angle]] points at — leg/chain identity mismatches are geometric, not numeric. When the visual symptom is a structural pattern (every-other-corner), the diagnosis lives in chain-vs-leg identity asymmetry, not in tuning constants; apply ONE structural fix and verify rather than iterating against the wrong model per [[feedback_rewrite_v2_alongside_v1]].
+
 ---
 
 ### Phase B — Polygon-graph schema + producer

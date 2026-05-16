@@ -287,13 +287,24 @@ function buildLegSidePolyline(chain, ixIdx, dir, sideSign, hw, depth = CORNER_Q_
   if (!pts || pts.length < 2) return null
   if (!Number.isInteger(ixIdx) || ixIdx < 0 || ixIdx >= pts.length) return null
   const perps = computePerps(pts)
+  // `perps` is chain-canonical (perp-LEFT of the chain's natural
+  // forward direction at each vertex). The leg's tangent T points OUT
+  // from V, so for dir=-1 legs T is anti-parallel to chain-forward —
+  // perp-LEFT-of-T flips sign relative to chain-canonical perp. The
+  // sideSign convention in `cornersAtIx` is keyed to perp-LEFT-of-T
+  // (the prior tangent-Q math used `V + outerR · [-T_y, T_x]`), so
+  // sign-flip `perps` for dir=-1 legs to align the polyline with the
+  // same physical side. Diagnosed 2026-05-16 via "every other corner"
+  // pattern on rectilinear LS IXs; verified by `dot(perps[V],
+  // perp-LEFT-of-T) === -1` for every dir=-1 leg.
+  const perpSign = dir === -1 ? -1 : +1
   const poly = []
   let k = ixIdx
   let steps = 0
   while (k >= 0 && k < pts.length && steps <= depth) {
     poly.push([
-      pts[k][0] + sideSign * perps[k][0] * hw,
-      pts[k][1] + sideSign * perps[k][1] * hw,
+      pts[k][0] + sideSign * perpSign * perps[k][0] * hw,
+      pts[k][1] + sideSign * perpSign * perps[k][1] * hw,
     ])
     k += dir
     steps++
