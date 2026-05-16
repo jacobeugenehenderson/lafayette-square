@@ -100,19 +100,39 @@ function applyRadialNoise(geo, branchHStart, branchHLen, displacementScale, seed
 const _flY = new THREE.Vector3(0, 1, 0)
 const _flDir = new THREE.Vector3()
 const _flQuat = new THREE.Quaternion()
-function makeFlangeRing(parentPos, childPos, childRadius, segs = PHASE_C_RADIAL_SEGS, flangeRingScale = 1.3) {
+function makeFlangeRing(parentPos, childPos, childRadius, parentRadius = 0, segs = PHASE_C_RADIAL_SEGS, flangeRingScale = 1.3) {
   _flDir.set(childPos[0] - parentPos[0], childPos[1] - parentPos[1], childPos[2] - parentPos[2])
   const dist = _flDir.length()
   if (dist < 1e-4) return null
   _flDir.divideScalar(dist)
   const flangeLen = Math.min(2 * childRadius, dist * 0.6)
   if (flangeLen < 1e-3) return null
-  const cyl = new THREE.CylinderGeometry(childRadius, childRadius * flangeRingScale, flangeLen, segs)
+  // Bottom radius must BRIDGE the parent's body. If we only widen to
+  // `childRadius * 1.3` we leave a visible armpit-wedge gap at Y-forks
+  // where the parent is fatter than the child. `parentRadius * 1.05`
+  // overhangs the parent slightly so the flange visually seals the joint.
+  const flangeBot = parentRadius > 0
+    ? Math.max(childRadius * flangeRingScale, parentRadius * 1.05)
+    : childRadius * flangeRingScale
+  const cyl = new THREE.CylinderGeometry(childRadius, flangeBot, flangeLen, segs)
   cyl.translate(0, flangeLen / 2, 0)
   _flQuat.setFromUnitVectors(_flY, _flDir)
   cyl.applyQuaternion(_flQuat)
   cyl.translate(parentPos[0], parentPos[1], parentPos[2])
   return cyl
+}
+
+// Scale the V (vertical) UV channel of a cylinder geometry in-place. Used
+// for the root-flare cylinder so the bark photo wraps at the SAME per-meter
+// density as the much-taller trunk above it. Without this the 0.4m flare's
+// V coords run 0→1 (covering the full bark photo height in 40 cm) while the
+// 5m trunk's V also runs 0→1 → bark on the flare is ~12× vertically
+// compressed, reading as "rotated or stretched" at Hero (2026-05-16 review).
+function scaleVUv(geo, scale) {
+  const uv = geo.attributes.uv
+  if (!uv) return
+  for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * scale)
+  uv.needsUpdate = true
 }
 
 // Subtle triangular buttress fin: tall at trunk base, tapers to nothing at
@@ -331,7 +351,13 @@ export function generateTreeMesh({
   const flareBot = trunkRBot * 1.4
   const flareHeight = 0.4
   const flare = new THREE.CylinderGeometry(flareTop, flareBot, flareHeight, PHASE_C_RADIAL_SEGS)
-  applyRadialNoise(flare, 0, flareHeight, 0.05, seedN * 11 + 999)
+  // Bark V density continuous with the trunk (see scaleVUv comment). Use
+  // a shared seedOffset with trunk so radial-noise pattern is continuous
+  // across the joint too — flare's noise was previously hashed with a
+  // different offset and produced a visible facet seam at the trunk-flare
+  // boundary.
+  applyRadialNoise(flare, 0, flareHeight, 0.05, seedN * 11 + 17)
+  scaleVUv(flare, flareHeight / trunkH)
   flare.translate(0, flareHeight / 2 - 0.25, 0)
   woodGeos.push(flare)
 
@@ -432,9 +458,15 @@ export function generateTreeMesh({
       const noise = (r0 > 0.05) ? { scale: 0.05, seedOffset: seedN * 13 + edgeIdx } : null
       const cyl = buildTaperedCylinderBetween(n.parent.pos, n.pos, r0, r1, branchSegs, noise)
       if (cyl) woodGeos.push(cyl)
-      // Flange ring only when parent IS a branching node (>1 child).
-      if (n.parent.children.length > 1 && n.radius > 0.02) {
-        const flange = makeFlangeRing(n.parent.pos, n.pos, n.radius)
+      // Flange ring at branching events: parent has >1 child (true fork) OR
+      // parent IS the SCA root (trunk-to-first-branch joint always gets one
+      // even if root has 1 child). Pass parent's radius so the flange's
+      // bottom overhangs the parent's body and seals the joint visually —
+      // without this bridge, Y-fork "armpit" gaps show at Hero distance
+      // (2026-05-16 review feedback).
+      const isBranchingJoint = n.parent.children.length > 1 || n.parent.parent == null
+      if (isBranchingJoint && n.radius > 0.02) {
+        const flange = makeFlangeRing(n.parent.pos, n.pos, n.radius, n.parent.radius)
         if (flange) woodGeos.push(flange)
       }
       edgeIdx++
