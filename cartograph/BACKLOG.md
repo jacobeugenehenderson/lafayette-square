@@ -3189,8 +3189,22 @@ Phase E and v1.6.
     alignment per `cartograph/FEATURES.md` line 89 is now structural.
     See `cartograph/NOTES.md` "Phase A.6" entry for the three pre-step
     audits + skip-vs-fallback executive call + bake size delta.
-    Phase B (polygon-graph schema + producer) is next; the corrected
-    algorithm is what B freezes.
+  - [x] **Phase A.7 — polygon simplification at source.** SHIPPED 2026-05-16.
+    Per FEATURES line 95–104 ("clean THE POLYGON: apply Douglas-Peucker
+    at derivation"). `simplifyPolylineDP(pts, ε=0.5)` applied to
+    `leftEdge` / `rightEdge` in `emitChain` BEFORE per-segment asphalt
+    rectangles are assembled. Endpoints (IX vertices) anchored so
+    adjacent rectangles still meet at corners. Collapses OSM
+    micro-bends (sub-degree wobbles within a few m of an IX) without
+    touching authored curvature. The unioned asphaltSharp boundary
+    near each IX now has longer adjacent sides → `arcReplaceVertex`'s
+    49% maxInset clamp doesn't fire at modest slider settings →
+    cranked-slider produces visibly big arcs on Mississippi-class
+    dense-chain IXs. Brief pointed at `chainPavementRing` (dead code);
+    actual application site is `emitChain` — surfaced. Phase 2
+    (sidewalk/treelawn arc-following) deferred pending visual outcome.
+    Phase B (polygon-graph schema + producer) is next; the corrected +
+    simplified algorithm is what B freezes.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**

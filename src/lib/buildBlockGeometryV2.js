@@ -82,6 +82,57 @@ const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 // mutated by V2 (Survey owns that). Tunable via NOTES.
 const IX_NOISE_RADIUS = 16
 
+// Douglas-Peucker simplification tolerance for per-segment asphalt
+// rectangle edges (Phase A.7). Applied to leftEdge / rightEdge inside
+// emitChain BEFORE the ring is assembled — collapses OSM micro-bends
+// (sub-degree wobbles within a few meters of an IX) without touching
+// authored curvature (meters-scale deviations). The unioned
+// asphaltSharp boundary then has longer sides near each IX corner →
+// arcReplaceVertex's 49% maxInset clamp doesn't fire at modest slider
+// settings → cranked-slider produces visibly big arcs on dense-chain
+// IXs (Mississippi-class). Endpoints (= IX vertices) are anchored by
+// DP construction so adjacent segments' rectangles still meet at the
+// corner. Tune visually; 0.5 m is the starting guess.
+const SIMPLIFY_EPS = 0.5
+
+// Perpendicular distance from point p to the infinite line through a-b.
+// Degenerate a==b returns Euclidean distance from p to a.
+function perpDistToSegment(p, a, b) {
+  const dx = b[0] - a[0], dz = b[1] - a[1]
+  const L2 = dx * dx + dz * dz
+  if (L2 < 1e-12) return Math.hypot(p[0] - a[0], p[1] - a[1])
+  const cross = dx * (p[1] - a[1]) - dz * (p[0] - a[0])
+  return Math.abs(cross) / Math.sqrt(L2)
+}
+
+// Iterative Douglas-Peucker (avoid recursion blow-up on long chains).
+// Preserves first and last points unconditionally. Returns a new array.
+function simplifyPolylineDP(pts, eps) {
+  const n = pts.length
+  if (n < 3) return pts.slice()
+  const keep = new Array(n).fill(false)
+  keep[0] = true
+  keep[n - 1] = true
+  const stack = [[0, n - 1]]
+  while (stack.length) {
+    const [i, j] = stack.pop()
+    let maxD = 0
+    let maxK = -1
+    for (let k = i + 1; k < j; k++) {
+      const d = perpDistToSegment(pts[k], pts[i], pts[j])
+      if (d > maxD) { maxD = d; maxK = k }
+    }
+    if (maxD > eps && maxK !== -1) {
+      keep[maxK] = true
+      stack.push([i, maxK])
+      stack.push([maxK, j])
+    }
+  }
+  const out = []
+  for (let i = 0; i < n; i++) if (keep[i]) out.push(pts[i])
+  return out
+}
+
 // Polygon-edge-Q polyline depth. Each leg's facing-side offset
 // polyline walks `CORNER_Q_POLY_DEPTH` chain.points vertices outward
 // from the IX V. At LS scale the asphalt-union corner vertex is on
@@ -1531,7 +1582,18 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       if (hwL > 0 || hwR > 0) {
         const leftEdge  = segPts.map((p, i) => [p[0] - segPerps[i][0] * hwL, p[1] - segPerps[i][1] * hwL])
         const rightEdge = segPts.map((p, i) => [p[0] + segPerps[i][0] * hwR, p[1] + segPerps[i][1] * hwR])
-        const ring = [...leftEdge, ...rightEdge.slice().reverse()]
+        // Phase A.7: Douglas-Peucker simplification on each side
+        // BEFORE ring assembly. Collapses OSM micro-bends near IX
+        // vertices so the unioned asphaltSharp boundary has longer
+        // sides at each corner → arcReplaceVertex's 49% maxInset
+        // clamp doesn't fire at modest slider settings. Endpoints
+        // (= IX vertices) are anchored by DP construction, so
+        // adjacent segments' rectangles still meet exactly at the
+        // corner. Authored curvature (meters-scale deviation) is
+        // preserved at SIMPLIFY_EPS=0.5m.
+        const leftEdgeS  = simplifyPolylineDP(leftEdge,  SIMPLIFY_EPS)
+        const rightEdgeS = simplifyPolylineDP(rightEdge, SIMPLIFY_EPS)
+        const ring = [...leftEdgeS, ...rightEdgeS.slice().reverse()]
         // Normalize to CCW. Without this the ring's winding flips with
         // chain direction, and unionRings (NonZero) cancels mixed-winding
         // overlaps at IXs — leaves gaps that the corner-asphalt plug is
