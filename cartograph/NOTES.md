@@ -155,6 +155,41 @@ All five primitives landed in `arborist/generate-procedural.js`:
 
 **Doesn't fix:** SCA-edge noise seam continuity (faint per-edge facet flips at Hero close-up — flagged above); foliage still sparse (Phase F); per-species hero tuning (G). Phase B.1.a's bark wrap-line crawl is unchanged — Phase C does NOT address shader-side bark issues; it changes the substrate the shader wraps onto.
 
+**Phase C.1 — SCA canopy-bias fix** — **SHIPPED 2026-05-16** (this commit, post-Phase-C, pre-Phase-F)
+Bug Phase C polish caught at the orchestrator-trust-but-verify step (visual canopy lean independent of trunk lean, on every seed). Diagnosis (Phase C baby's bypass run): SCA root at (0, 4.75, 0) with no lean still produced tip centroid at (-3.79, 7.75, 1.54) — ~4 m off-axis. Root cause is a positive-feedback bias in `runGrowthLoop`: a single growing tip's ~5 cm random asymmetry from rejection-sampled attractor averaging gets amplified by attractor-killing into a metastable canopy drift over ~100 iters. Independent of trunk lean, independent of geometry primitives, per-seed-variable.
+
+Fix is structural, lives entirely in `arborist/spaceColonization.js` (~80 LOC; `generateTreeMesh()` signature unchanged; zero pipeline / shader / artifact touches).
+
+- **§1 Force axial trunk extension.** After the existing auto-grow lift, deterministically extend the trunk straight up the central axis to `branchingStartY = trunkBase[1] + yOffset + envelope.height × branchingStartFrac`. Extension nodes carry `axial: true` and are skipped in `runGrowthLoop`'s nearest-node search for attractor pull — so they don't shape the canopy, they just paint a straight trunk to the branching-start height. Attractors near them still get killed by the normal kill pass so the central column clears cleanly. Per-morphology fraction: 0.5 for non-weeping, 0.2 for weeping (so the weeping trunk doesn't pierce above the curtain zone).
+- **§2 N-child azimuthal seed.** At the trunk top, seed `initialChildCount = 6` children spaced evenly around `TAU`. Each becomes a normal (non-axial) SCA tip from iter 1. Per-wedge attractor assignment splits cleanly across 6 sectors so iter-1 pull is symmetric and bias on one sector is balanced by tips on opposing sectors.
+- **§3 Weeping carve-out.** `branchingStartFrac=0.2` + `seedStep = stepLength × 0.5` (vs `max(0.5×step, 0.25×width)` for others). Tight central cluster + strong −Y tropism keeps the curtain effect intact; wider seeds in weeping breaks the curtain. Detected by `envelope.profile === 'umbrella'` OR `envelope.offsetYFrac < -0.1` so future PRESETS overlays naming a weeping morphology pick the carve-out automatically.
+- **Brief tuning deviation.** Brief specified `seedStep = stepLength × 0.5` (≈ 0.2 m). At that distance, the 6 children clustered too tightly for iter-1 wedge-balancing to fire — they all competed for the same attractors before the kill pass cleaned up. Widened to `max(0.5×stepLength, 0.25×envelope.width)` (≈ 1 m at LS scale) — each child lands firmly inside its own 60° wedge. 20-seed broadleaf sweep mean dropped from 0.92 m to 0.87 m, columnar 0.59 → 0.32, ornamental 0.65 → 0.31. Weeping exempt (carve-out above) — 0.247 m unchanged.
+
+**Bypass-script verification.** Canonical 5-seed (seeds 101/202/303/404/505) bypass with trunkBase=(0, 4.75, 0), canopyR=4, canopyH=8 — tip-XZ-centroid offset from trunk axis:
+- broadleaf:  mean 0.604 m, max 2.273 m (4/5 < 0.25 m; one runaway-chain at 2.27 m)
+- columnar:   mean 0.207 m, max 0.282 m (5/5 < 0.30 m)
+- ornamental: mean 0.317 m, max 1.087 m (4/5 < 0.20 m; one runaway at 1.09 m)
+- weeping:    mean 0.249 m, max 0.736 m (4/5 < 0.26 m; one at 0.74 m)
+- Baseline (pre-C.1): ~4 m offset always, independent of seed. Median improvement 10–20×; mean 5–15×.
+
+**Residual not-fixed (flagged, separate failure class).** ~5–35% of seeds per non-weeping morphology in 20-seed sweeps still produce 1–3 m offsets, but the failure mode is "runaway chain" not "initial-tip bias": those seeds have 4× the tip count (~250 vs ~60) because attractor-kill barely keeps up with N=6 expansion when rejection sampling produces isolated outlier attractor pockets. Tips chase those outliers at 0.4 m/iter (stepLength) but killRadius=1 m → 7–8 iter chase, chains off-axis. **Fix is outside C.1 scope** — candidates are per-tip chain length cap, raised killRadius, or outlier-attractor pruning. Visual review (e.g. broadleaf seeds 749/1391/1819) decides whether this needs follow-on tuning. Median canopy is well-centred which is the dominant LS-scale read.
+
+**Constants exposed.** `sca.branchingStartFrac` + `sca.initialChildCount` are now PRESETS-overlay-resolvable through `resolveVariantParams`'s existing effective-field plumbing — per-variant overrides if a particular species's silhouette demands tighter or looser tuning. Defaults sit on each preset in `DEFAULT_SCA_BY_PRESET`.
+
+**Tri-count delta.** Force-extension adds ~10 axial trunk segments × `PHASE_C_RADIAL_SEGS=12` × 6 tris/seg ≈ 720 tris/tree at lod0. Well inside the Phase C lod0 envelope.
+
+**Conifer untouched.** Conifer (`runMonopodial`) doesn't call `runSCA`; the bias fix is structurally outside conifer code. Confirmed by code path inspection.
+
+**Determinism preserved.** All randomness via `mulberry32(seedN × 1664525 + 1013904223)` (same stream as Phase D). Same `seedN` + params → byte-identical attractor cloud + byte-identical node graph + byte-identical GLB.
+
+**Surfaced scope-drift items** (per [[feedback_baby_must_surface_scope_drift]]):
+1. `runSCA`'s `envelope` input now reads `envelope.offsetYFrac` as a weeping-detection signal in addition to the existing `yOffset` computation — same input value, second consumer. Not a schema change.
+2. Internal node shape grew an optional `axial: true` flag on root + auto-grow + force-extension nodes. Default-falsy; no other consumer reads it. `computeRadii`'s post-order walk treats axial nodes normally (single-child chain → radius = child.radius, which is correct trunk behavior).
+3. `seedStep` widening deviates from the brief's `stepLength × 0.5`. Documented above with measurements. Brief's value left columnar/ornamental still failing the 0.5 m criterion; widened value passes columnar/ornamental and is ~equivalent on broadleaf.
+4. No tests written. Phase D shipped without an in-repo test harness for `spaceColonization.js`; C.1 follows the established pattern (bypass-script for verification, then deletion).
+
+**C.2 next.** Post-merge normal computation to seal SCA-edge facet flips (Phase C's flagged "not-fixed" item) — separate brief.
+
 **Phase B (core) — Photo-PBR bark + retint shader infra** — **SHIPPED 2026-05-15** (commit `0b2f6cb` + post-ship fix `0cd853b` for the `barkBySpeciesEffective` useMemo placement bug)
 - **Scope pivot from the original brief:** the GLSL pattern-library approach (5 procedural bark patterns via world-space noise + normal perturbation in shader) was DROPPED before code landed. Jacob (correctly) had zero faith we could ship 5 convincing GLSL bark patterns at Hero visual quality without significant craft, and the single-shader-program constraint (Bloom, see `bake-look.js:200`) makes uniform-branched-shader paths risky. The actual Phase B is **per-species photo-PBR bark materials + shader-side retinting infrastructure** — no GLSL pattern library. Phase B core lands the load-bearing infra; Workstage Bark panel + Stage debug overlay defer to **Phase B.1**.
 - 5 tileable CC0 PBR bark materials sourced from ambientCG, dropped under `public/textures/bark/<materialRef>/` (color.jpg + normal.jpg (NormalGL convention) + roughness.jpg + LICENSE.txt). Filler-species mapping: broadleaf→Bark007 (heavy furrowed), conifer→Bark012 (scaly), ornamental→Bark003, columnar→Bark004 (smooth), weeping→Bark015. Hero species (G.1–G.5) will publish their own mappings on top.

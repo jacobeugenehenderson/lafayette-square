@@ -32,6 +32,39 @@
 
 const TAU = Math.PI * 2
 
+// ── Phase C.1 anti-bias constants ───────────────────────────────────────
+//
+// The original SCA produces a metastable canopy lean: a ~5 cm random offset
+// of the single growing tip gets amplified by attractor-killing into a
+// per-seed asymmetric drift over ~100 iters (verified by Phase C bypass
+// script, even with no lean and root at (0, 4.75, 0): tip centroid lands
+// (-3.79, 7.75, 1.54)).
+//
+// Fix is structural, two parts:
+//   1. After the auto-grow lift, force-extend the trunk straight up the
+//      central axis to a height of (envelope start + envelope.height *
+//      branchingStartFrac). Trunk-extension nodes are marked `axial` so
+//      they do NOT participate in attractor-pull (only the canopy seeds
+//      do). The extension's attractor-kill still happens normally, so the
+//      lower envelope clears.
+//   2. At trunkTop, seed N children evenly distributed in the XZ plane
+//      (azimuth = k·τ/N). Each child is a normal SCA tip from iter 1,
+//      giving symmetric coverage from the start. Bias on one sector is
+//      balanced by symmetric tips on opposing sectors.
+//
+// Weeping morphology drapes BELOW the envelope start (offsetYFrac=-0.6),
+// so a 0.5-frac extension would push trunk well past the natural canopy
+// height; weeping gets a small frac (0.2) so trunk barely enters the
+// envelope and branches have room to droop. The N-child seed is unchanged.
+//
+// Both values are configurable per-species via `sca.branchingStartFrac` /
+// `sca.initialChildCount` (resolved through generate-procedural.js's
+// resolveVariantParams overlay path).
+const BRANCHING_START_FRAC_DEFAULT = 0.5
+const BRANCHING_START_FRAC_WEEPING = 0.2
+const INITIAL_CHILD_COUNT_DEFAULT = 6
+const MAX_AXIAL_EXTENSION_SEGS = 32  // safety cap; H≤12m / step≤0.4m → ≤30
+
 // ── 2D revolution profiles ──────────────────────────────────────────────
 //
 // Each profile is a list of (t, r) pairs in normalized [0, 1] space.
@@ -62,25 +95,27 @@ export const ENVELOPE_PROFILES = {
 export const DEFAULT_SCA_BY_PRESET = {
   broad: {
     envelope: { profile: 'rounded_oval', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200 },
+    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6 },
   },
   broadleaf: {
     envelope: { profile: 'rounded_oval', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200 },
+    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6 },
   },
   weeping: {
     // Envelope hangs 60% below the trunk top so attractors extend into the
     // curtain zone. Strong −Y tropism pulls branches down through them.
+    // C.1: tiny branchingStartFrac (0.2) means trunk barely extends into
+    // the envelope so branches have room to droop.
     envelope: { profile: 'umbrella',     asymmetry: 0, offsetYFrac: -0.6 },
-    sca: { tropism: [0, -0.4,  0], attractorCount: 700, influenceRadius: 3.5, killRadius: 0.9, stepLength: 0.4, maxIters: 240 },
+    sca: { tropism: [0, -0.4,  0], attractorCount: 700, influenceRadius: 3.5, killRadius: 0.9, stepLength: 0.4, maxIters: 240, branchingStartFrac: 0.2, initialChildCount: 6 },
   },
   columnar: {
     envelope: { profile: 'tight_column', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, +0.3,  0], attractorCount: 450, influenceRadius: 3.0, killRadius: 0.9, stepLength: 0.4, maxIters: 180 },
+    sca: { tropism: [0, +0.3,  0], attractorCount: 450, influenceRadius: 3.0, killRadius: 0.9, stepLength: 0.4, maxIters: 180, branchingStartFrac: 0.5, initialChildCount: 6 },
   },
   ornamental: {
     envelope: { profile: 'broad_low',    asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, -0.05, 0], attractorCount: 500, influenceRadius: 3.5, killRadius: 1.0, stepLength: 0.4, maxIters: 200 },
+    sca: { tropism: [0, -0.05, 0], attractorCount: 500, influenceRadius: 3.5, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6 },
   },
 }
 
@@ -175,6 +210,10 @@ function runGrowthLoop({ nodes, attractors, sca }) {
     for (const a of attractors) {
       let bestIdx = -1, bestSq = Infinity
       for (let i = 0; i < nodes.length; i++) {
+        // C.1: axial trunk-extension nodes do not attract; canopy seeds do.
+        // This keeps the trunk straight while the N azimuthal children
+        // share attractor-pull symmetrically.
+        if (nodes[i].axial) continue
         const sq = squaredDistance(a, nodes[i].pos)
         if (sq < bestSq) { bestSq = sq; bestIdx = i }
       }
@@ -290,7 +329,7 @@ export function runSCA({
   // Initialize tree. Trunk auto-grow: extend straight up by stepLength
   // until any attractor falls into influenceRadius — prevents stalling
   // when trunk top starts below the envelope's lowest point.
-  const root = { pos: [...trunkBase], parent: null, children: [], radius: 0 }
+  const root = { pos: [...trunkBase], parent: null, children: [], radius: 0, axial: true }
   const nodes = [root]
   const inflSq = sca.influenceRadius * sca.influenceRadius
   for (let lift = 0; lift < 8; lift++) {  // hard cap — never lift more than 8×stepLength
@@ -302,10 +341,65 @@ export function runSCA({
     const last = nodes[nodes.length - 1]
     const next = {
       pos: [last.pos[0], last.pos[1] + sca.stepLength, last.pos[2]],
-      parent: last, children: [], radius: 0,
+      parent: last, children: [], radius: 0, axial: true,
     }
     last.children.push(next)
     nodes.push(next)
+  }
+
+  // ── Phase C.1: deterministic axial trunk extension to branching-start
+  // height. Eliminates the single-tip bias-amplification window. Weeping
+  // morphology uses a much smaller frac so the trunk doesn't pierce above
+  // the curtain zone. See file-top constants.
+  const isWeeping = (envelope.profile === 'umbrella') ||
+                    (envelope.offsetYFrac !== undefined && envelope.offsetYFrac < -0.1)
+  const fallbackFrac = isWeeping ? BRANCHING_START_FRAC_WEEPING : BRANCHING_START_FRAC_DEFAULT
+  const branchingStartFrac = (sca.branchingStartFrac !== undefined)
+    ? sca.branchingStartFrac : fallbackFrac
+  const branchingStartY = trunkBase[1] + yOffset + envelope.height * branchingStartFrac
+  for (let seg = 0; seg < MAX_AXIAL_EXTENSION_SEGS; seg++) {
+    const last = nodes[nodes.length - 1]
+    if (last.pos[1] >= branchingStartY) break
+    const next = {
+      pos: [last.pos[0], last.pos[1] + sca.stepLength, last.pos[2]],
+      parent: last, children: [], radius: 0, axial: true,
+    }
+    last.children.push(next)
+    nodes.push(next)
+  }
+
+  // ── Phase C.1: seed N azimuthally-distributed initial children at the
+  // trunk top. Each becomes a normal (non-axial) SCA tip from iter 1.
+  // Symmetric coverage from the start means per-seed bias on one sector
+  // is balanced by tips on opposing sectors → centred canopy.
+  const trunkTopNode = nodes[nodes.length - 1]
+  const initialChildCount = (sca.initialChildCount !== undefined)
+    ? Math.max(1, sca.initialChildCount | 0) : INITIAL_CHILD_COUNT_DEFAULT
+  // Seed-step ~ ¼ envelope.width puts each seeded child firmly into its
+  // azimuthal wedge so iter-1 attractor assignment splits cleanly across
+  // N sectors. At the brief-suggested 0.5 × stepLength (≈ 0.2 m) the 6
+  // children all clustered at sub-meter distances competed for the same
+  // attractors, leaving the wedge-balancing benefit unrealized — bias
+  // still leaked through. Weeping is exempt: the curtain effect wants a
+  // tight central cluster + strong -Y tropism + descent; wide seeds
+  // start the canopy too far from axis and break the curtain.
+  const seedStep = isWeeping
+    ? sca.stepLength * 0.5
+    : Math.max(sca.stepLength * 0.5, envelope.width * 0.25)
+  for (let k = 0; k < initialChildCount; k++) {
+    const az = (k / initialChildCount) * TAU
+    const child = {
+      pos: [
+        trunkTopNode.pos[0] + Math.cos(az) * seedStep,
+        trunkTopNode.pos[1] + seedStep * 0.5,
+        trunkTopNode.pos[2] + Math.sin(az) * seedStep,
+      ],
+      parent: trunkTopNode,
+      children: [],
+      radius: 0,
+    }
+    trunkTopNode.children.push(child)
+    nodes.push(child)
   }
 
   runGrowthLoop({ nodes, attractors, sca })
