@@ -262,6 +262,7 @@
       "highway": "residential",
       "oneway": true,
       "smooth": 1,
+      "pairId": "WV-N",
       "loop": { "loopId": "loop-waverly-toy", "role": "outer" },
       "points": [
         [-40, 120],
@@ -282,6 +283,7 @@
       "highway": "residential",
       "oneway": true,
       "smooth": 1,
+      "pairId": "WV-S",
       "loop": { "loopId": "loop-waverly-toy", "role": "outer" },
       "points": [
         [52, 120],

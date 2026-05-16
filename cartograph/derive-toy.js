@@ -183,6 +183,7 @@ function main() {
     if (s.innerSign != null) street.innerSign = s.innerSign
     if (s.smooth != null) street.smooth = s.smooth
     if (s.disabled) street.disabled = true
+    if (s.pairId) street.pairId = s.pairId
     return street
   })
 
@@ -243,6 +244,7 @@ function main() {
       if (st.innerSign != null) out.innerSign = st.innerSign
       if (st.smooth != null) out.smooth = st.smooth
       if (st.disabled) out.disabled = true
+      if (st.pairId) out.pairId = st.pairId
       return out
     }),
     intersections,

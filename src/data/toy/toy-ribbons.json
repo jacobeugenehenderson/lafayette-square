@@ -552,7 +552,8 @@
         "start": "none",
         "end": "none"
       },
-      "smooth": 1
+      "smooth": 1,
+      "pairId": "WV-N"
     },
     {
       "name": "Waverly-toy",
@@ -622,7 +623,8 @@
         "start": "none",
         "end": "none"
       },
-      "smooth": 1
+      "smooth": 1,
+      "pairId": "WV-S"
     },
     {
       "name": "Waverly-toy",

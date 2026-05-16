@@ -520,6 +520,30 @@ Once Toy is clean, re-bake LS and verify all 4 park-corner IXs render the three-
 - Don't generalize beyond the divided-pair-endpoint case (e.g., don't try to fix unpaired single-endpoint legs in this commit — that's a different problem).
 - If Toy validation fails, STOP, report. Do not iterate against LS without Toy green.
 
+#### Phase A.5 shipped — 2026-05-16
+
+Shipped in this commit. Composite-leg coalesce lands in `cornersAtIx` between leg-build and CCW sort. Visible-bug coverage: divided-pair endpoint IXs (LS park-corner IXs, Toy Waverly couplet endpoint IXs) now form corner records at all four corners instead of dropping three of four to degenerate ~5° wedges.
+
+**Leg-record shape audit (pre-step).** Actual return shape from `buildLeg` in post-Phase-A source is `{ T, outerL, outerR, leftDepth, rightDepth, legKey, skel, name }`. Two corrections vs. the brief's assumed shape:
+
+1. `T` is the unit tangent (matches brief). No `tangent` field; `T` is already unitized in-place.
+2. `skel` is a **string** (`chain.skelId || chain.name || '?'`), NOT the chain object. The orchestrator-suggested option (a) "reach through `leg.skel`" couldn't access `.pairId` / `.skelId` / `.points.length` because skel is the id string. Adapted minimally: added two private attribution fields `chain` (the source chain object) + `ixIdx` (the IX vertex index along chain.points) to the leg record. Used exclusively by the Phase A.5 coalesce loop; not consumed by downstream corner-record geometry (which reads only `T_A`, `T_B`, `outerR_A`, `outerL_B`, `rightDepth_A`, `leftDepth_B`). Phase B's polygon-graph rewrite will refactor leg shape anyway.
+
+**`pairId` semantics correction.** The brief's algorithm pseudocode used `b.chain.pairId !== a.chain.pairId` (assuming a shared group id). Actual data shape in `src/data/ribbons.json` and the data-emitting toolchain is **cross-reference**: `lafayette-avenue-5.pairId === 'lafayette-avenue-6'` and `lafayette-avenue-6.pairId === 'lafayette-avenue-5'`. Coalesce match condition is therefore the symmetric assertion `a.pairId === b.skelId && b.pairId === a.skelId`. Symmetric form catches accidental one-way pairings as data-quality smells instead of silently coalescing. Update the standalone Phase A.5 brief + this NOTES algorithm block at orchestrator's next pass so future babies don't repeat the misread.
+
+**Downstream `chainIdx` classification.** Grepped all `leg.chainIdx` / `leg.skel` / `legKey` usages downstream of `cornersAtIx`. The corner record exposes only geometric fields (`T_A`, `T_B`, `outer*`, `*Depth`) plus `legKey` (identity, used in `sortedCornerKey` override resolution — composite-safe with its `${s1}+${s2}:c` key). No data-fetch consumer of `leg.chainIdx` exists post-leg-construction. Composite leg therefore needs no `members: [...]` rewire — pure geometric synthesis is sufficient.
+
+**Toy fixture enabling work (surfaced as scope drift, per [[feedback_baby_must_surface_scope_drift]]).** Toy was missing the data to exercise Phase A.5: `src/data/toy/toy-input.json` had no `pairId` on WV-S / WV-N, and `cartograph/derive-toy.js` had no passthrough for the field. Bundle reasoning per orchestrator clarification: the three layers (algorithm, fixture authoring, fixture plumbing) are the same logical change ("composite-leg coalesce at divided-pair endpoint IXs"); splitting would force a half-tested intermediate state. Edits:
+- `src/data/toy/toy-input.json`: `WV-S` gets `"pairId": "WV-N"`; `WV-N` gets `"pairId": "WV-S"`. Mutual cross-reference per the `pairId` semantics finding above.
+- `cartograph/derive-toy.js`: one-line passthroughs in the input-normalize loop (line ~185) and the ribbons-output loop (line ~245). Regenerated `src/data/toy/toy-ribbons.json` (re-ran `node cartograph/derive-toy.js`; 15 streets, 21 IX, 1 face — same shape, +`pairId` on WV-S/WV-N records).
+
+**Acceptance hand-off.** LS re-bake completed clean (`node cartograph/bake-ground.js` → `look=default: 44 groups, 371291 verts, 617001 tris, 11581.5 KB`). No warnings, no errors. Visual verification of the four park-corner IXs (Lafayette × {Mississippi, Missouri}, Park × {Mississippi, Missouri}) + regression check on Geyer × Mississippi + Toy Waverly couplet endpoint IXs is left to the orchestrator / Jacob — agent cannot view Designer.
+
+**Watchouts standing post-ship.** Re-flagging from the brief in case visual verification surprises:
+- 15° threshold may need tuning if real LS pairs come in tighter or wider than 2–10°. If a legitimate Y-junction trips the threshold, do NOT widen — investigate the data smell.
+- Composite `legKey` is `${skelA}+${skelB}:c`. Pre-A.5 operator overrides keyed under single-chain legKeys at these IXs will not resolve to composite corners — but those corners weren't forming pre-A.5, so no existing overrides exist there.
+- Composite `outerR = outerL = max(a.outerR, b.outerR)`. Conservative; if an asymmetric-width divided pair surfaces in LS, the wider member's offset wins for both sides.
+
 ---
 
 ### Phase B — Polygon-graph schema + producer

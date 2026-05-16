@@ -3184,18 +3184,19 @@ Phase E and v1.6.
   intersections at the park corners are currently a mess with no
   canonical resolution. Needs a dedicated geometry + authoring pass.
   Pairs with the whole-intersection corner editor restore below.
-  - [ ] **Phase A.5 — leg-formation at chain-endpoint IXs.** Polygon-graph
-    Phase A (per-leg tangent walker, commit 47f2f0a, 2026-05-15) did NOT
-    resolve the visible NW/SW/SE failure at Mississippi×Lafayette. Root
-    cause is `cornersAtIx` degenerating on near-parallel adjacent legs
-    from divided-pair carriageway endpoints — both `lafayette-avenue-5`
-    and `lafayette-avenue-6` terminate at V with their first stable
-    vertex ~east of V, producing a ~5° wedge whose corner Q is degenerate
-    → corner records not produced → no plug + no control dot. Fix:
-    deduplicate near-parallel legs OR detect them as a paired-carriageway
-    side and synthesize a single corner against the opposing chain. Needs
-    its own brief + Toy-first iteration; Waverly couplet endpoints
-    (HW4 ↔ WV junctions) in Toy likely already exercise this failure mode.
+  - [x] **Phase A.5 — leg-formation at chain-endpoint IXs.** SHIPPED 2026-05-16.
+    Composite-leg coalesce in `cornersAtIx` between leg-build and CCW sort.
+    Two paired chains (cross-referenced via `chain.pairId === mate.skelId`)
+    that both terminate at this IX with leg tangents within 15° get
+    synthesized into a single composite leg for corner-pair purposes;
+    data layer unchanged. Toy now exercises the failure mode via
+    pairId on WV-S/WV-N (toy-input + derive-toy passthrough bundled in
+    the same commit). See `cartograph/NOTES.md` "Phase A.5 shipped"
+    sub-entry for the leg-record-shape audit + pairId semantics
+    correction (cross-reference, not group-id) + chainIdx classification.
+    Phase B (polygon-graph schema + producer) is next; Toy fixtures +
+    Waverly couplet are now ready as the structural test rig for
+    divided-pair endpoint geometry.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**

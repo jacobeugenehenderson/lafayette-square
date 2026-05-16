@@ -82,6 +82,21 @@ const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 // mutated by V2 (Survey owns that). Tunable via NOTES.
 const IX_NOISE_RADIUS = 16
 
+// Phase A.5: divided-pair endpoint coalesce threshold. At an IX where
+// two paired chains both terminate, the two endpoint legs point
+// nearly the same way (the carriageway mouth opening — typically
+// 2–10° apart, set by median-width / IX-distance). Treated as
+// independent siblings, CCW sort places them adjacent and the
+// resulting ~5° wedge produces a degenerate corner Q (near-parallel
+// rays → intersection at near-infinity → no visible plug). Phase A.5
+// detects this case and coalesces the two legs into a single
+// "composite" leg for corner-pair purposes (data layer unchanged).
+// 15° gives headroom over the typical 2–10° spread without coalescing
+// legitimate distinct legs (a Y-junction has legs ~120° apart). If a
+// real divided pair has legs >15° apart, that's a data-quality smell;
+// investigate before widening.
+const COMPOSITE_ANGLE_THRESHOLD_RAD = 15 * Math.PI / 180
+
 function unit(v) {
   const l = Math.hypot(v[0], v[1])
   return l > 1e-9 ? [v[0] / l, v[1] / l] : [1, 0]
@@ -353,12 +368,93 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
         legKey: `${skel}:${dir === -1 ? 'b' : 'f'}`,
         skel,
         name: chain.name || null,
+        // Phase A.5 attribution: chain ref + ixIdx used only by the
+        // divided-pair endpoint coalesce loop below. Not consumed by
+        // downstream corner-record geometry.
+        chain,
+        ixIdx,
       }
     }
     if (ixIdx > 0) { const l = buildLeg(-1); if (l) legs.push(l) }
     if (ixIdx < pts.length - 1) { const l = buildLeg(+1); if (l) legs.push(l) }
   }
   if (legs.length < 2) return []
+
+  // Phase A.5: detect divided-pair endpoint legs at this IX. Two
+  // chains that (a) both terminate at this IX, (b) cross-reference
+  // each other via chain.pairId / chain.skelId, and (c) have leg
+  // tangents within COMPOSITE_ANGLE_THRESHOLD_RAD of each other get
+  // coalesced into one "composite" leg for corner-pair purposes.
+  // pairId in this codebase is a CROSS-REFERENCE to the mate's skelId
+  // (lafayette-avenue-5.pairId === 'lafayette-avenue-6' and vice
+  // versa), NOT a shared group identifier. Match condition is
+  // therefore the symmetric assertion below — one-way pairings count
+  // as data bugs, not silent coalesces.
+  const isEndpointLeg = (leg) => {
+    const n = leg.chain?.points?.length
+    return n != null && (leg.ixIdx === 0 || leg.ixIdx === n - 1)
+  }
+  const synthesizeCompositeLeg = (a, b) => {
+    const sx = a.T[0] + b.T[0], sz = a.T[1] + b.T[1]
+    const L = Math.hypot(sx, sz) || 1
+    const T = [sx / L, sz / L]
+    // Use the wider carriageway's outer half-width on BOTH sides of
+    // the composite so the corner Q clears both pavements. Same for
+    // ped-zone depths so corner pads land flush against the wider
+    // member's bands. Typical divided pairs are symmetric so this
+    // collapses to the shared value.
+    const outerR = Math.max(a.outerR, b.outerR)
+    const outerL = Math.max(a.outerL, b.outerL)
+    const leftDepth  = Math.max(a.leftDepth,  b.leftDepth)
+    const rightDepth = Math.max(a.rightDepth, b.rightDepth)
+    const [s1, s2] = (a.skel <= b.skel) ? [a.skel, b.skel] : [b.skel, a.skel]
+    return {
+      T, outerL, outerR, leftDepth, rightDepth,
+      legKey: `${s1}+${s2}:c`,
+      skel: s1,
+      name: a.name || b.name || null,
+      // No chain/ixIdx on composites — they're not real chains and
+      // shouldn't re-enter the coalesce loop on a hypothetical second
+      // pass. Downstream consumers (corner Q + plug emission) read
+      // only T / outer* / *Depth / legKey, so this is safe.
+    }
+  }
+  const claimedIdx = new Set()
+  const composites = []
+  for (let i = 0; i < legs.length; i++) {
+    if (claimedIdx.has(i)) continue
+    const a = legs[i]
+    if (!a.chain?.pairId || !isEndpointLeg(a)) continue
+    for (let j = i + 1; j < legs.length; j++) {
+      if (claimedIdx.has(j)) continue
+      const b = legs[j]
+      if (!b.chain?.pairId) continue
+      // Symmetric cross-reference. Catches accidental one-way
+      // pairings as data-quality smells (would silently coalesce
+      // if we only checked one direction).
+      if (a.chain.pairId !== b.chain.skelId) continue
+      if (b.chain.pairId !== a.chain.skelId) continue
+      if (!isEndpointLeg(b)) continue
+      const dot = Math.max(-1, Math.min(1, a.T[0] * b.T[0] + a.T[1] * b.T[1]))
+      const angle = Math.acos(dot)
+      if (angle > COMPOSITE_ANGLE_THRESHOLD_RAD) continue
+      claimedIdx.add(i)
+      claimedIdx.add(j)
+      composites.push(synthesizeCompositeLeg(a, b))
+      break
+    }
+  }
+  if (composites.length) {
+    const survivors = []
+    for (let i = 0; i < legs.length; i++) {
+      if (!claimedIdx.has(i)) survivors.push(legs[i])
+    }
+    legs.length = 0
+    for (const l of survivors) legs.push(l)
+    for (const c of composites) legs.push(c)
+    if (legs.length < 2) return []
+  }
+
   legs.sort((a, b) => Math.atan2(a.T[1], a.T[0]) - Math.atan2(b.T[1], b.T[0]))
 
   const corners = []
