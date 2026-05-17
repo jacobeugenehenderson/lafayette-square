@@ -65,6 +65,17 @@ const BRANCHING_START_FRAC_WEEPING = 0.2
 const INITIAL_CHILD_COUNT_DEFAULT = 6
 const MAX_AXIAL_EXTENSION_SEGS = 32  // safety cap; H≤12m / step≤0.4m → ≤30
 
+// C.1b: per-node branch fan-out cap. Once a node has this many direct
+// children it stops accepting pull → bounds the runaway pocket-domination
+// failure mode left by C.1 (one initial seed near a dense attractor pocket
+// otherwise spawns a new child every iter from the same node, dragging
+// centroid off-axis). Verified by 20-seed sweep (`_c1b_bypass.mjs`):
+// dropping cap to 3 collapses bimodal tip-count distribution to single-
+// modal 45–75 and zero seeds with cluster offset > 0.5 m across all four
+// morphologies; weeping mean offset improves too (0.29 → 0.17 m) without
+// breaking curtain descent. Overridable per-preset via `sca.maxChildrenPerNode`.
+const MAX_CHILDREN_PER_NODE_DEFAULT = 3
+
 // ── 2D revolution profiles ──────────────────────────────────────────────
 //
 // Each profile is a list of (t, r) pairs in normalized [0, 1] space.
@@ -199,6 +210,8 @@ function runGrowthLoop({ nodes, attractors, sca }) {
   const { tropism, influenceRadius, killRadius, stepLength, maxIters } = sca
   const inflSq = influenceRadius * influenceRadius
   const killSq = killRadius * killRadius
+  const childCap = (sca.maxChildrenPerNode !== undefined)
+    ? sca.maxChildrenPerNode : MAX_CHILDREN_PER_NODE_DEFAULT
 
   for (let iter = 0; iter < maxIters; iter++) {
     if (attractors.length === 0) break
@@ -213,7 +226,11 @@ function runGrowthLoop({ nodes, attractors, sca }) {
         // C.1: axial trunk-extension nodes do not attract; canopy seeds do.
         // This keeps the trunk straight while the N azimuthal children
         // share attractor-pull symmetrically.
+        // C.1b: nodes that have already accumulated childCap direct
+        // children also stop attracting → attractor flows to next-nearest
+        // tip, bounding per-node fan-out.
         if (nodes[i].axial) continue
+        if (nodes[i].children.length >= childCap) continue
         const sq = squaredDistance(a, nodes[i].pos)
         if (sq < bestSq) { bestSq = sq; bestIdx = i }
       }

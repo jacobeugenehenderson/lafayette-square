@@ -192,6 +192,38 @@ Fix is structural, lives entirely in `arborist/spaceColonization.js` (~80 LOC; `
 
 **C.2 next.** Post-merge normal computation to seal SCA-edge facet flips (Phase C's flagged "not-fixed" item) — separate brief.
 
+**Phase C.1b — runaway-cluster fix** — **SHIPPED 2026-05-16** (this commit, post-C.1)
+Resolves C.1's flagged "residual not-fixed" failure class. Diagnosis differed from C.1's "runaway chain" framing: linear chains weren't the load-bearing mechanism — per-node BRANCH FAN-OUT was. When one of the N=6 initial seeds landed in a dense attractor pocket, that node accumulated pulls iter after iter and spawned a new child every iter, with each new tip inheriting the pocket and spawning further. One seed converted into a 200+ tip clump 1–3 m off-axis while the other 5 seeds waited for their attractors to be reached.
+
+Fix is one structural rule in `arborist/spaceColonization.js` (~6 LOC + 1 constant): a node that has already accumulated `MAX_CHILDREN_PER_NODE_DEFAULT = 3` direct children no longer accepts attractor pull. Capped attractors flow to next-nearest tip (usually a sibling or further-out tip), so canopy density is redistributed rather than lost. Same gate mechanism as `axial:true`. Overridable per-preset via `sca.maxChildrenPerNode`.
+
+**Three options compared via bypass-script** (`arborist/_c1b_bypass.mjs`, 20-seed sweep, deleted on ship):
+- **A. Raise killRadius** (broadleaf 1.0→1.5, columnar 0.9→1.3, ornamental 1.0→1.5): centroid mean barely moved (broadleaf 0.89→0.79 m); worst runaway seeds persisted (seed 101: 410 tips, centroid 2.71 m). Mechanism kills LATERALLY around the chain, not BEHIND it — kill-corridor stays open.
+- **B. Prune sparse attractors** (K=4 D=1.2 m): WORSE (broadleaf centroid 0.89→1.47 m, tip count up). K=2 D=0.8: broadleaf better (0.46) but ornamental tipped (0.44→0.77). Per-seed brittle — wrong outliers got pruned.
+- **C. Per-node children cap (=3)**: clean across all four morphologies. Selected.
+
+**Bypass-script verification** (20 seeds × 4 morphologies, trunkBase=(0, 4.75, 0), canopyR=4, canopyH=8):
+- broadleaf:  centroid mean 0.156 m (was 0.889 m), max 0.300 m (was 2.879 m); tips mean 62.3 (was 173.7), max 74 (was 629). 0/20 runaway.
+- columnar:   centroid mean 0.154 m (was 0.341 m), max 0.344 m (was 2.310 m); tips mean 45.3 (was 70.8), max 50 (was 384). 0/20 runaway.
+- ornamental: centroid mean 0.171 m (was 0.435 m), max 0.437 m (was 2.953 m); tips mean 52.4 (was 80.2), max 57 (was 242). 0/20 runaway.
+- weeping:    centroid mean 0.166 m (was 0.294 m), max 0.487 m (was 2.554 m); tips mean 63.6 (was 86.2), max 72 (was 295). Mean tip-Y vs trunkBase = −2.01 m (curtain descent intact; cap didn't break the weeping silhouette).
+
+**Tri-count delta.** Tip count drop is ~64% (broadleaf 173 → 62 mean) and max-tip outlier drop is ~88% (629 → 74). Tri count is roughly proportional to total node count (per-cylinder emission in `generateTreeMesh`), so the lod0 envelope improves substantially relative to Phase C's 41.5K broadleaf-3 figure. Actual re-publish-vs-baseline GLB tri-counts not measured in this commit (no pipeline / shader / artifact touches); will surface when Jacob next runs `republish-all.js`.
+
+**`generateTreeMesh()` signature unchanged.** Kernel-only edit; no pipeline / shader / artifact touches.
+
+**Determinism preserved.** Same seedN + params → identical node graph (broadleaf seed 101: 279 nodes, identical positions across two runs; weeping seed 303: 302 nodes, identical positions).
+
+**Conifer untouched.** `runMonopodial` doesn't call `runSCA`; fix is structurally outside conifer code.
+
+**Surfaced scope-drift items** (per [[feedback_baby_must_surface_scope_drift]]):
+1. Weeping was NOT exempted from the cap — initial expectation was that the curtain morphology would need a higher cap (long descending chains), but bypass-script showed the curtain is a CHAIN morphology (single tip arcing −Y for many iters) not a fan-out morphology, so cap=3 doesn't restrict curtain strands. Weeping mean offset actually IMPROVED (0.29 → 0.17 m). `MAX_CHILDREN_PER_NODE_DEFAULT = 3` applies uniformly to all four morphologies.
+2. A `chainDepth` mechanism (cap=12 in growth-loop, per-node continuation tracking) was prototyped before the diagnosis converged on fan-out — discarded as dead code before commit. The simpler single-rule cap covers the failure mode cleanly.
+3. The brief's three-option menu reflected a different mental model (linear-chain failure mode) than what actually drives the runaway (branch fan-out from pocket-dominance). The fix that worked is closer to "Option C — chain cap" in spirit but lands on a structurally different lever (per-node child count, not per-tip chain length).
+4. `_c1b_bypass.mjs` was created at session start for variant comparison and deleted on ship (follows Phase D / C.1 verify-then-delete pattern).
+
+**C.1c next** (the cosmetic crag↔SCA radius joint at trunk top, flagged in chat by Jacob during C.1 review) — separate brief. **C.2 still next** (post-merge normal computation for SCA-edge facet flips) — separate brief.
+
 **Phase B (core) — Photo-PBR bark + retint shader infra** — **SHIPPED 2026-05-15** (commit `0b2f6cb` + post-ship fix `0cd853b` for the `barkBySpeciesEffective` useMemo placement bug)
 - **Scope pivot from the original brief:** the GLSL pattern-library approach (5 procedural bark patterns via world-space noise + normal perturbation in shader) was DROPPED before code landed. Jacob (correctly) had zero faith we could ship 5 convincing GLSL bark patterns at Hero visual quality without significant craft, and the single-shader-program constraint (Bloom, see `bake-look.js:200`) makes uniform-branched-shader paths risky. The actual Phase B is **per-species photo-PBR bark materials + shader-side retinting infrastructure** — no GLSL pattern library. Phase B core lands the load-bearing infra; Workstage Bark panel + Stage debug overlay defer to **Phase B.1**.
 - 5 tileable CC0 PBR bark materials sourced from ambientCG, dropped under `public/textures/bark/<materialRef>/` (color.jpg + normal.jpg (NormalGL convention) + roughness.jpg + LICENSE.txt). Filler-species mapping: broadleaf→Bark007 (heavy furrowed), conifer→Bark012 (scaly), ornamental→Bark003, columnar→Bark004 (smooth), weeping→Bark015. Hero species (G.1–G.5) will publish their own mappings on top.
