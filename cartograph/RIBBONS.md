@@ -1,6 +1,6 @@
 # Ribbons & Corners — canonical reference
 
-**Status: v0.1 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
+**Status: v0.2 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
 
 > Part of the cartograph quintet alongside `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. **Read this before any geometry / corner / curb / intersection / ribbon work.** Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem this system already answers. The doctrine in §1 is load-bearing. The pipeline walkthrough in §3 is the implementation. The failure-mode inventory in §6 is the live front of the work.
 >
@@ -503,14 +503,51 @@ Output shape matches `byChain[i]` + adds `treelawnEdges` / `sidewalkEdges` polyl
 
 ## §5. Designer render side
 
-> Scaffold for v0.1.
+### Y-lift stacking + drag perf split + edge strokes
 
 - **Y-lift stacking in Designer ortho** (`feedback_designer_ylift_stacking`): block 0.01, treelawn 0.02, sidewalk 0.03, curb 0.035, asphalt 0.04, corner-fillet 0.038, paths 0.05, edge strokes 0.06. Centerlines Y=0.5 + renderOrder 140 + depthTest false. NOT PRI/polygonOffset (that's bake's mechanism).
 - **Drag perf split** (`BlockGeometryV2Debug.jsx` ~lines 540-650): `nonSelectedChainGeo` triangulates every chain except selected from frozen byChain snapshot (cache key = byChain alone). `selectedChainGeo` triangulates from `liveSelectedRings` (`buildChainBandsLive`, ~1ms). Two material variants per ribbon class: opaque + `selectedCorridor` (opacity 0.55).
 - **Per-LU treelawn bucketing** (~line 583): non-selected chains' treelawn rings attributed to adjacent parcel LU via `ringInteriorProbe(fe.treelawnRings[0])` + `blockLuAtPoint(probe, blocks)`. Per-LU mesh outputs.
 - **Selected-adjacent block translucency** (~line 399): per-segment-midpoint probe at `max(hw + tl + sw) + cw + 10m`. Per-block mode narrows to two blocks at anchor.
 - **Edge strokes**: treelawn-outer (green) + sidewalk-outer (white) polylines drawn opaque at Y=0.06 only on selected chain. The curb stripe IS the asphalt|treelawn stroke.
-- **MeasureOverlay handle anchoring + drag write modes**: handles at `(cx + sign · nx · b.r, cz + sign · nz · b.r)` per (side, kind) tuple. Drag radius = `distToPolyline`. Global mode writes `chain.measure`; block mode writes `blockCustoms[fe.blockKey][fe.edgeOrd]` resolved via `findFeForSide(streetIdx, segOrd, side)`. rAF-throttled.
+
+### Measure tool — operator model
+
+The Measure tool lets the operator author the ribbon's cross-section per block edge. Two write modes, selected by a 3-segment toggle in MeasurePanel (`ModeToggle`):
+
+- **"Edit entire row" (global mode):** drag writes to `chain.measure[side]`. If `measure.symmetric === true`, mirrors to opposite side. The whole streetfront along the chain moves in tandem.
+- **"Edit block" (per-block mode, default):** drag writes to `blockCustoms[blockKey][edgeOrd]`. Only that one block edge of the chain's ribbon changes; the rest of the chain stays at its `chain.measure` default. **This decouples a single streetfront slice from the chain.**
+
+**Click semantics:**
+
+1. Click a centerline (royal-blue line drawn opaque at Y=0.5 with depthTest false — the always-visible "every street is selectable" affordance).
+2. `selectStreet(idx)` + `setMeasurePoint({x, z})` at the projected click point. The anchor sits at the CLICKDOWN position, not the chain midpoint.
+3. The clickdown projects to `(segOrd, sideKey)` via `naturalSegmentOrdinal` + the perp sign relative to the chain's local tangent.
+4. In per-block mode, that tuple resolves through `findFeForSide(streetIdx, segOrd, side)` to the live `(blockKey, edgeOrd)` — **THIS is the polygon being authored**. Drag handle writes go to `blockCustoms[blockKey][edgeOrd]`. Only that one block-edge changes; sibling blocks along the same chain stay at chain defaults.
+5. Drag a handle perpendicular to the centerline → new boundary radius via `distToPolyline` → write goes to whichever scope the mode dictates. rAF-throttled (~60-120 Hz pointermove coalesced to one store write per frame).
+
+**Translucency, by design:**
+
+- The selected chain's ribbons (asphalt + treelawn + sidewalk via `liveSelectedRings`) render through `selectedCorridor` materials at opacity 0.55.
+- Adjacent block fills (per `selectedAdjacentBlockKeys` probe) render through `selectedCorridor` at 0.55 — so the operator sees aerial through every layer of the block being edited.
+- **Non-selected chains' ribbons stay OPAQUE.** This includes chains running along the same block edge as the selected chain (e.g. the other three sides of a park). Only the clicked chain translucifies.
+
+This is the spec, not a defect. The operator authors one streetfront at a time; the opaque-vs-translucent visual contrast is the affordance. **If you find yourself hypothesizing "the non-selected ribbons should be translucent too" as a bug, stop — that's the operator model working correctly.** Past misdiagnoses of this pattern as a render bug (see §7's Stage 1 entry) cost a full diagnostic cycle.
+
+**Right-click / Ctrl-click gestures (covered in MeasureOverlay.jsx:674-773):**
+- On a handle → delete that boundary (collapse stripe). `treelawnOuter` collapses treelawn into sidewalk; `propertyLine` removes ped zone entirely (`terminal: 'none'`).
+- In an empty band → insert a boundary at click radius (split sidewalk into treelawn + sidewalk, or re-seed `terminal: 'sidewalk'` from `'none'`).
+
+**Other gestures:**
+- Empty click on canvas → no action (operators pan a lot; silent deselect was too easy to trigger).
+- Double-click → `deselectStreet()`. (Spec-divergent vs NOTES:3549-3551 which says double-click should insert a stripe split — see §6.5.)
+- Escape / Enter → deselect.
+
+### Handles, anti-overlap stagger
+
+Up to 3 handles per side per click anchor: `pavementHW` (the asphalt edge — dragging this is also dragging the block-edge silhouette, since `block = stencil − asphalt`), `treelawnOuter`, `propertyLine`. Pill geometry 5m long × 1.2m wide, oriented with long axis along the street. White fill + black border, opacity 1, depthTest false, renderOrder 149/150 so they paint over the translucent ribbons.
+
+Anti-overlap pass (MeasureOverlay.jsx:381-405): when two handles on the same side have similar `r` (within `HANDLE_LONG + 0.5`), the staggers shift them along the street tangent in alternating fore/aft offsets. The `r` value (perp distance from centerline) is preserved — only the visible along-street position changes; drag still resolves to the correct boundary radius.
 
 ---
 
@@ -518,25 +555,60 @@ Output shape matches `byChain[i]` + adds `treelawnEdges` / `sidewalkEdges` polyl
 
 > **This is the front of the work.** Every session adds/updates/closes entries here.
 
-### 6.1 L-shape black at park-adjacent ribbons — OPEN (2026-05-17)
+### 6.1 L-shape black at corner-adjacent ribbons — DIAGNOSED, FIX QUEUED (2026-05-17)
 
-**Symptom:** in Designer with Measure tool active + Aerial toggle on, two adjacent park sides expose aerial-through-translucent-ribbon correctly; the other two sides render an L-shaped black strip instead of aerial. Reported across the whole map, not just the park ("every single ribbon is disrupted, this is just one thing and feels like an unnecessary goose chase when the problem is widespread"). The park is the most visually obvious instance because of the aerial backdrop.
+**Symptom:** in Designer with Measure tool active + Aerial toggle on, the operator selects a chain; the selected chain's ribbons translucify, but at *every IX corner along the chain*, an opaque-black region extends into the corner mouth where aerial-through-asphalt should read. The park's interior perimeter is the visually obvious case (aerial backdrop makes it stark) but the failure is uniform map-wide — every corner on every block exhibits the same overshoot pattern, just less visibly against face-fill backdrop than against aerial.
 
-**Hypotheses, unranked:**
-- D.7a `blockKey` drift on 58% of straight bands (§6.2 below) makes per-block clip a no-op for those fes; band rings extend past the rounded silhouette at corners; opaque overshoot bleeds.
-- 49 residual SELFINT band rings (§6.3 below) triangulate as opaque black.
-- Per-LU treelawn bucketing renders park-side treelawn opaque (no `selectedCorridor` translucent variant in the per-LU pass) — selected-chain bands ARE translucent; OTHER chains' bands along the park stay opaque.
-- Selected-adjacent block translucency probe range (10m PROBE_SLACK) may miss park-adjacent chains whose pavementHW + ped zone is wider than the slack accommodates.
+**Diagnosed (Stage 1 + Stage 2, 2026-05-17):**
 
-**Diagnostic pending:** filter `frontageBands` to entries adjacent to park-LU blocks, check (a) SELFINT, (b) overshoot of owning blockRounded, (c) terminal-sidewalk presence. Three bits per entry × 4-8 park-adjacent entries = single console probe.
+The defect is **entirely §6.2** — drifted-key straight fes skip the per-block clip entirely, so their offset polylines extend up to **8.306m past** the rounded block silhouette (Truman Parkway `653.5,-236.5` edgeOrd 0; 248 fes have overshoots > 0.5m repo-wide). Opaque non-selected ribbons along the *other three sides* of the corner trespass into the corner mouth and paint over what should be aerial/asphalt.
 
-### 6.2 D.7a `blockKey` drift on straight bands — OPEN (2026-05-17)
+**Hypotheses ruled out during diagnosis:**
 
-**Surfaced by spine-fix baby.** 295/506 (58%) straight fes have `blockKey` 0.5m offset from the corresponding `blockRounded` ring key (e.g. fe `-620.5,752.0` vs ring `-621.0,752.0`). Per-block `intersectRings` clip is a no-op for these. Band rings emitted unclipped from the fe polyline; at corner approaches the unclipped offset polyline extends past the rounded silhouette.
+- ~~Per-LU treelawn missing `selectedCorridor` variant~~ — confirmed in code, but it is **design intent, not a defect** (§5 "Translucency, by design"). Only the selected chain translucifies; non-selected chains stay opaque on purpose. The "two-vs-two" symptom shape is selected-chain vs three other chains, which is the operator model. Once §6.2 is fixed and the opaque non-selected bands stop trespassing, the corner-mouth aerial reads through correctly without any render-side change.
+- ~~49 SELFINT band rings (§6.3)~~ — 17 of 725 entries (2.3%), 0 park-adjacent, not a contributor to the L-strip pattern.
+- ~~Missing band emission (terminal !== 'sidewalk')~~ — 0 entries, not a factor.
+- ~~91.9% geometric overshoot on lookup-OK fes (Stage 1 surprise #2)~~ — **probe artifact.** `pointInRing` ray-casting registered boundary-coincident vertices ambiguously; signed-distance recheck with 0.01m epsilon shows **zero real overshoots** on lookup-OK fes. The clip works perfectly when the key lookup succeeds.
 
-**Fix:** mirror the FE pass-1→pass-2 backfill (line 2145) onto frontageBands by `(chainIdx, segOrds[0], side)` tuple. ~10 LOC. Per `feedback_d7a_blockkey_drift`.
+**Fix shape:** §6.2's identity-based ringByKey rebuild. Stage 3 dispatch.
 
-**Status:** queued. Likely contributing to §6.1.
+**Closes when:** Stage 3 visually verified by Jacob (L-strip aerial-visible at corners), §6.1 + §6.2 collapse into a "RESOLVED 2026-05-XX" §7 history row.
+
+### 6.2 D.7a keying-system divergence: pass-2 `ringByKey` vs pass-1 `fe.blockKey` — DIAGNOSED, FIX QUEUED (2026-05-17)
+
+**Mechanism (exact):**
+
+- `buildFrontageBands` (line 1374) builds `ringByKey` via `blockKeyFromRing(blockRoundedRing)` on each pass-2-derived rounded block ring. **These are pass-2 keys.**
+- Each fe arriving at `buildFrontageBands` has `fe.blockKey` set to the **pass-1** value, because pass-2's `buildFrontageEdges` output is overwritten at line 2149: `fe.blockKey = p1.blockKey`. This was done so `blockCustoms[fe.blockKey][fe.edgeOrd]` resolves to the same customs entry the operator wrote against pass-1 keys.
+- **The two keying systems disagree for 295 of 506 straight fes (58%).** When pass-2 asphalt expansion shifts a bbox center past a 0.5m grid line, `blockKeyFromRing` rounds the pass-2 ring to one key while `fe.blockKey` carries the pass-1 key. `ringByKey.get(fe.blockKey)` returns undefined → clip block at lines 1440-1462 silently `continue`s → band rings emit unclipped from the offset polyline.
+- Unclipped offset polylines extend up to **8.306m** past the rounded silhouette into the corner mouth (Stage 2 worst-offender: Truman Parkway `653.5,-236.5` edgeOrd 0). 248 fes carry >0.5m overshoots repo-wide. **This is the L-strip black mechanism in §6.1.**
+
+**Pre-existing back to ed29700:** `buildFrontageBands` body is comment-only-diff between ed29700 and HEAD. Latent defect from the D.7a customs migration. Never visible before because (a) opaque ribbons trespassing into the asphalt-color corner mouth blend with the asphalt at normal viewing, (b) Aerial-mode + the operator clicking park-adjacent chains is the specific condition where the overshoot reads against a non-asphalt backdrop.
+
+**Fix shape (Stage 3, ~15 LOC):**
+
+Identity-based ringByKey construction. Don't rebuild keys from rings; **inherit them from the fes that own the rings.** For each blockRounded ring, find any fe whose interior probe lands in the ring (`pointInRing` against the ring); register the ring under that fe's `blockKey` (pass-1 backfilled, matches `fb.blockKey`). Now `ringByKey.get(fb.blockKey)` works correctly for both drifted and non-drifted fes.
+
+```js
+// In buildFrontageBands, replace the existing ringByKey build:
+const ringByKey = new Map()
+for (const ring of blockRounded) {
+  for (const fe of out) {
+    const probe = fe.treelawnRings[0]?.[0] || fe.sidewalkRings[0]?.[0]
+    if (probe && pointInRing(probe[0], probe[1], ring)) {
+      ringByKey.set(fe.blockKey, ring)
+      break
+    }
+  }
+}
+// ... then existing per-fe intersectRings clip works unchanged.
+```
+
+Stage 2's dry-run validates: 257/295 drifted entries resolve to their true owner via containment, all real overshoots collapse to zero. The 38 unresolvable fes (band probe falls outside all rounded rings — degenerate band geometry) need a fallback or are left unclipped (acceptable; they're <0.01% of repo-wide ring vertex count).
+
+**Why this over "thread pass-1 frontageEdges into the helper":** the containment-register-by-fe pattern is local to `buildFrontageBands`, no signature change, no pass-1 lookup plumbing. Per `feedback_corner_pad_continuity_first`-adjacent logic, identity (which fe owns this ring) beats geometric heuristic (find ring by key); inheriting the key FROM the fe IS identity, just routed through the ring instead of through a tuple.
+
+**Status:** Stage 3 dispatch queued. ~15 LOC in `buildFrontageBands`. Re-bake both looks. Re-run probe; expect 0 real overshoots. Closes §6.1.
 
 ### 6.3 49 residual SELFINT band rings repo-wide — OPEN
 
@@ -605,6 +677,8 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 | 2026-05-16 | Phase 2.2: morphological closing on curb stroke | REVERTED (NOTES:675, commit `c360fc2` + `3a80549`) | Dilate-erode precision tax cascades; structurally wrong, not tunably wrong |
 | 2026-05-17 | Phase 2-arc cusp guard: scale tl/sw when `cw+tl+sw > 0.9·arcR` | SHIPPED (NOTES:635, commit `8956ffa`) | Inward-offset arc cusps onto itself when offset depth ≈ arcR; 0.9× factor is a working but not tight enough threshold |
 | 2026-05-17 | Phase 2-arc revert: restore per-sharp-fe straight-span emission alongside arc emitter | SHIPPED (NOTES:652) | The new regime's spine architectural intent ("everything flows from blockRounded") collided with Clipper precision on long offset polylines; the doctrine permits both halves (per-sharp-fe straight + blockRounded-walked arc) since each satisfies polygon-walking |
+| 2026-05-17 | Stage 1 diagnostic — classify every frontageBand entry across H1-H4 hypotheses for the L-strip black symptom | DIAGNOSED | H1 (blockKey drift) dominant; H3 (per-LU translucency) was a misread of the operator model (non-selected chains stay opaque by design); H2/H4 minor. Stage 1 also produced a false 91.9% geometric-overshoot reading via `pointInRing` boundary noise — corrected at Stage 2. Lesson: use signed-distance with ≥0.01m epsilon, never strict `pointInRing` against clip-output boundaries |
+| 2026-05-17 | Stage 2 diagnostic — drill-in / baseline comparison / backfill dry-run | DIAGNOSED | (a) Stage 1's 91.9% was probe artifact; lookup-OK fes have zero real overshoots. (b) Defect pre-existing back to ed29700 — `buildFrontageBands` body comment-only-diff; not a regression. (c) Mechanism pinned: `ringByKey` is pass-2 keyed, `fe.blockKey` is pass-1 keyed (backfilled at line 2149); 295 fes disagree, clip skipped, 248 overshoot >0.5m, max 8.306m on Truman Parkway. (d) Dry-run with identity-based ring registration resolves 257/295 cleanly; closes all real overshoots |
 
 ---
 
