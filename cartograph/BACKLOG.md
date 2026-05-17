@@ -3323,6 +3323,19 @@ Phase E and v1.6.
     stroke (Clipper.OffsetPaths with EndType.etClosedLine +
     JoinType.jtRound on the asphalt boundary directly) queued for
     fresh cold-baby dispatch.
+  - [x] **Phase 2-arc — Lafayette Park band cusp guard.** SHIPPED
+    2026-05-17. Fixed opaque-black ribbons at park's 4 corner T-IXs
+    (Outcome (A) per `scratch/park-band-validity.js`): 4 of 8 arc-span
+    sidewalk rings self-intersected because totalDepth (~6.6m) marginally
+    exceeded the authored corner radius (~6.4m), cusping the inward
+    offset. Fix threads R through arcMeta and clamps tl/sw proportionally
+    in `buildFrontageBandsV2` arc-span branch when `cw+tl+sw > 0.9·R`.
+    Bake delta minimal (−176 verts / +78 tris / −1.2 KB); determinism
+    preserved. Surfaced not fixed: 70 repo-wide SELFINTs remain on other
+    blocks (different failure mode for straight-span bands; tighter
+    residual cusps on arc spans at blocks with even smaller R); D.7a
+    blockKey drift on `frontageBands` (bands key at rounded 2.5,0.0, FEs
+    backfilled to sharp 3.0,0.0). See NOTES "Phase 2-arc" entry.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**

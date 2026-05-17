@@ -816,7 +816,7 @@ function applyRoundCornersToRing(ring, corners, scale = 1) {
     const arcMetaForSpan = new Array(N1)
     for (let m = 0; m < N1; m++) {
       // Pre-reverse frac: arc[m] is at m/(N1-1) of A→B sweep.
-      arcMetaForSpan[m] = { corner: span.corner, arcPositionFrac: m / (N1 - 1) }
+      arcMetaForSpan[m] = { corner: span.corner, R: span.R, arcPositionFrac: m / (N1 - 1) }
     }
     arc = arc.slice().reverse()
     arcMetaForSpan.reverse()
@@ -824,6 +824,7 @@ function applyRoundCornersToRing(ring, corners, scale = 1) {
     for (let m = 0; m < N1; m++) {
       arcMetaForSpan[m] = {
         corner: arcMetaForSpan[m].corner,
+        R: arcMetaForSpan[m].R,
         arcPositionFrac: 1 - arcMetaForSpan[m].arcPositionFrac,
       }
     }
@@ -1464,10 +1465,27 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
       const Ameta = (nextMeta?.type === 'straight' && !nextMeta.skip) ? nextMeta : null
       if (!Bmeta && !Ameta) continue
 
-      const tl_B = Bmeta?.tl ?? Ameta?.tl ?? 0
-      const sw_B = Bmeta?.sw ?? Ameta?.sw ?? 0
-      const tl_A = Ameta?.tl ?? Bmeta?.tl ?? 0
-      const sw_A = Ameta?.sw ?? Bmeta?.sw ?? 0
+      let tl_B = Bmeta?.tl ?? Ameta?.tl ?? 0
+      let sw_B = Bmeta?.sw ?? Ameta?.sw ?? 0
+      let tl_A = Ameta?.tl ?? Bmeta?.tl ?? 0
+      let sw_A = Ameta?.sw ?? Bmeta?.sw ?? 0
+
+      // Cusp guard. When the requested inward offset exceeds the arc's
+      // local turning radius, the offset arc folds onto itself (cusp)
+      // and the resulting band ring self-intersects → renders as opaque
+      // triangulation artifacts at the corner. Manifested at Lafayette
+      // Park where authored radius (~6.4 m) is barely larger than
+      // park-side total ped-zone depth (cw+tl+sw ~6.6 m). Clamp by
+      // scaling tl/sw proportionally so the deepest ring stays inside
+      // (R − epsilon); cw (curb) is preserved as a hard minimum.
+      const arcR = arcMeta[span.idxs[0]]?.R ?? Infinity
+      const safeMax = Math.max(cw + 0.05, arcR * 0.9)
+      const totalMax = Math.max(cw + tl_A + sw_A, cw + tl_B + sw_B)
+      if (totalMax > safeMax) {
+        const k = (safeMax - cw) / Math.max(1e-9, totalMax - cw)
+        tl_A *= k; sw_A *= k; tl_B *= k; sw_B *= k
+      }
+
       const d_A = cw + tl_A + sw_A
       const d_B = cw + tl_B + sw_B
 
