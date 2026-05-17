@@ -1,6 +1,6 @@
 # Ribbons & Corners — canonical reference
 
-**Status: v0.5 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
+**Status: v0.6 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
 
 > Part of the cartograph quintet alongside `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. **Read this before any geometry / corner / curb / intersection / ribbon work.** Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem this system already answers. The doctrine in §1 is load-bearing. The pipeline walkthrough in §3 is the implementation. The failure-mode inventory in §6 is the live front of the work.
 >
@@ -660,6 +660,42 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 
 `MeasureOverlay.jsx:777-783` reads double-click as deselect. NOTES:3549-3551 spec says double-click should insert a stripe split (treelawn/sidewalk boundary). Surface-only divergence; cosmetic. **Status:** deferred.
 
+### 6.8 Corner-interior regime emitter deviates from concentric doctrine — OPEN, DOMINANT (2026-05-17)
+
+**Symptom:** at every IX corner the visible interior of the corner zone (the bands as they wrap the rounded silhouette) reads as a *constructed plug between two straight ribbons* rather than as *continuous concentric arcs wrapping the silhouette*. Doctrine (§1, "the ribbon wraps the silhouette"): each band depth (curb at cw, treelawn outer at cw+tl, sidewalk outer at cw+tl+sw) emerges as a nested inset arc around the same effective corner center — concentric, like a target. Implementation in `buildFrontageBandsV2`'s three-regime emitter does not produce this geometry on ANY corner today.
+
+**Audit (Stage 6, 2026-05-17, `scratch/corner-regime-audit.{js,csv,report.md}` — 355 arc-span entries on LS):**
+
+| regime | count | what it emits | concentric? |
+|---|---|---|---|
+| NEITHER-EMITTED | 128 (36%) | no band rings (both flanking spanMeta skip) | n/a — no emission |
+| SYM-NO-RAMP | 104 (29%) | single sidewalk band | no — only one band, no nesting |
+| SYM-WITH-RAMP | 98 (28%) | concentric tl + sw outside ramp; full-depth sw wedge inside ramp | partially — wedge breaks the concentric arc in the middle |
+| ASYM | 25 (7%) | single sidewalk plug with angular step at midpoint | no — angular step, no nesting |
+| **doctrine-correct** | **0 of 355** | | — |
+
+**Doctrine violations:**
+- **0 corners produce strictly doctrine-correct continuous-wraparound concentric.** Even the SYM-WITH-RAMP outside-ramp-window portion is concentric in pieces; the ramp wedge in the middle breaks it.
+- **8 ASYM corners are visible "treelawn drop" cases** — operator authored tl > 0 + sw > 0 on both flanking sides, but the regime dropped the treelawn and emitted only a single sidewalk plug. e.g., Grattan × Lasalle, Truman × Lafayette.
+- **18 of 25 ASYM corners sit at `diff ∈ [1.0, 1.5)m`** — the binary `PHASE2_ASYM_EPS_M = 1.0` threshold flips at marginal asymmetry. The threshold is too crisp; smooth-taper handles these cleanly.
+
+**Surfaced anomalies (Stage 6 baby):**
+- Cusp guard fires on 22.5% of corners (vs the 5% flag threshold) — `0.9·arcR` is too tight, OR authored R is too small for typical ped-zone depths, OR the depth-to-R ratio doctrine needs revisiting.
+- One IX has exactly 3 arc-spans (symmetry expects 2 or 4) — surface for verification.
+- One corner at θ=165.9° passes the 5°/355° through-T filter but is effectively collinear — filter threshold may need tightening.
+- NEITHER-EMITTED dominates at 36% — bigger than expected; mostly park-perimeter + non-asphalt-facing block edges (block-to-block boundaries with no chain on one side). Verify these are all legitimate skips, not authoring oversights.
+- 32 SELFINTs land inside arc-span emission (subset of §6.3's repo-wide 49). Most concentrate at smallest-R corners surviving the cusp guard.
+
+**Fix shape (Stage 7, queued):** structural rewrite of `buildFrontageBandsV2`'s arc-span branch. Replace the three-regime branching with a single concentric tapered emission path:
+- Emit two nested arc rings per arc-span entry: treelawn (outer at cw, inner at cw + tl) + sidewalk (outer at cw + tl, inner at cw + tl + sw).
+- Asymmetric corners (d_A ≠ d_B): linear interpolation of tl + sw depths along the arc, from flanking-A values at one end to flanking-B values at the other. Smooth taper; no step.
+- When tl = 0 on either flanking side: emit only the sidewalk ring at that taper segment. Single-band concentric is still concentric.
+- Retire the SYM-WITH-RAMP ramp wedge entirely. Retire PHASE2_ASYM_EPS_M / PHASE2_ASYM_RATIO / PHASE2_RAMP_MAX_M / PHASE2_RAMP_FRAC / PHASE2_RAMP_MIN_M / PHASE2_STEP_FRAC constants.
+- Keep the cusp guard. Re-evaluate its 0.9× threshold based on Stage 7's bake — may need tightening.
+- NEITHER-EMITTED skip remains structurally (no flanking sidewalk on either side = nothing to emit) but add a probe-validity assertion since 36% is high enough to suspect operator authoring oversights worth surfacing.
+
+**Status:** Stage 7 dispatch in flight.
+
 ### 6.7 Stale comments + PHASE 2 SUPERSEDED placeholder — HOUSEKEEPING
 
 - `cornersAtIx` has 3 docblocks referencing retired `buildCornerPadQuad`.
@@ -696,6 +732,7 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 | 2026-05-17 | Stage 2 diagnostic — drill-in / baseline comparison / backfill dry-run | DIAGNOSED | (a) Stage 1's 91.9% was probe artifact; lookup-OK fes have zero real overshoots. (b) Defect pre-existing back to ed29700 — `buildFrontageBands` body comment-only-diff; not a regression. (c) Mechanism pinned: `ringByKey` is pass-2 keyed, `fe.blockKey` is pass-1 keyed (backfilled at line 2149); 295 fes disagree, clip skipped, 248 overshoot >0.5m, max 8.306m on Truman Parkway. (d) Dry-run with identity-based ring registration resolves 257/295 cleanly; closes all real overshoots |
 | 2026-05-17 | Stage 4: block face fill must use `owning` (blockRounded), not `intersectRings(face, owning)` — restores figure-ground inversion in face emission | SHIPPED (commit `9cf12c4`) | Three-line surgical fix to `buildBlockGeometryV2.js:2316`. Closed the visible "black ring around every block" Jacob had been reporting since the session start — turned out to be canvas-ground showing through the gap between small authored faces (e.g. park's ±175m fence polygon) and the band-property-line (~±179m), NOT band overshoot from H1. Lesson: visible-material-absence (canvas through gap) and visible-material-trespass (opaque overshoot) look similar with bands above; Aerial-toggle discriminates instantly. Stage 1-3 misframing because diagnostic anchored on overshoot before testing absence. `feedback_verify_diagnosis_with_user` extended: visible-symptom-discrimination should be a 30-second test, not a session arc |
 | 2026-05-17 | Stage 5: H1 (per-fe containment ring resolution in buildFrontageBands) | SHIPPED (commit `48d8135`) | Closes the §6.2 D.7a keying-system divergence as a latent structural fix. 248 fes >0.5m overshoot trimmed; bake delta −0.4–0.5% verts per look. Did NOT visibly close any corner symptom — overshoots had been masked by overlying asphalt + curb stroke. The "corners are jacked" symptom Jacob continued to report after Stage 4 is corner-interior (sidewalks / treelawns / corner plugs at IXs) — a separate defect class living in `buildFrontageBandsV2` (arc-span emitter) and `attributeFilletResidualToArcs`, not in straight-fe band emission. Next dispatch addresses arc-span. Doctrinal note: H1 is a textbook D.7a-drift case — `feedback_d7a_blockkey_drift` says pass-1 (blockKey, edgeOrd) must be carried through pass-2 by `(chainIdx, segOrds[0], side)` join, and the same lesson reapplied here at the per-fe ring lookup |
+| 2026-05-17 | Stage 6: corner-regime-emitter audit (355 arc-span entries across LS, regime classification + concentric measurement) | DIAGNOSED | 0 of 355 corners produce doctrine-correct concentric emission. Regime distribution: NEITHER-EMITTED 36%, SYM-NO-RAMP 29%, SYM-WITH-RAMP 28%, ASYM 7%. 8 visible "treelawn drops" (operator authored tl + sw both sides, emitter dropped tl). Cusp guard fires on 22.5% of corners (vs 5% expected). 18 of 25 ASYM corners sit at marginal `diff ∈ [1.0, 1.5)m` — binary threshold too crisp. The three-regime emitter is structurally wrong for the doctrine, not occasionally — never produces concentric. Stage 7 rewrite indicated, not tuning. Audit script + CSV in `scratch/corner-regime-audit.*` |
 
 ---
 
