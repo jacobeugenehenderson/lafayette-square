@@ -1553,19 +1553,78 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
         }
       }
 
-      if (treelawnRings.length || sidewalkRings.length) {
-        out.push({
-          blockKey,
-          edgeOrd: Ameta?.edgeOrd ?? Bmeta?.edgeOrd,
-          chainIdx: Ameta?.chainIdx ?? Bmeta?.chainIdx,
-          side: Ameta?.side ?? Bmeta?.side,
-          treelawnRings,
-          sidewalkRings,
-        })
-      }
+      // Always emit an entry for arc spans (even with no inward bands)
+      // so Phase 2.1's per-arc asphalt-fillet attribution has a slot
+      // to populate. asphaltRings starts empty; populated post-build
+      // by attributeFilletResidualToArcs.
+      out.push({
+        blockKey,
+        edgeOrd: Ameta?.edgeOrd ?? Bmeta?.edgeOrd,
+        chainIdx: Ameta?.chainIdx ?? Bmeta?.chainIdx,
+        side: Ameta?.side ?? Bmeta?.side,
+        corner: span.corner,   // Phase 2.1: per-corner identity for attribution.
+        treelawnRings,
+        sidewalkRings,
+        asphaltRings: [],      // Phase 2.1: outer-face emission (filled below).
+      })
     }
   }
   return { frontageBands: out, frontageCaps: [] }
+}
+
+// Phase 2.1 — per-corner outer-face emission. The regime emitter's
+// arc-span branch handles INWARD geometry (bands + ramp + plug); this
+// pass handles OUTWARD geometry — the fillet area between the rounded
+// asphalt silhouette and the per-chain rectangles' square ends at each
+// IX. Path (b) of Phase 2.1 brief: compute the residual globally
+// (`asphaltRounded − union(per-chain asphalt)`), then attribute each
+// output polygon to its nearest corner record by centroid match.
+// Attributed rings are pushed onto the matching frontageBand entry's
+// `asphaltRings` field; orphans (no corner within FILLET_ATTRIB_MAX_M
+// or no matching frontageBand entry for the corner) accumulate in
+// `cornerOrphanAsphalt` and render as asphalt anyway.
+const FILLET_ATTRIB_MAX_M = 8
+
+function ringCentroidApprox(ring) {
+  let cx = 0, cy = 0
+  for (const p of ring) { cx += p[0]; cy += p[1] }
+  const n = ring.length
+  return n > 0 ? [cx / n, cy / n] : [0, 0]
+}
+
+function attributeFilletResidualToArcs(asphaltRounded, perChainAsphalt, frontageBands, allCorners) {
+  if (!asphaltRounded?.length) return { attributed: 0, orphans: [] }
+  const filletRings = differenceRings(asphaltRounded, perChainAsphalt)
+  if (!filletRings.length) return { attributed: 0, orphans: [] }
+  // Index frontageBand entries by corner-identity for O(1) attribution.
+  const fbByCorner = new Map()
+  for (const fb of frontageBands) {
+    if (fb.corner) fbByCorner.set(fb.corner, fb)
+  }
+  const orphans = []
+  let attributed = 0
+  for (const ring of filletRings) {
+    if (!ring || ring.length < 3) continue
+    const c = ringCentroidApprox(ring)
+    // Find nearest corner by centroid distance.
+    let bestCorner = null
+    let bestD = Infinity
+    for (const corner of allCorners) {
+      const dx = c[0] - corner.point[0], dy = c[1] - corner.point[1]
+      const d = Math.hypot(dx, dy)
+      if (d < bestD) { bestD = d; bestCorner = corner }
+    }
+    if (bestCorner && bestD <= FILLET_ATTRIB_MAX_M) {
+      const fb = fbByCorner.get(bestCorner)
+      if (fb) {
+        fb.asphaltRings.push(ring)
+        attributed++
+        continue
+      }
+    }
+    orphans.push(ring)
+  }
+  return { attributed, orphans }
 }
 
 // Outward polygon offset (Minkowski sum with a disc of radius `delta`).
@@ -2038,6 +2097,20 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   )
   __mark('frontageBands')
 
+  // Phase 2.1 — per-corner outer-face emission. Compute the fillet
+  // residual `asphaltRounded − union(per-chain asphaltRings)` and
+  // attribute each polygon to its nearest corner record's arc-span
+  // frontageBand entry. Restores the asphalt fill that Phase 2's
+  // deletion of cornerAsphaltPlugs accidentally removed (per-chain
+  // rectangles have square ends at IXs, leaving a fillet residual
+  // even though asphaltRounded has rounded mouths inherently).
+  const allChainAsphaltForFillet = unionRings(byChain.flatMap(c => c?.asphaltRings || []))
+  const filletAttribution = attributeFilletResidualToArcs(
+    asphaltRounded, allChainAsphaltForFillet, frontageBands, allCorners,
+  )
+  const cornerOrphanAsphalt = filletAttribution.orphans
+  __mark('filletAttribution')
+
   // Phase 2 — normalized curb stroke as final layer. dilate(asphaltRounded,
   // cw) − asphaltRounded gives a continuous cw-wide stroke around the
   // entire asphalt boundary: straight pavement edges, rounded corner
@@ -2189,8 +2262,11 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     byChain,
     corners: allCorners,
     frontageEdges,        // sharp fes — kept for cornersAtIx feLookup + MeasureOverlay consumer
-    frontageBands,        // Phase 2: includes straight-span bands + arc-span regime emission
+    frontageBands,        // Phase 2: straight-span bands + arc-span regime emission; arc entries
+                          //          also carry per-Phase-2.1 asphaltRings (corner outer face).
     frontageCaps,         // empty in Phase 2 (frontageCaps not emitted by regime emitter)
+    cornerOrphanAsphalt,  // Phase 2.1: fillet polygons whose centroid didn't match any corner
+                          //            within FILLET_ATTRIB_MAX_M; renders as asphalt material.
   }
 }
 

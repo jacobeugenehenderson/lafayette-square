@@ -3290,6 +3290,29 @@ Phase E and v1.6.
     ASYM_RATIO=0.7, RAMP_MAX_M=2.0, RAMP_FRAC=0.4, RAMP_MIN_M=0.5,
     STEP_FRAC=0.5) + algorithmic flags + FEATURES rewrite / NOTES
     consolidation deferred to housekeeping pass.
+  - [x] **Phase 2.1 — Corner ribbon outer face (per-arc asphalt
+    fillet).** SHIPPED 2026-05-16. Fixes the black voids at corner
+    fillets that Phase 2 produced. Phase 2's deletion of
+    `cornerAsphaltPlugs` was wrong: even with the round-block swap
+    giving `asphaltRounded` rounded mouths inherently, the per-chain
+    asphalt RENDERING (`byChain[*].asphaltRings`) is rectangles with
+    square ends at IXs that leave a fillet residual to the rounded
+    silhouette. Path (b) of brief: re-derive the global residual
+    `asphaltRounded − union(per-chain asphalt)` after
+    `buildFrontageBandsV2` returns; attribute each polygon to its
+    nearest corner record by centroid distance
+    (`FILLET_ATTRIB_MAX_M=8m`); push attributed rings onto the
+    matching frontageBand entry's new `asphaltRings` field
+    (regime emitter's per-arc loop now owns inward bands AND outward
+    asphalt). Orphans collect in `cornerOrphanAsphalt`; consumers
+    (bake-ground, BlockGeometryV2Debug) render both as asphalt.
+    `cornerAsphaltPlugs` does NOT return as a separate top-level
+    output — same area, same Clipper math, routed through per-corner
+    emission. Bake delta vs Phase 2 (`30f7c7e`): LS 42 groups
+    unchanged, +6,861 verts (+1.8%), +6,141 tris (+1.0%), +152 KB
+    (+1.3%); determinism preserved. See NOTES "Phase 2.1 — Corner
+    ribbon outer face" entry for attribution method + algorithmic
+    flags + Path (a) deferral.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**

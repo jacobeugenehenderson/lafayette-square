@@ -324,8 +324,8 @@ export default function BlockGeometryV2Debug({
     // chain's customs.
   }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse])
 
-  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [] }
+  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps, cornerOrphanAsphalt } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [], cornerOrphanAsphalt: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -500,10 +500,21 @@ export default function BlockGeometryV2Debug({
     return out
   }, [blocks, luColors, selectedAdjacentBlockKeys])
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
-  // Phase 2: cornerAsphaltGeo / cornerSidewalkGeo retired. The rounded
-  // asphalt mouth is now part of asphaltRounded directly (no fillet
-  // residual); the concrete corner pad is emitted as sidewalk-material
-  // by the regime emitter's arc-span branch inside frontageBands.
+  // Phase 2.1: per-corner outer-face asphalt fill. Per-chain rectangles
+  // have square ends at IXs; the fillet residual against asphaltRounded
+  // is attributed to corner records (via centroid-match) and pushed
+  // onto each arc-span frontageBand entry's `asphaltRings` field, with
+  // unattributed orphans collected in cornerOrphanAsphalt. Both render
+  // as asphalt material. asPolygonWithHoles=true on Clipper-output
+  // rings so CW holes pair with CCW outers cleanly.
+  const cornerFilletAsphaltGeo = useMemo(() => {
+    const rings = []
+    for (const fb of frontageBands) {
+      if (fb?.asphaltRings?.length) rings.push(...fb.asphaltRings)
+    }
+    if (cornerOrphanAsphalt?.length) rings.push(...cornerOrphanAsphalt)
+    return ringsToFlatGeo(rings, 0.038, true)
+  }, [frontageBands, cornerOrphanAsphalt])
   // Live overlay for the SELECTED chain. While the operator drags
   // measure handles on chain X, V2's full pass takes ~2.5s — so the
   // bands can't follow handles in real time. `buildChainBandsLive`
@@ -834,8 +845,17 @@ export default function BlockGeometryV2Debug({
             material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.asphaltSelected : bandMats.asphalt} />
         )
       })}
-      {/* Phase 2: corner asphalt plug retired — asphaltRounded above
-          carries its rounded mouths inherently (stencil − blockRounded). */}
+      {/* Phase 2.1: corner outer-face asphalt fill. asphaltRounded has
+          rounded mouths inherently (stencil − blockRounded), but the
+          per-chain asphalt rectangles have square ends at IXs and
+          leave a fillet residual. The regime emitter's per-arc loop
+          attributes that residual to corner records; render here under
+          asphalt material. Hides while a chain is selected so the
+          live-overlay bands aren't masked. */}
+      {(asphaltVisible || highwayVisible) && cornerFilletAsphaltGeo && selectedStreet == null && (
+        <mesh geometry={cornerFilletAsphaltGeo} renderOrder={PRI.asphalt} receiveShadow
+          material={bandMats.cornerAsphalt} />
+      )}
       {/* Non-street ribbons (alleys, footways, cycleways, steps, paths).
           Same geometry the bake emits via buildPathRibbons — shared helper
           guarantees Designer and slab don't drift. Each kind has its own

@@ -352,7 +352,16 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
       pushClipperRings(key, fe.treelawnRings)
     }
     if (fe.sidewalkRings?.length) pushClipperRings('sidewalk', fe.sidewalkRings)
+    // Phase 2.1: arc-span entries also carry the corner's outer-face
+    // asphalt-fillet ring (per-chain rectangles' square ends leave a
+    // residual to the rounded asphalt silhouette). Renders as asphalt.
+    if (fe.asphaltRings?.length) pushClipperRings('asphalt', fe.asphaltRings)
   }
+  // Phase 2.1 orphans — fillet polygons whose centroid couldn't
+  // attribute to a corner record within FILLET_ATTRIB_MAX_M (chain
+  // stubs, dead-end pavement, divided-pair degeneracies). Still need
+  // to render as asphalt so the visible mouth is filled.
+  if (v2.cornerOrphanAsphalt?.length) pushClipperRings('asphalt', v2.cornerOrphanAsphalt)
   pushClipperRings('curb',     v2.curbBands)
 
   // Per-block faces grouped by land use. Bare rings → `{outer, holes:[]}`

@@ -611,6 +611,27 @@ Per `cartograph/FEATURES.md` line 95–104 ("clean THE POLYGON: apply Douglas-Pe
 - Stale-comment cleanup in `cornersAtIx` (3 docblocks reference `buildCornerPadQuad`).
 - CornerEditHandles.jsx, CartographApp.jsx stale-comment cleanup.
 
+#### Phase 2.1 — Corner ribbon outer face (per-arc asphalt fillet) — 2026-05-16
+
+**Status:** SHIPPED 2026-05-16 (this commit). Fixes the black voids at corner fillets that Phase 2 produced. Phase 2's deletion of `cornerAsphaltPlugs` was based on incomplete diagnosis: even though `asphaltRounded` has rounded mouths inherently after the round-block swap, the per-chain asphalt RENDERING is via `byChain[*].asphaltRings` (rectangles with square ends at IXs), which leaves a fillet residual against the rounded silhouette. Pre-Phase-2 `cornerAsphaltPlugs = asphaltRounded − union(rectangles)` filled that residual; Phase 2 dropped both the math and the renderer mount, producing visible ground/horizon black voids at every IX corner.
+
+**Approach (path b per brief).** Re-derive the same global residual `asphaltRounded − union(per-chain asphalt)` after `buildFrontageBandsV2` returns, then attribute each output polygon to its nearest corner record by centroid distance. Attributed rings land on the matching frontageBand entry's new `asphaltRings` field (the regime emitter's per-arc loop now owns inward bands AND outward asphalt fill); orphans (distance > `FILLET_ATTRIB_MAX_M = 8m` or no frontageBand entry for the corner) collect in a top-level `cornerOrphanAsphalt` array. Both render as asphalt material in bake + Designer.
+
+**Doctrinal alignment.** Per `feedback_corner_pad_continuity_first`: the corner is one ribbon-construct with materials varying inside-vs-outside, not two separately constructed primitives. Phase 2.1 realizes that unification — each arc-span frontageBand entry now carries `{ treelawnRings, sidewalkRings, asphaltRings, corner }`, all three material faces of the corner ribbon. `cornerAsphaltPlugs` does NOT return as a separate top-level output; the same area is plumbed through per-corner emission via the regime emitter's existing slots.
+
+**Per-corner attribution.** `buildFrontageBandsV2` now emits a frontageBand entry for EVERY arc span (even arc spans with no inward bands — e.g. divided-pair endpoints where both flanking straight-spans skip emission) so attribution always has a slot. Distance threshold 8m chosen conservatively; on LS the typical corner-to-fillet-centroid distance is well under 1m for normal IXs. Orphans expected at: chain-stub dead-ends, divided-pair endpoint IXs where the median wedge doesn't belong to either pair-leg's arc.
+
+**Bake delta vs Phase 2 (commit `30f7c7e`).** LS: 42 groups (unchanged), 377,459 → 384,320 verts (+6,861, +1.8%), 631,441 → 637,582 tris (+6,141, +1.0%), 11,823 → 11,975.4 KB (+152.4 KB, +1.3%). Default look: 378,100 → 384,925 verts, 633,679 → 639,781 tris, 11,856.8 → 12,008.3 KB. Determinism preserved (re-bake byte-identical, diff confirmed). Net vs Phase 1 baseline (`ed29700`): LS now 384,320 verts, 637,582 tris, 11,975.4 KB — slightly above Phase 1's 381,672 / 635,585 / 11,921, consistent with Phase 2's regime emitter adding ramp wedges and per-arc plugs that the pre-Phase-2 pads didn't have.
+
+**Algorithmic flags (`feedback_baby_must_surface_scope_drift`).**
+- *Per-corner attribution.* Single nearest-corner match via centroid distance. O(fillets × corners) = O(few hundred × few hundred) at LS — manageable; not bucket-indexed. Bump to bbox-bucket if LS scales 10×.
+- *Orphan handling.* Threshold `FILLET_ATTRIB_MAX_M = 8m` chosen as a generous floor over typical IX-to-fillet distances. Fillets beyond that fall into `cornerOrphanAsphalt` and still render as asphalt — the visible result is correct regardless of attribution success.
+- *Path (a) deferred.* Per-arc geometric construction (build fillet polygon directly from arc vertices + adjacent chain rect-end edges, no global Clipper diff) is the doctrinally pure end-state. Path (b) ships now because it's the proven math from pre-Phase-2 with minimal code churn. If Path (b) hits edge cases visually, Path (a) becomes a focused future cleanup.
+- *Empty-band arc entries.* `buildFrontageBandsV2` now pushes a frontageBand entry for arc spans even when both flanking straights skip (`!Bmeta && !Ameta` no longer short-circuits the push) — change made so Phase 2.1's attribution always has a slot. This means the output may now contain entries with all-empty band fields and only an `asphaltRings` populated by Phase 2.1. Consumers iterate field-by-field so no breakage; flagged for posterity.
+- *`bandMats.cornerAsphalt` re-used.* The Designer renderer's `cornerFilletAsphaltGeo` mesh reuses the existing `bandMats.cornerAsphalt` material entry (which had been left defined after Phase 2 retired its consumer mesh). Same material as pre-Phase-2 — visible result should be identical.
+
+**Out of scope (still deferred).** FEATURES corner-section comprehensive rewrite; A.5/A.6/A.7/Bezier-shipped/Phase 1/Phase 2/Phase 2.1 NOTES consolidation; stale-comment cleanup in `cornersAtIx` + `CornerEditHandles.jsx` + `CartographApp.jsx`; Phase 3 UI. Housekeeping commit after Jacob's visual sign-off.
+
 ---
 
 ### Phase B — Polygon-graph schema + producer
