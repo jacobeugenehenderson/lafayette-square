@@ -3313,21 +3313,16 @@ Phase E and v1.6.
     (+1.3%); determinism preserved. See NOTES "Phase 2.1 — Corner
     ribbon outer face" entry for attribution method + algorithmic
     flags + Path (a) deferral.
-  - [x] **Phase 2.2 — Curb stroke smoothing pass.** SHIPPED 2026-05-16.
-    Morphological closing (`dilate` then `erode` by `CURB_CLOSE_EPS=0.08m`)
-    on the raw curb stroke fills the Clipper-precision sliver gaps
-    visible at LS on Mississippi-class curved chains (curb disappears
-    partway up the leg then reappears further along). New `erodeRings`
-    helper alongside `dilateRings` (same ClipperOffset path, negative
-    delta). ε chosen smaller than CURB_WIDTH (~15cm AASHTO residential)
-    to avoid visibly thickening, larger than typical Clipper slivers
-    (~1–5cm) to close them. Rings smaller than 2·ε vanish under erode
-    — exactly the sub-stroke-width sliver case we want closed. Bake
-    delta vs Phase 2.1 (`b9cb11c`): LS 42 groups unchanged, +593 verts
-    (+0.15%), +507 tris (+0.08%), +13 KB (+0.1%); determinism preserved.
-    Path (b) polyline-offset stroke deferred to future cleanup if (a)
-    hits edge cases. See NOTES "Phase 2.2 — Curb stroke smoothing
-    pass" entry for tuning notes.
+  - [~] **Phase 2.2 — Curb stroke smoothing.** REVERTED 2026-05-16
+    (`c360fc2`, reverted in following commit). Morphological-closing
+    approach (dilate-then-erode-by-ε on curb stroke) structurally
+    cascades through Clipper precision into adjacent block geometry —
+    operator screencap at LS showed black voids in block interiors +
+    curb stroke STILL missing on long curves. Not tunable; the
+    approach itself reaches past the stroke. Path (b) polyline-offset
+    stroke (Clipper.OffsetPaths with EndType.etClosedLine +
+    JoinType.jtRound on the asphalt boundary directly) queued for
+    fresh cold-baby dispatch.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**
