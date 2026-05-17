@@ -57,6 +57,19 @@ export default function ProceduralWorkstage() {
 
   const anyDirty = Object.keys(dirty).length > 0
 
+  // Single-slot focus (2026-05-16 redesign): a tall viewport reads vertically-
+  // composed trees far better than a 320×280 grid cell. Slot tabs in the
+  // header switch the focused variant; nothing about per-slot functionality
+  // changes.
+  const [activeSlot, setActiveSlot] = useState(null)
+  useEffect(() => {
+    if (seedlings.length === 0) { setActiveSlot(null); return }
+    if (activeSlot == null || !seedlings.find(v => v.slot === activeSlot)) {
+      setActiveSlot(seedlings[0].slot)
+    }
+  }, [seedlings, activeSlot])
+  const activeVariant = seedlings.find(v => v.slot === activeSlot) || null
+
   return (
     <div style={{
       position: 'fixed', inset: 0, color: '#ddd',
@@ -121,34 +134,70 @@ export default function ProceduralWorkstage() {
         </div>
       )}
 
-      {/* ── Variant grid ─────────────────────────────────────────── */}
+      {/* ── Slot tabs ────────────────────────────────────────────── */}
+      {seedlings.length > 0 && (
+        <div style={{
+          padding: '8px 18px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'rgba(255,255,255,0.015)',
+        }}>
+          {seedlings.map(v => {
+            const isActive = v.slot === activeSlot
+            const isDirty  = !!dirty[v.slot]
+            return (
+              <button key={v.slot} onClick={() => setActiveSlot(v.slot)}
+                style={{
+                  background: isActive ? 'rgba(232,184,96,0.18)' : 'rgba(255,255,255,0.04)',
+                  border: '1px solid ' + (isActive
+                    ? 'rgba(232,184,96,0.5)'
+                    : (isDirty ? 'rgba(232,184,96,0.35)' : 'rgba(255,255,255,0.1)')),
+                  color: isActive ? '#e8c878' : (isDirty ? '#e8b860' : '#bbb'),
+                  padding: '5px 12px', borderRadius: 3,
+                  fontFamily: 'inherit', fontSize: 11,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                Slot {v.slot}
+                {isDirty && (
+                  <span style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: '#e8b860',
+                  }} />
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ── Focused variant ─────────────────────────────────────── */}
       <main style={{
-        flex: 1, padding: 18, overflow: 'auto',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-        gap: 16, alignContent: 'start',
+        flex: 1, padding: 18, overflow: 'hidden',
+        display: 'flex', minHeight: 0,
       }}>
         {seedlings.length === 0 && (
           <div style={{ color: '#888', padding: 12 }}>
             {speciesMeta ? 'No variant slots — check seedlings.json.' : 'Loading seedlings…'}
           </div>
         )}
-        {seedlings.map(v => (
+        {activeVariant && (
           <SlotCard
-            key={v.slot}
+            key={activeVariant.slot}
             species={activeSpecies}
-            slot={v.slot}
-            seed={v.seed}
-            params={v.params}
-            effective={v.effective}
-            dirty={!!dirty[v.slot]}
+            slot={activeVariant.slot}
+            seed={activeVariant.seed}
+            params={activeVariant.params}
+            effective={activeVariant.effective}
+            dirty={!!dirty[activeVariant.slot]}
             targetCategory={targetCategory}
-            onDice={() => diceSlot(activeSpecies, v.slot)}
-            onSeedEdit={(seed) => setSlotSeed(activeSpecies, v.slot, seed)}
-            onParams={(paramsPatch) => setSlotParams(activeSpecies, v.slot, paramsPatch)}
-            onAdopt={() => adoptSlot(activeSpecies, v.slot)}
+            onDice={() => diceSlot(activeSpecies, activeVariant.slot)}
+            onSeedEdit={(seed) => setSlotSeed(activeSpecies, activeVariant.slot, seed)}
+            onParams={(paramsPatch) => setSlotParams(activeSpecies, activeVariant.slot, paramsPatch)}
+            onAdopt={() => adoptSlot(activeSpecies, activeVariant.slot)}
           />
-        ))}
+        )}
       </main>
 
       {/* ── Footer / republish ──────────────────────────────────── */}
@@ -245,31 +294,34 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
   // a fresh studio framing per slot.
   const viewKey = `${species}:${slot}:${seed}`
 
+  // Inspection-only transforms: rotation ring + XZ arrows + scale handle
+  // wired through so the operator can spin / nudge / scale the specimen
+  // for visual inspection. NOT persisted to seedlings (these are local
+  // viewing affordances, not parameters of the tree). Reset on slot
+  // change so each tab opens from the canonical pose.
+  const [rotationY, setRotationY] = useState(0)
+  const [posOffset, setPosOffset] = useState([0, 0, 0])
+  const [scaleOverride, setScaleOverride] = useState(1)
+  useEffect(() => {
+    setRotationY(0)
+    setPosOffset([0, 0, 0])
+    setScaleOverride(1)
+  }, [species, slot])
+
   return (
     <div style={{
+      flex: 1, minWidth: 0, minHeight: 0,
       background: 'rgba(255,255,255,0.03)',
       border: '1px solid ' + (dirty ? 'rgba(232,184,96,0.55)' : 'rgba(255,255,255,0.08)'),
       borderRadius: 6,
-      display: 'flex', flexDirection: 'column',
+      display: 'flex', flexDirection: 'row',
       overflow: 'hidden',
     }}>
+      {/* Viewport — fills the available height so vertically-composed
+          trees (columnar / weeping) read at full scale. */}
       <div style={{
-        padding: '8px 12px',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', gap: 10,
-        fontSize: 11, color: '#bbb',
+        flex: 1, minWidth: 0, position: 'relative', background: '#0d0d10',
       }}>
-        <strong style={{
-          letterSpacing: '0.08em', textTransform: 'uppercase',
-          color: '#ddd',
-        }}>Slot {slot}</strong>
-        <span style={{
-          marginLeft: 'auto',
-          color: dirty ? '#e8b860' : '#666',
-          fontSize: 11,
-        }}>{dirty ? 'unadopted' : 'adopted'}</span>
-      </div>
-      <div style={{ height: 280, position: 'relative', background: '#0d0d10' }}>
         {loading && (
           <div style={loaderStyle}>regenerating…</div>
         )}
@@ -283,66 +335,97 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
             viewKey={viewKey}
             forestryRotation={false}
             targetCategory={targetCategory}
-            effectiveScale={1}
-            positionOffset={[0, 0, 0]}
-            rotationOffset={[0, 0, 0]}
+            effectiveScale={scaleOverride}
+            positionOffset={posOffset}
+            rotationOffset={[0, rotationY, 0]}
+            onRotationChange={(_rx, ry, _rz) => setRotationY(ry)}
+            onPositionChange={(x, y, z) => setPosOffset([x, y, z])}
+            onScaleChange={(s) => setScaleOverride(s)}
             cameraStateRef={cameraStateRef}
           />
         )}
       </div>
-      {/* Envelope + Tropism panel (Phase D). Hidden for conifer until
-          Phase E lands its monopodial-whorl panel. Slider edits debounce
-          via DraftSlider (150ms idle commit + pointer-up final) so
-          dragging doesn't thrash the dice endpoint. */}
-      {SHOW_SCA_PANEL(species) && effective?.envelope && effective?.sca && (
-        <SCAPanel
-          envelope={effective.envelope}
-          sca={effective.sca}
-          onEnvelopeChange={(patch) => onParams({ envelope: patch })}
-          onSCAChange={(patch) => onParams({ sca: patch })}
-        />
-      )}
+
+      {/* Right rail — header + controls + seed/dice/adopt. */}
       <div style={{
-        padding: '10px 12px',
-        display: 'flex', alignItems: 'center', gap: 8,
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        width: 300, flexShrink: 0,
+        borderLeft: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'auto',
       }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#888' }}>
-          <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Seed</span>
-          <input
-            type="number"
-            value={seedDraft}
-            onChange={(e) => setSeedDraft(e.target.value)}
-            onBlur={commitSeed}
-            onKeyDown={(e) => { if (e.key === 'Enter') { commitSeed(); e.currentTarget.blur() } }}
-            style={{
-              width: 90,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: dirty ? '#e8b860' : '#ddd',
-              padding: '4px 6px', borderRadius: 3,
-              fontFamily: 'inherit', fontSize: 12,
-            }}
+        <div style={{
+          padding: '10px 12px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex', alignItems: 'center', gap: 10,
+          fontSize: 11, color: '#bbb',
+        }}>
+          <strong style={{
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: '#ddd',
+          }}>Slot {slot}</strong>
+          <span style={{
+            marginLeft: 'auto',
+            color: dirty ? '#e8b860' : '#666',
+            fontSize: 11,
+          }}>{dirty ? 'unadopted' : 'adopted'}</span>
+        </div>
+
+        {/* Envelope + Tropism panel (Phase D). Hidden for conifer until
+            Phase E lands its monopodial-whorl panel. Slider edits debounce
+            via DraftSlider (150ms idle commit + pointer-up final) so
+            dragging doesn't thrash the dice endpoint. */}
+        {SHOW_SCA_PANEL(species) && effective?.envelope && effective?.sca && (
+          <SCAPanel
+            envelope={effective.envelope}
+            sca={effective.sca}
+            onEnvelopeChange={(patch) => onParams({ envelope: patch })}
+            onSCAChange={(patch) => onParams({ sca: patch })}
           />
-        </label>
-        <button onClick={onDice} title="Roll a fresh random seed (preview only)"
-          style={btnStyle()}>
-          🎲 Dice
-        </button>
-        <button
-          onClick={onAdopt}
-          disabled={!dirty}
-          title={dirty ? 'Persist this slot to seedlings.json' : 'Already adopted'}
-          style={{
-            ...btnStyle(),
-            background: dirty ? 'rgba(80,200,140,0.18)' : 'rgba(255,255,255,0.04)',
-            border: '1px solid ' + (dirty ? 'rgba(80,200,140,0.5)' : 'rgba(255,255,255,0.1)'),
-            color: dirty ? '#9ed8b0' : '#666',
-            cursor: dirty ? 'pointer' : 'not-allowed',
-            opacity: dirty ? 1 : 0.5,
-          }}>
-          ✓ Adopt
-        </button>
+        )}
+
+        <div style={{
+          marginTop: 'auto',
+          padding: '10px 12px',
+          display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#888' }}>
+            <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Seed</span>
+            <input
+              type="number"
+              value={seedDraft}
+              onChange={(e) => setSeedDraft(e.target.value)}
+              onBlur={commitSeed}
+              onKeyDown={(e) => { if (e.key === 'Enter') { commitSeed(); e.currentTarget.blur() } }}
+              style={{
+                width: 80,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: dirty ? '#e8b860' : '#ddd',
+                padding: '4px 6px', borderRadius: 3,
+                fontFamily: 'inherit', fontSize: 12,
+              }}
+            />
+          </label>
+          <button onClick={onDice} title="Roll a fresh random seed (preview only)"
+            style={btnStyle()}>
+            🎲 Dice
+          </button>
+          <button
+            onClick={onAdopt}
+            disabled={!dirty}
+            title={dirty ? 'Persist this slot to seedlings.json' : 'Already adopted'}
+            style={{
+              ...btnStyle(),
+              background: dirty ? 'rgba(80,200,140,0.18)' : 'rgba(255,255,255,0.04)',
+              border: '1px solid ' + (dirty ? 'rgba(80,200,140,0.5)' : 'rgba(255,255,255,0.1)'),
+              color: dirty ? '#9ed8b0' : '#666',
+              cursor: dirty ? 'pointer' : 'not-allowed',
+              opacity: dirty ? 1 : 0.5,
+            }}>
+            ✓ Adopt
+          </button>
+        </div>
       </div>
     </div>
   )
