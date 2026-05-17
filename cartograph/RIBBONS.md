@@ -1,6 +1,6 @@
 # Ribbons & Corners — canonical reference
 
-**Status: v0.2 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
+**Status: v0.3 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
 
 > Part of the cartograph quintet alongside `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. **Read this before any geometry / corner / curb / intersection / ribbon work.** Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem this system already answers. The doctrine in §1 is load-bearing. The pipeline walkthrough in §3 is the implementation. The failure-mode inventory in §6 is the live front of the work.
 >
@@ -587,28 +587,34 @@ The defect is **entirely §6.2** — drifted-key straight fes skip the per-block
 
 **Fix shape (Stage 3, ~15 LOC):**
 
-Identity-based ringByKey construction. Don't rebuild keys from rings; **inherit them from the fes that own the rings.** For each blockRounded ring, find any fe whose interior probe lands in the ring (`pointInRing` against the ring); register the ring under that fe's `blockKey` (pass-1 backfilled, matches `fb.blockKey`). Now `ringByKey.get(fb.blockKey)` works correctly for both drifted and non-drifted fes.
+Per-fe containment resolution at clip time. Don't build a key→ring registry at all; for each fe, find the owning ring directly by interior probe + `pointInRing`. The registry indirection was the trap: registering rings under fe blockKeys collapses when multiple fes with DIFFERENT pass-1 blockKeys land in the same pass-2 ring (drift-collision case) — only the first wins, the others fall through unclipped.
 
 ```js
-// In buildFrontageBands, replace the existing ringByKey build:
-const ringByKey = new Map()
-for (const ring of blockRounded) {
+// In buildFrontageBands, replace the existing ringByKey build + per-fe lookup
+// with per-fe containment resolution:
+if (blockRounded?.length) {
   for (const fe of out) {
     const probe = fe.treelawnRings[0]?.[0] || fe.sidewalkRings[0]?.[0]
-    if (probe && pointInRing(probe[0], probe[1], ring)) {
-      ringByKey.set(fe.blockKey, ring)
-      break
+    if (!probe) continue
+    let owningRing = null
+    for (const ring of blockRounded) {
+      if (pointInRing(probe[0], probe[1], ring)) { owningRing = ring; break }
     }
+    if (!owningRing) continue
+    const clip = [owningRing]
+    if (fe.treelawnRings.length) fe.treelawnRings = intersectRings(fe.treelawnRings, clip)
+    if (fe.sidewalkRings.length) fe.sidewalkRings = intersectRings(fe.sidewalkRings, clip)
   }
 }
-// ... then existing per-fe intersectRings clip works unchanged.
 ```
 
-Stage 2's dry-run validates: 257/295 drifted entries resolve to their true owner via containment, all real overshoots collapse to zero. The 38 unresolvable fes (band probe falls outside all rounded rings — degenerate band geometry) need a fallback or are left unclipped (acceptable; they're <0.01% of repo-wide ring vertex count).
+Same O(rings × fes) complexity as the keymap approach. No registry; no collision-loss. This matches what Stage 2's `scratch/h1-backfill-dryrun.js` simulated and validated: **257/295 drifted entries (87%) resolve to their true owner via containment, all real overshoots collapse to zero on lookup-OK fes.** The 38 unresolvable fes (band probe falls outside every rounded ring — degenerate band geometry, sub-1m² edge cases) are left unclipped and have no visible artifact today.
 
-**Why this over "thread pass-1 frontageEdges into the helper":** the containment-register-by-fe pattern is local to `buildFrontageBands`, no signature change, no pass-1 lookup plumbing. Per `feedback_corner_pad_continuity_first`-adjacent logic, identity (which fe owns this ring) beats geometric heuristic (find ring by key); inheriting the key FROM the fe IS identity, just routed through the ring instead of through a tuple.
+**An earlier sketch in v0.1 had this backwards** (registry-build keyed by first-owning-fe's blockKey, ring-outer iteration). That algorithm only resolves drift-collisions for the first fe-per-ring; subsequent fes sharing the ring but having different blockKeys fall through. Stage 3's first attempt implemented that sketch faithfully and resolved only 144/295 drifted fes (49%) — the L-strip stayed visible. Per-fe iteration is the correct shape. Lesson: when the diagnostic dry-run validated a containment join, port the dry-run's algorithm directly, don't translate it into a registry pattern.
 
-**Status:** Stage 3 dispatch queued. ~15 LOC in `buildFrontageBands`. Re-bake both looks. Re-run probe; expect 0 real overshoots. Closes §6.1.
+**Why this over "thread pass-1 frontageEdges into the helper":** the containment resolution is local to `buildFrontageBands`, no signature change, no pass-1 lookup plumbing. Per `feedback_corner_pad_continuity_first`-adjacent logic, identity (which ring contains this fe's probe) beats geometric heuristic (find ring by key); per-fe direct resolution IS identity.
+
+**Status:** Stage 3 fix-the-fix dispatch queued (algorithm correction, warm-continuation from initial Stage 3 attempt). ~10 LOC delta from the buggy first attempt. Re-bake both looks. Verify against dry-run POST (`realOvershoot = 0`) + visual confirm in Designer. Closes §6.1.
 
 ### 6.3 49 residual SELFINT band rings repo-wide — OPEN
 
