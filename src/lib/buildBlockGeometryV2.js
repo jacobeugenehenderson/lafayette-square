@@ -2313,8 +2313,21 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       // clipped at the band's previous outer edge.
       let owning = blockRounded.length ? findOwningBlockRing(face.ring) : null
       if (owning && faceStraddles(face.ring, owning)) owning = null
+      // Doctrine (RIBBONS.md §1 + §3.12): ribbons define the void by
+      // expressing inward from chains; the block IS whatever they leave
+      // over (`owning` = blockRounded ring). The authored face is a LU
+      // label, not a geometry source — never let it constrain blockFill
+      // extent. When face fits inside owning (common, e.g. the park's
+      // authored fence polygon at ±175m vs the rounded-asphalt edge at
+      // ±185m), USE owning directly so blockFill covers the entire block
+      // silhouette out to the asphalt edge. Otherwise the 4m strip
+      // between fence-polygon and band-property-line has no underlying
+      // fill and canvas-ground shows through as a visible black ring.
+      // The straddle case (face overlaps multiple blocks) keeps the
+      // historical differenceRings fallback — `owning` is null there,
+      // no doctrinal violation to fix.
       const clipped = owning
-        ? intersectRings([face.ring], [owning])
+        ? [owning]
         : (asphaltRounded.length ? differenceRings([face.ring], asphaltRounded) : [face.ring])
       for (const ring of clipped) {
         if (!ring || ring.length < 3) continue
