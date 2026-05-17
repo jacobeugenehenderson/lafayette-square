@@ -1359,6 +1359,93 @@ function closeBandRingV2(outerEdge, innerEdge) {
   return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
 }
 
+// Pre-Phase-2 per-sharp-fe straight-span band emission, restored in
+// Phase 2-arc revert. Phase 2 replaced this with a blockRounded-walking
+// spine inside buildFrontageBandsV2, but the long offset polylines hit
+// Clipper precision and produced ~70 self-intersecting band rings
+// repo-wide (visible at Lafayette Park as opaque-black bands along the
+// interior perimeter). The doctrinally-correct corner solution (round-
+// block swap, Bezier arcs, three-regime emitter, fillet attribution,
+// cusp guard) is preserved in buildFrontageBandsV2's arc-span branch;
+// this helper restores the straight-span half. The two outputs concat
+// into one frontageBands array at the call site; downstream consumers
+// (attributeFilletResidualToArcs, bake-ground, BlockGeometryV2Debug)
+// iterate field-by-field and don't care about the split.
+function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms) {
+  if (!frontageEdges?.length) return { frontageBands: [], frontageCaps: [] }
+  const cw = curbWidth
+  const out = []
+
+  for (const fe of frontageEdges) {
+    const street = streets[fe.chainIdx]
+    if (!street?.measure) continue
+    const blockOverride = blockCustoms?.[fe.blockKey]?.[fe.edgeOrd]
+    const eff = blockOverride || street.measure[fe.side] || {}
+    if (eff.terminal !== 'sidewalk') continue
+    const tl = eff.treelawn || 0
+    const sw = eff.sidewalk || 0
+    if (tl <= 0 && sw <= 0) continue
+
+    const points = fe.points
+    if (!points || points.length < 2) continue
+    const perps = computePerps(points)
+    const inwardSign = fe.ringCcw ? +1 : -1
+
+    const offsetPolyline = (r) =>
+      points.map((p, i) => [
+        p[0] + perps[i][0] * inwardSign * r,
+        p[1] + perps[i][1] * inwardSign * r,
+      ])
+
+    const innerEdge = offsetPolyline(cw)
+    const tlOuterEdge = offsetPolyline(cw + tl)
+    const swOuterEdge = offsetPolyline(cw + tl + sw)
+
+    const closeRing = (outerEdge, innerEdge_) => {
+      if (outerEdge.length < 2 || innerEdge_.length < 2) return null
+      const ring = [...outerEdge, ...innerEdge_.slice().reverse()]
+      return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
+    }
+
+    const treelawnRings = []
+    const sidewalkRings = []
+    if (tl > 0) {
+      const r = closeRing(tlOuterEdge, innerEdge)
+      if (r) treelawnRings.push(r)
+    }
+    if (sw > 0) {
+      const r = closeRing(swOuterEdge, tlOuterEdge)
+      if (r) sidewalkRings.push(r)
+    }
+    if (!treelawnRings.length && !sidewalkRings.length) continue
+
+    out.push({
+      blockKey: fe.blockKey,
+      edgeOrd: fe.edgeOrd,
+      chainIdx: fe.chainIdx,
+      side: fe.side,
+      points,
+      treelawnRings,
+      sidewalkRings,
+    })
+  }
+
+  if (blockRounded?.length) {
+    const ringByKey = new Map()
+    for (const ring of blockRounded) {
+      ringByKey.set(blockKeyFromRing(ring), ring)
+    }
+    for (const fe of out) {
+      const ring = ringByKey.get(fe.blockKey)
+      if (!ring) continue
+      const clip = [ring]
+      if (fe.treelawnRings.length) fe.treelawnRings = intersectRings(fe.treelawnRings, clip)
+      if (fe.sidewalkRings.length) fe.sidewalkRings = intersectRings(fe.sidewalkRings, clip)
+    }
+  }
+  return { frontageBands: out, frontageCaps: [] }
+}
+
 function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth) {
   if (!blockRoundedWithMeta?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
@@ -1439,21 +1526,12 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
         pts[k][1] + perps[k][1] * inwardSign * d,
       ]
 
-      if (meta.type === 'straight') {
-        if (meta.skip) continue
-        const { tl, sw, edgeOrd, chainIdx, side } = meta
-        const outer = pts.slice()
-        const tlInner = pts.map((_, k) => offsetAt(k, cw + tl))
-        const swInner = pts.map((_, k) => offsetAt(k, cw + tl + sw))
-        const treelawnRings = []
-        const sidewalkRings = []
-        if (tl > 0) { const r = closeBandRingV2(outer, tlInner); if (r) treelawnRings.push(r) }
-        if (sw > 0) { const r = closeBandRingV2(tlInner, swInner); if (r) sidewalkRings.push(r) }
-        if (treelawnRings.length || sidewalkRings.length) {
-          out.push({ blockKey, edgeOrd, chainIdx, side, treelawnRings, sidewalkRings })
-        }
-        continue
-      }
+      // Phase 2-arc revert: straight-span emission moved back to the
+      // per-sharp-fe helper `buildFrontageBands` (called alongside this
+      // function in the pipeline). The spanMeta straight-branch
+      // resolution above is retained — arc-span flanking-meta lookup
+      // (Bmeta / Ameta) reads tl/sw/edgeOrd off it.
+      if (meta.type === 'straight') continue
 
       // ARC span — flanking straight-span metas. Walk order on block
       // CCW arrives via leg-B side and departs via leg-A side (Phase 1
@@ -2105,14 +2183,23 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   }
   __mark('asphaltRoundedDiff')
 
-  // Phase 2 regime emitter — walks blockRounded with arcMeta, classifies
-  // arc spans into ASYMMETRIC / SYMMETRIC-WITH-RAMP / SYMMETRIC-NO-RAMP
-  // and emits bands accordingly. Bands extend to the asphalt boundary
-  // (no cw inset) — the normalized curb stroke below paints over the
-  // inner cw to keep visible widths matching tl/sw authored values.
-  const { frontageBands, frontageCaps } = buildFrontageBandsV2(
+  // Phase 2-arc revert — band emission is split across two helpers:
+  //  • buildFrontageBands (pre-Phase-2) walks per-sharp-fe and emits
+  //    straight-span tl + sw rings, clipped per-block to blockRounded.
+  //    Restores the spine after Phase 2's blockRounded-walking spine
+  //    produced ~70 self-intersecting band rings repo-wide.
+  //  • buildFrontageBandsV2 (Phase 2) walks blockRounded + arcMeta and
+  //    emits ARC-span bands via the three-regime emitter (ASYMMETRIC /
+  //    SYMMETRIC-WITH-RAMP / SYMMETRIC-NO-RAMP) plus the per-arc
+  //    asphalt-fillet slot consumed by attributeFilletResidualToArcs.
+  // Concat into one frontageBands array; downstream iterates by field.
+  const { frontageBands: straightBands } = buildFrontageBands(
+    streets, frontageEdges, curbWidth, blockRounded, blockCustoms,
+  )
+  const { frontageBands: arcBands, frontageCaps } = buildFrontageBandsV2(
     streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
   )
+  const frontageBands = [...straightBands, ...arcBands]
   __mark('frontageBands')
 
   // Phase 2.1 — per-corner outer-face emission. Compute the fillet

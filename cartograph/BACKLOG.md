@@ -3336,6 +3336,24 @@ Phase E and v1.6.
     residual cusps on arc spans at blocks with even smaller R); D.7a
     blockKey drift on `frontageBands` (bands key at rounded 2.5,0.0, FEs
     backfilled to sharp 3.0,0.0). See NOTES "Phase 2-arc" entry.
+  - [x] **Phase 2-arc revert — restore per-sharp-fe straight-span band
+    emission.** SHIPPED 2026-05-17. Phase 2's blockRounded-walking spine
+    produced ~70 self-intersecting band rings repo-wide (visible at
+    Lafayette Park as opaque-black bands along the interior perimeter
+    where translucent ribbons should be). Restored pre-Phase-2
+    `buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded,
+    blockCustoms)` verbatim from `ed29700` alongside `buildFrontageBandsV2`;
+    V2's straight-span branch collapsed to `continue` (spanMeta straight-
+    resolution scaffolding retained for arc-span flanking-meta lookup).
+    Pipeline concats: `frontageBands = [...straightBands, ...arcBands]`.
+    Corner solution (round-block swap, three-regime emitter, fillet
+    attribution, cusp guard) preserved unchanged. Bake delta vs `8956ffa`:
+    +1.3% verts, +0.6% tris, +0.85% bin size, +1 group on both looks.
+    SELFINT scan 70 → 49 (-30%); residuals are pre-existing long-curved-fe
+    bends, not regressions. Surfaced: D.7a `blockKey` drift on straight
+    bands now substantial (295/506 fes miss the per-block intersectRings
+    clip lookup); latent because consumers don't filter by
+    `(blockKey, edgeOrd)`. Deferred. See NOTES "Phase 2-arc revert" entry.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**

@@ -649,6 +649,29 @@ Per `cartograph/FEATURES.md` line 95–104 ("clean THE POLYGON: apply Douglas-Pe
 
 **Out of scope (untouched).** Phantom park[0] gremlin (Dispatch 2). Curb-stroke gap (Phase 2.2 retry). Repo-wide SELFINT cleanup. D.7a drift on `frontageBands`. Designer onDblClick spec divergence.
 
+#### Phase 2-arc revert — restore per-sharp-fe straight-span band emission — 2026-05-17
+
+**Status:** SHIPPED. Restores the pre-Phase-2 spine for the STRAIGHT half of frontage-band emission. Corner solution (round-block swap, Bezier corners, three-regime arc emitter, per-corner fillet attribution, cusp guard) is preserved — only the straight branch in `buildFrontageBandsV2` was broken; the rewrite walked `blockRounded` to emit one long offset polyline per block side, which hit Clipper precision and produced ~70 self-intersecting band rings repo-wide (visible at Lafayette Park as opaque-black bands along the interior perimeter where translucent ribbons should be).
+
+**Fix.** `buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms)` restored verbatim from `ed29700` directly above `buildFrontageBandsV2`. V2's straight-span branch collapsed to `if (meta.type === 'straight') continue` — the `spanMeta` straight-resolution scaffolding above it stays because arc-span flanking-meta lookup reads `tl/sw/edgeOrd` off it. Pipeline now calls both helpers and concats: `frontageBands = [...straightBands, ...arcBands]`. Downstream consumers (`attributeFilletResidualToArcs`, `bake-ground.js`, `BlockGeometryV2Debug.jsx`) iterate field-by-field and don't care about the split. `closeBandRingV2` retained (still used inside V2 arc-span branch).
+
+**Output volume (LS).** 725 total entries — 506 straight (restored helper) + 219 arc (V2). Treelawn rings: 464. Sidewalk rings: 722. Fillet asphalt rings: 155.
+
+**Bake delta vs `8956ffa`.**
+- Default look: 384,749 → 389,816 verts (+5,067 / +1.32%); 639,859 → 643,472 tris (+3,613 / +0.56%); 12,295,296 → 12,399,456 B (+101.7 KB / +0.85%); 42 → 43 groups.
+- LS look: 384,320 → 388,968 verts (+4,648 / +1.21%); 637,582 → 641,641 tris (+4,059 / +0.64%); 12,262,824 → 12,367,308 B (+102.0 KB / +0.85%); 42 → 43 groups.
+
+The +1 group reflects a per-LU treelawn bucket that wasn't populated by V2 straight emission but now is.
+
+**SELFINT scan (`scratch/all-band-selfint-scan.js`).** 70 → 49 self-intersecting rings repo-wide (−21 / −30%). The long-offset-polyline straight SELFINTs are gone; remaining straight SELFINTs are on long curved per-fe polylines (e.g. chain 91 with 64 verts at key `382.5,114.5`, chain 143 with 26 verts at `653.5,-236.5`) where the inward offset can still fold on tight chain bends — these were pre-existing at `ed29700` too, not regressions. Arc-span residuals (<5 m² cusps on the smallest-R corners that survive the 0.9× cusp guard) unchanged. Surfaced, not fixed — outside spine-fix scope.
+
+**Surface for orchestrator + Jacob:**
+1. *D.7a `blockKey` drift on straight bands is real and substantial.* 295 of 506 straight fes (58%) have `blockKey` values 0.5m offset from the blockRounded ring keys (e.g. fe `-620.5,752.0` vs ring `-621.0,752.0`). For these the per-block `intersectRings` clip is a no-op — band rings are emitted from the fe polyline but not clipped to the rounded block silhouette at corners. Latent today because consumers don't filter bands by `(blockKey, edgeOrd)` and the visible overlap at corners is masked by arc-span emission + the curb stroke. Per `feedback_d7a_blockkey_drift` the proper fix mirrors the FE pass-1→pass-2 backfill onto frontageBands. Deferred.
+2. *Bake CLI flag is `--look=`, not `--instance=` as the brief described.* Re-baked default and LS via `node cartograph/bake-ground.js --look=<look>`. Flagging so the next dispatch's brief lands correctly.
+3. *No code touched outside `src/lib/buildBlockGeometryV2.js`.* No shader changes; no helper renames; no `closeBandRingV2` removal; no PHASE 2 SUPERSEDED comment cleanup (queued housekeeping).
+
+**Out of scope (untouched).** Phantom park[0] gremlin. Curb-stroke gap (Phase 2.2 retry). Repo-wide SELFINT residual cleanup. D.7a drift fix on `frontageBands`. Designer onDblClick spec divergence. FEATURES corner-section rewrite. Stale-comment cleanup. Branch push.
+
 #### Phase 2.2 — Curb stroke smoothing (REVERTED) — 2026-05-16
 
 Attempted morphological closing on the curb stroke (dilate-by-ε then erode-by-ε with ε=0.08m) to fill Clipper-precision sliver gaps on curved chains. Shipped as `c360fc2`, then operator screencap at LS showed the result was WORSE than Phase 2.1: the dilate-erode cycle's precision tax cascades through Clipper into adjacent block geometry via shared boundary edges, producing black voids in block interiors AND leaving the curb stroke still missing on long curves. Structurally wrong, not tunably wrong. Reverted (see following revert commit). Working tree matches Phase 2.1 (`b9cb11c`). Proper fix is Path (b) polyline-offset stroke (`Clipper.OffsetPaths` with `EndType.etClosedLine` + `JoinType.jtRound` on the asphalt boundary directly), bypassing polygon-vs-polygon Clipper ops at the stroke output entirely. Queued for fresh cold-baby dispatch.
