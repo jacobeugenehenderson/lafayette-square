@@ -5193,18 +5193,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2.286,
+          "pavementHW": 2.8088964682680597,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
         },
         "right": {
-          "pavementHW": 2.286,
+          "pavementHW": 1.7064491230429406,
           "treelawn": 0,
           "sidewalk": 0,
           "terminal": "none"
         },
-        "source": "default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -10428,7 +10428,7 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
+          "pavementHW": 4.025774546908343,
           "treelawn": 12.775599999999999,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
@@ -10439,7 +10439,7 @@
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
@@ -10754,18 +10754,18 @@
       ],
       "measure": {
         "left": {
-          "pavementHW": 2,
+          "pavementHW": 4.327086249282451,
           "treelawn": 12.775599999999999,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
         "right": {
-          "pavementHW": 2,
+          "pavementHW": 3.216558707625585,
           "treelawn": 2.1256000000000004,
           "sidewalk": 1.524,
           "terminal": "sidewalk"
         },
-        "source": "survey-default"
+        "symmetric": false
       },
       "capEnds": {
         "start": null,
