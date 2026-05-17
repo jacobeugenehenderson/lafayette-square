@@ -1,6 +1,6 @@
 # Ribbons & Corners — canonical reference
 
-**Status: v0.3 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
+**Status: v0.4 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
 
 > Part of the cartograph quintet alongside `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. **Read this before any geometry / corner / curb / intersection / ribbon work.** Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem this system already answers. The doctrine in §1 is load-bearing. The pipeline walkthrough in §3 is the implementation. The failure-mode inventory in §6 is the live front of the work.
 >
@@ -555,24 +555,33 @@ Anti-overlap pass (MeasureOverlay.jsx:381-405): when two handles on the same sid
 
 > **This is the front of the work.** Every session adds/updates/closes entries here.
 
-### 6.1 L-shape black at corner-adjacent ribbons — DIAGNOSED, FIX QUEUED (2026-05-17)
+### 6.1 Black ring around every block (the "L-strip") — RESOLVED 2026-05-17 (commit `9cf12c4`)
 
-**Symptom:** in Designer with Measure tool active + Aerial toggle on, the operator selects a chain; the selected chain's ribbons translucify, but at *every IX corner along the chain*, an opaque-black region extends into the corner mouth where aerial-through-asphalt should read. The park's interior perimeter is the visually obvious case (aerial backdrop makes it stark) but the failure is uniform map-wide — every corner on every block exhibits the same overshoot pattern, just less visibly against face-fill backdrop than against aerial.
+**Symptom:** a thick continuous dark band visible around every block's perimeter in Designer with Aerial OFF, sitting between the block face fill (e.g. park-green) and the asphalt edge. Most visually obvious at Lafayette Park because the authored polygon at `park-polygon.json` (halfWidth=175m, fence position) is materially smaller than the actual block silhouette extending to the asphalt edge (~±185m), exposing a ~4m wide strip of canvas-ground (`#2A2826` near-black). Same mechanism on every block where the polygonized face is smaller than the rounded block silhouette.
 
-**Diagnosed (Stage 1 + Stage 2, 2026-05-17):**
+**Root cause (diagnosed via Jacob's hypothesis 2026-05-17, after Stage 1-3 chased the wrong target):** `buildBlockGeometryV2.js:2316` intersected each face's authored polygon with its owning blockRounded ring:
 
-The defect is **entirely §6.2** — drifted-key straight fes skip the per-block clip entirely, so their offset polylines extend up to **8.306m past** the rounded block silhouette (Truman Parkway `653.5,-236.5` edgeOrd 0; 248 fes have overshoots > 0.5m repo-wide). Opaque non-selected ribbons along the *other three sides* of the corner trespass into the corner mouth and paint over what should be aerial/asphalt.
+```js
+const clipped = owning ? intersectRings([face.ring], [owning]) : ...
+```
 
-**Hypotheses ruled out during diagnosis:**
+When `face ⊂ owning` (the common case: authored polygons represent block features like fences or polygonized parcels that don't reach the asphalt edge), the intersect returned the SMALLER face. blockFill shrank to the face's extent. The ped-zone strip between the face's outer edge and the band-property-line had no fill underneath → canvas-ground showed through.
 
-- ~~Per-LU treelawn missing `selectedCorridor` variant~~ — confirmed in code, but it is **design intent, not a defect** (§5 "Translucency, by design"). Only the selected chain translucifies; non-selected chains stay opaque on purpose. The "two-vs-two" symptom shape is selected-chain vs three other chains, which is the operator model. Once §6.2 is fixed and the opaque non-selected bands stop trespassing, the corner-mouth aerial reads through correctly without any render-side change.
-- ~~49 SELFINT band rings (§6.3)~~ — 17 of 725 entries (2.3%), 0 park-adjacent, not a contributor to the L-strip pattern.
-- ~~Missing band emission (terminal !== 'sidewalk')~~ — 0 entries, not a factor.
-- ~~91.9% geometric overshoot on lookup-OK fes (Stage 1 surprise #2)~~ — **probe artifact.** `pointInRing` ray-casting registered boundary-coincident vertices ambiguously; signed-distance recheck with 0.01m epsilon shows **zero real overshoots** on lookup-OK fes. The clip works perfectly when the key lookup succeeds.
+**This was a doctrinal violation.** Per §1: ribbons define the void by expressing inward from chains; the block IS whatever they leave over (= `owning` = blockRounded ring). The authored face is a LU LABEL, not a geometry source. The intersect treated face as a geometry constraint, conflating LU-tag with extent.
 
-**Fix shape:** §6.2's identity-based ringByKey rebuild. Stage 3 dispatch.
+**Fix (3 lines, commit `9cf12c4`):**
 
-**Closes when:** Stage 3 visually verified by Jacob (L-strip aerial-visible at corners), §6.1 + §6.2 collapse into a "RESOLVED 2026-05-XX" §7 history row.
+```js
+const clipped = owning
+  ? [owning]                                       // ← was: intersectRings([face.ring], [owning])
+  : (asphaltRounded.length ? differenceRings([face.ring], asphaltRounded) : [face.ring])
+```
+
+The straddle-fallback (`differenceRings` against global `asphaltRounded`) is preserved for faces that span multiple blocks (rare on LS). `face.use` continues to flow into `lu` via line 2330; `blockKey = blockKeyFromRing(owning)` (same key the rest of V2's `ringByKey` builds were already using). Net effect: every blockFill extends to the rounded asphalt silhouette regardless of how small the authored face is.
+
+**Why we burned a session chasing H1 first:** Stage 1's diagnostic narrowed on "drifted straight fes overshooting by up to 8.3m" (real defect, §6.2 below) and we anchored the L-strip symptom on it. H1 IS a real defect — but the *visible* L-strip wasn't from band overshoot, it was from missing blockFill underneath where bands themselves would render fine. The pivot point: Jacob's "the internal land-use geometry isn't firing... the polygon there isn't ribbon-derived" hypothesis, which pointed at the face-clip semantic the H1 framing had silently assumed away. Lesson: when a visible symptom looks like material trespass, also test for material absence (canvas-through). Aerial-toggle is the discriminator (canvas-gap shows aerial; opaque trespass stays opaque).
+
+**Closes:** v0.4 commit `9cf12c4`. §6.2 (H1) remains a separate open defect; that work continues in Stage 5.
 
 ### 6.2 D.7a keying-system divergence: pass-2 `ringByKey` vs pass-1 `fe.blockKey` — DIAGNOSED, FIX QUEUED (2026-05-17)
 
@@ -685,6 +694,7 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 | 2026-05-17 | Phase 2-arc revert: restore per-sharp-fe straight-span emission alongside arc emitter | SHIPPED (NOTES:652) | The new regime's spine architectural intent ("everything flows from blockRounded") collided with Clipper precision on long offset polylines; the doctrine permits both halves (per-sharp-fe straight + blockRounded-walked arc) since each satisfies polygon-walking |
 | 2026-05-17 | Stage 1 diagnostic — classify every frontageBand entry across H1-H4 hypotheses for the L-strip black symptom | DIAGNOSED | H1 (blockKey drift) dominant; H3 (per-LU translucency) was a misread of the operator model (non-selected chains stay opaque by design); H2/H4 minor. Stage 1 also produced a false 91.9% geometric-overshoot reading via `pointInRing` boundary noise — corrected at Stage 2. Lesson: use signed-distance with ≥0.01m epsilon, never strict `pointInRing` against clip-output boundaries |
 | 2026-05-17 | Stage 2 diagnostic — drill-in / baseline comparison / backfill dry-run | DIAGNOSED | (a) Stage 1's 91.9% was probe artifact; lookup-OK fes have zero real overshoots. (b) Defect pre-existing back to ed29700 — `buildFrontageBands` body comment-only-diff; not a regression. (c) Mechanism pinned: `ringByKey` is pass-2 keyed, `fe.blockKey` is pass-1 keyed (backfilled at line 2149); 295 fes disagree, clip skipped, 248 overshoot >0.5m, max 8.306m on Truman Parkway. (d) Dry-run with identity-based ring registration resolves 257/295 cleanly; closes all real overshoots |
+| 2026-05-17 | Stage 4: block face fill must use `owning` (blockRounded), not `intersectRings(face, owning)` — restores figure-ground inversion in face emission | SHIPPED (commit `9cf12c4`) | Three-line surgical fix to `buildBlockGeometryV2.js:2316`. Closed the visible "black ring around every block" Jacob had been reporting since the session start — turned out to be canvas-ground showing through the gap between small authored faces (e.g. park's ±175m fence polygon) and the band-property-line (~±179m), NOT band overshoot from H1. Lesson: visible-material-absence (canvas through gap) and visible-material-trespass (opaque overshoot) look similar with bands above; Aerial-toggle discriminates instantly. Stage 1-3 misframing because diagnostic anchored on overshoot before testing absence. `feedback_verify_diagnosis_with_user` extended: visible-symptom-discrimination should be a 30-second test, not a session arc |
 
 ---
 
