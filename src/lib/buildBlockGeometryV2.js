@@ -1645,6 +1645,26 @@ function dilateRings(rings, delta) {
   return out.map(path => path.map(fromClipper))
 }
 
+// Inward polygon offset (Minkowski difference with a disc of radius
+// `delta`). Pair of dilate + erode = morphological closing, used by
+// Phase 2.2 on the curb stroke to fill Clipper-precision sliver gaps
+// on long curved chains without changing overall stroke width. Rings
+// smaller than 2·delta vanish entirely — desired behavior for the
+// curb-smoothing case where slivers are exactly the sub-stroke-width
+// gaps we want to close.
+function erodeRings(rings, delta) {
+  if (delta <= 0 || !rings.length) return rings
+  const { ClipperOffset, JoinType, EndType } = clipperLib
+  const co = new ClipperOffset()
+  for (const r of rings) {
+    if (!r || r.length < 3) continue
+    co.AddPath(r.map(toClipper), JoinType.jtMiter, EndType.etClosedPolygon)
+  }
+  const out = []
+  co.Execute(out, -delta * SCALE)
+  return out.map(path => path.map(fromClipper))
+}
+
 // Intersection of subject rings with clip rings.
 export function intersectRings(subjectRings, clipRings) {
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -2116,8 +2136,19 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // entire asphalt boundary: straight pavement edges, rounded corner
   // arcs, ramp transverse boundaries — all wrapped uniformly. Painted
   // OVER every band so the band-to-asphalt boundary stays hidden.
+  //
+  // Phase 2.2 — morphological closing on the raw curb stroke fills
+  // Clipper-precision sliver gaps that appear on long curved chains
+  // (visible at LS as the curb disappearing partway up Mississippi-
+  // class chains then re-appearing further along). ε is chosen
+  // smaller than CURB_WIDTH (typical 15 cm AASHTO residential) and
+  // larger than the typical Clipper sliver (~1–5 cm). Rings smaller
+  // than 2·ε vanish — that's precisely the sub-stroke-width sliver
+  // case we want to close.
+  const CURB_CLOSE_EPS = 0.08
   const curbDilated = dilateRings(asphaltRounded, curbWidth)
-  const curbBands   = differenceRings(curbDilated, asphaltRounded)
+  const rawCurb     = differenceRings(curbDilated, asphaltRounded)
+  const curbBands   = erodeRings(dilateRings(rawCurb, CURB_CLOSE_EPS), CURB_CLOSE_EPS)
   __mark('curbBands')
 
   // Per-chain asphalt clip skipped in Designer (Phase 1 perf decision):

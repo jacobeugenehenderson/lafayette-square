@@ -632,6 +632,28 @@ Per `cartograph/FEATURES.md` line 95–104 ("clean THE POLYGON: apply Douglas-Pe
 
 **Out of scope (still deferred).** FEATURES corner-section comprehensive rewrite; A.5/A.6/A.7/Bezier-shipped/Phase 1/Phase 2/Phase 2.1 NOTES consolidation; stale-comment cleanup in `cornersAtIx` + `CornerEditHandles.jsx` + `CartographApp.jsx`; Phase 3 UI. Housekeeping commit after Jacob's visual sign-off.
 
+#### Phase 2.2 — Curb stroke smoothing pass — 2026-05-16
+
+**Status:** SHIPPED 2026-05-16 (this commit). Fixes the curb-stroke sliver gaps visible on long curved chains at LS (Mississippi-class) where Clipper's `dilate(asphaltRounded, cw) − asphaltRounded` boundary computation hits precision limits and the stroke disappears partway up a leg's pavement edge then reappears further along. Morphological closing (`dilate` then `erode` by `CURB_CLOSE_EPS = 0.08m`) on the raw curb stroke fills these gaps without changing the overall stroke width.
+
+**Implementation.** New `erodeRings(rings, delta)` helper alongside `dilateRings` — same ClipperOffset path with negative delta. Curb derivation site appends one line:
+
+```
+const rawCurb   = differenceRings(dilateRings([asphaltRounded], cw), [asphaltRounded])
+const curbBands = erodeRings(dilateRings(rawCurb, CURB_CLOSE_EPS), CURB_CLOSE_EPS)
+```
+
+ε chosen smaller than CURB_WIDTH (typical 15cm AASHTO residential — keeps the close-pass from visibly thickening the stroke) and larger than typical Clipper sliver artifacts (~1–5cm). Rings smaller than 2·ε vanish entirely under erode — that's precisely the sub-stroke-width sliver case we want closed.
+
+**Bake delta vs Phase 2.1 (commit `b9cb11c`).** LS: 42 groups (unchanged), 384,320 → 384,913 verts (+593, +0.15%), 637,582 → 638,089 tris (+507, +0.08%), 11,975.4 → 11,988.3 KB (+12.9 KB, +0.1%). Default: 384,925 → 385,425 verts, 639,781 → 640,222 tris, 12,008.3 → 12,019.3 KB. Determinism preserved (re-bake byte-identical, diff confirmed). Modest growth consistent with extra polygon vertices from sliver-closure.
+
+**Algorithmic flags.**
+- *ε tuning.* 0.08m starter chosen per brief. If gaps remain visible after this lands, bump to 0.12m; if false-bridging appears (narrow non-curb regions getting closed across), drop to 0.05m. Visual verification required at LS scale.
+- *Vanishing rings.* Erode pass eliminates any sub-2ε ring. For curb stroke this is exactly the sliver case. If a real-but-small curb region disappears (e.g., a very short isolated curb segment), the underlying geometry has bigger issues than sliver artifacts and the smoothing pass surfaces it.
+- *Path (b) deferred.* Polyline-offset stroke (build the curb directly as an offset polyline rather than via dilate-difference) would be the precision-immune end-state. Path (a) closing pass ships now because it's a 4-line append; path (b) is a focused future cleanup if morphological closing hits edge cases.
+
+**Out of scope (still deferred — Phase 2-arc housekeeping commit).** Same list as Phase 2.1.
+
 ---
 
 ### Phase B — Polygon-graph schema + producer
