@@ -3241,6 +3241,28 @@ Phase E and v1.6.
     retained for R≤0.05 cases. Per-corner Bezier authoring UI + override
     data model deferred to subsequent phases. See `cartograph/NOTES.md`
     "Bezier corners shipped" entry for full audit + math.
+  - [x] **Phase 1 — Multi-vertex Bezier consumption.** SHIPPED 2026-05-16.
+    Rewrote `applyRoundCornersToRing` as a two-pass span-aware walker:
+    Pass 1 identifies CONSUME-SPANS per corner (walk outward along the
+    ring until accumulated arc-length exceeds `inset = R/tan(θ/2)`, or
+    until reaching another corner-matched vertex); Pass 2 emits the
+    ring with Bezier output replacing each entire span. The pre-Phase-1
+    walker replaced only the single TOL=0.5 matched vertex per corner,
+    leaving cluster vertices around the Bezier insertion as angular
+    polygon kinks immediately before `tA` and after `tB` on curved-chain
+    IXs. Phase 1 fulfills the Bezier-shipped commit's structural claim
+    at the ring-walker: A.7's simplification (already retired at Bezier
+    ship) is now provably unnecessary. Phase A retirement audit (this
+    commit): grep-confirmed zero live consumers of `findStableVertex`
+    or `IX_NOISE_RADIUS` anywhere in `src/` / `scripts/` / `cartograph/`.
+    Span magnitudes (LS): 421 corners; 87% singleton, 13% (55) consume
+    2–4 cluster vertices; max span 4 verts; 71 extra vertices consumed
+    past apex total. Bake delta vs `7db2d32`: −3,736 verts (−1.0%),
+    −7,076 tris (−1.1%), −126 KB (−1.1%); 43 groups unchanged.
+    `buildCornerPadQuad`, `cornerSidewalkPads`, `cornerPadUnion`
+    untouched (pads spiky from prior Bezier-era migration — Phase 2's
+    territory). See `cartograph/NOTES.md` "Phase 1 — Multi-vertex
+    Bezier consumption" entry for full audit + edge cases.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**

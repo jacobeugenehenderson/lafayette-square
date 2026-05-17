@@ -550,6 +550,28 @@ Per `cartograph/FEATURES.md` line 95–104 ("clean THE POLYGON: apply Douglas-Pe
 
 **Deferred.** Per-corner Bezier authoring UI (Illustrator handles), per-corner override data model in `design.json`, concrete-plug-as-stroke-band, FEATURES corner-section rewrite, and the en-masse housekeeping pass that strips A.5/A.6/A.7 sections. The A.x brief sections above remain as live history until the housekeeping commit.
 
+#### Phase 1 — Multi-vertex Bezier consumption (retires A.7 structurally) — 2026-05-16
+
+**Status:** SHIPPED 2026-05-16 (this commit). Rewrote `applyRoundCornersToRing` as a two-pass span-aware walker: Pass 1 identifies, per corner-matched ring vertex, the CONSUME-SPAN of polygon vertices around the apex that lie within the Bezier's `inset = R/tan(θ/2)` arc-length along the ring (walking outward in both directions, stopping at another corner-matched vertex to avoid stomping adjacent spans); Pass 2 rotates to a non-consumed starting index so no span wraps in iteration order, then walks forward emitting literals or per-span Bezier output once per span. The pre-Phase-1 walker matched only the single TOL=0.5 vertex per corner; cluster vertices around the matched apex remained in the output, producing angular polygon kinks immediately before tA and after tB on curved-chain IXs even though the Bezier itself was smooth. Phase 1's span-walker eliminates those kinks structurally — the Bezier output replaces the entire consumed range with `[tA, ...samples, tB]`.
+
+**Span magnitudes (LS post-Phase-1 probe).** Of 421 corners emitted at LS scale: 366 (87%) singleton (straight-chain, no cluster), 42 size 2 (one extra vertex consumed), 10 size 3, 3 size 4. Max span = 4 vertices. Total extra vertices consumed past the apex = 71. The brief's "5–10 cluster vertices within 2m of Vc" was a worst-case estimate; at LS's current chain density most corners had no cluster to consume. The structural fix matters for the cases where clusters do appear (Mississippi-class) and for future chain-density shifts (operator drags creating new curvature).
+
+**A.7 retirement (structural).** `simplifyPolylineDP` + `SIMPLIFY_EPS` + `perpDistToSegment` were already retired at the Bezier ship commit (`7db2d32`) on the theory that Bezier overwrites cluster vertices in flight; Phase 1 fulfills that theory at the ring-walker. `chainPavementRing` and `emitChain` retain their direct `pts.map` per-vertex offset edges (no simplification).
+
+**Phase A retirement audit.** Confirmed retired at HEAD: zero live consumers of `findStableVertex` / `IX_NOISE_RADIUS` in `src/`, `scripts/`, or `cartograph/`. Both Bezier handles and `buildCornerPadQuad` consume `corner.T_A`/`corner.T_B`, which now come exclusively from `polylineCross`'s local segment tangents at Vc. No resurrection.
+
+**Bake delta (vs `7db2d32`'s HEAD baseline).** LS: 43 groups, 381,672 verts (−3,736, −1.0%), 635,585 tris (−7,076, −1.1%), 11,921 KB (−126 KB, −1.1%). Determinism preserved (re-bake byte-identical).
+
+**Pads unchanged from prior state.** Phase 1 does not touch `buildCornerPadQuad`, `cornerSidewalkPads`, `cornerPadUnion`. Spiky pads at curved IXs persist; Phase 2 owns that.
+
+**Algorithmic edge cases.**
+- *Overlapping spans.* Prevented structurally: walk-back/walk-forward each stop at the first corner-matched neighbor (`matched[prevIdx] / matched[nextIdx]` test), so one corner's span never consumes another corner's apex. Two adjacent corners' spans can touch back-to-back at the boundary corner-vertex but never share consumed indices.
+- *Wraparound.* Pass 2 rotates `i0` to the first non-consumed index before walking. As long as one ring vertex is non-consumed, no span wraps the iteration boundary. Pathological fallback (entire ring consumed by one or more spans): iterate from 0; spans emit at their first encountered consumed index.
+- *R = 0 / degenerate angles.* Pass 1 explicitly skips corners with `R ≤ 0.05` or `tan(θ/2) ≤ 1e-6` — the consume-span is never recorded and the apex copies through unchanged. The pre-existing 5°/355° and 150°/210° (same-named through-T) gates in `cornersAtIx` mean those degenerate corners never make it to `applyRoundCornersToRing` as records anyway, but the local guard is kept for robustness.
+- *Performance.* Pre-pass match is O(n × |corners|), same complexity as the pre-Phase-1 walker. At LS this is invisible (`buildBlockGeometryV2` runs in tens of ms). Bucket-index by bbox if a future scene multiplies ring length or corner count by 10× per [[feedback_polygon_walking_needs_spatial_index]]. Surfaced, not implemented.
+
+**Deferred.** Same list as the Bezier-shipped entry — Phase 2 (path B + three-regime emitter + ramp wedge + asymmetric step) is the next phase to dispatch. Concrete-plug-as-stroke-band is its territory. FEATURES corner-section rewrite + A.x housekeeping still deferred to the trinity housekeeping pass after Phase 2.
+
 ---
 
 ### Phase B — Polygon-graph schema + producer

@@ -715,41 +715,156 @@ function bezierReplaceCorner(cur, R, theta, tangentA, tangentB) {
   return out
 }
 
+// Phase 1 (multi-vertex Bezier consumption): walk CCW around the
+// asphalt void's outer ring, identify CONSUME-SPANS around each
+// corner-matched vertex, then emit Bezier output replacing the entire
+// span. The pre-Phase-1 walker replaced only the single TOL=0.5
+// matched vertex per corner, leaving adjacent cluster vertices around
+// the Bezier insertion as angular kinks immediately before tA and
+// after tB. On curved chains (Mississippi class) the asphalt-union
+// boundary carries 5–10 cluster vertices within 2m of the corner
+// record's Q point — the result was a smooth Bezier surrounded by
+// faceted polygon facets. Phase A.7's polygon-density simplification
+// patched the symptom at the polygon emitter; this walker patches it
+// structurally where it belongs — at the consumer. A.7's helpers
+// retired with the Phase B Bezier ship; this rewrite is the matching
+// structural fix on the ring-walker side.
+//
+// Two-pass:
+//   Pass 1 — for each corner-matched ring vertex (block-convex turn,
+//   R > 0.05), walk OUTWARD in both directions accumulating arc-length
+//   distance until the accumulated walk exceeds the inset (R/tan(θ/2))
+//   or the walk would consume another corner-matched vertex. Record
+//   span = { start, end, cornerIdx } and mark consumed[] for those
+//   indices.
+//   Pass 2 — rotate to a non-consumed starting index so no span wraps
+//   across the iteration boundary, then emit literals for non-consumed
+//   indices and Bezier samples once per span when first entered.
+//
+// Boundary continuity: ring[(start-1) mod n] (last unconsumed before
+// the span) joins bezier's first sample tA; ring[(end+1) mod n] (first
+// unconsumed after) joins tB. tA / tB are at corner.point + inset *
+// corner.T_{A,B}; they may not coincide with any pre-existing ring
+// vertex — that's expected. The cluster vertices ring[start..end]
+// (inclusive) are dropped from the output; the Bezier subsumes them.
 function applyRoundCornersToRing(ring, corners, scale = 1) {
-  // Walk CCW around the asphalt void's outer ring. At each vertex match
-  // against precomputed IX corner records by spatial proximity; if a
-  // record is found AND the polygon turn at this vertex is right-handed
-  // (block-convex / asphalt-concave), replace the vertex with the
-  // sampled Bezier corner. Sample endpoints (tA, tB) are written back
-  // onto the corner record so downstream consumers (buildCornerPadQuad)
-  // can read them.
   const TOL = 0.5
   const n = ring.length
-  const out = []
+  if (n === 0) return []
+
+  // Pre-pass: match each ring vertex to a corner record (or null).
+  // O(n × |corners|) — same complexity as the pre-Phase-1 walker.
+  // Bucket-index by bbox if LS-scale rings ever bite (this runs once
+  // per asphalt-union output ring; today the cost is invisible).
+  const matched = new Array(n).fill(null)
   for (let i = 0; i < n; i++) {
+    const cur = ring[i]
+    for (const c of corners) {
+      if (Math.hypot(cur[0] - c.point[0], cur[1] - c.point[1]) < TOL) {
+        matched[i] = c
+        break
+      }
+    }
+  }
+
+  // Pass 1: per corner-matched vertex, compute the consume-span.
+  // `consumed[i] = spanIdx` (or -1). Spans store the corner-vertex
+  // ring index so Pass 2 can pass it to bezierReplaceCorner as `cur`.
+  const spans = []
+  const consumed = new Array(n).fill(-1)
+  for (let i = 0; i < n; i++) {
+    const m = matched[i]
+    if (!m) continue
+    // Block-convex check (polygon-local in/out direction at the corner
+    // vertex). Mirrors the pre-Phase-1 walker's filter.
     const prev = ring[(i - 1 + n) % n]
     const cur = ring[i]
     const next = ring[(i + 1) % n]
-    let matched = null
-    for (const c of corners) {
-      if (Math.hypot(cur[0] - c.point[0], cur[1] - c.point[1]) < TOL) { matched = c; break }
-    }
-    if (!matched) { out.push(cur); continue }
-    // Block-convex check still uses polygon-local in/out direction — the
-    // corner record's tangents could theoretically be local-tangent
-    // misaligned with polygon walk direction on extreme curved chains.
     const inDir = unit([cur[0] - prev[0], cur[1] - prev[1]])
     const outDir = unit([next[0] - cur[0], next[1] - cur[1]])
     const cross = inDir[0] * outDir[1] - inDir[1] * outDir[0]
-    if (cross >= 0) { out.push(cur); continue }  // not block-convex
-    const baseR = Number.isFinite(matched.R_authored)
-      ? matched.R_authored
-      : defaultR(matched.R_class, matched.d_min, matched.theta)
+    if (cross >= 0) continue // not block-convex
+    const baseR = Number.isFinite(m.R_authored)
+      ? m.R_authored
+      : defaultR(m.R_class, m.d_min, m.theta)
     const R = baseR * scale
-    if (R <= 0.05) { out.push(cur); continue }
-    const arc = bezierReplaceCorner(cur, R, matched.theta, matched.T_A, matched.T_B)
-    if (arc.tA) matched.tA = arc.tA
-    if (arc.tB) matched.tB = arc.tB
+    if (R <= 0.05) continue
+    const halfTheta = m.theta / 2
+    const tanH = Math.tan(halfTheta)
+    if (tanH <= 1e-6) continue
+    const inset = R / tanH
+    // Walk backward — stop when accumulated arc-length crossing the
+    // next neighbor would exceed `inset`, or when we'd consume another
+    // corner-matched vertex (don't stomp an adjacent corner's span).
+    let start = i
+    let walkedBack = 0
+    while (true) {
+      const prevIdx = (start - 1 + n) % n
+      if (prevIdx === i) break // wrapped the entire ring
+      if (matched[prevIdx]) break
+      const d = Math.hypot(ring[start][0] - ring[prevIdx][0], ring[start][1] - ring[prevIdx][1])
+      if (walkedBack + d > inset) break
+      walkedBack += d
+      start = prevIdx
+    }
+    // Walk forward — symmetric.
+    let end = i
+    let walkedFwd = 0
+    while (true) {
+      const nextIdx = (end + 1) % n
+      if (nextIdx === i) break
+      if (matched[nextIdx]) break
+      const d = Math.hypot(ring[end][0] - ring[nextIdx][0], ring[end][1] - ring[nextIdx][1])
+      if (walkedFwd + d > inset) break
+      walkedFwd += d
+      end = nextIdx
+    }
+    const spanIdx = spans.length
+    spans.push({ start, end, cornerIdx: i, corner: m, R })
+    // Mark consumed indices walking start→end forward (may wrap).
+    let k = start
+    while (true) {
+      consumed[k] = spanIdx
+      if (k === end) break
+      k = (k + 1) % n
+    }
+  }
+
+  if (spans.length === 0) {
+    // No corner emitted — return ring as-is (matches pre-Phase-1
+    // behavior when every corner is filtered).
+    return ring.slice()
+  }
+
+  // Pass 2: rotate to a non-consumed start so no span wraps in
+  // iteration order, then walk forward emitting literals or
+  // span-Beziers.
+  let i0 = 0
+  while (i0 < n && consumed[i0] !== -1) i0++
+  // Pathological fallback: entire ring consumed by spans. Iterate from
+  // 0; spans get emitted at their starts in arrival order. Result is
+  // bounded (at most one Bezier per span).
+  if (i0 >= n) i0 = 0
+
+  const out = []
+  const emittedSpan = new Set()
+  for (let k = 0; k < n; k++) {
+    const i = (i0 + k) % n
+    const sIdx = consumed[i]
+    if (sIdx === -1) {
+      out.push(ring[i])
+      continue
+    }
+    if (emittedSpan.has(sIdx)) continue
+    emittedSpan.add(sIdx)
+    const span = spans[sIdx]
+    const cornerVertex = ring[span.cornerIdx]
+    const arc = bezierReplaceCorner(
+      cornerVertex, span.R, span.corner.theta,
+      span.corner.T_A, span.corner.T_B,
+    )
+    if (arc.tA) span.corner.tA = arc.tA
+    if (arc.tB) span.corner.tB = arc.tB
     for (const p of arc) out.push(p)
   }
   return out
