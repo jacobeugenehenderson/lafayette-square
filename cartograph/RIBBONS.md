@@ -1,6 +1,6 @@
 # Ribbons & Corners — canonical reference
 
-**Status: v0.4 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
+**Status: v0.5 (2026-05-17) — living doc.** This is the central reference for the ribbon + corner system. It evolves every session until the corner problem is closed.
 
 > Part of the cartograph quintet alongside `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. **Read this before any geometry / corner / curb / intersection / ribbon work.** Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem this system already answers. The doctrine in §1 is load-bearing. The pipeline walkthrough in §3 is the implementation. The failure-mode inventory in §6 is the live front of the work.
 >
@@ -583,7 +583,7 @@ The straddle-fallback (`differenceRings` against global `asphaltRounded`) is pre
 
 **Closes:** v0.4 commit `9cf12c4`. §6.2 (H1) remains a separate open defect; that work continues in Stage 5.
 
-### 6.2 D.7a keying-system divergence: pass-2 `ringByKey` vs pass-1 `fe.blockKey` — DIAGNOSED, FIX QUEUED (2026-05-17)
+### 6.2 D.7a keying-system divergence: pass-2 `ringByKey` vs pass-1 `fe.blockKey` — RESOLVED 2026-05-17 (commit `48d8135`)
 
 **Mechanism (exact):**
 
@@ -623,7 +623,7 @@ Same O(rings × fes) complexity as the keymap approach. No registry; no collisio
 
 **Why this over "thread pass-1 frontageEdges into the helper":** the containment resolution is local to `buildFrontageBands`, no signature change, no pass-1 lookup plumbing. Per `feedback_corner_pad_continuity_first`-adjacent logic, identity (which ring contains this fe's probe) beats geometric heuristic (find ring by key); per-fe direct resolution IS identity.
 
-**Status:** Stage 3 fix-the-fix dispatch queued (algorithm correction, warm-continuation from initial Stage 3 attempt). ~10 LOC delta from the buggy first attempt. Re-bake both looks. Verify against dry-run POST (`realOvershoot = 0`) + visual confirm in Designer. Closes §6.1.
+**Status:** RESOLVED 2026-05-17 (commit `48d8135`). Per-fe containment ring resolution shipped. Note: H1 closes the underlying geometric defect (248 fes >0.5m overshoot) but did NOT visibly close the L-strip (§6.1 was actually the face-clip doctrine violation, closed separately in `9cf12c4`). H1's overshoots had been masked visually by the asphalt + curb stroke painting on top of them; H1 is a latent structural fix, not the cause of the visible black-ring symptom. Lesson recorded in §7.
 
 ### 6.3 49 residual SELFINT band rings repo-wide — OPEN
 
@@ -695,6 +695,7 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 | 2026-05-17 | Stage 1 diagnostic — classify every frontageBand entry across H1-H4 hypotheses for the L-strip black symptom | DIAGNOSED | H1 (blockKey drift) dominant; H3 (per-LU translucency) was a misread of the operator model (non-selected chains stay opaque by design); H2/H4 minor. Stage 1 also produced a false 91.9% geometric-overshoot reading via `pointInRing` boundary noise — corrected at Stage 2. Lesson: use signed-distance with ≥0.01m epsilon, never strict `pointInRing` against clip-output boundaries |
 | 2026-05-17 | Stage 2 diagnostic — drill-in / baseline comparison / backfill dry-run | DIAGNOSED | (a) Stage 1's 91.9% was probe artifact; lookup-OK fes have zero real overshoots. (b) Defect pre-existing back to ed29700 — `buildFrontageBands` body comment-only-diff; not a regression. (c) Mechanism pinned: `ringByKey` is pass-2 keyed, `fe.blockKey` is pass-1 keyed (backfilled at line 2149); 295 fes disagree, clip skipped, 248 overshoot >0.5m, max 8.306m on Truman Parkway. (d) Dry-run with identity-based ring registration resolves 257/295 cleanly; closes all real overshoots |
 | 2026-05-17 | Stage 4: block face fill must use `owning` (blockRounded), not `intersectRings(face, owning)` — restores figure-ground inversion in face emission | SHIPPED (commit `9cf12c4`) | Three-line surgical fix to `buildBlockGeometryV2.js:2316`. Closed the visible "black ring around every block" Jacob had been reporting since the session start — turned out to be canvas-ground showing through the gap between small authored faces (e.g. park's ±175m fence polygon) and the band-property-line (~±179m), NOT band overshoot from H1. Lesson: visible-material-absence (canvas through gap) and visible-material-trespass (opaque overshoot) look similar with bands above; Aerial-toggle discriminates instantly. Stage 1-3 misframing because diagnostic anchored on overshoot before testing absence. `feedback_verify_diagnosis_with_user` extended: visible-symptom-discrimination should be a 30-second test, not a session arc |
+| 2026-05-17 | Stage 5: H1 (per-fe containment ring resolution in buildFrontageBands) | SHIPPED (commit `48d8135`) | Closes the §6.2 D.7a keying-system divergence as a latent structural fix. 248 fes >0.5m overshoot trimmed; bake delta −0.4–0.5% verts per look. Did NOT visibly close any corner symptom — overshoots had been masked by overlying asphalt + curb stroke. The "corners are jacked" symptom Jacob continued to report after Stage 4 is corner-interior (sidewalks / treelawns / corner plugs at IXs) — a separate defect class living in `buildFrontageBandsV2` (arc-span emitter) and `attributeFilletResidualToArcs`, not in straight-fe band emission. Next dispatch addresses arc-span. Doctrinal note: H1 is a textbook D.7a-drift case — `feedback_d7a_blockkey_drift` says pass-1 (blockKey, edgeOrd) must be carried through pass-2 by `(chainIdx, segOrds[0], side)` join, and the same lesson reapplied here at the per-fe ring lookup |
 
 ---
 
