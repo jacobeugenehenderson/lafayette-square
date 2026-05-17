@@ -1,6 +1,8 @@
 # Cartograph Backlog
 
-> Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
+> Part of the **cartograph quintet** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md` / `cartograph/NOTES.md` / `cartograph/RIBBONS.md`). Read at session start; check off completions during work; prune toward pristine. Resolved items belong out of this doc, not in a "Done" section. If an item is older than its context still being relevant, retire it. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
+>
+> **Ribbons / corners / curbs / intersections / block geometry:** every entry below that touches these systems is governed by `cartograph/RIBBONS.md` — read it (especially §1 regime + §6 active failure modes) before working any such entry.
 
 ## 2026-05-16 — Neon rewrite as NeonBandsV2 (in-flight, partial verification)
 

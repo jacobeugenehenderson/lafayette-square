@@ -14,106 +14,13 @@ Cartograph + Stage produce a **slab** — a baked, flattened, fortified, secure,
 
 The architecture is the deliverable. Lafayette Square is the v1 instance. Other neighborhoods will pour their own slabs from the same toolkit; other operators will do the pouring. Every design decision in this codebase is in service of that kit ambition.
 
-## The ribbon doctrine — read this BEFORE any geometry/corner/curb/intersection work
+## The ribbon doctrine — see `RIBBONS.md`
 
-This section is canonical and load-bearing. Anyone — human or agent — touching ribbons, curbs, corners, intersections, or block geometry MUST read it first and reason inside it. Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem the polygon system already answers. We have litigated this enough times to make a doctrine of it.
+The ribbon + corner + curb + intersection + block geometry doctrine lives in [`RIBBONS.md`](RIBBONS.md) — the living doc that evolves every session. Cartograph quintet: FEATURES / ARCHITECTURE / BACKLOG / NOTES / **RIBBONS**.
 
-### The model in one sentence
+Read `RIBBONS.md` §1 (regime) + §6 (active failure modes) before any work that touches ribbons, corners, curbs, intersections, or block geometry. Most regressions in this repo trace to someone re-deriving a points-and-chains framing for a problem the polygon system already answers.
 
-**Blocks are positive space; streets are the void around them; everything visible at street level — asphalt, curb, sidewalk, treelawn, corner mouths — is a property of the block polygons' silhouettes, not of the chain centerlines that derive them.**
-
-### Print, not web — the load-bearing principle
-
-Cartograph delivers a print-like experience, not a reactive web app. The product is a **map** — a deliberate, settled surface the operator and end user trust without thinking about how it was made. Visual instability (corners that swing apart on widening, blocks that re-derive on every drag, geometry that "looks alive" because it's recomputing under the cursor) is a UX failure regardless of whether it's technically correct. Cognitive texture — the sliver of attention every operator spends every time they look at a wobbling map — is the design metric.
-
-The instinct in modern web/software vernacular is: source of truth is the lowest-level data (chain.points, OSM features); everything else is reactively recomputed. That model is wrong for this product. It produces a map that's always slightly trembling. We are a print job, not a spreadsheet — and a print job freezes layout decisions early so attention can land on content, not on geometry that won't sit still.
-
-When a design choice arises — "should this re-derive from chains every render?" "should the corner geometry react to chain edits?" — the answer is **no, freeze upstream and let downstream trust it**. Reactive recompute-from-source is the failure mode. Print-like-ness is achieved by data-shape walls, not by code discipline alone.
-
-### The stage wall — where chains end forever
-
-Chains and points exist in raw upstream data files (`cartograph/data/lafayette-square/raw/centerlines.json`, `osm.json`). They are the **provenance**, not the surface. From the operator's first interaction with the app onward, the system is **polygons**.
-
-The pre-bake is the wall:
-
-| Stage | Reads | Produces |
-|---|---|---|
-| 1. Survey (raw) | OSM ways, operator centerline edits | `chain.points`, IX vertices |
-| 2. IX extraction | chains | IX centerpoint set |
-| 3. Asphalt Intersection | chains (one-time, for long-run tangent) | per-IX leg-pair intersection points |
-| 4. Adjusted Asphalt Intersection | corner-radius authoring + Stage-3 output | clean rounded corner geometry |
-| **5. BAKE** | Stages 3–4 | **frozen polygon graph** (block polygons, asphalt edges, corner arcs, plug rings) |
-| 6+. Surface (Designer / Stage / Preview / bake-output consumers) | **only the frozen polygon graph** | rendered map |
-
-**After Stage 5, the chains are gone.** Stage 6+ code that reaches back into `chain.points` to compute leg tangents, snap endpoints, or extend rays is a **bug by definition**, even if it works. The wall is structural — surface code receives polygons, period.
-
-Today's V2 implementation runs Stages 2–4 in the same hot path as Stage 6 (`buildBlockGeometryV2` re-walks chains on every Designer store update). The doctrine says this is wrong; the implementation will be migrated to the wall over time. Until that migration lands, every surface-stage code path that touches `chain.points` is doctrine-noncompliant and treated as tech debt; new surface-stage code MUST NOT add new chain references.
-
-**Operator interaction model.** From the moment the operator opens the app, they work in polygons:
-- Couplers attach to polygon corners.
-- "Split traffic / center / left-offset" = polygon-edge attribute.
-- "Widen drag" = polygon-edge offset.
-- "Nudge in a section for parking" = sub-edge polygon edit.
-
-The operator never has practical interest in the underlying chain — and the implementation should make that invisibility a **structural fact**, not a presentational accident.
-
-### Authority order — load-bearing
-
-1. **Polygons (block polygons)** are the authoring substrate. The park is a polygon. Each residential block is a polygon. A plaza is a polygon. Geometry decisions begin here.
-2. **Sides** of a polygon are line segments between its corners. Sides carry the cross-section: pavement on the asphalt side, treelawn / sidewalk on the block side. Sides are STRAIGHT between corners (or smoothly curved by intent — never accidentally bent because a chain wandered).
-3. **Corners** of a polygon are the vertices that matter. Each corner gets one rounding arc (Illustrator-style round-corners op, inset by R per the corner kit). Round-corners is applied to the polygon, not to chain endpoints.
-4. **Chains and points** are downstream emergent artifacts — useful for UI selection, label placement, and as one input to the polygon derivation, but **not load-bearing for surface geometry**. A chain that bends slightly near a corner is data noise, not a geometric question.
-
-If you find yourself reasoning about "the chain endpoint near the corner" or "snap this point" or "extend this segment to find the intersection" — stop. The polygon system answers the question without you. Re-frame in terms of polygons / sides / corners.
-
-### What this gives you for free
-
-- **Asphalt at intersections** = `stencil − unionOfBlockPolygons` (or, in V2's current implementation, derived through the chain rectangles' union and then `block = stencil − asphalt`). Either way, the *boundary* between asphalt and block is the polygon silhouette. Round-corners on the polygon → rounded asphalt mouth at the corner. Free.
-- **Curb** = single offset of the block silhouette by `CURB_WIDTH`. One stroke, no separate curb-arc polygon. Honors round-corners by inheritance. The curb at the corner is the curb's natural arc around the polygon's rounded corner. Free.
-- **Sidewalk + treelawn** = bands walked along block edges INWARD into the block (polygon-walking, D.3c). One ring per band per block-edge. Free.
-- **Median** between paired carriageways = polygon between the two chains' inboard pavement edges. Emergent. Free if the polygon has room; absent if it doesn't.
-
-### Corner plugs — load-bearing, polygon-derived, three components
-
-> **[PHASE 2 SUPERSEDED — 2026-05-16]** The three plug components below remain visible regions at every IX corner, but they are no longer SEPARATE outputs of V2. Under Phase 2, the asphalt plug emerges inherently from `asphaltRounded = stencil − blockRounded` (no `cornerAsphaltPlugs` residual); the concrete plug is emitted as sidewalk-material by the three-regime arc emitter inside `frontageBands` (no `cornerSidewalkPads` separate output, no `buildCornerPadQuad` primitive); the curb plug stays an arc segment of the unified curb stroke. The doctrine (visible region must always be filled) holds; the emission topology changed. See `cartograph/NOTES.md` "Phase 2 — Path-B regime emitter" for the current model. Comprehensive rewrite of this subsection pending in the housekeeping commit after Phase 2 visually closes.
-
-At every IX corner V2 emits three distinct plug components. They are NOT anti-patterns — they are the canonical resolution of the corner. They are derived from the polygon (not constructed to paper over a bad join), but they ARE distinct geometry layers and must be respected by every consumer.
-
-1. **Asphalt plug (`cornerAsphaltPlugs`)** — `asphaltRounded − union(per-chain asphalt rectangles)`. Each chain emits per-segment rectangles with square ends at IX vertices; the round-corners op then ADDS a fillet wedge to the unioned silhouette. That fillet area is part of `asphaltRounded` but NOT covered by any chain's rectangles; the asphalt plug fills it. Always opaque (structural surface; no per-chain translucency). `buildBlockGeometryV2.js:1643`.
-2. **Curb plug** — the curb's natural arc around the corner. Emerges from `dilate(asphaltRounded) − asphaltRounded` (the unified curb stroke) traversing the polygon's rounded corner. No separate curb-arc emission — the curb-as-stroke pattern carries the corner for free, but it IS the corner plug for the curb material at that location.
-3. **Concrete plug (`cornerSidewalkPads`)** — `cornerPadUnion ∩ blockRounded`. The sidewalk pad at the corner; emerges where treelawn/sidewalk bands from adjacent block-edges overlap at a convex corner. Lives in V2's `byMaterial` map alongside the band rings. `feedback_load_bearing_corner_pads` memory: do not remove pre-emptively. `feedback_corner_pad_continuity_first` memory: corner must be derived from the same source as the legs (the polygon), never constructed as a separate primitive.
-
-All three are polygon-derived — they are properties of the rounded block silhouette and the band geometry, not patches over chain-joint failures. If any of them looks broken, the polygon is what's wrong; fixing the polygon fixes all three together.
-
-### What this forbids — common anti-patterns
-
-- ❌ **Snapping or editing chain endpoints to "clean up" a corner.** The corner geometry comes from the polygon. Chain endpoints are descriptive, not prescriptive. If a corner looks dirty (asphalt plug malformed, concrete plug missing or twisted, curb arc kinked), the polygon's corner vertex is wrong (cluster of micro-bends, not a single corner) — clean THE POLYGON.
-- ❌ **Per-IX special-case extension math** that extends a chain segment to find where it meets another extended segment, computed off chain vertex tangents. Inherits chain-vertex bend noise. Compute corner records off polygon edges, not off extended chain tangents.
-- ❌ **Authoring a fillet wedge primitive at a corner as a separate constructed polygon distinct from the corner plug components.** The three corner plugs above are NOT "fillet wedges"; they emerge from polygon ops on the silhouette and the band rings. A fourth filled object pasted on top is wrong.
-- ❌ **Confusing V1's retired `buildCornerPlug` with V2's `cornerAsphaltPlugs` / `cornerSidewalkPads`.** V1's per-corner-annular-sector approach (`buildCornerPlug`, `buildCurbAnnulus`, `intersectionGeometry.js`) was retired in commit `0286cb1`. V2's three-component plug system is its replacement and is fully alive. Different model entirely.
-- ❌ **Re-deriving "block polygon from chains" when an authored block polygon exists.** If the operator has authored the block polygon (e.g. the park's 4-corner polygon), the bake honors it; chain-derived polygons are fallback-only.
-- ❌ **Splitting a chain at every slight bend to "respect topology."** Slight bends are OSM noise. The polygon system already collapses them. Splitting amplifies the noise.
-
-### When the polygon doesn't look right
-
-If a block's geometry is wrong (corners, sides, mouth, curb), there is exactly one diagnostic order:
-
-1. **What's the polygon at this location?** Inspect block ring vertex count and corner positions. A 4-corner block should have ~4 vertices at corners (plus however many along sides). A 41-vertex blob with 5 vertices at each corner is the bug.
-2. **Where does that polygon come from?** Authored (file, store), derived from chains (polygonization), or imported from OSM (`leisure=park`, etc.)?
-3. **If the polygon is wrong: clean THE POLYGON, not the chains.** Either author it directly (canonical for block-of-record like the park), apply Douglas-Peucker / corner-detection at derivation, or change the source.
-4. **Re-bake. Round-corners, curb, ribbons, asphalt mouth all reconcile automatically.**
-
-There is no step "audit the chain endpoints near the corner." There is no step "snap the chain to the polygon." If a chain endpoint is materially off from the polygon corner, it is an unrelated authoring concern (label placement, perhaps), not a corner-geometry concern. The polygon owns the corner.
-
-### Cross-references
-
-- Block-as-positive-space derivation history: NOTES.md "the new model — figure-ground inversion."
-- V2 polygon-walking band emission (D.3c): NOTES.md 2026-05-10 entries.
-- Curb-as-unified-stroke: see the curb section later in this document.
-- Corner-authoring kit (3-tier: global / per-IX / per-corner): see the corner section later in this document.
-- Memory: `project_v2_curb_is_unified_stroke`, `project_v2_block_ring_extends_to_asphalt`, `feedback_corner_pad_continuity_first`, `feedback_load_bearing_corner_pads`, `feedback_clipping_mask_does_the_geometry`.
-
-If a request, an investigation, or a brief invokes "snap chain points," "extend chain segments to corner," "consolidate vertex cluster at intersection," or "the chain endpoint doesn't agree with the polygon corner" — push back. Re-frame in terms of polygons. The polygon answer always exists; the chain framing rediscovers a problem the polygon system already solved.
+The doctrine moved out of FEATURES (previously inline at this section) so it could be edited daily without inflating the product-orientation doc. The old inline copy is preserved in git history at any commit before this entry was created.
 
 ---
 

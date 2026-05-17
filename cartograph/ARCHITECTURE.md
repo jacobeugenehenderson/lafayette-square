@@ -2,7 +2,9 @@
 
 How this codebase is organized and how its pieces fit together. Read top to bottom; it builds.
 
-> Part of the **cartograph trinity** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md`). Read at session start; flag contradictions during work; update at session end. Goal: keep this doc pristine and current. Stale claims are worse than no claims — they actively mistrain readers. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
+> Part of the **cartograph quintet** (`cartograph/FEATURES.md` / `cartograph/ARCHITECTURE.md` / `cartograph/BACKLOG.md` / `cartograph/NOTES.md` / `cartograph/RIBBONS.md`). Read at session start; flag contradictions during work; update at session end. Goal: keep these docs pristine and current. Stale claims are worse than no claims — they actively mistrain readers. The LS consumer app has its own parallel trinity under `ls/` — see root `README.md` for the index.
+>
+> **`RIBBONS.md`** is the canonical reference for the ribbon + corner + curb + intersection + block-geometry system — the heart of the visible map. Read it before any geometry work. Living doc; evolves every session until the corner problem closes.
 
 ---
 

@@ -4,6 +4,8 @@ This document explains how to (re)build the Lafayette Square neighborhood map fr
 scratch, the principles behind the pipeline, and the work-in-progress problems the
 next operator should pick up. Read this top-to-bottom before touching any code.
 
+> Part of the **cartograph quintet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md` / `RIBBONS.md`). **Ribbon / corner / curb / intersection / block-geometry doctrine and pipeline** live in `RIBBONS.md` — the living doc that evolves every session. The sub-entries below carry the iteration archeology; the doctrine they cite has migrated to RIBBONS.md.
+
 ---
 
 ## 2026-05-15 — Procedural trees v1.5: in-Arborist authoring + skeleton-first roadmap — MAXI BRIEF
