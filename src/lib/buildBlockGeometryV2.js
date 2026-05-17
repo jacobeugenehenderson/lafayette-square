@@ -18,7 +18,8 @@ import clipperLib from 'clipper-lib'
 import { CURB_WIDTH, innerEdgeMeasure } from '../cartograph/streetProfiles.js'
 
 const SCALE = 1000
-const ARC_N = 16
+const ARC_N = 16          // half-cap arcs in chainPavementRing only
+const BEZIER_N = 16       // cubic-Bezier corner sampling count
 const RAD = Math.PI / 180
 
 // Weighted random LU palette for unauthored blocks. Distribution tuned to
@@ -75,71 +76,12 @@ function blockKeyFromRing(ring) {
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const fromClipper = (p) => [p.X / SCALE, p.Y / SCALE]
 
-// Distance (meters) inside which neighbor vertices around an IX are
-// treated as short-tangent noise (OSM micro-bends OR clustered adjacent
-// IXs along a chain). Used read-only by cornersAtIx.buildLeg to pick a
-// stable vertex for the leg's tangent direction; chain.points is never
-// mutated by V2 (Survey owns that). Tunable via NOTES.
-const IX_NOISE_RADIUS = 16
-
-// Douglas-Peucker simplification tolerance for per-segment asphalt
-// rectangle edges (Phase A.7). Applied to leftEdge / rightEdge inside
-// emitChain BEFORE the ring is assembled — collapses OSM micro-bends
-// (sub-degree wobbles within a few meters of an IX) without touching
-// authored curvature (meters-scale deviations). The unioned
-// asphaltSharp boundary then has longer sides near each IX corner →
-// arcReplaceVertex's 49% maxInset clamp doesn't fire at modest slider
-// settings → cranked-slider produces visibly big arcs on dense-chain
-// IXs (Mississippi-class). Endpoints (= IX vertices) are anchored by
-// DP construction so adjacent segments' rectangles still meet at the
-// corner. Tune visually; 0.5 m is the starting guess.
-const SIMPLIFY_EPS = 0.5
-
-// Perpendicular distance from point p to the infinite line through a-b.
-// Degenerate a==b returns Euclidean distance from p to a.
-function perpDistToSegment(p, a, b) {
-  const dx = b[0] - a[0], dz = b[1] - a[1]
-  const L2 = dx * dx + dz * dz
-  if (L2 < 1e-12) return Math.hypot(p[0] - a[0], p[1] - a[1])
-  const cross = dx * (p[1] - a[1]) - dz * (p[0] - a[0])
-  return Math.abs(cross) / Math.sqrt(L2)
-}
-
-// Iterative Douglas-Peucker (avoid recursion blow-up on long chains).
-// Preserves first and last points unconditionally. Returns a new array.
-function simplifyPolylineDP(pts, eps) {
-  const n = pts.length
-  if (n < 3) return pts.slice()
-  const keep = new Array(n).fill(false)
-  keep[0] = true
-  keep[n - 1] = true
-  const stack = [[0, n - 1]]
-  while (stack.length) {
-    const [i, j] = stack.pop()
-    let maxD = 0
-    let maxK = -1
-    for (let k = i + 1; k < j; k++) {
-      const d = perpDistToSegment(pts[k], pts[i], pts[j])
-      if (d > maxD) { maxD = d; maxK = k }
-    }
-    if (maxD > eps && maxK !== -1) {
-      keep[maxK] = true
-      stack.push([i, maxK])
-      stack.push([maxK, j])
-    }
-  }
-  const out = []
-  for (let i = 0; i < n; i++) if (keep[i]) out.push(pts[i])
-  return out
-}
-
 // Polygon-edge-Q polyline depth. Each leg's facing-side offset
 // polyline walks `CORNER_Q_POLY_DEPTH` chain.points vertices outward
 // from the IX V. At LS scale the asphalt-union corner vertex is on
-// segment 0 (rectilinear) or segment 1–2 (curved chains within
-// IX_NOISE_RADIUS); 6 gives generous slack. Larger depths add
-// polyline-pair work without finding crossings polyline-cross would
-// miss at 6.
+// segment 0 (rectilinear) or segment 1–2 (curved chains within ~16m
+// of the IX); 6 gives generous slack. Larger depths add polyline-pair
+// work without finding crossings polyline-cross would miss at 6.
 const CORNER_Q_POLY_DEPTH = 6
 
 function unit(v) {
@@ -383,11 +325,21 @@ function polylineSegSegCross(a1, a2, b1, b2) {
   if (t < -SLOP || t > 1 + SLOP) return null
   return [a1[0] + s * dax, a1[1] + s * daz]
 }
+// Returns { point, tangentA, tangentB } or null. Local tangents are the
+// unit direction of the hit segments in each polyline's natural walk
+// (both polylines walk away from V), so tangentA/tangentB point OUT
+// from V along each leg at the corner — the local-polyline tangent at
+// Vc, not the far-field tangent. Bezier consumes these for handle
+// direction; buildCornerPadQuad consumes them for tA/tB anchoring.
 function polylineCross(polyA, polyB) {
   for (let i = 0; i < polyA.length - 1; i++) {
     for (let j = 0; j < polyB.length - 1; j++) {
       const Q = polylineSegSegCross(polyA[i], polyA[i + 1], polyB[j], polyB[j + 1])
-      if (Q) return Q
+      if (Q) {
+        const tA = unit([polyA[i + 1][0] - polyA[i][0], polyA[i + 1][1] - polyA[i][1]])
+        const tB = unit([polyB[j + 1][0] - polyB[j][0], polyB[j + 1][1] - polyB[j][1]])
+        return { point: Q, tangentA: tA, tangentB: tB }
+      }
     }
   }
   return null
@@ -437,27 +389,17 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       return null
     }
     const buildLeg = (dir) => {
-      // Walk from the IX in `dir` until distance from V exceeds
-      // IX_NOISE_RADIUS. The first vertex beyond the radius gives the
-      // leg's clean tangent — short chain noise vertices near the IX
-      // (OSM micro-bends OR clustered adjacent IXs) get bypassed for
-      // tangent direction, but the chain's actual `points` array is
-      // untouched. naturalSegments / emitChain / buildFrontageEdges all
-      // continue to read raw chain.points so authored fixture geometry
-      // (saw-tooth jogs, bowed carriageways, closed teardrop bodies)
-      // renders intact.
-      let ni = ixIdx + dir
-      let stable = null
-      while (ni >= 0 && ni < pts.length) {
-        const ddx = pts[ni][0] - V[0], ddz = pts[ni][1] - V[1]
-        if (Math.hypot(ddx, ddz) >= IX_NOISE_RADIUS) { stable = pts[ni]; break }
-        ni += dir
-      }
-      // Fallback: short chain (dead-end stub shorter than R) — use the
-      // chain's far endpoint to recover any tangent at all.
-      if (!stable) stable = (dir > 0) ? pts[pts.length - 1] : pts[0]
-      if (stable === pts[ixIdx]) return null
-      const dx = stable[0] - V[0], dz = stable[1] - V[1]
+      // Local tangent at V along this leg = direction of the first
+      // chain.points segment from V outward in `dir`. Under the Bezier
+      // model the corner record's T_A / T_B come from polylineCross's
+      // local segment tangents at the hit point Vc (not far-field);
+      // here we only need a tangent direction for CCW leg sorting +
+      // theta calculation at V, and the local-at-V direction is the
+      // doctrine-correct value (a curved chain's two legs make their
+      // real intersection angle here, not 16m down the road).
+      const ni = ixIdx + dir
+      if (ni < 0 || ni >= pts.length) return null
+      const dx = pts[ni][0] - V[0], dz = pts[ni][1] - V[1]
       const L = Math.hypot(dx, dz)
       if (L < 1e-6) return null
       const isBack = dir === -1
@@ -491,10 +433,11 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
         name: chain.name || null,
         // Used by polygon-edge-Q (`buildLegSidePolyline`) to build the
         // leg's facing-side offset polyline from the chain's actual
-        // points + bisector-perps. T (above) is the far-field tangent
-        // from `findStableVertex` — still consumed by `corner.T_A` /
-        // `corner.T_B` for downstream `buildCornerPadQuad` geometry.
-        // Polygon-edge-Q only replaces the corner.point math, not T.
+        // points + bisector-perps. T (above) is the local at-V tangent
+        // (first chain segment from V outward) — consumed for CCW leg
+        // sorting + θ at V. The corner record's T_A / T_B are then
+        // overwritten with LOCAL tangents at the Vc hit point from
+        // polylineCross.
         chain,
         ixIdx,
         dir,
@@ -571,8 +514,14 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
     const polyA = buildLegSidePolyline(A.chain, A.ixIdx, A.dir, +1, A.outerR)
     const polyB = buildLegSidePolyline(B.chain, B.ixIdx, B.dir, -1, B.outerL)
     if (!polyA || !polyB) continue
-    const Vc = polylineCross(polyA, polyB)
-    if (!Vc) continue
+    const hit = polylineCross(polyA, polyB)
+    if (!hit) continue
+    const Vc = hit.point
+    // Local-polyline tangents at Vc (out from V along each leg). Override
+    // the at-V tangents A.T / B.T for corner-record use — buildCornerPadQuad
+    // and Bezier corners both want the tangent at the corner, not at V.
+    const localT_A = hit.tangentA
+    const localT_B = hit.tangentB
 
     const d_A = A.rightDepth   // A's RIGHT side faces this corner.
     const d_B = B.leftDepth    // B's LEFT side faces this corner.
@@ -595,12 +544,15 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
       d_min,
       R_class: R_CLASS_DEFAULT,
       R_authored,
-      // Leg data for downstream pad polygon construction. T_A/T_B point
-      // OUT from V along each leg; outerR/outerL are the leg's pavementHW
-      // facing this corner; rightDepth_A/leftDepth_B are the per-side
-      // ped-zone depths (treelawn + sidewalk on a 'sidewalk' terminal,
-      // 0 otherwise) facing this corner.
-      T_A: A.T, T_B: B.T,
+      // T_A / T_B are LOCAL-polyline tangents at Vc (not the at-V
+      // tangents A.T / B.T). They point OUT from V along each leg at
+      // the corner — the doctrine-correct tangent direction for
+      // Bezier handle alignment + pad quad geometry on curved chains.
+      // tA / tB are computed at corner-emission time in
+      // applyRoundCornersToRing once the per-corner R is resolved
+      // (since they're R-dependent via insetA = R/tan(θ/2)). The
+      // corner record carries them post-emission for buildCornerPadQuad.
+      T_A: localT_A, T_B: localT_B,
       outerR_A: A.outerR, outerL_B: B.outerL,
       rightDepth_A: A.rightDepth, leftDepth_B: B.leftDepth,
     })
@@ -645,72 +597,132 @@ function cornersAtIx(ix, streetsByName, ixOverrides, cornerOverrides, blockCusto
 // bands paint over the pad in the band-zone, leaving pad visible only
 // in the gap area near V.
 function buildCornerPadQuad(corner, cw) {
-  const { V, T_A, T_B, outerR_A, outerL_B, rightDepth_A, leftDepth_B } = corner
+  const { V, tA, tB, T_A, T_B, outerR_A, outerL_B, rightDepth_A, leftDepth_B } = corner
   if (rightDepth_A <= 0 || leftDepth_B <= 0) return null
-  // The pad's edge along T_A sits perpendicular-distance L_A from chain B
-  // (not chain A — T_A is parallel to chain A, so it's perpendicular to
-  // T_B's chain when θ=90°). Size L_A off B's facing-side metadata so
-  // the pad ends exactly at B's band outer edge; same for L_B/A. Flush,
-  // no slack — the chain band paints over any pad pixel that sneaks
-  // past, which would otherwise read as an "internal bump."
-  const L_A = outerL_B + cw + leftDepth_B
-  const L_B = outerR_A + cw + rightDepth_A
+  // Under Bezier corners, the pad's outer edge is the tA-tB segment
+  // (the Bezier endpoints on the asphalt-side polygon boundary, set by
+  // applyRoundCornersToRing post-emission). The pad extends inward
+  // into the block by cw + per-side band depth so the pad reaches the
+  // outer edge of treelawn + sidewalk on each side.
+  //
+  // Inward direction: perpendicular to tA-tB, on the side AWAY from V
+  // (V sits on the asphalt-interior side of the corner; block-interior
+  // is the opposite). Robust on curved chains where Vc-V doesn't point
+  // cleanly along the bisector.
+  //
+  // Pre-Bezier fallback: if tA/tB are missing (corner record exists
+  // but applyRoundCornersToRing didn't emit a Bezier for this vertex —
+  // e.g. R clamped to 0 by default-R rule), fall back to the legacy
+  // V-anchored parallelogram so the pad still emits.
+  if (!tA || !tB) {
+    const L_A = outerL_B + cw + leftDepth_B
+    const L_B = outerR_A + cw + rightDepth_A
+    return [
+      [V[0], V[1]],
+      [V[0] + T_A[0] * L_A, V[1] + T_A[1] * L_A],
+      [V[0] + T_A[0] * L_A + T_B[0] * L_B, V[1] + T_A[1] * L_A + T_B[1] * L_B],
+      [V[0] + T_B[0] * L_B, V[1] + T_B[1] * L_B],
+    ]
+  }
+  const ab = [tB[0] - tA[0], tB[1] - tA[1]]
+  const abLen = Math.hypot(ab[0], ab[1])
+  if (abLen < 1e-6) return null
+  const perp = [-ab[1] / abLen, ab[0] / abLen]
+  const midAB = [(tA[0] + tB[0]) / 2, (tA[1] + tB[1]) / 2]
+  const toV = [V[0] - midAB[0], V[1] - midAB[1]]
+  // inward = perp on the side opposite V (block-interior).
+  const inSign = (perp[0] * toV[0] + perp[1] * toV[1]) < 0 ? +1 : -1
+  const inward = [perp[0] * inSign, perp[1] * inSign]
+  // Per-side depth: tA-side depth = cw + rightDepth_A (leg A faces this
+  // corner with its RIGHT side); tB-side depth = cw + leftDepth_B.
+  const depthA = cw + rightDepth_A
+  const depthB = cw + leftDepth_B
   return [
-    [V[0], V[1]],
-    [V[0] + T_A[0] * L_A, V[1] + T_A[1] * L_A],
-    [V[0] + T_A[0] * L_A + T_B[0] * L_B, V[1] + T_A[1] * L_A + T_B[1] * L_B],
-    [V[0] + T_B[0] * L_B, V[1] + T_B[1] * L_B],
+    [tA[0], tA[1]],
+    [tB[0], tB[1]],
+    [tB[0] + inward[0] * depthB, tB[1] + inward[1] * depthB],
+    [tA[0] + inward[0] * depthA, tA[1] + inward[1] * depthA],
   ]
 }
 
-// Replace polygon vertex at `cur` with an arc of radius R tangent to
-// the in/out edges. Caller has already verified this is a convex-block
-// vertex (right turn when walking CCW around the asphalt void) and
-// computed R via the default-R rule.
-function arcReplaceVertex(prev, cur, next, R, theta) {
-  const inDir = unit([cur[0] - prev[0], cur[1] - prev[1]])
-  const outDir = unit([next[0] - cur[0], next[1] - cur[1]])
+// Evaluate cubic Bezier at parameter t ∈ [0,1].
+function cubicBezierEval(p0, p1, p2, p3, t) {
+  const u = 1 - t
+  const uu = u * u, tt = t * t
+  const uuu = uu * u, ttt = tt * t
+  const b0 = uuu, b1 = 3 * uu * t, b2 = 3 * u * tt, b3 = ttt
+  return [
+    b0 * p0[0] + b1 * p1[0] + b2 * p2[0] + b3 * p3[0],
+    b0 * p0[1] + b1 * p1[1] + b2 * p2[1] + b3 * p3[1],
+  ]
+}
+
+// Cubic-Bezier corner replacement, doctrine-aligned. Replaces polygon
+// vertex `cur` with a smooth Bezier arc whose endpoints (tA, tB) sit
+// inset insetA / insetB along the local tangents (tangentA / tangentB)
+// at the corner. Handles are aligned with the tangents and sized by
+// handleLen = (4/3)·R·tan(θ/4) — the canonical cubic-Bezier circular
+// approximation: error ≈ 0.027% at θ=90°, growing smoothly elsewhere
+// (well under 0.1m for residential R=4.5m).
+//
+// `tangentA` points OUT from V along leg A; `tangentB` points OUT from
+// V along leg B. The polygon walks CCW around the asphalt void, so it
+// ARRIVES at cur along (-tangentA) and DEPARTS along (+tangentB) — sign
+// convention matches a right-turn (block-convex / asphalt-concave)
+// corner. tA = cur + insetA·tangentA, tB = cur + insetB·tangentB. Both
+// handles point INTO the corner (toward V along their respective legs):
+// P1 = tA - handleLen·tangentA, P2 = tB - handleLen·tangentB.
+//
+// At clean rectilinear IXs with R = R_class and θ = 90°, the sampled
+// polyline is visually indistinguishable from a circular arc of radius
+// R at the same tangent points (parity verified to < 0.001 m max
+// vertex deviation; see commit body).
+//
+// Curved-chain handling: tangentA / tangentB are LOCAL-polyline
+// tangents at the corner (from polylineCross's hit segments), so the
+// Bezier follows leg-direction at the corner regardless of how many
+// polygon vertices live between tA and tB. The intermediate vertices
+// are overwritten by the sampled Bezier curve — no 49% inset clamp,
+// no polygon-density coupling.
+function bezierReplaceCorner(cur, R, theta, tangentA, tangentB) {
+  if (R <= 0) return [cur]
   const halfTheta = theta / 2
   const tanH = Math.tan(halfTheta)
   if (tanH <= 1e-6) return [cur]
-  // Cap inset at 49% of the shorter adjacent segment so a too-large R
-  // (e.g., from a maxed cornerRadiusScale slider) doesn't overshoot the
-  // segment endpoints and produce a degenerate ring. When clamped,
-  // recompute the effective R = clampedInset * tanH so the arc still
-  // closes tangentially.
-  let inset = R / tanH
-  const maxInset = Math.min(
-    Math.hypot(cur[0] - prev[0], cur[1] - prev[1]),
-    Math.hypot(next[0] - cur[0], next[1] - cur[1]),
-  ) * 0.49
-  let actualR = R
-  if (inset > maxInset) { inset = maxInset; actualR = inset * tanH }
-  const tA = [cur[0] - inset * inDir[0], cur[1] - inset * inDir[1]]
-  const tB = [cur[0] + inset * outDir[0], cur[1] + inset * outDir[1]]
-  // Right-turn convention: arc center is to the right of inDir.
-  // Right-perp of inDir = (inDir.y, -inDir.x).
-  const normalA = [inDir[1], -inDir[0]]
-  const center = [tA[0] + actualR * normalA[0], tA[1] + actualR * normalA[1]]
-  const a1 = Math.atan2(tA[1] - center[1], tA[0] - center[0])
-  const a2 = Math.atan2(tB[1] - center[1], tB[0] - center[0])
-  let da = a2 - a1
-  // Walk the SHORT arc.
-  if (da > Math.PI) da -= 2 * Math.PI
-  if (da < -Math.PI) da += 2 * Math.PI
+  const inset = R / tanH
+  // Arc central angle = π − θ (block-interior θ → arc sweeps the
+  // supplement at the inscribed circle). Brief's formula
+  // (4/3)·R·tan(θ/4) reads θ as the arc angle; here θ is the polygon's
+  // block-interior angle (from cornersAtIx) so feed (π − θ) into the
+  // canonical cubic-Bezier circular approximation. Verified by parity
+  // test: max deviation < 0.005m at any θ ∈ [60°, 170°], R ≤ 15m.
+  const handleLen = (4 / 3) * R * Math.tan((Math.PI - theta) / 4)
+  const tA = [cur[0] + inset * tangentA[0], cur[1] + inset * tangentA[1]]
+  const tB = [cur[0] + inset * tangentB[0], cur[1] + inset * tangentB[1]]
+  const P1 = [tA[0] - handleLen * tangentA[0], tA[1] - handleLen * tangentA[1]]
+  const P2 = [tB[0] - handleLen * tangentB[0], tB[1] - handleLen * tangentB[1]]
   const out = [tA]
-  for (let k = 1; k < ARC_N; k++) {
-    const a = a1 + (da * k / ARC_N)
-    out.push([center[0] + actualR * Math.cos(a), center[1] + actualR * Math.sin(a)])
+  for (let k = 1; k < BEZIER_N; k++) {
+    const t = k / BEZIER_N
+    out.push(cubicBezierEval(tA, P1, P2, tB, t))
   }
   out.push(tB)
+  // Side-channel: also return tA / tB endpoints so the caller can write
+  // them back onto the corner record for buildCornerPadQuad. Embedded
+  // as a non-enumerable so for-loop consumers ignore.
+  Object.defineProperty(out, 'tA', { value: tA, enumerable: false })
+  Object.defineProperty(out, 'tB', { value: tB, enumerable: false })
   return out
 }
 
 function applyRoundCornersToRing(ring, corners, scale = 1) {
-  // Walk CCW around the asphalt void's outer ring. At each vertex check:
-  //   1. Spatial match against precomputed IX corners (within tolerance).
-  //   2. Cross product of in/out edges < 0 (right turn → block-convex).
-  // If both pass, replace vertex with arc.
+  // Walk CCW around the asphalt void's outer ring. At each vertex match
+  // against precomputed IX corner records by spatial proximity; if a
+  // record is found AND the polygon turn at this vertex is right-handed
+  // (block-convex / asphalt-concave), replace the vertex with the
+  // sampled Bezier corner. Sample endpoints (tA, tB) are written back
+  // onto the corner record so downstream consumers (buildCornerPadQuad)
+  // can read them.
   const TOL = 0.5
   const n = ring.length
   const out = []
@@ -723,20 +735,21 @@ function applyRoundCornersToRing(ring, corners, scale = 1) {
       if (Math.hypot(cur[0] - c.point[0], cur[1] - c.point[1]) < TOL) { matched = c; break }
     }
     if (!matched) { out.push(cur); continue }
+    // Block-convex check still uses polygon-local in/out direction — the
+    // corner record's tangents could theoretically be local-tangent
+    // misaligned with polygon walk direction on extreme curved chains.
     const inDir = unit([cur[0] - prev[0], cur[1] - prev[1]])
     const outDir = unit([next[0] - cur[0], next[1] - cur[1]])
     const cross = inDir[0] * outDir[1] - inDir[1] * outDir[0]
     if (cross >= 0) { out.push(cur); continue }  // not block-convex
-    // Authored override (per-corner or per-IX) bypasses the default-R cap —
-    // operator's intent wins, even past the geometric pinch threshold.
-    // Reverting an override (deleting the key) returns a non-finite value
-    // here and falls through to the default-R rule.
     const baseR = Number.isFinite(matched.R_authored)
       ? matched.R_authored
       : defaultR(matched.R_class, matched.d_min, matched.theta)
     const R = baseR * scale
     if (R <= 0.05) { out.push(cur); continue }
-    const arc = arcReplaceVertex(prev, cur, next, R, matched.theta)
+    const arc = bezierReplaceCorner(cur, R, matched.theta, matched.T_A, matched.T_B)
+    if (arc.tA) matched.tA = arc.tA
+    if (arc.tB) matched.tB = arc.tB
     for (const p of arc) out.push(p)
   }
   return out
@@ -1582,18 +1595,13 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
       if (hwL > 0 || hwR > 0) {
         const leftEdge  = segPts.map((p, i) => [p[0] - segPerps[i][0] * hwL, p[1] - segPerps[i][1] * hwL])
         const rightEdge = segPts.map((p, i) => [p[0] + segPerps[i][0] * hwR, p[1] + segPerps[i][1] * hwR])
-        // Phase A.7: Douglas-Peucker simplification on each side
-        // BEFORE ring assembly. Collapses OSM micro-bends near IX
-        // vertices so the unioned asphaltSharp boundary has longer
-        // sides at each corner → arcReplaceVertex's 49% maxInset
-        // clamp doesn't fire at modest slider settings. Endpoints
-        // (= IX vertices) are anchored by DP construction, so
-        // adjacent segments' rectangles still meet exactly at the
-        // corner. Authored curvature (meters-scale deviation) is
-        // preserved at SIMPLIFY_EPS=0.5m.
-        const leftEdgeS  = simplifyPolylineDP(leftEdge,  SIMPLIFY_EPS)
-        const rightEdgeS = simplifyPolylineDP(rightEdge, SIMPLIFY_EPS)
-        const ring = [...leftEdgeS, ...rightEdgeS.slice().reverse()]
+        // Phase A.7 (Douglas-Peucker simplification of asphalt-rect
+        // edges) retired with the Bezier corner rewrite: Bezier samples
+        // overwrite all polygon vertices between tA and tB regardless
+        // of density, so the dense-corner→clamp-fires failure mode A.7
+        // patched no longer exists. Raw per-vertex offset edges feed
+        // the union directly.
+        const ring = [...leftEdge, ...rightEdge.slice().reverse()]
         // Normalize to CCW. Without this the ring's winding flips with
         // chain direction, and unionRings (NonZero) cancels mixed-winding
         // overlaps at IXs — leaves gaps that the corner-asphalt plug is
