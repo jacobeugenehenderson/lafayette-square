@@ -1431,14 +1431,19 @@ function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blo
   }
 
   if (blockRounded?.length) {
-    const ringByKey = new Map()
-    for (const ring of blockRounded) {
-      ringByKey.set(blockKeyFromRing(ring), ring)
-    }
+    // D.7a — pass-1 fe.blockKey ≠ pass-2 blockKeyFromRing(ring) for ~58% of
+    // fes (bbox shift from wider asphalt). Resolve per-fe by interior probe
+    // against blockRounded directly; registry keying would lose pass-1
+    // collisions onto the same pass-2 ring. See RIBBONS.md §6.2.
     for (const fe of out) {
-      const ring = ringByKey.get(fe.blockKey)
-      if (!ring) continue
-      const clip = [ring]
+      const probe = fe.treelawnRings[0]?.[0] || fe.sidewalkRings[0]?.[0]
+      if (!probe) continue
+      let owningRing = null
+      for (const ring of blockRounded) {
+        if (pointInRing(probe[0], probe[1], ring)) { owningRing = ring; break }
+      }
+      if (!owningRing) continue
+      const clip = [owningRing]
       if (fe.treelawnRings.length) fe.treelawnRings = intersectRings(fe.treelawnRings, clip)
       if (fe.sidewalkRings.length) fe.sidewalkRings = intersectRings(fe.sidewalkRings, clip)
     }
