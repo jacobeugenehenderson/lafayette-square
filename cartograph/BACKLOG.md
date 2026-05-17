@@ -3222,6 +3222,23 @@ Phase E and v1.6.
     (sidewalk/treelawn arc-following) deferred pending visual outcome.
     Phase B (polygon-graph schema + producer) is next; the corrected +
     simplified algorithm is what B freezes.
+  - [x] **Bezier corners — shipped (supersedes A through A.7).** SHIPPED
+    2026-05-16 (commit `7db2d32`). Replaced circular-arc corner geometry
+    with cubic Bezier corners: shape-agnostic about local polygon-vertex
+    density, so the dense-corner→clamp-fires failure mode A.7 was
+    patching no longer exists. AASHTO parity preserved (max deviation
+    0.0012 m at θ=90°, R=4.5 m; < 0.025 m across θ ∈ [60°, 170°]).
+    Curved IXs (Mississippi / Truman Parkway / Park-avenue) follow
+    local-polyline tangents at the corner regardless of how many
+    polygon vertices live between `tA` and `tB`. Retired: `arcReplaceVertex`,
+    `IX_NOISE_RADIUS`, `simplifyPolylineDP`, `SIMPLIFY_EPS`, `perpDistToSegment`,
+    and the inline `findStableVertex` walk. Kept: `polylineCross` (now
+    returns local tangents), `buildLegSidePolyline`, `defaultR` (AASHTO
+    table). `buildCornerPadQuad` migrated to anchor at `tA`/`tB` with
+    perpendicular-inward construction; legacy V-anchored fallback
+    retained for R≤0.05 cases. Per-corner Bezier authoring UI + override
+    data model deferred to subsequent phases. See `cartograph/NOTES.md`
+    "Bezier corners shipped" entry for full audit + math.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**
