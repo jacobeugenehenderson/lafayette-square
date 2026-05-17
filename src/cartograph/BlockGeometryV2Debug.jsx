@@ -324,8 +324,8 @@ export default function BlockGeometryV2Debug({
     // chain's customs.
   }, [selectedStreet, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, curbWidth, blockLandUse])
 
-  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, cornerAsphaltPlugs, cornerSidewalkPads, byChain, corners, frontageEdges, frontageBands, frontageCaps } = useMemo(() => {
-    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], cornerAsphaltPlugs: [], cornerSidewalkPads: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [] }
+  const { asphaltRounded, blockRounded, blockFill, blocks, curbBands, byChain, corners, frontageEdges, frontageBands, frontageCaps } = useMemo(() => {
+    const empty = { asphaltRounded: [], blockRounded: [], blockFill: [], blocks: [], curbBands: [], byChain: [], corners: [], frontageEdges: [], frontageBands: [], frontageCaps: [] }
     if (!liveRibbons) return empty
     try {
       return buildBlockGeometryV2(liveRibbons, {
@@ -500,19 +500,10 @@ export default function BlockGeometryV2Debug({
     return out
   }, [blocks, luColors, selectedAdjacentBlockKeys])
   const curbGeo     = useMemo(() => ringsToFlatGeo(curbBands,     0.035, true), [curbBands])
-  // Asphalt corner plug — fills the rounded fillet wedges at IX corners
-  // that the per-chain asphalt rectangles don't cover. Without this, the
-  // ground/horizon shows through the corner. Sits at asphalt priority,
-  // shared between chains, always opaque (no per-chain translucency).
-  // Clipper-output rings — must go through asPolygonWithHoles=true so CW
-  // holes pair with their CCW outers instead of rendering as filled
-  // polygons over their parent's interior. Same partition the bake
-  // adapter applies in cartograph/bake-ground.js.
-  const cornerAsphaltGeo = useMemo(() => ringsToFlatGeo(cornerAsphaltPlugs, 0.038, true), [cornerAsphaltPlugs])
-  // Concrete corner pad — sidewalk-color wedge at each IX corner where
-  // the chains' ped-zone bands don't connect. Sits at sidewalk priority,
-  // shared between chains, always opaque.
-  const cornerSidewalkGeo = useMemo(() => ringsToFlatGeo(cornerSidewalkPads, 0.028, true), [cornerSidewalkPads])
+  // Phase 2: cornerAsphaltGeo / cornerSidewalkGeo retired. The rounded
+  // asphalt mouth is now part of asphaltRounded directly (no fillet
+  // residual); the concrete corner pad is emitted as sidewalk-material
+  // by the regime emitter's arc-span branch inside frontageBands.
   // Live overlay for the SELECTED chain. While the operator drags
   // measure handles on chain X, V2's full pass takes ~2.5s — so the
   // bands can't follow handles in real time. `buildChainBandsLive`
@@ -843,14 +834,8 @@ export default function BlockGeometryV2Debug({
             material={g.chainIdx === selectedRibbonsChainIdx ? bandMats.asphaltSelected : bandMats.asphalt} />
         )
       })}
-      {/* Corner asphalt plugs are shared between chains (no per-chain class),
-          so they hide only when BOTH asphalt and highway are off. Also
-          hidden while a chain is selected — the plugs were sized to the
-          previous V2 pass and would mask the live-overlay bands at IXs. */}
-      {(asphaltVisible || highwayVisible) && cornerAsphaltGeo && selectedStreet == null && (
-        <mesh geometry={cornerAsphaltGeo} renderOrder={PRI.asphalt} receiveShadow
-          material={bandMats.cornerAsphalt} />
-      )}
+      {/* Phase 2: corner asphalt plug retired — asphaltRounded above
+          carries its rounded mouths inherently (stencil − blockRounded). */}
       {/* Non-street ribbons (alleys, footways, cycleways, steps, paths).
           Same geometry the bake emits via buildPathRibbons — shared helper
           guarantees Designer and slab don't drift. Each kind has its own
@@ -861,16 +846,10 @@ export default function BlockGeometryV2Debug({
             renderOrder={PRI.asphalt + 1} receiveShadow material={pathMats[kind]} />
         )
       ))}
-      {/* Concrete corner pad — quad covering the corner wedge, clipped by
-          the same blockRounded mask that shapes the bands and block fill.
-          Renders UNDER treelawn/sidewalk so chain bands paint over it;
-          pad shows only in the gap where neither band reaches (the
-          rounded wedge between the curb arc and the band-zone). Hides
-          with the sidewalk toggle since the pad reads as concrete. */}
-      {sidewalkVisible && cornerSidewalkGeo && selectedStreet == null && (
-        <mesh geometry={cornerSidewalkGeo} renderOrder={PRI.residential + 0.5} receiveShadow
-          material={bandMats.cornerSidewalk} />
-      )}
+      {/* Phase 2: corner concrete pad retired — the regime emitter
+          emits sidewalk-material wedges (ramp / asym plug) as part of
+          frontageBands' arc-span branch. Those render under the
+          sidewalk material above. */}
       {/* D.3c: frontageCaps — concrete cap quads at (tl+sw)↔(tl+sw)
           corners. Sits at sidewalk priority over the corner pads.
           Hides with the sidewalk toggle. */}

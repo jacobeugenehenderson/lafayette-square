@@ -331,22 +331,19 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
     pushClipperRings('treelawn',  c.treelawnCapRings)
     pushClipperRings('sidewalk',  c.sidewalkCapRings)
   }
-  // D.3c: frontageBands feed treelawn/sidewalk groups. Bands are
-  // square-ended at run-boundary IXs (extendCorners=false default);
-  // the existing cornerSidewalkPads fill the corner wedge as before.
-  // No frontageCaps consumed — pads do the corner concrete.
+  // Phase 2: frontageBands now carries straight-span bands AND arc-span
+  // regime emission (ramp wedges + asymmetric plugs as sidewalk-material
+  // rings, full-arc tl/sw wraps under their existing material keys).
+  // cornerSidewalkPads / cornerAsphaltPlugs retired — the arc emitter
+  // produces the corner concrete; asphaltRounded inherits its rounded
+  // mouths from blockRounded.
   //
-  // Treelawn now routes per-LU: each fe's treelawn is emitted under
+  // Treelawn routes per-LU: each fe's treelawn is emitted under
   // 'treelawn:<lu>' keyed by the LU of the block the fe abuts, so the
-  // ring picks up that LU's authored color and material (grass texture
-  // for residential/park/recreation; flat color for commercial/etc).
-  // Sidewalk stays uniform.
-  //
-  // Adjacent-block lookup is coordinate-based (point-in-polygon) rather
-  // than fe.blockKey lookup: pass-1 fee blockKeys drift from pass-2
-  // block blockKeys when asphalt widens via Measure customs, so a key
-  // join mis-attributes ~80% of fees. The treelawn ring sits inside the
-  // block, so its centroid is a safe probe.
+  // ring picks up that LU's authored color and material. Sidewalk stays
+  // uniform. Adjacent-block lookup is coordinate-based (point-in-
+  // polygon) since pass-1 fe blockKeys can drift from pass-2 block
+  // blockKeys under Measure customs.
   for (const fe of (v2.frontageBands || [])) {
     if (fe.treelawnRings?.length) {
       const probe = ringInteriorProbe(fe.treelawnRings[0])
@@ -356,8 +353,6 @@ function buildV2BakeShape(ribbons, design, stencilPolygon) {
     }
     if (fe.sidewalkRings?.length) pushClipperRings('sidewalk', fe.sidewalkRings)
   }
-  pushClipperRings('asphalt',  v2.cornerAsphaltPlugs)
-  pushClipperRings('sidewalk', v2.cornerSidewalkPads)
   pushClipperRings('curb',     v2.curbBands)
 
   // Per-block faces grouped by land use. Bare rings → `{outer, holes:[]}`

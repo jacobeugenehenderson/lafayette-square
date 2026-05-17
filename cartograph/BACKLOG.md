@@ -3263,6 +3263,33 @@ Phase E and v1.6.
     untouched (pads spiky from prior Bezier-era migration — Phase 2's
     territory). See `cartograph/NOTES.md` "Phase 1 — Multi-vertex
     Bezier consumption" entry for full audit + edge cases.
+  - [x] **Phase 2 — Path-B three-regime emitter + chain-era plug
+    retirement.** SHIPPED 2026-05-16. Three-in-one structural bundle:
+    (1) round-block instead of round-asphalt — `applyRoundCornersToRing`
+    runs on `blockSharp` rings, `asphaltRounded = stencil − blockRounded`
+    falls out, rounded asphalt mouths inherent; (2) Path-B regime
+    emitter (`buildFrontageBandsV2`) walks `blockRounded` end-to-end
+    via new `arcMeta` sidecar from the round-corners op, classifying
+    each arc span into ASYMMETRIC / SYMMETRIC-WITH-RAMP / SYMMETRIC-
+    NO-RAMP and emitting tl+sw bands or ramp wedge or asymmetric plug
+    accordingly; (3) normalized curb stroke (`dilate(asphalt,cw) −
+    asphalt`) re-derived as final layer, bands extend to the asphalt
+    boundary with no cw inset and the curb paints over the inner cw
+    to preserve visible widths. Retired: `buildCornerPadQuad`,
+    `cornerSidewalkPads`, `cornerAsphaltPlugs`, `cornerPadUnion`,
+    `cornerPadQuads`, PAD INVARIANT canary, the two consumer mounts
+    in Designer (`cornerAsphaltGeo` / `cornerSidewalkGeo`), the two
+    `pushClipperRings` calls in `bake-ground.js`. `byMaterial` keys
+    `cornerSidewalkPads:*` and `cornerAsphaltPlugs` disappear; the
+    materials they represented are now emitted by the regime emitter
+    under existing `treelawn:<lu>` / `sidewalk` keys. Bake delta vs
+    Phase 1 baseline (`ed29700`): LS 43→42 groups (−1), −4,213 verts
+    (−1.1%), −4,144 tris (−0.7%), −98 KB (−0.8%); determinism preserved
+    (re-bake byte-identical). See `cartograph/NOTES.md` "Phase 2 —
+    Path-B regime emitter" sub-entry for thresholds (ASYM_EPS_M=1.0,
+    ASYM_RATIO=0.7, RAMP_MAX_M=2.0, RAMP_FRAC=0.4, RAMP_MIN_M=0.5,
+    STEP_FRAC=0.5) + algorithmic flags + FEATURES rewrite / NOTES
+    consolidation deferred to housekeeping pass.
 
 ### Labels on all surfaces
 - [ ] **Close out label rendering + authoring across every surface kind**

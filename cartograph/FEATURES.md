@@ -75,6 +75,8 @@ If you find yourself reasoning about "the chain endpoint near the corner" or "sn
 
 ### Corner plugs — load-bearing, polygon-derived, three components
 
+> **[PHASE 2 SUPERSEDED — 2026-05-16]** The three plug components below remain visible regions at every IX corner, but they are no longer SEPARATE outputs of V2. Under Phase 2, the asphalt plug emerges inherently from `asphaltRounded = stencil − blockRounded` (no `cornerAsphaltPlugs` residual); the concrete plug is emitted as sidewalk-material by the three-regime arc emitter inside `frontageBands` (no `cornerSidewalkPads` separate output, no `buildCornerPadQuad` primitive); the curb plug stays an arc segment of the unified curb stroke. The doctrine (visible region must always be filled) holds; the emission topology changed. See `cartograph/NOTES.md` "Phase 2 — Path-B regime emitter" for the current model. Comprehensive rewrite of this subsection pending in the housekeeping commit after Phase 2 visually closes.
+
 At every IX corner V2 emits three distinct plug components. They are NOT anti-patterns — they are the canonical resolution of the corner. They are derived from the polygon (not constructed to paper over a bad join), but they ARE distinct geometry layers and must be respected by every consumer.
 
 1. **Asphalt plug (`cornerAsphaltPlugs`)** — `asphaltRounded − union(per-chain asphalt rectangles)`. Each chain emits per-segment rectangles with square ends at IX vertices; the round-corners op then ADDS a fillet wedge to the unioned silhouette. That fillet area is part of `asphaltRounded` but NOT covered by any chain's rectangles; the asphalt plug fills it. Always opaque (structural surface; no per-chain translucency). `buildBlockGeometryV2.js:1643`.

@@ -572,6 +572,45 @@ Per `cartograph/FEATURES.md` line 95–104 ("clean THE POLYGON: apply Douglas-Pe
 
 **Deferred.** Same list as the Bezier-shipped entry — Phase 2 (path B + three-regime emitter + ramp wedge + asymmetric step) is the next phase to dispatch. Concrete-plug-as-stroke-band is its territory. FEATURES corner-section rewrite + A.x housekeeping still deferred to the trinity housekeeping pass after Phase 2.
 
+#### Phase 2 — Path-B regime emitter + chain-era plug retirement — 2026-05-16
+
+**Status:** SHIPPED 2026-05-16 (this commit). Three structural changes in one bundle:
+
+1. *Round-block, derive asphalt as negative.* `applyRoundCornersToRing` now runs on each `blockSharp` ring; `asphaltRounded = stencil − blockRounded` falls out for free. Doctrinally correct per FEATURES line 23 ("blocks are positive space; streets are the void around them"). The rounded asphalt mouth at every IX emerges from the negative-space subtraction; no separate `cornerAsphaltPlugs` residual is needed. `applyRoundCornersToRing` now winding-aware: tests `cross * ringSign > 0` so the "block-convex" filter works on either ring direction; emission reversed after `bezierReplaceCorner` so the Bezier samples align with block-CCW walk order (which arrives via the tB-edge side and departs via the tA-edge side — opposite of the prior asphalt-CCW orientation).
+
+2. *Path-B three-regime emitter (`buildFrontageBandsV2`).* Walks each `blockRounded` ring vertex-by-vertex using the new `arcMeta` sidecar (per-vertex `{ corner, arcPositionFrac }` from `applyRoundCornersToRing`) and partitions into STRAIGHT and ARC spans. Straight spans emit concentric tl + sw bands offset inward from the block boundary; arc spans regime-classify off the two flanking straight-spans' measures:
+   - `|d_A − d_B| > 1.0m` OR `min(d)/max(d) < 0.7` → **ASYMMETRIC** plug spanning the whole arc, sidewalk material, inner-edge depth steps sharply at arc midpoint (frac=0.5 default) from d_min to d_max — ADA apron geometry.
+   - Else if both legs have treelawn → **SYMMETRIC-WITH-RAMP**: concentric tl + sw bands outside the ramp window, single sidewalk-material wedge spanning the full ped-zone depth inside the ramp window. Ramp arc-length = `min(2.0m, 0.4 × total_arc_length)`, skip if below `0.5m` floor.
+   - Else (both legs sidewalk-only) → **SYMMETRIC-NO-RAMP**: single sidewalk band across the arc.
+
+3. *Normalized curb stroke as final layer.* `curbBands = dilate(asphaltRounded, cw) − asphaltRounded` now derived AFTER bands emit, and bands extend to the asphalt boundary (no cw inset on their outer edge). The curb stroke paints over the inner cw of every band so visible treelawn/sidewalk widths preserve operator-authored tl/sw. Net visual: continuous curb stroke around every IX, wraps arcs cleanly, covers the band-to-asphalt boundary on all three regimes by construction.
+
+**Retirements (one commit).** Deleted: `buildCornerPadQuad`, the `cornerPadQuads` collection, `cornerPadUnion`, `cornerSidewalkPads`, `cornerAsphaltPlugs`, the PAD INVARIANT canary. The `byMaterial` keys `cornerSidewalkPads:*` and `cornerAsphaltPlugs` disappear from V2's output. Bake adapter (`cartograph/bake-ground.js`) drops the matching `pushClipperRings` consumer pushes; Designer renderer (`src/cartograph/BlockGeometryV2Debug.jsx`) drops `cornerAsphaltGeo` and `cornerSidewalkGeo` derived geos + their mesh mounts. Both materials kept defined (`bandMats.cornerSidewalk / cornerAsphalt`) since they're referenced by the still-mounted frontageCaps mesh (empty in Phase 2 but harmless). Comments still reference the retired symbols in 3 places under `cornersAtIx` (T_A/T_B leg-record docblocks) — left for the housekeeping pass since they're history not behavior.
+
+**Doctrine alignment.** Phase 2 satisfies the three corner-plug components named in FEATURES lines 76–84 STRUCTURALLY rather than as separate emitter outputs:
+- Asphalt plug → inherent in `asphaltRounded = stencil − blockRounded`.
+- Curb plug → arc segment of the unified curb stroke wrapping `asphaltRounded`'s rounded boundary.
+- Concrete plug → emitted as sidewalk-material by the regime emitter's arc-span branch (ramp wedge or asymmetric plug). The visible region "rounded curb arc meets straight ped-band inner edges at every block corner" is filled by the same band machinery that emits the straight spans — same source, same material, contiguous polygon. Honors `feedback_corner_pad_continuity_first` ("corner must be derived from same source as the legs, never a separate primitive") structurally.
+
+**Bake delta vs Phase 1 (commit `ed29700`).** LS: 43 → **42 groups** (−1, the cornerSidewalk and/or cornerAsphalt material entries that previously had carved corner contributions collapse), 381,672 → **377,459 verts** (−4,213, −1.1%), 635,585 → **631,441 tris** (−4,144, −0.7%), 11,921 KB → **11,823 KB** (−98 KB, −0.8%). Default look: 42 groups, 378,100 verts, 633,679 tris, 11,856.8 KB. Determinism preserved (re-bake byte-identical, md5 confirmed).
+
+**Algorithmic flags (`feedback_baby_must_surface_scope_drift`).**
+- *Cross-product sign convention.* `applyRoundCornersToRing` now tests `cross * ringSign > 0` (left turn relative to ring's interior). On CCW block rings this means block-convex corners (where corner records live). The asphalt-rounding case (pre-Phase-2) would now select asphalt-convex corners, opposite of the prior behavior — but there are no live asphalt callers; the only call site is `blockSharp.map(applyRoundCornersToRing)`. If a future caller wants the inverse, the sign needs a parameter — flagging for whoever resurrects asphalt-side rounding.
+- *Bezier walk-order reversal.* `bezierReplaceCorner` still produces `[tA, ..., tB]`; pass 2 now reverses + inverts arcPositionFrac so the emitted span aligns with block-CCW walk (which arrives via the tB side). Alternative: swap T_A↔T_B before the call — same geometry, different code path. Reversal chosen for locality.
+- *Band depth convention.* Brief specified bands at `[0, tl]` and `[tl, tl+sw]`. Implementation uses `[0, cw+tl]` and `[cw+tl, cw+tl+sw]` to preserve operator-authored visible tl/sw widths after the curb stroke paints over the inner cw. Surfaced as a deliberate divergence — if the brief literally meant the narrower-by-cw bands, swap the constants. Visible widths today are unchanged from pre-Phase-2.
+- *Regime classification thresholds.* `ASYM_EPS_M=1.0`, `ASYM_RATIO=0.7`, `RAMP_MAX_M=2.0`, `RAMP_FRAC=0.4`, `RAMP_MIN_M=0.5`, `STEP_FRAC=0.5`. Named in code as `PHASE2_*` constants for visibility. Real LS leg-depth differences may surface IXs that classify "wrong" visually — Jacob will flag specific cases on Designer review and we'll re-tune.
+- *Ramp-vs-band material continuity.* Treelawn band emitted as two sub-rings (before fStart, after fEnd) using vertex-bracket detection; ramp wedge sidewalk band wraps the whole arc with depth-modulated inner edge. At the ramp boundary (frac = fStart or fEnd), both the treelawn sub-ring's inner end and the ramp wedge's inner depth equal `cw + tl_avg`, so geometry should meet cleanly — visual verification on Mississippi needed.
+- *Step position in asymmetric mode.* Default `STEP_FRAC=0.5` (arc midpoint). If LS IXs (LS has four park-corner IXs with very wide tl on park side, narrower opposite) read better with the step at the natural sidewalk-inner-edge projection of leg-A, we'll add a runtime per-corner step-frac.
+- *Per-edge customs on arc portions.* Arc inherits flanking straight-span eff measures (prev → leg B, next → leg A); the arc's d_A vs d_B can therefore differ when two adjacent edges have different per-block-edge customs. No interpolation across the arc — step at midpoint via the same `STEP_FRAC` constant. Flagged.
+- *Spatial indexing.* Per-block walker is O(N_vertices_per_ring × N_corners) for the corner-match pre-pass. Same complexity as pre-Phase-1. Not bucket-indexed; `feedback_polygon_walking_needs_spatial_index` may bite at 10× scene scale.
+- *`feedback_corner_pad_retirement_caution` divergence.* Per the memory's preferred workflow, retire-by-deletion happens in a separate commit AFTER parallel-implementation. Phase 2 deletes in the same commit because the new regime emitter produces sidewalk-material at the same corner regions where `cornerSidewalkPads` previously emitted — keeping both would render double (visible material overlap at every corner, ~50% z-fight hits). The brief explicitly authorized the same-commit approach for this reason. Visual verification by Jacob is the validation step.
+
+**Out of scope (deferred to housekeeping commit after visual sign-off).**
+- Comprehensive FEATURES corner-section rewrite (lines 76–84 corner-plug subsection now superseded; one-line marker added at top per brief).
+- A.5 / A.6 / A.7 / Bezier-shipped / Phase 1 / Phase 2 NOTES sub-entry consolidation into a single coherent "corner emission v2" entry.
+- Stale-comment cleanup in `cornersAtIx` (3 docblocks reference `buildCornerPadQuad`).
+- CornerEditHandles.jsx, CartographApp.jsx stale-comment cleanup.
+
 ---
 
 ### Phase B — Polygon-graph schema + producer
