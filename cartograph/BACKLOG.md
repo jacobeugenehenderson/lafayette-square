@@ -4,6 +4,19 @@
 >
 > **Ribbons / corners / curbs / intersections / block geometry:** every entry below that touches these systems is governed by `cartograph/RIBBONS.md` — read it (especially §1 regime + §6 active failure modes) before working any such entry.
 
+## 2026-05-18 — NeonBandsV2 log-depth-buffer fix (root-caused after long arc)
+
+Closes a multi-hour misdiagnosis arc. NeonBandsV2's raw `ShaderMaterial` was writing linear depth into the Canvas's logarithmic depth buffer (`logarithmicDepthBuffer: true` since 2026-05-13, `CartographApp.jsx:802`). Result: tubes disappeared from overhead camera angles, were visible from horizon, and exhibited "underground glints" through ground-mesh seams — all artifacts of camera-angle-dependent depth-comparison failure on the wrong scale. Multiple wrong hypotheses chased before the z-axis audit (`scratch/handoff-2026-05-18-z-axis-audit.md`) found the root cause: the raw `ShaderMaterial` omitted the `<logdepthbuf_*>` GLSL chunks that built-in Three.js materials chain automatically.
+
+Fix: `defines: { USE_LOGDEPTHBUF: '' }` + four chunk-include directives in `VERT`/`FRAG`. ~5 LOC. Doctrine paragraph added to `FEATURES.md` §"Layering / coplanar stacking / depth precision". Memory: `feedback_raw_shadermaterial_needs_logdepth_chunks`.
+
+Re-resolves these prior-session red herrings (all artifacts of the same root bug):
+- "Overhead disappearance" attributed to roof-peak occlusion (option-6 `baseY` lift at `LafayetteScene.jsx:1281` was harmless but unnecessary; leave it as a safety margin).
+- "Underground glints in alleys" attributed to per-vertex vs rigid terrain-lift mismatch (the terrain-alignment fix e8a384f is still correct doctrine even though it didn't move this symptom — neon should lift in lockstep with buildings regardless).
+- "Cross-terrain occlusion" hypothesis (false — was depth-comparison failure on wrong scale).
+
+Audit also surveyed every other raw `ShaderMaterial` in the codebase (~12 in `CelestialBodies.jsx`, `CloudDome.jsx`, `PlanetariumOverlay.jsx`, `GatewayArch.jsx`, `StreetLights.jsx`, `NeonBands.jsx` v1). All are `depthWrite: false` additive billboards where the linear/log mismatch is invisible; none require the same fix today. If any future change moves one of them into the opaque depth queue, the new doctrine in `FEATURES.md` applies.
+
 ## 2026-05-16 — Neon rewrite as NeonBandsV2 (in-flight, partial verification)
 
 **2026-05-18 addendum (premise correction).** The prior session's "v2 mounted, hero verification pending" framing was wrong: grep showed V2 was never imported anywhere. The "verified at street-level" observation was of v1, not v2. V2 was wired in on 2026-05-18 (`LafayetteScene.jsx` + `ToyBuildings.jsx` imports swapped). Hero/browse verification is now genuinely pending. The five wrong diagnoses recorded below remain useful as a "don't repeat" list but they were diagnoses against v1's failure mode, not v2's.

@@ -216,6 +216,8 @@ function categoryColorVec(category) {
 // into volumetric glow at zero geometric cost.
 
 const VERT = /* glsl */`
+#include <common>
+#include <logdepthbuf_pars_vertex>
 attribute vec3 aColor;
 attribute float aCentroidY;
 uniform float uExag;
@@ -230,11 +232,14 @@ void main() {
   vWorldPos = wp.xyz;
   vWorldNormal = normalize(mat3(modelMatrix) * normal);
   gl_Position = projectionMatrix * viewMatrix * wp;
+  #include <logdepthbuf_vertex>
 }
 `
 
 const FRAG = /* glsl */`
 precision highp float;
+#include <common>
+#include <logdepthbuf_pars_fragment>
 uniform float uCore;
 uniform float uTube;
 uniform float uBleed;
@@ -244,6 +249,7 @@ varying vec3 vColor;
 varying vec3 vWorldNormal;
 varying vec3 vWorldPos;
 void main() {
+  #include <logdepthbuf_fragment>
   vec3 N = normalize(vWorldNormal);
   vec3 V = normalize(cameraPosition - vWorldPos);
   float facing = max(0.0, dot(N, V));
@@ -305,8 +311,20 @@ export default function NeonBandsV2({ places, forceOn = true, lookId }) {
     g.setAttribute('aColor',      new THREE.Float32BufferAttribute(colors, 3))
     g.setAttribute('aCentroidY', new THREE.Float32BufferAttribute(centroidYs, 1))
     g.setIndex(indices)
-    // DIAGNOSTIC: dump build counts so we can verify how many tubes
-    // are actually being merged into the mesh.
+    // DIAGNOSTIC: dump build counts + per-vertex aCentroidY range so we
+    // can verify (a) how many tubes are actually being merged into the
+    // mesh, and (b) whether the terrain-lift attribute carries realistic
+    // LS terrain raw values (~0–35m) per building or is collapsing to 0
+    // / a single value (which would mean tubes aren't being terrain-
+    // lifted and all sit at pre-terrain Y — the "flat plane" symptom).
+    let _cyMin = Infinity, _cyMax = -Infinity, _cySum = 0
+    for (let i = 0; i < centroidYs.length; i++) {
+      const v = centroidYs[i]
+      if (v < _cyMin) _cyMin = v
+      if (v > _cyMax) _cyMax = v
+      _cySum += v
+    }
+    const _cyMean = centroidYs.length ? _cySum / centroidYs.length : 0
     console.log('[neonV2]', {
       placesIn: places.length,
       tubeBuilt: _tubeOk,
@@ -314,6 +332,11 @@ export default function NeonBandsV2({ places, forceOn = true, lookId }) {
       skipBuildFailed: _tubeSkipBuild,
       totalVerts: positions.length / 3,
       totalTris: indices.length / 3,
+      centroidY: {
+        min: centroidYs.length ? _cyMin.toFixed(2) : 'n/a',
+        max: centroidYs.length ? _cyMax.toFixed(2) : 'n/a',
+        mean: _cyMean.toFixed(2),
+      },
     })
 
     // Bounding sphere intentionally not computed: vertex shader lifts
@@ -327,6 +350,15 @@ export default function NeonBandsV2({ places, forceOn = true, lookId }) {
   const materialRef = useRef(null)
   if (!materialRef.current) {
     materialRef.current = new THREE.ShaderMaterial({
+      // Required so three.js compiles in the <logdepthbuf_*> chunks the
+      // VERT/FRAG strings #include. Canvas runs with
+      // logarithmicDepthBuffer: true (CartographApp.jsx:802); without the
+      // chunks this raw ShaderMaterial would write linear depth into a
+      // log-depth buffer and lose comparisons against every standard
+      // material at camera-angle-dependent angles. See
+      // FEATURES.md §"Layering / coplanar stacking / depth precision"
+      // and [[feedback_raw_shadermaterial_needs_logdepth_chunks]].
+      defines: { USE_LOGDEPTHBUF: '' },
       vertexShader: VERT,
       fragmentShader: FRAG,
       uniforms: {
@@ -355,7 +387,7 @@ export default function NeonBandsV2({ places, forceOn = true, lookId }) {
     })
     // Unique key — distinct shader family, do NOT collide with the
     // terrain-patched program cache. [[feedback_unique_program_cache_key_before_wrappers]]
-    materialRef.current.customProgramCacheKey = () => 'neon-bands-v2-full-cylinder'
+    materialRef.current.customProgramCacheKey = () => 'neon-bands-v2-full-cylinder-logdepth'
   }
   materialRef.current.uniforms.uForceOn.value = forceOn ? 1.0 : 0.0
 
