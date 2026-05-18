@@ -6,6 +6,8 @@
 
 ## 2026-05-16 — Neon rewrite as NeonBandsV2 (in-flight, partial verification)
 
+**2026-05-18 addendum (premise correction).** The prior session's "v2 mounted, hero verification pending" framing was wrong: grep showed V2 was never imported anywhere. The "verified at street-level" observation was of v1, not v2. V2 was wired in on 2026-05-18 (`LafayetteScene.jsx` + `ToyBuildings.jsx` imports swapped). Hero/browse verification is now genuinely pending. The five wrong diagnoses recorded below remain useful as a "don't repeat" list but they were diagnoses against v1's failure mode, not v2's.
+
 Long iteration day on `src/components/NeonBands.jsx` that ended in a fresh side-by-side rewrite at `src/components/NeonBandsV2.jsx`. v2 is currently mounted in both `LafayetteScene.jsx` and `toy/ToyBuildings.jsx`; v1 (`NeonBands.jsx`) is on disk untouched as a fallback. Live diagnostic console.log `[neonV2]` still in place in v2's geometry useMemo.
 
 **Verified working this session (from underground / street-level views, see screenshot in chat):**

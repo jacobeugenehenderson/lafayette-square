@@ -20,7 +20,7 @@ import { terrainExag } from '../utils/terrainShader'
 import { getElevation, getElevationRaw } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import NeonBands from './NeonBands.jsx'
+import NeonBands from './NeonBandsV2.jsx'
 
 // Deterministic string hash — same id always picks the same palette slot.
 function hashStr(s) {
