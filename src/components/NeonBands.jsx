@@ -369,5 +369,15 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   useEffect(() => () => { geometry.dispose() }, [geometry])
   useEffect(() => () => { materialRef.current?.dispose() }, [])
 
-  return <mesh geometry={geometry} material={materialRef.current} renderOrder={20} frustumCulled={false} />
+  // renderOrder above every baked-ground transparent group (bake max is
+  // ~42 — `mat.path` slot in the current LS look — plus StreetLights pool
+  // at 50). Neon is `depthWrite:false`, so if it drew BEFORE the ground,
+  // pixels of neon-against-sky leave the depth buffer at 1.0 and any
+  // later transparent ground fragment (asphalt at street level, ~0.95)
+  // passes its depthTest against that 1.0 and overdraws the neon. Drawing
+  // neon LAST puts the ground's depth in the buffer first; the tube then
+  // depth-tests correctly. polygonOffset can't substitute here: under
+  // logarithmicDepthBuffer the fragment writes gl_FragDepth via the
+  // logdepthbuf chunk, bypassing polygon offset.
+  return <mesh geometry={geometry} material={materialRef.current} renderOrder={100} frustumCulled={false} />
 }

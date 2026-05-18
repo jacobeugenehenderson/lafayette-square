@@ -1445,21 +1445,55 @@ function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blo
   return { frontageBands: out, frontageCaps: [] }
 }
 
-// Stage 12 sub-A — silhouette-walking STRAIGHT-span band emitter.
-// Replaces buildFrontageBands's per-sharp-fe leg emission with a walk
-// over blockRounded's straight-span runs. Arc-span emission remains on
-// buildFrontageBandsV2's per-corner-pad code path (sub-B retires that).
-// Per-vertex perp offset is geometrically exact for straight vertices,
-// so no Clipper-precision selfints (the failure mode that sent Phase 2's
-// blockRounded-walking spine back to per-fe emission).
+// Stage 12 sub-B — concentric arc-center derivation.
+// The rounded silhouette arc at a corner is constructed by the Bezier
+// in applyRoundCornersToRing as an approximation of a circular arc
+// tangent to the two leg-asphalt-edges at points (Vc + inset·T_A) and
+// (Vc + inset·T_B), where Vc is the corner record's `point`,
+// inset = R/tan(θ/2), and T_A / T_B are the local-polyline tangents at
+// Vc (pointing out from V along each leg). The arc's geometric center
+// sits on the angle bisector (into the block-corner-wedge) at distance
+// R/sin(θ/2) from Vc. Concentric inner-edge points at depth d are then
+// C + (p − C)·(R − d)/R. If R − d < 0 the geometry produces the
+// expected "weird shape" — doctrinally honest per sub-B brief.
+function arcCenter(corner, R) {
+  if (!corner?.T_A || !corner?.T_B || !corner?.point) return null
+  let bx = corner.T_A[0] + corner.T_B[0]
+  let by = corner.T_A[1] + corner.T_B[1]
+  const bl = Math.hypot(bx, by)
+  if (bl < 1e-9) return null
+  bx /= bl; by /= bl
+  const sinHalf = Math.sin(corner.theta / 2)
+  if (sinHalf < 1e-9) return null
+  const dist = R / sinHalf
+  return [corner.point[0] + bx * dist, corner.point[1] + by * dist]
+}
+
+// Stage 12 sub-B — silhouette-walking band emitter (legs + corners).
+// Extends sub-A's straight-only emitter to also emit arc-span band
+// rings via concentric per-vertex offset (radial from arc center).
+// Retires buildFrontageBandsV2's per-corner-pad code path.
 //
-// Per Stage 11a.1 doctrine: probe + customs + chain.measure resolves the
-// run's authored measure; if !isSidewalk || (tl<=0 && sw<=0) (authoredZero)
-// or probe-null (partition artifact), emit nothing for the run. Arc-span
-// flanking inheritance is sub-B's territory; sub-A only emits where the
-// straight-run itself probes to authored sidewalk.
-function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth) {
-  if (!blockRoundedWithMeta?.length) return { frontageBands: [] }
+// For straight runs (arcMeta[i] null): per-vertex perp offset (exact
+// for straight vertices), kink-split for chain-tangent coherence.
+// For arc runs (arcMeta[i].corner non-null): concentric per-vertex
+// offset around the corner's arc center. Flanking metas resolved via
+// the existing ring-walk (Stage 11a + 11a.1: walk past partition
+// artifacts, stop at authoredZero). Bilateral-authoredZero short-
+// circuits (no emission).
+//
+// Asymmetric flanks (d_B ≠ d_A): deeper side wins. The corner's tl/sw
+// values are taken from whichever flank has greater cw+tl+sw total.
+// Geometrically equivalent to "the deeper flank's inner edge extends
+// past the bisector to fill the corner" — the wedge is implicit in
+// using one set of depths across the whole arc. Per-vertex concentric
+// keeps the geometry honest (no per-vertex perp folding).
+//
+// At sharp/unmatched corners (no arc-span partition), sub-A.1's kink-
+// split already terminates each leg at the bisector vertex; no arc-run
+// emission is needed because there's no arc-span to walk.
+function silhouetteBandEmitter(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth) {
+  if (!blockRoundedWithMeta?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
   const out = []
 
@@ -1471,6 +1505,8 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
     }
   }
 
+  const KINK_THRESHOLD_RAD = 5 * Math.PI / 180
+
   for (const { ring, arcMeta } of blockRoundedWithMeta) {
     if (!ring || ring.length < 3 || !arcMeta) continue
     const N = ring.length
@@ -1478,36 +1514,37 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
     const ringCcw = ringSignedArea2D(ring) >= 0
     const inwardSign = ringCcw ? +1 : -1
 
-    // Partition into straight-vertex runs (arc vertices break runs).
-    // Wraparound merge: when arcMeta[0] and arcMeta[N-1] are both null,
-    // the first and last runs are one logical run split by iteration
-    // boundary; merge.
+    // Partition into runs by (type, corner). Adjacent vertices sharing
+    // the same arc-corner identity form one arc run; null-corner
+    // (straight) vertices form straight runs. Iteration boundary
+    // wraparound merge applied below.
     const runs = []
     let cur = null
     for (let i = 0; i < N; i++) {
-      if (arcMeta[i]?.corner) { if (cur) { runs.push(cur); cur = null }; continue }
-      if (!cur) cur = { idxs: [] }
-      cur.idxs.push(i)
+      const cornerHere = arcMeta[i]?.corner || null
+      const targetType = cornerHere ? 'arc' : 'straight'
+      if (cur && cur.type === targetType && cur.corner === cornerHere) {
+        cur.idxs.push(i)
+      } else {
+        if (cur) runs.push(cur)
+        cur = { type: targetType, corner: cornerHere, idxs: [i] }
+      }
     }
     if (cur) runs.push(cur)
-    if (runs.length > 1 && !arcMeta[0]?.corner && !arcMeta[N - 1]?.corner) {
-      const last = runs.pop()
-      runs[0].idxs = [...last.idxs, ...runs[0].idxs]
+    if (runs.length > 1) {
+      const first = runs[0], last = runs[runs.length - 1]
+      if (first.type === last.type && first.corner === last.corner) {
+        runs.pop()
+        runs[0].idxs = [...last.idxs, ...runs[0].idxs]
+      }
     }
 
-    // Stage 12 sub-A.1 — chain-tangent-coherence split. Sub-A merged
-    // sharp fes across any non-corner IX vertex (through-T phantom,
-    // divided-pair endpoint, theta-filter skip); per-vertex perp at
-    // those merged vertices uses a bisector ~45° off-chain, kinking
-    // the offset polyline. Split each run at any vertex whose in/out
-    // direction differs by more than ~5°. Doctrinally correct: at a
-    // non-corner IX, chain identity changes (or terminates), so a
-    // band-emission boundary IS expected there. The kink vertex is
-    // shared between the two sub-runs (last of one, first of next).
-    const KINK_THRESHOLD_RAD = 5 * Math.PI / 180
+    // Kink-split STRAIGHT runs only (chain-tangent coherence per sub-A.1).
+    // Arc runs are deliberately one-piece — the concentric emission
+    // handles their curvature exactly.
     const splitRuns = []
     for (const run of runs) {
-      if (run.idxs.length < 3) { splitRuns.push(run); continue }
+      if (run.type !== 'straight' || run.idxs.length < 3) { splitRuns.push(run); continue }
       let curIdxs = [run.idxs[0]]
       for (let k = 1; k < run.idxs.length - 1; k++) {
         const i = run.idxs[k]
@@ -1520,22 +1557,22 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
         const kink = Math.acos(dot)
         curIdxs.push(i)
         if (kink > KINK_THRESHOLD_RAD) {
-          splitRuns.push({ idxs: curIdxs })
+          splitRuns.push({ type: 'straight', corner: null, idxs: curIdxs })
           curIdxs = [i]
         }
       }
       curIdxs.push(run.idxs[run.idxs.length - 1])
-      splitRuns.push({ idxs: curIdxs })
+      splitRuns.push({ type: 'straight', corner: null, idxs: curIdxs })
     }
-    runs.length = 0
-    runs.push(...splitRuns)
 
-    for (const run of runs) {
+    // Resolve per-run meta. Straight runs probe adjacency + measure;
+    // arc runs carry their corner identity for downstream walk-flanking.
+    const spanMetas = splitRuns.map(run => {
+      if (run.type === 'arc') return { type: 'arc', corner: run.corner }
       const pts = run.idxs.map(i => ring[i])
-      if (pts.length < 2) continue
-
+      if (pts.length < 2) return { type: 'straight', skip: true }
       const adj = findAdjacentChainForBlockEdge(pts, ringCcw, streets, chainIndex)
-      if (!adj) continue
+      if (!adj) return { type: 'straight', skip: true }
       const sharpFe = sharpFeByKey.get(`${blockKey}|${adj.chainIdx}|${adj.side}`)
       const street = streets[adj.chainIdx]
       const blockOverride = (sharpFe && blockCustoms?.[sharpFe.blockKey]?.[sharpFe.edgeOrd]) || null
@@ -1543,25 +1580,111 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
       const isSidewalk = eff.terminal === 'sidewalk'
       const tl = isSidewalk ? (eff.treelawn || 0) : 0
       const sw = isSidewalk ? (eff.sidewalk || 0) : 0
-      if (!isSidewalk || (tl <= 0 && sw <= 0)) continue  // authoredZero
+      return {
+        type: 'straight',
+        skip: false,
+        authoredZero: !isSidewalk || (tl <= 0 && sw <= 0),
+        chainIdx: adj.chainIdx, side: adj.side, edgeOrd: sharpFe?.edgeOrd,
+        tl, sw,
+      }
+    })
 
-      // Per-vertex perp offset (exact for straight vertices).
-      const perps = computePerps(pts)
-      const offsetAt = (k, d) => [
-        pts[k][0] + perps[k][0] * inwardSign * d,
-        pts[k][1] + perps[k][1] * inwardSign * d,
-      ]
-      const innerCurb = pts.map((_, k) => offsetAt(k, cw))
-      const tlOuter   = pts.map((_, k) => offsetAt(k, cw + tl))
-      const swOuter   = pts.map((_, k) => offsetAt(k, cw + tl + sw))
+    // Walk-to-first-authored (Stage 11a + 11a.1 semantics).
+    function walkToFirstAuthored(fromIdx, dir) {
+      const M = spanMetas.length
+      for (let step = 1; step < M; step++) {
+        const idx = ((fromIdx + dir * step) % M + M) % M
+        const m = spanMetas[idx]
+        if (m?.type !== 'straight') continue
+        if (m.skip) continue
+        return m  // authored (incl. authoredZero)
+      }
+      return null
+    }
 
-      const treelawnRings = []
-      const sidewalkRings = []
-      if (tl > 0) {
+    for (let ri = 0; ri < splitRuns.length; ri++) {
+      const run = splitRuns[ri]
+      const meta = spanMetas[ri]
+      const pts = run.idxs.map(i => ring[i])
+      if (pts.length < 2) continue
+
+      if (run.type === 'straight') {
+        if (meta.skip || meta.authoredZero) continue
+        const { tl, sw, chainIdx, side, edgeOrd } = meta
+        // Per-vertex perp offset (exact for straight vertices).
+        const perps = computePerps(pts)
+        const offsetAt = (k, d) => [
+          pts[k][0] + perps[k][0] * inwardSign * d,
+          pts[k][1] + perps[k][1] * inwardSign * d,
+        ]
+        const innerCurb = pts.map((_, k) => offsetAt(k, cw))
+        const tlOuter   = pts.map((_, k) => offsetAt(k, cw + tl))
+        const swOuter   = pts.map((_, k) => offsetAt(k, cw + tl + sw))
+        const treelawnRings = [], sidewalkRings = []
+        if (tl > 0) {
+          const r = closeBandRingV2(tlOuter, innerCurb)
+          if (r) treelawnRings.push(r)
+        }
+        if (sw > 0) {
+          const r = closeBandRingV2(swOuter, tlOuter)
+          if (r) sidewalkRings.push(r)
+        }
+        if (!treelawnRings.length && !sidewalkRings.length) continue
+        out.push({
+          blockKey, edgeOrd, chainIdx, side, points: pts,
+          corner: null, treelawnRings, sidewalkRings, asphaltRings: [],
+        })
+        continue
+      }
+
+      // ARC RUN — resolve flanking metas via ring-walk.
+      const Bmeta = walkToFirstAuthored(ri, -1)
+      const Ameta = walkToFirstAuthored(ri, +1)
+      const Bzero = !Bmeta || Bmeta.authoredZero
+      const Azero = !Ameta || Ameta.authoredZero
+      if (Bzero && Azero) continue  // bilateral-authoredZero short-circuit
+
+      const tl_B = Bmeta?.tl ?? 0, sw_B = Bmeta?.sw ?? 0
+      const tl_A = Ameta?.tl ?? 0, sw_A = Ameta?.sw ?? 0
+      const d_B = cw + tl_B + sw_B
+      const d_A = cw + tl_A + sw_A
+      // Deeper flank dominates the arc — its (tl, sw) values apply
+      // across the whole arc. Geometrically: the deeper inner-edge
+      // extends past the bisector to fill the corner. Symmetric case
+      // (d_B == d_A) is unaffected — either set works.
+      const useB = d_B >= d_A
+      const tl_use = useB ? tl_B : tl_A
+      const sw_use = useB ? sw_B : sw_A
+      const meta_use = useB ? Bmeta : Ameta
+
+      const corner = run.corner
+      const R = arcMeta[run.idxs[0]]?.R
+      if (!R || R <= 0) continue
+      const C = arcCenter(corner, R)
+      if (!C) continue
+
+      // Concentric inner-edge: p inward by d means scale (p − C) by (R − d)/R.
+      // When d >= R (authored ped zone exceeds the rounded silhouette's
+      // radius), the inner edge would cross THROUGH the arc center C to
+      // the opposite side, producing a self-intersecting close-ring.
+      // Per sub-B brief item 5: at very tight corners the inner arc
+      // "collapses or wraps." We collapse (clamp at C) — the band tapers
+      // to a point at C rather than wrapping. Doctrinally honest weird
+      // shape; visually a wedge whose apex sits at the arc center.
+      const innerAt = (p, d) => {
+        const sc = Math.max(0, (R - d) / R)
+        return [C[0] + (p[0] - C[0]) * sc, C[1] + (p[1] - C[1]) * sc]
+      }
+      const innerCurb = pts.map(p => innerAt(p, cw))
+      const tlOuter   = pts.map(p => innerAt(p, cw + tl_use))
+      const swOuter   = pts.map(p => innerAt(p, cw + tl_use + sw_use))
+
+      const treelawnRings = [], sidewalkRings = []
+      if (tl_use > 0) {
         const r = closeBandRingV2(tlOuter, innerCurb)
         if (r) treelawnRings.push(r)
       }
-      if (sw > 0) {
+      if (sw_use > 0) {
         const r = closeBandRingV2(swOuter, tlOuter)
         if (r) sidewalkRings.push(r)
       }
@@ -1569,18 +1692,16 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
 
       out.push({
         blockKey,
-        edgeOrd: sharpFe?.edgeOrd,
-        chainIdx: adj.chainIdx,
-        side: adj.side,
+        edgeOrd: meta_use?.edgeOrd,
+        chainIdx: meta_use?.chainIdx,
+        side: meta_use?.side,
         points: pts,
-        corner: null,                  // sub-A: straight-span; corner-pads handle arc fillet attribution
-        treelawnRings,
-        sidewalkRings,
-        asphaltRings: [],
+        corner,  // per-arc-run identity — attributeFilletResidualToArcs reads this
+        treelawnRings, sidewalkRings, asphaltRings: [],
       })
     }
   }
-  return { frontageBands: out }
+  return { frontageBands: out, frontageCaps: [] }
 }
 
 // Stage 11a: ring-walk for arc-span flanking-meta resolution.
@@ -1604,6 +1725,13 @@ function walkToFirstAuthoredMeta(spanMeta, fromIdx, dir) {
   return null
 }
 
+// SUB-B: retired by silhouetteBandEmitter; remove in sub-C.
+// Stage 9's per-corner pad emitter (cusp guard + RAMP_MIN_M + symmetric
+// dCorner = max(d_A, d_B, RAMP_MIN_M)). Sub-B replaced this with
+// concentric per-vertex arc-span emission via silhouetteBandEmitter.
+// Kept in place as dead code through sub-B so the diff stays bounded;
+// sub-C deletes the function definition + the H1 clip + the cusp guard
+// constants. Pipeline call site no longer invokes this function.
 function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth) {
   if (!blockRoundedWithMeta?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
@@ -2305,26 +2433,16 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   }
   __mark('asphaltRoundedDiff')
 
-  // Stage 12 sub-A — band emission is split across two helpers, both
-  // now sourcing geometry from blockRounded:
-  //  • silhouetteStraightEmitter walks each block's rounded ring,
-  //    partitions into straight-vertex runs, and emits tl + sw rings
-  //    by per-vertex perp offset. Replaces the per-sharp-fe legs from
-  //    pre-sub-A's buildFrontageBands. Per-vertex perp offset for
-  //    straight vertices is geometrically exact — no Clipper-precision
-  //    selfints (Phase 2's original blockRounded-spine failure mode).
-  //  • buildFrontageBandsV2 (Stage 9) walks blockRounded + arcMeta and
-  //    emits per-corner pads at arc spans, with the cusp guard +
-  //    RAMP_MIN_M dCorner. Sub-B replaces this with concentric arc-
-  //    span band emission.
-  // Concat into one frontageBands array; downstream iterates by field.
-  const { frontageBands: straightBands } = silhouetteStraightEmitter(
+  // Stage 12 sub-B — single silhouette-walking band emitter for legs
+  // AND corners. Straight runs emit per-vertex perp offset (chain-
+  // tangent-coherent via sub-A.1 kink-split). Arc runs emit per-vertex
+  // concentric offset around the corner's arc center (deeper flank's
+  // depths apply across the arc). The dual-emitter compromise from
+  // sub-A retires here: pre-sub-A's buildFrontageBands and Stage 9's
+  // buildFrontageBandsV2 are both dead code through sub-C cleanup.
+  const { frontageBands, frontageCaps } = silhouetteBandEmitter(
     streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
   )
-  const { frontageBands: arcBands, frontageCaps } = buildFrontageBandsV2(
-    streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
-  )
-  const frontageBands = [...straightBands, ...arcBands]
   __mark('frontageBands')
 
   // Phase 2.1 — per-corner outer-face emission. Compute the fillet

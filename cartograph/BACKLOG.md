@@ -4,6 +4,14 @@
 >
 > **Ribbons / corners / curbs / intersections / block geometry:** every entry below that touches these systems is governed by `cartograph/RIBBONS.md` — read it (especially §1 regime + §6 active failure modes) before working any such entry.
 
+## 2026-05-18 — Neon renderOrder bumped to 100 to win the transparent pass against baked ground
+
+Follow-up to the V2 close-out (`855a6ad`). With correct log-depth-buffer compliance, a previously-masked cosmetic regression surfaced: asphalt (and other higher-renderOrder BakedGround groups) cut through neon tubes on camera pan. Root cause is **not** polygonOffset — under `logarithmicDepthBuffer: true` in perspective, three.js's `logdepthbuf_fragment` chunk writes `gl_FragDepth` explicitly, which per the GL spec bypasses `GL_POLYGON_OFFSET_FILL` entirely. The asphalt-vs-grass `polygonOffsetUnits: -31` from 2026-05-13 is effectively inert; that fix actually works through transparent-pass draw ordering (renderOrder asphalt=30 > grass=0..7), not depth bias.
+
+Actual bug: a renderOrder + `depthWrite` interaction. Neon was `renderOrder: 20, depthWrite: false`; baked ground groups `renderOrder: 0..42, depthWrite: true` (transparent because of the soft-circle `fade` injection). Neon drew first; at pixels where the tube was visible against sky, the depth buffer kept the 1.0 background (neon didn't write). Asphalt drew next, depth-tested its street-level ~0.95 against the 1.0, passed, and overdrew the tube. Fix: `renderOrder: 100` on the neon mesh (well above the bake's max-42 + StreetLights pool at 50). Neon now draws LAST in the transparent pass and correctly depth-tests against ground that's already written depth. Preserves the asphalt-vs-grass ordering (asphalt's renderOrder unchanged).
+
+One-line code change (`src/components/NeonBands.jsx:372`) + an explanatory comment block citing why polygonOffset can't substitute.
+
 ## 2026-05-18 — NeonBandsV2 log-depth-buffer fix (root-caused after long arc)
 
 Closes a multi-hour misdiagnosis arc. NeonBandsV2's raw `ShaderMaterial` was writing linear depth into the Canvas's logarithmic depth buffer (`logarithmicDepthBuffer: true` since 2026-05-13, `CartographApp.jsx:802`). Result: tubes disappeared from overhead camera angles, were visible from horizon, and exhibited "underground glints" through ground-mesh seams — all artifacts of camera-angle-dependent depth-comparison failure on the wrong scale. Multiple wrong hypotheses chased before the z-axis audit (`scratch/handoff-2026-05-18-z-axis-audit.md`) found the root cause: the raw `ShaderMaterial` omitted the `<logdepthbuf_*>` GLSL chunks that built-in Three.js materials chain automatically.
