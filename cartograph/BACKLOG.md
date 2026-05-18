@@ -17,7 +17,9 @@ Re-resolves these prior-session red herrings (all artifacts of the same root bug
 
 Audit also surveyed every other raw `ShaderMaterial` in the codebase (~12 in `CelestialBodies.jsx`, `CloudDome.jsx`, `PlanetariumOverlay.jsx`, `GatewayArch.jsx`, `StreetLights.jsx`, `NeonBands.jsx` v1). All are `depthWrite: false` additive billboards where the linear/log mismatch is invisible; none require the same fix today. If any future change moves one of them into the opaque depth queue, the new doctrine in `FEATURES.md` applies.
 
-## 2026-05-16 — Neon rewrite as NeonBandsV2 (in-flight, partial verification)
+## 2026-05-16 → 2026-05-18 — Neon rewrite as NeonBands (SHIPPED)
+
+**2026-05-18 CLOSED.** Arc resolved across three commits: `a16313b` (wire V2 imports + doctrine docs), `e8a384f` (align V2 terrain lift to mean-corner anchor mechanism), `e0a4cad` (log-depth-buffer compliance — the actual root cause that produced the "overhead disappearance" and "underground glint" symptoms). v1 (`src/components/NeonBands.jsx`) excised in this commit; V2 renamed to `NeonBands.jsx`; `[neonV2]` diagnostic console.log stripped; `FEATURES.md` doctrine flipped from "in-flight" to shipped. The 2026-05-18 z-axis audit (`scratch/handoff-2026-05-18-z-axis-audit.md`) is the canonical record of the misdiagnosis arc that preceded the log-depth fix.
 
 **2026-05-18 addendum (premise correction).** The prior session's "v2 mounted, hero verification pending" framing was wrong: grep showed V2 was never imported anywhere. The "verified at street-level" observation was of v1, not v2. V2 was wired in on 2026-05-18 (`LafayetteScene.jsx` + `ToyBuildings.jsx` imports swapped). Hero/browse verification is now genuinely pending. The five wrong diagnoses recorded below remain useful as a "don't repeat" list but they were diagnoses against v1's failure mode, not v2's.
 

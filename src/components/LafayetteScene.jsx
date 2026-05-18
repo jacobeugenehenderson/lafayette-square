@@ -20,7 +20,7 @@ import { terrainExag } from '../utils/terrainShader'
 import { getElevation, getElevationRaw } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import NeonBands from './NeonBandsV2.jsx'
+import NeonBands from './NeonBands.jsx'
 
 // Deterministic string hash — same id always picks the same palette slot.
 function hashStr(s) {
@@ -1280,7 +1280,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       // same rooftop. NeonBands.buildTubeFor reads place.baseY.
       const baseY = getFoundationHeight(b) + b.size[1] + getRoofPeakHeight(b) + 0.3
       // Mean-corner raw elevation — canonical anchor matching Foundations
-      // (line 368) and Building walls (line 615). Threaded into NeonBandsV2
+      // (line 368) and Building walls (line 615). Threaded into NeonBands
       // so the neon mesh lifts in lockstep with its building on sloped
       // terrain. See cartograph/bake-buildings.js:571–575.
       let groundYRaw

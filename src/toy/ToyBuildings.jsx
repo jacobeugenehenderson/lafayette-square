@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Building, Foundations, loadBuildingTextures } from '../components/LafayetteScene'
-import NeonBands from '../components/NeonBandsV2.jsx'
+import NeonBands from '../components/NeonBands.jsx'
 import toyBuildings from '../data/toy/toy-buildings.json'
 
 /**
