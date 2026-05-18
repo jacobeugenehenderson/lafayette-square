@@ -1,4 +1,5 @@
-import { useMemo, useEffect, useRef } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { neon as _neonUniforms } from '../preview/neonState.js'
@@ -52,11 +53,19 @@ import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
  */
 
 // ── Geometry constants ──────────────────────────────────────────────
-const TUBE_RADIUS  = 1.0                       // 1m diameter — reads at hero/browse distance (sub-pixel
-                                               // otherwise, bloom can't recover something it can't see).
-                                               // Authoring-as-knob retired — physically motivated for
-                                               // the LS scene scale rather than operator-tunable.
-const ROOF_DROP    = -TUBE_RADIUS              // tube BOTTOM at rooftop seam → whole tube above wall geometry (z-precision probe 2026-05-18)
+// Tube radius is operator-authored as a TOD-animatable field in the
+// `neon` channel (Sky & Light → Neon → Tube radius slider). It flows
+// through the same module-uniform container as core/tube/bleed/emissive
+// (_neonUniforms.tubeRadiusUniform). In Stage, NeonPump writes it every
+// frame from the resolved channel; in production, the component's
+// useEffect writes the scene.json baseline. Unlike the four shader
+// uniforms, this one drives vertex positions, so the geometry useFrame
+// quantizes and rebuilds the merged BufferGeometry when the value
+// crosses a step boundary. ROOF_DROP is computed inside buildTube as
+// `-tubeRadius` so the tube BOTTOM always lands flush with the rooftop.
+const DEFAULT_TUBE_RADIUS      = 1.0
+const TUBE_RADIUS_STEP         = 0.05          // quantize per-frame radius read to this step before triggering rebuild
+const TUBE_RADIUS_DEBOUNCE_MS  = 120           // commit only when the quantized value has been stable for this long
 const OFFSET_OUT   = 0.5                       // meters past wall face — clears any eave/cornice
 const CROSS_SEGS   = 8                         // facets around the circular cross-section
 const CORNER_SEGS  = 3                         // arc segs per convex corner
@@ -165,11 +174,13 @@ function buildPath(footprint) {
  * identical to their counterparts at i=0 / s=0 — no extra draws since
  * they're index-referenced from neighboring quads.
  */
-function buildTube(building) {
+function buildTube(building, tubeRadius) {
   const fp = building.footprint
   if (!fp || fp.length < 3) return null
-  const baseY = (building.baseY ?? building.size?.[1] ?? 0) - ROOF_DROP
-  const r = TUBE_RADIUS
+  const r = tubeRadius
+  // ROOF_DROP = -r puts tube BOTTOM at rooftop seam (whole tube above
+  // wall geometry, regardless of authored radius).
+  const baseY = (building.baseY ?? building.size?.[1] ?? 0) - (-r)
   const path = buildPath(fp)
   const m = path.length
   if (m < 2) return null
@@ -291,18 +302,48 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   useEffect(() => {
     if (!lookId || !scene?.neon?.values) return
     const v = scene.neon.values
-    _neonUniforms.coreUniform.value     = v.core     ?? 0
-    _neonUniforms.tubeUniform.value     = v.tube     ?? 0
-    _neonUniforms.bleedUniform.value    = v.bleed    ?? 0
-    _neonUniforms.emissiveUniform.value = v.emissive ?? 4
+    _neonUniforms.coreUniform.value       = v.core       ?? 0
+    _neonUniforms.tubeUniform.value       = v.tube       ?? 0
+    _neonUniforms.bleedUniform.value      = v.bleed      ?? 0
+    _neonUniforms.emissiveUniform.value   = v.emissive   ?? 4
+    _neonUniforms.tubeRadiusUniform.value = v.tubeRadius ?? DEFAULT_TUBE_RADIUS
   }, [lookId, scene])
+
+  // Tube radius — animated like the other four fields, but the value
+  // drives vertex positions (not a shader uniform), so a change must
+  // trigger a merged BufferGeometry rebuild. Poll the shared module
+  // container each frame; quantize to TUBE_RADIUS_STEP so smooth TOD
+  // interpolation never crosses sub-step boundaries; then DEBOUNCE the
+  // commit by TUBE_RADIUS_DEBOUNCE_MS so a slider drag or a TOD slot
+  // transition only rebuilds the merged mesh ONCE at the end, not on
+  // every step boundary crossing during the change. Tradeoff: tube
+  // radius doesn't smoothly animate across a slot fade — it jumps at
+  // the end of the transition. For a geometry-changing param that's
+  // usually the cleaner read; smooth animation here was processor-
+  // saturating during repeated edits (some bands intermittently
+  // failed to render under back-pressure).
+  const [r, setR] = useState(DEFAULT_TUBE_RADIUS)
+  const pendingRRef = useRef(null)
+  useEffect(() => () => {
+    if (pendingRRef.current) clearTimeout(pendingRRef.current)
+  }, [])
+  useFrame(() => {
+    const live = _neonUniforms.tubeRadiusUniform.value || DEFAULT_TUBE_RADIUS
+    const q = Math.round(live / TUBE_RADIUS_STEP) * TUBE_RADIUS_STEP
+    if (Math.abs(q - r) <= 1e-6) return
+    if (pendingRRef.current) clearTimeout(pendingRRef.current)
+    pendingRRef.current = setTimeout(() => {
+      pendingRRef.current = null
+      setR(q)
+    }, TUBE_RADIUS_DEBOUNCE_MS)
+  })
 
   const geometry = useMemo(() => {
     const positions = [], normals = [], uvs = [], colors = [], centroidYs = [], indices = []
     let baseVert = 0
     for (const p of places) {
       if (!p.neon?.category) continue
-      const tube = buildTube(p)
+      const tube = buildTube(p, r)
       if (!tube) continue
       const rgb = categoryColorVec(p.neon.category)
       const count = tube.positions.length / 3
@@ -327,7 +368,7 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     // close range. `frustumCulled={false}` on the mesh instead — one
     // small draw, trivial cost.
     return g
-  }, [places])
+  }, [places, r])
 
   const materialRef = useRef(null)
   if (!materialRef.current) {

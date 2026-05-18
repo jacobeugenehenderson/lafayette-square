@@ -95,10 +95,11 @@ function NeonPump() {
     const minute = tod.getMinuteOfDay()
     const slotMinutes = neon.animated ? getTodSlotMinutes(tod.currentTime) : null
     const triple = resolveGroupAtMinute(neon, minute, slotMinutes, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS)
-    _neonUniforms.coreUniform.value     = triple.core     ?? 0
-    _neonUniforms.tubeUniform.value     = triple.tube     ?? 0
-    _neonUniforms.bleedUniform.value    = triple.bleed    ?? 0
-    _neonUniforms.emissiveUniform.value = triple.emissive ?? 4
+    _neonUniforms.coreUniform.value       = triple.core       ?? 0
+    _neonUniforms.tubeUniform.value       = triple.tube       ?? 0
+    _neonUniforms.bleedUniform.value      = triple.bleed      ?? 0
+    _neonUniforms.emissiveUniform.value   = triple.emissive   ?? 4
+    _neonUniforms.tubeRadiusUniform.value = triple.tubeRadius ?? 1.0
   })
   return null
 }

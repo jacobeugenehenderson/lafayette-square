@@ -132,18 +132,22 @@ export const DIRMOON_FIELD_KEYS  = ['value']
 // animate a slower warm-up via TOD slots; the flat default matches
 // observed authoring intent rather than the earlier "ship dark" stance.
 // Neon — Gaussian intensity masks (TOD-animatable) + emissive
-// brightness multiplier. The shader's three Gaussian widths
-// (core/tube/bleed) paint the realistic neon look authored in the
-// 2026-05-13 work session; `emissive` is the master brightness lever.
-// Tube geometry (radius, wall offset, roof drop) is physically
-// motivated and lives as constants in NeonBands.jsx — not authored.
+// brightness multiplier + tube radius. The shader's three Gaussian
+// widths (core/tube/bleed) paint the realistic neon look authored in
+// the 2026-05-13 work session; `emissive` is the master brightness
+// lever. `tubeRadius` (added 2026-05-18) is operator-authored geometry
+// — animatable too, though each authored slot triggers a merged-mesh
+// rebuild rather than a shader uniform write (see neonState.js + the
+// NeonBands geometry useFrame). Wall offset and roof drop are still
+// physically motivated and live as constants in NeonBands.jsx.
 export const NEON_FIELDS = [
-  { key: 'core',     label: 'Hot core',          min: 0,   max: 1,  step: 0.02 },
-  { key: 'tube',     label: 'Tube glow',         min: 0,   max: 1,  step: 0.02 },
-  { key: 'bleed',    label: 'Atmospheric bleed', min: 0,   max: 1,  step: 0.02 },
-  { key: 'emissive', label: 'Emissive',          min: 0.5, max: 8,  step: 0.1  },
+  { key: 'core',       label: 'Hot core',          min: 0,   max: 1,   step: 0.02 },
+  { key: 'tube',       label: 'Tube glow',         min: 0,   max: 1,   step: 0.02 },
+  { key: 'bleed',      label: 'Atmospheric bleed', min: 0,   max: 1,   step: 0.02 },
+  { key: 'emissive',   label: 'Emissive',          min: 0.5, max: 8,   step: 0.1  },
+  { key: 'tubeRadius', label: 'Tube radius',       min: 0.1, max: 3.0, step: 0.05 },
 ]
-export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4 }
+export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tubeRadius: 1.0 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
 // Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform /
