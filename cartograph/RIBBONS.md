@@ -704,18 +704,50 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 
 ### 6.9 Corner-input-preparation produces non-uniform output across IX corners — OPEN, DOMINANT (2026-05-18)
 
-**Symptom:** at a single IX, the four corner records (one per CCW leg pair) produce four different qualities of arc-span emission, despite all flowing through the identical Stage 9 single-polygon symmetric emitter code. Image 21 evidence: at one representative IX, SE corner pad is doctrine-correct, NE corner has no pad at all, NW corner pad is sized wrong, SW corner pad is shaped wrong. Same code, four outcomes.
+**Symptom:** at a single IX, the four corner records (one per CCW leg pair) produce four different qualities of arc-span emission, despite all flowing through the identical Stage 9 single-polygon symmetric emitter code. Image 21 evidence at Mississippi × Park: SW correctly empty (park-interior, both flanks terminal=none), SE wrong-size symmetric pad, NE self-intersecting pad, NW correct shape but scaled to 60% of authored depth.
 
-**Diagnosis:** the variance is in input-preparation upstream of the emitter, not in the emitter itself. The four corners come from four separate `buildFrontageBandsV2` block-ring walks (one per block at the IX), each with its own `applyRoundCornersToRing` vertex-to-corner-record match (TOL=0.5 vertex equality). The four blocks' vertices at the IX differ slightly in coord precision; some may exceed TOL=0.5 from the corner record's `point`, missing the match → no Bezier corner rounding → no arc-span entry → no pad emitted (NE case). The corners that DO match produce arc-span entries, but with potentially different `theta`, `R`, `T_A`, `T_B` (from `polylineCross` local tangent computation), flanking-meta resolution (per-block customs lookup variance), and cusp-guard threshold activation (per-corner `0.9·arcR` crossing). These threshold-based discontinuities + per-corner geometric variance produce qualitatively different emissions on superficially symmetric inputs.
+**Diagnosis (Stage 10 audit, commit `79fcd9e`, `scratch/corner-input-audit.{js,csv,report.md}`, 666 corner records on LS):** the variance is in input-preparation upstream of the emitter. The four corners come from four separate `buildFrontageBandsV2` block-ring walks (one per block at the IX), each with its own flanking-meta resolution through `applyRoundCornersToRing` (TOL=0.5 vertex match), then `findAdjacentChainForBlockEdge` (outward probe to nearest chain in `ribbons.streets`), then per-flank `terminal` / `tl` / `sw` lookup. Threshold-based discontinuities at each layer produce qualitatively different emissions on superficially symmetric inputs.
 
-**Failure mode catalog** (hypothesized; Stage 10 audit confirms):
-- *No pad:* `applyRoundCornersToRing` vertex-to-corner-record match failed (TOL=0.5 exceeded); no Bezier applied; no arc-span entry produced.
-- *Wrong size:* flanking-meta resolution picked up unexpected `tl + sw` values (one flank `terminal: 'none'` or per-block customs differ from chain default) → `dCorner = max(d_A, d_B, RAMP_MIN_M)` computed correctly but inputs wrong.
-- *Wrong shape:* cusp-guard fired aggressively (small `R` corner where `0.9·arcR < cw + tl + sw`), scaled flanking depths down, then `RAMP_MIN_M` floor over-rode the scaling → offset polygon self-intersects → Clipper post-processes into a distorted (but non-empty) ring.
+**Failure-mode histogram (666 corners on LS):**
 
-**Fix shape (Stage 10, queued):** the diagnostic dispatch first — a per-IX audit probe that dumps all four corner records + arc-span entries' resolved (theta, R, T_A, T_B, tl_A, sw_A, tl_B, sw_B, terminal_A, terminal_B, dCorner, cusp_fired, area, SELFINT, vertex_match_distance) at multiple representative IXs. The probe data identifies which failure mode dominates AND whether the variance is from input drift (fix: loosen TOL, tighten cusp guard) or from authoring variance (fix: handle terminal=none flank explicitly, etc.). Stage 11 implements the fix(es) per the audit findings.
+| mode | count | % | emits arc-span? | visible defect? |
+|---|---|---|---|---|
+| ok | 50 | 7.5% | yes | no (32 of 50 have cusp-fired-but-clean — see §6.9c) |
+| no_match (unmatched vertex, dist ≥0.5m) | 177 | 26.6% | no | no — corner records whose Vc lands 5-300m from any block (divided-pair endpoints, park-perimeter outliers); only 3 sit at 0.5-1.0m where tightening TOL would help |
+| no_match (matched but notConvex/smallR) | 135 | 20.3% | no | no — vertex matched but Bezier skipped (winding-aware convex test or R≤0.05 floor) |
+| flanking_skip | 126 | 18.9% | no | NO — `if (!Bmeta && !Ameta) continue`, doctrine-correct skip for bilateral no-ped-zone (e.g. park interior) |
+| **wrong_flanking** | **170** | **25.5%** | **163 yes / 7 no** | **YES — dominant defect bucket** |
+| selfint | 8 | 1.2% | yes | yes — pad ring self-intersects (subset of wrong_flanking with cusp fired) |
+| cusp_ramp_collision | 0 | 0% | n/a | n/a — `RAMP_MIN_M = 1.5` never fires on LS (`cw=0.45 + min(tl+sw) > 1.5` always); dead code under current authoring |
 
-**Status:** Stage 10 dispatch ready to draft.
+**Hypothesized taxonomy was wrong in three ways** (per Stage 10):
+1. `cusp_ramp_collision` doesn't exist on LS as authored — RAMP_MIN_M is inert.
+2. `no_match` is not a tunable-TOL bucket — 174 of 177 unmatched-vertex cases sit >1m from any block; loosening TOL=0.5 fixes ≤3 corners.
+3. The dominant visible defect (`wrong_flanking`) splits into TWO sub-modes that look identical in the histogram but require different fixes:
+   - **`terminal='none'` sub-case** — one flank authored `terminal='none'` (operator intent: no ped zone). The emitter's `?? Ameta?.tl ?? Bmeta?.tl` fallback mirrors the OTHER flank's depths, producing a symmetric pad where the operator authored asymmetry.
+   - **`adj=null` sub-case** — `findAdjacentChainForBlockEdge` returned null for one flank's straight-span. Working hypothesis (Stage 10.5 diagnostic queued): the null returns are NOT a probe bug but reflect that the flank borders an alley / service path NOT present in `ribbons.streets` (named-street centerlines only). If confirmed, `adj=null` is structurally identical to `terminal='none'` — both mean "no authored ped zone this flank."
+
+**Mississippi × Park reference IX (4 corners at V = (229, -158.9)):**
+
+| corner | flanks | mode | k_cusp | dCorner | padArea | note |
+|---|---|---|---|---|---|---|
+| SW | both terminal=none | flanking_skip | n/a | n/a (no emission) | 0 | park-interior, doctrine-correct empty |
+| SE | tl/sw + terminal=none | wrong_flanking | 0.799 | 4.05 | 27.02 | mirrors authored side onto no-ped-zone side |
+| NE | adj=null + tl/sw | selfint(+wrong_flanking) | 0.745 | 4.05 | 11.76 | prev-flank probe returned null (alley?) |
+| NW | both authored | ok | 0.598 | 4.05 | 25.25 | emits cleanly but at 60% of authored depth (cusp scaling) |
+
+**Stage 11 fix surface (revised post-Stage-10):**
+
+- **11a — Unified flanking-meta semantics.** Treat `adj=null` and `terminal='none'` identically as zero-authored-depth on that flank. The emitter spanMeta layer needs three handlers: bilateral-zero (skip, current), bilateral-authored (current Stage 9 symmetric path), unilateral-zero (new — asymmetric pad geometry, depth tapers to zero at the unauthored flank). Predicate on Stage 10.5's alley diagnostic: if the alley hypothesis holds, this is one fix; if it refutes, `adj=null` is also a real probe bug needing a separate sub-fix.
+- **11b — Cusp guard removal.** The 0.9× scaling is a numerical band-aid that silently shrinks 81 of 666 corners (12.2%) — including NW at Miss-Park to 60% of authored depth. Doctrinally: self-intersection is the geometry's signal that authored depth exceeds local turning radius; the right response is to emit honestly and let Clipper's union resolve the fold into the maximum-physically-realizable pad. Probe-then-ship: dump un-guarded pad geometry for the 81 cusp-firing corners, visual-check, retire the guard. Verifiable: Miss-Park NW emits at 100% of authored depth.
+
+**Concurrent doctrinal shifts:**
+- `RAMP_MIN_M = 1.5` is dead code on LS today. Keep as defensive floor (future-proofing for narrow-authoring scenes) but explicit comment that it's inert under typical authoring.
+- The cusp guard's 0.9× factor is retired entirely if 11b ships, not tuned.
+
+**Anomaly to track (Stage 10):** 38 of 242 LS IXs (15.7%) have corner-count ≠ 4 — 26 with 1 corner, 11 with 3 corners, 1 with 5 corners. Mostly T-junctions and chain endpoints (expected). The single 5-corner IX is worth a sanity probe before Stage 11 lands.
+
+**Status:** Stage 10 SHIPPED (commit `79fcd9e`). Stage 10.5 dispatch ready to draft (alley-hypothesis diagnostic). Stage 11a/11b plan above, blocked on 10.5.
 
 ### 6.7 Stale comments + PHASE 2 SUPERSEDED placeholder — HOUSEKEEPING
 
@@ -757,6 +789,7 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 | 2026-05-17 | Stage 7: concentric tapered arc-span emission (replaces three-regime emitter) | SHIPPED-then-REVERTED-as-uncommitted-work | Two-ring concentric tapered (tl ring + sw ring, depths linearly interpolated between flanking d_A and d_B). Validated 220+ of 355 doctrine-correct concentric per Stage 6's audit re-run. Visually produced small fragmentary bands at corners; the concentric tapered geometry was correct but visually overlapped with the per-sharp-fe straight bands' sharp angular inner edges, producing the "vestigial chain offsets" complaint. Code worked but wrong architectural layer for the visible problem |
 | 2026-05-17 | Stage 8: walk blockRounded for all band emission (retire per-sharp-fe spine) | SHIPPED-then-REVERTED-as-uncommitted-work | Restructured `buildFrontageBandsV2` to walk blockRounded vertices for both straight and arc spans, with chainMeta sidecar identifying per-vertex chain ownership. Goal: align straight-band emission with the rounded silhouette so corners read as concentric wraparound. Failed: the Bezier consume-span absorbed interior fe vertices into corner arcs; ~30% of LS fes (those with ≤3 points after consume) emitted nothing → most block edges had no straight-span bands. Multiple warm continuations (sharp-fe inheritance for chainMeta, bridge fix for tA/tB endpoints, per-span H1 clip, customs lookup refactor) addressed sub-issues but couldn't close the coverage gap. Bezier consume-span is structurally incompatible with per-fe-coverage straight emission |
 | 2026-05-18 | Stage 9: single-polygon symmetric corner pad over restored pre-Stage-8 per-sharp-fe legs | SHIPPED (commit `3cafe7f`) | Revert Stage 8's spine restructure (back to per-sharp-fe `buildFrontageBands` with H1 clip — pre-Stage-8 architecture, validated). Replace Stage 7's concentric tapered arc-span emission with single sidewalk-material polygon at `dCorner = max(d_A, d_B, RAMP_MIN_M=1.5)`. Architecture: legs from sharp fe + H1 clip; corner pads from arc-span on blockRounded. Two emissions overlap geometrically at corner zone (different rings; no shared boundary vertex; no per-slice perp inconsistency). Visual: legs continuous on all 506 block edges; corners 3/4 produce doctrine-correct symmetric pads. Residual: §6.9 — 4th corner per IX has no pad emission from upstream input-preparation variance. Lesson: **doctrinal pivots ("walk blockRounded for everything") need empirical validation at each sub-step before bundling**. Stage 8's architectural ambition was correct in principle (RIBBONS §1) but lost to the Bezier-consume coverage gap that wasn't visible in numerical audits — only visual inspection caught it. Visual smoke test between sub-changes, not at session end |
+| 2026-05-18 | Stage 10: corner-input-prep audit (666 corner records on LS, failure-mode classification + Mississippi × Park deep-dump) | SHIPPED (commit `79fcd9e`) | §6.9 hypothesized taxonomy was wrong in three ways: (1) `cusp_ramp_collision` fires 0/666 — `RAMP_MIN_M=1.5` is dead code under LS authoring; (2) `no_match` is not a tunable-TOL bucket (174 of 177 unmatched vertices sit >1m from any block); (3) `wrong_flanking` (25.5%, dominant defect bucket) splits into `terminal='none'` and `adj=null` sub-modes that look identical in the histogram but require different fixes. Mississippi × Park 4-corner deep-dump: NW `ok` but at 60% of authored depth (cusp k=0.598), SE `wrong_flanking` (terminal=none mirroring), NE `selfint`+`wrong_flanking` (adj=null prev flank), SW `flanking_skip` (bilateral terminal=none — doctrine-correct empty, NOT a defect). Cusp guard fires equally on `ok` (32) and `wrong_flanking` (45) — not itself a defect predictor but a pervasive authoring-fidelity tax. Stage 11 revised to 11a (unified meta semantics: adj=null ≡ terminal=none) + 11b (cusp guard removal: self-intersection IS the signal, not the error). Lesson: **hypothesized taxonomy needs audit validation BEFORE fix design**; the §6.9 cusp_ramp_collision bucket was framed from the Stage 9 emitter's code path without checking firing rates against actual authoring. Stage 10's diagnostic-only mandate caught this cheaply; designing 11a/11b from §6.9's hypothesis would have shipped a fix for an empty bucket |
 
 ---
 
@@ -779,4 +812,4 @@ Repo-wide scan: `scratch/all-band-selfint-scan.js`. Down from 70 post-revert. Re
 
 ---
 
-*Updated: 2026-05-17. Coordinator-Claude session, post Phase 2-arc revert.*
+*Updated: 2026-05-18. Coordinator-Claude session, post Stage 10 audit. §6.9 taxonomy revised per `79fcd9e`; Stage 10.5 alley-hypothesis diagnostic queued; Stage 11a/11b plan above blocked on 10.5.*
