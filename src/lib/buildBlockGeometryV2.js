@@ -1495,6 +1495,41 @@ function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges,
       runs[0].idxs = [...last.idxs, ...runs[0].idxs]
     }
 
+    // Stage 12 sub-A.1 — chain-tangent-coherence split. Sub-A merged
+    // sharp fes across any non-corner IX vertex (through-T phantom,
+    // divided-pair endpoint, theta-filter skip); per-vertex perp at
+    // those merged vertices uses a bisector ~45° off-chain, kinking
+    // the offset polyline. Split each run at any vertex whose in/out
+    // direction differs by more than ~5°. Doctrinally correct: at a
+    // non-corner IX, chain identity changes (or terminates), so a
+    // band-emission boundary IS expected there. The kink vertex is
+    // shared between the two sub-runs (last of one, first of next).
+    const KINK_THRESHOLD_RAD = 5 * Math.PI / 180
+    const splitRuns = []
+    for (const run of runs) {
+      if (run.idxs.length < 3) { splitRuns.push(run); continue }
+      let curIdxs = [run.idxs[0]]
+      for (let k = 1; k < run.idxs.length - 1; k++) {
+        const i = run.idxs[k]
+        const prev = ring[run.idxs[k - 1]]
+        const curV = ring[i]
+        const next = ring[run.idxs[k + 1]]
+        const inDir = unit([curV[0] - prev[0], curV[1] - prev[1]])
+        const outDir = unit([next[0] - curV[0], next[1] - curV[1]])
+        const dot = Math.max(-1, Math.min(1, inDir[0] * outDir[0] + inDir[1] * outDir[1]))
+        const kink = Math.acos(dot)
+        curIdxs.push(i)
+        if (kink > KINK_THRESHOLD_RAD) {
+          splitRuns.push({ idxs: curIdxs })
+          curIdxs = [i]
+        }
+      }
+      curIdxs.push(run.idxs[run.idxs.length - 1])
+      splitRuns.push({ idxs: curIdxs })
+    }
+    runs.length = 0
+    runs.push(...splitRuns)
+
     for (const run of runs) {
       const pts = run.idxs.map(i => ring[i])
       if (pts.length < 2) continue
