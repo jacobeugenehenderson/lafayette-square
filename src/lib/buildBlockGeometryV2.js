@@ -1569,89 +1569,34 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
         tl_A *= k; sw_A *= k; tl_B *= k; sw_B *= k
       }
 
-      const d_A = cw + tl_A + sw_A
-      const d_B = cw + tl_B + sw_B
-
-      const diff = Math.abs(d_A - d_B)
-      const dMax = Math.max(d_A, d_B), dMin = Math.min(d_A, d_B)
-      const ratio = dMax > 1e-9 ? dMin / dMax : 1
-      const isAsym = diff > PHASE2_ASYM_EPS_M || ratio < PHASE2_ASYM_RATIO
-      const hasRamp = !isAsym && tl_A > 0 && tl_B > 0
-
-      const treelawnRings = []
+      // Stage 9 — single-polygon symmetric corner emission. One polygon
+      // spans the full ped-zone depth from rounded asphalt edge to
+      // property line. Sidewalk-material across the entire corner zone
+      // (ADA poured-slab doctrine — corners are uniform-depth pads, not
+      // tapered). Replaces the three-regime branching (ASYM step /
+      // SYM-WITH-RAMP wedge / SYM-NO-RAMP single band) that produced
+      // 0/355 doctrine-correct concentric on LS (RIBBONS §6.8).
+      //
+      // Depth = max(legA total, legB total, RAMP_MIN_M). Symmetric flanks
+      // produce a corner pad whose inner edge matches the straight-band
+      // inner edge exactly at tA / tB → no step at the tangent point.
+      // Asymmetric flanks step at tA/tB; narrower side widens INTO the
+      // pad (real-world correct).
+      //
+      // RAMP_MIN_M floors corner depth at ADA-standard minimum width.
+      const RAMP_MIN_M = 1.5
+      const dCorner = Math.max(
+        cw + tl_A + sw_A,
+        cw + tl_B + sw_B,
+        RAMP_MIN_M,
+      )
+      const treelawnRings = []  // arc-span treelawn always empty (Stage 9)
       const sidewalkRings = []
-
-      if (isAsym) {
-        const outer = pts.slice()
-        const inner = pts.map((_, k) => offsetAt(k, fracOf(k) < PHASE2_STEP_FRAC ? d_B : d_A))
-        const r = closeBandRingV2(outer, inner)
-        if (r) sidewalkRings.push(r)
-      } else if (hasRamp) {
-        let totalLen = 0
-        for (let k = 1; k < Nv; k++) {
-          totalLen += Math.hypot(pts[k][0] - pts[k-1][0], pts[k][1] - pts[k-1][1])
-        }
-        const rampLen = Math.min(PHASE2_RAMP_MAX_M, PHASE2_RAMP_FRAC * totalLen)
-        const tl_avg = (tl_A + tl_B) / 2
-        const sw_avg = (sw_A + sw_B) / 2
-
-        if (rampLen < PHASE2_RAMP_MIN_M || totalLen < 1e-6) {
-          const outer = pts.slice()
-          const tlInner = pts.map((_, k) => offsetAt(k, cw + tl_avg))
-          const swInner = pts.map((_, k) => offsetAt(k, cw + tl_avg + sw_avg))
-          if (tl_avg > 0) { const r = closeBandRingV2(outer, tlInner); if (r) treelawnRings.push(r) }
-          if (sw_avg > 0) { const r = closeBandRingV2(tlInner, swInner); if (r) sidewalkRings.push(r) }
-        } else {
-          const rampFrac = rampLen / totalLen
-          const fStart = 0.5 - rampFrac / 2
-          const fEnd   = 0.5 + rampFrac / 2
-          const totalDepth = cw + tl_avg + sw_avg
-
-          // Sidewalk band wraps the whole arc; inner-edge offset is
-          // (cw + tl_avg) outside ramp window, 0 inside it — produces
-          // a single ring that bulges to the asphalt at the ramp.
-          const swOuter = pts.map((_, k) => offsetAt(k, totalDepth))
-          const swInnerVerts = pts.map((_, k) => {
-            const f = fracOf(k)
-            const inDepth = (f >= fStart && f <= fEnd) ? 0 : (cw + tl_avg)
-            return offsetAt(k, inDepth)
-          })
-          const swRing = [...swInnerVerts, ...swOuter.slice().reverse()]
-          if (swRing.length >= 3) {
-            const swR = ringSignedArea2D(swRing) >= 0 ? swRing : swRing.slice().reverse()
-            sidewalkRings.push(swR)
-          }
-
-          if (tl_avg > 0) {
-            const emitTl = (kStart, kEnd) => {
-              if (kEnd - kStart < 1) return
-              const sub = []
-              const subInner = []
-              for (let k = kStart; k <= kEnd; k++) {
-                sub.push(pts[k])
-                subInner.push(offsetAt(k, cw + tl_avg))
-              }
-              if (sub.length < 2) return
-              const r = closeBandRingV2(sub, subInner)
-              if (r) treelawnRings.push(r)
-            }
-            let kBefore = 0
-            while (kBefore < Nv - 1 && fracOf(kBefore + 1) < fStart) kBefore++
-            let kAfter = Nv - 1
-            while (kAfter > 0 && fracOf(kAfter - 1) > fEnd) kAfter--
-            emitTl(0, kBefore)
-            emitTl(kAfter, Nv - 1)
-          }
-        }
-      } else {
-        // SYMMETRIC-NO-RAMP — both legs sidewalk-only (tl = 0).
-        const sw_avg = (sw_A + sw_B) / 2
-        if (sw_avg > 0) {
-          const outer = pts.slice()
-          const inner = pts.map((_, k) => offsetAt(k, cw + sw_avg))
-          const r = closeBandRingV2(outer, inner)
-          if (r) sidewalkRings.push(r)
-        }
+      const outerEdge = pts
+      const innerEdge = pts.map((_, k) => offsetAt(k, dCorner))
+      const sidewalkRing = closeBandRingV2(outerEdge, innerEdge)
+      if (sidewalkRing && sidewalkRing.length >= 3 && Math.abs(ringSignedArea2D(sidewalkRing)) > 1e-3) {
+        sidewalkRings.push(sidewalkRing)
       }
 
       // Always emit an entry for arc spans (even with no inward bands)
