@@ -15,7 +15,7 @@ import usePlaceState from '../hooks/usePlaceState'
 import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
-import { patchTerrain } from '../utils/terrainShader'
+import { patchTerrain, patchTerrainAtCentroidRaw } from '../utils/terrainShader'
 import { terrainExag } from '../utils/terrainShader'
 import { getElevation, getElevationRaw } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
@@ -112,7 +112,10 @@ function getFoundationHeight(building) {
   return periodPedestalFor(building, _overrides)
 }
 
-// Building Y = foundation height only. Terrain displacement handled by patchTerrain on GPU.
+// Building Y = foundation height only. Terrain displacement handled by
+// patchTerrainAtCentroidRaw on GPU, lifting rigidly by the mean of
+// footprint-corner elevations (the bake-buildings.js canonical centroidY).
+// Doctrine: cartograph/FEATURES.md § "Anchor rule (foundations + walls)".
 function getBuildingY(building) {
   return getFoundationHeight(building)
 }
@@ -359,7 +362,19 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
     source.forEach(building => {
       const fh = getFoundationHeight(building)
       const footprint = building.footprint
-      const groundYRaw = getElevationRaw(building.position[0], building.position[2])
+      // Anchor lift = mean of footprint-corner raw elevations (canonical, matches
+      // cartograph/bake-buildings.js:571–575). Footprint-less buildings fall
+      // back to the single-point sample at building.position.
+      let groundYRaw
+      if (footprint && footprint.length >= 3) {
+        let sum = 0
+        for (let i = 0; i < footprint.length; i++) {
+          sum += getElevationRaw(footprint[i][0], footprint[i][1])
+        }
+        groundYRaw = sum / footprint.length
+      } else {
+        groundYRaw = getElevationRaw(building.position[0], building.position[2])
+      }
       // Block goes from (-FOUNDATION_BELOW_GRADE_M) to (+fh) in local Y.
       // Runtime adds `aCentroidY * uExag` to every vertex so the top sits
       // at (groundYRaw * uExag + fh) and the bottom at
@@ -592,6 +607,20 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
   const { selectedId, hoveredId, select, setHovered, clearHovered } = useSelectedBuilding()
   const getLightingPhase = useTimeOfDay((state) => state.getLightingPhase)
   const foundationY = getBuildingY(building)
+
+  // Anchor lift for walls — mean of footprint-corner raw elevations, matching
+  // Foundations and cartograph/bake-buildings.js:571–575. Walls lift rigidly
+  // by `meanCornerRaw * uExag` via patchTerrainAtCentroidRaw, so Stage and
+  // Preview agree on sloped terrain.
+  const meanCornerRaw = useMemo(() => {
+    const fp = building.footprint
+    if (fp && fp.length >= 3) {
+      let sum = 0
+      for (let i = 0; i < fp.length; i++) sum += getElevationRaw(fp[i][0], fp[i][1])
+      return sum / fp.length
+    }
+    return getElevationRaw(building.position[0], building.position[2])
+  }, [building])
 
   // Per-building neon state — the actual mesh is one merged <NeonBands>
   // in LafayetteScene's render; this block resolves the per-id "showNeon"
@@ -850,9 +879,9 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
       )
     }
 
-    patchTerrain(mat)
+    patchTerrainAtCentroidRaw(mat, meanCornerRaw)
     return mat
-  }, [baseColor, wallTex, roofTex, roofTintColor, hasTextures, foundationY, building])
+  }, [baseColor, wallTex, roofTex, roofTintColor, hasTextures, foundationY, building, meanCornerRaw])
 
   // Static apply on scene load — materialPhysics comes from scene.json via
   // prop (couplers plan §1). Replaces the prior per-frame cartograph-store
@@ -1245,7 +1274,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       // (pre-1900: +1.2m, pre-1920: +0.8m, else 0) shifts the
       // building's mounted position; the neon tube must sit at the
       // same rooftop. NeonBands.buildTubeFor reads place.baseY.
-      const baseY = getFoundationHeight(b) + b.size[1]
+      const baseY = getFoundationHeight(b) + b.size[1] + getRoofPeakHeight(b) + 0.3
       places.push({ ...b, baseY, neon: { category: info.category } })
     }
     return places
