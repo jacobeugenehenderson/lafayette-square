@@ -1203,6 +1203,12 @@ const useCartographStore = create((set, get) => ({
     if (get().bakeRunning) return
     set({ bakeRunning: true, bakeError: null })
     try {
+      // Drain the 300 ms autosave debounce so design.json reflects the
+      // operator's latest edits BEFORE the bake child processes read it.
+      // Without this, "toggle layer off + Stage" within 300 ms shipped
+      // stale design.json to bake-buildings/bake-scene — see NOTES.md
+      // §"Autosave debounce must flush before /bake (2026-05-18)".
+      await get()._saveDesignDebounced.flush()
       const r = await bakeLook(get().activeLookId, { force })
       // bakeLastMs is the cache-bust signal for BakedGround / InstancedTrees
       // (`?t=${bakeLastMs}`). Must be unique per bake-completion or the
@@ -1672,16 +1678,19 @@ const useCartographStore = create((set, get) => ({
   // network write 300 ms after the last change.
   _saveDesignDebounced: (() => {
     let t = null
-    return () => {
-      if (t) clearTimeout(t)
-      t = setTimeout(() => {
-        t = null
-        const s = get()
-        if (!s._designHydrated || !s._looksHydrated) return
-        const id = s.activeLookId
-        if (!id) return
-        if (!get().bakeStale) set({ bakeStale: true })
-        const design = {
+    // Last pending save body, captured at debounce-fire time. `flush()`
+    // (called from runBake) drains this synchronously so the /bake POST
+    // can't race a still-pending /design POST. Without this, a layer
+    // toggle followed by a Stage click within 300 ms shipped stale
+    // design.json to the bake — see 2026-05-18 NOTES entry.
+    const runSave = () => {
+      t = null
+      const s = get()
+      if (!s._designHydrated || !s._looksHydrated) return Promise.resolve()
+      const id = s.activeLookId
+      if (!id) return Promise.resolve()
+      if (!get().bakeStale) set({ bakeStale: true })
+      const design = {
           layerVis: s.layerVis,
           layerColors: s.layerColors,
           layerStrokes: s.layerStrokes,
@@ -1725,11 +1734,20 @@ const useCartographStore = create((set, get) => ({
           horizon: s.horizon,
           clouds: s.clouds,
           openSections: s.openSections,
-        }
-        saveLookDesign(id, design).catch(err =>
-          console.warn('[looks] design save failed:', err))
-      }, 300)
+      }
+      return saveLookDesign(id, design).catch(err =>
+        console.warn('[looks] design save failed:', err))
     }
+    const fn = () => {
+      if (t) clearTimeout(t)
+      t = setTimeout(runSave, 300)
+    }
+    fn.flush = () => {
+      if (t === null) return Promise.resolve()
+      clearTimeout(t)
+      return runSave()
+    }
+    return fn
   })(),
   // Back-compat alias for older callers that still invoke _saveCenterlines.
   _saveCenterlines: () => { get()._saveOverlay() },

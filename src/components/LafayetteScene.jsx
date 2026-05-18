@@ -1177,7 +1177,11 @@ function resolveLookId(propLookId) {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn } = {}) {
+function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn, hiddenLayers } = {}) {
+  // Panel layer toggles: { building, labels, ... } → boolean. Empty object in
+  // production (no overrides). Stage passes the live store map; baked Stage
+  // reads scene.json.layerVis. Foundations are tied to Building visibility.
+  const hide = hiddenLayers || {}
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
   // Stage's mount in CartographApp passes live-subscribed overrides from
   // the cartograph store so Surfaces panel drags retint instantly.
@@ -1334,12 +1338,16 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     <group>
       <ClickCatcher />
 
-      <Foundations materialPhysics={materialPhysics} materialColors={materialColors} />
+      {!hide.building && (
+        <>
+          <Foundations materialPhysics={materialPhysics} materialColors={materialColors} />
 
-      {/* Buildings — per-id mount; neon is one merged mesh below. */}
-      {_allBuildings.map(b => (
-        <Building key={b.id} building={b} neonInfo={visibleNeonIds.has(b.id) ? neonLookup[b.id] : undefined} palette={palette} materialPhysics={materialPhysics} />
-      ))}
+          {/* Buildings — per-id mount; neon is one merged mesh below. */}
+          {_allBuildings.map(b => (
+            <Building key={b.id} building={b} neonInfo={visibleNeonIds.has(b.id) ? neonLookup[b.id] : undefined} palette={palette} materialPhysics={materialPhysics} />
+          ))}
+        </>
+      )}
 
       {/* Neon — single Path B mesh over all currently-open places, with
           scene.json.neon driving the uCore/uTube/uBleed uniforms. */}
@@ -1348,7 +1356,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       {/* Street labels — SceneLabel renderer, panel-driven style; widthM
           carries the chain's pavement width so labels scale with the
           street. */}
-      {labelsReady && streetLabels.map((lbl, i) => (
+      {labelsReady && !hide.labels && streetLabels.map((lbl, i) => (
         <SceneLabel
           key={`label-${i}`}
           text={lbl.name}

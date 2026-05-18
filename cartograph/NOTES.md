@@ -8,6 +8,24 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-18 — Autosave debounce must flush before /bake, and Stage 3D mounts must honor `layerVis`
+
+Two ordering / contract bugs surfaced while troubleshooting "Stage button → 409, retry succeeds, but layers I toggled off are visible anyway."
+
+**Bug 1 — autosave races the bake POST.** `_saveDesignDebounced` (`src/cartograph/stores/useCartographStore.js:1673`) coalesces panel edits into a 300 ms-debounced `POST /looks/<id>/design`. `runBake` (`Toolbar.jsx:87` → store `:1202`) POSTs `/looks/<id>/bake` immediately on click. A panel toggle followed by Stage within 300 ms ships the POST to `/bake` *before* the POST to `/design` — the server's bake child processes (`bake-buildings`, `bake-scene`) re-read `design.json` per step, so you get split-bakes where some artifacts honor the new state and some the old. Manifested as "I turned all layers off and pressed Stage; buildings popped back in." Fix: `_saveDesignDebounced.flush()` drains the pending timer synchronously; `runBake` awaits it before posting. **Contract going forward:** any caller that depends on `design.json` reflecting current store state must await `_saveDesignDebounced.flush()` first. Today that's `runBake`; future server-side actions (export, snapshot, etc.) inherit the same constraint.
+
+**Bug 2 — `layerVis` was honored only for trees and lamps in Stage.** `StageEnvironment` in `src/cartograph/CartographApp.jsx:568` mounted `<LafayettePark>`, `<LafayetteScene>` (Foundations + Buildings + labels + landmarks + neon), and `<GatewayArch>` unconditionally. `bakedLayerVis` was correctly hydrated from `scene.json` (line 728), correctly projected into `hiddenLayers` (line 741), and correctly handed to `<MapLayers>` for flat-mode rendering — but the 3D-mount path silently dropped it for everything except trees and lamps. Doctrinally a violation of FEATURES.md §"Designer-toggle ↔ bake parity (2026-05-05)" (line 385) — "what the operator hides in Designer is what's hidden in Stage/Preview." Fix: gated `<LafayettePark>` on `!hiddenLayers.park`; passed `hiddenLayers` into `<LafayetteScene>` which now internally gates Foundations + Building map on `!hide.building` and the street-label group on `!hide.labels`.
+
+**Still-unsigned adjacencies (not in this commit):**
+
+- `<GatewayArch>` has no Panel layer key today, so no gate added. If we want to hide arch in Stage we need both a Panel toggle and a `layerVis.arch` key.
+- Toy's `StageEnvironment` (`CartographApp.jsx` ~614) doesn't accept `hiddenLayers` at all. Toy is a diagnostic scene; out of scope here, but if Toy's Panel toggles should apply in Stage that's a parallel wire-up.
+- The Stage button's `disabled={bakeRunning}` gate is client-only; the server's 409 (`serve.js:469`) still fires legitimately if a previous client (different tab / HMR-orphaned bake / `createLook`'s auto-bake) is still in flight. The flush fix doesn't make 409 go away, it just stops it being correlated with bad output.
+
+Doctrine touched: `[[project_authoring_is_live_production_is_static]]` (the layer gates are part of the live-authoring side of that boundary).
+
+---
+
 ## 2026-05-15 — Procedural trees v1.5: in-Arborist authoring + skeleton-first roadmap — MAXI BRIEF
 
 **Status (rolling, end of 2026-05-16):** Project goal: **ship 5 hero species at Hero quality** on top of morphology fillers, sharing one bark+leaf material pipeline via the Grove's master atlas. The 7-phase machinery is the *means*, not the end. **Phases shipped:** A (`2323a78` + `f6aaf61`), D (`06f903e`), B-core (`0b2f6cb`), B.1.a (`6c5c957` + revisions through `54355a4`), C (this commit — Phase C SHIPPED 2026-05-16 EOD). **Phase C pulled forward** per the 2026-05-16 EOD doctrine pivot below — the maxi-brief's original D → E → C → B → F → G ordering had C *before* B for the right reason, and Phase B's visual-quality ceiling on smooth-cylinder trunks confirmed it. **Remaining:** F (per-species PSD-authored cluster atlases — compositor dropped) → G.1–G.5 (five hero proving passes). Phases B.1.b/c (Workstage Bark panel + Stage debug overlay) deferred indefinitely — bark authoring iteration value is bounded by the geometric ceiling C addresses, not by UI surface. Phase F.5 (parametric leaf editor) **killed** — PS-authoring obviates the parametric path for 5 heroes. Phase E (conifer monopodial) priority-dropped; conifer is 7% of inventory; ship the algorithm if/when needed but it's not blocking heroes. Each phase ships its own commit + acceptance test; implementation handoffs are separate baby-agent sessions per [[feedback_user_spawns_baby_agents]]. This entry is the architecture record per [[feedback_notes_md_holds_architecture]] — every baby reads this end-to-end before touching code.
