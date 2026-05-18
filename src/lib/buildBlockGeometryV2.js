@@ -1451,6 +1451,25 @@ function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blo
   return { frontageBands: out, frontageCaps: [] }
 }
 
+// Stage 11a: ring-walk for arc-span flanking-meta resolution.
+// Walks at most N-1 spans in `dir` from `fromIdx`, returning the first
+// spanMeta entry that is an authored straight (type='straight' && !skip).
+// Walks PAST arc spans (adjacent corners) and skipped straights
+// (degenerate-length, terminal=none, adj=null) uniformly. Returns null
+// only when the entire ring has no authored straight reachable in this
+// direction. Doctrinal: a small block whose ring partition collapses
+// into back-to-back arcs still inherits its chain's authored ped-zone
+// depth at every corner, via the ring-walk past the adjacent arcs.
+function walkToFirstAuthoredMeta(spanMeta, fromIdx, dir) {
+  const N = spanMeta.length
+  for (let step = 1; step < N; step++) {
+    const idx = ((fromIdx + dir * step) % N + N) % N
+    const m = spanMeta[idx]
+    if (m?.type === 'straight' && !m.skip) return m
+  }
+  return null
+}
+
 function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth) {
   if (!blockRoundedWithMeta?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
@@ -1542,10 +1561,14 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
       // CCW arrives via leg-B side and departs via leg-A side (Phase 1
       // emission reverses the natural [tA,...,tB] to [tB,...,tA] for
       // block walks), so prevMeta corresponds to leg B, nextMeta to A.
-      const prevMeta = spanMeta[(si - 1 + spans.length) % spans.length]
-      const nextMeta = spanMeta[(si + 1) % spans.length]
-      const Bmeta = (prevMeta?.type === 'straight' && !prevMeta.skip) ? prevMeta : null
-      const Ameta = (nextMeta?.type === 'straight' && !nextMeta.skip) ? nextMeta : null
+      // Stage 11a: walk past adjacent arc spans + skipped straights
+      // (adj=null / terminal=none / degenerate <2-vertex) until the
+      // first authored straight is reached. Stage 10.5 found 95% of
+      // adj=null events at the immediately-adjacent index were
+      // structural (back-to-back arcs or 1-vertex straights); the
+      // ring-walk unifies those with the alley/void/terminal=none cases.
+      const Bmeta = walkToFirstAuthoredMeta(spanMeta, si, -1)
+      const Ameta = walkToFirstAuthoredMeta(spanMeta, si, +1)
       if (!Bmeta && !Ameta) continue
 
       let tl_B = Bmeta?.tl ?? Ameta?.tl ?? 0
