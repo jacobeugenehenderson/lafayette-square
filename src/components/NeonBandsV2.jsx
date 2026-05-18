@@ -16,8 +16,12 @@ import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
  *   - Slab-completeness: intensity from scene.json.neon.values, by
  *     reference (NeonPump writes the shared uniform refs in Stage;
  *     production reads scene.json once via useSceneJson)
- *   - Per-vertex terrain lift using the same XZ the building's
- *     patchTerrain samples, so tube tracks rooftop on hills
+ *   - Per-vertex terrain lift via the shared `aCentroidY` attribute
+ *     (mean of footprint-corner raw elevations, threaded through
+ *     openPlaces as `place.groundYRaw`) — matches the canonical
+ *     anchor mechanism used by Foundations and Building walls per
+ *     FEATURES.md anchor-rule doctrine. NOT a GPU terrain-map
+ *     texture sample.
  *   - No operator-authored geometry knobs (radius / drop / offset);
  *     they're physically motivated constants
  *
@@ -40,7 +44,7 @@ const TUBE_RADIUS  = 1.0                       // 1m diameter — reads at hero/
                                                // otherwise, bloom can't recover something it can't see).
                                                // Authoring-as-knob retired — physically motivated for
                                                // the LS scene scale rather than operator-tunable.
-const ROOF_DROP    = 0.0                       // tube center sits AT the rooftop seam
+const ROOF_DROP    = -TUBE_RADIUS              // tube BOTTOM at rooftop seam → whole tube above wall geometry (z-precision probe 2026-05-18)
 const OFFSET_OUT   = 0.5                       // meters past wall face — clears any eave/cornice
 const CROSS_SEGS   = 8                         // facets around the circular cross-section
 const CORNER_SEGS  = 3                         // arc segs per convex corner
@@ -158,16 +162,16 @@ function buildTube(building) {
   const m = path.length
   if (m < 2) return null
 
-  // Per-building terrain anchor: same XZ the building samples via
-  // patchTerrain (rigid) — guarantees tube + walls lift in lockstep.
-  const cx = building.position?.[0] ?? 0
-  const cz = building.position?.[2] ?? 0
+  // Per-building terrain anchor: mean of footprint-corner raw elevations,
+  // matching Foundations (LafayetteScene.jsx:368) and Building walls
+  // (LafayetteScene.jsx:615). Threaded through openPlaces as place.groundYRaw.
+  const centroidY = building.groundYRaw ?? 0
 
   const VPR = CROSS_SEGS + 1
   const positions = []
   const normals = []
   const uvs = []
-  const centroidXZ = []
+  const centroidYs = []
   for (let i = 0; i <= m; i++) {
     const ring = path[i % m]
     const u = i / m
@@ -181,7 +185,7 @@ function buildTube(building) {
       )
       normals.push(sn * ring.nx, cs, sn * ring.nz)
       uvs.push(u, s / CROSS_SEGS)
-      centroidXZ.push(cx, cz)
+      centroidYs.push(centroidY)
     }
   }
 
@@ -194,7 +198,7 @@ function buildTube(building) {
       indices.push(a + s + 1, b + s + 1, b + s)
     }
   }
-  return { positions, normals, uvs, centroidXZ, indices }
+  return { positions, normals, uvs, centroidYs, indices }
 }
 
 function categoryColorVec(category) {
@@ -213,20 +217,15 @@ function categoryColorVec(category) {
 
 const VERT = /* glsl */`
 attribute vec3 aColor;
-attribute vec2 aCentroidXZ;
-uniform sampler2D uTerrainMap;
-uniform float uBMinX, uBMinZ, uSpanX, uSpanZ, uExag;
+attribute float aCentroidY;
+uniform float uExag;
 varying vec3 vColor;
 varying vec3 vWorldNormal;
 varying vec3 vWorldPos;
 void main() {
   vColor = aColor;
   vec3 lifted = position;
-  vec2 _tuv = clamp(vec2(
-    (aCentroidXZ.x - uBMinX) / uSpanX,
-    (aCentroidXZ.y - uBMinZ) / uSpanZ
-  ), 0.0, 1.0);
-  lifted.y += texture2D(uTerrainMap, _tuv).r * uExag;
+  lifted.y += aCentroidY * uExag;
   vec4 wp = modelMatrix * vec4(lifted, 1.0);
   vWorldPos = wp.xyz;
   vWorldNormal = normalize(mat3(modelMatrix) * normal);
@@ -281,7 +280,7 @@ export default function NeonBandsV2({ places, forceOn = true, lookId }) {
   }, [lookId, scene])
 
   const geometry = useMemo(() => {
-    const positions = [], normals = [], uvs = [], colors = [], centroidXZ = [], indices = []
+    const positions = [], normals = [], uvs = [], colors = [], centroidYs = [], indices = []
     let baseVert = 0
     let _tubeOk = 0, _tubeSkipNoCat = 0, _tubeSkipBuild = 0
     for (const p of places) {
@@ -294,7 +293,7 @@ export default function NeonBandsV2({ places, forceOn = true, lookId }) {
       for (let i = 0; i < tube.positions.length;  i++) positions.push(tube.positions[i])
       for (let i = 0; i < tube.normals.length;    i++) normals.push(tube.normals[i])
       for (let i = 0; i < tube.uvs.length;        i++) uvs.push(tube.uvs[i])
-      for (let i = 0; i < tube.centroidXZ.length; i++) centroidXZ.push(tube.centroidXZ[i])
+      for (let i = 0; i < tube.centroidYs.length; i++) centroidYs.push(tube.centroidYs[i])
       for (let i = 0; i < count; i++) colors.push(rgb[0], rgb[1], rgb[2])
       for (let i = 0; i < tube.indices.length; i++) indices.push(baseVert + tube.indices[i])
       baseVert += count
@@ -304,7 +303,7 @@ export default function NeonBandsV2({ places, forceOn = true, lookId }) {
     g.setAttribute('normal',      new THREE.Float32BufferAttribute(normals, 3))
     g.setAttribute('uv',          new THREE.Float32BufferAttribute(uvs, 2))
     g.setAttribute('aColor',      new THREE.Float32BufferAttribute(colors, 3))
-    g.setAttribute('aCentroidXZ', new THREE.Float32BufferAttribute(centroidXZ, 2))
+    g.setAttribute('aCentroidY', new THREE.Float32BufferAttribute(centroidYs, 1))
     g.setIndex(indices)
     // DIAGNOSTIC: dump build counts so we can verify how many tubes
     // are actually being merged into the mesh.
@@ -336,11 +335,6 @@ export default function NeonBandsV2({ places, forceOn = true, lookId }) {
         uBleed:      _neonUniforms.bleedUniform,
         uEmissive:   _neonUniforms.emissiveUniform,
         uForceOn:    { value: forceOn ? 1.0 : 0.0 },
-        uTerrainMap: TERRAIN_UNIFORMS.uTerrainMap,
-        uBMinX:      TERRAIN_UNIFORMS.uBMinX,
-        uBMinZ:      TERRAIN_UNIFORMS.uBMinZ,
-        uSpanX:      TERRAIN_UNIFORMS.uSpanX,
-        uSpanZ:      TERRAIN_UNIFORMS.uSpanZ,
         uExag:       TERRAIN_UNIFORMS.uExag,
       },
       transparent: true,

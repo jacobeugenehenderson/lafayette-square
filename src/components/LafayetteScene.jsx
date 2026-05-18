@@ -1279,7 +1279,20 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       // building's mounted position; the neon tube must sit at the
       // same rooftop. NeonBands.buildTubeFor reads place.baseY.
       const baseY = getFoundationHeight(b) + b.size[1] + getRoofPeakHeight(b) + 0.3
-      places.push({ ...b, baseY, neon: { category: info.category } })
+      // Mean-corner raw elevation — canonical anchor matching Foundations
+      // (line 368) and Building walls (line 615). Threaded into NeonBandsV2
+      // so the neon mesh lifts in lockstep with its building on sloped
+      // terrain. See cartograph/bake-buildings.js:571–575.
+      let groundYRaw
+      const fp = b.footprint
+      if (fp && fp.length >= 3) {
+        let sum = 0
+        for (let i = 0; i < fp.length; i++) sum += getElevationRaw(fp[i][0], fp[i][1])
+        groundYRaw = sum / fp.length
+      } else {
+        groundYRaw = getElevationRaw(b.position[0], b.position[2])
+      }
+      places.push({ ...b, baseY, groundYRaw, neon: { category: info.category } })
     }
     return places
   }, [neonLookup, neonTick, forceNeonOn])
