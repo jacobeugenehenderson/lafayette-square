@@ -1452,20 +1452,22 @@ function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blo
 }
 
 // Stage 11a: ring-walk for arc-span flanking-meta resolution.
-// Walks at most N-1 spans in `dir` from `fromIdx`, returning the first
-// spanMeta entry that is an authored straight (type='straight' && !skip).
-// Walks PAST arc spans (adjacent corners) and skipped straights
-// (degenerate-length, terminal=none, adj=null) uniformly. Returns null
-// only when the entire ring has no authored straight reachable in this
-// direction. Doctrinal: a small block whose ring partition collapses
-// into back-to-back arcs still inherits its chain's authored ped-zone
-// depth at every corner, via the ring-walk past the adjacent arcs.
+// Walks PAST partition-artifact straights (skip:true — degenerate <2-
+// vertex spans + adj=null probe failures) and PAST arc spans, but STOPS
+// at authored-zero straights (authoredZero:true — terminal!=sidewalk or
+// tl<=0 && sw<=0). That distinction is Stage 11a.1: a flank where the
+// operator authored "no ped zone here" is real authored intent and must
+// contribute its zero depths to the corner, not be walked past in favor
+// of some distant chain's authoring. Doctrinal: walk past structural
+// gaps in the ring partition, stop at operator-intent zero.
 function walkToFirstAuthoredMeta(spanMeta, fromIdx, dir) {
   const N = spanMeta.length
   for (let step = 1; step < N; step++) {
     const idx = ((fromIdx + dir * step) % N + N) % N
     const m = spanMeta[idx]
-    if (m?.type === 'straight' && !m.skip) return m
+    if (m?.type !== 'straight') continue   // walk past arcs
+    if (m.skip) continue                   // walk past partition artifacts
+    return m                               // stop at authored (including authoredZero)
   }
   return null
 }
@@ -1527,9 +1529,15 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
       const isSidewalk = eff.terminal === 'sidewalk'
       const tl = isSidewalk ? (eff.treelawn || 0) : 0
       const sw = isSidewalk ? (eff.sidewalk || 0) : 0
+      // Stage 11a.1: split skip into two flags. `skip` is reserved for
+      // partition artifacts (pts.length<2, adj=null). Operator-zero
+      // (terminal!=sidewalk or tl=sw=0) becomes `authoredZero` — still
+      // resolved (carries chainIdx/side/edgeOrd) but contributes zero
+      // depth to the corner pad rather than being walked past.
       return {
         type: 'straight',
-        skip: !isSidewalk || (tl <= 0 && sw <= 0),
+        skip: false,
+        authoredZero: !isSidewalk || (tl <= 0 && sw <= 0),
         chainIdx: adj.chainIdx,
         side: adj.side,
         edgeOrd: sharpFe?.edgeOrd,
@@ -1569,7 +1577,16 @@ function buildFrontageBandsV2(streets, blockRoundedWithMeta, frontageEdges, chai
       // ring-walk unifies those with the alley/void/terminal=none cases.
       const Bmeta = walkToFirstAuthoredMeta(spanMeta, si, -1)
       const Ameta = walkToFirstAuthoredMeta(spanMeta, si, +1)
-      if (!Bmeta && !Ameta) continue
+      // Stage 11a.1: bilateral authored-zero short-circuit. If both
+      // flanks are unauthored (null) OR explicitly authored-zero, this
+      // corner has no ped zone to express — skip emission. Visible-defect
+      // case ("floating tab" at corners that previously inherited depth
+      // from a distant authored chain) closes here. Unilateral
+      // authoredZero still produces a symmetric pad via the meta-fallback
+      // chain below — visibly defective on one side, deferred to Stage 11b.
+      const Bzero = !Bmeta || Bmeta.authoredZero
+      const Azero = !Ameta || Ameta.authoredZero
+      if (Bzero && Azero) continue
 
       let tl_B = Bmeta?.tl ?? Ameta?.tl ?? 0
       let sw_B = Bmeta?.sw ?? Ameta?.sw ?? 0

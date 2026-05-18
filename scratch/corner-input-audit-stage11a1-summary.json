@@ -1,0 +1,27 @@
+{
+  "totalCorners": 666,
+  "modeCounts": {
+    "flanking_skip": 69,
+    "no_match": 312,
+    "ok": 244,
+    "wrong_flanking": 32,
+    "selfint": 9
+  },
+  "perIxHist": {
+    "1": 26,
+    "2": 107,
+    "3": 11,
+    "4": 97,
+    "5": 1
+  },
+  "cuspFiredCount": 111,
+  "rampMinFiredCount": 0,
+  "overTolCount": 177,
+  "nearTolCount": 3,
+  "arcRDistribution": {
+    "1": 2,
+    "2": 23,
+    "3": 174,
+    "4": 86
+  }
+}
