@@ -1359,18 +1359,12 @@ function closeBandRingV2(outerEdge, innerEdge) {
   return ringSignedArea2D(ring) >= 0 ? ring : ring.slice().reverse()
 }
 
-// Pre-Phase-2 per-sharp-fe straight-span band emission, restored in
-// Phase 2-arc revert. Phase 2 replaced this with a blockRounded-walking
-// spine inside buildFrontageBandsV2, but the long offset polylines hit
-// Clipper precision and produced ~70 self-intersecting band rings
-// repo-wide (visible at Lafayette Park as opaque-black bands along the
-// interior perimeter). The doctrinally-correct corner solution (round-
-// block swap, Bezier arcs, three-regime emitter, fillet attribution,
-// cusp guard) is preserved in buildFrontageBandsV2's arc-span branch;
-// this helper restores the straight-span half. The two outputs concat
-// into one frontageBands array at the call site; downstream consumers
-// (attributeFilletResidualToArcs, bake-ground, BlockGeometryV2Debug)
-// iterate field-by-field and don't care about the split.
+// SUB-A: retired by silhouetteStraightEmitter; remove in sub-C.
+// Pre-Phase-2 per-sharp-fe straight-span band emission. Kept in place
+// as dead code through sub-A so the sub-A diff stays bounded; sub-C
+// deletes the function definition along with the H1 clip (which is
+// structurally unnecessary for silhouette-walked bands since their
+// outer edges already follow blockRounded).
 function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blockCustoms) {
   if (!frontageEdges?.length) return { frontageBands: [], frontageCaps: [] }
   const cw = curbWidth
@@ -1449,6 +1443,109 @@ function buildFrontageBands(streets, frontageEdges, curbWidth, blockRounded, blo
     }
   }
   return { frontageBands: out, frontageCaps: [] }
+}
+
+// Stage 12 sub-A — silhouette-walking STRAIGHT-span band emitter.
+// Replaces buildFrontageBands's per-sharp-fe leg emission with a walk
+// over blockRounded's straight-span runs. Arc-span emission remains on
+// buildFrontageBandsV2's per-corner-pad code path (sub-B retires that).
+// Per-vertex perp offset is geometrically exact for straight vertices,
+// so no Clipper-precision selfints (the failure mode that sent Phase 2's
+// blockRounded-walking spine back to per-fe emission).
+//
+// Per Stage 11a.1 doctrine: probe + customs + chain.measure resolves the
+// run's authored measure; if !isSidewalk || (tl<=0 && sw<=0) (authoredZero)
+// or probe-null (partition artifact), emit nothing for the run. Arc-span
+// flanking inheritance is sub-B's territory; sub-A only emits where the
+// straight-run itself probes to authored sidewalk.
+function silhouetteStraightEmitter(streets, blockRoundedWithMeta, frontageEdges, chainIndex, blockCustoms, curbWidth) {
+  if (!blockRoundedWithMeta?.length) return { frontageBands: [] }
+  const cw = curbWidth
+  const out = []
+
+  const sharpFeByKey = new Map()
+  if (frontageEdges?.length) {
+    for (const fe of frontageEdges) {
+      if (fe.chainIdx == null) continue
+      sharpFeByKey.set(`${fe.blockKey}|${fe.chainIdx}|${fe.side}`, fe)
+    }
+  }
+
+  for (const { ring, arcMeta } of blockRoundedWithMeta) {
+    if (!ring || ring.length < 3 || !arcMeta) continue
+    const N = ring.length
+    const blockKey = blockKeyFromRing(ring)
+    const ringCcw = ringSignedArea2D(ring) >= 0
+    const inwardSign = ringCcw ? +1 : -1
+
+    // Partition into straight-vertex runs (arc vertices break runs).
+    // Wraparound merge: when arcMeta[0] and arcMeta[N-1] are both null,
+    // the first and last runs are one logical run split by iteration
+    // boundary; merge.
+    const runs = []
+    let cur = null
+    for (let i = 0; i < N; i++) {
+      if (arcMeta[i]?.corner) { if (cur) { runs.push(cur); cur = null }; continue }
+      if (!cur) cur = { idxs: [] }
+      cur.idxs.push(i)
+    }
+    if (cur) runs.push(cur)
+    if (runs.length > 1 && !arcMeta[0]?.corner && !arcMeta[N - 1]?.corner) {
+      const last = runs.pop()
+      runs[0].idxs = [...last.idxs, ...runs[0].idxs]
+    }
+
+    for (const run of runs) {
+      const pts = run.idxs.map(i => ring[i])
+      if (pts.length < 2) continue
+
+      const adj = findAdjacentChainForBlockEdge(pts, ringCcw, streets, chainIndex)
+      if (!adj) continue
+      const sharpFe = sharpFeByKey.get(`${blockKey}|${adj.chainIdx}|${adj.side}`)
+      const street = streets[adj.chainIdx]
+      const blockOverride = (sharpFe && blockCustoms?.[sharpFe.blockKey]?.[sharpFe.edgeOrd]) || null
+      const eff = blockOverride || street?.measure?.[adj.side] || {}
+      const isSidewalk = eff.terminal === 'sidewalk'
+      const tl = isSidewalk ? (eff.treelawn || 0) : 0
+      const sw = isSidewalk ? (eff.sidewalk || 0) : 0
+      if (!isSidewalk || (tl <= 0 && sw <= 0)) continue  // authoredZero
+
+      // Per-vertex perp offset (exact for straight vertices).
+      const perps = computePerps(pts)
+      const offsetAt = (k, d) => [
+        pts[k][0] + perps[k][0] * inwardSign * d,
+        pts[k][1] + perps[k][1] * inwardSign * d,
+      ]
+      const innerCurb = pts.map((_, k) => offsetAt(k, cw))
+      const tlOuter   = pts.map((_, k) => offsetAt(k, cw + tl))
+      const swOuter   = pts.map((_, k) => offsetAt(k, cw + tl + sw))
+
+      const treelawnRings = []
+      const sidewalkRings = []
+      if (tl > 0) {
+        const r = closeBandRingV2(tlOuter, innerCurb)
+        if (r) treelawnRings.push(r)
+      }
+      if (sw > 0) {
+        const r = closeBandRingV2(swOuter, tlOuter)
+        if (r) sidewalkRings.push(r)
+      }
+      if (!treelawnRings.length && !sidewalkRings.length) continue
+
+      out.push({
+        blockKey,
+        edgeOrd: sharpFe?.edgeOrd,
+        chainIdx: adj.chainIdx,
+        side: adj.side,
+        points: pts,
+        corner: null,                  // sub-A: straight-span; corner-pads handle arc fillet attribution
+        treelawnRings,
+        sidewalkRings,
+        asphaltRings: [],
+      })
+    }
+  }
+  return { frontageBands: out }
 }
 
 // Stage 11a: ring-walk for arc-span flanking-meta resolution.
@@ -2173,18 +2270,21 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   }
   __mark('asphaltRoundedDiff')
 
-  // Phase 2-arc revert — band emission is split across two helpers:
-  //  • buildFrontageBands (pre-Phase-2) walks per-sharp-fe and emits
-  //    straight-span tl + sw rings, clipped per-block to blockRounded.
-  //    Restores the spine after Phase 2's blockRounded-walking spine
-  //    produced ~70 self-intersecting band rings repo-wide.
-  //  • buildFrontageBandsV2 (Phase 2) walks blockRounded + arcMeta and
-  //    emits ARC-span bands via the three-regime emitter (ASYMMETRIC /
-  //    SYMMETRIC-WITH-RAMP / SYMMETRIC-NO-RAMP) plus the per-arc
-  //    asphalt-fillet slot consumed by attributeFilletResidualToArcs.
+  // Stage 12 sub-A — band emission is split across two helpers, both
+  // now sourcing geometry from blockRounded:
+  //  • silhouetteStraightEmitter walks each block's rounded ring,
+  //    partitions into straight-vertex runs, and emits tl + sw rings
+  //    by per-vertex perp offset. Replaces the per-sharp-fe legs from
+  //    pre-sub-A's buildFrontageBands. Per-vertex perp offset for
+  //    straight vertices is geometrically exact — no Clipper-precision
+  //    selfints (Phase 2's original blockRounded-spine failure mode).
+  //  • buildFrontageBandsV2 (Stage 9) walks blockRounded + arcMeta and
+  //    emits per-corner pads at arc spans, with the cusp guard +
+  //    RAMP_MIN_M dCorner. Sub-B replaces this with concentric arc-
+  //    span band emission.
   // Concat into one frontageBands array; downstream iterates by field.
-  const { frontageBands: straightBands } = buildFrontageBands(
-    streets, frontageEdges, curbWidth, blockRounded, blockCustoms,
+  const { frontageBands: straightBands } = silhouetteStraightEmitter(
+    streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
   )
   const { frontageBands: arcBands, frontageCaps } = buildFrontageBandsV2(
     streets, blockRoundedResults, frontageEdges, chainIndex, blockCustoms, curbWidth,
