@@ -4,6 +4,30 @@
 >
 > **Ribbons / corners / curbs / intersections / block geometry:** every entry below that touches these systems is governed by `cartograph/RIBBONS.md` — read it (especially §1 regime + §6 active failure modes) before working any such entry.
 
+## 2026-05-18 — Corner-arc continuation (IN-FLIGHT, sub-B redo queued for next session)
+
+End-of-session checkpoint. Full detail in `cartograph/RIBBONS.md` §6.9 + §7.
+
+Five commits this session: `44ca974` (Stage 11a meta-resolution ring-walk), `e710441` (Stage 11a.1 partition-artifact vs authored-zero), `e000b75` (Stage 12 sub-A silhouette-walking straight emitter), `54d5e8b` (Stage 12 sub-A.1 chain-tangent-coherence kink-split), `a7f2791` (revert of Stage 12 sub-B file edits to sub-A.1).
+
+**Where we are at HEAD (`a7f2791`):** silhouette-walking straight-span emission with kink-split shipped; Stage 9 per-corner pad emission still in place for arc-spans (the compromise sub-B is meant to retire); `buildFrontageBands` per-sharp-fe legs dead-coded (sub-C deletes). Visible state: "left corners" (no_match) wrap doctrinally; "right corners" (matched) Stage-9-compromise with legs+plug seam.
+
+**Doctrine settled (operator, 2026-05-18 EOD):** AASHTO/ADA ramp pad. Corner cross-section is sidewalk material only, depth `max(d_A, d_B)`, uniform concentric annulus across the entire arc from tA to tB. No treelawn at the corner. No tapering. Legs stop at tA/tB, corner ribbon takes over, legs resume. Cusp guard + `RAMP_MIN_M` retired. Operator override is a future authoring channel (Stage 13 candidate).
+
+**Tomorrow's queue:**
+- Draft sub-B redo brief per RIBBONS §6.9 "Sub-B redo brief surface." Cold dispatch recommended (fresh mental model on the locked doctrine).
+- Critical brief constraints: (1) do NOT touch straight-run partition; (2) true concentric arc emission, not per-vertex perp; (3) bilateral-zero short-circuit; (4) retire cusp guard + RAMP_MIN_M.
+- Visual gate after commit: all corners should look like the prior screenshot's "left corners" (concentric wrap). Asymmetric corners show the deeper flank's depth uniformly across the arc.
+- Then sub-C: delete dead `buildFrontageBands` + `buildFrontageBandsV2`, retire H1 clip if no-op, finalize cleanup.
+
+**Deferred (post-sub-C):**
+- **Option C — composite corner pad.** When two corners are physically adjacent (small-block IXs where the front edge is degenerate), they should emit as ONE composite pad spanning both arc-spans. Doctrinally beautiful, structurally bigger commit than sub-B. Track as Stage 13 candidate.
+- **Per-corner operator-override authoring.** Independent depth slider per corner. The default is `max(d_A, d_B)`; operator can drag deeper / shallower / change material per corner. Authoring kit extension.
+- **Build time.** 4058ms at sub-A.1 (+64% vs sub-A). Per-run probe cost dominant. Sub-B may consolidate; sub-C should consider chain-identity caching.
+- **Drag-handle bug.** Cursor changes to finger but drag handler doesn't fire. Separate thread.
+- **Duplicate V2 invocation perf.** V2 runs twice on Designer load (~3s × 2). Separate thread.
+- **Single 5-corner IX anomaly** (-355,-253.9). Sanity probe before declaring corner arc closed.
+
 ## 2026-05-18 — Neon authoring UX arc (CLOSED across five commits)
 
 Post-V2-close-out follow-up arc. Five commits over the late-PM session closed the queue of authoring UX items Jacob flagged after V2's log-depth fix landed.
