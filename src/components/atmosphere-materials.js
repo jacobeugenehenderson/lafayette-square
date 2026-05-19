@@ -107,8 +107,8 @@ float noise3(vec3 p) {
 // FBM with a single-pass domain warp. Input p is already in
 // noise-space (= world * uWarpFreq), so the warp offset is also
 // expressed at that scale. Output normalized to ~[0, 1] regardless of
-// octave count so `coverage` reads as "fraction of FBM range above
-// threshold" rather than depending on octave sum.
+// octave count so coverage reads as 'fraction of FBM range above
+// threshold' rather than depending on octave sum.
 float fbm(vec3 p) {
   vec3 warp = vec3(
     noise3(p + vec3(0.0, 0.0, 0.0)),
