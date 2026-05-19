@@ -12,6 +12,7 @@ import { useState, useMemo } from 'react'
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import { CLOUD_PARAM_FIELDS } from './cloudParamFields.js'
 import SlotTabs from './SlotTabs.jsx'
+import CanaryScene from './CanaryScene.jsx'
 import TodChannel from '../cartograph/TodChannel.jsx'
 import DawnTimeline from '../components/DawnTimeline.jsx'
 
@@ -105,14 +106,8 @@ export default function Teacup() {
 
       {/* ── Body: viewport + right rail ─────────────────────── */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        <main style={{
-          flex: 1, minWidth: 0,
-          background: '#0a0a0a',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#555', fontSize: 12, letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-        }}>
-          Phase 4: CanaryScene ({slot === 'chamber' ? 'Cloud Chamber' : 'Ground'}) mounts here
+        <main style={{ flex: 1, minWidth: 0, minHeight: 0, background: '#0a0a0a' }}>
+          <CanaryScene slot={slot} />
         </main>
 
         <aside style={{
