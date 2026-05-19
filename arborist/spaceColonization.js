@@ -385,37 +385,67 @@ export function runSCA({
     nodes.push(next)
   }
 
-  // ── Phase C.1: seed N azimuthally-distributed initial children at the
-  // trunk top. Each becomes a normal (non-axial) SCA tip from iter 1.
-  // Symmetric coverage from the start means per-seed bias on one sector
-  // is balanced by tips on opposing sectors → centred canopy.
+  // ── Phase C.1 + D.1a: seed N azimuthally-distributed initial children
+  // STAGGERED across the upper axial chain (not all at the topmost node).
+  // C.1 originally parented all N to trunkTopNode — that produces the
+  // canonical "umbrella spider" topology where all primary scaffolds
+  // radiate from one shared point. Real broadleaves emerge scaffolds at
+  // different heights over a 1–3 m zone.
+  //
+  // The original wedge-balancing rationale survives: azimuths still span
+  // TAU uniformly, so per-seed iter-1 bias on one sector is still
+  // balanced by tips on opposing sectors. The only change is that the
+  // tips are now at different Ys, sharing different axial parents.
+  //
+  // `sca.scaffoldZoneFrac` controls how much of the axial chain hosts
+  // scaffold emergences. 0 = all at the top (legacy / weeping). 0.5 =
+  // top half of the axial chain. 1.0 = the entire axial chain. Weeping
+  // is force-pinned to 0 so the curtain stays tight at the trunk top.
   const trunkTopNode = nodes[nodes.length - 1]
   const initialChildCount = (sca.initialChildCount !== undefined)
     ? Math.max(1, sca.initialChildCount | 0) : INITIAL_CHILD_COUNT_DEFAULT
-  // Seed-step ~ ¼ envelope.width puts each seeded child firmly into its
-  // azimuthal wedge so iter-1 attractor assignment splits cleanly across
-  // N sectors. At the brief-suggested 0.5 × stepLength (≈ 0.2 m) the 6
-  // children all clustered at sub-meter distances competed for the same
-  // attractors, leaving the wedge-balancing benefit unrealized — bias
-  // still leaked through. Weeping is exempt: the curtain effect wants a
-  // tight central cluster + strong -Y tropism + descent; wide seeds
-  // start the canopy too far from axis and break the curtain.
   const seedStep = isWeeping
     ? sca.stepLength * 0.5
     : Math.max(sca.stepLength * 0.5, envelope.width * 0.25)
+
+  // Collect axial-node indices into the global `nodes` array.
+  const axialNodeIndices = []
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].axial) axialNodeIndices.push(i)
+  }
+  const totalAxial = axialNodeIndices.length
+  const scaffoldZoneFrac = isWeeping
+    ? 0
+    : (sca.scaffoldZoneFrac !== undefined ? sca.scaffoldZoneFrac : 0.5)
+  const zoneCount = Math.max(1, Math.round(totalAxial * scaffoldZoneFrac))
+  // Zone covers the TOP `zoneCount` axial nodes; everything below is
+  // pure trunk. With scaffoldZoneFrac=0 zoneCount=1 → all scaffolds at
+  // the topmost axial node (legacy C.1 behaviour).
+  const zoneStart = totalAxial - zoneCount
+
   for (let k = 0; k < initialChildCount; k++) {
+    // Pick a parent axial node for this scaffold. Evenly distributed
+    // across the zone so scaffolds emerge at staggered heights. With
+    // zoneCount=1 every k picks the same parent (trunkTopNode).
+    const tInZone = initialChildCount === 1 ? 0 : k / (initialChildCount - 1)
+    const zoneIdx = Math.min(zoneCount - 1, Math.floor(tInZone * zoneCount))
+    const parent = nodes[axialNodeIndices[zoneStart + zoneIdx]]
+
+    // Azimuth: evenly span TAU. The per-k azimuth interleaves with the
+    // per-k height stagger, producing a gentle spiral up the trunk
+    // (helical phyllotaxis) instead of all scaffolds on the same side.
     const az = (k / initialChildCount) * TAU
     const child = {
       pos: [
-        trunkTopNode.pos[0] + Math.cos(az) * seedStep,
-        trunkTopNode.pos[1] + seedStep * 0.5,
-        trunkTopNode.pos[2] + Math.sin(az) * seedStep,
+        parent.pos[0] + Math.cos(az) * seedStep,
+        parent.pos[1] + seedStep * 0.5,
+        parent.pos[2] + Math.sin(az) * seedStep,
       ],
-      parent: trunkTopNode,
+      parent,
       children: [],
       radius: 0,
     }
-    trunkTopNode.children.push(child)
+    parent.children.push(child)
     nodes.push(child)
   }
 

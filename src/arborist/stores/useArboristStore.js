@@ -283,7 +283,15 @@ const useArboristStore = create((set, get) => ({
         if (v.slot !== slot) return v
         const params = { ...(v.params || {}) }
         for (const k of Object.keys(paramsPatch || {})) {
-          params[k] = { ...(params[k] || {}), ...paramsPatch[k] }
+          const val = paramsPatch[k]
+          // Nested objects (envelope, sca, branching) get one-level-deep merge
+          // so dragging one slider doesn't wipe siblings. Top-level scalars
+          // (dbh, canopyR, canopyH, etc.) and arrays assign directly.
+          if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+            params[k] = { ...(params[k] || {}), ...val }
+          } else {
+            params[k] = val
+          }
         }
         return { ...v, params }
       })
@@ -293,6 +301,34 @@ const useArboristStore = create((set, get) => ({
         proceduralDirtyBySpecies: { ...s.proceduralDirtyBySpecies, [speciesId]: dirty },
       }
     })
+  },
+  // Clear the operator overlay for one slot, persist to disk, refetch the
+  // effective fields. Equivalent to "drop the operator's deltas and snap
+  // back to PRESETS defaults for this slot." Does NOT touch the slot's
+  // seed (dice rolls still survive — Reset is about params, not topology).
+  resetProceduralSlotParams: async (speciesId, slot) => {
+    // 1. Local clear
+    set(s => {
+      const list = s.proceduralSeedlings[speciesId] || []
+      const next = list.map(v => v.slot === slot ? { ...v, params: {} } : v)
+      return {
+        proceduralSeedlings: { ...s.proceduralSeedlings, [speciesId]: next },
+      }
+    })
+    // 2. Persist (POST the whole seedlings array — same shape Adopt uses)
+    const variants = get().proceduralSeedlings[speciesId] || []
+    try {
+      const r = await fetch(`/api/arborist/procedural/${encodeURIComponent(speciesId)}/seedlings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variants }),
+      })
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      // 3. Refetch so `effective` recomputes from PRESETS (server-side merge).
+      await get().loadProceduralSeedlings(speciesId)
+    } catch (err) {
+      set({ proceduralError: String(err) })
+    }
   },
   // Persist the FULL species seedlings array to disk, then clear the slot's
   // dirty marker. The endpoint writes all slots in one shot — that's the

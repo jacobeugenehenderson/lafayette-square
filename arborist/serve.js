@@ -561,6 +561,7 @@ const server = createServer(async (req, res) => {
             slot: v.slot, seed: v.seed, params: v.params || {},
             effective: {
               preset:   merged.preset,
+              dbh:      merged.dbh,
               envelope: merged.envelope || null,
               sca:      merged.sca || null,
             },

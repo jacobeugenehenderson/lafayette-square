@@ -44,6 +44,7 @@ export default function ProceduralWorkstage() {
   const diceSlot                 = useArboristStore(s => s.diceProceduralSlot)
   const setSlotSeed              = useArboristStore(s => s.setProceduralSlotSeed)
   const setSlotParams            = useArboristStore(s => s.setProceduralSlotParams)
+  const resetSlotParams          = useArboristStore(s => s.resetProceduralSlotParams)
   const adoptSlot                = useArboristStore(s => s.adoptProceduralSlot)
   const republishSpecies         = useArboristStore(s => s.republishProceduralSpecies)
   const publishing               = useArboristStore(s => s.proceduralPublishing)
@@ -195,6 +196,7 @@ export default function ProceduralWorkstage() {
             onDice={() => diceSlot(activeSpecies, activeVariant.slot)}
             onSeedEdit={(seed) => setSlotSeed(activeSpecies, activeVariant.slot, seed)}
             onParams={(paramsPatch) => setSlotParams(activeSpecies, activeVariant.slot, paramsPatch)}
+            onReset={() => resetSlotParams(activeSpecies, activeVariant.slot)}
             onAdopt={() => adoptSlot(activeSpecies, activeVariant.slot)}
           />
         )}
@@ -241,7 +243,7 @@ export default function ProceduralWorkstage() {
 // v1 free-growth path inside generateTreeMesh).
 const SHOW_SCA_PANEL = (species) => species !== 'procedural_conifer'
 
-function SlotCard({ species, slot, seed, params, effective, dirty, targetCategory, onDice, onSeedEdit, onParams, onAdopt }) {
+function SlotCard({ species, slot, seed, params, effective, dirty, targetCategory, onDice, onSeedEdit, onParams, onReset, onAdopt }) {
   const [glbUrl, setGlbUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [previewError, setPreviewError] = useState(null)
@@ -376,8 +378,11 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
             dragging doesn't thrash the dice endpoint. */}
         {SHOW_SCA_PANEL(species) && effective?.envelope && effective?.sca && (
           <SCAPanel
+            species={species}
+            dbh={effective.dbh ?? 18}
             envelope={effective.envelope}
             sca={effective.sca}
+            onScalarChange={(patch) => onParams(patch)}
             onEnvelopeChange={(patch) => onParams({ envelope: patch })}
             onSCAChange={(patch) => onParams({ sca: patch })}
           />
@@ -410,6 +415,14 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
           <button onClick={onDice} title="Roll a fresh random seed (preview only)"
             style={btnStyle()}>
             🎲 Dice
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm('Reset this slot to PRESETS defaults? Operator overlay will be cleared and persisted.')) onReset()
+            }}
+            title="Drop operator overlay; snap envelope + tropism back to species defaults"
+            style={btnStyle()}>
+            ↺ Reset
           </button>
           <button
             onClick={onAdopt}
@@ -463,8 +476,18 @@ const ENVELOPE_PROFILE_OPTIONS = [
   'broad_low',
   'asymmetric_oval',
 ]
-function SCAPanel({ envelope, sca, onEnvelopeChange, onSCAChange }) {
+function SCAPanel({ species, dbh, envelope, sca, onScalarChange, onEnvelopeChange, onSCAChange }) {
   const tropism = sca.tropism || [0, 0, 0]
+  // Drape (envelope.offsetYFrac) hangs the canopy envelope below the trunk
+  // top. It's load-bearing for weeping (so the curtain has somewhere to
+  // drape) and effectively meaningless for the other SCA morphologies —
+  // hide it where it has no semantic purpose.
+  const showDrape = species === 'procedural_weeping' || envelope.profile === 'umbrella'
+  // Weeping pins scaffolds to the trunk top regardless of operator request —
+  // the curtain effect breaks if scaffolds emerge at staggered heights.
+  // Hide the spread slider for weeping; the value is still defended in the
+  // SCA kernel (isWeeping → scaffoldZoneFrac = 0).
+  const showScaffoldSpread = !showDrape
   return (
     <div style={{
       padding: '10px 12px',
@@ -473,6 +496,14 @@ function SCAPanel({ envelope, sca, onEnvelopeChange, onSCAChange }) {
       display: 'flex', flexDirection: 'column', gap: 8,
       fontSize: 11, color: '#aaa',
     }}>
+      <SectionLabel>Trunk</SectionLabel>
+      <Row label="DBH">
+        <DraftSlider min={5} max={100} step={1}
+          value={dbh ?? 18}
+          onCommit={(v) => onScalarChange({ dbh: v })}
+          format={(v) => `${v.toFixed(0)} cm`} />
+      </Row>
+
       <SectionLabel>Envelope</SectionLabel>
       <Row label="Profile">
         <select
@@ -502,11 +533,47 @@ function SCAPanel({ envelope, sca, onEnvelopeChange, onSCAChange }) {
           onCommit={(v) => onEnvelopeChange({ asymmetry: v })}
           format={(v) => v.toFixed(2)} />
       </Row>
-      <Row label="Y offset">
-        <DraftSlider min={-1} max={0} step={0.05}
-          value={envelope.offsetYFrac ?? 0}
-          onCommit={(v) => onEnvelopeChange({ offsetYFrac: v })}
-          format={(v) => v.toFixed(2)} />
+      {showDrape && (
+        <Row label="Drape">
+          <DraftSlider min={-1} max={0} step={0.05}
+            value={envelope.offsetYFrac ?? 0}
+            onCommit={(v) => onEnvelopeChange({ offsetYFrac: v })}
+            format={(v) => v === 0 ? '0' : `${Math.round(v * -100)}% below`} />
+        </Row>
+      )}
+
+      <SectionLabel>Canopy</SectionLabel>
+      <Row label="Start">
+        <DraftSlider min={0.1} max={0.9} step={0.05}
+          value={sca.branchingStartFrac ?? 0.5}
+          onCommit={(v) => onSCAChange({ branchingStartFrac: v })}
+          format={(v) => `${Math.round(v * 100)}% up`} />
+      </Row>
+      <Row label="Scaffolds">
+        <DraftSlider min={2} max={9} step={1}
+          value={sca.initialChildCount ?? 6}
+          onCommit={(v) => onSCAChange({ initialChildCount: v })}
+          format={(v) => `${v.toFixed(0)}`} />
+      </Row>
+      {showScaffoldSpread && (
+        <Row label="Spread">
+          <DraftSlider min={0} max={1} step={0.05}
+            value={sca.scaffoldZoneFrac ?? 0.5}
+            onCommit={(v) => onSCAChange({ scaffoldZoneFrac: v })}
+            format={(v) => v === 0 ? 'top only' : `${Math.round(v * 100)}%`} />
+        </Row>
+      )}
+      <Row label="Density">
+        <DraftSlider min={100} max={1000} step={50}
+          value={sca.attractorCount ?? 500}
+          onCommit={(v) => onSCAChange({ attractorCount: v })}
+          format={(v) => `${v.toFixed(0)}`} />
+      </Row>
+      <Row label="Fill">
+        <DraftSlider min={0.3} max={2.0} step={0.05}
+          value={sca.killRadius ?? 1.0}
+          onCommit={(v) => onSCAChange({ killRadius: v })}
+          format={(v) => `${v.toFixed(2)} m`} />
       </Row>
 
       <SectionLabel>Tropism</SectionLabel>

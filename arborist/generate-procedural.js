@@ -331,43 +331,71 @@ export function generateTreeMesh({
     }
   }
 
-  // ── Trunk (Phase C: 12 radial segs + radial noise) ────────────────────
-  const trunkTopVis = (preset === 'conifer' || preset === 'columnar')
-    ? trunkRTop * 0.2 : trunkRTop * 0.35
-  const trunk = new THREE.CylinderGeometry(trunkTopVis, trunkRBot, trunkH, PHASE_C_RADIAL_SEGS)
-  applyRadialNoise(trunk, 0, trunkH, 0.05, seedN * 11 + 17)
-  trunk.translate(0, trunkH / 2, 0)
-  const lean = (r(0) - 0.5) * 0.06
-  const leanSin = Math.sin(lean)
-  const leanCos = Math.cos(lean)
-  if (Math.abs(lean) > 0.001) trunk.rotateZ(lean)
-  trunk.translate(0, -0.25, 0)
-  woodGeos.push(trunk)
-  // Leaned trunk top position — `trunk.rotateZ(lean)` around the origin
-  // displaces the trunk's top from (0, trunkH) to (-trunkH·sinθ, trunkH·cosθ)
-  // before the final -0.25 translate. SCA root + the trunk-to-SCA flange
-  // must use this leaned position or the entire canopy floats off-axis from
-  // the leaning trunk (single-direction X offset; 2026-05-16 review).
-  const leanedTrunkTop = [-trunkH * leanSin, trunkH * leanCos - 0.25, 0]
-
-  // ── Phase C: root flare + 6 subtle buttress fins ──────────────────────
-  // Replaces the prior single flat-flare cylinder. Trunk reads as PLANTED,
-  // not stuck-in; subtle radial ribbing reads as Midwestern broadleaf
-  // (maple/oak/locust), not tropical/banyan. Fin parameters tuned for ~5–10 cm
-  // outward protrusion, ~10–15 cm tall, ~3–5 cm thick.
-  const flareTop = trunkRBot
+  // ── Trunk geometry: base at y=0, single shaft from the flare all the way
+  // up to where branching starts. For SCA presets the visible shaft swallows
+  // the Phase-C.1 axial-extension region so there's no "second trunk" column
+  // above the tapered shaft; the SCA emission loop below skips axial-to-axial
+  // edges to match. Conifer keeps a fixed trunkH (the leader paints above).
+  // Lean is dropped for now (a leaned cone diverges from the straight-up
+  // axial extension; if/when lean returns, do it as a group rotation on the
+  // whole tree, not on the trunk cylinder alone).
+  const FLARE_H = 0.4
   const flareBot = trunkRBot * 1.4
-  const flareHeight = 0.4
-  const flare = new THREE.CylinderGeometry(flareTop, flareBot, flareHeight, PHASE_C_RADIAL_SEGS)
-  // Bark V density continuous with the trunk (see scaleVUv comment). Use
-  // a shared seedOffset with trunk so radial-noise pattern is continuous
-  // across the joint too — flare's noise was previously hashed with a
-  // different offset and produced a visible facet seam at the trunk-flare
-  // boundary.
-  applyRadialNoise(flare, 0, flareHeight, 0.05, seedN * 11 + 17)
-  scaleVUv(flare, flareHeight / trunkH)
-  flare.translate(0, flareHeight / 2 - 0.25, 0)
+
+  let scaResult = null
+  let trunkTopVis
+  let topAxialY = FLARE_H + trunkH  // default for conifer / fallback
+  if (preset !== 'conifer') {
+    const _defaults = DEFAULT_SCA_BY_PRESET[preset] || DEFAULT_SCA_BY_PRESET.broadleaf
+    const _env = {
+      profile:     (envelope && envelope.profile)     || _defaults.envelope.profile,
+      width:       (envelope && envelope.width    !== undefined) ? envelope.width    : canopyR,
+      height:      (envelope && envelope.height   !== undefined) ? envelope.height   : canopyH,
+      asymmetry:   (envelope && envelope.asymmetry!== undefined) ? envelope.asymmetry: _defaults.envelope.asymmetry,
+      offsetYFrac: (envelope && envelope.offsetYFrac !== undefined) ? envelope.offsetYFrac : _defaults.envelope.offsetYFrac,
+    }
+    const _scaCfg = { ..._defaults.sca, ...(sca || {}) }
+    // SCA root sits at (0, FLARE_H + trunkH, 0) — no lean. trunkBase will
+    // be overshadowed by the extended visible shaft anyway; the SCA tree
+    // grows from there with axial extension going straight up.
+    scaResult = runSCA({
+      envelope: _env,
+      sca: _scaCfg,
+      seedN,
+      trunkBase: [0, FLARE_H + trunkH, 0],
+      tipRadius: 0.012,
+    })
+    // Visible shaft tops out where the top-most axial extension node sits —
+    // i.e., where canopy branches actually start. Above that the SCA cylinders
+    // do the work; below that the visible shaft paints the column.
+    for (const n of scaResult.nodes) {
+      if (n.axial && n.pos[1] > topAxialY) topAxialY = n.pos[1]
+    }
+    trunkTopVis = Math.max(0.025, scaResult.nodes[0].radius)
+  } else {
+    trunkTopVis = trunkRTop * 0.2
+  }
+
+  const trunkVisH = topAxialY - FLARE_H
+
+  // ── Flare (y=0 → FLARE_H), trunk shaft (FLARE_H → topAxialY), buttress
+  // fins at y=0. Flare top + shaft bottom share radius (trunkRBot) and both
+  // open-ended at the seam so no cap-disk shows. Shaft top radius =
+  // SCA root radius (so the canopy fan-out joins seamlessly). Noise hashed
+  // with aligned globalH (flare 0→FLARE_H, shaft FLARE_H→FLARE_H+trunkVisH)
+  // and the same seedOffset → continuous radial-noise pattern across the
+  // y=FLARE_H seam.
+  const flare = new THREE.CylinderGeometry(trunkRBot, flareBot, FLARE_H, PHASE_C_RADIAL_SEGS, 1, true)
+  applyRadialNoise(flare, 0, FLARE_H, 0.05, seedN * 11 + 17)
+  scaleVUv(flare, FLARE_H / (FLARE_H + trunkVisH))
+  flare.translate(0, FLARE_H / 2, 0)
   woodGeos.push(flare)
+
+  const trunk = new THREE.CylinderGeometry(trunkTopVis, trunkRBot, trunkVisH, PHASE_C_RADIAL_SEGS, 1, true)
+  applyRadialNoise(trunk, FLARE_H, trunkVisH, 0.05, seedN * 11 + 17)
+  scaleVUv(trunk, trunkVisH / (FLARE_H + trunkVisH))
+  trunk.translate(0, FLARE_H + trunkVisH / 2, 0)
+  woodGeos.push(trunk)
 
   const finCount = 6
   const finOutward = 0.08
@@ -377,9 +405,12 @@ export function generateTreeMesh({
     const az = (f / finCount) * TAU + r(700 + f) * 0.4
     const finGeo = makeButtressFin(flareBot, finOutward, finHeight, finThick)
     finGeo.rotateY(az)
-    finGeo.translate(0, -0.25, 0)
     woodGeos.push(finGeo)
   }
+
+  // Used by conifer / SCA branches below as the canopy attachment Y.
+  const totalTrunkH = FLARE_H + trunkH
+  const leanedTrunkTop = [0, FLARE_H + trunkH, 0]
 
   const maxGen = branching.maxGen
   const branchLen = canopyR * (0.8 + r(5) * 0.15)
@@ -392,13 +423,13 @@ export function generateTreeMesh({
     const leader = new THREE.CylinderGeometry(trunkRTop * 0.3, trunkRTop, leaderH, PHASE_C_RADIAL_SEGS)
     applyRadialNoise(leader, 0, leaderH, 0.05, seedN * 11 + 333)
     leader.translate(0, canopyH * 0.45, 0)
-    leader.translate(0, trunkH, 0)
+    leader.translate(0, totalTrunkH, 0)
     woodGeos.push(leader)
 
     const layers = 6 + Math.floor(r(50) * 3)
     for (let l = 0; l < layers; l++) {
       const t = l / (layers - 1)
-      const layerH = trunkH + canopyH * (0.05 + t * 0.85)
+      const layerH = totalTrunkH + canopyH * (0.05 + t * 0.85)
       const layerR = canopyR * (1.0 - t * 0.55)
       const brN = 3 + Math.floor(r(l + 60) * 2)
       const subMaxGen = t < 0.3 ? 2 : 1
@@ -411,38 +442,15 @@ export function generateTreeMesh({
           rBase + l * 500 + b * 50, branching)
       }
     }
-    addLeaf(0, trunkH + canopyH * 0.93, 0, canopyR * 0.2, r(300))
+    addLeaf(0, totalTrunkH + canopyH * 0.93, 0, canopyR * 0.2, r(300))
 
   } else {
     // ── Phase D (2026-05-15): SCA + tropism for the 4 non-conifer
-    // morphologies. Envelope-driven branching replaces the v1 free-growth
-    // recursion. Same generateTreeMesh() signature; new optional
-    // `envelope` + `sca` params merged onto per-preset defaults
-    // (DEFAULT_SCA_BY_PRESET). Generator algorithm is otherwise unchanged
-    // — cylinders are still plain tapered Y-aligned, leaf cards still go
-    // through addLeaf. Geometric polish (multi-seg crag, flange rings,
-    // root flare) is Phase C; bark/leaf shaders are Phases B/F.
-    const defaults = DEFAULT_SCA_BY_PRESET[preset] || DEFAULT_SCA_BY_PRESET.broadleaf
-    const env = {
-      profile:     (envelope && envelope.profile)     || defaults.envelope.profile,
-      width:       (envelope && envelope.width    !== undefined) ? envelope.width    : canopyR,
-      height:      (envelope && envelope.height   !== undefined) ? envelope.height   : canopyH,
-      asymmetry:   (envelope && envelope.asymmetry!== undefined) ? envelope.asymmetry: defaults.envelope.asymmetry,
-      offsetYFrac: (envelope && envelope.offsetYFrac !== undefined) ? envelope.offsetYFrac : defaults.envelope.offsetYFrac,
-    }
-    const scaCfg = { ...defaults.sca, ...(sca || {}) }
-
-    // SCA picks up at the trunk top — use the LEANED position computed
-    // above so the SCA root joins the visible (leaned) trunk top, not the
-    // pre-rotation X=0 axis.
-    const trunkTop = leanedTrunkTop
-    const { nodes } = runSCA({
-      envelope: env,
-      sca: scaCfg,
-      seedN,
-      trunkBase: trunkTop,
-      tipRadius: 0.012,
-    })
+    // morphologies. SCA was run earlier (above the trunk/flare emission)
+    // so the visible trunk-top radius could match the SCA root radius and
+    // eliminate the trunk↔canopy crag. Here we just emit cylinders +
+    // flange rings + leaf cards from the precomputed node graph.
+    const { nodes } = scaResult
 
     // Emit one tapered cylinder per edge. radius from Murray's law sits
     // on each node. We clamp the minimum radius so trunkward thin twigs
@@ -460,6 +468,11 @@ export function generateTreeMesh({
     let edgeIdx = 0
     for (const n of nodes) {
       if (!n.parent) continue
+      // Skip axial→axial edges: the visible trunk shaft (extended up to
+      // topAxialY) already paints that region. The first non-axial edge
+      // (parent axial, child branching) emits normally — that's the canopy
+      // seed cylinder fanning off the trunk top.
+      if (n.axial && n.parent.axial) continue
       const r0 = Math.max(0.01, n.parent.radius)
       const r1 = Math.max(0.008, n.radius)
       // Gate noise on radius — sub-mm displacement on twigs is invisible
