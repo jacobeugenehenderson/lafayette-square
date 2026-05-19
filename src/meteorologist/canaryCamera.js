@@ -1,36 +1,42 @@
 /**
- * Static starting cameras for the CanaryScene per slot tab. Operator
- * can orbit from here via <OrbitControls> mounted in CanaryScene with
- * per-slot distance clamps.
+ * Per-slot cameras for the CanaryScene. Each slot corresponds to a
+ * production-app viewpoint the operator is authoring for. Cameras
+ * are intentionally static — the operator scrubs cloud params + TOD,
+ * not the camera. (Earlier in-cloud-orbit experiment surfaced that
+ * unbounded navigation makes spatial bearing impossible; pinning the
+ * cameras to the production views fixes the "where am I?" problem.)
  *
- * CLOUD CHAMBER — camera INSIDE the cloud slab at altitude 1450m
- *   (the slab's vertical center), orbiting a fixed point at slab
- *   center. Backside rendering means every direction shows shader
- *   output; the operator becomes a fixed observer suspended in the
- *   cloud field, spinning to inspect it. OrbitControls clamps keep
- *   the camera within the cloud volume. Tree + ground hidden.
+ * BROWSE — pure overhead, mirrors production SHOTS.browse (90° down,
+ *   up:[0,0,-1], fov 45-ish). The operator sees the cloud field from
+ *   above the way the deployed app's Browse shot will. Ground + tree
+ *   hidden (these slot views are about reading the sky, not the
+ *   landscape).
  *
- * GROUND — eye-level on the ground plane, backed off ~25m from a
- *   typical 12-20m hero tree at slight upward tilt. Looking up at
- *   the cloud overhead in proper scale + perspective. The "from
- *   where users will see it" view.
+ * GROUND — eye-level on the ground plane, backed off ~25m from the
+ *   hero tree at slight upward tilt. Looks up at the cloud overhead
+ *   in scale + perspective. Mirrors what users see standing in the
+ *   neighborhood. Tree + ground shown; orbit modestly enabled to
+ *   inspect from a couple of angles.
  *
- * Mental model split:
- *   CHAMBER = specimen examination at the cloud's authored altitude
- *   GROUND  = in-place QA against environmental context
+ * `orbit` field: true → OrbitControls active with min/max clamps;
+ *   false → camera locked, all input disabled. Browse is locked
+ *   because it's the production overhead; tilt-pan-orbit there
+ *   would diverge from what's shipped.
  */
 
 export const CANARY_CAMERAS = {
-  chamber: {
-    // Inside the cloud slab (y=1200..1700), target locked to slab
-    // center. Starting position 250m forward of center; operator
-    // orbits with distance clamps to stay in the cloud volume.
-    position:   [0, 1450, 250],
-    target:     [0, 1450, 0],
-    fov:        75,
+  browse: {
+    // True 90° overhead, mirrors production SHOTS.browse.
+    // Camera at y=4000 looking straight down at the origin; slab
+    // sits at y∈[1200, 1700], so we're 2300-2800m above the cloud
+    // tops. At fov 50 this frames roughly a 2300m wide patch of the
+    // slab — enough to show 2-12 cumulus puffs depending on coverage.
+    position:   [0, 4000, 0],
+    target:     [0, 0, 0],
+    up:         [0, 0, -1],   // pure overhead needs camera-up in the ground plane
+    fov:        50,
     showGround: false,
-    minDistance: 50,
-    maxDistance: 500,
+    orbit:      false,
   },
   ground: {
     // Backed off ~25m at ~1.7m above ground. Tree canopy target at 8m
@@ -40,6 +46,7 @@ export const CANARY_CAMERAS = {
     target:     [0, 8, 0],
     fov:        45,
     showGround: true,
+    orbit:      true,
     minDistance: 8,
     maxDistance: 80,
   },

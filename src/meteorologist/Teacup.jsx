@@ -41,7 +41,7 @@ export default function Teacup() {
     return presets.filter(p => p.kind === preset.kind)
   }, [presets, preset])
 
-  const [slot, setSlot] = useState('chamber')
+  const [slot, setSlot] = useState('browse')
 
   if (!preset) {
     return (

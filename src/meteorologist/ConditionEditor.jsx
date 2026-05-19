@@ -30,7 +30,7 @@ export default function ConditionEditor() {
   const revertToDefault     = useMeteorologistStore(s => s.revertConditionToDefault)
 
   const rule = conditions.find(c => c.id === activeConditionId) || null
-  const [slot, setSlot] = useState('chamber')
+  const [slot, setSlot] = useState('browse')
 
   if (!rule) {
     return (

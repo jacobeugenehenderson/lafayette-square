@@ -49,7 +49,7 @@ const HERO_TREE_SKELETON = 'skeleton-1-lod0.glb'
 
 export default function CanaryScene({ slot = 'chamber' }) {
   const activeLookId = useMeteorologistStore(s => s.activeLookId)
-  const cam = CANARY_CAMERAS[slot] || CANARY_CAMERAS.chamber
+  const cam = CANARY_CAMERAS[slot] || CANARY_CAMERAS.browse
 
   return (
     <Canvas
@@ -94,20 +94,19 @@ export default function CanaryScene({ slot = 'chamber' }) {
 
       <Atmosphere lookId={activeLookId} />
 
-      {/* Orbit controls. Per-slot distance clamps come from the
-          camera config so each slot has its own "container":
-          - chamber: orbits a fixed center INSIDE the cloud slab;
-                     clamps keep the camera in the cloud volume.
-          - ground:  orbits the hero tree's mid-canopy; clamps keep
-                     the camera near the ground without escaping. */}
-      <OrbitControls
-        makeDefault
-        target={cam.target}
-        enableDamping
-        dampingFactor={0.1}
-        minDistance={cam.minDistance}
-        maxDistance={cam.maxDistance}
-      />
+      {/* Orbit controls — only mounted if the slot wants them.
+          BROWSE is locked (matches production's static overhead);
+          GROUND is orbitable around the tree with distance clamps. */}
+      {cam.orbit && (
+        <OrbitControls
+          makeDefault
+          target={cam.target}
+          enableDamping
+          dampingFactor={0.1}
+          minDistance={cam.minDistance}
+          maxDistance={cam.maxDistance}
+        />
+      )}
     </Canvas>
   )
 }
@@ -115,11 +114,15 @@ export default function CanaryScene({ slot = 'chamber' }) {
 // ── Camera ────────────────────────────────────────────────────────────
 // PerspectiveCamera makeDefault wires the active camera; lookAt runs
 // imperatively on mount so the `target` aims at canopy / cloud height.
+// `cam.up` (when present) reorients the camera's up vector before
+// lookAt — needed for true 90° overhead (BROWSE) where the default
+// world-up [0, 1, 0] degenerates with a straight-down view.
 function SceneCamera({ cam }) {
   const ref = useRef()
   useEffect(() => {
     const c = ref.current
     if (!c) return
+    if (cam.up) c.up.set(...cam.up)
     c.lookAt(...cam.target)
     c.updateProjectionMatrix()
   }, [cam])
