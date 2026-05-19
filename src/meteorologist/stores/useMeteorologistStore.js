@@ -69,11 +69,14 @@ const useMeteorologistStore = create((set, get) => ({
     set({ activePresetId: id })
   },
   setActiveCondition: (id) => {
-    console.log('setActiveCondition(', id, ')')
+    // Same flush-on-switch rule as setActivePreset: any in-flight
+    // debounced rule save must commit before we lose the active id.
+    get()._flushPendingSaves()
     set({ activeConditionId: id })
   },
 
-  presetById: (id) => get().presets.find(p => p.id === id),
+  presetById:    (id) => get().presets.find(p => p.id === id),
+  conditionById: (id) => get().conditions.find(c => c.id === id),
 
   // ── Per-cloud-param channel mutations (autosave-debounced) ──
   //
@@ -198,6 +201,7 @@ const useMeteorologistStore = create((set, get) => ({
     }, 500)
   },
   _flushPendingSaves: () => {
+    // Presets
     const timers = get()._saveTimers
     const pending = [...get()._pendingPresets]
     for (const id of pending) {
@@ -205,6 +209,14 @@ const useMeteorologistStore = create((set, get) => ({
       get()._savePresetNow(id)
     }
     get()._pendingPresets.clear()
+    // Rules
+    const rTimers = get()._ruleSaveTimers
+    const rPending = [...get()._pendingRules]
+    for (const id of rPending) {
+      if (rTimers[id]) { clearTimeout(rTimers[id]); delete rTimers[id] }
+      get()._saveRuleNow(id)
+    }
+    get()._pendingRules.clear()
   },
   _savePresetNow: async (presetId) => {
     const preset = get().presetById(presetId)
@@ -227,6 +239,160 @@ const useMeteorologistStore = create((set, get) => ({
   },
   // Public alias for Phase 4 (flush before any dependent POST).
   savePreset: async (presetId) => get()._savePresetNow(presetId),
+
+  // ── Condition (rule) mutations + autosave ────────────────────
+  //
+  // Phase 3 keeps the existing flat almanac.schema.json shape — directive
+  // numerics remain flat scalars. Phase 3b will promote selected fields
+  // (sun.intensity, lightDome.ambientFloor, wind.scale, wind.dir,
+  // precip.intensity) to the same TodChannel/animatableValue shape used by
+  // cloud-param channels, once Phase 4's viewport can validate the
+  // temporal authoring visually. See meteorologist/INTERFACE.md §5.2.
+
+  _ruleSaveTimers: {},
+  _pendingRules: new Set(),
+
+  // Patch a rule by dot path (e.g. 'when.cloudCover', 'directive.sun.tint').
+  // Pass value === undefined to remove the leaf key. Empty parent objects
+  // are pruned so the rule stays minimal (matches the original almanac
+  // authoring style: wildcards are absent, not [-Infinity, Infinity]).
+  setRuleField: (ruleId, path, value) => {
+    set(s => {
+      const idx = s.conditions.findIndex(c => c.id === ruleId)
+      if (idx < 0) return s
+      const next = JSON.parse(JSON.stringify(s.conditions[idx]))
+      const parts = path.split('.')
+      const last = parts.pop()
+      let cur = next
+      for (const k of parts) {
+        if (cur[k] == null || typeof cur[k] !== 'object') cur[k] = {}
+        cur = cur[k]
+      }
+      if (value === undefined) {
+        delete cur[last]
+        // Prune empty parent objects so absence stays absence.
+        let p = next, drop = []
+        for (const k of parts) { drop.push([p, k]); p = p[k] }
+        for (let i = drop.length - 1; i >= 0; i--) {
+          const [obj, k] = drop[i]
+          if (obj[k] && typeof obj[k] === 'object' && Object.keys(obj[k]).length === 0) {
+            delete obj[k]
+          }
+        }
+      } else {
+        cur[last] = value
+      }
+      const arr = s.conditions.slice()
+      arr[idx] = next
+      return { conditions: arr }
+    })
+    get()._scheduleRuleSave(ruleId)
+  },
+
+  // Replace the rule wholesale (used by revertConditionToDefault after
+  // the server writes the defaults back).
+  _replaceRule: (rule) => {
+    set(s => {
+      const idx = s.conditions.findIndex(c => c.id === rule.id)
+      if (idx < 0) return s
+      const arr = s.conditions.slice()
+      arr[idx] = rule
+      return { conditions: arr }
+    })
+  },
+
+  // directive.clouds array helpers — schema caps maxItems at 3.
+  addCloudToCondition: (ruleId, presetId) => {
+    const rule = get().conditionById(ruleId)
+    if (!rule) return
+    const cur = rule.directive?.clouds || []
+    if (cur.length >= 3) return
+    const next = [...cur, { preset: presetId, weight: 0.1 }]
+    get().setRuleField(ruleId, 'directive.clouds', next)
+  },
+  removeCloudFromCondition: (ruleId, idx) => {
+    const rule = get().conditionById(ruleId)
+    if (!rule) return
+    const cur = rule.directive?.clouds || []
+    if (idx < 0 || idx >= cur.length) return
+    const next = cur.filter((_, i) => i !== idx)
+    // If the last cloud was removed, drop the array entirely so the
+    // condition inherits whatever directive cloud blend would default
+    // to. (Matches almanac.json style: empty arrays are absent.)
+    if (next.length === 0) {
+      get().setRuleField(ruleId, 'directive.clouds', undefined)
+    } else {
+      get().setRuleField(ruleId, 'directive.clouds', next)
+    }
+  },
+  setCloudInCondition: (ruleId, idx, patch) => {
+    const rule = get().conditionById(ruleId)
+    if (!rule) return
+    const cur = rule.directive?.clouds || []
+    if (idx < 0 || idx >= cur.length) return
+    const next = cur.slice()
+    next[idx] = { ...cur[idx], ...patch }
+    get().setRuleField(ruleId, 'directive.clouds', next)
+  },
+  setCloudWeight: (ruleId, idx, weight) =>
+    get().setCloudInCondition(ruleId, idx, { weight: Number(weight) }),
+  setCloudPreset: (ruleId, idx, presetId) =>
+    get().setCloudInCondition(ruleId, idx, { preset: presetId }),
+
+  _scheduleRuleSave: (ruleId) => {
+    if (!ruleId) return
+    const timers = get()._ruleSaveTimers
+    if (timers[ruleId]) clearTimeout(timers[ruleId])
+    get()._pendingRules.add(ruleId)
+    timers[ruleId] = setTimeout(() => {
+      delete timers[ruleId]
+      get()._pendingRules.delete(ruleId)
+      get()._saveRuleNow(ruleId)
+    }, 500)
+  },
+  _saveRuleNow: async (ruleId) => {
+    const rule = get().conditionById(ruleId)
+    if (!rule) return
+    try {
+      const r = await fetch(`/api/meteorologist/almanac/${encodeURIComponent(ruleId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rule),
+      })
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        console.warn('[meteorologist] rule save failed:', err)
+        set({ conditionsError: err.error || `HTTP ${r.status}` })
+      }
+    } catch (err) {
+      console.warn('[meteorologist] rule save failed:', err)
+      set({ conditionsError: String(err) })
+    }
+  },
+  saveAlmanac: async (ruleId) => get()._saveRuleNow(ruleId),
+
+  revertConditionToDefault: async (ruleId) => {
+    // Cancel any pending edit-debounce for this rule; the server is about
+    // to overwrite with defaults and we don't want a stale autosave from
+    // the operator's pre-revert edits racing the response.
+    const timers = get()._ruleSaveTimers
+    if (timers[ruleId]) { clearTimeout(timers[ruleId]); delete timers[ruleId] }
+    get()._pendingRules.delete(ruleId)
+    try {
+      const r = await fetch(`/api/meteorologist/almanac/${encodeURIComponent(ruleId)}/revert`, {
+        method: 'POST',
+      })
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${r.status}`)
+      }
+      const d = await r.json()
+      if (d.rule) get()._replaceRule(d.rule)
+    } catch (err) {
+      console.warn('[meteorologist] revert failed:', err)
+      set({ conditionsError: String(err) })
+    }
+  },
 
   // ── Looks (mirrors arborist; owned by Cartograph) ───────────
   looks: [],

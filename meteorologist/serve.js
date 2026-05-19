@@ -10,18 +10,22 @@ import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { validatePreset, validatePresetsFile } from './pipeline/validate.js'
+import {
+  validatePreset, validatePresetsFile,
+  validateRule, validateAlmanac, validateLibrary,
+} from './pipeline/validate.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT      = join(__dirname, '..')
-const PRESETS   = join(ROOT, 'public', 'clouds', 'presets.json')
-const ALMANAC   = join(ROOT, 'public', 'clouds', 'almanac.json')
+const PRESETS          = join(ROOT, 'public', 'clouds', 'presets.json')
+const ALMANAC          = join(ROOT, 'public', 'clouds', 'almanac.json')
+const ALMANAC_DEFAULTS = join(ROOT, 'public', 'clouds', 'almanac.defaults.json')
 const PORT      = 3335
 
 // ── Boot scaffolding ───────────────────────────────────────────────────────
 // Phase 1 is read-only; both files MUST exist (they're scaffolded). Don't
 // auto-initialize — silent empties would mask a real misconfiguration.
-for (const p of [PRESETS, ALMANAC]) {
+for (const p of [PRESETS, ALMANAC, ALMANAC_DEFAULTS]) {
   if (!existsSync(p)) {
     console.error(`[meteorologist] required file missing: ${p}`)
     process.exit(1)
@@ -102,6 +106,63 @@ const server = createServer(async (req, res) => {
       if (!v2.ok) return jsonRes(res, 400, { error: 'presets-file invalid after splice', details: v2.errors })
       writeFileSync(PRESETS, JSON.stringify(next, null, 2) + '\n')
       return jsonRes(res, 200, { ok: true, id })
+    }
+
+    // GET /almanac/:id — one rule for tooling + curl sanity checks.
+    if (req.method === 'GET' && (m = path.match(/^\/almanac\/([^/]+)$/))) {
+      const id = m[1]
+      const file = readJsonOrNull(ALMANAC)
+      if (!file) return jsonRes(res, 500, { error: 'failed to read almanac.json' })
+      const rule = (file.rules || []).find(r => r.id === id)
+      if (!rule) return jsonRes(res, 404, { error: 'rule not found', id })
+      return jsonRes(res, 200, rule)
+    }
+
+    // PUT /almanac/:id — validate body against the rule subschema, splice
+    // into rules[], re-validate the whole almanac AND cross-schema
+    // (directive.clouds[].preset must reference live presets), then write.
+    if (req.method === 'PUT' && (m = path.match(/^\/almanac\/([^/]+)$/))) {
+      const id = m[1]
+      const incoming = await readBody(req)
+      if (!incoming || incoming.id !== id) {
+        return jsonRes(res, 400, { error: 'id mismatch', urlId: id, bodyId: incoming?.id })
+      }
+      const v = validateRule(incoming)
+      if (!v.ok) return jsonRes(res, 400, { error: 'schema invalid', details: v.errors })
+      const file = readJsonOrNull(ALMANAC)
+      if (!file) return jsonRes(res, 500, { error: 'failed to read almanac.json' })
+      const idx = (file.rules || []).findIndex(r => r.id === id)
+      if (idx < 0) return jsonRes(res, 404, { error: 'rule not found', id })
+      const next = { ...file, rules: file.rules.slice() }
+      next.rules[idx] = incoming
+      const v2 = validateAlmanac(next)
+      if (!v2.ok) return jsonRes(res, 400, { error: 'almanac invalid after splice', details: v2.errors })
+      const presetsFile = readJsonOrNull(PRESETS)
+      const v3 = validateLibrary({ presetsFile, almanac: next })
+      if (!v3.ok) return jsonRes(res, 400, { error: 'cross-schema invalid', details: v3.errors })
+      writeFileSync(ALMANAC, JSON.stringify(next, null, 2) + '\n')
+      return jsonRes(res, 200, { ok: true, id })
+    }
+
+    // POST /almanac/:id/revert — copy the matching rule from
+    // almanac.defaults.json onto the live almanac.json. Per-condition
+    // (not file-wide); other rules are untouched.
+    if (req.method === 'POST' && (m = path.match(/^\/almanac\/([^/]+)\/revert$/))) {
+      const id = m[1]
+      const defaults = readJsonOrNull(ALMANAC_DEFAULTS)
+      if (!defaults) return jsonRes(res, 500, { error: 'failed to read almanac.defaults.json' })
+      const seed = (defaults.rules || []).find(r => r.id === id)
+      if (!seed) return jsonRes(res, 404, { error: 'rule not in defaults', id })
+      const file = readJsonOrNull(ALMANAC)
+      if (!file) return jsonRes(res, 500, { error: 'failed to read almanac.json' })
+      const idx = (file.rules || []).findIndex(r => r.id === id)
+      if (idx < 0) return jsonRes(res, 404, { error: 'rule not found in live almanac', id })
+      const next = { ...file, rules: file.rules.slice() }
+      next.rules[idx] = seed
+      const v = validateAlmanac(next)
+      if (!v.ok) return jsonRes(res, 500, { error: 'defaults invalid', details: v.errors })
+      writeFileSync(ALMANAC, JSON.stringify(next, null, 2) + '\n')
+      return jsonRes(res, 200, { ok: true, id, rule: seed })
     }
 
     return jsonRes(res, 404, { error: 'route not found', method: req.method, url: req.url })

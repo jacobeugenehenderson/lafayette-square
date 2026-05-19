@@ -48,6 +48,10 @@ const validators = {
   almanac:        compile('almanac.schema.json'),
   weatherPayload: compile('weather-payload.schema.json'),
   directive:      compile('directive.schema.json'),
+  // Single-rule validator carved from the almanac schema. Used by serve.js
+  // on PUT /almanac/:id so we can validate just the rule the operator
+  // edited without round-tripping the full almanac through ajv.
+  rule:           ajv.compile({ $ref: 'almanac.schema.json#/$defs/rule' }),
 }
 
 function wrap(name) {
@@ -63,6 +67,7 @@ export const validatePresetsFile    = wrap('presetsFile')
 export const validateAlmanac        = wrap('almanac')
 export const validateWeatherPayload = wrap('weatherPayload')
 export const validateDirective      = wrap('directive')
+export const validateRule           = wrap('rule')
 
 /**
  * Cross-schema checks that JSON Schema can't express on its own.

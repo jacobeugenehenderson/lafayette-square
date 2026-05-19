@@ -148,6 +148,9 @@ Header pattern matches Arborist's `ProceduralWorkstage` exactly: back button on 
 
 ### 5.2 Condition editor right rail (Conditions view)
 
+> **Phase 3 ships these as flat inputs** (slider / color / dropdown / chip multi-select). **Phase 3b promotes the numeric directive fields** (`sun.intensity`, `lightDome.ambientFloor`, `wind.scale`, `wind.dir`, `precip.intensity`) **to TodChannels** (the same `animatableValue` shape Phase 2 introduced for cloud-shader params), once Phase 4's viewport lets us validate the temporal authoring visually. Colors and enums stay flat in v1.
+
+
 ```
 ┌── right rail ──────────────────────┐
 │ ▼ Time of Day                      │
