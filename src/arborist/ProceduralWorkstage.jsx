@@ -253,10 +253,11 @@ export default function ProceduralWorkstage() {
 // v1 free-growth path inside generateTreeMesh).
 const SHOW_SCA_PANEL = (species) => species !== 'procedural_conifer'
 
-function SlotCard({ species, slot, seed, params, effective, dirty, targetCategory, windEnabled, windStrength, onWindEnabledChange, onWindStrengthChange, onDice, onSeedEdit, onParams, onReset, onAdopt }) {
+function SlotCard({ species, slot, seed, params, effective, dirty, targetCategory, windEnabled, windStrength, onWindEnabledChange, onWindStrengthChange, previewLod, onPreviewLodChange, onDice, onSeedEdit, onParams, onReset, onAdopt }) {
   const [glbUrl, setGlbUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [previewError, setPreviewError] = useState(null)
+  const [perfSample, setPerfSample] = useState(null)
   const cameraStateRef = useRef({ distance: 22, height: 8 })
   const paramsKey = useMemo(() => JSON.stringify(params || {}), [params])
 
@@ -268,7 +269,7 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
     fetch('/api/arborist/procedural/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ species, slot, seed, params: params || {} }),
+      body: JSON.stringify({ species, slot, seed, params: params || {}, lod: previewLod }),
     })
       .then(r => {
         if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error || `HTTP ${r.status}`)))
@@ -290,7 +291,7 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
       cancelled = true
       if (revokeUrl) URL.revokeObjectURL(revokeUrl)
     }
-  }, [species, slot, seed, paramsKey])
+  }, [species, slot, seed, paramsKey, previewLod])
 
   const [seedDraft, setSeedDraft] = useState(String(seed))
   useEffect(() => { setSeedDraft(String(seed)) }, [seed])
@@ -355,8 +356,48 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
             onScaleChange={(s) => setScaleOverride(s)}
             cameraStateRef={cameraStateRef}
             windStrength={windEnabled ? windStrength : 0}
+            onPerfSample={setPerfSample}
           />
         )}
+        {/* LoD selector — top-right floating overlay. Switches the
+            simplification ratio applied server-side; perf gauge zones
+            recalibrate per LoD to match publish-glb's tier budgets. */}
+        <div style={{
+          position: 'absolute', top: 12, right: 12,
+          background: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 4,
+          padding: '4px',
+          display: 'flex', gap: 3,
+          fontSize: 11,
+          pointerEvents: 'auto',
+        }}>
+          {[0, 1, 2].map((lod) => {
+            const active = previewLod === lod
+            return (
+              <button key={lod}
+                disabled={loading}
+                onClick={() => onPreviewLodChange(lod)}
+                style={{
+                  background: active ? 'rgba(232,184,96,0.18)' : 'transparent',
+                  border: '1px solid ' + (active ? 'rgba(232,184,96,0.5)' : 'rgba(255,255,255,0.08)'),
+                  color: active ? '#e8c878' : '#888',
+                  padding: '3px 8px', borderRadius: 3,
+                  fontFamily: 'inherit', fontSize: 10,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  cursor: loading ? 'wait' : 'pointer',
+                  opacity: loading ? 0.5 : 1,
+                }}>
+                LOD {lod}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Perf gauge — bottom-right floating overlay. Read-only sample
+            of renderer.info + scene traversal at ~4 Hz. */}
+        <PerfGauge sample={perfSample} previewLod={previewLod} />
+
         {/* Floating wind controls — viewing condition, not a tree property. */}
         <div style={{
           position: 'absolute', bottom: 12, left: 12,
@@ -487,6 +528,54 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
         </div>
       </div>
     </div>
+  )
+}
+
+// Perf gauge — four rows (tris, leaf cards, draw calls, programs).
+// Tri thresholds mirror publish-glb's LoD ratios (lod0 baseline, lod1
+// ×0.5, lod2 ×0.2) so the operator sees zone recalibration on switch.
+// Programs row turns red >5 — catches accidental program-cache divergence
+// at author time per [[feedback_unique_program_cache_key_before_wrappers]].
+function PerfGauge({ sample, previewLod }) {
+  const fmtN = (n) => n == null ? '—' : n.toLocaleString()
+  const tris = sample?.tris
+  const lodScale = previewLod === 1 ? 0.5 : previewLod === 2 ? 0.2 : 1
+  const greenLim  = 20000 * lodScale
+  const yellowLim = 40000 * lodScale
+  const trisColor = tris == null
+    ? '#888'
+    : tris < greenLim  ? '#7ec97e'
+    : tris < yellowLim ? '#e8c878'
+    : '#e87878'
+  const programs = sample?.programs
+  const programsColor = programs == null ? '#888' : programs > 5 ? '#e87878' : '#bbb'
+  return (
+    <div style={{
+      position: 'absolute', bottom: 12, right: 12,
+      background: 'rgba(0,0,0,0.55)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 4,
+      padding: '6px 10px',
+      display: 'grid', gridTemplateColumns: 'auto auto', columnGap: 10, rowGap: 2,
+      fontSize: 11, color: '#bbb',
+      fontFamily: 'monospace',
+      pointerEvents: 'none',
+      minWidth: 130,
+    }}>
+      <GaugeRow label="tris"       value={fmtN(tris)}                color={trisColor} />
+      <GaugeRow label="leaf cards" value={fmtN(sample?.leafCards)}   color="#bbb" />
+      <GaugeRow label="draw calls" value={fmtN(sample?.drawCalls)}   color="#bbb" />
+      <GaugeRow label="programs"   value={fmtN(programs)}            color={programsColor} />
+    </div>
+  )
+}
+
+function GaugeRow({ label, value, color }) {
+  return (
+    <>
+      <span style={{ color: '#888', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: 10 }}>{label}</span>
+      <span style={{ color, textAlign: 'right' }}>{value}</span>
+    </>
   )
 }
 

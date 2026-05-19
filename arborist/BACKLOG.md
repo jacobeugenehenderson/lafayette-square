@@ -199,7 +199,7 @@ phases.
   without manual server restart. One-time restart needed after the
   package.json change to pick up the watcher itself.
 
-- [~] **Workstage LoD preview + perf gauge** — **SCAFFOLDED 2026-05-19, UI PENDING**.
+- [x] **Workstage LoD preview + perf gauge** — **SHIPPED 2026-05-19**.
   Operator's "is this tree lightweight?" question answered by a live
   meter showing what the canopy actually costs the GPU per LoD tier.
   - **Server (shipped)**: `POST /procedural/generate` accepts a `lod`
@@ -213,18 +213,19 @@ phases.
   - **Store (shipped)**: `previewLod` state in `ProceduralWorkstage`
     (survives slot switches); plumbed into SlotCard as
     `previewLod` + `onPreviewLodChange` props.
-  - **UI (pending)** — tomorrow's first move:
-    1. Destructure `previewLod` + `onPreviewLodChange` in SlotCard
-       function signature.
-    2. Include `lod: previewLod` in the body of the
-       `/procedural/generate` fetch (currently in the useEffect
-       around line 261). Add `previewLod` to the effect deps so
-       changing the selector triggers a refetch.
-    3. Render LoD selector — three buttons (0 / 1 / 2) in a floating
-       overlay, top-right or bottom-right of the viewport (same
-       pattern as the Wind toggle).
-    4. Render perf gauge — bottom-right floating panel. Traverse the
-       loaded scene; sum `(prim.index ? prim.index.count / 3 : prim.attributes.position.count / 3)` for total tris; count leaf cards (children with `atlasKind === 'leaf'` → divide vertex count by 4 = card count); pull `renderer.info.render.calls` and `renderer.info.programs.length` via `useThree()`. Color zones: green <20k tris, yellow 20–40k, red >40k (at LoD0; tighten for lower LoDs).
+  - **UI (shipped 2026-05-19)**:
+    - `SlotCard` destructures `previewLod` + `onPreviewLodChange`;
+      `/procedural/generate` body carries `lod: previewLod`; useEffect
+      deps include `previewLod` so the selector triggers a refetch.
+    - LoD selector — three buttons (0 / 1 / 2) at top-right of the
+      viewport, amber accent on active, disabled while loading.
+    - Perf gauge — bottom-right floating panel showing tris / leaf cards
+      / draw calls / programs. Read-only `<PerfProbe>` r3f child inside
+      `<Canvas>` (uses `useThree()` + `useFrame()`, ~4 Hz sample) calls
+      back to the parent. Tri zones green <20k / yellow 20–40k / red
+      >40k at LoD0; thresholds scale ×0.5 / ×0.2 at LoD1 / LoD2 to
+      mirror publish-glb's simplification ratios. Programs row turns
+      red >5 as an author-time guard against shared-shader divergence.
   **Why now**: opposite-phyllotaxis + leaf-cluster-along-shoot
   combined push lod0 broadleaf-1 to ~50k tris (1600 wood cylinders
   × ~24 tris + 5500 leaf cards × 2 tris). At 745 LS placements (geom

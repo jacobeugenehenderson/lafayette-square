@@ -701,6 +701,41 @@ function Skeleton({
   )
 }
 
+// ── Perf probe — samples renderer.info + scene traversal at ~4 Hz ─────
+// Reads-only: renders nothing, adds no materials, so it can't influence
+// the `programs` count it's measuring (per
+// [[feedback_unique_program_cache_key_before_wrappers]]).
+function PerfProbe({ onSample }) {
+  const { gl, scene } = useThree()
+  const lastRef = useRef({ t: 0, tris: -1, leafCards: -1, drawCalls: -1, programs: -1 })
+  useFrame(() => {
+    const now = performance.now()
+    if (now - lastRef.current.t < 250) return
+    lastRef.current.t = now
+    let tris = 0
+    let leafCards = 0
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.geometry) return
+      const g = o.geometry
+      const vCount = g.index ? g.index.count : (g.attributes?.position?.count || 0)
+      tris += vCount / 3
+      if (g.userData?.atlasKind === 'leaf') {
+        leafCards += (g.attributes?.position?.count || 0) / 4
+      }
+    })
+    tris = Math.round(tris)
+    leafCards = Math.round(leafCards)
+    const drawCalls = gl.info.render.calls
+    const programs  = gl.info.programs?.length ?? 0
+    const last = lastRef.current
+    if (tris === last.tris && leafCards === last.leafCards
+        && drawCalls === last.drawCalls && programs === last.programs) return
+    last.tris = tris; last.leafCards = leafCards; last.drawCalls = drawCalls; last.programs = programs
+    onSample({ tris, leafCards, drawCalls, programs })
+  })
+  return null
+}
+
 // ── Top-level viewport ────────────────────────────────────────────────
 export default function SpecimenViewport({
   mode, cloudUrl, glbUrl, viewKey,
@@ -714,6 +749,7 @@ export default function SpecimenViewport({
   onScaleChange,
   cameraStateRef,
   windStrength = 0,
+  onPerfSample,
 }) {
   if (mode === 'skeleton' && !glbUrl) {
     return <EmptyState>No baked variant for this specimen.</EmptyState>
@@ -778,6 +814,7 @@ export default function SpecimenViewport({
           />
         )}
         <DollyCam cameraStateRef={cameraStateRef} />
+        {onPerfSample && <PerfProbe onSample={onPerfSample} />}
       </Canvas>
       {mode === 'skeleton' && glbUrl && (
         <Suspense fallback={null}>

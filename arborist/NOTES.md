@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-05-19 — Workstage LoD preview + perf gauge
+
+**Shipped:** the UI half of the LoD-preview + perf-gauge item the prior session scaffolded server-side. Two floating overlays on the focused-slot viewport:
+
+- **LoD selector** (top-right) — three buttons (0 / 1 / 2). Switching writes to the `previewLod` state already plumbed at `ProceduralWorkstage` scope (survives slot tab switches), gets sent on the `/procedural/generate` POST body, and triggers a refetch via a new useEffect dep. Server-side `simplifyGlbBytes` (gltf-transform's `weld → dedup → simplify`, same `MeshoptSimplifier` ratios as `publish-glb.js`) already shipped — UI just exposes it.
+- **Perf gauge** (bottom-right) — read-only `<PerfProbe />` child mounted inside `<Canvas>`, samples at ~4 Hz via `useFrame` + `useThree`. Walks the scene for tris (`g.index ? g.index.count : positionCount` ÷ 3) and leaf cards (positionCount ÷ 4 where `geometry.userData.atlasKind === 'leaf'`), reads `gl.info.render.calls` and `gl.info.programs.length`. Calls back to SlotCard via a new optional `onPerfSample` prop on SpecimenViewport. Skips the callback if no value changed. Renders nothing — the gauge can't pollute the `programs` count it's measuring (per [[feedback_unique_program_cache_key_before_wrappers]]).
+
+Tri thresholds: green <20k, yellow 20–40k, red >40k at LoD0; ×0.5 at LoD1, ×0.2 at LoD2 (matching publish-glb's simplification ratios). Programs row visually flags >5 as an author-time tripwire against accidental shader-cache divergence — the v1.5 invariant is one shared tree material.
+
+**Out of scope (next briefs):** production wind in `treeAtlasMaterial.js`, G.1 Sugar Maple PRESETS, panel-knob walkthrough.
+
+---
+
 ## 2026-05-19 — Procedural Broadleaf authoring pass: Phase D.1 + D.2 + W-preview
 
 **Headline:** the third-shift session through the night of 2026-05-18 → 2026-05-19 took the procedural broadleaf from "trunk with a spider topper of branches + sparse garnish" to "Sugar-Maple-shaped wood with foliage mass and motion." The geometric algorithm is now substantially complete for the broadleaf morphology; what's left for G.1 hero is Photoshop-authored leaf clusters (operator's tomorrow task) and per-species PRESETS tuning.
