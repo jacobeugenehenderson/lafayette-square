@@ -575,6 +575,7 @@ function Skeleton({
   positionOffset = [0, 0, 0],
   rotationOffset = [0, 0, 0],
   onTopY,
+  windStrength = 0,
 }) {
   const { scene } = useGLTF(url)
   // Always compute the auto-anchor from LOD0 so switching LODs (which
@@ -583,15 +584,79 @@ function Skeleton({
   const lod0Url = url.replace(/-lod[12]\.glb($|\?)/, '-lod0.glb$1')
   const { scene: anchorScene } = useGLTF(lod0Url)
 
-  // Strip vertex-color AO baking.
+  // Wind uniforms — shared across every patched material on this scene
+  // so a single useFrame tick drives the whole tree. Mutate `.value` in
+  // place; the references the materials captured stay valid.
+  const windUniformsRef = useRef({
+    uTime:         { value: 0 },
+    uWindStrength: { value: windStrength },
+  })
+  useEffect(() => {
+    windUniformsRef.current.uWindStrength.value = windStrength
+  }, [windStrength])
+  useFrame((_, dt) => {
+    windUniformsRef.current.uTime.value += dt
+  })
+
+  // Strip vertex-color AO baking + patch each material with the wind
+  // shader. Patch is idempotent (userData.windPatched gate) so the
+  // useMemo can re-run on scene changes without compounding patches.
+  // Bark vs leaf is read from the primitive's atlasKind extra (stamped
+  // by buildSourceGLB at bake time) — leaves layer a high-frequency
+  // small-amplitude flutter on top of the slow sway, branches don't.
   useMemo(() => {
     scene.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
+      const isLeaf = o.geometry?.userData?.atlasKind === 'leaf'
       const mats = Array.isArray(o.material) ? o.material : [o.material]
       for (const m of mats) {
-        if (m?.vertexColors) { m.vertexColors = false; m.needsUpdate = true }
+        if (!m) continue
+        if (m.vertexColors) { m.vertexColors = false; m.needsUpdate = true }
+        if (m.userData.__windPatched) continue
+        const prev = m.onBeforeCompile
+        m.onBeforeCompile = (shader, renderer) => {
+          if (prev) prev(shader, renderer)
+          shader.uniforms.uTime         = windUniformsRef.current.uTime
+          shader.uniforms.uWindStrength = windUniformsRef.current.uWindStrength
+          shader.uniforms.uIsLeaf       = { value: isLeaf ? 1.0 : 0.0 }
+          shader.vertexShader = shader.vertexShader.replace(
+            '#include <common>',
+            `uniform float uTime;
+             uniform float uWindStrength;
+             uniform float uIsLeaf;
+             #include <common>`
+          ).replace(
+            '#include <begin_vertex>',
+            `#include <begin_vertex>
+             // Phase W: height-falloff sway. Below ~1m, no wind; above,
+             // sway grows linearly with height. uWindStrength=1 → ~15 cm
+             // peak at a 10m canopy. Two phase-offset sines on X and Z
+             // give a gentle elliptical wander rather than pure 1D shake.
+             float _windH = max(0.0, position.y - 1.0);
+             float _windAmt = _windH * 0.015 * uWindStrength;
+             float _windPhase = uTime * 1.5;
+             transformed.x += sin(_windPhase) * _windAmt;
+             transformed.z += sin(_windPhase * 0.7 + 1.3) * _windAmt;
+             // Leaf flutter: high-frequency, small-amplitude per-vertex
+             // wobble layered on top so leaves jitter against the slow
+             // branch sway. Per-leaf phase from the leaf-card center
+             // (varies along position so adjacent cards don't sync).
+             if (uIsLeaf > 0.5) {
+               float _leafPhase = uTime * 8.0
+                 + position.x * 3.7
+                 + position.z * 4.1
+                 + position.y * 2.3;
+               float _leafAmp = 0.025 * uWindStrength;
+               transformed.x += sin(_leafPhase) * _leafAmp;
+               transformed.y += sin(_leafPhase * 1.3 + 0.7) * _leafAmp * 0.6;
+               transformed.z += cos(_leafPhase * 0.9 + 1.1) * _leafAmp;
+             }`
+          )
+        }
+        m.userData.__windPatched = true
+        m.needsUpdate = true
       }
     })
   }, [scene])
@@ -648,6 +713,7 @@ export default function SpecimenViewport({
   onRotationChange,
   onScaleChange,
   cameraStateRef,
+  windStrength = 0,
 }) {
   if (mode === 'skeleton' && !glbUrl) {
     return <EmptyState>No baked variant for this specimen.</EmptyState>
@@ -693,6 +759,7 @@ export default function SpecimenViewport({
               positionOffset={positionOffset}
               rotationOffset={rotationOffset}
               onTopY={(y) => { topYRef.current = y }}
+              windStrength={windStrength}
             />
           )}
         </Suspense>

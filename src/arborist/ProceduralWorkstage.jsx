@@ -63,6 +63,10 @@ export default function ProceduralWorkstage() {
   // header switch the focused variant; nothing about per-slot functionality
   // changes.
   const [activeSlot, setActiveSlot] = useState(null)
+  // Wind + LoD are viewing conditions, not tree properties — survive slot switches.
+  const [windEnabled, setWindEnabled] = useState(false)
+  const [windStrength, setWindStrength] = useState(1.0)
+  const [previewLod, setPreviewLod] = useState(0)
   useEffect(() => {
     if (seedlings.length === 0) { setActiveSlot(null); return }
     if (activeSlot == null || !seedlings.find(v => v.slot === activeSlot)) {
@@ -193,6 +197,12 @@ export default function ProceduralWorkstage() {
             effective={activeVariant.effective}
             dirty={!!dirty[activeVariant.slot]}
             targetCategory={targetCategory}
+            windEnabled={windEnabled}
+            windStrength={windStrength}
+            onWindEnabledChange={setWindEnabled}
+            onWindStrengthChange={setWindStrength}
+            previewLod={previewLod}
+            onPreviewLodChange={setPreviewLod}
             onDice={() => diceSlot(activeSpecies, activeVariant.slot)}
             onSeedEdit={(seed) => setSlotSeed(activeSpecies, activeVariant.slot, seed)}
             onParams={(paramsPatch) => setSlotParams(activeSpecies, activeVariant.slot, paramsPatch)}
@@ -243,7 +253,7 @@ export default function ProceduralWorkstage() {
 // v1 free-growth path inside generateTreeMesh).
 const SHOW_SCA_PANEL = (species) => species !== 'procedural_conifer'
 
-function SlotCard({ species, slot, seed, params, effective, dirty, targetCategory, onDice, onSeedEdit, onParams, onReset, onAdopt }) {
+function SlotCard({ species, slot, seed, params, effective, dirty, targetCategory, windEnabled, windStrength, onWindEnabledChange, onWindStrengthChange, onDice, onSeedEdit, onParams, onReset, onAdopt }) {
   const [glbUrl, setGlbUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [previewError, setPreviewError] = useState(null)
@@ -344,8 +354,42 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
             onPositionChange={(x, y, z) => setPosOffset([x, y, z])}
             onScaleChange={(s) => setScaleOverride(s)}
             cameraStateRef={cameraStateRef}
+            windStrength={windEnabled ? windStrength : 0}
           />
         )}
+        {/* Floating wind controls — viewing condition, not a tree property. */}
+        <div style={{
+          position: 'absolute', bottom: 12, left: 12,
+          background: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 4,
+          padding: '6px 10px',
+          display: 'flex', alignItems: 'center', gap: 10,
+          fontSize: 11, color: '#bbb',
+          pointerEvents: 'auto',
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={!!windEnabled}
+              onChange={(e) => onWindEnabledChange(e.target.checked)}
+              style={{ margin: 0 }}
+            />
+            <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Wind</span>
+          </label>
+          {windEnabled && (
+            <>
+              <input
+                type="range"
+                min={0} max={2} step={0.05}
+                value={windStrength}
+                onChange={(e) => onWindStrengthChange(parseFloat(e.target.value))}
+                style={{ width: 110 }}
+              />
+              <span style={{ width: 36, color: '#888', textAlign: 'right' }}>{windStrength.toFixed(2)}</span>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Right rail — header + controls + seed/dice/adopt. */}
@@ -382,9 +426,11 @@ function SlotCard({ species, slot, seed, params, effective, dirty, targetCategor
             dbh={effective.dbh ?? 18}
             envelope={effective.envelope}
             sca={effective.sca}
+            deformers={effective.deformers || {}}
             onScalarChange={(patch) => onParams(patch)}
             onEnvelopeChange={(patch) => onParams({ envelope: patch })}
             onSCAChange={(patch) => onParams({ sca: patch })}
+            onDeformersChange={(patch) => onParams({ deformers: patch })}
           />
         )}
 
@@ -476,7 +522,7 @@ const ENVELOPE_PROFILE_OPTIONS = [
   'broad_low',
   'asymmetric_oval',
 ]
-function SCAPanel({ species, dbh, envelope, sca, onScalarChange, onEnvelopeChange, onSCAChange }) {
+function SCAPanel({ species, dbh, envelope, sca, deformers, onScalarChange, onEnvelopeChange, onSCAChange, onDeformersChange }) {
   const tropism = sca.tropism || [0, 0, 0]
   // Drape (envelope.offsetYFrac) hangs the canopy envelope below the trunk
   // top. It's load-bearing for weeping (so the curtain has somewhere to
@@ -563,6 +609,21 @@ function SCAPanel({ species, dbh, envelope, sca, onScalarChange, onEnvelopeChang
             format={(v) => v === 0 ? 'top only' : `${Math.round(v * 100)}%`} />
         </Row>
       )}
+      <Row label="Phyllotaxis">
+        <select
+          value={sca.phyllotaxisMode || 'alternate'}
+          onChange={(e) => onSCAChange({ phyllotaxisMode: e.target.value })}
+          style={selectStyle}>
+          <option value="alternate">alternate</option>
+          <option value="opposite">opposite (maple/ash)</option>
+        </select>
+      </Row>
+      <Row label="Lift">
+        <DraftSlider min={0} max={1.5} step={0.05}
+          value={sca.scaffoldEmergenceBias ?? 0}
+          onCommit={(v) => onSCAChange({ scaffoldEmergenceBias: v })}
+          format={(v) => v === 0 ? 'none' : v.toFixed(2)} />
+      </Row>
       <Row label="Density">
         <DraftSlider min={100} max={1000} step={50}
           value={sca.attractorCount ?? 500}
@@ -574,6 +635,32 @@ function SCAPanel({ species, dbh, envelope, sca, onScalarChange, onEnvelopeChang
           value={sca.killRadius ?? 1.0}
           onCommit={(v) => onSCAChange({ killRadius: v })}
           format={(v) => `${v.toFixed(2)} m`} />
+      </Row>
+
+      <SectionLabel>Deformers</SectionLabel>
+      <Row label="Trunk wander">
+        <DraftSlider min={0} max={0.3} step={0.01}
+          value={deformers.trunkWander ?? 0}
+          onCommit={(v) => onDeformersChange({ trunkWander: v })}
+          format={(v) => v === 0 ? 'none' : `${Math.round(v * 100)} cm`} />
+      </Row>
+      <Row label="Wavelength">
+        <DraftSlider min={0.5} max={5} step={0.1}
+          value={deformers.trunkWavelength ?? 2.0}
+          onCommit={(v) => onDeformersChange({ trunkWavelength: v })}
+          format={(v) => `${v.toFixed(1)} m`} />
+      </Row>
+      <Row label="Branch jitter">
+        <DraftSlider min={0} max={0.3} step={0.01}
+          value={deformers.branchJitter ?? 0}
+          onCommit={(v) => onDeformersChange({ branchJitter: v })}
+          format={(v) => v === 0 ? 'none' : `${Math.round(v * 100)}%`} />
+      </Row>
+      <Row label="Bark relief">
+        <DraftSlider min={0} max={0.15} step={0.005}
+          value={deformers.barkRelief ?? 0.05}
+          onCommit={(v) => onDeformersChange({ barkRelief: v })}
+          format={(v) => `${(v * 100).toFixed(1)}%`} />
       </Row>
 
       <SectionLabel>Tropism</SectionLabel>

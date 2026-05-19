@@ -45,16 +45,29 @@ In-Arborist authoring for the five procedural morphology fillers + the five Phas
 
 **Layout (post-Phase-C, 2026-05-16):** single-focused viewport + slot tabs. Slot tabs strip in the header (with a dirty-dot indicator); one focused card filling the main area; viewport as `flex: 1` left; 300-px controls rail right. This replaced the earlier Phase A/D grid-of-cards layout, which cropped vertically-composed silhouettes (columnar / weeping). Tab switcher is the only new affordance — the controls themselves are identical to the Phase D set.
 
-**Per-slot controls rail:**
+**Per-slot controls rail — 20 knobs across 5 sections** (updated through 2026-05-19):
 
-- 🎲 **Dice** — re-roll seed; SpecimenViewport thumbnail updates from a fresh `POST /procedural/generate` (blob-URL'd GLB)
+| Section | Knobs | Notes |
+|---|---|---|
+| **Trunk** | DBH (5–100 cm) | Trunk diameter at base. Top-level scalar param. |
+| **Envelope** | Profile, Width, Height, Asymmetry, Drape | Drape (was "Y offset") hidden for non-weeping presets — it only has semantic meaning when the envelope hangs below the trunk top. |
+| **Canopy** | Start, Scaffolds, Spread, Phyllotaxis, Lift, Density, Fill | Phyllotaxis dropdown (alternate / opposite for maple-style fishbone); Spread (scaffoldZoneFrac) hidden for weeping (curtain requires tip-pinned scaffolds); Lift (scaffoldEmergenceBias) drives J-curved lower scaffolds. |
+| **Deformers** | Trunk wander (cm), Wavelength (m), Branch jitter (%), Bark relief (%) | Operator-tunable organic noise. Trunk wander is a deterministic XZ sinuosity applied to both the visible trunk shaft and the SCA axial extension so the canopy attaches cleanly. Branch jitter perturbs each SCA spawn perpendicular to the pull line. |
+| **Tropism** | X / Y / Z | Per-axis gravity bias for SCA growth direction. |
+
+**Per-slot actions** (footer row):
+
+- 🎲 **Dice** — re-roll seed; viewport thumbnail updates from a fresh `POST /procedural/generate` (blob-URL'd GLB)
+- ↺ **Reset** — clear the operator overlay for this slot; persists `{}` to disk, refetches `effective`; sliders snap back to PRESETS defaults
 - ✓ **Adopt** — write `{slot, seed, params}` overlay to `arborist/state/procedural_<species>/seedlings.json`
-- **Envelope panel** (SCA species only — broadleaf / weeping / columnar / ornamental): profile dropdown + width / height / asymmetry / Y-offset sliders
-- **Tropism panel** (SCA species only): XYZ sliders for the gravity-bias vector
-- **Seed** input
-- **Republish** button (species-level, blocked until all dirty slots adopted)
+- **Seed** input (manual integer entry)
+- **Re-publish species** (species-level, in the workstage footer; blocked until all dirty slots adopted)
 
-All sliders use a local `DraftSlider` (150ms idle commit + pointer-up final commit) — same pattern as cartograph's `DraftRangeInput`, copied into the workstage rather than crossing the cartograph↔arborist boundary.
+All sliders use a local `DraftSlider` (150ms idle commit + pointer-up final commit) — same pattern as cartograph's `DraftRangeInput`. Controlled selects (Phyllotaxis, Profile) read from the store-mirrored `effective` value so operator choices reflect immediately without a server round-trip.
+
+**Floating viewport overlays** (viewing conditions, not tree properties):
+
+- **Wind** toggle + strength slider (0–2): two-layer sway — wood gets a slow height-falloff sway, leaves layer a high-frequency flutter on top. Operator-tunable in the workstage; production wind in `treeAtlasMaterial.js` is Phase W proper (still pending).
 
 **Conifer panel** (Phase E, pending): whorlsPerHeight, branchesPerWhorl, leaderDominance, droopPerWhorlAge. Hidden today.
 

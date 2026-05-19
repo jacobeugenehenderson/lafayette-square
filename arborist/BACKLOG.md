@@ -6,7 +6,9 @@
 
 ## Trees — Procedural v1.5: in-Arborist authoring + skeleton-first redo (in flight 2026-05-15)
 
-**Tomorrow's first move (parked 2026-05-15 EOD):** rewrite the `cartograph/NOTES.md` 2026-05-15 maxi-brief from "5 morphologies × ~3 variants each" to **"5 heroes on top of morphology fillers, all sharing the procedural bark shader; Phase G splits into 5 proving passes."** Doctrine clarifications to incorporate (from post-Phase-D conversation):
+**Tomorrow's first move (parked 2026-05-19 EOD, third-shift session):** finish the LoD-preview + perf-gauge wiring in the workstage, then begin G.1 Sugar Maple. The server scaffolding is in place (`POST /procedural/generate` accepts a `lod` body field; runs `simplifyGlbBytes` via gltf-transform's `MeshoptSimplifier` at the same ratios `publish-glb.js` uses). The store has a `previewLod` field and it's plumbed into `SlotCard` as a prop. **What's missing**: SlotCard needs to (a) destructure `previewLod` + `onPreviewLodChange` from props, (b) include `lod: previewLod` in the body of the generate-fetch (~line 261), (c) re-fetch on previewLod change (add to the useEffect deps), and (d) render the LoD selector buttons (0 / 1 / 2) + a perf gauge overlay (tri count, leaf count, draw calls) — same floating-panel pattern as the Wind toggle. After that lands, the operator finishes G.1 (Sugar Maple) by dropping the PSD palmate-leaf cluster atlas into `public/textures/leaves/acer_saccharum_procedural/cluster.png` and tuning the hero PRESETS entry.
+
+**Historical first move (parked 2026-05-15, completed 2026-05-19):** rewrite the `cartograph/NOTES.md` 2026-05-15 maxi-brief from "5 morphologies × ~3 variants each" to **"5 heroes on top of morphology fillers, all sharing the procedural bark shader; Phase G splits into 5 proving passes."** Doctrine clarifications to incorporate (from post-Phase-D conversation):
 - Morphology buckets STAY as fillers; heroes sit on top via species-map.json preferred-species routing. Two-tier substitution already supported by `bake-trees.js:pickVariant` — heroes win their category's lottery via `quality: 4` vs filler `quality: 2`.
 - The Grove's single master atlas (bake-look's `unifyAtlases`) is the load-bearing innovation that makes adding heroes nearly free (sha1 dedup) and makes shader bark unification possible (collapse tiles across the entire roster, not just procedurals).
 - Phase B's brief expands from "procedural-trees-only" to "**roster-wide shader unification via per-species `extras.bark` + shader patches in `treeAtlasMaterial.js`**." Vendor and procedural trees both lose their bark color tiles to the same 4×4 placeholder; the shader picks pattern + colors from material extras. Vendor normal maps stay (preserve real bark-groove geometry); only the color tiles collapse. Pipeline survives SpeedTree migration unchanged.
@@ -75,6 +77,168 @@ phases.
   **Doesn't fix:** conifers (Phase E); bark/leaf shaders (B/F); geometric
   polish — branches are still plain tapered cylinders (Phase C); per-species
   tuning (G).
+
+- [x] **Phase D.1a — Staggered scaffold emergence** — **SHIPPED 2026-05-19** (third-shift session).
+  Phase C.1 §2 parented all N initial children to a single `trunkTopNode`
+  → "umbrella spider." New `sca.scaffoldZoneFrac` (default 0.5 broadleaf;
+  force-pinned 0 for weeping) distributes the N azimuthal seeds across
+  the top portion of the SCA axial chain. Azimuths still span TAU
+  uniformly so the C.1 wedge-balancing rationale survives. **Fixes:** the
+  umbrella-spider topology. **Doesn't fix:** the canopy still emerges
+  from one shared parent direction (no opposite phyllotaxis — D.1 below).
+
+- [x] **Phase D.1 — Opposite phyllotaxis (Path 2 pair-spawn) + scaffold emergence-angle decoupling** — **SHIPPED 2026-05-19**.
+  Two structurally-coupled changes inside `runGrowthLoop`:
+  - **Pair-spawn:** when `sca.phyllotaxisMode === 'opposite'`, the spawn
+    step emits TWO children per pulled node at `pullDir ± sin(θ) × pairAxis`,
+    where pairAxis lies in the plane perpendicular to the parent edge,
+    rotated 0°/90° per `pairDepth` parity. `spawnIncrement = 2` tightens
+    the C.1b per-node child cap so pair-spawns never exceed it. Pairs
+    are atomic — no silent degradation to single-child near cap.
+  - **Emergence-angle decoupling:** decaying +Y bias near scaffold base
+    via `sca.scaffoldEmergenceBias × exp(-pathLenFromTrunk / 1.5m)`. New
+    per-node `pathLenFromTrunk` tracks each scaffold's path length from
+    its seed. Produces J-shaped lower scaffolds (curve up at base,
+    arch outward over the first ~1.5m).
+  Defaults: broadleaf opposite + lift 0.6; weeping alternate + lift 0;
+  columnar/ornamental alternate + small lift. **Fixes:** the decussate
+  fishbone signature; armpit-angle scaffold reading. **Doesn't fix:**
+  primary scaffolds emerging from the trunk are NOT paired with the
+  trunk (they spiral-stagger per D.1a) — only canopy ramification is
+  paired. Refining primary scaffolds to also pair-at-internode is a
+  future D.1c if visual review demands.
+
+- [x] **Phase D.1b — Leaf-cluster-along-shoot emission** — **SHIPPED 2026-05-19**.
+  Replaces the single-leaf-card-per-tip rule with: (a) bounded spray of
+  `tipCount = 5` cards in a 35 cm × 0.6-vertical-compression volume
+  around each tip, plus (b) pair-distributed cards walking back along
+  the parent chain for `shootLen = 0.6 m`, one on each side every
+  `shootSpacing = 0.18 m`, perpendicular offset `shootJitter = 0.12 m`.
+  Leaf count ~9× on broadleaf-1 (606 → 5496). Phase F's PSD-authored
+  cluster atlases will land into this same emission shape — F's scope
+  becomes "swap the morphology PNG" rather than "rethink the placement."
+  **Fixes:** canopy reads as foliage mass, not garnish. **Doesn't fix:**
+  per-species cluster authoring (Phase F); the cards are still generic
+  `ovate_large` PNG for now.
+
+- [x] **Phase D.2 — Operator-tunable deformers** — **SHIPPED 2026-05-19**.
+  New `deformers` nested params group (added to `NESTED_PARAM_KEYS` +
+  `DEFAULT_SCA_BY_PRESET`): `trunkWander`, `trunkWavelength`, `branchJitter`,
+  `barkRelief`. Three helpers in `spaceColonization.js`:
+  - `getTrunkWander(seedN, worldY, wanderOriginY, amplitude, wavelength)`
+    — deterministic XZ wander curve, cosine-smoothed between control
+    points, amplitude ramps in over the first metre. Consumed by both
+    the visible trunk geometry (subdivide cylinder → per-vertex XZ
+    displacement) AND the SCA root + axial extension + lift loop, so
+    the canopy attaches to the wandered shaft cleanly.
+  - `_jitterPerp` — deterministic perpendicular offset on each SCA
+    branch-spawn. Wobbles spawns off the ruler-straight pull line.
+  - `_jitterHash` / `_wanderHash` — `Math.sin(x) × 43758.5453` pattern,
+    cheap + deterministic.
+  Defaults broadleaf: 8 cm wander @ 2.0 m wavelength, 10% branch jitter,
+  5% bark relief. Weeping: 10 cm @ 2.5 m, 15% jitter. **Fixes:** trunk
+  reads sinuous; branches stop reading as ruler-straight. **Doesn't
+  fix:** hierarchical flange scale (primary chunky, twig flush — Tier 2
+  agent-report item, future polish).
+
+- [x] **Workstage anchor + joint smoothing + extended trunk** — **SHIPPED 2026-05-19**.
+  Base anchored to y=0 (was -0.25, lifting tree off floor on size
+  changes). Trunk↔canopy joint: SCA runs early; trunk-top radius set
+  to `Math.max(0.025, scaResult.nodes[0].radius)` matching Murray's-law
+  root. Trunk↔flange joint: flare and shaft stack non-overlapping
+  (flare 0→FLARE_H, shaft FLARE_H→top), both `openEnded:true` at the
+  seam, noise hashed with aligned `globalH` for continuity. Visible
+  trunk extends through SCA axial-extension region (`axial→axial`
+  edges skipped in emission loop) — eliminates the "second narrower
+  column" above the tapered shaft. Lean dropped (a leaned cone diverges
+  from the straight-up axial extension; lean returns as a group
+  rotation if/when desired).
+
+- [x] **Workstage panel expansion to 20 knobs** — **SHIPPED 2026-05-19**.
+  Five sections: Trunk · Envelope · Canopy · Deformers · Tropism. New
+  knobs since the 7-knob Phase D baseline: DBH, Canopy Start, Scaffolds,
+  Spread, Phyllotaxis, Lift, Density, Fill, Trunk wander, Wavelength,
+  Branch jitter, Bark relief. Plus ↺ Reset button (clears overlay,
+  persists, refetches effective). DBH required `setProceduralSlotParams`
+  to handle scalar top-level patches alongside nested-object patches.
+
+- [x] **Phyllotaxis dropdown effective-value bug fix** — **SHIPPED 2026-05-19**.
+  Two-end fix:
+  - Server `/procedural/:species/seedlings` `effective` payload now
+    layers `DEFAULT_SCA_BY_PRESET[preset][key] → base[key] → params[key]`,
+    matching the generator's runtime resolution exactly. Previously the
+    DEFAULTS layer was missing → selects displayed undefined-fallback.
+  - Store `setProceduralSlotParams` mirrors patches into `v.effective`
+    alongside `v.params` so controlled selects reflect operator changes
+    without a server round-trip. Sliders worked by accident (DraftSlider
+    local draft state masked the bug); selects (Phyllotaxis, Profile)
+    snapped back to stale values without this fix.
+
+- [x] **Phase W preview (workstage wind)** — **SHIPPED 2026-05-19**, partial.
+  Floating toggle + strength slider (0–2) at the viewport's bottom-left.
+  `SpecimenViewport.jsx` patches each loaded GLB material via
+  `onBeforeCompile`. Two-layer sway:
+  - **Wood** vertices: height-falloff slow sway (`uTime × 1.5`,
+    ~15 cm peak at 10 m canopy, two phase-offset sines for elliptical
+    wander).
+  - **Leaf** vertices: high-frequency flutter (`uTime × 8`, ~2.5 cm
+    amplitude, per-vertex phase from leaf-card position so adjacent
+    cards don't sync) layered on top.
+  `uIsLeaf` is set per-material at patch time from
+  `geometry.userData.atlasKind === 'leaf'`. `buildSourceGLB` now stamps
+  `atlasKind: 'bark'|'leaf'` on each primitive's extras. Idempotent
+  patch (`userData.__windPatched` gate) so re-renders don't compound.
+  **Doesn't fix:** production wind (`treeAtlasMaterial.js`) — Phase W
+  proper, queued as separate commit. Workstage shows wind today;
+  LS Stage / Preview do not.
+
+- [x] **Backend dev-server `--watch`** — **SHIPPED 2026-05-19**.
+  `dev:cartograph`, `dev:arborist`, `dev:meteorologist` scripts now use
+  `node --watch <serve>.js` (Node 22 built-in file watcher tracks the
+  entry script's require graph). Generator / SCA / serve edits reload
+  without manual server restart. One-time restart needed after the
+  package.json change to pick up the watcher itself.
+
+- [~] **Workstage LoD preview + perf gauge** — **SCAFFOLDED 2026-05-19, UI PENDING**.
+  Operator's "is this tree lightweight?" question answered by a live
+  meter showing what the canopy actually costs the GPU per LoD tier.
+  - **Server (shipped)**: `POST /procedural/generate` accepts a `lod`
+    body field (0 / 1 / 2). lod=0 returns the source GLB (current
+    behaviour); lod=1 or 2 runs `simplifyGlbBytes` through
+    gltf-transform's `weld → dedup → simplify` with `MeshoptSimplifier`
+    at the same ratios + error tolerances `publish-glb.js` uses (lod1:
+    ratio 0.40 / err 0.002, lod2: ratio 0.10 / err 0.008). Texture
+    compress step skipped — preview keeps the 1K bark + leaf source so
+    operator sees true geometry quality.
+  - **Store (shipped)**: `previewLod` state in `ProceduralWorkstage`
+    (survives slot switches); plumbed into SlotCard as
+    `previewLod` + `onPreviewLodChange` props.
+  - **UI (pending)** — tomorrow's first move:
+    1. Destructure `previewLod` + `onPreviewLodChange` in SlotCard
+       function signature.
+    2. Include `lod: previewLod` in the body of the
+       `/procedural/generate` fetch (currently in the useEffect
+       around line 261). Add `previewLod` to the effect deps so
+       changing the selector triggers a refetch.
+    3. Render LoD selector — three buttons (0 / 1 / 2) in a floating
+       overlay, top-right or bottom-right of the viewport (same
+       pattern as the Wind toggle).
+    4. Render perf gauge — bottom-right floating panel. Traverse the
+       loaded scene; sum `(prim.index ? prim.index.count / 3 : prim.attributes.position.count / 3)` for total tris; count leaf cards (children with `atlasKind === 'leaf'` → divide vertex count by 4 = card count); pull `renderer.info.render.calls` and `renderer.info.programs.length` via `useThree()`. Color zones: green <20k tris, yellow 20–40k, red >40k (at LoD0; tighten for lower LoDs).
+  **Why now**: opposite-phyllotaxis + leaf-cluster-along-shoot
+  combined push lod0 broadleaf-1 to ~50k tris (1600 wood cylinders
+  × ~24 tris + 5500 leaf cards × 2 tris). At 745 LS placements (geom
+  instanced), lod0 isn't the rendering cost — instance count drives
+  the canopy fragment cost which Phase H (shell/core split + A2C)
+  optimizes. But the operator needs the meter to know when their
+  tuning blows past the budget.
+
+- [x] **Phase F.0 — Leaf-cluster-along-shoot emission rule** — **SHIPPED 2026-05-19** as part of D.1b above.
+  Originally the agent-recommended sequencing put this as a Phase F
+  prerequisite (under "leaf-card placement geometry"), separable from
+  Phase F's PSD-authored cluster atlases. Shipped early so the
+  operator's tomorrow PS work attaches into a geometry that's already
+  maple-shaped.
 
 - [ ] **Phase E — Monopodial whorl** (conifer skeleton). New
   `arborist/monopodialWhorl.js`. Conifer path swaps to

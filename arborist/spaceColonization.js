@@ -106,29 +106,47 @@ export const ENVELOPE_PROFILES = {
 export const DEFAULT_SCA_BY_PRESET = {
   broad: {
     envelope: { profile: 'rounded_oval', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6 },
+    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'opposite', scaffoldEmergenceBias: 0.6 },
+    deformers: { trunkWander: 0.08, trunkWavelength: 2.0, branchJitter: 0.1, barkRelief: 0.05 },
   },
   broadleaf: {
     envelope: { profile: 'rounded_oval', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6 },
+    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'opposite', scaffoldEmergenceBias: 0.6 },
+    deformers: { trunkWander: 0.08, trunkWavelength: 2.0, branchJitter: 0.1, barkRelief: 0.05 },
   },
   weeping: {
     // Envelope hangs 60% below the trunk top so attractors extend into the
     // curtain zone. Strong −Y tropism pulls branches down through them.
     // C.1: tiny branchingStartFrac (0.2) means trunk barely extends into
-    // the envelope so branches have room to droop.
+    // the envelope so branches have room to droop. No upward emergence
+    // bias — the curtain wants to fall, not lift.
     envelope: { profile: 'umbrella',     asymmetry: 0, offsetYFrac: -0.6 },
-    sca: { tropism: [0, -0.4,  0], attractorCount: 700, influenceRadius: 3.5, killRadius: 0.9, stepLength: 0.4, maxIters: 240, branchingStartFrac: 0.2, initialChildCount: 6 },
+    sca: { tropism: [0, -0.4,  0], attractorCount: 700, influenceRadius: 3.5, killRadius: 0.9, stepLength: 0.4, maxIters: 240, branchingStartFrac: 0.2, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0 },
+    deformers: { trunkWander: 0.10, trunkWavelength: 2.5, branchJitter: 0.15, barkRelief: 0.05 },
   },
   columnar: {
     envelope: { profile: 'tight_column', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, +0.3,  0], attractorCount: 450, influenceRadius: 3.0, killRadius: 0.9, stepLength: 0.4, maxIters: 180, branchingStartFrac: 0.5, initialChildCount: 6 },
+    sca: { tropism: [0, +0.3,  0], attractorCount: 450, influenceRadius: 3.0, killRadius: 0.9, stepLength: 0.4, maxIters: 180, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0.4 },
+    deformers: { trunkWander: 0.05, trunkWavelength: 2.5, branchJitter: 0.05, barkRelief: 0.05 },
   },
   ornamental: {
     envelope: { profile: 'broad_low',    asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, -0.05, 0], attractorCount: 500, influenceRadius: 3.5, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6 },
+    sca: { tropism: [0, -0.05, 0], attractorCount: 500, influenceRadius: 3.5, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0.3 },
+    deformers: { trunkWander: 0.08, trunkWavelength: 2.0, branchJitter: 0.1, barkRelief: 0.05 },
   },
 }
+
+// Decay length (m) for scaffoldEmergenceBias — bias is applied as
+// `bias * exp(-pathLenFromTrunk / SCAFFOLD_EMERGENCE_DECAY_M)`, so values
+// of pathLen ≪ decay produce nearly-full bias; values ≫ decay produce
+// negligible bias. 1.5 m is the natural urban-broadleaf scale: the J of
+// a Sugar Maple scaffold tightens up over the first ~1–2 m before the
+// branch starts arcing outward.
+const SCAFFOLD_EMERGENCE_DECAY_M = 1.5
+// Pair half-angle (radians) — opposite-phyllotaxis children spawn at
+// pullDir ± sin(θ) × pairAxis. ~28° gives a recognisable fishbone splay
+// without exaggerating into a "Y" at every node.
+const PAIR_HALF_ANGLE_RAD = 0.5
 
 // ── PRNG ────────────────────────────────────────────────────────────────
 //
@@ -203,15 +221,91 @@ function squaredDistance(a, b) {
   return dx * dx + dy * dy + dz * dz
 }
 
+// ── Vector helpers for opposite-phyllotaxis pair geometry ────────────────
+function _normalize3(v) {
+  const len = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) || 1
+  return [v[0] / len, v[1] / len, v[2] / len]
+}
+function _cross3(a, b) {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ]
+}
+function _dot3(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] }
+
+// ── Deformer helpers (Phase D.2) ─────────────────────────────────────────
+// `getTrunkWander` produces a deterministic XZ wander curve along world-Y,
+// anchored at (0, 0) for y <= wanderOriginY (so the planted flare stays
+// straight) and growing to full amplitude over the first metre above.
+// Both the visible trunk geometry and the SCA axial extension query the
+// same function so the canopy attaches cleanly to the wandered shaft.
+function _wanderHash(seedN, ctrlIdx, channel) {
+  const x = (seedN | 0) * 9311 + ctrlIdx * 1471 + channel * 7919
+  const r = Math.sin(x * 12.9898) * 43758.5453
+  return 2 * (r - Math.floor(r)) - 1   // [-1, 1]
+}
+export function getTrunkWander(seedN, worldY, wanderOriginY, amplitude, wavelength) {
+  const yRel = worldY - wanderOriginY
+  if (amplitude <= 0 || yRel <= 0 || wavelength <= 0) return [0, 0]
+  const ctrlLo = Math.floor(yRel / wavelength)
+  const t = (yRel - ctrlLo * wavelength) / wavelength
+  // Cosine-smoothed t → tangent-continuous transitions between control
+  // points (linear-lerp produces visible corners on a swept-polyline trunk).
+  const ts = 0.5 - 0.5 * Math.cos(t * Math.PI)
+  const xLo = _wanderHash(seedN, ctrlLo,     0)
+  const xHi = _wanderHash(seedN, ctrlLo + 1, 0)
+  const zLo = _wanderHash(seedN, ctrlLo,     1)
+  const zHi = _wanderHash(seedN, ctrlLo + 1, 1)
+  // Linear ramp 0→1 over the first metre so the wander grows smoothly out
+  // of the planted base instead of starting mid-amplitude one stepLength up.
+  const ampRamp = Math.min(1, yRel / 1.0)
+  return [
+    (xLo + ts * (xHi - xLo)) * amplitude * ampRamp,
+    (zLo + ts * (zHi - zLo)) * amplitude * ampRamp,
+  ]
+}
+
+// `_jitterPerp` returns a deterministic perpendicular offset of magnitude
+// `scale`, used to wobble each SCA branch-spawn off the pull direction so
+// branches read as organic rather than ruler-straight along each axis.
+function _jitterHash(seedN, idx) {
+  const x = ((seedN | 0) + idx) * 12.9898
+  const v = Math.sin(x) * 43758.5453
+  return 2 * (v - Math.floor(v)) - 1
+}
+function _jitterPerp(seedN, hashIdx, parentDir, scale) {
+  if (scale <= 0) return [0, 0, 0]
+  let upRef = [0, 1, 0]
+  if (Math.abs(_dot3(parentDir, upRef)) > 0.98) upRef = [1, 0, 0]
+  const u0 = _normalize3(_cross3(parentDir, upRef))
+  const v0 = _cross3(parentDir, u0)
+  const r1 = _jitterHash(seedN, hashIdx * 7 + 3)
+  const r2 = _jitterHash(seedN, hashIdx * 7 + 11)
+  return [
+    (r1 * u0[0] + r2 * v0[0]) * scale,
+    (r1 * u0[1] + r2 * v0[1]) * scale,
+    (r1 * u0[2] + r2 * v0[2]) * scale,
+  ]
+}
+
 // Returns null when no further growth is possible (either every attractor
 // has been killed or no node is in influence range of any remaining
 // attractor — the natural stopping condition).
-function runGrowthLoop({ nodes, attractors, sca }) {
+function runGrowthLoop({ nodes, attractors, sca, seedN, branchJitter = 0 }) {
   const { tropism, influenceRadius, killRadius, stepLength, maxIters } = sca
   const inflSq = influenceRadius * influenceRadius
   const killSq = killRadius * killRadius
   const childCap = (sca.maxChildrenPerNode !== undefined)
     ? sca.maxChildrenPerNode : MAX_CHILDREN_PER_NODE_DEFAULT
+  const phyllotaxisMode = sca.phyllotaxisMode || 'alternate'
+  const emergenceBias = sca.scaffoldEmergenceBias ?? 0
+  // Opposite mode spawns 2 children per event; alternate spawns 1. The
+  // pull-filter uses this to skip nodes that would exceed the cap mid-pair
+  // (we don't degrade a pair into a single — pairs preserve the species
+  // signature).
+  const spawnIncrement = phyllotaxisMode === 'opposite' ? 2 : 1
 
   for (let iter = 0; iter < maxIters; iter++) {
     if (attractors.length === 0) break
@@ -226,11 +320,11 @@ function runGrowthLoop({ nodes, attractors, sca }) {
         // C.1: axial trunk-extension nodes do not attract; canopy seeds do.
         // This keeps the trunk straight while the N azimuthal children
         // share attractor-pull symmetrically.
-        // C.1b: nodes that have already accumulated childCap direct
-        // children also stop attracting → attractor flows to next-nearest
-        // tip, bounding per-node fan-out.
+        // C.1b: nodes that would exceed childCap after this iter's spawn
+        // (1 in alternate, 2 in opposite) also stop attracting → attractor
+        // flows to next-nearest tip, bounding per-node fan-out.
         if (nodes[i].axial) continue
-        if (nodes[i].children.length >= childCap) continue
+        if (nodes[i].children.length + spawnIncrement > childCap) continue
         const sq = squaredDistance(a, nodes[i].pos)
         if (sq < bestSq) { bestSq = sq; bestIdx = i }
       }
@@ -248,27 +342,107 @@ function runGrowthLoop({ nodes, attractors, sca }) {
     }
     if (pullByNode.size === 0) break
 
-    // 2. Spawn one child per pulled node. growDir = normalize(avgPull +
-    //    tropism). Tropism is added IN WORLD SPACE so the same vector
-    //    produces consistent silhouettes regardless of branch position.
+    // 2. Spawn child(ren) per pulled node.
+    //
+    // (B) Scaffold emergence bias: near the scaffold seed, add a decaying
+    //     +Y term to growDir so primary scaffolds leave the trunk closer
+    //     to vertical and open outward as they age. Decays exponentially
+    //     in path length from the scaffold seed.
+    //
+    // (A) Opposite phyllotaxis: pair-spawn two children at pullDir ±
+    //     sin(θ) × pairAxis, where pairAxis lies in the plane perpendicular
+    //     to the parent edge, rotated by 0° or 90° per generation
+    //     (pairDepth parity). Produces the decussate "fishbone" Sugar
+    //     Maple silhouette. Alternate mode (default for non-broadleaf)
+    //     keeps the legacy single-child spawn.
     const newNodes = []
     for (const [node, pull] of pullByNode) {
+      const pathLen = node.pathLenFromTrunk || 0
+      const biasY = emergenceBias * Math.exp(-pathLen / SCAFFOLD_EMERGENCE_DECAY_M)
+
       const gx = pull[0] + tropism[0]
-      const gy = pull[1] + tropism[1]
+      const gy = pull[1] + tropism[1] + biasY
       const gz = pull[2] + tropism[2]
       const glen = Math.sqrt(gx * gx + gy * gy + gz * gz) || 1
-      const child = {
-        pos: [
-          node.pos[0] + (gx / glen) * stepLength,
-          node.pos[1] + (gy / glen) * stepLength,
-          node.pos[2] + (gz / glen) * stepLength,
-        ],
-        parent: node,
-        children: [],
-        radius: 0,
+      const pullDir = [gx / glen, gy / glen, gz / glen]
+
+      const newPathLen = pathLen + stepLength
+      const newDepth = (node.pairDepth || 0) + 1
+
+      // Per-edge perpendicular jitter — wobbles each spawn off the
+      // pull-direction line so branches read as organic rather than
+      // ruler-straight. Magnitude = branchJitter × stepLength; direction
+      // hashed deterministically from (seedN, node identity, child).
+      const jitterScale = branchJitter * stepLength
+      const jitterIdx = nodes.length * 17  // unique per spawn event
+      let parentDirForJitter = [0, 1, 0]
+      if (node.parent) {
+        const dx = node.pos[0] - node.parent.pos[0]
+        const dy = node.pos[1] - node.parent.pos[1]
+        const dz = node.pos[2] - node.parent.pos[2]
+        parentDirForJitter = _normalize3([dx, dy, dz])
       }
-      node.children.push(child)
-      newNodes.push(child)
+
+      if (phyllotaxisMode === 'opposite') {
+        // Parent edge direction (forward axis of the pair plane).
+        const parent = node.parent
+        let parentDir = [0, 1, 0]
+        if (parent) {
+          const dx = node.pos[0] - parent.pos[0]
+          const dy = node.pos[1] - parent.pos[1]
+          const dz = node.pos[2] - parent.pos[2]
+          parentDir = _normalize3([dx, dy, dz])
+        }
+        // Build a unit perp basis (u0, v0) in the plane ⟂ parentDir.
+        // Fall back to X-up if parentDir is nearly vertical (cross with Y
+        // collapses there).
+        let upRef = [0, 1, 0]
+        if (Math.abs(_dot3(parentDir, upRef)) > 0.98) upRef = [1, 0, 0]
+        const u0 = _normalize3(_cross3(parentDir, upRef))
+        const v0 = _cross3(parentDir, u0)  // already unit
+        // Rotate by 0° or 90° per generation (decussate plane flip).
+        const azim = (newDepth & 1) ? Math.PI / 2 : 0
+        const c = Math.cos(azim), s = Math.sin(azim)
+        const u = [u0[0] * c + v0[0] * s, u0[1] * c + v0[1] * s, u0[2] * c + v0[2] * s]
+        const sa = Math.sin(PAIR_HALF_ANGLE_RAD)
+        const dirA = _normalize3([pullDir[0] + sa * u[0], pullDir[1] + sa * u[1], pullDir[2] + sa * u[2]])
+        const dirB = _normalize3([pullDir[0] - sa * u[0], pullDir[1] - sa * u[1], pullDir[2] - sa * u[2]])
+        const jA = _jitterPerp(seedN, jitterIdx + 0, parentDirForJitter, jitterScale)
+        const jB = _jitterPerp(seedN, jitterIdx + 1, parentDirForJitter, jitterScale)
+        const childA = {
+          pos: [
+            node.pos[0] + dirA[0] * stepLength + jA[0],
+            node.pos[1] + dirA[1] * stepLength + jA[1],
+            node.pos[2] + dirA[2] * stepLength + jA[2],
+          ],
+          parent: node, children: [], radius: 0,
+          pathLenFromTrunk: newPathLen, pairDepth: newDepth,
+        }
+        const childB = {
+          pos: [
+            node.pos[0] + dirB[0] * stepLength + jB[0],
+            node.pos[1] + dirB[1] * stepLength + jB[1],
+            node.pos[2] + dirB[2] * stepLength + jB[2],
+          ],
+          parent: node, children: [], radius: 0,
+          pathLenFromTrunk: newPathLen, pairDepth: newDepth,
+        }
+        node.children.push(childA, childB)
+        newNodes.push(childA, childB)
+      } else {
+        const j = _jitterPerp(seedN, jitterIdx, parentDirForJitter, jitterScale)
+        const child = {
+          pos: [
+            node.pos[0] + pullDir[0] * stepLength + j[0],
+            node.pos[1] + pullDir[1] * stepLength + j[1],
+            node.pos[2] + pullDir[2] * stepLength + j[2],
+          ],
+          parent: node, children: [], radius: 0,
+          pathLenFromTrunk: newPathLen, pairDepth: newDepth,
+        }
+        node.children.push(child)
+        newNodes.push(child)
+      }
     }
     for (const n of newNodes) nodes.push(n)
 
@@ -317,7 +491,14 @@ export function runSCA({
   seedN,
   trunkBase,
   tipRadius = 0.015,
+  // Phase D.2 deformers — passed through from generator. Defaults make the
+  // function bit-identical to the pre-D.2 behaviour for legacy callers.
+  deformers = {},
 }) {
+  const trunkWander     = deformers.trunkWander ?? 0
+  const trunkWavelength = deformers.trunkWavelength ?? 2.0
+  const wanderOriginY   = deformers.wanderOriginY ?? 0
+  const branchJitter    = deformers.branchJitter ?? 0
   // Use a derived seed offset so the SCA's PRNG stream doesn't collide
   // with the v1 seed() hash that generate-procedural.js still uses for
   // trunk lean / leaf-card jitter / etc.
@@ -343,10 +524,16 @@ export function runSCA({
     z + trunkBase[2],
   ])
 
-  // Initialize tree. Trunk auto-grow: extend straight up by stepLength
-  // until any attractor falls into influenceRadius — prevents stalling
-  // when trunk top starts below the envelope's lowest point.
-  const root = { pos: [...trunkBase], parent: null, children: [], radius: 0, axial: true }
+  // Initialize tree. Trunk auto-grow: extend up by stepLength until any
+  // attractor falls into influenceRadius — prevents stalling when trunk
+  // top starts below the envelope's lowest point. Wander (if configured)
+  // displaces each axial node's XZ so the chain follows the visible-trunk
+  // shaft sinuosity.
+  const rootWander = getTrunkWander(seedN, trunkBase[1], wanderOriginY, trunkWander, trunkWavelength)
+  const root = {
+    pos: [trunkBase[0] + rootWander[0], trunkBase[1], trunkBase[2] + rootWander[1]],
+    parent: null, children: [], radius: 0, axial: true,
+  }
   const nodes = [root]
   const inflSq = sca.influenceRadius * sca.influenceRadius
   for (let lift = 0; lift < 8; lift++) {  // hard cap — never lift more than 8×stepLength
@@ -356,8 +543,10 @@ export function runSCA({
     }
     if (inRange) break
     const last = nodes[nodes.length - 1]
+    const newY = last.pos[1] + sca.stepLength
+    const w = getTrunkWander(seedN, newY, wanderOriginY, trunkWander, trunkWavelength)
     const next = {
-      pos: [last.pos[0], last.pos[1] + sca.stepLength, last.pos[2]],
+      pos: [trunkBase[0] + w[0], newY, trunkBase[2] + w[1]],
       parent: last, children: [], radius: 0, axial: true,
     }
     last.children.push(next)
@@ -377,8 +566,10 @@ export function runSCA({
   for (let seg = 0; seg < MAX_AXIAL_EXTENSION_SEGS; seg++) {
     const last = nodes[nodes.length - 1]
     if (last.pos[1] >= branchingStartY) break
+    const newY = last.pos[1] + sca.stepLength
+    const w = getTrunkWander(seedN, newY, wanderOriginY, trunkWander, trunkWavelength)
     const next = {
-      pos: [last.pos[0], last.pos[1] + sca.stepLength, last.pos[2]],
+      pos: [trunkBase[0] + w[0], newY, trunkBase[2] + w[1]],
       parent: last, children: [], radius: 0, axial: true,
     }
     last.children.push(next)
@@ -444,12 +635,20 @@ export function runSCA({
       parent,
       children: [],
       radius: 0,
+      // (B) Phase D.1: pathLen seeded to 0 at the scaffold base. Each
+      // growth-loop iter increments by stepLength; emergence bias decays
+      // with this value so the +Y "lift" tapers off ~1.5 m into the
+      // scaffold.
+      // (A) Phase D.1: pairDepth=0 at the seed. Each subsequent spawn
+      // increments by 1; the decussate pair plane rotates 90° per parity.
+      pathLenFromTrunk: 0,
+      pairDepth: 0,
     }
     parent.children.push(child)
     nodes.push(child)
   }
 
-  runGrowthLoop({ nodes, attractors, sca })
+  runGrowthLoop({ nodes, attractors, sca, seedN, branchJitter })
   computeRadii(root, tipRadius)
 
   return { root, nodes }

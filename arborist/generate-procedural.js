@@ -31,8 +31,10 @@
  */
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { runSCA, DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
+import { runSCA, DEFAULT_SCA_BY_PRESET, getTrunkWander } from './spaceColonization.js'
 import { NodeIO, Document } from '@gltf-transform/core'
+import { weld, dedup, simplify as gltfSimplify } from '@gltf-transform/functions'
+import { MeshoptSimplifier } from 'meshoptimizer'
 import sharp from 'sharp'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -201,7 +203,16 @@ export function generateTreeMesh({
   leafMorph,
   envelope,     // Phase D — SCA envelope override (rounded_oval/umbrella/tight_column/broad_low; width/height/asymmetry/offsetYFrac)
   sca,          // Phase D — SCA tunables override (tropism, attractorCount, influenceRadius, killRadius, stepLength, maxIters)
+  deformers,    // Phase D.2 — trunkWander / trunkWavelength / branchJitter / barkRelief
 }) {
+  // Resolve deformers from preset defaults if the caller didn't supply.
+  const _defDeformers = (DEFAULT_SCA_BY_PRESET[preset] && DEFAULT_SCA_BY_PRESET[preset].deformers) || {}
+  const _df = {
+    trunkWander:     (deformers && deformers.trunkWander     !== undefined) ? deformers.trunkWander     : (_defDeformers.trunkWander     ?? 0),
+    trunkWavelength: (deformers && deformers.trunkWavelength !== undefined) ? deformers.trunkWavelength : (_defDeformers.trunkWavelength ?? 2.0),
+    branchJitter:    (deformers && deformers.branchJitter    !== undefined) ? deformers.branchJitter    : (_defDeformers.branchJitter    ?? 0),
+    barkRelief:      (deformers && deformers.barkRelief      !== undefined) ? deformers.barkRelief      : (_defDeformers.barkRelief      ?? 0.05),
+  }
   const woodGeos = []
   const leaves = []
 
@@ -364,6 +375,12 @@ export function generateTreeMesh({
       seedN,
       trunkBase: [0, FLARE_H + trunkH, 0],
       tipRadius: 0.012,
+      deformers: {
+        trunkWander:     _df.trunkWander,
+        trunkWavelength: _df.trunkWavelength,
+        wanderOriginY:   FLARE_H,
+        branchJitter:    _df.branchJitter,
+      },
     })
     // Visible shaft tops out where the top-most axial extension node sits —
     // i.e., where canopy branches actually start. Above that the SCA cylinders
@@ -386,15 +403,32 @@ export function generateTreeMesh({
   // and the same seedOffset → continuous radial-noise pattern across the
   // y=FLARE_H seam.
   const flare = new THREE.CylinderGeometry(trunkRBot, flareBot, FLARE_H, PHASE_C_RADIAL_SEGS, 1, true)
-  applyRadialNoise(flare, 0, FLARE_H, 0.05, seedN * 11 + 17)
+  applyRadialNoise(flare, 0, FLARE_H, _df.barkRelief, seedN * 11 + 17)
   scaleVUv(flare, FLARE_H / (FLARE_H + trunkVisH))
   flare.translate(0, FLARE_H / 2, 0)
   woodGeos.push(flare)
 
-  const trunk = new THREE.CylinderGeometry(trunkTopVis, trunkRBot, trunkVisH, PHASE_C_RADIAL_SEGS, 1, true)
-  applyRadialNoise(trunk, FLARE_H, trunkVisH, 0.05, seedN * 11 + 17)
+  // Subdivide the trunk shaft in Y so per-vertex wander has smooth
+  // resolution. ~30 cm per ring is plenty for the ~2 m wavelength wander
+  // default; cost is ~24 extra tris per ring × N rings.
+  const trunkHeightSegs = Math.max(8, Math.ceil(trunkVisH / 0.3))
+  const trunk = new THREE.CylinderGeometry(trunkTopVis, trunkRBot, trunkVisH, PHASE_C_RADIAL_SEGS, trunkHeightSegs, true)
+  applyRadialNoise(trunk, FLARE_H, trunkVisH, _df.barkRelief, seedN * 11 + 17)
   scaleVUv(trunk, trunkVisH / (FLARE_H + trunkVisH))
   trunk.translate(0, FLARE_H + trunkVisH / 2, 0)
+  // Trunk sinuosity (Phase D.2): displace each vertex's XZ by the
+  // deterministic wander function so the visible shaft follows the same
+  // curve as the SCA axial chain above it.
+  if (_df.trunkWander > 0) {
+    const pos = trunk.attributes.position
+    for (let i = 0; i < pos.count; i++) {
+      const w = getTrunkWander(seedN, pos.getY(i), FLARE_H, _df.trunkWander, _df.trunkWavelength)
+      pos.setX(i, pos.getX(i) + w[0])
+      pos.setZ(i, pos.getZ(i) + w[1])
+    }
+    pos.needsUpdate = true
+    trunk.computeVertexNormals()
+  }
   woodGeos.push(trunk)
 
   const finCount = 6
@@ -494,15 +528,84 @@ export function generateTreeMesh({
       edgeIdx++
     }
 
-    // Leaf card at every tip. The seed stream is offset per-tip via the
-    // node's index so adjacent tips don't render identical leaf cards.
+    // Phase D.1b: leaf-cluster-along-shoot emission. Each terminal tip
+    // emits a small SPRAY of cards in a bounded volume; additionally we
+    // walk back along the parent chain for ~`shootLen` metres and emit
+    // pair-distributed cards every `shootSpacing` along the shoot. The
+    // single-card-per-tip rule reads as "spider arms with garnish" — a
+    // dense cluster + along-shoot distribution reads as foliage mass.
+    // Future-Phase F PSD-authored cluster atlases land into this same
+    // emission shape; the tunables below carry into hero authoring.
+    const lc = scaResult && scaResult.leafCluster || {}
+    const tipCount     = lc.tipCount     ?? 5         // cards bunched at each tip
+    const tipRadiusVol = lc.tipRadiusVol ?? 0.35      // metres — volume around tip
+    const tipCardSize  = lc.tipCardSize  ?? 0.4       // metre-scale card radius
+    const shootLen     = lc.shootLen     ?? 0.6       // metres back along chain
+    const shootSpacing = lc.shootSpacing ?? 0.18      // metres between along-shoot cards
+    const shootJitter  = lc.shootJitter  ?? 0.12      // perpendicular offset (m)
+
     let tipIdx = 0
     for (const n of nodes) {
-      if (n.children.length === 0) {
-        const leafSeed = seed(seedN * 7919 + tipIdx * 31)
-        addLeaf(n.pos[0], n.pos[1], n.pos[2], 0.5, leafSeed)
-        tipIdx++
+      if (n.children.length !== 0) continue
+      const baseSeed = seedN * 7919 + tipIdx * 31
+
+      // (a) Terminal cluster — a small spray of cards in a bounded ball
+      // around the tip position. Random offsets are deterministic by seed.
+      for (let k = 0; k < tipCount; k++) {
+        const r1 = seed(baseSeed + k * 13 + 1) * 2 - 1
+        const r2 = seed(baseSeed + k * 13 + 2) * 2 - 1
+        const r3 = seed(baseSeed + k * 13 + 3) * 2 - 1
+        const px = n.pos[0] + r1 * tipRadiusVol
+        const py = n.pos[1] + r2 * tipRadiusVol * 0.6
+        const pz = n.pos[2] + r3 * tipRadiusVol
+        addLeaf(px, py, pz, tipCardSize, seed(baseSeed + k * 13 + 7))
       }
+
+      // (b) Along-shoot pair-distributed cards — walk back along the
+      // parent chain `shootLen` metres, emitting one card on each side
+      // of the shoot. Each "side" hashes deterministically to a per-tip
+      // perpendicular axis so the pairs read as distinct shoots.
+      let cur = n
+      let walked = 0
+      let cardIdx = 0
+      while (walked < shootLen && cur.parent) {
+        const dx = cur.pos[0] - cur.parent.pos[0]
+        const dy = cur.pos[1] - cur.parent.pos[1]
+        const dz = cur.pos[2] - cur.parent.pos[2]
+        const segLen = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1
+        // Step along this edge in shootSpacing increments.
+        let along = shootSpacing
+        while (along < segLen && walked + along < shootLen) {
+          const t = along / segLen
+          const px0 = cur.pos[0] - dx * t
+          const py0 = cur.pos[1] - dy * t
+          const pz0 = cur.pos[2] - dz * t
+          // Perpendicular to the edge — Gram-Schmidt with Y-up fallback.
+          const dirLen = segLen
+          const ex = dx / dirLen, ey = dy / dirLen, ez = dz / dirLen
+          let upx = 0, upy = 1, upz = 0
+          if (Math.abs(ey) > 0.95) { upx = 1; upy = 0 }
+          // perp1 = normalize(cross(edge, up))
+          let p1x = ey * upz - ez * upy
+          let p1y = ez * upx - ex * upz
+          let p1z = ex * upy - ey * upx
+          const p1l = Math.sqrt(p1x * p1x + p1y * p1y + p1z * p1z) || 1
+          p1x /= p1l; p1y /= p1l; p1z /= p1l
+          // Emit two cards, one on each side of the shoot.
+          for (const sign of [+1, -1]) {
+            const off = sign * shootJitter * (0.7 + 0.6 * seed(baseSeed + cardIdx * 19))
+            const px = px0 + p1x * off
+            const py = py0 + p1y * off
+            const pz = pz0 + p1z * off
+            addLeaf(px, py, pz, tipCardSize * 0.8, seed(baseSeed + cardIdx * 29 + (sign + 1)))
+            cardIdx++
+          }
+          along += shootSpacing
+        }
+        walked += segLen
+        cur = cur.parent
+      }
+      tipIdx++
     }
   }
 
@@ -671,8 +774,16 @@ async function buildSourceGLB({ species, variants, barkBundle, leafPng, outPath,
   for (let i = 0; i < variants.length; i++) {
     const v = variants[i]
     const mesh = doc.createMesh(`${species}_${i + 1}`)
-    if (v.barkGeo) mesh.addPrimitive(geoToPrimitive(doc, buffer, v.barkGeo, barkMat))
-    if (v.leafGeo) mesh.addPrimitive(geoToPrimitive(doc, buffer, v.leafGeo, leafMat))
+    if (v.barkGeo) {
+      const p = geoToPrimitive(doc, buffer, v.barkGeo, barkMat)
+      p.setExtras({ ...(p.getExtras() || {}), atlasKind: 'bark' })
+      mesh.addPrimitive(p)
+    }
+    if (v.leafGeo) {
+      const p = geoToPrimitive(doc, buffer, v.leafGeo, leafMat)
+      p.setExtras({ ...(p.getExtras() || {}), atlasKind: 'leaf' })
+      mesh.addPrimitive(p)
+    }
     const node = doc.createNode(`${species}_${i + 1}`).setMesh(mesh)
     scene.addChild(node)
   }
@@ -979,7 +1090,7 @@ export async function writeSeedlings(species, variants) {
 // the tropism.Y slider, which writes `{sca: {tropism: [...]}}`) doesn't
 // wipe the sibling fields off the base PRESET. Top-level keys (preset,
 // dbh, canopyR, etc.) remain shallow-merged.
-const NESTED_PARAM_KEYS = ['envelope', 'sca', 'branching']
+const NESTED_PARAM_KEYS = ['envelope', 'sca', 'branching', 'deformers']
 function resolveVariantParams(species, { slot, seed, params }) {
   const cfg = PRESETS[species]
   const base = cfg.variants[(slot - 1) % cfg.variants.length]
@@ -997,7 +1108,7 @@ function resolveVariantParams(species, { slot, seed, params }) {
 // committed manifest under public/trees/. Determinism: same {species, slot,
 // seed, params} → byte-identical bytes (modulo the /tmp filename, which is
 // the file off disk; the GLB contents themselves are deterministic).
-export async function generateSingleVariantGLB({ species, slot, seed, params }) {
+export async function generateSingleVariantGLB({ species, slot, seed, params, lod = 0 }) {
   const cfg = PRESETS[species]
   if (!cfg) throw new Error(`unknown procedural species: ${species}`)
   const effective = resolveVariantParams(species, { slot, seed, params })
@@ -1011,9 +1122,36 @@ export async function generateSingleVariantGLB({ species, slot, seed, params }) 
     variants: [{ barkGeo, leafGeo }],
     barkBundle, leafPng, outPath: tmpPath,
   })
-  const buf = await fs.readFile(tmpPath)
+  let buf = await fs.readFile(tmpPath)
   await fs.unlink(tmpPath).catch(() => {})
+  if (lod === 1 || lod === 2) {
+    buf = await simplifyGlbBytes(buf, lod)
+  }
   return buf
+}
+
+// On-demand LoD decimation for the workstage preview. Same gltf-transform
+// pass publish-glb.js uses (`weld → dedup → simplify`), minus the
+// texture-compress step since preview-quality keeps the original 1K bark
+// + leaf textures. Ratios + error tolerances mirror publish-glb's LODS
+// table so what the operator previews matches what'll ship after Adopt +
+// Re-publish.
+const LOD_PRESETS = {
+  1: { ratio: 0.40, error: 0.0020 },
+  2: { ratio: 0.10, error: 0.0080 },
+}
+async function simplifyGlbBytes(buf, lod) {
+  const preset = LOD_PRESETS[lod]
+  if (!preset) return buf
+  await MeshoptSimplifier.ready
+  const io = new NodeIO()
+  const doc = await io.readBinary(buf)
+  await doc.transform(
+    weld(),
+    dedup(),
+    gltfSimplify({ simplifier: MeshoptSimplifier, ratio: preset.ratio, error: preset.error }),
+  )
+  return await io.writeBinary(doc)
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────

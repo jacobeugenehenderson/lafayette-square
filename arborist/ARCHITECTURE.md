@@ -188,6 +188,80 @@ Deferred until Phase C lands and bark-quality re-evaluation says the wrap-line c
 
 ---
 
+## Opposite-phyllotaxis pair-spawn (Phase D.1, 2026-05-19)
+
+The decussate Sugar Maple silhouette signature. `sca.phyllotaxisMode === 'opposite'` switches `runGrowthLoop`'s spawn step from one-child-per-pulled-node to **two children at `pullDir ± sin(θ)·pairAxis`**, where `pairAxis` lies in the plane perpendicular to the parent edge, rotated 0°/90° per generation depth (decussate plane flip).
+
+Key invariants:
+
+- Each non-axial node carries a `pairDepth` field. Scaffold seeds start at 0; each spawn increments. `azim = (pairDepth & 1) ? π/2 : 0` selects which perpendicular axis is the pair axis.
+- `spawnIncrement = 2` in opposite mode tightens the C.1b per-node child cap so pair-spawns never exceed cap. **No degradation to single-child** near cap — pairs are atomic; the attractor flows to next-nearest non-capped tip instead.
+- The pull vector still drives the *centre* of the pair (each child takes `pullDir × stepLength ± sa·u·stepLength`), so attractors continue to shape growth. The pair only adds the lateral split, not a wholesale departure from SCA.
+- Path 2 (in-loop) was chosen over Path 1 (post-pass): cleaner attractor-kill semantics, ~30 LOC, and `pairDepth` generalizes to spiral / whorled phyllotaxis modes.
+
+Trade-off: opposite mode produces ~4× wood and ~10× leaves vs alternate at the same seed (broadleaf-1 baseline). Operator-controllable via the Phyllotaxis dropdown in the Canopy panel section.
+
+---
+
+## Deformers (Phase D.2, 2026-05-19)
+
+Three operator-tunable organic-noise primitives, threaded through SCA + generator + workstage via a new `deformers` nested params group (added to `NESTED_PARAM_KEYS` + `DEFAULT_SCA_BY_PRESET` + server effective payload).
+
+**Trunk wander** (`deformers.trunkWander`, `deformers.trunkWavelength`).
+Helper `getTrunkWander(seedN, worldY, wanderOriginY, amplitude, wavelength)` in `spaceColonization.js` returns a deterministic XZ offset at any world Y:
+
+- Anchored at `wanderOriginY` (the flare-trunk seam = `FLARE_H` = 0.4 m by default). Returns (0, 0) for `worldY <= wanderOriginY`.
+- Control points hashed deterministically every `wavelength` along Y via `Math.sin(x) * 43758.5453` — the same `seed()` pattern the rest of the generator uses.
+- Cosine-smoothed interpolation between control points → tangent-continuous curve (linear-lerp would produce visible corners on a per-vertex displaced trunk).
+- Amplitude ramps 0→1 linearly over the first metre above `wanderOriginY` so the trunk emerges smoothly from the planted flare instead of starting mid-amplitude one stepLength up.
+
+The **same wander function** is consumed by **three sites** simultaneously so they stay in lock-step:
+
+1. **Visible trunk geometry** (`generate-procedural.js`) — subdivide the trunk cylinder to ≥8 height rings (1 ring per ~0.3 m), then per-vertex XZ displacement after the cylinder is translated to world coordinates.
+2. **SCA root position** — `runSCA`'s root.pos = trunkBase + wander(trunkBase.y).
+3. **SCA axial extension** + lift loop — every axial node's XZ offset comes from wander() at its world Y.
+
+Without all three using the same source, the canopy "tears" off the wandered shaft.
+
+**Branch jitter** (`deformers.branchJitter`).
+Helper `_jitterPerp(seedN, hashIdx, parentDir, scale)` returns a deterministic perpendicular offset to apply to each SCA branch-spawn. Magnitude = `branchJitter × stepLength` (10% = ~4 cm at default stepLength). Each pair-spawn child gets an independent jitter so the pair doesn't lean as a unit.
+
+**Bark relief** (`deformers.barkRelief`).
+Exposes the existing `applyRadialNoise` scale that was hardcoded to 0.05. Operator-tunable from 0–15%.
+
+---
+
+## `atlasKind` extras — stamped at bake, gates runtime shaders
+
+`buildSourceGLB` writes `atlasKind: 'bark'|'leaf'` to each primitive's gltf-transform `extras`. After load (`useGLTF`), the value lands on `mesh.geometry.userData.atlasKind`. Two consumers:
+
+1. **Bark retint shader** (`treeAtlasMaterial.js`, Phase B). Per-vertex `aBark` attribute baked at runtime-merge time from `geometry.userData.atlasKind`. Gates retint, roughness override, and UV-wrap to bark fragments only.
+2. **Workstage wind shader** (`SpecimenViewport.jsx`, Phase W preview). Per-material `uIsLeaf` uniform set at patch time from `geometry.userData.atlasKind === 'leaf'`. Leaves layer high-frequency flutter on top of slow sway; bark gets only the sway.
+
+One extras field, two consumers — clean. New consumers (e.g. per-leaf seasonal tint, leaf shadow lighting) drop into the same gate.
+
+`bake-look.js` also writes `atlasKind` at atlas-pack time (with `tile.classification` driving 'bark' / 'leaf' / 'unified'). The `buildSourceGLB` stamp ensures the in-memory workstage preview path also carries the gate, even though it bypasses `bake-look`.
+
+---
+
+## Effective-payload layering (`effective` = DEFAULTS → PRESETS → overlay)
+
+The `GET /procedural/:species/seedlings` endpoint returns each variant with an `effective` field — the FULL resolved params object the kernel will consume, with operator deltas merged onto PRESETS variant base, which is merged onto `DEFAULT_SCA_BY_PRESET[preset]`. **All three layers must be spread in this order**, matching the generator's runtime resolution exactly.
+
+```js
+merged[key] = {
+  ...(DEFAULT_SCA_BY_PRESET[preset][key] || {}),   // lowest priority
+  ...(PRESETS_variant[key] || {}),
+  ...(operator_overlay[key] || {}),                 // highest priority
+}
+```
+
+UI controls bind to `effective`. Without the DEFAULTS layer, controls that reference fields only defined in `DEFAULT_SCA_BY_PRESET` (e.g. `phyllotaxisMode`, `scaffoldEmergenceBias`, default `deformers`) would display `undefined`-fallbacks → snap-back bugs on controlled selects.
+
+**Store-side mirror.** `setProceduralSlotParams` ALSO writes patches into `v.effective` alongside `v.params`. Sliders worked without this (DraftSlider keeps local draft state) but controlled selects (Phyllotaxis, Profile) snapped back to stale values without it. With the mirror, the next render of the panel sees the operator's choice in `effective.sca.phyllotaxisMode` immediately, no server round-trip needed.
+
+---
+
 ## cartograph ↔ arborist boundary
 
 Per `project_kit_helpers_pattern`:

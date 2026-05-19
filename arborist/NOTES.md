@@ -4,6 +4,108 @@
 
 ---
 
+## 2026-05-19 — Procedural Broadleaf authoring pass: Phase D.1 + D.2 + W-preview
+
+**Headline:** the third-shift session through the night of 2026-05-18 → 2026-05-19 took the procedural broadleaf from "trunk with a spider topper of branches + sparse garnish" to "Sugar-Maple-shaped wood with foliage mass and motion." The geometric algorithm is now substantially complete for the broadleaf morphology; what's left for G.1 hero is Photoshop-authored leaf clusters (operator's tomorrow task) and per-species PRESETS tuning.
+
+### What shipped (in commit order roughly)
+
+**Anchor + joint smoothing.** Tree base now anchored to y=0 unconditionally; scaling no longer lifts the trunk off the floor. Three joints smoothed:
+- Trunk↔flange: flare and shaft no longer overlap; they stack continuously (flare 0→FLARE_H=0.4m; shaft FLARE_H→top). Both `openEnded:true` at the seam so no cap-disk shows where they meet. Radial-noise hashed with aligned `globalH` so the noise pattern is continuous across the boundary.
+- Trunk↔canopy: SCA is run *early* (before trunk geometry), and the visible trunk-top radius is set to `Math.max(0.025, scaResult.nodes[0].radius)` — exactly matching the Murray's-law root radius the first SCA cylinder emits at. The "crag" where the trunk pinched into a narrow neck and the canopy puffed back out is gone.
+- Visible trunk extends through SCA axial chain. Phase C.1's axial trunk-extension nodes (which forced the trunk straight up from `leanedTrunkTop` to `branchingStartY` to fix bias amplification) used to emit visible cylinders, producing a "second narrower column" above the tapered shaft. Now `axial→axial` edges are skipped in the emission loop, and the visible trunk paints from y=0 up to `topAxialY` exclusively. Lean dropped (a leaned cone diverges from the straight-up axial extension; lean can return later as a group rotation on the whole tree).
+
+**Phase D.1a — staggered scaffold emergence.** Phase C.1 §2 parented all N initial children to a single `trunkTopNode`, producing a canonical "umbrella spider" topology. Now they distribute across the top portion of the axial chain via `sca.scaffoldZoneFrac` (default 0.5 broadleaf; force-pinned 0 for weeping). Azimuths still span TAU uniformly so the C.1 wedge-balancing rationale survives.
+
+**Phase D.1 — opposite phyllotaxis (Path 2 pair-spawn).** The decussate Sugar Maple signature. Replaced the per-iter single-child spawn in `runGrowthLoop` with paired children at `pullDir ± sin(θ)·pairAxis`, where pairAxis lies in the plane perpendicular to the parent edge, rotated 0°/90° per `pairDepth` parity. Gated on `sca.phyllotaxisMode === 'opposite'`. The `spawnIncrement = 2` flag also tightens the C.1b per-node child cap so a pair-spawn never exceeds it. Visible signature: fishbone canopy density (~4× wood, ~10× leaves vs alternate mode on the same seed).
+
+**Phase D.1 — scaffold emergence-angle decoupling.** Decaying +Y bias near the trunk via `sca.scaffoldEmergenceBias * exp(-pathLenFromTrunk / 1.5m)`. New per-node `pathLenFromTrunk` field tracks each scaffold's path length from its seed. Default 0.6 broadleaf, 0.4 columnar, 0.3 ornamental, 0 weeping. Produces the J-shaped lower scaffolds.
+
+**Phase D.2 — deformers (operator-tunable organic noise).** New `deformers` nested params group (`trunkWander`, `trunkWavelength`, `branchJitter`, `barkRelief`) added to `NESTED_PARAM_KEYS` + `DEFAULT_SCA_BY_PRESET`. Three helpers in `spaceColonization.js`:
+- `getTrunkWander(seedN, worldY, wanderOriginY, amplitude, wavelength)` — deterministic XZ wander curve, anchored at wanderOriginY (the flare-trunk seam), cosine-smoothed between control points, amplitude ramps in over the first metre. Same function consumed by both the visible trunk geometry (per-vertex displacement after subdivide → ≥8 height rings) AND the SCA root + axial extension + lift loop, so the canopy attaches cleanly to the wandered shaft.
+- `_jitterPerp(seedN, hashIdx, parentDir, scale)` — deterministic perpendicular offset on each SCA branch-spawn. Wobbles every spawn off the ruler-straight pull line.
+- `_jitterHash` / `_wanderHash` — `Math.sin(x) * 43758.5453` pattern; cheap and deterministic.
+
+**Workstage panel — full 20-knob surface.** Five sections (Trunk · Envelope · Canopy · Deformers · Tropism), nine of which are new this session:
+- Trunk: **DBH** (5–100 cm, top-level scalar — required `setProceduralSlotParams` to handle scalars not just nested-object patches)
+- Envelope: Drape (renamed from "Y offset"; hidden for non-weeping)
+- Canopy: **Start** (branchingStartFrac), **Scaffolds** (initialChildCount), **Spread** (scaffoldZoneFrac, hidden for weeping), **Phyllotaxis** (alternate/opposite dropdown), **Lift** (scaffoldEmergenceBias), **Density** (attractorCount), **Fill** (killRadius)
+- Deformers: **Trunk wander** (cm), **Wavelength** (m), **Branch jitter** (% of stepLength), **Bark relief** (% of radius)
+- Plus **↺ Reset** button between Dice and Adopt; clears the operator overlay for the slot, persists to disk, refetches effective so sliders snap back to PRESETS defaults.
+
+**Workstage wind (Phase W preview surface).** Floating toggle + strength slider (0–2) at the viewport's bottom-left. Patches each loaded GLB material via `onBeforeCompile` in `SpecimenViewport.jsx`. Shared `uTime`, `uWindStrength`, `uIsLeaf` uniforms updated via `useFrame`. Two-layer sway:
+- Wood: height-falloff slow sway (`uTime × 1.5`, ~15 cm peak amplitude at 10 m canopy, two phase-offset sines for elliptical wander)
+- Leaves: high-frequency flutter (`uTime × 8`, ~2.5 cm amplitude, per-vertex phase from leaf-card position so adjacent cards don't sync) layered on top
+- `uIsLeaf` is set per-material at patch time from `geometry.userData.atlasKind === 'leaf'`. `buildSourceGLB` now stamps `atlasKind: 'bark'|'leaf'` extras on each primitive, which `useGLTF` surfaces into `geometry.userData`.
+
+This is the **workstage preview** of Phase W. Production wind (`treeAtlasMaterial.js`) is still pending — when it lands, the same two-layer math goes in, plus per-tree phase from a world-XZ hash so 745 placements don't sync.
+
+**Phase D.1b — leaf-cluster-along-shoot emission.** Replaces the single-leaf-card-per-tip rule. Per-tip emission now:
+- (a) Bounded spray of `tipCount = 5` cards in a 35 cm × 0.6-vertical-compression volume around the tip
+- (b) Pair-distributed cards walking back along the parent chain for `shootLen = 0.6 m`, one on each side every `shootSpacing = 0.18 m`, perpendicular offset `shootJitter = 0.12 m` along the per-edge axis
+
+Smoke test on broadleaf-1: leaf count **606 → 5496** (~9× more cards). Canopy reads as foliage mass, not garnish. Phase F's PSD-authored cluster atlases will land into this same emission shape.
+
+### Architectural decisions worth keeping
+
+**Path 2 over Path 1 for opposite phyllotaxis.** The research agent's report flagged two paths: (1) structural pairing post-pass walking the node graph, or (2) hybrid SCA + sympodial step inside `runGrowthLoop`. We chose Path 2 — ~30 LOC inside the spawn step, cleaner attractor-kill semantics (paired tips compete for attractors per-iter just like single tips), and the `pairDepth` field naturally generalizes to other phyllotaxis modes (spiral, whorled). The pair-cap interaction with C.1b's per-node child cap is handled by `spawnIncrement`-aware pull-filter — a node that would exceed cap mid-pair simply stops being attracted, and the attractor flows to next-nearest. **No silent degradation to single-child** in opposite mode; pairs preserve the species signature.
+
+**`atlasKind` extras stamped at `buildSourceGLB` for runtime gates.** The same `geometry.userData.atlasKind` mechanism Phase B/B.1.a established for bark-vs-leaf fragment classification now also gates leaf-vs-wood vertex flutter in workstage wind. One extras field, two consumers — clean.
+
+**Trunk sinuosity via subdivided cylinder + per-vertex displacement, not swept polyline.** The agent's report suggested a swept-polyline trunk (~40 LOC, depends on C.2 normal-merge). The simpler approach: `CylinderGeometry(top, bot, h, RADIAL, heightSegs ≥ 8)` then per-vertex XZ displacement via `getTrunkWander()` in world coordinates. Same visual result, single cylinder mesh, no swept-polyline plumbing, no normal-merge dependency.
+
+**Phyllotaxis dropdown effective-value bug (load-bearing fix).** Server's `effective` payload only spread `base[key] + params[key]`, NOT `DEFAULT_SCA_BY_PRESET[preset][key]`. Sliders worked by accident (DraftSlider's local draft state masked the bug) but selects (Phyllotaxis, Profile) snapped back to stale values. Fixed both ends:
+1. **Server**: effective payload now layers `DEFAULT_SCA_BY_PRESET → PRESETS variant → operator overlay`, matching the generator's runtime resolution exactly.
+2. **Store**: `setProceduralSlotParams` mirrors patches into `v.effective` alongside `v.params` so controlled selects reflect the operator's choice without a server round-trip.
+
+The 2026-05-15 maxi-brief's `effective` doctrine implicitly assumed defaults were layered in; the implementation didn't. Recorded so the next baby doesn't re-walk this.
+
+**`scaffoldZoneFrac = 0` defends weeping.** The kernel pins weeping's scaffold spread to 0 regardless of operator overlay — the curtain effect breaks if scaffolds emerge at staggered heights. Defense in depth: the panel hides the slider for weeping AND the kernel zeros it. If the operator imports a non-weeping preset's overlay onto weeping by mistake, the curtain survives.
+
+### Bug-class lessons
+
+**Backend HMR.** `node arborist/serve.js` runs without auto-restart on file edits. Node 22's built-in `--watch` flag (`node --watch arborist/serve.js`) tracks the entry script's require graph and restarts on any edit. Added to `package.json` `dev:cartograph` + `dev:arborist` + `dev:meteorologist` scripts. Operator must restart `npm run dev` *once* after the package.json change to pick up the watcher itself; after that, future edits to `arborist/spaceColonization.js`, `generate-procedural.js`, `serve.js`, etc. reload automatically. Cost ~30 minutes of debug ("no change?" → "restart" → "OK now it works" cycle) before we surfaced this.
+
+**Vite HMR is fine for `src/`, doesn't apply to `arborist/`.** The frontend (workstage UI, SpecimenViewport) hot-reloads automatically. The backend (generator + SCA kernel + server) does not.
+
+### Operator-visible defaults shifted
+
+Compared to pre-session broadleaf seedling:
+- Phyllotaxis: alternate → **opposite**
+- Scaffold lift: 0 → **0.6**
+- Scaffold spread: (didn't exist) → **0.5**
+- Trunk wander: 0 → **8 cm** at **2.0 m** wavelength
+- Branch jitter: 0 → **10% of stepLength**
+- Bark relief: hardcoded 5% → operator-tunable, default **5%**
+
+Determinism preserved (same seed + same params → byte-identical mesh) but the GLBs are NOT byte-identical to pre-session output. Any operator-adopted variants in `arborist/state/procedural_broadleaf/seedlings.json` from before this session will visually transform on next republish — Adopt re-seeds the variant into the new defaults if the operator hits Reset first.
+
+### Pending — handed off to the next session
+
+**G.1 Sugar Maple authoring (next):**
+- Operator does PS palmate-leaf cluster atlas tomorrow → drops into `public/textures/leaves/acer_saccharum_procedural/cluster.png`
+- Phase F's `leafCluster.textureRef` field consumed by the generator
+- Hero PRESETS entry: envelope rounded-oval 12×20m, attractorCount ~600, tropism zero, opposite phyllotaxis, scaffoldEmergenceBias 0.6, bark `Bark007` with furrowed tint #3a2820/#6a5040, leafCluster `acer_saccharum_procedural/cluster.png`, two-stop tint ramp summer #2a5825→#3a7530, fall #a85020→#d4801f
+- Acceptance: reads as Sugar Maple to a botanist at Hero from 30 m up
+
+**Production wind (treeAtlasMaterial.js).** Phase W proper. Same two-layer math as workstage preview + per-tree world-XZ phase hash. Per `BACKLOG.md` Phase W entry.
+
+**LoD preview in workstage + perf gauge.** Workstage today only previews lod0. Adding a lod0/1/2 selector + live tri/leaf/draw-call gauge. Server runs `simplify({ratio: 0.40, 0.10})` on demand via `?lod=N` query parameter, same `MeshoptSimplifier` publish-glb uses.
+
+**Trunk sinuosity in axial-chain — flag.** Currently the wander is applied to the visible trunk shaft AND the SCA axial extension positions. But the SCA root position (`trunkBase` passed in) is also wandered, so the canopy attaches to the same wandered top. Confirmed structurally; visual review needed at high trunk-wander values (e.g. 25 cm). Watch for canopy "tearing" off the trunk top.
+
+**Phase F.0 — leaf-cluster-along-shoot considered a Phase F prerequisite, shipped early.** Originally Phase F was scoped as PSD-authored cluster atlases only. The leaf-card emission *rule* (cluster per tip + pair-distributed along shoot) is a structural change that Phase F's PSDs land into. Shipping it before F means the operator's tomorrow PS work attaches into a geometry that's already maple-shaped.
+
+### Cross-references
+
+- 2026-05-15 maxi-brief above for the load-bearing v1.5 doctrine
+- BACKLOG.md for phase check-offs landed this session
+- FEATURES.md for the 20-knob operator surface
+- Phase G.1 entry in BACKLOG for next-session priorities
+- [[project_arborist_quartet]] memory for the doc structure
+
+---
+
 ## 2026-05-15 — Procedural trees v1.5: in-Arborist authoring + skeleton-first roadmap — MAXI BRIEF
 
 **Status (rolling, end of 2026-05-16):** Project goal: **ship 5 hero species at Hero quality** on top of morphology fillers, sharing one bark+leaf material pipeline via the Grove's master atlas. The 7-phase machinery is the *means*, not the end. **Phases shipped:** A (`2323a78` + `f6aaf61`), D (`06f903e`), B-core (`0b2f6cb`), B.1.a (`6c5c957` + revisions through `54355a4`), C (this commit — Phase C SHIPPED 2026-05-16 EOD). **Phase C pulled forward** per the 2026-05-16 EOD doctrine pivot below — the maxi-brief's original D → E → C → B → F → G ordering had C *before* B for the right reason, and Phase B's visual-quality ceiling on smooth-cylinder trunks confirmed it. **Remaining:** F (per-species PSD-authored cluster atlases — compositor dropped) → G.1–G.5 (five hero proving passes). Phases B.1.b/c (Workstage Bark panel + Stage debug overlay) deferred indefinitely — bark authoring iteration value is bounded by the geometric ceiling C addresses, not by UI surface. Phase F.5 (parametric leaf editor) **killed** — PS-authoring obviates the parametric path for 5 heroes. Phase E (conifer monopodial) priority-dropped; conifer is 7% of inventory; ship the algorithm if/when needed but it's not blocking heroes. Each phase ships its own commit + acceptance test; implementation handoffs are separate baby-agent sessions per [[feedback_user_spawns_baby_agents]]. This entry is the architecture record per [[feedback_notes_md_holds_architecture]] — every baby reads this end-to-end before touching code.

@@ -282,18 +282,23 @@ const useArboristStore = create((set, get) => ({
       const next = list.map(v => {
         if (v.slot !== slot) return v
         const params = { ...(v.params || {}) }
+        // Mirror the patch into `effective` too so controlled inputs (selects
+        // without local draft state) reflect the operator's change immediately
+        // instead of snapping back to the server's last-fetched effective.
+        // DraftSlider keeps its own local draft, so sliders worked before;
+        // selects (Profile, Phyllotaxis) didn't.
+        const effective = { ...(v.effective || {}) }
         for (const k of Object.keys(paramsPatch || {})) {
           const val = paramsPatch[k]
-          // Nested objects (envelope, sca, branching) get one-level-deep merge
-          // so dragging one slider doesn't wipe siblings. Top-level scalars
-          // (dbh, canopyR, canopyH, etc.) and arrays assign directly.
           if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
             params[k] = { ...(params[k] || {}), ...val }
+            effective[k] = { ...(effective[k] || {}), ...val }
           } else {
             params[k] = val
+            effective[k] = val
           }
         }
-        return { ...v, params }
+        return { ...v, params, effective }
       })
       const dirty = { ...(s.proceduralDirtyBySpecies[speciesId] || {}), [slot]: true }
       return {

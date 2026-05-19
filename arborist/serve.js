@@ -18,6 +18,7 @@ import {
   readEffectiveSeedlings,
   writeSeedlings,
 } from './generate-procedural.js'
+import { DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
 const ROOT         = join(__dirname, '..')
@@ -547,10 +548,22 @@ const server = createServer(async (req, res) => {
         const enriched = variants.map(v => {
           const base = cfg.variants[(v.slot - 1) % cfg.variants.length]
           const merged = { ...base, ...(v.params || {}), seedN: v.seed }
-          for (const key of ['envelope', 'sca', 'branching']) {
-            if (base[key] || (v.params && v.params[key])) {
-              merged[key] = { ...(base[key] || {}), ...((v.params && v.params[key]) || {}) }
+          // Layer priority (lowest → highest):
+          //   1. DEFAULT_SCA_BY_PRESET[preset][key]  — kernel-side defaults
+          //      (phyllotaxisMode, scaffoldEmergenceBias, deformers, etc.)
+          //   2. base[key]                            — PRESETS variant
+          //   3. v.params[key]                        — operator overlay
+          // The same order the generator's resolveVariantParams +
+          // generateTreeMesh apply at runtime — keeps the UI's displayed
+          // values in lock-step with what the kernel actually consumes.
+          const defaultsForPreset = DEFAULT_SCA_BY_PRESET[merged.preset] || {}
+          for (const key of ['envelope', 'sca', 'branching', 'deformers']) {
+            const layered = {
+              ...(defaultsForPreset[key] || {}),
+              ...(base[key] || {}),
+              ...((v.params && v.params[key]) || {}),
             }
+            if (Object.keys(layered).length) merged[key] = layered
           }
           // Width/height default from canopyR/canopyH if not in envelope.
           if (merged.envelope) {
@@ -560,10 +573,11 @@ const server = createServer(async (req, res) => {
           return {
             slot: v.slot, seed: v.seed, params: v.params || {},
             effective: {
-              preset:   merged.preset,
-              dbh:      merged.dbh,
-              envelope: merged.envelope || null,
-              sca:      merged.sca || null,
+              preset:    merged.preset,
+              dbh:       merged.dbh,
+              envelope:  merged.envelope || null,
+              sca:       merged.sca || null,
+              deformers: merged.deformers || null,
             },
           }
         })
@@ -594,7 +608,7 @@ const server = createServer(async (req, res) => {
     // Returns the GLB binary directly. Used by the dice live preview.
     if (req.method === 'POST' && path === '/procedural/generate') {
       const body = await readBody(req)
-      const { species, slot, seed, params } = body || {}
+      const { species, slot, seed, params, lod } = body || {}
       if (!species || !PROCEDURAL_PRESETS[species]) {
         return jsonRes(res, 400, { error: 'unknown or missing species', species })
       }
@@ -604,8 +618,9 @@ const server = createServer(async (req, res) => {
       if (!Number.isFinite(seed)) {
         return jsonRes(res, 400, { error: 'seed must be a finite number' })
       }
+      const lodN = (lod === 1 || lod === 2) ? lod : 0
       try {
-        const buf = await generateSingleVariantGLB({ species, slot, seed, params: params || {} })
+        const buf = await generateSingleVariantGLB({ species, slot, seed, params: params || {}, lod: lodN })
         res.writeHead(200, {
           'Content-Type': 'model/gltf-binary',
           'Content-Length': buf.length,
