@@ -63,9 +63,8 @@ import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
 // quantizes and rebuilds the merged BufferGeometry when the value
 // crosses a step boundary. ROOF_DROP is computed inside buildTube as
 // `-tubeRadius` so the tube BOTTOM always lands flush with the rooftop.
-const DEFAULT_TUBE_RADIUS      = 1.0
-const TUBE_RADIUS_STEP         = 0.05          // quantize per-frame radius read to this step before triggering rebuild
-const TUBE_RADIUS_DEBOUNCE_MS  = 120           // commit only when the quantized value has been stable for this long
+const DEFAULT_TUBE_RADIUS = 1.0
+const TUBE_RADIUS_STEP    = 0.05               // quantize per-frame radius read to this step before triggering rebuild
 const OFFSET_OUT   = 0.5                       // meters past wall face — clears any eave/cornice
 const CROSS_SEGS   = 8                         // facets around the circular cross-section
 const CORNER_SEGS  = 3                         // arc segs per convex corner
@@ -313,47 +312,16 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   // drives vertex positions (not a shader uniform), so a change must
   // trigger a merged BufferGeometry rebuild. Poll the shared module
   // container each frame; quantize to TUBE_RADIUS_STEP so smooth TOD
-  // interpolation never crosses sub-step boundaries; then DEBOUNCE the
-  // commit by TUBE_RADIUS_DEBOUNCE_MS so a slider drag or a TOD slot
-  // transition only rebuilds the merged mesh ONCE at the end, not on
-  // every step boundary crossing during the change. Tradeoff: tube
-  // radius doesn't smoothly animate across a slot fade — it jumps at
-  // the end of the transition. For a geometry-changing param that's
-  // usually the cleaner read; smooth animation here was processor-
-  // saturating during repeated edits (some bands intermittently
-  // failed to render under back-pressure).
+  // interpolation between authored slots only rebuilds when the value
+  // actually crosses a step boundary (≤ ~60 rebuilds per full sweep
+  // across the 0.1–3.0 range, not 60/sec). No debounce: now that the
+  // depthbuf bug is fixed and the per-frame quantization is correct,
+  // immediate commit keeps the slider feeling responsive.
   const [r, setR] = useState(DEFAULT_TUBE_RADIUS)
-  const pendingRRef = useRef(null)
-  // Track the last quantized live value we saw so the debounce timer
-  // is reset ONLY when the live value itself changes, not on every
-  // frame where (q !== r) is true. Without this, the per-frame
-  // clearTimeout + setTimeout cycle keeps pre-empting its own 120 ms
-  // timer at 60 fps and the commit never lands until the render loop
-  // pauses for ≥120 ms (tab blur, GC). Reproduced by Jacob 2026-05-18.
-  const lastQRef = useRef(DEFAULT_TUBE_RADIUS)
-  useEffect(() => () => {
-    if (pendingRRef.current) clearTimeout(pendingRRef.current)
-  }, [])
   useFrame(() => {
     const live = _neonUniforms.tubeRadiusUniform.value || DEFAULT_TUBE_RADIUS
     const q = Math.round(live / TUBE_RADIUS_STEP) * TUBE_RADIUS_STEP
-    if (Math.abs(q - r) <= 1e-6) {
-      // Already at target — keep lastQ in sync so a future change is
-      // detected against a current baseline.
-      lastQRef.current = q
-      return
-    }
-    if (Math.abs(q - lastQRef.current) > 1e-6) {
-      // Live value just changed — (re)start the debounce window.
-      lastQRef.current = q
-      if (pendingRRef.current) clearTimeout(pendingRRef.current)
-      pendingRRef.current = setTimeout(() => {
-        pendingRRef.current = null
-        setR(q)
-      }, TUBE_RADIUS_DEBOUNCE_MS)
-    }
-    // q unchanged from last frame but still differs from r: a timer is
-    // already running for this q. Let it tick — do NOT reset it.
+    if (Math.abs(q - r) > 1e-6) setR(q)
   })
 
   const geometry = useMemo(() => {

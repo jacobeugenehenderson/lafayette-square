@@ -485,7 +485,7 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
   if (!geometry) return null
 
   return (
-    <mesh ref={meshRef} geometry={geometry} receiveShadow castShadow material={foundationMat} />
+    <mesh ref={meshRef} geometry={geometry} receiveShadow castShadow material={foundationMat} frustumCulled={false} />
   )
 }
 
@@ -956,6 +956,7 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
         material={material}
         castShadow
         receiveShadow
+        frustumCulled={false}
         onPointerOver={(e) => { e.stopPropagation(); setHovered(building.id); document.body.style.cursor = 'pointer' }}
         onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
         onClick={(e) => { e.stopPropagation(); if (!isDrag(e)) select(building.id) }}
@@ -1234,35 +1235,33 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     return () => clearInterval(id)
   }, [])
 
-  const activeTags = useLandmarkFilter((s) => s.activeTags)
-
   const neonLookup = useMemo(() => {
     const map = {}
     listings.forEach(l => {
       const bid = l.building_id || l.id
       const hex = CATEGORY_HEX[l.category]
       if (!bid || !hex) return
-      // Eligible if the listing has hours OR the Society Pages filter
-      // tags this listing — `_isWithinHours` decides on/off at the
-      // openPlaces filter below; NeonBands itself renders binary
-      // (one merged mesh, all-or-nothing per uniform).
+      // Eligible if the listing has authored hours. `_isWithinHours`
+      // at the openPlaces filter below decides on/off at the current
+      // TOD; NeonBands itself renders binary (one merged mesh,
+      // all-or-nothing per uniform). Society Pages tag state lives in
+      // useLandmarkFilter and is intentionally NOT consulted here —
+      // that store drives pin visibility (LandmarkMarkers), not neon,
+      // per separation-of-concerns. Authoring-time previewing happens
+      // through the Force Neon On checkbox in the cartograph Neon
+      // panel; production glow follows authored hours only.
       if (l.hours) {
         map[bid] = { hex, hours: l.hours, category: l.category }
       }
-      if (activeTags.size > 0 && (activeTags.has(l.subcategory) || activeTags.has(l.category))) {
-        if (!map[bid]) map[bid] = { hex, hours: null, forceOn: true, category: l.category }
-        else map[bid] = { ...map[bid], forceOn: true }
-      }
     })
     return map
-  }, [listings, neonTick, activeTags])
+  }, [listings, neonTick])
 
   // openPlaces — buildings whose neonLookup entry resolves "on" at the
-  // current time (or is force-on from a Society Pages filter). Drives
-  // the single <NeonBands> mesh in the render block. Refreshed on
-  // neonTick (60s) + activeTags + listings; geometry rebuilds at that
-  // cadence. Per-instance aIsOpen is the HANDOFF-neon §"Instancing"
-  // amendment, deferred to v1.1.
+  // current time. Drives the single <NeonBands> mesh in the render
+  // block. Refreshed on neonTick (60s) + listings + forceNeonOn;
+  // geometry rebuilds at that cadence. Per-instance aIsOpen is the
+  // HANDOFF-neon §"Instancing" amendment, deferred to v1.1.
   const openPlaces = useMemo(() => {
     const places = []
     const now = useTimeOfDay.getState().currentTime
@@ -1272,7 +1271,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
       // forceNeonOn (Stage QA toggle) bypasses the hours filter so the
       // operator can preview neon visibility at any TOD without scrubbing
       // to night. Production never sees it (prop omitted in Scene.jsx).
-      const on = forceNeonOn || info.forceOn || _isWithinHours(info.hours, now)
+      const on = forceNeonOn || _isWithinHours(info.hours, now)
       if (!on) continue
       // baseY = world Y of the rooftop. Foundation pedestal lift
       // (pre-1900: +1.2m, pre-1920: +0.8m, else 0) shifts the
