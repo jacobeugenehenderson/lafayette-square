@@ -96,6 +96,18 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings }) {
       const aBarkArr = new Float32Array(pos.count)
       if (isBark) aBarkArr.fill(1)
       g.setAttribute('aBark', new THREE.BufferAttribute(aBarkArr, 1))
+      // Phase L Cycle 2: per-region bark gate. bake-look stamps
+      // extras.barkRegion ('trunk' or 'branch') from the primitive's
+      // owning mesh name; absent on procedural bakes (legacy single-spec
+      // path). Default 0 (branch) is benign — the fragment shader's
+      // uBarkRegionSplit uniform decides whether to use the region
+      // selector at all per-draw.
+      const barkRegion = o.geometry?.userData?.barkRegion
+        ?? o.userData?.barkRegion
+        ?? o.userData?.gltfExtras?.barkRegion
+      const aBarkRegionArr = new Float32Array(pos.count)
+      if (barkRegion === 'trunk') aBarkRegionArr.fill(1)
+      g.setAttribute('aBarkRegion', new THREE.BufferAttribute(aBarkRegionArr, 1))
       collected.push(g)
     })
     if (collected.length === 0) return []
@@ -195,12 +207,36 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings }) {
 // overwrites these values for its own species; three.js uploads the
 // uniform block per-draw, so cross-draw bleed doesn't occur.
 const _barkTintTmp = new THREE.Color()
+const _barkTrunkTmp = new THREE.Color()
+const _barkBranchTmp = new THREE.Color()
 function applyBarkUniforms(material, barkSettings) {
   const shader = material?.userData?.shader
   if (!shader) return
-  // No bark spec (vendor species, etc.)? Reset to identity so leaf-only
-  // draws don't carry stale tints from the prior bark draw.
+  // No bark spec? Reset to identity so leaf-only draws don't carry stale
+  // tints from the prior bark draw. Region split disabled.
   if (!barkSettings) {
+    shader.uniforms.uBarkTintBase.value.set(1, 1, 1)
+    shader.uniforms.uBarkTintJitterRange.value = 0
+    shader.uniforms.uBarkRoughnessOverride.value = -1
+    shader.uniforms.uBarkRegionSplit.value = 0
+    return
+  }
+  // Phase L Cycle 2: per-region path when barkSettings carries .trunk
+  // and/or .branch sub-blocks. Legacy single-spec path otherwise.
+  const isRegionSplit = !!(barkSettings.trunk || barkSettings.branch)
+  if (isRegionSplit) {
+    const trunk = barkSettings.trunk || barkSettings.branch
+    const branch = barkSettings.branch || barkSettings.trunk
+    _barkTrunkTmp.set(trunk.tintBase || '#ffffff')
+    _barkBranchTmp.set(branch.tintBase || '#ffffff')
+    shader.uniforms.uBarkTrunkTintBase.value.copy(_barkTrunkTmp)
+    shader.uniforms.uBarkBranchTintBase.value.copy(_barkBranchTmp)
+    shader.uniforms.uBarkTrunkJitterRange.value = trunk.tintJitterRange ?? 0
+    shader.uniforms.uBarkBranchJitterRange.value = branch.tintJitterRange ?? 0
+    shader.uniforms.uBarkTrunkRoughness.value = trunk.roughnessOverride ?? -1
+    shader.uniforms.uBarkBranchRoughness.value = branch.roughnessOverride ?? -1
+    shader.uniforms.uBarkRegionSplit.value = 1
+    // Keep legacy uniforms benign in case a sibling draw forgets to set them.
     shader.uniforms.uBarkTintBase.value.set(1, 1, 1)
     shader.uniforms.uBarkTintJitterRange.value = 0
     shader.uniforms.uBarkRoughnessOverride.value = -1
@@ -211,6 +247,7 @@ function applyBarkUniforms(material, barkSettings) {
   shader.uniforms.uBarkTintBase.value.copy(_barkTintTmp)
   shader.uniforms.uBarkTintJitterRange.value = barkSettings.tintJitterRange ?? 0
   shader.uniforms.uBarkRoughnessOverride.value = barkSettings.roughnessOverride ?? -1
+  shader.uniforms.uBarkRegionSplit.value = 0
 }
 
 function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings }) {

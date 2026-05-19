@@ -179,8 +179,16 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
       v.styles?.some(s => activeStyles.has(s)),
     )
     if (candidates.length) {
-      const idx = Math.floor(hash01(seed, 1) * candidates.length)
-      return candidates[idx]
+      // Per ARCHITECTURE.md "Two-tier substitution": heroes win their
+      // bucket's quality lottery automatically (`4 > 2`). Restrict the hash
+      // lottery to the top-quality tier among preferred-list candidates so
+      // an authored hero at quality 4 dominates vs vendor at quality 2.
+      // Falls back to the full candidate set if there's only one tier.
+      const maxQ = candidates.reduce((m, v) => Math.max(m, v.quality ?? 0), 0)
+      const top = candidates.filter(v => (v.quality ?? 0) === maxQ)
+      const pool2 = top.length ? top : candidates
+      const idx = Math.floor(hash01(seed, 1) * pool2.length)
+      return pool2[idx]
     }
   }
   for (const cat of [category, ...(CATEGORY_FALLBACK[category] || [])]) {

@@ -59,61 +59,83 @@ def log(*args):
 # ── Pipeline (cylinder meshing + tips + GLB export retained here;
 #    load / voxel / skeleton extraction moved to lidar_extract.py) ────────
 
-def build_cylinder_mesh(nodes, edges, min_radius=0.005, sections=6):
-    """One tapered cylinder per edge. Merge into a single trimesh.
+def _emit_cylinder(p, c, radius, sections):
+    """Build one tapered-style cylinder spanning node p → node c."""
+    axis = c["pos"] - p["pos"]
+    length = float(np.linalg.norm(axis))
+    if length < 1e-3:
+        return None
+    cyl = trimesh.creation.cylinder(radius=radius, height=length, sections=sections)
+    z_axis = np.array([0, 0, 1.0])
+    target_axis = axis / length
+    v = np.cross(z_axis, target_axis)
+    s = float(np.linalg.norm(v))
+    cdot = float(np.dot(z_axis, target_axis))
+    if s < 1e-9:
+        R = np.eye(3) if cdot > 0 else np.diag([1.0, -1.0, -1.0])
+    else:
+        vx = np.array([
+            [0, -v[2], v[1]],
+            [v[2], 0, -v[0]],
+            [-v[1], v[0], 0],
+        ])
+        R = np.eye(3) + vx + (vx @ vx) * ((1 - cdot) / (s * s))
+    T = np.eye(4)
+    T[:3, :3] = R
+    T[:3, 3] = (p["pos"] + c["pos"]) / 2.0
+    cyl.apply_transform(T)
+    return cyl
 
-    Tapered means the cylinder transitions from parent.radius to child.radius
-    along its length — gives a more believable branch shape than uniform
-    cylinders. trimesh doesn't have native taper, so we build per-cylinder
-    with the *child* radius (branches are mostly characterized by their
-    child end at this resolution) and skip true taper as a v1 simplification.
 
-    Drops cylinders whose radius is below min_radius (twigs that produce
-    unstable mesh).
+def build_region_meshes(nodes, edges, min_radius=0.005, region_threshold=None):
+    """Partition cylinders by radius into trunk (≥ threshold) and branch
+    (< threshold) sub-meshes. Returns (trunk_mesh, branch_mesh, threshold_used,
+    counts).
+
+    Phase L Cycle 2 (per-region bark binding): the published GLB carries the
+    classification via two named primitives. bake-look + InstancedTrees gate
+    per-region uniforms off the primitive identity downstream — preserves
+    Bloom's single shader program (variation lives in uniforms, not branched
+    shaders).
+
+    Trunk cylinders use 8 radial sections (smoother bark wraps at LS Hero);
+    branch cylinders use 6 (tri-budget). Matches the lod0Tris estimate in
+    LidarWorkstage.jsx.
+
+    region_threshold=None → auto-compute as median of all surviving cylinder
+    radii. Operator can override via tuneParams.regionThreshold.
     """
-    geos = []
+    # Per-cylinder radius (smaller of parent/child — child end characterizes
+    # branch taper) + survives min_radius filter.
+    cyls = []  # list of (parent, child, radius)
     for parent_i, child_i in edges:
         p = nodes[parent_i]
         c = nodes[child_i]
-        # Use the smaller of parent/child radius for the cylinder. The
-        # parent end is normally fatter, but we want branches to taper
-        # outward — cylinders that LOOK like the leaf end.
         radius = min(p["radius"], c["radius"])
         if radius < min_radius:
             continue
-        axis = c["pos"] - p["pos"]
-        length = float(np.linalg.norm(axis))
-        if length < 1e-3:
-            continue
-        cyl = trimesh.creation.cylinder(
-            radius=radius, height=length, sections=sections,
-        )
-        # cylinder is along +Z, centered at origin. Move + rotate so it
-        # spans p.pos → c.pos.
-        z_axis = np.array([0, 0, 1.0])
-        target_axis = axis / length
-        # Rodrigues-style rotation axis = z × target
-        v = np.cross(z_axis, target_axis)
-        s = float(np.linalg.norm(v))
-        cdot = float(np.dot(z_axis, target_axis))
-        if s < 1e-9:
-            # Already aligned (target is +Z) or anti-aligned (-Z)
-            R = np.eye(3) if cdot > 0 else np.diag([1.0, -1.0, -1.0])
+        cyls.append((p, c, radius))
+    if not cyls:
+        return None, None, None, {"trunkCount": 0, "branchCount": 0}
+
+    if region_threshold is None:
+        region_threshold = float(np.median([r for _, _, r in cyls]))
+
+    trunk_geos, branch_geos = [], []
+    for p, c, radius in cyls:
+        if radius >= region_threshold:
+            cyl = _emit_cylinder(p, c, radius, sections=8)
+            if cyl is not None:
+                trunk_geos.append(cyl)
         else:
-            vx = np.array([
-                [0, -v[2], v[1]],
-                [v[2], 0, -v[0]],
-                [-v[1], v[0], 0],
-            ])
-            R = np.eye(3) + vx + (vx @ vx) * ((1 - cdot) / (s * s))
-        T = np.eye(4)
-        T[:3, :3] = R
-        T[:3, 3] = (p["pos"] + c["pos"]) / 2.0
-        cyl.apply_transform(T)
-        geos.append(cyl)
-    if not geos:
-        return None
-    return trimesh.util.concatenate(geos)
+            cyl = _emit_cylinder(p, c, radius, sections=6)
+            if cyl is not None:
+                branch_geos.append(cyl)
+
+    trunk_mesh = trimesh.util.concatenate(trunk_geos) if trunk_geos else None
+    branch_mesh = trimesh.util.concatenate(branch_geos) if branch_geos else None
+    counts = {"trunkCount": len(trunk_geos), "branchCount": len(branch_geos)}
+    return trunk_mesh, branch_mesh, region_threshold, counts
 
 
 def extract_tips(nodes, edges, tip_radius=0.03):
@@ -157,15 +179,42 @@ def bake_one(seedling, params, out_dir, variant_idx):
     log(f"  [{seedling['treeId']}] downsampled to {len(pts):,} pts (voxel={params['voxelSize']}m)")
     nodes, edges = extract_skeleton(pts)
     log(f"  [{seedling['treeId']}] skeleton: {len(nodes)} nodes, {len(edges)} edges")
-    mesh = build_cylinder_mesh(nodes, edges, min_radius=params["minRadius"])
-    if mesh is None:
+    region_threshold = params.get("regionThreshold")
+    trunk_mesh, branch_mesh, threshold_used, counts = build_region_meshes(
+        nodes, edges,
+        min_radius=params["minRadius"],
+        region_threshold=region_threshold,
+    )
+    if trunk_mesh is None and branch_mesh is None:
         raise RuntimeError(f"no cylinders survived min_radius={params['minRadius']}")
-    log(f"  [{seedling['treeId']}] mesh: {len(mesh.vertices):,} verts, {len(mesh.faces):,} faces")
+    # Per-region: assign each sub-mesh a distinct material with a region-named
+    # `material.name`. The geometry NAME and MATERIAL NAME both survive
+    # gltf-transform's atlas pass; bake-look reads mesh name to stamp
+    # extras.barkRegion, which InstancedTrees then gates on at runtime.
+    scene = trimesh.Scene()
+    trunk_verts = trunk_faces = 0
+    branch_verts = branch_faces = 0
+    if trunk_mesh is not None:
+        trunk_mat = trimesh.visual.material.PBRMaterial(name="trunkBark")
+        trunk_mesh.visual = trimesh.visual.TextureVisuals(material=trunk_mat)
+        scene.add_geometry(trunk_mesh, geom_name="trunkBark", node_name="trunkBark")
+        trunk_verts = len(trunk_mesh.vertices)
+        trunk_faces = len(trunk_mesh.faces)
+    if branch_mesh is not None:
+        branch_mat = trimesh.visual.material.PBRMaterial(name="branchBark")
+        branch_mesh.visual = trimesh.visual.TextureVisuals(material=branch_mat)
+        scene.add_geometry(branch_mesh, geom_name="branchBark", node_name="branchBark")
+        branch_verts = len(branch_mesh.vertices)
+        branch_faces = len(branch_mesh.faces)
+    total_verts = trunk_verts + branch_verts
+    total_faces = trunk_faces + branch_faces
+    log(f"  [{seedling['treeId']}] regions: trunk {counts['trunkCount']}c/{trunk_faces}f, "
+        f"branch {counts['branchCount']}c/{branch_faces}f, threshold={threshold_used:.4f}m")
     tips = extract_tips(nodes, edges, tip_radius=params["tipRadius"])
     log(f"  [{seedling['treeId']}] tips: {len(tips):,}")
     glb_name = f"skeleton-{variant_idx}.glb"
     tips_name = f"tips-{variant_idx}.json"
-    mesh.export(out_dir / glb_name, file_type="glb")
+    scene.export(out_dir / glb_name, file_type="glb")
     with open(out_dir / tips_name, "w") as f:
         json.dump({
             "treeId": seedling["treeId"],
@@ -174,6 +223,10 @@ def bake_one(seedling, params, out_dir, variant_idx):
         }, f)
     elapsed = time.time() - t0
     log(f"  [{seedling['treeId']}] wrote {glb_name} + {tips_name} in {elapsed:.1f}s")
+    # Persist the auto-computed threshold back into the variant record so
+    # subsequent bakes (and the runtime manifest's bark.regionThreshold)
+    # stay deterministic across re-publishes.
+    persisted_params = {**params, "regionThreshold": float(threshold_used)}
     return {
         "id": variant_idx,
         "treeId": seedling["treeId"],
@@ -181,12 +234,15 @@ def bake_one(seedling, params, out_dir, variant_idx):
         "sourceFile": seedling.get("sourceFile") or f"botanica/dev/{seedling['treeId']}.laz",
         "skeleton": glb_name,
         "tips": tips_name,
-        "tuneParams": params,
+        "tuneParams": persisted_params,
         "stats": {
             "nodes": len(nodes),
             "edges": len(edges),
-            "verts": len(mesh.vertices),
-            "faces": len(mesh.faces),
+            "verts": total_verts,
+            "faces": total_faces,
+            "trunkCylinders": counts["trunkCount"],
+            "branchCylinders": counts["branchCount"],
+            "regionThreshold": float(threshold_used),
             "tipCount": int(len(tips)),
         },
     }
@@ -240,10 +296,17 @@ def main():
     config = json.load(open(CONFIG_PATH))
     default_tune = config.get("tuneDefaults", {})
 
-    out_dir = TREES_DIR / args.species
+    # Hero-species routing (Phase L Cycle 2): the scan-source species
+    # (acer_saccharum) provides seedlings + bark spec + heroSpecies pointer;
+    # the BAKED ARTIFACT lives under the hero species id (acer_saccharum_procedural)
+    # so park_species_map's preferred-species lottery picks the LiDAR-baked
+    # variants under the same id procedural variants will eventually share.
+    # If no heroSpecies set, output stays under the scan id (legacy behavior).
+    hero_species = decl.get("heroSpecies") or args.species
+    out_dir = TREES_DIR / hero_species
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    log(f"baking {args.species} ({decl['label']}): {len(seedlings)} seedlings")
+    log(f"baking {args.species} → {hero_species} ({decl['label']}): {len(seedlings)} seedlings")
     variants_meta = []
     failures = []
     t_all = time.time()
@@ -259,8 +322,30 @@ def main():
         log("all seedlings failed; not writing manifest")
         return 1
 
+    # Per-region bark spec (Phase L Cycle 2). decl.bark may carry:
+    #   {trunk: {...}, branch: {...}}        — per-region (new)
+    #   {materialRef, uvScale, tintBase, …} — single-spec (legacy procedural)
+    # Manifest mirrors whichever shape is on disk. The runtime resolves both
+    # in InstancedTrees via barkBySpecies[<id>].trunk / .branch fallback.
+    bark_spec = decl.get("bark")
+    bark_manifest = None
+    if bark_spec:
+        if "trunk" in bark_spec or "branch" in bark_spec:
+            # Use the first variant's threshold (variants of same species share
+            # the same skeleton-extraction defaults; if operators tune per-variant
+            # the per-variant stats.regionThreshold is also stamped).
+            shared_threshold = variants_meta[0]["stats"].get("regionThreshold")
+            bark_manifest = {
+                "trunk": bark_spec.get("trunk"),
+                "branch": bark_spec.get("branch"),
+                "regionThreshold": shared_threshold,
+            }
+        else:
+            bark_manifest = bark_spec
+
     manifest = {
-        "species":    args.species,
+        "species":    hero_species,
+        "sourceSpecies": args.species,
         "label":      decl["label"],
         "scientific": decl["scientific"],
         "tier":       decl["tier"],
@@ -273,9 +358,13 @@ def main():
         "failures":   failures,
         "bakedAt":    int(time.time() * 1000),
     }
+    if bark_manifest is not None:
+        manifest["bark"] = bark_manifest
+    if decl.get("qualityOverride") is not None:
+        manifest["qualityOverride"] = decl["qualityOverride"]
     with open(out_dir / "manifest.json", "w") as f:
         json.dump(manifest, f, indent=2)
-    update_index(args.species, decl, len(variants_meta))
+    update_index(hero_species, decl, len(variants_meta))
     log(f"wrote {out_dir}/manifest.json ({len(variants_meta)} variants, {len(failures)} failures)")
     log(f"total bake time: {time.time() - t_all:.1f}s")
     return 0

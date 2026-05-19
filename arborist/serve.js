@@ -12,6 +12,7 @@ import { execFile } from 'child_process'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { bakeLook } from './bake-look.js'
+import { publishLidarSpecies } from './lidar-publish.js'
 import {
   PRESETS as PROCEDURAL_PRESETS,
   generateSingleVariantGLB,
@@ -498,6 +499,136 @@ const server = createServer(async (req, res) => {
           treeId,
           stderr: String(err.stderr || err.message).slice(0, 4000),
           stdout: String(err.stdout || '').slice(0, 1000),
+        })
+      }
+    }
+
+    // POST /lidar/specimen/:treeId/publish
+    // Phase L Cycle 2 (2026-05-19). Body { species, lookId?, tuneParams?, displayName? }.
+    // AWAITED, NOT FIRE-AND-FORGET (per brief). End-to-end pipeline:
+    //   1. Persist seedling + tuneParams via existing seedlings POST shape
+    //   2. Shell bake-tree.py → emits skeleton-N.glb under public/trees/<heroSpecies>/
+    //   3. Shell lidar-publish.js → splits into lod0/1/2 + promotes manifest schema
+    //   4. Ensure hero species appears in active Look's design.json#/trees roster
+    //   5. Run bake-look(lookId) → atlas + barkBySpecies regenerated
+    // Returns timings. Operator-facing acceptance: a Publish click ends with the
+    // trees-atlas.json updated mtime + the hero species visible in barkBySpecies.
+    if (req.method === 'POST' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/publish$/))) {
+      const treeId = m[1]
+      const body = await readBody(req)
+      const species = body.species
+      const lookId = body.lookId || null
+      if (!species) return jsonRes(res, 400, { error: 'missing species in body' })
+      const decl = readSpeciesDecl()[species]
+      if (!decl) return jsonRes(res, 404, { error: 'unknown species', species })
+      const heroSpecies = decl.heroSpecies || species
+      const lazPath = specimenLazPath(treeId)
+      if (!existsSync(lazPath)) return jsonRes(res, 404, { error: 'specimen not on disk', treeId, lazPath })
+
+      const timings = {}
+      try {
+        // (1) Persist seedling (merge into existing seedlings.json).
+        const seedlingsPath = join(STATE_DIR, species, 'seedlings.json')
+        const existing = readJsonOrNull(seedlingsPath) || { species, starred: [], seedlings: [], displayNames: {} }
+        const list = Array.isArray(existing.seedlings) ? existing.seedlings : []
+        const defaults = CONFIG.tuneDefaults || { voxelSize: 0.03, minRadius: 0.005, tipRadius: 0.02 }
+        const incomingTune = body.tuneParams || {}
+        const tune = {
+          voxelSize: Number(incomingTune.voxelSize ?? defaults.voxelSize),
+          minRadius: Number(incomingTune.minRadius ?? defaults.minRadius),
+          tipRadius: Number(incomingTune.tipRadius ?? defaults.tipRadius),
+        }
+        if (incomingTune.regionThreshold != null) tune.regionThreshold = Number(incomingTune.regionThreshold)
+        const hitIdx = list.findIndex(s => String(s.treeId) === String(treeId))
+        const nextList = hitIdx >= 0
+          ? list.map((s, i) => i === hitIdx ? { ...s, tuneParams: tune } : s)
+          : [...list, {
+              id: (list.length ? Math.max(...list.map(s => s.id || 0)) : 0) + 1,
+              treeId: String(treeId),
+              tuneParams: tune,
+            }]
+        const starredSet = new Set([...(existing.starred || []).map(String), String(treeId)])
+        const nextDisplayNames = { ...(existing.displayNames || {}) }
+        if (body.displayName != null) {
+          if (body.displayName === '') delete nextDisplayNames[treeId]
+          else nextDisplayNames[treeId] = body.displayName
+        }
+        writeJson(seedlingsPath, {
+          species,
+          starred: [...starredSet],
+          seedlings: nextList,
+          displayNames: nextDisplayNames,
+          savedAt: Date.now(),
+        })
+
+        // (2) Run bake-tree.py (awaited).
+        const t0 = Date.now()
+        const bake = join(__dirname, 'bake-tree.py')
+        const { stdout: bakeStdout, stderr: bakeStderr } = await execAsync(VENV_PYTHON, [bake, `--species=${species}`])
+        timings.bakeMs = Date.now() - t0
+
+        // (3) LOD pass + manifest schema promotion (awaited).
+        const t1 = Date.now()
+        await publishLidarSpecies(heroSpecies)
+        timings.lodMs = Date.now() - t1
+
+        // (4) Ensure hero species variant(s) appear in active Look's roster.
+        let rosterMutated = false
+        if (lookId) {
+          const designPath = join(ROOT, 'public', 'looks', lookId, 'design.json')
+          const design = readJsonOrNull(designPath)
+          if (design) {
+            const trees = Array.isArray(design.trees) ? design.trees : []
+            const heroManifest = readJsonOrNull(join(PUBLIC_TREES, heroSpecies, 'manifest.json'))
+            const heroVariants = Array.isArray(heroManifest?.variants) ? heroManifest.variants : []
+            const next = [...trees]
+            for (const v of heroVariants) {
+              const has = next.some(t => t.species === heroSpecies && t.variantId === v.id)
+              if (!has) {
+                next.push({ species: heroSpecies, variantId: v.id })
+                rosterMutated = true
+              }
+            }
+            if (rosterMutated) {
+              writeJson(designPath, { ...design, trees: next })
+            }
+          }
+        }
+
+        // (5) bake-look AWAITED (not fire-and-forget).
+        let bakeLookResult = null
+        if (lookId) {
+          const t2 = Date.now()
+          bakeLookResult = await bakeLook(lookId, { viz: false })
+          timings.bakeLookMs = Date.now() - t2
+        }
+
+        // (6) bake-trees AWAITED — rebuilds placement substitution into
+        // public/baked/default.json, which InstancedTrees fetches at runtime.
+        // Without this the 88 Sugar Maple placements stay on the old variant.
+        const t3 = Date.now()
+        const { bakeTrees } = await import('./bake-trees.js')
+        await bakeTrees()
+        timings.bakeTreesMs = Date.now() - t3
+
+        return jsonRes(res, 200, {
+          ok: true,
+          species,
+          heroSpecies,
+          treeId,
+          lookId,
+          rosterMutated,
+          timings,
+          bakeLog: bakeStdout?.slice(-2000) || '',
+          bakeLook: bakeLookResult,
+        })
+      } catch (err) {
+        return jsonRes(res, 500, {
+          error: 'publish failed',
+          species, treeId, lookId,
+          stderr: String(err.stderr || err.message || err).slice(0, 4000),
+          stdout: String(err.stdout || '').slice(0, 2000),
+          timings,
         })
       }
     }

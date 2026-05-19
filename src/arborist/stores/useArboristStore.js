@@ -155,6 +155,33 @@ const useArboristStore = create((set, get) => ({
   setLidarOpen: (open) => {
     set({ lidarOpen: !!open })
   },
+
+  // Phase L Cycle 2 (per-region bark + bake-to-roster). Publish action drives
+  // the awaited bake-tree → lidar-publish → roster-add → bake-look chain via
+  // POST /api/arborist/lidar/specimen/:treeId/publish. The endpoint returns
+  // when all four steps finish, so the UI's spinner faithfully reflects the
+  // operator's "ready to look" moment (per the brief's explicit no-fire-and-
+  // forget directive).
+  lidarPublishing: false,
+  lidarPublishError: null,
+  publishLidarSpecimen: async ({ treeId, species, tuneParams, displayName }) => {
+    set({ lidarPublishing: true, lidarPublishError: null })
+    const lookId = get().activeLookId || null
+    try {
+      const r = await fetch(`/api/arborist/lidar/specimen/${treeId}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ species, lookId, tuneParams, displayName }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+      set({ lidarPublishing: false })
+      return d
+    } catch (err) {
+      set({ lidarPublishing: false, lidarPublishError: String(err.message || err) })
+      throw err
+    }
+  },
   // Edit a variant's override field from Grove's hover card. Optimistic
   // local update + POST to the existing per-species variant override
   // endpoint. Pass value=null to clear an override (back to base).

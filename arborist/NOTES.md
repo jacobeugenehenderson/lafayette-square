@@ -4,6 +4,67 @@
 
 ---
 
+## 2026-05-19 PM — Phase L Cycle 2 Stage 1 — per-region bark + bake-to-roster
+
+**Shipped:** the LiDAR pipeline now publishes end-to-end. Operator picks a specimen, clicks Publish, and ~12s later: skeleton baked, LOD tiers generated, hero species added to active Look's roster, atlas re-baked with per-region bark spec in `barkBySpecies`, placement substitution refreshed. 104 Sugar Maple placements in `public/baked/default.json` now route to `acer_saccharum_procedural` (the LiDAR-baked hero).
+
+### Step 0 pre-flight result (per brief)
+
+All four checks green:
+- `lidar_extract.py --treeId=10184 --voxelSize=0.05` → 200 nodes / 105 cylinders / 838ms
+- `bake-tree.py --species=acer_saccharum` → 10186 baked in 2.9s
+- `POST /lidar/specimen/10186/extract` (un-prefixed, direct to :3334) → valid JSON
+- `/arborist` UI render deferred to operator visual check
+
+Deltas from brief: only 10186 is starred today (brief assumed two); pre-flight curl path needs the un-prefixed form when not going through Vite proxy.
+
+### Carrier choice — primitive split
+
+Operator ratified (B) over (A) vertex-colors and (C) extras-only. Three reasons surfaced as load-bearing: (1) vertex colors die in bake-look's COLOR_0 strip; (2) primitive split lines up perfectly with the existing bark+leaf-as-separate-primitives convention from the procedural pipeline; (3) the runtime infrastructure already handles per-draw uniform mutation via `applyBarkUniforms` — adding a region dimension is the lightest possible extension. Forward note for Stage 2: Configuration D adds outer-cards + inner-mass primitives → potentially 4 primitives per tree post-Stage-2. Architectural shape stays clean since each primitive category has its own mesh-name marker.
+
+### The atlas-survey gotcha
+
+First end-to-end test surfaced an unexpected miss: trees-atlas.json showed `barkBySpecies.acer_saccharum_procedural` populated correctly but the baked GLB primitives had empty extras. Root cause: `atlas-survey.js:124` skips materials with no `baseColorTexture`. trimesh's `PBRMaterial` had no texture → survey skipped both materials → tile lookup missed → bake-look's rewriter continued past `setExtras`. Fix: `lidar-publish.js` reads `manifest.bark.trunk.materialRef` + `branch.materialRef`, loads the corresponding `public/textures/bark/<id>/color.jpg` + `normal.jpg`, attaches them to the matching `trunkBark` / `branchBark` materials BEFORE the LOD pass. Atlas-survey then picks them up naturally; tiles dedupe across the roster via sha1; the bark photo packs travel through bake-look untouched. Documented in ARCHITECTURE.md under "Per-region bark binding".
+
+### Scope drift (surfaced per [[feedback_baby_must_surface_scope_drift]])
+
+- **`heroSpecies` field on species-map.json** is a new schema field (not in brief). Authored on `acer_saccharum` to route bake output to `acer_saccharum_procedural`. Operator ratified pre-implementation — supersedes G.1 pre-stage doc's Option B framing (`seedlings.json` lives at scan-source id; hero id is downstream output bucket). Cleaner shape: future many-to-one scan-sources for one hero works without duplication.
+- **`lidar-publish.js` is a new file** (~120 LOC). Bridges bake-tree.py's single-GLB output to the LOD-tier shape `bake-look.js` + runtime expect. Not in brief's listed files but unavoidable — bake-tree.py doesn't run publish-glb.js's variant-aware path, and without LOD tiers `surveyRoster` finds zero materials.
+- **`bake-trees.js:pickVariant` quality preference** is a one-line addition: restrict the hash lottery to the top-quality tier among preferred-list candidates. ARCHITECTURE.md's "Two-tier substitution" section asserts "heroes win their bucket's quality lottery automatically (`4 > 2`)" but the shipped code didn't enforce it — placements distributed evenly across the candidate list regardless of quality. Without the fix the hero gets ~17/88 instead of all 88. Doctrine ratified, code now matches.
+- **`acer_saccharum/manifest.json` stale.** Cycle 1 left a pre-LOD manifest there (one variant with `skeleton: 'skeleton-1.glb'`, no LODs). My edits route the bake to `acer_saccharum_procedural/` so the old manifest is untouched. build-index drops it from the flattened variants list silently. Not breaking; operator can rm if desired.
+- **Roster-add side effect.** The publish endpoint auto-adds the hero variant to the active Look's `design.json#/trees` if absent (Stage 1 acceptance #1 says "hits Publish → trees appear" which requires roster membership). Mirrors Grove's "Add to Look" gesture for the freshly-baked hero. Endpoint returns `rosterMutated: true` when this fires.
+- **No new dependencies.** All work uses gltf-transform + meshoptimizer + trimesh primitives already in the tree.
+- **Shader program count unchanged at Stage 1.** All primitives share the attribute layout `{POSITION, NORMAL, TEXCOORD_0, aBark, aBarkRegion, aLampGlow}` after runtime merge; single material; single compiled program preserved. Operator-verifiable via DevTools.
+
+### Acceptance status (operator-gated items remain)
+
+| Criterion | Self-verified | Operator-gated |
+|---|---|---|
+| #1 Operator clicks Publish → bake runs | ✓ end-to-end smoke | visual UI verify |
+| #2 GLB + manifest at hero path | ✓ files on disk + manifest carries `bark.trunk/branch/regionThreshold` | — |
+| #3 bake-look completes (awaited) + `barkBySpecies` updated | ✓ trees-atlas.json `mtime` + block populated | — |
+| #4 88 placements render with LiDAR variant | ✓ default.json shows 104 placements on hero | visual /cartograph |
+| #5 Trunk vs branch visibly differ at LS Hero | shader code in place | visual zoom needed |
+| #6 Single shader program preserved | attribute layout uniform | DevTools `renderer.info.programs.length` |
+| #7 Determinism: byte-identical re-publish | ✓ sha1 stable across 2 bakes | — |
+
+### Timings on `acer_saccharum` Sugar Maple seedling 10186
+
+- bake-tree.py: 3.5s (300K pts → 2612 nodes → 972 trunk + 970 branch cylinders → threshold 0.0413m)
+- lidar-publish.js LOD pass: ~210ms
+- bake-look: ~8.5s (26-species roster, 30 atlas tiles)
+- bake-trees: ~250ms
+- Total publish: ~12.5s
+
+### Cycle 2 Stage 2 handoff state
+
+- Per-region bark uniforms already shipped → Stage 2's PointsMaterial can compose against the same uniform pattern
+- GLB primitive structure: 2 primitives today (trunkBark, branchBark) → Stage 2 adds canopyCard (outer-shell A2C) + canopyPoints (inner-mass) for 4 total
+- bake-look rewriter iterates `root.listMeshes()` — adding new mesh-name markers `canopyCard` / `canopyPoints` extends cleanly
+- `previewDayOfYear` placeholder for Stage 3 NOT yet on the store; that's Stage 3's add
+
+---
+
 ## 2026-05-19 — Phase L Cycle 1 — LiDAR workspace + extraction tuning
 
 **Shipped:** third top-level mode (`LidarWorkstage.jsx`) alongside Procedural + Grove. Specimen browsing, live QSM extraction, multi-layer 3D viewport, save seedlings. Pre-flight repair to `bake-tree.py` so the underlying bake path actually works again. No bake/publish — that's Cycle 2.

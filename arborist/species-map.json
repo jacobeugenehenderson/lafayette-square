@@ -22,7 +22,7 @@
     "acer_saccharum": {
       "label": "Sugar Maple",
       "scientific": "Acer saccharum",
-      "source": "glb",
+      "source": "lidar",
       "forSpeciesName": "Acer_saccharum",
       "inventoryNames": [
         "Maple, Sugar"
@@ -32,6 +32,24 @@
       "barkMorph": "furrowed",
       "deciduous": true,
       "hasFlowers": false,
+      "heroSpecies": "acer_saccharum_procedural",
+      "qualityOverride": 4,
+      "bark": {
+        "trunk": {
+          "materialRef": "Bark007",
+          "uvScale": [1.5, 4.0],
+          "tintBase": "#3a2820",
+          "tintJitterRange": 0.08,
+          "roughnessOverride": null
+        },
+        "branch": {
+          "materialRef": "Bark003",
+          "uvScale": [1.0, 3.0],
+          "tintBase": "#5a4030",
+          "tintJitterRange": 0.06,
+          "roughnessOverride": null
+        }
+      },
       "tints": {
         "buds": "#a8c870",
         "spring": "#7eba5e",

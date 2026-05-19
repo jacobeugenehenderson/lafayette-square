@@ -189,6 +189,11 @@ export default function LidarWorkstage() {
   const setProceduralOpen   = useArboristStore(s => s.setProceduralOpen)
   const setGroveOpen        = useArboristStore(s => s.setGroveOpen)
   const setLidarOpen        = useArboristStore(s => s.setLidarOpen)
+  // Phase L Cycle 2 publish.
+  const lidarPublishing     = useArboristStore(s => s.lidarPublishing)
+  const lidarPublishError   = useArboristStore(s => s.lidarPublishError)
+  const publishLidarSpecimen = useArboristStore(s => s.publishLidarSpecimen)
+  const [publishResult, setPublishResult] = useState(null)
 
   // Default to first LiDAR-source species the first time the user enters LiDAR mode.
   useEffect(() => {
@@ -283,6 +288,22 @@ export default function LidarWorkstage() {
       setExtractError(String(err.message || err))
     } finally {
       setExtracting(false)
+    }
+  }
+
+  async function runPublish() {
+    if (!selectedTreeId || !activeSpeciesId || !extractionParams || lidarPublishing) return
+    setPublishResult(null)
+    try {
+      const r = await publishLidarSpecimen({
+        treeId: selectedTreeId,
+        species: activeSpeciesId,
+        tuneParams: extractionParams,
+        displayName: displayName || null,
+      })
+      setPublishResult(r)
+    } catch {
+      // error is captured into store.lidarPublishError + reflected below
     }
   }
 
@@ -466,15 +487,35 @@ export default function LidarWorkstage() {
                 value={extractionParams.tipRadius}
                 onCommit={v => setParams(p => ({ ...p, tipRadius: v }))} unit="m" />
 
-              <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                <button onClick={runExtract} disabled={extracting} style={btnPrimaryStyle}>
+              <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button onClick={runExtract} disabled={extracting || lidarPublishing} style={btnPrimaryStyle}>
                   {extracting ? 'Extracting…' : 'Re-extract'}
                 </button>
-                <button onClick={saveSeedling} disabled={savingSeedling || extracting || !extractionResult}
+                <button onClick={saveSeedling}
+                  disabled={savingSeedling || extracting || !extractionResult || lidarPublishing}
                   style={btnSecondaryStyle}>
                   {savingSeedling ? 'Saving…' : 'Save seedling'}
                 </button>
+                <button onClick={runPublish}
+                  disabled={!extractionResult || extracting || savingSeedling || lidarPublishing}
+                  style={btnPrimaryStyle}
+                  title="Save + bake-tree + LOD split + add to active Look + bake-look (awaited)">
+                  {lidarPublishing ? 'Publishing…' : 'Publish'}
+                </button>
               </div>
+              {publishResult && (
+                <div style={{ marginTop: 10, fontSize: 11, color: '#6acf6a' }}>
+                  Published → {publishResult.heroSpecies} (bake {publishResult.timings?.bakeMs}ms ·
+                  LOD {publishResult.timings?.lodMs}ms
+                  {publishResult.timings?.bakeLookMs != null ? ` · look ${publishResult.timings.bakeLookMs}ms` : ''})
+                  {publishResult.rosterMutated ? ' · added to Look' : ''}
+                </div>
+              )}
+              {lidarPublishError && (
+                <div style={{ marginTop: 10, fontSize: 11, color: '#cf6a6a' }}>
+                  Publish failed: {lidarPublishError}
+                </div>
+              )}
 
               {/* Specimen details + display-name editor */}
               <div style={{ marginTop: 14, padding: 10, background: 'rgba(255,255,255,0.025)', borderRadius: 4 }}>

@@ -13,7 +13,7 @@
     "parking_lot": true,
     "garden": true,
     "playground": true,
-    "swimming_pool": true,
+    "swimming_pool": false,
     "pitch": false,
     "sports_centre": false,
     "wood": false,
@@ -21,18 +21,18 @@
     "tree_row": true,
     "alley": true,
     "footway": true,
-    "cycleway": true,
-    "steps": true,
-    "path": true,
+    "cycleway": false,
+    "steps": false,
+    "path": false,
     "park": true,
-    "water": true,
+    "water": false,
     "tree": true,
     "lamp": true,
-    "fence": true,
-    "wall": true,
+    "fence": false,
+    "wall": false,
     "retaining_wall": false,
     "hedge": false,
-    "labels": true,
+    "labels": false,
     "centerline": false
   },
   "layerColors": {
@@ -363,6 +363,38 @@
         "sidewalk": 1.524,
         "terminal": "sidewalk"
       }
+    },
+    "-296.0,22.0": {
+      "0": {
+        "pavementHW": 10.21618259546345,
+        "treelawn": 3.1519828488643356,
+        "sidewalk": 2.345906370814321,
+        "terminal": "sidewalk"
+      }
+    },
+    "117.0,-299.5": {
+      "4": {
+        "pavementHW": 7.985636482733761,
+        "treelawn": 2.9144876422016814,
+        "sidewalk": 3.219995027327654,
+        "terminal": "sidewalk"
+      }
+    },
+    "341.5,-153.0": {
+      "2": {
+        "pavementHW": 7.591370406133601,
+        "treelawn": 1.524,
+        "sidewalk": 1.8288000000000002,
+        "terminal": "sidewalk"
+      }
+    },
+    "305.5,-2.0": {
+      "5": {
+        "pavementHW": 9.326823925973736,
+        "treelawn": 3.192626415453148,
+        "sidewalk": 1.7297401723922992,
+        "terminal": "sidewalk"
+      }
     }
   },
   "blockLandUse": {},
@@ -471,16 +503,11 @@
   },
   "neon": {
     "values": {
-      "core": 1,
-      "tube": 1,
-      "bleed": 1
-    }
-  },
-  "neonTube": {
-    "values": {
-      "tubeRadius": 0.2,
-      "roofLift": 0.3,
-      "emissive": 4
+      "core": 0.06,
+      "tube": 0.28,
+      "bleed": 0.54,
+      "emissive": 8,
+      "tubeRadius": 0.15
     }
   },
   "sky": {
@@ -679,17 +706,17 @@
   "heroKeyframes": [
     {
       "position": [
-        -540,
-        55,
-        362
+        -519,
+        135,
+        394
       ],
       "fov": 22
     },
     {
       "position": [
-        -260,
-        55,
-        98
+        -280,
+        68,
+        11
       ],
       "fov": 22
     }
@@ -757,8 +784,8 @@
     }
   },
   "openSections": {
-    "Streets": true,
-    "Blocks": true,
+    "Streets": false,
+    "Blocks": false,
     "Paths": false,
     "Features": false,
     "Labels": false,
@@ -867,6 +894,10 @@
     {
       "species": "procedural_weeping",
       "variantId": 2
+    },
+    {
+      "species": "acer_saccharum_procedural",
+      "variantId": 1
     }
   ]
 }

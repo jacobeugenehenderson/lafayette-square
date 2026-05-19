@@ -58,6 +58,18 @@ function injectFoliageSway(material) {
     shader.uniforms.uBarkTintBase = { value: new THREE.Color(1, 1, 1) }
     shader.uniforms.uBarkTintJitterRange = { value: 0 }
     shader.uniforms.uBarkRoughnessOverride = { value: -1 }
+    // Phase L Cycle 2 (per-region bark binding). Each draw call carries
+    // BOTH region specs; the fragment shader selects via vBarkRegion
+    // (per-vertex, stamped at runtime merge time from primitive identity).
+    // uBarkRegionSplit gates the path — 0 disables region-select (legacy
+    // single-spec path uses uBarkTintBase only); 1 enables.
+    shader.uniforms.uBarkRegionSplit = { value: 0 }
+    shader.uniforms.uBarkTrunkTintBase = { value: new THREE.Color(1, 1, 1) }
+    shader.uniforms.uBarkBranchTintBase = { value: new THREE.Color(1, 1, 1) }
+    shader.uniforms.uBarkTrunkJitterRange = { value: 0 }
+    shader.uniforms.uBarkBranchJitterRange = { value: 0 }
+    shader.uniforms.uBarkTrunkRoughness = { value: -1 }
+    shader.uniforms.uBarkBranchRoughness = { value: -1 }
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
     // → preTileBark). The atlas tile content already carries N×M tiled
@@ -74,9 +86,11 @@ function injectFoliageSway(material) {
          uniform float uTime;
          attribute float aLampGlow;
          attribute float aBark;
+         attribute float aBarkRegion;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
+         varying float vBarkRegion;
          varying vec3 vWorldXZ;`
       )
       .replace(
@@ -84,6 +98,7 @@ function injectFoliageSway(material) {
         `#include <begin_vertex>
          vLampGlow = aLampGlow;
          vBark = aBark;
+         vBarkRegion = aBarkRegion;
          // Canopy weight: hard-zero on the trunk, ramping in only above
          // the canopy break. Earlier 1.5→4.0 left ~20% contribution at 2m
          // which still showed as a faint trunk stripe. 3.0→4.5 gives a
@@ -114,9 +129,17 @@ function injectFoliageSway(material) {
          uniform vec3  uBarkTintBase;
          uniform float uBarkTintJitterRange;
          uniform float uBarkRoughnessOverride;
+         uniform float uBarkRegionSplit;
+         uniform vec3  uBarkTrunkTintBase;
+         uniform vec3  uBarkBranchTintBase;
+         uniform float uBarkTrunkJitterRange;
+         uniform float uBarkBranchJitterRange;
+         uniform float uBarkTrunkRoughness;
+         uniform float uBarkBranchRoughness;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
+         varying float vBarkRegion;
          varying vec3  vWorldXZ;`
       )
       .replace(
@@ -134,8 +157,19 @@ function injectFoliageSway(material) {
            float jh2 = fract(sin(dot(vWorldXZ.xz, vec2(269.5, 183.3))) * 43758.5453);
            float jh3 = fract(sin(dot(vWorldXZ.xz, vec2(419.2, 371.9))) * 43758.5453);
            vec3 jitter = vec3(jh1, jh2, jh3);
-           vec3 perInstanceTint = mix(vec3(1.0), 0.5 + jitter, uBarkTintJitterRange);
-           vec3 barkTint = uBarkTintBase * perInstanceTint;
+           // Phase L Cycle 2: when uBarkRegionSplit > 0, pick trunk vs
+           // branch spec from per-vertex vBarkRegion (1=trunk, 0=branch).
+           // Otherwise fall back to legacy single-spec uBarkTintBase. Both
+           // paths preserve Bloom's single shader program — variation lives
+           // in uniforms + per-vertex gate, not branch-and-compile.
+           vec3  baseTint = mix(uBarkBranchTintBase, uBarkTrunkTintBase, vBarkRegion);
+           float baseJit  = mix(uBarkBranchJitterRange, uBarkTrunkJitterRange, vBarkRegion);
+           vec3  regionTint = baseTint;
+           float regionJitter = baseJit;
+           vec3  effTintBase = mix(uBarkTintBase, regionTint, uBarkRegionSplit);
+           float effJitter   = mix(uBarkTintJitterRange, regionJitter, uBarkRegionSplit);
+           vec3 perInstanceTint = mix(vec3(1.0), 0.5 + jitter, effJitter);
+           vec3 barkTint = effTintBase * perInstanceTint;
            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * barkTint, vBark);
          }`
       )
@@ -144,8 +178,12 @@ function injectFoliageSway(material) {
         // when the per-species override is >= 0. Leaf fragments untouched.
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
-         if (uBarkRoughnessOverride >= 0.0) {
-           roughnessFactor = mix(roughnessFactor, uBarkRoughnessOverride, vBark);
+         {
+           float regionRough = mix(uBarkBranchRoughness, uBarkTrunkRoughness, vBarkRegion);
+           float effRough = mix(uBarkRoughnessOverride, regionRough, uBarkRegionSplit);
+           if (effRough >= 0.0) {
+             roughnessFactor = mix(roughnessFactor, effRough, vBark);
+           }
          }`
       )
       .replace(

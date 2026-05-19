@@ -401,6 +401,16 @@ async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale = 1) {
   let primCount = 0, missCount = 0
   const missed = new Set()
   for (const mesh of root.listMeshes()) {
+    // Phase L Cycle 2 (per-region bark binding): the LiDAR-baked GLB
+    // carries two primitives `trunkBark` / `branchBark` keyed by mesh
+    // name. lidar-publish.js's LOD pass dedups them down to a single
+    // shared bark material, so we can't differentiate at the material
+    // level any more — but mesh.getName() survives. Resolve the region
+    // here and stamp it onto primitive extras alongside atlasKind.
+    const meshNameLower = (mesh.getName() || '').toLowerCase()
+    const meshBarkRegion = /trunk/.test(meshNameLower) ? 'trunk'
+      : /branch/.test(meshNameLower) ? 'branch'
+      : null
     for (const prim of mesh.listPrimitives()) {
       const mat = prim.getMaterial()
       if (!mat) continue
@@ -434,7 +444,9 @@ async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale = 1) {
       // load-bearing for Phase B's runtime bark retint (InstancedTrees stamps
       // a per-vertex aBark attribute from this at merge time so the fragment
       // shader can gate uBarkTintBase/jitter/roughness to bark fragments).
-      prim.setExtras({ ...(prim.getExtras() || {}), atlasKind: tile.classification, atlasTileIndex: tile.tileIndex })
+      const extras = { ...(prim.getExtras() || {}), atlasKind: tile.classification, atlasTileIndex: tile.tileIndex }
+      if (meshBarkRegion) extras.barkRegion = meshBarkRegion
+      prim.setExtras(extras)
       primCount++
     }
   }
@@ -548,12 +560,27 @@ export async function bakeLook(lookName, opts = {}) {
     try {
       const m = JSON.parse(await fs.readFile(mPath, 'utf8'))
       if (m?.bark) {
-        barkBySpecies[v.species] = {
-          materialRef: m.bark.materialRef ?? null,
-          uvScale: m.bark.uvScale ?? [1, 1],
-          tintBase: m.bark.tintBase ?? '#ffffff',
-          tintJitterRange: typeof m.bark.tintJitterRange === 'number' ? m.bark.tintJitterRange : 0,
-          roughnessOverride: typeof m.bark.roughnessOverride === 'number' ? m.bark.roughnessOverride : -1,
+        // Per-region bark binding (Phase L Cycle 2): manifest.bark may
+        // carry { trunk, branch, regionThreshold } (LiDAR variants) or
+        // a single-spec { materialRef, ... } (procedural variants). Mirror
+        // whichever shape is on disk so the runtime resolves both via the
+        // same channel; InstancedTrees picks trunk/branch by aBarkRegion
+        // when present, falls back to legacy single-spec when not.
+        const flatten = (spec) => ({
+          materialRef: spec.materialRef ?? null,
+          uvScale: spec.uvScale ?? [1, 1],
+          tintBase: spec.tintBase ?? '#ffffff',
+          tintJitterRange: typeof spec.tintJitterRange === 'number' ? spec.tintJitterRange : 0,
+          roughnessOverride: typeof spec.roughnessOverride === 'number' ? spec.roughnessOverride : -1,
+        })
+        if (m.bark.trunk || m.bark.branch) {
+          barkBySpecies[v.species] = {
+            trunk: m.bark.trunk ? flatten(m.bark.trunk) : null,
+            branch: m.bark.branch ? flatten(m.bark.branch) : null,
+            regionThreshold: typeof m.bark.regionThreshold === 'number' ? m.bark.regionThreshold : null,
+          }
+        } else {
+          barkBySpecies[v.species] = flatten(m.bark)
         }
       }
     } catch { /* species without a manifest.json — skip silently */ }

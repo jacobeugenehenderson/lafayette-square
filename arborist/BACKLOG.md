@@ -543,7 +543,53 @@ scene. Operator can adopt more or fewer per species as needed.
   cylinder color-coding is preview-only; it doesn't yet write a
   `bark.regionThreshold` into manifests.
 
-- [ ] **Phase L Cycle 2 — bake/publish + Configuration D composition** (in design). Builds on Cycle 1 workspace.
+- [ ] **Phase L Cycle 2 — bake/publish + Configuration D composition** (Stage 1 SHIPPED 2026-05-19 PM; Stages 2-3 pending). Builds on Cycle 1 workspace.
+  - **Stage 1 (SHIPPED 2026-05-19 PM):** per-region bark + bake-to-roster.
+    Carrier: primitive split — `bake-tree.py` emits `trimesh.Scene` with
+    `trunkBark` (cylinder radius ≥ regionThreshold, 8 radial sections) +
+    `branchBark` (< threshold, 6 sections) named geometries; threshold
+    defaults to median of all surviving cylinder radii, persisted to
+    seedlings.json tuneParams for deterministic re-bake. Hero-species
+    routing via `species-map.json#/<scan>.heroSpecies` → bake output lands
+    at `public/trees/<heroSpecies>/`. New `arborist/lidar-publish.js`
+    bridges to the LOD pipeline (weld → dedup → simplify at the same
+    ratios as `publish-glb.js`), attaches per-region bark photo packs as
+    baseColor + normal textures so `atlas-survey.js` doesn't skip the
+    materials, promotes the manifest schema to procedural-compatible
+    shape (skeletons block, qualityOverride, category), and rebuilds
+    `public/trees/index.json` via `build-index.js#rebuildIndex`.
+    `bake-look.js` reads `mesh.getName()` to stamp `extras.barkRegion`
+    on each primitive. New runtime uniforms in `treeAtlasMaterial.js`:
+    `uBarkRegionSplit` (0=legacy, 1=region) + per-region tint/jitter/
+    roughness. `InstancedTrees.jsx` stamps per-vertex `aBarkRegion`
+    from `geometry.userData.barkRegion`. `applyBarkUniforms` handles
+    both region-split and legacy-single-spec shapes by sniffing
+    `barkSettings.trunk||.branch`. New `POST /lidar/specimen/:treeId/publish`
+    endpoint (awaited, not fire-and-forget): persists seedling → runs
+    bake-tree.py → lidar-publish.js → adds hero to active Look's
+    `design.json#/trees` → runs bake-look → runs bake-trees. New
+    `lidarPublishing` flag + `publishLidarSpecimen` action on the
+    store; new Publish button in the extraction tuner. Park species
+    map prepended `acer_saccharum_procedural` to "Maple, Sugar". One
+    scope-drift fix: `bake-trees.js:pickVariant` now restricts the
+    hash lottery to the top-quality tier among preferred-list
+    candidates (heroes win their bucket per ARCHITECTURE.md "Two-tier
+    substitution" doctrine, which previously didn't match shipped
+    behavior). Determinism: same `{treeId, tuneParams}` → byte-identical
+    `skeleton-N-lod{0,1,2}.glb` sha1 across re-publishes. Operator-gated
+    acceptance items 4/5/6 (placement count visible at /cartograph,
+    trunk-vs-branch readable at Hero, renderer.info.programs.length
+    unchanged) pending visual verification.
+  - **Stage 2 (pending):** Configuration D canopy composition — outer-shell
+    A2C cards on camera-facing surface (~1500/tree, ~70% reduction) +
+    inner-mass `THREE.Points` algorithmic canopy-volume sampling, ≤2
+    shader programs (second program is the inner-mass PointsMaterial,
+    load-bearing per [[project_configuration_d_canopy_render]]).
+  - **Stage 3 (pending):** Phase F integration — `leafCluster.annualCycle[]`
+    in manifest, gradient-LUT bake, annual-cycle anchor editor in the
+    workstage, per-Look shape-pack + gradient overrides,
+    `useArboristStore.previewDayOfYear` placeholder that Meteorologist
+    will eventually feed.
   - **Cycle 2 sub-item: quality-bracket LoD authoring** (surfaced 2026-05-19 standby). Instead of exposing voxelSize/detailLevel/tipRadius as three independent sliders, operator declares INTENT via a quality bracket widget: `[min acceptable cylinder count, max useful cylinder count]`. The bake pipeline distributes LoD tiers within that bracket (lod0 = max, lod2 = min, lod1 = midpoint). Underlying mechanism stays the same — graph pruning on the QSM cylinder graph (per-cylinder importance score: keep trunk + primary scaffolds; drop terminal twigs below order-N) followed by publish-glb's mesh simplification on top. Operator never has to know voxel sizes or cylinder thresholds; thinks in quality terms. Lives in the Phase L Cycle 2 bake/publish panel. Probably collapses voxelSize/minRadius/tipRadius into a single "extraction defaults" subsection (advanced) + the bracket widget as the primary surface.
 
 - [ ] **Phase V — View-aware baking** (architectural addition, surfaced 2026-05-19, v1.6+ unless mobile perf forces sooner). **Different views need different artifacts.** Browse-overhead doesn't need cylinders for the trunk (invisible from above); Hero needs full silhouette + bark wraps + canopy mass; Street (v2) needs close-up bark + per-leaf detail. publish-glb today produces 3 LoD tiers from ONE source — view-aware baking produces N views × M LoD tiers, each view optimized differently BEFORE LoD is applied. Browse-baked Sugar Maple could be ~1% the tri count of Hero-baked (canopy disc + color only, no branches/trunk visible from above) — and that compounds across 745 LS placements.

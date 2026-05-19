@@ -89,9 +89,9 @@ All sliders use a local `DraftSlider` (150ms idle commit + pointer-up final comm
 - **Occupancy slider** — alpha-density modulator for sparse-canopy species (honeylocust ~25%, oak ~70%, conifer ~95%).
 - **No** density/jitter/cluster-count sliders — those would be compositor knobs; the parametric compositor is dropped per the 2026-05-16 PS-authored reframe.
 
-### LiDAR mode (`src/arborist/LidarWorkstage.jsx`, Phase L Cycle 1 shipped 2026-05-19)
+### LiDAR mode (`src/arborist/LidarWorkstage.jsx`, Phase L Cycle 1 shipped 2026-05-19; Cycle 2 Stage 1 shipped 2026-05-19 PM)
 
-Third top-level mode alongside Procedural + Grove. Operator browses LiDAR specimens of the active species (110 Sugar Maples in `botanica/dev/train/` alone), extracts QSM cylinder skeleton via tunable parameters, previews multi-layer point cloud + cylinders, saves seedling. Cycle 1 ships browsing + extraction tuning + diagnostic viewport. Cycle 2 adds per-region bark binding + procedural canopy emission on the LiDAR skeleton + Configuration D rendering composition + Phase F integration + bake/publish.
+Third top-level mode alongside Procedural + Grove. Operator browses LiDAR specimens of the active species (110 Sugar Maples in `botanica/dev/train/` alone), extracts QSM cylinder skeleton via tunable parameters, previews multi-layer point cloud + cylinders, saves seedling. **Publish** action (Cycle 2 Stage 1) runs the awaited chain `bake-tree.py → lidar-publish.js (LOD + manifest promotion + index rebuild) → roster-add → bake-look → bake-trees` and surfaces timings on success. Cycle 1 shipped browsing + extraction tuning + diagnostic viewport. Cycle 2 Stage 2/3 will add Configuration D canopy composition + Phase F annual-cycle integration.
 
 Per Option δ scope (locked 2026-05-19): LiDAR provides skeleton ONLY; canopy is fully procedural + Configuration D. Captures the trunk-shader-quality win (bark wraps onto authentic real-tree geometry) without LiDAR-canopy-point-sampling complexity. G.1 Sugar Maple hero ships as mixed roster (LiDAR-baked variants + procedural variants under `acer_saccharum_procedural`).
 

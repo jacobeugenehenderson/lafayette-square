@@ -176,7 +176,7 @@ generateTreeMesh({
 
 **Pipeline survives SpeedTree migration unchanged.** SpeedTree-imported species would write the same `manifest.bark` shape and run through the same shader.
 
-### Per-region bark binding (Phase L Cycle 2 — design)
+### Per-region bark binding (Phase L Cycle 2 Stage 1 — SHIPPED 2026-05-19 PM)
 
 LiDAR-baked trees (Option δ — see "LiDAR pipeline + Option δ scope" below) carry cylinder-radius metadata per segment. Sugar Maple bark looks different on trunk (heavy furrowed) vs branches (smoother, lighter); the manifest can carry per-region bark spec keyed by a radius threshold:
 
@@ -189,6 +189,8 @@ LiDAR-baked trees (Option δ — see "LiDAR pipeline + Option δ scope" below) c
 ```
 
 Runtime classifies each cylinder by radius at bake time → assigns `aBark` attribute variant → fragment shader picks per-region uniforms. Single shader program preserved (uniforms-only branching, same Bloom constraint). When `bark` spec is single-value (current procedural pattern, no `trunk`/`branch` split), runtime treats all cylinders as one region — backwards-compatible.
+
+**Carrier (locked Cycle 2 Stage 1):** primitive split. `bake-tree.py` emits a `trimesh.Scene` with two named geometries `trunkBark` + `branchBark` (radius ≥ median → trunk, sections=8; else branch, sections=6). `lidar-publish.js` attaches the per-region Bark photo packs as `baseColorTexture` + `normalTexture` on the matching materials so `atlas-survey.js` picks them up (without a `baseColorTexture` it'd skip the material entirely). `bake-look.js`'s atlas pass reads `mesh.getName()` to stamp `extras.barkRegion: 'trunk'|'branch'` alongside `extras.atlasKind: 'bark'`. `InstancedTrees.jsx` reads `geometry.userData.barkRegion` at runtime merge time, stamps a per-vertex `aBarkRegion` (1=trunk, 0=branch). The fragment shader gates region selection via `uBarkRegionSplit` (per-draw uniform: 1 enables region, 0 falls back to legacy single-spec). Stage 2's Configuration D will add a third+fourth primitive category (`canopyCard` outer-shell + inner-mass points) — the GLB structure inherits cleanly since each category is its own primitive with its own mesh-name marker.
 
 ### Bark tile wrap is the open shader question (Phase B.2 — deferred)
 
