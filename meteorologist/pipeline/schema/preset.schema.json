@@ -82,6 +82,48 @@
     }
   ],
   "$defs": {
+    "animatableValue": {
+      "description": "TodChannel-shaped numeric channel. Flat form: { values: { value: <number> } }. Animated form: { animated:'tod', values:{ <slotId>:{ value:<number> } }, transitionIn?, transitionOut? }. Per-param min/max range is enforced by the UI's slider field metadata (cloudParamFields.js), not here — a relaxed/extended range authored across slots is still persistable.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["values"],
+          "properties": {
+            "values": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["value"],
+              "properties": {
+                "value": { "type": "number" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["animated", "values"],
+          "properties": {
+            "animated": { "const": "tod" },
+            "values": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["value"],
+                "properties": {
+                  "value": { "type": "number" }
+                }
+              }
+            },
+            "transitionIn":  { "type": "number", "minimum": 0, "maximum": 720 },
+            "transitionOut": { "type": "number", "minimum": 0, "maximum": 720 }
+          }
+        }
+      ]
+    },
     "cloudParams": {
       "type": "object",
       "required": [
@@ -93,20 +135,20 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "noiseSeed":      { "type": "number", "minimum": 0, "maximum": 10000, "description": "Procedural seed; different values yield different cloud shapes with same other params." },
-        "octaves":        { "type": "integer", "minimum": 1, "maximum": 8, "description": "FBM octave count. >6 expensive on phone." },
-        "coverage":       { "type": "number", "minimum": 0, "maximum": 1, "description": "Fraction of slab volume that contains cloud (0 = clear, 1 = overcast)." },
-        "density":        { "type": "number", "minimum": 0, "maximum": 2, "description": "Optical thickness multiplier. 1.0 = baseline; 2.0 reads as nimbostratus." },
-        "anvil":          { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Anvil-spread amount near top of slab. Cb-specific." },
-        "baseAlt":        { "type": "number", "minimum": 0, "maximum": 15000, "description": "Cloud-base altitude in meters (world Y)." },
-        "thickness":      { "type": "number", "minimum": 0, "maximum": 18000, "description": "Vertical extent in meters. Real Cb can reach 12–18 km." },
-        "warpFreq":       { "type": "number", "minimum": 0, "maximum": 0.01, "description": "Domain-warp noise frequency (1/m). Small numbers — multiplied by world coords." },
-        "warpAmp":        { "type": "number", "minimum": 0, "maximum": 2000, "description": "Domain-warp amplitude in meters. Drives cauliflower lobing." },
-        "sunScatter":     { "type": "number", "minimum": 0, "maximum": 3, "description": "Mie forward-scatter strength on sun-facing edges (silver lining)." },
-        "ambientFloor":   { "type": "number", "minimum": 0, "maximum": 1, "description": "Minimum lit value in fully shadowed regions; prevents black undersides." },
-        "edgeSilver":     { "type": "number", "minimum": 0, "maximum": 2, "description": "Edge-feather silver-lining gain at thin density boundaries." },
-        "shadowStrength": { "type": "number", "minimum": 0, "maximum": 2, "description": "Self-shadow opacity multiplier in the in-shader shadow march." },
-        "drift":          { "type": "number", "minimum": 0, "maximum": 5, "description": "Wind-drift response multiplier (1.0 = matches Almanac wind directly)." }
+        "noiseSeed":      { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 10000 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Procedural seed; different values yield different cloud shapes with same other params." },
+        "octaves":        { "oneOf": [ { "type": "integer", "minimum": 1, "maximum": 8 }, { "$ref": "#/$defs/animatableValue" } ], "description": "FBM octave count. >6 expensive on phone." },
+        "coverage":       { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 1 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Fraction of slab volume that contains cloud (0 = clear, 1 = overcast)." },
+        "density":        { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 2 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Optical thickness multiplier. 1.0 = baseline; 2.0 reads as nimbostratus." },
+        "anvil":          { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 1 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Anvil-spread amount near top of slab. Cb-specific." },
+        "baseAlt":        { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 15000 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Cloud-base altitude in meters (world Y)." },
+        "thickness":      { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 18000 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Vertical extent in meters. Real Cb can reach 12–18 km." },
+        "warpFreq":       { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 0.01 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Domain-warp noise frequency (1/m). Small numbers — multiplied by world coords." },
+        "warpAmp":        { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 2000 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Domain-warp amplitude in meters. Drives cauliflower lobing." },
+        "sunScatter":     { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 3 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Mie forward-scatter strength on sun-facing edges (silver lining)." },
+        "ambientFloor":   { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 1 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Minimum lit value in fully shadowed regions; prevents black undersides." },
+        "edgeSilver":     { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 2 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Edge-feather silver-lining gain at thin density boundaries." },
+        "shadowStrength": { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 2 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Self-shadow opacity multiplier in the in-shader shadow march." },
+        "drift":          { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 5 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Wind-drift response multiplier (1.0 = matches Almanac wind directly)." }
       }
     },
     "fogParams": {
@@ -114,11 +156,11 @@
       "required": ["density", "baseAlt", "thickness", "ambientFloor"],
       "additionalProperties": false,
       "properties": {
-        "density":      { "type": "number", "minimum": 0, "maximum": 2 },
-        "baseAlt":      { "type": "number", "minimum": 0, "maximum": 5000 },
-        "thickness":    { "type": "number", "minimum": 0, "maximum": 5000 },
-        "ambientFloor": { "type": "number", "minimum": 0, "maximum": 1 },
-        "tint":         { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "Optional warm/cool fog tint as hex." }
+        "density":      { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 2 }, { "$ref": "#/$defs/animatableValue" } ] },
+        "baseAlt":      { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 5000 }, { "$ref": "#/$defs/animatableValue" } ] },
+        "thickness":    { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 5000 }, { "$ref": "#/$defs/animatableValue" } ] },
+        "ambientFloor": { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 1 }, { "$ref": "#/$defs/animatableValue" } ] },
+        "tint":         { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "Optional warm/cool fog tint as hex. NOT animatable in v1 — modulation lives on the condition (sky.darken / desat) rather than the cloud preset." }
       }
     },
     "stubParams": {

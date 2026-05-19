@@ -9,13 +9,15 @@ import { useEffect } from 'react'
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import TeapotLibrary from './TeapotLibrary.jsx'
 import ConditionsLibrary from './ConditionsLibrary.jsx'
+import Teacup from './Teacup.jsx'
 
 export default function MeteorologistApp() {
-  const mode            = useMeteorologistStore(s => s.mode)
-  const setMode         = useMeteorologistStore(s => s.setMode)
-  const loadPresets     = useMeteorologistStore(s => s.loadPresets)
-  const loadConditions  = useMeteorologistStore(s => s.loadConditions)
-  const loadLooks       = useMeteorologistStore(s => s.loadLooks)
+  const mode             = useMeteorologistStore(s => s.mode)
+  const setMode          = useMeteorologistStore(s => s.setMode)
+  const loadPresets      = useMeteorologistStore(s => s.loadPresets)
+  const loadConditions   = useMeteorologistStore(s => s.loadConditions)
+  const loadLooks        = useMeteorologistStore(s => s.loadLooks)
+  const activePresetId   = useMeteorologistStore(s => s.activePresetId)
 
   useEffect(() => { loadPresets() }, [loadPresets])
   useEffect(() => { loadConditions() }, [loadConditions])
@@ -25,6 +27,13 @@ export default function MeteorologistApp() {
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [loadLooks])
+
+  // When a Teapot row is clicked, mount the per-cloud workstage. The library
+  // top bar is hidden inside Teacup — header context shifts to ← TEAPOT and
+  // the cloud pulldown. Phase 3 will add the same routing for Conditions.
+  if (mode === 'teapot' && activePresetId) {
+    return <Teacup />
+  }
 
   return (
     <div style={{
