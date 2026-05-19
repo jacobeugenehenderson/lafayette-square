@@ -47,9 +47,24 @@ const DEFAULT_WIND_DIR_DEG = 0     // 0 = blowing toward +X
 const HERO_TREE_SPECIES = 'platanus_acerifolia'
 const HERO_TREE_SKELETON = 'skeleton-1-lod0.glb'
 
-export default function CanaryScene({ slot = 'chamber' }) {
+export default function CanaryScene({ slot = 'browse' }) {
   const activeLookId = useMeteorologistStore(s => s.activeLookId)
   const cam = CANARY_CAMERAS[slot] || CANARY_CAMERAS.browse
+
+  // Derive circular-dolly lock values from the camera's starting
+  // position + target. Only matters when cam.lockDolly is true:
+  // radius = distance(position, target); polar = acos(dy / radius).
+  // Both values then constrain OrbitControls so the camera traces a
+  // horizontal arc at constant height + distance, only azimuth varies.
+  const dolly = (() => {
+    if (!cam.lockDolly) return null
+    const dx = cam.position[0] - cam.target[0]
+    const dy = cam.position[1] - cam.target[1]
+    const dz = cam.position[2] - cam.target[2]
+    const radius = Math.sqrt(dx * dx + dy * dy + dz * dz)
+    const polar = Math.acos(dy / radius)
+    return { radius, polar }
+  })()
 
   return (
     <Canvas
@@ -95,9 +110,26 @@ export default function CanaryScene({ slot = 'chamber' }) {
       <Atmosphere lookId={activeLookId} />
 
       {/* Orbit controls — only mounted if the slot wants them.
-          BROWSE is locked (matches production's static overhead);
-          GROUND is orbitable around the tree with distance clamps. */}
-      {cam.orbit && (
+          BROWSE is locked (matches production's static overhead).
+          GROUND uses a "circular dolly" lock: polar angle + radius
+          both fixed at their starting values; only azimuth varies.
+          Camera traces a horizontal arc around the tree at eye
+          height. Pan + zoom disabled. */}
+      {cam.orbit && dolly && (
+        <OrbitControls
+          makeDefault
+          target={cam.target}
+          enableDamping
+          dampingFactor={0.1}
+          enablePan={false}
+          enableZoom={false}
+          minDistance={dolly.radius}
+          maxDistance={dolly.radius}
+          minPolarAngle={dolly.polar}
+          maxPolarAngle={dolly.polar}
+        />
+      )}
+      {cam.orbit && !dolly && (
         <OrbitControls
           makeDefault
           target={cam.target}

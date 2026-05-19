@@ -41,13 +41,20 @@ export const CANARY_CAMERAS = {
   ground: {
     // Backed off ~25m at ~1.7m above ground. Tree canopy target at 8m
     // puts the full tree silhouette in the upper-middle of frame for
-    // typical 12-18m broadleaves; orbit lets the operator inspect.
+    // typical 12-18m broadleaves.
+    //
+    // lockDolly: orbit is constrained to a horizontal circular dolly —
+    // camera Y stays at eye level (1.7m), radius stays at the starting
+    // distance (~29m), only azimuth changes as the operator drags.
+    // Zoom + pan disabled; pitch locked to the upward tilt at the
+    // canopy. CanaryScene derives the polar/radius lock values from
+    // the initial position/target so changing the starting framing
+    // auto-updates the dolly geometry.
     position:   [-22, 1.7, 18],
     target:     [0, 8, 0],
     fov:        45,
     showGround: true,
     orbit:      true,
-    minDistance: 8,
-    maxDistance: 80,
+    lockDolly:  true,
   },
 }
