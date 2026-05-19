@@ -70,7 +70,7 @@ uniform float uSunScatter;
 uniform float uAmbientFloor;
 uniform float uEdgeSilver;
 uniform float uShadowStrength;
-uniform float uDrift;
+uniform float uWindScale;
 
 uniform int   uSteps;
 uniform int   uShadowSteps;
@@ -140,8 +140,11 @@ float verticalProfile(float y) {
 }
 
 float sampleDensity(vec3 worldP) {
-  // uDrift drives a slow advection of the noise field along +X/+Z.
-  vec3 wind = vec3(uTime * uDrift * 2.0, 0.0, uTime * uDrift * 1.0);
+  // uWindScale drives a slow advection of the noise field along +X/+Z.
+  // Sourced from the active Condition's directive.wind.scale (Phase 5+);
+  // hardcoded to 1.0 today. NOT a per-cloud Teapot param — wind is
+  // environmental, owned by Conditions.
+  vec3 wind = vec3(uTime * uWindScale * 2.0, 0.0, uTime * uWindScale * 1.0);
   vec3 q = (worldP + wind) * uWarpFreq;
   float n = fbm(q);
 
@@ -236,7 +239,7 @@ void main() {
     for (int i = 0; i < 64; ++i) {
       if (i >= uSteps) break;
       float v = uDebugMode == 2
-        ? fbm((p + vec3(uTime * uDrift * 2.0, 0.0, uTime * uDrift)) * uWarpFreq)
+        ? fbm((p + vec3(uTime * uWindScale * 2.0, 0.0, uTime * uWindScale)) * uWarpFreq)
         : sampleDensity(p);
       maxVal = max(maxVal, v);
       p += stepVec;
@@ -313,7 +316,7 @@ export function createAtmosphereMaterial() {
       uAmbientFloor:   { value: 0.32 },
       uEdgeSilver:     { value: 1.05 },
       uShadowStrength: { value: 0.65 },
-      uDrift:          { value: 1.0 },
+      uWindScale:          { value: 1.0 },
       // Per-frame
       uTime:           { value: 0 },
       uSunDir:         { value: new THREE.Vector3(0, 0.7, 0.7).normalize() },

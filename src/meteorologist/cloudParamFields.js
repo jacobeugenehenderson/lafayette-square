@@ -5,9 +5,13 @@
  * single-field group ({ key: 'value', ... }) — the slider widget reads
  * its min/max/step from here, the on-disk channel shape from presets.json.
  *
- * Render order: shape first (what the cloud is), lighting middle (how it
- * picks up the sun), motion last (how it drifts). Group label is used to
- * insert a thin section divider between groups.
+ * Render order: shape first (what the cloud IS), lighting second (how it
+ * picks up the sun). Group label inserts a thin section divider.
+ *
+ * Static-only — dynamics (wind drift, rain rate, lightning, snow rate)
+ * belong to Conditions, not the Teacup. Removed `drift` 2026-05-20 per
+ * the architectural call that Teacup = shape + lighting; Conditions =
+ * dynamics. See migrate-strip-drift.js + commit history.
  */
 
 export const CLOUD_PARAM_FIELDS = [
@@ -23,5 +27,4 @@ export const CLOUD_PARAM_FIELDS = [
   { key: 'ambientFloor',   label: 'Ambient floor',  min: 0,    max: 1,     step: 0.01,  group: 'lighting' },
   { key: 'edgeSilver',     label: 'Edge silver',    min: 0,    max: 2,     step: 0.01,  group: 'lighting' },
   { key: 'shadowStrength', label: 'Shadow str',     min: 0,    max: 2,     step: 0.01,  group: 'lighting' },
-  { key: 'drift',          label: 'Drift',          min: 0,    max: 5,     step: 0.01,  group: 'motion' },
 ]

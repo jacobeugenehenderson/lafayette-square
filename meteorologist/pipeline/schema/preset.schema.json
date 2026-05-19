@@ -130,8 +130,7 @@
         "noiseSeed", "octaves", "coverage", "density",
         "baseAlt", "thickness",
         "warpFreq", "warpAmp",
-        "sunScatter", "ambientFloor", "edgeSilver", "shadowStrength",
-        "drift"
+        "sunScatter", "ambientFloor", "edgeSilver", "shadowStrength"
       ],
       "additionalProperties": false,
       "properties": {
@@ -147,8 +146,7 @@
         "sunScatter":     { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 3 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Mie forward-scatter strength on sun-facing edges (silver lining)." },
         "ambientFloor":   { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 1 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Minimum lit value in fully shadowed regions; prevents black undersides." },
         "edgeSilver":     { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 2 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Edge-feather silver-lining gain at thin density boundaries." },
-        "shadowStrength": { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 2 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Self-shadow opacity multiplier in the in-shader shadow march." },
-        "drift":          { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 5 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Wind-drift response multiplier (1.0 = matches Almanac wind directly)." }
+        "shadowStrength": { "oneOf": [ { "type": "number", "minimum": 0, "maximum": 2 }, { "$ref": "#/$defs/animatableValue" } ], "description": "Self-shadow opacity multiplier in the in-shader shadow march." }
       }
     },
     "fogParams": {
