@@ -12,6 +12,10 @@ const useTimeOfDay = create((set, get) => ({
   isLive: true,
 
   setTime: (date) => set({ currentTime: date, isLive: false }),
+  // Pump-driven live tick: advance currentTime without flipping isLive.
+  // Only operator-driven scrub calls (setTime / setHour / setMinuteOfDay)
+  // leave live mode. See meteorologist/NOTES.md 2026-05-20 ADR.
+  setTimeFromLive: (date) => set({ currentTime: date }),
   returnToLive: () => set({ isLive: true, currentTime: new Date() }),
   setTimeSpeed: (speed) => set({ timeSpeed: speed }),
   setPaused: (v) => set({ isPaused: v }),
