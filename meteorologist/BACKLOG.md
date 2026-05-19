@@ -14,7 +14,20 @@ Updated 2026-05-20. Phases 1–4b.1 shipped (see `NOTES.md` for commits). Next:
 
 All five photoreal levers landed in one commit. Uniforms hardcoded to `cumulus_humilis` values; preset-driven binding queued for 4b.2. Visual verification (HANDOFF checklist 1–5 + 9) pending Jacob's eyes.
 
-### Phase 4b.2 — TodChannel uniform binding (NEXT UP)
+### Cross-helper: Kit clock + calendar anchor (NEXT UP — orchestrated from Meteorologist)
+
+Promote `useTimeOfDay` to formal kit primitive + add `useCalendar` (date, day-of-year, season) alongside. Add `<ClockCalendarPump>` shared driver. One anchor + one pump + N per-helper scrub UIs. ADR + rationale in `NOTES.md` 2026-05-20.
+
+Phasing:
+1. Kit primitive + pump scaffold (baby brief: `scratch/handoff-2026-05-20-kit-clock-calendar-primitive.md`). Meteorologist-orchestrator-hosted because it's pure kit-level (lives in `src/hooks/` + `src/components/`); no helper-specific code.
+2. Cartograph adds `DateScrubber` next to DawnTimeline. Cross-helper coordinator brief.
+3. Meteorologist consumes `useCalendar.season` in Condition editor (whenBlock.season match). Direct orchestrator commit, no baby.
+4. Arborist consumes `useCalendar` for seasonal tree variant selection. Cross-helper coordinator brief (pairs with their year-round trees work).
+5. Production runtime mounts `<ClockCalendarPump mode="live">`. After 1-4 land.
+
+Unblocks: seed-from-physics sky direction (needs `dayOfYear`), seasonal Conditions (`whenBlock.season` finally semantic), year-round Arborist trees, real-date production runtime.
+
+### Phase 4b.2 — TodChannel uniform binding
 
 Wire active preset's `params` through `resolveGroupAtMinute(channel, minute)` to feed shader uniforms each frame. Slider scrubs in Teacup's right rail now visibly affect the viewport. Same wiring extends to `<Atmosphere />` in CanaryScene whether mounted from Teacup or ConditionEditor.
 

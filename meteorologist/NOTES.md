@@ -4,6 +4,51 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-20 — Kit-level clock + calendar anchor (ADR, in flight)
+
+**Decision direction (in flight, not yet shipped):** time-of-day AND date/season are kit-level primitives. ONE anchor, ONE pump, N consumer UIs. No per-helper anchors.
+
+**Why this matters now.** The seed-from-physics sky direction (above-this-entry, parked) needs `dayOfYear` to drive seasonal sun-path. Arborist's seasonal tree variants (winter bare, fall colors, etc.) need the same. Meteorologist's `whenBlock.season` matching in the Almanac evaluator needs it. Three helpers, one piece of state — must be shared or it drifts.
+
+**The shape:**
+
+```
+src/hooks/
+  useTimeOfDay.js          (exists — kit primitive, owns current minute-of-day,
+                            isLive flag, scrub semantics)
+  useCalendar.js           (NEW — owns current date, day-of-year, season)
+
+src/components/
+  ClockCalendarPump.jsx    (NEW — when mounted in live mode, ticks both stores
+                            from wall time. Production scenes mount; authoring
+                            tabs skip + let scrub UIs drive instead.)
+
+# Each helper hosts its own scrub UI over the shared state:
+src/cartograph/   — DawnTimeline (exists, TOD scrub) + DateScrubber (NEW, date scrub)
+src/meteorologist/— DawnTimeline mounted in Teacup; Condition editor honors season match
+src/arborist/     — reads useCalendar.season to pick tree variant (future)
+```
+
+**The principle:**
+- **Shared anchor:** one source of truth per concept (clock; calendar). Lives in `src/hooks/`.
+- **Shared pump:** one driver component that ticks the anchor from wall time when in live mode.
+- **Per-helper UI:** each helper renders its own scrub affordance over the shared state. UIs aren't shared; the state IS.
+- **Live vs. scrub semantics:** anchor carries `isLive`. Production mounts the pump in live mode. Authoring tabs leave the pump off (or mount in scrub mode) — operator drives via scrub UI.
+
+**Rejected alternative:** each helper mints its own clock/calendar store. Drifts the moment two tabs disagree; production would need to multicast to N stores; authoring across helpers becomes incoherent. The activeLookId pattern (one canonical Cartograph store, consumed by Arborist + Meteorologist) is the precedent.
+
+**Phasing (orchestrated by Meteorologist for cross-helper coordination):**
+
+1. **Land `useCalendar` + `ClockCalendarPump`** (kit-primitive baby brief, queued in `scratch/handoff-2026-05-20-kit-clock-calendar-primitive.md`). Document the doctrine.
+2. **Cartograph adds `DateScrubber`** next to DawnTimeline. Cross-helper brief to Cartograph coordinator.
+3. **Meteorologist consumes useCalendar** in the Condition editor (whenBlock.season eligibility); I do this directly post-step-1, no baby.
+4. **Arborist consumes useCalendar** for seasonal tree variant selection. Cross-helper brief to Arborist coordinator. Pairs naturally with their year-round trees work.
+5. **Production runtime mounts `<ClockCalendarPump mode="live">`** — Scene.jsx + LafayetteScene.jsx. After 1-4 land.
+
+Cross-tab sync (BroadcastChannel) is a v2 nice-to-have; per-tab independence is fine for v1.
+
+---
+
 ## 2026-05-20 — Phase 4b.1 shipped: `<Atmosphere />` raymarched cloud shader
 
 The heaviest single piece of the project landed in one baby commit. `<Atmosphere />` replaces `<CloudDome />` in `CanaryScene` with a volumetric raymarched shader implementing all five photoreal levers per the HANDOFF principles. Uniforms hardcoded to `cumulus_humilis` values; preset-driven binding queued for Phase 4b.2.
