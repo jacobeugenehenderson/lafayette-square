@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n web,carto,arb -c cyan,magenta,green --kill-others-on-fail \"npm:dev:web\" \"npm:dev:cartograph\" \"npm:dev:arborist\"",
+    "dev": "concurrently -n web,carto,arb,met -c cyan,magenta,green,blue --kill-others-on-fail \"npm:dev:web\" \"npm:dev:cartograph\" \"npm:dev:arborist\" \"npm:dev:meteorologist\"",
     "dev:web": "vite",
     "dev:cartograph": "node --watch cartograph/serve.js",
     "dev:arborist": "node --watch arborist/serve.js",
+    "dev:meteorologist": "node --watch meteorologist/serve.js",
     "build": "vite build",
     "preview": "vite preview"
   },

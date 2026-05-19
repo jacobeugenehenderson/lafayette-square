@@ -14,6 +14,7 @@ function serveHelperApps() {
   const routes = [
     { url: '/cartograph', file: 'cartograph.html' },
     { url: '/arborist',   file: 'arborist.html' },
+    { url: '/meteorologist', file: 'meteorologist.html' },
     { url: '/preview',    file: 'preview.html' },
   ]
   return {
@@ -112,6 +113,11 @@ export default defineConfig(({ command }) => ({
         rewrite: (path) => path.replace(/^\/api\/arborist/, ''),
         agent: false,
       },
+      '/api/meteorologist': {
+        target: 'http://localhost:3335',
+        rewrite: (path) => path.replace(/^\/api\/meteorologist/, ''),
+        agent: false,
+      },
     },
   },
   assetsInclude: ['**/*.bin'],
@@ -122,6 +128,7 @@ export default defineConfig(({ command }) => ({
         main: 'index.html',
         cartograph: 'cartograph.html',
         arborist: 'arborist.html',
+        meteorologist: 'meteorologist.html',
         preview: 'preview.html',
       },
       output: {
