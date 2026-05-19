@@ -139,13 +139,27 @@ function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true }) {
 }
 
 
-function FitButton({ fitRef }) {
-  const { camera, controls } = useThree(s => ({ camera: s.camera, controls: s.controls }))
+// Captures the Canvas's camera + OrbitControls into parent refs so the
+// HTML FitButton (mounted OUTSIDE the Canvas) can imperatively re-frame
+// without using R3F hooks itself (hooks only work inside Canvas children).
+function CameraCapture({ cameraRef, controlsRef }) {
+  const camera = useThree(s => s.camera)
+  const controls = useThree(s => s.controls)
+  useEffect(() => {
+    cameraRef.current = camera
+    controlsRef.current = controls
+  }, [camera, controls, cameraRef, controlsRef])
+  return null
+}
+
+function FitButton({ fitRef, cameraRef, controlsRef }) {
   return (
     <button
       onClick={() => {
+        const camera = cameraRef.current
+        const controls = controlsRef.current
         const box = fitRef.current
-        if (!box || !controls) return
+        if (!box || !camera || !controls) return
         const center = new THREE.Vector3()
         const size = new THREE.Vector3()
         box.getCenter(center); box.getSize(size)
@@ -179,7 +193,7 @@ export default function LidarWorkstage() {
   // Default to first LiDAR-source species the first time the user enters LiDAR mode.
   useEffect(() => {
     if (activeSpeciesId) return
-    const first = species.find(s => (s.source || 'lidar') === 'lidar')
+    const first = species.find(s => !!s.forSpeciesName)
     if (first) setActiveSpecies(first.id)
   }, [species, activeSpeciesId, setActiveSpecies])
 
@@ -201,9 +215,11 @@ export default function LidarWorkstage() {
   const [seedlingsList, setSeedlings]   = useState([])
   const [layers, setLayers]             = useState({ points: true, cylinders: true, skeletonOnly: false, fullPreview: false })
   const fitRef = useRef()
+  const cameraRef = useRef()
+  const controlsRef = useRef()
 
   const activeSpecies = species.find(s => s.id === activeSpeciesId)
-  const lidarSpecies = species.filter(s => (s.source || 'lidar') === 'lidar')
+  const lidarSpecies = species.filter(s => !!s.forSpeciesName)
   const pack = suggestedLeafPack(activeSpeciesId, activeSpecies?.leafMorph)
 
   // Load saved seedlings + displayNames for the active species. Mirrors the
@@ -418,6 +434,7 @@ export default function LidarWorkstage() {
                 />
               )}
               <OrbitControls makeDefault target={[0, 5, 0]} maxDistance={80} />
+              <CameraCapture cameraRef={cameraRef} controlsRef={controlsRef} />
             </Canvas>
           )}
 
@@ -428,7 +445,7 @@ export default function LidarWorkstage() {
               <Toggle active={layers.cylinders} onClick={() => setLayers(l => ({ ...l, cylinders: !l.cylinders }))}>Cylinders</Toggle>
               <Toggle active={layers.skeletonOnly} onClick={() => setLayers(l => ({ ...l, skeletonOnly: !l.skeletonOnly }))}>Skeleton only</Toggle>
               <Toggle active={layers.fullPreview} onClick={() => setLayers(l => ({ ...l, fullPreview: !l.fullPreview }))}>Full preview</Toggle>
-              <FitButton fitRef={fitRef} />
+              <FitButton fitRef={fitRef} cameraRef={cameraRef} controlsRef={controlsRef} />
             </div>
           )}
         </section>

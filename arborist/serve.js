@@ -213,6 +213,7 @@ function listSpecies() {
       label:        m?.displayName || decl.label,
       scientific:   decl.scientific,
       source:       decl.source || m?.source || 'lidar',
+      forSpeciesName: decl.forSpeciesName || null,
       tier:         decl.tier,
       leafMorph:    decl.leafMorph,
       barkMorph:    decl.barkMorph,
