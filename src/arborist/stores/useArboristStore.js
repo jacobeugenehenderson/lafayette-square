@@ -146,6 +146,15 @@ const useArboristStore = create((set, get) => ({
     set({ groveOpen: !!open })
     if (open) get().loadGrove()
   },
+
+  // Phase L Cycle 1 (2026-05-19) — third top-level mode alongside Grove +
+  // Procedural. Routed in ArboristApp.jsx; the LidarWorkstage keeps its
+  // own viewport / extraction state local (kept out of the store so toggling
+  // between modes doesn't leak intermediate state across them).
+  lidarOpen: false,
+  setLidarOpen: (open) => {
+    set({ lidarOpen: !!open })
+  },
   // Edit a variant's override field from Grove's hover card. Optimistic
   // local update + POST to the existing per-species variant override
   // endpoint. Pass value=null to clear an override (back to base).

@@ -1,20 +1,22 @@
 /**
  * Arborist — species-asset library producer.
  *
- * Three surfaces:
+ * Four surfaces (Phase L Cycle 1 2026-05-19 added LiDAR):
  *   - Library: list of declared species. Click a row → workstage.
- *   - Workstage: specimen browser + 3D viewport + pick-to-promote.
- *   - Grove: every rated variant across the library on one ground plane,
- *           for spotting duds and toggling exclude.
+ *   - Workstage: specimen browser + 3D viewport + pick-to-promote (legacy Scan mode).
+ *   - Procedural: dice + adopt procedural variants per species.
+ *   - LiDAR: LiDAR specimen browse + QSM cylinder extraction tuning.
+ *   - Grove: every rated variant across the library on one ground plane.
  *
- * Mode is implicit: activeSpeciesId + groveOpen in the store decide which
- * view renders. No router needed.
+ * Mode is implicit: lidarOpen / proceduralOpen / groveOpen / activeSpeciesId
+ * in the store decide which view renders. No router needed.
  */
 import { useEffect, useState } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import Workstage from './Workstage.jsx'
 import Grove from './Grove.jsx'
 import ProceduralWorkstage from './ProceduralWorkstage.jsx'
+import LidarWorkstage from './LidarWorkstage.jsx'
 
 export default function ArboristApp() {
   const species         = useArboristStore(s => s.species)
@@ -24,6 +26,8 @@ export default function ArboristApp() {
   const setGroveOpen    = useArboristStore(s => s.setGroveOpen)
   const proceduralOpen     = useArboristStore(s => s.proceduralOpen)
   const setProceduralOpen  = useArboristStore(s => s.setProceduralOpen)
+  const lidarOpen          = useArboristStore(s => s.lidarOpen)
+  const setLidarOpen       = useArboristStore(s => s.setLidarOpen)
   const loadSpecies     = useArboristStore(s => s.loadSpecies)
   const setActiveSpecies = useArboristStore(s => s.setActiveSpecies)
   const loadLooks       = useArboristStore(s => s.loadLooks)
@@ -38,6 +42,7 @@ export default function ArboristApp() {
     return () => window.removeEventListener('focus', onFocus)
   }, [loadLooks])
 
+  if (lidarOpen) return <LidarWorkstage />
   if (proceduralOpen) return <ProceduralWorkstage />
   if (groveOpen) return <Grove />
   if (activeSpeciesId) return <Workstage />
@@ -74,6 +79,19 @@ export default function ArboristApp() {
               cursor: 'pointer',
             }}>
             Procedural →
+          </button>
+          <button onClick={() => setLidarOpen(true)}
+            title="LiDAR specimen browse + QSM cylinder extraction tuning (Phase L Cycle 1)"
+            style={{
+              background: 'rgba(126,200,224,0.12)',
+              border: '1px solid rgba(126,200,224,0.4)',
+              color: '#7fc8e0',
+              padding: '5px 12px', borderRadius: 4,
+              fontFamily: 'inherit', fontSize: 12,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}>
+            LiDAR →
           </button>
           <button onClick={() => setGroveOpen(true)}
             title="See every rated variant on one ground plane"

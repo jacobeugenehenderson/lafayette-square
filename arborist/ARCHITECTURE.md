@@ -176,6 +176,20 @@ generateTreeMesh({
 
 **Pipeline survives SpeedTree migration unchanged.** SpeedTree-imported species would write the same `manifest.bark` shape and run through the same shader.
 
+### Per-region bark binding (Phase L Cycle 2 — design)
+
+LiDAR-baked trees (Option δ — see "LiDAR pipeline + Option δ scope" below) carry cylinder-radius metadata per segment. Sugar Maple bark looks different on trunk (heavy furrowed) vs branches (smoother, lighter); the manifest can carry per-region bark spec keyed by a radius threshold:
+
+```json
+"bark": {
+  "trunk":  { "materialRef": "Bark007", "uvScale": [1.5, 4.0], "tintBase": "#3a2820", ... },
+  "branch": { "materialRef": "Bark003", "uvScale": [1.0, 3.0], "tintBase": "#4a3424", ... },
+  "regionThreshold": 0.08
+}
+```
+
+Runtime classifies each cylinder by radius at bake time → assigns `aBark` attribute variant → fragment shader picks per-region uniforms. Single shader program preserved (uniforms-only branching, same Bloom constraint). When `bark` spec is single-value (current procedural pattern, no `trunk`/`branch` split), runtime treats all cylinders as one region — backwards-compatible.
+
 ### Bark tile wrap is the open shader question (Phase B.2 — deferred)
 
 The `fract`-inside-atlas wrap has unavoidable derivative discontinuity at wrap lines — narrow blurry stripes that "crawl" at close-up Hero. Proper fixes (one of):
@@ -205,6 +219,87 @@ Botanically, mature trees fall into one of ~23 architectural models in the **Hal
 **Defense in depth on Lift:** in strong-leader mode the per-scaffold `localTropism` is the canopy's upward push; `scaffoldEmergenceBias` (the operator-facing "Lift" slider in spreading mode) becomes redundant. The UI hides Lift in strong-leader mode AND `runGrowthLoop` zeros `emergenceBias` when `architecture === 'strong-leader'` — so importing a spreading-mode Lift overlay onto a strong-leader slot can't double the upward bias.
 
 `leaderStrength ∈ [0.3, 1.0]` is a single dial: at 1.0 the leader threads through the full envelope and the lateral tropism is `[0, 0.4, 0]`; at 0.5 the leader reaches halfway then becomes a regular SCA tip, and the laterals get only `[0, 0.2, 0]` upward bias (~50% as fasciculate). Operator default 1.0 for the central-leader heroes — drops to 0.5–0.7 to soften toward Massart's.
+
+---
+
+## LiDAR pipeline + Option δ scope (Phase L, 2026-05-19)
+
+The Arborist carries TWO authoring pipelines that ultimately emit the same artifact shape (skeleton GLB + leaves + bark via the runtime atlas). The newer LiDAR pipeline lives alongside the procedural pipeline, not replacing it.
+
+```
+                 ┌─ Procedural pipeline ────────────────────────┐
+                 │  src/arborist/ProceduralWorkstage.jsx        │
+                 │  └─ arborist/generate-procedural.js          │
+                 │     └─ runSCA / runMonopodial → skeleton GLB │
+                 ▼                                              │
+            publish-glb.js                                      │
+                 ▲                                              │
+                 │  ┌─ LiDAR pipeline ────────────────────────┐ │
+                 │  │  src/arborist/LidarWorkstage.jsx        │ │
+                 │  │  └─ arborist/serve.js POST /lidar/.../extract
+                 │  │     └─ arborist/bake-tree.py            │ │
+                 │  │        └─ QSM extraction → skeleton GLB │ │
+                 └──┴─────────────────────────────────────────┘ │
+                                                                ▼
+                              bake-look.js (atlas), bake-trees.js (placement)
+                                              ▼
+                              public/baked/<look>/trees/<species>/...
+                                              ▼
+                              InstancedTrees.jsx (runtime, unchanged)
+```
+
+**bake-tree.py** is the Python QSM extractor (dated 2026-04-27 — predates the procedural arc). Reads `.laz` point clouds from `botanica/dev/train/`, voxel-downsamples, fits cylinders via slab DBSCAN clustering + parent linking, emits a tapered-cylinder skeleton GLB. Output artifact format is identical to procedural — same `publish-glb.js` consumer, same `bake-look.js` atlasing, same runtime path.
+
+### Cycle 1 refactor — extract-only path (2026-05-19)
+
+The load → voxel → slab-cluster → parent-link pipeline now lives in `arborist/lidar_extract.py` (Phase L Cycle 1) so the LidarWorkstage can drive interactive re-extraction without writing a GLB. Five exports:
+
+| Symbol | Role |
+|---|---|
+| `load_pointcloud(laz_path)` | `.laz` → Nx3 numpy, XY median-centered + Z floored at 0 |
+| `voxel_downsample(pts, voxel)` | hash-bucket voxel downsample (Nx3 → fewer-Nx3 centroids) |
+| `cluster_slab(xy, eps, min_samples)` | 2D connected-components via `cKDTree.query_pairs` + `scipy.sparse.csgraph` |
+| `extract_skeleton(pts, slab, eps, min_samples, link_max)` | Z-slab clustering + parent linking → `(nodes, edges)` |
+| `extract_cylinders(laz_path, voxel_size, min_radius, tip_radius)` | One-shot wrapper — returns `{nodes: [{x,y,z,radius,parentIdx}, ...], stats: {pointsRaw, pointsDownsampled, nodes, edges, cylinders, tips, trunkLike, branchLike, medianRadius, elapsedMs}}` |
+
+`bake-tree.py` imports the first four + `specimen_laz_path`; the cylinder-meshing / tip-extraction / trimesh GLB-export / manifest-emission code stays in `bake-tree.py` (Cycle 2 territory).
+
+`lidar_extract.py` carries a CLI used by `serve.js`'s `POST /lidar/specimen/:treeId/extract`:
+
+```
+.venv/bin/python arborist/lidar_extract.py \
+    --treeId=10184 --voxelSize=0.03 --minRadius=0.005 --tipRadius=0.02
+```
+
+Emits one JSON document on stdout (same shape `extract_cylinders` returns + `treeId` + `elapsedMs`). The HTTP endpoint just JSON-parses stdout and returns it.
+
+**Pre-flight repair (2026-05-19):** `bake-tree.py`'s `KeyError: 'sourceFile'` on every seedling was a schema-drift bug, not a numpy / dependency drift. The serve.js POST `/species/:id/seedlings` body schema doesn't accept / persist a `sourceFile` field; it's always derivable from `treeId` via the same rule `serve.js:specimenLazPath` uses. Both `bake-tree.py` callsites now fall back to `botanica/dev/<treeId>.laz` derivation when `seedling.sourceFile` is absent. Re-verified: both starred `acer_saccharum` seedlings bake clean in 4 s total.
+
+### Workspace render budget (Phase L Cycle 1)
+
+Desktop-class. Single specimen at a time. Visible-cost ceilings:
+
+| Layer | Mechanism | Ceiling (per specimen) |
+|---|---|---|
+| Raw point cloud | `THREE.Points` with `BufferGeometry` `position` + size-attenuated `PointsMaterial` | ≤1M pts; 60 fps trivially on integrated GPU at desktop res |
+| Cylinder overlay | Two `InstancedMesh` draws (trunk + branch), translucent `MeshStandardMaterial` | typical Sugar Maple TLS specimen: ~200–500 cylinders; ~10 K instance-tris total |
+| Cardinal helpers | `gridHelper` + ambient + one directional light | trivial |
+
+Bake-step knockdown to LS mobile budget (`publish-glb.js` weld/dedup/simplify at lod1=0.40, lod2=0.10) lives in Cycle 2; Cycle 1's workspace is hi-res authoring, not runtime-budget validation.
+
+**Per-region bark binding** rides the existing bark shader unification (see "Per-region bark binding" above). LiDAR cylinder radii feed directly into the trunk-vs-branch classification at bake time.
+
+### Option δ scope split — locked 2026-05-19 PM
+
+LiDAR provides **skeleton only** in v1.5. Canopy (leaves) stays fully procedural — D.1b leaf emission + Phase F gradient maps + Configuration D rendering (see below). The LiDAR canopy-point sampling alternative ("use real foliage points to place leaf cards") is reserved for v1.6+ when/if street-view (v2) makes the canopy-fidelity case worth the additional pipeline complexity.
+
+**Why this split:** LiDAR's high-value win at LS Hero distance is **trunk topology authenticity** — bark photo wraps onto real-tree geometry instead of parametric tubes, so "the shaders can work harder for the same calories." Canopy-point sampling is a tempting expansion but its visual contribution at LS distances (where individual leaves are sub-pixel) is uncertain and the pipeline complexity is significant. The split captures the high-confidence win without the high-uncertainty investment.
+
+**Mixed-roster heroes:** G.1 Sugar Maple ultimately ships as both LiDAR-baked variants AND procedural variants under the same `acer_saccharum_procedural` species id. Substitution lottery picks among them; per-instance jitter (rotation, scale, hue) diversifies across 88 LS placements. Each baked variant uploads to GPU once; instancing math is identical to procedural-only.
+
+**Workspace separation:** `LidarWorkstage.jsx` is a new third top-level mode in `ArboristApp.jsx` alongside `ProceduralWorkstage.jsx` and `Grove.jsx`. Existing `Workstage.jsx` (legacy Scan-mode UI predating the new pipelines) deprecates after Phase L Cycle 2 ships. See `BACKLOG.md` Phase L for cycle breakdown.
+
+See [[project_configuration_d_canopy_render]] for rendering doctrine + Option δ rationale.
 
 ---
 
@@ -279,6 +374,99 @@ merged[key] = {
 UI controls bind to `effective`. Without the DEFAULTS layer, controls that reference fields only defined in `DEFAULT_SCA_BY_PRESET` (e.g. `phyllotaxisMode`, `scaffoldEmergenceBias`, default `deformers`) would display `undefined`-fallbacks → snap-back bugs on controlled selects.
 
 **Store-side mirror.** `setProceduralSlotParams` ALSO writes patches into `v.effective` alongside `v.params`. Sliders worked without this (DraftSlider keeps local draft state) but controlled selects (Phyllotaxis, Profile) snapped back to stale values without it. With the mirror, the next render of the panel sees the operator's choice in `effective.sca.phyllotaxisMode` immediately, no server round-trip needed.
+
+---
+
+## Phase F leaf-color architecture (design, 2026-05-19)
+
+Phase F's leaf surface architecture went through three pivots on 2026-05-19. The final shape consolidates three doctrines: vendor-pack binding, year-long tree (annual cycle), and per-Look art-direction overrides. See `BACKLOG.md` Phase F for full pivot history; [[project_year_long_tree_doctrine]] for the year-long manifest schema in detail.
+
+### Layer 1 — Leaf-pack library (greyscale shape + PBR)
+
+Leaf shapes live as vendor or operator-authored PBR packs at `public/textures/leaves/shapes/<pack_id>/`:
+
+- `Color.jpg` — desaturated → luminance value used as gradient-map t-coordinate
+- `Opacity.jpg` — alpha mask (shape silhouette)
+- `NormalGL.jpg` — per-leaf surface direction (real per-leaf lighting)
+- `Displacement.jpg` — optional bevel/relief (defer use to v1.6 unless visible at Hero)
+
+10 vendor packs live at `assets/botanical-reference-hires/LeafSet0xx/` covering ~80% of LS inventory by morphology (palmate via LeafSet010, oak/lobed via LeafSet016, willow/narrow via LeafSet013, redbud/heart via LeafSet004, pine needles via LeafSet019, etc.). README in that directory pre-tags each pack to morphology — canonical source.
+
+**Morphology → pack mapping** lives in (planned) `arborist/leaf-pack-bindings.json` — drives auto-suggested defaults per species in the workspace UI. Coverage gaps (Ginkgo `fan`, Honeylocust `fine_compound`, etc.) are explicit; flagged for operator-authoring or future vendor sourcing.
+
+Per [[feedback_leverage_vendor_pbr_before_authoring]]: operator authoring is for coverage gaps, not the default path. Configuration-by-binding before Photoshop.
+
+### Layer 2 — Year-long tree (annual cycle in manifest)
+
+Per [[project_year_long_tree_doctrine]] (locked 2026-05-19 PM): the species manifest carries its annual phenology cycle. Runtime samples a `uDayOfYear` uniform (Meteorologist-published) and interpolates between authored season anchors:
+
+```json
+"leafCluster": {
+  "morphology": "palmate",
+  "shapeRef": "LeafSet010",
+  "annualCycle": [
+    { "day":  15, "label": "winter",      "presence": 0.0, "scale": 0.0 },
+    { "day": 105, "label": "spring buds", "presence": 0.6, "scale": 0.4,
+      "shapeRef": "LeafSet010_spring_buds",
+      "gradientFront": [{"t":0,"color":"#7eba5e"},{"t":1,"color":"#aece8a"}] },
+    { "day": 196, "label": "summer peak", "presence": 1.0, "scale": 1.0,
+      "gradientFront": [{"t":0,"color":"#2a5825"},{"t":0.5,"color":"#3a7530"},{"t":1,"color":"#5a9850"}] },
+    { "day": 288, "label": "fall peak",   "presence": 1.0, "scale": 1.0,
+      "gradientFront": [{"t":0,"color":"#882010"},{"t":0.3,"color":"#c84015"},{"t":0.6,"color":"#e87020"},{"t":1,"color":"#f8b830"}] },
+    { "day": 320, "label": "late fall",   "presence": 0.4, "scale": 0.85 },
+    { "day": 350, "label": "shed",        "presence": 0.0, "scale": 0.0 }
+  ]
+}
+```
+
+**Per-anchor fields:** `day` (1–365), `presence` (card alpha 0–1), `scale` (card size 0–1), optional `shapeRef` (per-season shape override — e.g., spring buds use smaller pack), `gradientFront` + `gradientBack` (multi-stop color ramps for front and back of leaf — front/back tinting drives maple-style wind shimmer via `gl_FrontFacing`).
+
+**Sensible defaults per morphology class:** deciduous-broadleaf template carries ~6 anchors (winter / spring-buds / summer-peak / fall-peak / late-fall / shed); evergreen-conifer ~2 anchors (winter-darker / summer-lighter, presence always 1.0). Operators tweak per species from morphology defaults — keeps authoring effort to ~10 minutes per hero for a meaningful annual cycle.
+
+**Runtime shader:** Phase F gradient LUT is per-anchor (256×1 RGBA texture baked at manifest-hash-keyed from gradient stops). Fragment shader samples luminance(`vColor`) → indexes the LUT for current bracket → `mix()` between adjacent anchors weighted by `uDayOfYear`. Per-card alpha multiplied by interpolated `presence`; per-card scale multiplied by interpolated `scale`. Single shader program preserved.
+
+### Layer 3 — Per-Look art-direction overrides
+
+The year-long manifest is the species's botanical TRUTH. Per-Look art-direction overrides ride the existing `scene.materialColors[<species>]` channel, extended to carry both shape-pack AND gradient overrides per (Look, species) pair:
+
+```json
+// in public/looks/halloween/design.json
+"trees": {
+  "speciesOverrides": {
+    "acer_saccharum_procedural": {
+      "shapeRef": "halloween_bats",
+      "gradientFront": [{"t":0,"color":"#1a0008"},{"t":1,"color":"#4a0020"}]
+    },
+    "quercus_alba": { "shapeRef": "halloween_bats" }
+  }
+}
+```
+
+**Resolution order at runtime:** per-Look override (if present) wins → else year-long annual-cycle interpolation at current `uDayOfYear` → else species default.
+
+Halloween bats, Christmas candy canes, Diwali ornament gold, Pride rainbow, Valentine's pink — all expressible as per-Look override packs on top of botanical defaults. Phase W wind animates override packs identically (bats flutter in canopy). New override packs live at `public/textures/leaves/shapes/<pack_id>/` alongside vendor LeafSet packs — same greyscale + opacity + normal pipeline.
+
+---
+
+## Configuration D canopy render (Phase L Cycle 2 + Phase H supersession, 2026-05-19)
+
+Per [[project_configuration_d_canopy_render]] (locked 2026-05-19 PM): the canopy renders as **outer-shell A2C cards + inner-mass `THREE.Points` point cloud**.
+
+| Layer | Geometry | Material | Cost |
+|---|---|---|---|
+| **Outer shell** | D.1b leaf cards on camera-facing surface only (~1500 cards/tree, 70% reduction from current 5500) | Phase F gradient-map alpha-blend | Alpha overdraw on ~1500 cards |
+| **Inner mass** | `THREE.Points` rendering of canopy-volume samples (algorithmic), size-attenuated | Sampled gradient color + slight bloom | One-to-nine opaque pixels per point — zero alpha overdraw |
+| **Skeleton** | Cylinders (LiDAR-baked via QSM or procedural via SCA) | Per-region bark shader | Standard cylinder cost |
+
+**Why this is the architectural pillar of Phase L:** alpha-blend overdraw is the dominant GPU cost in foliage rendering. `THREE.Points` rendering bypasses alpha entirely — interior-mass cost collapses by ~10×. Outer-shell card count drops ~70% (silhouette + camera-facing only). Bloom + film grade in the LS post-FX stack smooths the point-cloud-as-foliage into "foliage volume" — the visual sleight-of-hand is robust at LS Hero/Browse distances.
+
+**Source-split (Option δ):** in v1.5 the inner-mass points are **algorithmically sampled** from the canopy-volume envelope, not from real LiDAR canopy points. The LiDAR-canopy-point alternative is reserved for v1.6+ per the Option δ scope split (see "LiDAR pipeline + Option δ scope" above).
+
+**Supersedes the original Phase H plan** (alpha-test cards for core + A2C cards for shell). Configuration D is strictly better because POINTS HAVE NO ALPHA — the original card-core approach still had alpha-test cost on interior; the new approach has zero. Procedural-only trees that don't (yet) ship through Configuration D fall back to the original Phase H plan; LiDAR-baked trees ship through Configuration D from Phase L Cycle 2.
+
+**LoD progression:** lod0 = dense algorithmic points + cards-shell. lod1 = 30% point subsample + cards-shell. lod2 = alpha billboard or cards-only, no points.
+
+**Single shader program constraint:** Configuration D's outer-shell uses the Phase F gradient-map material; inner-mass points use a sibling material (different draw call, may compile to a separate program — verify at Cycle 2; if true, accept the 2nd program as load-bearing for the architectural win).
 
 ---
 

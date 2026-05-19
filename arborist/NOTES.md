@@ -4,6 +4,147 @@
 
 ---
 
+## 2026-05-19 — Phase L Cycle 1 — LiDAR workspace + extraction tuning
+
+**Shipped:** third top-level mode (`LidarWorkstage.jsx`) alongside Procedural + Grove. Specimen browsing, live QSM extraction, multi-layer 3D viewport, save seedlings. Pre-flight repair to `bake-tree.py` so the underlying bake path actually works again. No bake/publish — that's Cycle 2.
+
+### Pre-flight result
+
+`bake-tree.py --species=acer_saccharum` was failing with `KeyError: 'sourceFile'` on both starred seedlings. **Schema drift**, not the numpy 2.x ptp() hazard the brief flagged. The current `serve.js POST /species/:id/seedlings` body schema doesn't accept / persist a `sourceFile` field (look at line 339 — only `starred` + `seedlings` survive); the field is always derivable from `treeId` via the same rule `serve.js:specimenLazPath` uses (`botanica/dev/<treeId>.laz`). bake-tree.py looked it up in two places (source-laz path + variant-meta record). Replaced both with `seedling.get("sourceFile") or f"botanica/dev/{seedling['treeId']}.laz"` fallback. Re-verified: 10184 + 10171 bake clean in 4.0 s total. Pre-flight is back to green for the procedural arc / Cycle 2 builders to lean on.
+
+### Refactor — `arborist/lidar_extract.py`
+
+Lifted `load_pointcloud` / `voxel_downsample` / `cluster_slab` / `extract_skeleton` / `specimen_laz_path` out of the 2026-04-27 `bake-tree.py` monolith into a new module. Added `extract_cylinders(laz_path, voxel_size, min_radius, tip_radius) → {nodes, stats}` as the single-shot wrapper the new HTTP endpoint binds to. Also added a CLI (`--treeId / --voxelSize / --minRadius / --tipRadius` → JSON on stdout) so `serve.js` can shell out the same way it shells out for `bake-tree.py`.
+
+**No algorithm change.** Every line of the lifted code is byte-equivalent to its 2026-04-27 form. `bake-tree.py` imports the four helpers from `lidar_extract`; mesh/tips/manifest writes stay in `bake-tree.py`. This keeps Cycle 2 free to evolve the bake path without re-walking the extraction.
+
+### Endpoints
+
+- `POST /api/arborist/lidar/specimen/:treeId/extract` — body `{species, voxelSize, minRadius, tipRadius}`; shells `lidar_extract.py`; returns `{treeId, nodes: [{x,y,z,radius,parentIdx}, ...], stats: {...}, serverMs}`.
+- `GET /api/arborist/lidar/specimen/:treeId/seedling-state?species=<id>` — returns `{treeId, species, saved, displayName, extractionParams}` (falls back to `config.tuneDefaults` when the specimen hasn't been saved as a seedling).
+- Extended `POST /api/arborist/species/:id/seedlings` to accept `displayNames: {treeId: name}`. Merge semantics: incoming keys win, `null|""` clears, absent keys preserved on disk (per [[feedback_absence_means_inherit_in_authored_blocks]] so the two workstages — Scan + LiDAR — can each save their slice without trampling).
+
+### Workstage panel choices
+
+The brief specified 4 panels + multi-layer viewport. Implementation choices worth recording:
+
+- **Auto-extract on specimen pick.** Slider changes show the Re-extract button but *don't* re-fire automatically — the operator commits via the button. Mirrors `[[feedback_debounced_save_must_flush_before_dependent_post]]`'s gesture-not-debounce semantics (a re-extract is a 1–5 s operation, not a smooth slider effect).
+- **`DraftSlider` reused inline.** Cycle 1 has only three sliders; copying ProceduralWorkstage's pattern locally (150 ms idle + pointer-up final) was cheaper than threading a new shared component. If Cycle 2 grows the panel beyond ~5 sliders, hoist to a shared module.
+- **Two `InstancedMesh` draws for cylinders, split at `medianRadius`.** Brief asked for trunk-vs-branch color coding via a hidden tunable threshold `T = median radius`. Implemented as median-of-all-edge-radii computed during extraction (returned in `stats.medianRadius`); the workstage uses that directly. Tunable surfacing is a Cycle 2 concern when per-region bark binding needs an actual threshold to persist.
+- **Forestry XYZ → Three's Y-up at render.** Both the point cloud and the cylinder graph carry Z-up coordinates (forestry convention); the viewport remaps to `(x, z, -y)` inline at the mesh-construction site. Matches `SpecimenViewport.jsx`'s point-cloud handling.
+- **Specimen-details + display-name editor lives in the extraction tuner panel, not in the specimen-browser row.** Keeps the list dense + scannable; the per-active-specimen editor is one focused surface, not 110 inline forms.
+- **Filter syntax accepts `8-12` for a height range.** Substring otherwise. Discovered while writing the filter that operators will want both. Minimal addition; documented in FEATURES.md.
+
+### Auto-suggested leaf pack header
+
+`arborist/leaf-pack-bindings.json` (just-shipped) drives the header readout. Lookup order: `speciesOverrides[<id>]` (`null` is "coverage gap"; string is a packId) → else `shapeToMorphology[<species.leafMorph>]` → first candidate in `morphologyToPacks[morph]`. Cycle 1 INFORMATIONAL ONLY — Cycle 2 will pull from the same file at `bake-look.js` time. Coverage gaps render in red ("coverage gap — no vendor pack") so operators see when Ginkgo / Honeylocust need PSD work.
+
+### Surfaced scope drift
+
+Per [[feedback_baby_must_surface_scope_drift]]. Disclosing in commit body too:
+
+- **`bake-tree.py` refactor approach.** Brief floated "extract_cylinders out of monolithic main(), could land as separate `lidar_extract.py` that bake-tree.py imports." Took that route exactly. The whole load/voxel/skeleton pipeline moved (not just `extract_cylinders` solo) because the four helpers are interdependent and `bake-tree.py`'s `bake_one` calls them directly too. Five lifted symbols; same algorithm; bake re-verified clean.
+- **`sourceFile` schema repair done in `bake-tree.py`, not `serve.js`.** Could have gone the other way — extend the POST body to accept + persist a `sourceFile` field. Chose the bake-side derivation because `sourceFile` is *not authored data* (it's redundant with `treeId`), so persisting it would be DRY-violating noise on disk. Bake-side derivation is consistent with serve.js's `attachFileSize` (lines 144–155) which does the same derivation for the specimens list.
+- **Filter accepts `8-12` height-range syntax.** Brief said "Filter input (height range or display-name substring)" — implemented both, matched on `^\d+-\d+$`.
+- **No new store field beyond `lidarOpen`.** Brief allowed "LiDAR-related store extensions if any" — kept workstage state local to the component so toggling modes mid-session doesn't leak intermediate state across them.
+- **HTTP layer for the new endpoints not round-trip verified in this session.** The `lidar_extract.py` CLI was tested directly (returned valid `{nodes, stats}` for treeId 10184 at `voxelSize=0.05`); `bake-tree.py` end-to-end retested clean. The `serve.js` endpoints are syntactically clean but not stood up + curl-verified yet. Operator validation gate.
+
+### Cycle 2 handoff state
+
+- **Endpoints to extend:** `POST /lidar/specimen/:treeId/bake` (or fold into existing `/species/:id/bake` with a per-specimen filter); manifest emission needs to grow `bark.regionThreshold` per [[project_configuration_d_canopy_render]]; Configuration D inner-mass point sampling lives downstream of `extract_cylinders` (consume `nodes` + emit sampled points in the canopy envelope).
+- **State Cycle 2 reads:** `arborist/state/<species>/seedlings.json` `{seedlings[].tuneParams, displayNames}` — same shape Cycle 1 writes.
+- **Operator validation gates before Cycle 2 dispatches:** (1) stand up the dev server and round-trip the two new endpoints; (2) confirm point-cloud render at LS-realistic specimen sizes (the bake-tree pre-flight ran on 454 K-pt and 128 K-pt clouds; Sugar Maple TLS specimens at full density can be 1M+ pts, brief's stated ceiling); (3) confirm the cylinder color-coding reads correctly for a heritage-class Sugar Maple at workstage scale (median-radius split may need a hidden override for non-symmetric trees).
+
+---
+
+## 2026-05-19 PM — Architecture day: LiDAR pivot + Configuration D + year-long tree doctrine + Phase F reframe
+
+A second long session, this one entirely architectural — no code shipped, multiple BACKLOG / memory / scratch updates. Following the morning's G.0 ship + canary contract ship, the operator + coordinator walked the asset library, the LiDAR pipeline state, and the Phase F leaf surface plan. Result: five major doctrines locked, two memories added, BACKLOG significantly reshaped, Phase F twice-pivoted. Procedural arc paused; LiDAR workspace becomes the next baby cycle.
+
+### 1. Vendor PBR over operator authoring (Phase F pivot 1+2)
+
+The operator + coordinator walked `assets/botanical-reference-hires/` together and found ten 4K PBR leaf packs pre-tagged by morphology in the README — `LeafSet010` is the maple/sycamore palmate pack, `LeafSet016` is oak/lobed, `LeafSet013` is willow/lanceolate, etc. ~80% of LS inventory species covered without authoring. Phase F's earlier "per-species color PSD" doctrine flipped twice in the same session:
+
+- **AM pivot:** color PSD → greyscale shape PSD + complex multi-stop gradient-map color (handles seasonal shifts, per-Look palette overrides, front/back maple-style shimmer via `gl_FrontFacing`)
+- **PM pivot:** PSD authoring → vendor-pack binding via manifest. Operator authoring collapses to CONFIGURATION (pick pack, tune gradients). PSD only when vendor library has coverage gaps (Ginkgo fan, Honeylocust fine_compound, etc.).
+
+New memory [[feedback_leverage_vendor_pbr_before_authoring]] captures the doctrine: check vendor library + READMEs before designing authoring workflows. Procedural-trees-are-the-destination still holds for SKELETON (vendor GLBs too heavy); vendor PBR is correct for SURFACE.
+
+### 2. Configuration D — outer-card-shell + inner-mass point cloud
+
+Operator surfaced the canopy alpha-overdraw problem: "what if we card the outer 2 layers and just blur the point cloud for filler leaves?" Coordinator + operator worked the design forward:
+
+- Outer shell: Phase F gradient-map A2C cards on camera-facing surface only (~1500 cards/tree vs current 5500 — 70% reduction)
+- Inner mass: `THREE.Points` rendering with size attenuation and sampled gradient color
+- Zero alpha overdraw on inner mass (points are 1–9 opaque pixels each)
+- Bloom + film grade smooths point-cloud-as-foliage; visual sleight-of-hand robust at LS Hero/Browse distances
+- Phase H's original card-core/card-shell plan superseded; Configuration D becomes the architectural pillar
+
+Memory [[project_configuration_d_canopy_render]] captures the doctrine.
+
+### 3. Option δ — LiDAR for trunk only
+
+Operator pressure-tested whether LiDAR was worth the pipeline complexity. Coordinator initially overweighted the LiDAR-everything bundle; operator's "LiDAR trunks are inherently nicer shader quality" intuition surfaced the real tradeoff: LiDAR's value at LS Hero distance is **trunk topology authenticity** (bark wrap onto real-tree geometry vs parametric tubes), not canopy-point-sampling. The pro move surfaced as Option δ:
+
+- LiDAR provides TRUNK ONLY (QSM cylinder extraction)
+- Canopy is fully procedural (D.1b emission + Phase F gradient maps)
+- Configuration D rendering composition (outer cards + inner algorithmic points, NOT LiDAR canopy points)
+- LiDAR-canopy-point-sampling reserved v1.6+ when/if street-view (v2) makes the canopy-fidelity case
+
+Captures the high-value LiDAR win without the high-uncertainty LiDAR investment. Updated [[project_configuration_d_canopy_render]] to reflect Option δ source split. New BACKLOG Phase L entry covers the workspace + render pipeline.
+
+### 4. Year-long tree doctrine
+
+Operator's third major idea: "could we have a year-long tree? bake in seasonal leaf presence/size/color so it behaves like a real tree?" Coordinator worked it forward; this is the actual architectural breakthrough of the session.
+
+- Tree carries its annual phenology cycle baked into the manifest (`leafCluster.annualCycle[]`)
+- Each anchor: `{day, presence, scale, gradientFront, gradientBack, optional shapeRef}`
+- Runtime samples a `uDayOfYear` uniform (Meteorologist-published, scene-clock-driven)
+- Interpolates between adjacent anchors → tree presents correctly for any date
+- Sugar Maple peaks orange-red in mid-October because that's literally what it does; Norway peaks yellow; Ginkgo turns gold late November — botanically correct by construction
+
+**What this collapses:** per-Look palette overrides per species → Look is just a date. Halloween = Oct 31 = day 304 → maples at peak fall ramp naturally. Christmas = Dec 25 = day 359 → maples shed, twigs only. Authoring scale was N looks × M species; now M species × ~4–6 anchors (once per species).
+
+**Per-Look art-direction overrides still work** for cases where botanical accuracy isn't what the Look wants. `scene.materialColors[<species>]` channel extended to carry both shape-pack overrides AND gradient overrides per (Look, species) pair. **Halloween bats**, Christmas candy-cane stripes, Diwali ornament gold, Pride rainbow — all expressible as per-Look override packs on top of the year-long defaults. Phase W wind animates override packs identically — bats flutter in the canopy. Genuinely magical use case for the kit.
+
+Memory [[project_year_long_tree_doctrine]] captures.
+
+### 5. Procedural arc parked; LiDAR workspace becomes next dispatch
+
+Per the [[feedback_procedural_trees_are_the_destination]] memory we already had, the procedural arc remains the destination — but for this work cycle, LiDAR is the priority because it unlocks Option δ + trunk-quality win + paves the Configuration D path. Sequencing:
+
+1. Dispatch LiDAR Cycle 1 (workspace + extraction + viewport) — brief drafted, "short entrée" version pasted to operator
+2. Operator validates Cycle 1 outputs
+3. Dispatch LiDAR Cycle 2 (Configuration D composition + Phase F integration + bake/publish)
+4. Phase F brief (gradient editor + annual-cycle authoring + override pack picker) — joint with Cycle 2 since both need the shader infrastructure
+5. Meteorologist coordinator-to-coordinator handoff for `uDayOfYear` publish (small contract, similar shape to canary)
+6. G.1 Sugar Maple hero brief — dispatches once LiDAR workflow proves out + Phase F infrastructure lands. Hero ships as mixed roster (LiDAR-baked Option δ variants + procedural variants under same species id)
+
+Procedural-arc work parked (G.0 stays as the most recent ship; G.1 pre-stage scratch doc carries the placeholders and gets updated as the architecture settles).
+
+### Doctrine layering (synthesis)
+
+Final architecture after today's pivots:
+
+| Layer | Source | Role |
+|---|---|---|
+| Skeleton | LiDAR QSM (Option δ) or procedural (G.0 strong-leader) | Cylinder topology — LiDAR provides authenticity; procedural provides fallback + variation |
+| Bark surface | Vendor Bark pack + per-region binding (trunk vs branch by radius) | Per-Look retintable via existing uniforms |
+| Canopy structure | Procedural D.1b emission on whichever skeleton | Outer cards + inner algorithmic points (Configuration D) |
+| Leaf shape | Vendor LeafSet pack (per-species default via morphology mapping) | Greyscale shape; gradient-map drives color |
+| Leaf color | Multi-stop gradient LUT per (species, season) | Authored as annual-cycle anchors |
+| Time axis | `uDayOfYear` from Meteorologist | Tree presents correctly for any date |
+| Per-Look art direction | `scene.materialColors[<species>]` extended | Shape-pack + gradient overrides for special Looks (Halloween bats, Christmas red+white, etc.) |
+| Per-instance variation | World-XZ hash + (future) phenology offset | Natural diversity across 88 Sugar Maple placements |
+
+Each layer is independently authored, composes deterministically, ships through the same publish-glb + bake-look + bake-trees pipeline procedural already uses. The whole thing is structurally sound; what's left is execution.
+
+### Operator framing — the park is the gem
+
+Operator named at end of session: "the park is the gem of the square. it has taken a side-seat to get the rest of the app going but this is our major attention now." Doc-update pass triggered immediately. The park-as-gem framing affects coordinator prioritization going forward: trees / canopy / planting are first-class concerns, not afterthoughts. When forced to choose, default toward park polish over peripheral features.
+
+---
+
 ## 2026-05-19 — Phase G.0 — `strong-leader` SCA architecture (Rauh's model)
 
 **Shipped:** third structural SCA mode alongside `spreading`. Adds 21st knob (Architecture dropdown) + conditional Leader strength slider in the Canopy panel. Defaults: broadleaf / broad / columnar → strong-leader; weeping / ornamental → spreading.

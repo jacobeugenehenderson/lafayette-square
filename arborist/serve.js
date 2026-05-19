@@ -334,23 +334,41 @@ const server = createServer(async (req, res) => {
     }
 
     // POST /species/:id/seedlings — save the species's curation state.
-    // Body shape: { starred: string[], seedlings: [...] }
-    //   starred   — free operator notes (UI only, no system action)
-    //   seedlings — the "checked" set; bake-tree.py reads only this field.
-    // Either field is optional; missing means empty.
+    // Body shape: { starred: string[], seedlings: [...], displayNames?: {treeId: name} }
+    //   starred       — free operator notes (UI only, no system action)
+    //   seedlings     — the "checked" set; bake-tree.py reads only this field.
+    //   displayNames  — Phase L Cycle 1 (2026-05-19): operator-given labels
+    //                   per treeId. Preserved across POSTs that omit them so
+    //                   the LidarWorkstage and Scan Workstage can each save
+    //                   their slice without trampling the other's edits.
+    // Each field is optional; missing means empty (or — for displayNames —
+    // preserves the on-disk value).
     if (req.method === 'POST' && (m = req.url.match(/^\/species\/([^/]+)\/seedlings$/))) {
       const id = m[1]
       if (!readSpeciesDecl()[id]) return jsonRes(res, 404, { error: 'unknown species', id })
       const body = await readBody(req)
+      const seedlingsPath = join(STATE_DIR, id, 'seedlings.json')
+      const existing = readJsonOrNull(seedlingsPath) || {}
       const starred = Array.isArray(body.starred) ? body.starred : []
       const seedlings = Array.isArray(body.seedlings) ? body.seedlings : []
-      writeJson(join(STATE_DIR, id, 'seedlings.json'), {
+      // Merge displayNames: incoming wins per-key; `null` clears; absent keys
+      // inherit on-disk value. Per [[feedback_absence_means_inherit_in_authored_blocks]].
+      const displayNames = { ...(existing.displayNames || {}) }
+      if (body.displayNames && typeof body.displayNames === 'object') {
+        for (const [k, v] of Object.entries(body.displayNames)) {
+          if (v === null || v === '') delete displayNames[k]
+          else displayNames[k] = String(v)
+        }
+      }
+      writeJson(seedlingsPath, {
         species: id,
         starred,
         seedlings,
+        displayNames,
         savedAt: Date.now(),
       })
-      return jsonRes(res, 200, { ok: true, starred: starred.length, picked: seedlings.length })
+      return jsonRes(res, 200, { ok: true, starred: starred.length, picked: seedlings.length,
+        displayNames: Object.keys(displayNames).length })
     }
 
     // GET /specimens/:treeId/preview.ply — stream a converted PLY (cached)
@@ -404,6 +422,81 @@ const server = createServer(async (req, res) => {
           species: id,
           stderr: String(err.stderr || err.message).slice(0, 8000),
           stdout: String(err.stdout || '').slice(0, 4000),
+        })
+      }
+    }
+
+    // GET /lidar/specimen/:treeId/seedling-state?species=<id>
+    // Phase L Cycle 1 (2026-05-19). Returns the operator-tuned extraction
+    // params for one specimen + its display name. Reads from
+    // arborist/state/<species>/seedlings.json with a fall-through to
+    // config.tuneDefaults when the specimen hasn't been saved yet. Used by
+    // LidarWorkstage to pre-populate the extraction tuner + name field.
+    if (req.method === 'GET' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/seedling-state(\?.*)?$/))) {
+      const treeId = m[1]
+      const species = new URL(req.url, 'http://x').searchParams.get('species')
+      if (!species) return jsonRes(res, 400, { error: 'missing ?species=<id>' })
+      if (!readSpeciesDecl()[species]) return jsonRes(res, 404, { error: 'unknown species', species })
+      const seedlings = readJsonOrNull(join(STATE_DIR, species, 'seedlings.json')) || {}
+      const list = Array.isArray(seedlings.seedlings) ? seedlings.seedlings : []
+      const hit = list.find(s => String(s.treeId) === String(treeId))
+      const defaults = CONFIG.tuneDefaults || { voxelSize: 0.03, minRadius: 0.005, tipRadius: 0.02 }
+      const tune = (hit && hit.tuneParams) ? hit.tuneParams : defaults
+      const displayName = seedlings.displayNames?.[treeId] || null
+      return jsonRes(res, 200, {
+        treeId,
+        species,
+        saved: !!hit,
+        displayName,
+        extractionParams: {
+          voxelSize: Number(tune.voxelSize ?? defaults.voxelSize),
+          minRadius: Number(tune.minRadius ?? defaults.minRadius),
+          tipRadius: Number(tune.tipRadius ?? defaults.tipRadius),
+        },
+      })
+    }
+
+    // POST /lidar/specimen/:treeId/extract
+    // Phase L Cycle 1 (2026-05-19). Body { species, voxelSize, minRadius,
+    // tipRadius }. Runs lidar_extract.py against the specimen .laz and
+    // returns the node graph (nodes: [{x,y,z,radius,parentIdx}, ...]). No
+    // GLB write; this is for live tuning in the LidarWorkstage. The bake
+    // step (POST /species/:id/bake) still runs bake-tree.py for the full
+    // mesh + tips + manifest emission.
+    if (req.method === 'POST' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/extract$/))) {
+      const treeId = m[1]
+      const body = await readBody(req)
+      const species = body.species
+      if (species && !readSpeciesDecl()[species]) {
+        return jsonRes(res, 404, { error: 'unknown species', species })
+      }
+      const lazPath = specimenLazPath(treeId)
+      if (!existsSync(lazPath)) {
+        return jsonRes(res, 404, { error: 'specimen not on disk', treeId, lazPath })
+      }
+      const defaults = CONFIG.tuneDefaults || { voxelSize: 0.03, minRadius: 0.005, tipRadius: 0.02 }
+      const voxelSize = Number(body.voxelSize ?? defaults.voxelSize)
+      const minRadius = Number(body.minRadius ?? defaults.minRadius)
+      const tipRadius = Number(body.tipRadius ?? defaults.tipRadius)
+      const t0 = Date.now()
+      try {
+        const extract = join(__dirname, 'lidar_extract.py')
+        const { stdout } = await execAsync(VENV_PYTHON, [
+          extract,
+          `--treeId=${treeId}`,
+          `--voxelSize=${voxelSize}`,
+          `--minRadius=${minRadius}`,
+          `--tipRadius=${tipRadius}`,
+        ])
+        const result = JSON.parse(stdout)
+        result.serverMs = Date.now() - t0
+        return jsonRes(res, 200, result)
+      } catch (err) {
+        return jsonRes(res, 500, {
+          error: 'extract failed',
+          treeId,
+          stderr: String(err.stderr || err.message).slice(0, 4000),
+          stdout: String(err.stdout || '').slice(0, 1000),
         })
       }
     }

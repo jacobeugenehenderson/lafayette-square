@@ -65,15 +65,63 @@ In-Arborist authoring for the five procedural morphology fillers + the five Phas
 
 All sliders use a local `DraftSlider` (150ms idle commit + pointer-up final commit) — same pattern as cartograph's `DraftRangeInput`. Controlled selects (Phyllotaxis, Profile) read from the store-mirrored `effective` value so operator choices reflect immediately without a server round-trip.
 
-**Floating viewport overlays** (viewing conditions, not tree properties):
+**Floating viewport overlays** — three corners, three categories: viewing conditions, preview fidelity, instrumentation. None of them mutate the tree; all are local to the workstage session.
 
-- **Wind** toggle + strength slider (0–2): two-layer sway — wood gets a slow height-falloff sway, leaves layer a high-frequency flutter on top. Operator-tunable in the workstage; production wind in `treeAtlasMaterial.js` is Phase W proper (still pending).
+- **Wind** (bottom-left). Toggle + strength slider (0–2). Two-layer sway — wood gets a slow height-falloff sway, leaves layer a high-frequency flutter on top. Operator-tunable in the workstage; production wind in `treeAtlasMaterial.js` is Phase W proper (still pending). Viewing condition.
+
+- **LoD selector** (top-right). Three buttons (0 / 1 / 2) that re-fetch the preview at the corresponding simplification ratio. `POST /procedural/generate` carries the `lod` field; the server runs gltf-transform's `weld → dedup → simplify` with `MeshoptSimplifier` at the same ratios `publish-glb.js` uses (lod1 ratio 0.40 / err 0.002, lod2 ratio 0.10 / err 0.008). Active button gets the amber accent matching the Re-publish chrome; disabled while a preview is regenerating. State lives at `ProceduralWorkstage` scope so the choice survives slot-tab switches. Preview fidelity dial.
+
+- **Perf gauge** (bottom-right). Four-row readout sampled ~4 Hz by a read-only `<PerfProbe />` r3f child mounted inside the viewport's `<Canvas>`.
+  - `tris` — total triangle count across the loaded scene. Color zones at LoD0: green < 20k, yellow 20–40k, red > 40k. Zones scale × 0.5 at LoD1 and × 0.2 at LoD2 to mirror publish-glb's simplification ratios.
+  - `leaf cards` — `geometry.userData.atlasKind === 'leaf'` vertex count divided by 4 (each card is a 4-vert quad).
+  - `draw calls` — `gl.info.render.calls`.
+  - `programs` — `gl.info.programs.length`. Author-time tripwire: flagged red if > 5 to catch accidental shader-program divergence (per [[feedback_unique_program_cache_key_before_wrappers]]); should stay at the shared-tree-material count regardless of slot or LoD.
+  PerfProbe renders nothing — it can't pollute the count it measures. Instrumentation readout.
 
 **Conifer panel** (Phase E, pending): whorlsPerHeight, branchesPerWhorl, leaderDominance, droopPerWhorlAge. Hidden today.
 
 **Bark panel** (Phase B.1.b, deferred): material dropdown w/ thumbnails, UV scale X/Y sliders, tintBase color picker, tintJitterRange + roughnessOverride sliders, "Apply & republish species" button. Indefinitely deferred per 2026-05-16 EOD doctrine — bark authoring iteration value is bounded by the geometric ceiling Phase C addresses, not by UI surface.
 
-**Leaf panel** (Phase F, pending): cluster texture preview, summer/fall inner+outer color pickers, occupancy slider. NO density / jitter / cluster-count sliders — those would be compositor knobs; the compositor is dropped per the 2026-05-16 PS-authored reframe.
+**Leaf panel** (Phase F, pending — reframed 2026-05-19 to vendor-pack binding + year-long tree doctrine; see `ARCHITECTURE.md` "Phase F leaf-color architecture"). Operator authoring as configuration, not creation:
+- **Shape pack picker** — dropdown of available leaf packs from `public/textures/leaves/shapes/`. Auto-suggested default from `arborist/leaf-pack-bindings.json` species→morphology→pack mapping (Sugar Maple defaults to LeafSet010; oak defaults to LeafSet016; etc.). Operator overrides if species has a specific authored pack.
+- **Annual cycle anchor editor** — author 4–6 season anchors (winter / spring-buds / summer-peak / fall-peak / late-fall / shed). Each anchor carries: `day` (0–365), `presence` (card alpha 0–1), `scale` (card size 0–1), optional per-season shape override, multi-stop gradient for leaf front and leaf back. Runtime samples `uDayOfYear` and interpolates between anchors — Sugar Maple peaks orange-red in mid-October by construction; Look-switching is a date pick, not a per-tree palette swap.
+- **Per-Look override packs** — for Looks that want art-direction (Halloween bats, Christmas candy canes, Diwali ornament gold), per-Look `scene.materialColors[<species>]` extension carries shape-pack + gradient overrides that pre-empt the year-long defaults.
+- **Occupancy slider** — alpha-density modulator for sparse-canopy species (honeylocust ~25%, oak ~70%, conifer ~95%).
+- **No** density/jitter/cluster-count sliders — those would be compositor knobs; the parametric compositor is dropped per the 2026-05-16 PS-authored reframe.
+
+### LiDAR mode (`src/arborist/LidarWorkstage.jsx`, Phase L Cycle 1 shipped 2026-05-19)
+
+Third top-level mode alongside Procedural + Grove. Operator browses LiDAR specimens of the active species (110 Sugar Maples in `botanica/dev/train/` alone), extracts QSM cylinder skeleton via tunable parameters, previews multi-layer point cloud + cylinders, saves seedling. Cycle 1 ships browsing + extraction tuning + diagnostic viewport. Cycle 2 adds per-region bark binding + procedural canopy emission on the LiDAR skeleton + Configuration D rendering composition + Phase F integration + bake/publish.
+
+Per Option δ scope (locked 2026-05-19): LiDAR provides skeleton ONLY; canopy is fully procedural + Configuration D. Captures the trunk-shader-quality win (bark wraps onto authentic real-tree geometry) without LiDAR-canopy-point-sampling complexity. G.1 Sugar Maple hero ships as mixed roster (LiDAR-baked variants + procedural variants under `acer_saccharum_procedural`).
+
+Operator workflow per specimen: pick from filtered list (sorted by height descending, height + scan type as primary label, optional operator-given display name persisted to seedlings.json) → preview loads as point cloud → tune voxel/min-radius/tip-radius extraction params → see cylinder overlay color-coded by trunk-vs-branch region → save seedling → (Cycle 2) bake variant → publish to roster.
+
+Workspace render budget: desktop-class, single specimen at a time. Hi-res authoring; bake step handles knockdown to mobile LS runtime budget. See `ARCHITECTURE.md` "LiDAR pipeline + Option δ scope" for the full pipeline structure.
+
+**Cycle 1 layout (shipped 2026-05-19):**
+
+| Region | Purpose |
+|---|---|
+| Header | Mode toggle (Procedural / LiDAR / Grove), active species dropdown (filtered to LiDAR-source species), auto-suggested leaf pack readout (`arborist/leaf-pack-bindings.json`-derived: species override wins → morphology fallback → first candidate; informational only — Cycle 2 binds via `bake-look.js`), `← Library` |
+| Specimen browser (left top) | Filter (display name substring OR height range like `8-12`), sorted by `treeH` descending. Each row: `✦/◯ {height}m {scanType} {displayName-or-tree-treeId}`. ✦ = saved seedling. Active row tinted amber. |
+| 3D viewport (right top) | Multi-layer composite: raw point cloud (`THREE.Points`, size-attenuated, cyan tint, ≤1M pts streamed from existing `/specimens/:treeId/preview.ply`), QSM cylinder overlay (two `InstancedMesh` draws split at median radius — trunk-like red, branch-like cyan, translucent). Layer toggle chips overlay top-left (Points / Cylinders / Skeleton only / Full preview) + Fit-to-specimen button. `OrbitControls`. |
+| Skeleton extraction (left bottom) | Three `DraftSlider`s — Voxel (m), Min radius (m), Tip radius (m) — 150ms idle commit + pointer-up final (per [[feedback_heavy_render_sliders_need_draft]]). Re-extract + Save seedling buttons. Specimen details subsection (treeId, scan type, height) + inline `display name (optional)` input that saves into `seedlings.json#displayNames[treeId]`. |
+| Statistics (right bottom) | Points loaded, cylinders, trunk/branch split, est. lod0 tris (trunk×16 + branch×12), tips, median radius, server ms, voxel-downsampled point count. |
+
+Extraction loop:
+
+1. Operator picks species + specimen → `GET /lidar/specimen/:treeId/seedling-state?species=<id>` pre-fills the tuner from saved `tuneParams` (else `config.tuneDefaults`) + the saved display name (else empty).
+2. First load auto-fires `POST /lidar/specimen/:treeId/extract` → server shells out to `lidar_extract.py` → cylinder graph + stats returned as JSON. Workstage renders the graph immediately.
+3. Operator drags voxel / min radius / tip radius sliders → on commit, Re-extract button glows; clicking it re-runs the extract. (Cycle 1 does not auto-re-extract on slider commit — explicit gesture per [[feedback_debounced_save_must_flush_before_dependent_post]] semantics.)
+4. Save seedling persists `{tuneParams, displayName}` for this treeId into `arborist/state/<species>/seedlings.json` via the existing `POST /species/:id/seedlings` endpoint. `displayNames` map merges: incoming keys win, absent keys preserved on disk.
+
+Cycle 1 endpoints used:
+- `GET /api/arborist/species/:id/specimens` (existing)
+- `GET /api/arborist/specimens/:treeId/preview.ply` (existing)
+- `POST /api/arborist/lidar/specimen/:treeId/extract` (new)
+- `GET /api/arborist/lidar/specimen/:treeId/seedling-state?species=<id>` (new)
+- `POST /api/arborist/species/:id/seedlings` (existing, extended to accept `displayNames`)
 
 ---
 

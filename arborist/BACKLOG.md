@@ -356,31 +356,74 @@ phases.
   All three are pipeline changes; defer until Phase C lands and bark
   quality re-evaluation says the wrap-line crawl is the next constraint.
 
-- [ ] **Phase F — Per-species PSD-authored leaf cluster atlases + 2-stop tint ramp + sparse occupancy** (scope reframed 2026-05-16 EOD).
-  **Scope reframe:** the original Phase F included `arborist/leafCluster.js`,
-  a sharp-based parametric cluster compositor with per-leaf rotation /
-  scale / position jitter knobs. **That infrastructure is dropped.** It
-  was designed to scale leaf authoring to all 60 inventory species; for
-  5 heroes, Photoshop is faster + better (artist controls overlap,
-  density, color, accents directly; per-season variants are additional
-  PSDs; no parametric tuning struggles like we just had with bark uvScale).
-  **New scope:** import PSD-authored cluster PNGs at
-  `public/textures/leaves/<species>/cluster.png` (per-season subfolder
-  if needed), atlas + tint + sparse-occupancy at runtime. Species
-  manifest gains `leafCluster.textureRef` field (parallels `bark.materialRef`).
-  Workstage Leaf panel = picker + tint stops + occupancy slider; NO
-  density / jitter / cluster-count sliders (those would be compositor
-  knobs; compositor is dropped). Fillers continue using shared per-morph
-  PNGs (`public/textures/leaves/<morph>.png`) via v1 single-leaf-card
-  pipeline; heroes override with PSD-authored clusters.
-  Sparse-cluster occupancy parameter (`PRESETS.leafCluster.occupancy`)
-  remains load-bearing for honeylocust ~25% / oak ~70% / conifer ~95%
-  dappled vs dense alpha-density variation.
-  **Fixes:** foliage reads dense at distance; fall color has inner-to-outer
-  gradient (the species signature for Sugar Maple etc.); sparse-canopy
-  species (honeylocust) read correctly translucent. **Doesn't fix:**
-  per-species PSD authoring needed for each new hero beyond the 5
-  (substitution-fallback safety net covers the rest until v1.6+).
+- [ ] **Phase F — Vendor-PBR leaf-pack binding + complex gradient-map tint + front/back shimmer + sparse occupancy** (scope reframed AGAIN 2026-05-19 — operator-authoring step DROPPED).
+
+  **Architecture pivot 2 (2026-05-19 afternoon):** the per-species PSD-authoring step from earlier today is **DROPPED.** The `assets/botanical-reference-hires/` trove contains 10 vendor 4K PBR leaf packs (Color + Opacity + NormalGL + Displacement + Roughness + AO per pack), pre-tagged by morphology in the README — covers ~80%+ of LS inventory including 3 of the 5 planned heroes (G.1 Sugar Maple via LeafSet010, G.3 Willow via LeafSet013, plus oak coverage via LeafSet016). The vendor packs ARE the shape library. Operator authoring collapses to **configuration only**: pick a pack from the library, tune the gradient ramps, bind via manifest. No PSD round-trip unless a hero needs a morphology not in the vendor library (G.2 Ginkgo, G.4 Honeylocust — fan + fine_compound morphologies still need sourcing per README).
+
+  **Architecture pivot 1 (2026-05-19 morning, kept):** the per-species color-PSD doctrine from 2026-05-16 EOD generalizes to the bark-shader-unification pattern (Phase B): leaf cluster atlas tiles are **shape-defining greyscale** (alpha + luminance + normal + optional displacement) — color is delivered at runtime via per-species per-season **complex N-stop gradient-map LUT textures** sampled by the leaf-luminance value in the fragment shader. Per-species shape granularity preserved (Sugar Maple, Red Maple, Norway Maple all carry their own shape pack via the vendor library — silhouette is how operators tell species apart). The atlas-savings claim from the initial pitch was overstated and corrected: heroes carry their own shape tiles; the win is in COLOR FLEXIBILITY (per-Look palette overrides, per-season ramp swaps, front/back tinting for maple-style shimmer), not atlas footprint.
+
+  **Inputs (no operator authoring; configuration only):**
+  - **Shape pack** — bind to one of the 10 vendor packs at `assets/botanical-reference-hires/LeafSet0xx/`. Pack provides: Color (desaturated → luminance, used as gradient-map t-value), Opacity (alpha gate), NormalGL (per-leaf surface lighting), Displacement (optional bevel — defer use to v1.6 unless visible at Hero). Bake-look reads vendor pack directly; no copy / no PSD step. Heroes that need a morphology not in the vendor library are the only PSD-authoring cases — currently G.2 Ginkgo (fan) and G.4 Honeylocust (fine_compound).
+  - Per-species manifest carries `leafCluster.shapeRef` + per-season multi-stop gradient specs:
+    ```json
+    "leafCluster": {
+      "shapeRef": "palmate_acer_saccharum",
+      "occupancy": 0.7,
+      "tintFront": {
+        "summer": [{"t": 0, "color": "#2a5825"}, {"t": 0.5, "color": "#3a7530"}, {"t": 1, "color": "#5a9850"}],
+        "fall":   [{"t": 0, "color": "#882010"}, {"t": 0.3, "color": "#c84015"}, {"t": 0.6, "color": "#e87020"}, {"t": 1, "color": "#f8b830"}]
+      },
+      "tintBack": {
+        "summer": [{"t": 0, "color": "#a8b89a"}, {"t": 1, "color": "#c8d8c0"}],
+        "fall":   [{"t": 0, "color": "#a85020"}, {"t": 1, "color": "#d8a060"}]
+      }
+    }
+    ```
+    Gradient stops support arbitrary count (Sugar Maple fall = green → yellow → orange → red on one leaf via 4-stop ramp; summer = simpler 2-stop). Tint complexity per Jacob 2026-05-19 — heavy film grade + Bloom in the LS render smooths any duotone-flatness that simpler ramps would show.
+
+  **Runtime shader (extends Phase B bark-unification pattern):**
+  - Greyscale shape tile sampled with normal three.js material chain (Color → luminance via `dot(color.rgb, vec3(0.299, 0.587, 0.114))` or just `color.r` if pre-desaturated at bake time).
+  - Per-species manifest gradient specs baked at runtime into a 256×1 1D LUT RGBA texture per (species, season, side) — 4 LUTs per hero (front-summer / front-fall / back-summer / back-fall). Bake step lives in `bake-look.js` alongside atlas pack; cached by manifest hash so no per-frame cost.
+  - Fragment shader: `vec3 leafTint = gl_FrontFacing ? texture(uLeafLutFront, vec2(luminance, 0.5)).rgb : texture(uLeafLutBack, vec2(luminance, 0.5)).rgb;` Single shader program preserved (Bloom-stable, [[feedback_unique_program_cache_key_before_wrappers]]). `gl_FrontFacing` is free for DoubleSide materials — front/back shimmer emerges from Phase W's card flutter without additional cost.
+  - Per-Look palette override rides `scene.materialColors[<species>].leafTint*` channels — same retint-at-runtime mechanism Phase B established for bark. Halloween Look = orange-black gradient; Valentine's Look = pink; instant retint, no rebake.
+
+  **Workstage Leaf panel:**
+  - Shape picker (dropdown of available `shapes/*` entries; thumbnails).
+  - Gradient-stop editor per side per season (drag-handles on a horizontal ramp UI; click to add stops, color-picker per stop).
+  - Occupancy slider (alpha-density modulator).
+  - Sparse-cluster mode still load-bearing for honeylocust ~25% / oak ~70% / conifer ~95%.
+
+  **Fixes:** species silhouette preserved (per-species shape PSDs); maple shimmer achievable (front/back tint via `gl_FrontFacing`); fall color complexity authored as multi-stop gradients (Sugar Maple's green-yellow-orange-red on one leaf); per-Look palette overrides instant (no rebake); single shader program preserved.
+  **Doesn't fix:** per-species shape PSD authoring still needed for each new hero (substitution-fallback covers the rest); displacement-map bevel relief deferred to v1.6 unless visible at LS Hero distance; gradient-editor UI is meaningful new surface in workstage (separate sub-brief candidate).
+
+  **Why this is structurally right (vs the original color-PSD plan):**
+  - Front/back shimmer is impossible with a single full-color leaf PSD (would require two textures + mirror-aware UVs). Trivial with gradient maps.
+  - Per-Look color retinting becomes a runtime uniform swap, no rebake.
+  - Per-season variants are gradient-spec JSON, not separate PNGs.
+  - Reuses the LeafSet packs natively — they already ship Color + NormalGL + Opacity + Displacement, which is exactly the pipeline.
+  - Standard high-end foliage material pattern (Unreal foliage, SpeedTree, Unity HDRP all use this); not a hack.
+
+- [ ] **Phase F follow-up — Filler-tier vendor-pack binding** (surfaced 2026-05-19 with Phase F architecture pivot 2). Today's 5 procedural fillers (broadleaf / conifer / ornamental / columnar / weeping) reference stub `public/textures/leaves/<morph>.png` files; pointing them at the appropriate vendor packs from `assets/botanical-reference-hires/` gives **every filler tree in LS** vendor-quality 4K leaves overnight. One-line manifest change per filler. Massive visual upgrade on the bottom tier of two-tier substitution. Probably 5 lines of code total. Lands as follow-up after Phase F shader infrastructure ships and proves out on G.1 hero.
+
+- [ ] **Morphology → vendor-pack mapping table** (surfaced 2026-05-19, BACKLOG/ARCHITECTURE-doc task). Canonical reference for which vendor pack covers which morphology + which LS inventory species. Lives in ARCHITECTURE.md (probably under a new "Leaf shape library" subsection) once Phase F lands. Pre-stage table from the 2026-05-19 walk-the-leaftrove conversation:
+
+  | Vendor pack | Morphology | LS species coverage |
+  |---|---|---|
+  | LeafSet010 | palmate | all maples (178 placements) + sycamore |
+  | LeafSet016 | lobed | all oaks (~80 placements estimated) |
+  | LeafSet004 | heart | redbud, lilac |
+  | LeafSet001 | serrate ovate | elm, hornbeam |
+  | LeafSet005 | ovate composition | mulberry, dogwood, hydrangea, generic broadleaves |
+  | LeafSet013 | lanceolate | willow (3 placements) |
+  | LeafSet019 | long_needle | pine, larch |
+  | Leaf001 | ovate_large single | broadleaf filler fallback |
+  | LeafSet007 | elm autumn | seasonal elm |
+  | LeafSet012 | oak autumn | seasonal oak |
+
+  **Coverage gaps** (need new vendor sourcing or operator PSD authoring):
+  fan (Ginkgo — G.2 blocker), fine_compound (Honeylocust — G.4 blocker),
+  palmate_compound (Buckeye), tulip (Tuliptree), short_needle (Spruce/Holly),
+  scale (Juniper/Cypress), compound (Ash/Walnut).
 
 - [ ] ~~**Phase F.5 — Leaf editor** (parametric leaf generator)~~ — **KILLED 2026-05-16 EOD.**
   Parametric per-species leaf authoring (lobe count / depth / serration /
@@ -445,30 +488,107 @@ scene. Operator can adopt more or fewer per species as needed.
   **Fixes:** Browse canopy reads alive. **Doesn't fix:** trunk lean / branch
   sway (canopy is the dominant Browse motion; that's enough for v1.5).
 
-- [ ] **Phase H — Shell/core canopy overdraw split + A2C** (post-Phase-F
-  perf optimization). Per-leaf-cluster card carries `r/crownRadius`
-  annotation at author time. Two passes per tree: **core** (interior cards,
-  `r < ~0.75`, alpha-to-coverage with depth-write) followed by **shell**
-  (silhouette cards, `r >= ~0.75`, A2C, optionally view-dependent back-face
-  culling via `dot(viewDir, cardNormal) < 0`). Single shader program
-  preserved — **A2C is an alpha-test variant via MSAA, not a blend mode**,
-  so it's Bloom-stable per the foundational constraint. Alpha-test +
-  depth-write on the core pass restores early-Z rejection on TBDR mobile
-  GPUs (currently defeated by stacked alpha-blend cards), expected canopy
-  fragment cost drops ~5-10×.
-  **Prototype on one procedural species first behind a feature flag.** If
-  run pre-Phase-F (on today's single-leaf cards), calibration values won't
-  survive F's new cluster card layouts — preferred ordering is F lands
-  first, then H calibrates against the final card geometry.
-  **Fixes:** canopy fragment cost at Browse + near-Hero where leaf
-  overdraw dominates; mobile thermal-throttle headroom. **Doesn't fix:**
-  branch geometry overdraw (much smaller pixel count vs leaf cards),
-  trunk surface cost (Phase B), wind animation cost (Phase W).
-  **Surfaced by:** external-agent rendering-rethink brief 2026-05-15;
-  technique is standard mobile foliage perf (SpeedTree uses related
-  approach). Imposter-LOD-for-far-Hero remains a separate possible
-  optimization but is demoted to "nice to have" once W requires full mesh
-  at Browse.
+- [x] **Phase L Cycle 1 — LiDAR workspace + extraction tuning** — **SHIPPED 2026-05-19**.
+  New `src/arborist/LidarWorkstage.jsx` mounted as a third top-level mode in
+  `ArboristApp.jsx` alongside Procedural + Grove (toggle via library header
+  `[LiDAR →]` button; store flag `lidarOpen`). Four panels: specimen
+  browser (left top, filter + height-desc sort + display-name affordance),
+  3D viewport (right top, multi-layer `THREE.Points` + per-region color-coded
+  `InstancedMesh` cylinders + layer toggles + fit button), skeleton
+  extraction (left bottom, three `DraftSlider`s + Re-extract + Save seedling),
+  statistics (right bottom, points / cylinders / trunk-vs-branch / est lod0
+  tris / tips / median radius / server-ms).
+  - **Backend refactor:** `arborist/lidar_extract.py` lifts `load_pointcloud`
+    / `voxel_downsample` / `cluster_slab` / `extract_skeleton` /
+    `specimen_laz_path` out of `bake-tree.py` so the new
+    `POST /lidar/specimen/:treeId/extract` endpoint can drive the same
+    extraction without writing GLBs. `bake-tree.py` imports the four helpers.
+    Algorithm unchanged from the 2026-04-27 monolith. CLI:
+    `.venv/bin/python lidar_extract.py --treeId=<id> --voxelSize=... --minRadius=... --tipRadius=...`
+    emits `{nodes: [{x,y,z,radius,parentIdx}, ...], stats: {...}}` on stdout.
+  - **Pre-flight repair:** `bake-tree.py` `KeyError: 'sourceFile'` on both
+    starred Sugar Maple seedlings; cause was schema drift (serve.js POST
+    seedlings doesn't accept / persist `sourceFile`; bake-tree.py looked it
+    up from the seedling dict in two places). Both callsites now fall back
+    to `botanica/dev/<treeId>.laz` derivation — same rule serve.js's
+    `specimenLazPath` uses. Re-verified: both seedlings bake clean in 4.0s
+    on `acer_saccharum`.
+  - **Endpoints:** `POST /lidar/specimen/:treeId/extract` (body
+    `{species, voxelSize, minRadius, tipRadius}`); `GET
+    /lidar/specimen/:treeId/seedling-state?species=<id>` (returns saved
+    tune params + displayName, falls back to `config.tuneDefaults`);
+    extended `POST /species/:id/seedlings` to merge a `displayNames` map
+    onto disk preserving keys absent from the incoming body (per
+    [[feedback_absence_means_inherit_in_authored_blocks]]).
+  - **Header strip:** mode toggle + active-species dropdown (filtered to
+    `source === 'lidar'` species) + auto-suggested leaf pack readout from
+    `arborist/leaf-pack-bindings.json` (`speciesOverrides[id]` wins → else
+    `shapeToMorphology[leafMorph]` → first candidate in `morphologyToPacks`).
+    Cycle 1 INFORMATIONAL ONLY — bake-look.js binding lives in Cycle 2.
+  - **Display-name affordance:** inline text input on the active specimen's
+    details subsection in the extraction tuner. Save persists into
+    `seedlings.json#displayNames[treeId]`. List rows show display name
+    when set, fall back to `tree <treeId>`.
+  - **Performance:** desktop-class workstage — single specimen at a time;
+    raw point clouds rendered as `THREE.Points` with `BufferGeometry` +
+    size-attenuated `PointsMaterial` (1M+ point clouds streamed via the
+    existing cached `/specimens/:treeId/preview.ply` endpoint). Cylinder
+    overlay via two `InstancedMesh` draws (trunk-like vs branch-like, split
+    at `medianRadius`). Bake step still handles knockdown to mobile budget.
+  **Fixes:** operator can iterate extraction params live; the same
+  `seedlings.json` Cycle 2 bakes from is what the workstage edits; pre-flight
+  baking-path repaired so Cycle 2 can build on a green bake.
+  **Doesn't fix:** Cycle 2 owns per-region bark binding to manifest +
+  Configuration D canopy composition + bake/publish to roster. Cycle 1
+  cylinder color-coding is preview-only; it doesn't yet write a
+  `bark.regionThreshold` into manifests.
+
+- [ ] **Phase L Cycle 2 — bake/publish + Configuration D composition** (in design). Builds on Cycle 1 workspace.
+  - **Cycle 2 sub-item: quality-bracket LoD authoring** (surfaced 2026-05-19 standby). Instead of exposing voxelSize/detailLevel/tipRadius as three independent sliders, operator declares INTENT via a quality bracket widget: `[min acceptable cylinder count, max useful cylinder count]`. The bake pipeline distributes LoD tiers within that bracket (lod0 = max, lod2 = min, lod1 = midpoint). Underlying mechanism stays the same — graph pruning on the QSM cylinder graph (per-cylinder importance score: keep trunk + primary scaffolds; drop terminal twigs below order-N) followed by publish-glb's mesh simplification on top. Operator never has to know voxel sizes or cylinder thresholds; thinks in quality terms. Lives in the Phase L Cycle 2 bake/publish panel. Probably collapses voxelSize/minRadius/tipRadius into a single "extraction defaults" subsection (advanced) + the bracket widget as the primary surface.
+
+- [ ] **Phase V — View-aware baking** (architectural addition, surfaced 2026-05-19, v1.6+ unless mobile perf forces sooner). **Different views need different artifacts.** Browse-overhead doesn't need cylinders for the trunk (invisible from above); Hero needs full silhouette + bark wraps + canopy mass; Street (v2) needs close-up bark + per-leaf detail. publish-glb today produces 3 LoD tiers from ONE source — view-aware baking produces N views × M LoD tiers, each view optimized differently BEFORE LoD is applied. Browse-baked Sugar Maple could be ~1% the tri count of Hero-baked (canopy disc + color only, no branches/trunk visible from above) — and that compounds across 745 LS placements.
+  **Architectural pieces:**
+  - **Manifest schema** gains `variants[].views[hero|browse|street].lodN` per-view artifact references (or convention-based path resolution from a base manifest)
+  - **bake-trees.js view-awareness** — which placement uses which view artifact based on current Cartograph SHOT
+  - **Runtime view-selection** — Cartograph's existing SHOTS framing (`SHOTS.browse.up` et al.) drives the swap; transitioning between SHOTS swaps baked variants
+  - **Operator preview surface** — view-toggle in workspace ("how does this tree look in Browse?") before committing
+  - **Bake pipeline** — per-view optimizer functions; Browse-overhead = canopy-projection rasterizer + color, no cylinders; Hero = current full bake; Street = future
+  **Cross-helper:** Cartograph owns SHOTS definitions; Phase V is the kit-wide doctrine that those SHOTS become bake targets. Per [[project_slab_carries_full_authored_product]] the slab carries the full authored product → slab now carries N views per variant. See new memory [[project_view_aware_baking]].
+  **Why parked v1.6:** large architectural addition; manifest schema migration + runtime view-selection logic + per-view bake optimizers is substantial work. v1.5 ships with single-view bakes (current behavior); v1.6 unlocks view-specific perf wins. Mobile-perf review at LS scale post-Phase L Cycle 2 ship will decide whether to pull forward.
+  **Why this matters for [[project_park_is_the_gem]]:** 745 LS placements rendered overhead in Browse view is the dominant tree GPU cost in the dominant LS perceptual mode (the "little alive neighborhood" Browse experience). View-aware bake collapses that cost dramatically.
+
+- [ ] **Phase H — Canopy overdraw architecture: outer-shell A2C cards + inner-mass point cloud** (post-Phase-F
+
+- [ ] **Phase H — Canopy overdraw architecture: outer-shell A2C cards + inner-mass point cloud** (post-Phase-F
+  perf phase, **superseded 2026-05-19** per [[project_configuration_d_canopy_render]]).
+  **Architectural pivot 2026-05-19 PM:** the original Phase H plan (alpha-test cards for core
+  + A2C cards for shell) is superseded by Configuration D: **inner mass renders as `THREE.Points`
+  point cloud** (one-to-nine opaque pixels per point, zero alpha overdraw), outer shell renders
+  as A2C cards on camera-facing surface only. This is dramatically better than the original card-core
+  approach because POINTS HAVE NO ALPHA — mass-interior cost collapses by ~10× vs alpha-test cards.
+  Outer-shell card count also drops ~70% (silhouette + camera-facing only ≈ 1500 cards/tree vs
+  current 5500). Combined with bloom + film grade, the point-cloud-as-inner-foliage visual
+  sleight-of-hand is robust at LS Hero/Browse distances.
+  **LiDAR-pipeline-enabled.** Procedural can't do Configuration D — there's no real point cloud
+  source for inner mass. LiDAR-baked variants enable this as the architectural pillar that
+  justifies the LiDAR pipeline beyond just "real skeleton."
+  **Hybrid roster.** Procedural variants continue to use the original Phase H plan if/when shipped
+  (alpha-test core + A2C shell — fallback path for species without LiDAR sources). LiDAR-baked
+  variants use Configuration D. Substitution lottery picks whichever quality tier wins per
+  placement.
+  **Single shader program preserved per [[feedback_unique_program_cache_key_before_wrappers]]:**
+  outer-shell cards use Phase F gradient-map material; inner-mass points use a sibling material
+  (different draw call, may compile to separate program — verify; if true, accept the 2nd program
+  as load-bearing for Configuration D).
+  **LoD progression:** lod0 = dense points + cards-shell. lod1 = 30% point subsample + cards-shell.
+  lod2 = alpha billboard or cards-only, no points.
+  **Fixes:** canopy fragment cost drops dramatically vs all-cards (the dominant LS mobile-GPU cost);
+  mobile thermal headroom; renders volumetric foliage that procedural can't match.
+  **Doesn't fix:** branch geometry overdraw (small pixel count vs leaf cards); trunk surface cost
+  (Phase B handles); wind animation cost (Phase W handles); procedural-only species (those use the
+  original Phase H fallback plan or stay all-cards).
+  **Imposter-LOD-for-far-Hero** remains a separate possible optimization; demoted to "nice to have"
+  once Configuration D ships and we see Browse/Hero perf in practice.
 
 **Out of scope across the arc:** street-view photoreal (v2); real bark/leaf
 photographic scans (v2 / SpeedTree replacement window); per-conifer-species

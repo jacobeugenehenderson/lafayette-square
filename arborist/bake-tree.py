@@ -29,12 +29,18 @@ import sys
 import time
 from pathlib import Path
 
-import laspy
 import numpy as np
 import trimesh
-from scipy.sparse import csr_matrix
-from scipy.sparse.csgraph import connected_components
-from scipy.spatial import cKDTree
+
+# Pipeline helpers (Phase L Cycle 1 refactor 2026-05-19) live in lidar_extract.py
+# so the LidarWorkstage can drive interactive re-extraction via the same
+# load → voxel → slab-cluster → parent-link path. Algorithm unchanged.
+from lidar_extract import (
+    load_pointcloud,
+    voxel_downsample,
+    extract_skeleton,
+    specimen_laz_path,
+)
 
 
 # ── Paths ────────────────────────────────────────────────────────────────
@@ -50,136 +56,8 @@ def log(*args):
     print(*args, flush=True)
 
 
-# ── Pipeline ─────────────────────────────────────────────────────────────
-
-def load_pointcloud(laz_path):
-    """Load .laz, return Nx3 float64 array centered: XY median = 0, Z min = 0."""
-    las = laspy.read(str(laz_path))
-    pts = np.column_stack((las.x, las.y, las.z)).astype(np.float64)
-    pts[:, 0] -= np.median(pts[:, 0])
-    pts[:, 1] -= np.median(pts[:, 1])
-    pts[:, 2] -= pts[:, 2].min()
-    return pts
-
-
-def voxel_downsample(pts, voxel):
-    """Drop duplicate points within `voxel` (meters). Reduces ~80k pts → ~10–20k
-    for a typical TLS tree at voxel=0.03. Each output point is the centroid of
-    its source voxel."""
-    keys = np.floor(pts / voxel).astype(np.int64)
-    # Hash 3D voxel indices into a single int64 key for grouping.
-    h = keys[:, 0] * 73856093 ^ keys[:, 1] * 19349663 ^ keys[:, 2] * 83492791
-    order = np.argsort(h)
-    pts_sorted = pts[order]
-    h_sorted = h[order]
-    # Find boundaries between voxels
-    diff = np.diff(h_sorted, prepend=h_sorted[0] - 1)
-    boundaries = np.where(diff != 0)[0]
-    boundaries = np.append(boundaries, len(h_sorted))
-    centroids = []
-    for i in range(len(boundaries) - 1):
-        s, e = boundaries[i], boundaries[i + 1]
-        centroids.append(pts_sorted[s:e].mean(axis=0))
-    return np.array(centroids) if centroids else np.empty((0, 3))
-
-
-def cluster_slab(xy, eps, min_samples):
-    """Connected-components clustering in 2D (a single Z slab). Returns
-    labels (int per point); -1 = noise (component too small to be a branch).
-
-    Equivalent to DBSCAN with min_samples but we don't need the
-    core-point distinction — branch cross-sections are dense enough that
-    full connected-components matches DBSCAN cluster boundaries."""
-    if len(xy) < min_samples:
-        return np.full(len(xy), -1)
-    tree = cKDTree(xy)
-    pairs = tree.query_pairs(r=eps, output_type='ndarray')
-    if len(pairs) == 0:
-        return np.full(len(xy), -1)
-    n = len(xy)
-    rows = np.concatenate([pairs[:, 0], pairs[:, 1]])
-    cols = np.concatenate([pairs[:, 1], pairs[:, 0]])
-    data = np.ones(len(rows))
-    graph = csr_matrix((data, (rows, cols)), shape=(n, n))
-    _, labels = connected_components(graph, directed=False)
-    counts = np.bincount(labels)
-    return np.where(counts[labels] >= min_samples, labels, -1)
-
-
-def extract_skeleton(pts, slab=0.4, eps=0.10, min_samples=4, link_max=0.8):
-    """Build a node-and-edge skeleton via Z-slab clustering + parent linking.
-
-    For each Z slab:
-      - cluster the slab's XY points
-      - each cluster → a node at (cluster_xy_centroid, slab_z_mid),
-        with radius = cluster's XY std-dev (cylinder cross section)
-
-    Each node above the bottom slab finds its parent: the nearest node in
-    any lower slab within `link_max` Euclidean distance. Nodes with no
-    valid parent are dropped (orphan branches — usually scan noise).
-
-    Returns:
-      nodes: list of {pos: (x,y,z), radius: float, slab_idx: int}
-      edges: list of (parent_idx, child_idx)
-    """
-    z_min, z_max = pts[:, 2].min(), pts[:, 2].max()
-    n_slabs = max(2, int(np.ceil((z_max - z_min) / slab)))
-    z_edges = np.linspace(z_min, z_max, n_slabs + 1)
-
-    nodes = []
-    slab_to_node_indices = []  # nodes[] indices grouped by slab
-    for i in range(n_slabs):
-        z0, z1 = z_edges[i], z_edges[i + 1]
-        mask = (pts[:, 2] >= z0) & (pts[:, 2] < z1)
-        slab_pts = pts[mask]
-        if len(slab_pts) < min_samples:
-            slab_to_node_indices.append([])
-            continue
-        labels = cluster_slab(slab_pts[:, :2], eps=eps, min_samples=min_samples)
-        slab_z = (z0 + z1) / 2
-        idxs = []
-        for label in np.unique(labels):
-            if label < 0:
-                continue
-            cmask = labels == label
-            cluster_xy = slab_pts[cmask, :2]
-            centroid = cluster_xy.mean(axis=0)
-            # Branch-cross-section radius — half the larger XY std works
-            # well as a proxy. Floor at 1cm so noise doesn't produce
-            # zero-radius cylinders that crash trimesh.
-            r = max(0.01, float(np.std(cluster_xy, axis=0).mean()))
-            nodes.append({
-                "pos": np.array([centroid[0], centroid[1], slab_z]),
-                "radius": r,
-                "slab": i,
-            })
-            idxs.append(len(nodes) - 1)
-        slab_to_node_indices.append(idxs)
-
-    # Parent linking: for each node, find nearest node in any LOWER slab
-    # within link_max. Build edges.
-    edges = []
-    for ci, node in enumerate(nodes):
-        slab_i = node["slab"]
-        if slab_i == 0:
-            # Bottom slab — no parent. Treat as trunk root candidate.
-            continue
-        # Search slabs from i-1 down to 0
-        best_parent = -1
-        best_d = link_max
-        for sj in range(slab_i - 1, -1, -1):
-            for pj in slab_to_node_indices[sj]:
-                d = float(np.linalg.norm(nodes[pj]["pos"] - node["pos"]))
-                if d < best_d:
-                    best_d = d
-                    best_parent = pj
-            # Don't search lower slabs once we found a good parent in slab_i-1
-            if best_parent >= 0 and sj == slab_i - 1:
-                break
-        if best_parent >= 0:
-            edges.append((best_parent, ci))
-    return nodes, edges
-
+# ── Pipeline (cylinder meshing + tips + GLB export retained here;
+#    load / voxel / skeleton extraction moved to lidar_extract.py) ────────
 
 def build_cylinder_mesh(nodes, edges, min_radius=0.005, sections=6):
     """One tapered cylinder per edge. Merge into a single trimesh.
@@ -262,7 +140,14 @@ def extract_tips(nodes, edges, tip_radius=0.03):
 def bake_one(seedling, params, out_dir, variant_idx):
     """Run the full pipeline on one seedling. Writes skeleton-N.glb and
     tips-N.json. Returns a stats dict for the manifest."""
-    src = ROOT / seedling["sourceFile"]
+    # sourceFile is a snapshot field that older /species/:id/seedlings POSTs
+    # omitted (the serve.js POST schema doesn't accept it; the value is
+    # always derivable from treeId via specimenLazPath). Fall back to that
+    # derivation. Keeps old seedling files baking.
+    if "sourceFile" in seedling and seedling["sourceFile"]:
+        src = ROOT / seedling["sourceFile"]
+    else:
+        src = specimen_laz_path(seedling["treeId"])
     if not src.exists():
         raise FileNotFoundError(f"source file missing: {src}")
     t0 = time.time()
@@ -293,7 +178,7 @@ def bake_one(seedling, params, out_dir, variant_idx):
         "id": variant_idx,
         "treeId": seedling["treeId"],
         "treeH": seedling.get("treeH"),
-        "sourceFile": seedling["sourceFile"],
+        "sourceFile": seedling.get("sourceFile") or f"botanica/dev/{seedling['treeId']}.laz",
         "skeleton": glb_name,
         "tips": tips_name,
         "tuneParams": params,
