@@ -94,16 +94,19 @@ export default function CanaryScene({ slot = 'chamber' }) {
 
       <Atmosphere lookId={activeLookId} />
 
-      {/* Free-orbit camera controls. Different target per slot:
-          - chamber: orbit a point in the cloud volume above the operator.
-          - ground:  orbit around the hero tree's mid-canopy. */}
+      {/* Orbit controls. Per-slot distance clamps come from the
+          camera config so each slot has its own "container":
+          - chamber: orbits a fixed center INSIDE the cloud slab;
+                     clamps keep the camera in the cloud volume.
+          - ground:  orbits the hero tree's mid-canopy; clamps keep
+                     the camera near the ground without escaping. */}
       <OrbitControls
         makeDefault
         target={cam.target}
         enableDamping
         dampingFactor={0.1}
-        minDistance={cam.showGround ? 8 : 50}
-        maxDistance={cam.showGround ? 80 : 3000}
+        minDistance={cam.minDistance}
+        maxDistance={cam.maxDistance}
       />
     </Canvas>
   )

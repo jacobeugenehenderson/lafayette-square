@@ -1,26 +1,36 @@
 /**
  * Static starting cameras for the CanaryScene per slot tab. Operator
- * can free-orbit from here via <OrbitControls> mounted in CanaryScene.
+ * can orbit from here via <OrbitControls> mounted in CanaryScene with
+ * per-slot distance clamps.
  *
- * CLOUD CHAMBER — looks up at the cloud against the sky envelope. Good
- *   for tuning intrinsic shape against atmospheric lighting without
- *   scene-scale interference. Tree + ground hidden.
+ * CLOUD CHAMBER — camera INSIDE the cloud slab at altitude 1450m
+ *   (the slab's vertical center), orbiting a fixed point at slab
+ *   center. Backside rendering means every direction shows shader
+ *   output; the operator becomes a fixed observer suspended in the
+ *   cloud field, spinning to inspect it. OrbitControls clamps keep
+ *   the camera within the cloud volume. Tree + ground hidden.
  *
- * GROUND — backed off ~25m from a 15-20m hero tree at slight upward
- *   tilt. The full tree silhouette fits in frame; operator can orbit to
- *   inspect any side. Ground plane + tree both visible.
+ * GROUND — eye-level on the ground plane, backed off ~25m from a
+ *   typical 12-20m hero tree at slight upward tilt. Looking up at
+ *   the cloud overhead in proper scale + perspective. The "from
+ *   where users will see it" view.
  *
- * Tune here if the framings read wrong. Per-tree-species framing
- *   (different cameras for tall vs. compact species) is a Phase 5+
- *   refinement.
+ * Mental model split:
+ *   CHAMBER = specimen examination at the cloud's authored altitude
+ *   GROUND  = in-place QA against environmental context
  */
 
 export const CANARY_CAMERAS = {
   chamber: {
-    position:   [0, 200, 300],
-    target:     [0, 600, 0],
-    fov:        35,
+    // Inside the cloud slab (y=1200..1700), target locked to slab
+    // center. Starting position 250m forward of center; operator
+    // orbits with distance clamps to stay in the cloud volume.
+    position:   [0, 1450, 250],
+    target:     [0, 1450, 0],
+    fov:        75,
     showGround: false,
+    minDistance: 50,
+    maxDistance: 500,
   },
   ground: {
     // Backed off ~25m at ~1.7m above ground. Tree canopy target at 8m
@@ -30,5 +40,7 @@ export const CANARY_CAMERAS = {
     target:     [0, 8, 0],
     fov:        45,
     showGround: true,
+    minDistance: 8,
+    maxDistance: 80,
   },
 }
