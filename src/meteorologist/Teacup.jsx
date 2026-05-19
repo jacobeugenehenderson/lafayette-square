@@ -116,28 +116,22 @@ export default function Teacup() {
         </main>
 
         <aside style={{
-          width: 360,
+          width: 400,
           borderLeft: '1px solid rgba(255,255,255,0.08)',
           background: '#141414',
           overflowY: 'auto',
-          padding: '12px 12px 24px',
+          padding: 12,
+          display: 'flex', flexDirection: 'column', gap: 12,
         }}>
           {/* Time of Day card */}
-          <div style={{
-            fontSize: 10, letterSpacing: '0.08em',
-            textTransform: 'uppercase', color: 'var(--on-surface-subtle, #888)',
-            padding: '4px 4px 6px',
-          }}>Time of Day</div>
-          <DawnTimeline />
+          <div className="glass-panel rounded-xl p-3">
+            <div className="section-heading mb-2">Time of Day</div>
+            <DawnTimeline />
+          </div>
 
           {/* Cloud parameters card */}
-          <div style={{ marginTop: 12 }}>
-            <div style={{
-              fontSize: 10, letterSpacing: '0.08em',
-              textTransform: 'uppercase', color: 'var(--on-surface-subtle, #888)',
-              padding: '6px 4px 4px',
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-            }}>Cloud parameters</div>
+          <div className="glass-panel rounded-xl p-3">
+            <div className="section-heading mb-2">Cloud parameters</div>
 
             {CLOUD_PARAM_FIELDS.map((f, i) => {
               const prev = CLOUD_PARAM_FIELDS[i - 1]
