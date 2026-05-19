@@ -3,8 +3,10 @@
  *
  * Phase 4a scaffold: real <Canvas> with sky/sun/moon via the shared
  * CelestialBodies consumer (sourced from useSceneJson(activeLookId)),
- * flat ground plane + one hero tree in the GROUND slot, and the existing
- * v1 <CloudDome /> as the cloud renderer. Two static camera framings.
+ * flat ground plane + one hero tree in the GROUND slot, and the v3
+ * raymarched <Atmosphere /> as the cloud renderer (Phase 4b.1 swap;
+ * uniforms hardcoded to cumulus_humilis, preset binding lands 4b.2).
+ * Two static camera framings.
  *
  * Composition follows feedback_preview_uses_production_pipeline +
  * project_kit_helpers_pattern: Meteorologist mounts Cartograph's
@@ -32,7 +34,7 @@ import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import CelestialBodies from '../components/CelestialBodies.jsx'
-import CloudDome from '../components/CloudDome.jsx'
+import Atmosphere from '../components/Atmosphere.jsx'
 import { CANARY_CAMERAS } from './canaryCamera.js'
 
 const HERO_TREE_SPECIES = 'platanus_acerifolia'
@@ -76,7 +78,7 @@ export default function CanaryScene({ slot = 'chamber' }) {
         </Suspense>
       )}
 
-      <CloudDome />
+      <Atmosphere lookId={activeLookId} />
     </Canvas>
   )
 }
