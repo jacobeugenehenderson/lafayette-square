@@ -144,8 +144,16 @@ float sampleDensity(vec3 worldP) {
   vec3 wind = vec3(uTime * uDrift * 2.0, 0.0, uTime * uDrift * 1.0);
   vec3 q = (worldP + wind) * uWarpFreq;
   float n = fbm(q);
-  float d = n - (1.0 - uCoverage);
-  d = max(0.0, d);
+
+  // Contrast curve. Raw FBM is smooth-gradient; cumulus puffs are
+  // *isolated* with clear-sky gaps. Applying smoothstep here biases
+  // the field toward extremes (mostly 0, hot spots toward 1) so
+  // coverage produces visually puffy clouds rather than a smooth
+  // grey ceiling. Lower edge ≈ what coverage threshold cuts; upper
+  // edge controls how quickly hot spots saturate.
+  n = smoothstep(1.0 - uCoverage, 1.0 - uCoverage * 0.2, n);
+
+  float d = n;
   d *= verticalProfile(worldP.y);
   return d * uDensity;
 }
@@ -250,13 +258,16 @@ void main() {
       float silver = forwardScatter * edgeFactor * uEdgeSilver * uSunScatter;
       lit += silver * uSunColor;
 
-      // Bumped from 0.005 (the baby's placeholder) to 0.04 after
-      // empirical tuning: FBM normalized to [0, 1] meant raw density
-      // at hot spots was only ~0.20-0.30 (top decile above coverage
-      // threshold). At 0.005 multiplier, alpha per step was ~0.06,
-      // and the discard-floor culled most fragments. 0.04 produces
-      // visible-but-not-flat cloud edges.
-      float alpha = (1.0 - accum.a) * density * stepSize * 0.04;
+      // Alpha-accumulation multiplier. Tuning history:
+      //   0.005  (Phase 4b.1 baby placeholder) → too faint, all rays
+      //          fell under the accum.a < 0.005 discard floor.
+      //   0.04   → too strong combined with the FBM normalization;
+      //          every ray accumulated to grey opacity.
+      //   0.012  (current) → puffy clouds visible; clear sky between.
+      //          With smoothstep contrast curve in sampleDensity
+      //          biasing FBM toward 0/1 extremes, integrated alpha
+      //          at hot spots reaches ~0.7, clear sky stays ~0.
+      float alpha = (1.0 - accum.a) * density * stepSize * 0.012;
       accum.rgb += alpha * lit;
       accum.a   += alpha;
       if (accum.a >= 0.99) break;
@@ -319,5 +330,15 @@ export function createAtmosphereMaterial() {
   })
 
   material.customProgramCacheKey = () => 'atmosphere-v3'
+
+  // Expose for in-DevTools debugging. Flip uDebugMode without rebuilding:
+  //   window.atmosphereMaterial.uniforms.uDebugMode.value = 3   // solid red mesh test
+  //   window.atmosphereMaterial.uniforms.uDebugMode.value = 1   // raw density
+  //   window.atmosphereMaterial.uniforms.uDebugMode.value = 2   // raw FBM
+  //   window.atmosphereMaterial.uniforms.uDebugMode.value = 0   // normal
+  // Last-mount-wins if multiple Atmosphere components ever exist; today
+  // only one mounts (CanaryScene).
+  if (typeof window !== 'undefined') window.atmosphereMaterial = material
+
   return material
 }
