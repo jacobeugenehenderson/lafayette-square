@@ -1,0 +1,223 @@
+# Meteorologist Features
+
+> Part of the **meteorologist quartet** (`README.md` / `FEATURES.md` / `INTERFACE.md` / `ARCHITECTURE.md` / `SPEC.md` / `BACKLOG.md` / `NOTES.md`). This doc is the operator-facing surface — what an operator can do with the helper today, organized by what's shippable now vs. what's queued. Mirrors `../cartograph/FEATURES.md` and `../arborist/FEATURES.md` in shape and intent. Read at session start; flag mid-session contradictions explicitly; update at session end. Stale claims actively mistrain readers.
+
+---
+
+## What the helper produces
+
+Two canonical JSON artifacts at `public/clouds/`:
+
+- **`presets.json`** — *the Teapot.* The cloud preset library. 52 entries today: 38 cloud morphologies (10 WMO genera × visually-distinct species), 4 fog/haze, 1 `clear_sky` marker, 9 v1.x precipitation stubs (rain/snow/lightning, currently `enabled: false`). Each entry's 13 numeric shader params are stored in TodChannel shape (`{ values: { value: number } }` for flat; `{ animated: 'tod', values: { <slotId>: { value: number }, ... } }` for keyframed), so any parameter can be authored per-TOD-slot.
+- **`almanac.json`** — *the Almanac* (user-facing name: **Conditions**). The rule table mapping weather-payload inputs to atmospheric directives. 16 starter rules + fallback. Each rule has `when` predicates (range constraints on `tempC`, `cloudCover`, `windKph`, etc.), `softness` (boundary smoothing), `transitionMs` (lerp duration into this rule's directive), and a `directive` block (cloud blend + sun + lightDome + wind + precip).
+
+A third immutable file ships alongside:
+- **`almanac.defaults.json`** — byte-identical copy of the as-shipped almanac, used by per-condition Revert. Operator-editable changes go to `almanac.json`; defaults file preserves hand-authored format forever.
+
+Both editable artifacts are validated by `pipeline/validate.js` on every PUT; bad schemas return 400 with details. Cross-schema invariants (preset-id uniqueness, almanac → preset reference integrity, cloud-blend weight ≤ 1.0) enforced in `validateLibrary()`.
+
+The runtime consumes both artifacts at startup. `src/lib/almanac-eval.js` is the published evaluator — pure function `selectDirective(weather, almanac, presets, override)` shipped 2026-05-13 (SC.6), forward-compatible for `<Atmosphere />`.
+
+---
+
+## App shell
+
+Meteorologist runs at **`/meteorologist.html`** as a standalone app, mirroring Arborist's shape. Top bar:
+
+```
+METEOROLOGIST    [ TEAPOT | CONDITIONS ]    [Look ▾]
+```
+
+Three elements:
+
+- **App name** on the left, plain uppercase typography.
+- **Mode toggle** in the center — two co-equal libraries (Teapot and Conditions); not nested.
+- **Look picker** on the right — selects which Cartograph Look's published `scene.json` is consumed as the sky backdrop in CanaryScene. Mirrors Arborist's LookPicker exactly.
+
+No save action anywhere — autosave-on-edit throughout, same model as Stage's TodChannel primitive. Schema validation runs on every PUT; the operator never sees a save button.
+
+Deep-link entry from Cartograph Stage's Sky & Light card via a "launch meteorologist →" link (per `STAGE_MIGRATION.md`; the deep-link itself lands when Stage's Clouds TodChannel row is wired).
+
+---
+
+## Two libraries
+
+### Teapot (cloud preset library, 52 entries)
+
+Flat row list. Each row carries the preset's `label` (operator-facing name) + `wmo` (genus tag like "Cu hum", "Cb cap", "Ci fib"). Click a row → opens that cloud's **Teacup** (the per-cloud workstage).
+
+The Teapot is global — every cloud is part of the library always. No per-Look roster curation (clouds aren't trees; the runtime picks via the Almanac's directive, not a curated list).
+
+### Conditions (weather situations, 16 entries)
+
+Flat row list. Each row carries the rule's `label` (or `id` if no label). Click a row → opens the **Condition editor**.
+
+Internally still named "Almanac" in the schema + file (`almanac.json`); the operator-facing word is "Conditions" throughout the UI. Same data, two viewpoints.
+
+---
+
+## Per-cloud workstage (Teacup)
+
+Click a Teapot row → header reads `← TEAPOT  METEOROLOGIST  cloud authoring  CLOUD [<label> ▾]`. The CLOUD pulldown is **filtered by kind** (cloud↔cloud, fog↔fog): switching from `cumulus_humilis` to `fog_ground` requires going back to the library, since fog has different intrinsic params than cloud.
+
+Below the header, two slot tabs: **CLOUD CHAMBER** | **GROUND**. Both render the same `<CanaryScene />` viewport in the main area; only camera framing differs (CLOUD CHAMBER = cloud-centric close framing, no ground; GROUND = eye-level, hero tree visible, sky fills upper viewport).
+
+Right rail, top to bottom:
+
+- **Time of Day card** (top, persistent across all workstages). The Cartograph `<DawnTimeline>` scrub bar; reads/writes `useTimeOfDay` global state. Scrubbing here moves the sun, evolves the imported sky envelope, and (Phase 4b.2+) animates the cloud's TodChannel-bound params.
+- **Cloud parameters card** — one `<TodChannel>` row per param, grouped by Shape (coverage, density, thickness, baseAlt, warpFreq, warpAmp, noiseSeed, octaves), Lighting (sunScatter, ambientFloor, edgeSilver, shadowStrength), and Motion (drift). 13 params total. Each TodChannel can be flat (one value) or animated (per-TOD-slot keyframes). Editability gating: parked-on-attached-slot = editable; off-slot = read-only at the interpolated value.
+
+Autosave-on-edit. Drag a slider → `PUT /api/meteorologist/presets/<id>` fires ~500ms after the operator stops dragging. Animate-arm toggle promotes a flat param to keyframed; chip-strip below each slider attaches/detaches slot keyframes; per-channel Revert restores ship defaults (when Phase 3b lands; not present today for cloud params).
+
+---
+
+## Per-condition workstage (Condition editor)
+
+Click a Conditions row → header reads `← CONDITIONS  METEOROLOGIST  weather authoring  CONDITION [<label> ▾]`. The CONDITION pulldown lists all 16 conditions; switching mid-edit flushes pending autosaves first.
+
+Below: same CLOUD CHAMBER | GROUND slot tabs (different camera, same `<CanaryScene />`).
+
+Right rail:
+
+- **Time of Day card** (top, same as Teacup).
+- **When card** — range sliders per `when`-block field (tempC, cloudCover, humidity, windKph, windDirDeg, precipMmHr, stormDistanceKm, sunElevationDeg, sunAzimuthDeg) + chip multi-select for `tod`, `season`, `precipKind`. Plus `softness` slider and `transitionMs` number input. Each field has an **engagement toggle** (per `feedback_absence_means_inherit_in_authored_blocks`): an unengaged field stays absent in the saved JSON, so this condition inherits that input from the wildcard / parent. Disengaging the last child of `when.tod` (etc.) removes the parent key entirely.
+- **Directive card** — flat inputs for the condition's atmospheric output: `sun.intensity / sun.tint / sun.azimuth / sun.elevation`, `lightDome.{top, horizon, ambientFloor}`, `wind.{scale, dir}`, `precip.{kind, intensity}`. Sliders for numerics, color inputs for hex, dropdown for `precip.kind`. Engagement toggles per field. **Phase 3b** will promote the numeric fields to TodChannels so they vary across TOD; colors stay flat in v1.
+- **Clouds in this condition** — list of the rule's `directive.clouds[]` entries. Each entry is a row with a preset pulldown (filtered to `kind: cloud | fog`) + a weight slider (`0 ≤ weight ≤ 1`). Max 3 entries (schema `maxItems: 3`); `+ Add cloud` button hidden at 3. Orphan preset ids (referencing a removed/disabled preset) render in red, not silently coerced — operator sees what's broken.
+- **Revert to ship defaults** — bottom button, per-condition. Reads from `almanac.defaults.json` and restores this condition's values without touching the other 15. Confirmation dialog before write.
+
+Same autosave model. `PUT /api/meteorologist/almanac/<id>` on a ~500ms idle debounce; `POST /api/meteorologist/almanac/<id>/revert` for the Revert action.
+
+---
+
+## CanaryScene viewport
+
+The viewport in both workstages mounts `src/meteorologist/CanaryScene.jsx`. Composes:
+
+- **Sky / sun / moon / celestials** via the shared `<CelestialBodies />` consumer reading `useSceneJson(activeLookId)`. Same consumer Stage and Preview mount; no fork. The active Look's published `scene.json` provides per-TOD-slot keyframes for sky gradient, sun direction, moon, ambient, hemi, constellations.
+- **Flat ground plane** (GROUND slot only) — 200m × 200m mesh, neutral grey-tan, high roughness. No `BakedGround` import; this is the canary, not the production scene.
+- **One hero tree** (GROUND slot only) — `platanus_acerifolia/skeleton-1-lod0.glb` loaded directly via `useGLTF` from Arborist's per-Look bake (`public/baked/<look>/trees/`). Wrapped in `<Suspense fallback={null}>` so missing-bake gracefully falls back. The hero tree is intentionally a high-LOD asset we wouldn't ship in a populated LS scene — there's exactly one in the canary, so the GPU budget allows it.
+- **`<Atmosphere />` cloud renderer** — Phase 4b.1's volumetric raymarched shader. BoxGeometry slab at cloud altitude (y ∈ [1200, 1700] for cumulus_humilis defaults), 8km × 8km × 500m, BackSide-rendered. Uniforms currently hardcoded to `cumulus_humilis` values; Phase 4b.2 wires preset-driven binding.
+
+Two camera framings driven by the slot tab:
+
+| Slot | Position | Target | FOV | Ground |
+|---|---|---|---|---|
+| `chamber` | `[0, 200, 300]` | `[0, 600, 0]` | 35° | hidden |
+| `ground`  | `[-8, 1.7, 6]` | `[0, 8, 0]`   | 50° | shown |
+
+No camera controls in v1 — orbiting is Phase 5+ polish.
+
+Canvas opts into `logarithmicDepthBuffer: true` per kit convention. Raw `ShaderMaterial` (Atmosphere's) includes the four `<logdepthbuf_*>` chunks manually per memory `feedback_raw_shadermaterial_needs_logdepth_chunks`.
+
+---
+
+## What `<Atmosphere />` renders today
+
+Five photoreal levers per HANDOFF-clouds-day3-clouddome-v2.md, all five shipped in Phase 4b.1:
+
+1. **Three-tier lighting** — every visible cloud point reads as one of sun-side cap (warm-bright), body (neutral mid-gray), or shadow-side / underside (cool-dark, picks up sky color). Driven by `dot(cloudNormal, sunDir)` lerping between three colors. Without this, clouds read as flat noise blobs.
+2. **Silver lining** — Mie forward-scatter at thin sun-facing edges. `smoothstep(0.7, 1.0, dot(viewDir, sunDir)) × (1 - density) × edgeSilver × sunScatter`. Visible when the camera looks toward the sun through a cloud edge.
+3. **Self-shadowing** — 6-step shadow march toward the sun from each raymarch sample; `exp(-shadowDensity × shadowStrength)` falloff multiplies lit color. Thick cloud cores read darker than thin peripheries.
+4. **Domain warping** — two-pass 3D FBM with `worldPos + warpAmp × noise(worldPos × warpFreq)` reshaping the sample point before octave summing. Produces the cauliflower / lobe structure that makes cumulus look like cumulus, not blob-noise.
+5. **Vertical density gradient** — `smoothstep(0, 0.1, h) × (1 - smoothstep(0.6, 1.0, h))` profile. Floor near `h ≈ 0` makes the cloud "sit on" a flat layer; ceiling near `h ≈ 1` tapers the top. Distinguishes flat-based cumulus from a vertically-uniform stratus slab.
+
+Uniforms today are hardcoded to `cumulus_humilis` shape + lighting params. Sun direction is hardcoded warm-noon (`vec3(0, 0.7, 0.7).normalize()`); sky/sun colors are hardcoded `#ffe6c8 / #9faab8`. Phase 4b.2 swaps both for per-frame reads.
+
+---
+
+## API endpoints (`meteorologist/serve.js`, port 3335)
+
+Mounted under `/api/meteorologist` via Vite proxy.
+
+| Method | Path | Action |
+|---|---|---|
+| `GET`  | `/presets` | Read + return `public/clouds/presets.json` |
+| `GET`  | `/presets/:id` | Read + return one preset's full object |
+| `PUT`  | `/presets/:id` | Validate body against `preset.schema.json`; replace matching entry; write |
+| `GET`  | `/almanac` | Read + return `public/clouds/almanac.json` |
+| `GET`  | `/almanac/:id` | Read + return one rule's full object |
+| `PUT`  | `/almanac/:id` | Validate body against rule sub-schema; replace `rules[idx]`; cross-check via `validateLibrary`; write |
+| `POST` | `/almanac/:id/revert` | Read `almanac.defaults.json`; replace matching rule in live `almanac.json`; write |
+
+Bad PUT (schema invalid, id mismatch, orphan preset ref, cap exceeded) → 400 with ajv details. Missing id → 404. Read errors → 500.
+
+No `/bake` endpoint. Saves are direct.
+
+---
+
+## CLI
+
+| Command | What it does |
+|---|---|
+| `node meteorologist/serve.js` | Start the backend on port 3335 (called by `npm run dev`'s `dev:meteorologist`) |
+| `npm run validate -- public/clouds/presets.json public/clouds/almanac.json` | Validate schemas + cross-schema invariants. Expected: `ok: 52 presets, 16 rules`. |
+| `node meteorologist/pipeline/migrate-params-to-channels.js public/clouds/presets.json` | One-shot migration from Phase 2 (numeric → TodChannel shape). Kept in the repo as a precedent for future migrations. |
+
+---
+
+## Vocabulary
+
+| User-facing word | What it is | Schema name (internal) | File |
+|---|---|---|---|
+| **Teapot** | Library of 52 cloud presets | `presets-file` + `preset` | `public/clouds/presets.json` |
+| **Teacup** | Per-cloud workstage | — | — |
+| **Conditions** | Library of 16 weather situations | `almanac` (file stays named Almanac) | `public/clouds/almanac.json` |
+| **Condition editor** | Per-condition workstage | — | — |
+| **Cloud Chamber** | First slot tab — cloud isolated against sky, close framing | — | — |
+| **Ground** | Second slot tab — cloud composed with hero tree for scale | — | — |
+
+Schemas and file names keep their internal names to avoid churn; UI uses the operator-facing vocabulary throughout.
+
+---
+
+## What's NOT in v1 (and where each lands)
+
+| Feature | Status | Phase |
+|---|---|---|
+| Cloud shader binds to active preset (sliders affect viewport) | Queued | **4b.2** |
+| CloudDome retirement; production swap to `<Atmosphere />` | Queued | **4b.3** |
+| Color shift across TOD (sun-tint warm at sunset, etc.) | Queued (depends on 4b.2) | 4b.2 |
+| Directive numeric fields as TodChannels (sky modulations animate per-TOD) | Queued | **3b** |
+| Per-cloud-in-condition expression flags (rain rate, lightning rate per cloud entry) | Queued | 3b |
+| Cloud capabilities (`precipKinds`, `electrified`) on preset.schema | Queued | 3b |
+| Cloud pulldown filter graduates from `kind`-only to capability-aware | Queued | 3b |
+| Fake-weather fixture management UI | Queued | **5** |
+| Almanac evaluator hot-mount in CanaryScene (live `selectDirective` readout) | Queued | 5 |
+| Fallback editor (catch-all directive when no rule matches) | Queued | 5 |
+| Cloud preset gallery / reference-photo thumbnails | Queued | 5+ |
+| Camera orbit controls in viewport | Queued | 5+ |
+| Mobile quality tier (`uQualityTier`-driven step counts) | Queued | 5+ |
+| Multi-preset blending (per `directive.clouds[]` up to 3) at render | Queued | 5+ |
+| Weather-pack v2 (wind effects, precipitation render, heat haze, autumn foliage, audio) | Roadmap | post-v1 (own track) |
+| Per-Look primary tree species (cross-helper setup with Arborist) | Parked | TBD |
+
+See `BACKLOG.md` for the phase queue with scope summaries.
+
+---
+
+## How the runtime will consume Meteorologist's output
+
+When Phase 4b.3 lands and CloudDome retires, every production mount of `<CloudDome />` (Scene.jsx, CartographApp.jsx, PreviewApp.jsx, CanaryScene.jsx) flips to `<Atmosphere />`. The shader reads:
+
+1. **Active condition's directive** — selected by the Almanac evaluator each frame from the live weather payload. `selectDirective(weather, almanac, presets, override)` returns the cloud blend + sun + lightDome + wind + precip.
+2. **Per-cloud preset params** — for each cloud in the blend, read its 13 params (resolved via `resolveGroupAtMinute(channel, currentMinute)` for TodChannel-shaped values), feed as shader uniforms.
+3. **Sun direction + color** — from the active Look's `scene.dirSun` (already in scene.json per SC.1).
+4. **Wind** — `directive.wind.{scale, dir}` published per Look via `useWindState`; `<Atmosphere />` reads it directly; Arborist trees subscribe to the same source for sway.
+
+All composition happens in the runtime, not in Meteorologist. Meteorologist authors; runtime composes.
+
+---
+
+## Cross-references
+
+- [`README.md`](./README.md) — orientation + status table + start-here-in-morning
+- [`INTERFACE.md`](./INTERFACE.md) — layout model in depth (right-rail composition, slot tabs, autosave model)
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — publish-loop placement, consume-from-Stage pattern, directory layout
+- [`SPEC.md`](./SPEC.md) — full work order, locked decisions, acceptance criteria
+- [`BACKLOG.md`](./BACKLOG.md) — phase queue + spade work
+- [`NOTES.md`](./NOTES.md) — historical decisions + EOD records
+- [`CANON.md`](./CANON.md) — Teapot inclusion principles (WMO sourcing)
+- [`STAGE_MIGRATION.md`](./STAGE_MIGRATION.md) — cleanup commit spec for Phase 4b.3
+- [`../cartograph/FEATURES.md`](../cartograph/FEATURES.md) — kit-level features (Designer / Stage / Preview)
+- [`../arborist/FEATURES.md`](../arborist/FEATURES.md) — sibling helper Meteorologist borrows shape from
+- [`../HANDOFF-clouds-day3-clouddome-v2.md`](../HANDOFF-clouds-day3-clouddome-v2.md) — five photoreal levers reference (still alive until 4b.3 retires)
