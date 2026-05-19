@@ -6,7 +6,44 @@ Punchlist for the cloud + weather authoring track. Items are independently shipp
 
 ---
 
-## v1 cut decision
+## In flight — phase queue (next up first)
+
+Updated 2026-05-19 EOD. Phases 1–4a shipped (see `NOTES.md` for commits). Next:
+
+### Phase 4b.1 — `<Atmosphere />` shader + statically-bound test cloud
+
+The biggest single piece of the project. Implement `src/components/atmosphere-materials.js` (shader factory) + frag/vert shaders with all five photoreal levers (three-tier lighting, silver lining, self-shadowing, domain warping, vertical density gradient). BoxGeometry slab at cloud altitude. Mount in `CanaryScene.jsx` with HARDCODED uniforms for `cumulus_humilis` — don't yet wire to the active preset. Verification: cloud reads as a cloud against the active Look's sky.
+
+Brief NOT YET DRAFTED. First orchestrator task tomorrow morning.
+
+### Phase 4b.2 — TodChannel uniform binding
+
+Wire active preset's `params` through `resolveGroupAtMinute(channel, minute)` to feed shader uniforms each frame. Slider scrubs in Teacup's right rail now visibly affect the viewport. Same wiring extends to `<Atmosphere />` in CanaryScene whether mounted from Teacup or ConditionEditor.
+
+### Phase 4b.3 — CloudDome retirement
+
+Per `STAGE_MIGRATION.md`: swap all `<CloudDome />` mounts (Scene.jsx, CartographApp.jsx, PreviewApp.jsx, CanaryScene.jsx) to `<Atmosphere />`. Delete `CloudDome.jsx` + `SpriteClouds.jsx` + dead CloudDomeV2/V3. The `CloudCoverSeed` Phase-4a expedient in CanaryScene comes out (no longer needed once Atmosphere reads from preset directly).
+
+### Phase 3b — Directive TodChannel promotion + cloud capabilities + per-cloud expression
+
+Three coupled additions:
+
+1. **Schema promotion** of directive numeric fields: `directive.{sun.intensity, lightDome.ambientFloor, wind.scale, wind.dir, precip.intensity}` become `oneOf [number, animatableValue]` (same shape Phase 2 introduced for cloud params). Colors stay flat in v1. Migration script wraps existing scalars; `almanac.defaults.json` regenerated alongside.
+2. **Cloud capabilities** on `preset.schema.json`: `precipKinds: ['rain'|'snow'|...]`, `electrified: bool`. Authored in Teacup (small new card). Pulldown filter in CloudsInConditionCard graduates from kind-only to capability-aware.
+3. **Per-cloud-in-condition expression flags**: extend `directive.clouds[]` schema to allow `rainRate / snowRate / lightningRate` per cloud entry (each TodChannel-shaped, gated by the cloud's capabilities). New right-rail subsection inside CloudsInConditionCard.
+
+Lands AFTER Phase 4b so the temporal modulation is visually validatable.
+
+### Phase 5 — Fixtures + Almanac evaluator hot-mount + polish
+
+- Fake-weather fixture management UI (load/save weather payloads from `public/clouds/fixtures/`).
+- Almanac evaluator hot-mount in CanaryScene (or in Cartograph Stage's Sky&Light dev panel): reads `selectDirective(weather, almanac, presets, override)` each frame; surfaces "current condition" + "current cloud blend" while authoring.
+- Fallback editor (the catch-all directive for when no rule matches).
+- Cloud preset gallery / reference-photo thumbnails (BACKLOG item 10 from 2026-05-14 spade work).
+- Camera orbit controls in viewport.
+- `bakeLastMs` slice replaces Phase 4a's `Date.now()` stub (real cartograph fetch).
+
+---
 
 - [ ] **Ship v1 clouds; Meteorologist runs as a separate track.** Old noise-based `CloudDome.jsx` (v1) is the v1 shipper — get it back to a working state. Meteorologist (volumetric raymarch, 52-preset Teapot, 16-rule Almanac) continues evolving and lands when ready, not as a v1 blocker. See `SPEC.md`.
 

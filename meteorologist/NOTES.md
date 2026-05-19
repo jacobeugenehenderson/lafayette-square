@@ -4,6 +4,71 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-19 EOD — From zero to viewport in one day (Phases 1 → 4a)
+
+A single planning + execution arc took Meteorologist from "five docs and a validator" to "standalone app with both authoring surfaces live + viewport rendering." Five commits, four baby agents, two architectural reversals, and five new memory entries. End-of-day state captured in `README.md`'s Status section.
+
+### What shipped
+
+| Commit | Phase | Scope |
+|---|---|---|
+| `0330a3e` | doc structure | Excised Meteorologist content from cartograph docs; introduced the quartet (ARCHITECTURE / BACKLOG / NOTES) |
+| `b5accb3` | doc structure | `INTERFACE.md` + standalone-shell reversal (see entry below) |
+| `47c5de0` | **Phase 1** | Scaffold + read-only library views (`/meteorologist.html` + serve.js port 3335) |
+| `95bad99` | **Phase 2** | Teacup workstage + 13 cloud-param TodChannels (schema relaxed to `oneOf [number, animatableValue]`; existing presets migrated) |
+| `5fd8f78` | Phase 2 chrome | Glass-panel + section-heading on the cards (fixed by importing `src/index.css` instead of tokens-only — see memory `feedback_kit_helper_css_import_index_not_tokens`) |
+| `98f3781` | **Phase 3** | Condition editor (When + Directive + Clouds-in-condition + per-condition Revert via `almanac.defaults.json`) |
+| `6a3fd29` | **Phase 4a** | CanaryScene viewport (sky-from-active-Look + hero tree + flat ground + placeholder CloudDome) |
+
+### Architectural reversal: in-Stage → standalone shell
+
+Earlier in the day the SPEC's locked decision *"Authoring location: Inside Stage … NOT a separate `/meteorologist` app"* was reversed. The original rationale (don't reproduce Stage's sky stack) collapsed once it became clear that Meteorologist could **consume** Stage's published `scene.json` artifacts via the existing `<CelestialBodies>` consumer, rather than reproduce them. The full reversal entry is the next section down (with the prior in-Stage entry preserved-and-marked-SUPERSEDED).
+
+### Vocabulary landed
+
+- **Teapot** (cloud preset library, 52 entries, primary unit of Teapot mode)
+- **Teacup** (per-cloud workstage)
+- **Conditions** (weather situations, 16 entries — internally still `almanac.json` for schema continuity)
+- **Condition editor** (per-condition workstage)
+- **CLOUD CHAMBER / GROUND** (two slot tabs for the viewport)
+
+### Memory entries created today
+
+All under `~/.claude/projects/.../memory/`:
+
+1. `feedback_kit_helper_css_import_index_not_tokens.md` — new helpers must import `src/index.css`, not just `src/tokens/design.css`, to get utility classes.
+2. `feedback_absence_means_inherit_in_authored_blocks.md` — UI needs engagement toggles + autosave needs empty-parent pruning when the schema has "absent → inherit" semantics.
+3. `feedback_json_stringify_loses_handauthored_format.md` — `JSON.stringify(obj, null, 2)` reformats compact arrays on first PUT; mitigate via immutable `*.defaults.json` sibling.
+4. `feedback_stash_isolate_per_file.md` (amended) — added "check `git status` for STAGED state before commit, not just working-tree diff" after Phase 4a baby caught a 10-file pre-staged index slip and self-recovered.
+
+### Disclosure trail (load-bearing additions across the arc)
+
+Each baby agent surfaced its scope-drift cleanly. Notable ones that became architecture:
+
+- **Phase 2:** `_flushPendingSaves()` primitive (flush debounced autosave before any preset switch). Generalized in Phase 3 to drain both preset + rule timers.
+- **Phase 2:** Cloud pulldown filtered by `kind` (cloud↔cloud, fog↔fog) — prevents nonsense cross-kind selection.
+- **Phase 3:** Engage/off toggles on directive fields (absent vs zero distinction). Empty-parent pruning in `setRuleField`. Orphan preset ids render in red. All three → memory entry above.
+- **Phase 4a:** `CloudCoverSeed` one-shot to make CloudDome visible (useSkyState defaults to 0 = empty sky); disappears in Phase 4b when `<Atmosphere />` reads from preset params directly.
+
+### What's queued
+
+Per `BACKLOG.md` and `README.md` Status:
+
+- **Phase 4b.1** — `<Atmosphere />` v3 raymarched shader with 5 photoreal levers, statically bound to one test preset (`cumulus_humilis`). The biggest single piece of the project.
+- **Phase 4b.2** — TodChannel uniform binding: scrubbing a slider visibly affects the viewport.
+- **Phase 4b.3** — Retire `CloudDome.jsx` per `STAGE_MIGRATION.md`; production swap.
+- **Phase 3b** — TodChannel promotion of directive numeric fields + cloud capabilities + per-cloud-in-condition expression flags. After 4b lands so the temporal modulation is visually validatable.
+- **Phase 5** — Fixtures + Almanac evaluator hot-mount + fallback editor + cloud preset gallery + camera orbit controls.
+
+Briefs for Phases 1-4a are in `scratch/handoff-2026-05-19-meteorologist-phase-{1,2,3,4a}-*.md`. Phase 4b.1 brief is not yet drafted; tomorrow's first orchestrator task.
+
+### Lessons that didn't make it to memory
+
+- **The right phasing emerged in conversation.** Phase 4 nearly became "one big Atmosphere phase"; splitting into 4a (architecture proof with CloudDome placeholder) + 4b.1/4b.2/4b.3 (shader / binding / retirement) only landed after thinking through what a baby's commit looks like at each step. The smaller the unit, the cleaner the verification — and shader work has the highest variance, so isolating it minimizes blast radius.
+- **The standalone-shell reversal wasn't trivial.** What looked like "just change the housing" required patching SPEC.md's locked-decisions table, rewriting ARCHITECTURE.md §1 + adding §2 (consume-from-Stage), reframing INTERFACE.md, and documenting both the new direction and the SUPERSEDED prior direction in NOTES.md. Architectural reversals are cheap in conversation, expensive in docs — but doing the docs first paid off (every subsequent baby read the new state, not the old).
+
+---
+
 ## 2026-05-19 — Reversal: in-Stage editor housing → standalone shell
 
 **Reversed:** the prior locked decision *"Authoring location: Inside Stage, triggered from Sky and Light → Clouds row → 'launch meteorologist.' NOT a separate `/meteorologist` app"* (recorded below in the 2026-05-18 entry "In-Stage editor housing").
