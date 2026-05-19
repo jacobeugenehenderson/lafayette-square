@@ -4,6 +4,43 @@
 
 ---
 
+## 2026-05-19 — Arborist → Meteorologist canary tree contract (Arborist half)
+
+Shipped the Arborist half of a two-helper localStorage contract. Grove tiles now carry a `→ Set as Meteorologist canary` button in the hover card that writes `{species, variantId, lookId}` to `localStorage.meteorologist-canary-tree`. Meteorologist's CanaryScene listens for the `storage` event in its own tab and swaps its hero tree to match. The two halves are decoupled: Meteorologist's reader is shipping separately by the Meteorologist orchestrator.
+
+### Decisions worth keeping
+
+- **Affordance lives in `EditorCard`, not on the tile body.** Grove tiles are color-coded by quality rating; adding any visual to the tile itself would compete with that signal. The hover card already hosts per-tile actions (rating ladder, category chips, In-Look toggle, notes), so the canary button extends an existing surface rather than inventing a new one. Per [[feedback_dont_reinvent_existing_ux]].
+- **Subtle styling, not a primary action.** Plain `rgba(255,255,255,0.04)` background, no green accent — distinguishes "publishes UI preference" from the green "Add to Look" toggle which mutates authored state. The "→" prefix telegraphs the cross-helper jump.
+- **No store plumbing.** Per [[project_kit_helpers_pattern]] helpers publish authored artifacts; this isn't authored. The click handler is a one-shot `localStorage.setItem`. `useArboristStore` stays clean.
+- **`lookId: null` payload when no Look active** (vs disabling the button). Keeps the affordance available — operator might be browsing rated variants in `All Rated` scope with no Look picked yet and still want to send one to Meteorologist; Meteorologist's reader handles the null fallback per the contract.
+- **Toast lives at the Grove root, not inside EditorCard.** Hover cards unmount as soon as the cursor leaves a tile; a toast scoped to the card would flicker. Hoisting confirmation state to `Grove` keeps the 1.5s fade independent of hover lifecycle.
+
+### Contract shape (frozen, mirrored in `ARCHITECTURE.md`)
+
+```js
+key: 'meteorologist-canary-tree'
+payload: { species: string, variantId: number, lookId: string|null }
+```
+
+Field name is `species` (matches Arborist's `speciesId`), not `speciesId` — the contract surface drops the `Id` suffix because the consumer side reads it as a domain noun.
+
+### Files touched
+
+- `src/arborist/Grove.jsx` — toast state + `setMeteorologistCanary` handler in the `Grove` component; thread `onSetMeteorologistCanary` prop through `Tile` → `EditorCard`; new button below the In-Look toggle.
+- `arborist/FEATURES.md` — Grove subsection note.
+- `arborist/ARCHITECTURE.md` — new "Arborist ↔ Meteorologist canary contract" subsection.
+- `arborist/BACKLOG.md` — new `### Cross-helper integrations` section with the SHIPPED entry.
+- `arborist/NOTES.md` — this entry.
+
+### Out of scope (carried from brief)
+
+- Workstage secondary surface — Grove-only for now; cheap to add later if useful.
+- Auto-rewrite on Look switch — stale `lookId` is intentional; operator re-clicks.
+- Persistence across machines — localStorage is per-browser-per-origin and that's correct.
+
+---
+
 ## 2026-05-19 — Workstage LoD preview + perf gauge
 
 **Shipped:** the UI half of the LoD-preview + perf-gauge item the prior session scaffolded server-side. Two floating overlays on the focused-slot viewport:

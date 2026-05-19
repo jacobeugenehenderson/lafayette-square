@@ -276,6 +276,19 @@ Stash-isolate every Arborist commit per `feedback_stash_isolate_per_file` — op
 
 ---
 
+## Arborist ↔ Meteorologist canary contract
+
+Cross-helper seam for the Meteorologist's CanaryScene hero tree. Mirrors the helper-isolation discipline of the cartograph boundary: no direct imports across helpers, no shared store; the seam is a frozen data contract.
+
+- **Mechanism.** `localStorage` key `meteorologist-canary-tree`, origin-scoped (both helper apps run on the same Vite dev origin). Writing from Arborist (`Grove.jsx` hover-card affordance) fires the browser's `storage` event in every OTHER same-origin tab automatically. Meteorologist's CanaryScene subscribes and reacts.
+- **Payload** (JSON-stringified): `{ species: string, variantId: number, lookId: string|null }`. `species` matches Arborist's `speciesId`; `lookId` is the active Look at write time (null if none).
+- **Why localStorage, not a backend endpoint.** Per-operator UI preference — like Stage's debug-overlay toggle, not authored Look state. Wrong shape for `design.json` / `manifest.json` / serve.js (would survive across machines, leak into deploys, and demand a per-Look schema for a value that's just "what's the operator looking at right now"). Cross-tab via `storage` event is the lightest possible plumbing.
+- **No store touches.** Arborist's `useArboristStore` doesn't track the canary; the write is a one-shot from the click handler. Meteorologist owns the read.
+- **No auto-rewrite on Look switch.** Stale `lookId` is intentional — operator re-clicks to refresh. Auto-update is a future-design call per the Meteorologist contract.
+- **Independent ship halves.** Arborist (writer) and Meteorologist (reader) land separately; the contract is the only coupling.
+
+---
+
 ## Determinism guarantees
 
 - Same `{species, slot, seed, params}` + same on-disk materials → byte-identical published GLBs across re-runs. Verified `sha1sum public/trees/<species>/skeleton-N-lod0.glb` is stable on every phase ship.

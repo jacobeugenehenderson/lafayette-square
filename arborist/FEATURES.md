@@ -83,6 +83,8 @@ Per-Look roster curation. Reads `public/looks/<look>/design.json#/trees`; lets t
 
 The Grove's master atlas (`bake-look.js:unifyAtlases`) is the load-bearing innovation that makes hero species nearly free to add: `atlas-survey.js` dedupes tiles by sha1 hash before pack, so hero bark + leaf-cluster tiles collapse against the filler roster's identical content. See `ARCHITECTURE.md` for the full story.
 
+**Set as Meteorologist canary** (per-tile hover-card affordance). Click `→ Set as Meteorologist canary` on any tile to publish `{species, variantId, lookId}` into `localStorage.meteorologist-canary-tree`. Meteorologist's CanaryScene listens for the `storage` event (cross-tab, same origin) and swaps its hero tree to match — useful for sanity-checking a freshly adopted variant under stormy weather conditions without leaving Arborist. Per-operator UI preference; not authored, not per-Look state. Contract lives in `ARCHITECTURE.md` "Arborist ↔ Meteorologist canary contract".
+
 ---
 
 ## API endpoints (`arborist/serve.js`, port 3334)

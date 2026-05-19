@@ -625,6 +625,10 @@ Phase E and v1.6.
   v1 stopgap per [[project_v1_no_trees]]. SpeedTree will replace them
   by raising roster quality ratings — zero code change at swap time.
 
+### Cross-helper integrations
+
+- [x] **Arborist → Meteorologist canary tree contract** — **SHIPPED 2026-05-19**. Per-tile hover-card affordance in Grove (`src/arborist/Grove.jsx` EditorCard) writes `{ species, variantId, lookId }` to `localStorage.meteorologist-canary-tree`; Meteorologist's CanaryScene reads it via the cross-tab `storage` event to swap its hero tree. No backend, no authored state — per-operator UI preference scoped to the Vite dev origin. Contract shape + rationale in `ARCHITECTURE.md` "Arborist ↔ Meteorologist canary contract"; operator surface noted in `FEATURES.md` Grove subsection. Arborist-half ships independently of the Meteorologist reader half (separate ship by the Meteorologist orchestrator); the contract is the only coupling.
+
 ### Trees — SpeedTree
 - [ ] **Stand up the SpeedTree library.** Buy/grab `.spm` starter kits;
   tune a London Plane + generic deciduous + generic conifer; export

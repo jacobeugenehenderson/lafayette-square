@@ -49,6 +49,28 @@ export default function Grove() {
   const [scope, setScope] = useState('look')
   const [filterQuality, setFilterQuality] = useState(0)
   const [hovered, setHovered] = useState(null)
+  const [toast, setToast] = useState(null)
+
+  // Per-operator UI preference: tell the Meteorologist helper which tree
+  // to use as its CanaryScene hero. Cross-tab via the `storage` event
+  // (browsers fire it in OTHER tabs on same origin automatically). No
+  // backend, no authored state — see ARCHITECTURE.md
+  // "Arborist ↔ Meteorologist canary contract".
+  const toastTimerRef = useRef(null)
+  const setMeteorologistCanary = (v) => {
+    const payload = {
+      species: v.speciesId,
+      variantId: Number(v.variantId),
+      lookId: activeLookId || null,
+    }
+    localStorage.setItem('meteorologist-canary-tree', JSON.stringify(payload))
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToast(`Set as Meteorologist canary · ${v.speciesLabel || v.speciesId} v${v.variantId}`)
+    toastTimerRef.current = setTimeout(() => setToast(null), 1500)
+  }
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+  }, [])
 
   // Hover persistence — cursor can move tile → card without losing
   // focus. Tile-out + card-out both schedule a delayed clear; tile-in
@@ -202,6 +224,7 @@ export default function Grove() {
                 activeLookName={activeLook?.name}
                 onSetOverride={(key, val) => setGroveVariantOverride(v.speciesId, v.variantId, key, val)}
                 onToggleInLook={() => toggleInLook(activeLookId, v.speciesId, v.variantId)}
+                onSetMeteorologistCanary={() => setMeteorologistCanary(v)}
               />
             ))}
           </Suspense>
@@ -209,6 +232,20 @@ export default function Grove() {
           <FitToContent count={visible.length} cols={cols} />
           <OrbitControls makeDefault target={[0, 4, ((Math.ceil(visible.length / cols) - 1) * TILE_SPACING) / 2]} />
         </Canvas>
+
+        {toast && (
+          <div style={{
+            position: 'absolute', bottom: 24, left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(20,20,24,0.95)',
+            color: '#c0e0a8',
+            padding: '8px 14px', borderRadius: 4,
+            border: '1px solid #5a8a5a',
+            fontSize: 11, letterSpacing: '0.04em',
+            pointerEvents: 'none', zIndex: 3,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          }}>{toast}</div>
+        )}
       </div>
     </div>
   )
@@ -229,7 +266,7 @@ function FitToContent({ count, cols }) {
   return null
 }
 
-function Tile({ variant, position, inLook, activeLookId, activeLookName, hovered, onHoverIn, onHoverOut, onSetOverride, onToggleInLook }) {
+function Tile({ variant, position, inLook, activeLookId, activeLookName, hovered, onHoverIn, onHoverOut, onSetOverride, onToggleInLook, onSetMeteorologistCanary }) {
   const { glbUrl, normalizeScale, position: posOv, rotation: rotOv, quality, excluded, speciesLabel, variantId } = variant
   const { scene } = useGLTF(glbUrl)
   // Clone so each tile has its own scene graph (drei caches by URL).
@@ -316,6 +353,7 @@ function Tile({ variant, position, inLook, activeLookId, activeLookName, hovered
             activeLookName={activeLookName}
             onSetOverride={onSetOverride}
             onToggleInLook={onToggleInLook}
+            onSetMeteorologistCanary={onSetMeteorologistCanary}
             onPointerEnter={onHoverIn}
             onPointerLeave={onHoverOut}
           />
@@ -328,7 +366,7 @@ function Tile({ variant, position, inLook, activeLookId, activeLookName, hovered
 // Hover editor card. Stays open while the cursor is over it; exposes
 // rating, category, notes, and Remove. All edits go through the
 // store's setGroveVariantOverride (POST + optimistic local update).
-function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onPointerEnter, onPointerLeave }) {
+function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onSetMeteorologistCanary, onPointerEnter, onPointerLeave }) {
   const { speciesId, speciesLabel, variantId, quality, category, excluded, operatorNotes } = variant
   const [notes, setNotes] = useState(operatorNotes || '')
   useEffect(() => { setNotes(operatorNotes || '') }, [speciesId, variantId, operatorNotes])
@@ -457,6 +495,22 @@ function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverri
           : (inLook
               ? `Remove from ${activeLookName || 'Look'}`
               : `Add to ${activeLookName || 'Look'}`)}
+      </button>
+
+      <button
+        onClick={onSetMeteorologistCanary}
+        title="Set as the canary tree shown in Meteorologist's CanaryScene"
+        style={{
+          width: '100%', marginTop: 6,
+          padding: '6px 10px', borderRadius: 3,
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          color: '#c8c0e0',
+          fontFamily: 'inherit', fontSize: 11,
+          cursor: 'pointer',
+          letterSpacing: '0.04em',
+        }}>
+        → Set as Meteorologist canary
       </button>
     </div>
   )
