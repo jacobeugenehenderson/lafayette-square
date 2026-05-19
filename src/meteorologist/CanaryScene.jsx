@@ -26,7 +26,7 @@
  * GLB paths route through import.meta.env.BASE_URL so the same build
  * runs at apex or any subpath (project_kit_deploy_path_agnostic).
  */
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
@@ -158,11 +158,42 @@ function GroundPlane() {
 // ── Hero tree ─────────────────────────────────────────────────────────
 // Direct GLB via useGLTF — bypasses InstancedTrees because Meteorologist
 // places exactly one tree as a scale reference, not a population.
-// Fallback path: if the active Look's bake doesn't include this species
-// (e.g., a non-LS Look), useGLTF throws and the Suspense boundary swallows
-// it. The viewport continues to render sky + ground without crashing.
+//
+// Tree selection: reads `meteorologist-canary-tree` from localStorage (set
+// by Arborist's Grove/Workstage canary-picker button per the 2026-05-20
+// cross-helper contract). Falls back to platanus_acerifolia/skeleton-1
+// from the active Meteorologist Look if no preference is set.
+// Cross-tab updates via `storage` events.
+//
+// 404 fallback: if the resolved GLB doesn't exist (e.g. the payload's
+// lookId+species combination wasn't baked), useGLTF throws and the
+// Suspense boundary swallows it. The viewport continues to render sky +
+// ground without a tree. Operator-visible: pick a different tree in
+// Arborist.
+function useCanaryTreePref() {
+  const [pref, setPref] = useState(() => {
+    if (typeof localStorage === 'undefined') return null
+    try { return JSON.parse(localStorage.getItem('meteorologist-canary-tree') ?? 'null') }
+    catch { return null }
+  })
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== 'meteorologist-canary-tree') return
+      try { setPref(JSON.parse(e.newValue ?? 'null')) }
+      catch { setPref(null) }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+  return pref
+}
+
 function HeroTree({ lookId }) {
-  const url = `${import.meta.env.BASE_URL}baked/${lookId}/trees/${HERO_TREE_SPECIES}/${HERO_TREE_SKELETON}`
+  const pref = useCanaryTreePref()
+  const species  = pref?.species ?? HERO_TREE_SPECIES
+  const variant  = pref?.variantId != null ? `skeleton-${pref.variantId}-lod0.glb` : HERO_TREE_SKELETON
+  const treeLook = pref?.lookId ?? lookId
+  const url = `${import.meta.env.BASE_URL}baked/${treeLook}/trees/${species}/${variant}`
   const { scene } = useGLTF(url)
   return <primitive object={scene} position={[0, 0, 0]} />
 }
