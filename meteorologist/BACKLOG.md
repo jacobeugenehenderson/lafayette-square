@@ -12,6 +12,39 @@ Punchlist for the cloud + weather authoring track. Items are independently shipp
 
 ---
 
+## 2026-05-19 — Per-Look primary tree species (cross-helper setup)
+
+**Idea (parked 2026-05-19 EOD by Jacob):** the operator's setup flow for a new Look — the place where they pick latitude / longitude / season / time-of-day — should also include **the primary tree species** for that map.
+
+The bet: tree species is **climatic identity**, not just dressing. A Miami map's atmosphere is palm trees. Lafayette Square's is Sugar Maple. Chicago is honeylocust. The species choice anchors the visual character at the same scale-of-decision as "what does the sky look like."
+
+**Where it lives:** Meteorologist's setup flow seems like the right home because:
+- Meteorologist already owns per-Look climate fields (geography, weather code, almanac).
+- A "primary tree" field is a climate-adjacent metadata field. Climate → species follows naturally (the Almanac could even suggest defaults: tropical → palm/banyan, temperate → maple/oak, arid → mesquite, etc.).
+- Arborist already publishes `public/trees/index.json` of available species; the Meteorologist setup just renders a picker against it.
+
+**What this would look like:**
+1. New field on the Look config: `primarySpecies: 'acer_saccharum_procedural'` (or `palm`, `gleditsia`, etc.).
+2. Meteorologist setup surface renders a species picker pulling from arborist's `index.json`. Could climate-filter the list (sees `geography.lat → suggest temperate set`).
+3. The selection writes into the Look's design.json and gets surfaced into the bake.
+4. `bake-trees.js`'s placement-selection biases toward the primary species (boost its `qualityOverride`?) or seeds the per-Look roster with it pre-curated.
+5. Production runtime: primary-species placements get hero-quality bias; everything else fills in via the existing two-tier substitution (per `arborist/ARCHITECTURE.md`).
+
+**Open design questions** (TBD when this lands):
+- One primary species or N? (Lafayette Square is a Sugar Maple show but also has willows + ginkgoes + honeylocust. Maybe `primarySpecies` is plural, with the *first* getting the hero spot.)
+- Does the operator's choice REPLACE the Grove curation surface, or COMPLEMENT it? (Grove is already the per-Look roster knob; primary-species is just the *first* knob, with Grove for fine-tuning.)
+- Where does the picker live in the UI? Top of the Meteorologist setup screen, or its own panel alongside the Almanac rules? (Probably the former — it's a setup choice, not a tuning choice.)
+- How does it interact with G.1–G.5 hero authoring? Heroes already win the species-map lottery; a primary-species pick just means "give this Look's placements every chance to land on this species."
+
+**Cross-references:**
+- `arborist/ARCHITECTURE.md` two-tier substitution + master atlas sections — the mechanism this would feed.
+- `arborist/BACKLOG.md` G.1–G.5 hero authoring — primary-species selection assumes heroes exist for the popular species.
+- `project_kit_helpers_pattern` — Meteorologist owns climate; Arborist owns species; this is the seam where they meet.
+
+Not gating any current Phase. Land alongside the operator-facing Meteorologist setup screen.
+
+---
+
 ## 2026-05-14 — Spade work before standing up the studio
 
 SC.6 (`4176340`) installed the coupler scaffolding — `scene.clouds` channel, the Almanac evaluator at `src/lib/almanac-eval.js`, the `public/clouds/` artifacts shipped — without building the v3 `<Atmosphere />` volumetric raymarched runtime. v1 keeps procedural `CloudDome`. This section enumerates every other piece of spade work that can land BEFORE the Meteorologist studio (the operator-facing authoring UI for cloud presets + Almanac rules) is stood up, so when it lands, the studio plugs in mechanically.
