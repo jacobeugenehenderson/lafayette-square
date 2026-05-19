@@ -4,11 +4,12 @@ The species-asset library producer. Authors per-species tree skeletons + leaf/ba
 
 Read in order:
 
-1. [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — publish-loop pattern.
+1. [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — kit-wide publish-loop pattern.
 2. [`../cartograph/README.md`](../cartograph/README.md) — the helper template Arborist mirrors.
-3. [`SPEC.md`](SPEC.md) — full v1 build specification, decisions, acceptance criteria.
+3. [`FEATURES.md`](FEATURES.md) / [`ARCHITECTURE.md`](ARCHITECTURE.md) / [`BACKLOG.md`](BACKLOG.md) / [`NOTES.md`](NOTES.md) — the **arborist quartet**: operator-facing surface / load-bearing patterns / in-flight phases / dated decision record.
+4. [`SPEC.md`](SPEC.md) — original v1 build specification (largely shipped; residuals fold into BACKLOG).
 
-This README is the **runtime contract** for the helper. SPEC.md is the build plan.
+This README is the **runtime contract** for the helper. The quartet is the working-doc set, evolving every session.
 
 ---
 
