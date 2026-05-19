@@ -8,6 +8,33 @@ next operator should pick up. Read this top-to-bottom before touching any code.
 
 ---
 
+## 2026-05-18 PM — Neon arc close-out (V2 ship + authoring UX queue closure)
+
+Long-arc session that landed the full neon V2 shipping pass plus the post-ship authoring UX queue. Index:
+
+**Ship-V2 phase (morning → mid-afternoon):**
+- `a16313b` — wire V2 imports + correct neon doctrine docs (V2 was written prior but never actually mounted — first instance of doctrine-drift caught this session).
+- `3e51641` — land the 2026-05-14 mean-of-footprint anchor fix that BACKLOG claimed had shipped but hadn't. Walls + Foundations now lift by `mean(getElevationRaw(footprint corners))` matching `bake-buildings.js`. `patchTerrainAtCentroidRaw` helper is no longer orphaned. Second instance of doctrine-drift.
+- `29cf7de` — honor layerVis in Stage 3D mounts + flush autosave before `/bake` (covered in the entry below this one).
+- `e8a384f` — align NeonBandsV2 terrain lift to mean-corner anchor mechanism (cosmetic regression after the prior session's lift mismatch).
+- `e0a4cad` — **fix NeonBandsV2 log-depth-buffer compliance.** The session's root-cause finding: the Canvas runs `logarithmicDepthBuffer: true` (since 2026-05-13), but raw `ShaderMaterial`s don't chain the `<logdepthbuf_*>` GLSL chunks automatically the way built-in materials do. NeonBands was writing linear depth into a log buffer, producing camera-angle-dependent depth-comparison failure (overhead disappearance, underground glints). Six hours of misdiagnosis preceded the z-axis audit that surfaced it. Memory: `feedback_raw_shadermaterial_needs_logdepth_chunks`. Audit report: `scratch/handoff-2026-05-18-z-axis-audit.md`.
+- `855a6ad` — close out NeonBands V2 arc: excise v1, rename V2 → `NeonBands.jsx`, strip `[neonV2]` diagnostic, FEATURES.md flipped from in-flight to shipped.
+- `a5c1844` — fix asphalt portion of ribbons cutting through neon on pan. Surfaced the corollary that `polygonOffset` is structurally inert under the codebase's `logarithmicDepthBuffer: true` Canvas (the `<logdepthbuf_fragment>` chunk writes `gl_FragDepth` explicitly; per GL spec, polygon offset doesn't apply). Coplanar conflicts among transparent meshes resolve through `renderOrder` ordering, not polygon offset. Memory: `feedback_polygonoffset_inert_under_logdepth`.
+
+**Authoring UX phase (late afternoon → evening):**
+- `43ca3fe` + `9805305` — Tube radius slider in Cartograph Neon panel. Geometry-affecting (drives vertex positions, not just shader uniforms), so commits debounce/quantize on update. Memory: `feedback_geometry_affecting_channels_need_debounce`.
+- `e2b9095` — decouple neon from Society Pages activeTags + drop tubeRadius debounce (the additive-OR removal made the debounce unnecessary).
+- `6fcbd2d` — Stage / production gate split via prop presence: `forceNeonOn` prop passed in Stage path = panel is sole master; omitted in production path = hours is sole arbiter. Also incidentally landed the long-pending `frustumCulled={false}` on `Foundations` + `Building` meshes (third doctrine-drift instance from 2026-05-14). Memory: `feedback_panel_is_source_of_truth_for_authored_channels`.
+- `766bfcc` — extend neon eligibility to every building, defaulting per-building color from St. Louis zoning code (1036/1082 records populated).
+
+**Doctrine-drift pattern.** Three 2026-05-14 fixes were claimed in BACKLOG but never actually shipped to LS-live code, found this session: (1) the mean-of-corners anchor rule, (2) `patchTerrainAtCentroidRaw` was orphaned in `terrainShader.js` with zero callers, (3) `frustumCulled={false}` was missing from both relevant meshes. Pattern recorded in `feedback_verify_doctrine_against_code`: always grep before reasoning from doctrine claims.
+
+**Coordinator role lessons logged this session.** `feedback_coordinator_edits_one_liners_directly` (don't bounce one-line probes back to the operator); `feedback_verify_doctrine_against_code` (grep before trusting); plus the four engineering doctrines above.
+
+Canonical close-out narrative: `scratch/handoff-2026-05-18-neon-arc-closeout.md`. Full file ledger + commit-by-commit explanations live there.
+
+---
+
 ## 2026-05-18 — Autosave debounce must flush before /bake, and Stage 3D mounts must honor `layerVis`
 
 Two ordering / contract bugs surfaced while troubleshooting "Stage button → 409, retry succeeds, but layers I toggled off are visible anyway."
