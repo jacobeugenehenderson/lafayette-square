@@ -145,13 +145,23 @@ float sampleDensity(vec3 worldP) {
   vec3 q = (worldP + wind) * uWarpFreq;
   float n = fbm(q);
 
-  // Contrast curve. Raw FBM is smooth-gradient; cumulus puffs are
-  // *isolated* with clear-sky gaps. Applying smoothstep here biases
-  // the field toward extremes (mostly 0, hot spots toward 1) so
-  // coverage produces visually puffy clouds rather than a smooth
-  // grey ceiling. Lower edge ≈ what coverage threshold cuts; upper
-  // edge controls how quickly hot spots saturate.
-  n = smoothstep(1.0 - uCoverage, 1.0 - uCoverage * 0.2, n);
+  // Contrast curve. Maps coverage [0, 1] to a narrow smoothstep that
+  // produces visually puffy clouds rather than a smooth-gradient haze.
+  //
+  // Tuning targets:
+  //   coverage 0.10 → wispy fair-weather (top ~10% of FBM passes)
+  //   coverage 0.32 → cumulus humilis (top ~30%, isolated puffs visible)
+  //   coverage 0.55 → cumulus mediocris (mixed)
+  //   coverage 0.85 → overcast (most of FBM passes; sky mostly cloud)
+  //
+  // Earlier formula (smoothstep(1-cov, 1-cov*0.2, n)) cut too deep
+  // into the FBM upper tail at low coverage values — cumulus humilis
+  // rendered invisible. The mix() below shifts the lower threshold
+  // smoothly from 0.85 (sparse) to 0.10 (overcast); the upper
+  // threshold stays a fixed 0.20 above so saturation comes quickly.
+  float lo = mix(0.85, 0.10, uCoverage);
+  float hi = lo + 0.20;
+  n = smoothstep(lo, hi, n);
 
   float d = n;
   d *= verticalProfile(worldP.y);
