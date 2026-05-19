@@ -68,8 +68,8 @@ Per-Look overrides apply to dome visual-styling values (sun tint, halo, light do
 | Phone LoD | One shader, three quality tiers via `uQualityTier`. Half-res raymarch + bilateral upsample on phone. |
 | Stylization | Schema reserves a post-pass uniform block; UI deferred to v1.x. |
 | Save model | Saves write directly to `public/clouds/*.json` via `serve.js` after validation. No bake ceremony, no drafts. |
-| Authoring location | Inside Stage, triggered from Sky and Light → Clouds row → "launch meteorologist." NOT a separate `/meteorologist` app. |
-| Authoring scene | Toy 4-way corner (`src/toy/Toy*.jsx`). Mounted via the same `StageCamera` rig as production. |
+| Authoring location | Standalone app at `/meteorologist.html` (mirrors Arborist). Reverses an earlier in-Stage decision; rationale in `NOTES.md` 2026-05-19. Stage's Sky & Light card retains a Clouds TodChannel row + "launch meteorologist" link as a deep-link, but the app shell is separate. |
+| Authoring scene | Meteorologist canary (`src/meteorologist/CanaryScene.jsx`) — flat-ish ground + one hero tree + sky imported from active Look's `scene.json`. Two slot framings: Cloud Chamber (cloud isolated, no ground) and Ground (mid-distance, tree for scale). See `INTERFACE.md` §7. |
 | Fog | Rolls into the Clouds row — fog presets (`fog_ground`, `fog_valley`, `haze_*`) are low-altitude cloud presets in the Teapot, rendered by the same shader. No separate Fog channel in v1. |
 | Wind ownership | Almanac directive's `wind.scale` / `wind.dir` published via `useWindState` zustand slice. Trees (Arborist's `uWindPhase`), pennants, future precip read from this single source. |
 | Sun + light dome ownership | Almanac drives defaults; per-Look overrides win. |
@@ -77,7 +77,7 @@ Per-Look overrides apply to dome visual-styling values (sun tint, halo, light do
 | Transition timing | Default `transitionMs: 60_000` (1 min lerp), tied to 5-min `POLL_INTERVAL` in `WeatherPoller.jsx`. Per-rule overrides allowed. |
 | Future weather phenomena | Rain, snow, lightning stubbed in schema (`enabled: false` presets) from day one; rendering deferred to v1.x. |
 | Shared shader factory | `src/components/atmosphere-materials.js` — single source for the volume material, used by `<Atmosphere />` runtime; same shader everywhere it mounts. |
-| Frontend dir | NONE. Meteorologist's authoring cards live in `src/cartograph/`, conditionally rendered when `scene === 'meteorologist'`. The `meteorologist/` dir holds backend only. |
+| Frontend dir | `src/meteorologist/` — mirrors `src/arborist/`. Imports `src/tokens/design.css` + reuses `src/cartograph/TodChannel.jsx` + `src/components/DawnTimeline.jsx` directly (no fork). The `meteorologist/` dir holds backend + docs only. |
 
 ---
 
@@ -143,20 +143,35 @@ Half-res raymarch + bilateral upsample is the default mobile path. No forked cod
 
 ---
 
-## Authoring UI (Meteorologist mode in Stage)
+## Authoring UI
 
-Triggered from Sky and Light → Clouds row → "launch meteorologist." On entry: scene swaps to toy, right panel content swaps to the Meteorologist surfaces. Exit returns to normal Stage.
+See [`INTERFACE.md`](./INTERFACE.md) for the full layout model. Summary:
 
-### Right-panel cards (in Meteorologist mode)
+### Standalone app at `/meteorologist.html`
 
-1. **Teapot Library** — gallery of all presets in `presets.json`. Filter by `kind`, by tag, by altitude. Click a preset → opens its parameter rows inline (Tuner is not a separate surface; it's just expansion within the Library card). Each parameter is a TodChannel-style row with the existing primitives (slider / color / toggle). Compare slot at the top so the operator can A/B against another preset live.
-2. **Almanac Editor** — rule list (left), rule editor (center), fake-weather panel (right). Range sliders for each `when` field, multi-select preset weights for `directive.clouds`, optional sun/lightDome/wind/precip. Fixture management at top (load/save weather payloads from `public/clouds/fixtures/`). Coverage heatmap at the bottom flags rule gaps.
-3. **Fake-weather panel** — sliders for every weather field; the toy preview reflects what the Almanac would direct. Sliders for the *primary* fields (cloudCover, precipMmHr, windKph, sunElevation) on page 1; secondary fields (humidity, pressure, temp, stormDistance) on page 2 to keep the panel narrow on mobile.
-4. **Save** — writes to `public/clouds/presets.json` + `almanac.json` via `serve.js` after validation. No bake button. No drafts.
+Top-bar mode toggle: **TEAPOT | CONDITIONS**. Look picker on the right selects which Cartograph Look's `scene.json` is imported as the sky/sun/lighting backdrop.
 
-### What lives in Stage normally (NOT in Meteorologist mode)
+### Two libraries
 
-- The **Clouds** TodChannel row in Sky and Light is normal Stage UX. Operator can scrub TOD slots, attach/detach slots, set ramp-in/out, and pick a Teapot preset id per slot — all without launching Meteorologist mode. The launch button is for editing the Teapot/Almanac themselves.
+1. **Teapot** — flat list of 52 cloud presets. Click a row → opens that cloud's **Teacup** (the per-cloud workstage).
+2. **Conditions** — flat list of 16 weather situations (the Almanac, renamed for the operator). Click a row → opens the Condition editor.
+
+### Workstage shape (shared)
+
+Header (back button / mode name / named-unit pulldown), slot tabs (**CLOUD CHAMBER** / **GROUND**), viewport on the left, right rail on the right. Mirrors Arborist's `ProceduralWorkstage` frame exactly.
+
+Right rail top card is always the standard `<TodChannel>` TOD card (imported from `src/cartograph/TodChannel.jsx`). Body below diverges:
+
+- **Teacup rail (Teapot):** preview-context selector (which Condition's atmospheric modulations to apply while tuning) + 13 cloud-shader-param TodChannels.
+- **Condition rail (Conditions):** Sky modulations (darken, desat, halo, light dome, wind speed, wind dir — each a TodChannel) + Revert + filtered "clouds in this condition" pulldown + per-cloud expression flags (weight, rain rate, snow rate, lightning rate — TodChannels, gated by cloud capabilities) + "When this condition fires" range sliders for the rule's `when` predicates.
+
+### Autosave-on-edit
+
+No Save button anywhere. Every TodChannel commit writes through `serve.js` to the underlying file. **Revert** (per-condition, per-channel) is the only explicit action.
+
+### The Clouds TodChannel row in Stage Sky & Light
+
+Stays as planned — operator picks a Teapot preset id per TOD slot for the active Look (the per-Look cloud-channel override), without launching Meteorologist. The "launch meteorologist" affordance is a deep-link to `/meteorologist.html` for editing the Teapot/Conditions libraries themselves.
 
 ---
 
@@ -207,10 +222,10 @@ The build is complete for v1 when **all** of these are true:
 1. `meteorologist/serve.js` runs on port 3335; vite proxy wired; dev script includes it.
 2. PUT to `/presets` and `/almanac` validate via `pipeline/validate.js` and reject malformed input loudly. Round-tripped output is byte-stable.
 3. Stage's Sky and Light card has a new **Clouds** TodChannel row. Per-TOD-slot value is a Teapot preset id (selectable via dropdown).
-4. The Clouds row's **"launch meteorologist"** button swaps scene to toy + replaces right panel content with Meteorologist authoring surfaces.
-5. **Teapot Library** card lists all 52 presets, filterable, with inline parameter editing and A/B compare.
-6. **Almanac Editor** card edits rules, fake-weather sliders drive the live toy preview through `almanac-eval.js`, fixtures save/load.
-7. **Save** writes `presets.json` + `almanac.json` directly; no bake step.
+4. **`/meteorologist.html`** app shell loads; top-bar TEAPOT | CONDITIONS toggle works; Look picker imports the chosen Look's `scene.json` as sky backdrop. Deep-link from Stage's "launch meteorologist" lands here.
+5. **Teapot library** lists all 52 presets; clicking a row opens its Teacup with TodChannel rows for all 13 cloud params + preview-context selector.
+6. **Conditions library** lists all 16 conditions; clicking a row opens the Condition editor with TodChannel rows for sky modulations, filtered cloud pulldown, per-cloud expression flags, and `when`-predicate range sliders.
+7. **Autosave-on-edit** writes `presets.json` + `almanac.json` directly through `serve.js`; no Save button, no bake step. Per-condition Revert restores ship defaults.
 8. **`Atmosphere.jsx` mounted** in Stage, Preview, and Production runtime. Replaces every `CloudDome*` / `SpriteClouds` / `CloudsActive` mount. Legacy files deleted in same commit.
 9. **Phone LoD verified** — Preview's phone slice maintains ≥ 30 fps with `phone_low` tier active.
 10. **Desktop quality verified** — full Hero shot ≥ 50 fps with `desktop_high` tier active.

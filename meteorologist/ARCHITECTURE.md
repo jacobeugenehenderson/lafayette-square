@@ -4,7 +4,9 @@ How Meteorologist fits into the kit and what it publishes. Read top to bottom; i
 
 > Part of the **meteorologist quartet** (`README.md` / `ARCHITECTURE.md` / `SPEC.md` / `BACKLOG.md` / `NOTES.md`, with `CANON.md` + `STAGE_MIGRATION.md` as topical addenda). Read at session start; flag contradictions during work; update at session end. Stale claims are worse than no claims — they actively mistrain readers.
 >
-> Sibling docs live in `../cartograph/` (the publish-loop pattern lives there) and `../arborist/` (the helper-app template Meteorologist borrows shape from, minus the separate app shell).
+> Sibling docs live in `../cartograph/` (the publish-loop pattern lives there) and `../arborist/` (the helper-app template Meteorologist borrows shape from).
+>
+> See [`INTERFACE.md`](./INTERFACE.md) for the operator-facing layout (Teapot/Conditions libraries, Teacup workstage, slot tabs, right-rail composition).
 
 ---
 
@@ -15,22 +17,65 @@ Meteorologist is one of the kit's helper apps. Each helper authors a specific ki
 ```
 ┌────────────────┐    publishes     ┌──────────────────────────────┐
 │  Meteorologist │ ───────────────▶ │ public/clouds/presets.json   │ ──▶ Runtime
-│  (in Stage)    │ ───────────────▶ │ public/clouds/almanac.json   │
+│                │ ───────────────▶ │ public/clouds/almanac.json   │
 └────────────────┘                  └──────────────────────────────┘
 ```
 
-**Meteorologist's shape is unusual.** Unlike Cartograph and Arborist — which have their own app shells at `/cartograph.html` and `/arborist.html` — Meteorologist has **no separate app shell**. Its authoring UI lives inside Stage, triggered from the Sky and Light card's "launch meteorologist" button. The publish-loop properties still hold (one helper, canonical artifacts, decoupled runtime consumer); only the editor's housing differs.
+**Meteorologist runs as a standalone app shell at `/meteorologist.html`** — same shape as Arborist and Cartograph. This reverses an earlier "in-Stage editor housing" decision (2026-05-19; full reversal context in `NOTES.md`). The reversal's rationale is in §2 below.
 
-Why no shell:
-- The Teapot author needs to see clouds rendered against a real-world sun position + sky gradient + post-FX stack. That stack already exists inside Stage; reproducing it in a standalone shell would be duplication and a parity-drift risk.
-- The toy 4-way-corner scene is the canary. Stage already knows how to mount the toy.
-- The two artifacts are small JSON files validated against schemas — no atlas, no GLB pipeline, no bake server worth its own port (the optional `serve.js` notwithstanding).
-
-**Decision-history pointer:** the rejected alternatives (separate `/meteorologist.html` shell, three-tier Designer/Stage/Preview split internal to the helper) are captured in `NOTES.md §"In-Stage editor housing"`.
+`INTERFACE.md` is the canonical reference for the operator-facing layout (top-bar mode toggle, Teapot/Conditions libraries, Teacup workstage shape, slot tabs, right-rail composition).
 
 ---
 
-## 2. The two artifacts
+## 2. Consume-from-Stage pattern (the standalone-shell rationale)
+
+The original "no app shell — live inside Stage" decision was driven by one concern: *the Teapot author needs clouds rendered against a real sun + real sky gradient + real post-FX, and reproducing that stack outside Stage would be duplication + parity-drift risk.* Valid concern; wrong solution.
+
+The reversal: instead of *reproducing* Stage's rendering stack, Meteorologist **consumes** Stage's published artifacts at authoring time. The active Cartograph Look's `scene.json` (published by `cartograph/bake-scene.js`) carries the full sky envelope — `sky`, `dirSun`, `dirMoon`, `ambient`, `hemi`, `constellations`, `milkyWay` channels, with their per-TOD-slot keyframes. Meteorologist mounts the same `<CelestialBodies>` consumer Stage and Preview mount, fed by `useSceneJson(activeLookId)`. The sky is real, sourced from Cartograph; nothing is reproduced.
+
+```
+                      ┌─── Cartograph publishes ───┐
+                      │ public/baked/<look>/        │
+                      │   scene.json                │ ← sky + sun + lighting
+                      │                             │   keyframes per TOD slot
+Meteorologist         └─────────────┬───────────────┘
+  authoring scene                   │
+  composes:                         ▼
+                      <CelestialBodies>  ──┐
+                                           │
+                      ┌─── Arborist publishes ─────┐
+                      │ public/baked/<look>/trees/  │
+                      │   <species-hero>.glb        │ ← one hero tree for scale
+                      └─────────────┬───────────────┘
+                                    │
+                                    ▼
+                      <InstancedTrees>  ──┐
+                                          ├──▶ Meteorologist's canary viewport
+                      ┌── Meteorologist ──┐
+                      │   (own state)     │
+                      │   active Teapot   │ ← what the operator is authoring
+                      │   active Cond.    │
+                      └─────────┬─────────┘
+                                ▼
+                          <Atmosphere>  ──┘
+```
+
+This dovetails with `feedback_preview_uses_production_pipeline` (which Preview already follows for trees + buildings + water): authoring tools that need to render against a real-world context should compose from the production pipeline's published artifacts, not maintain their own parallel rendering paths.
+
+**Properties of the consume-from-Stage approach:**
+
+- **Single rendering codepath for sky.** `<CelestialBodies>` is mounted identically in Stage, Preview, Production, and now Meteorologist. No fork; parity is structural per `project_stage_consumer_parity`.
+- **Look picker is meaningful.** Switching Looks in Meteorologist's app-bar Look picker re-fetches that Look's `scene.json`; the sky changes instantly because we're swapping a fetched artifact, not switching authoring stores.
+- **Authoring against multiple Looks comes free.** Operator can tune a cloud preset under `lafayette-square`'s sky envelope, then switch to `valentines`'s and verify it still reads. Same Teapot edit, two visual contexts.
+- **The Almanac evaluator works the same against any sky.** `selectDirective(weather, almanac, presets, override)` is pure — it doesn't care which sky the result will render against. The sky just colors what it renders.
+
+**Composed-not-reproduced extends to trees.** The Ground slot mounts one tree from Arborist's per-Look bake (`public/baked/<look>/trees/<species>.glb`), again via the existing `<InstancedTrees>` consumer. Arborist's substitution pipeline + LOD tiers + bark/leaf atlas all apply unchanged.
+
+**Decision-history pointer:** the in-Stage decision's full rejection-of-alternatives is captured in `NOTES.md`'s pre-reversal entries (kept for posterity). The 2026-05-19 reversal entry there explains why the consume-from-Stage realization invalidated the original rationale.
+
+---
+
+## 3. The two artifacts
 
 | Artifact | Contents | Schema |
 |---|---|---|
@@ -50,7 +95,7 @@ Neither artifact is "baked" the way Cartograph bakes `ground.bin`. Saves write d
 
 ---
 
-## 3. Composition order at runtime
+## 4. Composition order at runtime
 
 ```
 Look's TOD-slot envelope (Sky & Light)
@@ -71,13 +116,14 @@ Today (2026-05-18) only the channel scaffolding is shipped (SC.6 — see `NOTES.
 
 ---
 
-## 4. Directory layout
+## 5. Directory layout
 
 ```
 meteorologist/                        # THIS DIR — backend + docs
   README.md                           # orientation card
   ARCHITECTURE.md                     # this file
-  SPEC.md                             # full work order (FEATURES-shaped)
+  INTERFACE.md                        # operator-facing layout model
+  SPEC.md                             # full work order
   BACKLOG.md                          # punchlist (spade work + v1/v2 roadmap)
   NOTES.md                            # historical decisions
   CANON.md                            # Teapot inclusion principles
@@ -91,8 +137,22 @@ meteorologist/                        # THIS DIR — backend + docs
 
 public/clouds/                        # PUBLISHED ARTIFACTS — runtime contracts
   presets.json                        # the Teapot, 52 entries
-  almanac.json                        # 16 rules + fallback
+  almanac.json                        # 16 conditions + fallback (user-facing: "Conditions")
   fixtures/                           # NOT YET POPULATED — fake-weather payloads
+
+meteorologist.html                    # NOT YET WRITTEN — standalone app shell
+
+src/meteorologist/                    # NOT YET WRITTEN — UI tree (mirrors src/arborist/)
+  main.jsx                            # imports ../tokens/design.css; renders <MeteorologistApp />
+  MeteorologistApp.jsx                # top bar, mode toggle, library router
+  TeapotLibrary.jsx                   # flat preset list
+  Teacup.jsx                          # per-cloud workstage
+  ConditionsLibrary.jsx               # flat conditions list
+  ConditionEditor.jsx                 # per-condition workstage
+  SlotTabs.jsx                        # shared CLOUD CHAMBER | GROUND
+  CanaryScene.jsx                     # the toy scene (ground + hero tree + sky)
+  stores/
+    useMeteorologistStore.js          # zustand
 
 src/components/
   Atmosphere.jsx                      # NOT YET WRITTEN — v3 runtime component
@@ -100,6 +160,15 @@ src/components/
   atmosphere-shaders/                 # NOT YET WRITTEN — frag/vert source
   CloudDome.jsx                       # v1 procedural shipper (retires when v3 lands)
   SpriteClouds.jsx                    # retires in cleanup commit
+  CelestialBodies.jsx                 # IMPORTED — Meteorologist mounts this unchanged
+  InstancedTrees.jsx                  # IMPORTED — Meteorologist mounts in Ground slot
+
+src/cartograph/
+  TodChannel.jsx                      # IMPORTED — Meteorologist's right-rail rows reuse this
+src/components/
+  DawnTimeline.jsx                    # IMPORTED — Meteorologist's scrub bar
+src/tokens/
+  design.css                          # IMPORTED — shared design tokens
 
 src/lib/
   almanac-eval.js                     # v3 evaluator interface — shipped 2026-05-13
@@ -108,11 +177,11 @@ src/lib/
                                       # against weather-payload.schema.json
 ```
 
-This shape mirrors `../arborist/` and `../cartograph/` so a contributor (or agent) showing up cold can navigate by analogy. The deviation: no `src/meteorologist/` UI tree, because the editor lives inside `src/cartograph/`'s Stage shell.
+This shape mirrors `../arborist/` and `../cartograph/` so a contributor (or agent) showing up cold can navigate by analogy.
 
 ---
 
-## 5. Runtime contract
+## 6. Runtime contract
 
 The runtime — Stage shots, Preview, the deployed app — consumes both artifacts read-only at startup:
 
@@ -129,22 +198,23 @@ const directive = selectDirective(weatherPayload, almanac, presets, override)
 
 ---
 
-## 6. Relationship to Cartograph Stage
+## 7. Relationship to Cartograph Stage
 
-Meteorologist consumes Stage as its editor host. The integration surfaces:
+Meteorologist consumes Stage's published artifacts (§2). The remaining integration surfaces in Stage itself are small:
 
 | Stage surface | What Meteorologist adds |
 |---|---|
-| Sky & Light card | One new TodChannel row: **Clouds** (slot value = `{ presetId }`). Same primitive as Sky gradient / Mist / Halo. |
-| Sky & Light card | A **"launch meteorologist"** button — click swaps scene to toy and takes over the right panel for Teapot/Almanac authoring; top-bar exit restores normal Stage view. |
-| Toy toggle (toolbar) | Stays as-is. Developer's shader-R&D entrance, separate door, same room. |
+| Sky & Light card | One new TodChannel row: **Clouds** (slot value = `{ presetId }`). Same primitive as Sky gradient / Mist / Halo. This is per-Look authoring — picks which Teapot preset that Look uses at each TOD slot. |
+| Sky & Light card | A **"launch meteorologist →"** link — deep-link to `/meteorologist.html`. Open in new tab; the Look picker on arrival defaults to the Look the operator was just viewing. No scene swap, no right-panel takeover. |
 | `bake-scene.js` | Reads `design.clouds` → emits `scene.clouds: {preset, overrides}`. Validates preset id against live `presets.json` (pre-bake hook — see BACKLOG item 3). |
 
 **The slab carries the cloud preset.** Per `project_slab_carries_full_authored_product` — if Sky & Light's Clouds row authors anything, the slab must carry it. SC.6 wired this in May 2026; v3 `<Atmosphere />` will be the production consumer.
 
+**Authoring direction is one-way.** Stage's Clouds row picks *which* preset to use (per-Look, per-TOD-slot). Editing the preset's intrinsic parameters happens only in Meteorologist's Teapot view. Conditions (the Almanac) are global, not per-Look; they're authored only in Meteorologist.
+
 ---
 
-## 7. Relationship to v1 CloudDome
+## 8. Relationship to v1 CloudDome
 
 `src/components/CloudDome.jsx` is the noise-based procedural cloud shipper. It is the **v1 production renderer** until v3 `<Atmosphere />` ships.
 
@@ -154,7 +224,7 @@ Meteorologist consumes Stage as its editor host. The integration surfaces:
 
 ---
 
-## 8. Wind contract (cross-helper)
+## 9. Wind contract (cross-helper)
 
 Wind direction + speed are part of the atmospheric directive (Meteorologist publishes them per Look as part of the Almanac output). **Consumers:**
 
@@ -162,29 +232,31 @@ Wind direction + speed are part of the atmospheric directive (Meteorologist publ
 - **CloudDome / `<Atmosphere />`** — cloud movement direction + speed for shader advection.
 - **Future:** rain particles (direction), audio (wind sounds gated on speed thresholds), heat-haze (gated on temp + low wind).
 
-Wind belongs to Meteorologist (`/cartograph.html` Stage → Sky & Light), not to any individual consumer. Consumers subscribe; they don't author.
+Wind belongs to Meteorologist (authored in the Condition editor's Sky-modulations card per `INTERFACE.md`), not to any individual consumer. Consumers subscribe; they don't author.
 
 ---
 
-## 9. Conventions worth knowing
+## 10. Conventions worth knowing
 
 - **Schemas are versioned by `$id` filename.** `preset.schema.json` is registered both by `$id` and by filename so `$ref`s resolve regardless of authoring style.
 - **The validator is strict.** `Ajv({ strict: true })` — unknown keywords throw. Schema authors must extend deliberately, not accidentally.
 - **Cross-schema checks live in `validateLibrary()`.** Preset-id uniqueness, almanac→preset reference integrity (including disabled presets), cloud-blend weight ≤1.0. Run via `npm run validate -- ../public/clouds/presets.json ../public/clouds/almanac.json`.
-- **The toy is the canary.** Don't build a separate sandbox app. The Atmosphere shader gets mounted against the toy 4-way-corner scene in Cartograph; "works in toy" advances to LS at Browse/Hero/Street for the visibility-at-scale check (memory `feedback_toy_not_proving_ground_for_ls_visibility`).
+- **The canary is `CanaryScene.jsx`.** A purpose-built sky-dominant scene (flat ground + one hero tree + imported Look sky) mounted inside the standalone Meteorologist shell. "Works in canary" advances to LS at Browse/Hero/Street for the visibility-at-scale check (memory `feedback_toy_not_proving_ground_for_ls_visibility`). The legacy 4-way-corner toy in `src/toy/` remains as the developer's shader-R&D entrance, separate door.
 - **No draft/published split.** Saves write directly through validation. The decision is captured in `NOTES.md`.
 
 ---
 
-## 10. Cross-references
+## 11. Cross-references
 
 - [`./README.md`](./README.md) — orientation, current status
+- [`./INTERFACE.md`](./INTERFACE.md) — operator-facing layout model (Teapot/Conditions/Teacup, slot tabs, right-rail composition)
 - [`./SPEC.md`](./SPEC.md) — full work order (Teapot + Almanac decisions, acceptance criteria, build order)
 - [`./BACKLOG.md`](./BACKLOG.md) — spade work inventory + roadmap
-- [`./NOTES.md`](./NOTES.md) — historical decisions (SC.6, strip-vs-wire, editor housing)
+- [`./NOTES.md`](./NOTES.md) — historical decisions (SC.6, strip-vs-wire, 2026-05-19 standalone-shell reversal)
 - [`./CANON.md`](./CANON.md) — what's in the Teapot today, what's not, why
 - [`./STAGE_MIGRATION.md`](./STAGE_MIGRATION.md) — the cleanup commit that retires CloudDome
 - [`../cartograph/ARCHITECTURE.md`](../cartograph/ARCHITECTURE.md) — kit-wide publish-loop pattern
-- [`../arborist/SPEC.md`](../arborist/SPEC.md) — sibling helper Meteorologist borrows shape from
+- [`../arborist/ARCHITECTURE.md`](../arborist/ARCHITECTURE.md) — sibling helper Meteorologist borrows shape from
+- `src/cartograph/TodChannel.jsx` + `src/components/DawnTimeline.jsx` + `src/tokens/design.css` — imported by Meteorologist, not forked
 - `src/lib/almanac-eval.js` — runtime evaluator, shipped 2026-05-13
 - `~/.claude/.../memory/MEMORY.md` — running session memory
