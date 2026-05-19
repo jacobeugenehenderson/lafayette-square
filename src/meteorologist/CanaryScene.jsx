@@ -33,9 +33,16 @@ import * as THREE from 'three'
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
+import { useSceneJson } from '../lib/useSceneJson.js'
 import CelestialBodies from '../components/CelestialBodies.jsx'
 import Atmosphere from '../components/Atmosphere.jsx'
 import { CANARY_CAMERAS } from './canaryCamera.js'
+
+// Wind defaults for the interim whole-tree sway (no Almanac directive
+// wired yet). Phase 5+ will replace these with the active Condition's
+// directive.wind values.
+const DEFAULT_WIND_SCALE = 1.0     // 0 = still, 5 = gale
+const DEFAULT_WIND_DIR_DEG = 0     // 0 = blowing toward +X
 
 const HERO_TREE_SPECIES = 'platanus_acerifolia'
 const HERO_TREE_SKELETON = 'skeleton-1-lod0.glb'
@@ -51,6 +58,12 @@ export default function CanaryScene({ slot = 'chamber' }) {
       // imperative camera-lookAt updates. Cheap — single tree GLB, no
       // post-FX.
       key={slot}
+      // `shadows` enables three's shadow-map pipeline. CelestialBodies'
+      // sun is already configured castShadow + 4096² shadow map (sized
+      // for LS-scale ground but our 200m canary plane fits comfortably
+      // inside its 1800m frustum). Tree + ground set cast/receive flags
+      // below.
+      shadows
       gl={{
         antialias: true, alpha: false,
         logarithmicDepthBuffer: true,
@@ -66,6 +79,7 @@ export default function CanaryScene({ slot = 'chamber' }) {
       {/* Defaults give a visible cloud envelope; brief flagged that
           useSkyState defaults are the driver in Phase 4a — disclosed. */}
       <CloudCoverSeed />
+      <CanaryFog lookId={activeLookId} />
 
       <Suspense fallback={null}>
         <CelestialBodies lookId={activeLookId} bakeLastMs={Date.now()} />
@@ -216,5 +230,60 @@ function HeroTree({ lookId }) {
   const treeLook = pref?.lookId ?? lookId
   const url = `${import.meta.env.BASE_URL}baked/${treeLook}/trees/${species}/${variant}`
   const { scene } = useGLTF(url)
-  return <primitive object={scene} position={[0, 0, 0]} />
+  const groupRef = useRef()
+
+  // Traverse the loaded scene once + tag every mesh castShadow.
+  // receiveShadow on the trunk would let leaf shadows fall on it but
+  // costs perf; skip for v1 — the ground catches most of the visible
+  // shadowing value.
+  useEffect(() => {
+    if (!scene) return
+    scene.traverse((obj) => {
+      if (obj.isMesh) {
+        obj.castShadow = true
+        obj.receiveShadow = false
+      }
+    })
+  }, [scene])
+
+  // Interim wind sway. Whole-tree gentle rotation around an axis
+  // perpendicular to wind direction. This is a PLACEHOLDER until either
+  // (a) Arborist exports applyAtlasToGltfScene so the proper per-vertex
+  // sway shader runs, OR (b) we wire wind from the active Condition's
+  // directive.wind.{scale, dir}. For now: hardcoded defaults give the
+  // tree a sign-of-life motion.
+  // TODO (Phase 5+): replace with wind uniform from active Condition.
+  const windDirRad = (DEFAULT_WIND_DIR_DEG * Math.PI) / 180
+  const windAxisX = Math.cos(windDirRad)
+  const windAxisZ = Math.sin(windDirRad)
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return
+    const t = clock.elapsedTime
+    // ~0.5 Hz primary sway + small 1.7 Hz overlay → reads as a breeze
+    // rather than a metronome. ±2.3° at scale=1.
+    const sway = (Math.sin(t * 0.5) * 0.04 + Math.sin(t * 1.7) * 0.012) * DEFAULT_WIND_SCALE
+    groupRef.current.rotation.x = sway * windAxisZ
+    groupRef.current.rotation.z = -sway * windAxisX
+  })
+
+  return (
+    <group ref={groupRef} position={[0, 0, 0]}>
+      <primitive object={scene} />
+    </group>
+  )
+}
+
+// ── Fog ───────────────────────────────────────────────────────────────
+// Reads the active Look's `mist` channel from scene.json and mounts
+// three.js exponential fog. Mist density=0 → no fog (today's default);
+// authored values surface in the canary the way they would in production.
+function CanaryFog({ lookId }) {
+  const scene = useSceneJson(lookId)
+  const mist  = scene?.mist?.values
+  if (!mist || !mist.density || mist.density <= 0) return null
+  // Mist density is authored 0-2 in the Conditions schema; map to an
+  // exponential fog density value with a gentle scale factor. 1.0 →
+  // visibility falls to ~50% at ~700m; 2.0 → ~350m. Tuned by eye.
+  const fogDensity = mist.density * 0.001
+  return <fogExp2 attach="fog" args={[mist.color || '#9dc5e0', fogDensity]} />
 }
