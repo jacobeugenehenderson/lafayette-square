@@ -232,10 +232,14 @@ function HeroTree({ lookId }) {
   const { scene } = useGLTF(url)
   const groupRef = useRef()
 
-  // Traverse the loaded scene once + tag every mesh castShadow.
-  // receiveShadow on the trunk would let leaf shadows fall on it but
-  // costs perf; skip for v1 — the ground catches most of the visible
-  // shadowing value.
+  // Once the scene loads: (a) tag every mesh castShadow, (b) compute the
+  // GLB's bounding box and shift the scene so its base-center sits at
+  // (0, 0, 0) inside the rotating group. Without the shift, the GLB's
+  // authored origin may be at the canopy center or other offset point;
+  // rotating from world-zero then swings the visible trunk away from
+  // the ground. The shift makes the rotation pivot exactly at the
+  // trunk-meets-ground point regardless of where Arborist's
+  // publish-glb pipeline put the GLB origin.
   useEffect(() => {
     if (!scene) return
     scene.traverse((obj) => {
@@ -244,14 +248,19 @@ function HeroTree({ lookId }) {
         obj.receiveShadow = false
       }
     })
+    const box = new THREE.Box3().setFromObject(scene)
+    const center = new THREE.Vector3()
+    box.getCenter(center)
+    scene.position.set(-center.x, -box.min.y, -center.z)
   }, [scene])
 
-  // Interim wind sway. Whole-tree gentle rotation around an axis
-  // perpendicular to wind direction. This is a PLACEHOLDER until either
-  // (a) Arborist exports applyAtlasToGltfScene so the proper per-vertex
-  // sway shader runs, OR (b) we wire wind from the active Condition's
-  // directive.wind.{scale, dir}. For now: hardcoded defaults give the
-  // tree a sign-of-life motion.
+  // Interim wind sway. Subtle whole-tree rotation around an axis
+  // perpendicular to wind direction; pivots from the group origin which
+  // is now anchored to the tree base by the bbox shift above. This is a
+  // PLACEHOLDER for the proper per-vertex sway shader (Arborist will
+  // own it via applyAtlasToGltfScene). Keeping amplitude small so it
+  // reads as breeze, not pantomime — actual leaves/branches don't move
+  // in this implementation, only the rigid tree as a unit.
   // TODO (Phase 5+): replace with wind uniform from active Condition.
   const windDirRad = (DEFAULT_WIND_DIR_DEG * Math.PI) / 180
   const windAxisX = Math.cos(windDirRad)
@@ -259,9 +268,11 @@ function HeroTree({ lookId }) {
   useFrame(({ clock }) => {
     if (!groupRef.current) return
     const t = clock.elapsedTime
-    // ~0.5 Hz primary sway + small 1.7 Hz overlay → reads as a breeze
-    // rather than a metronome. ±2.3° at scale=1.
-    const sway = (Math.sin(t * 0.5) * 0.04 + Math.sin(t * 1.7) * 0.012) * DEFAULT_WIND_SCALE
+    // ~0.4 Hz primary sway + small 1.3 Hz overlay → breeze, not
+    // metronome. ±0.8° at scale=1 (smaller now that the base is
+    // genuinely anchored; rigid-body sway shouldn't pretend to be
+    // shader sway).
+    const sway = (Math.sin(t * 0.4) * 0.014 + Math.sin(t * 1.3) * 0.004) * DEFAULT_WIND_SCALE
     groupRef.current.rotation.x = sway * windAxisZ
     groupRef.current.rotation.z = -sway * windAxisX
   })
