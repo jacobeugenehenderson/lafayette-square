@@ -74,6 +74,7 @@ uniform float uDrift;
 
 uniform int   uSteps;
 uniform int   uShadowSteps;
+uniform int   uDebugMode;  // 0 = normal, 1 = raw density (red), 2 = raw FBM (greyscale), 3 = solid red (mesh visible test)
 
 varying vec3 vWorldPos;
 
@@ -105,7 +106,9 @@ float noise3(vec3 p) {
 
 // FBM with a single-pass domain warp. Input p is already in
 // noise-space (= world * uWarpFreq), so the warp offset is also
-// expressed at that scale.
+// expressed at that scale. Output normalized to ~[0, 1] regardless of
+// octave count so `coverage` reads as "fraction of FBM range above
+// threshold" rather than depending on octave sum.
 float fbm(vec3 p) {
   vec3 warp = vec3(
     noise3(p + vec3(0.0, 0.0, 0.0)),
@@ -115,15 +118,17 @@ float fbm(vec3 p) {
   p += (warp - 0.5) * uWarpAmp * uWarpFreq;
 
   float sum = 0.0;
+  float ampSum = 0.0;
   float amp = 0.5;
   float freq = 1.0;
   for (int i = 0; i < 8; ++i) {
     if (i >= uOctaves) break;
     sum += amp * noise3(p * freq);
+    ampSum += amp;
     freq *= 2.0;
     amp *= 0.5;
   }
-  return sum;
+  return sum / max(ampSum, 1e-6);  // normalize to [0, 1]
 }
 
 // Flat-base cumulus profile: hard floor near base, gentle taper at top.
@@ -182,6 +187,15 @@ void main() {
   vec3 ro = uCameraPos;
   vec3 rd = normalize(vWorldPos - uCameraPos);
 
+  // Debug mode 3: mesh-visibility test — solid red wherever the slab
+  // back face renders. Use this to verify mount + frustum + depth
+  // before debugging the raymarch.
+  if (uDebugMode == 3) {
+    gl_FragColor = vec4(1.0, 0.0, 0.0, 0.5);
+    #include <logdepthbuf_fragment>
+    return;
+  }
+
   float tEnter, tExit;
   if (!intersectSlab(ro, rd, tEnter, tExit)) discard;
   tEnter = max(tEnter, 0.0);
@@ -196,6 +210,24 @@ void main() {
   // Mie-class forward scatter is view-direction dependent, not per-sample.
   float vdotS = dot(rd, uSunDir);
   float forwardScatter = smoothstep(0.7, 1.0, vdotS);
+
+  // Debug modes 1 & 2 short-circuit the lighting integration to
+  // visualize the density field directly.
+  if (uDebugMode == 1 || uDebugMode == 2) {
+    float maxVal = 0.0;
+    for (int i = 0; i < 64; ++i) {
+      if (i >= uSteps) break;
+      float v = uDebugMode == 2
+        ? fbm((p + vec3(uTime * uDrift * 2.0, 0.0, uTime * uDrift)) * uWarpFreq)
+        : sampleDensity(p);
+      maxVal = max(maxVal, v);
+      p += stepVec;
+    }
+    if (uDebugMode == 1) gl_FragColor = vec4(maxVal * 5.0, 0.0, 0.0, 0.8);
+    else                 gl_FragColor = vec4(vec3(maxVal), 0.8);
+    #include <logdepthbuf_fragment>
+    return;
+  }
 
   vec4 accum = vec4(0.0);
   for (int i = 0; i < 64; ++i) {
@@ -218,7 +250,13 @@ void main() {
       float silver = forwardScatter * edgeFactor * uEdgeSilver * uSunScatter;
       lit += silver * uSunColor;
 
-      float alpha = (1.0 - accum.a) * density * stepSize * 0.005;
+      // Bumped from 0.005 (the baby's placeholder) to 0.04 after
+      // empirical tuning: FBM normalized to [0, 1] meant raw density
+      // at hot spots was only ~0.20-0.30 (top decile above coverage
+      // threshold). At 0.005 multiplier, alpha per step was ~0.06,
+      // and the discard-floor culled most fragments. 0.04 produces
+      // visible-but-not-flat cloud edges.
+      float alpha = (1.0 - accum.a) * density * stepSize * 0.04;
       accum.rgb += alpha * lit;
       accum.a   += alpha;
       if (accum.a >= 0.99) break;
@@ -267,6 +305,10 @@ export function createAtmosphereMaterial() {
       // Quality (desktop_high)
       uSteps:          { value: 24 },
       uShadowSteps:    { value: 6 },
+      // Debug: 0=normal, 1=raw density (red), 2=raw FBM (greyscale),
+      //        3=solid red mesh test. Flip via material.uniforms.uDebugMode.value
+      //        in DevTools to diagnose without re-shipping.
+      uDebugMode:      { value: 0 },
     },
     vertexShader: ATMOSPHERE_VERT,
     fragmentShader: ATMOSPHERE_FRAG,
