@@ -33,7 +33,7 @@ The codebase is a **public-facing runtime app** plus a small set of **standalone
 └────────────────┘                  └──────────────────────────────┘
 ```
 
-**Note on Meteorologist's shape:** unlike the other helpers, Meteorologist has no separate app shell — its authoring UI lives inside Stage, triggered from the Sky and Light card's "launch meteorologist" button. The publish-loop pattern still holds (one helper, canonical artifacts, decoupled runtime consumer); only the editor's housing differs. See [`meteorologist/SPEC.md`](meteorologist/SPEC.md).
+**Note on Meteorologist's shape:** no separate app shell — its authoring UI lives inside Stage. The publish-loop pattern still holds; only the editor's housing differs. See [`../meteorologist/ARCHITECTURE.md`](../meteorologist/ARCHITECTURE.md).
 
 **Properties of this pattern, used everywhere:**
 

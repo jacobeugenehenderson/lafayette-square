@@ -172,49 +172,7 @@ Last updated: 2026-05-14 night.
 
 ## 2026-05-14 — Meteorologist plan: spade work before standing up the studio
 
-SC.6 (`4176340`) installed the coupler scaffolding — `scene.clouds` channel, the Almanac evaluator at `src/lib/almanac-eval.js`, the public/clouds/ artifacts shipped — without building the v3 `<Atmosphere />` volumetric raymarched runtime. v1 keeps procedural CloudDome. This section enumerates every other piece of spade work that can land BEFORE the Meteorologist studio (the operator-facing authoring UI for cloud presets + Almanac rules) is stood up, so when it lands, the studio plugs in mechanically.
-
-The principle: every piece below is independently shippable today — no blockers, no v3 shader dependency. Each closes a structural gap or removes a future-friction point.
-
-### Spade work inventory
-
-1. **Schema-derived TypeScript / JSDoc types.** `meteorologist/pipeline/schema/{teapot,almanac,weather-payload}.schema.json` exist and validate. Generate (or hand-write parallel) JSDoc-typedef declarations in `src/lib/almanac-eval.js`'s docblock so callers (and a future Stage UI) get IDE autocomplete on rule shapes, directive fields, and weather payload keys. Trivial; cuts confusion when the studio author writes their first rule.
-
-2. **Weather payload normalizer.** `useWeather.js` today exposes `cloudCover` + `storminess` (derived from `weather_code` + `precipitation`); the Almanac schema wants a richer payload (`{tempC, cloudCover, pressureMb, humidity, windKph, windDirDeg, precipMmHr, stormDistanceKm, sunElevationDeg, sunAzimuthDeg, tod, season, precipKind}`). Land a `src/lib/weather-payload.js` that takes raw open-meteo response + `useTimeOfDay` state + `INSTANCE.geography` and emits the schema-compliant payload. Atmosphere v3 reads this directly; Almanac validation passes; nothing else changes about the runtime today.
-
-3. **Authoring-time validator wired into bake-scene + Stage save.** `meteorologist/pipeline/validate.js` validates Teapot + Almanac against schemas; today it runs only via `npm run validate -- ...`. Pre-bake hook: when `bake-scene.js` reads `design.clouds`, also validate the referenced preset id exists in the live `public/clouds/presets.json`. Fail-loud-don't-bake on schema violations. Pre-save hook in cartograph store: same check when operator picks a preset (won't matter until the UI lands, but the action gets it for free). Saves a class of "I shipped a Look with a stale preset id" bugs.
-
-4. **Test fixtures for the Almanac evaluator.** `src/lib/almanac-eval.js`'s 12/12 self-test from SC.6's session lived in an ad-hoc node REPL. Move it into `src/lib/__tests__/almanac-eval.test.js` (or similar) with the canonical fixtures: clear day, golden-hour, thunderstorm-active, fog, etc. Lock the evaluator's behavior so future Almanac authoring can refactor rules with confidence.
-
-5. **Teapot library audit pass.** 52 presets scaffolded; some are WMO-canonical (cumulus_humilis, stratocumulus_translucidus), some are placeholders. Walk the list, identify which are "definitely v1," which are "v1 if we have time," which are "v2 deferral." Document the verdict in `meteorologist/CANON.md`. Lets the studio author focus on real-world tuning instead of triage.
-
-6. **Almanac rule library audit pass.** Same shape — 16 rules scaffolded; verify they cover the LS weather distribution at a reasonable resolution. Note coverage gaps; flag overlapping rules where ordering matters.
-
-7. **Stage "Clouds" TodChannel scaffolding (hidden).** The `STAGE_MIGRATION.md` Clouds TodChannel can land as a hidden / commented-out / behind-feature-flag row in `CartographSkyLight.jsx`. When v3 ships, flip the feature flag and the UI surfaces. Wires the channel input to the existing `clouds.values.preset` store action — no functional change today.
-
-8. **Atmosphere mount-site placeholders.** Per `STAGE_MIGRATION.md` four CloudDome mount sites need to flip to `<Atmosphere />` when v3 lands. Today they're three (Scene.jsx, CartographApp.jsx, PreviewApp.jsx) — no toy mount, no fork. Add a `// SWAP-IN: Atmosphere when v3 lands` comment at each site; the mount becomes a one-line edit.
-
-9. **Almanac evaluator hot-mount in cartograph.** Even though v3 isn't shipped, drop a debug-only readout in cartograph (Designer Sky & Light panel, dev-only, behind `import.meta.env.DEV`): "current Almanac preset: cumulus_humilis." Reads `selectDirective(weather, almanac, presets, override)` each frame; surfaces what v3 will render before v3 renders it. Useful for authoring rules against current weather without the shader.
-
-10. **Cloud preset rating UI scaffold (mirrors arborist's Grove).** Arborist's Grove lets the operator rate tree variants visually. The Teapot's analog is a preset gallery showing each cloud type rendered statically (could be reference photos in v1, replaced by Atmosphere renders in v3). Lives at `/cartograph.html` → Stage → Sky & Light → "Open Teapot." Doesn't require Atmosphere; reference-photo gallery is fine for v1 spade work.
-
-11. **Almanac rule editor scaffold.** Same shape — a `/cartograph.html` panel for editing the 16 (eventually more) rules. Reads/writes `public/clouds/almanac.json` via `meteorologist/serve.js` (port 3335 — needs adding to `npm run dev`). Validates on each save. No render dependency.
-
-12. **`meteorologist/serve.js` wired into `npm run dev`.** Today it's not in the concurrently config. Add it as the fourth process (alongside web/carto/arb) so the Teapot/Almanac editors have a backend to talk to.
-
-### Sequencing
-
-Items 1–6 are pure-research / library work and can fan out in parallel — no UI dependency. Items 7–12 are UI scaffolding and benefit from doing 1–6 first (clearer schemas → cleaner UI components).
-
-Pre-merge of LS marriage leap: 1, 2, 3 are quick wins worth landing as part of the closeout. The rest can ride concurrent tracks post-merge — Atmosphere v3 itself is the bigger lift and not gated on these.
-
-### Cross-references
-
-- `meteorologist/README.md` — the orientation card.
-- `meteorologist/SPEC.md` — the full work order.
-- `meteorologist/CANON.md` — Teapot inclusion principles.
-- `meteorologist/STAGE_MIGRATION.md` — the cleanup commit spec (executes when v3 lands).
-- `src/lib/almanac-eval.js` — the v3 evaluator's runtime interface, already shipped.
+Moved to `../meteorologist/BACKLOG.md` (2026-05-18 doc restructure). 12-item spade-work inventory + sequencing + cross-references all live there now; SC.6 ship-history in `../meteorologist/NOTES.md`. The cartograph BACKLOG retains the SC.6 ship-line below for slab-completeness continuity.
 
 ---
 
@@ -232,7 +190,7 @@ Last updated: 2026-05-13 night (Slab Completeness sweep nearly complete — SC.1
 - **Post-FX + grade + grain + shadow + exposure** ✅ shipped (SC.2 + SC.3, `015d8e0`). `scene.{bloom, ao, exposure, warmth, fill, mist, halo, grade, grain, shadow}` reach production via shared `src/components/PostProcessing.jsx`. envState DOM↔R3F bridge retired entirely; `src/stage/StageApp.jsx`'s PostProcessing / StageFog / StageShadows + effect-class exports retired; doubled PreviewPostFx mount removed; three Canvas `toneMappingExposure: 0.95` hardwires removed.
 - **Per-shot camera + Hero motion + Browse heading** ✅ shipped (SC.5, `e8ba8d6`). `scene.{shots, browseHeading, heroSubject, heroKeyframes, heroMotion}` reach production. `browseHeading` migrated from localStorage to the store. SHOTS const semantically split into "authored knobs bake" (fov, padding, bounds, eye height) vs "runtime inputs don't bake" (Browse altitude from aspect, Street position from double-click). CameraRig fork documented as legitimate (entry-point-host divergence; not consumer drift).
 - **Arch + horizon** ✅ shipped (SC.7, `a3952fe`). `scene.{arch, horizon}` reach production via the unified `src/components/GatewayArch.jsx` consumer + override props. `archState` module-scope bridge retired entirely (19 fields promoted to cartograph store; ArchHorizonControls rewired to store actions; reload-persistence finally works). `src/stage/StageArch.jsx` retired (574 LOC), `src/cartograph/DesignerArch.jsx` extracted for Designer plan-view silhouette. **Visible production change documented:** arch moves from prior hardcoded `[1470, -185, -490] @ 2.66` to operator-authored channel defaults `[~996, 0, -332] @ 1.3` — production was lying about what Stage shows; slab is now source of truth. **Last module-scope authoring bridge in the codebase, retired** per `project_authoring_is_live_production_is_static`.
-- **Meteorologist clouds** ⏳ pending Jacob's decision. `public/clouds/{presets, almanac}.json` published, never consumed in production today; `CloudDome.jsx` is fully procedural. **Strip-or-wire call** per slab-completeness principle: if the Sky & Light clouds panel authors anything, the slab carries it (wire `<Atmosphere />` per `meteorologist/README.md`); if not, strip the panel — don't ship authored-but-unconsumed UI. Decision yet to come.
+- **Meteorologist clouds** ✅ wired (SC.6, see below). Strip-vs-wire deliberation closed 2026-05-13 — full decision history in `../meteorologist/NOTES.md`.
 - **Time-of-day defaults & overrides** — SC.4 audited empty. `DawnTimeline.jsx` is a Stage-scrub UI only; no `design.time` field persists today. The field is forward-compatible in the bake (omitted, additive when added later). Revisit when DawnTimeline grows a "save default hour" or curve-override surface.
 
 **Sequencing — four-step contract per channel.**
@@ -263,7 +221,7 @@ Per-sub-phase verification gate: (1) operator authors a value in Stage, hits Bak
 2. **SC.3 + SC.2 together** — exposure first (post-FX thresholds depend on exposure), then bloom/AO/DOF/grade/grain.
 3. **SC.5** — per-shot camera (Hero/Street positions; Browse heading slider already half-routed).
 4. **SC.7** — arch tuning.
-5. **SC.6** — clouds. Re-evaluate strip-vs-wire decision per the slab-completeness principle. If clouds are part of the authored product, wire `<Atmosphere />`; if not, strip the authoring panel (don't ship authored-but-unconsumed UI).
+5. **SC.6** — clouds. Wired per SC.6 ship-line above; deeper Meteorologist roadmap in `../meteorologist/BACKLOG.md`.
 
 **Why not just keep live-wire from Stage to production?** Because the marriage leap explicitly severed that path (Couplers §1). The whole point of the slab is "production can't reach back into authoring." Live-wire across the seam would unravel §1 and the §1-shipped caching/perf wins with it. The correct path is bake-then-consume, with Stage's live preview retained via the per-channel override-prop pattern §1 established.
 
@@ -2717,11 +2675,7 @@ and arborist continue evolving on their own tracks (see their sections
 below) — not punchlist-gating.
 
 ### Clouds
-- [ ] **Ship v1 clouds; Meteorologist runs as a separate track.** Old
-  noise-based `CloudDome.jsx` (v1) is the v1 shipper — get it back to a
-  working state. Meteorologist (volumetric raymarch, 52-preset Teapot,
-  16-rule Almanac) continues evolving and lands when ready, not as a v1
-  blocker. See `meteorologist/SPEC.md`.
+- [ ] **Ship v1 clouds; Meteorologist runs as a separate track.** Old noise-based `CloudDome.jsx` (v1) is the v1 shipper — get it back to a working state. Meteorologist (volumetric raymarch, 52-preset Teapot, 16-rule Almanac) continues on its own track per `../meteorologist/BACKLOG.md`.
 
 ### Roofs — TABLED pending PlaceCards data route
 - [⏸] **Damaged roofs fix waits on PlaceCards user-edit route.**
@@ -3116,26 +3070,7 @@ retired — superseded by flat-by-default + PlaceCards authoring.
 
 ## 2026-05-02 — Weather pack (own track, post-Meteorologist)
 
-Ongoing track — not punchlist-gating. The product vision: Lafayette Square
-as a living place, today's actual weather + scheduled event Looks. Real
-weather data is already wired (`useWeather.js` → `useSkyState` → existing
-shaders); what's missing is visual fidelity. Clouds for v1 ship via the
-existing `CloudDome.jsx`; Meteorologist (volumetric raymarch) replaces it
-when ready. See `project_weather_and_events_vision.md`,
-`meteorologist/SPEC.md`.
-
-- [ ] **Wind effects.** Tree sway shader uniform (affects all instanced
-  trees), cloud movement direction + speed (CloudDome shader), audio
-  (wind, leaves, distant thunder).
-- [ ] **Precipitation effects.** Rain particles + wet-surface specular
-  shader on streets. Snow particles + roof accumulation (white tint
-  masked by surface normal). Drives off `useSkyState.storminess` +
-  WMO weather codes.
-- [ ] **Heat haze.** Full-screen shimmer distortion for hot summer days
-  in the park / hero shot.
-- [ ] **Autumn foliage.** Leaf-fall particles, color-shift in tree LODs.
-- [ ] **Audio integration.** Wind/rain/birdsong/distant city sounds tied
-  to weather + TOD.
+Moved to `../meteorologist/BACKLOG.md` (2026-05-18 doc restructure). Wind / precipitation / heat-haze / autumn-foliage / audio all live on the Meteorologist track now.
 
 ## 2026-05-02 — Sky gradient events overlay + Milky Way (consolidated 2026-05-13)
 

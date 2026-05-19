@@ -4,6 +4,8 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 **This README is the orientation card.** Open this first when starting work; it points at the rest.
 
+> Part of the **meteorologist quartet** (`README.md` / `ARCHITECTURE.md` / `SPEC.md` / `BACKLOG.md` / `NOTES.md`, with `CANON.md` + `STAGE_MIGRATION.md` as topical addenda). Read at session start; flag contradictions during work; update at session end. Stale claims actively mistrain readers.
+
 ---
 
 ## Status (as of 2026-05-04)
