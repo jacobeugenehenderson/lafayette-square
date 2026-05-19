@@ -1,0 +1,454 @@
+# Arborist Notes
+
+> Part of the **arborist quartet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`). Archival/append-only working notes — read at session start, flag mid-session contradictions, update at session end. Migrated 2026-05-18 out of `cartograph/NOTES.md` so tree-helper architecture lives with the tree helper. The kit-wide publish-loop pattern still lives in `cartograph/ARCHITECTURE.md` (Arborist mirrors it); this file holds the dated session-end architecture records specific to the Arborist.
+
+---
+
+## 2026-05-15 — Procedural trees v1.5: in-Arborist authoring + skeleton-first roadmap — MAXI BRIEF
+
+**Status (rolling, end of 2026-05-16):** Project goal: **ship 5 hero species at Hero quality** on top of morphology fillers, sharing one bark+leaf material pipeline via the Grove's master atlas. The 7-phase machinery is the *means*, not the end. **Phases shipped:** A (`2323a78` + `f6aaf61`), D (`06f903e`), B-core (`0b2f6cb`), B.1.a (`6c5c957` + revisions through `54355a4`), C (this commit — Phase C SHIPPED 2026-05-16 EOD). **Phase C pulled forward** per the 2026-05-16 EOD doctrine pivot below — the maxi-brief's original D → E → C → B → F → G ordering had C *before* B for the right reason, and Phase B's visual-quality ceiling on smooth-cylinder trunks confirmed it. **Remaining:** F (per-species PSD-authored cluster atlases — compositor dropped) → G.1–G.5 (five hero proving passes). Phases B.1.b/c (Workstage Bark panel + Stage debug overlay) deferred indefinitely — bark authoring iteration value is bounded by the geometric ceiling C addresses, not by UI surface. Phase F.5 (parametric leaf editor) **killed** — PS-authoring obviates the parametric path for 5 heroes. Phase E (conifer monopodial) priority-dropped; conifer is 7% of inventory; ship the algorithm if/when needed but it's not blocking heroes. Each phase ships its own commit + acceptance test; implementation handoffs are separate baby-agent sessions per [[feedback_user_spawns_baby_agents]]. This entry is the architecture record per [[feedback_notes_md_holds_architecture]] — every baby reads this end-to-end before touching code.
+
+**Cross-phase orchestrator note (after A → D → B-core → B.1.a, 2026-05-15 + 2026-05-16):**
+
+*Scope-drift transparency is teachable.* Phase A's baby silently extended `src/arborist/Workstage.jsx` to accept `source: 'procedural'` (necessary but undisclosed); orchestrator's Phase A trust-but-verify caught it and the Phase D brief explicitly required surfacing scope drift. Phase D baby then disclosed all three deviations (envelope.offsetYFrac, `effective` field in seedlings GET, PRESETS attractor-count tuning) in the commit body without prompting. B-core's baby (warm continuation through B.1.a) caught a load-bearing B-core bug in passing (the `mesh.userData?.atlasKind` lookup was reading wrong — primitive extras land on `geometry.userData`, not `mesh.userData`, so every vert silently got `aBark = 0` and the entire retint+roughness+jitter pipeline never fired; identity defaults made the regression invisible). The "surface anything not in this brief" clause is now a standard brief element.
+
+*Skeleton-first ordering was right; we shipped out of order.* The maxi-brief's phase ordering put C (geometric polish) before B (bark surface) deliberately — a bark shader on smooth-cylinder trunks is polish on a CAD-looking substrate. The operator's call to ship B first to explore the bark space surfaced exactly that constraint: photo PBR on smooth `THREE.CylinderGeometry` produces visibly stretched + warped bark wraps because tapered-cylinder UV unwrap distributes texels non-uniformly across radius, and any uvScale/tile-wrap shader-side fix runs into mipmap derivative discontinuities at tile boundaries (recorded in NOTES Phase B.2 deferred — texture-arrays or pre-tile-in-atlas are the proper fixes, both pipeline changes). **The bark quality ceiling at v1.5 is geometric, not shader-side.** Phase C's multi-segment cylinders + non-linear taper + per-vertex radial noise + flange rings + root flare break up the regularity that makes the bark wrap look computer-generated. Phase B's photo-PBR + retint infrastructure stays; what changes is the substrate it wraps onto. Resuming skeleton-first ordering: **C lands before any further visual-quality work on bark.**
+
+*PS-authored leaves obviate the parametric compositor.* Phase F's original scope included `arborist/leafCluster.js` — a sharp-based programmatic cluster compositor with per-leaf jitter/rotation/scale knobs. That infrastructure was designed to *scale* the leaf-authoring path to all 60 inventory species. For 5 heroes, Photoshop is faster + better: artist controls overlap, density, color variation, accent leaves directly; per-season variants are additional PSDs; no parametric tuning struggles (which we just lived through with bark's uvScale). **Phase F shrinks to "import authored cluster PNGs, atlas + tint + sparse-occupancy at runtime"; Phase F.5 dies entirely.** Substitution-fallback still uses shared per-morph PNGs (`public/textures/leaves/<morph>.png`) for filler species; only heroes get per-species PSD-authored clusters.
+
+*ProceduralWorkstage layout: single-focused slot + tabs (2026-05-16, post-Phase-C).* The Phase A / D grid-of-cards layout (`auto-fill, minmax(320px, 1fr)` with 280-px-tall viewports per card) cropped vertically-composed silhouettes — columnar/weeping read as stubs because the canopy and the trunk-extension below it both need vertical headroom the small card can't give. Operator feedback (2026-05-16, immediately after Phase C landed): "I don't think we need to see all three at once, and in many cases a tree will be vertically composed." Replaced with: **slot tabs strip in the header (with a dirty-dot indicator), one focused card filling the main area, viewport as `flex: 1` left, 300-px controls rail (Envelope / Tropism / Seed / Dice / Adopt) right.** No functionality added or removed — controls behavior identical to Phase D. New affordance: tab switcher (necessitated by single-focus). The operator's explicit constraint — *"do not add or remove any functionality or innovate on the controls in any way"* — became the rule: a layout pass is purely spatial, and a slot selector is the only permitted new affordance because single-focus requires it. See [[feedback_focus_one_over_grid_for_3d_inspection]] for the general rule. This unblocks the eyes-on hero-iteration loop ahead of G.1–G.5: columnar/weeping silhouettes are now legible at workstage scale, which matters because G's hero passes are silhouette-driven (per the "Hero = silhouette + density + color" framing above).
+
+### Why this exists
+
+v1 procedurals (commit `dbbd1ed`, shipped 2026-05-14) work end-to-end through the pipeline but are not visually sufficient by any metric. Free-form recursive growth + single-leaf cards + flat bark texture = trees that read as "procedural toys" at every distance. SpeedTree is the eventual answer but carries a learning curve; the operator is willing to do procedural the hard-but-awesome way to ship something tailored to our distance profile (Hero/Browse dominant; Street view deferred to v2).
+
+The critical reframing from 2026-05-15 design conversation:
+
+- **At Hero distance the trees are the star but you can't see detail.** What carries is silhouette accuracy, crown density distribution, and per-species color.
+- **At Browse we're directly overhead.** Disk-shaped canopy, trunk dot. Silhouette and color again.
+- **Photoreal only matters in Street view** — deferred to v2 entirely. Don't over-build for it.
+
+So the visual targets are silhouette + density + color, not leaf-vein fidelity or bark-micro-texture.
+
+### Design pillars
+
+**0. Two-tier substitution: heroes on top of morphology fillers.** The five morphology buckets (`procedural_broadleaf`, `procedural_conifer`, `procedural_ornamental`, `procedural_columnar`, `procedural_weeping`) stay in the roster as **fillers** at `quality: 2` — they catch every park-inventory species that doesn't have its own hero authored yet. Hand-tuned **hero species** (`acer_saccharum_procedural`, `ginkgo_biloba_procedural`, `salix_babylonica_procedural`, `gleditsia_triacanthos_procedural`, plus a fifth TBD per G.5) sit on top at `quality: 4`, each carrying its own envelope tuning, leaf cluster atlas, bark settings, and fall-color ramp. `arborist/bake-trees.js:pickVariant` already implements the two-tier lookup: `speciesMap.map?.[parkSpecies]` (preferred-species via `src/data/park_species_map.json`) wins first; category fallback covers everything else. Heroes win their bucket's quality lottery automatically because of `quality: 4 > 2`. The same mechanism is how SpeedTree slots in at v2: SpeedTree imports get authored at `quality: 4+` and the procedural heroes silently drop out. **Substitution is the safety net; heroes are the visible product.** No new code is needed for the two-tier doctrine — just authoring.
+
+**0.5. The Grove's single master atlas is the load-bearing innovation.** `arborist/bake-look.js:unifyAtlases` composites bark + leaf sub-atlases into one master PNG per Look; `atlas-survey.js` dedupes tiles by sha1 hash before pack. Adding hero species costs nearly nothing in atlas footprint because their bark + leaf-cluster tiles dedupe against the existing roster's identical content. Combined with Phase B (procedural bark shader applying roster-wide — vendor + procedural materials both lose their bark color tiles to a shared 4×4 placeholder via material extras), the unified atlas after the v1.5 arc may actually be **smaller than today's atlas even with 5 hero species added**. The Grove's atlas pipeline is the engine that makes the heroes-on-fillers doctrine feasible — without sha1 dedup + roster-wide shader unification, adding 5 hand-tuned species would multiply atlas footprint and shred GPU memory budgets.
+
+**1. Skeleton-first ordering, like the map maker.** Centerlines (branching topology) → surface (cylinders, flanges, root flare) → shader (bark, leaf clusters, tints). A bark shader on wrong-silhouette trees is polish on a broken script. Phase order matches this strictly: skeleton algorithms (Phases D, E) land before geometric polish (C) before surface shaders (B) before foliage (F) before per-species tuning (G).
+
+**2. Two algorithms, not one.** Conifers (gymnosperms) and broadleaves (angiosperms) have fundamentally different growth architectures. Forcing them through one model is why generic procedural trees look fake.
+
+- **Broadleaf / weeping / columnar / ornamental → Space Colonization (Runions 2007) + tropism vector.** Define envelope; scatter N attractors inside; branches grow toward nearest attractors; branch kills attractors within range. Tropism vector handles all silhouette variants from one algorithm: `(0,0,0)` = broad symmetric, `(0,-0.4,0)` = weeping recurve, `(0,+0.3,0)` = columnar bias, `(0,-0.05,0)` = ornamental. Sympodial topology (two-way splits).
+- **Conifer → monopodial whorl.** Single dominant central leader extends top-most all the way up; emits horizontal whorls of N lateral branches at regular vertical spacing; per-whorl branch length f(height) → cone shape; lower-whorl droop f(age). Botanically correct; SCA produces wrong topology for any conifer.
+
+**3. Dice + adopt, not slider tune.** Procedural trees produce unique topology per seed. Authoring workflow is roll-the-dice-until-good, not turn-knobs-precisely. Each species carries ~3 adopted variants (operator can adopt more or fewer); per-instance runtime jitter (Y-rotation, independent XZ + Y scale, hue shift, wind phase) provides visible diversity across the 745 LS placements. Three baked variants × strong shader jitter = looks like 30 distinct trees in scene.
+
+Baking is required (SCA in JS is ~50–500ms/tree × 745 placements = unacceptable; leaf clusters need sharp-composited atlases; bake-look needs source GLBs to atlas-pack) but **baking ≠ posing**. Adoption = "freeze this rolled topology to a GLB so the GPU can instance it cheaply."
+
+**4. Minimum-viable UI per phase.** Each phase exposes only the knobs its algorithm needs. Phase A is just dice/adopt buttons (generator unchanged). Envelope panel arrives with SCA (Phase D). Conifer-whorl panel arrives with monopodial (E). Bark pattern dropdown arrives with shader (B). Leaf cluster swatches arrive with clusters (F). No premature param surfaces — they'd just need re-tooling as the underlying algorithm grows.
+
+### Generator contract (the load-bearing API)
+
+`generateTreeMesh(params) → {barkGeo, leafGeo}` is the signature every phase preserves. UI binds to it; CLI binds to it; tests bind to it. The params object grows fields per phase but never breaks back-compat:
+
+```js
+generateTreeMesh({
+  // Identity (Phase A)
+  species,           // 'procedural_broadleaf' etc.
+  morphology,        // 'broadleaf' | 'weeping' | 'columnar' | 'ornamental' | 'conifer'
+  seed,              // integer; macro seed driving topology
+
+  // Silhouette (Phase D for SCA species; Phase E for conifer)
+  envelope: { profile, height, width, asymmetry },
+  branching: {
+    mode,            // 'sca' | 'monopodial'  — selected per morphology
+    phyllotaxis,     // 'alternate' | 'opposite' | 'whorled'
+    tropism,         // [x,y,z] gravity bias (SCA)
+    attractorCount, influenceRadius, killRadius, stepLength,  // SCA tunables
+    whorlsPerHeight, branchesPerWhorl, leaderDominance, droopPerWhorlAge,  // monopodial tunables
+  },
+
+  // Geometry (Phase C)
+  geometry: { lodTier, segmentsPerBranch, radialNoise, flangeRingScale, rootFlareScale, buttressFinCount },
+
+  // Surface (Phase B)
+  bark: { pattern, darkColor, lightColor, scale, roughness },
+
+  // Foliage (Phase F)
+  leafCluster, tintRamp: { summer: {inner, outer}, fall: {inner, outer}, ... },
+})
+```
+
+PRESETS table in `arborist/generate-procedural.js` is the committed canonical seedling defaults (5 morphology fillers × ~3 seedlings each, today; growing to +5 hero species over G.1–G.5). Per-variant `params: {}` overrides in `arborist/state/procedural_<species>/seedlings.json` overlay on top — operator's diced + adopted choices live there.
+
+**Hero species are first-class citizens at this same API.** The params object grows for heroes — full per-species `bark` extras (pattern + colors + scale + roughness), `leafCluster` reference to a per-species cluster atlas, two-stop `tintRamp` per season — but the `generateTreeMesh()` signature does not change. Heroes get their own PRESETS table entries (e.g. `acer_saccharum_procedural`, `ginkgo_biloba_procedural`); `park_species_map.json` routes inventory entries to them via preferred-species lists; `bake-look.js`'s `unifyAtlases` round-trips them through the same atlas pipeline as fillers. Fillers continue to use morphology-bucket defaults via `DEFAULT_SCA_BY_PRESET` (or new `DEFAULT_BARK_BY_PRESET` / `DEFAULT_LEAFCLUSTER_BY_PRESET` tables introduced by Phases B and F). The mechanical distinction between "hero" and "filler" is **quality rating + per-species tuning depth**, not pipeline location.
+
+### Phase table
+
+Each phase is a separate commit + acceptance + visible-bug coverage statement.
+
+**Phase A — Procedural mode: dice + adopt** (UI iteration surface) — **SHIPPED 2026-05-15** (commits `2323a78` + `f6aaf61` query-string fix)
+- New `src/arborist/ProceduralWorkstage.jsx`; top-level mode toggle in `ArboristApp.jsx` (Procedural button next to Grove)
+- Per-species panel: variant slots, each with 🎲 dice + ✓ adopt buttons + SpecimenViewport thumbnail (blob-URL'd GLB from the generate endpoint, keyed on {species, slot, seed, params} so dice rolls re-fetch and revoke the prior blob URL)
+- Endpoints: `GET /procedural/species`, `GET/POST /procedural/:species/seedlings`, `POST /procedural/generate` (returns `model/gltf-binary` directly), `POST /procedural/:species/publish?look=<id>` (shells out to `node arborist/generate-procedural.js --species <id>` + fires per-Look atlas auto-bake fire-and-forget)
+- Generator unchanged; `generate-procedural.js` refactored to export `generateSingleVariantGLB`, `readEffectiveSeedlings`, `writeSeedlings` + `PRESETS` + `BARK_BY_SPECIES`. `main()` now consumes the seedlings overlay (PRESETS fallback on fresh checkouts), gated on an `import.meta.url === argv[1]` script check so importing the module from `arborist/serve.js` is side-effect-free. CLI gained `--species procedural_<id>` flag.
+- Store: `proceduralOpen`, `proceduralActiveSpecies`, `proceduralSeedlings` (per-species), `proceduralDirtyBySpecies` (per-slot dirty markers), `proceduralSpeciesList`, plus `loadProceduralSpecies`, `loadProceduralSeedlings`, `setProceduralSlotSeed` / `diceProceduralSlot`, `adoptProceduralSlot`, `republishProceduralSpecies`. Republish blocked until all dirty slots are adopted (UI disables the button).
+- Determinism verified end-to-end: same {species, slot, seed, params} → byte-identical GLB across re-requests. Republish round-trips through publish-glb unmodified (~1.7s for a 2-variant species on a Mac).
+- **Fixes:** operator iterates in seconds via UI; no CLI round-trip for new variants
+- **Doesn't fix:** trees still look the same as v1 (no algorithm change — Phases D/E/C/B/F/F.5/G.1–G.5 follow)
+
+**Phase D — SCA + tropism** (skeleton for broadleaf / weeping / columnar / ornamental) — **SHIPPED 2026-05-15** (commit `06f903e`)
+- New `arborist/spaceColonization.js` (~270 LOC). Runions 2007 SCA + tropism, pure kernel (no three.js imports — emits raw position/parent arrays; mesh assembly stays in generate-procedural.js). Exports `runSCA`, `ENVELOPE_PROFILES`, `DEFAULT_SCA_BY_PRESET`, `mulberry32`.
+- 5 named envelope profiles as 2D (t, r) revolution curves: `rounded_oval`, `umbrella`, `tight_column`, `broad_low`, `asymmetric_oval`. Profile r-values multiply by `envelope.width` (=canopyR semantics) to get max radius at each normalized height.
+- **`envelope.offsetYFrac` added beyond the brief.** Negative values let the envelope hang below trunkBase — load-bearing for weeping (initial -0.4 tropism alone wasn't enough; branches just slowed their upward growth, never curtained). With `offsetYFrac=-0.6` the umbrella envelope straddles the trunk top so attractors include the curtain zone; tropism then physically pulls branches into it. The willow signature emerges from envelope geometry + tropism together, not tropism alone.
+- `generateTreeMesh()` dispatch: `useSCA = preset !== 'conifer'`. Conifer falls through to the existing free-growth `if (preset === 'conifer')` block untouched (Phase E will replace). SCA path emits one tapered cylinder per node→parent edge (6 radial segs; `buildTaperedCylinderBetween` helper rotates Y-aligned CylinderGeometry to align with the edge), Murray's-law radii via post-order traversal (leaf=tipRadius, internal=sqrt(sum(child.r²))). Leaf cards at every tip via existing addLeaf.
+- `resolveVariantParams` extended to do one-level-deep merge for nested `envelope` / `sca` / `branching` objects, so a partial overlay (e.g. operator dragging just `sca.tropism.Y`) doesn't wipe sibling fields off the PRESET base.
+- PRESETS table grew `envelope` + `sca` per non-conifer variant. Variants 2-3 of broadleaf + variant 2 of weeping have higher `killRadius` / `stepLength` and lower `attractorCount` than the brief's starter defaults — necessary to keep lod0 tri counts in a reasonable Phase D range (1.8K–19K per variant after publish-glb's prune pass; conifer unchanged at ~6K). Phase C's geometric polish will absorb the silhouette quality cost.
+- Seedlings GET endpoint extended with an `effective` field per variant (PRESETS base merged with operator overlay) so UI slider positions bind to resolved values. Adopt POSTs back the overlay-only `{slot, seed, params}` shape — disk state stays minimal, touched fields only.
+- ProceduralWorkstage gains per-slot SCAPanel: Profile dropdown + Width/Height/Asymmetry/Y-offset sliders + Tropism XYZ sliders. Hidden for `procedural_conifer`. Debounced via local `DraftSlider` (150ms idle commit + pointer-up final-commit, same pattern as cartograph/Panel.jsx's DraftRangeInput — pulled into ProceduralWorkstage rather than crossing the cartograph↔arborist boundary).
+- Silhouette verification (geometric, from SCA node positions): broadleaf W/H 1.87 (rounded oval), weeping W/H 2.29 with 3.2m of branches dropping below trunk top (CURTAIN), columnar W/H 0.29 (narrow vertical), ornamental W/H 1.99 (broad-low). All four visibly distinct from each other and from conifer.
+- Determinism preserved end-to-end (same {species, slot, seed, params} → byte-identical GLB; CLI `node arborist/generate-procedural.js [--species <id>]` round-trips). Conifer GLB byte count identical to Phase A (549,532 bytes) — confirmed non-regression.
+- **Fixes:** species silhouettes finally correct. Weeping recurves from physics. Columnar narrows. Ornamental broad-low-attached.
+- **Doesn't fix:** conifers (Phase E); bark/leaf shaders (B/F); geometric polish — branches still plain tapered cylinders (C); per-species hero tuning (G.1–G.5).
+
+**Phase E — Monopodial whorl** (skeleton for conifer) — **priority-dropped after Phase D**
+- New `arborist/monopodialWhorl.js` (~150 LOC). `generate-procedural.js` swaps conifer path to `runMonopodial(envelope, params)`. ProceduralWorkstage gains conifer panel: whorlsPerHeight, branchesPerWhorl, leaderDominance, droopPerWhorlAge.
+- **Priority drop rationale:** conifer is 7% of `src/data/park_trees.json` inventory (55/745 placements). Park-trees shape distribution is broadleaf 528 (71%), ornamental 139 (19%), conifer 55 (7%), columnar 31 (4%), weeping 3 (<1%). The operator's eye-level visual mix at LS is maple / willow / ginkgo / locust — conifer conspicuously absent. Ship the algorithm so those 55 placements don't fall back to SCA broadleaf and look wrong, but **per-conifer-species hero authoring (Spruce vs Pine vs Fir as distinct hero species ids) defers to v1.6** unless visual review at LS demands otherwise. The G.5 slot reserves the option to elevate one conifer hero in the v1.5 arc if visual review insists.
+- **Fixes:** conifers read as conifers from Browse/Hero. Central leader visible; whorls + skirt droop correct.
+- **Doesn't fix:** per-conifer-species variants (Spruce/Pine/Fir) need authoring, not code — and that authoring is deferred to v1.6 except for an optional G.5 conifer hero.
+
+**Phase C — Geometric polish on correct skeletons** — **SHIPPED 2026-05-16 EOD.**
+All five primitives landed in `arborist/generate-procedural.js`:
+- `nonLinearTaper(rBase, rTop, t, exp=2)` replaces linear lerp inside `makeBranch`'s per-segment loop, sampled at branch-global `t = s/n`. SCA edges keep linear taper across each (already-short) edge; the aggregate non-linear taper emerges from Murray's law radii × the SCA chain. Flagged: per-edge non-linear taper buys little when individual edges are ~0.4 m.
+- Radial-segment count bumped to a flat `PHASE_C_RADIAL_SEGS = 12` everywhere (trunk, flare, conifer leader, makeBranch cylinders, SCA edges). Previous gen-aware ladder (6 / 4 / 3) dropped — radial resolution is now uniform; `nBend` (axial-bend count) stays gen-aware.
+- `applyRadialNoise(geo, branchHStart, branchHLen, scale=0.05, seedOffset)` runs in LOCAL cylinder frame BEFORE any transforms. Hashed by `(angle, branchHStart + localFrac*branchHLen)`. For makeBranch's per-segment chain, adjacent segments share the same noise at their interface H — seam-continuous along straight branches. **Flagged seam case:** SCA edges share a node position but their local cylinder frames don't align across edges (different `setFromUnitVectors(Y, dir)` per edge), so noise is NOT continuous across SCA-node interfaces. Visible at Hero close-up as faint per-edge facet flips; acceptable at v1.5 — fix is post-merge normal computation, deferred. Per-vertex displacement gated on `r > 0.05` (twigs skipped — sub-mm noise on a ~1 cm twig is invisible and wastes `computeVertexNormals` time).
+- `makeFlangeRing(parentPos, childPos, childRadius, segs=12, scale=1.3)` short flared frustum at the BASE of child branches. Emitted at every recursive `growBranch` call's root (conifer free-growth path) AND at children of true branching nodes (`parent.children.length > 1`) in the SCA path — NOT at every SCA edge. Trunk-to-first-branch joints get one because growBranch's top-level call from the conifer layer loop hits the emit path.
+- Root flare + 6 subtle buttress fins replace the prior single-flare cylinder block. `makeButtressFin(trunkRadius, outward, height, thickness)` builds a triangular wedge that tapers to nothing at the top, so silhouette reads as Midwestern broadleaf (maple/oak/locust) rather than tropical/banyan. Starter values: outward 0.08, height 0.12, thickness 0.04. ~8 tris × 6 fins = ~48 tris/tree. Per-fin azimuth jittered via `r(700+f)`.
+
+**Measurements (lod0 / lod1 / lod2 tri counts, pre → post Phase C):**
+- broadleaf-1: 11,648 → 22,352 / 7,790 → 10,730 / 6,900 → 6,180
+- broadleaf-2: 10,444 → 23,140 / 5,714 → 10,978 / 5,524 → 6,200
+- broadleaf-3: 19,538 → **41,522** / 14,460 → 19,988 / 13,750 → 11,668
+- conifer-1:  6,442 → 14,058 / 3,064 → 6,648 / 2,190 → 2,114
+- conifer-2:  5,580 → 12,618 / 2,676 → 5,988 / 2,052 → 1,972
+- ornamental-1: 2,930 → 5,806 / 1,774 → 2,760 / 1,184 → 1,276
+- ornamental-2: 5,064 → 9,826 / 2,592 → 4,664 / 2,252 → 2,364
+- columnar-1: 1,796 → 3,904 / 860 → 1,852 / 644 → 678
+- columnar-2: 2,422 → 5,346 / 1,162 → 2,538 / 892 → 946
+- weeping-1:  5,784 → 11,346 / 2,588 → 5,384 / 2,250 → 2,356
+- weeping-2:  17,320 → **32,558** / 13,830 → 15,818 / 13,422 → 10,336
+
+**Tri-budget flag.** Brief expected ~30–40% lod0 growth; observed ~80–115% (radial-segs doubling 6→12 dominates). Two variants pierce the brief's 30K lod0 advisory: broadleaf-3 at 41.5K, weeping-2 at 32.6K. Per brief acceptance #6: VRAM at LS scale is dominated by atlas (13.6 MB color + 15.4 MB normal master PNGs), not source GLBs (745 placements × shared instanced geometry per variant — geometry is reused, not duplicated). lod1 & lod2 grow proportionally because publish-glb's `simplify({ratio: 0.85, 0.40, 0.10})` runs against the single source. Lever available if perf review flags it: drop `PHASE_C_RADIAL_SEGS` to 10 (single-line change). Not pulled at landing time — visual cross-section quality on the trunk is the load-bearing reason for 12.
+
+**Determinism preserved:** `sha1sum public/trees/procedural_broadleaf/skeleton-1-lod0.glb` = `d07d4ba6...` on two consecutive `node arborist/generate-procedural.js --species procedural_broadleaf` runs. All noise displacement uses `seed()` deterministic hash.
+
+**No shader / pipeline touches.** `publish-glb.js`, `bake-look.js`, `bake-trees.js`, `atlas-pack.js`, `atlas-survey.js`, `treeAtlasMaterial.js`, `InstancedTrees.jsx` — all untouched. `generateTreeMesh()` signature unchanged. Single shader program preserved.
+
+**Surfaced scope-drift items** (per [[feedback_baby_must_surface_scope_drift]]):
+1. `growBranch` gained an optional `emitFlange=true` parameter — only `false` would be needed if a caller wants to suppress the flange (none currently do). Worth noting because the brief's "files-touched" line was generate-procedural.js only and this signature change is fully internal to that file but worth flagging.
+2. `buildTaperedCylinderBetween` gained an optional `noise = {scale, seedOffset}` parameter. Same rationale — internal-only to the file but adds a param to an exported-shape helper. Default null = no-op for any future caller that doesn't pass it.
+3. `BARK_BY_SPECIES.uvScale` was NOT touched; the v3 baseline from `54355a4` (all uvScale [1,1]) stays. Phase C does not retune bark tiling.
+
+**Fixes:** branches taper realistically; joints buttress smoothly at true branching events; trunks look planted via root flare + subtle fins; close-up Hero substrate is non-trivial enough that bark photo wraps stop showing the obvious tapered-cylinder-stretch artifact (the load-bearing acceptance criterion — Phase C exists to unblock the bark visual ceiling).
+
+**Doesn't fix:** SCA-edge noise seam continuity (faint per-edge facet flips at Hero close-up — flagged above); foliage still sparse (Phase F); per-species hero tuning (G). Phase B.1.a's bark wrap-line crawl is unchanged — Phase C does NOT address shader-side bark issues; it changes the substrate the shader wraps onto.
+
+**Phase C.1 — SCA canopy-bias fix** — **SHIPPED 2026-05-16** (this commit, post-Phase-C, pre-Phase-F)
+Bug Phase C polish caught at the orchestrator-trust-but-verify step (visual canopy lean independent of trunk lean, on every seed). Diagnosis (Phase C baby's bypass run): SCA root at (0, 4.75, 0) with no lean still produced tip centroid at (-3.79, 7.75, 1.54) — ~4 m off-axis. Root cause is a positive-feedback bias in `runGrowthLoop`: a single growing tip's ~5 cm random asymmetry from rejection-sampled attractor averaging gets amplified by attractor-killing into a metastable canopy drift over ~100 iters. Independent of trunk lean, independent of geometry primitives, per-seed-variable.
+
+Fix is structural, lives entirely in `arborist/spaceColonization.js` (~80 LOC; `generateTreeMesh()` signature unchanged; zero pipeline / shader / artifact touches).
+
+- **§1 Force axial trunk extension.** After the existing auto-grow lift, deterministically extend the trunk straight up the central axis to `branchingStartY = trunkBase[1] + yOffset + envelope.height × branchingStartFrac`. Extension nodes carry `axial: true` and are skipped in `runGrowthLoop`'s nearest-node search for attractor pull — so they don't shape the canopy, they just paint a straight trunk to the branching-start height. Attractors near them still get killed by the normal kill pass so the central column clears cleanly. Per-morphology fraction: 0.5 for non-weeping, 0.2 for weeping (so the weeping trunk doesn't pierce above the curtain zone).
+- **§2 N-child azimuthal seed.** At the trunk top, seed `initialChildCount = 6` children spaced evenly around `TAU`. Each becomes a normal (non-axial) SCA tip from iter 1. Per-wedge attractor assignment splits cleanly across 6 sectors so iter-1 pull is symmetric and bias on one sector is balanced by tips on opposing sectors.
+- **§3 Weeping carve-out.** `branchingStartFrac=0.2` + `seedStep = stepLength × 0.5` (vs `max(0.5×step, 0.25×width)` for others). Tight central cluster + strong −Y tropism keeps the curtain effect intact; wider seeds in weeping breaks the curtain. Detected by `envelope.profile === 'umbrella'` OR `envelope.offsetYFrac < -0.1` so future PRESETS overlays naming a weeping morphology pick the carve-out automatically.
+- **Brief tuning deviation.** Brief specified `seedStep = stepLength × 0.5` (≈ 0.2 m). At that distance, the 6 children clustered too tightly for iter-1 wedge-balancing to fire — they all competed for the same attractors before the kill pass cleaned up. Widened to `max(0.5×stepLength, 0.25×envelope.width)` (≈ 1 m at LS scale) — each child lands firmly inside its own 60° wedge. 20-seed broadleaf sweep mean dropped from 0.92 m to 0.87 m, columnar 0.59 → 0.32, ornamental 0.65 → 0.31. Weeping exempt (carve-out above) — 0.247 m unchanged.
+
+**Bypass-script verification.** Canonical 5-seed (seeds 101/202/303/404/505) bypass with trunkBase=(0, 4.75, 0), canopyR=4, canopyH=8 — tip-XZ-centroid offset from trunk axis:
+- broadleaf:  mean 0.604 m, max 2.273 m (4/5 < 0.25 m; one runaway-chain at 2.27 m)
+- columnar:   mean 0.207 m, max 0.282 m (5/5 < 0.30 m)
+- ornamental: mean 0.317 m, max 1.087 m (4/5 < 0.20 m; one runaway at 1.09 m)
+- weeping:    mean 0.249 m, max 0.736 m (4/5 < 0.26 m; one at 0.74 m)
+- Baseline (pre-C.1): ~4 m offset always, independent of seed. Median improvement 10–20×; mean 5–15×.
+
+**Residual not-fixed (flagged, separate failure class).** ~5–35% of seeds per non-weeping morphology in 20-seed sweeps still produce 1–3 m offsets, but the failure mode is "runaway chain" not "initial-tip bias": those seeds have 4× the tip count (~250 vs ~60) because attractor-kill barely keeps up with N=6 expansion when rejection sampling produces isolated outlier attractor pockets. Tips chase those outliers at 0.4 m/iter (stepLength) but killRadius=1 m → 7–8 iter chase, chains off-axis. **Fix is outside C.1 scope** — candidates are per-tip chain length cap, raised killRadius, or outlier-attractor pruning. Visual review (e.g. broadleaf seeds 749/1391/1819) decides whether this needs follow-on tuning. Median canopy is well-centred which is the dominant LS-scale read.
+
+**Constants exposed.** `sca.branchingStartFrac` + `sca.initialChildCount` are now PRESETS-overlay-resolvable through `resolveVariantParams`'s existing effective-field plumbing — per-variant overrides if a particular species's silhouette demands tighter or looser tuning. Defaults sit on each preset in `DEFAULT_SCA_BY_PRESET`.
+
+**Tri-count delta.** Force-extension adds ~10 axial trunk segments × `PHASE_C_RADIAL_SEGS=12` × 6 tris/seg ≈ 720 tris/tree at lod0. Well inside the Phase C lod0 envelope.
+
+**Conifer untouched.** Conifer (`runMonopodial`) doesn't call `runSCA`; the bias fix is structurally outside conifer code. Confirmed by code path inspection.
+
+**Determinism preserved.** All randomness via `mulberry32(seedN × 1664525 + 1013904223)` (same stream as Phase D). Same `seedN` + params → byte-identical attractor cloud + byte-identical node graph + byte-identical GLB.
+
+**Surfaced scope-drift items** (per [[feedback_baby_must_surface_scope_drift]]):
+1. `runSCA`'s `envelope` input now reads `envelope.offsetYFrac` as a weeping-detection signal in addition to the existing `yOffset` computation — same input value, second consumer. Not a schema change.
+2. Internal node shape grew an optional `axial: true` flag on root + auto-grow + force-extension nodes. Default-falsy; no other consumer reads it. `computeRadii`'s post-order walk treats axial nodes normally (single-child chain → radius = child.radius, which is correct trunk behavior).
+3. `seedStep` widening deviates from the brief's `stepLength × 0.5`. Documented above with measurements. Brief's value left columnar/ornamental still failing the 0.5 m criterion; widened value passes columnar/ornamental and is ~equivalent on broadleaf.
+4. No tests written. Phase D shipped without an in-repo test harness for `spaceColonization.js`; C.1 follows the established pattern (bypass-script for verification, then deletion).
+
+**C.2 next.** Post-merge normal computation to seal SCA-edge facet flips (Phase C's flagged "not-fixed" item) — separate brief.
+
+**Phase C.1b — runaway-cluster fix** — **SHIPPED 2026-05-16** (this commit, post-C.1)
+Resolves C.1's flagged "residual not-fixed" failure class. Diagnosis differed from C.1's "runaway chain" framing: linear chains weren't the load-bearing mechanism — per-node BRANCH FAN-OUT was. When one of the N=6 initial seeds landed in a dense attractor pocket, that node accumulated pulls iter after iter and spawned a new child every iter, with each new tip inheriting the pocket and spawning further. One seed converted into a 200+ tip clump 1–3 m off-axis while the other 5 seeds waited for their attractors to be reached.
+
+Fix is one structural rule in `arborist/spaceColonization.js` (~6 LOC + 1 constant): a node that has already accumulated `MAX_CHILDREN_PER_NODE_DEFAULT = 3` direct children no longer accepts attractor pull. Capped attractors flow to next-nearest tip (usually a sibling or further-out tip), so canopy density is redistributed rather than lost. Same gate mechanism as `axial:true`. Overridable per-preset via `sca.maxChildrenPerNode`.
+
+**Three options compared via bypass-script** (`arborist/_c1b_bypass.mjs`, 20-seed sweep, deleted on ship):
+- **A. Raise killRadius** (broadleaf 1.0→1.5, columnar 0.9→1.3, ornamental 1.0→1.5): centroid mean barely moved (broadleaf 0.89→0.79 m); worst runaway seeds persisted (seed 101: 410 tips, centroid 2.71 m). Mechanism kills LATERALLY around the chain, not BEHIND it — kill-corridor stays open.
+- **B. Prune sparse attractors** (K=4 D=1.2 m): WORSE (broadleaf centroid 0.89→1.47 m, tip count up). K=2 D=0.8: broadleaf better (0.46) but ornamental tipped (0.44→0.77). Per-seed brittle — wrong outliers got pruned.
+- **C. Per-node children cap (=3)**: clean across all four morphologies. Selected.
+
+**Bypass-script verification** (20 seeds × 4 morphologies, trunkBase=(0, 4.75, 0), canopyR=4, canopyH=8):
+- broadleaf:  centroid mean 0.156 m (was 0.889 m), max 0.300 m (was 2.879 m); tips mean 62.3 (was 173.7), max 74 (was 629). 0/20 runaway.
+- columnar:   centroid mean 0.154 m (was 0.341 m), max 0.344 m (was 2.310 m); tips mean 45.3 (was 70.8), max 50 (was 384). 0/20 runaway.
+- ornamental: centroid mean 0.171 m (was 0.435 m), max 0.437 m (was 2.953 m); tips mean 52.4 (was 80.2), max 57 (was 242). 0/20 runaway.
+- weeping:    centroid mean 0.166 m (was 0.294 m), max 0.487 m (was 2.554 m); tips mean 63.6 (was 86.2), max 72 (was 295). Mean tip-Y vs trunkBase = −2.01 m (curtain descent intact; cap didn't break the weeping silhouette).
+
+**Tri-count delta.** Tip count drop is ~64% (broadleaf 173 → 62 mean) and max-tip outlier drop is ~88% (629 → 74). Tri count is roughly proportional to total node count (per-cylinder emission in `generateTreeMesh`), so the lod0 envelope improves substantially relative to Phase C's 41.5K broadleaf-3 figure. Actual re-publish-vs-baseline GLB tri-counts not measured in this commit (no pipeline / shader / artifact touches); will surface when Jacob next runs `republish-all.js`.
+
+**`generateTreeMesh()` signature unchanged.** Kernel-only edit; no pipeline / shader / artifact touches.
+
+**Determinism preserved.** Same seedN + params → identical node graph (broadleaf seed 101: 279 nodes, identical positions across two runs; weeping seed 303: 302 nodes, identical positions).
+
+**Conifer untouched.** `runMonopodial` doesn't call `runSCA`; fix is structurally outside conifer code.
+
+**Surfaced scope-drift items** (per [[feedback_baby_must_surface_scope_drift]]):
+1. Weeping was NOT exempted from the cap — initial expectation was that the curtain morphology would need a higher cap (long descending chains), but bypass-script showed the curtain is a CHAIN morphology (single tip arcing −Y for many iters) not a fan-out morphology, so cap=3 doesn't restrict curtain strands. Weeping mean offset actually IMPROVED (0.29 → 0.17 m). `MAX_CHILDREN_PER_NODE_DEFAULT = 3` applies uniformly to all four morphologies.
+2. A `chainDepth` mechanism (cap=12 in growth-loop, per-node continuation tracking) was prototyped before the diagnosis converged on fan-out — discarded as dead code before commit. The simpler single-rule cap covers the failure mode cleanly.
+3. The brief's three-option menu reflected a different mental model (linear-chain failure mode) than what actually drives the runaway (branch fan-out from pocket-dominance). The fix that worked is closer to "Option C — chain cap" in spirit but lands on a structurally different lever (per-node child count, not per-tip chain length).
+4. `_c1b_bypass.mjs` was created at session start for variant comparison and deleted on ship (follows Phase D / C.1 verify-then-delete pattern).
+
+**C.1c next** (the cosmetic crag↔SCA radius joint at trunk top, flagged in chat by Jacob during C.1 review) — separate brief. **C.2 still next** (post-merge normal computation for SCA-edge facet flips) — separate brief.
+
+**Phase B (core) — Photo-PBR bark + retint shader infra** — **SHIPPED 2026-05-15** (commit `0b2f6cb` + post-ship fix `0cd853b` for the `barkBySpeciesEffective` useMemo placement bug)
+- **Scope pivot from the original brief:** the GLSL pattern-library approach (5 procedural bark patterns via world-space noise + normal perturbation in shader) was DROPPED before code landed. Jacob (correctly) had zero faith we could ship 5 convincing GLSL bark patterns at Hero visual quality without significant craft, and the single-shader-program constraint (Bloom, see `bake-look.js:200`) makes uniform-branched-shader paths risky. The actual Phase B is **per-species photo-PBR bark materials + shader-side retinting infrastructure** — no GLSL pattern library. Phase B core lands the load-bearing infra; Workstage Bark panel + Stage debug overlay defer to **Phase B.1**.
+- 5 tileable CC0 PBR bark materials sourced from ambientCG, dropped under `public/textures/bark/<materialRef>/` (color.jpg + normal.jpg (NormalGL convention) + roughness.jpg + LICENSE.txt). Filler-species mapping: broadleaf→Bark007 (heavy furrowed), conifer→Bark012 (scaly), ornamental→Bark003, columnar→Bark004 (smooth), weeping→Bark015. Hero species (G.1–G.5) will publish their own mappings on top.
+- `arborist/generate-procedural.js` replaces `buildBarkPng` (32×32 sharp-generated noisy brown per species) with `loadBarkBundle(materialRef)` (reads photo color+normal bytes from disk + embeds into the GLB material as `baseColorTexture` + `normalTexture`). `BARK_BY_SPECIES` rewritten from hex colors to per-species bark spec `{materialRef, uvScale, tintBase, tintJitterRange, roughnessOverride}`. `patchManifestForFillTier` extended to stamp `manifest.bark` on each species's published manifest.json.
+- `arborist/bake-look.js` reads each species's `manifest.bark` while gathering the roster and surfaces a `barkBySpecies` block in `trees-atlas.json`. Also changes the per-primitive `atlasKind` extras from the constant `'unified'` to `tile.classification` (`'bark'` or `'leaf'`) so the runtime can distinguish bark vs leaf fragments without re-classifying.
+- `src/components/treeAtlasMaterial.js` adds 3 uniforms — `uBarkTintBase` (vec3), `uBarkTintJitterRange` (float), `uBarkRoughnessOverride` (float) — to the shared tree material. Vertex shader passes `aBark` attribute through `vBark` varying + per-instance `vWorldXZ`. Fragment shader patches at `<map_fragment>` (post-texture-sample retint, gated by `vBark` so leaf fragments pass through identity) and `<roughnessmap_fragment>` (per-species roughness clamp, also gated by `vBark`). Per-instance hue jitter hashes world-XZ so adjacent trees of the same species look different but the whole tree is one color. Bloom-stable: same compiled shader program for every (species, draw call); only uniform VALUES differ per draw.
+- `src/components/InstancedTrees.jsx` bakes a per-vertex `aBark` attribute on each cloned geometry at runtime-merge time based on `mesh.userData.atlasKind`. Derives species from the GLB URL (regex on `/trees/<species>/`) since out-of-roster placements substitute URL but retain original `inst.species`; the URL is the authoritative species for retint purposes. `onBeforeRender` on each submesh `applyBarkUniforms` mutates the shared material's uniforms per (species, draw). Per-Look palette override: `scene.materialColors[<species>]` wins over species default `tintBase` at runtime — no rebake required (instant retint on reload).
+- **Pipeline survives SpeedTree migration unchanged.** SpeedTree-imported species would write the same `manifest.bark` shape and run through the same shader. Heroes drop out of the procedural roster via the `quality` mechanism when their SpeedTree replacements land. Phase B becomes infrastructure that outlives the v1.5 procedurals.
+- **Measurements (lafayette-square Look post-Phase-B-bake):** 11 bark tiles + 19 leaf tiles in atlas (same count as pre-B since each of the 5 filler species picks a unique materialRef — sha1 dedup will fire when G.1–G.5 heroes share refs with their fillers, e.g. Sugar Maple on Bark007). Atlas dims 4040×2600. Atlas color PNG 13.6 MB / normal PNG 15.4 MB (heavier than pre-Phase-B because the photo textures are genuinely 1K each; pre-Phase-B used 32×32 placeholders). The Grove pillar 0.5 holds: with hero-on-filler shared refs, atlas size will not grow proportionally to species count.
+- **Determinism preserved.** Same {species, slot, seed, params} + same materialRef on disk → byte-identical published GLBs across re-runs (verified `sha1sum public/trees/procedural_broadleaf/skeleton-1-lod0.glb` before/after a re-publish of the same species).
+- **Fixes:** bark looks like photo bark (not 32×32 noisy brown); per-(species, Look, instance) retint via uniforms; per-Look pink-tinted maples possible via `materialColors[procedural_broadleaf]` reload; per-instance hue jitter ready; per-species roughness override ready; single shader program preserved; pipeline ready for SpeedTree drop-in.
+- **Doesn't fix:** UV tiling — the 1K photo bark sample stretches across full cylinder height (a 12m tree gets the same sample density as a 0.4m twig); tighter per-cylinder tiling is a follow-on requiring a `uvScale` shader uniform + per-cylinder UV multiply. No Workstage authoring UI (Phase B.1). No Stage debug overlay (Phase B.1). Acceptance criteria 5/6/7 from the original brief (WebGLProgram count check + Bloom flicker test + per-instance jitter visual) deferred to Phase B.1's debug overlay; the core infra above is structurally correct (single material → single program; aBark per-vertex → leaf fragments untouched; world-XZ hash → per-tree jitter).
+
+**Phase B.1 — split into B.1.a (shipped) / B.1.b + B.1.c (deferred)**
+
+**Phase B.1.a — UV-scale wiring** — **SHIPPED 2026-05-15 / 2026-05-16** (commits `6c5c957` initial + `e77278e` `textureGrad` polish + `94519db` aniso polish — last two reverted as no-ops in `d50dd7b`; `fd187d7` pre-tile-at-source v2; `54355a4` v3 revert to baseline = current state)
+- 3 new uniforms on the shared tree material — `uBarkUVScale` (vec2), `uBarkTileOffset` (vec2), `uBarkTileScale` (vec2) — initialized to identity (no-tile, full-atlas-span). Set per-draw in `applyBarkUniforms` from `barkBySpeciesEffective` resolved against the per-species manifest entry + the manifest's `tiles[].uvTransform` lookup (search tile by `classification==='bark'` AND `refs.some(r => r.species === <species>)`).
+- Fragment shader replaces the entire `#include <map_fragment>` chunk (the standard chunk hardcodes `texture2D(map, vMapUv)` — insertion before/after can't intercept the texture sample). Replacement reconstructs the chunk's `#ifdef USE_MAP` body verbatim BUT inserts a wrap-within-tile-bounds step before the sample: `localUV = fract((vMapUv − tileOffset) / tileScale × uvScale)`, then `mapUV = localUV × tileScale + tileOffset`. Gated by `vBark > 0.5 && uvScale != (1,1)` so leaves bypass entirely and bark species with explicit uvScale=identity also no-op. fract() wrap stays strictly inside the tile, so no bleed into neighbor atlas tiles. Mipmap gradient discontinuity at wrap lines is the standard tile-wrap artifact; mitigation via `textureGrad()` is a follow-on if visible at Hero.
+- Architectural deviation from the brief's per-vertex `aBarkTileOffset`/`aBarkTileScale` attributes: switched to per-draw UNIFORMS because within a merged geometry (one URL = one species + variant), all bark verts share the same tile bounds and all leaf verts share the same tile bounds — per-vertex would have been ~30 MB of VBO at LS scale (50K verts × 36 variants × 16 bytes) for what is effectively per-primitive-constant data. Per-draw uniforms align with the `applyBarkUniforms` pattern Phase B core already established for tint/jitter/roughness. Single compiled program preserved.
+- Per-species `uvScale` starter values shipped in PRESETS — broadleaf `[1.5, 4.0]`, conifer `[1, 3]`, ornamental `[1.5, 3]`, columnar `[1, 4]`, weeping `[1.5, 2]`. Tightest vertical tiling on broadleaf + columnar (long trunks, photo bark would otherwise smear). Tune visually in Phase B.1.b.
+- **Phase B core bug fixed in passing:** the B-core merge-time stamp checked `o.userData?.atlasKind` for the bark vs leaf signal, but GLTFLoader assigns primitive-level extras to `geometry.userData` (see three's `GLTFLoader.js:4649`), not `mesh.userData`. Effect: in B core every vert silently got `aBark = 0` → the retint + roughness + jitter paths never fired on any fragment. Trees rendered fine because the uniforms defaulted to identity; the regression was invisible-by-design. B.1.a's UV-wrap path also relies on the gate, so the fix is load-bearing for this phase. Lookup now reads `geometry.userData.atlasKind` first with the old paths as fallbacks. Per-instance jitter, per-Look pink-tint reload, and roughness overrides all become functional for the first time with this commit.
+- **Determinism preserved.** uvScale is runtime-driven (read from `trees-atlas.json` by the shader); same source manifest → byte-identical GLB output (`sha1sum public/trees/procedural_broadleaf/skeleton-1-lod0.glb` matched pre-B.1.a). Only the manifest's `barkBySpecies` block + species `manifest.bark.uvScale` updated.
+- **Single shader program preserved.** New uniforms + varyings ride the existing material via `onBeforeCompile`; no `customProgramCacheKey` divergence. Bloom-stable.
+
+**Phase B.2 — Proper bark tile wrap (atlas vs tiling tradeoff, deferred)**
+- Phase B.1.a's `fract`-inside-atlas approach has an unavoidable derivative
+  discontinuity at wrap lines: the GPU picks the coarsest mip there →
+  narrow blurry stripes that "crawl" slightly under tree sway at close-up
+  Hero distance. We tried `textureGrad` with the math-correct gradient
+  (`dFdx(vMapUv) × uBarkUVScale`) — it eliminated the crawl but produced
+  *uniform* mip-blur because dense tiling legitimately requires coarser
+  sampling per pixel. That's honest GPU mipmap math, not a bug; it's the
+  cost of atlas-tile + dense-repeat combined. Bumped anisotropy 4 → 16
+  hoping the aniso hardware would compensate; no visible difference,
+  meaning the wider gradient is already past the regime where aniso helps.
+  Reverted both polish attempts (`e77278e` textureGrad and `94519db`
+  aniso bump are no-ops in the final code path; the comments record the
+  reasoning so future babies don't re-walk this).
+- **Proper-fix paths** (pick one when B.2 lands):
+  1. **Texture arrays** — one atlas layer per unique bark `materialRef`,
+     each with `GL_REPEAT`. Sampler index from a per-draw uniform.
+     Hardware tiling, hardware mipmap, hardware aniso. Single shader
+     program preserved (one sampler binding, different layer index per
+     draw). WebGL 2 standard. Pipeline change in bake-look.
+  2. **Pre-tile in atlas** — bake-look composites an N×M-tiled version
+     of the source into the atlas tile content; shader samples directly
+     with no shader-side wrap. Atlas footprint grows N×M for bark tiles.
+     Simpler pipeline change but heavier atlas.
+  3. **Separate textures per species** — clean GL_REPEAT but breaks the
+     single-program Bloom constraint (`bake-look.js:200` "non-negotiable").
+     Not viable without re-evaluating that constraint.
+- For now: plain `texture2D` + `fract` wrap. Sharp bark away from wrap
+  lines; narrow wrap-line crawl at close Hero. Accept as the smaller cost
+  until B.2 lands.
+
+**Phase B.1.b — Workstage Bark panel** (deferred)
+- Per-species Bark panel in `src/arborist/Workstage.jsx`: material dropdown w/ 128×128 thumbnails (cached server-side), UV scale X/Y sliders, tintBase color picker, tintJitterRange + roughnessOverride sliders, "Apply & republish species" button.
+- `GET /procedural/bark/materials` lists available CC0 materials under `public/textures/bark/`; `POST /procedural/:species/bark` writes `manifest.bark` and re-triggers republish + per-Look atlas rebake.
+
+**Phase B.1.c — Stage debug overlay** (deferred)
+- `renderer.info.programs.length` readout + active bark uniform values for the focused species; toggle-able dev surface so visual gates (criterion 5: WebGLProgram count; 6: per-Look pink-tint reload; 7: per-instance jitter visual) close mechanically.
+
+**Phase F — Per-species PSD-authored leaf cluster atlases + 2-stop tint ramp + sparse occupancy** (scope reframed 2026-05-16 EOD)
+- **Scope reframe:** the original Phase F scope included `arborist/leafCluster.js`, a sharp-based parametric cluster compositor with per-leaf rotation/scale/position jitter knobs. **That infrastructure is dropped.** It was designed to *scale* leaf authoring to all 60 inventory species; for 5 heroes, Photoshop is faster + better (artist controls overlap, density, color, accents directly; per-season variants are additional PSDs; no parametric tuning struggles).
+- **New scope: import PSD-authored cluster PNGs at `public/textures/leaves/<species>/cluster.png` (or per-season subfolder), atlas + tint + sparse-occupancy at runtime.** Operator authors clusters in Photoshop for each hero; the pipeline picks them up via species manifest `leafCluster.textureRef`. Workstage Leaf panel = picker + tint stops + occupancy slider, not a slider-driven compositor UI.
+- Fillers continue to use shared per-morph PNGs (`public/textures/leaves/<morph>.png`) via the existing v1 single-leaf-card pipeline — substitution-fallback covers them at v1.5 quality. Heroes override with PSD-authored clusters.
+- **Sparse-cluster mode is still load-bearing.** `PRESETS.leafCluster` carries an `occupancy` field even for PSD-authored clusters — the shader uses it for per-tree alpha-density variation that the PSD's alpha channel can't carry. Honeylocust ~25% occupancy (dappled translucent canopy — the signature), oak ~70%, conifer needles ~95%.
+- `buildLeafGeometry` uses cluster cards; fewer cards per tree, each card visually denser.
+- Material extras carry 2-stop tint ramp (inner/outer × per-season); leaf shader samples UV.y for inner-vs-outer mix.
+- Workstage gains per-species foliage panel: cluster texture preview, summer/fall inner+outer color pickers, occupancy slider. NO density / jitter / cluster-count sliders (those would be compositor knobs; compositor is dropped).
+- **Fixes:** foliage reads dense at distance; fall color has inner-to-outer gradient that's the species signature; sparse-canopy species (honeylocust) read correctly translucent.
+- **Doesn't fix:** still need per-species PSD authoring for any new hero beyond the 5 (the substitution-fallback safety net per pillar 0 covers the rest until v1.6+ authoring passes scale up via the same PSD-import path).
+
+**Phase F.5 — Leaf editor** — **KILLED 2026-05-16 EOD**
+- The parametric leaf editor (lobe count / lobe depth / edge serration / venation density → generated PNG) was pulled forward from v1.6 as Phase G.1's enabling tool. **Obviated by PS-authoring.** For 5 heroes, hand-authoring in Photoshop produces better species character than any parametric generator at less engineering cost.
+- If the inventory ever scales to 60 species (v1.6+), the parametric editor may return — but only if the PSD-authoring workflow itself becomes the bottleneck. Until then, the kill stands.
+
+**Phase G — Five hero proving passes (G.1–G.5)**
+
+With Phases A → D → B-core → B.1.a → C → F landed (E priority-dropped; F.5 killed), the full machinery exists. G is where the **5 hero species at Hero quality** product goal is achieved. Each sub-phase is its own commit, its own acceptance criterion, its own visible-bug-coverage statement. G.5's species is operator-decided after G.1–G.4 ship.
+
+- **G.1 — Sugar Maple** (`acer_saccharum_procedural`). Dominant inventory species, canonical broadleaf, strictest visual bar. Includes Phase F.5 leaf-editor enabling work — author the palmate leaf first, generalize the editor surface out of it. Envelope: rounded oval 12m × 20m. Tropism: zero. Phyllotaxis: opposite (the species signature). Attractor count: ~600. Bark: furrowed, `#3a2820`/`#6a5040`. Leaf cluster: palmate × 8 per card, ~70% occupancy. Tint ramp summer `#2a5825→#3a7530`, fall `#a85020→#d4801f`. **Acceptance:** reads as Sugar Maple to a botanist at Hero from 30 m up. **Fixes:** ~60+ park trees mapping to acer_saccharum via species map ship at hero quality; reference implementation for what tuned procedurals look like.
+- **G.2 — Ginkgo** (`ginkgo_biloba_procedural`). Tests per-species leaf authoring (F.5) on the most leaf-defined species in temperate forestry. Bilobed fan + uniformly luminous gold fall is the signature. Authored as a new procedural_ginkgo species (envelope: rounded-cone variant; tropism: zero; leafMorph: `fan` with luminous gold tint ramp), **NOT as a substitution into procedural_broadleaf** — the silhouette (narrower than oak, fuller than columnar) doesn't sit inside the existing morphology buckets. **Acceptance:** ginkgo reads as ginkgo (bilobed fan + brilliant uniform-gold fall) at Hero; reference photo overlap with Lafayette Square's actual ginkgos is visually convincing.
+- **G.3 — Willow** (`salix_babylonica_procedural`). Weeping algorithm validation at hero quality. Authored on top of `procedural_weeping` (Phase D's envelope + tropism doctrine already producing the recurve via physics). Only 3 placements in inventory but iconic — Lafayette Square's willows are landmark trees. **Acceptance:** weeping curtain reads as Salix babylonica specifically, not generic-weeping; narrow lance leaves; gold-green summer / yellow fall.
+- **G.4 — Honeylocust** (`gleditsia_triacanthos_procedural`). **Sparse-cluster machinery validation.** Authored on top of `procedural_broadleaf` filler via the category fallback path (no new morphology bucket needed — honeylocust's silhouette fits the broadleaf SCA envelope; the species character is in the leaves + occupancy). Bipinnately compound leaves (F.5), ~25% cluster occupancy (Phase F), dappled translucent canopy. **Acceptance:** the dappled-shadow signature comes through at Hero — the canopy reads translucent, not solid; sun spots dapple the ground.
+- **G.5 — TBD 5th hero.** Decision deferred to operator after G.1–G.4 ship. Candidates:
+  - **Spruce or Pine** (conifer slot). Exercises Phase E's monopodial-whorl algorithm at hero quality. Resolves the Phase E priority-drop question by elevating one conifer to v1.5 if visual review at LS demands it.
+  - **Pin Oak.** Second broadleaf character — lobed (not palmate like maple). Lets the broadleaf bucket prove it can carry two distinct hero silhouettes without one bleeding into the other.
+  - **Sycamore** (`platanus_acerifolia` family). Closes the loop on the existing hand-modeled `platanus_acerifolia` ×9 variants that Grove curation would otherwise prune out — replaces them with a procedural hero rather than maintaining two parallel sources for the same species.
+- **Doesn't fix:** other 60+ inventory species still need per-species hero authoring eventually (ongoing operator workflow now that the editor + workstage + atlas pipeline all exist). The two-tier substitution safety net per pillar 0 keeps the unauthored species visually plausible until each gets its own hero pass — v1.6+ work.
+
+### Constraints carried across every phase
+
+- **Stash-isolate every commit** per [[feedback_stash_isolate_per_file]]. Operator working tree always has unrelated dirty files; each baby plumbs design.json / index.json the same way the v1 commit (`dbbd1ed`) did.
+- **No fork of foundational pipeline.** `publish-glb.js`, `bake-look.js`, `bake-trees.js`, `atlas-pack.js`, `atlas-survey.js` stay untouched. Generator output adapts to what they expect.
+- **`generateTreeMesh()` params signature is the contract.** UI binds to it; CLI binds to it. Never bypass.
+- **Trinity touch every phase.** FEATURES update for visible-bug-resolution; this NOTES maxi-brief gets a rolling update reflecting what shipped per [[feedback_features_md_is_a_working_doc]]; BACKLOG tick-off.
+- **Determinism.** Same params + same seed → byte-identical GLB. Required for `writeIfChanged` mtime stability + cache predictability.
+- **No `procedural` token in `src/` beyond the already-shipped `treeAtlasMaterial.js` extras** (which will gain bark + leaf shader patches in B + F respectively). Generator + state stays in `arborist/` and `public/trees/`.
+- **Hero species are first-class citizens at the same `generateTreeMesh()` API.** They get their own PRESETS table entries; `park_species_map.json` routes inventory entries to them via preferred-species lists; `bake-look.js`'s `unifyAtlases` round-trips them through the same atlas pipeline as fillers. The mechanical distinction between "hero" and "filler" is **quality rating + per-species tuning depth**, not pipeline location. Every hero must work through the published artifacts pipeline per [[feedback_preview_uses_production_pipeline]].
+- **Surface scope drift in every status update + commit body** per [[feedback_baby_must_surface_scope_drift]]. Phase A's silent `Workstage.jsx` extension → Phase D's proactive 3-item disclosure is the pattern; every subsequent phase brief carries the explicit "surface anything not in this brief" clause and every baby discloses extra files / schema extensions / retuned defaults.
+
+### Deferred / out of scope
+
+- **Full 60-species hero coverage** — eventually, but explicitly **not urgent for v1.5**. The two-tier substitution fallback (pillar 0) covers the gap until each species gets its own hero authoring pass. v1.6+.
+- **Street-view photoreal.** v2. Don't trade Hero/Browse quality for Street fidelity that won't ship.
+- **Real bark/leaf photographic scans.** v2 (SpeedTree replacement window). Phase B's procedural-bark-shader path is deliberately the shape SpeedTree migration plugs into unchanged — heroes drop out via the same `quality` mechanism when their SpeedTree replacements land.
+- **Per-conifer-species hero variants beyond Phase E's algorithm** (Norway Spruce vs Blue Spruce vs White Pine vs Bald Cypress as distinct hero species ids) — Phase E ships ONE generic conifer algorithm at v1.5; per-conifer-species hero authoring defers to v1.6 unless G.5 elects a conifer.
+- **Plant tool / interactive placement editor.** Per SPEC.md, v1.1+ work in Cartograph Designer; not procedural-trees scope.
+- **Runtime tree generation.** Bake is structurally required; no path to runtime SCA.
+
+### Architecture record cross-references
+
+- v1 ship doctrine: NOTES entry "## 2026-05-14 — Procedural-trees fallback: shipped (commit `dbbd1ed`)"
+- Original ParkTrees algorithm (resurrected for v1): `git show 43c4aa3~1:src/components/LafayettePark.jsx | sed -n '440,880p'`
+- Arborist UI patterns to mirror: `src/arborist/Workstage.jsx` (per-species toolbar/viewport/panel), `src/arborist/SpecimenViewport.jsx` (R3F GLB renderer), `src/arborist/Grove.jsx` (gallery)
+- Memories: [[project_v1_no_trees]], [[project_slab_is_the_instance_identity]], [[project_kit_helpers_pattern]], [[feedback_no_parallel_pipeline_for_scenes]], [[feedback_stash_isolate_per_file]], [[project_doped_artifact_placecard_edit_pattern]], [[feedback_phase_scope_explicitness]], [[feedback_d3_bundling_failure_modes]], [[feedback_features_md_is_a_working_doc]], [[feedback_baby_must_surface_scope_drift]], [[feedback_notes_md_holds_architecture]], [[feedback_preview_uses_production_pipeline]]
+
+---
+
+## 2026-05-14 — Procedural-trees fallback: shipped (commit `dbbd1ed`)
+
+**Status:** v1 landed. Five procedural species (`procedural_broadleaf` ×3 / `_conifer` ×2 / `_ornamental` ×2 / `_columnar` ×2 / `_weeping` ×2) publish through the unmodified `publish-glb` → `bake-look` → `bake-trees` pipeline. ~140/745 LS park placements now substitute procedurals (procedural_weeping has no shape-match placements; sits in roster ready). The architecture record below stands as written — the design landed verbatim.
+
+### What's true post-ship that wasn't fully captured pre-ship
+
+- **Grove is the operator's roster knob.** `src/arborist/Grove.jsx` already implements per-Look roster curation: scope toggle `In Look` / `All Rated`, click-to-toggle membership, fires `/api/cartograph/looks/<id>/trees` + `/api/arborist/atlas/bake?look=<id>` automatically. The "manually edit `design.json#/trees`" path my generator uses is the script-side equivalent; in normal operation an operator opens Grove → curates → done. **The 14 heavy hand-authored variants are pruned by clicking them out in Grove, not by editing design.json.**
+- **Per-Look atlas budget unlocks once roster shrinks.** `bake-look.js`'s `CONTENT_CAP` caps tiles at `bark 512×1024 / leaf 512×512`. The 25-tree LS roster today produces a 4040×1560 unified atlas (~6 MB color PNG); pruning to ~10 trees frees ~60% of atlas area, opening room for `bark 1024×2048 / leaf 1024×1024` at no runtime cost. One-line knob in `arborist/bake-look.js:39` — defer until operator finishes Grove curation so the actual roster size drives the cap.
+- **Bark variation deferred to SpeedTree.** The original ParkTrees palette (`['#5a4030', '#4d3828', '#634838', '#554030', '#4a3525']`) drove per-tree bark color via vertex colors; bake-look's atlas rewriter strips `COLOR_0` (bake-look.js:459), so v1 procedurals get one bark texture per species (5 distinct browns across the roster). SpeedTree restores per-instance bark via tinted baked-card atlas tiles — already the SpeedTree migration plan, no new gap.
+- **`cartograph/serve.js` Bake-button chain runs `bake-trees.js --look default`** (not `--look <id>`). With procedurals at `quality=2` in `public/trees/index.json`, the default Look's placements file now substitutes procedurals — but the default Look's `design.json#/trees` doesn't include them and `bake-look` won't atlas them under `public/baked/default/`. Runtime fetches to `/baked/default/trees/procedural_*/...` will 404 when the default Look is the active one. **Risk window:** only when an operator deploys against `?look=` unset or `=default`. Mitigation when relevant: add procedurals to default's roster via Grove + per-Look atlas-bake (the same mechanism), or gate the universal `public/trees/index.json` per-Look (out of scope for v1 stopgap).
+- **The publish-glb `quality` knob: `qualityOverride: 2`, not `quality: 2`.** publish-glb writes `quality: 0` (Untouched sentinel) on every newly-published variant; the Rating UI writes `qualityOverride: <N>` and that's what `build-index.js` consults (`effQuality = v.qualityOverride ?? v.quality ?? 0`). My generator patches `qualityOverride` on each procedural variant post-publish — preserves the "operator-rated" doctrine without forking publish-glb.
+
+### Deferred: procedural authoring UI in Arborist (~1 day, no algorithm change)
+
+Designed in the "Eventual UI" block below. `generateTreeMesh()` exposes the exact params signature the UI will bind to: `{preset, seed, dbh, canopyR, canopyH, branching, leafMorph}`. Slot-in plan:
+
+1. Top-level mode toggle in `ArboristApp.jsx`: `[Scan] | [Procedural]`. Procedural mode shows the 5 species in Library; per-species detail view shows the current `PRESETS` table entries as editable variants.
+2. Right-pane tune panel mirrors Workstage's voxelSize/minRadius/tipRadius pattern, with: shape preset dropdown / dbh / canopyR / canopyH / branching dropdowns (primaryN, childN, spread, baseTilt, droopPerGen, maxGen) / leaf morphology dropdown (from leafTypes.json) / seed integer + dice button.
+3. `POST /procedural/generate` in `arborist/serve.js`: reads body params, calls `generateTreeMesh()`, packages into a single-variant GLB (the existing `buildSourceGLB` helper, refactored to accept one variant), streams the binary back. `SpecimenViewport.jsx` renders it.
+4. "Adopt as seedling" button writes the params + seed to `arborist/state/procedural_<morph>/seedlings.json` and triggers `publish-glb.js` (mirrors the scan workflow's adoption).
+
+Not v1-blocking. Carried as a BACKLOG line.
+
+---
+
+## 2026-05-14 — Procedural-trees fallback: pre-ship design memorial (archival, kept for reference)
+
+The entry below is the pre-ship architecture record per [[feedback_notes_md_holds_architecture]]. Preserved verbatim because the design landed without changes; future migrations should trace from here.
+
+### Why this exists
+
+Current `lafayette-square` Look roster carries 14 hand-modeled/scanned variants (`platanus_acerifolia` ×9, `alaskan_cedar_2`, `broadleaf_rt3`, three generics). Total 138 MB baked GLBs + 10 MB atlas — too heavy for the mobile target per [[feedback_beautiful_first_lightweight_51]]. SpeedTree is the eventual destination (cards + LODs + impostor baker) but it carries a learning-curve cost. Procedurals are the v1 stopgap per [[project_v1_no_trees]].
+
+The wiring to remove the old procedural component was already done at commit `43c4aa3` (Arborist library split); `{false && <ParkTrees />}` and its dependencies are gone from `src/`. Only stale doc-comment residue remains (`src/components/R3FErrorBoundary.jsx`, `arborist/SPEC.md:16`). The deployed live site still mounts those procedurals because it ships from a pre-`43c4aa3` build.
+
+### Design: roster mix, not generator-only
+
+The decisive insight: **procedural and hand-authored trees coexist in the same roster.** InstancedTrees' substitution pool is keyed by category, ranked by `quality` (0=Untouched/excluded, 1=Trash, 2=Fill, 3=Mid, 4=Hero). One roster can carry:
+
+- `procedural_broadleaf` ×3 variants at `quality=2`
+- `platanus_acerifolia` ×9 variants at `quality=4`
+- `procedural_ornamental` ×2 variants at `quality=2`
+- vendor `dogwood` ×4 variants at `quality=4`
+
+All four pool into their category bucket; per-placement hash picks deterministically. Operator tunes mix via the Grove's quality slider alone — no rebake of placements, no code touch. SpeedTree replaces by raising its ratings; procedurals stay in roster at low rating as a permanent floor. This is [[project_doped_artifact_placecard_edit_pattern]] applied to trees: roster carries options, runtime samples by category × rating, operator refines.
+
+**The Grove becomes the tree experiment surface.** Each Look has its own roster mix; an operator can author a `lafayette-square-procedural-only` Look (zero SpeedTrees rated), a `lafayette-square-cinematic` Look (all hand-authored, full quality), and any combination, without ever changing tree placements.
+
+### Pipeline: reuse, don't fork
+
+Generator emits a multi-node source GLB (one top-level node per variant, named `procedural_<morph>_1..N`). `publish-glb.js`'s existing variant detection (`namesSuggestVariants` / `nodesSpatiallySeparated`) splits it; LOD simplification, manifest emission, helper-mesh filtering, `normalizeScale` from approxHeightM — all unchanged. `bake-look.js` atlas-packs procedural leaf-card PNGs (already present in `public/textures/leaves/`) + a 1×1 solid-color bark swatch into the unified Look atlas. No fork of `publish-glb` / `atlas-pack` / `bake-look` / `bake-trees`. No `src/components/` edits beyond the 2-line stale-residue cleanup.
+
+`InstancedTrees` consumes the published artifacts unchanged. The runtime sees one uniform tree-publishing channel.
+
+### Generator: parameter-first, UI-additive
+
+`arborist/generate-procedural.js` exposes one pure function:
+
+```
+generateTreeGLB({
+  preset,          // 'broad' | 'conifer' | 'ornamental' | 'columnar' | 'weeping'
+  seed,            // integer for deterministic regen
+  dbh,             // trunk size driver (matches old ParkTrees signature)
+  canopyR, canopyH,
+  branching: { maxGen, primaryN, childN, spread, droopPerGen, ... },
+  leafMorph,       // 'palmate' | 'lobed' | 'ovate_large' | ... (from leafTypes.json)
+  barkPalette,     // array of 5 hex strings
+}) → GLB buffer
+```
+
+The v1 commit ships a CLI wrapper iterating a small hardcoded preset table (one config per morphology × 1–2 seed variants). The eventual Arborist UI (top-level mode alongside scan-import per Jacob 2026-05-14) binds sliders to the same parameter object — same function, no algorithm change. **Discipline:** every variant in v1 must be expressible as a `params` object. No hardcoded shortcuts that bypass the parameter contract.
+
+Algorithm resurrection target: commit `43c4aa3~1`, `src/components/LafayettePark.jsx` lines 450–880. Lift `growBranch`, `addLeaf`, `makeBranch`, `paint`, the per-shape branching configs (`conifer` whorl logic, `weeping` droop, `columnar` upright, `broad`/`ornamental` recursive crown). Drop the runtime-only bits: `useEffect` instance-matrix wiring, `onBeforeCompile` shaders, panel-color reactivity — those live in `treeAtlasMaterial.js` (atlas side) or are obviated by the per-instance pipeline.
+
+### Species model: one per morphology
+
+Five published species in `public/trees/`: `procedural_broadleaf` / `procedural_conifer` / `procedural_ornamental` / `procedural_columnar` / `procedural_weeping`. Mirrors `src/data/leafTypes.json` morphology axis; the eventual UI species-picker maps cleanly; bake substitution stays per-category.
+
+(Rejected alternatives: one catch-all `procedural` species — wrong shape for UI; mirroring real species names like `procedural_acer_saccharum` — maximally substitutable but bloats state for a v1 stopgap.)
+
+### Eventual UI (deferred, ~1 day on top)
+
+Top-level mode toggle in the Arborist app: `[Scan] | [Procedural]`. Procedural mode owns the viewport. Right-pane tune panel mirrors the existing voxelSize/minRadius/tipRadius scan-panel pattern, with params instead:
+
+- Shape preset dropdown
+- Trunk: dbh, lean
+- Crown: canopyR, canopyH
+- Branching: maxGen, primaryN, childN, spread, droopPerGen
+- Leaf morphology dropdown (sourced from `leafTypes.json`)
+- Bark palette: 5 swatches
+- Seed: integer + dice button
+
+`POST /procedural/generate` endpoint on `arborist/serve.js` returns a GLB buffer; viewport renders it via `SpecimenViewport.jsx`. "Adopt as seedling" writes to `arborist/state/procedural_<morph>/seedlings.json` and triggers `publish-glb.js`. Not v1-blocking; build the function now with the API the UI will need.
+
+### Constraints carried into the brief
+
+- [[feedback_stash_isolate_per_file]] — the procedural commit must NOT bundle the 23 unrelated dirty files in the tree
+- [[project_kit_helpers_pattern]] — Arborist owns trees end-to-end; cartograph never imports tree code
+- [[feedback_no_parallel_pipeline_for_scenes]] — no procedural-only mount path bypassing InstancedTrees; the fallback is roster entries, not parallel renderers
+- [[project_slab_is_the_instance_identity]] — procedurals travel through bake into the slab artifact like everything else; deployed runtime sees one uniform tree channel
+- [[project_writeifchanged_touches_mtime]] — if the generator or pipeline writes files conditionally, mtime touches on no-op
+
+### Acceptance for the v1 commit
+
+- `node arborist/generate-procedural.js` + `node arborist/bake-trees.js --look lafayette-square` produces a `trees-atlas.json` whose roster includes all 5 procedural species at authored quality rating
+- LS Stage / Preview / production render trees via `InstancedTrees` substituting procedurals into every park placement
+- No `procedural` token appears in `src/` (only in `arborist/`, `public/trees/`, `public/baked/<look>/`)
+- 2-line stale-residue cleanup (`R3FErrorBoundary.jsx` doc-comment, `arborist/SPEC.md:16`) lands in same commit
+
+---
