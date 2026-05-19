@@ -28,7 +28,7 @@
  */
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { PerspectiveCamera, useGLTF } from '@react-three/drei'
+import { OrbitControls, PerspectiveCamera, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -79,6 +79,18 @@ export default function CanaryScene({ slot = 'chamber' }) {
       )}
 
       <Atmosphere lookId={activeLookId} />
+
+      {/* Free-orbit camera controls. Different target per slot:
+          - chamber: orbit a point in the cloud volume above the operator.
+          - ground:  orbit around the hero tree's mid-canopy. */}
+      <OrbitControls
+        makeDefault
+        target={cam.target}
+        enableDamping
+        dampingFactor={0.1}
+        minDistance={cam.showGround ? 8 : 50}
+        maxDistance={cam.showGround ? 80 : 3000}
+      />
     </Canvas>
   )
 }
@@ -158,6 +170,15 @@ function GroundPlane() {
 // ── Hero tree ─────────────────────────────────────────────────────────
 // Direct GLB via useGLTF — bypasses InstancedTrees because Meteorologist
 // places exactly one tree as a scale reference, not a population.
+//
+// ⚠ KNOWN-PENDING (2026-05-20): renders with embedded GLB materials only;
+// Arborist's runtime `applyBarkUniforms` + atlas tinting are not applied,
+// so the tree appears unlit white/grayscale instead of properly bark-
+// and-leaf-textured. Fix path: Arborist coordinator exports
+// `applyBarkUniforms` + an atlas-loader from `treeAtlasMaterial.js`; this
+// component consumes them. Tracked in a follow-up coordinator brief
+// dated 2026-05-20. Until then, the tree silhouette + scale are
+// correct, just color/texture wrong.
 //
 // Tree selection: reads `meteorologist-canary-tree` from localStorage (set
 // by Arborist's Grove/Workstage canary-picker button per the 2026-05-20

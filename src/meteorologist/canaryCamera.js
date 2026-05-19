@@ -1,17 +1,18 @@
 /**
- * Static camera setups for the CanaryScene per slot tab.
+ * Static starting cameras for the CanaryScene per slot tab. Operator
+ * can free-orbit from here via <OrbitControls> mounted in CanaryScene.
  *
- * CLOUD CHAMBER — close framing, no ground. Looks up at the cloud against
- *   the sky envelope. Good for tuning intrinsic shape against atmospheric
- *   lighting without scene-scale interference.
+ * CLOUD CHAMBER — looks up at the cloud against the sky envelope. Good
+ *   for tuning intrinsic shape against atmospheric lighting without
+ *   scene-scale interference. Tree + ground hidden.
  *
- * GROUND — eye level, mid-distance. One hero tree anchors scale +
- *   perspective. Good for verifying the cloud reads at LS scale with a
- *   real-world reference object in frame.
+ * GROUND — backed off ~25m from a 15-20m hero tree at slight upward
+ *   tilt. The full tree silhouette fits in frame; operator can orbit to
+ *   inspect any side. Ground plane + tree both visible.
  *
- * No orbit controls in Phase 4a — values are starting points. If the
- * framings read wrong, retune here. Phase 5 may add a camera-orbit
- * affordance once the cloud + sky pipeline is stable.
+ * Tune here if the framings read wrong. Per-tree-species framing
+ *   (different cameras for tall vs. compact species) is a Phase 5+
+ *   refinement.
  */
 
 export const CANARY_CAMERAS = {
@@ -22,9 +23,12 @@ export const CANARY_CAMERAS = {
     showGround: false,
   },
   ground: {
-    position:   [-8, 1.7, 6],   // 1.7m = adult eye height
-    target:     [0, 8, 0],      // tree canopy ~8m up
-    fov:        50,
+    // Backed off ~25m at ~1.7m above ground. Tree canopy target at 8m
+    // puts the full tree silhouette in the upper-middle of frame for
+    // typical 12-18m broadleaves; orbit lets the operator inspect.
+    position:   [-22, 1.7, 18],
+    target:     [0, 8, 0],
+    fov:        45,
     showGround: true,
   },
 }
