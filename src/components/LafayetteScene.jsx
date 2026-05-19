@@ -522,6 +522,38 @@ function simColor(id) {
   return _SIM_HEXES[Math.abs(h) % _SIM_HEXES.length]
 }
 
+// ============ DEFAULT NEON CLASSIFICATION ============
+// Buildings without a listings.json entry still get neon tube geometry
+// (see openPlaces). The category that determines the tube color is
+// derived from the building's St. Louis zoning code — the only
+// classification field actually populated on buildings.json
+// (1036/1082 records, distribution: A/B/C/D/E residential, F/G/H/I
+// commercial, J industrial). Buckets:
+//
+//   A B C D E  →  residential   (Sage; single/two/multi-family dwellings)
+//   F G H I    →  services      (Prussian Blue; neighborhood-through-central commercial)
+//   J          →  community     (Terra Cotta; industrial as community/civic proxy)
+//   null/other →  residential   (safe default for the ~4% missing zoning)
+//
+// This is intentionally coarse: zoning code is the only classification
+// signal on buildings.json, and even that doesn't map cleanly to the
+// dining/historic/arts/parks/shopping/services/community/residential
+// taxonomy in CATEGORY_HEX. A richer mapping belongs to later authoring
+// (PlaceCard / Events tab) where the operator can override per-building.
+// Listings-authored buildings keep their authored category color via
+// neonLookup → openPlaces in LafayetteScene.
+const _NEON_ZONING_CATEGORY = {
+  A: 'residential', B: 'residential', C: 'residential', D: 'residential', E: 'residential',
+  F: 'services',    G: 'services',    H: 'services',    I: 'services',
+  J: 'community',
+}
+function defaultNeonCategoryForBuilding(building) {
+  return _NEON_ZONING_CATEGORY[building.zoning] || 'residential'
+}
+function defaultNeonHexForBuilding(building) {
+  return CATEGORY_HEX[defaultNeonCategoryForBuilding(building)]
+}
+
 // ============ BUILDINGS ============
 // Shared temp color to avoid per-frame allocations
 const _tmpColor = new THREE.Color()
@@ -1257,26 +1289,40 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     return map
   }, [listings, neonTick])
 
-  // openPlaces — buildings whose neonLookup entry resolves "on" at the
-  // current time. Drives the single <NeonBands> mesh in the render
-  // block. Refreshed on neonTick (60s) + listings + forceNeonOn;
-  // geometry rebuilds at that cadence. Per-instance aIsOpen is the
-  // HANDOFF-neon §"Instancing" amendment, deferred to v1.1.
+  // openPlaces — buildings eligible for tube geometry this frame. Every
+  // building in _allBuildings is a candidate; listings-authored ones
+  // carry their authored category color via neonLookup, every other
+  // building falls back to a zoning-derived default (see
+  // defaultNeonCategoryForBuilding above). Drives the single
+  // <NeonBands> mesh in the render block; refreshed on neonTick (60s)
+  // + listings + forceNeonOn. Per-instance aIsOpen is the HANDOFF-neon
+  // §"Instancing" amendment, deferred to v1.1.
   const openPlaces = useMemo(() => {
     const places = []
     const now = useTimeOfDay.getState().currentTime
     for (const b of _allBuildings) {
-      const info = neonLookup[b.id]
-      if (!info) continue
+      const listingInfo = neonLookup[b.id]
+      // Resolve color: listings-authored category wins; otherwise the
+      // zoning-derived default. `hours` only exists on the listings
+      // path, so production gating (below) keeps non-listings dark
+      // unless Stage's Force Neon On is the active gate.
+      const info = listingInfo || {
+        hex: defaultNeonHexForBuilding(b),
+        hours: null,
+        category: defaultNeonCategoryForBuilding(b),
+      }
       // Stage vs production gating, decided by prop presence:
       //   Stage (CartographApp passes the prop as a bool from the store):
-      //     forceNeonOn IS the sole gate. Checked = all eligible neon.
-      //     Unchecked = silence. The hours filter is intentionally
-      //     bypassed in Stage so authoring time doesn't lie about which
-      //     places will be lit at the current TOD.
+      //     forceNeonOn IS the sole gate. Checked = every building, off
+      //     = silence. The hours filter is intentionally bypassed in
+      //     Stage so authoring time doesn't lie about which places will
+      //     be lit at the current TOD.
       //   Production (Scene.jsx omits the prop, undefined here):
       //     `_isWithinHours` is the sole gate. Tubes auto-glow when a
-      //     listing's authored business hours intersect the current TOD.
+      //     listing's authored business hours intersect the current
+      //     TOD. Buildings without authored hours stay dark in
+      //     production — the eligibility extension is a Stage-side
+      //     authoring affordance, not a production behavior change.
       const on = forceNeonOn !== undefined
         ? !!forceNeonOn
         : _isWithinHours(info.hours, now)
@@ -1304,41 +1350,6 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     return places
   }, [neonLookup, neonTick, forceNeonOn])
 
-  // Frustum-cull neon: only mount NeonBands for buildings the camera can actually see.
-  // Checks every 30 frames (~0.5s) to avoid per-frame churn.
-  const _neonFrustum = useRef(new THREE.Frustum())
-  const _neonMatrix = useRef(new THREE.Matrix4())
-  const _neonPt = useRef(new THREE.Vector3())
-  const [visibleNeonIds, setVisibleNeonIds] = useState(() => new Set())
-  const _frameCount = useRef(0)
-  const _bldgPosMap = useMemo(() => {
-    const m = {}
-    _allBuildings.forEach(b => { m[b.id] = b })
-    return m
-  }, [])
-
-  useFrame(({ camera }) => {
-    if (++_frameCount.current % 30 !== 0) return
-    const eligible = Object.keys(neonLookup)
-    if (eligible.length === 0) { if (visibleNeonIds.size > 0) setVisibleNeonIds(new Set()); return }
-
-    _neonMatrix.current.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
-    _neonFrustum.current.setFromProjectionMatrix(_neonMatrix.current)
-
-    const next = new Set()
-    for (const bid of eligible) {
-      const b = _bldgPosMap[bid]
-      if (!b) continue
-      _neonPt.current.set(b.position[0], b.size[1] / 2, b.position[2])
-      if (_neonFrustum.current.containsPoint(_neonPt.current)) next.add(bid)
-    }
-
-    // Only trigger re-render if the set actually changed
-    if (next.size !== visibleNeonIds.size || [...next].some(id => !visibleNeonIds.has(id))) {
-      setVisibleNeonIds(next)
-    }
-  })
-
   useEffect(() => {
     const handleKeyDown = (e) => { if (e.key === 'Escape') deselect() }
     window.addEventListener('keydown', handleKeyDown)
@@ -1364,7 +1375,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
 
           {/* Buildings — per-id mount; neon is one merged mesh below. */}
           {_allBuildings.map(b => (
-            <Building key={b.id} building={b} neonInfo={visibleNeonIds.has(b.id) ? neonLookup[b.id] : undefined} palette={palette} materialPhysics={materialPhysics} />
+            <Building key={b.id} building={b} neonInfo={neonLookup[b.id]} palette={palette} materialPhysics={materialPhysics} />
           ))}
         </>
       )}
