@@ -45,13 +45,13 @@ In-Arborist authoring for the five procedural morphology fillers + the five Phas
 
 **Layout (post-Phase-C, 2026-05-16):** single-focused viewport + slot tabs. Slot tabs strip in the header (with a dirty-dot indicator); one focused card filling the main area; viewport as `flex: 1` left; 300-px controls rail right. This replaced the earlier Phase A/D grid-of-cards layout, which cropped vertically-composed silhouettes (columnar / weeping). Tab switcher is the only new affordance — the controls themselves are identical to the Phase D set.
 
-**Per-slot controls rail — 20 knobs across 5 sections** (updated through 2026-05-19):
+**Per-slot controls rail — 21 knobs across 5 sections** (updated through 2026-05-19):
 
 | Section | Knobs | Notes |
 |---|---|---|
 | **Trunk** | DBH (5–100 cm) | Trunk diameter at base. Top-level scalar param. |
 | **Envelope** | Profile, Width, Height, Asymmetry, Drape | Drape (was "Y offset") hidden for non-weeping presets — it only has semantic meaning when the envelope hangs below the trunk top. |
-| **Canopy** | Start, Scaffolds, Spread, Phyllotaxis, Lift, Density, Fill | Phyllotaxis dropdown (alternate / opposite for maple-style fishbone); Spread (scaffoldZoneFrac) hidden for weeping (curtain requires tip-pinned scaffolds); Lift (scaffoldEmergenceBias) drives J-curved lower scaffolds. |
+| **Canopy** | Start, Scaffolds, Spread, Phyllotaxis, Architecture, Leader strength, Lift, Density, Fill | Architecture dropdown (spreading / strong-leader) selects the iter-0 SCA seeding mode — spreading=apical N scaffolds (oak/elm/dogwood); strong-leader=lateral scaffolds at distributed Ys along an axial trunk that threads through the crown (maple/ash/basswood, Rauh's botanical model). Leader strength visible only in strong-leader (controls how far axial extends + the per-scaffold sustained +Y tropism magnitude). Spread + Lift hidden in strong-leader — the per-scaffold localTropism takes over. Phyllotaxis (alternate/opposite) is orthogonal to Architecture and composes. |
 | **Deformers** | Trunk wander (cm), Wavelength (m), Branch jitter (%), Bark relief (%) | Operator-tunable organic noise. Trunk wander is a deterministic XZ sinuosity applied to both the visible trunk shaft and the SCA axial extension so the canopy attaches cleanly. Branch jitter perturbs each SCA spawn perpendicular to the pull line. |
 | **Tropism** | X / Y / Z | Per-axis gravity bias for SCA growth direction. |
 

@@ -622,7 +622,16 @@ function SCAPanel({ species, dbh, envelope, sca, deformers, onScalarChange, onEn
   // the curtain effect breaks if scaffolds emerge at staggered heights.
   // Hide the spread slider for weeping; the value is still defended in the
   // SCA kernel (isWeeping → scaffoldZoneFrac = 0).
-  const showScaffoldSpread = !showDrape
+  //
+  // Phase G.0 (2026-05-19): strong-leader architecture doesn't use
+  // scaffoldZoneFrac either — laterals attach at distributed Ys via the
+  // brancingStartFrac..0.9 zone hardcoded in the kernel — so hide Spread
+  // and Lift in that mode. The decussate Phyllotaxis dropdown stays
+  // because pair-spawn behaviour is orthogonal to architecture.
+  const architecture = sca.architecture || 'spreading'
+  const isStrongLeader = architecture === 'strong-leader'
+  const showScaffoldSpread = !showDrape && !isStrongLeader
+  const showLift = !isStrongLeader
   return (
     <div style={{
       padding: '10px 12px',
@@ -707,12 +716,31 @@ function SCAPanel({ species, dbh, envelope, sca, deformers, onScalarChange, onEn
           <option value="opposite">opposite (maple/ash)</option>
         </select>
       </Row>
-      <Row label="Lift">
-        <DraftSlider min={0} max={1.5} step={0.05}
-          value={sca.scaffoldEmergenceBias ?? 0}
-          onCommit={(v) => onSCAChange({ scaffoldEmergenceBias: v })}
-          format={(v) => v === 0 ? 'none' : v.toFixed(2)} />
+      <Row label="Architecture">
+        <select
+          value={architecture}
+          onChange={(e) => onSCAChange({ architecture: e.target.value })}
+          style={selectStyle}>
+          <option value="spreading">spreading (oak/elm)</option>
+          <option value="strong-leader">strong-leader (maple/ash)</option>
+        </select>
       </Row>
+      {isStrongLeader && (
+        <Row label="Leader strength">
+          <DraftSlider min={0.3} max={1.0} step={0.05}
+            value={sca.leaderStrength ?? 1.0}
+            onCommit={(v) => onSCAChange({ leaderStrength: v })}
+            format={(v) => `${Math.round(v * 100)}%`} />
+        </Row>
+      )}
+      {showLift && (
+        <Row label="Lift">
+          <DraftSlider min={0} max={1.5} step={0.05}
+            value={sca.scaffoldEmergenceBias ?? 0}
+            onCommit={(v) => onSCAChange({ scaffoldEmergenceBias: v })}
+            format={(v) => v === 0 ? 'none' : v.toFixed(2)} />
+        </Row>
+      )}
       <Row label="Density">
         <DraftSlider min={100} max={1000} step={50}
           value={sca.attractorCount ?? 500}

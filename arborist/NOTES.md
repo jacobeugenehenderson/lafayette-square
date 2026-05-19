@@ -4,6 +4,74 @@
 
 ---
 
+## 2026-05-19 — Phase G.0 — `strong-leader` SCA architecture (Rauh's model)
+
+**Shipped:** third structural SCA mode alongside `spreading`. Adds 21st knob (Architecture dropdown) + conditional Leader strength slider in the Canopy panel. Defaults: broadleaf / broad / columnar → strong-leader; weeping / ornamental → spreading.
+
+### Why a new mode was load-bearing (not a tuning question)
+
+Operator + coordinator walked the 20-knob authoring panel against vendor Sugar Maple renders + a defoliated Sugar Maple photo. Real Sugar Maples have:
+
+- **One strong central trunk that continues all the way up through the crown** (not a trunk that stops at scaffold height with N apical children fanning out).
+- **~5–7 major scaffolds emerging laterally along the trunk's lower-mid length**, NOT all at one apical point.
+- **Every scaffold arcs upward and runs near-parallel to the trunk for most of its length** — sustained +Y tropism, not the base-decay Lift our spreading-mode kernel produced.
+- Fasciculate crown silhouette (W:H ≈ 0.6).
+
+This is **Rauh's architectural model** in the Hallé & Oldeman 1970 classification — botanically distinct from oak/elm (Troll's / Massart's, i.e. our existing `spreading` mode). No combination of the existing 20 knobs produces Rauh's topology because the iter-0 seed pattern hardcoded the wrong skeleton: one trunk → N azimuthal apical children. Lift (`scaffoldEmergenceBias`) decays exponentially with path length from each scaffold's trunk attachment — it gives the J-curve at the scaffold base but the scaffold then bends outward with attractor pull, not upward with the trunk.
+
+### The kernel split
+
+`runSCA` now reads `sca.architecture` (default `'spreading'`). The two modes share `runGrowthLoop` unchanged — only the iter-0 seeding differs:
+
+- **`spreading`** (oak/elm/weeping/ornamental): axial chain stops at `branchingStartY`; N scaffolds emerge azimuthally distributed across an upper zone. Same as Phase C.1+D.1a.
+- **`strong-leader`** (maple/ash/basswood/columnar): axial chain extends to `Math.max(branchingStartFrac, leaderStrength) × envelope.height`. N lateral scaffold seeds attach at distributed Ys between `branchingStartFrac` and 0.9 of envelope height, each anchored at the nearest axial node by Y, each with random azimuth from the deterministic `rng`. Every scaffold seed carries `localTropism = [0, leaderStrength × 0.4, 0]`. When `leaderStrength < 0.95`, also seed one apical SCA tip (no localTropism) at the topmost axial — the upper envelope grows as a normal spreading-mode top above the leader's reach.
+
+### Tropism-blend choice — sum, not replace
+
+In `runGrowthLoop`'s pull-direction step, per-node `localTropism` is **summed with** global `sca.tropism`, not overwriting. Global tropism (e.g. windward lean, or weeping's `-0.4` Y) is a tree-wide effect; localTropism is a per-scaffold effect. Composing them lets an operator apply a windward lean to a Sugar Maple — global `[+0.2, 0, 0]` + local `[0, 0.4, 0]` → scaffolds run upward AND lean east. Replace semantics would force a choice.
+
+`localTropism` propagates to every spawned child via `localTropism: node.localTropism` in the spawn step (both alternate + opposite phyllotaxis paths). Once a scaffold seed has it, every descendant inherits — sustained over the LIFETIME of the chain, not just at iter-0.
+
+### Defense in depth on Lift
+
+Two changes make Lift redundant in strong-leader mode and prevent operator accidents:
+
+1. **UI hides the Lift slider** when `architecture === 'strong-leader'`. Also hides Spread (`scaffoldZoneFrac`) which doesn't apply since laterals attach by Y position, not by axial-zone fraction.
+2. **Kernel zeros `emergenceBias`** when `architecture === 'strong-leader'`. So if an operator imports a `spreading`-mode Lift overlay onto a strong-leader slot, no double-lift.
+
+### Why these defaults, per preset
+
+- **broadleaf / broad → strong-leader, leaderStrength 1.0.** Dominant LS inventory (Sugar Maple + ash + basswood). The current variants were wrong anyway.
+- **columnar → strong-leader, leaderStrength 1.0.** Verticality is the literal signature. A central leader threading through the entire crown gives lombardy-poplar / sentinel-form columnar.
+- **weeping → spreading.** Curtain morphology depends on apical scaffolds pinned at the trunk top so the umbrella envelope hangs cleanly below. Lateral seeding would scatter the curtain.
+- **ornamental → spreading.** Low broad form (dogwood / crabapple / redbud) reads as apical-radial scaffolding. Rauh's would give them a wrong candelabra form.
+
+### Bypass-script numbers
+
+3-seed verification (seed=11, broadleaf preset, width=7 height=7):
+
+| Mode | axial nodes | axial Y range | mean canopy radius | total nodes |
+|---|---|---|---|---|
+| spreading L=1.0 | 10 | 5.15..8.75 | 3.81 m | 2176 |
+| strong-leader L=1.0 | 19 | 5.15..12.35 | 3.59 m | 2777 |
+| strong-leader L=0.7 | 14 | 5.15..10.35 | 3.53 m | 2935 |
+| strong-leader L=0.4 | 10 | 5.15..8.75 | 3.59 m | 2715 |
+
+Visible difference: axial chain extends through full envelope in strong-leader (12.35 vs 8.75 m), mean canopy radius narrows from 3.81 → 3.59 m (fasciculate sign). Determinism preserved — same input → same node count + positions across re-runs.
+
+### Surfaced scope drift
+
+- Hid the **Spread (`scaffoldZoneFrac`) slider** in strong-leader mode in addition to Lift (brief only specified Lift). `scaffoldZoneFrac` doesn't apply in strong-leader (laterals attach by absolute Y, not by axial-zone fraction). Leaving the slider visible would be confusing UX.
+- `branchingStartFrac` defaults left at 0.5 (not retuned). Real Sugar Maples have scaffolds at 30–60% trunk height — operator drags the Start slider to bring scaffolds lower. Choosing not to drift the default avoids retuning weeping/ornamental's `branchingStartFrac` simultaneously.
+- The visible trunk shaft now paints through the entire crown for `leaderStrength=1.0` (since `topAxialY` extends to envelope top). Aesthetically expected per Rauh's botanically-correct form; let the operator verify in workstage.
+
+### Out of scope (next briefs)
+
+- G.1 Sugar Maple hero PRESETS row + manifest authoring (separate brief — this brief unblocks G.1 but doesn't ship the hero).
+- Phase E monopodial-whorl (conifer) — third Hallé & Oldeman mode reserved but not implemented. Architecture dropdown shows 2 options today (spreading + strong-leader); third tab lands with Phase E.
+
+---
+
 ## 2026-05-19 — Arborist → Meteorologist canary tree contract (Arborist half)
 
 Shipped the Arborist half of a two-helper localStorage contract. Grove tiles now carry a `→ Set as Meteorologist canary` button in the hover card that writes `{species, variantId, lookId}` to `localStorage.meteorologist-canary-tree`. Meteorologist's CanaryScene listens for the `storage` event in its own tab and swaps its hero tree to match. The two halves are decoupled: Meteorologist's reader is shipping separately by the Meteorologist orchestrator.

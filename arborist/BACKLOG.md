@@ -391,17 +391,29 @@ phases.
   PSD-authoring workflow itself becomes the bottleneck for scaling to
   60 species; until then, the kill stands.
 
-- [ ] **Phase G — Sugar Maple proving pass.** With full stack landed, tune
-  Sugar Maple specifically until it reads convincingly at Hero. Adopted
-  variants in seedlings.json (or new species id `acer_saccharum_procedural`
-  — design call at landing time). Envelope: rounded oval 12m × 20m. Tropism:
-  zero. Phyllotaxis: opposite. Attractor count: ~600. Bark: furrowed,
-  `#3a2820/#6a5040`. Leaf cluster: palmate × 8 per card. Tint ramp summer
+- [x] **Phase G.0 — Architecture dropdown + `strong-leader` SCA mode** — **SHIPPED 2026-05-19**. Third structural SCA mode alongside `spreading` (current) and `monopodial` (Phase E future). `strong-leader` produces Rauh's botanical architecture: axial trunk threads through the crown to `leaderStrength × envelope.height`; N lateral scaffolds attach at distributed Ys along the chain (between `branchingStartFrac` and 0.9 of envelope height); each scaffold seed carries a `localTropism = [0, leaderStrength × 0.4, 0]` that propagates to every descendant (sustained per-scaffold +Y bias, not the base-decay `scaffoldEmergenceBias`). When `leaderStrength < 0.95`, a single apical SCA tip seeds at the topmost axial node so the upper envelope still gets a normal spreading-mode top. `runGrowthLoop` sums `localTropism` with global `tropism` in the pull-direction step. 21st knob in the Canopy panel: Architecture dropdown + conditional Leader strength slider. Defaults broadleaf / broad / columnar → strong-leader; weeping / ornamental → spreading. Spread + Lift sliders hidden in strong-leader mode. Determinism preserved (same {species, slot, seed, params, architecture} → byte-identical GLB). See `ARCHITECTURE.md` "Three architecture modes" + `NOTES.md` 2026-05-19 G.0 entry. **Fixes:** Sugar Maple, ash, basswood, hornbeam, young pin oak now achievable. **Doesn't fix:** G.1 hero PRESETS row + leaf cluster authoring (separate brief; that's G.1 proper).
+
+- [ ] **Phase G.1 — Sugar Maple proving pass.** With full stack landed (incl. Phase G.0 architecture mode), tune
+  Sugar Maple specifically until it reads convincingly at Hero. Register as a new species id
+  `acer_saccharum_procedural` (per [[feedback_procedural_trees_are_the_destination]] — heroes ship procedural,
+  vendor `acer_saccharum` stays in the roster as untouched-quality-0 historical / fallback). Hero seedlings get
+  **committed to source**, not gitignored — the working seedlings.json (or PRESETS table row, design call at
+  landing time) IS the canonical truth for `acer_saccharum_procedural`. Three promotion-mechanism shapes to
+  evaluate when this brief gets written: (1) PRESETS row in JS source with full per-variant param specs;
+  (2) committed seedlings.json + `.gitignore` exception (`!arborist/state/acer_saccharum_procedural/`); (3) new
+  `arborist/heroes/<hero_id>/` directory outside the existing state/ tree. Lean (2) since it minimizes pipeline
+  divergence from the operator-iteration channel.
+  Tuning targets (subject to revision once G.0 lands and we see strong-leader output):
+  Architecture: strong-leader. Envelope: tall oval ~7m × 12m (W:H ≈ 0.6, NOT the original 12×20 spec — that
+  was for an open-grown heritage tree; LS context is street-tree scale). Tropism: zero. Phyllotaxis: opposite.
+  Attractor count: ~600. Leader strength: 0.9–1.0. Bark: Bark007, furrowed, tintBase `#3a2820`, tintJitter
+  `#6a5040`. Leaf cluster: maple-shaped PSD (operator authoring, references one of the
+  `assets/botanical-reference-hires/LeafSet0xx/` packs for venation + opacity reference). Tint ramp summer
   `#2a5825→#3a7530`, fall `#a85020→#d4801f`. Document tuned params in NOTES.
-  **Fixes:** dominant inventory species (61 park trees) ships at quality 3+;
-  reference implementation for what tuned procedurals look like.
-  **Doesn't fix:** other 60+ inventory species still need per-species tuning
-  (ongoing operator workflow now that UI exists).
+  **Fixes:** dominant inventory species (~61 park trees) ships at quality 4 (hero). Reference implementation
+  for the procedural-hero workflow. Establishes the rhythm to template to G.2–G.5.
+  **Doesn't fix:** other 60+ inventory species still need per-species tuning (G.2–G.5 + iteration cycles per
+  species via the rhythm G.1 establishes).
 
 **Variants strategy:** ~3 baked variants per species; runtime per-instance
 jitter (Y-rotation, independent XZ + Y scale, hue shift, wind phase) does the
@@ -523,6 +535,46 @@ Phase E and v1.6.
   to ProceduralWorkstage. Dice-and-adopt doctrine doesn't fit leaves
   (you can't really dice a leaf; it's species-determined), so the UX
   is parametric-sliders + preview.
+- [ ] **Per-species sub-grove view** (surfaced 2026-05-19 during G.1 pre-stage).
+  Sub-page of the Grove showing all variants of a single species across all
+  authoring sources side-by-side: procedural variants, vendor GLBs, LiDAR
+  scans (currently unsurfaced), low-poly / multistem alternates. For Sugar
+  Maple specifically this would surface `acer_saccharum_procedural` heroes +
+  `acer_saccharum` 18-variant vendor roster + `acer_saccharum_lowpoly` +
+  `acer_saccharum_multistem` + the **110 Sugar Maple LiDAR scans in
+  `botanica/dev/train/`** (6.6m–28m height range, currently invisible from
+  the UI). One screen, all the maples; same view per species.
+  **Why this is good:** (a) surfaces LiDAR as a viable authoring source —
+  today the 51GB FOR-species20K dataset is invisible from the operator's
+  perspective, accessible only via CLI `bake-tree.py`; (b) gives the
+  operator a single place to compare across sources when deciding which
+  variants get curated into a Look; (c) natural launching point for "scan
+  this LiDAR specimen → bake → publish" — the operator clicks a LiDAR
+  thumbnail and the existing Scan-mode pipeline kicks off; (d) frames the
+  hero authoring loop in context — operator can A/B their tuned procedural
+  against the vendor hand-models AND a real laser-scanned specimen of the
+  same species, side by side.
+  **Structure:** route is `/arborist/species/<species_id>` (or similar);
+  nav from a Grove tile's "open species" affordance. Tabs at top split
+  procedural / vendor / LiDAR / variants. LiDAR tab queries
+  `tree_metadata_dev.csv` for matching scientific binomial (already supported
+  by `GET /species/:id/specimens` endpoint per FEATURES.md:99), renders
+  thumbnails via the existing `.laz → .ply` cache + SpecimenViewport pipeline.
+  Click on a LiDAR thumbnail kicks off Scan-mode authoring (existing
+  `Workstage.jsx` flow); click on a procedural variant opens
+  ProceduralWorkstage; click on a vendor variant... probably read-only for
+  now, since vendor isn't operator-tunable.
+  **Why deferred:** (a) not blocking heroes — G.1–G.5 ship without this; (b)
+  meaningful UI surface (nav + new route + per-source rendering); (c) the
+  hero workflow needs to settle first so we know what "compare across
+  sources" actually means in practice. Revisit when G.2 is in flight or
+  Jacob wants to start exploring LiDAR-baked heroes for species where
+  procedural can't reach hero quality.
+  **Coordinator note:** the spark for this entry was Jacob mentioning the
+  LiDAR trees being "super cool" and wanting a place to see all the Sugar
+  Maples. Per [[project_doped_artifact_placecard_edit_pattern]] this is
+  squarely operator-aid surface, not an authoring-channel addition.
+
 - [ ] **Decorative lights — Christmas / party / Halloween / etc.**
   Self-contained micro-arc (~2 days) that leverages existing infra:
   `src/components/lampLightmap.js` already bakes gaussian splats per

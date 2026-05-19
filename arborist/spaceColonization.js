@@ -106,12 +106,12 @@ export const ENVELOPE_PROFILES = {
 export const DEFAULT_SCA_BY_PRESET = {
   broad: {
     envelope: { profile: 'rounded_oval', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'opposite', scaffoldEmergenceBias: 0.6 },
+    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'opposite', scaffoldEmergenceBias: 0.6, architecture: 'strong-leader', leaderStrength: 1.0 },
     deformers: { trunkWander: 0.08, trunkWavelength: 2.0, branchJitter: 0.1, barkRelief: 0.05 },
   },
   broadleaf: {
     envelope: { profile: 'rounded_oval', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'opposite', scaffoldEmergenceBias: 0.6 },
+    sca: { tropism: [0, 0,     0], attractorCount: 600, influenceRadius: 4.0, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'opposite', scaffoldEmergenceBias: 0.6, architecture: 'strong-leader', leaderStrength: 1.0 },
     deformers: { trunkWander: 0.08, trunkWavelength: 2.0, branchJitter: 0.1, barkRelief: 0.05 },
   },
   weeping: {
@@ -119,19 +119,24 @@ export const DEFAULT_SCA_BY_PRESET = {
     // curtain zone. Strong −Y tropism pulls branches down through them.
     // C.1: tiny branchingStartFrac (0.2) means trunk barely extends into
     // the envelope so branches have room to droop. No upward emergence
-    // bias — the curtain wants to fall, not lift.
+    // bias — the curtain wants to fall, not lift. Stays on 'spreading' —
+    // the curtain morphology needs apical scaffolds, not lateral seeding.
     envelope: { profile: 'umbrella',     asymmetry: 0, offsetYFrac: -0.6 },
-    sca: { tropism: [0, -0.4,  0], attractorCount: 700, influenceRadius: 3.5, killRadius: 0.9, stepLength: 0.4, maxIters: 240, branchingStartFrac: 0.2, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0 },
+    sca: { tropism: [0, -0.4,  0], attractorCount: 700, influenceRadius: 3.5, killRadius: 0.9, stepLength: 0.4, maxIters: 240, branchingStartFrac: 0.2, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0, architecture: 'spreading', leaderStrength: 1.0 },
     deformers: { trunkWander: 0.10, trunkWavelength: 2.5, branchJitter: 0.15, barkRelief: 0.05 },
   },
   columnar: {
+    // Verticality is the signature — strong-leader at full strength keeps
+    // the central axis dominant and laterals running near-parallel.
     envelope: { profile: 'tight_column', asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, +0.3,  0], attractorCount: 450, influenceRadius: 3.0, killRadius: 0.9, stepLength: 0.4, maxIters: 180, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0.4 },
+    sca: { tropism: [0, +0.3,  0], attractorCount: 450, influenceRadius: 3.0, killRadius: 0.9, stepLength: 0.4, maxIters: 180, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0.4, architecture: 'strong-leader', leaderStrength: 1.0 },
     deformers: { trunkWander: 0.05, trunkWavelength: 2.5, branchJitter: 0.05, barkRelief: 0.05 },
   },
   ornamental: {
+    // Low broad form — 'spreading' keeps apical-radial scaffolding which
+    // matches dogwood / redbud / crabapple silhouettes.
     envelope: { profile: 'broad_low',    asymmetry: 0, offsetYFrac: 0 },
-    sca: { tropism: [0, -0.05, 0], attractorCount: 500, influenceRadius: 3.5, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0.3 },
+    sca: { tropism: [0, -0.05, 0], attractorCount: 500, influenceRadius: 3.5, killRadius: 1.0, stepLength: 0.4, maxIters: 200, branchingStartFrac: 0.5, initialChildCount: 6, phyllotaxisMode: 'alternate', scaffoldEmergenceBias: 0.3, architecture: 'spreading', leaderStrength: 1.0 },
     deformers: { trunkWander: 0.08, trunkWavelength: 2.0, branchJitter: 0.1, barkRelief: 0.05 },
   },
 }
@@ -300,7 +305,16 @@ function runGrowthLoop({ nodes, attractors, sca, seedN, branchJitter = 0 }) {
   const childCap = (sca.maxChildrenPerNode !== undefined)
     ? sca.maxChildrenPerNode : MAX_CHILDREN_PER_NODE_DEFAULT
   const phyllotaxisMode = sca.phyllotaxisMode || 'alternate'
-  const emergenceBias = sca.scaffoldEmergenceBias ?? 0
+  // In strong-leader architecture the per-scaffold `localTropism` carries
+  // the sustained +Y bias for the LIFETIME of the scaffold chain, so the
+  // base-decay `scaffoldEmergenceBias` ("Lift") is redundant — zero it
+  // here to avoid double-lift when the operator imports a spreading-mode
+  // Lift value onto a strong-leader slot by mistake. UI hides the Lift
+  // slider in this mode; this is the defense-in-depth.
+  const architecture = sca.architecture || 'spreading'
+  const emergenceBias = architecture === 'strong-leader'
+    ? 0
+    : (sca.scaffoldEmergenceBias ?? 0)
   // Opposite mode spawns 2 children per event; alternate spawns 1. The
   // pull-filter uses this to skip nodes that would exceed the cap mid-pair
   // (we don't degrade a pair into a single — pairs preserve the species
@@ -360,9 +374,14 @@ function runGrowthLoop({ nodes, attractors, sca, seedN, branchJitter = 0 }) {
       const pathLen = node.pathLenFromTrunk || 0
       const biasY = emergenceBias * Math.exp(-pathLen / SCAFFOLD_EMERGENCE_DECAY_M)
 
-      const gx = pull[0] + tropism[0]
-      const gy = pull[1] + tropism[1] + biasY
-      const gz = pull[2] + tropism[2]
+      // Per-node localTropism (Phase G.0 strong-leader): each scaffold seed
+      // carries a [0, +leaderStrength*0.4, 0] vector that propagates to
+      // every descendant of the chain. Summed with global tropism — global
+      // tropism (e.g. windward lean) still applies on top.
+      const lt = node.localTropism
+      const gx = pull[0] + tropism[0] + (lt ? lt[0] : 0)
+      const gy = pull[1] + tropism[1] + biasY + (lt ? lt[1] : 0)
+      const gz = pull[2] + tropism[2] + (lt ? lt[2] : 0)
       const glen = Math.sqrt(gx * gx + gy * gy + gz * gz) || 1
       const pullDir = [gx / glen, gy / glen, gz / glen]
 
@@ -417,6 +436,7 @@ function runGrowthLoop({ nodes, attractors, sca, seedN, branchJitter = 0 }) {
           ],
           parent: node, children: [], radius: 0,
           pathLenFromTrunk: newPathLen, pairDepth: newDepth,
+          localTropism: node.localTropism,
         }
         const childB = {
           pos: [
@@ -426,6 +446,7 @@ function runGrowthLoop({ nodes, attractors, sca, seedN, branchJitter = 0 }) {
           ],
           parent: node, children: [], radius: 0,
           pathLenFromTrunk: newPathLen, pairDepth: newDepth,
+          localTropism: node.localTropism,
         }
         node.children.push(childA, childB)
         newNodes.push(childA, childB)
@@ -439,6 +460,7 @@ function runGrowthLoop({ nodes, attractors, sca, seedN, branchJitter = 0 }) {
           ],
           parent: node, children: [], radius: 0,
           pathLenFromTrunk: newPathLen, pairDepth: newDepth,
+          localTropism: node.localTropism,
         }
         node.children.push(child)
         newNodes.push(child)
@@ -557,15 +579,30 @@ export function runSCA({
   // height. Eliminates the single-tip bias-amplification window. Weeping
   // morphology uses a much smaller frac so the trunk doesn't pierce above
   // the curtain zone. See file-top constants.
+  //
+  // Phase G.0 (strong-leader, 2026-05-19): in `strong-leader` architecture
+  // the axial chain continues past branchingStartY to `leaderStrength` of
+  // envelope height — the central trunk threads through the crown the way
+  // Rauh's-model species (Sugar Maple / ash / basswood) topologically work.
+  // Lateral scaffolds attach AT distributed Y positions along this chain
+  // (not all bundled at one apex), each carrying a sustained per-scaffold
+  // +Y tropism. `spreading` architecture (oak / elm / weeping / dogwood)
+  // keeps the original behaviour: axial stops at branchingStartY, N
+  // scaffolds emerge azimuthally distributed across the upper zone.
+  const architecture = sca.architecture || 'spreading'
+  const leaderStrength = sca.leaderStrength ?? 1.0
   const isWeeping = (envelope.profile === 'umbrella') ||
                     (envelope.offsetYFrac !== undefined && envelope.offsetYFrac < -0.1)
   const fallbackFrac = isWeeping ? BRANCHING_START_FRAC_WEEPING : BRANCHING_START_FRAC_DEFAULT
   const branchingStartFrac = (sca.branchingStartFrac !== undefined)
     ? sca.branchingStartFrac : fallbackFrac
   const branchingStartY = trunkBase[1] + yOffset + envelope.height * branchingStartFrac
+  const axialTopY = (architecture === 'strong-leader')
+    ? trunkBase[1] + yOffset + envelope.height * Math.max(branchingStartFrac, leaderStrength)
+    : branchingStartY
   for (let seg = 0; seg < MAX_AXIAL_EXTENSION_SEGS; seg++) {
     const last = nodes[nodes.length - 1]
-    if (last.pos[1] >= branchingStartY) break
+    if (last.pos[1] >= axialTopY) break
     const newY = last.pos[1] + sca.stepLength
     const w = getTrunkWander(seedN, newY, wanderOriginY, trunkWander, trunkWavelength)
     const next = {
@@ -592,7 +629,6 @@ export function runSCA({
   // scaffold emergences. 0 = all at the top (legacy / weeping). 0.5 =
   // top half of the axial chain. 1.0 = the entire axial chain. Weeping
   // is force-pinned to 0 so the curtain stays tight at the trunk top.
-  const trunkTopNode = nodes[nodes.length - 1]
   const initialChildCount = (sca.initialChildCount !== undefined)
     ? Math.max(1, sca.initialChildCount | 0) : INITIAL_CHILD_COUNT_DEFAULT
   const seedStep = isWeeping
@@ -605,47 +641,103 @@ export function runSCA({
     if (nodes[i].axial) axialNodeIndices.push(i)
   }
   const totalAxial = axialNodeIndices.length
-  const scaffoldZoneFrac = isWeeping
-    ? 0
-    : (sca.scaffoldZoneFrac !== undefined ? sca.scaffoldZoneFrac : 0.5)
-  const zoneCount = Math.max(1, Math.round(totalAxial * scaffoldZoneFrac))
-  // Zone covers the TOP `zoneCount` axial nodes; everything below is
-  // pure trunk. With scaffoldZoneFrac=0 zoneCount=1 → all scaffolds at
-  // the topmost axial node (legacy C.1 behaviour).
-  const zoneStart = totalAxial - zoneCount
 
-  for (let k = 0; k < initialChildCount; k++) {
-    // Pick a parent axial node for this scaffold. Evenly distributed
-    // across the zone so scaffolds emerge at staggered heights. With
-    // zoneCount=1 every k picks the same parent (trunkTopNode).
-    const tInZone = initialChildCount === 1 ? 0 : k / (initialChildCount - 1)
-    const zoneIdx = Math.min(zoneCount - 1, Math.floor(tInZone * zoneCount))
-    const parent = nodes[axialNodeIndices[zoneStart + zoneIdx]]
-
-    // Azimuth: evenly span TAU. The per-k azimuth interleaves with the
-    // per-k height stagger, producing a gentle spiral up the trunk
-    // (helical phyllotaxis) instead of all scaffolds on the same side.
-    const az = (k / initialChildCount) * TAU
-    const child = {
-      pos: [
-        parent.pos[0] + Math.cos(az) * seedStep,
-        parent.pos[1] + seedStep * 0.5,
-        parent.pos[2] + Math.sin(az) * seedStep,
-      ],
-      parent,
-      children: [],
-      radius: 0,
-      // (B) Phase D.1: pathLen seeded to 0 at the scaffold base. Each
-      // growth-loop iter increments by stepLength; emergence bias decays
-      // with this value so the +Y "lift" tapers off ~1.5 m into the
-      // scaffold.
-      // (A) Phase D.1: pairDepth=0 at the seed. Each subsequent spawn
-      // increments by 1; the decussate pair plane rotates 90° per parity.
-      pathLenFromTrunk: 0,
-      pairDepth: 0,
+  if (architecture === 'strong-leader') {
+    // ── Phase G.0 strong-leader (Rauh's botanical model, 2026-05-19).
+    // Lateral scaffolds at N distributed Y positions along the axial
+    // chain, between `branchingStartFrac` and 0.9 of envelope height.
+    // Each scaffold seed carries a `localTropism` of [0, leaderStrength*0.4, 0]
+    // that propagates to every descendant of the chain — produces the
+    // fasciculate Sugar Maple silhouette where scaffolds arc up and run
+    // near-parallel to the trunk instead of spreading wide. Per-scaffold
+    // azimuth is drawn from the rng (random, not evenly distributed)
+    // since lateral emission in real Rauh's-model species is sparse +
+    // helical, not radially symmetric.
+    const yLo = trunkBase[1] + yOffset + envelope.height * branchingStartFrac
+    const yHi = trunkBase[1] + yOffset + envelope.height * 0.9
+    const localTropism = [0, leaderStrength * 0.4, 0]
+    for (let k = 0; k < initialChildCount; k++) {
+      const t = initialChildCount === 1 ? 0.5 : k / (initialChildCount - 1)
+      const targetY = yLo + (yHi - yLo) * t
+      // Find the axial node whose Y is closest to targetY.
+      let parent = nodes[axialNodeIndices[0]]
+      let bestDy = Math.abs(parent.pos[1] - targetY)
+      for (let i = 1; i < totalAxial; i++) {
+        const n = nodes[axialNodeIndices[i]]
+        const dy = Math.abs(n.pos[1] - targetY)
+        if (dy < bestDy) { bestDy = dy; parent = n }
+      }
+      const az = rng() * TAU
+      const child = {
+        pos: [
+          parent.pos[0] + Math.cos(az) * seedStep,
+          parent.pos[1] + seedStep * 0.5,
+          parent.pos[2] + Math.sin(az) * seedStep,
+        ],
+        parent, children: [], radius: 0,
+        pathLenFromTrunk: 0, pairDepth: 0,
+        localTropism,
+      }
+      parent.children.push(child)
+      nodes.push(child)
     }
-    parent.children.push(child)
-    nodes.push(child)
+    // When the leader doesn't thread all the way through, seed a single
+    // apical SCA tip at the topmost axial node so the upper envelope still
+    // gets growth. The tip has NO localTropism — it grows by attractor
+    // pull alone, taking over as a regular spreading-mode top. Per the
+    // brief: "0.5 = halfway then becomes a normal SCA tip."
+    if (leaderStrength < 0.95) {
+      const topAxial = nodes[axialNodeIndices[totalAxial - 1]]
+      const apical = {
+        pos: [topAxial.pos[0], topAxial.pos[1] + seedStep * 0.5, topAxial.pos[2]],
+        parent: topAxial, children: [], radius: 0,
+        pathLenFromTrunk: 0, pairDepth: 0,
+      }
+      topAxial.children.push(apical)
+      nodes.push(apical)
+    }
+  } else {
+    // ── Phase C.1 + D.1a spreading architecture: seed N azimuthally-
+    // distributed initial children STAGGERED across the upper axial
+    // chain (not all at the topmost node). C.1 originally parented all
+    // N to trunkTopNode — that produces the canonical "umbrella spider"
+    // topology where all primary scaffolds radiate from one shared
+    // point. Real broadleaves emerge scaffolds at different heights
+    // over a 1–3 m zone.
+    //
+    // The original wedge-balancing rationale survives: azimuths still
+    // span TAU uniformly, so per-seed iter-1 bias on one sector is
+    // still balanced by tips on opposing sectors. The only change is
+    // that the tips are now at different Ys, sharing different axial
+    // parents.
+    //
+    // `sca.scaffoldZoneFrac` controls how much of the axial chain hosts
+    // scaffold emergences. 0 = all at the top (legacy / weeping). 0.5
+    // = top half of the axial chain. 1.0 = the entire axial chain.
+    // Weeping is force-pinned to 0 so the curtain stays tight at the
+    // trunk top.
+    const scaffoldZoneFrac = isWeeping
+      ? 0
+      : (sca.scaffoldZoneFrac !== undefined ? sca.scaffoldZoneFrac : 0.5)
+    const zoneCount = Math.max(1, Math.round(totalAxial * scaffoldZoneFrac))
+    const zoneStart = totalAxial - zoneCount
+    for (let k = 0; k < initialChildCount; k++) {
+      const tInZone = initialChildCount === 1 ? 0 : k / (initialChildCount - 1)
+      const zoneIdx = Math.min(zoneCount - 1, Math.floor(tInZone * zoneCount))
+      const parent = nodes[axialNodeIndices[zoneStart + zoneIdx]]
+      const az = (k / initialChildCount) * TAU
+      const child = {
+        pos: [
+          parent.pos[0] + Math.cos(az) * seedStep,
+          parent.pos[1] + seedStep * 0.5,
+          parent.pos[2] + Math.sin(az) * seedStep,
+        ],
+        parent, children: [], radius: 0,
+        pathLenFromTrunk: 0, pairDepth: 0,
+      }
+      parent.children.push(child)
+      nodes.push(child)
+    }
   }
 
   runGrowthLoop({ nodes, attractors, sca, seedN, branchJitter })
