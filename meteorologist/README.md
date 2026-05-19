@@ -8,52 +8,61 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ---
 
-## Status (as of 2026-05-19)
+## Status (as of 2026-05-20)
 
-**The standalone app shell ships. Authoring UI works end-to-end for both Teapot (per-cloud) and Conditions (per-rule). Viewport renders sky + tree + placeholder cloud. The v3 raymarched shader is the next sprint.**
+**Standalone app shell + authoring UI + v3 raymarched cloud shader all ship. The cloud shader is hardcoded to `cumulus_humilis` values; TodChannel uniform binding (Phase 4b.2) is next.**
 
 | Done | Not yet |
 |---|---|
-| Schemas (`pipeline/schema/*`) | `<Atmosphere />` v3 raymarched runtime (Phase 4b.1) |
-| Validator + cross-schema checks (`pipeline/validate.js`) | `atmosphere-materials.js` shader factory (Phase 4b.1) |
-| Teapot — 52 presets, params migrated to TodChannel shape | TodChannel uniform binding to shader (Phase 4b.2) |
-| Almanac — 16 rules + immutable defaults sibling | CloudDome retirement + production swap (Phase 4b.3) |
-| `meteorologist/serve.js` backend (GET/PUT presets, GET/PUT/Revert almanac) | TodChannel promotion of directive numeric fields (Phase 3b) |
-| `src/lib/almanac-eval.js` (shipped 2026-05-13 via SC.6) | Per-cloud-in-condition expression flags (Phase 3b) |
-| `/meteorologist.html` standalone app shell | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema (Phase 3b) |
-| Top-bar TEAPOT ⎮ CONDITIONS toggle + Look picker | Almanac evaluator hot-mount in Conductor preview (Phase 5) |
-| Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Fake-weather fixtures + fixture management UI (Phase 5) |
-| Conditions library + Condition editor (When + Directive + Clouds-in-cond + Revert) | Fallback editor (Phase 5) |
-| CanaryScene viewport (sky-from-Look + hero tree + flat ground + placeholder cloud) | Cloud preset gallery / thumbnails (Phase 5+) |
-| `INTERFACE.md` (operator-facing layout spec) | Camera orbit controls in viewport (Phase 5+) |
+| Schemas (`pipeline/schema/*`) | TodChannel uniform binding to shader (Phase 4b.2) |
+| Validator + cross-schema checks (`pipeline/validate.js`) | CloudDome retirement + production swap (Phase 4b.3) |
+| Teapot — 52 presets, params migrated to TodChannel shape | TodChannel promotion of directive numeric fields (Phase 3b) |
+| Almanac — 16 rules + immutable defaults sibling | Per-cloud-in-condition expression flags (Phase 3b) |
+| `meteorologist/serve.js` backend (GET/PUT presets, GET/PUT/Revert almanac) | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema (Phase 3b) |
+| `src/lib/almanac-eval.js` (shipped 2026-05-13 via SC.6) | Almanac evaluator hot-mount in Conductor preview (Phase 5) |
+| `/meteorologist.html` standalone app shell | Fake-weather fixtures + fixture management UI (Phase 5) |
+| Top-bar TEAPOT ⎮ CONDITIONS toggle + Look picker | Fallback editor (Phase 5) |
+| Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Cloud preset gallery / thumbnails (Phase 5+) |
+| Conditions library + Condition editor (When + Directive + Clouds-in-cond + Revert) | Camera orbit controls in viewport (Phase 5+) |
+| CanaryScene viewport (sky-from-Look + hero tree + flat ground) | Mobile quality tier (`uQualityTier`) (Phase 5+) |
+| `<Atmosphere />` v3 raymarched cloud shader (5 photoreal levers, cumulus_humilis hardcoded) | Multi-preset blending (per `directive.clouds[]`) (Phase 5+) |
+| `atmosphere-materials.js` shader factory + inline GLSL | |
+| `FEATURES.md` + `INTERFACE.md` (operator-facing surfaces) | |
 | 5 memory entries from this arc | |
 
 **Validation passes:** `npm run validate -- ../public/clouds/presets.json ../public/clouds/almanac.json` → `ok: 52 presets, 16 rules`.
 
-**Shipped phases (2026-05-19):**
-- Phase 1 — scaffold + library views (commit `47c5de0`)
-- Phase 2 — Teacup workstage + cloud-param TodChannels (commit `95bad99`)
-- Phase 2 chrome — Stage's glass-panel card setup (commit `5fd8f78`)
-- Phase 3 — Condition editor (commit `98f3781`)
-- Phase 4a — CanaryScene scaffold (commit `6a3fd29`)
+**Shipped phases:**
+- Phase 1 — scaffold + library views (commit `47c5de0`, 2026-05-19)
+- Phase 2 — Teacup workstage + cloud-param TodChannels (commit `95bad99`, 2026-05-19)
+- Phase 2 chrome — Stage's glass-panel card setup (commit `5fd8f78`, 2026-05-19)
+- Phase 3 — Condition editor (commit `98f3781`, 2026-05-19)
+- Phase 4a — CanaryScene scaffold (commit `6a3fd29`, 2026-05-19)
+- Phase 4b.1 — `<Atmosphere />` raymarched shader (commit `d1c66fe`, 2026-05-20)
 
 ---
 
 ## Start here in the morning
 
-**Phase 4b.1: the shader.** The single biggest piece of the project. From `SPEC.md § Runtime`:
+**Phase 4b.2: TodChannel uniform binding.** Wire active preset's `params` through `resolveGroupAtMinute(channel, currentMinute)` to feed `<Atmosphere />`'s 13 shape + lighting uniforms each frame. Slider scrubs in Teacup's right rail will visibly affect the viewport. Animated channels (operator-keyframed slots) lerp between TOD waypoints as time scrubs.
 
-> `atmosphere-materials.js` shader factory + frag/vert shaders implementing the five photoreal levers: three-tier lighting, silver lining, self-shadowing, domain warping, vertical density gradient. BoxGeometry slab at cloud altitude. Mount in CanaryScene with hardcoded uniforms for `cumulus_humilis` first; dynamic preset binding lands in Phase 4b.2.
+The wiring touches:
+- `src/components/Atmosphere.jsx` — replace hardcoded uniform initializers with per-frame reads from the active preset.
+- `src/meteorologist/stores/useMeteorologistStore.js` — expose `activePreset` (or `activePresetId` consumers) for Atmosphere to subscribe to. The store's already shaped right; just one more selector.
+- `src/cartograph/animatedParam.js` — `resolveGroupAtMinute(channel, minute)` is the resolver to call; it already handles both flat and animated channel shapes.
 
-Brief for Phase 4b.1 is **not yet drafted.** Tomorrow's first orchestrator task. The phasing rationale (4b split into .1 shader / .2 binding / .3 retirement) is captured in the previous session's handoff conversation; recap:
+`useTimeOfDay` from `src/hooks/useTimeOfDay` provides the current minute; CelestialBodies + DawnTimeline already drive it.
 
-- **4b.1** — the shader works visually against one hardcoded preset
-- **4b.2** — preset params drive shader uniforms via `resolveGroupAtMinute`; slider scrubs affect the viewport
-- **4b.3** — retire `CloudDome.jsx` / `SpriteClouds.jsx` per `STAGE_MIGRATION.md`; production swap
+**Phase 4b.1 verification** is still pending Jacob's eyes (HANDOFF checklist items 1–5 + 9). If the cloud reads as a uniform gray blob, the most likely culprit is the cloudNormal density-gradient step (`eps=30m` vs `uWarpFreq=0.001`'s ~1000m wavelength); the baby's commit body flags this debug pointer. Stable visual confirmation before launching Phase 4b.2 is the right gate.
 
-The five photoreal levers are described in [`../HANDOFF-clouds-day3-clouddome-v2.md`](../HANDOFF-clouds-day3-clouddome-v2.md) under "Tune to principles, not to a reference image." That document is **still authoritative for shader tuning** until the working `<Atmosphere />` ships and supersedes it. Don't delete it before then.
+**The phasing arc continues:**
 
-**The canary scene** for Phase 4b.1 is `src/meteorologist/CanaryScene.jsx` — already mounted and rendering sky+tree+placeholder. Swap CloudDome out for Atmosphere with hardcoded uniforms; the operator can now see what `cumulus_humilis` looks like against `lafayette-square`'s sky.
+- **4b.2 (next)** — TodChannel binding; the right-rail sliders affect the viewport.
+- **4b.3** — Retire `CloudDome.jsx` / `SpriteClouds.jsx` per `STAGE_MIGRATION.md`; production swap. The `CloudCoverSeed` Phase-4a expedient comes out.
+- **3b** — Promote directive numerics to TodChannel + add cloud capabilities + per-cloud-in-condition expression flags. After 4b lands so the temporal modulation is visually validatable.
+- **5** — Fixtures + Almanac evaluator hot-mount + fallback editor + cloud preset gallery + mobile quality tier + multi-preset blending + camera orbit.
+
+The five photoreal levers reference is in [`../HANDOFF-clouds-day3-clouddome-v2.md`](../HANDOFF-clouds-day3-clouddome-v2.md). **That doc is now superseded in working code** by `src/components/atmosphere-materials.js`; keep the HANDOFF alive only until Phase 4b.1 is visually verified, then it can retire alongside CloudDome in 4b.3.
 
 ---
 
@@ -61,13 +70,14 @@ The five photoreal levers are described in [`../HANDOFF-clouds-day3-clouddome-v2
 
 In reading order:
 
-1. **[`INTERFACE.md`](./INTERFACE.md)** — operator-facing layout. Teapot ⎮ Conditions, Teacup workstage, slot tabs, right-rail composition. The canonical reference for what the UI is. (Introduced 2026-05-19.)
-2. **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** — publish-loop placement, consume-from-Stage pattern, directory layout, runtime contract. Where Meteorologist sits in the kit and what it composes from other helpers.
-3. **[`SPEC.md`](./SPEC.md)** — full work order. Decisions locked, acceptance criteria. Some rows patched 2026-05-19 (standalone-shell reversal); patches noted in `NOTES.md`.
-4. **[`BACKLOG.md`](./BACKLOG.md)** — punchlist + roadmap.
-5. **[`NOTES.md`](./NOTES.md)** — historical decisions + EOD records. Read the top entry first; it has the latest context.
-6. **[`CANON.md`](./CANON.md)** — what's in the Teapot, what's not, why. Inclusion principles.
-7. **[`STAGE_MIGRATION.md`](./STAGE_MIGRATION.md)** — the cleanup commit spec (executes when v3 lands; Phase 4b.3).
+1. **[`FEATURES.md`](./FEATURES.md)** — operator-facing surface. What an operator can do with Meteorologist today, what's queued, what each card / pulldown / slot is for. (Introduced 2026-05-20.)
+2. **[`INTERFACE.md`](./INTERFACE.md)** — layout model. Teapot ⎮ Conditions, Teacup workstage, slot tabs, right-rail composition. The canonical reference for what the UI is. (Introduced 2026-05-19.)
+3. **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** — publish-loop placement, consume-from-Stage pattern, directory layout, runtime contract. Where Meteorologist sits in the kit and what it composes from other helpers.
+4. **[`SPEC.md`](./SPEC.md)** — full work order. Decisions locked, acceptance criteria. Some rows patched 2026-05-19 (standalone-shell reversal); patches noted in `NOTES.md`.
+5. **[`BACKLOG.md`](./BACKLOG.md)** — punchlist + roadmap.
+6. **[`NOTES.md`](./NOTES.md)** — historical decisions + EOD records. Read the top entry first; it has the latest context.
+7. **[`CANON.md`](./CANON.md)** — what's in the Teapot, what's not, why. Inclusion principles.
+8. **[`STAGE_MIGRATION.md`](./STAGE_MIGRATION.md)** — the cleanup commit spec (executes when v3 lands; Phase 4b.3).
 
 ---
 
@@ -75,7 +85,7 @@ In reading order:
 
 ```
 meteorologist/                        # backend + docs (THIS DIR)
-  README.md / INTERFACE.md / ARCHITECTURE.md / SPEC.md / BACKLOG.md / NOTES.md
+  README.md / FEATURES.md / INTERFACE.md / ARCHITECTURE.md / SPEC.md / BACKLOG.md / NOTES.md
   CANON.md / STAGE_MIGRATION.md       # topical addenda
   package.json                        # ajv dep
   pipeline/
@@ -109,9 +119,8 @@ src/meteorologist/                    # SHIPPED — UI tree mirroring src/arbori
   stores/useMeteorologistStore.js     # zustand: mode + active id + autosave plumbing
 
 src/components/
-  Atmosphere.jsx                      # NOT YET WRITTEN — v3 runtime (Phase 4b.1)
-  atmosphere-materials.js             # NOT YET WRITTEN — shader factory (Phase 4b.1)
-  atmosphere-shaders/                 # NOT YET WRITTEN — frag/vert source (Phase 4b.1)
+  Atmosphere.jsx                      # SHIPPED 4b.1 — v3 raymarched runtime (cumulus_humilis hardcoded)
+  atmosphere-materials.js             # SHIPPED 4b.1 — shader factory + inline GLSL
   CloudDome.jsx                       # v1 procedural shipper (retires Phase 4b.3)
   SpriteClouds.jsx                    # retires in cleanup commit
   CelestialBodies.jsx                 # IMPORTED — same consumer Stage/Preview mount

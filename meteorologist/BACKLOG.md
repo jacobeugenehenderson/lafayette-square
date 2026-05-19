@@ -8,15 +8,13 @@ Punchlist for the cloud + weather authoring track. Items are independently shipp
 
 ## In flight — phase queue (next up first)
 
-Updated 2026-05-19 EOD. Phases 1–4a shipped (see `NOTES.md` for commits). Next:
+Updated 2026-05-20. Phases 1–4b.1 shipped (see `NOTES.md` for commits). Next:
 
-### Phase 4b.1 — `<Atmosphere />` shader + statically-bound test cloud
+### ✅ Phase 4b.1 — `<Atmosphere />` shader (shipped 2026-05-20, commit `d1c66fe`)
 
-The biggest single piece of the project. Implement `src/components/atmosphere-materials.js` (shader factory) + frag/vert shaders with all five photoreal levers (three-tier lighting, silver lining, self-shadowing, domain warping, vertical density gradient). BoxGeometry slab at cloud altitude. Mount in `CanaryScene.jsx` with HARDCODED uniforms for `cumulus_humilis` — don't yet wire to the active preset. Verification: cloud reads as a cloud against the active Look's sky.
+All five photoreal levers landed in one commit. Uniforms hardcoded to `cumulus_humilis` values; preset-driven binding queued for 4b.2. Visual verification (HANDOFF checklist 1–5 + 9) pending Jacob's eyes.
 
-Brief NOT YET DRAFTED. First orchestrator task tomorrow morning.
-
-### Phase 4b.2 — TodChannel uniform binding
+### Phase 4b.2 — TodChannel uniform binding (NEXT UP)
 
 Wire active preset's `params` through `resolveGroupAtMinute(channel, minute)` to feed shader uniforms each frame. Slider scrubs in Teacup's right rail now visibly affect the viewport. Same wiring extends to `<Atmosphere />` in CanaryScene whether mounted from Teacup or ConditionEditor.
 
