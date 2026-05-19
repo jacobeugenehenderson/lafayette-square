@@ -324,18 +324,36 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
   // failed to render under back-pressure).
   const [r, setR] = useState(DEFAULT_TUBE_RADIUS)
   const pendingRRef = useRef(null)
+  // Track the last quantized live value we saw so the debounce timer
+  // is reset ONLY when the live value itself changes, not on every
+  // frame where (q !== r) is true. Without this, the per-frame
+  // clearTimeout + setTimeout cycle keeps pre-empting its own 120 ms
+  // timer at 60 fps and the commit never lands until the render loop
+  // pauses for ≥120 ms (tab blur, GC). Reproduced by Jacob 2026-05-18.
+  const lastQRef = useRef(DEFAULT_TUBE_RADIUS)
   useEffect(() => () => {
     if (pendingRRef.current) clearTimeout(pendingRRef.current)
   }, [])
   useFrame(() => {
     const live = _neonUniforms.tubeRadiusUniform.value || DEFAULT_TUBE_RADIUS
     const q = Math.round(live / TUBE_RADIUS_STEP) * TUBE_RADIUS_STEP
-    if (Math.abs(q - r) <= 1e-6) return
-    if (pendingRRef.current) clearTimeout(pendingRRef.current)
-    pendingRRef.current = setTimeout(() => {
-      pendingRRef.current = null
-      setR(q)
-    }, TUBE_RADIUS_DEBOUNCE_MS)
+    if (Math.abs(q - r) <= 1e-6) {
+      // Already at target — keep lastQ in sync so a future change is
+      // detected against a current baseline.
+      lastQRef.current = q
+      return
+    }
+    if (Math.abs(q - lastQRef.current) > 1e-6) {
+      // Live value just changed — (re)start the debounce window.
+      lastQRef.current = q
+      if (pendingRRef.current) clearTimeout(pendingRRef.current)
+      pendingRRef.current = setTimeout(() => {
+        pendingRRef.current = null
+        setR(q)
+      }, TUBE_RADIUS_DEBOUNCE_MS)
+    }
+    // q unchanged from last frame but still differs from r: a timer is
+    // already running for this q. Let it tick — do NOT reset it.
   })
 
   const geometry = useMemo(() => {
