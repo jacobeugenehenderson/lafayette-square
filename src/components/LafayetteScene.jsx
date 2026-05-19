@@ -1268,10 +1268,18 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
     for (const b of _allBuildings) {
       const info = neonLookup[b.id]
       if (!info) continue
-      // forceNeonOn (Stage QA toggle) bypasses the hours filter so the
-      // operator can preview neon visibility at any TOD without scrubbing
-      // to night. Production never sees it (prop omitted in Scene.jsx).
-      const on = forceNeonOn || _isWithinHours(info.hours, now)
+      // Stage vs production gating, decided by prop presence:
+      //   Stage (CartographApp passes the prop as a bool from the store):
+      //     forceNeonOn IS the sole gate. Checked = all eligible neon.
+      //     Unchecked = silence. The hours filter is intentionally
+      //     bypassed in Stage so authoring time doesn't lie about which
+      //     places will be lit at the current TOD.
+      //   Production (Scene.jsx omits the prop, undefined here):
+      //     `_isWithinHours` is the sole gate. Tubes auto-glow when a
+      //     listing's authored business hours intersect the current TOD.
+      const on = forceNeonOn !== undefined
+        ? !!forceNeonOn
+        : _isWithinHours(info.hours, now)
       if (!on) continue
       // baseY = world Y of the rooftop. Foundation pedestal lift
       // (pre-1900: +1.2m, pre-1920: +0.8m, else 0) shifts the
