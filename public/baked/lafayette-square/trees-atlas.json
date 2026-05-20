@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-19T23:39:00.803Z",
+  "generatedAt": "2026-05-20T03:42:56.975Z",
   "lookName": "lafayette-square",
-  "rosterSize": 26,
+  "rosterSize": 30,
   "materialDefaults": {
     "roughness": 0.85,
     "metalness": 0
@@ -86,6 +86,100 @@
     },
     {
       "tileIndex": 1,
+      "key": "30dabbc091b2|fa536ec90b05",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 1,
+          "matName": "trunkBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 2,
+          "matName": "trunkBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 3,
+          "matName": "trunkBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 4,
+          "matName": "trunkBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 5,
+          "matName": "trunkBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.5025706940874035,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.16452442159383032
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 2,
+      "key": "527e6aecc879|531c79957b4e",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 1,
+          "matName": "branchBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 2,
+          "matName": "branchBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 3,
+          "matName": "branchBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 4,
+          "matName": "branchBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 5,
+          "matName": "branchBark"
+        }
+      ],
+      "content": {
+        "x": 2876,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.711881188118812,
+        "offsetV": 0.5025706940874035,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.16452442159383032
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 3,
       "key": "f24561453b5f|026eed9e6935",
       "atlas": "unified",
       "classification": "bark",
@@ -107,70 +201,6 @@
         }
       ],
       "content": {
-        "x": 2356,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.5831683168316831,
-        "offsetV": 0.5025706940874035,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 2,
-      "key": "3b7c8f7988b9|ae418d353754",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_conifer",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_conifer",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
-        "x": 2876,
-        "y": 4,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.5025706940874035,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 3,
-      "key": "9c0dbb9fa2fa|4248af0d275f",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "procedural_ornamental",
-          "variantId": 1,
-          "matName": "proceduralBark"
-        },
-        {
-          "species": "procedural_ornamental",
-          "variantId": 2,
-          "matName": "proceduralBark"
-        }
-      ],
-      "content": {
         "x": 3396,
         "y": 4,
         "w": 512,
@@ -187,17 +217,17 @@
     },
     {
       "tileIndex": 4,
-      "key": "3d7d8613ae27|a0320064e00d",
+      "key": "3b7c8f7988b9|ae418d353754",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
         {
-          "species": "procedural_columnar",
+          "species": "procedural_conifer",
           "variantId": 1,
           "matName": "proceduralBark"
         },
         {
-          "species": "procedural_columnar",
+          "species": "procedural_conifer",
           "variantId": 2,
           "matName": "proceduralBark"
         }
@@ -219,17 +249,17 @@
     },
     {
       "tileIndex": 5,
-      "key": "19ec8d128907|9baa036ecb92",
+      "key": "9c0dbb9fa2fa|4248af0d275f",
       "atlas": "unified",
       "classification": "bark",
       "refs": [
         {
-          "species": "procedural_weeping",
+          "species": "procedural_ornamental",
           "variantId": 1,
           "matName": "proceduralBark"
         },
         {
-          "species": "procedural_weeping",
+          "species": "procedural_ornamental",
           "variantId": 2,
           "matName": "proceduralBark"
         }
@@ -251,6 +281,70 @@
     },
     {
       "tileIndex": 6,
+      "key": "3d7d8613ae27|a0320064e00d",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_columnar",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_columnar",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 3396,
+        "y": 524,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.8405940594059406,
+        "offsetV": 0.6696658097686374,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.16452442159383032
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 7,
+      "key": "19ec8d128907|9baa036ecb92",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "procedural_weeping",
+          "variantId": 1,
+          "matName": "proceduralBark"
+        },
+        {
+          "species": "procedural_weeping",
+          "variantId": 2,
+          "matName": "proceduralBark"
+        }
+      ],
+      "content": {
+        "x": 4,
+        "y": 1036,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.8341902313624678,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.16452442159383032
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    {
+      "tileIndex": 8,
       "key": "15c88e3d0ad6|8f0866f3e68b",
       "atlas": "unified",
       "classification": "bark",
@@ -277,7 +371,7 @@
       "sourceNormalDims": "512×2048"
     },
     {
-      "tileIndex": 7,
+      "tileIndex": 9,
       "key": "52f3b6d064a1|31382c4db848",
       "atlas": "unified",
       "classification": "bark",
@@ -304,7 +398,7 @@
       "sourceNormalDims": "512×2048"
     },
     {
-      "tileIndex": 8,
+      "tileIndex": 10,
       "key": "ef7d501fb660|68ed62827ad4",
       "atlas": "unified",
       "classification": "bark",
@@ -331,7 +425,7 @@
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 9,
+      "tileIndex": 11,
       "key": "42788cae31b1|44d10fcb4523",
       "atlas": "unified",
       "classification": "bark",
@@ -358,7 +452,7 @@
       "sourceNormalDims": "1024×1024"
     },
     {
-      "tileIndex": 10,
+      "tileIndex": 12,
       "key": "c936750534a1|d8d5b8abe1ab",
       "atlas": "unified",
       "classification": "bark",
@@ -382,60 +476,6 @@
         "scaleV": 0.32904884318766064
       },
       "sourceColorDims": "1024×2048",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 11,
-      "key": "30dabbc091b2|fa536ec90b05",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "acer_saccharum_procedural",
-          "variantId": 1,
-          "matName": "trunkBark"
-        }
-      ],
-      "content": {
-        "x": 3396,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.6696658097686374,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    {
-      "tileIndex": 12,
-      "key": "527e6aecc879|531c79957b4e",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "acer_saccharum_procedural",
-          "variantId": 1,
-          "matName": "branchBark"
-        }
-      ],
-      "content": {
-        "x": 4,
-        "y": 1036,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.8341902313624678,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
-      },
-      "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     {
@@ -1165,8 +1205,102 @@
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
     },
-    "f24561453b5f|026eed9e6935": {
+    "30dabbc091b2|fa536ec90b05": {
       "tileIndex": 1,
+      "key": "30dabbc091b2|fa536ec90b05",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 1,
+          "matName": "trunkBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 2,
+          "matName": "trunkBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 3,
+          "matName": "trunkBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 4,
+          "matName": "trunkBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 5,
+          "matName": "trunkBark"
+        }
+      ],
+      "content": {
+        "x": 2356,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.5025706940874035,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.16452442159383032
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "527e6aecc879|531c79957b4e": {
+      "tileIndex": 2,
+      "key": "527e6aecc879|531c79957b4e",
+      "atlas": "unified",
+      "classification": "bark",
+      "refs": [
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 1,
+          "matName": "branchBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 2,
+          "matName": "branchBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 3,
+          "matName": "branchBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 4,
+          "matName": "branchBark"
+        },
+        {
+          "species": "acer_saccharum_procedural",
+          "variantId": 5,
+          "matName": "branchBark"
+        }
+      ],
+      "content": {
+        "x": 2876,
+        "y": 4,
+        "w": 512,
+        "h": 512
+      },
+      "uvTransform": {
+        "offsetU": 0.711881188118812,
+        "offsetV": 0.5025706940874035,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.16452442159383032
+      },
+      "sourceColorDims": "1024×1024",
+      "sourceNormalDims": "1024×1024"
+    },
+    "f24561453b5f|026eed9e6935": {
+      "tileIndex": 3,
       "key": "f24561453b5f|026eed9e6935",
       "atlas": "unified",
       "classification": "bark",
@@ -1188,13 +1322,13 @@
         }
       ],
       "content": {
-        "x": 2356,
+        "x": 3396,
         "y": 4,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.5831683168316831,
+        "offsetU": 0.8405940594059406,
         "offsetV": 0.5025706940874035,
         "scaleU": 0.12673267326732673,
         "scaleV": 0.16452442159383032
@@ -1203,7 +1337,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "3b7c8f7988b9|ae418d353754": {
-      "tileIndex": 2,
+      "tileIndex": 4,
       "key": "3b7c8f7988b9|ae418d353754",
       "atlas": "unified",
       "classification": "bark",
@@ -1220,14 +1354,14 @@
         }
       ],
       "content": {
-        "x": 2876,
-        "y": 4,
+        "x": 2356,
+        "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.5025706940874035,
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.6696658097686374,
         "scaleU": 0.12673267326732673,
         "scaleV": 0.16452442159383032
       },
@@ -1235,7 +1369,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "9c0dbb9fa2fa|4248af0d275f": {
-      "tileIndex": 3,
+      "tileIndex": 5,
       "key": "9c0dbb9fa2fa|4248af0d275f",
       "atlas": "unified",
       "classification": "bark",
@@ -1252,14 +1386,14 @@
         }
       ],
       "content": {
-        "x": 3396,
-        "y": 4,
+        "x": 2876,
+        "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.5025706940874035,
+        "offsetU": 0.711881188118812,
+        "offsetV": 0.6696658097686374,
         "scaleU": 0.12673267326732673,
         "scaleV": 0.16452442159383032
       },
@@ -1267,7 +1401,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "3d7d8613ae27|a0320064e00d": {
-      "tileIndex": 4,
+      "tileIndex": 6,
       "key": "3d7d8613ae27|a0320064e00d",
       "atlas": "unified",
       "classification": "bark",
@@ -1284,13 +1418,13 @@
         }
       ],
       "content": {
-        "x": 2356,
+        "x": 3396,
         "y": 524,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.5831683168316831,
+        "offsetU": 0.8405940594059406,
         "offsetV": 0.6696658097686374,
         "scaleU": 0.12673267326732673,
         "scaleV": 0.16452442159383032
@@ -1299,7 +1433,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "19ec8d128907|9baa036ecb92": {
-      "tileIndex": 5,
+      "tileIndex": 7,
       "key": "19ec8d128907|9baa036ecb92",
       "atlas": "unified",
       "classification": "bark",
@@ -1316,14 +1450,14 @@
         }
       ],
       "content": {
-        "x": 2876,
-        "y": 524,
+        "x": 4,
+        "y": 1036,
         "w": 512,
         "h": 512
       },
       "uvTransform": {
-        "offsetU": 0.711881188118812,
-        "offsetV": 0.6696658097686374,
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.8341902313624678,
         "scaleU": 0.12673267326732673,
         "scaleV": 0.16452442159383032
       },
@@ -1331,7 +1465,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "15c88e3d0ad6|8f0866f3e68b": {
-      "tileIndex": 6,
+      "tileIndex": 8,
       "key": "15c88e3d0ad6|8f0866f3e68b",
       "atlas": "unified",
       "classification": "bark",
@@ -1358,7 +1492,7 @@
       "sourceNormalDims": "512×2048"
     },
     "52f3b6d064a1|31382c4db848": {
-      "tileIndex": 7,
+      "tileIndex": 9,
       "key": "52f3b6d064a1|31382c4db848",
       "atlas": "unified",
       "classification": "bark",
@@ -1385,7 +1519,7 @@
       "sourceNormalDims": "512×2048"
     },
     "ef7d501fb660|68ed62827ad4": {
-      "tileIndex": 8,
+      "tileIndex": 10,
       "key": "ef7d501fb660|68ed62827ad4",
       "atlas": "unified",
       "classification": "bark",
@@ -1412,7 +1546,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "42788cae31b1|44d10fcb4523": {
-      "tileIndex": 9,
+      "tileIndex": 11,
       "key": "42788cae31b1|44d10fcb4523",
       "atlas": "unified",
       "classification": "bark",
@@ -1439,7 +1573,7 @@
       "sourceNormalDims": "1024×1024"
     },
     "c936750534a1|d8d5b8abe1ab": {
-      "tileIndex": 10,
+      "tileIndex": 12,
       "key": "c936750534a1|d8d5b8abe1ab",
       "atlas": "unified",
       "classification": "bark",
@@ -1463,60 +1597,6 @@
         "scaleV": 0.32904884318766064
       },
       "sourceColorDims": "1024×2048",
-      "sourceNormalDims": "1024×1024"
-    },
-    "30dabbc091b2|fa536ec90b05": {
-      "tileIndex": 11,
-      "key": "30dabbc091b2|fa536ec90b05",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "acer_saccharum_procedural",
-          "variantId": 1,
-          "matName": "trunkBark"
-        }
-      ],
-      "content": {
-        "x": 3396,
-        "y": 524,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.8405940594059406,
-        "offsetV": 0.6696658097686374,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
-      },
-      "sourceColorDims": "1024×1024",
-      "sourceNormalDims": "1024×1024"
-    },
-    "527e6aecc879|531c79957b4e": {
-      "tileIndex": 12,
-      "key": "527e6aecc879|531c79957b4e",
-      "atlas": "unified",
-      "classification": "bark",
-      "refs": [
-        {
-          "species": "acer_saccharum_procedural",
-          "variantId": 1,
-          "matName": "branchBark"
-        }
-      ],
-      "content": {
-        "x": 4,
-        "y": 1036,
-        "w": 512,
-        "h": 512
-      },
-      "uvTransform": {
-        "offsetU": 0.0009900990099009901,
-        "offsetV": 0.8341902313624678,
-        "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
-      },
-      "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
     },
     "3b70158cae63|58277515a126": {
