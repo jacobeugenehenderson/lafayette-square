@@ -7,7 +7,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
 import useSkyState from '../hooks/useSkyState'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { resolveSkyAtMinute, SKY_DEFAULTS } from '../cartograph/skyGrid.js'
+import { resolveSkyAtMinute } from '../cartograph/skyGrid.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import {
   AMBIENT_FIELD_KEYS, AMBIENT_FLAT_DEFAULTS,
@@ -23,7 +23,9 @@ import {
 // would emit for an unauthored Look, so first-paint matches the baker's
 // output — no flash, no dead `?? null` branch. Doctrine:
 // project_hardwires_come_out_when_channels_install.
-const SKY_DEFAULT_CHANNEL            = { values: SKY_DEFAULTS }
+// Sky channel now stores per-Look overrides on top of kit-canonical anchor
+// cards (see skyGrid.js). Empty list = pure procedural-canon mosaic.
+const SKY_DEFAULT_CHANNEL            = { overrides: [] }
 const AMBIENT_DEFAULT_CHANNEL        = { values: AMBIENT_FLAT_DEFAULTS }
 const HEMI_DEFAULT_CHANNEL           = { values: HEMI_FLAT_DEFAULTS }
 const DIRSUN_DEFAULT_CHANNEL         = { values: DIRSUN_FLAT_DEFAULTS }

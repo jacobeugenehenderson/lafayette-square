@@ -34,27 +34,32 @@ Wren shipped sub-phases 1 + 3 in `bff87b5` (schema + Preetham composition + runt
 
 Maxibrief `scratch/handoff-2026-05-20-cartograph-4anchor-seasonal-sky.md` is partially obsolete — sub-phases 1+3 done; sub-phase 2 retired; new direction takes over below.
 
-### Cross-helper: Sky architecture pivot (NEXT UP — Cartograph, single Wren brief)
+### ✅ Sky architecture pivot — Phase A shipped
 
-The next piece of work consolidates several threads: procedural sky restoration, 24-hour uniform grid, per-cell override system with spatial + temporal envelope, 3 missing seasonal cards (procedural-seeded + artistic deviation).
+Mechanism landed in a single Wren commit (2026-05-21). All 8 items in the original 10-item walk except the artistic deviation (item 4) and any further doc sweep beyond NOTES + BACKLOG. See `NOTES.md` 2026-05-21 entry "Sky pivot Phase A shipped" for the full breakdown of what's in.
 
-ADR + full architecture in `NOTES.md` "Sky architecture pivot: procedural canon + per-cell overrides" 2026-05-20.
+**Done in Phase A:**
+- `cartograph/proceduralSky.js` extracted (`KEYFRAMES` + `proceduralSkyAt`)
+- `cartograph/pipeline/hydrate-anchor-cards.js` one-shot script
+- Procedural-seeded winter / spring / autumn cards baked into `ANCHOR_CARDS_PROCEDURAL` constant
+- `skyGrid.js` reshaped: `SKY_HOURS=24`, `ANCHOR_CARDS`, `buildMosaicForDate`, `flankingAnchors`, override envelope (`spatialWeight` × `temporalWeight`)
+- `scene.json` schema migrated to sparse `{overrides:[]}`; legacy shapes resolve through tolerant migration
+- Store: `addSkyOverride` / `removeSkyOverride` / `revertSky` clears
+- Sky Builder UI rewritten: 24 hour-cols × 5 bands, CSS-gradient cells with left/mid/right-minute sampling, click-to-author, shift+click revert, solar-noon marker
+- Shader callsite unchanged — `resolveSkyAtMinute` builds mosaic + applies overrides + minute-lerp adjacent hours
 
-Architecture locked: procedural shader/function HYDRATES the editable mosaics; the resolved mosaic is what renders. See `NOTES.md` "Shader path" section. Brief drafting unblocked.
+### Sky architecture pivot — Phase B (queued: Wren's artistic deviation pass)
 
-Once confirmed, the brief covers:
-1. Extract `cartograph/proceduralSky.js` from the historical pre-`47c2760` `GradientSky` (pure JS function + GLSL template + keyframe data table)
-2. Restore procedural shader path in `CelestialBodies.jsx` (or pivot to mosaic-driven per Q resolution)
-3. Sample procedural at 24 hourly positions × winter/spring/autumn reference dates → raw seasonal cards
-4. **Wren artistic deviation pass** on the 3 raw cards (winter cooler/desat, autumn golden-warmth, spring fresh)
-5. Reshape `skyGrid.js`: `SKY_HOURS = 24`, 4 anchor cards exported, runtime `buildMosaicForDate(date, overrides)` resolver
-6. Migrate existing summer 22-editorial-cols → 24-uniform-hourly (preserve artistry as overrides)
-7. `scene.json` schema downgrade: 4-anchor matrix → sparse override list `{ overrides: [{ hour, band, hex }] }`
-8. Override resolver implements Chebyshev spatial (d=0 full, d=1 50%, d≥2 none) + temporal envelope (full inside override hour, 15-min ramp on each side)
-9. Sky Builder UI: 24 hour-labeled columns, CSS gradient cells (sample left/mid/right minute), per-cell override authoring, shift-click revert
-10. Doc sweep
+The painter's eye on winter / spring / autumn cards. Summer is already the project canon (the procedural seed for summer matches the existing hand-painted look exactly, so no deviation needed).
 
-Unblocks: sky color responds to year-strip via canonical procedural physics; operator overrides as sparse hand-painted touches; "sell sky space" mental model becomes literal (hour-keyed cells); 4 seasonal cards exist as kit canon with Wren's artistic touch.
+Edits one file only: `ANCHOR_CARDS` constant in `src/cartograph/skyGrid.js`. Procedural seed stays in `ANCHOR_CARDS_PROCEDURAL` for traceability.
+
+Per the original maxibrief (`scratch/handoff-2026-05-20-...` or the inlined orchestrator brief):
+- **Winter:** cooler hue cast across lighter bands, subtle desaturation across the day, slight darken at noon (winter air is clearer, less brilliant sun), cooler sun-glow, pinker pre-dawn/post-dusk if it feels right.
+- **Spring:** fresh / green-cast horizon at morning, crisper noon zenith, slight warm-cool oscillation across the day.
+- **Autumn:** golden-amber bias across daytime hours, boosted saturation, richer sunset colors, cooler short twilights — "harvest-light."
+
+Disclose artistic decisions in commit body per season so Jacob can review + veto.
 
 ### Phase 4b.2 — TodChannel uniform binding
 

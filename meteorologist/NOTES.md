@@ -4,6 +4,36 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-21 — Sky pivot Phase A shipped
+
+Mechanism for the 2026-05-20 ADR ("procedural canon + per-cell overrides") landed in a single commit. Phase A scope: extract `cartograph/proceduralSky.js`, hydrate the 4 anchor cards (procedural-seeded only — Wren's artistic deviation is Phase B), reshape `skyGrid.js` to `SKY_HOURS=24` + `buildMosaicForDate` + override envelope, rewire store actions to `addSkyOverride/removeSkyOverride`, rewrite `SkyGradientGrid.jsx` to 24 hour-cols with CSS-gradient cells, migrate `scene.json` schema, defensive backward-compat reads on legacy shapes.
+
+**What's new (kit canon):**
+
+- `cartograph/proceduralSky.js` — `KEYFRAMES` table + `proceduralSkyAt(altitude, isDawn)`. Pure-JS hex (Node ESM portable). Lifted from `47c2760^:CelestialBodies.jsx:405-510`.
+- `cartograph/pipeline/hydrate-anchor-cards.js` — one-shot script. SunCalc × `proceduralSkyAt` → 4 × 24 × 5 hex table. Re-run if `KEYFRAMES` ever change.
+- `src/cartograph/skyGrid.js` — exports `ANCHOR_CARDS_PROCEDURAL` (static, generated) and `ANCHOR_CARDS` (active; Phase A = procedural; Phase B will deviate). `buildMosaicForDate(date, overrides)`, `flankingAnchors(doy)`, override envelope (`spatialWeight`, `temporalWeight`).
+- Store: `addSkyOverride(hour, band, hex)`, `removeSkyOverride(hour, band)`, `revertSky()` clears all overrides.
+- `scene.json` schema: `{ sky: { overrides: [...] } }`. Legacy 1-layer + 4-anchor shapes migrate to `{ overrides: [] }` (no operator deviations to salvage — the 1-layer summer IS the procedural seed).
+
+**Resolver behavior (verified by smoke tests):**
+
+- May 19 → mosaic lerps spring (Mar 20) → summer (Jun 21) at ~60%. Sample 7am horizon: `#b1bebd` (between spring's golden `#d4b07c` and summer's day-blue `#9dc5e0`). Winter 7am horizon: `#2d2030` (deep twilight). Summer 7am horizon: `#9dc5e0` (full day). All as expected.
+- Override at `(hour=18, band='horizon', hex='#ff00ff')`: cell at h=18 reads full magenta inside [18:00, 19:00); neighbors h=17 and h=19 read 50% blend; h=16 / h=20 read pure base. Ramp-in over 15min before 18:00 and ramp-out 15min after 19:00 fade smoothly. Multi-override stacking applies sequentially (intentional — sum-and-normalize available if pathological clustering arises).
+
+**Shader path (unchanged at callsite):** CelestialBodies' `useFrame` still calls `resolveSkyAtMinute(skyChannel, minute, slotMinutes)` and writes the resulting 5-band RGB to shader uniforms. The new resolver builds the 24×5 base mosaic + applies overrides + lerps adjacent hour cols for minute-of-day continuity. No new GPU work; CPU resolution is O(overrides × 24 × 5) per frame — trivial.
+
+**Phase B (next):** Wren's artistic deviation pass on winter / spring / autumn (summer is already lovely; the procedural seed for summer matches the existing hand-painted look exactly). Edits `ANCHOR_CARDS` constant in `skyGrid.js` only — clean diff, easy to revert per season.
+
+**Surfaced decisions:**
+
+- Migration salvage of summer-card "deviations from procedural" not implemented. LS's current 1-layer summer card IS the procedural seed (sampled from the same `GradientSky` function `proceduralSky.js` extracts), so there are no operator deviations to preserve. If a future Look ships with operator-authored deviation cells, extend `migrateSkyChannel` to compare and emit overrides — left as a future affordance.
+- `SKY_DEFAULTS`, `SKY_SLOT_COLUMNS`, `SKY_DEFAULTS_4ANCHOR`, `SKY_FLAT_DEFAULTS`, `getSkyColumnMinutes` removed from `skyGrid.js`. No external consumers grep'd — all changes contained in this commit.
+- `scene.json` deliberately NOT re-baked into the commit (Jacob's working tree has unrelated `layerVis` / `design.json` edits that would have ridden along). Existing baked file's legacy `sky.values.{slots}` shape still reads correctly through the new resolver (which sees no `overrides` array → pure procedural mosaic) until a clean rebake.
+- `resolveSkyAtMinute`'s `slotMinutes` argument kept in the signature for backward compatibility with the existing CelestialBodies call site, but is unused under the 24-hour grid.
+
+---
+
 ## 2026-05-20 — Sky architecture pivot: procedural canon + per-cell overrides (ADR)
 
 **Reverses + replaces** the "Sky Builder authors per-Look 4-anchor matrices" direction recorded in the next entry below ("4-anchor seasonal sky matrix"). After three iterations of architectural growth (4-anchor matrices in `bff87b5`; Preetham composition; per-anchor edit-lock UX), Jacob surfaced the underlying simplification: **the procedural sky shader that originally produced the project's lovely summer card IS the source of truth**, and the operator's authoring surface is per-cell overrides on top, not from-scratch matrix painting.

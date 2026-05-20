@@ -1,49 +1,29 @@
 /**
- * SkyGradientGrid — Sky & Light card's 2D color matrix editor.
+ * SkyGradientGrid — Sky Builder, post-2026-05-20 architecture pivot.
  *
- * Twirl-collapsible. Open drawer:
- *   • Editor grid: 5 rows (zenith → horizon → sun-glow) × 22 cols.
- *     No row or column labels — vertical position is self-describing,
- *     slot color stripes between groups mark the TOD divisions.
- *   • Now preview: full-width vertical slice of the resolved sky at
- *     the current minute, with sun + moon dots placed by altitude
- *     when above horizon.
- *   • 24h preview: stacked sample columns showing the full day's
- *     color story end to end.
+ * 24 clock-hour columns × 5 vertical bands. Each cell renders the resolved
+ * sky color at that (hour, band), composed from:
+ *   - the procedural-canon anchor cards (ANCHOR_CARDS in skyGrid.js)
+ *   - lerped between flanking seasonal anchors by useCalendar.dayOfYear()
+ *   - with per-Look overrides applied via Chebyshev d≤1 spatial × 15-min
+ *     temporal envelope (handled by skyGrid.buildMosaicForDate / resolver)
  *
- * Edits go through useCartographStore.setSkySwatch which autosaves.
+ * Click a cell → author an override at that (hour, band).
+ * Shift+click → remove the override at that (hour, band) (revert to canon).
+ *
+ * No anchor-name navigation — operator thinks "today's sky" not "spring's
+ * matrix"; year-strip drag in DawnTimeline scrubs the date.
  */
 import { useState, useMemo, useEffect, Fragment } from 'react'
 import SunCalc from 'suncalc'
 import useCartographStore from './stores/useCartographStore.js'
-import { NAMED_TOD_SLOTS, getTodSlotMinutes } from './animatedParam.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCalendar from '../hooks/useCalendar'
 import {
-  SKY_BANDS, SKY_SLOT_COLUMNS, SKY_DEFAULTS,
-  SKY_ANCHORS, SKY_ANCHOR_DOY,
-  resolveSkyAtMinute, getSkyColumnMinutes,
+  SKY_BANDS, SKY_HOURS,
+  resolveSkyAtMinute, buildMosaicForDate,
 } from './skyGrid.js'
 import { INSTANCE } from '../instance.js'
-
-// Pick the seasonal anchor nearest the given day-of-year on the cyclic
-// year ring. Used so the matrix editor always reflects "the card you're
-// currently parked on" (or nearest to, between anchors). Edit-lock UX in
-// sub-phase 2 will explicitly distinguish on-anchor (editable) from
-// between-anchors (read-only preview); this commit treats the nearest
-// anchor as the editable target.
-function nearestAnchor(doy) {
-  const DAYS = 365
-  let best = SKY_ANCHORS[0]
-  let bestDist = Infinity
-  for (const a of SKY_ANCHORS) {
-    const ad = SKY_ANCHOR_DOY[a]
-    let d = Math.abs(doy - ad)
-    if (d > DAYS / 2) d = DAYS - d  // cyclic distance
-    if (d < bestDist) { bestDist = d; best = a }
-  }
-  return best
-}
 
 const BAND_ORDER = ['high', 'mid', 'low', 'horizon', 'sunGlow']  // top-to-bottom
 const LAT = INSTANCE.geography.lat
@@ -57,148 +37,171 @@ function rgbCss(rgb) {
   return `rgb(${r},${g},${b})`
 }
 
-function SwatchCell({ anchor, slotId, colIdx, band, hex, onChange }) {
-  return (
-    <input
-      type="color"
-      className="sky-swatch"
-      value={hex || '#000000'}
-      onChange={(e) => onChange(anchor, slotId, colIdx, band, e.target.value)}
-      style={{
-        width: '100%', height: '100%',
-        cursor: 'pointer', display: 'block', minWidth: 0, boxSizing: 'border-box',
-      }}
-      title={`${anchor} · ${slotId} · col ${colIdx + 1} · ${band}`}
-    />
-  )
+// Look up the existing override at (hour, band) if any.
+function findOverride(overrides, hour, band) {
+  if (!Array.isArray(overrides)) return null
+  return overrides.find(o => o.hour === hour && o.band === band) || null
 }
 
-function EditorGrid({ sky, anchor, setSwatch, tick }) {
-  const cols = []
-  for (const s of NAMED_TOD_SLOTS) {
-    const n = SKY_SLOT_COLUMNS[s.id] || 1
-    for (let c = 0; c < n; c++) {
-      cols.push({
-        slotId: s.id, colIdx: c, slotColor: s.color,
-        isFirst: c === 0,
-      })
-    }
-  }
-  const totalCols = cols.length
+function EditorGrid({ sky, currentDate, tick }) {
+  const addSkyOverride = useCartographStore(s => s.addSkyOverride)
+  const removeSkyOverride = useCartographStore(s => s.removeSkyOverride)
+  const overrides = sky?.overrides || []
 
-  const valueFor = (slotId, colIdx, band) => {
-    // Read from the active anchor's card. Tolerant of both 4-anchor and
-    // legacy 1-layer shapes (the resolver handles both, so does this).
-    const values = sky?.values
-    const card = (values && values[anchor] && typeof values[anchor] === 'object'
-                  && !Array.isArray(values[anchor]))
-      ? values[anchor]
-      : values  // legacy 1-layer fallback
-    const slot = card?.[slotId]
-    const tuple = (Array.isArray(slot) && slot[colIdx]) || SKY_DEFAULTS[slotId][colIdx]
-    return tuple?.[band] || '#000000'
+  // Base mosaic for hex sampling per cell. We rebuild it once per render
+  // and sample the resolver at three points per hour to get the CSS
+  // gradient stops. The mosaic itself is doy-dependent (currentDate)
+  // and override-dependent.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const _ = useMemo(() => null, [tick, currentDate, sky])
+
+  // Sample a single (hour, band) at three minutes within the hour, return
+  // [leftHex, midHex, rightHex]. Uses the same resolver path the shader
+  // consumes, so what-you-see is what-renders.
+  const sampleCell = (hour, band) => {
+    const samples = []
+    for (const min of [hour * 60, hour * 60 + 30, hour * 60 + 59]) {
+      const r = resolveSkyAtMinute(sky, min, null)
+      samples.push(rgbCss(r[band]))
+    }
+    return samples
   }
 
-  // Playhead position in EDITOR space — fractional column index (0..totalCols).
-  // Resolves which two columns bracket the current minute (handling wrap),
-  // returns aIdx + t. Different math from the day strip's % of 1440.
-  const playheadColX = useMemo(() => {
-    const tod = useTimeOfDay.getState()
-    const minute = tod.getMinuteOfDay()
-    const slotMinutes = getTodSlotMinutes(tod.currentTime)
-    const colMins = getSkyColumnMinutes(slotMinutes)
-    if (!colMins.length) return 0
-    let aIdx = -1
-    for (let i = 0; i < colMins.length; i++) {
-      const cur  = colMins[i]
-      const next = colMins[(i + 1) % colMins.length]
-      const nextM = next.minute >= cur.minute ? next.minute : next.minute + 1440
-      const m = minute >= cur.minute ? minute : minute + 1440
-      if (m >= cur.minute && m <= nextM) { aIdx = i; break }
-    }
-    if (aIdx < 0) aIdx = colMins.length - 1
-    const a = colMins[aIdx], b = colMins[(aIdx + 1) % colMins.length]
-    let aM = a.minute, bM = b.minute, m = minute
-    if (bM < aM) bM += 1440
-    if (m < aM) m += 1440
-    const span = bM - aM || 1
-    const t = Math.max(0, Math.min(1, (m - aM) / span))
-    // Find aIdx position in the cols array order (matches NAMED_TOD_SLOTS order
-    // since getSkyColumnMinutes walks slots in the same order then sorts by
-    // minute — close enough for visualization; lookup by slotId+colIdx is safer).
-    const editorAIdx = cols.findIndex(c => c.slotId === a.slotId && c.colIdx === a.colIdx)
-    const editorBIdx = cols.findIndex(c => c.slotId === b.slotId && c.colIdx === b.colIdx)
-    if (editorAIdx < 0 || editorBIdx < 0) return 0
-    // Handle wrap (Night → Dawn) by clamping; visually the playhead simply
-    // hits the right edge then reappears at the left.
-    let frac
-    if (editorBIdx === editorAIdx) frac = editorAIdx
-    else if (Math.abs(editorBIdx - editorAIdx) === 1) frac = editorAIdx + t * (editorBIdx - editorAIdx)
-    else frac = editorAIdx  // wrap case: don't draw across the full strip
-    // Each column center sits at (frac + 0.5) / totalCols of the strip.
-    return ((frac + 0.5) / totalCols) * 100
+  // Solar-noon hour for the active date (for the sun-overhead marker).
+  const solarNoonHour = useMemo(() => {
+    const t = SunCalc.getTimes(currentDate, LAT, LON)
+    return t.solarNoon.getHours() + t.solarNoon.getMinutes() / 60
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick, totalCols])
+  }, [currentDate])
 
   const gridStyle = {
     display: 'grid',
-    gridTemplateColumns: `repeat(${totalCols}, minmax(0, 1fr))`,
-    gap: 3,
+    gridTemplateColumns: `repeat(${SKY_HOURS}, minmax(0, 1fr))`,
+    gap: 2,
     background: 'transparent',
   }
 
+  const onCellClick = (e, hour, band) => {
+    if (e.shiftKey) {
+      removeSkyOverride(hour, band)
+      e.preventDefault()
+      return
+    }
+    // First click on a cell without an override: open the color picker on
+    // the sampled current color. Override is added on the picker's onChange
+    // via addSkyOverride. To trigger the native picker, we let the input
+    // receive the click — see SwatchInput below.
+  }
+
   return (
-    <div style={{ position: 'relative' }}>
+    <div>
+      {/* Hour labels — bold at every 6 hours */}
       <div style={gridStyle}>
+        {Array.from({ length: SKY_HOURS }, (_, h) => {
+          const bold = h === 0 || h === 6 || h === 12 || h === 18
+          return (
+            <div key={`label-${h}`} style={{
+              fontSize: 9, color: bold ? 'var(--on-surface)' : 'var(--on-surface-subtle)',
+              fontWeight: bold ? 600 : 400, textAlign: 'center',
+              padding: '0 0 2px',
+            }}>{h}</div>
+          )
+        })}
+      </div>
+
+      {/* Sky grid — 5 rows of band cells */}
+      <div style={{ ...gridStyle, position: 'relative' }}>
         {BAND_ORDER.map((band) => (
           <Fragment key={`row-${band}`}>
-            {cols.map((c, i) => (
-              <div
-                key={`cell-${band}-${i}`}
-                style={{ aspectRatio: '1 / 1' }}
-              >
-                <SwatchCell
-                  anchor={anchor}
-                  slotId={c.slotId}
-                  colIdx={c.colIdx}
-                  band={band}
-                  hex={valueFor(c.slotId, c.colIdx, band)}
-                  onChange={setSwatch}
-                />
-              </div>
-            ))}
+            {Array.from({ length: SKY_HOURS }, (_, h) => {
+              const stops = sampleCell(h, band)
+              const bg = stops[0] === stops[2]
+                ? stops[1]  // flat — no gradient
+                : `linear-gradient(to right, ${stops[0]} 0%, ${stops[1]} 50%, ${stops[2]} 100%)`
+              const ov = findOverride(overrides, h, band)
+              return (
+                <div key={`cell-${band}-${h}`} style={{
+                  position: 'relative', aspectRatio: '1 / 1',
+                  borderRadius: 2, overflow: 'hidden',
+                  background: bg,
+                  outline: ov ? '1.5px solid var(--vic-gold, #ffd166)' : '1px solid rgba(255,255,255,0.05)',
+                  cursor: 'pointer',
+                }}>
+                  <SwatchInput
+                    hour={h} band={band}
+                    initialHex={ov?.hex || rgbCss(resolveSkyAtMinute(sky, h * 60 + 30, null)[band])}
+                    onAuthor={(hex) => addSkyOverride(h, band, hex)}
+                    onShiftClick={(e) => onCellClick(e, h, band)}
+                  />
+                </div>
+              )
+            })}
           </Fragment>
         ))}
+
+        {/* Solar-noon marker — a thin gold line at the column corresponding
+            to solar noon on the active date. */}
+        <div style={{
+          position: 'absolute', top: -14, bottom: -2,
+          left: `${(solarNoonHour / SKY_HOURS) * 100}%`,
+          width: 1, background: 'var(--vic-gold, #ffd166)',
+          opacity: 0.6, pointerEvents: 'none',
+        }} />
       </div>
-      {/* Playhead caret — points UP at the column currently being
-          resolved, sits just beneath the editor's bottom edge. */}
-      <div style={{
-        position: 'absolute',
-        bottom: -5,
-        left: `${playheadColX}%`,
-        transform: 'translateX(-50%)',
-        width: 0, height: 0,
-        borderLeft: '4px solid transparent',
-        borderRight: '4px solid transparent',
-        borderBottom: '5px solid var(--vic-gold, #ffd166)',
-        pointerEvents: 'none',
-      }} />
     </div>
   )
 }
 
-// "Now" preview — vertical sky slice at the current minute, with sun
-// and moon placed by altitude. Refreshes via useFrame so the strip
-// updates as TOD scrubs.
+// Color input that takes a sampled hex as its initial value. On user-
+// committed change, calls onAuthor(hex). Shift+click bypasses the picker
+// and calls onShiftClick (used by the cell's onClick handler to remove the
+// override). The transparent input overlay covers the cell so the gradient
+// behind it is visible.
+function SwatchInput({ hour, band, initialHex, onAuthor, onShiftClick }) {
+  // Convert "rgb(r,g,b)" → "#rrggbb" for the color picker (which only
+  // accepts hex). Pure hex strings pass through.
+  const hex = useMemo(() => {
+    if (typeof initialHex !== 'string') return '#000000'
+    if (initialHex.startsWith('#')) return initialHex
+    const m = initialHex.match(/^rgb\((\d+),(\d+),(\d+)\)$/)
+    if (!m) return '#000000'
+    const c = (n) => Number(n).toString(16).padStart(2, '0')
+    return '#' + c(m[1]) + c(m[2]) + c(m[3])
+  }, [initialHex])
+
+  return (
+    <input
+      type="color"
+      value={hex}
+      onClick={(e) => {
+        if (e.shiftKey) {
+          e.preventDefault()
+          onShiftClick?.(e)
+        }
+      }}
+      onChange={(e) => onAuthor(e.target.value)}
+      title={`${String(hour).padStart(2, '0')}:00 · ${band} — click to author override, shift+click to revert`}
+      className="sky-swatch"
+      style={{
+        position: 'absolute', inset: 0,
+        width: '100%', height: '100%',
+        opacity: 0,
+        cursor: 'pointer',
+        border: 'none', padding: 0, margin: 0,
+        background: 'transparent',
+      }}
+    />
+  )
+}
+
+// "Now" preview — vertical sky slice at the current minute, sun and moon
+// placed by altitude. Refreshes via useFrame tick + currentDate.
 function NowPreview({ sky, tick }) {
-  // Subscribe to currentDate so the preview refreshes when the operator
-  // scrubs the year strip (resolveSkyAtMinute reads doy from useCalendar).
   const currentDate = useCalendar(s => s.currentDate)
   const { resolved, sunAlt, moonAlt, moonIllum } = useMemo(() => {
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
-    const slotMinutes = getTodSlotMinutes(tod.currentTime)
-    const r = resolveSkyAtMinute(sky, minute, slotMinutes)
+    const r = resolveSkyAtMinute(sky, minute, null)
     const sunPos = SunCalc.getPosition(tod.currentTime, LAT, LON)
     const moonPos = SunCalc.getMoonPosition(tod.currentTime, LAT, LON)
     const moonIllum = SunCalc.getMoonIllumination(tod.currentTime).fraction
@@ -213,61 +216,46 @@ function NowPreview({ sky, tick }) {
 
   if (!resolved) return null
 
-  // CSS gradient: zenith at top → horizon at bottom. 4 stops.
   const bg = `linear-gradient(to bottom,
     ${rgbCss(resolved.high)} 0%,
     ${rgbCss(resolved.mid)} 33%,
     ${rgbCss(resolved.low)} 66%,
     ${rgbCss(resolved.horizon)} 100%)`
 
-  // Altitude → vertical position. 0 rad = horizon (bottom). π/2 = zenith (top).
-  // Map [-0.05, π/2] → [bottom .. top]; below -0.05 = below horizon, hide.
   function altToY(altRad) {
     if (altRad < -0.05) return null
     const t = Math.max(0, Math.min(1, altRad / (Math.PI / 2)))
-    return (1 - t) * 100  // % from top
+    return (1 - t) * 100
   }
   const sunY = altToY(sunAlt)
   const moonY = altToY(moonAlt)
 
-  // Sun glow wash: paint a soft horizon glow when sun is near or below
-  // horizon (twilight). Falls off above 0.3 rad (~17°).
   const sunGlowAlpha = Math.max(0, Math.min(1,
     sunAlt < 0
       ? 1 - Math.abs(sunAlt) / 0.3
       : 1 - sunAlt / 0.3
   ))
   const sunGlowCss = sunGlowAlpha > 0.05
-    ? `linear-gradient(to top,
-        ${rgbCss(resolved.sunGlow)} 0%,
-        rgba(0,0,0,0) 30%)`
+    ? `linear-gradient(to top, ${rgbCss(resolved.sunGlow)} 0%, rgba(0,0,0,0) 30%)`
     : null
 
   return (
     <div style={{ marginTop: 6 }}>
       <div style={{
-        position: 'relative',
-        height: 100,
+        position: 'relative', height: 100,
         border: '1px solid var(--outline-variant)',
-        background: bg,
-        overflow: 'hidden',
+        background: bg, overflow: 'hidden',
       }}>
-        {/* Sun glow wash overlay */}
         {sunGlowCss && (
           <div style={{
             position: 'absolute', inset: 0,
-            background: sunGlowCss,
-            opacity: sunGlowAlpha,
-            mixBlendMode: 'screen',
-            pointerEvents: 'none',
+            background: sunGlowCss, opacity: sunGlowAlpha,
+            mixBlendMode: 'screen', pointerEvents: 'none',
           }} />
         )}
-        {/* Sun dot */}
         {sunY !== null && (
           <div style={{
-            position: 'absolute',
-            top: `${sunY}%`,
-            left: '50%',
+            position: 'absolute', top: `${sunY}%`, left: '50%',
             transform: 'translate(-50%, -50%)',
             width: 14, height: 14, borderRadius: '50%',
             background: '#fff5d6',
@@ -275,12 +263,9 @@ function NowPreview({ sky, tick }) {
             pointerEvents: 'none',
           }} title={`Sun · ${(sunAlt * 180 / Math.PI).toFixed(1)}°`} />
         )}
-        {/* Moon dot — sized by illumination */}
         {moonY !== null && moonIllum > 0.05 && (
           <div style={{
-            position: 'absolute',
-            top: `${moonY}%`,
-            left: '70%',
+            position: 'absolute', top: `${moonY}%`, left: '70%',
             transform: 'translate(-50%, -50%)',
             width: 10, height: 10, borderRadius: '50%',
             background: '#dde6f5',
@@ -294,31 +279,26 @@ function NowPreview({ sky, tick }) {
   )
 }
 
-// Day-long resolved preview. Each sample = one minute slice rendered
-// as a vertical mini-gradient. Sun-glow row beneath. Hour ticks below.
+// Day-long resolved preview. Each sample = one minute slice rendered as a
+// vertical mini-gradient. Sun-glow row beneath. Click/drag → scrub TOD.
 function DayStrip({ sky, tick }) {
-  // Subscribe to currentDate so the 24h preview refreshes when the operator
-  // scrubs the year strip (resolveSkyAtMinute reads doy from useCalendar).
   const currentDate = useCalendar(s => s.currentDate)
-  const slotMinutes = useMemo(() => getTodSlotMinutes(currentDate), [sky, currentDate])
   const columns = useMemo(() => {
     const out = []
     for (let i = 0; i < PREVIEW_SAMPLES; i++) {
       const minute = (i / PREVIEW_SAMPLES) * 1440
-      out.push(resolveSkyAtMinute(sky, minute, slotMinutes))
+      out.push(resolveSkyAtMinute(sky, minute, null))
     }
     return out
-  }, [sky, slotMinutes, currentDate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sky, currentDate])
 
-  // Playhead horizontal position in % from left.
   const playheadPct = useMemo(() => {
     const tod = useTimeOfDay.getState()
     return (tod.getMinuteOfDay() / 1440) * 100
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick])
 
-  // Scrub: click anywhere on the strip → set minute. Drag → continuous.
-  // Pointer-capture so the drag survives the cursor leaving the strip.
   const onPointerDown = (e) => {
     const el = e.currentTarget
     el.setPointerCapture(e.pointerId)
@@ -341,10 +321,8 @@ function DayStrip({ sky, tick }) {
   }
 
   return (
-    <div
-      style={{ marginTop: 6, position: 'relative', cursor: 'ew-resize' }}
-      onPointerDown={onPointerDown}
-    >
+    <div style={{ marginTop: 6, position: 'relative', cursor: 'ew-resize' }}
+         onPointerDown={onPointerDown}>
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${PREVIEW_SAMPLES}, 1fr)`,
@@ -362,20 +340,16 @@ function DayStrip({ sky, tick }) {
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${PREVIEW_SAMPLES}, 1fr)`,
-        gap: 0, height: 6,
-        marginTop: 1,
+        gap: 0, height: 6, marginTop: 1,
         border: '1px solid var(--outline-variant)',
       }}>
         {columns.map((c, i) => (
           <div key={i} style={{ background: c ? rgbCss(c.sunGlow) : 'transparent' }} />
         ))}
       </div>
-      {/* Playhead — vertical line spanning both day strips */}
       <div style={{
-        position: 'absolute',
-        top: 0, bottom: 0,
-        left: `${playheadPct}%`,
-        width: 1,
+        position: 'absolute', top: 0, bottom: 0,
+        left: `${playheadPct}%`, width: 1,
         background: 'var(--vic-gold, #ffd166)',
         pointerEvents: 'none',
         boxShadow: '0 0 3px rgba(255,209,102,0.8)',
@@ -386,30 +360,19 @@ function DayStrip({ sky, tick }) {
 
 export default function SkyGradientGrid() {
   const sky = useCartographStore(s => s.sky)
-  const setSwatch = useCartographStore(s => s.setSkySwatch)
   const revert = useCartographStore(s => s.revertSky)
   const [expanded, setExpanded] = useState(false)
-  // Active anchor is whichever seasonal anchor the year-strip thumb is
-  // nearest to. Operator parks on Spring/Summer/Autumn/Winter via the
-  // DawnTimeline year-strip; edits land in that anchor's card. Sub-phase 2
-  // will add an explicit "on anchor vs. between anchors" UX gate.
   const currentDate = useCalendar(s => s.currentDate)
-  const anchor = useMemo(() => {
-    const start = Date.UTC(currentDate.getFullYear(), 0, 1)
-    const cur = Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
-    const doy = Math.floor((cur - start) / 86400000) + 1
-    return nearestAnchor(doy)
-  }, [currentDate])
+  const overrides = sky?.overrides || []
 
-  // Single ~5fps tick drives all live previews + playhead. Only runs
-  // while the card is open.
+  // ~5fps tick drives the playhead position + sun/moon dots in NowPreview.
+  // Only runs while the card is open.
   const [tick, setTick] = useState(0)
   useEffect(() => {
     if (!expanded) return
     const id = setInterval(() => setTick(n => (n + 1) % 1e6), 200)
     return () => clearInterval(id)
   }, [expanded])
-
 
   return (
     <div style={{ borderTop: '1px solid var(--outline-variant)' }}>
@@ -441,29 +404,24 @@ export default function SkyGradientGrid() {
           marginBottom: 4,
         }}>
           <div className="flex items-center justify-between" style={{ gap: 6 }}>
-            <span className="text-caption" style={{
-              color: 'var(--on-surface-subtle)',
-              textTransform: 'capitalize',
-            }}>
-              editing — {anchor}
+            <span className="text-caption" style={{ color: 'var(--on-surface-subtle)' }}>
+              today's sky · {overrides.length} override{overrides.length === 1 ? '' : 's'}
             </span>
             <button
               onClick={revert}
               style={{
-                fontSize: 10,
-                padding: '2px 8px',
+                fontSize: 10, padding: '2px 8px',
                 border: '1px solid var(--outline)',
-                borderRadius: 3,
-                background: 'transparent',
+                borderRadius: 3, background: 'transparent',
                 color: 'var(--on-surface-subtle)',
                 cursor: 'pointer',
               }}
-              title="Reset all sky swatches to canonical defaults"
+              title="Clear all overrides — sky reverts to procedural canon"
             >
               ↺ Revert
             </button>
           </div>
-          <EditorGrid sky={sky} anchor={anchor} setSwatch={setSwatch} tick={tick} />
+          <EditorGrid sky={sky} currentDate={currentDate} tick={tick} />
           <NowPreview sky={sky} tick={tick} />
           <DayStrip sky={sky} tick={tick} />
         </div>

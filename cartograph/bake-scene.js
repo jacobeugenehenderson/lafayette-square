@@ -26,7 +26,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
-import { SKY_DEFAULTS_4ANCHOR, migrateSkyChannel } from '../src/cartograph/skyGrid.js'
+import { migrateSkyChannel } from '../src/cartograph/skyGrid.js'
 import {
   AMBIENT_FLAT_DEFAULTS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FLAT_DEFAULTS, DIRMOON_FLAT_DEFAULTS,
@@ -82,14 +82,11 @@ export async function bakeScene({ look = 'default' } = {}) {
     layerVis:        design.layerVis        || {},
     lampGlow:        design.lampGlow        || { grass: 0.06, trees: 0.40, pool: 1.0 },
     neon:            design.neon            || { values: { ...NEON_FLAT_DEFAULTS } },
-    // SC.1 — sky / lighting / celestial. Operator authors via Sky & Light
-    // panel; defaults seeded from skyGrid.js + skyLightChannels.js so an
-    // unauthored Look renders identically to today's hardcoded shader.
-    // The sky channel migrated to a 4-anchor shape (winter/spring/summer/
-    // autumn TOD-grid cards) — migrateSkyChannel wraps legacy 1-layer
-    // design.json into the new shape (summer = previously-authored card;
-    // other three anchors = copy of summer for visual continuity).
-    sky:            migrateSkyChannel(design.sky || { values: { ...SKY_DEFAULTS_4ANCHOR } }),
+    // SC.1 — sky / lighting / celestial. Sky pivoted (2026-05-20 ADR) to
+    // kit-canonical 4 anchor cards in skyGrid.js + per-Look sparse
+    // overrides in scene.json. migrateSkyChannel normalizes any legacy
+    // shape (1-layer, 4-anchor bff87b5, or new) to { overrides: [...] }.
+    sky:            migrateSkyChannel(design.sky),
     ambient:        design.ambient        || { values: { ...AMBIENT_FLAT_DEFAULTS } },
     hemi:           design.hemi           || { values: { ...HEMI_FLAT_DEFAULTS } },
     dirSun:         design.dirSun         || { values: { ...DIRSUN_FLAT_DEFAULTS } },
