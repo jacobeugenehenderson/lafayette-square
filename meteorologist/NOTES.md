@@ -4,6 +4,30 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-20 — Phase 5a shipped — runtime live wiring (evaluator hot-mount + directive tween + wind subscribers)
+
+The plumbing for "live LS" landed. open-meteo → `useWeather` → `useAtmosphereDirective` → `selectDirective(payload, almanac, presets, override)` → `useAtmosphere.rawDirective` → 45s ease-in-out tween (weight-union cloud crossfade) → `useAtmosphere.tweenedDirective` → Atmosphere uniforms + tree sway. The directive's `wind.dir` + `wind.scale` drive cloud advection and tree sway from the same source.
+
+What's bound where:
+- `<Atmosphere>` shape + lighting uniforms: production path runs `bindUniformsFromDirective` (weighted-blend across all presets in the directive's `clouds[]` at the current minute). When a Teacup preset is loaded the authoring path wins, unchanged from Phase 4b.2.
+- `<Atmosphere>` sun/sky color: when no authoring preset is active, the directive's `sun.tint` overrides the sky-light coupling amendment's `sunGlow` write for cloud lighting (`directive.lightDome.horizon` → `uSkyColor`, `directive.lightDome.ambientFloor` → `uAmbientFloor`). Sky channel still drives the dome itself.
+- `<InstancedTrees>` sway: existing `treeSwayUniforms.uTime` pump gains `uSwayWindSpeed` (scales oscillation rate) + `uSwayWindDir` (XZ unit vec biasing canopy lean). Phase 7a will replace these scalars with a multi-timescale gust envelope.
+
+Weight-union crossfade is the load-bearing choice for the directive tween: when the Almanac flips condition the blend at lerp param t carries BOTH presets — old weights · (1-t), new weights · t — so cloud morphology morphs through the transition instead of snap-cutting. Renormalized only when the sum exceeds 1.
+
+Open-meteo extension: useWeather's fetch grew `pressure_msl`, `relative_humidity_2m`, and separate `wind_direction_10m` fields. The schema's `humidity` is 0..1 so the parser divides by 100; pressure_mb passes through.
+
+Production caveat: `Scene.jsx` still mounts `<CloudDome />` (Phase 4b.3 hasn't shipped) and trees are NOT mounted in production at all today. The driver writes into the store the moment Scene.jsx loads, and CanaryScene + PreviewApp + Stage are the proving surfaces today. The Phase 5a wiring is fully in place; the production-visible "live LS" beat lands on 4b.3 + the production tree mount.
+
+Disclosure trail:
+- `weather-payload.js` matched schema field names verbatim: `tempC, cloudCover, pressureMb, humidity, windKph, windDirDeg, precipMmHr, precipKind, stormDistanceKm, sunElevationDeg, sunAzimuthDeg, tod, season`. Schema's `season` enum uses `fall` (not `autumn`); the deriver matches. TOD enum is broader than what the Almanac uses; only the subset `dawn/morning/noon/afternoon/dusk/night` is emitted today.
+- `bindUniformsFromDirective` does the full weighted blend across all presets in the directive's `clouds[]` (preferred path, not the top-weighted shortcut). Missing presets in the cache are skipped + their weight excluded from the normalization.
+- Sun/sky uniform override: when the directive is active, its `sun.tint` overrides the sky-light coupling amendment's `sunGlow` write (matches the framing's "weather-coloured days override sky lighting"). Sky channel still owns dome rendering.
+- Tree sway scalar contract for Phase 7a: speed scales the oscillation rate basis (`0.6 + 0.4*(speed-1)`) and adds a static lean proportional to `speed-1`. Phase 7a should replace this with a sampled wind field + multi-timescale envelope; the scalar pair is a placeholder, not the destination.
+- Driver mounted in `Scene.jsx` only (per stash-isolate). CanaryScene + PreviewApp will need their own mount when their directive consumption matters (Phase 5b polish).
+
+---
+
 ## 2026-05-20 — Phase Seed shipped
 
 Library is no longer placeholder. Nimbus's 52-preset specialist seed + the photo-in-viewport authoring loop turn the Teapot from scaffolding into a real authoring surface. Schema gained an optional `description` field; UI surfaces it as read-only in the rail and editable in the expanded state. `specialist-seed.json` acts as the immutable canon — operator edits override it per preset, "Revert to seed" restores it.

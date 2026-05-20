@@ -11,6 +11,7 @@ import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import CloudDome from './CloudDome'
 import WeatherPoller from './WeatherPoller'
+import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import UserDot from './UserDot'
 import CourierDots from './CourierDots'
 import useCamera from '../hooks/useCamera'
@@ -679,6 +680,7 @@ function Scene() {
       <TimeTicker />
       <SkyStateTicker />
       <WeatherPoller />
+      <AtmosphereDirectiveDriver lookId={INSTANCE.lookId} />
       <CelestialBodies />
       <CloudDome />
       {/* Terrain mesh hidden — the ribbons + land-use fills ARE the

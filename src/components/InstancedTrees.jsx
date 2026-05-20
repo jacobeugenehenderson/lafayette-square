@@ -22,6 +22,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { useTreeAtlas, treeSwayUniforms } from './treeAtlasMaterial'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
+import useAtmosphere from '../hooks/useAtmosphere.js'
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -300,6 +301,16 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
 function SwayDriver() {
   useFrame((_, delta) => {
     treeSwayUniforms.uTime.value += delta
+    // Phase 5a — pull wind from the live directive. directive.wind.dir
+    // is meteorological FROM-bearing; convert to TO unit vector in XZ
+    // (+X east, +Z south in three's world frame). Falls back to gentle
+    // east-ward sway when no directive has resolved yet.
+    const directive = useAtmosphere.getState().tweenedDirective
+    if (directive?.wind) {
+      treeSwayUniforms.uSwayWindSpeed.value = directive.wind.scale ?? 1.0
+      const fromRad = ((directive.wind.dir ?? 0) * Math.PI) / 180
+      treeSwayUniforms.uSwayWindDir.value.set(-Math.sin(fromRad), -Math.cos(fromRad))
+    }
   })
   return null
 }

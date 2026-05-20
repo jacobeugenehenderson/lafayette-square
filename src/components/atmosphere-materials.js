@@ -71,6 +71,7 @@ uniform float uAmbientFloor;
 uniform float uEdgeSilver;
 uniform float uShadowStrength;
 uniform float uWindScale;
+uniform vec3  uWindDir;
 
 uniform int   uSteps;
 uniform int   uShadowSteps;
@@ -144,7 +145,10 @@ float sampleDensity(vec3 worldP) {
   // Sourced from the active Condition's directive.wind.scale (Phase 5+);
   // hardcoded to 1.0 today. NOT a per-cloud Teapot param — wind is
   // environmental, owned by Conditions.
-  vec3 wind = vec3(uTime * uWindScale * 2.0, 0.0, uTime * uWindScale * 1.0);
+  // Wind direction driven by the directive (Phase 5a). uWindDir is a
+  // unit vector in the XZ plane (Y=0). Multiplied by uWindScale to give
+  // a per-second drift; uTime advances the noise field.
+  vec3 wind = vec3(uTime * uWindScale * uWindDir.x * 2.0, 0.0, uTime * uWindScale * uWindDir.z * 2.0);
   vec3 q = (worldP + wind) * uWarpFreq;
   float n = fbm(q);
 
@@ -239,7 +243,7 @@ void main() {
     for (int i = 0; i < 64; ++i) {
       if (i >= uSteps) break;
       float v = uDebugMode == 2
-        ? fbm((p + vec3(uTime * uWindScale * 2.0, 0.0, uTime * uWindScale)) * uWarpFreq)
+        ? fbm((p + vec3(uTime * uWindScale * uWindDir.x * 2.0, 0.0, uTime * uWindScale * uWindDir.z * 2.0)) * uWarpFreq)
         : sampleDensity(p);
       maxVal = max(maxVal, v);
       p += stepVec;
@@ -317,6 +321,10 @@ export function createAtmosphereMaterial() {
       uEdgeSilver:     { value: 1.05 },
       uShadowStrength: { value: 0.65 },
       uWindScale:          { value: 1.0 },
+      // Wind direction — XZ unit vector. Default east-ward until the
+      // directive resolves and overwrites. Y component intentionally 0
+      // (cloud advection is a 2D field).
+      uWindDir:            { value: new THREE.Vector3(1, 0, 0) },
       // Per-frame
       uTime:           { value: 0 },
       uSunDir:         { value: new THREE.Vector3(0, 0.7, 0.7).normalize() },

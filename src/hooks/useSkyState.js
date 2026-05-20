@@ -22,6 +22,10 @@ const useSkyState = create((set, get) => ({
   turbidity: 0,
   precipitationIntensity: 0,
   windVector: new THREE.Vector2(0, 0),
+  windSpeedMs: 0,          // raw scalar speed (m/s), surfaced so Almanac evaluator gets windKph without re-deriving from windVector
+  windDirDeg: 0,           // meteorological convention — degrees the wind blows FROM
+  pressureMb: null,        // open-meteo pressure_msl (mb / hPa)
+  humidity: null,          // open-meteo relative_humidity_2m, normalized to 0..1
   temperatureF: null,  // real temp from Open-Meteo (°F), null until first fetch
   currentWeatherCode: null,  // WMO code from current conditions
   hourlyForecast: [],  // Array<{ time: Date, temperatureF: number, weatherCode: number }>
@@ -50,6 +54,10 @@ const useSkyState = create((set, get) => ({
       _targetTurbidity: data.turbidity ?? get()._targetTurbidity,
       _targetPrecipitation: data.precipitationIntensity ?? get()._targetPrecipitation,
       _targetWind: data.windVector ?? get()._targetWind,
+      windSpeedMs: data.windSpeedMs !== undefined ? data.windSpeedMs : get().windSpeedMs,
+      windDirDeg: data.windDirDeg !== undefined ? data.windDirDeg : get().windDirDeg,
+      pressureMb: data.pressureMb !== undefined ? data.pressureMb : get().pressureMb,
+      humidity: data.humidity !== undefined ? data.humidity : get().humidity,
       temperatureF: data.temperatureF !== undefined ? data.temperatureF : get().temperatureF,
       currentWeatherCode: data.currentWeatherCode !== undefined ? data.currentWeatherCode : get().currentWeatherCode,
     })

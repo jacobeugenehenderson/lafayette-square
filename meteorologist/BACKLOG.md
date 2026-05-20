@@ -82,16 +82,26 @@ Three coupled additions:
 
 Lands AFTER Phase 4b so the temporal modulation is visually validatable.
 
-### Phase 5 — Fixtures + Almanac evaluator hot-mount + polish
+### ✅ Phase 5a — Runtime live wiring (shipped 2026-05-20)
+
+Almanac evaluator hot-mounted against live open-meteo state via:
+- `src/lib/weather-payload.js` — bridges open-meteo + INSTANCE + SunCalc → schema-aligned payload.
+- `src/hooks/useAtmosphere.js` + `useAtmosphereDirective.js` — shared zustand store holding the resolved directive; subscribers (Atmosphere + InstancedTrees) read from `tweenedDirective`.
+- `src/components/AtmosphereDirectiveDriver.jsx` — mounted in `Scene.jsx`, runs `selectDirective` whenever weather / time / override changes, lerps `rawDirective` → `tweenedDirective` over 45s via weight-union cloud crossfade.
+- `Atmosphere.jsx` — production directive path: `bindUniformsFromDirective` does a weighted blend of preset params across the directive's `clouds[]`, then directive's `sun.tint` + `lightDome.horizon/ambientFloor` overwrite the sky-light coupling for cloud lighting (sky channel still drives the dome).
+- `atmosphere-materials.js` — new `uWindDir` Vector3 uniform; wind advection now respects directive direction.
+- `InstancedTrees.jsx` + `treeAtlasMaterial.js` — sway shader picks up `uSwayWindSpeed` + `uSwayWindDir`; faster oscillation + static lean under stronger wind. Phase 7a replaces with multi-timescale gust envelope.
+
+Caveat: production `Scene.jsx` still mounts `<CloudDome />` (Phase 4b.3 pending), so the directive's full visual effect — clouds tracking weather, lighting tracking weather, trees swaying with weather — is verifiable in CanaryScene + PreviewApp today, and becomes production-visible the moment 4b.3 lands. The plumbing itself is fully in place; only the consumer mount remains.
+
+### Phase 5b — Polish
 
 - Fake-weather fixture management UI (load/save weather payloads from `public/clouds/fixtures/`).
-- Almanac evaluator hot-mount in CanaryScene (or in Cartograph Stage's Sky&Light dev panel): reads `selectDirective(weather, almanac, presets, override)` each frame; surfaces "current condition" + "current cloud blend" while authoring.
+- Surface "current directive" debug readout in Sky & Light card (DevTools: `useAtmosphere.getState()` for now).
 - Fallback editor (the catch-all directive for when no rule matches).
 - Cloud preset gallery / reference-photo thumbnails (BACKLOG item 10 from 2026-05-14 spade work).
 - Camera orbit controls in viewport.
 - `bakeLastMs` slice replaces Phase 4a's `Date.now()` stub (real cartograph fetch).
-- **Directive tween-on-change** (between consecutive `selectDirective` outputs): when the Almanac flips condition, lerp uniforms over ~30–60s so the runtime never snaps. Lays the rails Phase 6 modulators ride on.
-- **Wind cross-helper wiring.** The resolved directive's `wind.speed` + `wind.dir` (+ `wind.gustsScale` after Phase 6) become a single subscribable source. Two consumers: `<Atmosphere>` (cloud advection via `uWindScale` + new `uWindDir`) and `<InstancedTrees>` (sway shader uniforms). Subscribes-not-authors per ARCHITECTURE §9. Today open-meteo's wind values reach `useWeather` but don't flow further; Phase 5's hot-mount is what closes that loop.
 
 ### Phase 6 — Modulators (continuous atmospheric phenomena) — v1 commitment
 

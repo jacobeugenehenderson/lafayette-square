@@ -28,6 +28,15 @@ const _cache = new Map()  // lookName -> { manifest, barkMaterial, leavesMateria
 // program for leaves regardless of how many Looks have been visited.
 export const treeSwayUniforms = {
   uTime: { value: 0 },
+  // Phase 5a — wind cross-helper subscriber. The driver in
+  // AtmosphereDirectiveDriver.jsx writes directive.wind into these each
+  // frame. uSwayWindSpeed scales the existing time-driven oscillation
+  // (1.0 = today's hardcoded behavior). uSwayWindDir is a unit XZ
+  // vector that biases the sway in the wind's direction (so leaves
+  // lean +wind, not just oscillate symmetrically). Phase 7a will
+  // replace this scalar with a multi-timescale gust envelope.
+  uSwayWindSpeed: { value: 1.0 },
+  uSwayWindDir: { value: new THREE.Vector2(1, 0) },
 }
 
 // Phase B (2026-05-15) — per-(species, draw) bark retint uniforms. These
@@ -49,6 +58,8 @@ export const treeSwayUniforms = {
 function injectFoliageSway(material) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = treeSwayUniforms.uTime
+    shader.uniforms.uSwayWindSpeed = treeSwayUniforms.uSwayWindSpeed
+    shader.uniforms.uSwayWindDir = treeSwayUniforms.uSwayWindDir
     // Per-tree lamp-glow uniform — driven by CartographApp from the
     // per-Look TOD curve (lampGlow.trees slider). The per-instance
     // `aLampGlow` attribute (pre-baked at tree position) carries the
@@ -84,6 +95,8 @@ function injectFoliageSway(material) {
         '#include <common>',
         `#include <common>
          uniform float uTime;
+         uniform float uSwayWindSpeed;
+         uniform vec2  uSwayWindDir;
          attribute float aLampGlow;
          attribute float aBark;
          attribute float aBarkRegion;
@@ -111,9 +124,22 @@ function injectFoliageSway(material) {
            vec3 instWorld = vec3(instanceMatrix[3].x, 0.0, instanceMatrix[3].z);
            float phase = instWorld.x * 0.05 + instWorld.z * 0.07;
            float h = max(position.y, 0.0);
+           // Phase 5a: scalar wind. uSwayWindSpeed scales the time
+           // basis (gentle 1.0 today → faster oscillation under stronger
+           // wind). uSwayWindDir biases the sway so leaves lean toward
+           // the wind direction (constant offset proportional to speed)
+           // on top of the symmetric oscillation. Phase 7a replaces with
+           // a multi-timescale gust envelope.
            float swayAmp = 0.04;
-           transformed.x += sin(uTime * 0.6 + phase) * swayAmp * h;
-           transformed.z += cos(uTime * 0.5 + phase * 1.3) * swayAmp * h;
+           float t = uTime * (0.6 + 0.4 * (uSwayWindSpeed - 1.0));
+           float swayX = sin(t + phase) * swayAmp * h;
+           float swayZ = cos(t * 0.83 + phase * 1.3) * swayAmp * h;
+           // Static lean — small offset in the wind direction proportional
+           // to speed. Keeps the canopy's neutral position slightly
+           // tipped under sustained wind.
+           float lean = clamp((uSwayWindSpeed - 1.0) * 0.25, -0.6, 0.6) * swayAmp * h;
+           transformed.x += swayX + uSwayWindDir.x * lean;
+           transformed.z += swayZ + uSwayWindDir.y * lean;
            // Per-instance world-XZ for fragment hue jitter. We sample the
            // instance translation column (constant within a draw) so every
            // fragment of one tree gets ONE jitter value, not noise per
