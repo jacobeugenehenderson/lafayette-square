@@ -14,18 +14,27 @@ Updated 2026-05-20. Phases 1–4b.1 shipped (see `NOTES.md` for commits). Next:
 
 All five photoreal levers landed in one commit. Uniforms hardcoded to `cumulus_humilis` values; preset-driven binding queued for 4b.2. Visual verification (HANDOFF checklist 1–5 + 9) pending Jacob's eyes.
 
-### Cross-helper: Kit clock + calendar anchor (NEXT UP — orchestrated from Meteorologist)
+### Cross-helper: Kit clock + calendar anchor (mostly shipped 2026-05-20)
 
-Promote `useTimeOfDay` to formal kit primitive + add `useCalendar` (date, day-of-year, season) alongside. Add `<ClockCalendarPump>` shared driver. One anchor + one pump + N per-helper scrub UIs. ADR + rationale in `NOTES.md` 2026-05-20.
+ADR + rationale in `NOTES.md` 2026-05-20 entries. Phasing:
 
-Phasing:
-1. Kit primitive + pump scaffold (baby brief: `scratch/handoff-2026-05-20-kit-clock-calendar-primitive.md`). Meteorologist-orchestrator-hosted because it's pure kit-level (lives in `src/hooks/` + `src/components/`); no helper-specific code.
-2. Cartograph adds `DateScrubber` next to DawnTimeline. Cross-helper coordinator brief.
-3. Meteorologist consumes `useCalendar.season` in Condition editor (whenBlock.season match). Direct orchestrator commit, no baby.
-4. Arborist consumes `useCalendar` for seasonal tree variant selection. Cross-helper coordinator brief (pairs with their year-round trees work).
-5. Production runtime mounts `<ClockCalendarPump mode="live">`. After 1-4 land.
+1. ✅ Kit primitive + pump scaffold (Wren). useCalendar + ClockCalendarPump shipped.
+2. ✅ **Replaced** by unified time card (Wren). DateScrubber subsumed into expanded DawnTimeline.
+3. ✅ Meteorologist Condition editor — WhenCard live dots on TOD + season chips (commit `36d667c`).
+4. ⏳ Arborist seasonal-tree consumption. Cross-helper coordinator brief at `scratch/handoff-2026-05-20-arborist-seasonal-tree-consumption.md`. Pairs with year-round trees track.
+5. ⏳ Production runtime mounts `<ClockCalendarPump mode="live">`. Small direct commit after 4 ships.
 
-Unblocks: seed-from-physics sky direction (needs `dayOfYear`), seasonal Conditions (`whenBlock.season` finally semantic), year-round Arborist trees, real-date production runtime.
+Also shipped:
+- Year-strip 12-month markers → 4 season-name anchors (commit `5e98533`)
+- Bidirectional sync between useCalendar + useTimeOfDay so year-strip drives CelestialBodies' SunCalc → seasonal sun motion is visible
+
+### Cross-helper: 4-anchor seasonal sky matrix (NEXT UP — Cartograph coordinator)
+
+Promote `scene.json` sky channel from 1 grid → 4 anchor layers (winter/spring/summer/autumn at solstices + equinoxes). Sky Builder gains edit-lock UX (operator must park on an anchor to edit; off-anchor = preview-only tween). Runtime interpolates between anchors based on `useCalendar.dayOfYear()`.
+
+Maxibrief: `scratch/handoff-2026-05-20-cartograph-4anchor-seasonal-sky.md` (in flight).
+
+Unblocks: sky color responds to year-strip the way sun position now does. Custom-event Looks become per-season deviations instead of from-scratch authoring.
 
 ### Phase 4b.2 — TodChannel uniform binding
 

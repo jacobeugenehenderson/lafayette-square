@@ -39,6 +39,10 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 - Phase 3 — Condition editor (commit `98f3781`, 2026-05-19)
 - Phase 4a — CanaryScene scaffold (commit `6a3fd29`, 2026-05-19)
 - Phase 4b.1 — `<Atmosphere />` raymarched shader (commit `d1c66fe`, 2026-05-20)
+- Kit clock+calendar primitive — `useCalendar` + `ClockCalendarPump` (2026-05-20)
+- Step 3 WhenCard live dots — TOD + season chip indicators (commit `36d667c`, 2026-05-20)
+- Unified time card — TOD + ToY + playback in DawnTimeline (Wren, 2026-05-20)
+- Year-strip seasons + clock/calendar bidirectional sync (commit `5e98533`, 2026-05-20)
 
 ---
 

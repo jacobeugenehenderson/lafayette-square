@@ -4,6 +4,44 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-20 — Seasonal sun motion + 4-anchor seasonal sky matrix (ADR)
+
+**Background.** With kit calendar + bidirectional clock/calendar sync shipped (commit `5e98533`), scrubbing the year-strip in the unified time card now reaches CelestialBodies' SunCalc(currentTime, lat, lon) call (CelestialBodies.jsx:986). Sun position responds to year-position immediately — winter sun lower + southerly, summer sun higher, equinox sun on the celestial equator. Daylight duration also varies seasonally because `getDawnWindow(currentTime)` consumes the live Date for SunCalc waypoint computation.
+
+**What still doesn't follow the season:** the sky COLOR. The Sky Builder's 5×22 swatch matrix (`scene.json` sky channel) is TOD-keyed but not date-keyed. December noon in Lafayette Square renders the sun lower in the sky (correct, physics) — but against the same summery sky colors authored for July noon. Visually odd until per-season authoring lands.
+
+### 4-anchor seasonal sky matrix — the direction (parked)
+
+Promote the sky matrix from a single 5×22 grid per Look to **4 layers per Look** — one at each cardinal year-anchor (Winter solstice, Spring equinox, Summer solstice, Autumn equinox). Runtime interpolates between the two flanking anchors based on `useCalendar.dayOfYear()`.
+
+**Editor UX:** the year-strip determines which anchor's matrix is editable. Operator clicks "Spring" → year thumb snaps to Mar 20 → matrix shows + permits editing of Spring's swatches. Drag away from the anchor → matrix becomes read-only preview showing the interpolated tween toward the next anchor. Operator must park on an anchor to edit. Matches the TodChannel pattern (attached-slot = editable; off-slot = interpolated preview).
+
+**Why 4 (not 12).** 4 = the canonical cardinal points of the year astronomically + the 4-season cognitive model + a 4x authoring burden (440 swatches/Look) that's tractable when paired with seed-from-physics. 12 monthly anchors would be 12x burden with most months sitting near their neighbors — not enough additional fidelity to justify the work. 8 anchors (adding cross-quarter days) is the next stop if 4 ever proves coarse, but unlikely.
+
+**Pairs naturally with seed-from-physics.** Each anchor's initial matrix can regenerate from physical sky model + date + dramatize, so operators don't author all 4 from scratch — they regenerate, then deviate.
+
+**Storage shape (proposed):**
+
+```jsonc
+// scene.json — sky channel becomes 4 layers
+"sky": {
+  "values": {
+    "winter": { /* 5 bands × N TOD swatches */ },
+    "spring": { /* ... */ },
+    "summer": { /* ... */ },
+    "autumn": { /* ... */ }
+  }
+}
+```
+
+Backward-compat: a 1-layer matrix (today's shape) is treated as one of the four (probably autumn, given LS's current authoring leans warm-cool-mixed) until the other three are authored.
+
+**Where the work lives:** Cartograph. Schema + Sky Builder UI + runtime interpolation in CelestialBodies (or wherever the sky shader reads the matrix). Cartographer coordinator maxibrief drafted at `scratch/handoff-2026-05-20-cartograph-4anchor-seasonal-sky.md`.
+
+**What this unlocks:** sky color responds to year-strip scrubbing. Combined with the already-shipped seasonal sun motion, "December noon" reads as cold winter light *with cold winter sky*. Custom-event Looks (Valentine's pink horizon, Cardinals red zenith) become deviations on their season's anchor, not from-scratch authoring.
+
+---
+
 ## 2026-05-20 — Kit-level clock + calendar anchor (ADR, in flight)
 
 **Decision direction (in flight, not yet shipped):** time-of-day AND date/season are kit-level primitives. ONE anchor, ONE pump, N consumer UIs. No per-helper anchors.
