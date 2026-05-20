@@ -43,6 +43,9 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 - Step 3 WhenCard live dots — TOD + season chip indicators (commit `36d667c`, 2026-05-20)
 - Unified time card — TOD + ToY + playback in DawnTimeline (Wren, 2026-05-20)
 - Year-strip seasons + clock/calendar bidirectional sync (commit `5e98533`, 2026-05-20)
+- Cartograph 4-anchor seasonal sky scaffold + Preetham composition (Wren, commit `bff87b5`, 2026-05-20) — **partially superseded by pivot below**
+- Preetham composition dropped — operator juice is the truth (commit `d6b861b`, 2026-05-20)
+- Sky architecture pivot ADR — procedural canon + per-cell overrides + 24-hour grid (parked + queued; see `NOTES.md`, 2026-05-20)
 
 ---
 

@@ -28,13 +28,33 @@ Also shipped:
 - Year-strip 12-month markers → 4 season-name anchors (commit `5e98533`)
 - Bidirectional sync between useCalendar + useTimeOfDay so year-strip drives CelestialBodies' SunCalc → seasonal sun motion is visible
 
-### Cross-helper: 4-anchor seasonal sky matrix (NEXT UP — Cartograph coordinator)
+### ✅ Partially shipped + pivoted: 4-anchor seasonal sky matrix
 
-Promote `scene.json` sky channel from 1 grid → 4 anchor layers (winter/spring/summer/autumn at solstices + equinoxes). Sky Builder gains edit-lock UX (operator must park on an anchor to edit; off-anchor = preview-only tween). Runtime interpolates between anchors based on `useCalendar.dayOfYear()`.
+Wren shipped sub-phases 1 + 3 in `bff87b5` (schema + Preetham composition + runtime interpolation). Subsequent architectural conversation surfaced that the entire model wanted simplification — see `NOTES.md` "Sky architecture pivot" 2026-05-20 ADR. Sub-phase 2 (edit-lock UX) was queued but is now superseded by the pivot. Preetham composition removed in `d6b861b`.
 
-Maxibrief: `scratch/handoff-2026-05-20-cartograph-4anchor-seasonal-sky.md` (in flight).
+Maxibrief `scratch/handoff-2026-05-20-cartograph-4anchor-seasonal-sky.md` is partially obsolete — sub-phases 1+3 done; sub-phase 2 retired; new direction takes over below.
 
-Unblocks: sky color responds to year-strip the way sun position now does. Custom-event Looks become per-season deviations instead of from-scratch authoring.
+### Cross-helper: Sky architecture pivot (NEXT UP — Cartograph, single Wren brief)
+
+The next piece of work consolidates several threads: procedural sky restoration, 24-hour uniform grid, per-cell override system with spatial + temporal envelope, 3 missing seasonal cards (procedural-seeded + artistic deviation).
+
+ADR + full architecture in `NOTES.md` "Sky architecture pivot: procedural canon + per-cell overrides" 2026-05-20.
+
+One open architectural question pending Jacob's confirm: whether the rendered sky shader consumes the procedural function live or the resolved mosaic (anchor-lerp + overrides). Brief drafting waits on that decision.
+
+Once confirmed, the brief covers:
+1. Extract `cartograph/proceduralSky.js` from the historical pre-`47c2760` `GradientSky` (pure JS function + GLSL template + keyframe data table)
+2. Restore procedural shader path in `CelestialBodies.jsx` (or pivot to mosaic-driven per Q resolution)
+3. Sample procedural at 24 hourly positions × winter/spring/autumn reference dates → raw seasonal cards
+4. **Wren artistic deviation pass** on the 3 raw cards (winter cooler/desat, autumn golden-warmth, spring fresh)
+5. Reshape `skyGrid.js`: `SKY_HOURS = 24`, 4 anchor cards exported, runtime `buildMosaicForDate(date, overrides)` resolver
+6. Migrate existing summer 22-editorial-cols → 24-uniform-hourly (preserve artistry as overrides)
+7. `scene.json` schema downgrade: 4-anchor matrix → sparse override list `{ overrides: [{ hour, band, hex }] }`
+8. Override resolver implements Chebyshev spatial (d=0 full, d=1 50%, d≥2 none) + temporal envelope (full inside override hour, 15-min ramp on each side)
+9. Sky Builder UI: 24 hour-labeled columns, CSS gradient cells (sample left/mid/right minute), per-cell override authoring, shift-click revert
+10. Doc sweep
+
+Unblocks: sky color responds to year-strip via canonical procedural physics; operator overrides as sparse hand-painted touches; "sell sky space" mental model becomes literal (hour-keyed cells); 4 seasonal cards exist as kit canon with Wren's artistic touch.
 
 ### Phase 4b.2 — TodChannel uniform binding
 

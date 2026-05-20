@@ -4,7 +4,100 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
-## 2026-05-20 — Seasonal sun motion + 4-anchor seasonal sky matrix (ADR)
+## 2026-05-20 — Sky architecture pivot: procedural canon + per-cell overrides (ADR)
+
+**Reverses + replaces** the "Sky Builder authors per-Look 4-anchor matrices" direction recorded in the next entry below ("4-anchor seasonal sky matrix"). After three iterations of architectural growth (4-anchor matrices in `bff87b5`; Preetham composition; per-anchor edit-lock UX), Jacob surfaced the underlying simplification: **the procedural sky shader that originally produced the project's lovely summer card IS the source of truth**, and the operator's authoring surface is per-cell overrides on top, not from-scratch matrix painting.
+
+Concrete sequence of realizations this session:
+
+1. Preetham composition (`final = preetham + juice × (1 - preethamLuma)`) actively fought the painter — operator's authored summer-noon-zenith was attenuated to ~30% strength by the Preetham layer that ostensibly was "supporting" it. Dropped in commit `d6b861b`.
+2. The existing summer SKY_DEFAULTS isn't hand-painted from scratch — it's a 22-column-snapshot of the project's original procedural sky shader (the `GradientSky` function in `47c2760^:src/components/CelestialBodies.jsx`), sampled at summer's altitude trajectory through the day. The keyframes (`dawnDeep` / `dawnPeak` / `dawnGolden` / `day` / `duskGolden` / `duskPeak` / `duskDeep` / `night`) are project canon; the summer card is one materialization of them.
+3. The other 3 seasons (winter / spring / autumn) follow inherently from the same procedural function, sampled at THEIR altitude trajectories. Winter noon's 28° sun-altitude produces colors that summer reaches at ~8am — automatically, because the procedural function captures the altitude→color relationship that's true year-round.
+4. The whole "seasonal" concept is internal — operators never author 4 separate matrices; they paint per-cell overrides on top of the procedural canon, which renders today's-sky every day based on today's altitudes.
+5. The grid should align to **24 uniform clock-hour columns** (not 22 editorial waypoints) because the override-buyer's mental model is clock time ("Sponsor the sky at 7pm"), not SunCalc waypoint subdivisions.
+6. Overrides bleed both spatially (Chebyshev distance 1 → 50% blend; brand-halo) and temporally (15-min ramp on either side of the override hour; the override owns its full hour at full strength, fades to procedural before/after).
+
+### The architecture this lands on
+
+```
+cartograph/proceduralSky.js  (NEW, kit-level)
+  Pure function: f(sunAltitude, isDawn) → { horizon, low, mid, high, sunGlow }
+  + GLSL fragment template string (same logic, shader form)
+  + keyframe data table (the canonical dawn/dusk/day/night palettes)
+
+cartograph SKY_ANCHOR_CARDS (kit canon, materialized at module-load or build-time)
+  ├─ summer  = the existing hand-painted card, remapped from 22-editorial to
+  │            24-hourly grid (preserved as Look-level overrides where the
+  │            artistic deviation matters; procedural where it doesn't)
+  ├─ winter  = procedural-seeded + Wren's artistic deviation
+  ├─ spring  = procedural-seeded + Wren's artistic deviation
+  └─ autumn  = procedural-seeded + Wren's artistic deviation
+
+Per-day base mosaic
+  lerp between flanking anchors by dayOfYear (e.g. May 19 is ~60% from
+  spring toward summer). 24 hours × 5 bands = 120 cells of resolved base.
+
+Per-Look override layer
+  scene.json schema: `{ sky: { overrides: [{ hour, band, hex }] } }`
+  Sparse list. Default Look = empty. Custom-event Looks add a few cells.
+
+Spatial + temporal envelope (when overrides resolve)
+  Chebyshev distance:
+    d=0 → 100% override
+    d=1 → 50% blend with base (vertical band-neighbors + horizontal hour-neighbors)
+    d≥2 → no influence
+  Temporal envelope:
+    Inside override hour [hO*60, hO*60+60) → full strength
+    Ramp-in [hO*60-15, hO*60)             → linear 0→1 over 15 min
+    Ramp-out (hO*60+60, hO*60+75]         → linear 1→0 over 15 min
+    Beyond → no influence
+  Combined per-cell weight = spatial × temporal
+  Hour distance wraps at midnight (sky has no discontinuity at 23↔0).
+  Multi-override stacking: average all influences at a cell.
+
+Sky Builder UI
+  24 hour-labeled columns × 5 bands. Each cell either flat (no nearby
+  override) or rendered as a horizontal CSS gradient sampling the
+  resolver at left-edge / middle / right-edge minutes. Click cell to
+  author override at that (hour, band); shift+click to revert to
+  procedural. Year-strip drag scrubs the date; mosaic recalculates.
+  No anchor-name navigation needed — operator thinks "today's sky"
+  not "spring's matrix."
+```
+
+### What this collapses
+
+- **`bff87b5`'s 4-anchor matrix schema in scene.json** — replaced with a sparse override list. The 4 anchor cards still exist as kit canon (one source of truth, one location), but they're not per-Look authored data.
+- **Wren's queued sub-phase 2 (edit-lock UX)** — irrelevant. No anchor parking; per-cell override is the authoring affordance.
+- **Preetham composition** — removed in `d6b861b`. The procedural function alone produces seasonally-correct sky.
+- **The seasonal authoring concept in operator UX** — the user never sees "winter card vs summer card" tabs. They see "today's sky," scrubbable by date. The 4 cards are an implementation detail.
+- **SKY_HOUR vs SKY_SLOT_COLUMNS** — 24 uniform hourly columns replaces the 22 editorial subdivisions. Better for "sell sky space" addressing (column 19 = sky at 7pm, independent of season).
+
+### What stays
+
+- The kit clock/calendar primitives (`useTimeOfDay` + `useCalendar` bidirectional sync).
+- The unified time card / year-strip / 4 season-name click targets in DawnTimeline (now jump-to-date affordances).
+- All non-Preetham CelestialBodies features (sun glow, halo, moon disc, constellations, weather modifiers).
+- Almanac directive overrides at runtime (sun.tint, lightDome.\*, etc.) — these are weather modulations on top of the resolved sky, independent of the per-Look override system.
+
+### One open architectural question
+
+**Does the rendered sky shader consume the procedural function live, or the resolved mosaic (anchor-lerp + overrides)?**
+
+- **Option A: procedural shader live + override layer.** Shader runs continuous procedural from sun position. Operator overrides modulate via additive uniform updates per cell. Render smooth between hours but per-band discrete. Mosaic exists for Sky Builder display only.
+- **Option B: mosaic-driven shader.** Shader reads resolved 24×5 mosaic each frame; lerps between adjacent cells. Sky color = exactly what the Sky Builder shows. Wren's artistic deviation flows directly to pixels.
+
+Recommend B (what-you-author = what-renders). Pending Jacob's confirm.
+
+### Wren's next work
+
+Single brief covering: extract `proceduralSky.js`, restore procedural shader path (or pivot to mosaic-driven per the open question), build the 24-hourly Sky Builder grid with CSS-gradient cells, implement the spatial+temporal override resolver, generate the 3 missing seasonal cards (procedural seed + Wren artistic deviation), migrate existing summer card to 24-hour grid, schema downgrade scene.json sky channel. Doc sweep alongside.
+
+Brief drafting pending Jacob's confirm on the open architectural question.
+
+---
+
+## 2026-05-20 — Seasonal sun motion + 4-anchor seasonal sky matrix (ADR — SUPERSEDED 2026-05-20 by entry above)
 
 **Background.** With kit calendar + bidirectional clock/calendar sync shipped (commit `5e98533`), scrubbing the year-strip in the unified time card now reaches CelestialBodies' SunCalc(currentTime, lat, lon) call (CelestialBodies.jsx:986). Sun position responds to year-position immediately — winter sun lower + southerly, summer sun higher, equinox sun on the celestial equator. Daylight duration also varies seasonally because `getDawnWindow(currentTime)` consumes the live Date for SunCalc waypoint computation.
 
