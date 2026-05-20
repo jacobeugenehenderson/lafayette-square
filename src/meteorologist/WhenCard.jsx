@@ -17,6 +17,9 @@
 import { useState, useRef, useEffect } from 'react'
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import { WHEN_FIELDS } from './conditionFields.js'
+import useTimeOfDay from '../hooks/useTimeOfDay.js'
+import useCalendar from '../hooks/useCalendar.js'
+import { todSlotAtMinute } from '../cartograph/animatedParam.js'
 
 export default function WhenCard({ rule }) {
   const setRuleField = useMeteorologistStore(s => s.setRuleField)
@@ -136,6 +139,19 @@ function RangeRow({ field, value, onChange }) {
 }
 
 function ChipRow({ field, value, onChange }) {
+  const currentTime = useTimeOfDay(s => s.currentTime)
+  const seasonNow = useCalendar(s => s.season())
+
+  // Live-matching option for this field, or null if no live source.
+  // precipKind has no live feed in the canary — no dot.
+  let liveOption = null
+  if (field.key === 'tod') {
+    const minute = currentTime.getHours() * 60 + currentTime.getMinutes()
+    liveOption = todSlotAtMinute(minute, currentTime)
+  } else if (field.key === 'season') {
+    liveOption = seasonNow
+  }
+
   const isSelected = (opt) => value.some(v => v === opt || (v == null && opt == null))
   const toggle = (opt) => {
     if (isSelected(opt)) onChange(value.filter(v => !(v === opt || (v == null && opt == null))))
@@ -150,9 +166,11 @@ function ChipRow({ field, value, onChange }) {
         {field.options.map((opt, i) => {
           const label = opt == null ? (field.nullLabel || 'null') : opt
           const on = isSelected(opt)
+          const isLive = liveOption !== null && (opt === liveOption || (opt == null && liveOption == null))
           return (
             <button key={opt == null ? `null-${i}` : opt}
               onClick={() => toggle(opt)}
+              title={isLive ? `${label} — current state` : undefined}
               style={{
                 height: 20, padding: '0 8px', borderRadius: 4,
                 fontSize: 'var(--type-caption)',
@@ -166,6 +184,13 @@ function ChipRow({ field, value, onChange }) {
                 color: on ? 'var(--vic-gold)' : 'var(--on-surface-subtle)',
                 cursor: 'pointer',
               }}>
+              {isLive && (
+                <span aria-hidden="true"
+                  style={{
+                    color: on ? 'var(--vic-gold)' : 'var(--on-surface-medium)',
+                    marginRight: 3,
+                  }}>●</span>
+              )}
               {label}
             </button>
           )
