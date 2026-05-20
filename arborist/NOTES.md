@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-05-20 PM — Project: Li'l Vera — rev. 2 pivot — adding the missing iteration loop
+
+**Tycho shipped rev. 1 across `604dfed` / `de00a30` / `0d9102d`** (Stages N.2.0 / N.2.1 / N.2.2). Apparatus base + multi-rig observation + orientation tomography + ridge tracing + axonal glimpse-reach + taper projection all in place. Visual gate review surfaced a structural gap: **the canopy is a wireframe ball; the apparatus has no mechanism to clear it.**
+
+Operator's diagnosis (precise): "There should be no leaf clusters left if you did what we said we were going to do." And shortly after: "This set of algorithms seem to be tracing to define a *surface* when I was expecting to find the centerlines that we could procedurally add radii to."
+
+Both observations are correct. Re-reading the brief revealed the coordinator's failure: during the brief revision in conversation, the load-bearing **iteration-loop-with-elimination** primitive — extensively discussed in the design session — was dropped from the written spec. Specifically missing:
+
+- Three-outcome elimination per pass (locked-in / rejected / deferred)
+- `P_N ⊂ P_{N-1}` — strictly shrinking working set
+- Rasterizer rendering MASKED source cloud (locked-in + rejected points excluded between passes)
+- Confident leaf / sheet-artifact / noise rejection driving elimination
+- Rubin-style residual subtraction as a co-primitive alongside accumulation
+- Parametric spline output (vs dense voxel-node graphs)
+
+Tycho built precisely what rev. 1 said. Rev. 1 said the wrong thing. Coordinator failure, surfaced honestly, fixed now.
+
+**Rev. 2 of the brief lands** at `scratch/phase-n2-lil-vera-observational-skeleton-brief.md`. The structural changes:
+
+1. The brief is now organized around an **iteration loop** that explicitly subtracts confident classifications from the working set each pass. Phase 4 (three-outcome elimination) is now load-bearing, not implicit.
+2. **Rubin-style subtraction** is added as a co-primitive in the Epistemic Posture, alongside Monte-Carlo evidence accumulation. The two are presented as halves of one mechanism — accumulate evidence, subtract what's confidently classified, study the residual.
+3. **Species-conditioned botanical priors** added as the third inference channel. The apparatus is given specimen species identity as a *known input* and consults a position-dependent species spatial-prior file at every classification decision. This is the leaf-discriminator pure geometry lacks — leaf-mass at impossible-for-skeleton positions gets rejected because the species prior says "no Sugar Maple skeleton structure here." Directly addresses rev. 1's classifier failure (63% junction rate at N=500 vs botanical ~8%). Per-species `botanical-priors.json` files; hand-encoded for Cycle 1, statistically refined in Cycle 2+.
+4. **Output specification is parametric splines** (100–500 per tree, 3–10 control points each, parametric `radiusFn`), NOT dense voxel-node graphs (~40K nodes was rev. 1's actual output — too dense for procedural use by 10–100×).
+5. **Neuronal mutual recognition** elevated to load-bearing connectivity primitive. Phase 3b is bidirectional probe + reciprocal recognition (filopodia-like, synapse-formation analogy), not one-direction extension. This is what makes the algorithm neuronal vs path-finding.
+6. **Fresh build, not retrofit.** Rev. 2 lives in a new module `arborist/lil_vera_v2.py`; fresh baby; Tycho's three commits stand as baseline comparison artifacts (5th alignment-oracle layer = "Li'l Vera v1 (baseline)"). Architecture is woven throughout (iteration touches every layer); surgical retrofit was not a coherent path.
+7. Stage numbering shifts from N.2.x to N.3.x to mark the fresh build. N.3.0 is now classifier-first gate (validate tomography + priors on static dataset BEFORE any iteration machinery).
+8. Tycho's MST closure compromise from rev. 1's N.2.2 is removed; connectivity must emerge from genuine mutual recognition. MST was a band-aid for the broken iteration loop + missing prior channel.
+
+**What stands as baseline from rev. 1:** apparatus base (rig + spiral + per-view classification + stereo), tomography primitives, 5th alignment-oracle layer + heat layer + Saved Runs picker, serve.js endpoints + query-string regex fix, cyan-magenta layer color convention. All survive untouched; v2 builds parallel infrastructure in a new module (`lil_vera_v2.py`) with its own 6th alignment-oracle layer (orange-gold / deep-teal).
+
+**Long-term architecture clarified:** Li'l Vera's role is the per-specimen **parametric skeleton extractor**. Cycle 2+ aggregates across specimens for per-species parameter distributions; procedural generator (G.0 strong-leader + G.1 hand-grounded PRESETS) consumes those distributions at runtime. **Li'l Vera is upstream of runtime; never directly shipped to LS scenes.** Procedural is the runtime; Li'l Vera grounds its defaults.
+
+`arborist/BACKLOG.md` updated with the new phase shape. Memory `[[project_lidar_as_training_data]]` to be refreshed after N.3.2's outcome.
+
+Pre-pivot dispatch state — Tycho's three commits stand as the foundation; rev. 2 dispatch is the next move once operator + coordinator agree on the plan.
+
+---
+
 ## 2026-05-20 — Project: Li'l Vera — vision + scope discipline
 
 Phase N.2 has matured from "an algorithmic spike" to **Project: Li'l Vera** — a multi-cycle initiative to build a Monte-Carlo consensus-inference observational skeleton-extraction apparatus. Named in honor of the operator's beloved AND of Vera Rubin; the project carries that lineage forward.
