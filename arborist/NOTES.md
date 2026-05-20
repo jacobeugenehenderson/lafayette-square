@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-05-20 early hours — Phase N.1 spike → dual-track pivot
+
+Hawthorn shipped `c9bf5df` end-to-end: bidirectional skeleton Strategy A (geodesic Dijkstra on density-weighted KNN graph) integrated into the alignment oracle as a 4th magenta/yellow overlay. 5 specimens converged in <3s; deterministic; topologically cleaner than QSM. Operator-visual gate call: "I *guess* it's cleaner? But it's hardly closer to being a tree."
+
+Honest read: both algorithms extract from real LiDAR, which is inherently a wire-frame mess (occlusion, twig dropout, partial coverage). Extraction is bounded by data; constructive algorithms aren't. Cleaner extraction delta is real but not the visual breakthrough.
+
+**Dual-track pivot:**
+
+1. **G.1 procedural-runway** — fall back to procedural-only Sugar Maple hero with hand-grounded PRESETS (3–5 LiDAR specimens, eyeball stats, hand-edit PRESETS row) + Phase F leaf binding + dice/adopt iteration. Get something on the runway. Brief at `scratch/phase-g1-sugar-maple-procedural-runway-brief.md`.
+2. **Phase N redirect — neuronal backward-forward** — operator named the real algorithmic novelty: trace tip→ground paths (backward pass), then walk ground→tips accumulating cross-section from path-bundle density (forward pass). This IS the pipe model (Shinozaki 1964) / Murray's law, implemented as path-bundling with emergent radius. Radius isn't a heuristic — it's count(paths through point). Branching geometry is exact. Neuronal analogy is structural, not decorative (dendritic integration = branch confluence). Specialist baby brief in planning.
+
+Phase T (statistical scalar extraction) demoted to fallback if neuronal specialist work doesn't pop. Memory `[[project_lidar_as_training_data]]` body not yet updated — will refresh AFTER specialist spike resolves, not pre, to avoid locking in an untested doctrine.
+
+---
+
 ## 2026-05-19 night — Phase N.0 — Alignment Oracle + frame-convention resolution (Baby Cedar)
 
 **Shipped:** the LidarWorkstage viewport is now the load-bearing alignment oracle for every future bake-pipeline change. Three persistent layers — source point cloud, live QSM cylinder extraction, baked GLB — each with a visibility toggle and an opacity slider, all overlapping at the same origin and scale for any selected specimen with a baked variant.
