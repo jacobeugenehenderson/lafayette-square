@@ -30,7 +30,7 @@ These metaphors live here. The brief body describes the algorithm in invariants 
 
 You are an **observational scientist**, not an algorithm implementer. The deliverable is a *measurement apparatus*. Channel Vera Rubin: many independent observations, iterative model refinement, structure inferred from where evidence accumulates **AND from what gets confidently subtracted as known signal or known noise**.
 
-**Posture B — vision-only stereo recovery.** The apparatus treats source 3D positions as **unobserved structure** and recovers them purely from rendered views via stereo correspondence. Cameras are real cameras. The algorithm's input is the **rendered pixel data** of the point cloud, NOT the raw 3D coordinates as labels. Source positions enter only as a final ground-truth check at validation time, never as algorithm input. This discipline forces parsimony, makes the apparatus noise-tolerant, and generalizes the code to consume iPhone photographs in future cycles.
+**Posture B — vision-only stereo recovery.** The apparatus treats source 3D positions as **unobserved structure** and recovers them purely from rendered views via stereo correspondence. Cameras are real cameras. The algorithm's input is the **rendered pixel data** of the point cloud, NOT the raw 3D coordinates as labels. Source positions enter only as: (a) the rasterizer's input (filtered through the working-set mask each pass); (b) a final ground-truth check at validation time; (c) **one explicit low-bandwidth scalar primitive — trunk-axis derivation via RANSAC vertical fit through the densest Z-column of P₀**. The trunk axis is a single 3D line scalar (origin + direction), not per-point labels. It is consumed only to compute tree-frame coordinates (`height_frac`, `radial_dist`) for species-priors lookups. This explicit carve-out is documented to prevent baby-time confusion; the rest of the algorithm holds the discipline. (Cycle 2+ may tighten this to a fully vision-only trunk-axis derivation via per-rig silhouette-centroid vertical regression; for Cycle 1 the carve-out is honest and pragmatic.) This discipline forces parsimony, makes the apparatus noise-tolerant, and generalizes the code to consume iPhone photographs in future cycles.
 
 **The unifying primitive — Monte-Carlo evidence accumulation + Rubin-style residual subtraction.** Two halves of one mechanism:
 
@@ -143,7 +143,11 @@ Initialize:
   priors ← load(arborist/state/<species>/botanical-priors.json)
   trunk_axis ← RANSAC vertical fit through densest Z-column of P₀
                 (provides tree-frame coords for prior queries:
-                 height_frac ∈ [0,1] above ground; radial_dist from axis)
+                 height_frac ∈ [0,1] above ground; radial_dist from axis.
+                 RANSAC SEEDED from --seed CLI arg for determinism per
+                 Std. Req. #6. The trunk_axis primitive is the one
+                 explicit Posture-B carve-out documented in the Posture
+                 section — a low-bandwidth scalar, not per-point labels.)
   pass_count ← 0
 
 Loop until terminated:
@@ -186,25 +190,43 @@ Loop until terminated:
   # ── Phase 3: extract structure (three primitives, all prior-aware) ──
 
   # 3a: ridge extraction
-  ridge_chains ← Hessian-eigenvector ridge trace on smoothed M_obs, seeded
-                 from candidate-tip points whose combined_confidence exceeds
-                 threshold. Ridges WILL NOT trace through regions whose
-                 prior_likelihood < ε_prior — the species prior excludes
-                 botanically-impossible structure from the start.
+  # Build a per-voxel prior field M_prior at the same grid as smoothed M_obs.
+  # For each voxel v: compute its tree-frame coords (height_frac, radial_dist),
+  # query priors.likelihood(...) using v's location + M_obs's perpendicular
+  # spread at v as inferred_radius + Hessian's local v₁ as local_axis,
+  # → M_prior[v] ∈ [0, 1].
+  ridge_chains ← Hessian-eigenvector ridge trace on smoothed M_obs, with
+                 ridge condition: (|λ₂|, |λ₃| << |λ₁|) AND (M_obs > thresh)
+                 AND (M_prior > ε_prior). Seeded from candidate-tip points
+                 whose combined_confidence exceeds threshold. The
+                 multiplicative M_prior gate excludes botanically-impossible
+                 voxels from traversal — species prior shapes ridge topology
+                 from the start, not as a post-hoc filter.
 
   # 3b: NEURONAL AXONAL REACH — bidirectional mutual recognition
   #     This is the load-bearing connectivity primitive. NOT one-direction
-  #     extension. Every locked-in endpoint sends probes BOTH in
-  #     mother-direction (toward parent / trunk) AND child-direction(s)
-  #     (multiple, since real nodes can branch). A connection FORMS when
-  #     a probe from A finds B AND B's reciprocal probe in the opposite
-  #     direction would find A back. Symmetric recognition by construction.
+  #     extension. Every current-pass ridge endpoint (not yet locked-in;
+  #     lock-in happens in Phase 4 below) AND every prior-pass locked-in
+  #     endpoint sends probes BOTH in mother-direction (toward parent /
+  #     trunk) AND child-direction(s) (multiple, since real nodes can
+  #     branch). A connection FORMS when a probe from A finds B AND B's
+  #     reciprocal probe in the opposite direction would find A back.
+  #     Symmetric recognition by construction.
+  #     COLD-START — pass 1: locked-in set is empty (Phase 4 hasn't run
+  #     yet), so the working set is just current-pass ridge_chains
+  #     endpoints. They can form connections among themselves; they
+  #     cannot yet receive mother-search probes from prior-pass locked-in
+  #     splines (none exist). Pass 2+ accumulates locked-in endpoints
+  #     that prior passes have committed; mutual recognition then
+  #     extends connectivity both within new ridges and back to existing
+  #     splines.
   #     This is the synapse-formation primitive in neural development —
   #     filopodia probe outward; reciprocal recognition with a partner
   #     triggers connection. Skip this primitive and the algorithm is just
   #     path-finding through a memory field; geometric fragments emerge
   #     without enforced connectivity (the QSM failure mode).
-  For each ridge endpoint e ∈ ridge_chains:
+  For each endpoint e ∈ (current-pass ridge_chains ∪ prior-pass locked-in
+                          spline endpoints):
     Spawn confidence cones in mother-direction + child-direction(s) along
     e's local axial fit.
     Cone's working medium is M_obs (ALL of it, including LOW-M_obs regions
@@ -273,10 +295,13 @@ Loop until terminated:
   splines ← splines ∪ {s ∈ new_splines : s.prior_likelihood > lock_in_threshold}
 
   # ── Termination ──
-  If (no new lock-ins this pass) AND (no new rejections):
+  If |P| == 0:
+    Terminated (working set fully exhausted; every source point is either
+                locked-in or rejected).
+  Elif (no new lock-ins this pass) AND (no new rejections):
     Terminated (stable residual — apparatus has nothing more to say).
   Elif |P| / |P₀| < ε_residual:
-    Terminated (working set exhausted).
+    Terminated (working set exhausted below threshold).
   Elif pass_count >= max_passes (default 10):
     Terminated (safety cap; flag as "did not converge"; surface in
                 diagnostics so operator can investigate threshold tuning).
@@ -284,11 +309,12 @@ Loop until terminated:
 return splines  # parametric centerlines, ready for Phase 5 radius pass
 ```
 
-### Phase 5 — pipe-model radius accumulation (operates on splines)
+### Phase 5 — pipe-model radius accumulation + parent-direction assignment (operates on splines)
 
-After the loop terminates, splines is the sparse parametric skeleton (target: 100–500 splines per tree). On this graph:
+After the loop terminates, splines is the sparse parametric skeleton (target: ~hundreds, never tens of thousands; see acceptance for guidance). Phase 5 operates on this graph:
 
-- **Backward pass:** for each terminal-tip spline, trace its path through the spline graph back to the ground (trunk-base spline). Each tip = one "pipe."
+- **Parent-direction assignment** (writes the spline graph's `parentSplineId` + `parentAttachT` fields): mutual recognition in Phase 3b produces symmetric edges (a, b) with no inherent direction. Phase 5 traverses from the trunk-base spline outward via BFS (or any tree-rooting traversal), assigning each non-root spline a parent + parametric attach position on its parent. Edges become directed parent→child. The trunk-base spline has `parentSplineId=null`.
+- **Backward pass:** for each terminal-tip spline, trace its path through the now-directed graph back to the ground (trunk-base spline). Each tip = one "pipe."
 - **Forward pass:** walk ground→tips. At each spline cross-section, count overlapping pipes. **Radius² ∝ pipe count.** Murray's law emerges; no heuristic radius function.
 - **Output radius function per spline:** parametric — `radius(t) = baseRadius × (1 - t)^taperExponent` fit to the per-cross-section pipe counts, OR per-control-point radii if the curve doesn't fit cleanly.
 - **Co-determination diagnostic:** per-spline radii from Phase 5 pipe-counting should agree (within tolerance) with Phase 3c's taper-projected tip predictions. They're two views of the same Murray's-law relationship. Disagreement is surfaced as a diagnostic and may flag a chain for re-extraction rather than silent commitment.
@@ -320,9 +346,13 @@ The Rubin test: dark matter doesn't vanish when one telescope goes offline.
     // Position-dependent expected radius envelope.
     // Lookup: given (height_frac ∈ [0,1], radial_dist_from_axis_m),
     // returns {radiusMin, radiusMax, radiusModal}.
-    // Used in priors.likelihood() to score whether an inferred radius is
-    // consistent with the species at this position.
-    "type": "piecewise2d",
+    // INTERPOLATION: Delaunay-triangulated linear interpolation via
+    // scipy.interpolate.LinearNDInterpolator on the scattered (height_frac,
+    // radial_dist) samples below. Queries outside the convex hull of
+    // samples are CLAMPED (no extrapolation): use the nearest sample's
+    // values. This is deterministic and well-defined; no IDW, no
+    // bilinear-on-irregular-grid hand-waving.
+    "type": "piecewise2d-delaunay",
     "samples": [
       {"heightFrac": 0.0, "radialDist": 0.0,  "rMin": 0.15, "rMax": 0.50, "rMode": 0.30},
       {"heightFrac": 0.1, "radialDist": 0.0,  "rMin": 0.13, "rMax": 0.45, "rMode": 0.28},
@@ -339,6 +369,7 @@ The Rubin test: dark matter doesn't vanish when one telescope goes offline.
     // Sugar Maple scaffolds emerge 30-70° from vertical; never horizontal.
   },
   "murraysLawJointTolerance": 0.15,            // parent_r² vs Σ(child_r²) within ±15%
+  "junctionMinBranchingDensity": 0.1,          // branches/m below this = no junction possible at this height
   "branchingDensityByHeight": {
     // Expected branches-per-meter at each height range
     "type": "piecewise1d",
@@ -377,25 +408,48 @@ The Rubin test: dark matter doesn't vanish when one telescope goes offline.
 priors.likelihood(geometric_class, height_frac, radial_dist,
                   inferred_radius, local_axis) → ∈ [0, 1]
 
-  1. Lookup expected radius envelope at (height_frac, radial_dist).
-     If inferred_radius outside [rMin, rMax] → likelihood = 0 (hard reject).
-     Else likelihood_radius = gaussian(inferred_radius, rMode, (rMax-rMin)/4).
+  Define: gaussian_bell(x, mode, sigma) = exp(-0.5 × ((x - mode) / sigma)²)
+          (peak-1 bell, smooth shoulders, no hard cuts. Returns 1.0 at
+           x=mode, decays smoothly to 0 as |x - mode| grows. NEVER
+           normalized PDF — always peak-1.)
 
-  2. If geometric_class implies branching context:
-     Lookup expected branchAngleDistribution.
-     likelihood_angle = gaussian(local_axis_angle_from_vertical, modal, stdDeg).
-     If angle > hardRejections.branchAngleSteeperThanDeg → likelihood = 0.
+  1. Lookup expected radius envelope at (height_frac, radial_dist) via
+     Delaunay LinearNDInterpolator → {rMin, rMax, rMode}.
+     If outside convex hull of priors samples: clamp to nearest sample.
+     sigma_r = max(0.001, (rMax - rMin) / 4)   # 4σ ≈ ±[rMin,rMax] width
+     likelihood_radius = gaussian_bell(inferred_radius, rMode, sigma_r)
+     # No hard cut at rMin/rMax — the bell smoothly decays through and
+     # beyond the envelope edges. A candidate at rMax + ε scores ~0.135
+     # (gaussian at 2σ), not 0. Soft shoulders prevent discontinuities
+     # at envelope boundaries that would jitter the rejection_threshold.
+
+  2. If geometric_class implies branching context (linear-interior, junction,
+     tip) AND local_axis is provided:
+     angle_from_vertical = arccos(|local_axis · [0,1,0]|) in degrees
+     {modal, stdDeg} = priors.branchAngleDistribution.fromVertical
+     likelihood_angle = gaussian_bell(angle_from_vertical, modal, stdDeg)
+     If angle_from_vertical > priors.hardRejections.branchAngleSteeperThanDeg:
+       likelihood_angle = 0   # only HARD-zero case (operator-tunable)
 
   3. If geometric_class == 'junction':
-     branching_density_at_height should be > 0 to support a junction here.
-     If branchingDensity ≈ 0 at this height_frac → likelihood = 0 (no junction
-     possible where no branching exists).
+     bd = priors.branchingDensityByHeight at height_frac (1D linear interp)
+     If bd < priors.junctionMinBranchingDensity (default 0.1 branches/m):
+       likelihood_branching = 0   # no junction possible where no branching
+     Else:
+       likelihood_branching = 1.0
+     Else (non-junction class): likelihood_branching = 1.0
 
-  4. Combine: likelihood = likelihood_radius × likelihood_angle × ...
-              (apply softnessScaling: smoothly interpolate toward 1.0 as
-               softnessScaling → 0.0)
+  4. Combine:
+     raw = likelihood_radius × likelihood_angle × likelihood_branching
+     # Apply softnessScaling ∈ [0, 1]: 1 = full priors; 0 = ignore priors.
+     # Smooth interpolation: softness_blend = raw × softnessScaling
+     #                                       + (1 - softnessScaling) × 1.0
+     # So softnessScaling=0 returns 1.0 always (priors disabled).
+     # softnessScaling=1 returns raw.
+     likelihood = raw × priors.softnessScaling
+                  + (1.0 - priors.softnessScaling) × 1.0
 
-  return likelihood
+  return clip(likelihood, 0.0, 1.0)
 ```
 
 **Cycle 2+ aggregation pipeline (out of scope for Cycle 1 but worth noting):** after multiple specimens are extracted, aggregate per-specimen `expectedRadiusByPosition` samples to produce species-level distribution-with-variance refining the hand-encoded starter values. The hand-encoded starter is *enough* for Cycle 1's classifier to work; Cycle 2 sharpens it.
@@ -457,7 +511,7 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
 | Stage | Days | Wall-clock budget | Output | Operator gate |
 |---|---|---|---|---|
 | **N.3.0 — Classifier + priors validation on static dataset** | ~1.5 | <2min CLI at N=50 | Hand-encoded `botanical-priors.json` for Sugar Maple. Per-rig observation + tomography classifier producing `geometric_class` AND `prior_likelihood` AND `combined_confidence` per candidate. **No iteration yet, no elimination yet.** Single-pass apparatus runs on one specimen and produces a classified candidate set. Diagnostics: classification distribution histogram vs `priors.expected*Fraction`. | **The classifier-first gate.** Does the classifier visibly distinguish leaf-mass (low combined_confidence) from real branching joints (high combined_confidence)? Is the classification distribution within tolerance of priors' expected fractions (junction <15%, not 63%)? **If the classifier can't get this right on a static dataset, no iteration loop on top will save it. This is the foundational gate.** |
-| **N.3.1 — Iteration loop + three-outcome elimination** | ~1.5 | <10min CLI at N=50, 4 passes | Working set state `P`, masked rasterization (rasterizer takes `pts_world[P]`), Phase 4 three-outcome elimination wired. Pass N renders the residual; canopy leaf-mass progressively dissolves as rejections accumulate. Per-pass diagnostics: working-set size curve, lock-in count, rejection count broken down by source (tomography vs prior vs both). | **The leaf-clearing visual gate.** Per-pass animation in the workstage: pass-1 candidate cloud → pass-2 residual (leaves rejected) → pass-3 residual (more rejected) → pass-4 stable. Trunk + branches survive; leaf mass dissolves. Working-set curve falls monotonically. |
+| **N.3.1 — Iteration loop + three-outcome elimination** | ~1.5 | <10min CLI at N=50, expected to converge in ~4 passes | Working set state `P`, masked rasterization (rasterizer takes `pts_world[P]`), Phase 4 three-outcome elimination wired. Pass N renders the residual; canopy leaf-mass progressively dissolves as rejections accumulate. Per-pass diagnostics: working-set size curve, lock-in count, rejection count broken down by source (tomography vs prior vs both). (Note: "4 passes" is the expected convergence count at N=50 with default thresholds, NOT a hardcode. Algorithm continues until termination criteria fire; `max_passes` cap is 10 per the algorithm spec.) | **The leaf-clearing visual gate.** Per-pass animation in the workstage: pass-1 candidate cloud → pass-2 residual (leaves rejected) → pass-3 residual (more rejected) → stable. Trunk + branches survive; leaf mass dissolves. Working-set curve falls monotonically. |
 | **N.3.2 — Spline fitting + lock-in + mutual recognition** | ~1.5 | <30min CLI at N=500, ~10 passes | Phase 3a/3b/3c (ridge + axonal mutual-recognition reach + taper-projection) extract chains per pass; chains fit to parametric splines (3–10 control points each); spline `prior_likelihood` scored; points within ε_lock of high-likelihood splines mark LOCKED-IN. **NO MST closure** — connectivity emerges from genuine mutual recognition. Output JSON in parametric-spline format. | **THE cycle gate.** N=500, multi-pass. Does the apparatus produce ~100–500 parametric splines (NOT 40K voxel nodes)? Does the canopy contain continuous SPLINE branches (not chaos)? Visibly cleaner than QSM AND Hawthorn's Bidirectional AND Tycho's rev. 1 v1 baseline (6th alignment-oracle layer comparison). |
 | **N.3.3 — Pipe-model radii + taper co-determination** | ~0.5 | <5min CLI | Phase 5 backward-forward pipe-model counts on the spline graph. Per-spline parametric `radiusFn` populated. Co-determination diagnostic: per-spline radii (pipe-counting) vs Phase 3c taper-projection agreement. | Visual: trunks taper sensibly; Murray's law sanity at joints (parent radius² ≈ Σ child radii²); taper-vs-pipe agreement within tolerance. |
 | **N.3.4 — Rubin consensus-stability validation** | ~0.5 | <30min for 4 subsampled runs | Run apparatus 4× with 10/25/40% rig dropout. Spline count variance, position variance, topology agreement, tip-set agreement quantified. | Numerical gate: per-spline-endpoint variance < threshold across all dropout rates. |
@@ -478,7 +532,7 @@ b. **Visible leaf-mass discrimination.** In the M_obs heat layer with `prior_lik
 
 At the N.3.2 gate (the cycle gate):
 
-1. **Sparse parametric output.** Total spline count 100–500 per tree, not 40K. Per-spline control points are 3–10, not thousands. This is the structural sanity check that the output is *centerlines*, not a *surface mesh-cloud*.
+1. **Sparse parametric output.** Total spline count in the hundreds — soft target ~100–800, hard cap "no more than 5× the operator's visible-branch-count estimate from the alignment oracle." Never tens of thousands. Per-spline control points are 3–10, not thousands. This is the structural sanity check that the output is *centerlines*, not a *surface mesh-cloud*. (Note: a small or young specimen may legitimately have ~80 splines and still pass — the criterion is "well under 1000 + matches visible-branch scale," not a hard 100-floor.)
 2. **The canopy is no longer a wireframe ball.** Interior canopy contains continuous spline branches (axonal mutual-recognition reach into low-M_obs regions did its job), but those branches are SPLINES (parametric curves) not chaos.
 3. **Confident leaf rejection visible per pass.** Per-pass diagnostics show the working set monotonically shrinking; the rejected-count is meaningful (not zero); pass-N rendered point cloud progressively cleaner than pass-1. Rejection-by-source breakdown shows both tomography and prior contributing (not one dominating).
 4. **Connected output via genuine mutual recognition, NOT MST closure.** Connectivity emerges from bidirectional probe + reciprocal recognition. If MST-style closure is needed as a safety net, it's a flag that the algorithm hasn't converged properly.
