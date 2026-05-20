@@ -4,6 +4,16 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-20 — Phase 4b.3 shipped — production swap
+
+Meteorologist's volumetric raymarched cloud renderer is now the runtime everywhere. Three mounts flipped (`Scene.jsx:683`, `CartographApp.jsx:956`, `PreviewApp.jsx:574`); orphan import dropped from `StageApp.jsx`; `CloudDome.jsx` + `SpriteClouds.jsx` deleted along with `HANDOFF-clouds-day3-clouddome-v2.md`.
+
+Phase 5a (commit `e9936f8`) already wired the directive path into Atmosphere. With 4b.3 mounting Atmosphere at the three production sites, production now renders today's actual atmospheric directive smoothly tweened against live weather. The two consumer paths (authoring via `useMeteorologistStore.activePreset`, production via `useAtmosphere.tweenedDirective`) both exist in `Atmosphere.jsx`; this commit just gets the component mounted where users will see it.
+
+Caveat — the `AtmosphereDirectiveDriver` is mounted only in `Scene.jsx` (per 5a stash-isolate). Cartograph Stage + Preview render Atmosphere but no driver runs there, so without an authored preset their `tweenedDirective` stays null and the uniforms hold their `createAtmosphereMaterial` defaults (hardcoded cumulus_humilis). Production (`/`) is fully directive-driven; Stage + Preview need their own driver mount as Phase 5b polish for the directive path to be visible there.
+
+---
+
 ## 2026-05-20 — Phase 5a shipped — runtime live wiring (evaluator hot-mount + directive tween + wind subscribers)
 
 The plumbing for "live LS" landed. open-meteo → `useWeather` → `useAtmosphereDirective` → `selectDirective(payload, almanac, presets, override)` → `useAtmosphere.rawDirective` → 45s ease-in-out tween (weight-union cloud crossfade) → `useAtmosphere.tweenedDirective` → Atmosphere uniforms + tree sway. The directive's `wind.dir` + `wind.scale` drive cloud advection and tree sway from the same source.

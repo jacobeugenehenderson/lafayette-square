@@ -68,9 +68,9 @@ Follow-ups:
 - Phase Seed.2 — operator hand-tune sweep against live render now that ref photos are visible
 - Photo wishlist — 5 needs_photo presets per `public/clouds/photos/SOURCES.json`
 
-### Phase 4b.3 — CloudDome retirement
+### ✅ Phase 4b.3 — CloudDome retirement (shipped 2026-05-20)
 
-Per `STAGE_MIGRATION.md`: swap all `<CloudDome />` mounts (Scene.jsx, CartographApp.jsx, PreviewApp.jsx, CanaryScene.jsx) to `<Atmosphere />`. Delete `CloudDome.jsx` + `SpriteClouds.jsx` + dead CloudDomeV2/V3. The `CloudCoverSeed` Phase-4a expedient in CanaryScene comes out (no longer needed once Atmosphere reads from preset directly).
+Production LS, Cartograph Stage, and Preview all flipped from `<CloudDome />` to `<Atmosphere />`. CanaryScene unchanged (already on Atmosphere since 4b.1). Deleted `CloudDome.jsx`, `SpriteClouds.jsx`, `HANDOFF-clouds-day3-clouddome-v2.md`, and the orphan import in `StageApp.jsx`. With Phase 5a's directive path already live (commit `e9936f8`), production immediately renders today's actual atmospheric directive smoothly tweened — no bridge interval. The `AtmosphereDirectiveDriver` mount in `Scene.jsx` (shipped in 5a) makes the directive available to subscribers there; Cartograph + Preview will need their own driver mounts when their directive-driven visuals matter (Phase 5b polish).
 
 ### Phase 3b — Directive TodChannel promotion + cloud capabilities + per-cloud expression
 

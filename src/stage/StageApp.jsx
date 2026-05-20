@@ -23,7 +23,6 @@ import CelestialBodies from '../components/CelestialBodies'
 import LafayettePark from '../components/LafayettePark'
 import StreetLights from '../components/StreetLights'
 import GatewayArch from '../components/GatewayArch'
-import CloudDome from '../components/CloudDome'
 import Terrain from '../components/Terrain'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 

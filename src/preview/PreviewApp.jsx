@@ -14,7 +14,7 @@ import * as THREE from 'three'
 import InstancedTrees from '../components/InstancedTrees'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import CelestialBodies from '../components/CelestialBodies'
-import CloudDome from '../components/CloudDome'
+import Atmosphere from '../components/Atmosphere'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import LafayettePark from '../components/LafayettePark'
@@ -571,7 +571,7 @@ function CanvasContents({ layers, shot }) {
       {layers.celestial
         ? <R3FErrorBoundary name="CelestialBodies"><CelestialBodies /></R3FErrorBoundary>
         : <BasicLights />}
-      {layers.clouds && <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>}
+      {layers.clouds && <R3FErrorBoundary name="Atmosphere"><Atmosphere /></R3FErrorBoundary>}
 
       <Suspense fallback={null}>
         {layers.ground    && <R3FErrorBoundary name="BakedGround"><BakedGround targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG} /></R3FErrorBoundary>}

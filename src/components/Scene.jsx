@@ -9,7 +9,7 @@ import BakedGround from './BakedGround.jsx'
 import LafayettePark from './LafayettePark'
 import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
-import CloudDome from './CloudDome'
+import Atmosphere from './Atmosphere'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import UserDot from './UserDot'
@@ -682,7 +682,7 @@ function Scene() {
       <WeatherPoller />
       <AtmosphereDirectiveDriver lookId={INSTANCE.lookId} />
       <CelestialBodies />
-      <CloudDome />
+      <Atmosphere />
       {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
           visible ground (Cartograph convention). Terrain still mounts
           so its `terrainExag` shader uniform stays live (drives Y

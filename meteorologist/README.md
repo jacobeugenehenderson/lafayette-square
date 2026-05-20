@@ -8,13 +8,15 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ---
 
-## Status (as of 2026-05-21)
+## Status (as of 2026-05-20)
 
-**Standalone app shell + authoring UI + v3 raymarched cloud shader all ship. TodChannel uniform binding (Phase 4b.2) is live — operator slider drags in Teacup land on the canary cloud synchronously. CloudDome retirement + production swap (Phase 4b.3) is next.**
+**Standalone app shell + authoring UI + v3 raymarched cloud shader ship. TodChannel uniform binding (4b.2) + Phase Seed library + Phase 5a runtime live wiring + Phase 4b.3 production swap all shipped. Production LS now renders today's actual atmospheric directive smoothly tweened against live weather.**
 
 | Done | Not yet |
 |---|---|
-| Schemas (`pipeline/schema/*`) | CloudDome retirement + production swap (Phase 4b.3) |
+| Schemas (`pipeline/schema/*`) | TodChannel promotion of directive numeric fields (Phase 3b) |
+| **Phase 4b.3 — CloudDome retirement + production swap to `<Atmosphere />`** (2026-05-20) | |
+| **Phase 5a — Almanac evaluator hot-mount + directive tween + wind cross-helper wiring** (2026-05-20) | |
 | Validator + cross-schema checks (`pipeline/validate.js`) | TodChannel promotion of directive numeric fields (Phase 3b) |
 | Teapot — 52 presets, params migrated to TodChannel shape | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema (Phase 3b) |
 | Almanac — 16 rules + immutable defaults sibling | Per-cloud-in-condition expression flags (Phase 3b) |
@@ -42,6 +44,8 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 - Phase 4a — CanaryScene scaffold (commit `6a3fd29`, 2026-05-19)
 - Phase 4b.1 — `<Atmosphere />` raymarched shader (commit `d1c66fe`, 2026-05-20)
 - Phase 4b.2 — TodChannel uniform binding; active preset drives shader uniforms each frame (Wren, 2026-05-21)
+- Phase 5a — Runtime live wiring: evaluator hot-mount + directive tween + wind cross-helper (Cirrus, 2026-05-20, commit `e9936f8`)
+- Phase 4b.3 — CloudDome retirement; production swap to `<Atmosphere />` (Cirrus, 2026-05-20)
 - Phase Seed — Cloud Specialist seed applied (51/52 presets retuned by Nimbus); ref photos surface in TeapotLibrary + Teacup; description field added end-to-end (Stratus, 2026-05-20)
 - Kit clock+calendar primitive — `useCalendar` + `ClockCalendarPump` (2026-05-20)
 - Step 3 WhenCard live dots — TOD + season chip indicators (commit `36d667c`, 2026-05-20)
@@ -55,17 +59,12 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ## Start here in the morning
 
-**Phase 4b.3: CloudDome retirement + production swap.** Per `STAGE_MIGRATION.md`: swap every `<CloudDome />` mount (`Scene.jsx`, `CartographApp.jsx`, `PreviewApp.jsx`, `CanaryScene.jsx`) to `<Atmosphere />`. Delete `CloudDome.jsx` + `SpriteClouds.jsx` + dead CloudDomeV2/V3. The `CloudCoverSeed` Phase-4a expedient in CanaryScene comes out (no longer needed once Atmosphere reads from preset directly).
+**Phase 5b polish + Phase 6 Modulators.** 4b.3 and 5a both shipped 2026-05-20; production runs Atmosphere with directive-driven uniforms against live weather. Open priorities:
 
-With 4b.2 landed, the authoring loop is closed: operator slider drags in Teacup land synchronously on the canary cloud via per-frame `resolveGroupAtMinute` reads of the active preset's params. The remaining gate is making sure production runtime (LS Scene + Cartograph Stage + Preview) all consume the same path.
-
-**The phasing arc continues:**
-
-- **4b.3 (next)** — Retire `CloudDome.jsx` / `SpriteClouds.jsx` per `STAGE_MIGRATION.md`; production swap. The `CloudCoverSeed` Phase-4a expedient comes out.
-- **3b** — Promote directive numerics to TodChannel + add cloud capabilities + per-cloud-in-condition expression flags. After 4b lands so the temporal modulation is visually validatable.
-- **5** — Fixtures + Almanac evaluator hot-mount + fallback editor + cloud preset gallery + mobile quality tier + multi-preset blending + camera orbit.
-
-The five photoreal levers reference is in [`../HANDOFF-clouds-day3-clouddome-v2.md`](../HANDOFF-clouds-day3-clouddome-v2.md). **That doc is now superseded in working code** by `src/components/atmosphere-materials.js`; keep the HANDOFF alive only until Phase 4b.1 is visually verified, then it can retire alongside CloudDome in 4b.3.
+- **5b polish** — mount the `AtmosphereDirectiveDriver` in CartographApp + PreviewApp (today only Scene.jsx mounts it). Surface a "current directive" debug readout in Sky & Light card. Fake-weather fixture management UI. Fallback editor. Cloud preset gallery.
+- **3b** — Promote directive numerics to TodChannel + add cloud capabilities + per-cloud-in-condition expression flags.
+- **6** — Modulators (continuous atmospheric phenomena). See `NOTES.md` 2026-05-20 ADR.
+- **7** — Atmospheric consumers (wind field, rain particles, snow + accumulation, lightning). See `NOTES.md` 2026-05-20 ADR.
 
 ---
 
@@ -80,7 +79,7 @@ In reading order:
 5. **[`BACKLOG.md`](./BACKLOG.md)** — punchlist + roadmap.
 6. **[`NOTES.md`](./NOTES.md)** — historical decisions + EOD records. Read the top entry first; it has the latest context.
 7. **[`CANON.md`](./CANON.md)** — what's in the Teapot, what's not, why. Inclusion principles.
-8. **[`STAGE_MIGRATION.md`](./STAGE_MIGRATION.md)** — the cleanup commit spec (executes when v3 lands; Phase 4b.3).
+8. **[`STAGE_MIGRATION.md`](./STAGE_MIGRATION.md)** — historical, kept for archive. Phase 4b.3 (2026-05-20) executed it.
 
 ---
 
@@ -124,7 +123,7 @@ src/meteorologist/                    # SHIPPED — UI tree mirroring src/arbori
 src/components/
   Atmosphere.jsx                      # SHIPPED 4b.1 — v3 raymarched runtime (cumulus_humilis hardcoded)
   atmosphere-materials.js             # SHIPPED 4b.1 — shader factory + inline GLSL
-  CloudDome.jsx                       # v1 procedural shipper (retires Phase 4b.3)
+  Atmosphere.jsx                      # production renderer (post-4b.3)
   SpriteClouds.jsx                    # retires in cleanup commit
   CelestialBodies.jsx                 # IMPORTED — same consumer Stage/Preview mount
   WeatherPoller.jsx                   # untouched; consumes its output downstream

@@ -1,5 +1,8 @@
 # Stage migration — cleanup commit checklist
 
+> **Historical.** This was the cleanup-commit spec for retiring CloudDome. Phase 4b.3 (2026-05-20) executed the relevant portions. The "Add to Stage" section is stale — Meteorologist ships as a standalone shell at `/meteorologist.html`, not as a right-panel takeover. Kept for archive value.
+
+
 The Meteorologist landing affects Stage in three small ways: one new TodChannel row, one new launch button, one mode swap. The rest of the migration is the cleanup commit that retires the legacy cloud sandbox spike code.
 
 **No file moves out of Stage. No card splits. No renames of `CartographSkyLight.jsx` / `CartographPost.jsx` / `CartographSurfaces.jsx`.** Everything that's currently in Stage stays in Stage, structurally unchanged.

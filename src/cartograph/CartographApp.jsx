@@ -25,8 +25,7 @@ import StreetLights from '../components/StreetLights'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import CelestialBodies from '../components/CelestialBodies'
-import CloudDome from '../components/CloudDome'
-import SpriteClouds from '../components/SpriteClouds'
+import Atmosphere from '../components/Atmosphere'
 import Terrain from '../components/Terrain'
 import { V_EXAG } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
@@ -953,15 +952,7 @@ export default function CartographApp() {
               constellationsOverride={constellationsOverride}
               milkyWayOverride={milkyWayOverride}
             /></R3FErrorBoundary>
-            <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>
-            {/* SpriteClouds parked 2026-05-03 — drei sprite Clouds approach
-                produces stylized cartoon puffs, not the photoreal-stylized
-                weather-responsive aesthetic this project is going for. The
-                right path is upgrading CloudDome's noise shader (better fbm,
-                domain warping, sun-direction lighting, weather-state morphing).
-                Component file kept as a parked experiment. See
-                HANDOFF-clouds-day3-clouddome-v2.md for the rebooted brief. */}
-            {/* <R3FErrorBoundary name="SpriteClouds"><SpriteClouds /></R3FErrorBoundary> */}
+            <R3FErrorBoundary name="Atmosphere"><Atmosphere /></R3FErrorBoundary>
             {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
                 visible ground. Terrain still mounts so its shader uniforms
                 drive displacement for ribbons/buildings. */}

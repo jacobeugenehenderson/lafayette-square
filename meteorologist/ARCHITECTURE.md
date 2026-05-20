@@ -115,7 +115,7 @@ Per-Look overrides apply to dome visual-styling values (sun tint, halo, light do
 - **Sun tint / halo / light dome** — authored per Look, override-flavored — apply on top of the Almanac directive at render time.
 - **Wind** — published per Look by Meteorologist (direction + speed uniforms). Trees subscribe via `InstancedTrees` shader uniforms; future precipitation + audio layers subscribe too.
 
-Today (2026-05-18) only the channel scaffolding is shipped (SC.6 — see `NOTES.md`). The runtime renderer is still procedural `CloudDome.jsx`; v3 `<Atmosphere />` is unbuilt.
+As of 2026-05-20 the runtime renderer everywhere is `<Atmosphere />` (Phase 4b.3); the procedural `CloudDome.jsx` is retired.
 
 ---
 
@@ -161,7 +161,7 @@ src/components/
   Atmosphere.jsx                      # NOT YET WRITTEN — v3 runtime component
   atmosphere-materials.js             # NOT YET WRITTEN — shader factory
   atmosphere-shaders/                 # NOT YET WRITTEN — frag/vert source
-  CloudDome.jsx                       # v1 procedural shipper (retires when v3 lands)
+  Atmosphere.jsx                      # production renderer (post-4b.3)
   SpriteClouds.jsx                    # retires in cleanup commit
   CelestialBodies.jsx                 # IMPORTED — Meteorologist mounts this unchanged
   InstancedTrees.jsx                  # IMPORTED — Meteorologist mounts in Ground slot
@@ -197,7 +197,7 @@ const directive = selectDirective(weatherPayload, almanac, presets, override)
 
 `src/lib/almanac-eval.js` exports `selectDirective(weather, almanac, presets, override)` — a pure function: same inputs → same directive. The evaluator is already shipped (SC.6); a debug-only readout in cartograph's Sky & Light panel can surface "current Almanac preset" before v3 renders it.
 
-**Three mount sites today** for the v1 procedural `CloudDome.jsx` — `Scene.jsx` / `CartographApp.jsx` / `PreviewApp.jsx` — all identical, no fork. When v3 lands, those flip to `<Atmosphere />` per `STAGE_MIGRATION.md`. The toy scene gets a fourth mount (Meteorologist's authoring canary).
+**Three production mount sites** for `<Atmosphere />` — `Scene.jsx` / `CartographApp.jsx` / `PreviewApp.jsx` — all identical, no fork. CanaryScene is the fourth mount (Meteorologist's authoring canary). Post-4b.3, no procedural fallback path exists.
 
 ---
 
@@ -217,13 +217,12 @@ Meteorologist consumes Stage's published artifacts (§2). The remaining integrat
 
 ---
 
-## 8. Relationship to v1 CloudDome
+## 8. Relationship to v1 CloudDome (historical)
 
-`src/components/CloudDome.jsx` is the noise-based procedural cloud shipper. It is the **v1 production renderer** until v3 `<Atmosphere />` ships.
+`src/components/CloudDome.jsx` WAS the noise-based procedural cloud shipper — the v1 production renderer through 2026-05-19. Retired 2026-05-20 in Phase 4b.3; `<Atmosphere />` is the production renderer now at all three mount sites (Scene.jsx / CartographApp.jsx / PreviewApp.jsx), with CanaryScene having used it since Phase 4b.1.
 
-- v1 ships LS today with CloudDome doing all cloud rendering.
-- Meteorologist is a **separate track**: not a v1 blocker. The Teapot + Almanac + `<Atmosphere />` continue evolving on their own pace; land when ready.
-- `STAGE_MIGRATION.md` is the swap-in commit spec. Today three mount sites (Scene/CartographApp/PreviewApp) use CloudDome; the cleanup commit retires `CloudDome.jsx` + `SpriteClouds.jsx` + the dead `CloudDomeV2/V3.jsx` files and flips all sites to `<Atmosphere />`.
+- The `CloudDome.jsx` + `SpriteClouds.jsx` files are deleted.
+- `STAGE_MIGRATION.md` is now historical — see the header note in that file.
 
 ---
 
