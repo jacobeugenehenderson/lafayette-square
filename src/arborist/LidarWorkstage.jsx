@@ -264,9 +264,13 @@ export default function LidarWorkstage() {
   const lidarSpecies = species.filter(s => !!s.forSpeciesName)
   const pack = suggestedLeafPack(activeSpeciesId, activeSpecies?.leafMorph)
   // Hero species id — where bake-tree.py writes the artifact (set on the
-  // scan-source decl via species-map.json's `heroSpecies` field). Falls back
-  // to the active id when no hero indirection is configured.
-  const heroSpeciesId = activeSpecies?.heroSpecies || activeSpeciesId
+  // scan-source decl via species-map.json's `heroSpecies` field). Trust the
+  // last publish's response first (covers the case where the in-memory
+  // species list pre-dates the heroSpecies field landing on /species), then
+  // the species-list field, then the active id as fallback.
+  const heroSpeciesId = publishResult?.heroSpecies
+    || activeSpecies?.heroSpecies
+    || activeSpeciesId
 
   // Fetch the hero manifest so the oracle can look up `variantId` for the
   // currently-selected specimen. One fetch per heroSpecies switch.
@@ -371,10 +375,14 @@ export default function LidarWorkstage() {
         displayName: displayName || null,
       })
       setPublishResult(r)
-      // Refresh hero manifest so the oracle picks up the new variant immediately.
-      if (heroSpeciesId) {
+      // Refresh hero manifest so the oracle picks up the new variant
+      // immediately. Use r.heroSpecies (the actual hero just published to)
+      // rather than the closed-over heroSpeciesId, which can still be the
+      // pre-publish fallback (active id) until the next render cycle.
+      const heroJustPublished = r?.heroSpecies
+      if (heroJustPublished) {
         try {
-          const m = await fetch(`/api/arborist/species/${heroSpeciesId}?t=${Date.now()}`)
+          const m = await fetch(`/api/arborist/species/${heroJustPublished}?t=${Date.now()}`)
             .then(rr => rr.ok ? rr.json() : null)
           if (m) setHeroManifest(m)
         } catch { /* non-fatal */ }
