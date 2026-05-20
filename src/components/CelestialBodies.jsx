@@ -511,63 +511,20 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       uniform float uBeautyBias;
       varying vec3 vWorldPosition;
 
-      // ─────────────────────────────────────────────────────────────
-      // Preetham-inspired analytical sky baseline.
-      // Provides physical luminance + chroma per (view dir, sun dir).
-      // Operator-authored juice (the 4-band gradient below) layers on
-      // top via:   final = preetham + juice * (1 - preetham_luma)
-      // Result: bright days dominated by physics, dim/night dominated
-      // by operator authoring, automatic seasonal brightness via sun
-      // altitude. See cartograph/NOTES.md "4-anchor seasonal sky".
-      // ─────────────────────────────────────────────────────────────
-      vec3 preethamSky(vec3 dir, vec3 sunDirN, float turbidity) {
-        float h = max(dir.y, 0.0);                       // view zenith
-        float sa = sunDirN.y;                            // sin(sun altitude)
-        float cosGamma = clamp(dot(dir, sunDirN), -1.0, 1.0);
-
-        // Day weight — Preetham is silent below astronomical twilight.
-        // Smooth ramp through civil/nautical twilight band.
-        float dayW = smoothstep(-0.20, 0.10, sa);
-
-        // Rayleigh-flavored zenith blue + horizon wash. Turbidity widens
-        // the horizon haze band and warms it.
-        vec3 zenithColor  = vec3(0.10, 0.22, 0.55);
-        vec3 horizonCool  = vec3(0.62, 0.74, 0.88);
-        vec3 horizonWarm  = vec3(0.92, 0.66, 0.42);
-        // Widened 0.40 → 0.85 (2026-05-20) so winter-noon (sa ≈ 0.49 at
-        // 38°N) still produces visible horizon-warming + Mie sun-prox
-        // glow. With the prior 0.40 cap, both summer noon (sa 0.97) and
-        // winter noon (sa 0.49) saturated to lowSun=0 → identical
-        // Preetham output → year-scrub at noon produced no visible
-        // seasonal sky variation. Widening to 0.85 means winter noon
-        // reads as "low-ish sun" (lowSun ≈ 0.42), summer noon stays
-        // "high sun" (lowSun ≈ 0), equinox noon between (~0.08).
-        // Twilight unchanged — sa → 0 still maps to lowSun → 1.
-        float lowSun = 1.0 - smoothstep(0.0, 0.85, sa);
-        vec3 horizonColor = mix(horizonCool, horizonWarm, lowSun * 0.65);
-
-        // Vertical blend — horizon warm/wide, zenith deep blue.
-        float vBlend = pow(1.0 - h, 1.4 + turbidity * 0.5);
-        vec3 sky = mix(zenithColor, horizonColor, vBlend);
-
-        // Mie-like forward-scatter glow near sun on the horizon.
-        float sunProx = pow(max(cosGamma, 0.0), 4.0);
-        float horizonStrength = (1.0 - h) * (1.0 - h);
-        vec3 sunWarm = vec3(1.0, 0.55, 0.20);
-        sky += sunWarm * sunProx * horizonStrength * lowSun * 0.45;
-
-        // Apply day-weight luminance gate so night → zero contribution,
-        // letting operator-authored night cards drive the dome.
-        return sky * dayW;
-      }
-
       void main() {
         vec3 dir = normalize(vWorldPosition);
         float h = dir.y;
 
-        // ── Operator-authored "juice" — 4-band gradient + sun-glow band.
-        // These are the resolved colors from the active seasonal anchor
-        // card (lerp between two flanking anchors handled CPU-side).
+        // ── Operator-authored "juice" — the sky color, full stop.
+        // 4 bands (horizon → low → mid → high) + sun-glow, resolved on the
+        // CPU side from the active seasonal anchor card (lerp between two
+        // flanking anchors by day-of-year; lerp between TOD columns by
+        // minute-of-day). The hand-painted swatches ARE the physics — sun
+        // position, atmospheric mood, season character all encoded by the
+        // artist directly. Earlier experiments with a Preetham analytical
+        // baseline laid on top were removed 2026-05-20: physics-overlay
+        // fought the painter (suppressed authored noon colors to ~30%
+        // strength via luma-gated composition). Painter is source of truth.
         float hn = pow(max(0.0, h), 0.65 * (1.0 + uTurbidity * 0.4));
         float t1 = smoothstep(0.0,  0.12, hn);  // horizon → low
         float t2 = smoothstep(0.10, 0.32, hn);  // low → mid
@@ -576,15 +533,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         juice = mix(juice, bandMid, t2);
         juice = mix(juice, bandHigh, t3);
 
-        // ── Preetham physical baseline.
-        vec3 preetham = preethamSky(dir, normalize(sunDir), uTurbidity);
-        float preethamLuma = clamp(dot(preetham, vec3(0.2126, 0.7152, 0.0722)), 0.0, 1.0);
-
-        // ── Composition: physics + (juice gated by physics dimness).
-        // Day:   preetham bright  → juice contribution small  → sky reads physical.
-        // Night: preetham ~0      → juice contribution full   → operator drives.
-        // Twilight: smooth blend automatic (luma is the gate).
-        vec3 finalColor = preetham + juice * (1.0 - preethamLuma);
+        vec3 finalColor = juice;
 
         // ── Directional sun glow ──
         float sunDot = dot(dir, sunDir);
