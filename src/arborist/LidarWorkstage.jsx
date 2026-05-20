@@ -148,17 +148,42 @@ function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true, opac
 // oracle) add no further rotation. See arborist/NOTES.md 2026-05-19 evening.
 function BakedGlbOracle({ url, visible = true, opacity = 1.0 }) {
   const { scene } = useGLTF(url)
-  const cloned = useMemo(() => scene.clone(), [scene])
+  const cloned = useMemo(() => {
+    const s = scene.clone(true)
+    // Clone materials too so opacity mutations don't bleed across mounts
+    // (Object3D.clone shares material refs by default).
+    let meshCount = 0
+    const bbox = new THREE.Box3()
+    s.traverse(o => {
+      if (o.isMesh) {
+        meshCount++
+        if (Array.isArray(o.material)) o.material = o.material.map(m => m.clone())
+        else if (o.material) o.material = o.material.clone()
+        bbox.expandByObject(o)
+      }
+    })
+    const size = new THREE.Vector3(); bbox.getSize(size)
+    const ctr = new THREE.Vector3(); bbox.getCenter(ctr)
+    console.log('[BakedGlbOracle] loaded', url, '— meshes:', meshCount,
+      'bbox center:', ctr.toArray().map(n => n.toFixed(2)),
+      'size:', size.toArray().map(n => n.toFixed(2)))
+    return s
+  }, [scene, url])
   useEffect(() => {
     cloned.traverse(o => {
-      if (o.isMesh && o.material) {
-        const mats = Array.isArray(o.material) ? o.material : [o.material]
-        for (const mat of mats) {
-          mat.transparent = opacity < 1.0
+      if (!o.isMesh || !o.material) return
+      const mats = Array.isArray(o.material) ? o.material : [o.material]
+      for (const mat of mats) {
+        if (opacity >= 0.999) {
+          mat.transparent = false
+          mat.opacity = 1.0
+          mat.depthWrite = true
+        } else {
+          mat.transparent = true
           mat.opacity = opacity
-          mat.depthWrite = opacity >= 1.0
-          mat.needsUpdate = true
+          mat.depthWrite = false
         }
+        mat.needsUpdate = true
       }
     })
   }, [cloned, opacity])
@@ -251,7 +276,7 @@ export default function LidarWorkstage() {
   // operator can dim a layer without losing its toggle state.
   const [layers, setLayers]             = useState({
     points: true, cylinders: true, baked: true,
-    pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 0.6,
+    pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 1.0,
   })
   // Per-hero baked manifest cache. Keyed by heroSpecies so we don't re-fetch
   // on every selection change within the same species.
