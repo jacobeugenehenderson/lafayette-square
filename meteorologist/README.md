@@ -25,6 +25,7 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 | Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Camera orbit controls in viewport (Phase 5+) |
 | Conditions library + Condition editor (When + Directive + Clouds-in-cond + Revert) | Mobile quality tier (`uQualityTier`) (Phase 5+) |
 | CanaryScene viewport (sky-from-Look + hero tree + flat ground) | Multi-preset blending (per `directive.clouds[]`) (Phase 5+) |
+| **Phase Seed — 52 reference photos + Nimbus seed tunings + editable descriptions** (2026-05-20) | |
 | `<Atmosphere />` v3 raymarched cloud shader (5 photoreal levers) | |
 | `atmosphere-materials.js` shader factory + inline GLSL | |
 | **TodChannel uniform binding — active preset's params drive the cloud shader (Phase 4b.2)** | |
@@ -41,6 +42,7 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 - Phase 4a — CanaryScene scaffold (commit `6a3fd29`, 2026-05-19)
 - Phase 4b.1 — `<Atmosphere />` raymarched shader (commit `d1c66fe`, 2026-05-20)
 - Phase 4b.2 — TodChannel uniform binding; active preset drives shader uniforms each frame (Wren, 2026-05-21)
+- Phase Seed — Cloud Specialist seed applied (51/52 presets retuned by Nimbus); ref photos surface in TeapotLibrary + Teacup; description field added end-to-end (Stratus, 2026-05-20)
 - Kit clock+calendar primitive — `useCalendar` + `ClockCalendarPump` (2026-05-20)
 - Step 3 WhenCard live dots — TOD + season chip indicators (commit `36d667c`, 2026-05-20)
 - Unified time card — TOD + ToY + playback in DawnTimeline (Wren, 2026-05-20)

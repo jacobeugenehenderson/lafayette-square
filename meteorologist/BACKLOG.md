@@ -60,6 +60,14 @@ See `NOTES.md` 2026-05-21 "Sky pivot Phase B" entry for per-season values + inte
 
 Atmosphere's twelve shape + lighting uniforms now read from the active preset's per-param TodChannels each frame via `resolveGroupAtMinute`. Operator slider drags in Teacup land on the canary cloud synchronously (store's `_patchParam` mutates `presets` in-memory on the same tick). Animated channels lerp between TOD slot waypoints as time scrubs. `getActivePreset()` selector added to `useMeteorologistStore`. `uWindScale` deliberately not wired (lives in Conditions/directive). See `NOTES.md` 2026-05-21 entry.
 
+### ✅ Phase Seed shipped (2026-05-20)
+
+Reference photos surface in TeapotLibrary + Teacup; Nimbus's `specialist-seed.json` drove 51 preset tunings (cumulus_humilis preserved authored). Description field added to schema + autosave + UI; swap-into-viewport open state with editable text. Library is now visually distinct + operator-captioned end-to-end.
+
+Follow-ups:
+- Phase Seed.2 — operator hand-tune sweep against live render now that ref photos are visible
+- Photo wishlist — 5 needs_photo presets per `public/clouds/photos/SOURCES.json`
+
 ### Phase 4b.3 — CloudDome retirement
 
 Per `STAGE_MIGRATION.md`: swap all `<CloudDome />` mounts (Scene.jsx, CartographApp.jsx, PreviewApp.jsx, CanaryScene.jsx) to `<Atmosphere />`. Delete `CloudDome.jsx` + `SpriteClouds.jsx` + dead CloudDomeV2/V3. The `CloudCoverSeed` Phase-4a expedient in CanaryScene comes out (no longer needed once Atmosphere reads from preset directly).
@@ -82,6 +90,59 @@ Lands AFTER Phase 4b so the temporal modulation is visually validatable.
 - Cloud preset gallery / reference-photo thumbnails (BACKLOG item 10 from 2026-05-14 spade work).
 - Camera orbit controls in viewport.
 - `bakeLastMs` slice replaces Phase 4a's `Date.now()` stub (real cartograph fetch).
+- **Directive tween-on-change** (between consecutive `selectDirective` outputs): when the Almanac flips condition, lerp uniforms over ~30–60s so the runtime never snaps. Lays the rails Phase 6 modulators ride on.
+- **Wind cross-helper wiring.** The resolved directive's `wind.speed` + `wind.dir` (+ `wind.gustsScale` after Phase 6) become a single subscribable source. Two consumers: `<Atmosphere>` (cloud advection via `uWindScale` + new `uWindDir`) and `<InstancedTrees>` (sway shader uniforms). Subscribes-not-authors per ARCHITECTURE §9. Today open-meteo's wind values reach `useWeather` but don't flow further; Phase 5's hot-mount is what closes that loop.
+
+### Phase 6 — Modulators (continuous atmospheric phenomena) — v1 commitment
+
+ADR in `NOTES.md` 2026-05-20. Adds a Modulators layer on top of the Almanac: continuous, weather-signal-driven directive deltas that compose with the base directive. Captures atmospheric phenomena that don't reduce to "which cloud preset" — cold-front passage, about-to-rain feel, tornado green, wildfire smoke, pre-storm gold, fog burn-off — each as its own authored modulator with a driver signal, curve, deltas, and ramp duration. Runtime evaluates them against open-meteo's full payload (pressure trend, radiation ratios, etc.); stacks results onto base directive.
+
+**Scope:**
+
+- `public/clouds/modulators.json` artifact + `modulator.schema.json`
+- `src/lib/weather-signals.js` — `deriveSignals(weatherPayload, time)` producing pressure_trend_3hr, direct_ratio, hour_of_day, etc.
+- Evaluator extension: `selectDirective` returns base + composed modulator stack; commutative composition (intensity scales multiply; tints sum-and-clamp; ramps interpolate)
+- "Modulators" tab in Meteorologist UI alongside Teapot + Conditions; per-modulator editor (driver picker, curve picker, delta rows, ramp slider)
+- Seed library — 5–8 starter modulators (cold_front_passage, about_to_rain, severe_storm_aerosol_filter, wildfire_smoke, pre_storm_gold, fog_burn_off, summer_heat_haze)
+- Cross-helper: wind modulator outputs feed `InstancedTrees` sway uniforms (already on the wind contract)
+
+**Why v1 not v2:** the product promises an LS that reflects its real world. A LS that can't show "the cold front is here" or "the air today is smoke from Canada" misses the promise. Modulators are the architectural piece that makes the promise reachable. Land after Phase 5 (need evaluator hot-mount first).
+
+### Phase 7 — Atmospheric consumers (wind, rain, snow, lightning) — v1 commitment
+
+ADR in `NOTES.md` 2026-05-20. Turns the directive's wind/precip/lightning output into visible scene behavior. Wind as sampled field (not scalar) breaks the "dawdle." Rain via streaks + wet-surface pass. Snow via points + accumulation. Lightning via scene-flash + delayed thunder. Sub-phased for atomic review.
+
+**Phase 7a — Wind field + multi-scale tree response.** Cross-helper with Arborist.
+
+- `src/lib/wind-field.js` — `windAt(t, pos, windState) → { force, intensity }`. Three temporal scales (drift / gust envelope / gust spikes via `smoothmax`). Spatial gust-front advection so gusts visibly travel through the scene.
+- InstancedTrees sway shader rewritten to sample the field at four time-constants (leaves / twigs / branches / trunk) with appropriate damping. Cross-helper coordinator brief at dispatch time.
+- Atmosphere subscribes too — `uWindScale` + `uWindDir` populated from `windAt(t, cameraPos, ...)`. Cloud advection becomes gust-aware.
+- The single dawdle-fix beat. Largest single visual upgrade in the atmospheric arc.
+
+**Phase 7b — Rain particles + wet-surface shader.**
+
+- ~5–10k motion-blurred streaks in a ~150–200m camera-following cylinder. Wind-tilted fall. Per-particle speed variance.
+- `uWetness ∈ [0,1]` integrator from `directive.precip.intensity`; asphalt + concrete materials darken albedo + boost specular. Puddles take ~minute to form/decay.
+- Rain audio layer fades with intensity.
+
+**Phase 7c — Snow particles + accumulation integrator.**
+
+- Point sprites (not streaks). Curl-noise lateral motion. Wind dominates trajectory.
+- `uSnowAccumulation ∈ [0,1]` integrator whitens top-facing surfaces (`mix(base, white, accum * normal.y)`). Rises during `precip.kind === 'snow'`, decays slowly.
+- World audio gets a low-pass filter under heavy snow.
+
+**Phase 7d — Lightning flash + delayed thunder.**
+
+- `uLightningFlash` scene uniform — 50ms spike, 200ms decay. Brief ambient-multiplier wash, cloud lit-from-above pulse.
+- Thunder layer delayed proportional to `directive.lightning.distance`. Intracloud (glow only) vs cloud-to-ground (vertical streak particle line) via `directive.lightning.kind`.
+
+**Cross-helper consequences:**
+
+- Arborist: 7a rewrites InstancedTrees sway shader.
+- Cartograph: 7b authors wet-surface response per-Look (optional per-Look road-darkening curves).
+- Future Audiologist (or Meteorologist runtime): 7b/c/d audio layers.
+
+**Why v1 not v2:** each consumer here exists because skipping it produces the uncanny "video game weather" tell. The dawdle (no real wind), the dry rain (no wet surface), the snowless snow (no accumulation), the instant thunder (no delay) — each is the singular property that breaks immersion in its category. Land after Phase 6 (need modulator-driven wind/precip/lightning values to consume).
 
 ---
 

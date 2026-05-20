@@ -89,6 +89,62 @@ const useMeteorologistStore = create((set, get) => ({
     return presets.find(p => p.id === activePresetId) || null
   },
 
+  // ── Specialist seed (immutable canon for revert) ─────────────
+  specialistSeed: null,
+  specialistSeedError: null,
+  loadSpecialistSeed: async () => {
+    try {
+      const r = await fetch(`/api/meteorologist/specialist-seed?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set({ specialistSeed: d, specialistSeedError: null })
+    } catch (err) {
+      set({ specialistSeedError: String(err) })
+    }
+  },
+  seedDescriptionFor: (presetId) => {
+    const seed = get().specialistSeed
+    if (!seed?.presets) return null
+    const s = seed.presets.find(p => p.id === presetId)
+    return s?.description || null
+  },
+
+  // ── Per-preset top-level field mutations (description, etc.) ─
+  setPresetField: (presetId, field, value) => {
+    set(s => {
+      const idx = s.presets.findIndex(p => p.id === presetId)
+      if (idx < 0) return s
+      const cur = s.presets[idx]
+      const next = { ...cur, [field]: value, authored: true }
+      const arr = s.presets.slice()
+      arr[idx] = next
+      return { presets: arr }
+    })
+    get()._scheduleSave(presetId)
+  },
+  revertPresetField: (presetId, field) => {
+    if (field !== 'description') {
+      // Only description supports revert today; extend when more fields land.
+      return
+    }
+    const seedText = get().seedDescriptionFor(presetId)
+    set(s => {
+      const idx = s.presets.findIndex(p => p.id === presetId)
+      if (idx < 0) return s
+      const cur = s.presets[idx]
+      const next = { ...cur }
+      if (seedText) next.description = seedText
+      else delete next.description
+      // Operator chose to revert — clear authored so future seed re-runs
+      // can resume picking up specialist updates.
+      delete next.authored
+      const arr = s.presets.slice()
+      arr[idx] = next
+      return { presets: arr }
+    })
+    get()._scheduleSave(presetId)
+  },
+
   // ── Per-cloud-param channel mutations (autosave-debounced) ──
   //
   // The channel data shape on disk is the same `{ values, animated?,

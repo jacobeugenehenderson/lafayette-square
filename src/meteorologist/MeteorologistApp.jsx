@@ -18,12 +18,14 @@ export default function MeteorologistApp() {
   const loadPresets      = useMeteorologistStore(s => s.loadPresets)
   const loadConditions   = useMeteorologistStore(s => s.loadConditions)
   const loadLooks        = useMeteorologistStore(s => s.loadLooks)
+  const loadSpecialistSeed = useMeteorologistStore(s => s.loadSpecialistSeed)
   const activePresetId   = useMeteorologistStore(s => s.activePresetId)
   const activeConditionId = useMeteorologistStore(s => s.activeConditionId)
 
   useEffect(() => { loadPresets() }, [loadPresets])
   useEffect(() => { loadConditions() }, [loadConditions])
   useEffect(() => { loadLooks() }, [loadLooks])
+  useEffect(() => { loadSpecialistSeed() }, [loadSpecialistSeed])
   useEffect(() => {
     const onFocus = () => loadLooks()
     window.addEventListener('focus', onFocus)

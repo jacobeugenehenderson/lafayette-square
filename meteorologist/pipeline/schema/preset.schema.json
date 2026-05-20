@@ -53,6 +53,15 @@
     "params": {
       "type": "object",
       "description": "Kind-dependent parameter block. See per-kind constraints below."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Operator-facing plainspoken caption. Seeded by Cloud Specialist (Nimbus), refined by operator over time. Edits set `authored:true`."
+    },
+    "authored": {
+      "type": "boolean",
+      "description": "Operator-touched flag. When true, the seed-presets.js pipeline skips overwriting params + description on re-run."
     }
   },
   "allOf": [

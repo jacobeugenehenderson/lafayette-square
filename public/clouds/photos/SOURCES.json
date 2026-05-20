@@ -1,0 +1,266 @@
+[
+  {
+    "id": "clear_sky",
+    "status": "exists"
+  },
+  {
+    "id": "cirrus_fibratus",
+    "status": "exists"
+  },
+  {
+    "id": "cirrus_uncinus",
+    "status": "exists"
+  },
+  {
+    "id": "cirrus_spissatus",
+    "status": "exists"
+  },
+  {
+    "id": "cirrus_castellanus",
+    "status": "needs_photo",
+    "note": "current photo is a poor reference for castellanus turrets"
+  },
+  {
+    "id": "cirrus_floccus",
+    "status": "exists"
+  },
+  {
+    "id": "cirrocumulus_stratiformis",
+    "status": "exists"
+  },
+  {
+    "id": "cirrocumulus_lenticularis",
+    "status": "exists"
+  },
+  {
+    "id": "cirrocumulus_floccus",
+    "status": "needs_photo",
+    "note": "was byte-duplicate of cirrocumulus_stratiformis"
+  },
+  {
+    "id": "cirrocumulus_castellanus",
+    "status": "needs_photo",
+    "note": "was byte-duplicate of cirrocumulus_stratiformis"
+  },
+  {
+    "id": "cirrostratus_fibratus",
+    "status": "exists"
+  },
+  {
+    "id": "cirrostratus_nebulosus",
+    "status": "exists"
+  },
+  {
+    "id": "cirrostratus_duplicatus",
+    "status": "exists"
+  },
+  {
+    "id": "altocumulus_stratiformis",
+    "status": "exists"
+  },
+  {
+    "id": "altocumulus_lenticularis",
+    "status": "exists"
+  },
+  {
+    "id": "altocumulus_castellanus",
+    "status": "needs_photo",
+    "note": "current photo is a poor reference for castellanus turrets"
+  },
+  {
+    "id": "altocumulus_floccus",
+    "status": "exists"
+  },
+  {
+    "id": "altocumulus_translucidus",
+    "status": "exists"
+  },
+  {
+    "id": "altocumulus_opacus",
+    "status": "exists"
+  },
+  {
+    "id": "altocumulus_lacunosus",
+    "status": "exists"
+  },
+  {
+    "id": "altostratus_translucidus",
+    "status": "exists"
+  },
+  {
+    "id": "altostratus_opacus",
+    "status": "exists"
+  },
+  {
+    "id": "nimbostratus",
+    "status": "exists"
+  },
+  {
+    "id": "stratocumulus_stratiformis",
+    "status": "exists"
+  },
+  {
+    "id": "stratocumulus_castellanus",
+    "status": "needs_photo",
+    "note": "current photo is a poor reference for castellanus turrets"
+  },
+  {
+    "id": "stratocumulus_lenticularis",
+    "status": "exists"
+  },
+  {
+    "id": "stratocumulus_perlucidus",
+    "status": "exists"
+  },
+  {
+    "id": "stratocumulus_opacus",
+    "status": "exists"
+  },
+  {
+    "id": "stratocumulus_volutus",
+    "status": "ok",
+    "source": "File:Volutus Clouds over Buftea 2.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/14/Volutus_Clouds_over_Buftea_2.jpg"
+  },
+  {
+    "id": "stratus_nebulosus",
+    "status": "ok",
+    "source": "File:Stratus nebulosus \u00fcber Limburg, 26.11.2020 II.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Stratus_nebulosus_%C3%BCber_Limburg%2C_26.11.2020_II.jpg/1920px-Stratus_nebulosus_%C3%BCber_Limburg%2C_26.11.2020_II.jpg"
+  },
+  {
+    "id": "stratus_fractus",
+    "status": "exists"
+  },
+  {
+    "id": "stratus_opacus",
+    "status": "ok",
+    "source": "File:Stratus-Opacus-Uniformis.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d1/Stratus-Opacus-Uniformis.jpg"
+  },
+  {
+    "id": "cumulus_humilis",
+    "status": "ok",
+    "source": "File:Cumulus cloud above Lechtaler Alps at tannheim, Austria.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/2b/Cumulus_cloud_above_Lechtaler_Alps_at_tannheim%2C_Austria.jpg"
+  },
+  {
+    "id": "cumulus_mediocris",
+    "status": "ok",
+    "source": "File:Cumulus clouds Andalucia.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Cumulus_clouds_Andalucia.jpg/1920px-Cumulus_clouds_Andalucia.jpg"
+  },
+  {
+    "id": "cumulus_congestus",
+    "status": "ok",
+    "source": "File:2016 Chmura Cumulus congestus 01.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/2016_Chmura_Cumulus_congestus_01.jpg/1920px-2016_Chmura_Cumulus_congestus_01.jpg"
+  },
+  {
+    "id": "cumulus_fractus",
+    "status": "ok",
+    "source": "File:Cumulus fractus mit Irisieren.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Cumulus_fractus_mit_Irisieren.jpg/1920px-Cumulus_fractus_mit_Irisieren.jpg"
+  },
+  {
+    "id": "cumulonimbus_calvus",
+    "status": "ok",
+    "source": "File:Large cloud over Mexican landscape.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Large_cloud_over_Mexican_landscape.jpg/1920px-Large_cloud_over_Mexican_landscape.jpg"
+  },
+  {
+    "id": "cumulonimbus_capillatus",
+    "status": "ok",
+    "source": "File:Cumulonimbus sunset panorama, Albury NSW Australia.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Cumulonimbus_sunset_panorama%2C_Albury_NSW_Australia.jpg/1920px-Cumulonimbus_sunset_panorama%2C_Albury_NSW_Australia.jpg"
+  },
+  {
+    "id": "cumulonimbus_mammatus",
+    "status": "ok",
+    "source": "File:Mammatus cloud panorama.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Mammatus_cloud_panorama.jpg/1920px-Mammatus_cloud_panorama.jpg"
+  },
+  {
+    "id": "fog_ground",
+    "status": "intentionally_omitted",
+    "source": "File:Vallee-brouillard.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Vallee-brouillard.jpg/1920px-Vallee-brouillard.jpg",
+    "note": "duplicate of fog_valley; UI uses fog_valley photo"
+  },
+  {
+    "id": "fog_valley",
+    "status": "ok",
+    "source": "File:Vallee-brouillard.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Vallee-brouillard.jpg/1920px-Vallee-brouillard.jpg"
+  },
+  {
+    "id": "haze_summer",
+    "status": "intentionally_omitted",
+    "source": "File:View from Tegelberg 02.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/View_from_Tegelberg_02.jpg/1920px-View_from_Tegelberg_02.jpg",
+    "note": "reference shows clear day, no haze visible"
+  },
+  {
+    "id": "haze_smoke",
+    "status": "ok",
+    "source": "File:Haze from Wildfire smoke Vancouver 2021 (51378633336).jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Haze_from_Wildfire_smoke_Vancouver_2021_%2851378633336%29.jpg/1920px-Haze_from_Wildfire_smoke_Vancouver_2021_%2851378633336%29.jpg"
+  },
+  {
+    "id": "rain_light",
+    "status": "ok",
+    "source": "File:Cumulonimbus and rain over Sandgate from Shorncliffe Pier Shorncliffe Bramble Bay Queensland IMGP2973.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Cumulonimbus_and_rain_over_Sandgate_from_Shorncliffe_Pier_Shorncliffe_Bramble_Bay_Queensland_IMGP2973.jpg/1920px-Cumulonimbus_and_rain_over_Sandgate_from_Shorncliffe_Pier_Shorncliffe_Bramble_Bay_Queensland_IMGP2973.jpg"
+  },
+  {
+    "id": "rain_moderate",
+    "status": "ok",
+    "source": "File:Rain falling from cloud near Taitung Seaside Park.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Rain_falling_from_cloud_near_Taitung_Seaside_Park.jpg/1920px-Rain_falling_from_cloud_near_Taitung_Seaside_Park.jpg"
+  },
+  {
+    "id": "rain_heavy",
+    "status": "intentionally_omitted",
+    "source": "File:Tokat Kale.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Tokat_Kale.jpg/1920px-Tokat_Kale.jpg",
+    "note": "reference shows castle under blue sky (mismatch)"
+  },
+  {
+    "id": "rain_squall",
+    "status": "intentionally_omitted",
+    "source": "File:Squall line conceptual.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Squall_line_conceptual.jpg",
+    "note": "reference is a schematic diagram, not a sky photo"
+  },
+  {
+    "id": "snow_calm",
+    "status": "ok",
+    "source": "File:Snowfall at night over Brofjorden and Preemraff oil refinery.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Snowfall_at_night_over_Brofjorden_and_Preemraff_oil_refinery.jpg/1920px-Snowfall_at_night_over_Brofjorden_and_Preemraff_oil_refinery.jpg"
+  },
+  {
+    "id": "snow_heavy",
+    "status": "ok",
+    "source": "File:Aftermath of a heavy snowfall in the grove of Efremov.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Aftermath_of_a_heavy_snowfall_in_the_grove_of_Efremov.jpg/1920px-Aftermath_of_a_heavy_snowfall_in_the_grove_of_Efremov.jpg"
+  },
+  {
+    "id": "snow_blizzard",
+    "status": "ok",
+    "source": "File:Whiteout in Yonkers, New York, Blizzard of 2006.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/13/Whiteout_in_Yonkers%2C_New_York%2C_Blizzard_of_2006.jpg"
+  },
+  {
+    "id": "lightning_intracloud",
+    "status": "intentionally_omitted",
+    "source": "File:Lightning Pritzerbe 01 (MK).jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Lightning_Pritzerbe_01_%28MK%29.jpg/1920px-Lightning_Pritzerbe_01_%28MK%29.jpg",
+    "note": "reference shows cloud-to-ground bolts (wrong type)"
+  },
+  {
+    "id": "lightning_cloud_ground",
+    "status": "ok",
+    "source": "File:Cloud to ground lightning bangalore.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Cloud_to_ground_lightning_bangalore.jpg"
+  }
+]

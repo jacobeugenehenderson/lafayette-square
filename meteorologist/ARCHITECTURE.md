@@ -83,6 +83,7 @@ This dovetails with `feedback_preview_uses_production_pipeline` (which Preview a
 |---|---|---|
 | `public/clouds/presets.json` | **The Teapot.** Cloud preset library — WMO species × visually-distinct variants + practical fog/haze + v1.x precipitation stubs. 52 entries scaffolded. | `pipeline/schema/presets-file.schema.json` + per-entry `preset.schema.json` |
 | `public/clouds/almanac.json` | **The Almanac.** Rule table: weather payload → atmospheric directive. 16 starter rules + a fallback directive. | `pipeline/schema/almanac.schema.json` |
+| `meteorologist/data/specialist-seed.json` | **The Seed.** Calibrated initial params + operator-facing descriptions per preset, authored by Cloud Specialist agent (Nimbus, 2026-05-20). Immutable canon; operator edits in `presets.json` override per preset. Applied via `pipeline/seed-presets.js`. | (no schema; flat 52-entry list) |
 
 Two additional schemas describe wire formats, not stored files:
 

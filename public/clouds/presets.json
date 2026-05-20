@@ -15,16 +15,6 @@
         "any-altitude"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 0
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 1
-          }
-        },
         "coverage": {
           "values": {
             "value": 0
@@ -35,14 +25,14 @@
             "value": 0
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 1500
-          }
-        },
         "thickness": {
           "values": {
             "value": 1
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1500
           }
         },
         "warpFreq": {
@@ -53,6 +43,16 @@
         "warpAmp": {
           "values": {
             "value": 0
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 0
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 1
           }
         },
         "sunScatter": {
@@ -75,7 +75,8 @@
             "value": 0
           }
         }
-      }
+      },
+      "description": "A clean blue dome with nothing between you and the sun. The signature of a stable high-pressure day — crisp shadows, deep saturation overhead, gentler color at the horizon. Best for hero shots that want the sky to feel infinite, or to anchor a season's noon-summer reference. Pair with strong direct sun and minimal haze."
     },
     {
       "id": "cirrus_fibratus",
@@ -88,6 +89,36 @@
         "fibrous"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.45
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.22
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 9000
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0009
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 110
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 11
@@ -98,34 +129,78 @@
             "value": 3
           }
         },
+        "sunScatter": {
+          "values": {
+            "value": 1.75
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.55
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 1.35
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 0.15
+          }
+        }
+      },
+      "description": "Long parallel fibers drawn out across the upper sky by high-altitude wind, like falling streamers brushed sideways. Translucent enough that blue shows through cleanly, but enough of them to fill a wide swath of the dome. Catches sunset gold beautifully. Suggests fair weather now, a front incoming in a day or so."
+    },
+    {
+      "id": "cirrus_uncinus",
+      "label": "Cirrus uncinus",
+      "kind": "cloud",
+      "wmo": "Ci unc",
+      "tags": [
+        "high",
+        "hooked",
+        "mares-tails"
+      ],
+      "params": {
         "coverage": {
           "values": {
-            "value": 0.18
+            "value": 0.35
           }
         },
         "density": {
           "values": {
-            "value": 0.25
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 9000
+            "value": 0.3
           }
         },
         "thickness": {
           "values": {
-            "value": 600
+            "value": 800
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 9200
           }
         },
         "warpFreq": {
           "values": {
-            "value": 0.0008
+            "value": 0.0013
           }
         },
         "warpAmp": {
           "values": {
-            "value": 80
+            "value": 160
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 12
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 4
           }
         },
         "sunScatter": {
@@ -140,80 +215,7 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 1.4
-          }
-        },
-        "shadowStrength": {
-          "values": {
-            "value": 0.15
-          }
-        }
-      }
-    },
-    {
-      "id": "cirrus_uncinus",
-      "label": "Cirrus uncinus",
-      "kind": "cloud",
-      "wmo": "Ci unc",
-      "tags": [
-        "high",
-        "hooked",
-        "mares-tails"
-      ],
-      "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 12
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 4
-          }
-        },
-        "coverage": {
-          "values": {
-            "value": 0.15
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.3
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 9500
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 700
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0012
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 140
-          }
-        },
-        "sunScatter": {
-          "values": {
-            "value": 1.9
-          }
-        },
-        "ambientFloor": {
-          "values": {
-            "value": 0.55
-          }
-        },
-        "edgeSilver": {
-          "values": {
-            "value": 1.5
+            "value": 1.45
           }
         },
         "shadowStrength": {
@@ -221,7 +223,8 @@
             "value": 0.18
           }
         }
-      }
+      },
+      "description": "Mares' tails — thin curls of ice with a hooked top, the wisp trailing down like a comma. Scattered widely across the upper sky, each one its own little brushstroke. Translucent and bright against deep blue. A poetic sky, and a reliable early signal that the weather is about to shift in the next day."
     },
     {
       "id": "cirrus_spissatus",
@@ -234,6 +237,36 @@
         "anvil-debris"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.3
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.6
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 1200
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 8500
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0009
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 200
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 13
@@ -244,39 +277,9 @@
             "value": 4
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.32
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.55
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 8500
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 1100
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0009
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 180
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 1.2
+            "value": 1.1
           }
         },
         "ambientFloor": {
@@ -286,15 +289,16 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 0.9
+            "value": 0.95
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 0.45
+            "value": 0.5
           }
         }
-      }
+      },
+      "description": "Dense cirrus thick enough to mute the sun behind it — the leftover anvil debris from a storm long gone. Darker and weightier than the wispy cirrus species. At sunset it stands as a silhouette with a brilliant rim where the sun rakes its edge. Reads as the morning-after of yesterday's afternoon storm."
     },
     {
       "id": "cirrus_castellanus",
@@ -307,6 +311,36 @@
         "instability"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.18
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.35
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 1200
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 8800
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0015
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 240
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 14
@@ -317,39 +351,9 @@
             "value": 5
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.22
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.4
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 8800
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 1400
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0014
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 260
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 1.5
+            "value": 1.55
           }
         },
         "ambientFloor": {
@@ -367,7 +371,8 @@
             "value": 0.35
           }
         }
-      }
+      },
+      "description": "Cirrus with tiny turret-tops bubbling upward from a thin shared base — a sign of instability up at altitude. Lighter and more scattered than its cumulus-shaped cousins, but the same telltale crenellation. Often a hint that afternoon thunderstorms could build later. A connoisseur's cloud, easy to miss if you aren't looking for it."
     },
     {
       "id": "cirrus_floccus",
@@ -379,24 +384,19 @@
         "tufted"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 15
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 4
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.6
+            "value": 0.4
           }
         },
         "density": {
           "values": {
-            "value": 0.99
+            "value": 0.45
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 900
           }
         },
         "baseAlt": {
@@ -404,24 +404,29 @@
             "value": 8800
           }
         },
-        "thickness": {
-          "values": {
-            "value": 8500
-          }
-        },
         "warpFreq": {
           "values": {
-            "value": 0.0016
+            "value": 0.0018
           }
         },
         "warpAmp": {
           "values": {
-            "value": 200
+            "value": 230
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 15
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 5
           }
         },
         "sunScatter": {
           "values": {
-            "value": 1.6
+            "value": 1.55
           }
         },
         "ambientFloor": {
@@ -431,15 +436,16 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 1.3
+            "value": 1.25
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 0.25
+            "value": 0.3
           }
         }
-      }
+      },
+      "description": "Small tufts of cirrus, each one ragged and self-contained, often with a wispy trail falling underneath. Scattered across the upper sky like cotton balls pulled apart by the wind. A festive, decorative sky. Often shares the canvas with a thinner cirrus layer above, layering detail at two altitudes."
     },
     {
       "id": "cirrocumulus_stratiformis",
@@ -452,6 +458,36 @@
         "mackerel"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.9
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.55
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 500
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 8000
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0028
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 80
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 21
@@ -462,49 +498,19 @@
             "value": 4
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.55
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.4
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 8000
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 500
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0022
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 90
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 1.3
+            "value": 1.35
           }
         },
         "ambientFloor": {
           "values": {
-            "value": 0.5
+            "value": 0.55
           }
         },
         "edgeSilver": {
           "values": {
-            "value": 1.1
+            "value": 1.15
           }
         },
         "shadowStrength": {
@@ -512,7 +518,8 @@
             "value": 0.3
           }
         }
-      }
+      },
+      "description": "A mackerel sky — countless tiny rippled cells covering most of the dome in a fine fish-scale pattern. Reads almost as texture rather than discrete clouds. Bright against the blue, with the grain of the ripples picking up direction from the upper wind. Beautiful at golden hour when the ripples catch warm light."
     },
     {
       "id": "cirrocumulus_lenticularis",
@@ -525,6 +532,36 @@
         "wave"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.15
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.5
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 400
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 8200
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0006
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 50
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 22
@@ -535,49 +572,19 @@
             "value": 3
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.12
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.5
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 8200
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 400
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0006
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 60
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 1.4
+            "value": 1.45
           }
         },
         "ambientFloor": {
           "values": {
-            "value": 0.5
+            "value": 0.55
           }
         },
         "edgeSilver": {
           "values": {
-            "value": 1.2
+            "value": 1.3
           }
         },
         "shadowStrength": {
@@ -585,7 +592,8 @@
             "value": 0.3
           }
         }
-      }
+      },
+      "description": "A smooth lens-shaped cap riding a high-altitude standing wave — almond-shaped, edges feathering off into fibers. When the sun is directly behind, the cloud lights up with rainbow iridescence around its rim. Rare enough to be a small event when one appears. Doesn't drift; the wave is anchored to the terrain below."
     },
     {
       "id": "cirrocumulus_floccus",
@@ -597,6 +605,36 @@
         "tufted"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.45
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.42
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 8200
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0022
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 140
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 23
@@ -605,36 +643,6 @@
         "octaves": {
           "values": {
             "value": 4
-          }
-        },
-        "coverage": {
-          "values": {
-            "value": 0.3
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.4
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 8200
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 600
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.002
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 140
           }
         },
         "sunScatter": {
@@ -654,10 +662,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.3
+            "value": 0.32
           }
         }
-      }
+      },
+      "description": "High-altitude tufts — smaller and more delicate than altocumulus floccus, but cousins in shape. Each cell is a soft puff with a faint trail beneath. Spread across a large patch of sky with blue showing between. Reads as fair-weather decoration, often paired with a finer mackerel layer in the same scene."
     },
     {
       "id": "cirrocumulus_castellanus",
@@ -669,29 +678,14 @@
         "turreted"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 24
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 4
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.28
+            "value": 0.3
           }
         },
         "density": {
           "values": {
-            "value": 0.45
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 8000
+            "value": 0.48
           }
         },
         "thickness": {
@@ -699,14 +693,29 @@
             "value": 900
           }
         },
+        "baseAlt": {
+          "values": {
+            "value": 8000
+          }
+        },
         "warpFreq": {
           "values": {
-            "value": 0.0018
+            "value": 0.002
           }
         },
         "warpAmp": {
           "values": {
-            "value": 200
+            "value": 210
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 24
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 5
           }
         },
         "sunScatter": {
@@ -721,15 +730,16 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 1.2
+            "value": 1.25
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 0.35
+            "value": 0.38
           }
         }
-      }
+      },
+      "description": "Tiny high-altitude turrets sprouting from a thin shared base. Smaller-celled than altocumulus castellanus but the same physics — instability at altitude shouldering little towers upward. Reads as detailed, busy texture overhead, the kind of sky you keep glancing at. Often a quiet hint that the air aloft is unsettled, with bigger development possible later. A photographer's sky."
     },
     {
       "id": "cirrostratus_fibratus",
@@ -743,6 +753,36 @@
         "fibrous"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.85
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.2
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 700
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 8500
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0006
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 70
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 31
@@ -753,36 +793,6 @@
             "value": 3
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.85
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.22
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 8500
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 700
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0006
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 60
-          }
-        },
         "sunScatter": {
           "values": {
             "value": 1.6
@@ -790,7 +800,7 @@
         },
         "ambientFloor": {
           "values": {
-            "value": 0.55
+            "value": 0.58
           }
         },
         "edgeSilver": {
@@ -803,7 +813,8 @@
             "value": 0.18
           }
         }
-      }
+      },
+      "description": "A nearly-uniform high veil with fibrous grain running through it — like a translucent silk pulled across the whole sky. The sun shines through unobstructed but slightly softened. Often capable of throwing a 22-degree halo around the sun or moon. Reads as a deteriorating weather sky; rain in 18 to 36 hours."
     },
     {
       "id": "cirrostratus_nebulosus",
@@ -817,16 +828,6 @@
         "halo-capable"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 32
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 2
-          }
-        },
         "coverage": {
           "values": {
             "value": 0.95
@@ -837,14 +838,14 @@
             "value": 0.18
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 8500
-          }
-        },
         "thickness": {
           "values": {
             "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 8500
           }
         },
         "warpFreq": {
@@ -857,9 +858,19 @@
             "value": 30
           }
         },
+        "noiseSeed": {
+          "values": {
+            "value": 32
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 2
+          }
+        },
         "sunScatter": {
           "values": {
-            "value": 1.5
+            "value": 1.55
           }
         },
         "ambientFloor": {
@@ -877,7 +888,8 @@
             "value": 0.12
           }
         }
-      }
+      },
+      "description": "A smooth featureless high veil — so even it can be hard to see, except for the soft glow it puts around the sun and the wide 22-degree halo it throws on a good day. The sun is undimmed but the blue is washed out. Quiet, watercolor weather. The same front-warning role as fibratus but smoother."
     },
     {
       "id": "cirrostratus_duplicatus",
@@ -890,6 +902,36 @@
         "veil"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.92
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.32
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 1500
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 8200
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0005
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 60
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 33
@@ -900,39 +942,9 @@
             "value": 3
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.9
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.3
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 8200
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 1500
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0005
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 50
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 1.4
+            "value": 1.35
           }
         },
         "ambientFloor": {
@@ -947,10 +959,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.2
+            "value": 0.22
           }
         }
-      }
+      },
+      "description": "Two layered cirrostratus veils at slightly different altitudes — you can see them sliding past each other when one moves and the other doesn't. The sky gains depth from the parallax. Stronger overall opacity than a single veil. A heavier hint of weather change than its plain siblings."
     },
     {
       "id": "altocumulus_stratiformis",
@@ -963,34 +976,24 @@
         "sheet"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 41
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 4
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.6
+            "value": 0.55
           }
         },
         "density": {
           "values": {
-            "value": 0.7
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 4000
+            "value": 0.65
           }
         },
         "thickness": {
           "values": {
             "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 4000
           }
         },
         "warpFreq": {
@@ -1000,7 +1003,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 120
+            "value": 140
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 41
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 4
           }
         },
         "sunScatter": {
@@ -1015,7 +1028,7 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 0.9
+            "value": 0.95
           }
         },
         "shadowStrength": {
@@ -1023,7 +1036,8 @@
             "value": 0.5
           }
         }
-      }
+      },
+      "description": "A mid-level patchy sheet — cells loosely organized into a broad layer with breaks between them. Bottoms catch warm color at sunrise and sunset. Not as fine as a mackerel sky; the cells are clearly individual. A sky for soft, indirect light at ground level."
     },
     {
       "id": "altocumulus_lenticularis",
@@ -1037,34 +1051,24 @@
         "stationary"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 42
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 3
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.1
+            "value": 0.12
           }
         },
         "density": {
           "values": {
-            "value": 0.85
+            "value": 0.9
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 800
           }
         },
         "baseAlt": {
           "values": {
             "value": 4200
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 700
           }
         },
         "warpFreq": {
@@ -1074,7 +1078,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 80
+            "value": 70
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 42
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 3
           }
         },
         "sunScatter": {
@@ -1089,7 +1103,7 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 1
+            "value": 1.05
           }
         },
         "shadowStrength": {
@@ -1097,7 +1111,8 @@
             "value": 0.55
           }
         }
-      }
+      },
+      "description": "Stacked saucer-lenses parked over a peak — the classic UFO cloud, anchored to a mountain wave that holds it in place while the wind blows through it. Dense and sculptural, with smooth almond curves. Stays put for hours. A dramatic anchor for a mountain-view scene."
     },
     {
       "id": "altocumulus_castellanus",
@@ -1110,34 +1125,24 @@
         "instability"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 43
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 5
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.45
+            "value": 0.4
           }
         },
         "density": {
           "values": {
-            "value": 0.8
+            "value": 0.78
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 1600
           }
         },
         "baseAlt": {
           "values": {
             "value": 4000
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 1500
           }
         },
         "warpFreq": {
@@ -1147,7 +1152,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 280
+            "value": 300
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 43
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 5
           }
         },
         "sunScatter": {
@@ -1167,10 +1182,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.55
+            "value": 0.58
           }
         }
-      }
+      },
+      "description": "Mid-level turrets bubbling up from a shared raft — little castles in a row, each with its own vertical extent. Reads as instability brewing aloft. Often a morning sign that afternoon storms could fire. A textured, busy sky with real depth to it."
     },
     {
       "id": "altocumulus_floccus",
@@ -1182,19 +1198,9 @@
         "tufted"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 44
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 4
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.4
+            "value": 0.55
           }
         },
         "density": {
@@ -1202,14 +1208,14 @@
             "value": 0.7
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 4200
-          }
-        },
         "thickness": {
           "values": {
             "value": 900
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 4200
           }
         },
         "warpFreq": {
@@ -1219,12 +1225,22 @@
         },
         "warpAmp": {
           "values": {
-            "value": 220
+            "value": 240
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 44
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 5
           }
         },
         "sunScatter": {
           "values": {
-            "value": 1.3
+            "value": 1.25
           }
         },
         "ambientFloor": {
@@ -1239,10 +1255,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.5
+            "value": 0.52
           }
         }
-      }
+      },
+      "description": "Scattered mid-level tufts, each with a defined cauliflower top and a soft trail of detail underneath. Widely spaced across the sky with lots of blue between them. Brighter and bolder than the cirrus floccus high above, more substantial in body. A playful, decorative sky that suggests mild instability at mid-altitude. Often photographed on calm afternoons."
     },
     {
       "id": "altocumulus_translucidus",
@@ -1255,34 +1272,24 @@
         "sun-visible"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 45
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 4
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.55
+            "value": 0.58
           }
         },
         "density": {
           "values": {
-            "value": 0.5
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 4000
+            "value": 0.48
           }
         },
         "thickness": {
           "values": {
             "value": 500
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 4000
           }
         },
         "warpFreq": {
@@ -1295,9 +1302,19 @@
             "value": 110
           }
         },
+        "noiseSeed": {
+          "values": {
+            "value": 45
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 4
+          }
+        },
         "sunScatter": {
           "values": {
-            "value": 1.4
+            "value": 1.45
           }
         },
         "ambientFloor": {
@@ -1307,7 +1324,7 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 1
+            "value": 1.05
           }
         },
         "shadowStrength": {
@@ -1315,7 +1332,8 @@
             "value": 0.35
           }
         }
-      }
+      },
+      "description": "A mid-level sheet thin enough that the sun and the position of the brighter parts of the sky show through. Cells are visible but with backlight glowing through their thinner regions. At twilight the bottoms warm to pink and gold. A gentle, atmospheric sky."
     },
     {
       "id": "altocumulus_opacus",
@@ -1328,6 +1346,36 @@
         "sun-obscured"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.85
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.1
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 950
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 3800
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0012
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 160
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 46
@@ -1338,39 +1386,9 @@
             "value": 4
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.8
-          }
-        },
-        "density": {
-          "values": {
-            "value": 1.1
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 3800
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 900
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0012
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 140
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 0.9
+            "value": 0.85
           }
         },
         "ambientFloor": {
@@ -1385,10 +1403,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.7
+            "value": 0.72
           }
         }
-      }
+      },
+      "description": "A heavy mid-level sheet that nearly closes off the sky. The sun is hidden; small breaks of blue may show at the edges. Bottoms are dark and well-shadowed; tops out of sight. The grey of a slow afternoon, often preceding steadier weather."
     },
     {
       "id": "altocumulus_lacunosus",
@@ -1401,6 +1420,36 @@
         "rare"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.62
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.72
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 4000
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0026
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 170
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 47
@@ -1409,36 +1458,6 @@
         "octaves": {
           "values": {
             "value": 5
-          }
-        },
-        "coverage": {
-          "values": {
-            "value": 0.55
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.7
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 4000
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 600
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0024
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 160
           }
         },
         "sunScatter": {
@@ -1461,7 +1480,8 @@
             "value": 0.55
           }
         }
-      }
+      },
+      "description": "A mid-level sheet pierced by a regular pattern of holes — the negative-space cousin of a regular cloud layer. The honeycomb of dark blue cells against pale cloud is the signature. Rare and short-lived; the holes close back up within a few minutes as the layer evolves. A connoisseur's sky, more often described in textbooks than actually seen overhead."
     },
     {
       "id": "altostratus_translucidus",
@@ -1474,16 +1494,6 @@
         "ground-glass-sun"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 51
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 2
-          }
-        },
         "coverage": {
           "values": {
             "value": 0.95
@@ -1494,14 +1504,14 @@
             "value": 0.6
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 3500
-          }
-        },
         "thickness": {
           "values": {
             "value": 1200
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 3500
           }
         },
         "warpFreq": {
@@ -1511,7 +1521,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 40
+            "value": 50
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 51
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 2
           }
         },
         "sunScatter": {
@@ -1526,7 +1546,7 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 0.6
+            "value": 0.65
           }
         },
         "shadowStrength": {
@@ -1534,7 +1554,8 @@
             "value": 0.45
           }
         }
-      }
+      },
+      "description": "A mid-level sheet covering nearly all of the sky, but thin enough that the sun shows through as a dim diffused disk — the classic ground-glass sun. Light at the surface is soft and shadowless. Often the front-edge of a steady rain situation a few hours out."
     },
     {
       "id": "altostratus_opacus",
@@ -1548,6 +1569,36 @@
         "pre-rain"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 1
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.05
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 1800
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 3000
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0003
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 35
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 52
@@ -1558,39 +1609,9 @@
             "value": 2
           }
         },
-        "coverage": {
-          "values": {
-            "value": 1
-          }
-        },
-        "density": {
-          "values": {
-            "value": 1
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 3000
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 1800
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0003
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 30
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 0.6
+            "value": 0.55
           }
         },
         "ambientFloor": {
@@ -1605,10 +1626,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.7
+            "value": 0.72
           }
         }
-      }
+      },
+      "description": "A dense featureless mid-level overcast. The sun is gone — you can sometimes locate it as a slightly brighter region behind the layer, but no disk. Subtle horizontal undulations show structure. The sky of an incoming front; rain within hours."
     },
     {
       "id": "nimbostratus",
@@ -1621,6 +1643,36 @@
         "dark"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 1
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.65
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 4000
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1200
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0005
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 90
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 61
@@ -1631,39 +1683,9 @@
             "value": 3
           }
         },
-        "coverage": {
-          "values": {
-            "value": 1
-          }
-        },
-        "density": {
-          "values": {
-            "value": 1.6
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 1200
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 4000
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0005
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 80
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 0.4
+            "value": 0.35
           }
         },
         "ambientFloor": {
@@ -1673,15 +1695,16 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 0.3
+            "value": 0.25
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 1
+            "value": 1.05
           }
         }
-      }
+      },
+      "description": "The rain sky. A thick uniform grey from horizon to horizon — no breaks, no edges, no sun, just weight overhead. Steady falling precipitation rather than dramatic bursts. Bottoms ragged where falling rain meets surface stratus. The defining cloud of a soaked day."
     },
     {
       "id": "stratocumulus_stratiformis",
@@ -1694,19 +1717,9 @@
         "sheet"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 71
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 4
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.75
+            "value": 0.78
           }
         },
         "density": {
@@ -1714,14 +1727,14 @@
             "value": 0.95
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 1100
-          }
-        },
         "thickness": {
           "values": {
             "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1100
           }
         },
         "warpFreq": {
@@ -1731,7 +1744,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 180
+            "value": 200
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 71
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 4
           }
         },
         "sunScatter": {
@@ -1751,10 +1774,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.65
+            "value": 0.68
           }
         }
-      }
+      },
+      "description": "A low lumpy sheet — cells big enough to read as individuals but pressed together into a layer. Bright lit tops, dark mottled undersides. The default overcast of a cool damp day that never quite commits to rain. A workhorse sky."
     },
     {
       "id": "stratocumulus_castellanus",
@@ -1766,16 +1790,6 @@
         "turreted"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 72
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 5
-          }
-        },
         "coverage": {
           "values": {
             "value": 0.55
@@ -1786,14 +1800,14 @@
             "value": 1
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 1100
-          }
-        },
         "thickness": {
           "values": {
             "value": 1400
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1100
           }
         },
         "warpFreq": {
@@ -1806,6 +1820,16 @@
             "value": 280
           }
         },
+        "noiseSeed": {
+          "values": {
+            "value": 72
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 5
+          }
+        },
         "sunScatter": {
           "values": {
             "value": 1
@@ -1823,10 +1847,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.7
+            "value": 0.72
           }
         }
-      }
+      },
+      "description": "Low cumulus-like turrets growing out of a shared low base — a layer with personality. Each turret reads as a small developing tower, brighter on the sunlit shoulder and shadowed beneath. A hint of energy in an otherwise low cloud regime; sometimes precedes brief showers in the afternoon. The grumpier sibling of the smoother stratocumulus sheets."
     },
     {
       "id": "stratocumulus_lenticularis",
@@ -1839,19 +1864,9 @@
         "wave"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 73
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 3
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.15
+            "value": 0.18
           }
         },
         "density": {
@@ -1859,14 +1874,14 @@
             "value": 1.1
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 1200
-          }
-        },
         "thickness": {
           "values": {
             "value": 700
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1200
           }
         },
         "warpFreq": {
@@ -1876,7 +1891,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 100
+            "value": 90
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 73
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 3
           }
         },
         "sunScatter": {
@@ -1899,7 +1924,8 @@
             "value": 0.65
           }
         }
-      }
+      },
+      "description": "Low lens-clouds shaped by wave motion in the lower atmosphere — smooth almond shapes parked above ridges or hills. Less iconic than the high-altitude lenticularis above mountains, but still anchored to the terrain and still stationary while the wind blows through them. A quiet wind-direction signal for anyone watching the sky over hilly country."
     },
     {
       "id": "stratocumulus_perlucidus",
@@ -1912,6 +1938,36 @@
         "with-gaps"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.65
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.95
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 700
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1200
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0011
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 230
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 74
@@ -1922,39 +1978,9 @@
             "value": 4
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.65
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.9
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 1200
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 600
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0011
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 200
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 1.05
+            "value": 1.1
           }
         },
         "ambientFloor": {
@@ -1964,7 +1990,7 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 0.9
+            "value": 0.95
           }
         },
         "shadowStrength": {
@@ -1972,7 +1998,8 @@
             "value": 0.6
           }
         }
-      }
+      },
+      "description": "A low lumpy sheet with deliberate gaps of blue between cells. Lots of contrast — bright sunlit tops, deep shaded undersides, sharp blue holes. The most photogenic stratocumulus; a sky that suggests the layer is breaking up and the day is getting better."
     },
     {
       "id": "stratocumulus_opacus",
@@ -1984,19 +2011,9 @@
         "thick-sheet"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 75
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 3
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.95
+            "value": 0.98
           }
         },
         "density": {
@@ -2004,14 +2021,14 @@
             "value": 1.2
           }
         },
+        "thickness": {
+          "values": {
+            "value": 750
+          }
+        },
         "baseAlt": {
           "values": {
             "value": 1000
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 700
           }
         },
         "warpFreq": {
@@ -2024,9 +2041,19 @@
             "value": 120
           }
         },
+        "noiseSeed": {
+          "values": {
+            "value": 75
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 3
+          }
+        },
         "sunScatter": {
           "values": {
-            "value": 0.75
+            "value": 0.7
           }
         },
         "ambientFloor": {
@@ -2036,15 +2063,16 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 0.6
+            "value": 0.55
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 0.85
+            "value": 0.88
           }
         }
-      }
+      },
+      "description": "A complete low overcast that mutes the sun to faint glow. Bottoms are dark and uniformly grey; subtle organization shows here and there but mostly just weight. The default sky of a damp gray winter afternoon. Light at the surface is flat and shadowless."
     },
     {
       "id": "stratocumulus_volutus",
@@ -2058,6 +2086,36 @@
         "dramatic"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.32
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.3
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 900
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0004
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 90
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 76
@@ -2068,39 +2126,9 @@
             "value": 3
           }
         },
-        "coverage": {
-          "values": {
-            "value": 0.18
-          }
-        },
-        "density": {
-          "values": {
-            "value": 1.3
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 900
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 500
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0004
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 80
-          }
-        },
         "sunScatter": {
           "values": {
-            "value": 1
+            "value": 1.05
           }
         },
         "ambientFloor": {
@@ -2110,15 +2138,16 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 0.95
+            "value": 1.05
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 0.7
+            "value": 0.72
           }
         }
-      }
+      },
+      "description": "A roll cloud — one long horizontal tube of cloud stretched across a slab of sky, smooth and rotating around its own axis. Dense and sculptural. Rare, dramatic, and unmistakable when one appears. Often part of a sea-breeze or outflow boundary."
     },
     {
       "id": "stratus_nebulosus",
@@ -2131,16 +2160,6 @@
         "smooth"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 81
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 2
-          }
-        },
         "coverage": {
           "values": {
             "value": 1
@@ -2148,17 +2167,17 @@
         },
         "density": {
           "values": {
-            "value": 1
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 300
+            "value": 1.05
           }
         },
         "thickness": {
           "values": {
             "value": 400
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 300
           }
         },
         "warpFreq": {
@@ -2169,6 +2188,16 @@
         "warpAmp": {
           "values": {
             "value": 20
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 81
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 2
           }
         },
         "sunScatter": {
@@ -2191,7 +2220,8 @@
             "value": 0.7
           }
         }
-      }
+      },
+      "description": "A featureless low ceiling — no edges, no cells, just an even sheet a few hundred meters above the ground. The sun appears as a soft glow when it appears at all. The sky of damp coastal mornings and fog that lifted into a layer."
     },
     {
       "id": "stratus_fractus",
@@ -2205,6 +2235,36 @@
         "post-rain"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.45
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.78
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 500
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 350
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0025
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 290
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 82
@@ -2213,36 +2273,6 @@
         "octaves": {
           "values": {
             "value": 5
-          }
-        },
-        "coverage": {
-          "values": {
-            "value": 0.4
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.75
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 350
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 500
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0024
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 260
           }
         },
         "sunScatter": {
@@ -2262,10 +2292,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.5
+            "value": 0.52
           }
         }
-      }
+      },
+      "description": "Ragged, torn low cloud — wisps clinging to hillsides and drifting between trees after rain. Highly irregular, no two pieces alike. Often called scud. A moody, cinematic sky for mountain or forest scenes, especially in the hour after a passing storm."
     },
     {
       "id": "stratus_opacus",
@@ -2277,16 +2308,6 @@
         "heavy-ceiling"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 83
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 2
-          }
-        },
         "coverage": {
           "values": {
             "value": 1
@@ -2297,14 +2318,14 @@
             "value": 1.3
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 250
-          }
-        },
         "thickness": {
           "values": {
             "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 250
           }
         },
         "warpFreq": {
@@ -2315,6 +2336,16 @@
         "warpAmp": {
           "values": {
             "value": 25
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 83
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 2
           }
         },
         "sunScatter": {
@@ -2337,7 +2368,8 @@
             "value": 0.85
           }
         }
-      }
+      },
+      "description": "A heavy low ceiling — denser and darker than nebulosus. The sun is fully hidden and the light underneath is dim and flat all day. The defining ceiling of overcast winter days that never really brighten. Often paired with light drizzle that doesn't quite count as rain."
     },
     {
       "id": "cumulus_humilis",
@@ -2411,7 +2443,9 @@
             "value": 0.65
           }
         }
-      }
+      },
+      "authored": true,
+      "description": "Fair-weather puffy cumulus, low base, cauliflower tops with soft self-shadowing on the lit side. Mid-coverage; gaps between cells let blue sky through. The signature of a calm summer afternoon — clouds that arrive after breakfast and dissolve by evening. Best authored at noon-summer altitudes; sits gently in the lower third of the sky."
     },
     {
       "id": "cumulus_mediocris",
@@ -2424,16 +2458,6 @@
         "puffy"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 92
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 5
-          }
-        },
         "coverage": {
           "values": {
             "value": 0.4
@@ -2444,14 +2468,14 @@
             "value": 1
           }
         },
+        "thickness": {
+          "values": {
+            "value": 1600
+          }
+        },
         "baseAlt": {
           "values": {
             "value": 1200
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 1500
           }
         },
         "warpFreq": {
@@ -2461,12 +2485,22 @@
         },
         "warpAmp": {
           "values": {
-            "value": 380
+            "value": 400
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 92
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 5
           }
         },
         "sunScatter": {
           "values": {
-            "value": 1.25
+            "value": 1.2
           }
         },
         "ambientFloor": {
@@ -2481,10 +2515,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 0.75
+            "value": 0.78
           }
         }
-      }
+      },
+      "description": "Puffy cumulus that have started to grow upward — about as tall as they are wide, with the bottoms still flat but the tops piling into deeper cauliflower. Confident, bright on the sunlit side, shadowed beneath. The mid-day version of fair-weather cumulus; sometimes a hint that bigger towers are coming later."
     },
     {
       "id": "cumulus_congestus",
@@ -2497,34 +2532,24 @@
         "pre-storm"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 93
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 6
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.45
+            "value": 0.48
           }
         },
         "density": {
           "values": {
-            "value": 1.3
+            "value": 0.76
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 8300
           }
         },
         "baseAlt": {
           "values": {
             "value": 1100
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 4500
           }
         },
         "warpFreq": {
@@ -2534,30 +2559,41 @@
         },
         "warpAmp": {
           "values": {
-            "value": 520
+            "value": 540
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 0
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 5
           }
         },
         "sunScatter": {
           "values": {
-            "value": 1.2
+            "value": 1.44
           }
         },
         "ambientFloor": {
           "values": {
-            "value": 0.28
+            "value": 1
           }
         },
         "edgeSilver": {
           "values": {
-            "value": 1
+            "value": 0
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 0.9
+            "value": 0
           }
         }
-      }
+      },
+      "description": "Towering cumulus, distinctly taller than wide, growing fast. The base is darkening; the top still hard-edged cauliflower rather than fibrous. Often shows light shower beneath. The pre-storm cloud — half an hour from becoming a cumulonimbus if it keeps going. Drama in the lower half of the sky."
     },
     {
       "id": "cumulus_fractus",
@@ -2570,6 +2606,36 @@
         "ragged"
       ],
       "params": {
+        "coverage": {
+          "values": {
+            "value": 0.28
+          }
+        },
+        "density": {
+          "values": {
+            "value": 0.72
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 600
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 900
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0023
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 310
+          }
+        },
         "noiseSeed": {
           "values": {
             "value": 94
@@ -2578,36 +2644,6 @@
         "octaves": {
           "values": {
             "value": 5
-          }
-        },
-        "coverage": {
-          "values": {
-            "value": 0.25
-          }
-        },
-        "density": {
-          "values": {
-            "value": 0.7
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 900
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 600
-          }
-        },
-        "warpFreq": {
-          "values": {
-            "value": 0.0022
-          }
-        },
-        "warpAmp": {
-          "values": {
-            "value": 300
           }
         },
         "sunScatter": {
@@ -2622,7 +2658,7 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 1.05
+            "value": 1.1
           }
         },
         "shadowStrength": {
@@ -2630,7 +2666,8 @@
             "value": 0.55
           }
         }
-      }
+      },
+      "description": "Torn, irregular cumulus — fragments rather than whole cells. No defined cauliflower; just shreds drifting at the same low level. Sometimes iridescent edges where backlit thin parts catch the sun. Often appears at the edges of forming weather, or as scud beneath a higher base."
     },
     {
       "id": "cumulonimbus_calvus",
@@ -2643,34 +2680,24 @@
         "no-anvil"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 101
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 6
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.4
+            "value": 0.42
           }
         },
         "density": {
           "values": {
-            "value": 1.6
-          }
-        },
-        "baseAlt": {
-          "values": {
-            "value": 800
+            "value": 1.55
           }
         },
         "thickness": {
           "values": {
             "value": 8000
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 800
           }
         },
         "warpFreq": {
@@ -2680,7 +2707,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 600
+            "value": 620
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 101
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 6
           }
         },
         "sunScatter": {
@@ -2703,7 +2740,8 @@
             "value": 1.05
           }
         }
-      }
+      },
+      "description": "A young thunderstorm — towering and dense, dark-bottomed, but the top is still hard cauliflower without the anvil. Smaller and less spread than its mature cousin but already serious. Showers underneath, sometimes hail. Reads as the early stage of a storm cycle."
     },
     {
       "id": "cumulonimbus_capillatus",
@@ -2720,19 +2758,9 @@
         "incus"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 102
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 6
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.5
+            "value": 0.55
           }
         },
         "density": {
@@ -2740,19 +2768,14 @@
             "value": 1.7
           }
         },
+        "thickness": {
+          "values": {
+            "value": 11500
+          }
+        },
         "baseAlt": {
           "values": {
             "value": 800
-          }
-        },
-        "thickness": {
-          "values": {
-            "value": 11000
-          }
-        },
-        "anvil": {
-          "values": {
-            "value": 0.85
           }
         },
         "warpFreq": {
@@ -2762,7 +2785,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 700
+            "value": 720
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 102
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 6
           }
         },
         "sunScatter": {
@@ -2782,10 +2815,11 @@
         },
         "shadowStrength": {
           "values": {
-            "value": 1.15
+            "value": 1.18
           }
         }
-      }
+      },
+      "description": "A mature thunderstorm with the classic anvil spreading at the top — ice crystals fanning out where the rising column hits the tropopause. Dense and dark below, brilliant where the sun rakes the anvil's underside at golden hour. The iconic storm cloud. Pair with heavy rain or cloud-to-ground lightning in the same Condition."
     },
     {
       "id": "cumulonimbus_mammatus",
@@ -2803,19 +2837,9 @@
         "mamma"
       ],
       "params": {
-        "noiseSeed": {
-          "values": {
-            "value": 103
-          }
-        },
-        "octaves": {
-          "values": {
-            "value": 6
-          }
-        },
         "coverage": {
           "values": {
-            "value": 0.7
+            "value": 0.72
           }
         },
         "density": {
@@ -2823,19 +2847,14 @@
             "value": 1.5
           }
         },
-        "baseAlt": {
-          "values": {
-            "value": 1500
-          }
-        },
         "thickness": {
           "values": {
             "value": 6000
           }
         },
-        "anvil": {
+        "baseAlt": {
           "values": {
-            "value": 0.6
+            "value": 1500
           }
         },
         "warpFreq": {
@@ -2845,7 +2864,17 @@
         },
         "warpAmp": {
           "values": {
-            "value": 500
+            "value": 510
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 103
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 6
           }
         },
         "sunScatter": {
@@ -2860,15 +2889,16 @@
         },
         "edgeSilver": {
           "values": {
-            "value": 0.8
+            "value": 0.78
           }
         },
         "shadowStrength": {
           "values": {
-            "value": 1
+            "value": 1.02
           }
         }
-      }
+      },
+      "description": "The underside of a storm anvil studded with pendulous pouches — ominous round lobes hanging down like inverted cumulus. Almost always appears after the worst of the weather has passed; the storm is moving away but the leftover anvil is still spectacular. A sky to look up at in awe, not fear."
     },
     {
       "id": "fog_ground",
@@ -2901,7 +2931,8 @@
           }
         },
         "tint": "#cfd6dc"
-      }
+      },
+      "description": "A shallow layer of dense fog hugging the ground — visibility drops to the width of a street. Best as a morning condition that burns off by mid-morning. Light is diffuse, shadows almost gone, and color saturation falls sharply at distance. Adds a quiet, hushed quality to ground-level scenes."
     },
     {
       "id": "fog_valley",
@@ -2934,7 +2965,8 @@
           }
         },
         "tint": "#c8d2da"
-      }
+      },
+      "description": "Fog pooled in low ground — valleys, river beds, dips between hills. From above the ridgeline you see it as a flat white sea with peaks rising out of it; from below you're inside it. Holds longer than ground fog because cold air settles. A photographer's morning condition."
     },
     {
       "id": "haze_summer",
@@ -2967,7 +2999,8 @@
           }
         },
         "tint": "#e8dcc6"
-      }
+      },
+      "description": "A dry warm haze that softens distance and warms color toward beige — humidity and dust suspended through the lower atmosphere on a hot day. The sky overhead stays mostly blue but loses saturation; the horizon turns milky. Reads as a sultry afternoon, the kind that primes summer storms by evening."
     },
     {
       "id": "haze_smoke",
@@ -3001,7 +3034,8 @@
           }
         },
         "tint": "#a07a55"
-      }
+      },
+      "description": "Wildfire smoke filling the atmosphere — distant buildings dissolve into ochre and the sun reddens at any time of day. Heavier and more sinister than summer haze; the air smells wrong. Adds an ominous warm cast to all scenes. Use with a tan-and-orange palette to lean into the foreboding mood."
     },
     {
       "id": "rain_light",
@@ -3011,7 +3045,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 1
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.3
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 2500
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1200
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0006
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 100
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 121
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 3
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.55
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.28
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.4
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 0.85
+          }
+        }
+      },
+      "description": "A thin, steady rain falling from a moderate overcast — enough to wet pavement and bead on a coat but not enough to drive you indoors. The sky is grey but not black; the air smells of clean stone. Best as a foreground texture under a nimbostratus or stratus parent. Stub preset; full particles arrive in v1.x."
     },
     {
       "id": "rain_moderate",
@@ -3021,7 +3117,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 1
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.55
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 3500
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1100
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0005
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 100
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 122
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 3
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.4
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.24
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.3
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 1
+          }
+        }
+      },
+      "description": "Steady rain that has fully committed — visible curtains in the middle distance, gutters running, the kind of rain you wait out. Sky is uniformly dark grey. Reads as the middle of a wet afternoon. Stub preset; full precipitation system arrives in v1.x."
     },
     {
       "id": "rain_heavy",
@@ -3031,7 +3189,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 1
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.7
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 6000
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 900
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0008
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 250
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 123
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 4
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.3
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.2
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.25
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 1.15
+          }
+        }
+      },
+      "description": "A downpour — sheets of rain, near-zero visibility into the middle distance, drainage overwhelmed. Sky is black-grey overhead with a charge-of-color glow at the horizon. The cloud above is a low cumulonimbus base, not a nimbostratus sheet. Stub preset; full particles arrive in v1.x."
     },
     {
       "id": "rain_squall",
@@ -3041,7 +3261,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 0.8
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.6
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 7000
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 700
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0011
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 400
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 124
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 5
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.45
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.22
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.6
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 1.05
+          }
+        }
+      },
+      "description": "A line of heavy rain moving fast — wind ahead of it, shelf cloud at the leading edge, a wall of grey advancing across the horizon. Short-lived but intense. The sky in front of it can be clear blue right up to the boundary. Stub preset; full system with wind arrives in v1.x."
     },
     {
       "id": "snow_calm",
@@ -3051,7 +3333,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 1
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.1
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 800
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 600
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0003
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 50
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 131
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 2
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.55
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.4
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.45
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 0.7
+          }
+        }
+      },
+      "description": "Gentle snow falling out of an even overcast — flakes the size of a thumbnail, drifting straight down. Visibility is good; the world goes quiet. The sky is a pale uniform grey, brighter than rain weather. Pair with stratus or low altostratus. Stub preset; full particles in v1.x."
     },
     {
       "id": "snow_heavy",
@@ -3061,7 +3405,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 1
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.5
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 3000
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 800
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0005
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 110
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 132
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 3
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.4
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.32
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.35
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 0.95
+          }
+        }
+      },
+      "description": "Snow accumulating fast — heavy steady fall, an inch an hour, drifts forming on the lee side of things. The sky is bright-grey from the diffused light of so much falling snow. Quiet, except for the muffled sound that snow makes. Stub preset; full particles in v1.x."
     },
     {
       "id": "snow_blizzard",
@@ -3071,7 +3477,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 1
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.8
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 4000
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 500
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.001
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 220
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 133
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 4
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.3
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.28
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.3
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 1.1
+          }
+        }
+      },
+      "description": "Whiteout. Wind-driven snow blasting horizontally, visibility down to the length of a car. The sky is indistinguishable from the air; the whole world is a wall of white-grey motion. A dangerous condition photographed safely from indoors. Stub preset; full system with wind arrives in v1.x."
     },
     {
       "id": "lightning_intracloud",
@@ -3081,7 +3549,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 0.65
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.65
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 9000
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 1000
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.001
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 600
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 141
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 6
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.4
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.2
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.65
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 1.1
+          }
+        }
+      },
+      "description": "Lightning hidden inside the cloud — the whole storm flashes from within, illuminating its own anvil and base from the inside. No visible bolt; the light arrives as a quick all-over glow followed by the rumble. Common in distant storms. Stub preset; lit-cloud flash arrives with the lightning system in v1.x."
     },
     {
       "id": "lightning_cloud_ground",
@@ -3091,7 +3621,69 @@
       "tags": [
         "v1.x"
       ],
-      "params": {}
+      "params": {
+        "coverage": {
+          "values": {
+            "value": 0.7
+          }
+        },
+        "density": {
+          "values": {
+            "value": 1.7
+          }
+        },
+        "thickness": {
+          "values": {
+            "value": 10000
+          }
+        },
+        "baseAlt": {
+          "values": {
+            "value": 800
+          }
+        },
+        "warpFreq": {
+          "values": {
+            "value": 0.0009
+          }
+        },
+        "warpAmp": {
+          "values": {
+            "value": 680
+          }
+        },
+        "noiseSeed": {
+          "values": {
+            "value": 142
+          }
+        },
+        "octaves": {
+          "values": {
+            "value": 6
+          }
+        },
+        "sunScatter": {
+          "values": {
+            "value": 0.35
+          }
+        },
+        "ambientFloor": {
+          "values": {
+            "value": 0.18
+          }
+        },
+        "edgeSilver": {
+          "values": {
+            "value": 0.6
+          }
+        },
+        "shadowStrength": {
+          "values": {
+            "value": 1.18
+          }
+        }
+      },
+      "description": "The dramatic bolt — a branched ribbon of light running from cloud base to ground in a single moment, painting the storm sky purple-white. Multiple strikes may stack in a long exposure. The sound follows seconds later. The signature of close, mature storms. Stub preset; bolt rendering and SFX arrive in v1.x."
     }
   ]
 }

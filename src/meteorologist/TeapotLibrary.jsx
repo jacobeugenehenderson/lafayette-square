@@ -3,6 +3,7 @@
  * Click → setActivePreset (Phase 1 just console.logs; Phase 2 routes to Teacup).
  */
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
+import CloudPhoto from './CloudPhoto.jsx'
 
 export default function TeapotLibrary() {
   const presets         = useMeteorologistStore(s => s.presets)
@@ -39,6 +40,11 @@ export default function TeapotLibrary() {
               fontFamily: 'inherit', fontSize: 13,
               display: 'flex', alignItems: 'center', gap: 12,
             }}>
+            <CloudPhoto
+              presetId={p.id}
+              alt={p.label || p.id}
+              style={{ width: 80, height: 40, borderRadius: 4, flexShrink: 0 }}
+            />
             <strong style={{ minWidth: 200 }}>{p.label || p.id}</strong>
             <span style={{ color: '#888' }}>·</span>
             <em style={{ color: '#888' }}>{p.wmo || (p.tags && p.tags[0]) || ''}</em>

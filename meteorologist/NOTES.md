@@ -4,6 +4,214 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-20 — Phase Seed shipped
+
+Library is no longer placeholder. Nimbus's 52-preset specialist seed + the photo-in-viewport authoring loop turn the Teapot from scaffolding into a real authoring surface. Schema gained an optional `description` field; UI surfaces it as read-only in the rail and editable in the expanded state. `specialist-seed.json` acts as the immutable canon — operator edits override it per preset, "Revert to seed" restores it.
+
+Open the library now → every preset is its own thing.
+
+Mechanism notes:
+- `meteorologist/pipeline/seed-presets.js` is idempotent. `authored:true` (operator-touched OR previously-protected via `preserve_authored` flag in the seed) blocks param + description rewrites. Re-run anytime.
+- Seeding is kind-aware. `cloud` + stub kinds (rain/snow/lightning) take all 12 cloud-shader params; `fog` takes only the 4 keys allowed by the fogParams schema (and preserves existing `tint`). Nimbus's full 12-key block for fog is preserved in the seed file for future use if fogParams ever relaxes.
+- The seed is served via `GET /api/meteorologist/specialist-seed` (lives outside `public/` to keep one source of truth); the store fetches it on app mount and uses it for the Teacup "Revert to seed" affordance.
+
+---
+
+## 2026-05-20 — Modulators: continuous atmospheric phenomena layer (ADR — v1 commitment)
+
+**Decision:** Add a Modulators layer on top of the Almanac. Almanac picks the base directive (which preset, baseline tints) from weather; Modulators stack continuous, weather-signal-driven deltas on top (cold front, about-to-rain, tornado green, wildfire smoke, pre-storm gold, fog burn-off). Composed result feeds Atmosphere uniforms. **This is v1, not v2.**
+
+**Context.** Jacob asked whether a single neutral-density dial could simulate "a cold front coming" or "tornado green." Answer: no — real atmospheric phenomena are *selective*. Each touches a small bundle of dials with characteristic curves against quantifiable weather signals. A cold front warms the sun, cools the sky, drops contrast, spikes gusts — all simultaneously, all over ~45 min, all driven by pressure tendency. Tornado green is yellow-green sun + dropped intensity + cooler sky-low band, driven by severe-storm WMO codes + late-afternoon TOD + heavy precip. These have specific signatures in the open-meteo response, but the Almanac's discrete-rule model doesn't have a natural place to express continuous, signal-driven, *composable* modulations.
+
+**The data is there.** Open-meteo (already wired via `useWeather.js`) returns: weathercode, cloudcover_low/mid/high, pressure_msl (we derive 3hr trend), temperature_2m, apparent_temperature, dewpoint_2m, relativehumidity_2m, visibility, shortwave_radiation, direct_radiation, diffuse_radiation, windspeed_10m, winddirection_10m, windgusts_10m, precipitation, rain, showers, snowfall, uv_index, is_day. `direct/(direct+diffuse)` ratio alone gives us measured sun-through-haze behavior for free.
+
+**The architecture.**
+
+```
+Almanac          → base directive   (which preset, baseline sun/sky/light/wind)
+Modulators[]     → directive deltas (each tied to a weather signal + curve)
+Result           = base ⊕ stacked deltas → Atmosphere uniforms
+```
+
+A Modulator is an authored record:
+
+```json
+{
+  "id": "cold_front_passage",
+  "driver": { "signal": "pressure_trend_3hr", "range": [-6, 0], "curve": "smoothstep" },
+  "deltas": {
+    "sun.color":     { "from": "#ffe6c8", "to": "#fff0aa" },
+    "sun.intensity": { "scale": [1.0, 0.7] },
+    "sky.tint":      { "tintToward": "#7e9eb8", "amount": [0, 0.4] },
+    "wind.gustsScale": [1.0, 1.8]
+  },
+  "rampMinutes": 45
+}
+```
+
+The runtime evaluates each modulator's driver against the weather payload, computes its strength via the curve, applies its deltas to the base directive. Multiple modulators stack — a smoky summer day with an incoming cold front fires both, the shader sees one resolved uniform set. The 45-minute ramp prevents flicker on signal-boundary crossings.
+
+**What "tornado green" looks like as a modulator** (operator-authored once, lives forever):
+
+```json
+{
+  "id": "severe_storm_aerosol_filter",
+  "driver": { "all": [
+    { "signal": "weathercode",   "in": [95, 96, 99] },
+    { "signal": "hour_of_day",   "in": [16, 21] },
+    { "signal": "precipitation", "min": 5 }
+  ]},
+  "deltas": {
+    "sun.color":     { "from": "#ffe6c8", "to": "#9aaa55" },
+    "sun.intensity": { "scale": [1.0, 0.35] },
+    "sky.low":       { "tintToward": "#9caa66", "amount": [0, 0.6] }
+  },
+  "rampMinutes": 5
+}
+```
+
+When the trigger conditions hold → 5-minute ramp to the eerie yellow-green. When they unmatch → ramp back. Real atmospheric optics, captured once by the operator, runs forever against real weather.
+
+**Why this and not "more rules in the Almanac":**
+
+- Combinatorial explosion. Rules want discrete categories; phenomena are continuous and *compose*. Adding "cold front × wildfire smoke × tornado green × late afternoon" as discrete Almanac rules explodes; stacking them as modulators is multiplicative-free.
+- The Almanac stays simple. Conditions remain "what kind of clouds is the sky." Modulators handle "what does the sky FEEL like."
+- Authoring lives at the right grain. Each modulator is its own authoring unit, with its own driver and curve and ramp. Operator builds an atmospheric vocabulary once; the runtime applies it to whatever weather rolls in.
+
+**Why this and not "shader-side atmospheric physics":** the operator loses control. Modulators preserve the painter's hand — operator decides exactly what "tornado green" looks like in this kit.
+
+**Phasing.**
+
+This lands as **Phase 6 — Modulators**, after Phase 5 (Almanac evaluator hot-mount). Walk before run: get the Almanac running live against real weather first, see the directive flowing through Atmosphere, then add the modulation layer on top. Modulators *need* the evaluator hot-mount to be visible at all.
+
+**Locked decisions:**
+
+- New `public/clouds/modulators.json` artifact (sibling to `almanac.json`); new `modulator.schema.json` in `pipeline/schema/`.
+- Drivers reference open-meteo field names + derived signals (`pressure_trend_3hr`, `direct_ratio = direct/(direct+diffuse)`, `hour_of_day`, etc.). A small `deriveSignals(weatherPayload, time)` helper produces the expanded payload modulators read against.
+- Curve types: `smoothstep` (default), `linear`, `bell`, `threshold`. Operator-pickable per driver.
+- `deltas` paths address directive fields by dot-path (`sun.color`, `sky.tint`, etc.). Color deltas use hex lerps; scalar deltas use scale-or-add ranges.
+- Composition: stack additively for additive fields (intensity scales multiply; tint-toward amounts sum and clamp); commutative-by-design so order doesn't matter.
+- New "Modulators" tab in Meteorologist UI alongside Teapot + Conditions. Per-modulator editor with driver picker, curve picker, delta-rows, ramp slider.
+- **Wind is part of the directive output** (`wind.speed`, `wind.dir`, `wind.gustsScale`) — sourced from open-meteo (windspeed_10m, winddirection_10m, windgusts_10m), modulated by modulators (cold_front_passage spikes gustsScale, summer_heat_haze drops speed, etc.). **Two consumers**, both subscribe to the same resolved wind output: `<Atmosphere>` (cloud advection via `uWindScale` + `uWindDir`) and `<InstancedTrees>` (sway shader uniforms). Cross-helper subscribes-not-authors per `project_kit_helpers_pattern` + ARCHITECTURE §9.
+
+**Vision capture:** this is a v1 commitment, not a v2 deferral. Lafayette Square should be able to show its operator what a real cold front feels like — that's the level of liveness the product promises. Modulators are the architectural piece that makes that promise reachable.
+
+---
+
+## 2026-05-20 — Atmospheric consumers: wind, rain, snow, lightning (ADR — v1 commitment)
+
+**Decision:** The directive (Almanac base + Modulators stack) outputs *what the atmosphere is doing*; this ADR locks the *consumer* layer that turns that output into visible scene state. Wind is a sampled field, not a global scalar. Trees, clouds, and particles all subscribe to the same field. Rain is motion-blurred streaks + wet-surface shader. Snow is points + accumulation (accumulation IS the snow). Lightning is a scene-level flash with delayed thunder. **This is v1, not v2.**
+
+**Context.** Jacob raised the dawdle problem — most game weather uses a global sine-wave wind that everything bobs on uniformly. Real wind has at least three temporal scales (drift, gust envelope, gust spikes), is *coherent in space* (gusts travel through the scene as moving waves), and provokes multi-timescale response (leaves twitch, branches sway, trunks lean). Without these properties, even physically-accurate weather rendering reads as fake. Same applies to precip: rain without wet streets reads wrong; snow falling without accumulation reads wrong; lightning without delayed thunder reads wrong. Modulators (sibling ADR above) shape the directive's wind/precip/lightning *values*; this ADR locks how those values become visible scene behavior.
+
+### Wind — sampled field, not scalar
+
+Single source: `src/lib/wind-field.js` exporting
+
+```js
+windAt(timeSec, worldPos, windState) → { force: vec3, intensity: scalar }
+```
+
+`windState` carries the resolved directive's `wind.speed`, `wind.dir`, `wind.gustsScale`. Every consumer (Atmosphere, InstancedTrees, particle systems, audio) samples this same field at its own position. Cross-helper subscribes-not-authors per `project_kit_helpers_pattern`.
+
+**Three temporal scales** (real wind):
+
+```js
+intensity(t, pos) = windState.speed * (
+  1.0
+  + perlin(t * 0.005) * 0.2                            // drift: minute-scale
+  + perlin(t * 0.08) * 0.4                             // gust envelope: ~10-20s
+  + smoothmax(perlin(t * 0.4), 0.65) * gustsScale      // gust spikes: 1-2s
+)
+```
+
+The `smoothmax(...0.65)` threshold is load-bearing — what makes gusts feel sharp instead of oscillatory. Real gusts spike above a baseline and fall back; without the threshold, wind sine-waves and reads as dawdle.
+
+**Spatial coherence — gusts travel.** A gust is a moving wave, not a global pulse:
+
+```js
+gustFrontPos = -windDir * (t * windSpeed)
+localGust = perlin((pos.xz - gustFrontPos.xz) * 0.01)
+```
+
+Each sample point asks "where is the gust front relative to me?" Effect: a gust visibly travels through the scene over ~1–3s. Trees on the upwind side bend first; the disturbance ripples across. This is the singular property that breaks dawdle.
+
+**Multi-scale consumer response.** Trees don't respond uniformly; different parts have different time-constants:
+
+| Element | Frequency | Damping | Follows |
+|---|---|---|---|
+| Leaves | ~10 Hz | very low | every nuance |
+| Twigs / small branches | ~2 Hz | moderate | gust envelope |
+| Major branches | ~0.5 Hz | heavy | sustained wind |
+| Trunk lean | ~0.1 Hz | very heavy | minute-average |
+
+InstancedTrees' sway shader samples the wind field at different temporal frequencies per geometry level, with appropriate damping. Result: leaves flicker during gusts, branches sway with the envelope, the trunk leans only in sustained wind. This is the doctrine for "not video-game wind."
+
+### Rain — streaks + wet surface
+
+Bounded volume (~150–200m radius cylinder around camera) of ~5–10k particles. Locked details:
+
+- **Streaks, not points.** Each particle is a thin billboarded quad with vertical alpha gradient. Points read as snow even when grey-tinted; the streak shape IS the percept.
+- **Wind-tilted fall.** `velocity = down * 0.7 + windDir * 0.3`. In heavy wind the tilt is visible.
+- **Per-particle speed variance.** ±30% randomness; heavy drops fall fast, small drops drift slowly. Gives depth.
+- **Wet-surface pass** (load-bearing). Single uniform `uWetness ∈ [0,1]` from `directive.precip.intensity` through a slow integrator (puddles form over ~minute, persist ~minute after rain stops). Asphalt + concrete materials darken albedo + boost specular. Rain without this reads as "rain particles passing through a dry world" — wrong.
+- **Audio.** Rain layer fades with intensity. Localized "on the umbrella" near camera; ambient distant rain at horizon.
+
+### Snow — points + accumulation
+
+Different physics, different visual emphasis. Locked details:
+
+- **Particles are points** (small sprites), not streaks.
+- **Curl-noise lateral motion.** Particles meander; `velocity = down * 0.3 + windDir * 0.7 + curl(pos, t) * 0.4`.
+- **Wind dominates.** At the same wind speed, snow gets pushed sideways far more than rain.
+- **Accumulation is the look** (the load-bearing thing). Single uniform `uSnowAccumulation ∈ [0,1]` whitens top-facing surfaces:
+
+  ```glsl
+  float topFacing = clamp(normal.y, 0.0, 1.0);
+  vec3 snowAlbedo = mix(baseAlbedo, vec3(0.95), uSnowAccumulation * topFacing);
+  ```
+
+  Integrator rises while `directive.precip.kind === 'snow'`, decays slowly otherwise. Roofs cap white, branches frost, ground turns. Snow ON things is what reads as a snowy day; the falling particles add kinetic feel but the static look comes from accumulation.
+- **Audio.** World goes muffled — ambient bed gets a low-pass filter; snow absorbs high frequencies in reality.
+
+### Lightning — scene flash + delayed thunder
+
+Cheap but high-impact. Locked details:
+
+- **`uLightningFlash` uniform** at scene level. Runtime fires it when `directive.lightning.rate > 0`, stochastically per frame at the directive-defined rate.
+- **Curve.** 50 ms hard spike, ~200 ms decay tail. Affects scene ambient multiplier (everything briefly washes out), the cloud shader's lit-from-above term, optional ground-albedo flash.
+- **Audio.** Thunder layer delayed proportional to a `directive.lightning.distance` signal. Close storms = immediate crack; far storms = rumble several seconds later. Modulators can drive distance.
+- **Intracloud vs cloud-to-ground.** Intracloud = cloud just glows briefly (cheap, common). Cloud-to-ground = bright vertical streak rendered as a particle line (rarer, more expensive). `directive.lightning.kind` distinguishes.
+
+### Why these specifications and not alternatives
+
+- **Wind field vs global scalar:** the dawdle break is structural, not parametric. You can't tune your way out of "every leaf reading the same wind value."
+- **Streaks vs points for rain:** points read as snow at any color. The streak shape is the percept.
+- **Snow accumulation vs more particles:** doubling particle count doesn't make snow look more snowy; whitening surfaces does. Falling particles are decoration; accumulation is the photograph.
+- **Wet-surface pass vs none:** rain without darkened/specular wet streets is the single largest "uncanny weather" tell. Not optional.
+- **Delayed thunder vs synced thunder:** instant thunder reads as a flash sound effect, not weather. The delay locates the storm in space.
+
+### Phasing
+
+Lands as **Phase 7 — Atmospheric consumers**, after Phase 6 Modulators. Split into reviewable sub-phases (each a verifiable visual beat):
+
+- **Phase 7a — Wind field + multi-scale tree response.** Cross-helper with Arborist. The dawdle fix. Standalone visual win.
+- **Phase 7b — Rain particles + wet-surface shader.** Cloud presets with `precipKinds: ['rain']` start producing visible rain.
+- **Phase 7c — Snow particles + accumulation integrator.** Same for `precipKinds: ['snow']`. Accumulation persists across pause/resume.
+- **Phase 7d — Lightning flash + delayed thunder.** `directive.lightning.*` consumers.
+
+Sub-phasing keeps each layer independently reviewable; bundling would hide which layer broke what.
+
+### Cross-helper consequences
+
+- **Arborist** — InstancedTrees sway shader rewritten in Phase 7a to read the wind field at multi-scale frequencies. Cross-helper coordinator brief writes itself when Phase 7a is ready to dispatch.
+- **Cartograph** — wet-surface materials authoring lives here (per-Look "this road darkens to X under rain"); bake-scene.js doesn't change shape, gains authored channels.
+- **Sound layer** (not yet a helper) — rain/snow/wind/thunder audio layering. Future Audiologist helper or under Meteorologist's own runtime.
+
+**Vision capture:** Modulators answer "what does today's atmosphere look like?" Atmospheric consumers answer "what does today's atmosphere FEEL like inside the scene?" Together they're the v1 promise. Each consumer here exists because skipping it produces the uncanny "video game weather" tell.
+
+---
+
 ## 2026-05-21 — Phase 4b.2 amendment shipped — sky-light coupling
 
 Follow-up to the same-day Phase 4b.2 commit. The cloud shader's three lighting uniforms stop being hardcoded; they now read from the Look's sky channel + SunCalc each frame:

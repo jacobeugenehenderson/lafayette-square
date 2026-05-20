@@ -20,6 +20,7 @@ const ROOT      = join(__dirname, '..')
 const PRESETS          = join(ROOT, 'public', 'clouds', 'presets.json')
 const ALMANAC          = join(ROOT, 'public', 'clouds', 'almanac.json')
 const ALMANAC_DEFAULTS = join(ROOT, 'public', 'clouds', 'almanac.defaults.json')
+const SPECIALIST_SEED  = join(ROOT, 'meteorologist', 'data', 'specialist-seed.json')
 const PORT      = 3335
 
 // ── Boot scaffolding ───────────────────────────────────────────────────────
@@ -57,6 +58,15 @@ const server = createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
   try {
     const path = (req.url || '').split('?')[0]
+
+    // Cloud Specialist (Nimbus) seed — immutable canon used by Teacup's
+    // "Revert to seed" affordance. Lives outside public/ to keep single-
+    // source-of-truth; served here so the UI can fetch it.
+    if (req.method === 'GET' && path === '/specialist-seed') {
+      const d = readJsonOrNull(SPECIALIST_SEED)
+      if (!d) return jsonRes(res, 500, { error: 'failed to read specialist-seed.json' })
+      return jsonRes(res, 200, d)
+    }
 
     if (req.method === 'GET' && path === '/presets') {
       const d = readJsonOrNull(PRESETS)
