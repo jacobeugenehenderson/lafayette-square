@@ -83,7 +83,8 @@ function PointCloud({ url, visible = true, opacity = 0.85, fitRef }) {
 // >= medianRadius, red) + branch-like (< medianRadius, cyan). Translucent
 // so the operator sees what's underneath. Skipping the cylinder when its
 // radius is below minRadius is the same gate bake-tree.py applies.
-function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true, opacity = 0.75 }) {
+function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true, opacity = 0.75,
+                            trunkColor = '#d44a3a', branchColor = '#4ac8d4' }) {
   const trunkRef = useRef()
   const branchRef = useRef()
 
@@ -131,11 +132,11 @@ function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true, opac
     <>
       <instancedMesh ref={trunkRef} args={[null, null, Math.max(1, trunkData.length)]}>
         <cylinderGeometry args={[1, 1, 1, 8, 1]} />
-        <meshStandardMaterial color="#d44a3a" transparent opacity={opacity} roughness={0.6} />
+        <meshStandardMaterial color={trunkColor} transparent opacity={opacity} roughness={0.6} />
       </instancedMesh>
       <instancedMesh ref={branchRef} args={[null, null, Math.max(1, branchData.length)]}>
         <cylinderGeometry args={[1, 1, 1, 6, 1]} />
-        <meshStandardMaterial color="#4ac8d4" transparent opacity={opacity * 0.85} roughness={0.6} />
+        <meshStandardMaterial color={branchColor} transparent opacity={opacity * 0.85} roughness={0.6} />
       </instancedMesh>
     </>
   )
@@ -275,9 +276,18 @@ export default function LidarWorkstage() {
   // an opacity slider. `pointsOpacity` etc. are decoupled from visibility so
   // operator can dim a layer without losing its toggle state.
   const [layers, setLayers]             = useState({
-    points: true, cylinders: true, baked: true,
-    pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 1.0,
+    points: true, cylinders: true, baked: true, bidi: true,
+    pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 1.0, bidiOpacity: 0.85,
   })
+  // Phase N.1 — bidirectional-growth spike. Lives alongside QSM extraction
+  // (above) so the alignment oracle can show both as overlapped layers for
+  // operator-visual comparison. Params seeded with module defaults; operator
+  // tweaks via the tuner sub-section, hits Re-extract explicitly. No
+  // auto-extract — bidirectional takes seconds, not milliseconds.
+  const [bidiParams, setBidiParams]     = useState({ voxelSize: 0.05, kNearest: 20, viewCount: 12, minRadius: 0.005 })
+  const [bidiResult, setBidiResult]     = useState(null)
+  const [bidiExtracting, setBidiExt]    = useState(false)
+  const [bidiError, setBidiError]       = useState(null)
   // Per-hero baked manifest cache. Keyed by heroSpecies so we don't re-fetch
   // on every selection change within the same species.
   const [heroManifest, setHeroManifest] = useState(null)
@@ -388,6 +398,29 @@ export default function LidarWorkstage() {
       setExtracting(false)
     }
   }
+
+  async function runBidiExtract() {
+    if (!selectedTreeId || bidiExtracting) return
+    setBidiExt(true); setBidiError(null)
+    try {
+      const r = await fetch(`/api/arborist/lidar/specimen/${selectedTreeId}/bidirectional-extract`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ species: activeSpeciesId, ...bidiParams }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+      setBidiResult(d)
+    } catch (err) {
+      setBidiError(String(err.message || err))
+    } finally {
+      setBidiExt(false)
+    }
+  }
+
+  // Reset the bidirectional result when the operator picks a new specimen —
+  // stale skeleton from prior tree shouldn't keep overlaying.
+  useEffect(() => { setBidiResult(null); setBidiError(null) }, [selectedTreeId])
 
   async function runPublish() {
     if (!selectedTreeId || !activeSpeciesId || !extractionParams || lidarPublishing) return
@@ -569,6 +602,17 @@ export default function LidarWorkstage() {
                   opacity={layers.cylindersOpacity}
                 />
               )}
+              {bidiResult && (
+                <CylinderSkeleton
+                  nodes={bidiResult.nodes}
+                  medianRadius={bidiResult.stats.medianRadius}
+                  minRadius={bidiParams.minRadius}
+                  visible={layers.bidi}
+                  opacity={layers.bidiOpacity}
+                  trunkColor="#e070d8"
+                  branchColor="#f0d460"
+                />
+              )}
               {bakedGlbUrl && (
                 <Suspense fallback={null}>
                   <BakedGlbOracle
@@ -599,6 +643,15 @@ export default function LidarWorkstage() {
                 onToggle={() => setLayers(l => ({ ...l, cylinders: !l.cylinders }))}
                 opacity={layers.cylindersOpacity}
                 onOpacity={v => setLayers(l => ({ ...l, cylindersOpacity: v }))}
+              />
+              <LayerControl
+                label="Bidirectional"
+                active={layers.bidi}
+                onToggle={() => setLayers(l => ({ ...l, bidi: !l.bidi }))}
+                opacity={layers.bidiOpacity}
+                onOpacity={v => setLayers(l => ({ ...l, bidiOpacity: v }))}
+                missing={!bidiResult}
+                missingHint={bidiExtracting ? '(extracting…)' : '(hit Bidirectional → Re-extract)'}
               />
               <LayerControl
                 label="Baked GLB"
@@ -678,6 +731,43 @@ export default function LidarWorkstage() {
               </div>
 
               {extractError && <div style={errorTextStyle}>{extractError}</div>}
+
+              {/* Phase N.1 — Bidirectional-growth tuner. Sibling of the QSM
+                  tuner above; emits {x,y,z,radius,parentIdx} in the same
+                  source-frame shape so the cylinder renderer above handles
+                  both interchangeably. Operator clicks Re-extract; not
+                  auto-fired. */}
+              <div style={{ marginTop: 18, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ ...sectionHeading, color: '#e070d8', marginBottom: 4 }}>
+                  Bidirectional · Phase N.1 spike
+                </div>
+                <DraftSlider label="Voxel size" min={0.02} max={0.15} step={0.005}
+                  value={bidiParams.voxelSize}
+                  onCommit={v => setBidiParams(p => ({ ...p, voxelSize: v }))} unit="m" />
+                <DraftSlider label="k-nearest" min={6} max={40} step={1}
+                  value={bidiParams.kNearest}
+                  onCommit={v => setBidiParams(p => ({ ...p, kNearest: v }))} />
+                <DraftSlider label="View count" min={6} max={24} step={1}
+                  value={bidiParams.viewCount}
+                  onCommit={v => setBidiParams(p => ({ ...p, viewCount: v }))} />
+                <DraftSlider label="Min radius" min={0.001} max={0.05} step={0.001}
+                  value={bidiParams.minRadius}
+                  onCommit={v => setBidiParams(p => ({ ...p, minRadius: v }))} unit="m" />
+                <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                  <button onClick={runBidiExtract} disabled={bidiExtracting || lidarPublishing}
+                    style={{ ...btnPrimaryStyle, background: 'rgba(224,112,216,0.18)',
+                             borderColor: 'rgba(224,112,216,0.5)', color: '#e8a8e0' }}>
+                    {bidiExtracting ? 'Extracting…' : 'Re-extract (bidirectional)'}
+                  </button>
+                </div>
+                {bidiResult && (
+                  <div style={{ marginTop: 8, fontSize: 11, color: '#aaa' }}>
+                    {bidiResult.stats.tips} tips · {bidiResult.stats.nodes} nodes ·
+                    {' '}{bidiResult.stats.cylinders} cyl · {bidiResult.serverMs ?? bidiResult.stats.elapsedMs}ms
+                  </div>
+                )}
+                {bidiError && <div style={errorTextStyle}>{bidiError}</div>}
+              </div>
             </>
           )}
         </section>

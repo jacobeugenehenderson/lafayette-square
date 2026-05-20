@@ -505,6 +505,52 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    // POST /lidar/specimen/:treeId/bidirectional-extract
+    // Phase N.1 (2026-05-19). Body { species, voxelSize, kNearest, viewCount,
+    // minRadius }. Shells bidirectional_skeleton.py — Strategy A geodesic
+    // Dijkstra over a density-weighted KNN graph. Same JSON shape as
+    // /extract so the LidarWorkstage's cylinder renderer can render either
+    // algorithm interchangeably (source Z-up frame; load-time Z→Y at the JS
+    // overlay layer). No GLB write, no manifest change; spike-only surface.
+    if (req.method === 'POST' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/bidirectional-extract$/))) {
+      const treeId = m[1]
+      const body = await readBody(req)
+      const species = body.species
+      if (species && !readSpeciesDecl()[species]) {
+        return jsonRes(res, 404, { error: 'unknown species', species })
+      }
+      const lazPath = specimenLazPath(treeId)
+      if (!existsSync(lazPath)) {
+        return jsonRes(res, 404, { error: 'specimen not on disk', treeId, lazPath })
+      }
+      const voxelSize = Number(body.voxelSize ?? 0.05)
+      const kNearest  = Number(body.kNearest  ?? 20)
+      const viewCount = Number(body.viewCount ?? 12)
+      const minRadius = Number(body.minRadius ?? 0.005)
+      const t0 = Date.now()
+      try {
+        const script = join(__dirname, 'bidirectional_skeleton.py')
+        const { stdout } = await execAsync(VENV_PYTHON, [
+          script,
+          `--treeId=${treeId}`,
+          `--voxelSize=${voxelSize}`,
+          `--kNearest=${kNearest}`,
+          `--viewCount=${viewCount}`,
+          `--minRadius=${minRadius}`,
+        ])
+        const result = JSON.parse(stdout)
+        result.serverMs = Date.now() - t0
+        return jsonRes(res, 200, result)
+      } catch (err) {
+        return jsonRes(res, 500, {
+          error: 'bidirectional-extract failed',
+          treeId,
+          stderr: String(err.stderr || err.message).slice(0, 4000),
+          stdout: String(err.stdout || '').slice(0, 1000),
+        })
+      }
+    }
+
     // POST /lidar/specimen/:treeId/publish
     // Phase L Cycle 2 (2026-05-19). Body { species, lookId?, tuneParams?, displayName? }.
     // AWAITED, NOT FIRE-AND-FORGET (per brief). End-to-end pipeline:
