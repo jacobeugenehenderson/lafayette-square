@@ -56,9 +56,9 @@ Re-tuning loop: edit the three numbers per season → re-run hydration → paste
 
 See `NOTES.md` 2026-05-21 "Sky pivot Phase B" entry for per-season values + intent.
 
-### Phase 4b.2 — TodChannel uniform binding
+### ✅ Phase 4b.2 — TodChannel uniform binding (shipped 2026-05-21)
 
-Wire active preset's `params` through `resolveGroupAtMinute(channel, minute)` to feed shader uniforms each frame. Slider scrubs in Teacup's right rail now visibly affect the viewport. Same wiring extends to `<Atmosphere />` in CanaryScene whether mounted from Teacup or ConditionEditor.
+Atmosphere's twelve shape + lighting uniforms now read from the active preset's per-param TodChannels each frame via `resolveGroupAtMinute`. Operator slider drags in Teacup land on the canary cloud synchronously (store's `_patchParam` mutates `presets` in-memory on the same tick). Animated channels lerp between TOD slot waypoints as time scrubs. `getActivePreset()` selector added to `useMeteorologistStore`. `uWindScale` deliberately not wired (lives in Conditions/directive). See `NOTES.md` 2026-05-21 entry.
 
 ### Phase 4b.3 — CloudDome retirement
 

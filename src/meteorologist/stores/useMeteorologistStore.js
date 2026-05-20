@@ -78,6 +78,17 @@ const useMeteorologistStore = create((set, get) => ({
   presetById:    (id) => get().presets.find(p => p.id === id),
   conditionById: (id) => get().conditions.find(c => c.id === id),
 
+  // Active-preset selector. Returns the preset object (with `params` map
+  // of per-cloud-param TodChannels) or null. Used by <Atmosphere />'s
+  // per-frame uniform binding so slider mutations land on the cloud
+  // synchronously — `_patchParam` updates the in-memory presets array on
+  // the same tick, so the next useFrame reads the new channel.
+  getActivePreset: () => {
+    const { activePresetId, presets } = get()
+    if (!activePresetId || !Array.isArray(presets)) return null
+    return presets.find(p => p.id === activePresetId) || null
+  },
+
   // ── Per-cloud-param channel mutations (autosave-debounced) ──
   //
   // The channel data shape on disk is the same `{ values, animated?,

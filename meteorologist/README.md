@@ -8,25 +8,26 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ---
 
-## Status (as of 2026-05-20)
+## Status (as of 2026-05-21)
 
-**Standalone app shell + authoring UI + v3 raymarched cloud shader all ship. The cloud shader is hardcoded to `cumulus_humilis` values; TodChannel uniform binding (Phase 4b.2) is next.**
+**Standalone app shell + authoring UI + v3 raymarched cloud shader all ship. TodChannel uniform binding (Phase 4b.2) is live — operator slider drags in Teacup land on the canary cloud synchronously. CloudDome retirement + production swap (Phase 4b.3) is next.**
 
 | Done | Not yet |
 |---|---|
-| Schemas (`pipeline/schema/*`) | TodChannel uniform binding to shader (Phase 4b.2) |
-| Validator + cross-schema checks (`pipeline/validate.js`) | CloudDome retirement + production swap (Phase 4b.3) |
-| Teapot — 52 presets, params migrated to TodChannel shape | TodChannel promotion of directive numeric fields (Phase 3b) |
+| Schemas (`pipeline/schema/*`) | CloudDome retirement + production swap (Phase 4b.3) |
+| Validator + cross-schema checks (`pipeline/validate.js`) | TodChannel promotion of directive numeric fields (Phase 3b) |
+| Teapot — 52 presets, params migrated to TodChannel shape | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema (Phase 3b) |
 | Almanac — 16 rules + immutable defaults sibling | Per-cloud-in-condition expression flags (Phase 3b) |
-| `meteorologist/serve.js` backend (GET/PUT presets, GET/PUT/Revert almanac) | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema (Phase 3b) |
-| `src/lib/almanac-eval.js` (shipped 2026-05-13 via SC.6) | Almanac evaluator hot-mount in Conductor preview (Phase 5) |
-| `/meteorologist.html` standalone app shell | Fake-weather fixtures + fixture management UI (Phase 5) |
-| Top-bar TEAPOT ⎮ CONDITIONS toggle + Look picker | Fallback editor (Phase 5) |
-| Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Cloud preset gallery / thumbnails (Phase 5+) |
-| Conditions library + Condition editor (When + Directive + Clouds-in-cond + Revert) | Camera orbit controls in viewport (Phase 5+) |
-| CanaryScene viewport (sky-from-Look + hero tree + flat ground) | Mobile quality tier (`uQualityTier`) (Phase 5+) |
-| `<Atmosphere />` v3 raymarched cloud shader (5 photoreal levers, cumulus_humilis hardcoded) | Multi-preset blending (per `directive.clouds[]`) (Phase 5+) |
+| `meteorologist/serve.js` backend (GET/PUT presets, GET/PUT/Revert almanac) | Almanac evaluator hot-mount in Conductor preview (Phase 5) |
+| `src/lib/almanac-eval.js` (shipped 2026-05-13 via SC.6) | Fake-weather fixtures + fixture management UI (Phase 5) |
+| `/meteorologist.html` standalone app shell | Fallback editor (Phase 5) |
+| Top-bar TEAPOT ⎮ CONDITIONS toggle + Look picker | Cloud preset gallery / thumbnails (Phase 5+) |
+| Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Camera orbit controls in viewport (Phase 5+) |
+| Conditions library + Condition editor (When + Directive + Clouds-in-cond + Revert) | Mobile quality tier (`uQualityTier`) (Phase 5+) |
+| CanaryScene viewport (sky-from-Look + hero tree + flat ground) | Multi-preset blending (per `directive.clouds[]`) (Phase 5+) |
+| `<Atmosphere />` v3 raymarched cloud shader (5 photoreal levers) | |
 | `atmosphere-materials.js` shader factory + inline GLSL | |
+| **TodChannel uniform binding — active preset's params drive the cloud shader (Phase 4b.2)** | |
 | `FEATURES.md` + `INTERFACE.md` (operator-facing surfaces) | |
 | 5 memory entries from this arc | |
 
@@ -39,6 +40,7 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 - Phase 3 — Condition editor (commit `98f3781`, 2026-05-19)
 - Phase 4a — CanaryScene scaffold (commit `6a3fd29`, 2026-05-19)
 - Phase 4b.1 — `<Atmosphere />` raymarched shader (commit `d1c66fe`, 2026-05-20)
+- Phase 4b.2 — TodChannel uniform binding; active preset drives shader uniforms each frame (Wren, 2026-05-21)
 - Kit clock+calendar primitive — `useCalendar` + `ClockCalendarPump` (2026-05-20)
 - Step 3 WhenCard live dots — TOD + season chip indicators (commit `36d667c`, 2026-05-20)
 - Unified time card — TOD + ToY + playback in DawnTimeline (Wren, 2026-05-20)
@@ -51,21 +53,13 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ## Start here in the morning
 
-**Phase 4b.2: TodChannel uniform binding.** Wire active preset's `params` through `resolveGroupAtMinute(channel, currentMinute)` to feed `<Atmosphere />`'s 13 shape + lighting uniforms each frame. Slider scrubs in Teacup's right rail will visibly affect the viewport. Animated channels (operator-keyframed slots) lerp between TOD waypoints as time scrubs.
+**Phase 4b.3: CloudDome retirement + production swap.** Per `STAGE_MIGRATION.md`: swap every `<CloudDome />` mount (`Scene.jsx`, `CartographApp.jsx`, `PreviewApp.jsx`, `CanaryScene.jsx`) to `<Atmosphere />`. Delete `CloudDome.jsx` + `SpriteClouds.jsx` + dead CloudDomeV2/V3. The `CloudCoverSeed` Phase-4a expedient in CanaryScene comes out (no longer needed once Atmosphere reads from preset directly).
 
-The wiring touches:
-- `src/components/Atmosphere.jsx` — replace hardcoded uniform initializers with per-frame reads from the active preset.
-- `src/meteorologist/stores/useMeteorologistStore.js` — expose `activePreset` (or `activePresetId` consumers) for Atmosphere to subscribe to. The store's already shaped right; just one more selector.
-- `src/cartograph/animatedParam.js` — `resolveGroupAtMinute(channel, minute)` is the resolver to call; it already handles both flat and animated channel shapes.
-
-`useTimeOfDay` from `src/hooks/useTimeOfDay` provides the current minute; CelestialBodies + DawnTimeline already drive it.
-
-**Phase 4b.1 verification** is still pending Jacob's eyes (HANDOFF checklist items 1–5 + 9). If the cloud reads as a uniform gray blob, the most likely culprit is the cloudNormal density-gradient step (`eps=30m` vs `uWarpFreq=0.001`'s ~1000m wavelength); the baby's commit body flags this debug pointer. Stable visual confirmation before launching Phase 4b.2 is the right gate.
+With 4b.2 landed, the authoring loop is closed: operator slider drags in Teacup land synchronously on the canary cloud via per-frame `resolveGroupAtMinute` reads of the active preset's params. The remaining gate is making sure production runtime (LS Scene + Cartograph Stage + Preview) all consume the same path.
 
 **The phasing arc continues:**
 
-- **4b.2 (next)** — TodChannel binding; the right-rail sliders affect the viewport.
-- **4b.3** — Retire `CloudDome.jsx` / `SpriteClouds.jsx` per `STAGE_MIGRATION.md`; production swap. The `CloudCoverSeed` Phase-4a expedient comes out.
+- **4b.3 (next)** — Retire `CloudDome.jsx` / `SpriteClouds.jsx` per `STAGE_MIGRATION.md`; production swap. The `CloudCoverSeed` Phase-4a expedient comes out.
 - **3b** — Promote directive numerics to TodChannel + add cloud capabilities + per-cloud-in-condition expression flags. After 4b lands so the temporal modulation is visually validatable.
 - **5** — Fixtures + Almanac evaluator hot-mount + fallback editor + cloud preset gallery + mobile quality tier + multi-preset blending + camera orbit.
 

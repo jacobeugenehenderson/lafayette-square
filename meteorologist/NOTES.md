@@ -4,6 +4,46 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-21 — Phase 4b.2 shipped — TodChannel uniform binding
+
+Atmosphere's twelve shape + lighting uniforms now read from the active preset's per-param TodChannels each frame. Operator slider drags in Teacup land on the cloud synchronously — `_patchParam` mutates the in-memory `presets` array on the same tick, the next `useFrame` reads it, no debounce wait. Animated channels (operator-keyframed slots across `dawn → noon → dusk`) lerp via `resolveGroupAtMinute` as the time strip scrubs.
+
+**Binding (`src/components/Atmosphere.jsx`):**
+
+```js
+const PARAM_TO_UNIFORM = {
+  coverage: 'uCoverage', density: 'uDensity', thickness: 'uThickness',
+  baseAlt: 'uBaseAlt', warpFreq: 'uWarpFreq', warpAmp: 'uWarpAmp',
+  noiseSeed: 'uNoiseSeed', octaves: 'uOctaves',
+  sunScatter: 'uSunScatter', ambientFloor: 'uAmbientFloor',
+  edgeSilver: 'uEdgeSilver', shadowStrength: 'uShadowStrength',
+}
+// inside useFrame:
+const preset = useMeteorologistStore.getState().getActivePreset()
+const minute = tod.currentTime.getHours() * 60 + tod.currentTime.getMinutes()
+const slotMinutes = getTodSlotMinutes(tod.currentTime)
+for (const [k, u] of Object.entries(PARAM_TO_UNIFORM)) {
+  const ch = preset?.params?.[k]
+  if (!ch) continue
+  const r = resolveGroupAtMinute(ch, minute, slotMinutes, ['value'], { value: material.uniforms[u].value })
+  material.uniforms[u].value = r.value
+}
+```
+
+`getActivePreset()` selector added to `useMeteorologistStore` (returns the preset object matching `activePresetId`).
+
+**Surfaced decisions:**
+
+- **Option A confirmed (store-direct).** `_patchParam` synchronously mutates `presets[i].params[k]` before scheduling the debounced PUT — verified by reading the store action source. No draft layer; Atmosphere reads the same object Teacup's sliders write to.
+- **Minute-of-day inlined** as `currentTime.getHours() * 60 + currentTime.getMinutes()` rather than reusing `useTimeOfDay.getMinuteOfDay()`. Both produce identical values; the inline keeps Atmosphere's frame path tight and doesn't take a getter call.
+- **noiseSeed + octaves pass as floats.** The shader's `atmosphere-materials.js` uniform table declares them as `{ value: number }` and the GLSL casts internally — no special handling needed in this binding.
+- **uWindScale not bound.** Wind belongs to Conditions/directive (not in `CLOUD_PARAM_FIELDS`); left alone per brief.
+- **Per-frame iteration cost.** Twelve `resolveGroupAtMinute` calls per frame, each a constant-time lookup on a 7-slot TodChannel. Trivial; not worth caching unless the per-frame minute hasn't changed (deferred — measure first).
+
+**Closes the authoring loop:** what Teacup edits is what the canary viewport renders. Phase 4b.3 (CloudDome retirement + production swap) is the next gate.
+
+---
+
 ## 2026-05-21 — Sky pivot Phase B shipped — rules-based seasonal derivation
 
 Three HSV knobs per season instead of per-cell painting. `SEASON_TRANSFORMS` in `cartograph/proceduralSky.js` applies a `(hueDeg, sat, val)` transform to `KEYFRAMES` at sample time — the procedural lerp then walks through a palette-shifted copy of the canon per season. Summer is locked to identity (canon). Winter / spring / autumn deviate per the knobs:
