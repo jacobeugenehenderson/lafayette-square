@@ -4,6 +4,43 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-21 — Sky pivot Phase B shipped — rules-based seasonal derivation
+
+Three HSV knobs per season instead of per-cell painting. `SEASON_TRANSFORMS` in `cartograph/proceduralSky.js` applies a `(hueDeg, sat, val)` transform to `KEYFRAMES` at sample time — the procedural lerp then walks through a palette-shifted copy of the canon per season. Summer is locked to identity (canon). Winter / spring / autumn deviate per the knobs:
+
+| Season | hueDeg | sat  | val  | Intent |
+|--------|--------|------|------|--------|
+| summer |   0    | 1.00 | 1.00 | identity — the canon |
+| winter |  -8°   | 0.78 | 0.93 | cool / pale / hazy / clear-air feel; desaturated; slight darken |
+| spring |  +5°   | 0.95 | 1.02 | crisper noon; warm rose tinge on dawn/dusk; slight lift |
+| autumn |  -6°   | 1.18 | 0.97 | sat push for harvest vividness; small red-shift on twilight peaks; slight darken |
+
+Verification samples from the regenerated `ANCHOR_CARDS_PROCEDURAL` (LS lat/lon):
+
+| Hour | winter | spring | summer | autumn |
+|------|--------|--------|--------|--------|
+| noon zenith | `#64a5d0` (pale cyan) | `#538be4` (saturated violet-blue) | `#4a90e0` (canon) | `#2e8fd9` (saturated deep blue) |
+| 18:00 horizon | `#191722` (night — winter sun's already set) | `#cf7339` (warm orange) | `#bdb293` (still daylight) | `#782218` (deep harvest crimson) |
+
+**Re-tuning workflow** (the operator's instrument):
+
+1. Edit `SEASON_TRANSFORMS.<season>` in `cartograph/proceduralSky.js`.
+2. `node cartograph/pipeline/hydrate-anchor-cards.js > /tmp/cards.js`.
+3. Paste the new `ANCHOR_CARDS_PROCEDURAL` body into `src/cartograph/skyGrid.js`.
+4. Reload Stage → eye-check → iterate.
+
+The hydration is deterministic; the three numbers per season are the entire audit trail. "Autumn too aggressive" = one number, not 22 cells.
+
+**Surfaced decisions:**
+
+- `sunGlow` literal colors in `proceduralSkyAt` (`#dd4433`, `#ff3318`, `#ee7755`, etc.) NOT transformed — they sit outside `KEYFRAMES` and represent the sun-disc/halo glow rather than the sky bands. Kept canonical so the sun itself reads consistently across seasons. Easy to revisit if autumn's sunset glow needs deeper warmth.
+- Identity short-circuit in `transformKeyframes` so summer pays zero conversion cost (and is byte-identical to the canon).
+- Knob ranges chosen near the orchestrator's brief suggestions; I have no Stage eyes for visual verification — Jacob's first scrub may want re-tuning. The dial-edit-rehydrate loop is one command.
+
+**Phase B closes the sky pivot.** Override authoring (Phase A) + rules-based season derivation (Phase B) compose: operator's sparse `{hour, band, hex}` overrides ride on top of the season-correct procedural mosaic.
+
+---
+
 ## 2026-05-21 — Sky pivot Phase A shipped
 
 Mechanism for the 2026-05-20 ADR ("procedural canon + per-cell overrides") landed in a single commit. Phase A scope: extract `cartograph/proceduralSky.js`, hydrate the 4 anchor cards (procedural-seeded only — Wren's artistic deviation is Phase B), reshape `skyGrid.js` to `SKY_HOURS=24` + `buildMosaicForDate` + override envelope, rewire store actions to `addSkyOverride/removeSkyOverride`, rewrite `SkyGradientGrid.jsx` to 24 hour-cols with CSS-gradient cells, migrate `scene.json` schema, defensive backward-compat reads on legacy shapes.

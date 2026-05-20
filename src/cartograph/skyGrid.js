@@ -51,56 +51,56 @@ const DAYS_IN_YEAR = 365  // ignore leap-day in anchor math; ±1d is invisible
 // ─────────────────────────────────────────────────────────────────────
 export const ANCHOR_CARDS_PROCEDURAL = {
   winter: [
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 00:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 01:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 02:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 03:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 04:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 05:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 06:00
-    { horizon: '#2d2030', low: '#231c36', mid: '#101228', high: '#080913', sunGlow: '#5b231a' },  // 07:00
-    { horizon: '#daa66d', low: '#ae8890', mid: '#7273b4', high: '#283e71', sunGlow: '#ffc386' },  // 08:00
-    { horizon: '#bfbca6', low: '#9ba7bb', mid: '#6e97cb', high: '#3f77bc', sunGlow: '#ffe6cc' },  // 09:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 10:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 11:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 12:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 13:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 14:00
-    { horizon: '#beb292', low: '#9d9ba3', mid: '#6994c6', high: '#3f74b9', sunGlow: '#ffe2c4' },  // 15:00
-    { horizon: '#da8f4a', low: '#b8776c', mid: '#6a63a5', high: '#213366', sunGlow: '#ffb367' },  // 16:00
-    { horizon: '#4f2827', low: '#2a1b2b', mid: '#110f24', high: '#080912', sunGlow: '#5a1a0c' },  // 17:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 18:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 19:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 20:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 21:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 22:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 23:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 00:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 01:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 02:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 03:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 04:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 05:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 06:00
+    { horizon: '#2a222e', low: '#222032', mid: '#141725', high: '#0a0c11', sunGlow: '#5b231a' },  // 07:00
+    { horizon: '#cb9a7b', low: '#a2868f', mid: '#737ba8', high: '#344b69', sunGlow: '#ffc386' },  // 08:00
+    { horizon: '#b6b2a3', low: '#96a2ad', mid: '#79a0bd', high: '#5589af', sunGlow: '#ffe6cc' },  // 09:00
+    { horizon: '#a0c3d0', low: '#8bbad0', mid: '#6facd0', high: '#64a5d0', sunGlow: '#ffeedd' },  // 10:00
+    { horizon: '#a0c3d0', low: '#8bbad0', mid: '#6facd0', high: '#64a5d0', sunGlow: '#ffeedd' },  // 11:00
+    { horizon: '#a0c3d0', low: '#8bbad0', mid: '#6facd0', high: '#64a5d0', sunGlow: '#ffeedd' },  // 12:00
+    { horizon: '#a0c3d0', low: '#8bbad0', mid: '#6facd0', high: '#64a5d0', sunGlow: '#ffeedd' },  // 13:00
+    { horizon: '#a0c3d0', low: '#8bbad0', mid: '#6facd0', high: '#64a5d0', sunGlow: '#ffeedd' },  // 14:00
+    { horizon: '#b5a895', low: '#98979c', mid: '#759db8', high: '#5386ac', sunGlow: '#ffe2c4' },  // 15:00
+    { horizon: '#cb8662', low: '#ab7574', mid: '#696c9a', high: '#2c405f', sunGlow: '#ffb367' },  // 16:00
+    { horizon: '#4a2a2d', low: '#281e2a', mid: '#121322', high: '#090c10', sunGlow: '#5a1a0c' },  // 17:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 18:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 19:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 20:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 21:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 22:00
+    { horizon: '#191722', low: '#101116', mid: '#090a0f', high: '#050607', sunGlow: '#000000' },  // 23:00
   ],
   spring: [
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 00:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 01:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 02:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 03:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 04:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 05:00
-    { horizon: '#362636', low: '#2c2244', mid: '#131633', high: '#090b18', sunGlow: '#9d4532' },  // 06:00
-    { horizon: '#d4b07c', low: '#ab959d', mid: '#7585ba', high: '#325690', sunGlow: '#ffd0a2' },  // 07:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 08:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 09:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 10:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 11:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 12:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 13:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 14:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 15:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 16:00
-    { horizon: '#c8ad7b', low: '#a69390', mid: '#6e91be', high: '#3c6cad', sunGlow: '#ffd9b3' },  // 17:00
-    { horizon: '#cb5f30', low: '#9f4f58', mid: '#49356f', high: '#141835', sunGlow: '#ff8a3f' },  // 18:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 19:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 20:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 21:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 22:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 23:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 00:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 01:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 02:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 03:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 04:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 05:00
+    { horizon: '#372836', low: '#302545', mid: '#151534', high: '#0a0b19', sunGlow: '#9d4532' },  // 06:00
+    { horizon: '#d8bc83', low: '#ae999f', mid: '#7d87be', high: '#385393', sunGlow: '#ffd0a2' },  // 07:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 08:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 09:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 10:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 11:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 12:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 13:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 14:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 15:00
+    { horizon: '#a4c5e4', low: '#87b3e4', mid: '#6398e4', high: '#538be4', sunGlow: '#ffeedd' },  // 16:00
+    { horizon: '#ccb881', low: '#a99a94', mid: '#7490c2', high: '#4368b0', sunGlow: '#ffd9b3' },  // 17:00
+    { horizon: '#cf7339', low: '#a25557', mid: '#513971', high: '#161736', sunGlow: '#ff8a3f' },  // 18:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 19:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 20:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 21:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 22:00
+    { horizon: '#1c1626', low: '#101018', mid: '#090910', high: '#050508', sunGlow: '#000000' },  // 23:00
   ],
   summer: [
     { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 00:00
@@ -129,32 +129,31 @@ export const ANCHOR_CARDS_PROCEDURAL = {
     { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 23:00
   ],
   autumn: [
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 00:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 01:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 02:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 03:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 04:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 05:00
-    { horizon: '#b1684d', low: '#7e5073', mid: '#443471', high: '#131735', sunGlow: '#f38c5f' },  // 06:00
-    { horizon: '#cdb98d', low: '#a6a1ab', mid: '#7695c2', high: '#3b6cad', sunGlow: '#ffddbc' },  // 07:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 08:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 09:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 10:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 11:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 12:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 13:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 14:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 15:00
-    { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0', sunGlow: '#ffeedd' },  // 16:00
-    { horizon: '#d0a264', low: '#ae887f', mid: '#6e82b4', high: '#325793', sunGlow: '#ffcb96' },  // 17:00
-    { horizon: '#7c3928', low: '#42263b', mid: '#191636', high: '#0a0c1b', sunGlow: '#cf5625' },  // 18:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 19:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 20:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 21:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 22:00
-    { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508', sunGlow: '#000000' },  // 23:00
-  ],
-}
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 00:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 01:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 02:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 03:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 04:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 05:00
+    { horizon: '#ac4d3a', low: '#7a4572', mid: '#33296d', high: '#0c1533', sunGlow: '#f38c5f' },  // 06:00
+    { horizon: '#c6a87d', low: '#9f9ba6', mid: '#6692bc', high: '#266aa8', sunGlow: '#ffddbc' },  // 07:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 08:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 09:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 10:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 11:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 12:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 13:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 14:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 15:00
+    { horizon: '#8dc2d9', low: '#6bb3d9', mid: '#409bd9', high: '#2e8fd9', sunGlow: '#ffeedd' },  // 16:00
+    { horizon: '#ca884f', low: '#a97873', mid: '#5d7caf', high: '#20558f', sunGlow: '#ffcb96' },  // 17:00
+    { horizon: '#782218', low: '#40203b', mid: '#101034', high: '#070b1a', sunGlow: '#cf5625' },  // 18:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 19:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 20:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 21:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 22:00
+    { horizon: '#151224', low: '#0d0e17', mid: '#060710', high: '#040508', sunGlow: '#000000' },  // 23:00
+  ],}
 
 // Active anchor cards. Phase A: identical to procedural seed. Phase B
 // will override these per-season per Wren's artistic eye.

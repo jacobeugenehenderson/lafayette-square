@@ -41,7 +41,40 @@ export const KEYFRAMES = {
   duskDeep:        { horizon: '#7a3828', low: '#40253a', mid: '#181535', high: '#0a0c1a' },
 }
 
-// ─── Hex / RGB / lerp helpers ──────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+// SEASON_TRANSFORMS — three HSV knobs per anchor. Applied to KEYFRAMES at
+// sample time before the altitude-banded lerp, so each season's altitude
+// trajectory walks through a palette-shifted copy of the canon. Summer is
+// locked to identity (it IS the canonical palette). Winter / spring /
+// autumn deviate per Wren's eye via these dials:
+//
+//   hueDeg: rotate the palette around the hue wheel (degrees, can wrap).
+//           Subtle — altitude does most of the seasonal work.
+//   sat:    multiply saturation. <1 desaturated, >1 boosted.
+//   val:    multiply brightness. <1 darkened, >1 lifted.
+//
+// Phase B re-tuning loop:
+//   1. edit the three numbers for a season here
+//   2. node cartograph/pipeline/hydrate-anchor-cards.js > /tmp/cards.js
+//   3. paste new ANCHOR_CARDS_PROCEDURAL into src/cartograph/skyGrid.js
+//   4. reload Stage → eye-check → iterate
+// ─────────────────────────────────────────────────────────────────────
+export const SEASON_TRANSFORMS = {
+  // Summer = identity. Canonical reference.
+  summer: { hueDeg:   0, sat: 1.00, val: 1.00 },
+  // Winter — cooler, desaturated, slight darken. Pale-hazy-clear-air feel.
+  // Negative hueDeg pulls day-blue keyframe toward cyan; saturated dawn /
+  // dusk peaks fade toward muted purples.
+  winter: { hueDeg:  -8, sat: 0.78, val: 0.93 },
+  // Spring — slight warm shift, near-full saturation, slight lift. Crisper
+  // noon zenith; the warm hue rotation tinges dawn/dusk peaks more rosily.
+  spring: { hueDeg:  +5, sat: 0.95, val: 1.02 },
+  // Autumn — saturation push for vividness; small negative hue toward red
+  // deepens dawn/dusk peaks toward crimson; slight darken for harvest tone.
+  autumn: { hueDeg:  -6, sat: 1.18, val: 0.97 },
+}
+
+// ─── Hex / RGB / HSV helpers ──────────────────────────────────────────
 function hexToRGB(hex) {
   const h = hex.replace('#', '')
   const n = parseInt(h.length === 3
@@ -68,6 +101,68 @@ function lerpRGB(a, b, t) {
 
 export function lerpHex(a, b, t) {
   return rgbToHex(lerpRGB(hexToRGB(a), hexToRGB(b), Math.max(0, Math.min(1, t))))
+}
+
+// ─── HSV conversion + transform ───────────────────────────────────────
+// HSV used because the season knobs (hue rotate, sat scale, val scale) map
+// directly to operator intent. Round-trips RGB → HSV → transform → RGB
+// per band per keyframe at hydration time.
+function rgbToHSV([r, g, b]) {
+  const mx = Math.max(r, g, b)
+  const mn = Math.min(r, g, b)
+  const d = mx - mn
+  let h = 0
+  if (d > 0) {
+    if (mx === r) h = ((g - b) / d) % 6
+    else if (mx === g) h = (b - r) / d + 2
+    else h = (r - g) / d + 4
+    h *= 60
+    if (h < 0) h += 360
+  }
+  const s = mx === 0 ? 0 : d / mx
+  return [h, s, mx]
+}
+
+function hsvToRGB([h, s, v]) {
+  const c = v * s
+  const hh = (((h % 360) + 360) % 360) / 60
+  const x = c * (1 - Math.abs((hh % 2) - 1))
+  let r = 0, g = 0, b = 0
+  if (hh < 1)      { r = c; g = x; b = 0 }
+  else if (hh < 2) { r = x; g = c; b = 0 }
+  else if (hh < 3) { r = 0; g = c; b = x }
+  else if (hh < 4) { r = 0; g = x; b = c }
+  else if (hh < 5) { r = x; g = 0; b = c }
+  else             { r = c; g = 0; b = x }
+  const m = v - c
+  return [r + m, g + m, b + m]
+}
+
+function applyHSV(hex, transform) {
+  const [h, s, v] = rgbToHSV(hexToRGB(hex))
+  const h2 = h + (transform.hueDeg || 0)
+  const s2 = Math.max(0, Math.min(1, s * (transform.sat ?? 1)))
+  const v2 = Math.max(0, Math.min(1, v * (transform.val ?? 1)))
+  return rgbToHex(hsvToRGB([h2, s2, v2]))
+}
+
+// Apply the season transform across every keyframe / band. Returns a
+// fresh KEYFRAMES-shaped object the procedural lerp can read.
+function transformKeyframes(kf, transform) {
+  if (!transform || (transform.hueDeg === 0 && transform.sat === 1 && transform.val === 1)) {
+    return kf  // identity short-circuit (summer)
+  }
+  const out = {}
+  for (const name of Object.keys(kf)) {
+    const f = kf[name]
+    out[name] = {
+      horizon: applyHSV(f.horizon, transform),
+      low:     applyHSV(f.low,     transform),
+      mid:     applyHSV(f.mid,     transform),
+      high:    applyHSV(f.high,    transform),
+    }
+  }
+  return out
 }
 
 function lerpBands(a, b, t) {
@@ -97,19 +192,20 @@ function lerpBands(a, b, t) {
 //   alt <  0.35          → golden → day
 //   alt >= 0.35          → day
 // ─────────────────────────────────────────────────────────────────────
-export function proceduralSkyAt(altitude, isDawn) {
+export function proceduralSkyAt(altitude, isDawn, seasonTransform = SEASON_TRANSFORMS.summer) {
   const alt = altitude
+  const tk = transformKeyframes(KEYFRAMES, seasonTransform)
 
-  const deep        = isDawn ? KEYFRAMES.dawnDeep        : KEYFRAMES.duskDeep
-  const peak        = isDawn ? KEYFRAMES.dawnPeak        : KEYFRAMES.duskPeak
-  const earlyGolden = isDawn ? KEYFRAMES.dawnEarlyGolden : KEYFRAMES.duskEarlyGolden
-  const golden      = isDawn ? KEYFRAMES.dawnGolden     : KEYFRAMES.duskGolden
+  const deep        = isDawn ? tk.dawnDeep        : tk.duskDeep
+  const peak        = isDawn ? tk.dawnPeak        : tk.duskPeak
+  const earlyGolden = isDawn ? tk.dawnEarlyGolden : tk.duskEarlyGolden
+  const golden      = isDawn ? tk.dawnGolden     : tk.duskGolden
 
   let bands
   if (alt < -0.12) {
-    bands = { ...KEYFRAMES.night }
+    bands = { ...tk.night }
   } else if (alt < -0.02) {
-    bands = lerpBands(KEYFRAMES.night, deep, (alt + 0.12) / 0.10)
+    bands = lerpBands(tk.night, deep, (alt + 0.12) / 0.10)
   } else if (alt < 0.03) {
     bands = lerpBands(deep, peak, (alt + 0.02) / 0.05)
   } else if (alt < 0.08) {
@@ -117,9 +213,9 @@ export function proceduralSkyAt(altitude, isDawn) {
   } else if (alt < 0.22) {
     bands = lerpBands(earlyGolden, golden, (alt - 0.08) / 0.14)
   } else if (alt < 0.35) {
-    bands = lerpBands(golden, KEYFRAMES.day, (alt - 0.22) / 0.13)
+    bands = lerpBands(golden, tk.day, (alt - 0.22) / 0.13)
   } else {
-    bands = { ...KEYFRAMES.day }
+    bands = { ...tk.day }
   }
 
   // Sun glow — separate ladder, dawn rosier vs dusk amber.

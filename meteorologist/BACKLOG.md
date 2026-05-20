@@ -48,18 +48,13 @@ Mechanism landed in a single Wren commit (2026-05-21). All 8 items in the origin
 - Sky Builder UI rewritten: 24 hour-cols × 5 bands, CSS-gradient cells with left/mid/right-minute sampling, click-to-author, shift+click revert, solar-noon marker
 - Shader callsite unchanged — `resolveSkyAtMinute` builds mosaic + applies overrides + minute-lerp adjacent hours
 
-### Sky architecture pivot — Phase B (queued: Wren's artistic deviation pass)
+### ✅ Sky architecture pivot — Phase B shipped (rules-based seasonal derivation)
 
-The painter's eye on winter / spring / autumn cards. Summer is already the project canon (the procedural seed for summer matches the existing hand-painted look exactly, so no deviation needed).
+Three HSV knobs per season (`hueDeg`, `sat`, `val`) in `cartograph/proceduralSky.js` `SEASON_TRANSFORMS`. Procedural function transforms `KEYFRAMES` at sample time before the altitude lerp. Summer = identity. `ANCHOR_CARDS_PROCEDURAL` in `skyGrid.js` regenerated via `node cartograph/pipeline/hydrate-anchor-cards.js`.
 
-Edits one file only: `ANCHOR_CARDS` constant in `src/cartograph/skyGrid.js`. Procedural seed stays in `ANCHOR_CARDS_PROCEDURAL` for traceability.
+Re-tuning loop: edit the three numbers per season → re-run hydration → paste output → reload. Pivot complete; sky pipeline is the rules-based instrument the orchestrator described.
 
-Per the original maxibrief (`scratch/handoff-2026-05-20-...` or the inlined orchestrator brief):
-- **Winter:** cooler hue cast across lighter bands, subtle desaturation across the day, slight darken at noon (winter air is clearer, less brilliant sun), cooler sun-glow, pinker pre-dawn/post-dusk if it feels right.
-- **Spring:** fresh / green-cast horizon at morning, crisper noon zenith, slight warm-cool oscillation across the day.
-- **Autumn:** golden-amber bias across daytime hours, boosted saturation, richer sunset colors, cooler short twilights — "harvest-light."
-
-Disclose artistic decisions in commit body per season so Jacob can review + veto.
+See `NOTES.md` 2026-05-21 "Sky pivot Phase B" entry for per-season values + intent.
 
 ### Phase 4b.2 — TodChannel uniform binding
 

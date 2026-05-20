@@ -21,7 +21,7 @@
  * See meteorologist/NOTES.md 2026-05-20 "Sky architecture pivot" ADR.
  */
 import SunCalc from 'suncalc'
-import { proceduralSkyAt } from '../proceduralSky.js'
+import { proceduralSkyAt, SEASON_TRANSFORMS } from '../proceduralSky.js'
 
 // Match src/instance.js — keeping this script self-contained so it can
 // run pre-bundle. Update both if a different instance is ever added.
@@ -50,6 +50,7 @@ function hourClock(refDate, hour) {
 
 function buildCard(season) {
   const ref = REF_DATES[season]
+  const transform = SEASON_TRANSFORMS[season]
   // Solar-noon test: SunCalc gives the local-noon hour for the date.
   const times = SunCalc.getTimes(hourClock(ref, 12), LAT, LON)
   const solarNoonLocalH = times.solarNoon.getUTCHours() + TIMEZONE_OFFSET_HOURS + times.solarNoon.getUTCMinutes() / 60
@@ -58,7 +59,7 @@ function buildCard(season) {
     const clock = hourClock(ref, h)
     const sunPos = SunCalc.getPosition(clock, LAT, LON)
     const isDawn = h < solarNoonLocalH
-    card.push(proceduralSkyAt(sunPos.altitude, isDawn))
+    card.push(proceduralSkyAt(sunPos.altitude, isDawn, transform))
   }
   return card
 }
