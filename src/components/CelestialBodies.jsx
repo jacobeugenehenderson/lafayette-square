@@ -534,7 +534,16 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         vec3 zenithColor  = vec3(0.10, 0.22, 0.55);
         vec3 horizonCool  = vec3(0.62, 0.74, 0.88);
         vec3 horizonWarm  = vec3(0.92, 0.66, 0.42);
-        float lowSun = 1.0 - smoothstep(0.0, 0.40, sa);  // 1 at sunset, 0 at noon
+        // Widened 0.40 → 0.85 (2026-05-20) so winter-noon (sa ≈ 0.49 at
+        // 38°N) still produces visible horizon-warming + Mie sun-prox
+        // glow. With the prior 0.40 cap, both summer noon (sa 0.97) and
+        // winter noon (sa 0.49) saturated to lowSun=0 → identical
+        // Preetham output → year-scrub at noon produced no visible
+        // seasonal sky variation. Widening to 0.85 means winter noon
+        // reads as "low-ish sun" (lowSun ≈ 0.42), summer noon stays
+        // "high sun" (lowSun ≈ 0), equinox noon between (~0.08).
+        // Twilight unchanged — sa → 0 still maps to lowSun → 1.
+        float lowSun = 1.0 - smoothstep(0.0, 0.85, sa);
         vec3 horizonColor = mix(horizonCool, horizonWarm, lowSun * 0.65);
 
         // Vertical blend — horizon warm/wide, zenith deep blue.
