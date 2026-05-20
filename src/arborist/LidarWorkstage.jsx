@@ -276,8 +276,9 @@ export default function LidarWorkstage() {
   // an opacity slider. `pointsOpacity` etc. are decoupled from visibility so
   // operator can dim a layer without losing its toggle state.
   const [layers, setLayers]             = useState({
-    points: true, cylinders: true, baked: true, bidi: true,
-    pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 1.0, bidiOpacity: 0.85,
+    points: true, cylinders: true, baked: true, bidi: true, lilVera: true,
+    pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 1.0,
+    bidiOpacity: 0.85, lilVeraOpacity: 0.85,
   })
   // Phase N.1 — bidirectional-growth spike. Lives alongside QSM extraction
   // (above) so the alignment oracle can show both as overlapped layers for
@@ -288,6 +289,24 @@ export default function LidarWorkstage() {
   const [bidiResult, setBidiResult]     = useState(null)
   const [bidiExtracting, setBidiExt]    = useState(false)
   const [bidiError, setBidiError]       = useState(null)
+  // Project: Li'l Vera, Stage N.2.0 (2026-05-20, Tycho). Posture-B
+  // observational skeleton apparatus. Sibling to Bidirectional but a
+  // separate algorithm + separate saved-run JSON store; the alignment
+  // oracle shows all three as overlapped layers for visual comparison.
+  // Single primary knob N (rig count); kOrient is structural at N.2.0 and
+  // will be load-bearing at N.2.1 (orientation tomography). No auto-extract
+  // — N=50 dev runs take seconds, N=500 overnight runs take minutes.
+  // `voxelSize` here is the OUTPUT-side consolidation voxel — the knob the
+  // operator perceives as "resolution / chain density". Source-cloud
+  // downsample stays at the lil_vera.py default (0.03m); power users can
+  // override via the CLI `--voxelSize` flag. See N.2.0 status note
+  // "consolidationVoxel is the visible knob, not source voxelSize."
+  const [veraParams, setVeraParams]     = useState({ N: 50, kOrient: 200, pitch: 0.3, consolidationVoxel: 0.05 })
+  const [veraResult, setVeraResult]     = useState(null)
+  const [veraExtracting, setVeraExt]    = useState(false)
+  const [veraError, setVeraError]       = useState(null)
+  const [veraSavedRuns, setVeraSavedRuns] = useState([])
+  const [veraSelectedRun, setVeraSelectedRun] = useState('') // '' = current extract
   // Per-hero baked manifest cache. Keyed by heroSpecies so we don't re-fetch
   // on every selection change within the same species.
   const [heroManifest, setHeroManifest] = useState(null)
@@ -421,6 +440,64 @@ export default function LidarWorkstage() {
   // Reset the bidirectional result when the operator picks a new specimen —
   // stale skeleton from prior tree shouldn't keep overlaying.
   useEffect(() => { setBidiResult(null); setBidiError(null) }, [selectedTreeId])
+
+  // Project: Li'l Vera handlers + saved-runs fetch.
+  async function runVeraExtract() {
+    if (!selectedTreeId || veraExtracting) return
+    setVeraExt(true); setVeraError(null); setVeraSelectedRun('')
+    try {
+      const r = await fetch(`/api/arborist/lidar/specimen/${selectedTreeId}/lil-vera-extract`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ species: activeSpeciesId, ...veraParams }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+      setVeraResult(d)
+      refreshVeraRuns()
+    } catch (err) {
+      setVeraError(String(err.message || err))
+    } finally {
+      setVeraExt(false)
+    }
+  }
+
+  async function refreshVeraRuns() {
+    if (!selectedTreeId) return
+    try {
+      const r = await fetch(`/api/arborist/lidar/specimen/${selectedTreeId}/lil-vera-runs?t=${Date.now()}`)
+      if (!r.ok) return
+      const d = await r.json()
+      setVeraSavedRuns(Array.isArray(d.runs) ? d.runs : [])
+    } catch { /* non-fatal */ }
+  }
+
+  async function loadVeraRun(filename) {
+    if (!selectedTreeId || !filename) {
+      setVeraSelectedRun('')
+      return
+    }
+    setVeraSelectedRun(filename)
+    try {
+      const r = await fetch(`/api/arborist/lidar/specimen/${selectedTreeId}/lil-vera-run/${encodeURIComponent(filename)}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      setVeraResult(d)
+      setVeraError(null)
+    } catch (err) {
+      setVeraError(`Load run failed: ${String(err.message || err)}`)
+    }
+  }
+
+  // Refresh saved-runs list whenever the specimen changes, and clear
+  // any current Li'l Vera overlay so stale skeleton from prior tree
+  // doesn't keep showing.
+  useEffect(() => {
+    setVeraResult(null); setVeraError(null); setVeraSelectedRun('')
+    setVeraSavedRuns([])
+    if (selectedTreeId) refreshVeraRuns()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTreeId])
 
   async function runPublish() {
     if (!selectedTreeId || !activeSpeciesId || !extractionParams || lidarPublishing) return
@@ -613,6 +690,17 @@ export default function LidarWorkstage() {
                   branchColor="#f0d460"
                 />
               )}
+              {veraResult && (
+                <CylinderSkeleton
+                  nodes={veraResult.nodes}
+                  medianRadius={veraResult.stats.medianRadius}
+                  minRadius={0.005}
+                  visible={layers.lilVera}
+                  opacity={layers.lilVeraOpacity}
+                  trunkColor="#22e0e0"
+                  branchColor="#d040c0"
+                />
+              )}
               {bakedGlbUrl && (
                 <Suspense fallback={null}>
                   <BakedGlbOracle
@@ -652,6 +740,15 @@ export default function LidarWorkstage() {
                 onOpacity={v => setLayers(l => ({ ...l, bidiOpacity: v }))}
                 missing={!bidiResult}
                 missingHint={bidiExtracting ? '(extracting…)' : '(hit Bidirectional → Re-extract)'}
+              />
+              <LayerControl
+                label="Li'l Vera"
+                active={layers.lilVera}
+                onToggle={() => setLayers(l => ({ ...l, lilVera: !l.lilVera }))}
+                opacity={layers.lilVeraOpacity}
+                onOpacity={v => setLayers(l => ({ ...l, lilVeraOpacity: v }))}
+                missing={!veraResult}
+                missingHint={veraExtracting ? '(extracting…)' : '(hit Li’l Vera → Re-extract)'}
               />
               <LayerControl
                 label="Baked GLB"
@@ -767,6 +864,68 @@ export default function LidarWorkstage() {
                   </div>
                 )}
                 {bidiError && <div style={errorTextStyle}>{bidiError}</div>}
+              </div>
+
+              {/* Project: Li'l Vera, Stage N.2.0 (2026-05-20, Tycho).
+                  Posture-B observational skeleton apparatus. Sibling to
+                  Bidirectional but a separate algorithm + separate saved-run
+                  store; the alignment oracle shows all three as overlapped
+                  layers. Single primary knob N; kOrient is structural at
+                  N.2.0, load-bearing at N.2.1 (orientation tomography). */}
+              <div style={{ marginTop: 18, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ ...sectionHeading, color: '#22e0e0', marginBottom: 4 }}>
+                  Li'l Vera · Stage N.2.0 apparatus
+                </div>
+                <DraftSlider label="N (rigs)" min={6} max={500} step={1}
+                  value={veraParams.N}
+                  onCommit={v => setVeraParams(p => ({ ...p, N: Math.round(v) }))} />
+                <DraftSlider label="K orient" min={50} max={500} step={10}
+                  value={veraParams.kOrient}
+                  onCommit={v => setVeraParams(p => ({ ...p, kOrient: Math.round(v) }))} />
+                <DraftSlider label="Pitch ratio" min={0.1} max={1.0} step={0.05}
+                  value={veraParams.pitch}
+                  onCommit={v => setVeraParams(p => ({ ...p, pitch: v }))} />
+                <DraftSlider label="Voxel size" min={0.02} max={0.20} step={0.005}
+                  value={veraParams.consolidationVoxel}
+                  onCommit={v => setVeraParams(p => ({ ...p, consolidationVoxel: v }))} unit="m" />
+                <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                  <button onClick={runVeraExtract} disabled={veraExtracting || lidarPublishing}
+                    style={{ ...btnPrimaryStyle, background: 'rgba(34,224,224,0.18)',
+                             borderColor: 'rgba(34,224,224,0.5)', color: '#a8e8e0' }}>
+                    {veraExtracting ? 'Observing…' : 'Re-extract (Li’l Vera)'}
+                  </button>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 10, color: '#888', letterSpacing: '0.08em',
+                                textTransform: 'uppercase', marginBottom: 4 }}>
+                    Saved runs
+                  </div>
+                  <select
+                    value={veraSelectedRun}
+                    onChange={e => loadVeraRun(e.target.value)}
+                    style={{ ...selectStyle, width: '100%' }}>
+                    <option value="">— current extract / none —</option>
+                    {veraSavedRuns.map(r => (
+                      <option key={r.filename} value={r.filename}>
+                        {r.filename} · N{r.N} · {r.nodes}n · {(r.sizeBytes / 1024).toFixed(0)}KB
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {veraResult && (
+                  <div style={{ marginTop: 8, fontSize: 11, color: '#aaa' }}>
+                    N{veraResult.hyperparams?.N} · {veraResult.stats.rigs} rigs ·
+                    {' '}{veraResult.stats.nodes} nodes · {veraResult.stats.cylinders} cyl ·
+                    {' '}{veraResult.stats.candidatesPreConsolidation} cand ·
+                    {' '}{veraResult.serverMs ?? veraResult.stats.elapsedMs}ms
+                    {veraResult.savedTo && (
+                      <div style={{ fontSize: 10, color: '#666', marginTop: 2 }}>
+                        → {veraResult.savedTo}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {veraError && <div style={errorTextStyle}>{veraError}</div>}
               </div>
             </>
           )}

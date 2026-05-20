@@ -15,3 +15,6 @@ open3d>=0.18    # voxel downsample, surface reconstruction (later phases)
 trimesh>=4.0    # cylinder → mesh → GLB
 pygltflib>=1.16 # GLB writer
 pillow>=10.0    # leaf/bark atlas packing (if/when needed)
+scikit-image>=0.24   # Project: Li'l Vera (lil_vera.py) — Zhang-Suen
+                     # skeletonize for per-view medial-axis extraction
+                     # (Stage N.2.0+).
