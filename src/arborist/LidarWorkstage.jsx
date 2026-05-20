@@ -787,7 +787,7 @@ export default function LidarWorkstage() {
               )}
               {veraResult && (
                 <MemoryHeatPoints
-                  nodes={veraResult.nodes}
+                  nodes={veraResult.memoryNodes || veraResult.nodes}
                   channel={layers.veraHeatChannel}
                   visible={layers.veraHeat}
                   opacity={layers.veraHeatOpacity}

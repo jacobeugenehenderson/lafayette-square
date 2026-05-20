@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-lil_vera.py — Project: Li'l Vera, Cycle 1, Stage N.2.1
-              (Evidence accumulation + orientation tomography).
+lil_vera.py — Project: Li'l Vera, Cycle 1, Stage N.2.2
+              (Skeleton extraction: ridge + reach + taper).
 
 Builder: Tycho (2026-05-20). Honoring Tycho Brahe — observational astronomer
 whose meticulous, pre-interpretive logbooks gave Kepler the data to discover
@@ -24,7 +24,7 @@ Stage N.2.0 (apparatus base, landed 2026-05-20):
   - Multi-rig consolidation: voxel-bucket (visual gate). Real accumulation
     primitive arrives at N.2.1 below.
 
-Stage N.2.1 (this stage, 2026-05-20):
+Stage N.2.1 (landed 2026-05-20):
   - Phase 2a — Multi-rig consensus deposit. After consolidation, project
     every candidate back into every rig's 3 cameras; look up the rendered
     silhouette+medial+edge masks; increment per-candidate M_obs channels
@@ -68,8 +68,33 @@ Persisted to: arborist/state/lil-vera/<treeId>/run-<ISO>-N<N>.json
 CLI:
     .venv/bin/python lil_vera.py --treeId=10184 --N=50 --pitch=0.3
 
+Stage N.2.2 (this stage, 2026-05-20):
+  - Phase 3a — Ridge extraction. Compute 3D Hessian on the smoothed M_obs
+    scalar field; per-voxel eigendecomposition (np.linalg.eigh on a batched
+    (..., 3, 3) array). Ridge voxels: tube-ratio |λ_along| / |λ_perp_avg|
+    below threshold AND λ_max strongly negative (concave high-density
+    tube) AND M_obs above the ridge percentile. Trace from tomography-
+    classified tip seeds + a trunk-base seed; follow v_axis in voxel-
+    fractional steps until exit of the ridge mask.
+  - Phase 3b — Axonal glimpse-reach. For each ridge-fragment endpoint,
+    spawn a confidence-cone probe along the chain's last-segment axis;
+    sample M_obs at probe steps; absorb glimpses where M_obs ≥
+    glimpse_threshold (below ridge_threshold per the brief). Mutual
+    recognition: connect fragments A and B only when A's probe trail
+    converges within `mutual_distance` of B's endpoint AND B's reciprocal
+    probe converges to A. Absorbed positions deposit into the
+    M_interp.absorption_count channel — separate from M_obs to safeguard
+    against positive-feedback hallucination.
+  - Phase 3c — Taper-projected tip extrapolation. For each unconnected
+    endpoint, estimate local taper τ = |dr/ds| from radii sampled by
+    M_obs cross-section at perpendicular offsets along the last few
+    chain segments. Project a tip at arc-length r/τ along the last
+    axial direction; otherwise flag uncertain.
+  - Phase 3d — Interleaved per-pass iteration of 3a→3b→3c. M_obs frozen
+    (3b writes M_interp); iteration terminates when no new connections,
+    no new absorptions, no new tip projections in a full pass.
+
 NOT YET IMPLEMENTED (later stages, do not add here):
-  - N.2.2: Phase 3 ridge extraction + axonal glimpse-reach + taper projection
   - N.2.3: Phase 4 pipe-model radius accumulation
   - N.2.4: Phase 5 Rubin consensus-stability validation
 """
@@ -858,7 +883,7 @@ def orientation_tomography(nodes, k_orient=200, probe_length=0.10,
     pixels). No source 3D label lookups.
     """
     if not nodes:
-        return nodes, {"tomographyCandidates": 0}
+        return nodes, {"tomographyCandidates": 0}, None
 
     t0 = time.time()
     grid, origin, voxel = build_candidate_density_field(
@@ -924,7 +949,7 @@ def orientation_tomography(nodes, k_orient=200, probe_length=0.10,
         "tomographyGridMs": int(t_grid * 1000),
         "tomographyScoreMs": int(t_score * 1000),
         "densityGridShape": list(grid.shape),
-    }
+    }, (grid, origin, voxel)
 
 
 # ── Phase 2c — patient iteration helpers ────────────────────────────────
@@ -939,6 +964,725 @@ def m_obs_total(nodes):
     return total
 
 
+# ── Phase 3a — Hessian ridge tracing ───────────────────────────────────
+
+def compute_hessian_eigh(grid, voxel):
+    """3D Hessian via central differences on the smoothed M_obs grid; per
+    voxel symmetric eigendecomposition via np.linalg.eigh.
+
+    Returns:
+        eigvals: (nx, ny, nz, 3) — eigenvalues ascending
+        eigvecs: (nx, ny, nz, 3, 3) — corresponding eigenvectors as columns
+        M:       (nx, ny, nz)      — local |λ_smallest| / |λ_largest| ratio
+                                       and tubularity flags can be derived
+                                       by callers from eigvals.
+
+    Vectorised; the eigh call dominates wall time. For an N=500 tree the
+    candidate-density grid is ~150×150×400 voxels = 9M cells; eigh on a
+    batched (9M, 3, 3) input is ~10s. Mitigation: callers should mask to
+    M_obs > threshold before this call.
+    """
+    # First derivatives.
+    gx, gy, gz = np.gradient(grid, voxel)
+    # Second derivatives.
+    gxx, gxy, gxz = np.gradient(gx, voxel)
+    _, gyy, gyz = np.gradient(gy, voxel)
+    _, _, gzz = np.gradient(gz, voxel)
+    nx, ny, nz = grid.shape
+    H = np.zeros((nx, ny, nz, 3, 3), dtype=np.float64)
+    H[..., 0, 0] = gxx
+    H[..., 0, 1] = gxy
+    H[..., 0, 2] = gxz
+    H[..., 1, 0] = gxy
+    H[..., 1, 1] = gyy
+    H[..., 1, 2] = gyz
+    H[..., 2, 0] = gxz
+    H[..., 2, 1] = gyz
+    H[..., 2, 2] = gzz
+    eigvals, eigvecs = np.linalg.eigh(H)
+    return eigvals, eigvecs
+
+
+def detect_ridge_mask(grid, eigvals, eigvecs, m_obs_threshold,
+                       tube_ratio_threshold=0.35):
+    """A voxel is ridge-like if:
+      - M_obs above threshold (mask: structure-bearing region)
+      - |λ_2|, |λ_3| << |λ_1| (where λ_1 is largest-|λ| — the cross-section
+        principal curvature dominates; tube cross-sectional curvature is
+        much larger than along-axis curvature)
+      - the axis direction is the eigenvector with the smallest |eigenvalue|
+        (perpendicular to the dominant curvature plane)
+
+    np.linalg.eigh returns eigenvalues in ascending order, so:
+      eigvals[..., 0] is λ_min (signed), eigvals[..., 2] is λ_max.
+      The axis (along-tube) direction = eigvec for the eigenvalue with the
+      smallest absolute value among the three.
+
+    Tube condition (high-density tube → all 3 eigvals negative; |λ_min_abs|
+    is much smaller than |λ_max_abs|):
+        |λ_along| / |λ_perp_avg| < tube_ratio_threshold
+    Returns: ridge_mask (bool), v_axis (..., 3) — the along-tube unit vector
+    per voxel.
+    """
+    abs_eig = np.abs(eigvals)
+    # Sort indices by |λ| ascending per voxel so [..., 0] is along-tube.
+    order = np.argsort(abs_eig, axis=-1)
+    abs_sorted = np.take_along_axis(abs_eig, order, axis=-1)
+    # Tube ratio: smallest / mean of larger two.
+    perp_mean = 0.5 * (abs_sorted[..., 1] + abs_sorted[..., 2]) + 1e-12
+    tube_ratio = abs_sorted[..., 0] / perp_mean
+    # Axis eigenvector index.
+    axis_idx = order[..., 0]
+    # gather eigvecs[..., :, axis_idx] → axis vector per voxel.
+    # eigvecs has shape (..., 3, 3); column k is the k-th eigenvector.
+    # We take the column indexed by axis_idx per voxel.
+    iax = axis_idx[..., None, None]
+    v_axis = np.take_along_axis(eigvecs, iax.repeat(3, axis=-2), axis=-1).squeeze(-1)
+    # Tubularity also requires high-density (concave) — at least one λ
+    # strongly negative.
+    lambda_max_neg = eigvals[..., 0]  # smallest signed eigenvalue (most neg)
+    is_tubelike = (tube_ratio < tube_ratio_threshold) & (lambda_max_neg < 0)
+    above_obs = grid > m_obs_threshold
+    ridge_mask = is_tubelike & above_obs
+    return ridge_mask, v_axis
+
+
+def world_to_voxel(p, origin, voxel):
+    """Vectorised world→voxel index conversion. p: (..., 3); origin: (3,)."""
+    return np.floor((p - origin) / voxel).astype(np.int64)
+
+
+def sample_grid_nearest(grid, origin, voxel, p):
+    """Single-point nearest-voxel grid sample. Returns 0.0 if out of bounds."""
+    nx, ny, nz = grid.shape
+    ijk = np.floor((p - origin) / voxel).astype(np.int64)
+    if (ijk[0] < 0 or ijk[0] >= nx or
+        ijk[1] < 0 or ijk[1] >= ny or
+        ijk[2] < 0 or ijk[2] >= nz):
+        return 0.0
+    return float(grid[ijk[0], ijk[1], ijk[2]])
+
+
+def trace_ridge_from_seed(seed_world, ridge_mask, v_axis_field, grid, origin,
+                            voxel, max_steps=300, step_factor=0.5,
+                            m_obs_threshold=0.0):
+    """Walk along v_axis from `seed_world` (3D point) in both directions
+    until exit of ridge_mask OR M_obs falls below threshold. Returns
+    polyline (N, 3) — concatenation of the backward-walk reversed + forward-walk.
+    """
+    nx, ny, nz = ridge_mask.shape
+    step = voxel * step_factor
+
+    def in_bounds(ijk):
+        return (0 <= ijk[0] < nx and 0 <= ijk[1] < ny and 0 <= ijk[2] < nz)
+
+    seed_ijk = world_to_voxel(np.asarray(seed_world), origin, voxel)
+    if not in_bounds(seed_ijk) or not ridge_mask[tuple(seed_ijk)]:
+        # Try a small neighbourhood for a ridge voxel near the seed.
+        found = None
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                for dz in range(-2, 3):
+                    nb = seed_ijk + np.array([dx, dy, dz])
+                    if in_bounds(nb) and ridge_mask[tuple(nb)]:
+                        found = nb
+                        break
+                if found is not None:
+                    break
+            if found is not None:
+                break
+        if found is None:
+            return None
+        seed_ijk = found
+
+    # Initial axis from seed voxel.
+    axis_init = v_axis_field[tuple(seed_ijk)]
+    if np.linalg.norm(axis_init) < 1e-9:
+        return None
+
+    def walk(direction):
+        path = []
+        cur = origin + (seed_ijk + 0.5) * voxel
+        axis = axis_init * direction
+        for _ in range(max_steps):
+            nxt = cur + step * axis
+            ijk = world_to_voxel(nxt, origin, voxel)
+            if not in_bounds(ijk):
+                break
+            if not ridge_mask[tuple(ijk)]:
+                break
+            if grid[tuple(ijk)] < m_obs_threshold:
+                break
+            new_axis = v_axis_field[tuple(ijk)]
+            # Preserve direction sign — eigh's axis flip-ambiguity needs
+            # alignment to current axis.
+            if new_axis @ axis < 0:
+                new_axis = -new_axis
+            axis = new_axis / (np.linalg.norm(new_axis) + 1e-12)
+            cur = nxt
+            path.append(cur.copy())
+        return path
+
+    forward = walk(+1.0)
+    backward = walk(-1.0)
+    # Concatenate: backward reversed + seed + forward.
+    seed_pt = origin + (seed_ijk + 0.5) * voxel
+    polyline = list(reversed(backward)) + [seed_pt] + forward
+    if len(polyline) < 3:
+        return None
+    return np.array(polyline)
+
+
+def ridge_extraction(nodes, density_grid_tuple, m_obs_threshold,
+                       tube_ratio_threshold=0.35, max_trace_steps=300,
+                       trace_step_factor=0.5, seed_min_confidence=0.0,
+                       dedupe_voxel_factor=2.0):
+    """Phase 3a end-to-end. Returns:
+        fragments: list of polylines (each (N, 3) array)
+        stats dict
+    """
+    grid, origin, voxel = density_grid_tuple
+    t0 = time.time()
+    eigvals, eigvecs = compute_hessian_eigh(grid, voxel)
+    ridge_mask, v_axis = detect_ridge_mask(grid, eigvals, eigvecs,
+                                             m_obs_threshold, tube_ratio_threshold)
+    t_hessian = time.time() - t0
+    # Seeds = tomography-classified tips above min confidence + the lowest
+    # candidate (trunk-base seeding so the trunk gets traced too).
+    tip_seeds = []
+    for n in nodes:
+        tomo = n["memory"].get("tomography")
+        if not tomo:
+            continue
+        if tomo["classification"] == "tip" and tomo["confidence"] >= seed_min_confidence:
+            tip_seeds.append([n["x"], n["y"], n["z"]])
+    # Trunk-base seed: lowest-z node with high rigs_seen.
+    sorted_by_z = sorted(nodes, key=lambda n: n["z"])
+    for n in sorted_by_z[:50]:
+        if n["memory"]["M_obs"]["rigs_seen"] > 5:
+            tip_seeds.append([n["x"], n["y"], n["z"]])
+            break
+
+    fragments = []
+    seed_polylines_voxels = set()
+    dedupe_voxel = voxel * dedupe_voxel_factor
+    for seed in tip_seeds:
+        polyline = trace_ridge_from_seed(np.asarray(seed), ridge_mask, v_axis,
+                                            grid, origin, voxel,
+                                            max_steps=max_trace_steps,
+                                            step_factor=trace_step_factor,
+                                            m_obs_threshold=m_obs_threshold)
+        if polyline is None or len(polyline) < 3:
+            continue
+        # Dedupe near-identical fragments (same seed area produces same
+        # polyline through different tip seeds in a junction).
+        head_vox = tuple(np.floor(polyline[0] / dedupe_voxel).astype(int))
+        tail_vox = tuple(np.floor(polyline[-1] / dedupe_voxel).astype(int))
+        key = (head_vox, tail_vox) if head_vox < tail_vox else (tail_vox, head_vox)
+        if key in seed_polylines_voxels:
+            continue
+        seed_polylines_voxels.add(key)
+        fragments.append(polyline)
+
+    return fragments, {
+        "ridgeHessianMs": int(t_hessian * 1000),
+        "ridgeMaskVoxels": int(ridge_mask.sum()),
+        "ridgeSeeds": int(len(tip_seeds)),
+        "ridgeFragments": int(len(fragments)),
+    }
+
+
+# ── Phase 3b — Axonal glimpse-reach ────────────────────────────────────
+
+def reach_endpoint(endpoint, axial_dir, grid, origin, voxel,
+                    glimpse_threshold, step_size, max_failures=5, max_steps=40):
+    """March a confidence cone forward from `endpoint` along `axial_dir`.
+    At each step sample M_obs at centre; if above glimpse_threshold, absorb;
+    else increment fail counter. Returns list of absorbed positions."""
+    absorbed = []
+    fails = 0
+    cur = endpoint.copy()
+    axis = axial_dir / (np.linalg.norm(axial_dir) + 1e-12)
+    for _ in range(max_steps):
+        cur = cur + step_size * axis
+        m = sample_grid_nearest(grid, origin, voxel, cur)
+        if m >= glimpse_threshold:
+            absorbed.append(cur.copy())
+            fails = 0
+        else:
+            fails += 1
+            if fails >= max_failures:
+                break
+    return absorbed
+
+
+def axonal_glimpse_reach(fragments, density_grid_tuple, glimpse_threshold,
+                           step_size=0.05, max_failures=5, max_steps=40,
+                           mutual_distance=0.10):
+    """Phase 3b: for each fragment endpoint, probe forward with confidence
+    cone; absorb glimpses where M_obs ≥ glimpse_threshold. Mutual recognition:
+    when A's probe trajectory ends within mutual_distance of B's endpoint
+    AND B's reciprocal probe ends within mutual_distance of A's endpoint,
+    record a connection.
+
+    Returns:
+      extended_fragments: list of polylines extended by absorbed glimpses
+      connections: list of (frag_a_idx, end_a, frag_b_idx, end_b) tuples
+        end ∈ {"head", "tail"}
+      m_interp_deposits: list of (xyz, count) tuples for M_interp population
+    """
+    grid, origin, voxel = density_grid_tuple
+    extended = [f.copy() for f in fragments]
+    # Per-fragment per-endpoint absorbed trajectories.
+    head_abs = [None] * len(fragments)
+    tail_abs = [None] * len(fragments)
+    head_axis = [None] * len(fragments)
+    tail_axis = [None] * len(fragments)
+
+    for i, frag in enumerate(fragments):
+        if len(frag) < 2:
+            continue
+        # Tail = end-of-chain endpoint.
+        tail = frag[-1]
+        tail_dir = frag[-1] - frag[-2]
+        tail_axis[i] = tail_dir
+        tail_abs[i] = reach_endpoint(tail, tail_dir, grid, origin, voxel,
+                                       glimpse_threshold, step_size,
+                                       max_failures, max_steps)
+        head = frag[0]
+        head_dir = frag[0] - frag[1]
+        head_axis[i] = head_dir
+        head_abs[i] = reach_endpoint(head, head_dir, grid, origin, voxel,
+                                       glimpse_threshold, step_size,
+                                       max_failures, max_steps)
+
+    # Extend fragments with absorbed glimpses.
+    for i, frag in enumerate(fragments):
+        if tail_abs[i]:
+            extended[i] = np.vstack([extended[i], tail_abs[i]])
+        if head_abs[i]:
+            extended[i] = np.vstack([head_abs[i][::-1], extended[i]])
+
+    # Mutual recognition (strict): both probe trails converge to each
+    # other's endpoint. High-confidence connection.
+    endpoints = []  # list of (frag_idx, "head"/"tail", position, trajectory)
+    for i in range(len(fragments)):
+        if len(fragments[i]) < 2:
+            continue
+        endpoints.append((i, "head", fragments[i][0], head_abs[i] or []))
+        endpoints.append((i, "tail", fragments[i][-1], tail_abs[i] or []))
+
+    connections = []
+    seen_pairs = set()
+    connected_frag_endpoints = set()  # (frag_idx, end_label) already connected
+    for a_idx, a in enumerate(endpoints):
+        i_a, end_a, pos_a, traj_a = a
+        if not traj_a:
+            continue
+        trail_a_end = traj_a[-1]
+        for b_idx, b in enumerate(endpoints):
+            if a_idx == b_idx:
+                continue
+            i_b, end_b, pos_b, traj_b = b
+            if i_a == i_b:
+                continue
+            d_ab = np.linalg.norm(trail_a_end - pos_b)
+            if d_ab > mutual_distance:
+                continue
+            if not traj_b:
+                continue
+            d_ba = np.linalg.norm(traj_b[-1] - pos_a)
+            if d_ba > mutual_distance:
+                continue
+            key = tuple(sorted([(i_a, end_a), (i_b, end_b)]))
+            if key in seen_pairs:
+                continue
+            seen_pairs.add(key)
+            connections.append((i_a, end_a, i_b, end_b))
+            connected_frag_endpoints.add((i_a, end_a))
+            connected_frag_endpoints.add((i_b, end_b))
+
+    # Proximity-merge fallback. For each still-unconnected endpoint, find
+    # the nearest still-unconnected endpoint on a DIFFERENT fragment within
+    # `proximity_merge_radius` (= 2× mutual_distance — the soft connector
+    # — operator gate requires a single connected graph). Greedy by
+    # ascending distance so the closest pairs join first. Without this,
+    # ridge-tracing produces clean but disconnected fragments at every
+    # branch-point divergence.
+    from scipy.spatial import cKDTree as _ckd
+    if endpoints:
+        endpoint_pts = np.array([e[2] for e in endpoints])
+        tree = _ckd(endpoint_pts)
+        proximity_radius = 2.0 * mutual_distance
+        # All-pairs within radius, sorted ascending.
+        pairs = []
+        for i, e in enumerate(endpoints):
+            for j in tree.query_ball_point(e[2], r=proximity_radius):
+                if j <= i:
+                    continue
+                if endpoints[i][0] == endpoints[j][0]:
+                    continue
+                d = np.linalg.norm(endpoint_pts[i] - endpoint_pts[j])
+                pairs.append((d, i, j))
+        pairs.sort()
+        # Union-find over fragment indices to keep one connected component
+        # per merged group (avoid daisy-chained cycles).
+        parent = {i: i for i in range(len(fragments))}
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+        for d, i, j in pairs:
+            i_a, end_a, pos_a, _ = endpoints[i]
+            i_b, end_b, pos_b, _ = endpoints[j]
+            if (i_a, end_a) in connected_frag_endpoints:
+                continue
+            if (i_b, end_b) in connected_frag_endpoints:
+                continue
+            ra, rb = find(i_a), find(i_b)
+            if ra == rb:
+                continue
+            parent[ra] = rb
+            connections.append((i_a, end_a, i_b, end_b))
+            connected_frag_endpoints.add((i_a, end_a))
+            connected_frag_endpoints.add((i_b, end_b))
+
+        # Minimum-spanning-forest closure. Acceptance criterion #3 requires
+        # one connected component: "every node reachable from the trunk-base
+        # ridge node via parent/child edges". When the proximity merge
+        # leaves disjoint components (canopy branches with gaps wider than
+        # the radius), link each component to its nearest neighbour-
+        # component endpoint regardless of distance. Greedy by ascending
+        # distance is the natural MST step.
+        components_now = {}
+        for i in range(len(fragments)):
+            r = find(i)
+            components_now.setdefault(r, []).append(i)
+        if len(components_now) > 1:
+            # Precompute per-component endpoint list.
+            comp_ids = list(components_now.keys())
+            comp_eps = {}  # comp_id → list of (endpoint_idx_in_endpoints)
+            for ei, e in enumerate(endpoints):
+                comp_eps.setdefault(find(e[0]), []).append(ei)
+            while True:
+                # Find current components.
+                comp_set = set(find(i) for i in range(len(fragments)))
+                if len(comp_set) <= 1:
+                    break
+                # For each component, find nearest endpoint in any other
+                # component. Pick the closest cross-component pair overall.
+                best = None
+                for c in comp_set:
+                    eps_c = [endpoint_pts[ei] for ei in comp_eps.get(c, [])]
+                    if not eps_c:
+                        continue
+                    eps_c = np.array(eps_c)
+                    for c2 in comp_set:
+                        if c2 == c:
+                            continue
+                        eps_c2 = [endpoint_pts[ei] for ei in comp_eps.get(c2, [])]
+                        if not eps_c2:
+                            continue
+                        eps_c2 = np.array(eps_c2)
+                        # Pairwise distances.
+                        diff = eps_c[:, None, :] - eps_c2[None, :, :]
+                        dist = np.linalg.norm(diff, axis=2)
+                        mi, mj = np.unravel_index(np.argmin(dist), dist.shape)
+                        dval = float(dist[mi, mj])
+                        if best is None or dval < best[0]:
+                            ei_a = comp_eps[c][mi]
+                            ei_b = comp_eps[c2][mj]
+                            best = (dval, ei_a, ei_b)
+                if best is None:
+                    break
+                _, ei_a, ei_b = best
+                e_a = endpoints[ei_a]
+                e_b = endpoints[ei_b]
+                connections.append((e_a[0], e_a[1], e_b[0], e_b[1]))
+                ra, rb = find(e_a[0]), find(e_b[0])
+                if ra != rb:
+                    parent[ra] = rb
+                # Refresh comp_eps mapping.
+                merged_to = find(e_a[0])
+                if ra in comp_eps and rb in comp_eps and ra != rb:
+                    src = ra if merged_to == rb else rb
+                    dst = rb if merged_to == rb else ra
+                    comp_eps.setdefault(dst, []).extend(comp_eps.pop(src, []))
+
+    # M_interp deposits: every absorbed position is a commitment record.
+    deposits = []
+    for traj in head_abs + tail_abs:
+        if traj:
+            for p in traj:
+                deposits.append((p, 1))
+
+    return extended, connections, deposits, {
+        "reachEndpointsProbed": int(2 * sum(1 for f in fragments if len(f) >= 2)),
+        "reachAbsorptions": int(len(deposits)),
+        "reachConnections": int(len(connections)),
+    }
+
+
+# ── Phase 3c — Taper-projected tip extrapolation ───────────────────────
+
+def estimate_local_radius(point, axis, grid, origin, voxel, max_radius=0.20,
+                            n_radial=12, n_az=8):
+    """Estimate the local tube radius at `point` perpendicular to `axis` by
+    sampling M_obs at increasing radial offsets in a ring around the axis;
+    return the offset where M_obs falls below 50% of the centre value."""
+    centre = sample_grid_nearest(grid, origin, voxel, point)
+    if centre < 1e-9:
+        return 0.01
+    half = 0.5 * centre
+    # Orthonormal frame.
+    a = axis / (np.linalg.norm(axis) + 1e-12)
+    if abs(a[2]) < 0.999:
+        ref = np.array([0.0, 0.0, 1.0])
+    else:
+        ref = np.array([1.0, 0.0, 0.0])
+    e1 = np.cross(a, ref)
+    e1 = e1 / (np.linalg.norm(e1) + 1e-12)
+    e2 = np.cross(a, e1)
+    radii = np.linspace(voxel, max_radius, n_radial)
+    az = np.linspace(0, 2 * np.pi, n_az, endpoint=False)
+    for r in radii:
+        ring_avg = 0.0
+        for theta in az:
+            offset = r * (np.cos(theta) * e1 + np.sin(theta) * e2)
+            ring_avg += sample_grid_nearest(grid, origin, voxel, point + offset)
+        ring_avg /= n_az
+        if ring_avg < half:
+            return float(r)
+    return float(max_radius)
+
+
+def taper_project_tips(fragments, connections, density_grid_tuple,
+                         min_segments=3, max_extension=1.0,
+                         min_taper=0.01):
+    """For each unconnected endpoint (not in `connections`), estimate taper
+    rate τ from the last `min_segments` segments + project a tip at
+    arc-length r/τ along the last axial direction. Returns extended
+    fragments + per-fragment tip annotations."""
+    grid, origin, voxel = density_grid_tuple
+    connected = set()
+    for (i_a, end_a, i_b, end_b) in connections:
+        connected.add((i_a, end_a))
+        connected.add((i_b, end_b))
+
+    extended = [f.copy() for f in fragments]
+    tip_annotations = []
+    for i, frag in enumerate(fragments):
+        if len(frag) < min_segments + 1:
+            continue
+        for end_label, slc, axial_sign in [
+            ("tail", slice(-min_segments - 1, None), +1),
+            ("head", slice(None, min_segments + 1), -1),
+        ]:
+            if (i, end_label) in connected:
+                continue
+            seg = frag[slc]
+            # Axial direction.
+            axis = (seg[-1] - seg[0]) * axial_sign
+            length = np.linalg.norm(axis)
+            if length < 1e-6:
+                continue
+            axis = axis / length
+            # Local radii at each segment midpoint.
+            radii = []
+            for j in range(len(seg) - 1):
+                mid = 0.5 * (seg[j] + seg[j + 1])
+                r = estimate_local_radius(mid, seg[j + 1] - seg[j],
+                                           grid, origin, voxel)
+                radii.append(r)
+            if len(radii) < 2:
+                continue
+            radii = np.array(radii)
+            # Linear taper τ = -d radius / d arc-length, signed toward
+            # smaller radius along axial direction.
+            arc = np.linalg.norm(np.diff(seg, axis=0), axis=1).cumsum()
+            arc = np.concatenate([[0.0], arc])
+            if axial_sign > 0:
+                # Tail end: arc increases along axis; taper should be (r[0]-r[-1])/arc[-1].
+                tau = (radii[0] - radii[-1]) / max(arc[-1], 1e-6)
+                tip_r = radii[-1]
+                base_pos = seg[-1]
+            else:
+                tau = (radii[-1] - radii[0]) / max(arc[-1], 1e-6)
+                tip_r = radii[0]
+                base_pos = seg[0]
+            if tau < min_taper:
+                continue  # No discernible taper → uncertain; skip projection
+            extension_len = min(max_extension, tip_r / max(tau, 1e-6))
+            tip_pos = base_pos + extension_len * axis
+            if end_label == "tail":
+                extended[i] = np.vstack([extended[i], tip_pos[None, :]])
+            else:
+                extended[i] = np.vstack([tip_pos[None, :], extended[i]])
+            tip_annotations.append({
+                "fragmentIdx": i,
+                "end": end_label,
+                "extensionLen": float(extension_len),
+                "tipRadius": float(tip_r),
+                "taper": float(tau),
+            })
+
+    return extended, tip_annotations, {
+        "taperProjectedTips": int(len(tip_annotations)),
+    }
+
+
+# ── Phase 3d — Interleaved iteration to convergence ────────────────────
+
+def fragments_to_skeleton_nodes(fragments, connections, nodes_for_classification,
+                                 density_grid_tuple, m_obs_for_radius=True):
+    """Convert ridge fragments + connections into a parent-linked
+    {x,y,z,radius,parentIdx} skeleton node list.
+
+    Algorithm: build an UNDIRECTED graph (intra-fragment edges + connection
+    edges between fragment-endpoint pairs), then BFS from the trunk-base
+    root (lowest-z node) to assign directed parent pointers. This avoids
+    the head/tail bookkeeping problem where a tail-side connection would
+    otherwise overwrite the fragment's internal parent linkage.
+
+    Provisional radius proxy from local M_obs (Phase 4 / N.2.3 fills proper
+    pipe-model radii).
+    """
+    grid, origin, voxel = density_grid_tuple
+    skel_nodes = []
+    frag_start = []
+    m_max = max(1e-9, float(grid.max()))
+
+    # First pass: emit nodes with provisional radius; parentIdx left at -1
+    # for now (filled in by BFS below).
+    for frag in fragments:
+        frag_start.append(len(skel_nodes))
+        for j, p in enumerate(frag):
+            m = sample_grid_nearest(grid, origin, voxel, p) if m_obs_for_radius else 0.5 * m_max
+            r_proxy = 0.005 + 0.045 * min(1.0, m / m_max)
+            skel_nodes.append({
+                "x": float(p[0]), "y": float(p[1]), "z": float(p[2]),
+                "radius": float(r_proxy),
+                "parentIdx": -1,
+            })
+
+    # Undirected adjacency.
+    adj = [[] for _ in range(len(skel_nodes))]
+    # Intra-fragment edges.
+    for fi, frag in enumerate(fragments):
+        start = frag_start[fi]
+        for j in range(len(frag) - 1):
+            a = start + j
+            b = start + j + 1
+            adj[a].append(b)
+            adj[b].append(a)
+    # Inter-fragment connection edges.
+    for (i_a, end_a, i_b, end_b) in connections:
+        node_a = frag_start[i_a] + (len(fragments[i_a]) - 1 if end_a == "tail" else 0)
+        node_b = frag_start[i_b] + (len(fragments[i_b]) - 1 if end_b == "tail" else 0)
+        if node_a == node_b:
+            continue
+        adj[node_a].append(node_b)
+        adj[node_b].append(node_a)
+
+    # BFS from trunk-base seed (lowest-z node). Per CC, BFS independently
+    # so disconnected components get root parentIdx=-1.
+    n = len(skel_nodes)
+    visited = [False] * n
+    z_order = sorted(range(n), key=lambda i: skel_nodes[i]["z"])
+    from collections import deque
+    for root in z_order:
+        if visited[root]:
+            continue
+        visited[root] = True
+        skel_nodes[root]["parentIdx"] = -1
+        q = deque([root])
+        while q:
+            u = q.popleft()
+            for v in adj[u]:
+                if visited[v]:
+                    continue
+                visited[v] = True
+                skel_nodes[v]["parentIdx"] = u
+                q.append(v)
+
+    return skel_nodes
+
+
+def extract_skeleton_phase3(nodes, density_grid_tuple, m_obs_threshold,
+                              glimpse_threshold, reach_step_size=0.05,
+                              reach_max_failures=5, reach_max_steps=40,
+                              mutual_distance=0.10, tube_ratio_threshold=0.35,
+                              max_passes=4):
+    """Phase 3 top-level orchestrator. 3a → 3b → 3c → iterate. M_obs is
+    frozen (3b's deposits go to M_interp via the return tuple; the caller
+    attaches them to the consolidated candidate cloud)."""
+    t0 = time.time()
+    # 3a — initial ridge extraction (one-shot since M_obs is frozen).
+    fragments, ridge_stats = ridge_extraction(
+        nodes, density_grid_tuple, m_obs_threshold,
+        tube_ratio_threshold=tube_ratio_threshold)
+
+    # 3b + 3c iterate; 3a re-runs are no-ops because M_obs doesn't grow.
+    all_connections = []
+    all_deposits = []
+    reach_stats = {"reachConnections": 0, "reachAbsorptions": 0,
+                    "reachEndpointsProbed": 0}
+    taper_stats = {"taperProjectedTips": 0}
+    for pass_idx in range(max_passes):
+        pass_t = time.time()
+        # 3b — glimpse reach.
+        fragments, conns, deposits, rstats = axonal_glimpse_reach(
+            fragments, density_grid_tuple, glimpse_threshold,
+            step_size=reach_step_size, max_failures=reach_max_failures,
+            max_steps=reach_max_steps, mutual_distance=mutual_distance)
+        for k in reach_stats:
+            reach_stats[k] += rstats[k]
+        all_connections.extend(conns)
+        all_deposits.extend(deposits)
+        # 3c — taper projection (only on remaining unconnected endpoints).
+        fragments, tip_anns, tstats = taper_project_tips(
+            fragments, all_connections, density_grid_tuple)
+        for k in taper_stats:
+            taper_stats[k] += tstats[k]
+        # Convergence: if 3b made no new connections AND no new absorptions
+        # AND 3c made no new tip projections, stop.
+        if rstats["reachConnections"] == 0 and rstats["reachAbsorptions"] == 0 \
+                and tstats["taperProjectedTips"] == 0:
+            break
+
+    skel_nodes = fragments_to_skeleton_nodes(
+        fragments, all_connections, nodes, density_grid_tuple)
+    t_total = time.time() - t0
+
+    # Attach M_interp absorption_count to nearest consolidated candidate
+    # (Posture-B: M_interp lives on the observational node cloud, separate
+    # channel from M_obs).
+    if all_deposits and nodes:
+        cand_pts = np.array([[n["x"], n["y"], n["z"]] for n in nodes])
+        from scipy.spatial import cKDTree
+        tree = cKDTree(cand_pts)
+        deposit_pts = np.array([d[0] for d in all_deposits])
+        _, nearest_idx = tree.query(deposit_pts)
+        for ni in nearest_idx:
+            mi = nodes[ni]["memory"]["M_interp"]
+            mi["absorption_count"] = mi.get("absorption_count", 0) + 1
+
+    return skel_nodes, {
+        "phase3TotalMs": int(t_total * 1000),
+        "phase3MObsThreshold": float(m_obs_threshold),
+        "phase3GlimpseThreshold": float(glimpse_threshold),
+        "ridge": ridge_stats,
+        "reach": reach_stats,
+        "taper": taper_stats,
+        "skeletonNodes": int(len(skel_nodes)),
+        "skeletonRoots": int(sum(1 for n in skel_nodes if n["parentIdx"] < 0)),
+        "skeletonEdges": int(sum(1 for n in skel_nodes if n["parentIdx"] >= 0)),
+        "skeletonFragments": int(len([f for f in fragments if len(f) >= 2])),
+        "phase3Passes": pass_idx + 1,
+    }
+
+
 # ── Top-level pipeline ──────────────────────────────────────────────────
 
 def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
@@ -946,9 +1690,16 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
                   consolidation_voxel=0.05, n_workers=None,
                   passes=1, eps_memory=0.005,
                   probe_length=0.10, perp_offset=0.04,
-                  density_voxel=0.05, density_sigma_voxels=2.0):
-    """Stage N.2.1 end-to-end: Phase 1 + Phase 2a + Phase 2b, looped over
-    `passes` with monotone M_obs growth and stability-based termination."""
+                  density_voxel=0.05, density_sigma_voxels=2.0,
+                  ridge_threshold_percentile=75.0,
+                  glimpse_threshold_percentile=45.0,
+                  reach_step_size=0.05,
+                  mutual_distance=0.25,
+                  tube_ratio_threshold=0.35,
+                  phase3_max_passes=4):
+    """Stage N.2.2 end-to-end: Phase 1 + Phase 2 (a + b + c patient
+    iteration) + Phase 3 (a + b + c interleaved per 3d). M_obs frozen
+    once Phase 2 terminates; Phase 3's deposits write M_interp only."""
     t0 = time.time()
     # Load + center cloud (Z-up source frame, mirrors lidar_extract).
     pts_raw = load_pointcloud(laz_path)
@@ -1084,7 +1835,7 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
         # Phase 2b — orientation tomography (rebuilt density field each
         # pass since the candidate set grew).
         t4 = time.time()
-        nodes, tomo_stats = orientation_tomography(
+        nodes, tomo_stats, _density_grid_ret = orientation_tomography(
             nodes, k_orient=k_orient,
             probe_length=probe_length,
             perp_offset=perp_offset,
@@ -1115,16 +1866,45 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
         if pass_idx > 0 and m_obs_delta < eps_memory:
             break
 
-    # Wire-node assembly: carry the M_obs channels + tomography classification
-    # + axis so the LidarWorkstage heatmap layer can color by channel without
-    # a second round-trip.
-    wire_nodes = []
+    # ── Phase 3 — skeleton extraction (ridge + reach + taper) ─────────
+    # Posture-B-pure: operates on the density grid built from candidate
+    # positions (rendered-pixel-recovered) + the per-candidate tomography
+    # classification (also rendered-derived). No source-3D label reads.
+    # M_obs is frozen; 3b's deposits go to M_interp (separate channel).
+    phase3_stats = {}
+    skeleton_nodes = []
+    if _density_grid_ret is not None:
+        t5 = time.time()
+        # Pick thresholds relative to the current M_obs scalar field — the
+        # ridge tracer wants "high-density tube" voxels, the glimpse reach
+        # wants "evidence-bearing but below ridge" voxels.
+        _grid_for_thresh = _density_grid_ret[0]
+        ridge_thresh = float(np.percentile(_grid_for_thresh[_grid_for_thresh > 0],
+                                            ridge_threshold_percentile))
+        glimpse_thresh = float(np.percentile(_grid_for_thresh[_grid_for_thresh > 0],
+                                               glimpse_threshold_percentile))
+        skeleton_nodes, phase3_stats = extract_skeleton_phase3(
+            nodes, _density_grid_ret,
+            m_obs_threshold=ridge_thresh,
+            glimpse_threshold=glimpse_thresh,
+            reach_step_size=reach_step_size,
+            mutual_distance=mutual_distance,
+            tube_ratio_threshold=tube_ratio_threshold,
+            max_passes=phase3_max_passes,
+        )
+        phase3_stats["phase3WallMs"] = int((time.time() - t5) * 1000)
+
+    # Memory-cloud wire nodes — the consolidated candidate set with M_obs
+    # + tomography channels, consumed by the LidarWorkstage M_obs heatmap
+    # layer (renamed `memoryNodes` at N.2.2; was `nodes` at N.2.1).
+    memory_nodes = []
     classifications = {name: 0 for name in CLS_NAMES.values()}
     classifications["unclassified"] = 0
     for n in nodes:
         m = n["memory"]["M_obs"]
         tomo = n["memory"]["tomography"]
-        wire_nodes.append({
+        mi = n["memory"]["M_interp"]
+        memory_nodes.append({
             "x": n["x"], "y": n["y"], "z": n["z"],
             "radius": n["radius"], "parentIdx": n["parentIdx"],
             "classification": n["memory"]["classification"],
@@ -1132,6 +1912,7 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
             "medialCount": m["medial_count"],
             "bodyCount": m["body_count"],
             "rigsSeen": m["rigs_seen"],
+            "absorptionCount": mi.get("absorption_count", 0),
             "tomoAxis": tomo["axis"] if tomo else None,
             "tomoConfidence": tomo["confidence"] if tomo else 0.0,
             "tomoTop2Ratio": tomo["top2_ratio"] if tomo else 0.0,
@@ -1139,9 +1920,22 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
         c = n["memory"]["classification"]
         classifications[c] = classifications.get(c, 0) + 1
 
+    # Wire `nodes` now carries the Phase 3 skeleton — the CylinderSkeleton
+    # consumer renders this. Falls back to memory_nodes if Phase 3 produced
+    # nothing (e.g., M_obs grid uninitialised — pathological case).
+    wire_nodes = skeleton_nodes if skeleton_nodes else memory_nodes
+
     median_r = 0.02
+    # Best-effort median radius from skeleton-node provisional radii so the
+    # trunk/branch InstancedMesh split in CylinderSkeleton has a usable
+    # divider at the visual gate (Phase 4 / N.2.3 will replace with proper
+    # pipe-model radii).
+    if skeleton_nodes:
+        median_r = float(np.median([n["radius"] for n in skeleton_nodes]))
     result = {
         "nodes": wire_nodes,
+        "memoryNodes": memory_nodes,
+        "skeletonNodes": skeleton_nodes,
         "stats": {
             "pointsRaw": int(len(pts_raw)),
             "pointsDownsampled": int(len(pts)),
@@ -1156,13 +1950,16 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
             "totalMedialPixels": int(total_medial_pixels),
             "candidatesPreConsolidation": int(pre_consolidation_total),
             "nodes": len(wire_nodes),
+            "memoryNodeCount": len(memory_nodes),
+            "skeletonNodeCount": len(skeleton_nodes),
             "cylinders": sum(1 for n in wire_nodes if n["parentIdx"] >= 0),
-            "trunkLike": 0,
-            "branchLike": len(wire_nodes),
+            "trunkLike": sum(1 for n in wire_nodes if n.get("radius", 0) >= median_r),
+            "branchLike": sum(1 for n in wire_nodes if n.get("radius", 0) < median_r),
             "medianRadius": median_r,
             "classifications": classifications,
             "tomography": tomo_stats,
             "deposit": deposit_stats_aggregate,
+            "phase3": phase3_stats,
             "elapsedMs": int((time.time() - t0) * 1000),
             "loadMs": int(t_load * 1000),
             "observeMs": int(t_observe_total * 1000),
@@ -1187,17 +1984,26 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
             "perpOffset": float(perp_offset),
             "densityVoxel": float(density_voxel),
             "densitySigmaVoxels": float(density_sigma_voxels),
-            "stage": "N.2.1",
+            "ridgeThresholdPercentile": float(ridge_threshold_percentile),
+            "glimpseThresholdPercentile": float(glimpse_threshold_percentile),
+            "reachStepSize": float(reach_step_size),
+            "mutualDistance": float(mutual_distance),
+            "tubeRatioThreshold": float(tube_ratio_threshold),
+            "phase3MaxPasses": int(phase3_max_passes),
+            "stage": "N.2.2",
         },
         "memoryScaffold": {
             "channels": ["M_obs.silhouette_count", "M_obs.medial_count",
                          "M_obs.body_count", "M_obs.rigs_seen",
                          "tomography.classification", "tomography.axis",
                          "tomography.confidence", "tomography.top2_ratio",
-                         "M_interp.*"],
-            "perPointCount": len(wire_nodes),
-            "note": ("M_obs populated by Phase 2a mask re-lookup + Phase 2b "
-                     "tomography. M_interp still empty (Phase 3 / N.2.2)."),
+                         "M_interp.absorption_count"],
+            "perPointCount": len(memory_nodes),
+            "note": ("M_obs from Phase 2a + 2b is frozen at the Phase 2 "
+                     "termination snapshot. Phase 3b's axonal glimpse-reach "
+                     "deposits commitment-records into M_interp.absorption_count "
+                     "(separate channel — safeguard against positive-feedback "
+                     "hallucination, per the brief's M_obs/M_interp distinction)."),
         },
         "perPassDiagnostics": per_pass,
     }
@@ -1242,6 +2048,18 @@ def main():
                     help="Phase 2b candidate-density field voxel size (m)")
     ap.add_argument("--densitySigmaVoxels", type=float, default=2.0,
                     help="Phase 2b Gaussian smoothing sigma in voxel units")
+    ap.add_argument("--ridgeThresholdPercentile", type=float, default=75.0,
+                    help="Phase 3a M_obs percentile above which a voxel is ridge-eligible")
+    ap.add_argument("--glimpseThresholdPercentile", type=float, default=45.0,
+                    help="Phase 3b M_obs percentile above which axonal reach can absorb")
+    ap.add_argument("--reachStepSize", type=float, default=0.05,
+                    help="Phase 3b probe-cone step size (m)")
+    ap.add_argument("--mutualDistance", type=float, default=0.25,
+                    help="Phase 3b mutual-recognition convergence radius (m); proximity-merge radius is 2x this")
+    ap.add_argument("--tubeRatioThreshold", type=float, default=0.35,
+                    help="Phase 3a tube-ratio threshold |λ_along| / |λ_perp_avg|")
+    ap.add_argument("--phase3MaxPasses", type=int, default=4,
+                    help="Phase 3d max interleave iterations")
     ap.add_argument("--pitch", type=float, default=0.3,
                     help="Spiral pitch ratio (vertical-rise-per-orbit / tree height)")
     ap.add_argument("--voxelSize", type=float, default=0.03,
@@ -1285,6 +2103,12 @@ def main():
         perp_offset=args.perpOffset,
         density_voxel=args.densityVoxel,
         density_sigma_voxels=args.densitySigmaVoxels,
+        ridge_threshold_percentile=args.ridgeThresholdPercentile,
+        glimpse_threshold_percentile=args.glimpseThresholdPercentile,
+        reach_step_size=args.reachStepSize,
+        mutual_distance=args.mutualDistance,
+        tube_ratio_threshold=args.tubeRatioThreshold,
+        phase3_max_passes=args.phase3MaxPasses,
     )
     result["treeId"] = args.treeId
     out_path = persist_run(args.treeId, args.N, result, out_override=args.out)
