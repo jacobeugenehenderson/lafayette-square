@@ -101,7 +101,8 @@ Both Teacup (per-cloud) and Condition editor (per-condition) share the same oute
 │ [ CLOUD CHAMBER ● ] [ GROUND ]                                                │
 ├── viewport ──────────────────────────────────────────┬── right rail ─────────┤
 │                                                      │ ▼ Time of Day         │
-│                                                      │   [TodChannel UI]     │
+│                                                      │   [time card: TOD +  │
+│                                                      │    Year + Playback]  │
 │                                                      ├───────────────────────┤
 │                                                      │ ▼ <rail body — see    │
 │                                                      │     §5.1 or §5.2>     │
@@ -122,7 +123,7 @@ Header pattern matches Arborist's `ProceduralWorkstage` exactly: back button on 
 ```
 ┌── right rail ──────────────┐
 │ ▼ Time of Day              │
-│   [TodChannel UI]          │
+│   [time card]              │
 ├────────────────────────────┤
 │ Previewed under:           │
 │ [ Thunderstorm ▾ ]         │  ← condition selector for the sky backdrop
@@ -154,7 +155,7 @@ Header pattern matches Arborist's `ProceduralWorkstage` exactly: back button on 
 ```
 ┌── right rail ──────────────────────┐
 │ ▼ Time of Day                      │
-│   [TodChannel UI]                  │
+│   [time card]                      │
 ├────────────────────────────────────┤
 │ ▼ Sky modulations                  │
 │   darken      [TodChannel]         │
@@ -194,18 +195,28 @@ The "When this condition fires" block at the bottom uses plain range sliders (no
 
 ---
 
-## 6. The TOD card and the autosave model
+## 6. The time card, the per-channel TodChannels, and the autosave model
 
-Both rails carry the **same TOD card on top** — the existing `<TodChannel>` primitive from `src/cartograph/TodChannel.jsx`, untouched. Imports the project-wide design tokens from `src/tokens/design.css`. No fork, no copy.
+Two distinct primitives, both on the right rail of every workstage.
 
-**Per the TodChannel contract:**
+**The unified time card on top** — `src/components/DawnTimeline.jsx`. Three rows:
+
+1. **Time of Day strip** — 7 named TOD waypoints (`dawn / sunrise / noon / golden / sunset / dusk / night`), draggable thumb, click waypoint to jump.
+2. **Time of Year strip** — 4 season-name anchors at solstices + equinoxes (Spring/Summer/Autumn/Winter, ~doy 79 / 172 / 265 / 355), draggable thumb, click anchor to jump. Season-band background (winter/spring/summer/autumn) shades the track.
+3. **Playback row** — Play/pause, speed selector (1× / 60× / 600× / 3600×), TOD-only vs TOD+Year scope toggle, Return-to-Live. Driver runs at 10Hz, advances `setTime` scaled by `useTimeOfDay.timeSpeed`.
+
+Scrubbing the year strip moves both the calendar AND `useTimeOfDay.currentTime` via bidirectional sync — `CelestialBodies` consumes `useTimeOfDay.currentTime` through `SunCalc(currentTime, lat, lon)`, so the sun position responds to year-position immediately (seasonal sun motion). Sky color does NOT yet respond to year (still TOD-keyed only — 4-anchor seasonal sky matrix is the planned follow-up; see `NOTES.md` 2026-05-20 ADR).
+
+**Per-channel TodChannel rows below** — `src/cartograph/TodChannel.jsx`. One row per authored field (cloud-shape param, sky modulation, etc.). Each row IS a TodChannel — separate primitive from the time card, just consumes the same `useTimeOfDay` slot system:
 
 - Each authored value is one of 7 named TOD slots (`dawn / sunrise / noon / golden / sunset / dusk / night`).
 - A channel can be **flat** (one value) or **animated** (per-slot keyframes with optional ramp in/out).
 - Slot-chip strip below each slider lets the operator attach/detach keyframes.
-- Editability gating: when the playhead is parked on an attached slot, sliders are editable; off-slot they're read-only at the interpolated value. (Same rules across all callers.)
+- Editability gating: when the playhead is parked on an attached slot, sliders are editable; off-slot they're read-only at the interpolated value.
 
 **Autosave-on-edit.** No Save button anywhere in the app. Drag a slider → the channel commits the new keyframe at the active slot → write debounces to disk through `serve.js` → next reload reflects the change. Same model as Stage. The only explicit action in the whole app is **Revert** (per-condition, per-channel) — and that's a recovery affordance, not a finisher.
+
+**Kit clock + calendar primitives.** Both stores (`useTimeOfDay` + `useCalendar`) are shared singletons under `src/hooks/`, with bidirectional sync. Production runtime mounts `<ClockCalendarPump mode="live">` to advance both from wall time; authoring tabs let operator scrub via the time card. See `meteorologist/NOTES.md` 2026-05-20 ADR for the architecture.
 
 **Volumetrically:** 52 clouds × 13 params × 7 slots ≈ 4,700 numeric values in the Teapot, plus 16 conditions × ~6 sky-mod channels × 7 slots ≈ 670 values in Conditions, plus per-cloud-in-condition expression flags. Authored sparsely (most slots inherit the flat default until the operator touches them).
 

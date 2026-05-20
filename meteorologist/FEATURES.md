@@ -64,7 +64,12 @@ Below the header, two slot tabs: **CLOUD CHAMBER** | **GROUND**. Both render the
 
 Right rail, top to bottom:
 
-- **Time of Day card** (top, persistent across all workstages). The Cartograph `<DawnTimeline>` scrub bar; reads/writes `useTimeOfDay` global state. Scrubbing here moves the sun, evolves the imported sky envelope, and (Phase 4b.2+) animates the cloud's TodChannel-bound params.
+- **Time card** (top, persistent across all workstages). The unified `<DawnTimeline>` time card (`src/components/DawnTimeline.jsx`) — three rows:
+  - **Time of Day strip** — 7 named TOD waypoints (dawn / sunrise / noon / golden / sunset / dusk / night), draggable thumb, click waypoint to jump.
+  - **Time of Year strip** — 4 season-name anchors at solstices + equinoxes (Spring / Summer / Autumn / Winter), draggable thumb, click anchor to jump, season-band background tinting the track.
+  - **Playback row** — Play/pause, speed selector (1× / 60× / 600× / 3600×), TOD-only vs TOD+Year scope toggle, Return-to-Live button.
+
+  Reads/writes `useTimeOfDay` + `useCalendar` global stores (bidirectionally synced — scrubbing either dimension updates both). Scrubbing the year-strip moves the sun position via SunCalc (seasonal sun motion — winter sun lower, summer sun higher). Phase 4b.2+ also animates the cloud's TodChannel-bound params per TOD scrub. Sky color responds to TOD but NOT yet to year (4-anchor seasonal sky matrix is queued; see `BACKLOG.md`).
 - **Cloud parameters card** — one `<TodChannel>` row per param, grouped by Shape (coverage, density, thickness, baseAlt, warpFreq, warpAmp, noiseSeed, octaves), Lighting (sunScatter, ambientFloor, edgeSilver, shadowStrength), and Motion (drift). 13 params total. Each TodChannel can be flat (one value) or animated (per-TOD-slot keyframes). Editability gating: parked-on-attached-slot = editable; off-slot = read-only at the interpolated value.
 
 Autosave-on-edit. Drag a slider → `PUT /api/meteorologist/presets/<id>` fires ~500ms after the operator stops dragging. Animate-arm toggle promotes a flat param to keyframed; chip-strip below each slider attaches/detaches slot keyframes; per-channel Revert restores ship defaults (when Phase 3b lands; not present today for cloud params).

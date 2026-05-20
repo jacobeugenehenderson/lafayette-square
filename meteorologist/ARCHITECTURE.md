@@ -71,6 +71,8 @@ This dovetails with `feedback_preview_uses_production_pipeline` (which Preview a
 
 **Composed-not-reproduced extends to trees.** The Ground slot mounts one tree from Arborist's per-Look bake (`public/baked/<look>/trees/<species>.glb`), again via the existing `<InstancedTrees>` consumer. Arborist's substitution pipeline + LOD tiers + bark/leaf atlas all apply unchanged.
 
+**Composed-not-reproduced extends to time + calendar.** The kit clock + calendar primitives (`useTimeOfDay` + `useCalendar`, shipped 2026-05-20) are shared singletons under `src/hooks/`, bidirectionally synced. CanaryScene's `<CelestialBodies>` reads `useTimeOfDay.currentTime` for `SunCalc(currentTime, lat, lon)` — so scrubbing the year-strip in Meteorologist's unified time card moves the sun position seasonally (winter lower, summer higher) without any consumer-side changes. Same anchor, multiple consumers; the kit primitive does the routing. Sky color responds to TOD but not yet year — 4-anchor seasonal sky matrix is queued; see `NOTES.md` 2026-05-20 ADR + `BACKLOG.md`.
+
 **Decision-history pointer:** the in-Stage decision's full rejection-of-alternatives is captured in `NOTES.md`'s pre-reversal entries (kept for posterity). The 2026-05-19 reversal entry there explains why the consume-from-Stage realization invalidated the original rationale.
 
 ---
@@ -166,7 +168,7 @@ src/components/
 src/cartograph/
   TodChannel.jsx                      # IMPORTED — Meteorologist's right-rail rows reuse this
 src/components/
-  DawnTimeline.jsx                    # IMPORTED — Meteorologist's scrub bar
+  DawnTimeline.jsx                    # IMPORTED — unified time card (TOD + Year + Playback)
 src/tokens/
   design.css                          # IMPORTED — shared design tokens
 
