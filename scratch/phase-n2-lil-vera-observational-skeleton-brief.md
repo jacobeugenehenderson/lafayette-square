@@ -89,7 +89,7 @@ Rev. 1 (Tycho's `604dfed` / `de00a30` / `0d9102d`) produced a working apparatus 
 - ✗ **No species-conditioned prior** to discriminate "geometrically-plausible-but-botanically-impossible" candidates (leaf mass at impossible structural positions misclassified as junction; 63% junction rate at N=500 vs botanical ~8%).
 - ✗ Produced dense voxel-node graphs (40K nodes, 132K cylinders for one tree) rather than sparse parametric splines (target: 100–500 splines per tree, for use as procedural-generator training data downstream).
 
-**Rev. 2 fixes those five gaps by:** (1) adding the iteration loop with three-outcome elimination + masked rasterization as the structural primitive; (2) introducing the species-conditioned botanical-priors file as a third inference channel that fundamentally conditions classification (input, not validation); (3) specifying parametric splines as the output shape; (4) elevating neuronal mutual recognition to the load-bearing connectivity primitive (vs ridge tracing alone or MST closure shortcut).
+**Rev. 2 fixes those five gaps by:** (1) adding the iteration loop with three-outcome elimination + masked rasterization as the structural primitive (gaps 1+2+3); (2) introducing the species-conditioned botanical-priors file as a third inference channel that fundamentally conditions classification (input, not validation) (gap 4); (3) specifying parametric splines as the output shape (gap 5); (4) elevating neuronal mutual recognition to the load-bearing connectivity primitive (vs ridge tracing alone or MST closure shortcut). Five gaps → four mechanisms (some gaps share a mechanism); all five are addressed.
 
 **Rev. 2 is a fresh build in a new module — `arborist/lil_vera_v2.py`.** The architecture is woven throughout (iteration loop touches Phase 1 rasterization, Phase 2 classification, Phase 3 extraction, Phase 4 elimination, Phase 5 radii, output emission); surgical retrofit was not a coherent path. Tycho's rev. 1 commits stand as **baseline comparison artifacts**:
 
@@ -122,7 +122,7 @@ What gets newly authored:
 - Point cloud P₀ (source frame; pulled via `lidar_extract.py`'s `load_pointcloud`)
 - **Species identity** (required, e.g., `acer_saccharum`) — conditions every classification decision
 - **Species priors file** at `arborist/state/<species>/botanical-priors.json` (see "Species priors file specification" section below)
-- Hyperparameters: N (rig count), K_orient (tomography sample count, default 200), pitch ratio, ridge thresholds, glimpse threshold, rejection thresholds (sheet-classification confidence cutoff, flat-distribution cutoff, prior-violation confidence cutoff), termination criterion (ε_residual = fraction of P₀ remaining below threshold OR no-progress passes), max_passes (soft cap, default 10)
+- Hyperparameters: N (rig count), K_orient (tomography sample count, default 200), pitch ratio, ridge thresholds, glimpse threshold, ε_lock (point-to-spline distance for lock-in), ε_prior (per-voxel `M_prior` cutoff below which ridge tracing won't traverse), rejection thresholds (sheet-classification confidence cutoff, flat-distribution cutoff, prior-violation confidence cutoff), K_rigs_min (minimum `rigs_seen` observational confidence before a point can be marked rejected; default ~5 — prevents over-eager rejection of points seen by too few rigs), termination criterion (ε_residual = fraction of P₀ remaining below threshold OR no-progress passes), max_passes (soft cap, default 10), --seed (RNG seed for determinism)
 
 ### Rig — 3 cameras at 120° (unchanged from rev. 1)
 
@@ -141,6 +141,12 @@ Initialize:
   M_obs ← empty 3D field  (observational memory; passive evidence; pure)
   M_interp ← empty 3D field  (interpretation memory; extraction commitments)
   priors ← load(arborist/state/<species>/botanical-priors.json)
+  ground ← min y of P₀ (bottom of source cloud bbox)
+  tree_height ← (max y of P₀) - ground
+                (these two are Posture-B-allowed bbox queries on the source
+                 cloud — same low-bandwidth scalar carve-out as trunk_axis;
+                 used to compute height_frac for prior queries. Not per-
+                 point labels.)
   trunk_axis ← RANSAC vertical fit through densest Z-column of P₀
                 (provides tree-frame coords for prior queries:
                  height_frac ∈ [0,1] above ground; radial_dist from axis.
@@ -171,6 +177,13 @@ Loop until terminated:
       Unimodal one-sided        → candidate-tip
       Flat                      → candidate-noise
       Distributed on great circle → candidate-sheet
+    geometric_confidence ← measure of how cleanly the distribution shape
+      fits the class (e.g., normalized peak sharpness for unimodal classes;
+      top2_ratio of the highest channel-score vs second-highest for
+      bimodal/multimodal; inverse-variance for flat classification). ∈ [0, 1].
+      Tycho's rev. 1 used a similar scalar (`tomoConfidence`, `tomoTop2Ratio`);
+      v2 baby computes its own — exact formula is implementation choice as
+      long as it's deterministic + monotonic in classification quality.
     height_frac ← (c.y - ground) / tree_height
     radial_dist ← distance from c to trunk_axis
     inferred_radius ← perpendicular spread of M_obs around c
@@ -225,6 +238,7 @@ Loop until terminated:
   #     triggers connection. Skip this primitive and the algorithm is just
   #     path-finding through a memory field; geometric fragments emerge
   #     without enforced connectivity (the QSM failure mode).
+  reached_chains ← []
   For each endpoint e ∈ (current-pass ridge_chains ∪ prior-pass locked-in
                           spline endpoints):
     Spawn confidence cones in mother-direction + child-direction(s) along
@@ -235,8 +249,10 @@ Loop until terminated:
                                   prior_likelihood > ε_prior AND
                                   tomography axis aligns with cone direction:
       Mark c as candidate-absorption.
-    Commit absorption if absorbed candidates form a coherent axial chain.
-    MUTUAL RECOGNITION: if e's probe reaches another locked-in endpoint f
+    Commit absorption if absorbed candidates form a coherent axial chain →
+      append to reached_chains as a new chain extending from e.
+    MUTUAL RECOGNITION: if e's probe reaches another endpoint f (either a
+    current-pass ridge endpoint OR a prior-pass locked-in spline endpoint)
     AND f's reciprocal probe in the opposite direction would reach e back,
     declare an edge (e, f). Recognition is symmetric by construction; both
     ends must independently signal toward each other.
@@ -249,12 +265,18 @@ Loop until terminated:
     must still support continued growth.
 
   # 3c: taper-projected tip extrapolation
-  For each unconnected chain endpoint (candidate tip):
+  For each unconnected chain endpoint (candidate tip) in (ridge_chains ∪
+                                                           reached_chains):
     Estimate observed taper rate τ from M_obs perpendicular spread along
     chain's last segments.
-    If τ consistent → project tip at arc-length r/τ beyond last-observed
-                       segment along last-observed axial direction.
-    If τ inconsistent → flag uncertain; conservative projection.
+    If τ consistent → extend the chain by appending a taper-projected
+                       endpoint at arc-length r/τ beyond the last-observed
+                       segment along the chain's last-observed axial
+                       direction. Mark `tipExtrapolated: true` on this
+                       endpoint.
+    If τ inconsistent → flag the endpoint uncertain; conservative projection
+                         (use minimum observed τ) OR leave open for next
+                         pass's M_obs deposit to refine τ.
     NOTE: Phase 5's pipe-model pipe-counting and Phase 3c's taper-projection
     are TWO VIEWS of the same Murray's-law relationship. They must agree
     per chain endpoint at validation time; disagreement is a diagnostic to
@@ -262,6 +284,8 @@ Loop until terminated:
 
   # Spline fitting
   new_chains ← merge (ridge_chains + reached_chains), dedup by proximity.
+                (Phase 3c's taper extensions live inside the chains they
+                 extend, so they flow naturally into spline fitting below.)
   new_splines ← fit parametric splines through new_chains
                 (Catmull-Rom or scipy.interpolate.splprep; 3-10 control
                  points per spline based on arc-length / curvature).
@@ -361,7 +385,7 @@ The Rubin test: dark matter doesn't vanish when one telescope goes offline.
       {"heightFrac": 0.5, "radialDist": 4.0,  "rMin": 0.005,"rMax": 0.04, "rMode": 0.015},
       {"heightFrac": 0.8, "radialDist": 3.0,  "rMin": 0.001,"rMax": 0.01, "rMode": 0.003},
       {"heightFrac": 1.0, "radialDist": 5.0,  "rMin": 0.0,  "rMax": 0.005,"rMode": 0.0}
-      // ... ~12-20 samples covering position space; bilinearly interpolated
+      // ... ~12-20 samples covering position space; Delaunay-linear interpolated per spec above
     ]
   },
   "branchAngleDistribution": {
@@ -502,7 +526,7 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
 }
 ```
 
-**Total spline count target: 100–500 per tree.** Not 40K nodes. Parametric centerlines that a procedural generator can consume directly.
+**Total spline count target: ~hundreds per tree** (soft range 100–800; small/young specimens may legitimately have ~80). Not 40K nodes. Parametric centerlines that a procedural generator can consume directly.
 
 ---
 
@@ -559,7 +583,7 @@ If N.3.2 gate doesn't pop visibly: spike concluded honestly. Phase T fallback (p
 
 - Do NOT modify `lidar_extract.py`, `bidirectional_skeleton.py`, OR `lil_vera.py`. The first two stay as comparison baselines in the alignment oracle (layers 2 and 3); the third stays as Tycho's rev. 1 v1 baseline (layer 5). Rev. 2 publishes its own layer 6.
 - Do NOT integrate into `generate-procedural.js`. Cycle 1 produces the *measurement apparatus*; procedural integration is a future cycle conditioned on N.3.2 passing.
-- Do NOT consume source 3D positions as algorithm input (Posture B violation). Source positions feed only the rasterizer's MASKED renders (rasterizer takes `pts_world[P]`, not all of P₀). Species identity IS allowed as input — that's the third inference channel.
+- Do NOT consume source 3D positions as per-point algorithm input. Source positions feed only: (a) the rasterizer's MASKED renders (`pts_world[P]`); (b) the explicit Posture-B scalar carve-outs documented in the Posture section — RANSAC trunk_axis derivation + ground/tree_height bbox queries (all low-bandwidth scalars, not per-point labels); (c) final ground-truth validation. Species identity IS allowed as input — that's the third inference channel.
 - Do NOT extend to multiple specimens beyond N.3.4's subsampling-robustness test. One specimen for development.
 - Do NOT touch other species or Phase G.1 procedural-runway work. Parallel cycle.
 - Do NOT add iPhone-photo support, web UI, or open-source release scaffolding.
