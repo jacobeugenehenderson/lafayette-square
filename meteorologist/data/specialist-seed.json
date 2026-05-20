@@ -1,0 +1,580 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-20T00:00:00Z",
+  "specialist": "Nimbus",
+  "notes": "Calibrated against the 52 reference photos in public/clouds/photos/. Pass 1 surveyed the family ranges; Pass 2 tuned 12 dials per preset relative to family monotonicity (translucidus < perlucidus < opacus; calvus < capillatus; humilis < mediocris < congestus). Pass 3 wrote operator-facing descriptions. cumulus_humilis copied verbatim from public/clouds/presets.json with preserve_authored flag. Stub kinds (rain/snow/lightning) get 12 cloud-shader params seeded from their parent sky-state (nimbostratus or cumulonimbus); the cloud morphology is what gets rendered above the precip particles when those stubs ship in v1.x. Fog kinds also carry 12 cloud-shader params (low haze layer), in addition to the kind-specific tint that lives in presets.json.",
+  "presets": [
+    {
+      "id": "clear_sky",
+      "params": {
+        "coverage": 0.00, "density": 0.00, "thickness": 1, "baseAlt": 1500,
+        "warpFreq": 0.0000, "warpAmp": 0, "noiseSeed": 0, "octaves": 1,
+        "sunScatter": 0.00, "ambientFloor": 0.00, "edgeSilver": 0.00, "shadowStrength": 0.00
+      },
+      "description": "A clean blue dome with nothing between you and the sun. The signature of a stable high-pressure day — crisp shadows, deep saturation overhead, gentler color at the horizon. Best for hero shots that want the sky to feel infinite, or to anchor a season's noon-summer reference. Pair with strong direct sun and minimal haze.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cirrus_fibratus",
+      "params": {
+        "coverage": 0.45, "density": 0.22, "thickness": 600, "baseAlt": 9000,
+        "warpFreq": 0.0009, "warpAmp": 110, "noiseSeed": 11, "octaves": 3,
+        "sunScatter": 1.75, "ambientFloor": 0.55, "edgeSilver": 1.35, "shadowStrength": 0.15
+      },
+      "description": "Long parallel fibers drawn out across the upper sky by high-altitude wind, like falling streamers brushed sideways. Translucent enough that blue shows through cleanly, but enough of them to fill a wide swath of the dome. Catches sunset gold beautifully. Suggests fair weather now, a front incoming in a day or so.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cirrus_uncinus",
+      "params": {
+        "coverage": 0.35, "density": 0.30, "thickness": 800, "baseAlt": 9200,
+        "warpFreq": 0.0013, "warpAmp": 160, "noiseSeed": 12, "octaves": 4,
+        "sunScatter": 1.80, "ambientFloor": 0.55, "edgeSilver": 1.45, "shadowStrength": 0.18
+      },
+      "description": "Mares' tails — thin curls of ice with a hooked top, the wisp trailing down like a comma. Scattered widely across the upper sky, each one its own little brushstroke. Translucent and bright against deep blue. A poetic sky, and a reliable early signal that the weather is about to shift in the next day.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cirrus_spissatus",
+      "params": {
+        "coverage": 0.30, "density": 0.60, "thickness": 1200, "baseAlt": 8500,
+        "warpFreq": 0.0009, "warpAmp": 200, "noiseSeed": 13, "octaves": 4,
+        "sunScatter": 1.10, "ambientFloor": 0.40, "edgeSilver": 0.95, "shadowStrength": 0.50
+      },
+      "description": "Dense cirrus thick enough to mute the sun behind it — the leftover anvil debris from a storm long gone. Darker and weightier than the wispy cirrus species. At sunset it stands as a silhouette with a brilliant rim where the sun rakes its edge. Reads as the morning-after of yesterday's afternoon storm.",
+      "confidence": "high",
+      "flags": ["density_inferred_from_silhouette"]
+    },
+    {
+      "id": "cirrus_castellanus",
+      "params": {
+        "coverage": 0.18, "density": 0.35, "thickness": 1200, "baseAlt": 8800,
+        "warpFreq": 0.0015, "warpAmp": 240, "noiseSeed": 14, "octaves": 5,
+        "sunScatter": 1.55, "ambientFloor": 0.50, "edgeSilver": 1.20, "shadowStrength": 0.35
+      },
+      "description": "Cirrus with tiny turret-tops bubbling upward from a thin shared base — a sign of instability up at altitude. Lighter and more scattered than its cumulus-shaped cousins, but the same telltale crenellation. Often a hint that afternoon thunderstorms could build later. A connoisseur's cloud, easy to miss if you aren't looking for it.",
+      "confidence": "medium",
+      "flags": ["poor_reference_photo"]
+    },
+    {
+      "id": "cirrus_floccus",
+      "params": {
+        "coverage": 0.40, "density": 0.45, "thickness": 900, "baseAlt": 8800,
+        "warpFreq": 0.0018, "warpAmp": 230, "noiseSeed": 15, "octaves": 5,
+        "sunScatter": 1.55, "ambientFloor": 0.50, "edgeSilver": 1.25, "shadowStrength": 0.30
+      },
+      "description": "Small tufts of cirrus, each one ragged and self-contained, often with a wispy trail falling underneath. Scattered across the upper sky like cotton balls pulled apart by the wind. A festive, decorative sky. Often shares the canvas with a thinner cirrus layer above, layering detail at two altitudes.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cirrocumulus_stratiformis",
+      "params": {
+        "coverage": 0.90, "density": 0.55, "thickness": 500, "baseAlt": 8000,
+        "warpFreq": 0.0028, "warpAmp": 80, "noiseSeed": 21, "octaves": 4,
+        "sunScatter": 1.35, "ambientFloor": 0.55, "edgeSilver": 1.15, "shadowStrength": 0.30
+      },
+      "description": "A mackerel sky — countless tiny rippled cells covering most of the dome in a fine fish-scale pattern. Reads almost as texture rather than discrete clouds. Bright against the blue, with the grain of the ripples picking up direction from the upper wind. Beautiful at golden hour when the ripples catch warm light.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cirrocumulus_lenticularis",
+      "params": {
+        "coverage": 0.15, "density": 0.50, "thickness": 400, "baseAlt": 8200,
+        "warpFreq": 0.0006, "warpAmp": 50, "noiseSeed": 22, "octaves": 3,
+        "sunScatter": 1.45, "ambientFloor": 0.55, "edgeSilver": 1.30, "shadowStrength": 0.30
+      },
+      "description": "A smooth lens-shaped cap riding a high-altitude standing wave — almond-shaped, edges feathering off into fibers. When the sun is directly behind, the cloud lights up with rainbow iridescence around its rim. Rare enough to be a small event when one appears. Doesn't drift; the wave is anchored to the terrain below.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cirrocumulus_floccus",
+      "params": {
+        "coverage": 0.45, "density": 0.42, "thickness": 600, "baseAlt": 8200,
+        "warpFreq": 0.0022, "warpAmp": 140, "noiseSeed": 23, "octaves": 4,
+        "sunScatter": 1.40, "ambientFloor": 0.50, "edgeSilver": 1.20, "shadowStrength": 0.32
+      },
+      "description": "High-altitude tufts — smaller and more delicate than altocumulus floccus, but cousins in shape. Each cell is a soft puff with a faint trail beneath. Spread across a large patch of sky with blue showing between. Reads as fair-weather decoration, often paired with a finer mackerel layer in the same scene.",
+      "confidence": "medium",
+      "flags": ["photo_appears_to_show_stratiformis_pattern"]
+    },
+    {
+      "id": "cirrocumulus_castellanus",
+      "params": {
+        "coverage": 0.30, "density": 0.48, "thickness": 900, "baseAlt": 8000,
+        "warpFreq": 0.0020, "warpAmp": 210, "noiseSeed": 24, "octaves": 5,
+        "sunScatter": 1.40, "ambientFloor": 0.50, "edgeSilver": 1.25, "shadowStrength": 0.38
+      },
+      "description": "Tiny high-altitude turrets sprouting from a thin shared base. Smaller-celled than altocumulus castellanus but the same physics — instability at altitude shouldering little towers upward. Reads as detailed, busy texture overhead, the kind of sky you keep glancing at. Often a quiet hint that the air aloft is unsettled, with bigger development possible later. A photographer's sky.",
+      "confidence": "medium",
+      "flags": ["poor_reference_photo"]
+    },
+    {
+      "id": "cirrostratus_fibratus",
+      "params": {
+        "coverage": 0.85, "density": 0.20, "thickness": 700, "baseAlt": 8500,
+        "warpFreq": 0.0006, "warpAmp": 70, "noiseSeed": 31, "octaves": 3,
+        "sunScatter": 1.60, "ambientFloor": 0.58, "edgeSilver": 1.00, "shadowStrength": 0.18
+      },
+      "description": "A nearly-uniform high veil with fibrous grain running through it — like a translucent silk pulled across the whole sky. The sun shines through unobstructed but slightly softened. Often capable of throwing a 22-degree halo around the sun or moon. Reads as a deteriorating weather sky; rain in 18 to 36 hours.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cirrostratus_nebulosus",
+      "params": {
+        "coverage": 0.95, "density": 0.18, "thickness": 600, "baseAlt": 8500,
+        "warpFreq": 0.0003, "warpAmp": 30, "noiseSeed": 32, "octaves": 2,
+        "sunScatter": 1.55, "ambientFloor": 0.60, "edgeSilver": 0.80, "shadowStrength": 0.12
+      },
+      "description": "A smooth featureless high veil — so even it can be hard to see, except for the soft glow it puts around the sun and the wide 22-degree halo it throws on a good day. The sun is undimmed but the blue is washed out. Quiet, watercolor weather. The same front-warning role as fibratus but smoother.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cirrostratus_duplicatus",
+      "params": {
+        "coverage": 0.92, "density": 0.32, "thickness": 1500, "baseAlt": 8200,
+        "warpFreq": 0.0005, "warpAmp": 60, "noiseSeed": 33, "octaves": 3,
+        "sunScatter": 1.35, "ambientFloor": 0.55, "edgeSilver": 0.90, "shadowStrength": 0.22
+      },
+      "description": "Two layered cirrostratus veils at slightly different altitudes — you can see them sliding past each other when one moves and the other doesn't. The sky gains depth from the parallax. Stronger overall opacity than a single veil. A heavier hint of weather change than its plain siblings.",
+      "confidence": "medium",
+      "flags": []
+    },
+    {
+      "id": "altocumulus_stratiformis",
+      "params": {
+        "coverage": 0.55, "density": 0.65, "thickness": 600, "baseAlt": 4000,
+        "warpFreq": 0.0014, "warpAmp": 140, "noiseSeed": 41, "octaves": 4,
+        "sunScatter": 1.20, "ambientFloor": 0.40, "edgeSilver": 0.95, "shadowStrength": 0.50
+      },
+      "description": "A mid-level patchy sheet — cells loosely organized into a broad layer with breaks between them. Bottoms catch warm color at sunrise and sunset. Not as fine as a mackerel sky; the cells are clearly individual. A sky for soft, indirect light at ground level.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "altocumulus_lenticularis",
+      "params": {
+        "coverage": 0.12, "density": 0.90, "thickness": 800, "baseAlt": 4200,
+        "warpFreq": 0.0006, "warpAmp": 70, "noiseSeed": 42, "octaves": 3,
+        "sunScatter": 1.30, "ambientFloor": 0.40, "edgeSilver": 1.05, "shadowStrength": 0.55
+      },
+      "description": "Stacked saucer-lenses parked over a peak — the classic UFO cloud, anchored to a mountain wave that holds it in place while the wind blows through it. Dense and sculptural, with smooth almond curves. Stays put for hours. A dramatic anchor for a mountain-view scene.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "altocumulus_castellanus",
+      "params": {
+        "coverage": 0.40, "density": 0.78, "thickness": 1600, "baseAlt": 4000,
+        "warpFreq": 0.0016, "warpAmp": 300, "noiseSeed": 43, "octaves": 5,
+        "sunScatter": 1.20, "ambientFloor": 0.40, "edgeSilver": 1.00, "shadowStrength": 0.58
+      },
+      "description": "Mid-level turrets bubbling up from a shared raft — little castles in a row, each with its own vertical extent. Reads as instability brewing aloft. Often a morning sign that afternoon storms could fire. A textured, busy sky with real depth to it.",
+      "confidence": "medium",
+      "flags": ["poor_reference_photo"]
+    },
+    {
+      "id": "altocumulus_floccus",
+      "params": {
+        "coverage": 0.55, "density": 0.70, "thickness": 900, "baseAlt": 4200,
+        "warpFreq": 0.0018, "warpAmp": 240, "noiseSeed": 44, "octaves": 5,
+        "sunScatter": 1.25, "ambientFloor": 0.40, "edgeSilver": 1.00, "shadowStrength": 0.52
+      },
+      "description": "Scattered mid-level tufts, each with a defined cauliflower top and a soft trail of detail underneath. Widely spaced across the sky with lots of blue between them. Brighter and bolder than the cirrus floccus high above, more substantial in body. A playful, decorative sky that suggests mild instability at mid-altitude. Often photographed on calm afternoons.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "altocumulus_translucidus",
+      "params": {
+        "coverage": 0.58, "density": 0.48, "thickness": 500, "baseAlt": 4000,
+        "warpFreq": 0.0014, "warpAmp": 110, "noiseSeed": 45, "octaves": 4,
+        "sunScatter": 1.45, "ambientFloor": 0.50, "edgeSilver": 1.05, "shadowStrength": 0.35
+      },
+      "description": "A mid-level sheet thin enough that the sun and the position of the brighter parts of the sky show through. Cells are visible but with backlight glowing through their thinner regions. At twilight the bottoms warm to pink and gold. A gentle, atmospheric sky.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "altocumulus_opacus",
+      "params": {
+        "coverage": 0.85, "density": 1.10, "thickness": 950, "baseAlt": 3800,
+        "warpFreq": 0.0012, "warpAmp": 160, "noiseSeed": 46, "octaves": 4,
+        "sunScatter": 0.85, "ambientFloor": 0.32, "edgeSilver": 0.70, "shadowStrength": 0.72
+      },
+      "description": "A heavy mid-level sheet that nearly closes off the sky. The sun is hidden; small breaks of blue may show at the edges. Bottoms are dark and well-shadowed; tops out of sight. The grey of a slow afternoon, often preceding steadier weather.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "altocumulus_lacunosus",
+      "params": {
+        "coverage": 0.62, "density": 0.72, "thickness": 600, "baseAlt": 4000,
+        "warpFreq": 0.0026, "warpAmp": 170, "noiseSeed": 47, "octaves": 5,
+        "sunScatter": 1.20, "ambientFloor": 0.40, "edgeSilver": 1.00, "shadowStrength": 0.55
+      },
+      "description": "A mid-level sheet pierced by a regular pattern of holes — the negative-space cousin of a regular cloud layer. The honeycomb of dark blue cells against pale cloud is the signature. Rare and short-lived; the holes close back up within a few minutes as the layer evolves. A connoisseur's sky, more often described in textbooks than actually seen overhead.",
+      "confidence": "medium",
+      "flags": ["variant_within_family_atypical"]
+    },
+    {
+      "id": "altostratus_translucidus",
+      "params": {
+        "coverage": 0.95, "density": 0.60, "thickness": 1200, "baseAlt": 3500,
+        "warpFreq": 0.0004, "warpAmp": 50, "noiseSeed": 51, "octaves": 2,
+        "sunScatter": 1.00, "ambientFloor": 0.45, "edgeSilver": 0.65, "shadowStrength": 0.45
+      },
+      "description": "A mid-level sheet covering nearly all of the sky, but thin enough that the sun shows through as a dim diffused disk — the classic ground-glass sun. Light at the surface is soft and shadowless. Often the front-edge of a steady rain situation a few hours out.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "altostratus_opacus",
+      "params": {
+        "coverage": 1.00, "density": 1.05, "thickness": 1800, "baseAlt": 3000,
+        "warpFreq": 0.0003, "warpAmp": 35, "noiseSeed": 52, "octaves": 2,
+        "sunScatter": 0.55, "ambientFloor": 0.30, "edgeSilver": 0.40, "shadowStrength": 0.72
+      },
+      "description": "A dense featureless mid-level overcast. The sun is gone — you can sometimes locate it as a slightly brighter region behind the layer, but no disk. Subtle horizontal undulations show structure. The sky of an incoming front; rain within hours.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "nimbostratus",
+      "params": {
+        "coverage": 1.00, "density": 1.65, "thickness": 4000, "baseAlt": 1200,
+        "warpFreq": 0.0005, "warpAmp": 90, "noiseSeed": 61, "octaves": 3,
+        "sunScatter": 0.35, "ambientFloor": 0.22, "edgeSilver": 0.25, "shadowStrength": 1.05
+      },
+      "description": "The rain sky. A thick uniform grey from horizon to horizon — no breaks, no edges, no sun, just weight overhead. Steady falling precipitation rather than dramatic bursts. Bottoms ragged where falling rain meets surface stratus. The defining cloud of a soaked day.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "stratocumulus_stratiformis",
+      "params": {
+        "coverage": 0.78, "density": 0.95, "thickness": 600, "baseAlt": 1100,
+        "warpFreq": 0.0009, "warpAmp": 200, "noiseSeed": 71, "octaves": 4,
+        "sunScatter": 1.00, "ambientFloor": 0.32, "edgeSilver": 0.85, "shadowStrength": 0.68
+      },
+      "description": "A low lumpy sheet — cells big enough to read as individuals but pressed together into a layer. Bright lit tops, dark mottled undersides. The default overcast of a cool damp day that never quite commits to rain. A workhorse sky.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "stratocumulus_castellanus",
+      "params": {
+        "coverage": 0.55, "density": 1.00, "thickness": 1400, "baseAlt": 1100,
+        "warpFreq": 0.0014, "warpAmp": 280, "noiseSeed": 72, "octaves": 5,
+        "sunScatter": 1.00, "ambientFloor": 0.32, "edgeSilver": 0.90, "shadowStrength": 0.72
+      },
+      "description": "Low cumulus-like turrets growing out of a shared low base — a layer with personality. Each turret reads as a small developing tower, brighter on the sunlit shoulder and shadowed beneath. A hint of energy in an otherwise low cloud regime; sometimes precedes brief showers in the afternoon. The grumpier sibling of the smoother stratocumulus sheets.",
+      "confidence": "low",
+      "flags": ["poor_reference_photo", "density_inferred_from_species_not_photo"]
+    },
+    {
+      "id": "stratocumulus_lenticularis",
+      "params": {
+        "coverage": 0.18, "density": 1.10, "thickness": 700, "baseAlt": 1200,
+        "warpFreq": 0.0005, "warpAmp": 90, "noiseSeed": 73, "octaves": 3,
+        "sunScatter": 1.00, "ambientFloor": 0.32, "edgeSilver": 0.95, "shadowStrength": 0.65
+      },
+      "description": "Low lens-clouds shaped by wave motion in the lower atmosphere — smooth almond shapes parked above ridges or hills. Less iconic than the high-altitude lenticularis above mountains, but still anchored to the terrain and still stationary while the wind blows through them. A quiet wind-direction signal for anyone watching the sky over hilly country.",
+      "confidence": "medium",
+      "flags": []
+    },
+    {
+      "id": "stratocumulus_perlucidus",
+      "params": {
+        "coverage": 0.65, "density": 0.95, "thickness": 700, "baseAlt": 1200,
+        "warpFreq": 0.0011, "warpAmp": 230, "noiseSeed": 74, "octaves": 4,
+        "sunScatter": 1.10, "ambientFloor": 0.34, "edgeSilver": 0.95, "shadowStrength": 0.60
+      },
+      "description": "A low lumpy sheet with deliberate gaps of blue between cells. Lots of contrast — bright sunlit tops, deep shaded undersides, sharp blue holes. The most photogenic stratocumulus; a sky that suggests the layer is breaking up and the day is getting better.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "stratocumulus_opacus",
+      "params": {
+        "coverage": 0.98, "density": 1.20, "thickness": 750, "baseAlt": 1000,
+        "warpFreq": 0.0007, "warpAmp": 120, "noiseSeed": 75, "octaves": 3,
+        "sunScatter": 0.70, "ambientFloor": 0.28, "edgeSilver": 0.55, "shadowStrength": 0.88
+      },
+      "description": "A complete low overcast that mutes the sun to faint glow. Bottoms are dark and uniformly grey; subtle organization shows here and there but mostly just weight. The default sky of a damp gray winter afternoon. Light at the surface is flat and shadowless.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "stratocumulus_volutus",
+      "params": {
+        "coverage": 0.32, "density": 1.30, "thickness": 600, "baseAlt": 900,
+        "warpFreq": 0.0004, "warpAmp": 90, "noiseSeed": 76, "octaves": 3,
+        "sunScatter": 1.05, "ambientFloor": 0.32, "edgeSilver": 1.05, "shadowStrength": 0.72
+      },
+      "description": "A roll cloud — one long horizontal tube of cloud stretched across a slab of sky, smooth and rotating around its own axis. Dense and sculptural. Rare, dramatic, and unmistakable when one appears. Often part of a sea-breeze or outflow boundary.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "stratus_nebulosus",
+      "params": {
+        "coverage": 1.00, "density": 1.05, "thickness": 400, "baseAlt": 300,
+        "warpFreq": 0.0002, "warpAmp": 20, "noiseSeed": 81, "octaves": 2,
+        "sunScatter": 0.55, "ambientFloor": 0.32, "edgeSilver": 0.40, "shadowStrength": 0.70
+      },
+      "description": "A featureless low ceiling — no edges, no cells, just an even sheet a few hundred meters above the ground. The sun appears as a soft glow when it appears at all. The sky of damp coastal mornings and fog that lifted into a layer.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "stratus_fractus",
+      "params": {
+        "coverage": 0.45, "density": 0.78, "thickness": 500, "baseAlt": 350,
+        "warpFreq": 0.0025, "warpAmp": 290, "noiseSeed": 82, "octaves": 5,
+        "sunScatter": 1.00, "ambientFloor": 0.32, "edgeSilver": 0.95, "shadowStrength": 0.52
+      },
+      "description": "Ragged, torn low cloud — wisps clinging to hillsides and drifting between trees after rain. Highly irregular, no two pieces alike. Often called scud. A moody, cinematic sky for mountain or forest scenes, especially in the hour after a passing storm.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "stratus_opacus",
+      "params": {
+        "coverage": 1.00, "density": 1.30, "thickness": 600, "baseAlt": 250,
+        "warpFreq": 0.0002, "warpAmp": 25, "noiseSeed": 83, "octaves": 2,
+        "sunScatter": 0.40, "ambientFloor": 0.26, "edgeSilver": 0.30, "shadowStrength": 0.85
+      },
+      "description": "A heavy low ceiling — denser and darker than nebulosus. The sun is fully hidden and the light underneath is dim and flat all day. The defining ceiling of overcast winter days that never really brighten. Often paired with light drizzle that doesn't quite count as rain.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cumulus_humilis",
+      "params": {
+        "coverage": 0.32, "density": 0.85, "thickness": 500, "baseAlt": 1200,
+        "warpFreq": 0.0010, "warpAmp": 280, "noiseSeed": 91, "octaves": 4,
+        "sunScatter": 1.30, "ambientFloor": 0.32, "edgeSilver": 1.05, "shadowStrength": 0.65
+      },
+      "description": "Fair-weather puffy cumulus, low base, cauliflower tops with soft self-shadowing on the lit side. Mid-coverage; gaps between cells let blue sky through. The signature of a calm summer afternoon — clouds that arrive after breakfast and dissolve by evening. Best authored at noon-summer altitudes; sits gently in the lower third of the sky.",
+      "confidence": "high",
+      "flags": ["preserve_authored"]
+    },
+    {
+      "id": "cumulus_mediocris",
+      "params": {
+        "coverage": 0.40, "density": 1.00, "thickness": 1600, "baseAlt": 1200,
+        "warpFreq": 0.0011, "warpAmp": 400, "noiseSeed": 92, "octaves": 5,
+        "sunScatter": 1.20, "ambientFloor": 0.30, "edgeSilver": 1.00, "shadowStrength": 0.78
+      },
+      "description": "Puffy cumulus that have started to grow upward — about as tall as they are wide, with the bottoms still flat but the tops piling into deeper cauliflower. Confident, bright on the sunlit side, shadowed beneath. The mid-day version of fair-weather cumulus; sometimes a hint that bigger towers are coming later.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cumulus_congestus",
+      "params": {
+        "coverage": 0.48, "density": 1.35, "thickness": 5000, "baseAlt": 1100,
+        "warpFreq": 0.0012, "warpAmp": 540, "noiseSeed": 93, "octaves": 6,
+        "sunScatter": 1.15, "ambientFloor": 0.28, "edgeSilver": 1.00, "shadowStrength": 0.92
+      },
+      "description": "Towering cumulus, distinctly taller than wide, growing fast. The base is darkening; the top still hard-edged cauliflower rather than fibrous. Often shows light shower beneath. The pre-storm cloud — half an hour from becoming a cumulonimbus if it keeps going. Drama in the lower half of the sky.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cumulus_fractus",
+      "params": {
+        "coverage": 0.28, "density": 0.72, "thickness": 600, "baseAlt": 900,
+        "warpFreq": 0.0023, "warpAmp": 310, "noiseSeed": 94, "octaves": 5,
+        "sunScatter": 1.25, "ambientFloor": 0.32, "edgeSilver": 1.10, "shadowStrength": 0.55
+      },
+      "description": "Torn, irregular cumulus — fragments rather than whole cells. No defined cauliflower; just shreds drifting at the same low level. Sometimes iridescent edges where backlit thin parts catch the sun. Often appears at the edges of forming weather, or as scud beneath a higher base.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cumulonimbus_calvus",
+      "params": {
+        "coverage": 0.42, "density": 1.55, "thickness": 8000, "baseAlt": 800,
+        "warpFreq": 0.0010, "warpAmp": 620, "noiseSeed": 101, "octaves": 6,
+        "sunScatter": 1.00, "ambientFloor": 0.24, "edgeSilver": 0.90, "shadowStrength": 1.05
+      },
+      "description": "A young thunderstorm — towering and dense, dark-bottomed, but the top is still hard cauliflower without the anvil. Smaller and less spread than its mature cousin but already serious. Showers underneath, sometimes hail. Reads as the early stage of a storm cycle.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cumulonimbus_capillatus",
+      "params": {
+        "coverage": 0.55, "density": 1.70, "thickness": 11500, "baseAlt": 800,
+        "warpFreq": 0.0009, "warpAmp": 720, "noiseSeed": 102, "octaves": 6,
+        "sunScatter": 0.95, "ambientFloor": 0.22, "edgeSilver": 0.85, "shadowStrength": 1.18
+      },
+      "description": "A mature thunderstorm with the classic anvil spreading at the top — ice crystals fanning out where the rising column hits the tropopause. Dense and dark below, brilliant where the sun rakes the anvil's underside at golden hour. The iconic storm cloud. Pair with heavy rain or cloud-to-ground lightning in the same Condition.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "cumulonimbus_mammatus",
+      "params": {
+        "coverage": 0.72, "density": 1.50, "thickness": 6000, "baseAlt": 1500,
+        "warpFreq": 0.0014, "warpAmp": 510, "noiseSeed": 103, "octaves": 6,
+        "sunScatter": 0.85, "ambientFloor": 0.24, "edgeSilver": 0.78, "shadowStrength": 1.02
+      },
+      "description": "The underside of a storm anvil studded with pendulous pouches — ominous round lobes hanging down like inverted cumulus. Almost always appears after the worst of the weather has passed; the storm is moving away but the leftover anvil is still spectacular. A sky to look up at in awe, not fear.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "fog_ground",
+      "params": {
+        "coverage": 1.00, "density": 1.20, "thickness": 60, "baseAlt": 0,
+        "warpFreq": 0.0003, "warpAmp": 25, "noiseSeed": 111, "octaves": 2,
+        "sunScatter": 0.50, "ambientFloor": 0.40, "edgeSilver": 0.30, "shadowStrength": 0.40
+      },
+      "description": "A shallow layer of dense fog hugging the ground — visibility drops to the width of a street. Best as a morning condition that burns off by mid-morning. Light is diffuse, shadows almost gone, and color saturation falls sharply at distance. Adds a quiet, hushed quality to ground-level scenes.",
+      "confidence": "medium",
+      "flags": ["density_inferred_from_species_not_photo", "shared_photo_with_fog_valley"]
+    },
+    {
+      "id": "fog_valley",
+      "params": {
+        "coverage": 1.00, "density": 1.50, "thickness": 120, "baseAlt": 0,
+        "warpFreq": 0.0003, "warpAmp": 30, "noiseSeed": 112, "octaves": 2,
+        "sunScatter": 0.55, "ambientFloor": 0.42, "edgeSilver": 0.35, "shadowStrength": 0.45
+      },
+      "description": "Fog pooled in low ground — valleys, river beds, dips between hills. From above the ridgeline you see it as a flat white sea with peaks rising out of it; from below you're inside it. Holds longer than ground fog because cold air settles. A photographer's morning condition.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "haze_summer",
+      "params": {
+        "coverage": 1.00, "density": 0.25, "thickness": 3000, "baseAlt": 0,
+        "warpFreq": 0.0002, "warpAmp": 20, "noiseSeed": 113, "octaves": 2,
+        "sunScatter": 1.20, "ambientFloor": 0.55, "edgeSilver": 0.50, "shadowStrength": 0.20
+      },
+      "description": "A dry warm haze that softens distance and warms color toward beige — humidity and dust suspended through the lower atmosphere on a hot day. The sky overhead stays mostly blue but loses saturation; the horizon turns milky. Reads as a sultry afternoon, the kind that primes summer storms by evening.",
+      "confidence": "low",
+      "flags": ["poor_reference_photo", "all_params_inferred_from_species_not_photo"]
+    },
+    {
+      "id": "haze_smoke",
+      "params": {
+        "coverage": 1.00, "density": 0.60, "thickness": 4000, "baseAlt": 0,
+        "warpFreq": 0.0002, "warpAmp": 25, "noiseSeed": 114, "octaves": 2,
+        "sunScatter": 0.95, "ambientFloor": 0.35, "edgeSilver": 0.45, "shadowStrength": 0.30
+      },
+      "description": "Wildfire smoke filling the atmosphere — distant buildings dissolve into ochre and the sun reddens at any time of day. Heavier and more sinister than summer haze; the air smells wrong. Adds an ominous warm cast to all scenes. Use with a tan-and-orange palette to lean into the foreboding mood.",
+      "confidence": "high",
+      "flags": []
+    },
+    {
+      "id": "rain_light",
+      "params": {
+        "coverage": 1.00, "density": 1.30, "thickness": 2500, "baseAlt": 1200,
+        "warpFreq": 0.0006, "warpAmp": 100, "noiseSeed": 121, "octaves": 3,
+        "sunScatter": 0.55, "ambientFloor": 0.28, "edgeSilver": 0.40, "shadowStrength": 0.85
+      },
+      "description": "A thin, steady rain falling from a moderate overcast — enough to wet pavement and bead on a coat but not enough to drive you indoors. The sky is grey but not black; the air smells of clean stone. Best as a foreground texture under a nimbostratus or stratus parent. Stub preset; full particles arrive in v1.x.",
+      "confidence": "medium",
+      "flags": ["stub_preset", "params_seed_parent_sky_state"]
+    },
+    {
+      "id": "rain_moderate",
+      "params": {
+        "coverage": 1.00, "density": 1.55, "thickness": 3500, "baseAlt": 1100,
+        "warpFreq": 0.0005, "warpAmp": 100, "noiseSeed": 122, "octaves": 3,
+        "sunScatter": 0.40, "ambientFloor": 0.24, "edgeSilver": 0.30, "shadowStrength": 1.00
+      },
+      "description": "Steady rain that has fully committed — visible curtains in the middle distance, gutters running, the kind of rain you wait out. Sky is uniformly dark grey. Reads as the middle of a wet afternoon. Stub preset; full precipitation system arrives in v1.x.",
+      "confidence": "medium",
+      "flags": ["stub_preset", "params_seed_parent_sky_state"]
+    },
+    {
+      "id": "rain_heavy",
+      "params": {
+        "coverage": 1.00, "density": 1.70, "thickness": 6000, "baseAlt": 900,
+        "warpFreq": 0.0008, "warpAmp": 250, "noiseSeed": 123, "octaves": 4,
+        "sunScatter": 0.30, "ambientFloor": 0.20, "edgeSilver": 0.25, "shadowStrength": 1.15
+      },
+      "description": "A downpour — sheets of rain, near-zero visibility into the middle distance, drainage overwhelmed. Sky is black-grey overhead with a charge-of-color glow at the horizon. The cloud above is a low cumulonimbus base, not a nimbostratus sheet. Stub preset; full particles arrive in v1.x.",
+      "confidence": "low",
+      "flags": ["stub_preset", "poor_reference_photo", "params_seed_parent_sky_state"]
+    },
+    {
+      "id": "rain_squall",
+      "params": {
+        "coverage": 0.80, "density": 1.60, "thickness": 7000, "baseAlt": 700,
+        "warpFreq": 0.0011, "warpAmp": 400, "noiseSeed": 124, "octaves": 5,
+        "sunScatter": 0.45, "ambientFloor": 0.22, "edgeSilver": 0.60, "shadowStrength": 1.05
+      },
+      "description": "A line of heavy rain moving fast — wind ahead of it, shelf cloud at the leading edge, a wall of grey advancing across the horizon. Short-lived but intense. The sky in front of it can be clear blue right up to the boundary. Stub preset; full system with wind arrives in v1.x.",
+      "confidence": "low",
+      "flags": ["stub_preset", "schematic_reference_not_photo", "all_params_inferred_from_species_not_photo"]
+    },
+    {
+      "id": "snow_calm",
+      "params": {
+        "coverage": 1.00, "density": 1.10, "thickness": 800, "baseAlt": 600,
+        "warpFreq": 0.0003, "warpAmp": 50, "noiseSeed": 131, "octaves": 2,
+        "sunScatter": 0.55, "ambientFloor": 0.40, "edgeSilver": 0.45, "shadowStrength": 0.70
+      },
+      "description": "Gentle snow falling out of an even overcast — flakes the size of a thumbnail, drifting straight down. Visibility is good; the world goes quiet. The sky is a pale uniform grey, brighter than rain weather. Pair with stratus or low altostratus. Stub preset; full particles in v1.x.",
+      "confidence": "medium",
+      "flags": ["stub_preset", "params_seed_parent_sky_state"]
+    },
+    {
+      "id": "snow_heavy",
+      "params": {
+        "coverage": 1.00, "density": 1.50, "thickness": 3000, "baseAlt": 800,
+        "warpFreq": 0.0005, "warpAmp": 110, "noiseSeed": 132, "octaves": 3,
+        "sunScatter": 0.40, "ambientFloor": 0.32, "edgeSilver": 0.35, "shadowStrength": 0.95
+      },
+      "description": "Snow accumulating fast — heavy steady fall, an inch an hour, drifts forming on the lee side of things. The sky is bright-grey from the diffused light of so much falling snow. Quiet, except for the muffled sound that snow makes. Stub preset; full particles in v1.x.",
+      "confidence": "medium",
+      "flags": ["stub_preset", "params_seed_parent_sky_state"]
+    },
+    {
+      "id": "snow_blizzard",
+      "params": {
+        "coverage": 1.00, "density": 1.80, "thickness": 4000, "baseAlt": 500,
+        "warpFreq": 0.0010, "warpAmp": 220, "noiseSeed": 133, "octaves": 4,
+        "sunScatter": 0.30, "ambientFloor": 0.28, "edgeSilver": 0.30, "shadowStrength": 1.10
+      },
+      "description": "Whiteout. Wind-driven snow blasting horizontally, visibility down to the length of a car. The sky is indistinguishable from the air; the whole world is a wall of white-grey motion. A dangerous condition photographed safely from indoors. Stub preset; full system with wind arrives in v1.x.",
+      "confidence": "high",
+      "flags": ["stub_preset"]
+    },
+    {
+      "id": "lightning_intracloud",
+      "params": {
+        "coverage": 0.65, "density": 1.65, "thickness": 9000, "baseAlt": 1000,
+        "warpFreq": 0.0010, "warpAmp": 600, "noiseSeed": 141, "octaves": 6,
+        "sunScatter": 0.40, "ambientFloor": 0.20, "edgeSilver": 0.65, "shadowStrength": 1.10
+      },
+      "description": "Lightning hidden inside the cloud — the whole storm flashes from within, illuminating its own anvil and base from the inside. No visible bolt; the light arrives as a quick all-over glow followed by the rumble. Common in distant storms. Stub preset; lit-cloud flash arrives with the lightning system in v1.x.",
+      "confidence": "medium",
+      "flags": ["stub_preset", "photo_appears_to_show_cloud_ground", "params_seed_parent_sky_state"]
+    },
+    {
+      "id": "lightning_cloud_ground",
+      "params": {
+        "coverage": 0.70, "density": 1.70, "thickness": 10000, "baseAlt": 800,
+        "warpFreq": 0.0009, "warpAmp": 680, "noiseSeed": 142, "octaves": 6,
+        "sunScatter": 0.35, "ambientFloor": 0.18, "edgeSilver": 0.60, "shadowStrength": 1.18
+      },
+      "description": "The dramatic bolt — a branched ribbon of light running from cloud base to ground in a single moment, painting the storm sky purple-white. Multiple strikes may stack in a long exposure. The sound follows seconds later. The signature of close, mature storms. Stub preset; bolt rendering and SFX arrive in v1.x.",
+      "confidence": "high",
+      "flags": ["stub_preset"]
+    }
+  ]
+}
