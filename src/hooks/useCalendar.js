@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { INSTANCE } from '../instance.js'
+import useTimeOfDay from './useTimeOfDay.js'
 
 // Kit-level calendar anchor — date / day-of-year / season. Parallel to
 // useTimeOfDay (which owns minute-of-day). One source of truth per concept;
@@ -59,18 +60,39 @@ const useCalendar = create((set, get) => ({
   isLive: true,
 
   // Operator-driven scrub: flip isLive=false.
-  setDate: (date) => set({ currentDate: date, isLive: false }),
+  // Bidirectional sync: useTimeOfDay.currentTime tracks the same Date so
+  // CelestialBodies' SunCalc (and all other useTimeOfDay consumers) see
+  // the new date. Direct setState writes don't recurse; safe.
+  setDate: (date) => {
+    set({ currentDate: date, isLive: false })
+    useTimeOfDay.setState({ currentTime: date, isLive: false })
+  },
 
-  // Pump-driven live tick: preserve isLive.
-  setDateFromLive: (date) => set({ currentDate: date }),
+  // Pump-driven live tick: preserve isLive on both stores.
+  setDateFromLive: (date) => {
+    set({ currentDate: date })
+    useTimeOfDay.setState({ currentTime: date })
+  },
 
-  returnToLive: () => set({ isLive: true, currentDate: new Date() }),
+  returnToLive: () => {
+    const now = new Date()
+    set({ isLive: true, currentDate: now })
+    useTimeOfDay.setState({ isLive: true, currentTime: now })
+  },
 
   setDayOfYear: (doy) => {
     const { currentDate } = get()
     const next = new Date(currentDate.getFullYear(), 0, 1)
     next.setDate(doy)
+    // Preserve TOD from current state so doy jumps don't reset the clock.
+    next.setHours(
+      currentDate.getHours(),
+      currentDate.getMinutes(),
+      currentDate.getSeconds(),
+      currentDate.getMilliseconds(),
+    )
     set({ currentDate: next, isLive: false })
+    useTimeOfDay.setState({ currentTime: next, isLive: false })
   },
 
   setSeason: (s) => {

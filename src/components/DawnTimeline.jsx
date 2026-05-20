@@ -18,7 +18,23 @@ const SUNCALC_KEY = {
   sunset: 'sunset', dusk: 'dusk', night: 'night',
 }
 
-const MONTH_LETTERS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+// Four cardinal year-anchors at solstices + equinoxes. Northern-hemisphere
+// dates; the name is the season this anchor *starts*. Click an anchor name
+// → year-strip thumb jumps to its day-of-year (the "first frame of the
+// tween" toward the next anchor). Between anchors the matrix authoring is
+// preview-only — operator must park on an anchor to edit. Matches the
+// 4-layer seasonal-matrix model in Cartograph (see maxibrief 2026-05-20).
+//
+// Order in array = left-to-right on the year strip:
+//   Spring (Mar 20) → Summer (Jun 21) → Autumn (Sep 22) → Winter (Dec 21).
+// Winter sits near the right edge; the Jan-Mar wraparound region shows the
+// winter season-band but no label (the anchor IS the right-edge "Winter").
+const SEASON_ANCHORS = [
+  { name: 'Spring', monthIdx: 2,  day: 20 },  // ~doy 79
+  { name: 'Summer', monthIdx: 5,  day: 21 },  // ~doy 172
+  { name: 'Autumn', monthIdx: 8,  day: 22 },  // ~doy 265
+  { name: 'Winter', monthIdx: 11, day: 21 },  // ~doy 355
+]
 
 // Northern-hemisphere season day-of-year bands. Mirrors useCalendar.seasonFromDoy.
 // Each entry: { name, startDoy, endDoy } where bands are inclusive and wrap winter
@@ -33,13 +49,6 @@ const SEASON_BANDS_NORTH = [
 
 function daysInYear(year) {
   return ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365
-}
-
-// First-day-of-month day-of-year (1-based). Index 0 = Jan, 11 = Dec.
-function monthFirstDoy(monthIdx, year) {
-  const start = Date.UTC(year, 0, 1)
-  const cur = Date.UTC(year, monthIdx, 1)
-  return Math.floor((cur - start) / 86400000) + 1
 }
 
 function TodStrip() {
@@ -167,13 +176,19 @@ function YearStrip() {
     return next
   }, [year, total, currentDate])
 
-  const monthMarkers = useMemo(() => MONTH_LETTERS.map((letter, i) => {
-    const d = monthFirstDoy(i, year)
-    return { letter, monthIdx: i, fraction: (d - 1) / (total - 1) }
+  // Four season-anchor markers at solstices + equinoxes. Each is a
+  // click-to-jump target; the position on the strip is the day-of-year
+  // for that anchor's date in the current year.
+  const seasonMarkers = useMemo(() => SEASON_ANCHORS.map(a => {
+    const d = new Date(year, a.monthIdx, a.day)
+    const start = Date.UTC(year, 0, 1)
+    const cur = Date.UTC(year, a.monthIdx, a.day)
+    const anchorDoy = Math.floor((cur - start) / 86400000) + 1
+    return { ...a, anchorDoy, fraction: (anchorDoy - 1) / (total - 1) }
   }), [year, total])
 
-  const jumpToMonth = (monthIdx) => {
-    const next = new Date(year, monthIdx, 1)
+  const jumpToAnchor = (a) => {
+    const next = new Date(year, a.monthIdx, a.day)
     next.setHours(currentDate.getHours(), currentDate.getMinutes(),
       currentDate.getSeconds(), currentDate.getMilliseconds())
     setDate(next)
@@ -182,14 +197,21 @@ function YearStrip() {
   return (
     <div className="space-y-1">
       <div className="relative px-1 h-3">
-        {monthMarkers.map(m => (
+        {seasonMarkers.map(a => (
           <button
-            key={m.monthIdx}
-            onClick={() => jumpToMonth(m.monthIdx)}
+            key={a.name}
+            onClick={() => jumpToAnchor(a)}
+            title={`Jump to ${a.name} anchor`}
             className="absolute text-caption leading-none transition-opacity hover:opacity-100 cursor-pointer -translate-x-1/2"
-            style={{ left: `${m.fraction * 100}%`, opacity: 0.75 }}
+            style={{
+              left: `${a.fraction * 100}%`,
+              opacity: 0.85,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              fontSize: 9,
+            }}
           >
-            {m.letter}
+            {a.name}
           </button>
         ))}
       </div>
@@ -238,10 +260,10 @@ function YearStrip() {
         <div className="absolute inset-x-0 h-[4px] rounded-full top-1/2 -translate-y-1/2"
           style={{ background: 'var(--surface-container-high)' }} />
 
-        {monthMarkers.map(m => (
-          <div key={m.monthIdx}
-            className="absolute w-[2px] h-[8px] top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full"
-            style={{ left: `${m.fraction * 100}%`, backgroundColor: 'rgba(255,255,255,0.45)' }}
+        {seasonMarkers.map(a => (
+          <div key={a.name}
+            className="absolute w-[2px] h-[10px] top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full"
+            style={{ left: `${a.fraction * 100}%`, backgroundColor: 'rgba(255,255,255,0.65)' }}
           />
         ))}
 

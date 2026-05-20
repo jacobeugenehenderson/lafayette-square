@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import SunCalc from 'suncalc'
 import { INSTANCE } from '../instance.js'
+import useCalendar from './useCalendar.js'
 
 const LATITUDE = INSTANCE.geography.lat
 const LONGITUDE = INSTANCE.geography.lon
@@ -11,12 +12,26 @@ const useTimeOfDay = create((set, get) => ({
   isPaused: false,
   isLive: true,
 
-  setTime: (date) => set({ currentTime: date, isLive: false }),
+  // Operator-driven scrub: flip isLive=false.
+  // Bidirectional sync with useCalendar: the two stores hold parallel
+  // Date views; keep them in lockstep so consumers reading either see
+  // the same moment. Direct setState writes don't recurse; safe.
+  setTime: (date) => {
+    set({ currentTime: date, isLive: false })
+    useCalendar.setState({ currentDate: date, isLive: false })
+  },
   // Pump-driven live tick: advance currentTime without flipping isLive.
   // Only operator-driven scrub calls (setTime / setHour / setMinuteOfDay)
   // leave live mode. See meteorologist/NOTES.md 2026-05-20 ADR.
-  setTimeFromLive: (date) => set({ currentTime: date }),
-  returnToLive: () => set({ isLive: true, currentTime: new Date() }),
+  setTimeFromLive: (date) => {
+    set({ currentTime: date })
+    useCalendar.setState({ currentDate: date })
+  },
+  returnToLive: () => {
+    const now = new Date()
+    set({ isLive: true, currentTime: now })
+    useCalendar.setState({ isLive: true, currentDate: now })
+  },
   setTimeSpeed: (speed) => set({ timeSpeed: speed }),
   setPaused: (v) => set({ isPaused: v }),
   togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
