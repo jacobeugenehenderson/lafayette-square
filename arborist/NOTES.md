@@ -4,6 +4,122 @@
 
 ---
 
+## 2026-05-19 night — Phase N.0 — Alignment Oracle + frame-convention resolution (Baby Cedar)
+
+**Shipped:** the LidarWorkstage viewport is now the load-bearing alignment oracle for every future bake-pipeline change. Three persistent layers — source point cloud, live QSM cylinder extraction, baked GLB — each with a visibility toggle and an opacity slider, all overlapping at the same origin and scale for any selected specimen with a baked variant.
+
+### Frame convention — resolved end-to-end
+
+**Canonical convention: the baked GLB artifact ships Y-up. Runtime three.js consumers add NO rotation. Source-frame overlays (point cloud, live cylinder extraction) apply the Z→Y rotation at load.**
+
+- `arborist/bake-tree.py` applies `rotation_matrix(-π/2, [1,0,0])` to the scene before `scene.export`, and the matching `(x, z, -y)` remap to tips. Already in place (pre-N.0 attempt). KEEP.
+- `src/components/InstancedTrees.jsx` consumes the GLB as-is — translation + Y-rotation only, no orientation correction. KEEP.
+- `src/arborist/LidarWorkstage.jsx`:
+  - `PointCloud`: applies `g.rotateX(-π/2)` at PLY load — source PLY is forestry Z-up. KEEP.
+  - `CylinderSkeleton`: applies inline `(x, y, z) → (x, z, -y)` per node — server-side `lidar_extract.py` emits source-frame nodes. KEEP.
+  - `BakedGlbOracle` (this stage's rename of `BakedPreview`): NO rotation. The double-rotation bug from prior coordinator session is gone — that surgical fix in bake-tree.py was compounding against `BakedPreview`'s `s.rotateX(-π/2)`. Resolved by deleting the rotation from the runtime side, not the bake side, because the bake side is the right place to canonicalize (production InstancedTrees has no chance to apply an orientation correction).
+
+The 4 already-baked variants in `public/trees/acer_saccharum_procedural/` (mtime 20:50) post-date the bake-tree.py rotation (mtime 20:47) — no re-bake needed, they're already Y-up canonical.
+
+### Oracle UX
+
+- `LayerControl` chips top-left of the viewport: each layer's toggle + 0–1 opacity slider in one vertical card. Visibility and opacity are decoupled (dimming a layer doesn't lose its toggle state).
+- Scrubbing the specimen list updates the oracle without re-bake: hero manifest fetched once per `heroSpecies` switch; on selection, the matching variant (by `treeId`) is looked up and the LOD0 GLB URL is built with a `?v=<bakedAt>` cache-buster. If the selected specimen has no baked variant, the Baked GLB chip shows "(not yet baked…)" and the toggle disables.
+- Post-publish, the hero manifest is re-fetched so a freshly-baked variant becomes immediately scrubbable in the oracle.
+
+### Acceptance (operator-gated — needs Jacob's visual pass)
+
+| # | Criterion | State |
+|---|---|---|
+| 1 | 5 specimens overlap: cloud + cylinders + GLB | needs operator visual scrub in `/arborist` |
+| 2 | No specimen sideways / half-submerged in any layer | code-gated: single Y-up convention enforced end-to-end |
+| 3 | Clean toggles + opacity slider per layer | shipped |
+| 4 | Scrubbing list updates overlay without re-bake | shipped (hero manifest cache + per-treeId variant lookup) |
+
+Only 4 of the hero's specimens are currently baked (10186, 10171, 10244, 10170). Operator can either validate against those 4 + spot-check a 5th by publishing a new one, or treat the 4 as sufficient for the visual pass.
+
+### Scope drift (surfaced per [[feedback_baby_must_surface_scope_drift]])
+
+- **`arborist/serve.js`** — added `heroSpecies: decl.heroSpecies || null` to the `/species` list response. One-line additive change; the workstage needs the hero id to build oracle URLs without coupling to publish-state. Mirrors the existing `forSpeciesName` exposure.
+- **`BakedPreview` → `BakedGlbOracle` rename.** The component is no longer the "post-publish preview" affordance — it's the persistent regression-catch surface per the N.0 brief. New name + new behavior (per-specimen lookup, opacity, no rotation, no diagnostic console.log). Replaces the broken Stage-1.5 prototype called out in the prior-session evening note.
+- **`layers.skeletonOnly` / `layers.fullPreview` toggles removed.** They were Cycle-1 modal aids that don't survive the 3-layer-oracle framing (skeletonOnly hid points but kept cylinders; fullPreview was a no-op against the brief's three named layers). Their behavior is recoverable as a combination of the 3 toggles + opacity sliders.
+- **No new dependencies.** No re-bake required. No bake-tree.py changes (just confirmed the rotation block is correct).
+- **`SpecimenViewport.jsx` not touched.** It already lives in the "source-frame, rotate at load" Y-up convention via `g.rotateX(-π/2)` (line 558) and `rotation={[-Math.PI/2, 0, 0]}` (lines 130, 403, 414, 539). Consistent with the convention this entry ratifies.
+
+### Stop point — operator visual pass needed before N.1 dispatch
+
+Per the maxi brief, N.0 stops here. Once operator confirms 5/5 green on the alignment oracle, dispatch N.1 (bidirectional-growth prototype).
+
+---
+
+## 2026-05-19 evening — LiDAR-runtime → LiDAR-as-training pivot
+
+**Third major architectural pivot today.** Following Stage 1's ship (`12ef2a1`), operator + coordinator built Stage 1.5 (the "Baked preview" toggle loading the published GLB inside LidarWorkstage so operator validates per-region bark without tab-switching to /cartograph.html). Multiple debugging iterations on alignment + scale — GLB landing at wrong XZ position, wrong height (27.7m vs CSV's 18.7m for specimen 10171), side-by-side with the diagnostic instead of overlapping.
+
+In the middle of debugging, operator looked at the comparative view and named the load-bearing observation: **"the point clouds right now are more evocative of real trees than the geometry we've tried to apply."** The QSM cylinder mesh extracted by `bake-tree.py` reads as fragmented + abstract. The trunk-authenticity premise that justified Option δ (LiDAR-runtime-trunk + procedural-canopy) doesn't materialize when the extracted geometry looks worse than parametric procedural cylinders.
+
+### The pivot
+
+LiDAR's role changes from RUNTIME ARTIFACT to AUTHORING-TIME STATISTICAL TRAINING SOURCE.
+
+**Per-species statistical extraction:**
+- For each LiDAR specimen of a species: compute DBH, total height, W:H crown ratio, branching density per height meter, mean branch insertion angle from vertical, leader strength (how far the central axis continues through the crown), architecture-mode classification (Rauh's vs Massart's / Troll's), per-anchor canopy density
+- Aggregate across N specimens of one species → mean + variance JSON
+- Persist to `arborist/state/<species>/lidar-stats.json` (committed; load-bearing artifact)
+
+**Generator integration:**
+- `generate-procedural.js` reads `lidar-stats.json` if present
+- Computes PRESETS defaults from the mean (per-species, per-parameter)
+- Per-instance jitter samples from variance using the existing `mulberry32` seed stream
+- Procedural species become statistically-grounded in real-tree data without runtime LiDAR cost
+
+**Operator workflow:**
+1. Browse + visually validate LiDAR specimens in the LidarWorkstage (Cycle 1 ships this surface — repurposed for the training-set curation pass)
+2. Mark which specimens count as training data (reject scans with poor coverage, heavy occlusion, unusual topology)
+3. Run the extraction script
+4. Procedural PRESETS auto-update
+5. Iterate procedural authoring (G.0 strong-leader + Phase F gradient editor) from a statistically-grounded starting point
+
+### Why this is structurally correct
+
+- Honors [[feedback_procedural_trees_are_the_destination]] — procedural is the destination; LiDAR is supporting data
+- Honors [[feedback_leverage_vendor_pbr_before_authoring]] — LiDAR library leveraged via statistics, not direct runtime integration
+- Honors [[project_park_is_the_gem]] — visual quality bar restored to procedural's runway (which has 4+ perf phases designed: Configuration D, Phase W wind, Phase F gradient maps, override packs)
+- Visual upside: procedural cylinders render CLEANER than fragmented QSM mesh
+- Future scaling: every additional LiDAR species adds more training data; no per-species runtime work
+
+### What survives
+
+- **`arborist/lidar_extract.py`** — the cylinder graph extraction is the input to statistical extraction; load-bearing for Phase T
+- **`arborist/bake-tree.py`** + LOD pipeline — stays for any direct LiDAR-mesh baking case (sub-grove view, future v2 needs)
+- **`arborist/serve.js` `/lidar/specimen/*` endpoints** — useful for operator visual validation of specimens before training-pass selection
+- **`LidarWorkstage.jsx`** — repurposed as the operator's specimen-curation surface (browse 110 Sugar Maples, validate quality, mark training set). Specimen browser + extraction tuner already work.
+- **Per-region bark binding** (Cycle 2 Stage 1, commit `12ef2a1`) — applies to PROCEDURAL too; radius-based trunk vs branch classification works regardless of source. KEEP.
+- **`arborist/leaf-pack-bindings.json`** — Phase F leaf surface infrastructure, applies regardless of source
+- **`species-map.json` `heroSpecies` field** + park_species_map prepend — useful for procedural-hero substitution flow
+
+### What gets wound down
+
+- **Phase L Cycle 2 Stages 2 + 3** (Configuration D over LiDAR mesh + Phase F integration on LiDAR variants) — superseded; Configuration D doctrine still applies but to procedural meshes
+- **`BakedPreview` component in LidarWorkstage** — broken + architecturally moot; remove in next cleanup commit
+- **G.1 hero "mixed roster"** (LiDAR-baked + procedural variants) — replaced by procedural-only G.1 with LiDAR-derived defaults
+- **`[[project_configuration_d_canopy_render]]` Option δ source split** — Configuration D itself remains the rendering doctrine; Option δ-specific source split is historical
+
+### Memories + BACKLOG state
+
+- **New memory:** `[[project_lidar_as_training_data]]` — captures the full pivot rationale + Phase T shape
+- **Updated:** `[[project_configuration_d_canopy_render]]` — Option δ section marked as superseded with historical context preserved
+- **Updated:** BACKLOG.md — new Phase T entry; Phase L Cycle 2 marked `[~]` with Stages 2-3 superseded
+- **Unchanged (still applies):** `[[project_year_long_tree_doctrine]]`, `[[project_view_aware_baking]]`, `[[project_park_is_the_gem]]`, `[[feedback_procedural_trees_are_the_destination]]`, `[[feedback_leverage_vendor_pbr_before_authoring]]`
+
+### The third-pivot cost
+
+This is the third architectural pivot in a 12-hour session: morning (procedural → LiDAR Option δ), afternoon (doctrine cascade — Configuration D + year-long + override packs + view-aware), evening (LiDAR-runtime → LiDAR-training). Each pivot has cost. The honest record: today's design work was high-velocity but also high-iteration. The doctrines that emerged are stronger for the iteration; the implementation work spent on the superseded paths is bounded (Stage 1 ships per-region bark which is generally useful; Cycle 1 ships LidarWorkstage which gets repurposed; BakedPreview is the only fully-wasted slice).
+
+Operator confirmed pivot after dinner break; the pivot is ratified. Coordinator + operator pausing here for the night; pre-handoff cleanup (this entry + memory + BACKLOG updates) lands; Maxi Baby brief drafted in the next session for the statistical-extraction + PRESETS-integration work.
+
+---
+
 ## 2026-05-19 PM — Phase L Cycle 2 Stage 1 — per-region bark + bake-to-roster
 
 **Shipped:** the LiDAR pipeline now publishes end-to-end. Operator picks a specimen, clicks Publish, and ~12s later: skeleton baked, LOD tiers generated, hero species added to active Look's roster, atlas re-baked with per-region bark spec in `barkBySpecies`, placement substitution refreshed. 104 Sugar Maple placements in `public/baked/default.json` now route to `acer_saccharum_procedural` (the LiDAR-baked hero).

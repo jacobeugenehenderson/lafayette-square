@@ -214,12 +214,19 @@ def bake_one(seedling, params, out_dir, variant_idx):
     log(f"  [{seedling['treeId']}] tips: {len(tips):,}")
     glb_name = f"skeleton-{variant_idx}.glb"
     tips_name = f"tips-{variant_idx}.json"
+    # Source frame is forestry Z-up; glTF convention is Y-up. Rotate the
+    # whole scene -90° around X so trees stand up correctly when three.js
+    # loads them, and apply the same rotation to tip positions so downstream
+    # leaf-card placement stays in the same frame as the mesh.
+    zup_to_yup = trimesh.transformations.rotation_matrix(-np.pi / 2.0, [1, 0, 0])
+    scene.apply_transform(zup_to_yup)
+    tips_yup = np.column_stack((tips[:, 0], tips[:, 2], -tips[:, 1])) if len(tips) else tips
     scene.export(out_dir / glb_name, file_type="glb")
     with open(out_dir / tips_name, "w") as f:
         json.dump({
             "treeId": seedling["treeId"],
             "count": len(tips),
-            "tips": tips.tolist(),
+            "tips": tips_yup.tolist() if len(tips) else [],
         }, f)
     elapsed = time.time() - t0
     log(f"  [{seedling['treeId']}] wrote {glb_name} + {tips_name} in {elapsed:.1f}s")

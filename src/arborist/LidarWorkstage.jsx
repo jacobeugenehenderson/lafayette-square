@@ -18,7 +18,7 @@
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, useGLTF } from '@react-three/drei'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import * as THREE from 'three'
 import useArboristStore from './stores/useArboristStore.js'
@@ -57,7 +57,10 @@ function suggestedLeafPack(speciesId, speciesMorph) {
 // Raw .laz → PLY conversion lives on the server (existing cached
 // /specimens/:treeId/preview.ply endpoint). We render as THREE.Points; the
 // forestry rotation lifts Z-up to Y-up so it stacks with our skeleton.
-function PointCloud({ url, visible = true, fitRef }) {
+//
+// Frame convention (resolved N.0, 2026-05-19): viewport is Y-up. The
+// PLY arrives in source forestry Z-up and is rotated here at load.
+function PointCloud({ url, visible = true, opacity = 0.85, fitRef }) {
   const geometry = useLoader(PLYLoader, url)
   const oriented = useMemo(() => {
     const g = geometry.clone()
@@ -70,7 +73,7 @@ function PointCloud({ url, visible = true, fitRef }) {
   if (!visible) return null
   return (
     <points geometry={oriented}>
-      <pointsMaterial size={0.04} sizeAttenuation color="#7fc8e0" transparent opacity={0.85} />
+      <pointsMaterial size={0.04} sizeAttenuation color="#7fc8e0" transparent opacity={opacity} />
     </points>
   )
 }
@@ -80,7 +83,7 @@ function PointCloud({ url, visible = true, fitRef }) {
 // >= medianRadius, red) + branch-like (< medianRadius, cyan). Translucent
 // so the operator sees what's underneath. Skipping the cylinder when its
 // radius is below minRadius is the same gate bake-tree.py applies.
-function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true }) {
+function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true, opacity = 0.75 }) {
   const trunkRef = useRef()
   const branchRef = useRef()
 
@@ -128,14 +131,39 @@ function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true }) {
     <>
       <instancedMesh ref={trunkRef} args={[null, null, Math.max(1, trunkData.length)]}>
         <cylinderGeometry args={[1, 1, 1, 8, 1]} />
-        <meshStandardMaterial color="#d44a3a" transparent opacity={0.75} roughness={0.6} />
+        <meshStandardMaterial color="#d44a3a" transparent opacity={opacity} roughness={0.6} />
       </instancedMesh>
       <instancedMesh ref={branchRef} args={[null, null, Math.max(1, branchData.length)]}>
         <cylinderGeometry args={[1, 1, 1, 6, 1]} />
-        <meshStandardMaterial color="#4ac8d4" transparent opacity={0.65} roughness={0.6} />
+        <meshStandardMaterial color="#4ac8d4" transparent opacity={opacity * 0.85} roughness={0.6} />
       </instancedMesh>
     </>
   )
+}
+
+
+// N.0 Alignment Oracle layer — the published GLB straight off disk, no
+// transform. bake-tree.py applies the Z→Y rotation at bake time so the
+// artifact ships Y-up; runtime three.js consumers (InstancedTrees and this
+// oracle) add no further rotation. See arborist/NOTES.md 2026-05-19 evening.
+function BakedGlbOracle({ url, visible = true, opacity = 1.0 }) {
+  const { scene } = useGLTF(url)
+  const cloned = useMemo(() => scene.clone(), [scene])
+  useEffect(() => {
+    cloned.traverse(o => {
+      if (o.isMesh && o.material) {
+        const mats = Array.isArray(o.material) ? o.material : [o.material]
+        for (const mat of mats) {
+          mat.transparent = opacity < 1.0
+          mat.opacity = opacity
+          mat.depthWrite = opacity >= 1.0
+          mat.needsUpdate = true
+        }
+      }
+    })
+  }, [cloned, opacity])
+  if (!visible) return null
+  return <primitive object={cloned} />
 }
 
 
@@ -218,7 +246,16 @@ export default function LidarWorkstage() {
   const [extractError, setExtractError] = useState(null)
   const [savingSeedling, setSaving]     = useState(false)
   const [seedlingsList, setSeedlings]   = useState([])
-  const [layers, setLayers]             = useState({ points: true, cylinders: true, skeletonOnly: false, fullPreview: false })
+  // N.0 Alignment Oracle: three layers, each with a visibility toggle and
+  // an opacity slider. `pointsOpacity` etc. are decoupled from visibility so
+  // operator can dim a layer without losing its toggle state.
+  const [layers, setLayers]             = useState({
+    points: true, cylinders: true, baked: true,
+    pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 0.6,
+  })
+  // Per-hero baked manifest cache. Keyed by heroSpecies so we don't re-fetch
+  // on every selection change within the same species.
+  const [heroManifest, setHeroManifest] = useState(null)
   const fitRef = useRef()
   const cameraRef = useRef()
   const controlsRef = useRef()
@@ -226,6 +263,38 @@ export default function LidarWorkstage() {
   const activeSpecies = species.find(s => s.id === activeSpeciesId)
   const lidarSpecies = species.filter(s => !!s.forSpeciesName)
   const pack = suggestedLeafPack(activeSpeciesId, activeSpecies?.leafMorph)
+  // Hero species id — where bake-tree.py writes the artifact (set on the
+  // scan-source decl via species-map.json's `heroSpecies` field). Falls back
+  // to the active id when no hero indirection is configured.
+  const heroSpeciesId = activeSpecies?.heroSpecies || activeSpeciesId
+
+  // Fetch the hero manifest so the oracle can look up `variantId` for the
+  // currently-selected specimen. One fetch per heroSpecies switch.
+  useEffect(() => {
+    if (!heroSpeciesId) { setHeroManifest(null); return }
+    let cancelled = false
+    fetch(`/api/arborist/species/${heroSpeciesId}?t=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled) setHeroManifest(d) })
+      .catch(() => { if (!cancelled) setHeroManifest(null) })
+    return () => { cancelled = true }
+  }, [heroSpeciesId])
+
+  // Variant matching the selected specimen, if any. Used to build the baked
+  // GLB URL for the oracle layer.
+  const bakedVariant = useMemo(() => {
+    if (!heroManifest || !selectedTreeId) return null
+    return (heroManifest.variants || []).find(
+      v => String(v.treeId) === String(selectedTreeId),
+    ) || null
+  }, [heroManifest, selectedTreeId])
+  const bakedGlbUrl = useMemo(() => {
+    if (!bakedVariant || !heroSpeciesId) return null
+    const lod = bakedVariant.skeletons?.lod0
+    if (!lod) return null
+    // Bust cache on every re-bake so a fresh publish doesn't show stale GLB.
+    return `${import.meta.env.BASE_URL || '/'}trees/${heroSpeciesId}/${lod}?v=${heroManifest.bakedAt || 0}`
+  }, [bakedVariant, heroSpeciesId, heroManifest])
 
   // Load saved seedlings + displayNames for the active species. Mirrors the
   // Scan-mode Workstage's fetch — the two modes share one seedlings.json.
@@ -302,6 +371,14 @@ export default function LidarWorkstage() {
         displayName: displayName || null,
       })
       setPublishResult(r)
+      // Refresh hero manifest so the oracle picks up the new variant immediately.
+      if (heroSpeciesId) {
+        try {
+          const m = await fetch(`/api/arborist/species/${heroSpeciesId}?t=${Date.now()}`)
+            .then(rr => rr.ok ? rr.json() : null)
+          if (m) setHeroManifest(m)
+        } catch { /* non-fatal */ }
+      }
     } catch {
       // error is captured into store.lidarPublishError + reflected below
     }
@@ -443,7 +520,11 @@ export default function LidarWorkstage() {
               <gridHelper args={[40, 40, '#333', '#1f1f1f']} position={[0, 0, 0]} />
               {plyUrl && (
                 <Suspense fallback={null}>
-                  <PointCloud url={plyUrl} visible={layers.points && !layers.skeletonOnly} fitRef={fitRef} />
+                  <PointCloud
+                    url={plyUrl}
+                    visible={layers.points}
+                    opacity={layers.pointsOpacity}
+                    fitRef={fitRef} />
                 </Suspense>
               )}
               {extractionResult && (
@@ -451,21 +532,52 @@ export default function LidarWorkstage() {
                   nodes={extractionResult.nodes}
                   medianRadius={extractionResult.stats.medianRadius}
                   minRadius={extractionParams?.minRadius ?? 0.005}
-                  visible={layers.cylinders || layers.skeletonOnly || layers.fullPreview}
+                  visible={layers.cylinders}
+                  opacity={layers.cylindersOpacity}
                 />
+              )}
+              {bakedGlbUrl && (
+                <Suspense fallback={null}>
+                  <BakedGlbOracle
+                    url={bakedGlbUrl}
+                    visible={layers.baked}
+                    opacity={layers.bakedOpacity}
+                  />
+                </Suspense>
               )}
               <OrbitControls makeDefault target={[0, 5, 0]} maxDistance={80} />
               <CameraCapture cameraRef={cameraRef} controlsRef={controlsRef} />
             </Canvas>
           )}
 
-          {/* Layer toggles overlay */}
+          {/* N.0 Alignment Oracle controls — three persistent layers + opacity */}
           {selectedTreeId && (
             <div style={overlayTLStyle}>
-              <Toggle active={layers.points} onClick={() => setLayers(l => ({ ...l, points: !l.points }))}>Points</Toggle>
-              <Toggle active={layers.cylinders} onClick={() => setLayers(l => ({ ...l, cylinders: !l.cylinders }))}>Cylinders</Toggle>
-              <Toggle active={layers.skeletonOnly} onClick={() => setLayers(l => ({ ...l, skeletonOnly: !l.skeletonOnly }))}>Skeleton only</Toggle>
-              <Toggle active={layers.fullPreview} onClick={() => setLayers(l => ({ ...l, fullPreview: !l.fullPreview }))}>Full preview</Toggle>
+              <LayerControl
+                label="Points"
+                active={layers.points}
+                onToggle={() => setLayers(l => ({ ...l, points: !l.points }))}
+                opacity={layers.pointsOpacity}
+                onOpacity={v => setLayers(l => ({ ...l, pointsOpacity: v }))}
+              />
+              <LayerControl
+                label="Cylinders"
+                active={layers.cylinders}
+                onToggle={() => setLayers(l => ({ ...l, cylinders: !l.cylinders }))}
+                opacity={layers.cylindersOpacity}
+                onOpacity={v => setLayers(l => ({ ...l, cylindersOpacity: v }))}
+              />
+              <LayerControl
+                label="Baked GLB"
+                active={layers.baked}
+                onToggle={() => setLayers(l => ({ ...l, baked: !l.baked }))}
+                opacity={layers.bakedOpacity}
+                onOpacity={v => setLayers(l => ({ ...l, bakedOpacity: v }))}
+                missing={!bakedGlbUrl}
+                missingHint={heroManifest === null
+                  ? '(loading manifest…)'
+                  : '(not yet baked — pick a published specimen or hit Publish)'}
+              />
               <FitButton fitRef={fitRef} cameraRef={cameraRef} controlsRef={controlsRef} />
             </div>
           )}
@@ -605,6 +717,36 @@ function ModeButton({ active, onClick, children }) {
         letterSpacing: '0.08em', textTransform: 'uppercase',
         cursor: active ? 'default' : 'pointer',
       }}>{children}</button>
+  )
+}
+
+// N.0 Alignment Oracle layer control: toggle + opacity slider in one
+// vertical chip so the three layers (Points / Cylinders / Baked GLB) read
+// at a glance. Opacity is decoupled from visibility — dimming a layer
+// doesn't lose its toggle state.
+function LayerControl({ label, active, onToggle, opacity, onOpacity, missing, missingHint }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 4,
+      background: 'rgba(0,0,0,0.6)',
+      border: `1px solid ${active ? 'rgba(126,200,224,0.4)' : 'rgba(255,255,255,0.1)'}`,
+      borderRadius: 3, padding: '4px 8px', minWidth: 110,
+    }}>
+      <button onClick={onToggle} disabled={missing} style={{
+        background: 'transparent', border: 'none', padding: 0,
+        color: missing ? '#555' : (active ? '#7fc8e0' : '#888'),
+        fontFamily: 'inherit', fontSize: 11, textAlign: 'left',
+        cursor: missing ? 'not-allowed' : 'pointer',
+      }}>{label}</button>
+      {missing ? (
+        <span style={{ fontSize: 9, color: '#555' }}>{missingHint}</span>
+      ) : (
+        <input type="range" min={0} max={1} step={0.05} value={opacity}
+          onChange={e => onOpacity(parseFloat(e.target.value))}
+          disabled={!active}
+          style={{ width: '100%', accentColor: '#7fc8e0', opacity: active ? 1 : 0.4 }} />
+      )}
+    </div>
   )
 }
 
