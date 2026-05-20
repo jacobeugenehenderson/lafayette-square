@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-lil_vera.py — Project: Li'l Vera, Cycle 1, Stage N.2.0 (Apparatus base).
+lil_vera.py — Project: Li'l Vera, Cycle 1, Stage N.2.1
+              (Evidence accumulation + orientation tomography).
 
 Builder: Tycho (2026-05-20). Honoring Tycho Brahe — observational astronomer
 whose meticulous, pre-interpretive logbooks gave Kepler the data to discover
 the planetary laws. The Posture B discipline (observe before interpret) lives
 in the same lineage as Vera Rubin, whose name this project carries forward.
 
-Stage N.2.0 — Phase 1 end-to-end ONLY. Apparatus base:
+Stage N.2.0 (apparatus base, landed 2026-05-20):
   - Spiral rig generator: N rig positions around tree's vertical axis, two
     superimposed pitches (wide + narrow baseline) for mixed-baseline coverage.
   - Per-rig 3-camera tripod at 120° azimuthal separation around the rig's
@@ -20,16 +21,37 @@ Stage N.2.0 — Phase 1 end-to-end ONLY. Apparatus base:
     pixels via epipolar constraint; triangulate (linear DLT) to 3D candidates.
   - Per-point memory vector scaffold (M_obs / M_interp channels) — STRUCTURAL
     only at N.2.0; orientation tomography (N.2.1) fills M_obs proper.
-  - Multi-rig consolidation: voxel-bucket stub for visual gate. Real
-    accumulation primitive is N.2.1.
+  - Multi-rig consolidation: voxel-bucket (visual gate). Real accumulation
+    primitive arrives at N.2.1 below.
+
+Stage N.2.1 (this stage, 2026-05-20):
+  - Phase 2a — Multi-rig consensus deposit. After consolidation, project
+    every candidate back into every rig's 3 cameras; look up the rendered
+    silhouette+medial+edge masks; increment per-candidate M_obs channels
+    (silhouette_count, medial_count, body_count, rigs_seen). Vectorised
+    over candidates per camera, parallelised over rig chunks.
+  - Phase 2b — Orientation tomography ("drag-a-stick-through-jelly").
+    Build a Gaussian-smoothed candidate-density field. For each candidate
+    and each of K_orient Fibonacci-on-hemisphere directions, drag a probe
+    along the direction and score the (density-along-drag) /
+    (density-along-drag + perp-residual + monotonicity-penalty +
+    symmetry-penalty) ratio. Score distribution shape across orientations
+    classifies the point: sharp unimodal → linear-interior; bimodal →
+    junction; unimodal one-sided → tip; flat → noise.
+  - Phase 2c — Patient iteration. Per-pass diagnostic curves persisted;
+    termination on M_obs-delta < eps_memory across the dominant channels.
+    Default 1 pass; --passes > 1 interleaves rig azimuths deterministically
+    for monotonic M_obs growth.
 
 POSTURE B (load-bearing): source 3D positions enter the apparatus exclusively
 as input to the camera-projection raster step (the physical equivalent of
 "the camera registered photons"). The extraction algorithm — silhouette,
-medial axis, stereo correspondence, triangulation — operates on the rendered
-2D images + known camera intrinsics/extrinsics. Source 3D coordinates are
-NEVER consulted as labels by the extraction code. This discipline generalizes
-the apparatus to consume iPhone photographs in future cycles.
+medial axis, stereo correspondence, triangulation, mask re-lookup in 2a,
+candidate-density field + probe-cone scoring in 2b — operates exclusively
+on rendered 2D images / pixel-derived 3D positions + known camera
+intrinsics/extrinsics. Source 3D coordinates are NEVER consulted as labels
+by the extraction code. This discipline generalizes the apparatus to consume
+iPhone photographs in future cycles.
 
 Output JSON (same shape as lidar_extract.py / bidirectional_skeleton.py so
 the LidarWorkstage cylinder renderer ingests it interchangeably):
@@ -47,7 +69,6 @@ CLI:
     .venv/bin/python lil_vera.py --treeId=10184 --N=50 --pitch=0.3
 
 NOT YET IMPLEMENTED (later stages, do not add here):
-  - N.2.1: Phase 2a multi-rig consensus deposit; Phase 2b orientation tomography
   - N.2.2: Phase 3 ridge extraction + axonal glimpse-reach + taper projection
   - N.2.3: Phase 4 pipe-model radius accumulation
   - N.2.4: Phase 5 Rubin consensus-stability validation
@@ -62,6 +83,7 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 import numpy as np
+from scipy.ndimage import binary_erosion, gaussian_filter
 from skimage.morphology import skeletonize
 
 # Reuse the canonical .laz loader so the source frame is identical to QSM /
@@ -333,8 +355,11 @@ def epipolar_stereo_match_full(uv_a, uv_b, R_a, t_a, K_a, P_b,
     far_b = proj_homog(far_pts, P_b)
 
     # 3. For each A-pixel, find the B-pixel closest to the line through
-    #    (near_b, far_b). Limit candidates to those within epipolar_tol.
-    # Distance from point p to line through a→b: |(b-a)×(p-a)| / |b-a|.
+    #    (near_b, far_b). Kept as a Python A-loop with vectorised B-search:
+    #    benchmarked faster than a full (Na × Nb × 2) tensor at our medial
+    #    pixel counts (the short-circuit on no-match A-pixels matters). At
+    #    N=500 per-rig observe is ~50s aggregate — well under the Phase 2b
+    #    budget that dominates overnight runs.
     a = near_b
     b = far_b
     ab = b - a  # Nx2
@@ -343,8 +368,6 @@ def epipolar_stereo_match_full(uv_a, uv_b, R_a, t_a, K_a, P_b,
     # All B-pixel coords as Mx2.
     Bxy = uv_b.astype(np.float64)
 
-    # We'll iterate A-pixels (typically a few thousand) — vectorise the
-    # B-search per A.
     idx_a_list = []
     idx_b_list = []
     for i in range(len(uv_a)):
@@ -404,18 +427,28 @@ def observe_rig(rig):
                    classification, confidence, source_pair}, ...] }.
     """
     cams = rig_cameras(rig, _RIG_TARGET_H)
-    # Render 3 silhouette masks.
+    # Render 3 silhouette masks. Retain silhouette + medial + R + t per
+    # camera so Phase 2a can re-project consolidated candidates back through
+    # the same rendered data (Posture-B-pure: 2a's classification reads come
+    # from the masks, not source 3D).
     views = []
     for (pos, tgt, up) in cams:
         R, t = build_view_matrix(pos, tgt, up)
         mask = rasterize_silhouette(_RIG_PTS, R, t, _RIG_K, _RIG_IMAGE_W,
                                      _RIG_IMAGE_H, splat_radius=_RIG_SPLAT)
         medial = extract_medial(mask)
+        # Silhouette edge = (mask) AND NOT (eroded mask). Pre-compute here
+        # so 2a deposit doesn't pay morphology cost per candidate.
+        eroded = binary_erosion(mask.astype(bool), iterations=1)
+        edge = mask.astype(bool) & (~eroded)
         vs, us = medial_pixels(medial)
         uv = np.column_stack([us, vs])  # Nx2 in (u, v) order
         P = projection_matrix(R, t, _RIG_K, _RIG_IMAGE_H)
         views.append({
             "R": R, "t": t, "P": P,
+            "mask": mask.astype(bool),
+            "medial": medial.astype(bool),
+            "edge": edge,
             "mask_sum": int(mask.sum()),
             "medial_sum": int(medial.sum()),
             "uv": uv,
@@ -455,6 +488,7 @@ def observe_rig(rig):
         "rig_idx": rig["_idx"],
         "rig": rig,
         "candidates": candidates,
+        "views": views,  # masks + R/t per camera — consumed by Phase 2a
         "view_stats": [{"mask": v["mask_sum"], "medial": v["medial_sum"]}
                        for v in views],
     }
@@ -463,9 +497,10 @@ def observe_rig(rig):
 # ── Multi-rig consolidation stub + chain emission ───────────────────────
 
 def consolidate_to_chains(rig_outputs, voxel=0.05):
-    """N.2.0 stub: voxel-bucket the candidates into one point per occupied
-    voxel; emit a parent-linked path per rig (raster order). Real
-    accumulation primitive is N.2.1.
+    """Voxel-bucket the per-rig stereo candidates into one node per occupied
+    voxel; chain-link them in (rig, pair) emission order so the renderer can
+    draw polylines. Memory channels are zero-initialised — Phase 2a does the
+    real M_obs deposit via mask re-projection.
 
     Returns: list of node dicts [{x,y,z,radius,parentIdx,memory}, ...]
     and stats dict.
@@ -483,9 +518,6 @@ def consolidate_to_chains(rig_outputs, voxel=0.05):
                   int(round(wz / voxel)))
             if vk in seen_voxels:
                 node_idx = seen_voxels[vk]
-                # Increment memory channel for the existing node.
-                nodes[node_idx]["memory"]["M_obs"]["medial_count"] += 1
-                nodes[node_idx]["memory"]["M_obs"]["rigs_seen"] += 1
             else:
                 node_idx = len(nodes)
                 seen_voxels[vk] = node_idx
@@ -500,12 +532,13 @@ def consolidate_to_chains(rig_outputs, voxel=0.05):
                     "memory": {
                         "M_obs": {
                             "silhouette_count": 0,
-                            "medial_count": 1,
+                            "medial_count": 0,
                             "body_count": 0,
-                            "rigs_seen": 1,
+                            "rigs_seen": 0,
                         },
                         "M_interp": {},
-                        "classification": cand["classification"],
+                        "classification": "unclassified",
+                        "tomography": None,
                     },
                 })
             prev_idx_in_chain[cand["pair"]] = node_idx
@@ -517,12 +550,405 @@ def consolidate_to_chains(rig_outputs, voxel=0.05):
     return nodes, stats
 
 
+# ── Phase 2a — Multi-rig consensus deposit (Posture-B mask re-lookup) ──
+
+def multi_rig_consensus_deposit(nodes, rig_outputs, K, image_w, image_h):
+    """For each consolidated candidate, project into every rig's 3 cameras
+    using the per-camera R/t retained from Phase 1; look up the rendered
+    silhouette/medial/edge masks; deposit per-channel counts into the
+    node's M_obs vector.
+
+    Channels:
+      - medial_count   += 1 per camera-view where projection lands on the
+                         medial-axis skeleton pixel
+      - silhouette_count += 1 per camera-view where projection lands on the
+                         silhouette boundary (mask edge, not skeleton)
+      - body_count     += 1 per camera-view where projection lands on the
+                         body interior (mask, not skeleton, not edge)
+      - rigs_seen      += 1 per rig where ≥1 of 3 cameras' projection lands
+                         on any silhouette pixel
+
+    Vectorised over candidates per camera. Returns the updated nodes list
+    in-place + a stats dict.
+    """
+    if not nodes:
+        return nodes, {"depositCameras": 0, "depositRigs": 0}
+
+    # Stack candidate world positions once.
+    Pc = np.array([[n["x"], n["y"], n["z"]] for n in nodes], dtype=np.float64)
+    Nc = len(Pc)
+    sil = np.zeros(Nc, dtype=np.int32)
+    med = np.zeros(Nc, dtype=np.int32)
+    body = np.zeros(Nc, dtype=np.int32)
+    rigs_seen = np.zeros(Nc, dtype=np.int32)
+    cam_count = 0
+
+    for ro in rig_outputs:
+        # Per-rig: OR-reduce silhouette hits across 3 cameras for rigs_seen.
+        seen_this_rig = np.zeros(Nc, dtype=bool)
+        for v in ro["views"]:
+            cam_count += 1
+            uv, _depth, in_frame = project_points(Pc, v["R"], v["t"], K,
+                                                    image_w, image_h)
+            if not np.any(in_frame):
+                continue
+            u_int = np.clip(uv[:, 0].astype(np.int32), 0, image_w - 1)
+            v_int = np.clip(uv[:, 1].astype(np.int32), 0, image_h - 1)
+            mask_hit = in_frame & v["mask"][v_int, u_int]
+            medial_hit = mask_hit & v["medial"][v_int, u_int]
+            edge_hit = mask_hit & ~medial_hit & v["edge"][v_int, u_int]
+            body_hit = mask_hit & ~medial_hit & ~edge_hit
+            med += medial_hit.astype(np.int32)
+            sil += edge_hit.astype(np.int32)
+            body += body_hit.astype(np.int32)
+            seen_this_rig |= mask_hit
+        rigs_seen += seen_this_rig.astype(np.int32)
+
+    # Write back into the node dicts.
+    for i, n in enumerate(nodes):
+        m = n["memory"]["M_obs"]
+        m["medial_count"]    += int(med[i])
+        m["silhouette_count"] += int(sil[i])
+        m["body_count"]       += int(body[i])
+        m["rigs_seen"]        += int(rigs_seen[i])
+
+    return nodes, {
+        "depositCameras": int(cam_count),
+        "depositRigs": int(len(rig_outputs)),
+        "totalMedialDeposits": int(med.sum()),
+        "totalSilhouetteDeposits": int(sil.sum()),
+        "totalBodyDeposits": int(body.sum()),
+        "meanRigsSeen": float(rigs_seen.mean()) if Nc else 0.0,
+    }
+
+
+# ── Phase 2b — Orientation tomography ("drag-a-stick-through-jelly") ───
+
+def fibonacci_hemisphere(k):
+    """Deterministic k unit vectors on the +Z hemisphere (orientation has
+    axial symmetry — u and -u are the same axis). Golden-angle spiral; for
+    k=200 the angular separation is ~10° (sufficient for peak detection).
+    Returns (k, 3) float array."""
+    if k <= 0:
+        return np.zeros((0, 3))
+    golden = (1.0 + np.sqrt(5.0)) / 2.0
+    out = np.empty((k, 3))
+    for i in range(k):
+        # z in (0, 1] — upper hemisphere only.
+        z = 1.0 - (i + 0.5) / k
+        r = np.sqrt(max(0.0, 1.0 - z * z))
+        theta = 2.0 * np.pi * i / golden
+        out[i, 0] = r * np.cos(theta)
+        out[i, 1] = r * np.sin(theta)
+        out[i, 2] = z
+    return out
+
+
+def build_candidate_density_field(nodes, voxel=0.05, sigma_voxels=2.0,
+                                    padding=4):
+    """Voxelise the candidate cloud's M_obs-weighted positions into a
+    scalar density field; Gaussian-smooth. Returns (grid, origin, voxel).
+
+    Each candidate contributes weight = max(1, rigs_seen) — points the
+    apparatus saw from many rigs deposit stronger. This is the field
+    Phase 2b's probe cone slides through.
+    """
+    if not nodes:
+        return np.zeros((1, 1, 1)), np.zeros(3), voxel
+    pts = np.array([[n["x"], n["y"], n["z"]] for n in nodes])
+    weights = np.array([max(1, n["memory"]["M_obs"]["rigs_seen"])
+                        for n in nodes], dtype=np.float64)
+    mins = pts.min(axis=0) - voxel * padding
+    maxs = pts.max(axis=0) + voxel * padding
+    nx = int(np.ceil((maxs[0] - mins[0]) / voxel)) + 1
+    ny = int(np.ceil((maxs[1] - mins[1]) / voxel)) + 1
+    nz = int(np.ceil((maxs[2] - mins[2]) / voxel)) + 1
+    grid = np.zeros((nx, ny, nz), dtype=np.float64)
+    ijk = np.floor((pts - mins) / voxel).astype(np.int64)
+    ijk[:, 0] = np.clip(ijk[:, 0], 0, nx - 1)
+    ijk[:, 1] = np.clip(ijk[:, 1], 0, ny - 1)
+    ijk[:, 2] = np.clip(ijk[:, 2], 0, nz - 1)
+    # Accumulate weighted deposits (np.add.at handles repeated indices).
+    np.add.at(grid, (ijk[:, 0], ijk[:, 1], ijk[:, 2]), weights)
+    grid = gaussian_filter(grid, sigma=sigma_voxels)
+    return grid, mins, voxel
+
+
+def sample_density_trilinear(grid, origin, voxel, pts):
+    """Vectorised trilinear-nearest density sampler. pts: (N, 3). Returns
+    (N,) float."""
+    ijk = np.floor((pts - origin) / voxel).astype(np.int64)
+    nx, ny, nz = grid.shape
+    ijk[:, 0] = np.clip(ijk[:, 0], 0, nx - 1)
+    ijk[:, 1] = np.clip(ijk[:, 1], 0, ny - 1)
+    ijk[:, 2] = np.clip(ijk[:, 2], 0, nz - 1)
+    return grid[ijk[:, 0], ijk[:, 1], ijk[:, 2]]
+
+
+# Module globals for the Phase 2b worker pool (avoid repickling the
+# density field per candidate chunk).
+_TOMO_GRID = None
+_TOMO_ORIGIN = None
+_TOMO_VOXEL = None
+_TOMO_DIRS = None
+_TOMO_PARAMS = None
+
+
+def _tomo_pool_init(grid, origin, voxel, directions, params):
+    global _TOMO_GRID, _TOMO_ORIGIN, _TOMO_VOXEL, _TOMO_DIRS, _TOMO_PARAMS
+    _TOMO_GRID = grid
+    _TOMO_ORIGIN = origin
+    _TOMO_VOXEL = voxel
+    _TOMO_DIRS = directions
+    _TOMO_PARAMS = params
+
+
+def tomography_chunk(args):
+    """Worker entrypoint. args = (chunk_idx, pts_chunk).
+    Returns chunk_idx + per-candidate (scores, classification_idx, axis,
+    confidence, top2_ratio)."""
+    chunk_idx, pts_chunk = args
+    grid = _TOMO_GRID
+    origin = _TOMO_ORIGIN
+    voxel = _TOMO_VOXEL
+    dirs = _TOMO_DIRS
+    p = _TOMO_PARAMS
+    n_pts = len(pts_chunk)
+    k = len(dirs)
+    if n_pts == 0:
+        return chunk_idx, np.zeros((0, k)), np.zeros(0, dtype=np.int8), \
+               np.zeros((0, 3)), np.zeros(0), np.zeros(0)
+
+    probe_len = p["probe_length"]
+    n_samples = p["n_samples_along_drag"]
+    perp_offset = p["perp_offset"]
+    n_perp = p["n_perp_samples"]
+
+    # Sample positions along drag — split into forward (+u, n/2 samples) and
+    # backward (-u) halves so we can measure asymmetry per direction (tip
+    # distinguisher: probe along axis sees structure forward but not back).
+    half = max(2, n_samples // 2)
+    s_plus = np.linspace(probe_len * 0.05, probe_len * 0.5, half)
+    s_minus = -s_plus
+    perp_az = np.linspace(0, 2 * np.pi, n_perp, endpoint=False)
+
+    scores = np.zeros((n_pts, k), dtype=np.float64)
+    asymmetry = np.zeros((n_pts, k), dtype=np.float64)
+    for d_idx in range(k):
+        u = dirs[d_idx]
+        if abs(u[2]) < 0.999:
+            ref = np.array([0.0, 0.0, 1.0])
+        else:
+            ref = np.array([1.0, 0.0, 0.0])
+        e1 = np.cross(u, ref)
+        e1 = e1 / (np.linalg.norm(e1) + 1e-12)
+        e2 = np.cross(u, e1)
+
+        # Forward / backward density-along.
+        pl = pts_chunk[:, None, :] + s_plus[None, :, None] * u
+        mi = pts_chunk[:, None, :] + s_minus[None, :, None] * u
+        d_plus = sample_density_trilinear(grid, origin, voxel,
+                                            pl.reshape(-1, 3)).reshape(n_pts, half)
+        d_minus = sample_density_trilinear(grid, origin, voxel,
+                                             mi.reshape(-1, 3)).reshape(n_pts, half)
+        d_along_mean = 0.5 * (d_plus.mean(axis=1) + d_minus.mean(axis=1))
+
+        # Perpendicular ring at probe centre (s=0) at radius perp_offset.
+        ring_offsets = (np.cos(perp_az)[:, None] * e1 +
+                        np.sin(perp_az)[:, None] * e2) * perp_offset
+        ring = pts_chunk[:, None, :] + ring_offsets[None, :, :]
+        d_perp = sample_density_trilinear(grid, origin, voxel,
+                                            ring.reshape(-1, 3)).reshape(n_pts, n_perp)
+        d_perp_mean = d_perp.mean(axis=1)
+
+        # Tubularity score = max(0, d_along - d_perp). Raw difference
+        # preserves dynamic range across directions — ratio normalisation
+        # collapsed to ~constant across directions in dev runs because the
+        # candidate cloud's overall density swamped the directional gradient.
+        scores[:, d_idx] = np.maximum(0.0, d_along_mean - d_perp_mean)
+        # Asymmetry: |forward - backward| / total. High asymmetry + peaked
+        # score on this axis = tip; low asymmetry + peaked score = linear.
+        plus_mean = d_plus.mean(axis=1)
+        minus_mean = d_minus.mean(axis=1)
+        asymmetry[:, d_idx] = (np.abs(plus_mean - minus_mean) /
+                                (plus_mean + minus_mean + 1e-9))
+
+    # Per-point classification via greedy non-maximum-suppression on the
+    # hemisphere (top peak, plus any peak ≥ peak_ratio of top and angularly
+    # separated by ≥ peak_angular_radius).
+    classifications = np.zeros(n_pts, dtype=np.int8)
+    axes = np.zeros((n_pts, 3))
+    confidences = np.zeros(n_pts)
+    top2 = np.zeros(n_pts)
+    flat_thresh = p["flat_threshold"]
+    peak_ratio = p["peak_ratio_threshold"]
+    cos_angular = np.cos(p["peak_angular_radius_rad"])
+    tip_asym = p["tip_asymmetry_threshold"]
+    junction_min_peak = p["junction_min_peak_score"]
+
+    for i in range(n_pts):
+        s = scores[i]
+        s_max = s.max()
+        s_mean = s.mean()
+        sharpness = s_max - s_mean
+        order = np.argsort(-s)
+        # Greedy NMS — collect peaks.
+        peaks = []
+        for idx in order:
+            if s[idx] < peak_ratio * s_max:
+                break
+            if s[idx] < junction_min_peak:
+                # Below the per-peak floor — only the very-top can pass.
+                if peaks:
+                    continue
+            ok = True
+            for pi in peaks:
+                if dirs[idx] @ dirs[pi] > cos_angular:
+                    ok = False
+                    break
+            if ok:
+                peaks.append(idx)
+                if len(peaks) >= 4:
+                    break
+        primary = peaks[0] if peaks else int(order[0])
+        axes[i] = dirs[primary]
+        confidences[i] = sharpness
+        # top2_ratio uses second-NMS peak if any, else 2nd order.
+        if len(peaks) >= 2:
+            top2[i] = s[peaks[1]] / max(s_max, 1e-9)
+        elif k > 1:
+            top2[i] = s[order[1]] / max(s_max, 1e-9)
+
+        if sharpness < flat_thresh:
+            classifications[i] = CLS_NOISE
+        elif len(peaks) >= 2:
+            classifications[i] = CLS_JUNCTION
+        elif asymmetry[i, primary] > tip_asym:
+            classifications[i] = CLS_TIP
+        else:
+            classifications[i] = CLS_LINEAR_INTERIOR
+
+    return chunk_idx, scores, classifications, axes, confidences, top2
+
+
+# Classification codes (int8 for compact wire transfer).
+CLS_NOISE = 0
+CLS_LINEAR_INTERIOR = 1
+CLS_JUNCTION = 2
+CLS_TIP = 3
+CLS_NAMES = {0: "noise", 1: "linear-interior", 2: "junction", 3: "tip"}
+
+
+def orientation_tomography(nodes, k_orient=200, probe_length=0.10,
+                            perp_offset=0.04, n_samples_along_drag=8,
+                            n_perp_samples=8, flat_threshold=0.010,
+                            peak_ratio_threshold=0.75,
+                            peak_angular_radius_deg=60.0,
+                            tip_asymmetry_threshold=0.18,
+                            junction_min_peak_score=0.0,
+                            density_voxel=0.03,
+                            density_sigma_voxels=1.0,
+                            n_workers=None, chunk_size=512):
+    """Phase 2b end-to-end: build candidate-density field, sample K_orient
+    Fibonacci-on-hemisphere directions per candidate, classify by
+    score-distribution shape. Updates nodes in-place + returns stats dict.
+
+    Posture-B-pure: the density field is built from the 3D candidate
+    positions recovered in Phase 1 (themselves derived from rendered
+    pixels). No source 3D label lookups.
+    """
+    if not nodes:
+        return nodes, {"tomographyCandidates": 0}
+
+    t0 = time.time()
+    grid, origin, voxel = build_candidate_density_field(
+        nodes, voxel=density_voxel, sigma_voxels=density_sigma_voxels)
+    t_grid = time.time() - t0
+
+    dirs = fibonacci_hemisphere(k_orient)
+    pts = np.array([[n["x"], n["y"], n["z"]] for n in nodes])
+
+    params = {
+        "probe_length": probe_length,
+        "perp_offset": perp_offset,
+        "n_samples_along_drag": n_samples_along_drag,
+        "n_perp_samples": n_perp_samples,
+        "flat_threshold": flat_threshold,
+        "peak_ratio_threshold": peak_ratio_threshold,
+        "peak_angular_radius_rad": np.deg2rad(peak_angular_radius_deg),
+        "tip_asymmetry_threshold": tip_asymmetry_threshold,
+        "junction_min_peak_score": junction_min_peak_score,
+    }
+
+    if n_workers is None:
+        n_workers = max(1, cpu_count() - 1)
+
+    # Slice candidates into chunks for parallel processing.
+    chunks = [(i, pts[i:i + chunk_size])
+              for i in range(0, len(pts), chunk_size)]
+
+    t1 = time.time()
+    if n_workers == 1 or len(chunks) <= 2:
+        _tomo_pool_init(grid, origin, voxel, dirs, params)
+        chunk_results = [tomography_chunk(c) for c in chunks]
+    else:
+        with Pool(processes=n_workers,
+                  initializer=_tomo_pool_init,
+                  initargs=(grid, origin, voxel, dirs, params)) as pool:
+            chunk_results = pool.map(tomography_chunk, chunks)
+    t_score = time.time() - t1
+
+    # Stitch chunk outputs back into nodes in order.
+    chunk_results.sort(key=lambda r: r[0])
+    cursor = 0
+    class_counts = {name: 0 for name in CLS_NAMES.values()}
+    for (_idx, _scores, cls, axes, confs, top2) in chunk_results:
+        for j in range(len(cls)):
+            n = nodes[cursor + j]
+            cname = CLS_NAMES[int(cls[j])]
+            n["memory"]["tomography"] = {
+                "classification": cname,
+                "axis": [float(axes[j, 0]), float(axes[j, 1]),
+                         float(axes[j, 2])],
+                "confidence": float(confs[j]),
+                "top2_ratio": float(top2[j]),
+            }
+            n["memory"]["classification"] = cname
+            class_counts[cname] += 1
+        cursor += len(cls)
+
+    return nodes, {
+        "tomographyCandidates": int(len(nodes)),
+        "tomographyKOrient": int(k_orient),
+        "tomographyClassCounts": class_counts,
+        "tomographyGridMs": int(t_grid * 1000),
+        "tomographyScoreMs": int(t_score * 1000),
+        "densityGridShape": list(grid.shape),
+    }
+
+
+# ── Phase 2c — patient iteration helpers ────────────────────────────────
+
+def m_obs_total(nodes):
+    """Sum of dominant M_obs channels across all nodes — used for
+    termination criterion (M_obs delta < eps_memory across passes)."""
+    total = 0
+    for n in nodes:
+        m = n["memory"]["M_obs"]
+        total += m["medial_count"] + m["silhouette_count"] + m["body_count"]
+    return total
+
+
 # ── Top-level pipeline ──────────────────────────────────────────────────
 
 def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
                   image_w=384, image_h=288, splat_radius=1,
-                  consolidation_voxel=0.05, n_workers=None):
-    """Stage N.2.0 end-to-end. Returns full result dict."""
+                  consolidation_voxel=0.05, n_workers=None,
+                  passes=1, eps_memory=0.005,
+                  probe_length=0.10, perp_offset=0.04,
+                  density_voxel=0.05, density_sigma_voxels=2.0):
+    """Stage N.2.1 end-to-end: Phase 1 + Phase 2a + Phase 2b, looped over
+    `passes` with monotone M_obs growth and stability-based termination."""
     t0 = time.time()
     # Load + center cloud (Z-up source frame, mirrors lidar_extract).
     pts_raw = load_pointcloud(laz_path)
@@ -534,60 +960,186 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
     ))
     t_load = time.time() - t0
 
-    # Spiral rig set.
-    rigs = generate_rig_positions(n_rigs, tree_height, tree_radius, pitch_ratio)
-    for i, r in enumerate(rigs):
-        r["_idx"] = i
-
     # Intrinsics (shared across rigs).
     K = build_intrinsics(image_w, image_h, vfov_deg=45.0)
     target_h = tree_height * 0.5
 
-    # Per-rig observation in parallel.
-    t1 = time.time()
     if n_workers is None:
         n_workers = max(1, cpu_count() - 1)
-    if n_workers == 1 or len(rigs) < 4:
-        # Serial path (easier for debugging + small N).
-        _pool_init(pts, K, target_h, image_w, image_h, splat_radius)
-        rig_outputs = [observe_rig(r) for r in rigs]
-    else:
-        with Pool(processes=n_workers,
-                  initializer=_pool_init,
-                  initargs=(pts, K, target_h, image_w, image_h, splat_radius)) as pool:
-            rig_outputs = pool.map(observe_rig, rigs)
-    t_observe = time.time() - t1
 
-    # Consolidation + chain emission.
-    t2 = time.time()
-    nodes, consol_stats = consolidate_to_chains(rig_outputs,
-                                                voxel=consolidation_voxel)
-    t_consolidate = time.time() - t2
+    # State accumulated across passes.
+    nodes = []
+    seen_voxels = {}
+    pre_consolidation_total = 0
+    deposit_stats_aggregate = {"depositCameras": 0, "depositRigs": 0,
+                                "totalMedialDeposits": 0,
+                                "totalSilhouetteDeposits": 0,
+                                "totalBodyDeposits": 0}
+    per_pass = []
+    prev_m_obs = 0
+    tomo_stats = {}
+    total_mask_pixels = 0
+    total_medial_pixels = 0
+    t_observe_total = 0.0
+    t_deposit_total = 0.0
+    t_tomo_total = 0.0
+    t_consolidate_total = 0.0
 
-    # Strip the heavy memory dict from the nodes that go on the wire — the
-    # scaffold lives in `memoryScaffold.perPointCount`; per-node detail is
-    # not consumed by the LidarWorkstage's CylinderSkeleton (renders
-    # x/y/z/radius/parentIdx). Keep classification on the node for debugging.
+    for pass_idx in range(passes):
+        pass_t0 = time.time()
+        # Deterministic per-pass azimuth offset for interleaved coverage
+        # across multi-pass runs (per Phase 2c: monotone M_obs growth).
+        pass_offset = pass_idx * (2.0 * np.pi / max(1, passes * n_rigs))
+        rigs = generate_rig_positions(n_rigs, tree_height, tree_radius,
+                                       pitch_ratio)
+        for i, r in enumerate(rigs):
+            r["_idx"] = i
+            r["azimuth"] = r["azimuth"] + pass_offset
+
+        # Phase 1 — per-rig observation in parallel.
+        t1 = time.time()
+        if n_workers == 1 or len(rigs) < 4:
+            _pool_init(pts, K, target_h, image_w, image_h, splat_radius)
+            rig_outputs = [observe_rig(r) for r in rigs]
+        else:
+            with Pool(processes=n_workers,
+                      initializer=_pool_init,
+                      initargs=(pts, K, target_h, image_w, image_h, splat_radius)) as pool:
+                rig_outputs = pool.map(observe_rig, rigs)
+        t_observe = time.time() - t1
+        t_observe_total += t_observe
+
+        # Consolidate this pass's candidates into the rolling node set.
+        t2 = time.time()
+        if pass_idx == 0:
+            nodes, consol_stats = consolidate_to_chains(
+                rig_outputs, voxel=consolidation_voxel)
+            seen_voxels = {(int(round(n["x"] / consolidation_voxel)),
+                            int(round(n["y"] / consolidation_voxel)),
+                            int(round(n["z"] / consolidation_voxel))): i
+                           for i, n in enumerate(nodes)}
+            pre_consolidation_total = consol_stats["candidatesPreConsolidation"]
+        else:
+            # Merge new pass candidates into the existing node set,
+            # preserving voxel identity. Chain-links use the new (pair) per
+            # rig within the pass.
+            add_count = 0
+            for ro in rig_outputs:
+                prev_idx_in_chain = {}
+                for cand in ro["candidates"]:
+                    pre_consolidation_total += 1
+                    wx, wy, wz = cand["world"]
+                    vk = (int(round(wx / consolidation_voxel)),
+                          int(round(wy / consolidation_voxel)),
+                          int(round(wz / consolidation_voxel)))
+                    if vk in seen_voxels:
+                        node_idx = seen_voxels[vk]
+                    else:
+                        node_idx = len(nodes)
+                        seen_voxels[vk] = node_idx
+                        parent = prev_idx_in_chain.get(cand["pair"], -1)
+                        nodes.append({
+                            "x": float(wx), "y": float(wy), "z": float(wz),
+                            "radius": 0.02,
+                            "parentIdx": int(parent),
+                            "memory": {
+                                "M_obs": {"silhouette_count": 0,
+                                          "medial_count": 0,
+                                          "body_count": 0, "rigs_seen": 0},
+                                "M_interp": {},
+                                "classification": "unclassified",
+                                "tomography": None,
+                            },
+                        })
+                        add_count += 1
+                    prev_idx_in_chain[cand["pair"]] = node_idx
+            consol_stats = {"candidatesPreConsolidation": pre_consolidation_total,
+                            "nodesPostConsolidation": len(nodes),
+                            "consolidationVoxel": consolidation_voxel,
+                            "nodesAddedThisPass": add_count}
+        t_consolidate_total += time.time() - t2
+
+        # Per-rig view stats summary (accumulated for reporting).
+        for ro in rig_outputs:
+            for vs in ro["view_stats"]:
+                total_mask_pixels += vs["mask"]
+                total_medial_pixels += vs["medial"]
+
+        # Phase 2a — multi-rig consensus deposit (mask re-lookup).
+        t3 = time.time()
+        nodes, deposit_stats = multi_rig_consensus_deposit(
+            nodes, rig_outputs, K, image_w, image_h)
+        for k_, v_ in deposit_stats.items():
+            if isinstance(v_, (int, float)):
+                deposit_stats_aggregate[k_] = (
+                    deposit_stats_aggregate.get(k_, 0) + v_)
+        t_deposit_total += time.time() - t3
+
+        # Drop the heavy per-rig view masks now that 2a has read them —
+        # frees memory before the tomography step (which builds its own
+        # voxel grid).
+        for ro in rig_outputs:
+            ro["views"] = None
+
+        # Phase 2b — orientation tomography (rebuilt density field each
+        # pass since the candidate set grew).
+        t4 = time.time()
+        nodes, tomo_stats = orientation_tomography(
+            nodes, k_orient=k_orient,
+            probe_length=probe_length,
+            perp_offset=perp_offset,
+            density_voxel=density_voxel,
+            density_sigma_voxels=density_sigma_voxels,
+            n_workers=n_workers,
+        )
+        t_tomo_total += time.time() - t4
+
+        # Per-pass diagnostic snapshot.
+        m_obs_now = m_obs_total(nodes)
+        m_obs_delta = ((m_obs_now - prev_m_obs) / max(m_obs_now, 1)
+                        if prev_m_obs > 0 else 1.0)
+        per_pass.append({
+            "passIdx": pass_idx,
+            "rigsInPass": len(rigs),
+            "nodesAfter": len(nodes),
+            "candidatesPreConsolidationCum": pre_consolidation_total,
+            "mObsTotal": int(m_obs_now),
+            "mObsDelta": float(m_obs_delta),
+            "tomoClassCounts": tomo_stats.get("tomographyClassCounts", {}),
+            "passMs": int((time.time() - pass_t0) * 1000),
+        })
+        prev_m_obs = m_obs_now
+
+        # Termination: M_obs accumulation flattened across passes (only
+        # after pass 1, since pass 0 sets the baseline).
+        if pass_idx > 0 and m_obs_delta < eps_memory:
+            break
+
+    # Wire-node assembly: carry the M_obs channels + tomography classification
+    # + axis so the LidarWorkstage heatmap layer can color by channel without
+    # a second round-trip.
     wire_nodes = []
-    classifications = {}
+    classifications = {name: 0 for name in CLS_NAMES.values()}
+    classifications["unclassified"] = 0
     for n in nodes:
+        m = n["memory"]["M_obs"]
+        tomo = n["memory"]["tomography"]
         wire_nodes.append({
             "x": n["x"], "y": n["y"], "z": n["z"],
             "radius": n["radius"], "parentIdx": n["parentIdx"],
             "classification": n["memory"]["classification"],
-            "medialCount": n["memory"]["M_obs"]["medial_count"],
-            "rigsSeen": n["memory"]["M_obs"]["rigs_seen"],
+            "silhouetteCount": m["silhouette_count"],
+            "medialCount": m["medial_count"],
+            "bodyCount": m["body_count"],
+            "rigsSeen": m["rigs_seen"],
+            "tomoAxis": tomo["axis"] if tomo else None,
+            "tomoConfidence": tomo["confidence"] if tomo else 0.0,
+            "tomoTop2Ratio": tomo["top2_ratio"] if tomo else 0.0,
         })
         c = n["memory"]["classification"]
         classifications[c] = classifications.get(c, 0) + 1
 
-    # Per-rig view stats summary.
-    total_medial_pixels = sum(
-        sum(vs["medial"] for vs in ro["view_stats"]) for ro in rig_outputs)
-    total_mask_pixels = sum(
-        sum(vs["mask"] for vs in ro["view_stats"]) for ro in rig_outputs)
-
-    median_r = 0.02  # Phase 4 will fill; placeholder for renderer.
+    median_r = 0.02
     result = {
         "nodes": wire_nodes,
         "stats": {
@@ -595,22 +1147,30 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
             "pointsDownsampled": int(len(pts)),
             "treeHeight": tree_height,
             "treeRadius": tree_radius,
-            "rigs": len(rigs),
-            "cameras": 3 * len(rigs),
+            "rigs": n_rigs,
+            "rigsPerPass": n_rigs,
+            "passes": len(per_pass),
+            "passesRequested": passes,
+            "cameras": 3 * n_rigs * len(per_pass),
             "totalSilhouettePixels": int(total_mask_pixels),
             "totalMedialPixels": int(total_medial_pixels),
-            "candidatesPreConsolidation": consol_stats["candidatesPreConsolidation"],
+            "candidatesPreConsolidation": int(pre_consolidation_total),
             "nodes": len(wire_nodes),
             "cylinders": sum(1 for n in wire_nodes if n["parentIdx"] >= 0),
             "trunkLike": 0,
             "branchLike": len(wire_nodes),
             "medianRadius": median_r,
             "classifications": classifications,
+            "tomography": tomo_stats,
+            "deposit": deposit_stats_aggregate,
             "elapsedMs": int((time.time() - t0) * 1000),
             "loadMs": int(t_load * 1000),
-            "observeMs": int(t_observe * 1000),
-            "consolidateMs": int(t_consolidate * 1000),
+            "observeMs": int(t_observe_total * 1000),
+            "depositMs": int(t_deposit_total * 1000),
+            "tomographyMs": int(t_tomo_total * 1000),
+            "consolidateMs": int(t_consolidate_total * 1000),
             "workers": int(n_workers),
+            "terminatedByMObsStability": (len(per_pass) < passes),
         },
         "hyperparams": {
             "N": int(n_rigs),
@@ -621,15 +1181,25 @@ def run_lil_vera(laz_path, n_rigs, k_orient, pitch_ratio, voxel_size,
             "imageH": int(image_h),
             "splatRadius": int(splat_radius),
             "consolidationVoxel": float(consolidation_voxel),
-            "stage": "N.2.0",
+            "passes": int(passes),
+            "epsMemory": float(eps_memory),
+            "probeLength": float(probe_length),
+            "perpOffset": float(perp_offset),
+            "densityVoxel": float(density_voxel),
+            "densitySigmaVoxels": float(density_sigma_voxels),
+            "stage": "N.2.1",
         },
         "memoryScaffold": {
             "channels": ["M_obs.silhouette_count", "M_obs.medial_count",
                          "M_obs.body_count", "M_obs.rigs_seen",
+                         "tomography.classification", "tomography.axis",
+                         "tomography.confidence", "tomography.top2_ratio",
                          "M_interp.*"],
             "perPointCount": len(wire_nodes),
-            "note": "Scaffold only at N.2.0; orientation tomography (N.2.1) fills M_obs proper.",
+            "note": ("M_obs populated by Phase 2a mask re-lookup + Phase 2b "
+                     "tomography. M_interp still empty (Phase 3 / N.2.2)."),
         },
+        "perPassDiagnostics": per_pass,
     }
     return result
 
@@ -654,12 +1224,24 @@ def persist_run(tree_id, n_rigs, result, out_override=None):
 # ── CLI ─────────────────────────────────────────────────────────────────
 
 def main():
-    ap = argparse.ArgumentParser(description="Project: Li'l Vera, Stage N.2.0 apparatus base")
+    ap = argparse.ArgumentParser(description="Project: Li'l Vera, Stage N.2.1 — evidence accumulation + orientation tomography")
     ap.add_argument("--treeId", required=True)
     ap.add_argument("--N", type=int, default=50,
                     help="Total rig positions (dev: 50; overnight load-bearing: 500)")
     ap.add_argument("--kOrient", type=int, default=200,
-                    help="Orientation tomography samples per point (structural at N.2.0; used at N.2.1)")
+                    help="Orientation tomography samples per point (Fibonacci-on-hemisphere)")
+    ap.add_argument("--passes", type=int, default=1,
+                    help="Patient-iteration passes; M_obs additive across passes with deterministic azimuth interleave")
+    ap.add_argument("--epsMemory", type=float, default=0.005,
+                    help="Per-pass M_obs delta termination threshold (passes>1)")
+    ap.add_argument("--probeLength", type=float, default=0.10,
+                    help="Phase 2b probe-cone length along drag (m)")
+    ap.add_argument("--perpOffset", type=float, default=0.04,
+                    help="Phase 2b perpendicular sampling radius around axis (m)")
+    ap.add_argument("--densityVoxel", type=float, default=0.05,
+                    help="Phase 2b candidate-density field voxel size (m)")
+    ap.add_argument("--densitySigmaVoxels", type=float, default=2.0,
+                    help="Phase 2b Gaussian smoothing sigma in voxel units")
     ap.add_argument("--pitch", type=float, default=0.3,
                     help="Spiral pitch ratio (vertical-rise-per-orbit / tree height)")
     ap.add_argument("--voxelSize", type=float, default=0.03,
@@ -697,6 +1279,12 @@ def main():
         splat_radius=args.splatRadius,
         consolidation_voxel=args.consolidationVoxel,
         n_workers=workers,
+        passes=args.passes,
+        eps_memory=args.epsMemory,
+        probe_length=args.probeLength,
+        perp_offset=args.perpOffset,
+        density_voxel=args.densityVoxel,
+        density_sigma_voxels=args.densitySigmaVoxels,
     )
     result["treeId"] = args.treeId
     out_path = persist_run(args.treeId, args.N, result, out_override=args.out)

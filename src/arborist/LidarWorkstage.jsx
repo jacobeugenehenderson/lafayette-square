@@ -143,6 +143,88 @@ function CylinderSkeleton({ nodes, medianRadius, minRadius, visible = true, opac
 }
 
 
+// Project: Li'l Vera Stage N.2.1 (2026-05-20, Tycho) — debug heatmap of the
+// observational memory field. Each consolidated 3D candidate is rendered as
+// a coloured point; the colour encodes the selected M_obs channel
+// (silhouette_count / medial_count / body_count / rigs_seen) or the Phase 2b
+// tomography classification (noise / linear-interior / junction / tip).
+// This IS the N.2.1 visual gate per the brief: "does M_obs concentrate along
+// tree-shaped regions?".
+const MEMORY_CHANNELS = ['rigsSeen', 'medialCount', 'silhouetteCount', 'bodyCount', 'classification']
+const CLASSIFICATION_COLORS = {
+  'noise':           [0.40, 0.40, 0.45],
+  'linear-interior': [0.20, 0.80, 0.85],  // cyan
+  'junction':        [0.95, 0.30, 0.85],  // magenta
+  'tip':             [1.00, 0.85, 0.20],  // yellow
+  'unclassified':    [0.30, 0.30, 0.30],
+}
+function viridis(t) {
+  // 5-stop viridis approximation, t in [0, 1].
+  const t1 = Math.max(0, Math.min(1, t))
+  const stops = [
+    [0.267, 0.005, 0.329],   // dark purple
+    [0.282, 0.140, 0.458],
+    [0.254, 0.265, 0.530],
+    [0.207, 0.372, 0.553],
+    [0.165, 0.471, 0.558],
+    [0.128, 0.567, 0.551],
+    [0.135, 0.659, 0.518],
+    [0.267, 0.749, 0.441],
+    [0.478, 0.821, 0.318],
+    [0.741, 0.873, 0.150],
+    [0.993, 0.906, 0.144],   // yellow
+  ]
+  const f = t1 * (stops.length - 1)
+  const i = Math.floor(f)
+  const j = Math.min(stops.length - 1, i + 1)
+  const k = f - i
+  const a = stops[i], b = stops[j]
+  return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
+}
+function MemoryHeatPoints({ nodes, channel = 'rigsSeen', visible = true, opacity = 0.9, pointSize = 0.08 }) {
+  const geom = useMemo(() => {
+    if (!nodes || nodes.length === 0) return null
+    const N = nodes.length
+    const positions = new Float32Array(N * 3)
+    const colors = new Float32Array(N * 3)
+    let max = 1
+    if (channel !== 'classification') {
+      for (let i = 0; i < N; i++) {
+        const v = nodes[i][channel] || 0
+        if (v > max) max = v
+      }
+    }
+    for (let i = 0; i < N; i++) {
+      const n = nodes[i]
+      // Forestry XYZ → Three's Y-up. Z is up in the file; map (x,z,-y).
+      positions[i * 3 + 0] = n.x
+      positions[i * 3 + 1] = n.z
+      positions[i * 3 + 2] = -n.y
+      let rgb
+      if (channel === 'classification') {
+        rgb = CLASSIFICATION_COLORS[n.classification] || CLASSIFICATION_COLORS.unclassified
+      } else {
+        const v = n[channel] || 0
+        rgb = viridis(v / max)
+      }
+      colors[i * 3 + 0] = rgb[0]
+      colors[i * 3 + 1] = rgb[1]
+      colors[i * 3 + 2] = rgb[2]
+    }
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    g.setAttribute('color',    new THREE.BufferAttribute(colors,    3))
+    return g
+  }, [nodes, channel])
+  if (!visible || !geom) return null
+  return (
+    <points geometry={geom}>
+      <pointsMaterial size={pointSize} sizeAttenuation vertexColors transparent opacity={opacity} />
+    </points>
+  )
+}
+
+
 // N.0 Alignment Oracle layer — the published GLB straight off disk, no
 // transform. bake-tree.py applies the Z→Y rotation at bake time so the
 // artifact ships Y-up; runtime three.js consumers (InstancedTrees and this
@@ -277,8 +359,10 @@ export default function LidarWorkstage() {
   // operator can dim a layer without losing its toggle state.
   const [layers, setLayers]             = useState({
     points: true, cylinders: true, baked: true, bidi: true, lilVera: true,
+    veraHeat: false,
     pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 1.0,
-    bidiOpacity: 0.85, lilVeraOpacity: 0.85,
+    bidiOpacity: 0.85, lilVeraOpacity: 0.85, veraHeatOpacity: 0.95,
+    veraHeatChannel: 'rigsSeen', // 'rigsSeen' | 'medialCount' | 'silhouetteCount' | 'bodyCount' | 'classification'
   })
   // Phase N.1 — bidirectional-growth spike. Lives alongside QSM extraction
   // (above) so the alignment oracle can show both as overlapped layers for
@@ -301,7 +385,7 @@ export default function LidarWorkstage() {
   // downsample stays at the lil_vera.py default (0.03m); power users can
   // override via the CLI `--voxelSize` flag. See N.2.0 status note
   // "consolidationVoxel is the visible knob, not source voxelSize."
-  const [veraParams, setVeraParams]     = useState({ N: 50, kOrient: 200, pitch: 0.3, consolidationVoxel: 0.05 })
+  const [veraParams, setVeraParams]     = useState({ N: 50, kOrient: 200, pitch: 0.3, consolidationVoxel: 0.05, passes: 1 })
   const [veraResult, setVeraResult]     = useState(null)
   const [veraExtracting, setVeraExt]    = useState(false)
   const [veraError, setVeraError]       = useState(null)
@@ -701,6 +785,14 @@ export default function LidarWorkstage() {
                   branchColor="#d040c0"
                 />
               )}
+              {veraResult && (
+                <MemoryHeatPoints
+                  nodes={veraResult.nodes}
+                  channel={layers.veraHeatChannel}
+                  visible={layers.veraHeat}
+                  opacity={layers.veraHeatOpacity}
+                />
+              )}
               {bakedGlbUrl && (
                 <Suspense fallback={null}>
                   <BakedGlbOracle
@@ -750,6 +842,30 @@ export default function LidarWorkstage() {
                 missing={!veraResult}
                 missingHint={veraExtracting ? '(extracting…)' : '(hit Li’l Vera → Re-extract)'}
               />
+              <LayerControl
+                label="M_obs heat"
+                active={layers.veraHeat}
+                onToggle={() => setLayers(l => ({ ...l, veraHeat: !l.veraHeat }))}
+                opacity={layers.veraHeatOpacity}
+                onOpacity={v => setLayers(l => ({ ...l, veraHeatOpacity: v }))}
+                missing={!veraResult}
+                missingHint='(N.2.1 visual gate — extract Li’l Vera first)'
+              />
+              {layers.veraHeat && veraResult && (
+                <div style={{ marginLeft: 6, marginTop: -4, marginBottom: 4 }}>
+                  <select
+                    value={layers.veraHeatChannel}
+                    onChange={e => setLayers(l => ({ ...l, veraHeatChannel: e.target.value }))}
+                    style={{ ...selectStyle, fontSize: 10, padding: '2px 6px', width: 160 }}
+                    title="Which per-point M_obs / tomography channel to colour by">
+                    <option value="rigsSeen">rigs_seen (viridis)</option>
+                    <option value="medialCount">medial_count (viridis)</option>
+                    <option value="silhouetteCount">silhouette_count (viridis)</option>
+                    <option value="bodyCount">body_count (viridis)</option>
+                    <option value="classification">tomography class (categorical)</option>
+                  </select>
+                </div>
+              )}
               <LayerControl
                 label="Baked GLB"
                 active={layers.baked}
@@ -888,6 +1004,9 @@ export default function LidarWorkstage() {
                 <DraftSlider label="Voxel size" min={0.02} max={0.20} step={0.005}
                   value={veraParams.consolidationVoxel}
                   onCommit={v => setVeraParams(p => ({ ...p, consolidationVoxel: v }))} unit="m" />
+                <DraftSlider label="Passes" min={1} max={8} step={1}
+                  value={veraParams.passes}
+                  onCommit={v => setVeraParams(p => ({ ...p, passes: Math.round(v) }))} />
                 <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
                   <button onClick={runVeraExtract} disabled={veraExtracting || lidarPublishing}
                     style={{ ...btnPrimaryStyle, background: 'rgba(34,224,224,0.18)',

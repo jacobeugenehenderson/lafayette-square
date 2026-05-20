@@ -579,6 +579,7 @@ const server = createServer(async (req, res) => {
       const imageH    = Number(body.imageH    ?? 288)
       const splatRad  = Number(body.splatRadius ?? 1)
       const consolVox = Number(body.consolidationVoxel ?? 0.05)
+      const passes    = Number(body.passes    ?? 1)
       const workers   = Number(body.workers   ?? 0)
       const t0 = Date.now()
       try {
@@ -595,6 +596,7 @@ const server = createServer(async (req, res) => {
             `--imageH=${imageH}`,
             `--splatRadius=${splatRad}`,
             `--consolidationVoxel=${consolVox}`,
+            `--passes=${passes}`,
             `--workers=${workers}`,
           ], { maxBuffer: 64 * 1024 * 1024 }, (err, so, se) => {
             if (err) { err.stdout = so; err.stderr = se; return reject(err) }
