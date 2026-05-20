@@ -40,7 +40,7 @@ The next piece of work consolidates several threads: procedural sky restoration,
 
 ADR + full architecture in `NOTES.md` "Sky architecture pivot: procedural canon + per-cell overrides" 2026-05-20.
 
-One open architectural question pending Jacob's confirm: whether the rendered sky shader consumes the procedural function live or the resolved mosaic (anchor-lerp + overrides). Brief drafting waits on that decision.
+Architecture locked: procedural shader/function HYDRATES the editable mosaics; the resolved mosaic is what renders. See `NOTES.md` "Shader path" section. Brief drafting unblocked.
 
 Once confirmed, the brief covers:
 1. Extract `cartograph/proceduralSky.js` from the historical pre-`47c2760` `GradientSky` (pure JS function + GLSL template + keyframe data table)
