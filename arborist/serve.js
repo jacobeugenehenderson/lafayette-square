@@ -303,8 +303,9 @@ const server = createServer(async (req, res) => {
       return jsonRes(res, 200, { variants, count: variants.length })
     }
 
-    // GET /species/:id — manifest from public/trees (404 until baked)
-    if (req.method === 'GET' && (m = req.url.match(/^\/species\/([^/]+)$/))) {
+    // GET /species/:id — manifest from public/trees (404 until baked).
+    // `[^/?]+` so a `?t=...` cache-buster doesn't get sucked into the id capture.
+    if (req.method === 'GET' && (m = req.url.match(/^\/species\/([^/?]+)(?:\?.*)?$/))) {
       const manifestPath = join(PUBLIC_TREES, m[1], 'manifest.json')
       const manifest = readJsonOrNull(manifestPath)
       if (!manifest) return jsonRes(res, 404, { error: 'not yet baked', species: m[1] })
@@ -329,7 +330,7 @@ const server = createServer(async (req, res) => {
     }
 
     // GET /species/:id/seedlings — picked seedlings + tune params
-    if (req.method === 'GET' && (m = req.url.match(/^\/species\/([^/]+)\/seedlings$/))) {
+    if (req.method === 'GET' && (m = req.url.match(/^\/species\/([^/?]+)\/seedlings(?:\?.*)?$/))) {
       const id = m[1]
       const data = readJsonOrNull(join(STATE_DIR, id, 'seedlings.json'))
       if (!data) return jsonRes(res, 404, { error: 'no seedlings picked yet', species: id })
