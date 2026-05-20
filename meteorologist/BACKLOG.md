@@ -170,6 +170,22 @@ Pre-merge of LS marriage leap: 1, 2, 3 are quick wins worth landing as part of t
 
 ---
 
+## 2026-05-20 — Cloud altitude importer (small, post-pivot)
+
+Add `meteorologist/pipeline/import-cloud-altitudes.js` — small script that pulls WMO + aviation cloud-altitude tables (hardcoded; they don't change) and populates `baseAlt` + `thickness` on existing Teapot presets by matching their `wmo` code to the authoritative range midpoint. Real-world physics values ship as defaults; everything else stays hand-tuned. ~50 LOC + a lookup table.
+
+**Why:** kit-completeness. Future instances (Cary, Miami, etc.) get WMO-correct cloud altitudes for free instead of inheriting LS's hand-scaffolded numbers. The artistic shader-tune layer lives on top, unaffected.
+
+**Not urgent:** existing 52 scaffolded entries are reasonable as-is. Land after the sky architecture pivot ships and the dust settles. Low priority.
+
+**Mechanism:**
+- Lookup table embedded in script: `{ 'Cu hum': { baseRange: [600, 2000], topRange: [...] }, ... }` for each WMO genus.
+- For each preset where `kind === 'cloud'` and `wmo` is set: assign `baseAlt = midpoint(baseRange)`, `thickness = midpoint(topRange) - midpoint(baseRange)`.
+- Re-runnable; idempotent.
+- Operator can deviate post-import.
+
+---
+
 ## 2026-05-02 — Weather pack (own track, post-Meteorologist)
 
 Ongoing track — not punchlist-gating. The product vision: Lafayette Square as a living place, today's actual weather + scheduled event Looks. Real weather data is already wired (`useWeather.js` → `useSkyState` → existing shaders); what's missing is visual fidelity. Clouds for v1 ship via the existing `CloudDome.jsx`; Meteorologist (volumetric raymarch) replaces it when ready. See `project_weather_and_events_vision.md`, `SPEC.md`.
