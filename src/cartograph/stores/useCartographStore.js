@@ -36,7 +36,7 @@ import {
   DIRSUN_FIELD_KEYS, DIRSUN_FLAT_DEFAULTS,
   DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS,
 } from '../skyLightChannels.js'
-import { migrateSkyChannel, SKY_DEFAULTS, SKY_BANDS, SKY_SLOT_COLUMNS } from '../skyGrid.js'
+import { migrateSkyChannel, SKY_DEFAULTS, SKY_DEFAULTS_4ANCHOR, SKY_ANCHORS, SKY_BANDS, SKY_SLOT_COLUMNS } from '../skyGrid.js'
 
 const ACTIVE_LOOK_KEY = 'cartograph-active-look'
 const DEFAULT_LOOK_ID = 'lafayette-square'
@@ -383,7 +383,7 @@ const useCartographStore = create((set, get) => ({
   // chunk threads this channel as `skyOverride` into CelestialBodies via
   // CartographApp.StageEnvironment; production omits the override and
   // reads scene.sky frozen-at-bake (SC.1, commit c333e50).
-  sky:            { values: { ...SKY_DEFAULTS } },
+  sky:            { values: { ...SKY_DEFAULTS_4ANCHOR } },
   // The single object the Hero shot frames around. Camera target locks to
   // its centroid every frame. { kind, id } resolved at runtime to a 3D point.
   // null = no designation (HeroPreview falls back to legacy arch centroid).
@@ -912,27 +912,34 @@ const useCartographStore = create((set, get) => ({
     flatDefaults: DIRMOON_FLAT_DEFAULTS,
   }, set, get),
 
-  // Sky gradient — write a single swatch hex into a specific cell.
-  // slotId: 'dawn'|'sunrise'|... colIdx: 0..N-1, band: 'horizon'|'low'|'mid'|'high'|'sunGlow'.
-  setSkySwatch: (slotId, colIdx, band, hex) => {
+  // Sky gradient — write a single swatch hex into a specific cell within a
+  // specific seasonal anchor card.
+  //   anchor: 'winter'|'spring'|'summer'|'autumn'
+  //   slotId: 'dawn'|'sunrise'|... colIdx: 0..N-1, band: 'horizon'|'low'|...
+  setSkySwatch: (anchor, slotId, colIdx, band, hex) => {
+    if (!SKY_ANCHORS.includes(anchor)) return
     if (!SKY_SLOT_COLUMNS[slotId]) return
     if (colIdx < 0 || colIdx >= SKY_SLOT_COLUMNS[slotId]) return
     if (!SKY_BANDS.includes(band)) return
     set(s => {
       const sky = s.sky || { values: {} }
-      const slot = Array.isArray(sky.values?.[slotId])
-        ? sky.values[slotId].slice()
+      const card = (sky.values?.[anchor] && typeof sky.values[anchor] === 'object')
+        ? sky.values[anchor]
+        : { ...SKY_DEFAULTS }
+      const slot = Array.isArray(card[slotId])
+        ? card[slotId].slice()
         : (SKY_DEFAULTS[slotId] || []).slice()
       const tuple = { ...(slot[colIdx] || SKY_DEFAULTS[slotId][colIdx] || {}) }
       tuple[band] = hex
       slot[colIdx] = tuple
-      return { sky: { ...sky, values: { ...sky.values, [slotId]: slot } } }
+      const nextCard = { ...card, [slotId]: slot }
+      return { sky: { ...sky, values: { ...sky.values, [anchor]: nextCard } } }
     })
     get()._saveDesignDebounced()
   },
-  // Reset sky gradient to defaults (canonical-shader-matching).
+  // Reset sky gradient to defaults across all four anchors.
   revertSky: () => {
-    set({ sky: { values: { ...SKY_DEFAULTS } } })
+    set({ sky: { values: { ...SKY_DEFAULTS_4ANCHOR } } })
     get()._saveDesignDebounced()
   },
   // Scrub the TOD clock onto a named slot's SunCalc-computed minute. Used

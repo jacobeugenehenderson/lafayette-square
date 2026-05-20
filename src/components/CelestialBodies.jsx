@@ -511,21 +511,71 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       uniform float uBeautyBias;
       varying vec3 vWorldPosition;
 
+      // ─────────────────────────────────────────────────────────────
+      // Preetham-inspired analytical sky baseline.
+      // Provides physical luminance + chroma per (view dir, sun dir).
+      // Operator-authored juice (the 4-band gradient below) layers on
+      // top via:   final = preetham + juice * (1 - preetham_luma)
+      // Result: bright days dominated by physics, dim/night dominated
+      // by operator authoring, automatic seasonal brightness via sun
+      // altitude. See cartograph/NOTES.md "4-anchor seasonal sky".
+      // ─────────────────────────────────────────────────────────────
+      vec3 preethamSky(vec3 dir, vec3 sunDirN, float turbidity) {
+        float h = max(dir.y, 0.0);                       // view zenith
+        float sa = sunDirN.y;                            // sin(sun altitude)
+        float cosGamma = clamp(dot(dir, sunDirN), -1.0, 1.0);
+
+        // Day weight — Preetham is silent below astronomical twilight.
+        // Smooth ramp through civil/nautical twilight band.
+        float dayW = smoothstep(-0.20, 0.10, sa);
+
+        // Rayleigh-flavored zenith blue + horizon wash. Turbidity widens
+        // the horizon haze band and warms it.
+        vec3 zenithColor  = vec3(0.10, 0.22, 0.55);
+        vec3 horizonCool  = vec3(0.62, 0.74, 0.88);
+        vec3 horizonWarm  = vec3(0.92, 0.66, 0.42);
+        float lowSun = 1.0 - smoothstep(0.0, 0.40, sa);  // 1 at sunset, 0 at noon
+        vec3 horizonColor = mix(horizonCool, horizonWarm, lowSun * 0.65);
+
+        // Vertical blend — horizon warm/wide, zenith deep blue.
+        float vBlend = pow(1.0 - h, 1.4 + turbidity * 0.5);
+        vec3 sky = mix(zenithColor, horizonColor, vBlend);
+
+        // Mie-like forward-scatter glow near sun on the horizon.
+        float sunProx = pow(max(cosGamma, 0.0), 4.0);
+        float horizonStrength = (1.0 - h) * (1.0 - h);
+        vec3 sunWarm = vec3(1.0, 0.55, 0.20);
+        sky += sunWarm * sunProx * horizonStrength * lowSun * 0.45;
+
+        // Apply day-weight luminance gate so night → zero contribution,
+        // letting operator-authored night cards drive the dome.
+        return sky * dayW;
+      }
+
       void main() {
         vec3 dir = normalize(vWorldPosition);
         float h = dir.y;
 
-        // 4-band sky gradient with visible banding at transitions
+        // ── Operator-authored "juice" — 4-band gradient + sun-glow band.
+        // These are the resolved colors from the active seasonal anchor
+        // card (lerp between two flanking anchors handled CPU-side).
         float hn = pow(max(0.0, h), 0.65 * (1.0 + uTurbidity * 0.4));
         float t1 = smoothstep(0.0,  0.12, hn);  // horizon → low
         float t2 = smoothstep(0.10, 0.32, hn);  // low → mid
         float t3 = smoothstep(0.30, 0.65, hn);  // mid → high (zenith)
-        vec3 skyColor = mix(bandHorizon, bandLow, t1);
-        skyColor = mix(skyColor, bandMid, t2);
-        skyColor = mix(skyColor, bandHigh, t3);
+        vec3 juice = mix(bandHorizon, bandLow, t1);
+        juice = mix(juice, bandMid, t2);
+        juice = mix(juice, bandHigh, t3);
 
-        // Below horizon: sky color continues (SVG ground handles the dark tones)
-        vec3 finalColor = skyColor;
+        // ── Preetham physical baseline.
+        vec3 preetham = preethamSky(dir, normalize(sunDir), uTurbidity);
+        float preethamLuma = clamp(dot(preetham, vec3(0.2126, 0.7152, 0.0722)), 0.0, 1.0);
+
+        // ── Composition: physics + (juice gated by physics dimness).
+        // Day:   preetham bright  → juice contribution small  → sky reads physical.
+        // Night: preetham ~0      → juice contribution full   → operator drives.
+        // Twilight: smooth blend automatic (luma is the gate).
+        vec3 finalColor = preetham + juice * (1.0 - preethamLuma);
 
         // ── Directional sun glow ──
         float sunDot = dot(dir, sunDir);

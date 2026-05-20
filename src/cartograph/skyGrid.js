@@ -19,8 +19,22 @@
  */
 
 import { NAMED_TOD_SLOTS, NAMED_TOD_SLOTS_BY_ID } from './animatedParam.js'
+import useCalendar from '../hooks/useCalendar.js'
 
 export const SKY_BANDS = ['horizon', 'low', 'mid', 'high', 'sunGlow']
+
+// Four cardinal year anchors at solstices + equinoxes. Sky authoring is
+// keyed per anchor — operator paints a "juice" card per season; runtime
+// cyclically lerps between the two flanking anchors by day-of-year.
+// Aligned with DawnTimeline.SEASON_ANCHORS and useCalendar.season().
+export const SKY_ANCHORS = ['winter', 'spring', 'summer', 'autumn']
+export const SKY_ANCHOR_DOY = {
+  spring: 79,   // Mar 20
+  summer: 172,  // Jun 21
+  autumn: 265,  // Sep 22
+  winter: 355,  // Dec 21
+}
+const DAYS_IN_YEAR = 365  // ignore leap-day in anchor math; ±1d is invisible
 
 // Editorial column counts per slot. Fixed; reshape requires a defaults
 // regeneration but the data model handles any count >= 1.
@@ -134,16 +148,69 @@ function lerpRGB(a, b, t) {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
 }
 
-// Look up a single column's tuple from the channel; falls back to defaults.
-function tupleAt(channel, slotId, colIdx) {
-  const slotData = channel?.values?.[slotId]
+// Detect whether channel.values is the legacy 1-layer shape (top-level keys
+// are TOD slot ids like 'dawn'/'sunrise'/etc.) or the 4-anchor shape (top-
+// level keys are 'winter'/'spring'/'summer'/'autumn'). Used for tolerant
+// reads — both shapes resolve correctly so pre-migration scene.json files
+// and inline-default channels continue to work.
+function isLegacyOneLayer(values) {
+  if (!values || typeof values !== 'object') return true
+  // 4-anchor shape: at least one of the SKY_ANCHORS keys present
+  for (const a of SKY_ANCHORS) if (values[a]) return false
+  return true
+}
+
+// Look up a single column's tuple from a specific anchor's card; falls back
+// to defaults. Tolerant of both 4-anchor and legacy 1-layer channel shapes.
+function tupleAt(channel, anchor, slotId, colIdx) {
+  const values = channel?.values
+  let card
+  if (values && !isLegacyOneLayer(values)) {
+    card = values[anchor]
+  } else {
+    // Legacy 1-layer: every anchor reads the same shared card.
+    card = values
+  }
+  const slotData = card?.[slotId]
   if (Array.isArray(slotData) && slotData[colIdx]) return slotData[colIdx]
   return SKY_DEFAULTS[slotId]?.[colIdx] || SKY_DEFAULTS.night[0]
 }
 
+// Cyclic anchor lookup: given dayOfYear, return [anchorA, anchorB, t] where
+// the date falls between anchorA's doy and anchorB's doy along the year
+// ring. Winter→spring wraps through year-end correctly.
+function flankingAnchors(doy) {
+  // Sort anchors by doy then walk the ring.
+  const ring = SKY_ANCHORS
+    .map(a => ({ a, doy: SKY_ANCHOR_DOY[a] }))
+    .sort((x, y) => x.doy - y.doy)
+  // Walk: find segment where doy ∈ [ring[i].doy, ring[i+1].doy) (cyclic).
+  for (let i = 0; i < ring.length; i++) {
+    const cur = ring[i]
+    const next = ring[(i + 1) % ring.length]
+    const startDoy = cur.doy
+    let endDoy = next.doy
+    if (endDoy <= startDoy) endDoy += DAYS_IN_YEAR  // wrap (autumn → winter is OK; winter → spring wraps)
+    let probe = doy
+    if (probe < startDoy) probe += DAYS_IN_YEAR
+    if (probe >= startDoy && probe < endDoy) {
+      const span = endDoy - startDoy || 1
+      const t = (probe - startDoy) / span
+      return [cur.a, next.a, t]
+    }
+  }
+  // Fallback (shouldn't hit) — return summer flat.
+  return ['summer', 'summer', 0]
+}
+
 // Resolve the band-and-sun-glow palette at a given minute-of-day.
 // Returns { horizon, low, mid, high, sunGlow } as [r,g,b] floats.
-export function resolveSkyAtMinute(channel, minute, slotMinutes) {
+//
+// Year-aware: if `dayOfYear` is omitted, reads from useCalendar so consumers
+// don't need to plumb it through. The resolver internally lerps between the
+// two flanking seasonal anchor cards before lerping between adjacent minute
+// columns.
+export function resolveSkyAtMinute(channel, minute, slotMinutes, dayOfYear) {
   const columns = getSkyColumnMinutes(slotMinutes)
   if (columns.length === 0) return null
   // Find adjacent columns by minute (with wrap-around).
@@ -164,34 +231,94 @@ export function resolveSkyAtMinute(channel, minute, slotMinutes) {
   const span = bM - aM || 1
   const t = Math.max(0, Math.min(1, (m - aM) / span))
 
-  const aT = tupleAt(channel, a.slotId, a.colIdx)
-  const bT = tupleAt(channel, b.slotId, b.colIdx)
+  // Year-aware anchor resolution. If caller didn't supply doy, read from
+  // the kit calendar — this is the single source of truth across helpers.
+  const doy = (dayOfYear != null) ? dayOfYear : useCalendar.getState().dayOfYear()
+  const [anchorA, anchorB, yT] = flankingAnchors(doy)
+
+  // Per minute-column endpoint, lerp anchor cards first (cyclic year axis),
+  // then lerp between minute columns (TOD axis). Two-pass interpolation:
+  // first season, then time. Order is commutative under linear interp.
+  const sampleCell = (slotId, colIdx) => {
+    const cardA = tupleAt(channel, anchorA, slotId, colIdx)
+    const cardB = tupleAt(channel, anchorB, slotId, colIdx)
+    const out = {}
+    for (const k of SKY_BANDS) {
+      out[k] = lerpRGB(hexToRGB(cardA[k] || '#000000'), hexToRGB(cardB[k] || '#000000'), yT)
+    }
+    return out
+  }
+  const aT = sampleCell(a.slotId, a.colIdx)
+  const bT = sampleCell(b.slotId, b.colIdx)
 
   const out = {}
   for (const k of SKY_BANDS) {
-    out[k] = lerpRGB(hexToRGB(aT[k] || '#000000'), hexToRGB(bT[k] || '#000000'), t)
+    out[k] = lerpRGB(aT[k], bT[k], t)
   }
   return out
 }
 
-// Migration: empty / legacy → seeded defaults.  Defaults are full so
-// unauthored Looks render identically to current shader.
-export function migrateSkyChannel(legacy) {
-  if (!legacy || !legacy.values) {
-    return { values: { ...SKY_DEFAULTS } }
-  }
-  // Patch in any missing slot or short column array from defaults.
-  const values = {}
+// Patch a single anchor's card (a TOD-grid) against SKY_DEFAULTS to fill
+// any missing slot or short column array.
+function patchCard(card) {
+  const safe = (card && typeof card === 'object') ? card : {}
+  const out = {}
   for (const id of Object.keys(SKY_DEFAULTS)) {
     const def = SKY_DEFAULTS[id]
-    const cur = Array.isArray(legacy.values[id]) ? legacy.values[id] : []
+    const cur = Array.isArray(safe[id]) ? safe[id] : []
     const merged = []
     for (let i = 0; i < def.length; i++) {
       merged.push(cur[i] || def[i])
     }
-    values[id] = merged
+    out[id] = merged
+  }
+  return out
+}
+
+// Build the canonical 4-anchor default sky channel. All four anchors get
+// identical copies of SKY_DEFAULTS — operator authors per-anchor deviations
+// on top. Used by initial store state, bake fallback, and resolver fallback.
+export const SKY_DEFAULTS_4ANCHOR = {
+  winter: SKY_DEFAULTS,
+  spring: SKY_DEFAULTS,
+  summer: SKY_DEFAULTS,
+  autumn: SKY_DEFAULTS,
+}
+
+// Migration entry point. Accepts:
+//   - undefined / null / empty           → seeded 4-anchor defaults
+//   - legacy 1-layer { values: { dawn: [...], ... } }  → wrap into summer;
+//                                                        copy summer to the
+//                                                        other three anchors
+//                                                        (Jacob's "keep the
+//                                                        lovely current LS")
+//   - 4-anchor { values: { winter: {...}, spring: ... } } → patch each
+//                                                          anchor against
+//                                                          SKY_DEFAULTS to
+//                                                          fill missing
+//                                                          slots/columns
+export function migrateSkyChannel(legacy) {
+  if (!legacy || !legacy.values) {
+    return { values: {
+      winter: patchCard(SKY_DEFAULTS),
+      spring: patchCard(SKY_DEFAULTS),
+      summer: patchCard(SKY_DEFAULTS),
+      autumn: patchCard(SKY_DEFAULTS),
+    } }
+  }
+  if (isLegacyOneLayer(legacy.values)) {
+    // 1-layer → 4-anchor: the existing authored card becomes summer; the
+    // other three anchors mirror it so first-render is visually identical
+    // to today across the whole year. Operator deviates per anchor later.
+    const summer = patchCard(legacy.values)
+    return { values: { winter: summer, spring: summer, summer, autumn: summer } }
+  }
+  // 4-anchor → 4-anchor: patch each anchor independently.
+  const values = {}
+  for (const a of SKY_ANCHORS) {
+    values[a] = patchCard(legacy.values[a])
   }
   return { values }
 }
 
-export const SKY_FLAT_DEFAULTS = SKY_DEFAULTS  // alias for store consistency
+export const SKY_FLAT_DEFAULTS = SKY_DEFAULTS_4ANCHOR  // alias for store consistency

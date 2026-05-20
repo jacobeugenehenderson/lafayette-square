@@ -18,11 +18,32 @@ import SunCalc from 'suncalc'
 import useCartographStore from './stores/useCartographStore.js'
 import { NAMED_TOD_SLOTS, getTodSlotMinutes } from './animatedParam.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import useCalendar from '../hooks/useCalendar'
 import {
   SKY_BANDS, SKY_SLOT_COLUMNS, SKY_DEFAULTS,
+  SKY_ANCHORS, SKY_ANCHOR_DOY,
   resolveSkyAtMinute, getSkyColumnMinutes,
 } from './skyGrid.js'
 import { INSTANCE } from '../instance.js'
+
+// Pick the seasonal anchor nearest the given day-of-year on the cyclic
+// year ring. Used so the matrix editor always reflects "the card you're
+// currently parked on" (or nearest to, between anchors). Edit-lock UX in
+// sub-phase 2 will explicitly distinguish on-anchor (editable) from
+// between-anchors (read-only preview); this commit treats the nearest
+// anchor as the editable target.
+function nearestAnchor(doy) {
+  const DAYS = 365
+  let best = SKY_ANCHORS[0]
+  let bestDist = Infinity
+  for (const a of SKY_ANCHORS) {
+    const ad = SKY_ANCHOR_DOY[a]
+    let d = Math.abs(doy - ad)
+    if (d > DAYS / 2) d = DAYS - d  // cyclic distance
+    if (d < bestDist) { bestDist = d; best = a }
+  }
+  return best
+}
 
 const BAND_ORDER = ['high', 'mid', 'low', 'horizon', 'sunGlow']  // top-to-bottom
 const LAT = INSTANCE.geography.lat
@@ -36,23 +57,23 @@ function rgbCss(rgb) {
   return `rgb(${r},${g},${b})`
 }
 
-function SwatchCell({ slotId, colIdx, band, hex, onChange }) {
+function SwatchCell({ anchor, slotId, colIdx, band, hex, onChange }) {
   return (
     <input
       type="color"
       className="sky-swatch"
       value={hex || '#000000'}
-      onChange={(e) => onChange(slotId, colIdx, band, e.target.value)}
+      onChange={(e) => onChange(anchor, slotId, colIdx, band, e.target.value)}
       style={{
         width: '100%', height: '100%',
         cursor: 'pointer', display: 'block', minWidth: 0, boxSizing: 'border-box',
       }}
-      title={`${slotId} · col ${colIdx + 1} · ${band}`}
+      title={`${anchor} · ${slotId} · col ${colIdx + 1} · ${band}`}
     />
   )
 }
 
-function EditorGrid({ sky, setSwatch, tick }) {
+function EditorGrid({ sky, anchor, setSwatch, tick }) {
   const cols = []
   for (const s of NAMED_TOD_SLOTS) {
     const n = SKY_SLOT_COLUMNS[s.id] || 1
@@ -66,7 +87,14 @@ function EditorGrid({ sky, setSwatch, tick }) {
   const totalCols = cols.length
 
   const valueFor = (slotId, colIdx, band) => {
-    const slot = sky?.values?.[slotId]
+    // Read from the active anchor's card. Tolerant of both 4-anchor and
+    // legacy 1-layer shapes (the resolver handles both, so does this).
+    const values = sky?.values
+    const card = (values && values[anchor] && typeof values[anchor] === 'object'
+                  && !Array.isArray(values[anchor]))
+      ? values[anchor]
+      : values  // legacy 1-layer fallback
+    const slot = card?.[slotId]
     const tuple = (Array.isArray(slot) && slot[colIdx]) || SKY_DEFAULTS[slotId][colIdx]
     return tuple?.[band] || '#000000'
   }
@@ -130,6 +158,7 @@ function EditorGrid({ sky, setSwatch, tick }) {
                 style={{ aspectRatio: '1 / 1' }}
               >
                 <SwatchCell
+                  anchor={anchor}
                   slotId={c.slotId}
                   colIdx={c.colIdx}
                   band={band}
@@ -162,6 +191,9 @@ function EditorGrid({ sky, setSwatch, tick }) {
 // and moon placed by altitude. Refreshes via useFrame so the strip
 // updates as TOD scrubs.
 function NowPreview({ sky, tick }) {
+  // Subscribe to currentDate so the preview refreshes when the operator
+  // scrubs the year strip (resolveSkyAtMinute reads doy from useCalendar).
+  const currentDate = useCalendar(s => s.currentDate)
   const { resolved, sunAlt, moonAlt, moonIllum } = useMemo(() => {
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
@@ -177,7 +209,7 @@ function NowPreview({ sky, tick }) {
       moonIllum,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sky, tick])
+  }, [sky, tick, currentDate])
 
   if (!resolved) return null
 
@@ -265,7 +297,10 @@ function NowPreview({ sky, tick }) {
 // Day-long resolved preview. Each sample = one minute slice rendered
 // as a vertical mini-gradient. Sun-glow row beneath. Hour ticks below.
 function DayStrip({ sky, tick }) {
-  const slotMinutes = useMemo(() => getTodSlotMinutes(new Date()), [sky])
+  // Subscribe to currentDate so the 24h preview refreshes when the operator
+  // scrubs the year strip (resolveSkyAtMinute reads doy from useCalendar).
+  const currentDate = useCalendar(s => s.currentDate)
+  const slotMinutes = useMemo(() => getTodSlotMinutes(currentDate), [sky, currentDate])
   const columns = useMemo(() => {
     const out = []
     for (let i = 0; i < PREVIEW_SAMPLES; i++) {
@@ -273,7 +308,7 @@ function DayStrip({ sky, tick }) {
       out.push(resolveSkyAtMinute(sky, minute, slotMinutes))
     }
     return out
-  }, [sky, slotMinutes])
+  }, [sky, slotMinutes, currentDate])
 
   // Playhead horizontal position in % from left.
   const playheadPct = useMemo(() => {
@@ -354,6 +389,17 @@ export default function SkyGradientGrid() {
   const setSwatch = useCartographStore(s => s.setSkySwatch)
   const revert = useCartographStore(s => s.revertSky)
   const [expanded, setExpanded] = useState(false)
+  // Active anchor is whichever seasonal anchor the year-strip thumb is
+  // nearest to. Operator parks on Spring/Summer/Autumn/Winter via the
+  // DawnTimeline year-strip; edits land in that anchor's card. Sub-phase 2
+  // will add an explicit "on anchor vs. between anchors" UX gate.
+  const currentDate = useCalendar(s => s.currentDate)
+  const anchor = useMemo(() => {
+    const start = Date.UTC(currentDate.getFullYear(), 0, 1)
+    const cur = Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
+    const doy = Math.floor((cur - start) / 86400000) + 1
+    return nearestAnchor(doy)
+  }, [currentDate])
 
   // Single ~5fps tick drives all live previews + playhead. Only runs
   // while the card is open.
@@ -394,7 +440,13 @@ export default function SkyGradientGrid() {
           borderRadius: 4,
           marginBottom: 4,
         }}>
-          <div className="flex items-center justify-end" style={{ gap: 6 }}>
+          <div className="flex items-center justify-between" style={{ gap: 6 }}>
+            <span className="text-caption" style={{
+              color: 'var(--on-surface-subtle)',
+              textTransform: 'capitalize',
+            }}>
+              editing — {anchor}
+            </span>
             <button
               onClick={revert}
               style={{
@@ -411,7 +463,7 @@ export default function SkyGradientGrid() {
               ↺ Revert
             </button>
           </div>
-          <EditorGrid sky={sky} setSwatch={setSwatch} tick={tick} />
+          <EditorGrid sky={sky} anchor={anchor} setSwatch={setSwatch} tick={tick} />
           <NowPreview sky={sky} tick={tick} />
           <DayStrip sky={sky} tick={tick} />
         </div>
