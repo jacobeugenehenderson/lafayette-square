@@ -4,6 +4,31 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-21 — Phase 4b.2 amendment shipped — sky-light coupling
+
+Follow-up to the same-day Phase 4b.2 commit. The cloud shader's three lighting uniforms stop being hardcoded; they now read from the Look's sky channel + SunCalc each frame:
+
+| Uniform     | Was                              | Now (per frame)                                     |
+|-------------|----------------------------------|-----------------------------------------------------|
+| `uSunColor` | hardcoded `#ffe6c8` (warm)       | `sky.sunGlow` band (sun's color at this minute)     |
+| `uSkyColor` | hardcoded `#9faab8` (grey-blue)  | `sky.low` band (horizon-ish ambient cloud undersides see) |
+| `uSunDir`   | hardcoded `vec3(0, 0.7, 0.7)`    | SunCalc.getPosition at INSTANCE lat/lon, projected via the same `celestialToPosition` math CelestialBodies uses |
+
+Sky channel reuses the post-pivot resolver: `useSceneJson(lookId)` → `scene.sky` → `resolveSkyAtMinute(skyChannel, minute, slotMinutes)` → 5-band RGB. First-paint fallback is `{ overrides: [] }` (pure procedural mosaic) so there's no flash before scene.json resolves.
+
+**Visible result:** clouds warm at golden hour, deepen blue at twilight, dim at night — automatically, tracking the same sky the skydome renders. Year-strip scrubs propagate through the sky resolver's anchor lerp to the cloud lighting (winter's low sun → cloud lit-side reads warm-yellow earlier in the day; summer's high sun → noon clouds stay cool-lit). Operator overrides on `sunGlow` at a specific hour propagate to the cloud's lit side too — same authoring surface, two consumers.
+
+**Surfaced decisions:**
+
+- Scene shape is `scene.sky` (not `scene.skyLight.sky` as the brief sketched) — matches CelestialBodies' callsite. No nesting under a `skyLight` group exists in the post-pivot schema.
+- Sun-direction math matches `celestialToPosition` in CelestialBodies exactly — `x = cos(alt)·sin(az)`, `y = sin(alt)`, `z = -cos(alt)·cos(az)`. No sign-flip needed.
+- `lookId` prop now consumed (was an unused commented-out arg). Falls back to `INSTANCE.lookId` if omitted. CanaryScene already passes `activeLookId` so production wiring is correct.
+- `useSceneJson` runs once per `(lookId, cacheBust)` via its module-level memo, so the per-frame cost is just the resolver math (already used by the skydome each frame).
+
+**Not folded into the parent 4b.2 commit:** the parent was already committed + pushed when this amendment arrived. Shipped as a small follow-up rather than rewriting history.
+
+---
+
 ## 2026-05-21 — Phase 4b.2 shipped — TodChannel uniform binding
 
 Atmosphere's twelve shape + lighting uniforms now read from the active preset's per-param TodChannels each frame. Operator slider drags in Teacup land on the cloud synchronously — `_patchParam` mutates the in-memory `presets` array on the same tick, the next `useFrame` reads it, no debounce wait. Animated channels (operator-keyframed slots across `dawn → noon → dusk`) lerp via `resolveGroupAtMinute` as the time strip scrubs.
