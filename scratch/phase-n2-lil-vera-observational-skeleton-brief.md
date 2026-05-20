@@ -1,5 +1,9 @@
-# Phase N.2 — Li'l Vera — Observational Skeleton Apparatus
+# Project: Li'l Vera — Cycle 1 — First Light
 
+> **Project: Li'l Vera** is an ongoing initiative within the Arborist to build a Monte-Carlo consensus-inference observational skeleton-extraction system — named in honor of the operator's beloved AND of Vera Rubin (the astronomer whose observational posture the apparatus channels; the Vera C. Rubin Observatory carries her name forward in the same lineage). The project is anticipated to span multiple cycles; this brief defines **Cycle 1 — First Light** — the foundational apparatus + its first single-specimen observation. Future cycles will refine algorithm choices, generalize beyond LiDAR sources, integrate with procedural generation, and tune the apparatus from the lessons of First Light.
+>
+> The implementing baby self-names per Standing Requirement #1. Li'l Vera is the project; the baby is its first builder.
+>
 > Specialist baby brief. ~3–4 day budget. Five stages with stop points. **Each stage stops at the boundary** — report, operator validates, next stage dispatched. Do NOT batch.
 
 ---

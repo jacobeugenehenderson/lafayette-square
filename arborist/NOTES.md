@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-05-20 — Project: Li'l Vera — vision + scope discipline
+
+Phase N.2 has matured from "an algorithmic spike" to **Project: Li'l Vera** — a multi-cycle initiative to build a Monte-Carlo consensus-inference observational skeleton-extraction apparatus. Named in honor of the operator's beloved AND of Vera Rubin; the project carries that lineage forward.
+
+**Long-term aspiration (operator's framing, 2026-05-20):** Li'l Vera, if it pops on the v1.5 visual quality bar, has the potential to be a publicly-released open-source tool that fills a real gap — point-cloud-to-GPU-friendly-vector tree generation, accessible to indie game devs / architectural viz / education / citizen science / open asset libraries, eventually consuming iPhone photogrammetry inputs (Posture B's design enables this generalization for free). SpeedTree dominates the high end; Blender's Sapling addon serves hobbyists; nothing currently serves the middle. "Make real waves" framing.
+
+**Scope discipline that matters MORE now, not less:**
+- Cycle 1 (First Light) gate stays: "does Li'l Vera produce visibly cleaner skeleton than QSM/Hawthorn-Bidirectional on one specimen?" That's the load-bearing visual question. Open-source release, photo input, web UI, documentation — all downstream and only earn development time if Cycle 1 pops.
+- Build then announce, not announce then build. Vera Rubin published dark matter results after observations were in. We build Li'l Vera, validate it, demonstrate it privately first.
+- Cycle 1's brief at `scratch/phase-n2-lil-vera-observational-skeleton-brief.md` deliberately constrains scope to the single-specimen apparatus + first observation. Future cycles add: multi-specimen + species-level distribution learning (Cycle 2), photogrammetry inputs (Cycle 3), procedural-generation integration (Cycle 4), packaging + release (Cycle 5+).
+
+This entry exists so future coordinators know what Li'l Vera might grow into — but Cycle 1 stays narrowly focused.
+
+---
+
 ## 2026-05-20 early hours — Phase N.1 spike → dual-track pivot
 
 Hawthorn shipped `c9bf5df` end-to-end: bidirectional skeleton Strategy A (geodesic Dijkstra on density-weighted KNN graph) integrated into the alignment oracle as a 4th magenta/yellow overlay. 5 specimens converged in <3s; deterministic; topologically cleaner than QSM. Operator-visual gate call: "I *guess* it's cleaner? But it's hardly closer to being a tree."
