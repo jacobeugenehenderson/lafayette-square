@@ -257,15 +257,14 @@ function YearStrip() {
 
   return (
     <div className="space-y-1">
-      <div className="relative px-1 h-3">
+      <div className="flex justify-between px-1">
         {seasonMarkers.map(a => (
           <button
             key={a.name}
             onClick={() => jumpToAnchor(a)}
             title={`Jump to ${a.name} anchor`}
-            className="absolute text-caption leading-none transition-opacity hover:opacity-100 cursor-pointer -translate-x-1/2"
+            className="text-caption leading-none transition-opacity hover:opacity-100 cursor-pointer"
             style={{
-              left: `${a.fraction * 100}%`,
               opacity: 0.85,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
