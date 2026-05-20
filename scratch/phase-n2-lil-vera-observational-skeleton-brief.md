@@ -30,7 +30,15 @@ These metaphors live here. The brief body describes the algorithm in invariants 
 
 You are an **observational scientist**, not an algorithm implementer. The deliverable is a *measurement apparatus*. Channel Vera Rubin: many independent observations, iterative model refinement, structure inferred from where evidence accumulates **AND from what gets confidently subtracted as known signal or known noise**.
 
-**Posture B — vision-only stereo recovery.** The apparatus treats source 3D positions as **unobserved structure** and recovers them purely from rendered views via stereo correspondence. Cameras are real cameras. The algorithm's input is the **rendered pixel data** of the point cloud, NOT the raw 3D coordinates as labels. Source positions enter only as: (a) the rasterizer's input (filtered through the working-set mask each pass); (b) a final ground-truth check at validation time; (c) **one explicit low-bandwidth scalar primitive — trunk-axis derivation via RANSAC vertical fit through the densest Z-column of P₀**. The trunk axis is a single 3D line scalar (origin + direction), not per-point labels. It is consumed only to compute tree-frame coordinates (`height_frac`, `radial_dist`) for species-priors lookups. This explicit carve-out is documented to prevent baby-time confusion; the rest of the algorithm holds the discipline. (Cycle 2+ may tighten this to a fully vision-only trunk-axis derivation via per-rig silhouette-centroid vertical regression; for Cycle 1 the carve-out is honest and pragmatic.) This discipline forces parsimony, makes the apparatus noise-tolerant, and generalizes the code to consume iPhone photographs in future cycles.
+**Posture B — vision-only stereo recovery.** The apparatus treats source 3D positions as **unobserved structure** and recovers them purely from rendered views via stereo correspondence. Cameras are real cameras. The algorithm's input is the **rendered pixel data** of the point cloud, NOT the raw 3D coordinates as labels feeding classifier inference. Source positions enter only as:
+
+(a) **the rasterizer's input** (filtered through the working-set mask each pass);
+(b) **bbox-scalar derivations** (`ground`, `tree_height`) — single scalars from the source bbox, used to compute `height_frac` for prior queries; not per-point labels;
+(c) **RANSAC trunk-axis derivation** — a single 3D line (origin + direction) computed from the densest Z-column of P₀; used to compute `radial_dist` for prior queries; not per-point labels;
+(d) **mask preparation in Phase 4** — per-source-point distance checks against extracted splines (`distance(P₀[p], spline) < ε_lock`) and consultation of candidate-derived classifier verdicts attributed to each source point via the explicit Phase 4 attribution step (see §Algorithm Phase 4). These reads decide which source points are excluded from NEXT pass's rasterizer input. They DO NOT feed classifier inference; they are mask-preparation, semantically equivalent to the rasterizer's masked input but applied at the *boundary between passes* rather than at render time. The classifier scalars Phase 4 consults are derived in Phase 2 from rendered observations of candidates (stereo-recovered), then attributed by spatial proximity to source points; no source 3D label ever crosses into the inference path.
+(e) **final ground-truth validation** at end of Cycle 1.
+
+These five carve-outs are documented exhaustively to prevent baby-time confusion; the rest of the algorithm holds the discipline. (Cycle 2+ may tighten (b)-(c) to fully vision-only derivations via per-rig silhouette-centroid regression; for Cycle 1 the carve-out is honest and pragmatic.) This discipline forces parsimony, makes the apparatus noise-tolerant, and generalizes the code to consume iPhone photographs in future cycles.
 
 **The unifying primitive — Monte-Carlo evidence accumulation + Rubin-style residual subtraction.** Two halves of one mechanism:
 
@@ -75,7 +83,7 @@ This directly addresses rev. 1's classifier failure mode. Tycho's 63% junction c
 6. **Determinism.** Same specimen + same seed + same hyperparameters → byte-identical output JSON.
 7. **Performance.** Per-rig + per-orientation + per-voxel processing is embarrassingly parallel. Use numpy vectorization or multiprocessing so 500-rig overnight runs scale ≤ linearly with core count.
 8. **Operational mode — standalone CLI app + disk-persistent results.** Primary interface is CLI (`python arborist/lil_vera_v2.py --treeId=... --species=acer_saccharum --N=... --out=...`). Note `--species` is now a required arg — the apparatus is conditioned on species identity from the start. HTTP endpoint is quick-iteration convenience. Result JSON persists to `arborist/state/lil-vera-v2/<treeId>/run-<ISO-timestamp>-N<N>.json` (note v2-suffixed directory so v1 and v2 runs coexist for comparison). Result JSON includes: full **parametric spline output** (see Output specification below), hyperparameters, species identity + priors-file hash, per-pass diagnostics (working-set size curve, lock-in count, rejection count broken down by source [tomography vs botanical-prior vs both], deferred count, classification histograms vs species expected distribution), source-3D-validation residuals.
-9. **Operator-tunable thresholds in the workstage UI.** Lock-in confidence threshold, rejection confidence threshold (for noise/sheet/leaf), glimpse-threshold for reach probes, max iteration passes (default 10), species-prior softness scaling (0 = ignore priors, 1 = hard priors, default 1). All exposed as sliders in the v2 tuner sub-section. Operator can dial during the visual gate.
+9. **Operator-tunable thresholds in the workstage UI.** Lock-in confidence threshold, rejection confidence threshold (for noise/sheet/leaf), glimpse-threshold for reach probes, max iteration passes (default 20 — see Inputs), species-prior softness scaling (0 = ignore priors, 1 = hard priors, default 1). All exposed as sliders in the v2 tuner sub-section. Operator can dial during the visual gate.
 
 ---
 
@@ -103,14 +111,14 @@ What gets read for context (mandatory reads) but not imported:
 - `arborist/lidar_extract.py` — QSM baseline; load_pointcloud is referenced but the cylinder graph extraction is baseline-only.
 
 What stays unchanged in the codebase:
-- `arborist/serve.js` v1 endpoints (`/lil-vera-extract`, `/lil-vera-runs`, `/lil-vera-run/:filename`) — Tycho's. v2 adds parallel `/lil-vera-v2-extract` etc.
+- `arborist/serve.js` v1 endpoints (`/lidar/specimen/:treeId/lil-vera-extract`, `/lidar/specimen/:treeId/lil-vera-runs`, `/lidar/specimen/:treeId/lil-vera-run/:filename`) — Tycho's. v2 adds parallel routes at `/lidar/specimen/:treeId/lil-vera-v2-extract` (+ matching `-v2-runs` and `-v2-run/:filename`); see Files section for canonical path forms.
 - `src/arborist/LidarWorkstage.jsx` v1 5th layer + tuner sub-section + heat layer — Tycho's. v2 adds a 6th layer + its own tuner sub-section alongside.
 - All the rev. 1 commits' visualization infrastructure (frame conventions, alignment oracle, Saved Runs picker pattern) is the design language v2 builds in.
 
 What gets newly authored:
 - `arborist/lil_vera_v2.py` — entire module (apparatus base + iteration loop + classification + extraction + spline fitting + output, all coherent).
 - `arborist/state/<species>/botanical-priors.json` — hand-encoded for Sugar Maple for Cycle 1; Cycle 2+ statistical refinement.
-- `arborist/serve.js` /lil-vera-v2-* endpoints (3 of them: extract, runs, run/:filename — same pattern as v1).
+- `arborist/serve.js` v2 endpoints (3 of them, full canonical mount paths): `/lidar/specimen/:treeId/lil-vera-v2-extract` (POST), `/lidar/specimen/:treeId/lil-vera-v2-runs` (GET), `/lidar/specimen/:treeId/lil-vera-v2-run/:filename` (GET) — same pattern as v1, all tolerating `?t=` cache-buster.
 - `src/arborist/LidarWorkstage.jsx` 6th layer + `SplineSkeleton` component (THREE.TubeGeometry from Catmull-Rom) + v2 tuner sub-section + per-pass diagnostics panel.
 
 ---
@@ -122,7 +130,7 @@ What gets newly authored:
 - Point cloud P₀ (source frame; pulled via `lidar_extract.py`'s `load_pointcloud`)
 - **Species identity** (required, e.g., `acer_saccharum`) — conditions every classification decision
 - **Species priors file** at `arborist/state/<species>/botanical-priors.json` (see "Species priors file specification" section below)
-- Hyperparameters: N (rig count), K_orient (tomography sample count, default 200), pitch ratio, ridge thresholds, glimpse threshold, ε_lock (point-to-spline distance for lock-in), ε_prior (per-voxel `M_prior` cutoff below which ridge tracing won't traverse), rejection thresholds (sheet-classification confidence cutoff, flat-distribution cutoff, prior-violation confidence cutoff), K_rigs_min (minimum `rigs_seen` observational confidence before a point can be marked rejected; default ~5 — prevents over-eager rejection of points seen by too few rigs), termination criterion (ε_residual = fraction of P₀ remaining below threshold OR no-progress passes), max_passes (soft cap, default 10), --seed (RNG seed for determinism)
+- Hyperparameters: N (rig count), K_orient (tomography sample count, default 200), pitch ratio, ridge thresholds, glimpse threshold, ε_lock (point-to-spline distance for Phase 4 lock-in), **ε_attribution** (point-to-candidate distance for the Phase 4 attribution step — bridges candidate-derived classifier scalars to source points; suggested default = consolidation voxel size × 1.5, so each source point picks up the nearest candidate within ~one voxel), ε_prior (per-voxel `M_prior` cutoff below which ridge tracing won't traverse; the same threshold also gates per-candidate `prior_likelihood` in Phase 3b — single threshold serves both since they share semantics ["prior says this region is plausible"], though the voxel-field and per-candidate scalar distributions differ slightly — surface as scope drift if numerical tuning indicates they need to be split), rejection thresholds (sheet-classification confidence cutoff, flat-distribution cutoff, prior-violation confidence cutoff), K_rigs_min (minimum `rigs_seen` observational confidence before a point can be marked rejected; default ~5 — prevents over-eager rejection of points seen by too few rigs), termination criterion (ε_residual = fraction of P₀ remaining below threshold OR no-progress passes), **max_passes (safety-cap default 20** — well above the expected ~10-pass convergence so the algorithm reaches "stable residual" or "working set exhausted" naturally rather than tripping the cap as a routine outcome), --seed (RNG seed for determinism)
 
 ### Rig — 3 cameras at 120° (unchanged from rev. 1)
 
@@ -141,19 +149,22 @@ Initialize:
   M_obs ← empty 3D field  (observational memory; passive evidence; pure)
   M_interp ← empty 3D field  (interpretation memory; extraction commitments)
   priors ← load(arborist/state/<species>/botanical-priors.json)
+                (FAIL-FAST schema validation at load time: required keys present,
+                 sample arrays non-empty, numerical fields within plausible
+                 ranges. If validation fails: print error, exit non-zero. Silent
+                 degradation to "softnessScaling=0 ignore-priors mode" would
+                 mask the bug and break acceptance criterion 8 — refuse to run.)
   ground ← min y of P₀ (bottom of source cloud bbox)
   tree_height ← (max y of P₀) - ground
-                (these two are Posture-B-allowed bbox queries on the source
-                 cloud — same low-bandwidth scalar carve-out as trunk_axis;
-                 used to compute height_frac for prior queries. Not per-
-                 point labels.)
+                (Posture-B carve-out (b): bbox scalars, not per-point labels.)
   trunk_axis ← RANSAC vertical fit through densest Z-column of P₀
-                (provides tree-frame coords for prior queries:
-                 height_frac ∈ [0,1] above ground; radial_dist from axis.
-                 RANSAC SEEDED from --seed CLI arg for determinism per
-                 Std. Req. #6. The trunk_axis primitive is the one
-                 explicit Posture-B carve-out documented in the Posture
-                 section — a low-bandwidth scalar, not per-point labels.)
+                (Posture-B carve-out (c): single 3D line scalar (origin +
+                 direction). RANSAC SEEDED from --seed CLI arg for determinism
+                 per Std. Req. #6. SANITY CHECK: if trunk_axis verticality angle
+                 from world-up > 15°, surface diagnostic + halt — tilted /
+                 multi-stem / mis-classified-axis specimens silently miscalibrate
+                 every prior query downstream. Better to halt early than to
+                 produce a quiet wrong skeleton.)
   pass_count ← 0
 
 Loop until terminated:
@@ -215,6 +226,17 @@ Loop until terminated:
                  multiplicative M_prior gate excludes botanically-impossible
                  voxels from traversal — species prior shapes ridge topology
                  from the start, not as a post-hoc filter.
+                 NOTE: If no candidates classify as tip in this pass (e.g.,
+                 leaf-dominated early passes where tomography distributions
+                 are mostly flat/multimodal), ridge_chains may be empty.
+                 That is acceptable — Phase 4 may still produce REJECTED
+                 points (leaf-mass classifications), the working set
+                 shrinks, and tips emerge in later passes once enough leaves
+                 are removed to expose structure. Empty Phase 3 output in
+                 any single pass is NOT a bug as long as Phase 4 produces
+                 rejections or lock-ins. The loop terminates on "no new
+                 lock-ins AND no new rejections" — silence on extraction
+                 + silence on elimination = converged.
 
   # 3b: NEURONAL AXONAL REACH — bidirectional mutual recognition
   #     This is the load-bearing connectivity primitive. NOT one-direction
@@ -298,7 +320,27 @@ Loop until terminated:
     until prior agrees.
 
   # ── Phase 4: THREE-OUTCOME ELIMINATION (Rubin subtraction) ──
+  #
+  # Attribution bridge — Phase 2 computes classifier scalars per CANDIDATE
+  # (stereo-recovered 3D positions); Phase 4 needs them per SOURCE POINT.
+  # The bridge is explicit nearest-candidate inheritance: for each source
+  # point p ∈ P, find the candidate c nearest p within ε_attribution radius
+  # in 3D space. If found: attribute (p.classification, p.combined_confidence,
+  # p.prior_likelihood, p.rigs_seen) ← (c.classification, c.combined_confidence,
+  # c.prior_likelihood, c.rigs_seen). If no candidate within ε_attribution:
+  # mark p as INVISIBLE-THIS-PASS — too far from any stereo-recovered
+  # observation to classify confidently → p stays DEFERRED. The attribution
+  # uses the candidate's spatial position to look up its scalars; the source
+  # point's 3D position is only consulted as a kNN-style spatial query for
+  # mask preparation, never as a label feeding inference (Posture-B carve-
+  # out (d)).
+  #
   For each point p ∈ P:
+    Attribution: find nearest candidate c within ε_attribution radius of p.
+    If no candidate within ε: MARK DEFERRED (no observation this pass).
+    Else inherit: p.classification, p.combined_confidence, p.prior_likelihood,
+                  p.rigs_seen ← c's values.
+
     If p lies within ε_lock of any spline s ∈ new_splines with
        s.prior_likelihood > lock_in_threshold:
       MARK LOCKED-IN  → remove p from P. Spline s persists in output.
@@ -326,9 +368,12 @@ Loop until terminated:
     Terminated (stable residual — apparatus has nothing more to say).
   Elif |P| / |P₀| < ε_residual:
     Terminated (working set exhausted below threshold).
-  Elif pass_count >= max_passes (default 10):
+  Elif pass_count >= max_passes (default 20; expected convergence ~10):
     Terminated (safety cap; flag as "did not converge"; surface in
-                diagnostics so operator can investigate threshold tuning).
+                diagnostics so operator can investigate threshold tuning.
+                Hitting the cap is a meaningful failure signal — the
+                acceptance criteria require "stable residual" or "working
+                set exhausted" termination, not cap-hit.).
 
 return splines  # parametric centerlines, ready for Phase 5 radius pass
 ```
@@ -338,6 +383,7 @@ return splines  # parametric centerlines, ready for Phase 5 radius pass
 After the loop terminates, splines is the sparse parametric skeleton (target: ~hundreds, never tens of thousands; see acceptance for guidance). Phase 5 operates on this graph:
 
 - **Parent-direction assignment** (writes the spline graph's `parentSplineId` + `parentAttachT` fields): mutual recognition in Phase 3b produces symmetric edges (a, b) with no inherent direction. Phase 5 traverses from the trunk-base spline outward via BFS (or any tree-rooting traversal), assigning each non-root spline a parent + parametric attach position on its parent. Edges become directed parent→child. The trunk-base spline has `parentSplineId=null`.
+- **Multi-component handling.** If mutual recognition fails to connect every spline (possible at aggressive rejection thresholds or low N), BFS from trunk reaches only one component. **Disconnected splines are flagged but NOT dropped.** They appear in output with `parentSplineId=null` AND `"orphan": true` so downstream consumers + the operator can see them; the orphan count is surfaced in `stats.orphanCount` per-pass diagnostic. Acceptance criterion 4 ("connected output") requires `orphanCount == 0` at the cycle gate — if orphans remain, that's a flag the apparatus didn't converge cleanly, not a silent commit. (Future cycles may attempt a one-shot reach-extension pass to reconnect orphans before output; Cycle 1 surfaces them honestly.)
 - **Backward pass:** for each terminal-tip spline, trace its path through the now-directed graph back to the ground (trunk-base spline). Each tip = one "pipe."
 - **Forward pass:** walk ground→tips. At each spline cross-section, count overlapping pipes. **Radius² ∝ pipe count.** Murray's law emerges; no heuristic radius function.
 - **Output radius function per spline:** parametric — `radius(t) = baseRadius × (1 - t)^taperExponent` fit to the per-cross-section pipe counts, OR per-control-point radii if the curve doesn't fit cleanly.
@@ -364,7 +410,7 @@ The Rubin test: dark matter doesn't vanish when one telescope goes offline.
   "speciesId": "acer_saccharum",
   "architectureMode": "rauh",                  // Hallé & Oldeman; strong-leader
   "matureHeightRange": [12.0, 35.0],           // meters; outside → impossible
-  "dbhRange": [0.05, 1.00],                    // meters (radius, not diameter)
+  "dbhRange": [0.05, 1.00],                    // meters — TRUNK RADIUS at breast height (despite the conventional "DBH" name being diameter; the field is named for forestry recognition but values are radius for consistency with the rest of the priors schema. Botanically-literate readers: yes, this is intentional naming-vs-physics drift kept for grep-ability across forestry data sources.)
   "crownWHRatio": [0.5, 0.9],                  // width/height ratio of crown bbox
   "expectedRadiusByPosition": {
     // Position-dependent expected radius envelope.
@@ -372,10 +418,17 @@ The Rubin test: dark matter doesn't vanish when one telescope goes offline.
     // returns {radiusMin, radiusMax, radiusModal}.
     // INTERPOLATION: Delaunay-triangulated linear interpolation via
     // scipy.interpolate.LinearNDInterpolator on the scattered (height_frac,
-    // radial_dist) samples below. Queries outside the convex hull of
-    // samples are CLAMPED (no extrapolation): use the nearest sample's
-    // values. This is deterministic and well-defined; no IDW, no
-    // bilinear-on-irregular-grid hand-waving.
+    // radial_dist) samples below. CLAMP IMPLEMENTATION (load-bearing —
+    // LinearNDInterpolator natively returns NaN outside the convex hull,
+    // not the nearest sample's value): wrap the linear interp with a
+    // scipy.interpolate.NearestNDInterpolator fallback that fires when the
+    // linear interp returns NaN. Pattern:
+    //   linear = LinearNDInterpolator(samples, values)
+    //   nearest = NearestNDInterpolator(samples, values)
+    //   def lookup(query): v = linear(query); return nearest(query) if isnan(v) else v
+    // Without the fallback, off-hull queries (common for early-pass leaf-mass
+    // candidates at high height_frac × large radial_dist) propagate NaN into
+    // combined_confidence and silently break rejection thresholds.
     "type": "piecewise2d-delaunay",
     "samples": [
       {"heightFrac": 0.0, "radialDist": 0.0,  "rMin": 0.15, "rMax": 0.50, "rMode": 0.30},
@@ -463,13 +516,11 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
        likelihood_branching = 1.0
      Else (non-junction class): likelihood_branching = 1.0
 
-  4. Combine:
+  4. Combine + apply softnessScaling:
      raw = likelihood_radius × likelihood_angle × likelihood_branching
-     # Apply softnessScaling ∈ [0, 1]: 1 = full priors; 0 = ignore priors.
-     # Smooth interpolation: softness_blend = raw × softnessScaling
-     #                                       + (1 - softnessScaling) × 1.0
-     # So softnessScaling=0 returns 1.0 always (priors disabled).
-     # softnessScaling=1 returns raw.
+     # softnessScaling ∈ [0, 1]: 1 = full priors; 0 = ignore priors.
+     # Smooth linear blend: softnessScaling=0 → likelihood=1.0 (priors
+     # disabled); softnessScaling=1 → likelihood=raw (full priors).
      likelihood = raw × priors.softnessScaling
                   + (1.0 - priors.softnessScaling) × 1.0
 
@@ -538,7 +589,7 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
 | **N.3.1 — Iteration loop + three-outcome elimination** | ~1.5 | <10min CLI at N=50, expected to converge in ~4 passes | Working set state `P`, masked rasterization (rasterizer takes `pts_world[P]`), Phase 4 three-outcome elimination wired. Pass N renders the residual; canopy leaf-mass progressively dissolves as rejections accumulate. Per-pass diagnostics: working-set size curve, lock-in count, rejection count broken down by source (tomography vs prior vs both). (Note: "4 passes" is the expected convergence count at N=50 with default thresholds, NOT a hardcode. Algorithm continues until termination criteria fire; `max_passes` cap is 10 per the algorithm spec.) | **The leaf-clearing visual gate.** Per-pass animation in the workstage: pass-1 candidate cloud → pass-2 residual (leaves rejected) → pass-3 residual (more rejected) → stable. Trunk + branches survive; leaf mass dissolves. Working-set curve falls monotonically. |
 | **N.3.2 — Spline fitting + lock-in + mutual recognition** | ~1.5 | <30min CLI at N=500, ~10 passes | Phase 3a/3b/3c (ridge + axonal mutual-recognition reach + taper-projection) extract chains per pass; chains fit to parametric splines (3–10 control points each); spline `prior_likelihood` scored; points within ε_lock of high-likelihood splines mark LOCKED-IN. **NO MST closure** — connectivity emerges from genuine mutual recognition. Output JSON in parametric-spline format. | **THE cycle gate.** N=500, multi-pass. Does the apparatus produce ~100–500 parametric splines (NOT 40K voxel nodes)? Does the canopy contain continuous SPLINE branches (not chaos)? Visibly cleaner than QSM AND Hawthorn's Bidirectional AND Tycho's rev. 1 v1 baseline (6th alignment-oracle layer comparison). |
 | **N.3.3 — Pipe-model radii + taper co-determination** | ~0.5 | <5min CLI | Phase 5 backward-forward pipe-model counts on the spline graph. Per-spline parametric `radiusFn` populated. Co-determination diagnostic: per-spline radii (pipe-counting) vs Phase 3c taper-projection agreement. | Visual: trunks taper sensibly; Murray's law sanity at joints (parent radius² ≈ Σ child radii²); taper-vs-pipe agreement within tolerance. |
-| **N.3.4 — Rubin consensus-stability validation** | ~0.5 | <30min for 4 subsampled runs | Run apparatus 4× with 10/25/40% rig dropout. Spline count variance, position variance, topology agreement, tip-set agreement quantified. | Numerical gate: per-spline-endpoint variance < threshold across all dropout rates. |
+| **N.3.4 — Rubin consensus-stability validation** | ~0.5 | ~2 hours for 4 subsampled N=500 runs (rig dropout reduces Phase-1 cost ~linearly in rig count but does not touch Phase 3/4/5 cost; 4 runs at ~25min each) | Run apparatus 4× with 10/25/40% rig dropout. Spline count variance, position variance, topology agreement, tip-set agreement quantified. | Numerical gate: per-spline-endpoint variance < threshold across all dropout rates. |
 
 **Total ~5.5 days work + ~1.5 days operator validation cycles = ~7 days end-to-end.** Stages renumbered N.3.x (rather than N.2.x) to mark the rev. 2 fresh build while preserving Tycho's N.2.0/2.1/2.2 commits as baseline comparison artifacts (the 5th alignment-oracle layer, "Li'l Vera v1 (baseline)").
 
@@ -550,13 +601,13 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
 
 At the N.3.0 gate (the classifier-first gate):
 
-a. **Botanical-prior consistency.** Classification distribution at N=50 single-pass falls within tolerance of priors' expected fractions (e.g., junction count <15% not 63%, tip count 25–35%, linear-interior count 55–70%). If the distribution wildly diverges from priors, classifier thresholds need tuning **before any iteration machinery is built on top.**
+a. **Botanical-prior consistency.** Classification distribution at N=50 single-pass falls within tolerance of priors' expected fractions. Specifically: junction count <15% (not 63%), tip count 25–35%, linear-interior count 55–70%. The noise + sheet buckets are pre-elimination categories — their counts are diagnostic-only at this gate (no expected fraction), but together with linear/junction/tip should sum to 100% of classified candidates. If the distribution wildly diverges from priors' expected fractions, classifier thresholds need tuning **before any iteration machinery is built on top.**
 
 b. **Visible leaf-mass discrimination.** In the M_obs heat layer with `prior_likelihood` as the colormap channel: dense leaf-mass regions should color dim (low likelihood — botanically impossible at this position) while real structural skeleton regions color bright. Pure tomography couldn't make this distinction; species-conditioned classification can.
 
 At the N.3.2 gate (the cycle gate):
 
-1. **Sparse parametric output.** Total spline count in the hundreds — soft target ~100–800, hard cap "no more than 5× the operator's visible-branch-count estimate from the alignment oracle." Never tens of thousands. Per-spline control points are 3–10, not thousands. This is the structural sanity check that the output is *centerlines*, not a *surface mesh-cloud*. (Note: a small or young specimen may legitimately have ~80 splines and still pass — the criterion is "well under 1000 + matches visible-branch scale," not a hard 100-floor.)
+1. **Sparse parametric output.** Total spline count in the hundreds — soft target ~100–800; small/young specimens may legitimately have ~80 and still pass; hard cap <1000. Per-spline control points are 3–10, not thousands. This is the structural sanity check that the output is *centerlines*, not a *surface mesh-cloud*. Tens of thousands of splines = fail.
 2. **The canopy is no longer a wireframe ball.** Interior canopy contains continuous spline branches (axonal mutual-recognition reach into low-M_obs regions did its job), but those branches are SPLINES (parametric curves) not chaos.
 3. **Confident leaf rejection visible per pass.** Per-pass diagnostics show the working set monotonically shrinking; the rejected-count is meaningful (not zero); pass-N rendered point cloud progressively cleaner than pass-1. Rejection-by-source breakdown shows both tomography and prior contributing (not one dominating).
 4. **Connected output via genuine mutual recognition, NOT MST closure.** Connectivity emerges from bidirectional probe + reciprocal recognition. If MST-style closure is needed as a safety net, it's a flag that the algorithm hasn't converged properly.
