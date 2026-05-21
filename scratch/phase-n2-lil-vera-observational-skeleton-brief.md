@@ -4,7 +4,7 @@
 >
 > The implementing baby self-names per Standing Requirement #1. Li'l Vera is the project; the baby is its first builder.
 >
-> **REV. 2 NOTE (2026-05-20):** rev. 1 of this brief shipped to Baby Tycho across commits `604dfed` / `de00a30` / `0d9102d` (Stages N.2.0 / N.2.1 / N.2.2). Tycho built precisely what rev. 1 specified — but rev. 1 was missing a load-bearing architectural primitive: **the working set never shrinks; leaf-mass and noise never get rejected; the canopy never clears.** What rev. 1 produced was a ridge-tracer through a dense static memory field, which makes the canopy interior a wireframe ball regardless of how many rigs observe it. Rev. 2 adds the missing primitive (Rubin-style residual subtraction with three-outcome elimination per pass) and specifies parametric-spline output instead of dense voxel-node graphs. **See "What's new in rev. 2" section below.**
+> **REV. 2 NOTE (2026-05-20):** rev. 1 of this brief shipped to Baby Tycho across commits `604dfed` / `de00a30` / `0d9102d` (Stages N.2.0 / N.2.1 / N.2.2). Tycho built precisely what rev. 1 specified — but rev. 1 was missing a load-bearing architectural primitive: **the working set never shrinks; leaf-mass and noise never get rejected; the canopy never clears.** What rev. 1 produced was a ridge-tracer through a dense static memory field, which makes the canopy interior a wireframe ball regardless of how many rigs observe it. Rev. 2's first draft added Rubin-style residual subtraction with three-outcome elimination + species priors + parametric-spline output. **Then, during pre-dispatch coordinator review (2026-05-20 evening, after the Fraunhofer audit), the operator concluded the rev. 2 draft as written still "made decisions too fast" — leaning on Hessian ridge tracing as the primary structure-extractor and committing classifications eagerly per pass. A stereodetective point-cluster analyzer is nothing new and was unlikely to clear the visual gate.** Rev. 2 was restructured in place to **defer commitment** and lean on the neuronal reacher as the load-bearing extraction primitive (not just a connectivity-completer): (1) high-precision tip detection + RANSAC trunk give two confident *anchor sets*; (2) the rig **scans adaptively** in batches until the residual memory field contains no long-pointy clusters that still need explaining (no fixed N); (3) bidirectional axonal *growth* — step by step, not cone-shot — builds connectivity middle-out from trunk + tips, with species curvature priors steering each step. Ridge tracing is removed entirely. The three load-bearing primitives (iteration + elimination, species priors, neuronal mutual recognition) survive, but the algorithm's temporal structure is now **tips-first, middle-out, adaptive-scan, growth-shaped**. **See "What's new in rev. 2" section below.**
 >
 > **REV. 2 IS A FRESH BUILD, NOT A RETROFIT.** Rev. 2 lives in a new module `arborist/lil_vera_v2.py` with a fresh baby reading this brief cold (no inherited rev. 1 mental model). Tycho's three commits survive as **baseline comparison artifacts** — the cyan-magenta Li'l Vera layer becomes "Li'l Vera v1 (baseline)" in the alignment oracle alongside QSM and Hawthorn's Bidirectional; v2 publishes a **6th alignment-oracle layer** for direct visual comparison. Rev. 1 primitives (apparatus base, tomography functions) are mandatory reads for context but ARE NOT IMPORTED — v2 builds them coherently in one module to preserve architectural integrity. The architecture is woven throughout (iteration loop touches every layer); surgical retrofit was not a coherent path.
 >
@@ -14,16 +14,17 @@
 
 ## For the human reader (intuition pumps; not in the brief body)
 
-Six pictures to keep in your head while you build:
+Seven pictures to keep in your head while you build:
 
-1. **A spiral dolly with a 3-camera rig** at 120° around the tree, looping past hundreds of times. Each rig position takes a triple snapshot. Crank N=500 overnight; you get 1500 observations from carefully-distributed angles.
-2. **Dragging a stick through jelly** at every candidate point, in hundreds of directions per point. The directions that produce a clean channel reveal the local structural axis. The shape of the channel-score distribution classifies the point (linear interior, branching junction, tip, noise, sheet artifact).
+1. **A spiral dolly with a 3-camera rig** at 120° around the tree. Each rig position takes a triple snapshot. The dolly **doesn't stop at a fixed N** — it keeps looping, adding rigs in batches, until the residual memory field contains no long-pointy clusters that haven't been explained. A real measurement apparatus scans until the data stops surprising it, not until a stopwatch fires. (Hard safety cap N_max=2000 in case priors or thresholds are off; hitting it is a diagnostic.)
+2. **Dragging a stick through jelly** at every candidate point, in hundreds of directions per point. The directions that produce a clean channel reveal the local structural axis. The shape of the channel-score distribution classifies the point (linear interior, branching junction, tip, noise, sheet artifact) — but classification is *tagged*, not *committed*. Hard commits come later, only when an anchor (trunk or tip) or a growing axon needs to consume the tag.
 3. **A scalar memory field in 3D space.** Every observation deposits evidence at points the apparatus has seen as silhouette, medial, structurally-coherent. The tree is what gets *repeatedly covered* — the high-evidence region of this field.
-4. **Vera Rubin subtracting known signals to find dark matter.** Per pass, the apparatus subtracts confidently-classified points — both **confident-skeleton (locked-in)** AND **confident-noise (rejected, e.g., leaf surface, scan artifact)** — from the working set. Next pass renders the *residual*. The tree emerges progressively as leaves and noise dissolve out of the data the apparatus sees. Termination = working set exhausted or stable. **THE WORKING SET MONOTONICALLY SHRINKS.**
-5. **A botanist checking the apparatus's homework.** Real Sugar Maples have bounded DBH, bounded heights, continuous taper, branch angles between ~30° and ~70° from vertical, strong-leader topology, children thinner than parents at every joint. The apparatus consults a **species botanical-priors file** at each classification decision. Geometrically-plausible candidates that are botanically impossible get rejected outright (hard constraints); botanically-unlikely candidates get deferred or down-weighted (soft constraints). This is the third inference channel alongside parallax + tomography — Bayesian priors that pull ambiguous observations toward biologically-correct answers.
-6. **Neurons reaching for synaptic partners.** This is the load-bearing connectivity primitive — and what makes the algorithm NEURONAL rather than just path-finding. Every ridge endpoint sends out probes (filopodia) in mother-direction (toward parent / trunk) AND child-direction(s) (toward children / canopy). When a probe from A finds B AND B's reciprocal probe in the opposite direction finds A back, a connection FORMS — that's a synapse, symmetric recognition by construction. Crucially, these probes reach INTO low-evidence territory (leaf-occluded canopy interior) where strong axial priors expect continuation but observational evidence is sparse — picking up "glimpses" through leaf gaps that ridge-tracing alone would miss. **Skip this primitive and the algorithm reverts to path-finding through a memory field; geometric fragments emerge with no enforced connectivity — the QSM failure mode rev. 2 is built to escape.** Picture it as filopodia + synaptic mutual recognition in actual neural development; the algorithmic analog is exact.
+4. **Vera Rubin subtracting known signals to find dark matter.** Per pass, the apparatus subtracts confidently-classified points — both **confirmed-skeleton (locked-in on a trunk↔tip path)** AND **confirmed-noise (rejected: leaf-mass at botanically-impossible position, scan sheet artifact)** — from the working set. Next pass renders the *residual*. The tree emerges progressively as leaves and noise dissolve out of the data the apparatus sees. **THE WORKING SET MONOTONICALLY SHRINKS.**
+5. **A botanist checking the apparatus's homework.** Real Sugar Maples have bounded DBH, bounded heights, continuous taper, branch angles between ~30° and ~70° from vertical, strong-leader topology, children thinner than parents at every joint. The apparatus consults a **species botanical-priors file** at every classification decision *and* at every axonal growth step (to steer curvature). Geometrically-plausible candidates that are botanically impossible get rejected outright (hard constraints); botanically-unlikely candidates get deferred or down-weighted (soft constraints). This is the third inference channel alongside parallax + tomography — Bayesian priors that pull ambiguous observations toward biologically-correct answers.
+6. **A forensics team marking the obvious evidence first.** Before trying to figure out anything in the middle, the apparatus identifies the two *easy* feature classes with high precision: the **trunk** (RANSAC vertical fit, trivially confident) and the **branch tips** (a precision-gated detector — long, thin, monotonically tapering, terminating in space, AND the species priors agree this is a plausible tip at this position). Tip detection is deliberately conservative — false-positive tips at leaf-cluster positions get rejected by the priors before they're allowed to anchor anything. The output is two **anchor sets** that the next primitive grows between. Tips first, middle later.
+7. **Neurons growing axons toward synaptic partners — middle-out from trunk + tips.** The load-bearing extraction primitive (not just connectivity-completer). Every anchor in {trunk endpoints, tip anchors, prior-pass locked-in spline endpoints} spawns growing probes — like filopodia in a developing nervous system — in BOTH mother-direction (toward trunk) AND child-direction(s) (toward canopy; multiple if branching). Probes **grow step by step**, not as one-shot cones: at each step the probe (a) confirms a glimpse exists in M_obs ahead AND the species priors at that glimpse's position agree it's plausible skeleton, (b) re-derives its local direction by blending what it just saw with what the species's curvature priors expect at this height, (c) advances. Two growing probes from opposite-end anchors **handshake** when their tips meet AND their advancing directions agree — symmetric mutual recognition, no one-direction shortcuts, no MST closure fallback. The probes reach INTO low-evidence territory (leaf-occluded canopy interior) where direct observation can't see through the leaves but priors say "the branch keeps going" — picking up *glimpses* through leaf gaps that nothing else could. **Skip this primitive and the algorithm collapses to a stereodetective point-cluster analyzer; we already know that doesn't clear the visual gate — that's the failure mode the restructure was built to escape.** The algorithmic analog to filopodia + synapse formation is exact.
 
-These metaphors live here. The brief body describes the algorithm in invariants — math doesn't care which dolly trajectory, only that the viewpoint set has required coverage properties, the memory accumulates correctly, the working set shrinks each pass via dual classification (lock-in + rejection), every classification respects species-specific botanical constraints, AND skeleton fragments connect via bidirectional mutual-recognition reach into low-evidence canopy interior.
+These metaphors live here. The brief body describes the algorithm in invariants — math doesn't care which dolly trajectory, only that the viewpoint set covers until the long-pointy residual is exhausted, the memory accumulates correctly, the working set shrinks each pass via dual classification (lock-in + rejection), every classification respects species-specific botanical constraints, AND skeleton is *grown* between trunk and tip anchors via step-by-step bidirectional axonal probes that handshake through low-evidence canopy interior.
 
 ---
 
@@ -98,7 +99,16 @@ Rev. 1 (Tycho's `604dfed` / `de00a30` / `0d9102d`) produced a working apparatus 
 - ✗ **No species-conditioned prior** to discriminate "geometrically-plausible-but-botanically-impossible" candidates (leaf mass at impossible structural positions misclassified as junction; 63% junction rate at N=500 vs botanical ~8%).
 - ✗ Produced dense voxel-node graphs (40K nodes, 132K cylinders for one tree) rather than sparse parametric splines (target: 100–500 splines per tree, for use as procedural-generator training data downstream).
 
-**Rev. 2 fixes those five gaps by:** (1) adding the iteration loop with three-outcome elimination + masked rasterization as the structural primitive (gaps 1+2+3); (2) introducing the species-conditioned botanical-priors file as a third inference channel that fundamentally conditions classification (input, not validation) (gap 4); (3) specifying parametric splines as the output shape (gap 5); (4) elevating neuronal mutual recognition to the load-bearing connectivity primitive (vs ridge tracing alone or MST closure shortcut). Five gaps → four mechanisms (some gaps share a mechanism); all five are addressed.
+**Rev. 2's first draft fixed those five gaps by:** (1) adding the iteration loop with three-outcome elimination + masked rasterization as the structural primitive (gaps 1+2+3); (2) introducing the species-conditioned botanical-priors file as a third inference channel that fundamentally conditions classification (input, not validation) (gap 4); (3) specifying parametric splines as the output shape (gap 5); (4) elevating neuronal mutual recognition to a load-bearing primitive (vs ridge tracing alone or MST closure shortcut). All five gaps addressed via four mechanisms.
+
+**Then the 2026-05-20 evening pre-dispatch restructure surfaced two more gaps that the first draft still carried over from rev. 1's geometric-first DNA:**
+
+- ✗ **Ridge tracing as the primary structure-extractor commits classifications too eagerly.** Hessian eigenvector ridge-following on a smoothed memory field will trace through any density ridge — including dense leaf-mass canopy interiors — and lock in those traces as splines before the elimination pass has a chance to clear the field. The structural primitive has to *defer* commitment until anchor evidence is overwhelming, not race to extract.
+- ✗ **A fixed-N scan and a one-shot cone reach both treat "enough observation" as a hyperparameter rather than a measured property of the data.** A real measurement apparatus scans *until the residual is explained*; a real synapse-forming neuron *grows* its axon stepwise toward a partner, re-aiming as it goes.
+
+**The restructure addresses these by:** (5) **removing ridge tracing entirely** and elevating neuronal mutual recognition from "connectivity-completer for ridge fragments" to **primary structure-builder**; (6) **anchoring extraction on two high-precision sources** — RANSAC trunk (already specified) plus a new precision-gated tip detector (geometric long-pointy-shape test AND species-prior tip-class consistency); (7) **replacing fixed-N scan with adaptive batched scanning** terminated by a residual cluster-detector ("any long-pointy mass still unaccounted for? scan more"); (8) **replacing one-shot cone reach with step-by-step axonal growth** — each probe step confirms a glimpse exists, blends its local direction with species curvature priors, advances, and only handshakes when two opposing-anchor probes meet AND agree on direction.
+
+Net: seven gaps → eight mechanisms. The three named load-bearing primitives (iteration + elimination, species priors, neuronal mutual recognition) are unchanged in identity; the neuronal one is now structurally larger because it owns extraction, not just connectivity.
 
 **Rev. 2 is a fresh build in a new module — `arborist/lil_vera_v2.py`.** The architecture is woven throughout (iteration loop touches Phase 1 rasterization, Phase 2 classification, Phase 3 extraction, Phase 4 elimination, Phase 5 radii, output emission); surgical retrofit was not a coherent path. Tycho's rev. 1 commits stand as **baseline comparison artifacts**:
 
@@ -131,15 +141,29 @@ What gets newly authored:
 - Point cloud P₀ (source frame; pulled via `lidar_extract.py`'s `load_pointcloud`)
 - **Species identity** (required, e.g., `acer_saccharum`) — conditions every classification decision
 - **Species priors file** at `arborist/state/<species>/botanical-priors.json` (see "Species priors file specification" section below)
-- Hyperparameters: N (rig count), K_orient (tomography sample count, default 200), pitch ratio, ridge thresholds, glimpse threshold, ε_lock (point-to-spline distance for Phase 4 lock-in), **ε_attribution** (point-to-candidate distance for the Phase 4 attribution step — bridges candidate-derived classifier scalars to source points; suggested default ~0.05m, sized to typical inter-candidate spacing at N=500 — adjust empirically if the per-pass diagnostic "deferred-for-no-candidate count" is high (too small) or rejection is over-eager (too large)), ε_prior (per-voxel `M_prior` cutoff below which ridge tracing won't traverse; the same threshold also gates per-candidate `prior_likelihood` in Phase 3b — single threshold serves both since they share semantics ["prior says this region is plausible"], though the voxel-field and per-candidate scalar distributions differ slightly — surface as scope drift if numerical tuning indicates they need to be split), rejection thresholds (sheet-classification confidence cutoff, flat-distribution cutoff, prior-violation confidence cutoff), K_rigs_min (minimum `rigs_seen` observational confidence before a point can be marked rejected; default ~5 — prevents over-eager rejection of points seen by too few rigs), termination criterion (ε_residual = fraction of P₀ remaining below threshold OR no-progress passes), **max_passes (safety-cap default 20** — well above the expected ~10-pass convergence so the algorithm reaches "stable residual" or "working set exhausted" naturally rather than tripping the cap as a routine outcome), --seed (RNG seed for determinism)
+- Hyperparameters (grouped):
+
+  **Observation:** K_orient (tomography sample count, default 200), pitch ratio (spiral geometry).
+
+  **Adaptive scan:** N_batch (rigs added per scan iteration, default 50), N_max (hard safety cap on total rigs, default 2000; hitting it is a "did-not-converge" diagnostic, not a routine outcome), cluster-detector params {`density_threshold` for binarizing M_obs into connected components, `min_voxel_count` to ignore tiny noise blobs, `elongation_threshold` = PCA λ1/λ2 ratio below which a cluster fails the "long-pointy-shape" test and is considered unexplained mass requiring more scanning}. Scan loop terminates when zero clusters fail the elongation test, OR N_max is hit.
+
+  **Tip-precision detector:** `tip_elongation_min` (local-PCA λ1/λ2 in a spherical neighborhood; default ~5.0 — tips are decidedly elongated), `tip_taper_sign` (must be negative — radius monotonically shrinks toward the candidate; flat or growing rules out tip), `tip_neighborhood_radius` (PCA window, default ~0.15m), `τ_tip_prior` (minimum `priors.likelihood(class='tip', ...)` for the tip to anchor; default 0.5 — half-prior or better). Anchor admission is conjunction of all four (geometric AND priors).
+
+  **Axonal growth:** `step_length` (probe advance per step, default ~0.05m — fine enough to follow real branch curvature), `probe_max_steps` (per-probe cap before stalling, default 200 — bounds runaway growth), `glimpse_threshold` (minimum M_obs ahead of probe tip to count as a confirmed glimpse), `cone_half_angle` (forward search cone half-angle at each step, default ~20° — tight, since priors are steering), `curvature_prior_blend` (weight ∈ [0,1] for blending last-segment direction vs species-priors expected local direction at this height; default 0.5), `handshake_distance` (probes within this Euclidean distance are candidates for handshake; default 2 × step_length), `directional_agreement_threshold` (cos-angle between A's forward direction and -B's forward direction must exceed this for handshake; default 0.7 ≈ 45°). Handshake requires BOTH proximity AND directional agreement.
+
+  **Elimination:** ε_lock (point-to-confirmed-trunk↔tip-path distance for Phase 4 lock-in), **ε_attribution** (point-to-candidate distance for the Phase 4 attribution step — bridges candidate-derived classifier scalars to source points; suggested default ~0.05m, sized to typical inter-candidate spacing — adjust empirically if "deferred-for-no-candidate" count is high (too small) or rejection is over-eager (too large)), ε_prior (per-candidate `prior_likelihood` cutoff below which the candidate is hard-rejected; also gates whether a glimpse counts during axonal growth), rejection thresholds (sheet-classification confidence cutoff, flat-distribution cutoff, prior-violation confidence cutoff), K_rigs_min (minimum `rigs_seen` observational confidence before a point can be marked rejected; default ~5 — prevents over-eager rejection of points seen by too few rigs).
+
+  **Loop control:** termination criterion (ε_residual = fraction of P₀ remaining below threshold OR no-progress passes), **max_passes (safety-cap default 20** — well above the expected ~10-pass convergence so the algorithm reaches "stable residual" or "working set exhausted" naturally rather than tripping the cap as a routine outcome), --seed (RNG seed for determinism — RANSAC, cluster-detector tie-breaks, and any stochastic probe initializations all derive from this).
+
+  **REMOVED from rev. 2 draft:** Hessian ridge thresholds + ridge-trace seed config. Ridge tracing is gone; the reacher does extraction.
 
 ### Rig — 3 cameras at 120° (unchanged from rev. 1)
 
 Each rig captures three cameras at 120° around its vertical axis, looking inward. Properties by construction: complete silhouette coverage per rig; universal within-rig stereo; triple-consensus per rig.
 
-### Spiral — single N knob (unchanged from rev. 1)
+### Spiral — adaptive scan, no fixed N
 
-Spiral around the tree's vertical symmetry axis, single primary knob N + pitch ratio. Operational mode: N=50 development; N=500 overnight load-bearing runs.
+Spiral around the tree's vertical symmetry axis with pitch ratio as the spatial-distribution knob. **Total rig count is NOT fixed in advance** — it's whatever the adaptive-scan loop in Phase 1 below determines is needed for the residual to contain no unexplained long-pointy clusters. Operational guidance: development runs typically converge at N ≈ 50–150; production runs at N ≈ 300–800; complex specimens may legitimately need more. Hard safety cap N_max=2000. The spiral generator is deterministic from `--seed` so adding a batch of N_batch rigs always extends the same sequence — no re-randomization mid-run.
 
 ### THE structural primitive — iteration loop with working-set subtraction
 
@@ -167,21 +191,55 @@ Initialize:
                  every prior query downstream. Better to halt early than to
                  produce a quiet wrong skeleton.)
   pass_count ← 0
+  N_scanned ← 0
+  rig_seed_cursor ← 0  # deterministic position in the spiral sequence
 
 Loop until terminated:
   pass_count += 1
   pts_active ← P₀[P]  # the masked source cloud — ONLY uncertain points
 
-  # ── Phase 1: observe the current working set ──
-  For each rig position r ∈ {1...N}:
-    Render pts_active from the rig's 3 cameras (silhouette + medial via skimage)
-    Within-rig stereo correspondence: triangulate to 3D candidates.
-    (Crucially: rejected leaves from prior passes are GONE from pts_active and
-     do not contribute medial-axis pixels in this pass's renders.)
+  # ── Phase 1: ADAPTIVE SCAN — keep adding rigs until residual is clean ──
+  #
+  # No fixed N. The scan extends in batches of N_batch rigs and stops only
+  # when the cluster detector finds zero "unexplained long-pointy mass" in
+  # M_obs, OR when N_scanned hits N_max (the safety cap — a meaningful
+  # failure signal, not routine).
+  #
+  Scan-loop:
+    Generate next N_batch spiral rig positions starting from rig_seed_cursor.
+    For each new rig r:
+      Render pts_active from r's 3 cameras (silhouette + medial via skimage).
+      Within-rig stereo correspondence: triangulate to 3D candidates.
+      Deposit into M_obs at candidate positions (silhouette_count,
+      medial_count, body_count, rigs_seen).
+      (Crucially: rejected leaves from prior passes are GONE from pts_active
+       and do not contribute medial-axis pixels in this pass's renders.)
+    N_scanned += N_batch
+    rig_seed_cursor += N_batch
 
-  # ── Phase 2: deposit + SPECIES-CONDITIONED classify ──
+    # ── Cluster detector — is there still unexplained long-pointy mass? ──
+    binary_M ← M_obs > density_threshold
+    clusters ← connected_components(binary_M, min_voxel_count)
+    For each cluster c:
+      Run PCA on c's voxel positions; compute elongation = λ1 / max(λ2, ε).
+      If elongation < elongation_threshold:
+        c is BLOBBY — fails the long-pointy-shape test; unexplained.
+      Else:
+        c is LONG-POINTY — accounted-for shape; OK to stop scanning re: c.
+    unexplained ← [c for c in clusters if c is BLOBBY]
+
+    If unexplained is empty: break  # scan-complete this pass.
+    If N_scanned >= N_max: break with DID-NOT-CONVERGE diagnostic.
+    (Otherwise loop and add another N_batch rigs.)
+
+  # ── Phase 2: SPECIES-CONDITIONED CLASSIFY candidates (TAG, don't commit) ──
+  #
+  # Classification is deferred-commitment: candidates get tagged with
+  # geometric_class + combined_confidence; the tags are CONSUMED later by
+  # (a) the tip detector in Phase 3a, (b) axonal growth glimpse checks in
+  # Phase 3b, (c) elimination in Phase 4. No tag is acted on here.
+  #
   For each candidate c (within ε of a point in pts_active):
-    Deposit into M_obs: silhouette_count, medial_count, body_count, rigs_seen.
     Orientation tomography: sample K_orient directions, compute channel scores.
     geometric_class ← classify by tomography distribution shape:
       Sharp unimodal peak       → candidate-linear-interior (peak dir = axis)
@@ -191,134 +249,195 @@ Loop until terminated:
       Distributed on great circle → candidate-sheet
     geometric_confidence ← measure of how cleanly the distribution shape
       fits the class (e.g., normalized peak sharpness for unimodal classes;
-      top2_ratio of the highest channel-score vs second-highest for
-      bimodal/multimodal; inverse-variance for flat classification). ∈ [0, 1].
-      Tycho's rev. 1 used a similar scalar (`tomoConfidence`, `tomoTop2Ratio`);
-      v2 baby computes its own — exact formula is implementation choice as
-      long as it's deterministic + monotonic in classification quality.
+      top2_ratio for bimodal/multimodal; inverse-variance for flat).
+      ∈ [0, 1]. Exact formula is implementation choice as long as
+      deterministic + monotonic in classification quality.
     height_frac ← (c.y - ground) / tree_height
     radial_dist ← distance from c to trunk_axis
     inferred_radius ← perpendicular spread of M_obs around c
     prior_likelihood ← priors.likelihood(geometric_class, height_frac,
                                           radial_dist, inferred_radius,
                                           local_axis=peak_direction)
-      # priors.likelihood ∈ [0, 1]: 1 = perfectly consistent with species at
-      # this position; 0 = botanically impossible; soft values for
-      # unlikely-but-possible. EXAMPLE: Sugar Maple at height_frac=0.5,
-      # radial_dist=4m, inferred_radius=1.5m → likelihood ≈ 0 (no thick
-      # branch exists 4m radially-out at mid-height; it's a leaf cluster,
-      # not skeleton).
+      # ∈ [0, 1]: 1 = perfectly consistent with species at this position;
+      # 0 = botanically impossible; soft values for unlikely-but-possible.
+      # EXAMPLE: Sugar Maple at height_frac=0.5, radial_dist=4m,
+      # inferred_radius=1.5m → likelihood ≈ 0 (no thick branch 4m radially-
+      # out at mid-height; it's a leaf cluster, not skeleton).
     c.classification ← geometric_class
     c.prior_likelihood ← prior_likelihood
     c.combined_confidence ← geometric_confidence × prior_likelihood
+    c.local_axis ← peak direction from tomography (used by Phase 3b for
+                   probe direction seeding).
 
-  # ── Phase 3: extract structure (three primitives, all prior-aware) ──
+  # ── Phase 3: EXTRACT STRUCTURE via anchored axonal growth ──
+  #
+  # NOT ridge tracing. NOT seed-and-grow from any density peak. The
+  # extraction primitive is: identify two high-precision anchor sets
+  # (trunk + tips), then GROW axons from anchors until they handshake
+  # with each other. Everything in between is built, not traced.
+  #
 
-  # 3a: ridge extraction
-  # Build a per-voxel prior field M_prior at the same grid as smoothed M_obs.
-  # For each voxel v: compute its tree-frame coords (height_frac, radial_dist),
-  # query priors.likelihood(...) using v's location + M_obs's perpendicular
-  # spread at v as inferred_radius + Hessian's local v₁ as local_axis,
-  # → M_prior[v] ∈ [0, 1].
-  ridge_chains ← Hessian-eigenvector ridge trace on smoothed M_obs, with
-                 ridge condition: (|λ₂|, |λ₃| << |λ₁|) AND (M_obs > thresh)
-                 AND (M_prior > ε_prior). Seeded from candidate-tip points
-                 whose combined_confidence exceeds threshold. The
-                 multiplicative M_prior gate excludes botanically-impossible
-                 voxels from traversal — species prior shapes ridge topology
-                 from the start, not as a post-hoc filter.
-                 NOTE: If no candidates classify as tip in this pass (e.g.,
-                 leaf-dominated early passes where tomography distributions
-                 are mostly flat/multimodal), ridge_chains may be empty.
-                 That is acceptable — Phase 4 may still produce REJECTED
-                 points (leaf-mass classifications), the working set
-                 shrinks, and tips emerge in later passes once enough leaves
-                 are removed to expose structure. Empty Phase 3 output in
-                 any single pass is NOT a bug as long as Phase 4 produces
-                 rejections or lock-ins. The loop terminates on "no new
-                 lock-ins AND no new rejections" — silence on extraction
-                 + silence on elimination = converged.
+  # 3a: PRECISION-GATED TIP DETECTION
+  #
+  # Branch tips are the only feature class besides the trunk that can
+  # be identified with high confidence from local geometry + priors
+  # alone. Anchor admission requires conjunction of four tests; this
+  # is deliberately conservative — false-positive tips at leaf-cluster
+  # positions would poison axonal growth.
+  #
+  tip_anchors ← []
+  For each candidate c with c.classification == 'tip':
+    If c.geometric_confidence < tip_geometric_min: skip.
+    # Local-PCA in tip_neighborhood_radius spherical window around c:
+    nbhd ← candidates within tip_neighborhood_radius of c
+    If |nbhd| < min_nbhd_count: skip.  # not enough local evidence
+    Run PCA on nbhd positions → λ1, λ2, λ3 (descending).
+    elongation ← λ1 / max(λ2, ε)
+    If elongation < tip_elongation_min: skip.  # not long enough
+    # Taper-sign check: M_obs spread along λ1 axis, sampled at several
+    # arc-length offsets, must decrease monotonically toward c.
+    taper_slope ← linear_fit(M_obs_perp_spread, arclength_from_c)
+    If taper_slope >= 0: skip.  # flat or thickening → not a tip
+    # Priors gate:
+    If priors.likelihood(class='tip', height_frac, radial_dist,
+                          inferred_radius, local_axis=λ1) < τ_tip_prior:
+      skip.  # botanically implausible tip
+    # All four gates pass → admit as tip anchor.
+    tip_anchors.append({position: c, direction: -λ1 toward trunk,
+                        observed_radius: inferred_radius})
 
-  # 3b: NEURONAL AXONAL REACH — bidirectional mutual recognition
-  #     This is the load-bearing connectivity primitive. NOT one-direction
-  #     extension. Every current-pass ridge endpoint (not yet locked-in;
-  #     lock-in happens in Phase 4 below) AND every prior-pass locked-in
-  #     endpoint sends probes BOTH in mother-direction (toward parent /
-  #     trunk) AND child-direction(s) (multiple, since real nodes can
-  #     branch). A connection FORMS when a probe from A finds B AND B's
-  #     reciprocal probe in the opposite direction would find A back.
-  #     Symmetric recognition by construction.
-  #     COLD-START — pass 1: locked-in set is empty (Phase 4 hasn't run
-  #     yet), so the working set is just current-pass ridge_chains
-  #     endpoints. They can form connections among themselves; they
-  #     cannot yet receive mother-search probes from prior-pass locked-in
-  #     splines (none exist). Pass 2+ accumulates locked-in endpoints
-  #     that prior passes have committed; mutual recognition then
-  #     extends connectivity both within new ridges and back to existing
-  #     splines.
-  #     This is the synapse-formation primitive in neural development —
-  #     filopodia probe outward; reciprocal recognition with a partner
-  #     triggers connection. Skip this primitive and the algorithm is just
-  #     path-finding through a memory field; geometric fragments emerge
-  #     without enforced connectivity (the QSM failure mode).
-  reached_chains ← []
-  For each endpoint e ∈ (current-pass ridge_chains ∪ prior-pass locked-in
-                          spline endpoints):
-    Spawn confidence cones in mother-direction + child-direction(s) along
-    e's local axial fit.
-    Cone's working medium is M_obs (ALL of it, including LOW-M_obs regions
-    ridge tracing skipped — that's how we reach into leaf-occluded canopy).
-    For each candidate c in cone with M_obs > glimpse_threshold AND
-                                  prior_likelihood > ε_prior AND
-                                  tomography axis aligns with cone direction:
-      Mark c as candidate-absorption.
-    Commit absorption if absorbed candidates form a coherent axial chain →
-      append to reached_chains as a new chain extending from e.
-    MUTUAL RECOGNITION: if e's probe reaches another endpoint f (either a
-    current-pass ridge endpoint OR a prior-pass locked-in spline endpoint)
-    AND f's reciprocal probe in the opposite direction would reach e back,
-    declare an edge (e, f). Recognition is symmetric by construction; both
-    ends must independently signal toward each other.
-    Deposit absorption_count into M_interp at absorbed locations.
-    **M_obs is NEVER modified by extraction.** Observational evidence stays
-    pure; extraction commitments accumulate separately in M_interp. This
-    is the positive-feedback hallucination safeguard: a candidate that's
-    been "absorbed" by an axon doesn't artificially boost its observational
-    confidence on the next pass; the underlying observational evidence
-    must still support continued growth.
+  # 3a-cold-start: if pass 1 finds zero tip anchors (leaf-saturated specimen),
+  # that is acceptable. Phase 4 may still produce rejections via Phase 2's
+  # tags; the working set shrinks; tips emerge in later passes once leaves
+  # clear. Empty Phase 3a in any pass is NOT a bug as long as Phase 4
+  # makes progress (lock-ins or rejections). The loop terminates on
+  # "no new progress" — silence on extraction + silence on elimination
+  # = converged.
 
-  # 3c: taper-projected tip extrapolation
-  For each unconnected chain endpoint (candidate tip) in (ridge_chains ∪
-                                                           reached_chains):
+  # 3b: BIDIRECTIONAL AXONAL GROWTH from trunk + tip anchors
+  #     ── THE load-bearing extraction primitive ──
+  #
+  # Anchor set A = trunk endpoints (top and bottom of the trunk_axis line
+  # within tree_height, with direction = trunk_axis direction) ∪
+  # tip_anchors (with direction toward trunk) ∪ prior-pass locked-in
+  # spline endpoints (with their last-segment direction).
+  #
+  # Every anchor spawns growing probes in BOTH mother-direction (away
+  # from canopy, toward trunk for tips; downward for trunk-top; etc.)
+  # AND child-direction(s) (multiple if at a branching position;
+  # initially one, but can spawn additional children at branch
+  # detection events during growth).
+  #
+  # Probes grow STEP BY STEP — not one-shot cones. At each step they
+  # confirm a glimpse exists ahead, re-derive their local direction
+  # from observation + species curvature priors, and advance.
+  #
+  active_probes ← []
+  For each anchor a ∈ A:
+    For each direction d ∈ {a.mother_direction, *a.child_directions}:
+      active_probes.append(Probe(origin=a.position, direction=d,
+                                  trail=[a.position], stalled=False,
+                                  steps_taken=0, parent_anchor=a))
+
+  Step-loop (until all probes stalled, connected, or step-cap hit):
+    For each probe p in active_probes (not stalled, not connected):
+      # Forward search cone at p's tip:
+      search_pos ← p.tip + p.direction × step_length
+      glimpses ← candidates within cone(search_pos, p.direction,
+                                         cone_half_angle, step_length)
+                  filtered by (M_obs > glimpse_threshold AND
+                               prior_likelihood > ε_prior AND
+                               dot(c.local_axis, ±p.direction) > 0.5)
+      If glimpses is empty:
+        p.stalled ← True
+        Continue.
+      # Advance to weighted centroid of glimpses:
+      next_tip ← M_obs-weighted centroid of glimpses
+      # Re-derive local direction by blending observation + curvature prior:
+      obs_direction ← normalize(next_tip - p.tip)
+      prior_direction ← priors.expected_local_direction(
+                          height_frac, radial_dist, current_direction=p.direction)
+        # priors.expected_local_direction returns the species's expected
+        # tangent at this tree-frame position (e.g., Sugar Maple scaffolds
+        # bend toward vertical near trunk, more horizontal in outer canopy).
+        # See botanical-priors.json schema below.
+      p.direction ← normalize(
+                      curvature_prior_blend × prior_direction +
+                      (1 - curvature_prior_blend) × obs_direction)
+      p.trail.append(next_tip)
+      p.steps_taken += 1
+      Deposit absorption_count into M_interp at next_tip. (M_obs NEVER
+      modified by growth — observational evidence stays pure; extraction
+      commitments accumulate separately. Hallucination safeguard: an
+      "absorbed" glimpse doesn't artificially boost its observational
+      confidence on subsequent passes.)
+      # Branch detection at this step:
+      If glimpses partition into >1 spatially-distinct sub-cluster:
+        For each additional sub-cluster s:
+          spawn new probe from next_tip in direction(s) → active_probes.
+
+      If p.steps_taken >= probe_max_steps:
+        p.stalled ← True  # bounded — runaway growth flagged for diagnostics
+
+    # ── Handshake check — every active probe pair ──
+    For each (p_a, p_b) pair of non-connected active probes:
+      If distance(p_a.tip, p_b.tip) < handshake_distance AND
+         dot(p_a.direction, -p_b.direction) > directional_agreement_threshold:
+        # MUTUAL RECOGNITION — probes are advancing toward each other,
+        # both ends independently signal directional agreement. Symmetric.
+        new_chain ← concat(p_a.trail, reversed(p_b.trail))
+        new_chains.append(new_chain)
+        p_a.connected ← p_b.connected ← True
+
+    If all probes stalled or connected: break Step-loop.
+
+  # Note: a probe that stalls without handshaking represents a partial
+  # observation — the apparatus reached into low-evidence territory and
+  # found no continuation OR no partner. These partial trails are NOT
+  # committed to splines. They are surfaced as per-pass diagnostics
+  # (`stalled_probe_count`) so the operator can watch for systematic
+  # failure modes (e.g., glimpse_threshold too high → all probes stall;
+  # cone_half_angle too narrow → probes miss real continuations).
+
+  # 3c: TAPER EXTRAPOLATION — fallback for unconnected tip anchors
+  #
+  # A tip anchor whose probes all stalled without handshaking remains
+  # disconnected. Taper-projection extrapolates a short distal segment
+  # from the tip toward the trunk based on observed local taper, so
+  # the unconnected anchor still contributes a tagged-as-uncertain
+  # spline tail to the output. This is DEGRADED-MODE recovery, not
+  # primary extraction.
+  #
+  For each tip_anchor t with no successful handshake:
     Estimate observed taper rate τ from M_obs perpendicular spread along
-    chain's last segments.
-    If τ consistent → extend the chain by appending a taper-projected
-                       endpoint at arc-length r/τ beyond the last-observed
-                       segment along the chain's last-observed axial
-                       direction. Mark `tipExtrapolated: true` on this
-                       endpoint.
-    If τ inconsistent → flag the endpoint uncertain; conservative projection
-                         (use minimum observed τ) OR leave open for next
-                         pass's M_obs deposit to refine τ.
-    NOTE: Phase 5's pipe-model pipe-counting and Phase 3c's taper-projection
-    are TWO VIEWS of the same Murray's-law relationship. They must agree
-    per chain endpoint at validation time; disagreement is a diagnostic to
-    surface, not silently commit.
+    the partial probe trail (use the longest stalled probe from t).
+    If τ consistent: append a short taper-projected segment to t's trail
+      (arc-length r/τ beyond last observed point, along t's last direction).
+      Mark `tipExtrapolated: true` on the resulting endpoint.
+    If τ inconsistent: leave t as a bare anchor; defer to next pass's
+      growth attempt (more rigs may give it a partner).
+    NOTE: Phase 5's pipe-model radius accumulation and Phase 3c's
+    taper-projection are TWO VIEWS of the same Murray's-law relationship.
+    They must agree per spline endpoint at validation time; disagreement
+    is a diagnostic to surface, not silently commit.
 
   # Spline fitting
-  new_chains ← merge (ridge_chains + reached_chains), dedup by proximity.
-                (Phase 3c's taper extensions live inside the chains they
-                 extend, so they flow naturally into spline fitting below.)
+  #
+  # new_chains contains both handshake-formed chains (Phase 3b) and
+  # taper-extended chains (Phase 3c). Dedup by proximity. Fit splines.
+  #
+  new_chains ← dedup_by_proximity(new_chains)
   new_splines ← fit parametric splines through new_chains
                 (Catmull-Rom or scipy.interpolate.splprep; 3-10 control
                  points per spline based on arc-length / curvature).
   For each new spline s:
     Compute s.prior_likelihood = mean(priors.likelihood at each control point
                                        given inferred radius + position).
+    s.from_handshake ← (s was produced by a Phase 3b handshake)
+    s.from_taper_only ← (s was produced solely from a Phase 3c extrapolation)
     Splines whose control points fall in low-prior regions, OR whose taper
-    doesn't match priors.taper_distribution at their height range, score
-    lower. Low-likelihood splines stay in "candidate" status; don't lock-in
-    until prior agrees.
+    doesn't match priors at their height range, score lower. Low-likelihood
+    splines stay in "candidate" status; don't lock-in until prior agrees.
 
   # ── Phase 4: THREE-OUTCOME ELIMINATION (Rubin subtraction) ──
   #
@@ -445,6 +564,30 @@ The Rubin test: dark matter doesn't vanish when one telescope goes offline.
   "branchAngleDistribution": {
     "fromVertical": {"min": 25.0, "max": 75.0, "modal": 50.0, "stdDeg": 10.0}
     // Sugar Maple scaffolds emerge 30-70° from vertical; never horizontal.
+  },
+  "expectedLocalDirection": {
+    // Position-dependent expected branch tangent — consumed by Phase 3b
+    // axonal growth to steer the prior_direction component of each step.
+    // Lookup: given (height_frac, radial_dist_from_axis, current_direction),
+    // returns the species's expected local tangent at that tree-frame
+    // position. Implementation: at each (height_frac, radial_dist) sample,
+    // record a modal angle-from-vertical AND a modal azimuthal flare
+    // (direction-from-axis in the horizontal plane). Sugar Maple's
+    // strong-leader topology: near the trunk axis, branches lean toward
+    // vertical (continue the leader); outer canopy, branches flare outward
+    // and gradually horizontal (but never past 80°). The returned tangent
+    // is a unit 3D vector reconstructed from {angle_from_vertical,
+    // azimuthal_flare relative to (current_direction - vertical component)}.
+    "type": "piecewise2d-delaunay",  // same interp scheme as expectedRadiusByPosition
+    "samples": [
+      {"heightFrac": 0.0, "radialDist": 0.0,  "angleFromVertical": 0.0,  "stdDeg": 5.0},
+      {"heightFrac": 0.3, "radialDist": 0.0,  "angleFromVertical": 5.0,  "stdDeg": 8.0},
+      {"heightFrac": 0.5, "radialDist": 1.0,  "angleFromVertical": 35.0, "stdDeg": 12.0},
+      {"heightFrac": 0.5, "radialDist": 3.0,  "angleFromVertical": 60.0, "stdDeg": 15.0},
+      {"heightFrac": 0.8, "radialDist": 2.0,  "angleFromVertical": 55.0, "stdDeg": 15.0},
+      {"heightFrac": 0.8, "radialDist": 4.0,  "angleFromVertical": 70.0, "stdDeg": 12.0}
+      // ... ~10-15 samples; same Delaunay+nearest-fallback interp scheme as expectedRadiusByPosition
+    ]
   },
   "murraysLawJointTolerance": 0.15,            // parent_r² vs Σ(child_r²) within ±15%
   "junctionMinBranchingDensity": 0.1,          // branches/m below this = no junction possible at this height
@@ -586,13 +729,13 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
 
 | Stage | Days | Wall-clock budget | Output | Operator gate |
 |---|---|---|---|---|
-| **N.3.0 — Classifier + priors validation on static dataset** | ~1.5 | <2min CLI at N=50 | Hand-encoded `botanical-priors.json` for Sugar Maple. Per-rig observation + tomography classifier producing `geometric_class` AND `prior_likelihood` AND `combined_confidence` per candidate. **No iteration yet, no elimination yet.** Single-pass apparatus runs on one specimen and produces a classified candidate set. Diagnostics: classification distribution histogram vs `priors.expected*Fraction`. | **The classifier-first gate.** Does the classifier visibly distinguish leaf-mass (low combined_confidence) from real branching joints (high combined_confidence)? Is the classification distribution within tolerance of priors' expected fractions (junction <15%, not 63%)? **If the classifier can't get this right on a static dataset, no iteration loop on top will save it. This is the foundational gate.** |
-| **N.3.1 — Iteration loop + three-outcome elimination** | ~1.5 | <10min CLI at N=50, expected to converge in ~4 passes | Working set state `P`, masked rasterization (rasterizer takes `pts_world[P]`), Phase 4 three-outcome elimination wired. Pass N renders the residual; canopy leaf-mass progressively dissolves as rejections accumulate. Per-pass diagnostics: working-set size curve, lock-in count, rejection count broken down by source (tomography vs prior vs both). (Note: "4 passes" is the expected convergence count at N=50 with default thresholds, NOT a hardcode. Algorithm continues until termination criteria fire; `max_passes` cap is 10 per the algorithm spec.) | **The leaf-clearing visual gate.** Per-pass animation in the workstage: pass-1 candidate cloud → pass-2 residual (leaves rejected) → pass-3 residual (more rejected) → stable. Trunk + branches survive; leaf mass dissolves. Working-set curve falls monotonically. |
-| **N.3.2 — Spline fitting + lock-in + mutual recognition** | ~1.5 | <30min CLI at N=500, ~10 passes | Phase 3a/3b/3c (ridge + axonal mutual-recognition reach + taper-projection) extract chains per pass; chains fit to parametric splines (3–10 control points each); spline `prior_likelihood` scored; points within ε_lock of high-likelihood splines mark LOCKED-IN. **NO MST closure** — connectivity emerges from genuine mutual recognition. Output JSON in parametric-spline format. | **THE cycle gate.** N=500, multi-pass. Does the apparatus produce ~100–500 parametric splines (NOT 40K voxel nodes)? Does the canopy contain continuous SPLINE branches (not chaos)? Visibly cleaner than QSM AND Hawthorn's Bidirectional AND Tycho's rev. 1 v1 baseline (6th alignment-oracle layer comparison). |
-| **N.3.3 — Pipe-model radii + taper co-determination** | ~0.5 | <5min CLI | Phase 5 backward-forward pipe-model counts on the spline graph. Per-spline parametric `radiusFn` populated. Co-determination diagnostic: per-spline radii (pipe-counting) vs Phase 3c taper-projection agreement. | Visual: trunks taper sensibly; Murray's law sanity at joints (parent radius² ≈ Σ child radii²); taper-vs-pipe agreement within tolerance. |
-| **N.3.4 — Rubin consensus-stability validation** | ~0.5 | ~2 hours for 4 subsampled N=500 runs (rig dropout reduces Phase-1 cost ~linearly in rig count but does not touch Phase 3/4/5 cost; 4 runs at ~25min each) | Run apparatus 4× with 10/25/40% rig dropout. Spline count variance, position variance, topology agreement, tip-set agreement quantified. | Numerical gate: per-spline-endpoint variance < threshold across all dropout rates. |
+| **N.3.0 — Classifier + priors + tip-detector validation on static dataset** | ~1.5 | <2min CLI at N=50 fixed (Phase 1 adaptive scan disabled for this stage) | Hand-encoded `botanical-priors.json` for Sugar Maple (including `expectedLocalDirection` field for Phase 3b growth steering). Per-candidate tomography classifier producing `geometric_class` AND `prior_likelihood` AND `combined_confidence`. **Phase 3a precision-gated tip detector** runs and emits a `tip_anchors` set. **No iteration, no adaptive scan, no axonal growth yet.** Diagnostics: classification distribution histogram vs `priors.expected*Fraction`; tip-anchor count + visualization (anchors rendered as colored dots in alignment oracle). | **The classifier+tip-precision gate.** (a) Does the classifier visibly distinguish leaf-mass (low combined_confidence) from real branching joints (high combined_confidence)? Classification fractions within priors tolerance? (b) Does the tip detector emit a SPARSE, HIGH-PRECISION anchor set? Operator visually verifies that every emitted tip anchor sits at the visual end of a real branch — false-positive anchors at leaf-cluster positions are a stop-the-cycle failure. **Both classifier AND tip detector must clear this gate before adaptive scan and growth are built on top.** |
+| **N.3.1 — Adaptive scan + cluster detector + masked rasterization** | ~1.5 | <10min CLI on dev specimen; expected to converge to scan-complete in ≤300 rigs | Phase 1 adaptive-scan loop wired: spiral generator emits rigs in batches of N_batch; cluster detector audits residual M_obs after each batch; loop terminates on `unexplained == 0` OR N_max hit. Phase 4 three-outcome elimination wired (lock-in disabled for this stage since no splines exist yet — only rejection + deferred active). Per-pass diagnostics: rigs-added curve, working-set size curve, blobby-cluster count over time, rejection count broken down by source (tomography vs prior vs both). | **The leaf-clearing + adaptive-stop visual gate.** Per-pass animation in the workstage: working set shrinks as rejections accumulate; blobby-cluster count drops toward zero; scan loop terminates *itself* on a real specimen (not by hitting N_max). Trunk + branches survive in M_obs; leaf mass dissolves. Working-set curve falls monotonically. If N_max trips on a representative specimen, threshold-tuning is required before N.3.2. |
+| **N.3.2 — Precision-gated tip anchoring + axonal growth + handshake recognition** | ~2 | <45min CLI on dev specimen (adaptive scan typically settles ~300–800 rigs; multi-pass; growth is the new cost center) | Phase 3a tip anchors (from N.3.0) + Phase 3b axonal growth (step-by-step probes from trunk + tips, glimpse-confirm + priors-blend each step) + Phase 3c degraded-mode taper fallback for un-handshaken tips. Chains fit to parametric splines (3–10 control points each); spline `prior_likelihood` scored; lock-in only for `from_handshake` splines above `lock_in_threshold`. **NO MST closure.** **NO ridge tracing.** Output JSON in parametric-spline format with `from_handshake` / `from_taper_only` / `tipExtrapolated` flags per spline. New per-pass diagnostics: `tip_anchor_count`, `active_probes_per_pass`, `handshake_count`, `stalled_probe_count`, `mean_probe_steps_to_handshake`. | **THE cycle gate.** Multi-pass on adaptive-N. Does the apparatus produce ~100–500 parametric splines (NOT 40K voxel nodes)? Does the canopy contain continuous SPLINE branches built by handshakes through low-evidence regions (not chaos, not isolated fragments)? Are stalled-probe counts diagnostically reasonable (not all probes stalling = priors/growth bug; not all probes handshaking = thresholds too loose)? Visibly cleaner than QSM AND Hawthorn's Bidirectional AND Tycho's rev. 1 v1 baseline (6th alignment-oracle layer comparison). |
+| **N.3.3 — Pipe-model radii + taper co-determination** | ~0.5 | <5min CLI | Phase 5 backward-forward pipe-model counts on the connected spline graph. Per-spline parametric `radiusFn` populated. Co-determination diagnostic: per-spline radii (pipe-counting) vs Phase 3c taper-projection agreement for the splines that *have* taper-projected endpoints. | Visual: trunks taper sensibly; Murray's law sanity at joints (parent radius² ≈ Σ child radii²); taper-vs-pipe agreement within tolerance where applicable. |
+| **N.3.4 — Rubin consensus-stability validation** | ~0.5 | ~2 hours for 4 subsampled runs (rig dropout reduces Phase-1 scan cost ~linearly but doesn't touch Phase 3/4/5; 4 runs at ~25min each) | Run apparatus 4× with 10/25/40% rig dropout from the adaptive-converged rig set. Spline count variance, position variance, topology agreement (do same tip anchors emerge? do same handshakes form?), tip-set agreement quantified. | Numerical gate: per-spline-endpoint variance < threshold across all dropout rates; tip-anchor set agreement > 80% across dropout runs. |
 
-**Total ~5.5 days work + ~1.5 days operator validation cycles = ~7 days end-to-end.** Stages renumbered N.3.x (rather than N.2.x) to mark the rev. 2 fresh build while preserving Tycho's N.2.0/2.1/2.2 commits as baseline comparison artifacts (the 5th alignment-oracle layer, "Li'l Vera v1 (baseline)").
+**Total ~6 days work + ~1.5 days operator validation cycles = ~7.5 days end-to-end.** N.3.2 grew by ~0.5 days because growth-shaped reach + tip-precision anchoring is more substantial work than the cone-shot reach of the rev. 2 draft. Stages numbered N.3.x mark the rev. 2 fresh build while preserving Tycho's N.2.0/2.1/2.2 commits as baseline comparison artifacts (the 5th alignment-oracle layer, "Li'l Vera v1 (baseline)").
 
 **Wall-clock budgets are advisory** — if a stage materially exceeds budget, surface as scope drift; some stages may need optimization (numpy vectorization, Cython for inner loops) before being usable at N=500. Per Standing Requirement #7, the v2 baby builds parallelism in from day one.
 
@@ -600,22 +743,30 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
 
 ## Acceptance — observation-shaped
 
-At the N.3.0 gate (the classifier-first gate):
+At the N.3.0 gate (classifier + priors + tip-precision gate):
 
 a. **Botanical-prior consistency.** Classification distribution at N=50 single-pass falls within tolerance of priors' expected fractions. Specifically: junction count <15% (not 63%), tip count 25–35%, linear-interior count 55–70%. The noise + sheet buckets are pre-elimination categories — their counts are diagnostic-only at this gate (no expected fraction), but together with linear/junction/tip should sum to 100% of classified candidates. If the distribution wildly diverges from priors' expected fractions, classifier thresholds need tuning **before any iteration machinery is built on top.**
 
 b. **Visible leaf-mass discrimination.** In the M_obs heat layer with `prior_likelihood` as the colormap channel: dense leaf-mass regions should color dim (low likelihood — botanically impossible at this position) while real structural skeleton regions color bright. Pure tomography couldn't make this distinction; species-conditioned classification can.
 
-At the N.3.2 gate (the cycle gate):
+c. **Tip-detector precision.** Tip anchor count is in the dozens-to-low-hundreds (NOT thousands; NOT zero on a leafed specimen). Every emitted tip anchor sits at the visual end of a real branch when overlaid on the point cloud in the alignment oracle. **Operator visually audits the full anchor set**; any leaf-cluster false positive is a stop-the-cycle failure → re-tune `tip_elongation_min` / `τ_tip_prior` / `tip_neighborhood_radius`. Precision matters far more than recall at this stage — a missed real tip will get picked up in a later pass once leaves clear; a phantom tip poisons every axon that tries to grow from it.
+
+At the N.3.1 gate (adaptive scan + elimination gate):
+
+d. **Adaptive scan self-terminates.** On the development specimen, scan-loop terminates via `unexplained == 0` (cluster detector empty) rather than via N_max safety cap. Total rigs scanned reported in diagnostics; rigs-added curve plateaus. If N_max trips, cluster-detector thresholds need tuning (density / min-volume / elongation) before N.3.2.
+
+e. **Working set shrinks monotonically.** Per-pass elimination curve falls cleanly; rejection-count broken down by source shows both tomography AND prior contributing (not one dominating). Pass-N rendered residual is visibly cleaner than pass-1.
+
+At the N.3.2 gate (THE cycle gate):
 
 1. **Sparse parametric output.** Total spline count in the hundreds — soft target ~100–800; small/young specimens may legitimately have ~80 and still pass; hard cap <1000. Per-spline control points are 3–10, not thousands. This is the structural sanity check that the output is *centerlines*, not a *surface mesh-cloud*. Tens of thousands of splines = fail.
-2. **The canopy is no longer a wireframe ball.** Interior canopy contains continuous spline branches (axonal mutual-recognition reach into low-M_obs regions did its job), but those branches are SPLINES (parametric curves) not chaos.
-3. **Confident leaf rejection visible per pass.** Per-pass diagnostics show the working set monotonically shrinking; the rejected-count is meaningful (not zero); pass-N rendered point cloud progressively cleaner than pass-1. Rejection-by-source breakdown shows both tomography and prior contributing (not one dominating).
-4. **Connected output via genuine mutual recognition, NOT MST closure.** Connectivity emerges from bidirectional probe + reciprocal recognition. If MST-style closure is needed as a safety net, it's a flag that the algorithm hasn't converged properly.
-5. **Visible improvement over baselines.** N.3.2 skeleton sits visibly cleaner than QSM (red-cyan), Hawthorn's Bidirectional (magenta-yellow), AND Tycho's rev. 1 v1 baseline (5th alignment-oracle layer cyan-magenta dense voxel mesh).
+2. **The canopy is no longer a wireframe ball.** Interior canopy contains continuous spline branches grown by step-by-step axonal handshakes through low-M_obs regions, but those branches are SPLINES (parametric curves) not chaos. Visual inspection: branches curve naturally (priors-steered growth), not as straight cone-shots.
+3. **Connectivity emerges from genuine handshakes, NOT MST closure, NOT ridge tracing.** The `from_handshake` flag is true on the majority of splines; `from_taper_only` is a small minority (degraded-mode fallback for unconnected tips). If `from_taper_only` dominates, axonal growth isn't working and the cycle hasn't popped. If MST-style closure is needed as a safety net, that's a stop-the-cycle failure — surface the gap, do not silently add MST.
+4. **Axonal-growth diagnostics are sane.** `mean_probe_steps_to_handshake` is in a reasonable range (not 1 = priors are dragging probes directly to partners regardless of evidence; not at `probe_max_steps` = probes runaway-grow until they cap). `stalled_probe_count` / `handshake_count` ratio reflects the apparatus working hard but mostly succeeding. `tip_anchor_count` agrees with N.3.0's operator-validated anchor count (within ±10% — tips don't materially appear or disappear once classifier is stable).
+5. **Visible improvement over baselines.** N.3.2 skeleton sits visibly cleaner than QSM (red-cyan), Hawthorn's Bidirectional (magenta-yellow), AND Tycho's rev. 1 v1 baseline (5th alignment-oracle layer cyan-magenta dense voxel mesh) — both in branch continuity AND in canopy interior reach.
 6. **Self-terminating iteration.** Per-pass elimination curve flattens cleanly; algorithm reports "stable residual" or "working set exhausted" rather than "max passes hit."
-7. **Tips inferred via taper extrapolation; pipe-model co-determination passes.** Per-chain observed radii (Phase 5 pipe-counting) ≈ taper-extrapolation predictions (Phase 3c) within tolerance per spline endpoint.
-8. **Botanical conformance at the spline level.** Output splines pass priors validation: every spline's control points lie in their expected radius-by-position envelope; every joint passes Murray's law (parent_r² ≈ Σ child_r² within 15%); no spline angles violate the species's expected range.
+7. **Tips inferred via taper extrapolation; pipe-model co-determination passes** (where applicable — i.e., on splines that have taper-projected endpoints; splines built entirely from handshake chains don't need this check). Per-chain observed radii (Phase 5 pipe-counting) ≈ taper-extrapolation predictions (Phase 3c) within tolerance per such spline endpoint.
+8. **Botanical conformance at the spline level.** Output splines pass priors validation: every spline's control points lie in their expected radius-by-position envelope; every joint passes Murray's law (parent_r² ≈ Σ child_r² within 15%); no spline angles violate the species's expected range; spline curvatures match `priors.expected_local_direction` profiles within tolerance (growth was actually steered by priors, not just nominally).
 
 If N.3.2 gate doesn't pop visibly: spike concluded honestly. Phase T fallback (per-species statistical extraction over Tycho's rev. 1 output OR over Hawthorn's Bidirectional / QSM baselines) is the next move.
 
@@ -635,12 +786,15 @@ If N.3.2 gate doesn't pop visibly: spike concluded honestly. Phase T fallback (p
 
 - Do NOT modify `lidar_extract.py`, `bidirectional_skeleton.py`, OR `lil_vera.py`. The first two stay as comparison baselines in the alignment oracle (layers 2 and 3); the third stays as Tycho's rev. 1 v1 baseline (layer 5). Rev. 2 publishes its own layer 6.
 - Do NOT integrate into `generate-procedural.js`. Cycle 1 produces the *measurement apparatus*; procedural integration is a future cycle conditioned on N.3.2 passing.
-- Do NOT consume source 3D positions as per-point algorithm input. Source positions feed only: (a) the rasterizer's MASKED renders (`pts_world[P]`); (b) the explicit Posture-B scalar carve-outs documented in the Posture section — RANSAC trunk_axis derivation + ground/tree_height bbox queries (all low-bandwidth scalars, not per-point labels); (c) final ground-truth validation. Species identity IS allowed as input — that's the third inference channel.
+- Do NOT consume source 3D positions as per-point algorithm input outside the five documented Posture-B carve-outs (see Posture section). Species identity IS allowed as input — that's the third inference channel.
 - Do NOT extend to multiple specimens beyond N.3.4's subsampling-robustness test. One specimen for development.
 - Do NOT touch other species or Phase G.1 procedural-runway work. Parallel cycle.
 - Do NOT add iPhone-photo support, web UI, or open-source release scaffolding.
 - Do NOT optimize prematurely.
-- Do NOT use MST closure as a connectivity guarantee. Connectivity must emerge from genuine mutual-recognition reach. If you can't get to one connected component without MST, surface the gap and ratify it OR diagnose what's failing.
+- **Do NOT introduce Hessian ridge tracing as a primary structure-extractor.** The rev. 2 first draft specified ridge tracing in Phase 3a; the operator's pre-dispatch restructure removed it. Extraction is now anchored on trunk + tips with bidirectional axonal growth between them. Re-introducing ridge tracing as primary defeats the whole architectural point of the restructure. (Ridge tracing as a *diagnostic visualization* in the workstage to inspect the M_obs field is allowed and useful; as algorithmic input to Phase 3+ it is forbidden.)
+- **Do NOT use a fixed-N scan.** Phase 1 is adaptive — scan until the residual cluster detector reports zero unexplained long-pointy mass, OR hit the N_max safety cap. A baby that hard-codes `for r in range(500)` has misread the brief.
+- **Do NOT use one-shot cone reach.** Axonal growth advances step-by-step (`step_length` per step), confirming a glimpse at each step and re-blending its direction with species curvature priors. A baby that shoots a single cone from each anchor and absorbs everything inside has rebuilt the cone-shot reacher the restructure explicitly removed. Step-by-step is the load-bearing primitive; without it, the algorithm can't follow real branch curvature.
+- Do NOT use MST closure as a connectivity guarantee. Connectivity must emerge from genuine mutual-recognition handshakes (Phase 3b). If you can't get to one connected component without MST, surface the gap and ratify it OR diagnose what's failing.
 - Do NOT re-introduce dense voxel-node output. Output is parametric splines (`controlPoints` + `radiusFn`).
 - Do NOT statistically aggregate priors from observations in Cycle 1. The priors are hand-encoded for now; refinement from real specimens is Cycle 2's job.
 - Do NOT softness-scale priors to 0 (ignore-priors mode) and treat that as a fallback — if priors hurt instead of help, surface as scope drift and re-tune the priors file rather than disabling them.
