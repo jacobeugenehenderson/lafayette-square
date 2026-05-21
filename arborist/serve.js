@@ -19,6 +19,15 @@ import {
   readEffectiveSeedlings,
   writeSeedlings,
 } from './generate-procedural.js'
+import {
+  listSalonSpecies,
+  listChassis as listSalonChassis,
+  listBarkRefs as listSalonBarkRefs,
+  listLeafPacks as listSalonLeafPacks,
+  readEffectiveCompositions,
+  writeCompositions,
+  generateSingleCompositionGLB,
+} from './generate-salon.js'
 import { DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
@@ -1015,6 +1024,143 @@ const server = createServer(async (req, res) => {
         return jsonRes(res, result.ok ? 200 : 500, result)
       } catch (err) {
         return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
+      }
+    }
+
+    // ── Salon authoring (Brief 1, Sequoia 2026-05-21) ─────────────────
+    //
+    // Fourth top-level mode: chassis + bark + leaves composition.
+    // Mirrors the procedural endpoint block's shape exactly. The species
+    // path segment is informational (filters / labels); chassis / bark /
+    // leaves listings are global filesystem reads under `_all` aliasing
+    // or the species id (both routes accepted).
+
+    // GET /salon/species — species filtered to "has chassis OR has compositions.json"
+    if (req.method === 'GET' && path === '/salon/species') {
+      try {
+        return jsonRes(res, 200, { species: await listSalonSpecies() })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // GET /salon/:species/chassis — full chassis catalog. Brief calls for an
+    // optional ?morphology= filter; the workstage does its own client-side
+    // ranking, so server-side filter is only useful for tooling.
+    if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/chassis$/))) {
+      try {
+        const filter = new URL(req.url, 'http://x').searchParams.get('morphology') || null
+        let chassis = await listSalonChassis()
+        if (filter) chassis = chassis.filter(c => c.morphology === filter)
+        return jsonRes(res, 200, { chassis })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // GET /salon/:species/bark — bark refs available under public/textures/bark/
+    if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/bark$/))) {
+      try {
+        return jsonRes(res, 200, { bark: await listSalonBarkRefs() })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // GET /salon/:species/leaves — leaf packs (Phase F target dir + flat PNG fallback)
+    if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/leaves$/))) {
+      try {
+        return jsonRes(res, 200, { leaves: await listSalonLeafPacks() })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // GET /salon/:species/compositions — overlay with `effective` layered
+    if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/compositions$/))) {
+      const species = m[1]
+      try {
+        const compositions = await readEffectiveCompositions(species)
+        return jsonRes(res, 200, { species, compositions })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // POST /salon/:species/compositions — persist overlay. Absent keys
+    // preserved per `feedback_absence_means_inherit_in_authored_blocks`.
+    if (req.method === 'POST' && (m = path.match(/^\/salon\/([^/]+)\/compositions$/))) {
+      const species = m[1]
+      const body = await readBody(req)
+      const compositions = Array.isArray(body.compositions) ? body.compositions : null
+      if (!compositions) return jsonRes(res, 400, { error: 'missing compositions[]' })
+      try {
+        await writeCompositions(species, compositions)
+        return jsonRes(res, 200, { ok: true, species, count: compositions.length })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
+    // POST /salon/generate — body { chassis, bark, leaves, lod }
+    // Returns the GLB binary directly. Used by the workstage live preview.
+    if (req.method === 'POST' && path === '/salon/generate') {
+      const body = await readBody(req)
+      const { chassis, bark, leaves, lod } = body || {}
+      if (!chassis || typeof chassis !== 'string') {
+        return jsonRes(res, 400, { error: 'chassis is required' })
+      }
+      const lodN = (lod === 1 || lod === 2) ? lod : 0
+      try {
+        const buf = await generateSingleCompositionGLB({
+          chassis, bark: bark || {}, leaves: leaves || {}, lod: lodN,
+        })
+        res.writeHead(200, {
+          'Content-Type': 'model/gltf-binary',
+          'Content-Length': buf.length,
+        })
+        res.end(buf)
+        return
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
+      }
+    }
+
+    // POST /salon/:species/publish — shell out to `generate-salon.js --species <id>`,
+    // rebuild the index, fire-and-forget per-Look atlas auto-bake.
+    if (req.method === 'POST' && (m = path.match(/^\/salon\/([^/]+)\/publish$/))) {
+      const species = m[1]
+      const lookName = new URL(req.url, 'http://x').searchParams.get('look') || null
+      if (lookName && (lookName.includes('/') || lookName.includes('..') || lookName.startsWith('.'))) {
+        return jsonRes(res, 400, { error: 'invalid look name' })
+      }
+      const t0 = Date.now()
+      try {
+        const { stdout } = await execAsync('node', [
+          join(__dirname, 'generate-salon.js'),
+          '--species', species,
+        ])
+        try {
+          const { rebuildIndex } = await import('./build-index.js')
+          await rebuildIndex()
+        } catch (e) {
+          console.warn('[arborist] index rebuild failed after salon publish:', e.message)
+        }
+        if (lookName) {
+          bakeLook(lookName).catch(err =>
+            console.warn('[arborist] atlas auto-bake after salon publish failed for', lookName, err.message),
+          )
+        }
+        return jsonRes(res, 200, {
+          ok: true, ms: Date.now() - t0, species,
+          look: lookName, log: String(stdout).slice(-4000),
+        })
+      } catch (err) {
+        return jsonRes(res, 500, {
+          error: 'publish failed', species,
+          stderr: String(err.stderr || err.message).slice(0, 8000),
+          stdout: String(err.stdout || '').slice(0, 4000),
+        })
       }
     }
 

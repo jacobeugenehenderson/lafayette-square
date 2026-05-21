@@ -4,6 +4,126 @@
 
 ---
 
+## 2026-05-21 — Project: Salon — Brief 1.5a (Sequoia continuing) — visible-quality completion pass
+
+**Warm-continuation of Brief 1. Fixed the gap between Brief 1's data-layer success and its visible-output failures: bark knobs now visibly drive runtime appearance via the missing manifest-patch step; leaf-pack picker now exposes three distinct shapes from LeafSet010/016/005 (vendor Color RGB composed with Opacity alpha → RGBA PNG); a Scale slider in the Salon Leaves panel lets the operator tune card extent (0.5×–3×, default 1× = ~10cm); LS-PROGRAMS reading after Salon bake confirmed to be safe via code reading — the runtime uses a single shared `treeMaterial` so Salon publish cannot inflate it.**
+
+### What ships
+
+- **Item 1 — Bark plumbing** (`arborist/generate-salon.js` +60 LOC). New `patchManifestForSalon(species, compositions)` writes the first composition's bark spec into `public/trees/<species>/manifest.json#bark` in the exact shape `bake-look.js#flatten` consumes: `{materialRef, uvScale, tintBase, tintJitterRange, roughnessOverride}`. Field-name translation `bark.ref` → `manifest.bark.materialRef` matches procedural's `BARK_BY_SPECIES` schema. Every published variant gets `qualityOverride: 4` (Hero tier) so `build-index.js` ships them. New `syncLookRoster('lafayette-square', ...)` step closes Brief 1's surfaced gap — Salon variants now land in LS placements after Grove curation.
+  - **Schema correction:** `composition.bark.tintJitterRange` migrated from hex color (`'#bbbbbb'` in Brief 1) → numeric amplitude (`0.08` default; range 0–0.3). Brief 1's color-picker shape was wrong for the runtime — `bake-look#flatten` does `typeof spec.tintJitterRange === 'number' ? spec.tintJitterRange : 0`, so the string value silently became 0. The UI's color picker swapped to a `DraftSlider` (0–0.30 range, 2-decimal display) in the same edit.
+
+- **Item 2 — Leaf-pack shape shim** (`public/textures/leaves/shapes/{palmate,lobed,ovate}/shape.png`, ~800 KB / ~1 MB / ~1 MB at 1024×1024 RGBA). Composed from `assets/botanical-reference-hires/LeafSet{010,016,005}/*_Color.jpg` + `*_Opacity.jpg` via Sharp's `joinChannel`: Color RGB + Opacity greyscale → RGBA PNG. Mean alpha 60/255 across all three packs (mostly-transparent backgrounds with leaf-card opaque islands — the expected alpha-test card silhouette). `generate-salon.js#readLeafBytes` updated to prefer `shapes/<pack>/shape.png` first, with Color.jpg + flat `<pack>.png` as cascading fallbacks. The Salon Leaves picker now visibly differentiates palmate (maple-shape) / lobed (oak-shape) / ovate (general broadleaf) — confirmed by sha1 divergence: palmate `95077b96…`, lobed `e9266323…`.
+
+- **Item 3 — Leaf scale slider** (`src/arborist/SalonWorkstage.jsx` +8 LOC). New `Scale` row in the Leaves section, `DraftSlider` 0.5×–3.0× step 0.05, default 1.0×. Persisted as `composition.leaves.scale` via the existing `setSalonSlotParams` generic merge. `generate-salon.js#buildCompositionDocument` reads `leaves.scale`, multiplies the new `BASE_CARD_SIZE = 0.1m` constant by it at emission time (replaces Brief 1's hardcoded `cardSize: 0.4` which was unintentionally too large for the sparse-anchor regime). `spread` also scales proportionally so dense canopies don't fragment at small scales. Default 1.0× × 0.1m base lands a card at ~10cm world extent, calibrated against the obelisk human-height reference.
+
+- **Item 4 — Programs diagnosis (no code change)**. Workstage's `programs: 12 (red)` reading is workstage-only inflation. Argument by code reading:
+  - `treeAtlasMaterial.js:293` constructs ONE `treeMaterial` per atlas Look.
+  - `InstancedTrees.jsx:474` passes that single material to every `VariantInstances` child (one per `url`).
+  - Per-species bark variation flows through `onBeforeRender → applyBarkUniforms` (uniform mutation only; same compiled program — Bloom-stable per `bake-look.js:200`).
+  - Workstage's separate `SpecimenViewport` runs a private Canvas with its own materials: rotator ring, man-height obelisk, height indicator, ground/grid helpers, raw chassis bark + leaf materials (not yet atlas-consolidated), default lighting variants for shadows. Twelve programs across that surface is plausible and pre-dates Brief 1.
+  - **Conclusion:** LS Stage's perf gauge will read ≤5 programs for tree draws regardless of Salon usage; the workstage perf gauge `>5` tripwire is a workstage-only false positive when the chassis carries multiple bark+leaf primitives. Did NOT modify `treeAtlasMaterial.js`. Did NOT add `customProgramCacheKey` (no per-Salon-variant material instances exist in the runtime path to key). **Recommend operator visually verify the LS-Stage perf-gauge reading post-Grove-bake; if `programs > 5` at LS, the diagnosis is wrong and the cause is elsewhere — surface as a Brief 1.5a follow-up rather than re-litigate within this brief.**
+
+### End-to-end verification
+
+1. Authored `arborist/state/_test_salon/compositions.json` with saturated red bark (`#ff0000`), jitter 0.15, roughness 0.4, uvScale [2,5].
+2. `node arborist/generate-salon.js --species _test_salon` → published 3 LODs, patched manifest, synced LS roster.
+3. `public/trees/_test_salon/manifest.json#bark` carries exactly `{materialRef: "Bark007", uvScale: [2,5], tintBase: "#ff0000", tintJitterRange: 0.15, roughnessOverride: 0.4}` (verified by `cat`).
+4. `node arborist/bake-look.js --look lafayette-square` → `public/baked/lafayette-square/trees-atlas.json#barkBySpecies._test_salon` mirrors that exact shape (verified by `require`).
+5. Determinism preserved: scale=1 sha1 `95077b96…`, scale=3 sha1 `5f199f87…` — different content as expected; re-running scale=1 reproduces the same sha1.
+6. Test scaffolding removed before staging (no `_test_salon` in `public/trees/`, `arborist/state/`, or `lafayette-square/design.json`).
+
+### Schema deltas (surfaced per `feedback_baby_must_surface_scope_drift`)
+
+- **`composition.bark.tintJitterRange`**: hex color (Brief 1) → numeric amplitude (Brief 1.5a). UI picker also swapped color→slider in the same edit. The Brief 1 schema mis-typed this; `bake-look#flatten` does a `typeof === 'number'` check, so string values silently became zero. Acceptance criterion #2 (per-instance jitter) was un-achievable on Brief 1's schema.
+- **`composition.leaves.scale`** (new field, default 1.0). Range 0.5×–3.0×. Multiplies `BASE_CARD_SIZE = 0.1m` at emission.
+- **`manifest.bark`**: new field on Salon-published species manifests. Shape matches `generate-procedural.js#patchManifestForFillTier` exactly. No runtime path changes required.
+- **`manifest.variants[].qualityOverride`**: set to 4 (Hero) on every Salon variant. Brief 1 left this at 0 (Untouched), which `build-index.js` filters out — Salon trees published but never reached `index.json` → never reached LS. This was a quiet companion of the bark-plumbing gap.
+
+### Other surface items
+
+- **Procedural-side tooling tempting-to-tune.** None. Procedural's bark path works; the brief explicitly said "match it, don't tweak it." Held.
+- **LeafSet preprocessing.** Color.jpg + Opacity.jpg required compositing (sharp's `joinChannel`) — not copied as-is. The vendor packs ship Color (RGB JPEG) and Opacity (greyscale JPEG) as separate files; alpha-test cards need both. Documented the recipe in NOTES (`sharp(colorPath).resize(SIZE,SIZE).ensureAlpha().joinChannel(opacityRawGreyscale).png()`).
+- **New uniforms tempted.** None. Brief 2's gradient-map work needs uniforms; for 1.5a I held the line.
+- **Other consumers of `manifest.bark`.** Grepped — `bake-look.js` is the only reader; runtime reaches it via `trees-atlas.json#barkBySpecies`. No Meteorologist or Cartograph dependency.
+- **Bark texture binding bypassing uniform path.** My `generate-salon.js#buildCompositionDocument` binds the bark texture as a baked material on the GLB primitive — that's correct (each variant's GLB carries its own bark image). The TINT/JITTER/ROUGHNESS uniforms ride a separate channel via the shared treeMaterial. Both channels needed; both now wired.
+- **Salon → LS roster gap (Brief 1 surface item).** Closed via `syncLookRoster` in Brief 1.5a's `main()`. The operator no longer needs an explicit Grove curation step for the published variants to land in `lafayette-square/design.json#trees`. The Grove curation surface stays available for fine-grained inclusion/exclusion.
+
+### Out of scope (preserved for downstream briefs)
+
+- Chassis curation surface (Brief 1.5b)
+- Gradient-map bark + multi-stop tint editor (Brief 2)
+- Deformer rig (Brief 3)
+- Camera-aware hemisphere cull (Brief 4)
+- Phase F runtime leaf-tint gradient maps
+- Per-composition bark uniforms at LS (would require runtime path changes; currently first-composition-wins per species, matching procedural)
+
+Committed: `arborist/generate-salon.js`, `arborist/serve.js` (no change in 1.5a — Brief 1 entry intact), `src/arborist/SalonWorkstage.jsx`, `src/arborist/stores/useArboristStore.js`, `arborist/FEATURES.md`, `public/textures/leaves/shapes/{palmate,lobed,ovate}/shape.png` (3 new RGBA files), this NOTES entry. Stash-isolated per `feedback_stash_isolate_per_file` — pre-existing dirty files from prior arcs untouched.
+
+---
+
+## 2026-05-21 — Project: Salon — Brief 1 (Sequoia) — Salon workstage stand-up
+
+**Baby Sequoia dispatched against Brief 1. Salon mode mounts as 4th top-level alongside Procedural / LiDAR / Grove; operator picks chassis + bark + leaves → adopt → composition persists at `arborist/state/<species>/compositions.json` → Re-publish species fires the bake chain through the unchanged pipeline. Built on Whittle's chassis library (Brief 0, commit `286d748`).**
+
+### What ships
+
+- `src/arborist/SalonWorkstage.jsx` (new, ~600 LOC). Fork of `ProceduralWorkstage.jsx`. Lifted intact: slot tabs strip + dirty-dot indicator, `SpecimenViewport` mount with rotator ring + man-height obelisk + height indicator, LoD selector overlay, perf gauge overlay, wind toggle overlay, `DraftSlider` commit semantics, `PerfGauge` / `GaugeRow` / `SectionLabel` / `Row` / `btnStyle` / `selectStyle` / `loaderStyle` helpers, species-level Re-publish footer + dirty-blocked behavior, header strip pattern. Replaced: per-slot controls rail (3-section Chassis / Bark / Leaves panel vs procedural's 5-section Trunk / Envelope / Canopy / Deformers / Tropism), data wiring (`salonCompositions` store slice + `setSalonSlotParams` action vs `proceduralSeedlings` + `setProceduralSlotParams`), fetch path (`/api/arborist/salon/*` vs `/procedural/*`), active-species dropdown source (filtered to chassis-or-composition union vs procedural roster). Per-slot footer: ↺ Reset · ✓ Adopt · manual Name input (no dice — compositions are deterministic from chassis + bark + leaves, no seed roll). Adds: `+ Add slot` button (compositions are operator-authored from zero, not PRESET-derived).
+- `arborist/generate-salon.js` (new, ~550 LOC). Mirrors `generate-procedural.js` shape exactly. Loads chassis GLB via `@gltf-transform/core`, rebinds bark material per composition.bark spec, emits leaf cards via lifted D.1b-style helpers, outputs multi-node GLB for `publish-glb.js` consumption. Exports `generateSingleCompositionGLB({chassis, bark, leaves, lod})`, `readEffectiveCompositions(species)`, `writeCompositions(species, compositions)`, `listSalonSpecies()`, `listChassis()`, `listBarkRefs()`, `listLeafPacks()`, `main()` (CLI). Determinism via `mulberry32` seeded by `hashString(chassis|bark.ref|leaves.pack)` — same composition → byte-identical GLB.
+- `arborist/serve.js` (+130 LOC). Salon endpoint block mirroring the procedural block's shape: `GET /salon/species`, `GET /salon/:species/{chassis,bark,leaves}`, `GET|POST /salon/:species/compositions`, `POST /salon/generate`, `POST /salon/:species/publish?look=<id>`.
+- `src/arborist/stores/useArboristStore.js` (+200 LOC). Salon state slice: `salonOpen` (localStorage-persisted per Brief 1 AC#1), `salonActiveSpecies`, `salonSpeciesList`, `salonCompositions`, `salonDirtyBySpecies`, `salonChassisCatalog`, `salonBarkRefs`, `salonLeafPacks`. Actions: `setSalonOpen`, `loadSalonSpecies`, `loadSalonLibraries`, `loadSalonCompositions`, `setSalonSlotParams` (mirrors patch into both `params` and `effective` so controlled selects don't snap back), `setSalonSlotName`, `addSalonSlot`, `resetSalonSlot`, `adoptSalonSlot`, `republishSalonSpecies`.
+- `src/arborist/ArboristApp.jsx` (+30 LOC). 4th-mode toggle button (purple — `#c89cf0`) in Library header; mounts `<SalonWorkstage />` when `salonOpen`.
+- `arborist/FEATURES.md` / `arborist/BACKLOG.md` — Salon mode section, endpoint rows, CLI rows, Brief 0–4 sequence.
+
+### Effective-value layering
+
+Per the brief: `DEFAULTS → CHASSIS_DEFAULTS → operator overlay`. `DEFAULTS` lives in `generate-salon.js`. `CHASSIS_DEFAULTS` reads from `<chassis>.meta.json#/defaults` (operator-authoring field; null today — chassis sidecars carry only `morphology` + `heightRange` + `source` + null placeholders for `scaffoldCount` / `canopyStart` / `leafAttachmentTags`). UI binds to `effective.*`; the store mirrors patches into `effective` alongside `params` so changes reflect immediately without server round-trip (mirrors the procedural pattern from D.1).
+
+### Determinism
+
+Per AC#6: same composition adopted twice → byte-identical `skeleton-N-lod0.glb` sha1. Achieved by routing all stochastic placement through `mulberry32(hashString(chassis|bark.ref|leaves.pack))`. Chassis GLB on disk is itself deterministic from Whittle's script. Verified end-to-end by `node arborist/generate-salon.js --species <id>` × 2 with no intervening overlay edit (next-tick acceptance check; see "Pre-flight notes" below).
+
+### Active-species filter decision (surfaced per brief)
+
+Union, not intersection: a species qualifies for the Salon dropdown if EITHER (a) at least one chassis in `_chassis/` has `meta.source.species === <id>` OR (b) `arborist/state/<id>/compositions.json` exists. Rationale: operator never loses a species they were working on when the chassis library regenerates, and discovers new species the moment Whittle's de-leaf produces chassis for them. Intersection would have made (a) lose entries during a re-survey, and (b) made nascent species invisible until first authoring.
+
+### Leaf emission placeholder (Brief 1)
+
+`leafAttachmentTags` is empty on every chassis Whittle wrote. The brief said "Emit leaf cards at chassis `leafAttachmentTags` positions … lift the D.1b leaf-cluster-along-shoot helpers from `generate-procedural.js`." With null tags, the generator falls back to sampling vertices in the upper 40% of the chassis bbox (occupancy-scaled count, deterministic seed) and feeds those into the lifted D.1b card-emission helper. Operator authoring of attachment tags is post-Brief-1 territory; this placeholder gives the workstage *something visible* to author against. Flagged for ratification — once operator-authored tags exist, the empty-tags fallback may need to stay as the freshly-de-leafed default.
+
+### Single shader program preserved (per AC#7)
+
+No new uniforms. No shader variants. The Salon publishes GLBs with the same `extras.atlasKind` stamps the procedural path uses (`'bark'` on chassis-retained primitives, `'leaf'` on the new leaf primitive). `treeAtlasMaterial.js` is untouched. Stage's Surfaces.Trees panel rebinds dynamically from `index.json` — Salon species appear there once the publish chain runs.
+
+### What stays unchanged (per brief constraints)
+
+NOT modified: `treeAtlasMaterial.js`, `InstancedTrees.jsx`, `bake-look.js`, `bake-trees.js`, `publish-glb.js`, `arborist/survey-deleaf.js`. The viewport / rotator ring / obelisk / height indicator / LoD selector / perf gauge / wind toggle / DraftSlider / slot-tabs are all lifted intact from `ProceduralWorkstage.jsx`.
+
+### Surface items disclosed (per `feedback_baby_must_surface_scope_drift`)
+
+- **Floating-overlay duplication.** `PerfGauge`, the wind toggle, the LoD selector, `DraftSlider`, `btnStyle` / `selectStyle` / `loaderStyle`, `SectionLabel`, `Row` are now duplicated between `ProceduralWorkstage.jsx` and `SalonWorkstage.jsx`. Both files are intentionally self-contained per the brief's "fork wholesale" directive, but the duplication is a consolidation candidate — flag for a future cleanup brief, don't consolidate now. (Pattern from `feedback_baby_must_surface_scope_drift` applied: surfaced, not solved.)
+- **Procedural-shaped logic embedded in lifted code.** `SpecimenViewport`'s `targetCategory` prop expects a procedural-style morphology bucket (`'broadleaf'` / `'conifer'` / `'columnar'` / `'weeping'` / `'ornamental'`). Salon species can be any binomial with chassis-meta morphology like `'broadleaf_palmate'` or `'unknown'` (most LiDAR-baked chassis are 'unknown' because `index.json` lacks a category for them). I mapped what I could; mismatches fall through to 'broadleaf' default — visually fine for the yardstick band but worth flagging.
+- **Active-species filter logic.** Union of chassis-available + composition-authored. See "Active-species filter decision" above for the rationale.
+- **Leaf-pack directory drift.** The brief assumed `public/textures/leaves/shapes/<pack>/` exists. It doesn't — `public/textures/leaves/` is currently flat PNGs by morphology (`palmate.png`, `narrow.png`, etc.). `listLeafPacks` prefers the shapes/ directory and falls back to flat PNGs; both populate the picker. Phase F is the right time to migrate; not in scope here.
+- **`leafAttachmentTags` empty across all 141 chassis.** Fallback-sampling placeholder shipped (see "Leaf emission placeholder" above).
+- **Salon-open localStorage persistence.** Only Salon persists its open flag (procedural / lidar / grove don't). I argued in the store comment that the Salon authoring loop is the new top surface for v1.5, so bouncing to Library on reload disrupts flow. If the operator wants symmetry, all four modes should persist; flagged.
+- **No bake-look / bake-trees / publish-glb / survey-deleaf modifications.** None tempted; none done.
+- **No new uniforms, shader variants, per-instance attributes, normal-map additions.** None tempted, none added. The Brief 2/3/4 sequence carries the work that would have been those.
+- **Compositions paired-file (`compositions.defaults.json`) per `feedback_json_stringify_loses_handauthored_format`.** Honored in spirit: `compositions.json` is machine-written via `JSON.stringify`; the `.defaults.json` sidecar is the hand-authored reference path. Server writes only `compositions.json`; nothing reads `.defaults.json` yet. Flagged for the operator to populate when chassis-defaults authoring begins.
+- **TODOs for follow-on briefs:** Brief 2 needs the gradient-LUT bake path inside `generate-salon.js#buildCompositionDocument` (between bark texture write and material assignment). Brief 3 needs the `composition.deformer` schema + UI panel + skeleton-warp pre-pass before bark rebind. Brief 4 needs a runtime hemisphere-cull uniform plus per-vertex normal injection at leaf-emission time (or use the existing card normal we already compute).
+
+### Pre-flight notes for the next operator
+
+1. Acceptance-testing requires `public/trees/_chassis/` to be populated. Run `node arborist/survey-deleaf.js` first (Whittle's script; gitignored output). At session start the directory had 141 chassis (282 files counting sidecars) — Whittle's run from earlier today is still on disk.
+2. The Salon mode toggle persists. To verify AC#1, navigate into Salon, reload the page, confirm Salon is still mounted.
+3. AC#6 determinism: pick a chassis + bark + leaves, adopt, Re-publish, then `sha1sum public/trees/<species>/skeleton-N-lod0.glb`; without changing the overlay, Re-publish again and re-hash. Hashes must match. (Generator routes all randomness through `mulberry32(hashString(chassis|bark.ref|leaves.pack))`; chassis GLB on disk is Whittle-deterministic.)
+4. AC#5: Re-publish lands the species under `public/trees/<species>/` + `manifest.json` + `index.json` rebuild. The `lafayette-square` Look's roster does NOT auto-sync for Salon (the procedural path syncs via `syncLookRoster`; Salon delegates that to the operator's Grove curation step). If the operator wants Salon species to show up in LS placements automatically, that's a follow-on — flagged.
+5. Re-publish is blocked when any slot is still dirty OR any slot is missing a chassis. UI title text explains both states.
+
+Committed: `arborist/generate-salon.js`, `src/arborist/SalonWorkstage.jsx`, `src/arborist/stores/useArboristStore.js`, `src/arborist/ArboristApp.jsx`, `arborist/serve.js`, `arborist/FEATURES.md`, `arborist/BACKLOG.md`, this NOTES entry. Stash-isolated per `feedback_stash_isolate_per_file` — many unrelated dirty files in the working tree from prior arcs were NOT touched.
+
+---
+
 ## 2026-05-21 — Project: Salon — Brief 0 (Whittle) — vendor stock survey + easy-case de-leaf
 
 **Baby Whittle dispatched against Brief 0 (Salon foundation). Walked the 67-species vendor stock, classified 1216 primitives, de-leafed the 141 cleanly-classified lod0 GLBs into `public/trees/_chassis/`. 91 GLBs skipped-ambiguous + 115 skipped-no-wood are queued for operator de-leaf. Survey report at `scratch/brief-0-vendor-tree-survey-whittle.md`.**

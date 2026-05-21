@@ -10,6 +10,12 @@ import { create } from 'zustand'
 // Look they were curating. Stored under a separate key from cartograph's
 // own selection so the two apps can drift if needed.
 const ACTIVE_LOOK_KEY = 'arborist-active-look'
+// salonOpen persists too (Brief 1 acceptance criterion #1) — reload while
+// inside Salon returns to Salon. Mirrors the activeLookId localStorage
+// pattern. The other modes (procedural/lidar/grove) intentionally do NOT
+// persist; Salon does because the Salon authoring loop is the new top
+// surface for v1.5, and bouncing back to Library on reload disrupts flow.
+const SALON_OPEN_KEY = 'arborist-salon-open'
 
 const useArboristStore = create((set, get) => ({
   // ── Looks ────────────────────────────────────────────────────
@@ -420,6 +426,245 @@ const useArboristStore = create((set, get) => ({
       set({ proceduralPublishing: false })
     } catch (err) {
       set({ proceduralPublishing: false, proceduralError: String(err) })
+    }
+  },
+
+  // ── Salon (Brief 1, Sequoia 2026-05-21) ──────────────────────────────
+  // Fourth top-level mode. Chassis + bark + leaves composition surface.
+  // Mirrors the procedural slice's shape (open flag, species list, per-
+  // species variant overlay, dirty tracking, publish action) but the
+  // payload is `compositions` instead of `seedlings`. Effective layering
+  // (DEFAULTS → CHASSIS_DEFAULTS → operator overlay) is mirrored into
+  // the store on patch so controlled selects reflect immediately.
+  salonOpen: (typeof localStorage !== 'undefined'
+    ? localStorage.getItem(SALON_OPEN_KEY) === '1' : false),
+  setSalonOpen: (open) => {
+    set({ salonOpen: !!open })
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(SALON_OPEN_KEY, open ? '1' : '0')
+    }
+    if (open) {
+      get().loadSalonSpecies()
+      get().loadSalonLibraries()
+      const active = get().salonActiveSpecies
+      if (active) get().loadSalonCompositions(active)
+    }
+  },
+  salonActiveSpecies: null,
+  setSalonActiveSpecies: (s) => {
+    set({ salonActiveSpecies: s })
+    if (s) get().loadSalonCompositions(s)
+  },
+  salonSpeciesList: [],            // [{speciesId, label, morphology, chassisCount, compositionCount}]
+  salonCompositions: {},           // { [speciesId]: [{slot, name, chassis, bark, leaves, deformer, effective}] }
+  salonDirtyBySpecies: {},
+  salonChassisCatalog: [],         // [{name, morphology, heightRange, source, ...}]
+  salonBarkRefs: [],               // ['Bark003', ...]
+  salonLeafPacks: [],              // [{packId, kind}]
+  salonError: null,
+  salonPublishing: false,
+
+  loadSalonSpecies: async () => {
+    try {
+      const r = await fetch(`/api/arborist/salon/species?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      const list = d.species || []
+      set({ salonSpeciesList: list, salonError: null })
+      // Default-select the first species so the workstage isn't blank on
+      // first open. Doesn't override an existing active selection.
+      if (list.length > 0 && !get().salonActiveSpecies) {
+        get().setSalonActiveSpecies(list[0].speciesId)
+      }
+    } catch (err) {
+      set({ salonError: String(err) })
+    }
+  },
+  loadSalonLibraries: async () => {
+    // Chassis / bark / leaves are filesystem-global; the brief routes them
+    // through `:species` for shape consistency with the procedural block.
+    // Use the active species id (or '_all' placeholder) as the path arg.
+    const speciesArg = encodeURIComponent(get().salonActiveSpecies || '_all')
+    try {
+      const [cR, bR, lR] = await Promise.all([
+        fetch(`/api/arborist/salon/${speciesArg}/chassis?t=${Date.now()}`),
+        fetch(`/api/arborist/salon/${speciesArg}/bark?t=${Date.now()}`),
+        fetch(`/api/arborist/salon/${speciesArg}/leaves?t=${Date.now()}`),
+      ])
+      const [cD, bD, lD] = await Promise.all([cR.json(), bR.json(), lR.json()])
+      set({
+        salonChassisCatalog: cD.chassis || [],
+        salonBarkRefs:       bD.bark || [],
+        salonLeafPacks:      lD.leaves || [],
+      })
+    } catch (err) {
+      set({ salonError: String(err) })
+    }
+  },
+  loadSalonCompositions: async (speciesId) => {
+    try {
+      const r = await fetch(`/api/arborist/salon/${encodeURIComponent(speciesId)}/compositions?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set(s => ({
+        salonCompositions: { ...s.salonCompositions, [speciesId]: d.compositions || [] },
+        salonDirtyBySpecies: { ...s.salonDirtyBySpecies, [speciesId]: {} },
+        salonError: null,
+      }))
+    } catch (err) {
+      set({ salonError: String(err) })
+    }
+  },
+  // Mutate a slot's chassis/bark/leaves. paramsPatch is one-level-deep,
+  // mirroring setProceduralSlotParams shape:
+  //   {chassis: 'foo'}, {bark: {ref: 'Bark012', uvScale: [2,5]}},
+  //   {leaves: {pack: 'palmate', occupancy: 0.8}}
+  // The patch merges into both `params` (next disk write) and `effective`
+  // (UI binding) so controlled selects don't snap back to stale server
+  // state. Marks the slot dirty.
+  setSalonSlotParams: (speciesId, slot, patch) => {
+    set(s => {
+      const list = s.salonCompositions[speciesId] || []
+      const next = list.map(v => {
+        if (v.slot !== slot) return v
+        const params = { ...v }
+        const effective = { ...(v.effective || {}) }
+        for (const k of Object.keys(patch || {})) {
+          const val = patch[k]
+          if (k === 'chassis') {
+            params.chassis = val
+            effective.chassis = val
+          } else if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+            params[k]    = { ...(params[k]    || {}), ...val }
+            effective[k] = { ...(effective[k] || {}), ...val }
+          } else {
+            params[k]    = val
+            effective[k] = val
+          }
+        }
+        return { ...v, ...params, effective }
+      })
+      const dirty = { ...(s.salonDirtyBySpecies[speciesId] || {}), [slot]: true }
+      return {
+        salonCompositions: { ...s.salonCompositions, [speciesId]: next },
+        salonDirtyBySpecies: { ...s.salonDirtyBySpecies, [speciesId]: dirty },
+      }
+    })
+  },
+  setSalonSlotName: (speciesId, slot, name) => {
+    set(s => {
+      const list = s.salonCompositions[speciesId] || []
+      const next = list.map(v => v.slot === slot ? { ...v, name } : v)
+      const dirty = { ...(s.salonDirtyBySpecies[speciesId] || {}), [slot]: true }
+      return {
+        salonCompositions: { ...s.salonCompositions, [speciesId]: next },
+        salonDirtyBySpecies: { ...s.salonDirtyBySpecies, [speciesId]: dirty },
+      }
+    })
+  },
+  addSalonSlot: (speciesId) => {
+    set(s => {
+      const list = s.salonCompositions[speciesId] || []
+      const maxSlot = list.reduce((m, v) => Math.max(m, v.slot), 0)
+      const newSlot = maxSlot + 1
+      const fresh = {
+        slot: newSlot,
+        name: `Slot ${newSlot}`,
+        chassis: null,
+        bark: {},
+        leaves: {},
+        deformer: {},
+        // Effective layered with kit DEFAULTS in the server. For the local
+        // mirror we ship a sensible starting effective block so the UI's
+        // controlled selects render with defaults until the operator picks
+        // a chassis (the next adopt+republish will write these to disk).
+        effective: {
+          chassis: null,
+          // Brief 1.5a: tintJitterRange migrated from hex color → numeric
+          // amplitude (matches procedural BARK_BY_SPECIES + bake-look#flatten).
+          // leaves.scale added — operator-tunable card-size multiplier.
+          bark:    { ref: 'Bark007', uvScale: [1.5, 4], tintBase: '#ffffff', tintJitterRange: 0.08, roughnessOverride: 0.85 },
+          leaves:  { pack: 'palmate', occupancy: 0.7, scale: 1.0, tintFront: '#3a7530', tintBack: '#a8b89a' },
+          deformer: {},
+        },
+      }
+      const dirty = { ...(s.salonDirtyBySpecies[speciesId] || {}), [newSlot]: true }
+      return {
+        salonCompositions: { ...s.salonCompositions, [speciesId]: [...list, fresh] },
+        salonDirtyBySpecies: { ...s.salonDirtyBySpecies, [speciesId]: dirty },
+      }
+    })
+  },
+  resetSalonSlot: async (speciesId, slot) => {
+    // Local clear: drop overlay fields, keep slot+name; re-layer effective
+    // from DEFAULTS once the server re-fetches.
+    set(s => {
+      const list = s.salonCompositions[speciesId] || []
+      const next = list.map(v => v.slot === slot
+        ? { ...v, chassis: null, bark: {}, leaves: {}, deformer: {} }
+        : v)
+      return { salonCompositions: { ...s.salonCompositions, [speciesId]: next } }
+    })
+    const compositions = get().salonCompositions[speciesId] || []
+    try {
+      const r = await fetch(`/api/arborist/salon/${encodeURIComponent(speciesId)}/compositions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ compositions }),
+      })
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      await get().loadSalonCompositions(speciesId)
+    } catch (err) {
+      set({ salonError: String(err) })
+    }
+  },
+  adoptSalonSlot: async (speciesId, slot) => {
+    const compositions = get().salonCompositions[speciesId] || []
+    try {
+      const r = await fetch(`/api/arborist/salon/${encodeURIComponent(speciesId)}/compositions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ compositions }),
+      })
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      set(s => {
+        const dirty = { ...(s.salonDirtyBySpecies[speciesId] || {}) }
+        delete dirty[slot]
+        return {
+          salonDirtyBySpecies: { ...s.salonDirtyBySpecies, [speciesId]: dirty },
+          salonError: null,
+        }
+      })
+    } catch (err) {
+      set({ salonError: String(err) })
+    }
+  },
+  // Per `feedback_debounced_save_must_flush_before_dependent_post`: if any
+  // slot is still dirty we MUST not fire the publish POST before its
+  // adopt POST has flushed. The Re-publish button is disabled by the UI
+  // when anyDirty, which gives the operator one explicit gesture
+  // (✓ Adopt all → ↳ Re-publish) — debounced auto-save isn't in play here,
+  // each adopt is an explicit click. So the dependency holds by UI shape.
+  republishSalonSpecies: async (speciesId) => {
+    set({ salonPublishing: true, salonError: null })
+    const lookId = get().activeLookId
+    const qs = lookId ? `?look=${encodeURIComponent(lookId)}` : ''
+    try {
+      const r = await fetch(
+        `/api/arborist/salon/${encodeURIComponent(speciesId)}/publish${qs}`,
+        { method: 'POST' },
+      )
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${r.status}`)
+      }
+      get().loadSpecies?.()
+      // Refresh salon species so chassisCount / compositionCount counts
+      // reflect the new state.
+      get().loadSalonSpecies()
+      set({ salonPublishing: false })
+    } catch (err) {
+      set({ salonPublishing: false, salonError: String(err) })
     }
   },
 

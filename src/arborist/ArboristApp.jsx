@@ -17,6 +17,7 @@ import Workstage from './Workstage.jsx'
 import Grove from './Grove.jsx'
 import ProceduralWorkstage from './ProceduralWorkstage.jsx'
 import LidarWorkstage from './LidarWorkstage.jsx'
+import SalonWorkstage from './SalonWorkstage.jsx'
 
 export default function ArboristApp() {
   const species         = useArboristStore(s => s.species)
@@ -28,6 +29,8 @@ export default function ArboristApp() {
   const setProceduralOpen  = useArboristStore(s => s.setProceduralOpen)
   const lidarOpen          = useArboristStore(s => s.lidarOpen)
   const setLidarOpen       = useArboristStore(s => s.setLidarOpen)
+  const salonOpen          = useArboristStore(s => s.salonOpen)
+  const setSalonOpen       = useArboristStore(s => s.setSalonOpen)
   const loadSpecies     = useArboristStore(s => s.loadSpecies)
   const setActiveSpecies = useArboristStore(s => s.setActiveSpecies)
   const loadLooks       = useArboristStore(s => s.loadLooks)
@@ -42,6 +45,7 @@ export default function ArboristApp() {
     return () => window.removeEventListener('focus', onFocus)
   }, [loadLooks])
 
+  if (salonOpen) return <SalonWorkstage />
   if (lidarOpen) return <LidarWorkstage />
   if (proceduralOpen) return <ProceduralWorkstage />
   if (groveOpen) return <Grove />
@@ -79,6 +83,19 @@ export default function ArboristApp() {
               cursor: 'pointer',
             }}>
             Procedural →
+          </button>
+          <button onClick={() => setSalonOpen(true)}
+            title="Compose chassis + bark + leaves (Salon — Brief 1)"
+            style={{
+              background: 'rgba(192,140,232,0.15)',
+              border: '1px solid rgba(192,140,232,0.4)',
+              color: '#c89cf0',
+              padding: '5px 12px', borderRadius: 4,
+              fontFamily: 'inherit', fontSize: 12,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}>
+            Salon →
           </button>
           <button onClick={() => setLidarOpen(true)}
             title="LiDAR specimen browse + QSM cylinder extraction tuning (Phase L Cycle 1)"

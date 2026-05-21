@@ -22,9 +22,9 @@ These are the contract the deployed runtime (`InstancedTrees.jsx`) consumes. The
 
 ---
 
-## Two authoring modes
+## Four authoring modes
 
-The Arborist UI (`/arborist`) opens to a mode selector — **Scan** (LiDAR pipeline) and **Procedural** (in-Arborist authoring). They share the same publish pipeline and the same per-Look atlas pass.
+The Arborist UI (`/arborist`) opens to a mode selector — **Scan** (legacy LiDAR Workstage), **Procedural** (synthesize from parameters), **LiDAR** (QSM extraction from scans), and **Salon** (compose chassis + bark + leaves; Brief 1, 2026-05-21). All four share the same publish pipeline and the same per-Look atlas pass.
 
 ### Scan mode (`src/arborist/Workstage.jsx`)
 
@@ -88,6 +88,51 @@ All sliders use a local `DraftSlider` (150ms idle commit + pointer-up final comm
 - **Per-Look override packs** — for Looks that want art-direction (Halloween bats, Christmas candy canes, Diwali ornament gold), per-Look `scene.materialColors[<species>]` extension carries shape-pack + gradient overrides that pre-empt the year-long defaults.
 - **Occupancy slider** — alpha-density modulator for sparse-canopy species (honeylocust ~25%, oak ~70%, conifer ~95%).
 - **No** density/jitter/cluster-count sliders — those would be compositor knobs; the parametric compositor is dropped per the 2026-05-16 PS-authored reframe.
+
+### Salon mode (`src/arborist/SalonWorkstage.jsx`, Brief 1 shipped 2026-05-21)
+
+Fourth top-level mode. The Salon pivots from *generation* (Procedural / LiDAR — synthesize a tree) to *composition* — operator picks **chassis + bark + leaves** from existing libraries and the publish pipeline emits a compatible artifact unchanged.
+
+**Why it exists:** the Salon arc is the operator's call to ship v1.5 by composing rather than synthesizing. Two prior generation-focused arcs hit ceilings (Phase G.1 procedural progressing slowly; Li'l Vera LiDAR shelved 2026-05-20 at N.3.0). The Arborist already has the publish pipeline, atlas system, and runtime contract — Salon is a parallel authoring surface that emits compatible output.
+
+**Workstage layout** — fork of `ProceduralWorkstage.jsx` with the per-slot controls rail and data wiring swapped (~70% lifted intact: slot tabs, viewport, LoD selector, perf gauge, wind toggle, DraftSlider, header/footer pattern). The replaced sections are:
+
+| Section | Knobs | Notes |
+|---|---|---|
+| **Chassis** | Picker dropdown (filtered/ranked by species morphology), height-range readout | Reads `public/trees/_chassis/<name>.glb` + `<name>.meta.json` sidecar (Whittle, Brief 0). Chassis-library empty → workstage shows a regenerate instruction (`node arborist/survey-deleaf.js`). |
+| **Bark** | Ref dropdown, uvScale X/Y `DraftSlider`s, tintBase + tintJitterRange color pickers, roughnessOverride `DraftSlider` | Lists `public/textures/bark/<ref>/`. |
+| **Leaves** | Pack dropdown, occupancy + scale `DraftSlider`s, tintFront + tintBack color pickers | Lists `public/textures/leaves/shapes/<pack>/shape.png` (Brief 1.5a Salon-curated RGBA composites: Color RGB + Opacity alpha from `assets/botanical-reference-hires/LeafSet0xx/`; three packs land in 1.5a — `palmate`/`lobed`/`ovate` from LeafSet010/016/005). Falls back to flat `public/textures/leaves/*.png` when no shapes/ dir present. |
+
+**Per-slot actions** (footer): ↺ Reset · ✓ Adopt · manual Name input (no dice — compositions are deterministic from chassis + bark + leaves; no seed roll).
+
+**Active-species dropdown filter:** union of (a) species with at least one chassis in `_chassis/` (via `meta.source.species`) AND (b) species with an existing `arborist/state/<species>/compositions.json`. Operator never loses a species they were working on.
+
+**Persistence:** the Salon-open flag persists to `localStorage` so reloading inside Salon returns to Salon (mirrors the `activeLookId` pattern). The other modes (Procedural / LiDAR / Grove) intentionally don't persist.
+
+**Effective-value layering** (server-side, surfaced in `effective` per composition): `DEFAULTS → CHASSIS_DEFAULTS → operator overlay`. UI controlled selects bind to `effective.*`. Store action `setSalonSlotParams` mirrors patches into both `params` and `effective` so changes reflect immediately without a server round-trip.
+
+**Composition data model** — per-species overlay at `arborist/state/<species>/compositions.json`:
+
+```json
+{
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "<operator label>",
+      "chassis": "<chassis-name from _chassis library>",
+      "bark":    { "ref": "Bark007", "uvScale": [1.5, 4], "tintBase": "#3a2820", "tintJitterRange": 0.12, "roughnessOverride": 0.8 },
+      "leaves":  { "pack": "palmate", "occupancy": 0.7, "scale": 1.0, "tintFront": "#3a7530", "tintBack": "#a8b89a" },
+      "deformer": {}
+    }
+  ]
+}
+```
+
+`deformer` is reserved-but-empty in Brief 1 — Brief 3 fills. Brief 2 adds gradient-map bark + multi-stop tint editor. Brief 4 adds camera-aware hemisphere cull.
+
+**Leaf emission stub (Brief 1):** chassis `leafAttachmentTags` are operator-authoring fields populated post-Brief-1. While the array is empty, the generator samples a deterministic placement set from the chassis's upper-bbox volume (mulberry32-seeded by `hash(chassis|bark.ref|leaves.pack)`) so the operator has visible leaves to author against. The lifted D.1b helpers consume that point set just as they consume terminal-tip positions in the procedural path.
+
+**Bark plumbing (Brief 1.5a):** `generate-salon.js#patchManifestForSalon` writes the first composition's bark spec into `public/trees/<species>/manifest.json#bark` after `publish-glb.js` completes, in the exact shape `bake-look.js#flatten` expects (`materialRef`/`uvScale`/`tintBase`/`tintJitterRange`/`roughnessOverride`). Runtime `InstancedTrees.jsx#applyBarkUniforms` then drives per-draw uniforms — the operator's tintBase / uvScale / roughnessOverride / per-instance jitter visibly land at LS. Single bark spec per species (procedural's model); per-composition bark texture variation lives in each variant's GLB. `qualityOverride: 4` (Hero tier) so Salon variants win their bucket's quality lottery vs the procedural fillers. Salon's `main()` also calls `syncLookRoster('lafayette-square', ...)` so the published variants appear in LS placements after the next bake-look + bake-trees (Brief 1 deferred this; 1.5a closed the loop).
 
 ### LiDAR mode (`src/arborist/LidarWorkstage.jsx`, Phase L Cycle 1 shipped 2026-05-19; Cycle 2 Stage 1 shipped 2026-05-19 PM)
 
@@ -154,6 +199,13 @@ Mounted under `/api/arborist` from the web app via Vite proxy.
 | `GET\|POST` | `/procedural/:species/seedlings` | Procedural seedlings overlay (`arborist/state/<species>/seedlings.json`); GET returns `effective` field per variant (PRESETS base merged with operator overlay) |
 | `POST` | `/procedural/generate` | Returns `model/gltf-binary` directly for a single (species, slot, seed, params) — used by the workstage dice/preview loop |
 | `POST` | `/procedural/:species/publish?look=<id>` | Shells out to `node generate-procedural.js --species <id>` + fires per-Look atlas auto-bake fire-and-forget |
+| `GET`  | `/salon/species` | Salon species: chassis-available OR composition-authored (union) |
+| `GET`  | `/salon/:species/chassis` | Chassis catalog (`public/trees/_chassis/`); optional `?morphology=` filter |
+| `GET`  | `/salon/:species/bark` | Bark refs under `public/textures/bark/` |
+| `GET`  | `/salon/:species/leaves` | Leaf packs (shapes/ dir if present, else flat PNG fallback) |
+| `GET\|POST` | `/salon/:species/compositions` | Overlay; GET returns `effective` per composition; POST merges with absent-keys-preserved |
+| `POST` | `/salon/generate` | Body `{chassis, bark, leaves, lod}` — returns `model/gltf-binary` for live preview |
+| `POST` | `/salon/:species/publish?look=<id>` | Shells out to `node generate-salon.js --species <id>` + fires per-Look atlas auto-bake fire-and-forget |
 | `POST` | `/atlas/bake?look=<id>` | Re-run `bake-look.js` for one Look (used by Grove on curation changes) |
 
 ---
@@ -164,6 +216,8 @@ Mounted under `/api/arborist` from the web app via Vite proxy.
 |---|---|
 | `node arborist/serve.js` | Start the backend (called automatically by `npm run dev`) |
 | `node arborist/generate-procedural.js [--species procedural_<id>]` | Headless procedural republish; reads `arborist/state/<species>/seedlings.json` overlays + PRESETS fallback |
+| `node arborist/generate-salon.js [--species <id>]` | Headless Salon republish; reads `arborist/state/<species>/compositions.json` overlays + chassis-defaults + kit DEFAULTS |
+| `node arborist/survey-deleaf.js` | Regenerate the gitignored chassis library at `public/trees/_chassis/` (Whittle, Brief 0). Brief 1 acceptance-testing depends on this. |
 | `node arborist/bake-look.js --look <id>` | Re-pack per-Look master atlas + emit `trees-atlas.json` |
 | `node arborist/bake-trees.js --look <id>` | Substitute placements onto the Look's roster + emit `public/baked/<look>/trees/...` |
 | `node arborist/republish-all.js` | Walk every species and re-emit through the full pipeline |
