@@ -6,13 +6,25 @@
 
 ---
 
+## ⚠️ LOAD-BEARING CONSTRAINT — single-page atlas
+
+**Bloom postprocessing breaks with multiple atlas pages.** Whatever the bark library + leaf library + any other texture authoring produces tomorrow, the bake step MUST gang every tile into a **single atlas page**. This is exactly what `arborist/atlas-pack.js` + `arborist/atlas-survey.js` + `bake-look.js:unifyAtlases` were built for (the "Grove's master atlas" — see `arborist/FEATURES.md`).
+
+**Implications for tomorrow's bark library work:**
+- All 6 bark luminance maps + 6 bark normals + N gradient LUTs ride in the same atlas as the leaf cards
+- atlas-survey.js dedupes by sha1 hash before pack — shared bark/leaf tiles collapse automatically
+- Resolution budget per tile shrinks accordingly; verify the proposed 4K bark luminance survives the atlas pack OR drop to 2K luminance (still substantially higher detail than per-species PBR at the same atlas budget)
+- Gradient LUTs are tiny (256×1) so basically free in the atlas
+
+**Don't author tiles that bypass the gang tool.** Any path that ships a separate texture file at runtime breaks bloom.
+
 ## TL;DR
 
 Tonight we landed the **articulated-blank doctrine** for trees and proved it works with a dry leaf-swap experiment. The Sugar Maple leaves from our `LeafSet010` pack dropped cleanly onto the vendor's existing card geometry — visually beautiful. The architecture for a full **Tree Builder** ("Fashion Plates for trees") is now clear:
 
 > A tree is a *recipe* binding `{silhouette_blank, bark_primitive, bark_tint, leaf_species, jitter_seed, age, health}` — composed from finite kit-level libraries of platonics, baked into one scene-specific atlas, drawn in one instanced batch.
 
-Tomorrow's chunk: **swap the whole grove + build out the Tree Builder UI**.
+**Tomorrow's focus (scope-reset 2026-05-21 late evening):** get all 3 maple blanks **Grove Ready** — decimation + LoD + canopy-painting strategy proven on Sugar Maple, ready to drop into the Lafayette Square grove. Tree Builder UI + 5-hero roster slide to v1.6+. **Project's near-term "done for the time being" line:** representatives of every pack-covered species (6 broadleaf + 1 conifer — see Inventory) rendering with their proper leaves on appropriate blanks. Pack gaps (Ginkgo, Honey Locust) defer to v1.6.
 
 ---
 
@@ -41,6 +53,39 @@ Tomorrow's chunk: **swap the whole grove + build out the Tree Builder UI**.
 **Overdraw is solved structurally** by canopy-depth shading (see "Canopy-depth doctrine" below) — interior cards render opaque + dark + matte (early-Z culls them), only the outer 2 layers are translucent. O(canopy_thickness) instead of O(leaf_count).
 
 ---
+
+## The 5 hero species (canonical — from BACKLOG.md, locked 2026-05-19)
+
+Project sharpened to **"ship 5 hero species at Hero quality."** These are the trees that must look photographic; the other 60+ inventory species ride filler procedural defaults dressed with the same per-species leaf packs.
+
+| # | Species | Doctrinal role | Leaf pack | Procurement status |
+|---|---|---|---|---|
+| **G.1** | **Sugar Maple** (`acer_saccharum`) | Dominant inventory (104 placements), canonical broadleaf, strictest visual bar | ✓ `LeafSet010` (palmate) | **3 maple blanks in hand** (maple-trees-pack) + existing `acer_saccharum_multistem` published + parallel G.1.0 procedural-runway arc using LiDAR-derived priors |
+| **G.2** | **Ginkgo** (`ginkgo_biloba`) | Proves the leaf editor + per-species hero path on the most leaf-defined species (bilobed fan + autumn gold = the identity) | ✗ `fan` gap — **no vendor source** | Needs sourcing: CGTrader (~$5–30), or phone-camera shoot (May = full green, perfect season), or PSD authoring |
+| **G.3** | **Willow** (`salix_babylonica` or similar) | Weeping algorithm at hero quality | ✓ `LeafSet013` (narrow) | Base model needed; check `public/trees/salix_alba/` (already in inventory directory) |
+| **G.4** | **Honey Locust** (`gleditsia_triacanthos`) | Sparse-cluster validation (dappled canopy) | ✗ `fine_compound` gap — **no vendor source** | Needs sourcing same as G.2; base model already published at `public/trees/gleditsia_triacanthos/` |
+| **G.5** | **TBD** (3 candidates) | Decision pending — see below | Depends on choice | First-thing-tomorrow decision |
+
+### G.5 — first decision tomorrow
+
+Per BACKLOG.md, three candidates with different doctrinal payoffs:
+
+| Candidate | Why | Leaf-pack cost | Slot coverage |
+|---|---|---|---|
+| **Spruce / Pine** (likely `pinus_sp` or `picea_sp`) | Adds the conifer slot to hero roster (currently all-broadleaf) | ✗ `short_needle` gap (Spruce) or ✓ `LeafSet019` (Pine, long needle) | Fills conifer hero slot |
+| **Pin Oak** (`quercus_palustris`) | Second broadleaf character (Pin Oak's strong pyramidal habit is visually distinct from Sugar Maple's oval) | ✓ `LeafSet016` (lobed) | Adds pyramidal/strong-leader silhouette platonic |
+| **Sycamore** (`platanus_occidentalis`) | Closes the existing-hand-modeled-roster loop (we already have Sycamore-class assets via maple-trees-pack since it's same `palmate` morphology) | ✓ `LeafSet010` (palmate, shared with Sugar Maple) | Adds exfoliating-bark species + spreading silhouette |
+
+**Recommendation if forced to pick now:** **Pin Oak.** Reasons: (a) leaf pack already in hand (LeafSet016, zero procurement); (b) adds a meaningfully different silhouette to the platonic library; (c) Pin Oak appears in DC park inventories; (d) doesn't compete with G.1 Sugar Maple for the broadleaf-default slot. Tradeoff: doesn't fix the all-broadleaf-roster problem (Spruce/Pine would). If conifer coverage matters for the v1.5 ship aesthetic, Pine wins (LeafSet019 already covers it).
+
+**Honest meta:** picking G.5 is a 5-minute decision. Make it first, don't let it block.
+
+## Park-scale numbers
+
+- **Total placements at Lafayette Square: 745**
+- **Sugar Maple alone: 104 placements** (per `NOTES.md`, routed to `acer_saccharum_procedural`)
+- **Per-instance jitter axes** (already plumbed): Y rotation, independent XZ + Y scale, hue shift, wind phase — gives 745 placements visually unbounded diversity from a small base-model set
+- **5 hero base models × 8 jitter axes** = more visual diversity than the eye can detect at park-scale. The 745 is the inventory ceiling, not a kit-capacity ceiling.
 
 ## Tonight's wins
 
@@ -156,41 +201,115 @@ The maple pack has **no bones, no skins, no animations** — just static meshes 
 
 ---
 
-## Tomorrow's chunk
+## Tomorrow's focus — get all 3 maples Grove Ready
 
-### Goal
-1. Publish the 3 maple-pack blanks into the species pipeline (`acer_saccharum_blank_01/02/03` or similar)
-2. Bark lighten (the deferred half of "photo-real Sugar Maple")
-3. Swap the whole grove — wire per-species leaf-pack binding so each species pulls its correct pack instead of the hardcoded Sugar Maple global
-4. Begin Tree Builder UI — at minimum a recipe editor that composes `{blank, bark, leaf}` and previews in `SpecimenViewport`
-5. Plan view of all species (`Grove.jsx` top-down) — the "kit inventory" check
+**Reset 2026-05-21 late evening.** The "ship all 5 heroes in one day" framing was Claude's reach; operator pulled it back to a focused single-track day:
 
-### Recommended sequence
+> **"If we can get all three of the maples Grove Ready I'll be happy."**
 
-| Step | Effort | Why this order |
+Three priorities, in order:
+
+1. **Decimation** — the bark prim is 166–208k tris per maple. Mobile-untenable. Get it to ~5–20k for hero tier, lower for distant tiers, via `meshoptimizer` / `gltf-transform`.
+2. **LoD** — produce the lod0 / lod1 / lod2 chain per blank (the existing `publish-glb.js` already emits `skeleton-N-lodX.glb` naming convention; extend to the maple pack).
+3. **Canopy-painting strategy** — prove the depth-attenuated dark-interior / translucent-outer-shell approach visually. Probably ship the shader-side fake-depth POC for v1.5; bake-time `aCanopyDepth` follows as Phase-G.6-adjacent work (see below).
+
+### Grove Ready — definition of done
+
+All 3 maples (`acer_saccharum_blank_01/02/03`) published into `public/trees/` with:
+- ✓ Bark decimated to mobile-acceptable triangle counts at lod0/1/2
+- ✓ Leaves swapped to LeafSet010 Sugar Maple via the existing dry-swap path (now scoped to species, not global)
+- ✓ Bark lightened via `uBarkTint` reading `species.bark.trunk.tintBase`
+- ✓ Canopy painting visible — interior cards opaque + matte + dark, outer-shell translucent (even if depth is faked from y-coord in v1.5)
+- ✓ Drops cleanly into Lafayette Square Stage view; visible in Grove plan-view if time permits
+
+### Suggested ~6 hour sequence
+
+| # | Step | Effort | Output |
+|---|---|---|---|
+| **A** | **Bark lighten** (warm-up) | 30 min | `uBarkTint` uniform path on non-leaf materials; species-map tint field unblocked |
+| **B** | **Per-species leaf binding** (narrows tonight's global swap to Sugar Maple only) | 45 min | `getLeafTexForSpecies(speciesId)` consulting `leaf-pack-bindings.json`. Pre-extract single-leaf variants for ALL 10 LeafSets in one Python pass so the cousin species are unblocked for the "done for the time being" milestone. |
+| **C** | **Decimation + LoD via gltf-transform** | 1.5 hr | meshoptimizer simplify chain in `publish-glb.js`; bark prim → lod0 (~15k tris) / lod1 (~5k) / lod2 (~1k); leaves handled separately (drop card count for distant tiers, don't decimate the cards themselves) |
+| **D** | **Publish 3 maple blanks** | 1 hr | Extend `publish-glb.js` to split multi-node source GLB → N specimens. If rabbit-holes, fall back to manual Blender Python per-tree extraction (5 min each) → 3 separate publish runs. |
+| **E** | **Canopy-painting POC (shader-side fake depth)** | 1 hr | Fake `aCanopyDepth` from canopy-bounds-normalized `y`. Interior cards: opaque, A2C, darkened toward interior color, roughness scaled to matte. Outer 2 layers: alpha-blend translucent. Two-pass render via `renderOrder` + `depthWrite`. |
+| **F** | **Grove visual check + commit** | 30 min | Open Stage view, verify maples drop in cleanly. Bake `lafayette-square` Look. Commit. |
+
+**Total: ~5–6 hours.** Achievable, leaves room for unexpected snags or stretch goals.
+
+### Stretch goals (only if A–F land cleanly)
+
+- Dress the cousin species (Oak via `LeafSet016`, Redbud via `LeafSet004`, Willow via `LeafSet013`, Mulberry via `Leaf001`, Pine via `LeafSet019`) with the per-species leaf binding from step B. Most are zero-code follow-on once B is in — just add the texture extraction. **Hitting this is the "done for the time being" milestone:** every pack-covered species has a representative tree rendering with its proper leaves.
+
+- **Bark library v1** (architecture sketched 2026-05-21 evening): six grayscale bark luminance maps (one per platonic — smooth, furrowed, plated, scaly, exfoliating, fibrous) + N per-species gradient LUTs (256×1 each). Shader: `color = texture(barkGradient, texture(barkLum, uv).r).rgb`. Substance/Unreal master-material pattern. Source path: extract from existing PBR packs (desaturate diffuse → luminance) for fastest landing. **All tiles ride in the single-page master atlas via the gang tool** (atlas-pack.js + unifyAtlases) — see load-bearing constraint at top. Honest caveat: mottled species (Sycamore, Birch) need a second mask channel for spatial color variation — defer to v1.6. Start with the 4 species that fit single-gradient cleanly: Sugar Maple, Oak, Pine, Linden. Estimated ~2–3 hours additional work atop the core day.
+
+### What's in scope for this handoff — and what's NOT
+
+**IN scope (tomorrow's day):**
+- 3 maples Grove Ready (decimation + LoD + canopy painting + leaves + bark)
+- Per-species leaf binding (tonight's global swap → scoped)
+- Bark lighten
+- Cousin species dressed as stretch (6 broadleaf + 1 conifer rendering with proper leaves = "done for the time being")
+
+**OUT of scope (now deferred to v1.6 or later):**
+- All 5 hero species at hero quality (G.2 Ginkgo / G.4 Honey Locust still blocked on leaf-pack sourcing)
+- Tree Builder UI (the workstage chunk — deferred until the underlying recipe surface settles)
+- G.5 decision (decoupled from tomorrow's day)
+- Real bake-time `aCanopyDepth` pass (today is shader-fake; real bake is Phase-G.6 territory)
+- Per-vertex `aBranchId` + `aHierarchyDepth` (Phase G.6)
+- Bones / auto-rigger (Phase G.6 — see new section below)
+- Bark-shader procedural (one master shader, 6 platonics) — v1.6
+- Per-instance jitter axes beyond what's plumbed — v1.6
+- Scene atlas baker — v1.6
+
+### The open visual question to settle first thing
+
+**Single leaf per card vs cluster card.** Tonight's swap shows ONE Sugar Maple leaf per vendor card (~22k cards per tree → 22k visible leaves). Either:
+
+- **Reads beautifully** → proceed; this is the architecture for all heroes
+- **Reads sparse/"polka-dotted"** → compose 3–5 leaf clusters into a `<packId>_cluster.png` per species (one-time PSD/Pillow pass, ~30 min per pack)
+
+**First-thing-tomorrow check:** open Arborist, look at a Sugar Maple specimen with tonight's swap. Decision lives in 5 minutes, gates the rest of the day.
+
+---
+
+## Phase G.6 — Auto-rigger via mesh-skeleton extraction (NEW, post-v1.5)
+
+**Surfaced 2026-05-21 late evening** during conversation about whether deformers require bones.
+
+**The realization:** the user's framing — *"we are literally trying to use 5 trees as 600"* — DOES require per-branch addressability with hierarchical inheritance (rotate parent → children follow), which `aBranchId` alone doesn't provide cleanly. The right long-term architecture is a **light skeletal rig (4–8 bones)** for big hierarchical motions + **`aBranchId`** (20–40 IDs) for fine-grained non-hierarchical ops. SpeedTree, Unreal foliage, Pixar's tree systems all use this hybrid.
+
+**The maple pack has NO bones.** Three paths to add them:
+
+| Path | Effort | Tradeoff |
 |---|---|---|
-| **A. Bark lighten** | ~30 min | Trivial extension of tonight's shader patch. `uBarkTint` uniform on non-leaf materials, reads `species.bark.trunk.tintBase` from `species-map.json` (the field already exists, just unwired). Completes the "photo-real Sugar Maple" experiment from tonight. |
-| **B. Per-species leaf-pack binding** | ~1 hr | Replace tonight's global `getSugarMapleLeafTex()` with a `getLeafTexForSpecies(speciesId)` that consults `leaf-pack-bindings.json` → `speciesOverrides` + `morphologyToPacks`. Caches per-species. Pre-extract a single-leaf variant from each pack into `public/textures/leaves/<packId>_single.png` (or compose a small cluster — see "Open question" below). |
-| **C. Publish maple-pack** | ~1–2 hr | Extend `arborist/publish-glb.js` to handle the 3-tree multi-node case (one source GLB → three specimens). Each becomes its own blank with its own LoD chain. May need to add an "articulated blank" concept to the species schema (a blank is not a species — it's a recipe ingredient). |
-| **D. Grove swap visual check** | ~30 min | Open `Grove.jsx`, configure top-down camera, verify every species shows correct leaves + reasonable bark tint. Catch any regressions. |
-| **E. Tree Builder UI v0** | ~2–3 hr | New workstage (peer to `LidarWorkstage`, `ProceduralWorkstage`). Three dropdowns: silhouette, bark, leaf species. Live preview. "Save as new species" button writes to `species-map.json`. Live preview reuses `SpecimenViewport`. |
-| **F. Canopy-depth proof-of-concept** | ~1 hr | Fake `aCanopyDepth` from `y`-normalized in shader, demo the depth-attenuated dark-interior look. NOT the real bake yet — just visual proof to commit to the architecture. |
+| **Hand-rig in Blender** | ~1 hr/tree (with skill) — needs artist if not | One-off; doesn't scale to future blanks |
+| **Auto-rig via mesh-skeleton extraction** | ~1 week one-time, then free for all future blanks | Kit-elegant; reactivates shelved `lil_vera_v2.py` investment |
+| **Wrap Pinocchio (Baran & Popović 2007)** | ~1 day if it builds | 19-year-old research code; often a build nightmare |
 
-**Order rationale:** A unblocks the "photo-real Sugar Maple" reveal that justifies the whole thing. B–D land the grove swap visibly. E is the conceptual chunk the user named as the day's headline. F is gravy if there's time.
+**Phase G.6 is the auto-rig path.** Pipeline:
 
-### What to defer (BACKLOG candidates)
+1. **Mesh → medial skeleton.** Laplacian/mean-curvature contraction (Au et al. 2008 / CGAL implementation). Mesh iteratively collapses to a 1D graph through trunk + branches. Solved territory.
+2. **Skeleton → branch hierarchy.** Walk the graph: lowest endpoint = trunk root, depth-first traversal outward, vertices of degree ≥ 3 are junctions. Polylines between junctions = bones. Parent assignments fall out naturally because trees ARE hierarchies.
+3. **Bone count tunable.** Threshold parameter merges tiny branches into parent — 5–8 bones for hero rig, 20–40 for fine rig. Same algorithm.
+4. **Mesh → skinning weights.** Distance-based (cheap, works well at low bone counts) or heat-diffusion (Baran & Popović 2007, what Blender's auto-weight uses — smoother). Per-vertex weight to each bone.
+5. **Repack as rigged glTF.** Add `skins` block, stamp `JOINTS_0` + `WEIGHTS_0`. Three.js GLTFLoader handles natively.
+6. **`aBranchId` falls out for free.** Each vertex's dominant bone IS its branch ID — both layers come from one bake pass.
 
-- Real canopy-depth bake-time pass (after F proves shader is right)
-- Per-vertex `aBranchId` + `aHierarchyDepth` (mesh analysis pass; reuses `lil_vera_v2.py` algorithms)
-- Bark-shader procedural (one master shader, 6 platonics by parameter)
-- Sourcing ginkgo + honeylocust + tuliptree leaf assets (3 separate $5–30 purchases on CGTrader or 30-min phone-camera shoots — current season is right for both)
-- LoD pipeline via `meshoptimizer` (the bark prim's 200k-tri source has 10–40× headroom)
-- Scene atlas baker (walks scene's species bindings, packs scene-tight atlas)
-- Per-instance jitter stack (lean / prune mask / non-uniform scale / phenology offset / bark hue jitter)
+**Critical: `lil_vera_v2.py` and `bidirectional_skeleton.py` ALREADY implement steps 1–2** for LiDAR point clouds. Mesh input is *easier* than point cloud (explicit connectivity, no noise). The failure that shelved Li'l Vera was downstream (tip-detector gate) — the skeleton extraction itself worked. **Phase G.6 reactivates the shelved investment in a productive direction.** Per [[project_lidar_as_training_data]] this is exactly the re-entry condition we'd want: "different architecture on the table that doesn't depend on tip anchors."
 
-### Open question to resolve before B
+**Implementation recommendation: pure-Python via adapted `lil_vera_v2.py`.** ~1 week. No external tool dependency. Becomes a first-class Arborist CLI invocable from `publish-glb.js` — every blank we already have AND every future blank gets bones automatically.
 
-**Does the "single leaf per card" pattern hold up at canopy density, or do we need cluster cards?** Tonight's single-leaf swap means each vendor card shows ONE Sugar Maple leaf. The vendor authored ~22k cards per tree — so we get a 22k-leaf canopy, which is fine if leaf shape reads at distance. If it looks sparse or "polka-dotted," the next iteration is composing a 3–5 leaf cluster atlas per species (a sprig per card) to match real-foliage density patterns. **Visual inspection tomorrow tells us which way to go.** Cluster atlas adds ~30 min of compositing per species.
+**Critical caveats:**
+- Mesh quality matters — clean modeled trees auto-rig well; photogrammetry blobs don't. We screened the maple pack for this.
+- Operator-in-the-loop preview is required — "did the auto-rig produce a sensible skeleton?" needs eyeballing. Build a Tree Builder panel that overlays the proposed skeleton on the mesh and gates adoption.
+- Skinning weight quality degrades at high bone counts. Stick to 5–10 bones for hero rigs.
+
+**Phase G.6 unlocks:**
+- True per-instance per-branch articulation (the "5 trees as 600" feature)
+- Hierarchical motion (lean trunk → branches follow)
+- Branch-coherent operations at runtime (prune branch_3 + everything downstream)
+- The Tree Builder UI's per-branch authoring controls (panel surface)
+
+**Phase G.6 does NOT block v1.5 ship.** Tomorrow's no-bones approach (wind via height-falloff, prune via per-vertex hash, lean via per-instance uniform on whole tree, no hierarchical motion) ships visually-acceptable trees TODAY. G.6 is the architecture that takes us from "visually-acceptable 5 base models" to "5 base models truly serve as 600 distinct trees with per-instance branch-level variation."
 
 ---
 
