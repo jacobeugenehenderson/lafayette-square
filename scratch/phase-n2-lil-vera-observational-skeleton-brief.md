@@ -86,7 +86,24 @@ This directly addresses rev. 1's classifier failure mode. Tycho's 63% junction c
 7. **Performance.** Per-rig + per-orientation + per-voxel processing is embarrassingly parallel. Use numpy vectorization or multiprocessing so 500-rig overnight runs scale ≤ linearly with core count.
 8. **Operational mode — standalone CLI app + disk-persistent results.** Primary interface is CLI (`python arborist/lil_vera_v2.py --treeId=... --species=acer_saccharum --N=... --out=...`). Note `--species` is now a required arg — the apparatus is conditioned on species identity from the start. HTTP endpoint is quick-iteration convenience. Result JSON persists to `arborist/state/lil-vera-v2/<treeId>/run-<ISO-timestamp>-N<N>.json` (note v2-suffixed directory so v1 and v2 runs coexist for comparison). Result JSON includes: full **parametric spline output** (see Output specification below), hyperparameters, species identity + priors-file hash, per-pass diagnostics (working-set size curve, lock-in count, rejection count broken down by source [tomography vs botanical-prior vs both], deferred count, classification histograms vs species expected distribution), source-3D-validation residuals.
 9. **Operator-tunable thresholds in the workstage UI.** Lock-in confidence threshold, rejection confidence threshold (for noise/sheet/leaf), glimpse-threshold for reach probes, max iteration passes (default 20 — see Inputs), species-prior softness scaling (0 = ignore priors, 1 = hard priors, default 1). All exposed as sliders in the v2 tuner sub-section. Operator can dial during the visual gate.
-10. **CLI heartbeat (operator-readable progress signal).** Long runs (multi-pass × N=500+ × step-by-step axonal growth) may take 1–2 hours. The CLI MUST print a heartbeat line on stdout at every batch boundary (every time Phase 1 adds N_batch rigs OR every time Phase 3b completes a step-loop iteration) AND at minimum every 30 seconds even mid-batch. Format example: `[pass 2 | scan-batch 4 | rigs 350/2000 | |P|=8123 | splines=42 (new handshakes this batch: 18) | elapsed 14m32s]`. Glance-readable from a `tail -f` in another terminal so the operator can distinguish "still working" from "hung" without instrumenting anything else. (Operator runs `caffeinate` for the duration; the heartbeat is the only signal that the process hasn't silently wedged.) Output file size is negligible (~100–500 KB worst case) so logging volume is not a concern.
+10. **CLI heartbeat (operator-readable progress signal).** Long runs (multi-pass × N=500+ × step-by-step axonal growth) may take 1–2 hours. The CLI MUST print a heartbeat line on stdout at every natural phase boundary AND at minimum every 30 seconds even mid-phase (use a wall-clock timer or per-loop time check; whichever is cleanest in Python).
+
+   *Universal floor format (every heartbeat MUST include these fields):* `[pass N | phase=<phase tag> | |P|=<working set size> | splines=<accumulated count> | elapsed <mm:ss>]`. Phase tag is one of: `scan`, `classify`, `tip-detect`, `grow`, `eliminate`, `pipe-model`, `validate`.
+
+   *Phase-specific extras when available:*
+   - **Phase 1 (scan):** `rigs N_scanned/N_max | batch B | eligible_fraction X.XX | verdict_rate Y.YYY`
+   - **Phase 2 (classify):** `candidates K_done/K_total`
+   - **Phase 3a (tip-detect):** `tip_anchors emitted_count`
+   - **Phase 3b (grow):** `active_probes P_active | step S/probe_max_steps | new handshakes this iteration: H`
+   - **Phase 3c (taper-fallback):** `orphans T_taper`
+   - **Phase 4 (eliminate):** `lock-ins L | rejections R | deferred D`
+   - **Phase 5 (pipe-model):** `splines_processed S_done/S_total | orphans O`
+
+   *Example Phase 1 heartbeat:* `[pass 2 | phase=scan | |P|=8123 | splines=42 | elapsed 14m32s | rigs 350/2000 | batch 7 | eligible_fraction 0.62 | verdict_rate 0.012]`
+
+   *Example Phase 3b heartbeat (mid-growth, no natural batch boundary):* `[pass 3 | phase=grow | |P|=4421 | splines=98 | elapsed 41m18s | active_probes 184 | step 67/200 | new handshakes this iteration: 3]`
+
+   Glance-readable from a `tail -f` in another terminal so the operator can distinguish "still working" from "hung" without instrumenting anything else. (Operator runs `caffeinate` for the duration; the heartbeat is the only signal that the process hasn't silently wedged.) Output file size is negligible (~100–500 KB worst case) so heartbeat logging volume is not a concern.
 
 ---
 
@@ -146,7 +163,25 @@ What gets newly authored:
 
   **Observation:** K_orient (tomography sample count, default 200), pitch ratio (spiral geometry).
 
-  **Adaptive scan:** N_batch (rigs added per scan iteration, default 50), N_max (hard safety cap on total rigs, default 2000; hitting it is a "did-not-converge" diagnostic, not a routine outcome), **verdict-rate stopping**: `verdict_rate_threshold` (default 0.005 = 0.5%) — the scan loop terminates when the last batch's `(new_lock_ins + new_rejections) / N_batch_candidates_attributed` falls below this threshold; i.e., the apparatus stops scanning when adding rigs stops materially changing its verdicts. `min_batches_before_stop` (default 2 — require at least two batches before allowing termination, so the apparatus can't stop on a pathologically-quiet first batch). No cluster detector; no geometric long-pointy-shape proxy. (Earlier drafts specified a cluster detector — it suffered from M_obs ghost effects: monotonically-accumulating M_obs preserves the visual signature of already-rejected leaf clusters indefinitely, making the detector demand more scanning forever. Verdict-rate is a direct measurement of "is more observation changing anything?" — cleaner and ghost-free.)
+  **Adaptive scan:** N_batch (rigs added per scan iteration, default 50), N_max (hard safety cap on total rigs, default 2000; hitting it is a "did-not-converge" diagnostic, not a routine outcome), **verdict-rate stopping** (full mechanics below).
+
+  *Verdict-rate stopping definitions:*
+
+  - **Eligible subset** at batch B = source points p ∈ P whose nearest-candidate attribution has `rigs_seen ≥ K_rigs_min` (default K_rigs_min ~5). Under-observed points are NOT eligible — the apparatus isn't yet entitled to form a verdict about them, so they must not contribute to the "verdicts have stabilized" signal in either direction (neither inflate the denominator nor zero-out the numerator).
+  - **Would-be verdict** for an eligible point p at batch B: the verdict Phase 4 *would* commit right now if it ran on the working set against `accumulated splines` (prior-pass output) — either LOCKED-IN-WOULD (within ε_lock of an accumulated `from_handshake` spline), REJECTED-WOULD (combined_confidence + K_rigs_min thresholds met), or DEFERRED-WOULD. These are hypothetical — the actual Phase 4 commitment happens later in this pass after Phase 3 produces new splines.
+  - **Numerator:** count of eligible points whose would-be verdict CHANGED since the prior batch (DEFERRED-WOULD → LOCKED-IN-WOULD, DEFERRED-WOULD → REJECTED-WOULD, or — unusual but possible if attribution shifts — verdict flips). Unchanged-verdict points do not contribute.
+  - **Denominator:** |eligible subset| at the current batch.
+  - **`verdict_rate` = numerator / max(denominator, 1)`** — when the eligible subset is empty, the rate is by definition 0/1=0; the `min_eligible_fraction` guard below prevents termination from firing in this case.
+
+  *Hyperparameters:*
+
+  - `verdict_rate_threshold` (default 0.005 = 0.5%): scan terminates when the verdict rate falls below this — i.e., adding rigs stops materially changing the apparatus's mind about the eligible subset.
+  - `min_batches_before_stop` (default 4 — raised from earlier draft's 2 per Doppler audit to allow ≥4 × N_batch = ≥200 rigs of accumulation before any termination decision; ensures rigs_seen has a chance to cross K_rigs_min for a meaningful slice of P even on sparse-rig-coverage geometry).
+  - `min_eligible_fraction` (default 0.30 — require at least 30% of |P| to be in the eligible subset before allowing termination; prevents premature stop when the apparatus has only formed verdicts on a small fraction of the working set, regardless of how stable those few verdicts look).
+
+  No cluster detector; no geometric long-pointy-shape proxy. (Earlier drafts specified a cluster detector — it suffered from M_obs ghost effects: monotonically-accumulating M_obs preserves the visual signature of already-rejected leaf clusters indefinitely, making the detector demand more scanning forever. Verdict-rate is a direct measurement of "is more observation changing anything?" — cleaner and ghost-free.)
+
+  *Pass-1 regime note:* on pass 1, `accumulated splines` is empty, so LOCKED-IN-WOULD verdicts are structurally impossible. Pass 1's verdict rate consists entirely of the rejection signal. The eligibility filter + `min_batches_before_stop=4` + `min_eligible_fraction=0.30` are the three guards that together prevent pass 1 from terminating prematurely on a leafy specimen whose rejection signal hasn't yet had time to develop. If any one of these guards looks too loose at N.3.1, tighten it before N.3.2.
 
   **Tip-precision detector:** `tip_geometric_min` (minimum `c.geometric_confidence` for the candidate to enter the tip pipeline at all; default 0.5 — tomography must be confident in its 'tip' verdict before geometric tests are even attempted), `min_nbhd_count` (minimum candidate-count in the local-PCA spherical neighborhood; default 8 — fewer points than this gives an unreliable PCA), `tip_elongation_min` (local-PCA λ1/λ2 in a spherical neighborhood; default ~5.0 — tips are decidedly elongated), `tip_taper_sign` (must be negative — radius monotonically shrinks toward the candidate; flat or growing rules out tip), `tip_neighborhood_radius` (PCA window, default ~0.15m), `τ_tip_prior` (minimum `priors.likelihood(class='tip', ...)` for the tip to anchor; default 0.5 — half-prior or better). Anchor admission is conjunction of all six gates (geometric_confidence + nbhd-count + elongation + taper sign + neighborhood radius window + priors). Two-of-six being optional or lax breaks the precision premise of N.3.0's "stop-the-cycle" tip gate; keep all six strict.
 
@@ -216,7 +251,13 @@ Loop until terminated:
   # changed any verdict? — and is ghost-free.
   #
   batches_in_pass ← 0
-  prior_batch_verdict_count ← infinity  # forces at least one batch
+  prev_would_verdict ← {p: DEFERRED-WOULD for all p ∈ P}
+                       # Per-point map carried across scan-batch iterations
+                       # within this pass. Initialized to DEFERRED for every
+                       # source point in the working set at pass start. Each
+                       # batch's verdict-rate is the count of points whose
+                       # entry changed since the prior batch. Reset to
+                       # DEFERRED-WOULD at the start of every outer-loop pass.
   Scan-loop:
     Generate next N_batch spiral rig positions starting from rig_seed_cursor.
     For each new rig r:
@@ -230,31 +271,55 @@ Loop until terminated:
     rig_seed_cursor += N_batch
     batches_in_pass += 1
 
-    # ── Verdict-rate check ──
+    # ── Would-be verdict computation (lightweight Phase 2 + Phase 4 attribution) ──
     # Classify the newly-deposited candidates (lightweight Phase 2: tomography
     # + priors per new candidate; SAME formulas as full Phase 2 below). Then
-    # do a lightweight Phase 4 attribution-only pass over the working set P:
-    # for each source point p, find its nearest candidate within ε_attribution
-    # (may now be a brand-new candidate from this batch), and check whether
-    # p's would-be verdict has CHANGED since the prior batch's check:
-    #   - WAS DEFERRED, NOW would lock-in against any spline ∈ accumulated
-    #     splines (prior-pass output) → counts as a new lock-in.
-    #   - WAS DEFERRED, NOW would reject (combined_confidence drop AND
-    #     rigs_seen ≥ K_rigs_min) → counts as a new rejection.
-    #   - VERDICT UNCHANGED (still deferred, or still locked-in, or still
-    #     rejected) → does not contribute to verdict-rate.
-    # This is a "would" check — the actual Phase 4 commitment still happens
-    # later in this pass, after Phase 3 produces new splines. We're measuring
-    # the apparatus's *willingness* to change its mind based on more rigs.
-    batch_verdict_count ← (new_would-be_lock_ins + new_would-be_rejections)
-    batch_verdict_rate ← batch_verdict_count / max(|attributed_candidates|, 1)
+    # for each source point p ∈ P, find its nearest candidate within
+    # ε_attribution (may now be a brand-new candidate from this batch), and
+    # compute p's would-be verdict against `accumulated splines` (prior-pass
+    # output):
+    #
+    #   LOCKED-IN-WOULD  → p within ε_lock of any accumulated spline
+    #                      s with s.from_handshake AND
+    #                      s.prior_likelihood > lock_in_threshold.
+    #                      (Pass 1: empty by construction, since
+    #                      accumulated splines = ∅.)
+    #   REJECTED-WOULD   → p.rigs_seen ≥ K_rigs_min AND
+    #                      (combined_confidence < rejection_threshold
+    #                       OR classification ∈ {noise, sheet} with
+    #                       high geometric_confidence).
+    #   DEFERRED-WOULD   → neither of the above.
+    #
+    # This is a "would" check — actual Phase 4 commitment happens later in
+    # this pass, after Phase 3 produces new splines. We're measuring the
+    # apparatus's *willingness* to change its mind based on more rigs.
+    cur_would_verdict ← {p: compute would-be verdict for p as above
+                          for all p ∈ P}
 
+    # ── Eligible subset + verdict-rate ──
+    eligible ← {p ∈ P : p.attributed_candidate.rigs_seen ≥ K_rigs_min}
+    # Eligibility filter: under-observed points (rigs_seen < K_rigs_min)
+    # are NOT entitled to a verdict yet — they must not contribute to
+    # the "verdicts have stabilized" signal in either direction (neither
+    # inflate the denominator nor zero-out the numerator). Doppler-audit
+    # fix: this prevents the early-batch K_rigs_min suppression bug that
+    # would otherwise let a leafy specimen's scan terminate at ~100 rigs
+    # before the apparatus had seen enough to reject anything.
+    changed ← {p ∈ eligible : cur_would_verdict[p] != prev_would_verdict[p]}
+    batch_verdict_rate ← |changed| / max(|eligible|, 1)
+    eligible_fraction ← |eligible| / max(|P|, 1)
+
+    # ── Termination check (three guards must ALL pass to terminate) ──
     If batches_in_pass >= min_batches_before_stop AND
+       eligible_fraction >= min_eligible_fraction AND
        batch_verdict_rate < verdict_rate_threshold:
       break  # scan-complete: verdicts have stabilized.
+
     If N_scanned >= N_max:
       break with DID-NOT-CONVERGE diagnostic.
-    prior_batch_verdict_count ← batch_verdict_count
+
+    # ── Carry per-point state into next batch ──
+    prev_would_verdict ← cur_would_verdict
     (Otherwise loop and add another N_batch rigs.)
 
   # ── Phase 2: SPECIES-CONDITIONED CLASSIFY candidates (TAG, don't commit) ──
@@ -795,6 +860,12 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
     {
       "pass": 1,
       "rigsScannedThisPass": 250,
+      "scanBatchesThisPass": 5,
+      "scanTerminationReason": "verdictRateBelowThreshold",  // or "nMaxHit"
+      "finalEligibleFraction": 0.78,
+      "finalVerdictRate": 0.003,
+      "perBatchVerdictRateCurve": [0.42, 0.18, 0.06, 0.012, 0.003],  // monotone-down expected
+      "perBatchEligibleFractionCurve": [0.08, 0.31, 0.55, 0.69, 0.78],  // monotone-up expected
       "workingSetSize": 14045,
       "lockedIn": 1820,
       "rejected": 4500,
@@ -810,6 +881,12 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
     {
       "pass": 2,
       "rigsScannedThisPass": 100,
+      "scanBatchesThisPass": 2,
+      "scanTerminationReason": "verdictRateBelowThreshold",
+      "finalEligibleFraction": 0.91,
+      "finalVerdictRate": 0.004,
+      "perBatchVerdictRateCurve": [0.09, 0.004],
+      "perBatchEligibleFractionCurve": [0.87, 0.91],
       "workingSetSize": 7725,
       "lockedIn": 1300,
       "rejected": 2100,
@@ -848,7 +925,7 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
 | Stage | Days | Wall-clock budget | Output | Operator gate |
 |---|---|---|---|---|
 | **N.3.0 — Classifier + priors + tip-detector validation on static dataset** | ~1.5 | <2min CLI at N=50 fixed (Phase 1 adaptive scan disabled for this stage) | Hand-encoded `botanical-priors.json` for Sugar Maple (including `expectedLocalDirection` field for Phase 3b growth steering). Per-candidate tomography classifier producing `geometric_class` AND `prior_likelihood` AND `combined_confidence`. **Phase 3a precision-gated tip detector** runs and emits a `tip_anchors` set. **No iteration, no adaptive scan, no axonal growth yet.** Diagnostics: classification distribution histogram vs `priors.expected*Fraction`; tip-anchor count + visualization (anchors rendered as colored dots in alignment oracle). | **The classifier+tip-precision gate.** (a) Does the classifier visibly distinguish leaf-mass (low combined_confidence) from real branching joints (high combined_confidence)? Classification fractions within priors tolerance? (b) Does the tip detector emit a SPARSE, HIGH-PRECISION anchor set? Operator visually verifies that every emitted tip anchor sits at the visual end of a real branch — false-positive anchors at leaf-cluster positions are a stop-the-cycle failure. **Both classifier AND tip detector must clear this gate before adaptive scan and growth are built on top.** |
-| **N.3.1 — Adaptive scan + verdict-rate stop + masked rasterization** | ~1.5 | <10min CLI on dev specimen; expected to converge to scan-complete in ≤300 rigs | Phase 1 adaptive-scan loop wired: spiral generator emits rigs in batches of N_batch; verdict-rate check after each batch (would-be lock-ins + would-be rejections vs the prior batch's attribution); loop terminates when `batch_verdict_rate < verdict_rate_threshold` (after `min_batches_before_stop`) OR N_max hit. Phase 4 three-outcome elimination wired (lock-in disabled for this stage since no splines exist yet — only rejection + deferred active). Per-pass diagnostics: rigs-added curve, working-set size curve, per-batch verdict-rate curve (must trend downward as scanning saturates), rejection count broken down by source (tomography vs prior vs both). | **The leaf-clearing + adaptive-stop visual gate.** Per-pass animation in the workstage: working set shrinks as rejections accumulate; verdict-rate curve falls toward `verdict_rate_threshold`; scan loop terminates *itself* on a real specimen (not by hitting N_max). Trunk + branches survive in M_obs; leaf mass dissolves. Working-set curve falls monotonically. If N_max trips on a representative specimen, threshold-tuning is required before N.3.2 (likely `verdict_rate_threshold` set too low). |
+| **N.3.1 — Adaptive scan + verdict-rate stop + masked rasterization** | ~1.5 | <10min CLI on dev specimen; expected to converge to scan-complete in ≥200 rigs (`min_batches_before_stop=4` × N_batch=50 floor) and typically ≤500 | Phase 1 adaptive-scan loop wired with the three-guard termination: `batches_in_pass ≥ min_batches_before_stop` AND `eligible_fraction ≥ min_eligible_fraction` AND `batch_verdict_rate < verdict_rate_threshold`. Per-point `prev_would_verdict` map carried across scan batches within each pass. Phase 4 three-outcome elimination wired (lock-in disabled for this stage since no splines exist yet — only rejection + deferred active). Per-pass diagnostics: rigs-added curve, working-set size curve, per-batch verdict-rate curve (must trend downward as scanning saturates), per-batch eligible-fraction curve (must trend upward as more points cross K_rigs_min), rejection count broken down by source (tomography vs prior vs both). | **The leaf-clearing + adaptive-stop visual gate.** Per-pass animation in the workstage: working set shrinks as rejections accumulate; verdict-rate curve falls toward `verdict_rate_threshold`; eligible-fraction curve climbs toward 1.0; scan loop terminates *itself* on a real specimen (not by hitting N_max, AND not by premature termination at the ≥200-rig floor). Trunk + branches survive in M_obs; leaf mass dissolves. See acceptance criterion (d) for the two tuning failure modes. |
 | **N.3.2 — Precision-gated tip anchoring + axonal growth + handshake recognition** | ~2 | <45min CLI on dev specimen (adaptive scan typically settles ~300–800 rigs; multi-pass; growth is the new cost center) | Phase 3a tip anchors (from N.3.0) + Phase 3b axonal growth (step-by-step probes from trunk + tips, glimpse-confirm + priors-blend each step) + Phase 3c degraded-mode taper fallback for un-handshaken tips. Chains fit to parametric splines (3–10 control points each); spline `prior_likelihood` scored; lock-in only for `from_handshake` splines above `lock_in_threshold`. **NO MST closure.** **NO ridge tracing.** Output JSON in parametric-spline format with `from_handshake` / `from_taper_only` / `tipExtrapolated` flags per spline. New per-pass diagnostics: `tip_anchor_count`, `active_probes_per_pass`, `handshake_count`, `stalled_probe_count`, `mean_probe_steps_to_handshake`. | **THE cycle gate.** Multi-pass on adaptive-N. Does the apparatus produce ~100–500 parametric splines (NOT 40K voxel nodes)? Does the canopy contain continuous SPLINE branches built by handshakes through low-evidence regions (not chaos, not isolated fragments)? Are stalled-probe counts diagnostically reasonable (not all probes stalling = priors/growth bug; not all probes handshaking = thresholds too loose)? Visibly cleaner than QSM AND Hawthorn's Bidirectional AND Tycho's rev. 1 v1 baseline (6th alignment-oracle layer comparison). |
 | **N.3.3 — Pipe-model radii + taper co-determination** | ~0.5 | <5min CLI | Phase 5 backward-forward pipe-model counts on the connected spline graph. Per-spline parametric `radiusFn` populated. Co-determination diagnostic: per-spline radii (pipe-counting) vs Phase 3c taper-projection agreement for the splines that *have* taper-projected endpoints. | Visual: trunks taper sensibly; Murray's law sanity at joints (parent radius² ≈ Σ child radii²); taper-vs-pipe agreement within tolerance where applicable. |
 | **N.3.4 — Rubin consensus-stability validation** | ~0.5 | ~2 hours for 4 subsampled runs (rig dropout reduces Phase-1 scan cost ~linearly but doesn't touch Phase 3/4/5; 4 runs at ~25min each) | Run apparatus 4× with 10/25/40% rig dropout from the adaptive-converged rig set. Spline count variance, position variance, topology agreement (do same tip anchors emerge? do same handshakes form?), tip-set agreement quantified. | Numerical gate: per-spline-endpoint variance < threshold across all dropout rates; tip-anchor set agreement > 80% across dropout runs. |
@@ -871,7 +948,11 @@ c. **Tip-detector precision.** Tip anchor count is in the dozens-to-low-hundreds
 
 At the N.3.1 gate (adaptive scan + elimination gate):
 
-d. **Adaptive scan self-terminates via verdict-rate.** On the development specimen, scan-loop terminates via `batch_verdict_rate < verdict_rate_threshold` rather than via N_max safety cap. Total rigs scanned reported in diagnostics; per-batch verdict-rate curve trends monotonically downward across batches within each pass. If N_max trips, `verdict_rate_threshold` is likely set too low (apparatus is asking for impossible verdict-rate stability) and needs tuning upward before N.3.2.
+d. **Adaptive scan self-terminates via verdict-rate.** On the development specimen, scan-loop terminates via `batch_verdict_rate < verdict_rate_threshold` rather than via N_max safety cap. Total rigs scanned reported in diagnostics; per-batch verdict-rate curve trends monotonically downward across batches within each pass; eligible-subset fraction trends upward as more points cross `rigs_seen ≥ K_rigs_min`.
+
+  *Two tuning failure modes to watch for:*
+  - **N_max trips on a representative specimen:** `verdict_rate_threshold` is likely set too low (apparatus is asking for impossible verdict-rate stability) → raise it before N.3.2.
+  - **Scan terminates well below operational range (e.g., ≤200 rigs on a leafy specimen) AND the canopy is visibly under-resolved at N.3.2:** either `verdict_rate_threshold` is too high (apparatus declares "stable" too eagerly), `min_batches_before_stop` is too low (didn't let rigs_seen develop), OR `min_eligible_fraction` is too low (terminated on a small confident slice of P while most of P was still under-observed). Diagnostics: check the per-batch eligible_fraction and verdict_rate curves in the workstage — if eligible_fraction was still well below 1.0 at termination, raise `min_eligible_fraction`; if verdict_rate curve hadn't actually plateaued, lower `verdict_rate_threshold`; if both look fine but the scan ended too early, raise `min_batches_before_stop`.
 
 e. **Working set shrinks monotonically.** Per-pass elimination curve falls cleanly; rejection-count broken down by source shows both tomography AND prior contributing (not one dominating). Pass-N rendered residual is visibly cleaner than pass-1.
 
@@ -911,7 +992,7 @@ If N.3.2 gate doesn't pop visibly: spike concluded honestly. Phase T fallback (p
 - Do NOT add iPhone-photo support, web UI, or open-source release scaffolding.
 - Do NOT optimize prematurely.
 - **Do NOT introduce Hessian ridge tracing as a primary structure-extractor.** The rev. 2 first draft specified ridge tracing in Phase 3a; the operator's pre-dispatch restructure removed it. Extraction is now anchored on trunk + tips with bidirectional axonal growth between them. Re-introducing ridge tracing as primary defeats the whole architectural point of the restructure. (Ridge tracing as a *diagnostic visualization* in the workstage to inspect the M_obs field is allowed and useful; as algorithmic input to Phase 3+ it is forbidden.)
-- **Do NOT use a fixed-N scan.** Phase 1 is adaptive — scan until the per-batch verdict-rate (would-be lock-ins + would-be rejections per attributed candidate) falls below `verdict_rate_threshold`, OR hit the N_max safety cap. A baby that hard-codes `for r in range(500)` has misread the brief.
+- **Do NOT use a fixed-N scan.** Phase 1 is adaptive — scan until the three-guard termination condition fires (`batches_in_pass ≥ min_batches_before_stop` AND `eligible_fraction ≥ min_eligible_fraction` AND `batch_verdict_rate < verdict_rate_threshold`), OR hit the N_max safety cap. A baby that hard-codes `for r in range(500)` has misread the brief. A baby that drops the eligible-subset filter or any of the three guards has misread the Doppler audit-fix rationale (Critical 1 in commit forthcoming).
 - **Do NOT re-introduce a geometric cluster detector** for adaptive-scan termination. An earlier brief draft specified one; it was removed because M_obs's monotonic accumulation produces ghost clusters from rejected leaves that the detector cannot distinguish from genuine unexplained mass. Verdict-rate is ghost-free; do not regress.
 - **Do NOT use one-shot cone reach.** Axonal growth advances step-by-step (`step_length` per step), confirming a glimpse at each step and re-blending its direction with species curvature priors. A baby that shoots a single cone from each anchor and absorbs everything inside has rebuilt the cone-shot reacher the restructure explicitly removed. Step-by-step is the load-bearing primitive; without it, the algorithm can't follow real branch curvature.
 - Do NOT use MST closure as a connectivity guarantee. Connectivity must emerge from genuine mutual-recognition handshakes (Phase 3b). If you can't get to one connected component without MST, surface the gap and ratify it OR diagnose what's failing.
