@@ -90,6 +90,13 @@ botanica/
 # .laz → .ply preview conversion cache lives in arborist/_cache/. Both
 # regenerable; never committed.
 arborist/state/
+# EXCEPT the hand-encoded species priors files — load-bearing artifacts
+# per Project: Li'l Vera Cycle 1 rev. 2 (2026-05-20). Future species
+# onboarding follows the same hand-encode → run → refine cycle.
+!arborist/state/
+!arborist/state/*/
+arborist/state/*/*
+!arborist/state/*/botanical-priors.json
 arborist/_cache/
 arborist/.venv/
 

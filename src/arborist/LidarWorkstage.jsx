@@ -225,6 +225,112 @@ function MemoryHeatPoints({ nodes, channel = 'rigsSeen', visible = true, opacity
 }
 
 
+// ── Project: Li'l Vera Cycle 1 rev. 2 — N.3.0 First Light (2026-05-20, Penzias). ──
+//
+// 6th alignment-oracle layer. Renders the rev. 2 apparatus output:
+//   • candidates as colour-coded points (combined_confidence / prior_likelihood
+//     / classification / geometric_confidence)
+//   • tip anchors as small instanced spheres (orange-gold #f0a040)
+// Lives alongside the 5th layer ("Li'l Vera v1 baseline" — cyan-magenta
+// CylinderSkeleton); both visible simultaneously so the operator can
+// compare rev. 1 voxel-graph vs rev. 2 species-conditioned classification.
+const VERA2_CHANNELS = [
+  'combined_confidence',
+  'prior_likelihood',
+  'geometric_confidence',
+  'classification',
+]
+const VERA2_CLASS_COLORS = {
+  'noise':           [0.30, 0.30, 0.35],
+  'linear-interior': [0.94, 0.62, 0.25],  // orange-gold
+  'junction':        [0.85, 0.30, 0.45],  // crimson — bimodal joints
+  'tip':             [1.00, 0.85, 0.30],  // bright gold
+  'sheet':           [0.45, 0.45, 0.65],
+  'unclassified':    [0.25, 0.25, 0.25],
+}
+function teal_to_gold(t) {
+  // Orange-gold (#f0a040) ↔ deep-teal (#208070) ramp for prior-likelihood
+  // / combined-confidence channels. t∈[0,1]; t=0 → teal, t=1 → gold.
+  const t1 = Math.max(0, Math.min(1, t))
+  const teal = [0.125, 0.502, 0.439]   // #208070
+  const gold = [0.941, 0.627, 0.251]   // #f0a040
+  return [
+    teal[0] + (gold[0] - teal[0]) * t1,
+    teal[1] + (gold[1] - teal[1]) * t1,
+    teal[2] + (gold[2] - teal[2]) * t1,
+  ]
+}
+function VeraV2Candidates({ candidates, channel = 'combined_confidence',
+                            visible = true, opacity = 0.85, pointSize = 0.06,
+                            confidenceFloor = 0.0 }) {
+  const geom = useMemo(() => {
+    if (!candidates || candidates.length === 0) return null
+    // Filter for visualization clarity — candidates below confidenceFloor
+    // are hidden (operator can dial the floor to see the discriminator in
+    // action: at floor=0 everything renders, at floor=0.3 only the
+    // species-prior-confident structural skeleton remains).
+    const filtered = candidates.filter(c =>
+      channel === 'classification' || ((c[channel] || 0) >= confidenceFloor))
+    const N = filtered.length
+    if (N === 0) return null
+    const positions = new Float32Array(N * 3)
+    const colors = new Float32Array(N * 3)
+    for (let i = 0; i < N; i++) {
+      const c = filtered[i]
+      positions[i * 3 + 0] = c.x
+      positions[i * 3 + 1] = c.z
+      positions[i * 3 + 2] = -c.y
+      let rgb
+      if (channel === 'classification') {
+        rgb = VERA2_CLASS_COLORS[c.classification] || VERA2_CLASS_COLORS.unclassified
+      } else {
+        rgb = teal_to_gold(c[channel] || 0)
+      }
+      colors[i * 3 + 0] = rgb[0]
+      colors[i * 3 + 1] = rgb[1]
+      colors[i * 3 + 2] = rgb[2]
+    }
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    g.setAttribute('color',    new THREE.BufferAttribute(colors,    3))
+    return g
+  }, [candidates, channel, confidenceFloor])
+  if (!visible || !geom) return null
+  return (
+    <points geometry={geom}>
+      <pointsMaterial size={pointSize} sizeAttenuation vertexColors
+        transparent opacity={opacity} />
+    </points>
+  )
+}
+function VeraV2TipAnchors({ anchors, visible = true, opacity = 0.95,
+                            radius = 0.08, color = '#f0a040' }) {
+  const ref = useRef()
+  useEffect(() => {
+    if (!ref.current || !anchors) return
+    const m = new THREE.Matrix4()
+    const s = new THREE.Vector3(radius, radius, radius)
+    const q = new THREE.Quaternion()
+    for (let i = 0; i < anchors.length; i++) {
+      const p = anchors[i].position
+      // Forestry XYZ → Y-up.
+      m.compose(new THREE.Vector3(p[0], p[2], -p[1]), q, s)
+      ref.current.setMatrixAt(i, m)
+    }
+    ref.current.count = anchors.length
+    ref.current.instanceMatrix.needsUpdate = true
+  }, [anchors, radius])
+  if (!visible || !anchors || anchors.length === 0) return null
+  return (
+    <instancedMesh ref={ref} args={[null, null, Math.max(1, anchors.length)]}>
+      <sphereGeometry args={[1, 12, 8]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.4}
+        transparent opacity={opacity} roughness={0.4} />
+    </instancedMesh>
+  )
+}
+
+
 // N.0 Alignment Oracle layer — the published GLB straight off disk, no
 // transform. bake-tree.py applies the Z→Y rotation at bake time so the
 // artifact ships Y-up; runtime three.js consumers (InstancedTrees and this
@@ -360,9 +466,13 @@ export default function LidarWorkstage() {
   const [layers, setLayers]             = useState({
     points: true, cylinders: true, baked: true, bidi: true, lilVera: true,
     veraHeat: false,
+    lilVera2: true, lilVera2Tips: true,
     pointsOpacity: 0.85, cylindersOpacity: 0.75, bakedOpacity: 1.0,
     bidiOpacity: 0.85, lilVeraOpacity: 0.85, veraHeatOpacity: 0.95,
+    lilVera2Opacity: 0.85, lilVera2TipsOpacity: 0.95,
     veraHeatChannel: 'rigsSeen', // 'rigsSeen' | 'medialCount' | 'silhouetteCount' | 'bodyCount' | 'classification'
+    lilVera2Channel: 'combined_confidence', // 'combined_confidence' | 'prior_likelihood' | 'geometric_confidence' | 'classification'
+    lilVera2ConfidenceFloor: 0.0,
   })
   // Phase N.1 — bidirectional-growth spike. Lives alongside QSM extraction
   // (above) so the alignment oracle can show both as overlapped layers for
@@ -391,6 +501,23 @@ export default function LidarWorkstage() {
   const [veraError, setVeraError]       = useState(null)
   const [veraSavedRuns, setVeraSavedRuns] = useState([])
   const [veraSelectedRun, setVeraSelectedRun] = useState('') // '' = current extract
+  // Project: Li'l Vera Cycle 1 rev. 2 — N.3.0 First Light (2026-05-20, Penzias).
+  // Rev. 2 is a fresh build per brief; v1 (above) stays as baseline-
+  // comparison artifact. v2 emits per-candidate classification + tip
+  // anchors (NOT a cylinder graph); the 6th alignment-oracle layer
+  // renders candidates as priors-coloured dots + tip anchors as orange-
+  // gold spheres for direct visual comparison vs v1 cyan-magenta.
+  const [veraV2Params, setVeraV2Params] = useState({
+    N: 50, seed: 42, kOrient: 200, pitch: 0.3,
+    consolidationVoxel: 0.05,
+    tipGeometricMin: 0.12, tipElongationMin: 2.5,
+    tauTipPrior: 0.5, tipNeighborhoodRadius: 0.25, minNbhdCount: 6,
+  })
+  const [veraV2Result, setVeraV2Result] = useState(null)
+  const [veraV2Extracting, setVeraV2Ext] = useState(false)
+  const [veraV2Error, setVeraV2Error]   = useState(null)
+  const [veraV2SavedRuns, setVeraV2SavedRuns] = useState([])
+  const [veraV2SelectedRun, setVeraV2SelectedRun] = useState('')
   // Per-hero baked manifest cache. Keyed by heroSpecies so we don't re-fetch
   // on every selection change within the same species.
   const [heroManifest, setHeroManifest] = useState(null)
@@ -580,6 +707,55 @@ export default function LidarWorkstage() {
     setVeraResult(null); setVeraError(null); setVeraSelectedRun('')
     setVeraSavedRuns([])
     if (selectedTreeId) refreshVeraRuns()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTreeId])
+
+  // Project: Li'l Vera v2 (Penzias, N.3.0) — sibling handlers + saved-runs.
+  async function runVeraV2Extract() {
+    if (!selectedTreeId || veraV2Extracting) return
+    setVeraV2Ext(true); setVeraV2Error(null); setVeraV2SelectedRun('')
+    try {
+      const r = await fetch(`/api/arborist/lidar/specimen/${selectedTreeId}/lil-vera-v2-extract`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ species: activeSpeciesId, ...veraV2Params }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+      setVeraV2Result(d)
+      refreshVeraV2Runs()
+    } catch (err) {
+      setVeraV2Error(String(err.message || err))
+    } finally {
+      setVeraV2Ext(false)
+    }
+  }
+  async function refreshVeraV2Runs() {
+    if (!selectedTreeId) return
+    try {
+      const r = await fetch(`/api/arborist/lidar/specimen/${selectedTreeId}/lil-vera-v2-runs?t=${Date.now()}`)
+      if (!r.ok) return
+      const d = await r.json()
+      setVeraV2SavedRuns(Array.isArray(d.runs) ? d.runs : [])
+    } catch { /* non-fatal */ }
+  }
+  async function loadVeraV2Run(filename) {
+    if (!selectedTreeId || !filename) { setVeraV2SelectedRun(''); return }
+    setVeraV2SelectedRun(filename)
+    try {
+      const r = await fetch(`/api/arborist/lidar/specimen/${selectedTreeId}/lil-vera-v2-run/${encodeURIComponent(filename)}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      setVeraV2Result(d)
+      setVeraV2Error(null)
+    } catch (err) {
+      setVeraV2Error(`Load run failed: ${String(err.message || err)}`)
+    }
+  }
+  useEffect(() => {
+    setVeraV2Result(null); setVeraV2Error(null); setVeraV2SelectedRun('')
+    setVeraV2SavedRuns([])
+    if (selectedTreeId) refreshVeraV2Runs()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTreeId])
 
@@ -793,6 +969,22 @@ export default function LidarWorkstage() {
                   opacity={layers.veraHeatOpacity}
                 />
               )}
+              {veraV2Result && (
+                <VeraV2Candidates
+                  candidates={veraV2Result.candidates}
+                  channel={layers.lilVera2Channel}
+                  visible={layers.lilVera2}
+                  opacity={layers.lilVera2Opacity}
+                  confidenceFloor={layers.lilVera2ConfidenceFloor}
+                />
+              )}
+              {veraV2Result && (
+                <VeraV2TipAnchors
+                  anchors={veraV2Result.tipAnchors}
+                  visible={layers.lilVera2Tips}
+                  opacity={layers.lilVera2TipsOpacity}
+                />
+              )}
               {bakedGlbUrl && (
                 <Suspense fallback={null}>
                   <BakedGlbOracle
@@ -866,6 +1058,47 @@ export default function LidarWorkstage() {
                   </select>
                 </div>
               )}
+              <LayerControl
+                label="Li'l Vera v2"
+                active={layers.lilVera2}
+                onToggle={() => setLayers(l => ({ ...l, lilVera2: !l.lilVera2 }))}
+                opacity={layers.lilVera2Opacity}
+                onOpacity={v => setLayers(l => ({ ...l, lilVera2Opacity: v }))}
+                missing={!veraV2Result}
+                missingHint={veraV2Extracting ? '(extracting…)' : '(hit Li’l Vera v2 → Re-extract)'}
+              />
+              {layers.lilVera2 && veraV2Result && (
+                <div style={{ marginLeft: 6, marginTop: -4, marginBottom: 4 }}>
+                  <select
+                    value={layers.lilVera2Channel}
+                    onChange={e => setLayers(l => ({ ...l, lilVera2Channel: e.target.value }))}
+                    style={{ ...selectStyle, fontSize: 10, padding: '2px 6px', width: 200 }}
+                    title="Which per-candidate channel to colour by (orange-gold ↔ deep-teal ramp)">
+                    <option value="combined_confidence">combined_confidence (gold heat)</option>
+                    <option value="prior_likelihood">prior_likelihood (gold heat)</option>
+                    <option value="geometric_confidence">geometric_confidence (gold heat)</option>
+                    <option value="classification">classification (categorical)</option>
+                  </select>
+                  <div style={{ fontSize: 9, color: '#888', marginTop: 4 }}>
+                    Conf. floor {layers.lilVera2ConfidenceFloor.toFixed(2)}
+                  </div>
+                  <input type="range" min={0} max={1} step={0.02}
+                    value={layers.lilVera2ConfidenceFloor}
+                    onChange={e => setLayers(l => ({ ...l, lilVera2ConfidenceFloor: parseFloat(e.target.value) }))}
+                    disabled={layers.lilVera2Channel === 'classification'}
+                    style={{ width: '100%' }} />
+                </div>
+              )}
+              <LayerControl
+                label="Tip anchors"
+                active={layers.lilVera2Tips}
+                onToggle={() => setLayers(l => ({ ...l, lilVera2Tips: !l.lilVera2Tips }))}
+                opacity={layers.lilVera2TipsOpacity}
+                onOpacity={v => setLayers(l => ({ ...l, lilVera2TipsOpacity: v }))}
+                missing={!veraV2Result || (veraV2Result.tipAnchors || []).length === 0}
+                missingHint={veraV2Result ? '(no anchors emitted — surface as scope drift)'
+                                          : '(extract Li’l Vera v2 first)'}
+              />
               <LayerControl
                 label="Baked GLB"
                 active={layers.baked}
@@ -1046,30 +1279,155 @@ export default function LidarWorkstage() {
                 )}
                 {veraError && <div style={errorTextStyle}>{veraError}</div>}
               </div>
+
+              {/* Project: Li'l Vera Cycle 1 rev. 2 — N.3.0 First Light
+                  (2026-05-20, Penzias). Sibling to v1 above; rev. 2 is a
+                  fresh build with species-conditioned classification +
+                  precision-gated tip detector. v1 remains as baseline
+                  comparison artifact. Operator tunes the six tip-detector
+                  gates + the priors-softness blend; visual gate is the
+                  6th alignment-oracle layer in the viewport. */}
+              <div style={{ marginTop: 18, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ ...sectionHeading, color: '#f0a040', marginBottom: 4 }}>
+                  Li'l Vera v2 · N.3.0 First Light
+                </div>
+                <DraftSlider label="N (rigs)" min={6} max={500} step={1}
+                  value={veraV2Params.N}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, N: Math.round(v) }))} />
+                <DraftSlider label="Seed" min={1} max={9999} step={1}
+                  value={veraV2Params.seed}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, seed: Math.round(v) }))} />
+                <DraftSlider label="K orient" min={50} max={500} step={10}
+                  value={veraV2Params.kOrient}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, kOrient: Math.round(v) }))} />
+                <DraftSlider label="Pitch ratio" min={0.1} max={1.0} step={0.05}
+                  value={veraV2Params.pitch}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, pitch: v }))} />
+                <DraftSlider label="Tip geom min" min={0.05} max={0.6} step={0.01}
+                  value={veraV2Params.tipGeometricMin}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, tipGeometricMin: v }))} />
+                <DraftSlider label="Tip elongation min" min={1.5} max={8.0} step={0.1}
+                  value={veraV2Params.tipElongationMin}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, tipElongationMin: v }))} />
+                <DraftSlider label="τ tip prior" min={0.05} max={0.9} step={0.05}
+                  value={veraV2Params.tauTipPrior}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, tauTipPrior: v }))} />
+                <DraftSlider label="Tip nbhd radius" min={0.05} max={0.50} step={0.01}
+                  value={veraV2Params.tipNeighborhoodRadius}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, tipNeighborhoodRadius: v }))} unit="m" />
+                <DraftSlider label="Min nbhd count" min={3} max={20} step={1}
+                  value={veraV2Params.minNbhdCount}
+                  onCommit={v => setVeraV2Params(p => ({ ...p, minNbhdCount: Math.round(v) }))} />
+                <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                  <button onClick={runVeraV2Extract} disabled={veraV2Extracting || lidarPublishing}
+                    style={{ ...btnPrimaryStyle, background: 'rgba(240,160,64,0.18)',
+                             borderColor: 'rgba(240,160,64,0.5)', color: '#f0c878' }}>
+                    {veraV2Extracting ? 'Observing…' : 'Re-extract (Li’l Vera v2)'}
+                  </button>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 10, color: '#888', letterSpacing: '0.08em',
+                                textTransform: 'uppercase', marginBottom: 4 }}>
+                    Saved runs (v2)
+                  </div>
+                  <select value={veraV2SelectedRun}
+                    onChange={e => loadVeraV2Run(e.target.value)}
+                    style={{ ...selectStyle, width: '100%' }}>
+                    <option value="">— current extract / none —</option>
+                    {veraV2SavedRuns.map(r => (
+                      <option key={r.filename} value={r.filename}>
+                        {r.filename} · N{r.N} · {r.candidates}c · {r.tipAnchorCount}t · {(r.sizeBytes / 1024).toFixed(0)}KB
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {veraV2Result && <VeraV2Diagnostics result={veraV2Result} />}
+                {veraV2Error && <div style={errorTextStyle}>{veraV2Error}</div>}
+              </div>
             </>
           )}
         </section>
 
-        {/* Right pane bottom — statistics */}
-        <section style={{ ...panelStyle, gridRow: 2, borderTop: panelStyle.borderRight, padding: '14px 18px' }}>
-          <h3 style={sectionHeading}>Statistics</h3>
-          {!extractionResult ? (
-            <div style={hintTextStyle}>{extracting ? 'Extracting…' : 'Pick a specimen and extract to see stats.'}</div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, fontSize: 12 }}>
-              <Stat label="Points loaded"   value={extractionResult.stats.pointsRaw.toLocaleString()} />
-              <Stat label="Cylinders"        value={extractionResult.stats.cylinders.toLocaleString()} />
-              <Stat label="Trunk/branch"     value={`${extractionResult.stats.trunkLike} / ${extractionResult.stats.branchLike}`} />
-              <Stat label="Est. lod0 tris"   value={`~${(lod0Tris / 1000).toFixed(1)}K`} />
-              <Stat label="Tips"             value={extractionResult.stats.tips} />
-              <Stat label="Median r"         value={`${(extractionResult.stats.medianRadius * 100).toFixed(1)}cm`} />
-              <Stat label="Server ms"        value={extractionResult.serverMs ?? extractionResult.stats.elapsedMs} />
-              <Stat label="Voxel pts"        value={extractionResult.stats.pointsDownsampled.toLocaleString()} />
-            </div>
-          )}
-        </section>
       </main>
+
+      {/* Full-width bottom strip — statistics. Parked at window bottom so the
+          viewport above gets the whole vertical preview space. */}
+      <footer style={{ ...panelStyle, borderTop: panelStyle.borderRight, padding: '8px 18px', flex: '0 0 auto' }}>
+        {!extractionResult ? (
+          <div style={{ ...hintTextStyle, fontSize: 11 }}>{extracting ? 'Extracting…' : 'Pick a specimen and extract to see stats.'}</div>
+        ) : (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 18px', fontSize: 11, alignItems: 'baseline' }}>
+            <InlineStat label="Points loaded"  value={extractionResult.stats.pointsRaw.toLocaleString()} />
+            <InlineStat label="Cylinders"       value={extractionResult.stats.cylinders.toLocaleString()} />
+            <InlineStat label="Trunk/branch"    value={`${extractionResult.stats.trunkLike} / ${extractionResult.stats.branchLike}`} />
+            <InlineStat label="Est. lod0 tris"  value={`~${(lod0Tris / 1000).toFixed(1)}K`} />
+            <InlineStat label="Tips"            value={extractionResult.stats.tips} />
+            <InlineStat label="Median r"        value={`${(extractionResult.stats.medianRadius * 100).toFixed(1)}cm`} />
+            <InlineStat label="Server ms"       value={extractionResult.serverMs ?? extractionResult.stats.elapsedMs} />
+            <InlineStat label="Voxel pts"       value={extractionResult.stats.pointsDownsampled.toLocaleString()} />
+          </div>
+        )}
+      </footer>
     </div>
+  )
+}
+
+function VeraV2Diagnostics({ result }) {
+  const stats = result.stats || {}
+  const pass1 = (result.perPassDiagnostics || [])[0] || {}
+  const fr = stats.classFractionsOfStructural || {}
+  const ef = stats.expectedFractions || {}
+  const rejection = pass1.tipRejectionLog || {}
+  const fmt = v => (v === null || v === undefined ? '—' : (typeof v === 'number' ? (v < 1 ? v.toFixed(3) : v.toLocaleString()) : v))
+  const pct = v => (v === null || v === undefined ? '—' : `${(v * 100).toFixed(1)}%`)
+  const compare = (label, raw, exp) => {
+    const ok = raw != null && exp != null && Math.abs(raw - exp) < 0.15
+    return (
+      <tr><td style={{ color: '#888', paddingRight: 10 }}>{label}</td>
+        <td style={{ color: ok ? '#6acf6a' : '#cf8a3a', fontVariantNumeric: 'tabular-nums' }}>{pct(raw)}</td>
+        <td style={{ color: '#666', paddingLeft: 10 }}>exp {pct(exp)}</td></tr>
+    )
+  }
+  return (
+    <div style={{ marginTop: 10, padding: 8, background: 'rgba(240,160,64,0.04)',
+                  border: '1px solid rgba(240,160,64,0.15)', borderRadius: 4 }}>
+      <div style={{ fontSize: 10, color: '#f0a040', letterSpacing: '0.08em',
+                    textTransform: 'uppercase', marginBottom: 6 }}>
+        N.3.0 acceptance diagnostics
+      </div>
+      <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>
+        N{stats.rigs} · {fmt(stats.candidates)} candidates · {fmt(stats.tipAnchorCount)} tip anchors · {fmt(stats.elapsedMs)}ms
+      </div>
+      <table style={{ fontSize: 10, color: '#aaa', borderCollapse: 'collapse' }}>
+        <tbody>
+          {compare('linear-interior', fr['linear-interior'], ef['linear-interior'])}
+          {compare('junction',        fr['junction'],        ef['junction'])}
+          {compare('tip',             fr['tip'],             ef['tip'])}
+        </tbody>
+      </table>
+      <div style={{ fontSize: 10, color: '#888', marginTop: 6 }}>
+        Trunk verticality {(stats.trunkVerticalityDeg || 0).toFixed(2)}° · inlier frac {(stats.trunkInlierFraction || 0).toFixed(2)}
+      </div>
+      <div style={{ fontSize: 10, color: '#888', marginTop: 6 }}>
+        Tip rejection breakdown: class≠tip {rejection.classNotTip}, geom &lt; min {rejection.geomConfBelow},
+        nbhd &lt; min {rejection.nbhdTooSmall}, elong &lt; min {rejection.elongationBelow},
+        taper ≮ 0 {rejection.taperNotNegative}, prior &lt; τ {rejection.priorTipBelow}
+      </div>
+      {result.savedTo && (
+        <div style={{ fontSize: 10, color: '#666', marginTop: 4 }}>
+          → {result.savedTo} · priorsHash {result.hyperparams?.priorsHash?.slice(0, 8)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InlineStat({ label, value }) {
+  return (
+    <span style={{ whiteSpace: 'nowrap' }}>
+      <span style={{ color: '#888', letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: 10 }}>{label}</span>
+      <span style={{ color: '#e8e8e8', marginLeft: 6, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+    </span>
   )
 }
 

@@ -663,6 +663,133 @@ const server = createServer(async (req, res) => {
       return jsonRes(res, 200, parsed)
     }
 
+    // POST /lidar/specimen/:treeId/lil-vera-v2-extract
+    // Project: Li'l Vera Cycle 1 rev. 2, Stage N.3.0 (2026-05-20, Penzias).
+    // Body { species, N, kOrient, pitch, voxelSize?, consolidationVoxel?,
+    //   imageW?, imageH?, splatRadius?, seed?, tipGeometricMin?,
+    //   tipElongationMin?, tauTipPrior?, tipNeighborhoodRadius?,
+    //   minNbhdCount?, workers? }. Shells lil_vera_v2.py — Posture-B
+    // observational skeleton apparatus conditioned on species priors.
+    // Output is per-candidate classification + tipAnchors + diagnostics
+    // (NOT the cylinder-graph shape; the 6th alignment-oracle layer
+    // renders candidates as priors-coloured dots + tip anchors as orange-
+    // gold spheres). Disk-persisted to
+    // arborist/state/lil-vera-v2/<treeId>/run-*.json by the CLI; HTTP
+    // response includes savedTo for the operator. v1 endpoints
+    // (/lil-vera-extract) remain untouched.
+    if (req.method === 'POST' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/lil-vera-v2-extract$/))) {
+      const treeId = m[1]
+      const body = await readBody(req)
+      const species = body.species
+      if (!species) return jsonRes(res, 400, { error: 'missing species in body' })
+      if (!readSpeciesDecl()[species]) {
+        return jsonRes(res, 404, { error: 'unknown species', species })
+      }
+      const lazPath = specimenLazPath(treeId)
+      if (!existsSync(lazPath)) {
+        return jsonRes(res, 404, { error: 'specimen not on disk', treeId, lazPath })
+      }
+      const N         = Number(body.N         ?? 50)
+      const kOrient   = Number(body.kOrient   ?? 200)
+      const pitch     = Number(body.pitch     ?? 0.3)
+      const voxelSize = Number(body.voxelSize ?? 0.03)
+      const consolVox = Number(body.consolidationVoxel ?? 0.05)
+      const imageW    = Number(body.imageW    ?? 384)
+      const imageH    = Number(body.imageH    ?? 288)
+      const splatRad  = Number(body.splatRadius ?? 1)
+      const seed      = Number(body.seed      ?? 42)
+      const tipGeoMin = Number(body.tipGeometricMin       ?? 0.12)
+      const tipElong  = Number(body.tipElongationMin      ?? 2.5)
+      const tauTip    = Number(body.tauTipPrior           ?? 0.5)
+      const tipNbR    = Number(body.tipNeighborhoodRadius ?? 0.25)
+      const minNbhd   = Number(body.minNbhdCount          ?? 6)
+      const workers   = Number(body.workers   ?? 0)
+      const t0 = Date.now()
+      try {
+        const script = join(__dirname, 'lil_vera_v2.py')
+        const { stdout } = await new Promise((resolve, reject) => {
+          execFile(VENV_PYTHON, [
+            script,
+            `--treeId=${treeId}`,
+            `--species=${species}`,
+            `--N=${N}`,
+            `--seed=${seed}`,
+            `--kOrient=${kOrient}`,
+            `--pitch=${pitch}`,
+            `--voxelSize=${voxelSize}`,
+            `--consolidationVoxel=${consolVox}`,
+            `--imageW=${imageW}`,
+            `--imageH=${imageH}`,
+            `--splatRadius=${splatRad}`,
+            `--tipGeometricMin=${tipGeoMin}`,
+            `--tipElongationMin=${tipElong}`,
+            `--tauTipPrior=${tauTip}`,
+            `--tipNeighborhoodRadius=${tipNbR}`,
+            `--minNbhdCount=${minNbhd}`,
+            `--workers=${workers}`,
+          ], { maxBuffer: 128 * 1024 * 1024 }, (err, so, se) => {
+            if (err) { err.stdout = so; err.stderr = se; return reject(err) }
+            resolve({ stdout: so, stderr: se })
+          })
+        })
+        const result = JSON.parse(stdout)
+        result.serverMs = Date.now() - t0
+        return jsonRes(res, 200, result)
+      } catch (err) {
+        return jsonRes(res, 500, {
+          error: 'lil-vera-v2-extract failed',
+          treeId,
+          stderr: String(err.stderr || err.message).slice(0, 4000),
+          stdout: String(err.stdout || '').slice(0, 1000),
+        })
+      }
+    }
+
+    // GET /lidar/specimen/:treeId/lil-vera-v2-runs
+    // List saved Li'l Vera v2 runs for this specimen (newest first).
+    if (req.method === 'GET' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/lil-vera-v2-runs(\?.*)?$/))) {
+      const treeId = m[1]
+      const dir = join(STATE_DIR, 'lil-vera-v2', treeId)
+      if (!existsSync(dir)) return jsonRes(res, 200, { treeId, runs: [] })
+      const runs = []
+      for (const fname of readdirSync(dir)) {
+        if (!fname.endsWith('.json')) continue
+        try {
+          const fp = join(dir, fname)
+          const st = statSync(fp)
+          const parsed = readJsonOrNull(fp)
+          if (!parsed) continue
+          runs.push({
+            filename: fname,
+            mtime: st.mtimeMs,
+            sizeBytes: st.size,
+            stage: parsed.hyperparams?.stage,
+            N: parsed.hyperparams?.N,
+            speciesId: parsed.speciesId,
+            candidates: parsed.stats?.candidates,
+            tipAnchorCount: parsed.stats?.tipAnchorCount,
+            elapsedMs: parsed.stats?.elapsedMs,
+          })
+        } catch { /* skip unreadable */ }
+      }
+      runs.sort((a, b) => b.mtime - a.mtime)
+      return jsonRes(res, 200, { treeId, runs })
+    }
+
+    // GET /lidar/specimen/:treeId/lil-vera-v2-run/:filename
+    if (req.method === 'GET' && (m = req.url.match(/^\/lidar\/specimen\/([^/]+)\/lil-vera-v2-run\/([^/?]+)(\?.*)?$/))) {
+      const treeId = m[1]
+      const filename = m[2]
+      if (!/^run-[0-9A-Za-z._-]+\.json$/.test(filename)) {
+        return jsonRes(res, 400, { error: 'invalid filename', filename })
+      }
+      const fp = join(STATE_DIR, 'lil-vera-v2', treeId, filename)
+      if (!existsSync(fp)) return jsonRes(res, 404, { error: 'run not found', treeId, filename })
+      const parsed = readJsonOrNull(fp)
+      if (!parsed) return jsonRes(res, 500, { error: 'unreadable run file' })
+      return jsonRes(res, 200, parsed)
+    }
+
     // POST /lidar/specimen/:treeId/publish
     // Phase L Cycle 2 (2026-05-19). Body { species, lookId?, tuneParams?, displayName? }.
     // AWAITED, NOT FIRE-AND-FORGET (per brief). End-to-end pipeline:

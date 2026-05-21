@@ -1,0 +1,131 @@
+{
+  "_comment": [
+    "Project: Li'l Vera Cycle 1, Stage N.3.0 — hand-encoded Sugar Maple",
+    "(Acer saccharum) species-conditioned spatial priors. Hand-encoded by",
+    "Penzias from forestry references (Hallé & Oldeman 1970 Rauh's-model",
+    "architecture; USDA NRCS plant guide; published DBH-height-age",
+    "relationships for northeastern hardwoods). Cycle 2+ statistical",
+    "aggregation refines these values from real LiDAR specimens.",
+    "",
+    "Interpretation: every key/value here is a load-bearing INPUT to the",
+    "lil_vera_v2.py classifier (Phase 2) + tip detector (Phase 3a) + axonal",
+    "growth (Phase 3b, N.3.2+). The likelihood function in priors.likelihood",
+    "consumes (heightFrac, radialDist, inferredRadius, localAxis) and emits",
+    "[0,1]. See arborist/lil_vera_v2.py docstring + brief §Species priors",
+    "file specification for the full formula.",
+    "",
+    "Naming convention note (intentional drift): `dbhRange` keeps the",
+    "forestry-conventional 'DBH' (Diameter at Breast Height) field name for",
+    "grep-ability with USDA/FIA datasets, but VALUES are TRUNK RADIUS (not",
+    "diameter) to be consistent with every other r-suffixed field in this",
+    "schema. Botanically-literate readers: yes, this is intentional."
+  ],
+  "speciesId": "acer_saccharum",
+  "architectureMode": "rauh",
+  "matureHeightRange": [12.0, 35.0],
+  "dbhRange": [0.05, 1.00],
+  "crownWHRatio": [0.5, 0.9],
+
+  "expectedRadiusByPosition": {
+    "_comment": "Position-dependent expected trunk/branch radius envelope. Looked up via scipy.interpolate.LinearNDInterpolator on (heightFrac, radialDist) → {rMin, rMax, rMode}, with NearestNDInterpolator fallback for off-hull queries (load-bearing — see brief). Values are TRUNK / BRANCH RADIUS in meters at that tree-frame position.",
+    "type": "piecewise2d-delaunay",
+    "samples": [
+      {"heightFrac": 0.00, "radialDist": 0.00, "rMin": 0.150, "rMax": 0.500, "rMode": 0.300},
+      {"heightFrac": 0.05, "radialDist": 0.00, "rMin": 0.140, "rMax": 0.480, "rMode": 0.290},
+      {"heightFrac": 0.10, "radialDist": 0.00, "rMin": 0.130, "rMax": 0.450, "rMode": 0.280},
+      {"heightFrac": 0.20, "radialDist": 0.00, "rMin": 0.115, "rMax": 0.400, "rMode": 0.250},
+      {"heightFrac": 0.30, "radialDist": 0.00, "rMin": 0.100, "rMax": 0.350, "rMode": 0.220},
+      {"heightFrac": 0.30, "radialDist": 0.50, "rMin": 0.050, "rMax": 0.150, "rMode": 0.090},
+      {"heightFrac": 0.30, "radialDist": 2.00, "rMin": 0.030, "rMax": 0.120, "rMode": 0.060},
+      {"heightFrac": 0.50, "radialDist": 0.00, "rMin": 0.080, "rMax": 0.280, "rMode": 0.170},
+      {"heightFrac": 0.50, "radialDist": 1.00, "rMin": 0.035, "rMax": 0.140, "rMode": 0.080},
+      {"heightFrac": 0.50, "radialDist": 2.50, "rMin": 0.012, "rMax": 0.060, "rMode": 0.028},
+      {"heightFrac": 0.50, "radialDist": 4.00, "rMin": 0.005, "rMax": 0.040, "rMode": 0.015},
+      {"heightFrac": 0.70, "radialDist": 0.00, "rMin": 0.055, "rMax": 0.200, "rMode": 0.110},
+      {"heightFrac": 0.70, "radialDist": 1.50, "rMin": 0.020, "rMax": 0.080, "rMode": 0.040},
+      {"heightFrac": 0.70, "radialDist": 3.00, "rMin": 0.006, "rMax": 0.030, "rMode": 0.014},
+      {"heightFrac": 0.80, "radialDist": 0.00, "rMin": 0.040, "rMax": 0.150, "rMode": 0.080},
+      {"heightFrac": 0.80, "radialDist": 1.00, "rMin": 0.010, "rMax": 0.050, "rMode": 0.022},
+      {"heightFrac": 0.80, "radialDist": 3.00, "rMin": 0.001, "rMax": 0.010, "rMode": 0.003},
+      {"heightFrac": 0.90, "radialDist": 0.00, "rMin": 0.025, "rMax": 0.100, "rMode": 0.050},
+      {"heightFrac": 0.90, "radialDist": 2.00, "rMin": 0.001, "rMax": 0.008, "rMode": 0.003},
+      {"heightFrac": 1.00, "radialDist": 0.00, "rMin": 0.005, "rMax": 0.040, "rMode": 0.015},
+      {"heightFrac": 1.00, "radialDist": 5.00, "rMin": 0.000, "rMax": 0.005, "rMode": 0.000}
+    ]
+  },
+
+  "branchAngleDistribution": {
+    "_comment": "Sugar Maple Rauh's-model strong-leader topology. Scaffolds emerge between 25-75° from vertical with a modal ~50°. Never near-horizontal (≥85° is in hardRejections).",
+    "fromVertical": {"min": 25.0, "max": 75.0, "modal": 50.0, "stdDeg": 12.0}
+  },
+
+  "expectedLocalDirection": {
+    "_comment": "Position-dependent expected branch tangent. Consumed by Phase 3b axonal growth (N.3.2+) to steer prior_direction at each probe step. Reconstruction: polar θ from this table; azimuthal radial-outward direction from probe-position vs trunk-axis (well-defined unless probe is within axialFallbackRadius of the axis, in which case prior collapses to vertical steer + inherits azimuth from current_direction). See brief §Species priors file specification.",
+    "type": "piecewise2d-delaunay",
+    "axialFallbackRadius": 0.05,
+    "samples": [
+      {"heightFrac": 0.00, "radialDist": 0.00, "angleFromVertical":  0.0, "stdDeg":  5.0},
+      {"heightFrac": 0.20, "radialDist": 0.00, "angleFromVertical":  3.0, "stdDeg":  6.0},
+      {"heightFrac": 0.30, "radialDist": 0.00, "angleFromVertical":  5.0, "stdDeg":  8.0},
+      {"heightFrac": 0.30, "radialDist": 1.50, "angleFromVertical": 45.0, "stdDeg": 12.0},
+      {"heightFrac": 0.50, "radialDist": 0.00, "angleFromVertical": 10.0, "stdDeg":  8.0},
+      {"heightFrac": 0.50, "radialDist": 1.00, "angleFromVertical": 35.0, "stdDeg": 12.0},
+      {"heightFrac": 0.50, "radialDist": 2.50, "angleFromVertical": 55.0, "stdDeg": 14.0},
+      {"heightFrac": 0.50, "radialDist": 4.00, "angleFromVertical": 65.0, "stdDeg": 15.0},
+      {"heightFrac": 0.70, "radialDist": 0.00, "angleFromVertical": 15.0, "stdDeg": 10.0},
+      {"heightFrac": 0.70, "radialDist": 2.00, "angleFromVertical": 50.0, "stdDeg": 14.0},
+      {"heightFrac": 0.80, "radialDist": 0.00, "angleFromVertical": 20.0, "stdDeg": 12.0},
+      {"heightFrac": 0.80, "radialDist": 2.00, "angleFromVertical": 55.0, "stdDeg": 15.0},
+      {"heightFrac": 0.80, "radialDist": 4.00, "angleFromVertical": 70.0, "stdDeg": 12.0},
+      {"heightFrac": 1.00, "radialDist": 0.00, "angleFromVertical": 25.0, "stdDeg": 15.0},
+      {"heightFrac": 1.00, "radialDist": 3.00, "angleFromVertical": 75.0, "stdDeg": 10.0}
+    ]
+  },
+
+  "murraysLawJointTolerance": 0.15,
+  "junctionMinBranchingDensity": 0.1,
+
+  "branchingDensityByHeight": {
+    "_comment": "Expected branches-per-meter as a function of heightFrac. Linear-interp between samples. Below junctionMinBranchingDensity, junction classifications are zeroed (no junction possible where the species has no branching at this height).",
+    "type": "piecewise1d",
+    "samples": [
+      {"heightFrac": 0.00, "branchesPerMeter":  0.0},
+      {"heightFrac": 0.15, "branchesPerMeter":  0.1},
+      {"heightFrac": 0.25, "branchesPerMeter":  0.6},
+      {"heightFrac": 0.40, "branchesPerMeter":  1.8},
+      {"heightFrac": 0.55, "branchesPerMeter":  3.5},
+      {"heightFrac": 0.70, "branchesPerMeter":  6.0},
+      {"heightFrac": 0.85, "branchesPerMeter":  9.0},
+      {"heightFrac": 1.00, "branchesPerMeter": 12.0}
+    ]
+  },
+
+  "expectedJunctionFraction": 0.08,
+  "expectedTipFraction": 0.30,
+  "expectedLinearInteriorFraction": 0.62,
+
+  "expectedTipRadius": {
+    "_comment": "Tip-class-specific radius envelope. A branch terminus is by definition thin (Sugar Maple twig diameters ~2-12mm). Used in priors.likelihood when geometric_class == 'tip' to reject thick trunk-base spurs that pass the position-conditioned envelope but aren't biologically tips.",
+    "min": 0.001,
+    "max": 0.020,
+    "modal": 0.005
+  },
+
+  "expectedTipHeightFrac": {
+    "_comment": "Tips live in the upper-canopy region of the tree, not at the trunk base. Soft prior: Sugar Maple terminal twigs concentrate in the upper ~50% of the tree.",
+    "modal": 0.80,
+    "stdDeg": 0.20
+  },
+
+  "hardRejections": {
+    "_comment": "Hard impossibilities — likelihood snaps to 0 regardless of other channels. Soft priors (down-weights) are handled by the gaussian-bell smoothness in priors.likelihood; hard rejections are reserved for things botanically impossible.",
+    "radiusAboveAtHeight": [
+      {"heightFrac": 0.70, "radialDistAbove": 3.0, "radiusAbove": 0.05},
+      {"heightFrac": 0.85, "radialDistAbove": 2.0, "radiusAbove": 0.03},
+      {"heightFrac": 0.95, "radialDistAbove": 1.0, "radiusAbove": 0.015}
+    ],
+    "branchAngleSteeperThanDeg": 85.0
+  },
+
+  "softnessScaling": 1.0
+}
