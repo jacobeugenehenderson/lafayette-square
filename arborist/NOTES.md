@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-05-20 evening — Project: Li'l Vera — rev. 2 restructured + dispatched (post-audit chain)
+
+**Brief at `scratch/phase-n2-lil-vera-observational-skeleton-brief.md` is dispatched.** Six commits since rev. 2 baseline; four independent cold audits + a substantial pre-dispatch restructure. Implementing baby picks own name and starts at N.3.0.
+
+The shape of the algorithm after restructure (changes from the rev. 2 PM pivot earlier today):
+
+- **Tips-first, middle-out, adaptive-scan, growth-shaped.** Operator review of the rev. 2 PM draft concluded the algorithm as written still "made decisions too fast" — leaning on Hessian ridge tracing as the primary structure-extractor, classifications committed eagerly per pass, fixed-N spiral. The restructure replaced ridge tracing with precision-gated tip detection (six-gate conjunction) + RANSAC trunk as the two confident anchor sets, then made the neuronal reacher the *primary* extraction primitive (not just connectivity-completer): bidirectional axonal *growth* — step by step, not cone-shot — from anchors through M_obs with species curvature priors steering each step; handshake fires when opposing probes meet with directional agreement. Ridge tracing is an explicit non-goal now.
+
+- **Adaptive scan via verdict-rate, not geometric cluster detector.** First-pass restructure spec'd a geometric cluster detector ("scan until no blobby long-pointy mass") which suffered an M_obs ghost bug (monotonic accumulation preserves rejected-leaf signatures forever → detector demands more scanning eternally). Replaced with a verdict-rate stopping criterion: scan terminates when the *eligible subset* (source points with rigs_seen ≥ K_rigs_min) has a per-batch would-be-verdict change rate below `verdict_rate_threshold` (default 0.005). Three guards must all fire to terminate: `batches_in_pass ≥ min_batches_before_stop` (default 4) AND `eligible_fraction ≥ min_eligible_fraction` (default 0.30) AND `batch_verdict_rate < verdict_rate_threshold`. Direct behavioral measurement of "is more observation changing the apparatus's mind?" — ghost-free.
+
+- **Heartbeat as Std Req #10.** Long runs (1–2 hours expected) need an operator-readable progress signal so `caffeinate`-running operators can distinguish "still working" from "hung" via `tail -f`. Universal floor format `[pass N | phase=<tag> | |P|=X | splines=Y | elapsed mm:ss]` plus phase-specific extras for each of: scan, classify, tip-detect, grow, eliminate, pipe-model, validate. Output file size negligible (~400 KB worst case).
+
+Audit chain that hardened the brief: **Curie** (`036cfdf`, first cold audit — caught 5 critical spec gaps + ~6 minor in the rev. 2 PM draft). **Fraunhofer** (`9ac8387`, second cold audit — caught 3 criticals + 7 importants in the polished draft, including the Phase 4 Posture-B carve-out gap and the candidate→source-point attribution ambiguity). **Restructure** (`b307541`, pre-dispatch reframe — tips-first + axonal growth + adaptive scan + ridge-tracing removal). **Bessel** (`25e08f3` + `2e7cc2b`, third cold audit on the restructured brief — caught 4 criticals + 5 importants including the missing `tip_geometric_min`/`min_nbhd_count` hyperparameters, the `expectedLocalDirection` 1D→3D reconstruction underdetermination, the stale `from_handshake`/`from_taper_only`/`orphan` fields missing from the output schema, and the Phase 5 stale-acceptance-criterion back-reference; also resolved the cluster-detector → verdict-rate replacement and the heartbeat spec). **Doppler** (`bdd66c1`, narrow audit on the verdict-rate machinery authored in one unaudited commit — caught the early-batch K_rigs_min suppression bug that would have terminated leafy-specimen scans at ~100 rigs, plus the denominator ambiguity between `|attributed_candidates|` and `N_batch_candidates_attributed`, plus the implicit per-point `prev_would_verdict` state).
+
+What every audit confirmed clean: Posture B's five carve-outs (rasterizer-masked input, bbox scalars, RANSAC trunk axis, Phase 4 mask preparation, final validation); the three load-bearing primitives' load-bearingness (iteration + elimination, species priors, neuronal mutual recognition — now extraction-primary); determinism story (`--seed` covers RANSAC + stochastic probe init); the `ε_attribution` nearest-candidate bridge between Phase 2's per-candidate scalars and Phase 4's per-source-point elimination.
+
+**Dispatch state:** Brief is settled. Implementing baby reads `scratch/phase-n2-lil-vera-observational-skeleton-brief.md` cold, picks their own name, starts at N.3.0 (classifier + priors + tip-detector precision validation on a static N=50 dataset). Five stages with stop points; no batching. Memory [[project_lidar_as_training_data]] refresh deferred until N.3.2 outcome — wait to see if the apparatus actually pops before committing the doctrinal language to the rephrased shape.
+
+What stays unchanged from rev. 1: Tycho's `lil_vera.py` module, apparatus base, tomography primitives, 5th alignment-oracle layer ("Li'l Vera v1 baseline"), heat layer, Saved Runs picker, serve.js v1 endpoints. Rev. 2 builds parallel infrastructure in a new module + new endpoints + new 6th alignment-oracle layer (orange-gold / deep-teal). v1 stands as the baseline-comparison artifact.
+
+---
+
 ## 2026-05-20 PM — Project: Li'l Vera — rev. 2 pivot — adding the missing iteration loop
 
 **Tycho shipped rev. 1 across `604dfed` / `de00a30` / `0d9102d`** (Stages N.2.0 / N.2.1 / N.2.2). Apparatus base + multi-rig observation + orientation tomography + ridge tracing + axonal glimpse-reach + taper projection all in place. Visual gate review surfaced a structural gap: **the canopy is a wireframe ball; the apparatus has no mechanism to clear it.**
