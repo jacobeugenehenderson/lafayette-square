@@ -23,6 +23,26 @@ import { useGLTF } from '@react-three/drei'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import * as THREE from 'three'
 
+// Dry-swap experiment (2026-05-21): replace vendor leaf-card diffuse with
+// our LeafSet010-derived single Sugar Maple leaf. Module-scoped so every
+// Skeleton instance shares one GPU texture. flipY=false matches glTF UV
+// convention (vendor cards' UV-spans the full [0,1] so the leaf shows
+// once per card; see articulated-blank plan in NOTES.md).
+const SUGAR_MAPLE_LEAF_URL = `${import.meta.env.BASE_URL}textures/leaves/sugar_maple_single.png`
+let _sugarMapleLeafTex = null
+function getSugarMapleLeafTex() {
+  if (_sugarMapleLeafTex) return _sugarMapleLeafTex
+  _sugarMapleLeafTex = new THREE.TextureLoader().load(SUGAR_MAPLE_LEAF_URL, (t) => {
+    t.flipY = false
+    t.colorSpace = THREE.SRGBColorSpace
+    t.anisotropy = 8
+    t.needsUpdate = true
+  })
+  _sugarMapleLeafTex.flipY = false
+  _sugarMapleLeafTex.colorSpace = THREE.SRGBColorSpace
+  return _sugarMapleLeafTex
+}
+
 // Realistic tree heights (meters) per category — yardstick highlights this band.
 const CATEGORY_TARGET_HEIGHT = {
   broadleaf: 12,
@@ -609,11 +629,27 @@ function Skeleton({
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
-      const isLeaf = o.geometry?.userData?.atlasKind === 'leaf'
+      const atlasIsLeaf = o.geometry?.userData?.atlasKind === 'leaf'
       const mats = Array.isArray(o.material) ? o.material : [o.material]
       for (const m of mats) {
         if (!m) continue
+        // Name-based fallback for vendor GLBs that weren't stamped by
+        // buildSourceGLB (e.g. the maple-pack purchase): treat any
+        // material whose name contains "leaf" as leaf-side.
+        const isLeaf = atlasIsLeaf || /leaf/i.test(m.name || '')
         if (m.vertexColors) { m.vertexColors = false; m.needsUpdate = true }
+        // Dry swap (2026-05-21): replace vendor leaf diffuse with our
+        // Sugar Maple single-leaf card. Vendor UV-spans [0,1] per card,
+        // so a one-leaf-centered texture renders one leaf per card.
+        // Idempotent via userData.__leafSwapped gate.
+        if (isLeaf && !m.userData.__leafSwapped) {
+          m.map = getSugarMapleLeafTex()
+          m.transparent = true
+          m.alphaTest = 0.5
+          m.side = THREE.DoubleSide
+          m.userData.__leafSwapped = true
+          m.needsUpdate = true
+        }
         if (m.userData.__windPatched) continue
         const prev = m.onBeforeCompile
         m.onBeforeCompile = (shader, renderer) => {
