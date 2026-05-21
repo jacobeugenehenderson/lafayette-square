@@ -4,6 +4,121 @@
 
 ---
 
+## 2026-05-20 late night — Project: Li'l Vera — SHELVED at N.3.0 gate (operator call)
+
+**Operator-called shelve at the N.3.0 stop point. Implementing baby Penzias delivered the N.3.0 deliverable; tip-detector emitted zero anchors on both dev specimens (10191, 00070); operator concluded the cycle is not on its way to working and the proposed architectural fix (drop tomography-class gate) would be a re-think rather than an incremental patch. Penzias dismissed cleanly with thanks; cycle stops here. Procedural runway (Phase G.1) becomes the active arc for v1.5 ship.**
+
+This entry is intentionally exhaustive because the spike is being shelved with deferred re-entry — months from now the next coordinator + baby need to be able to reconstruct exactly what was tried, what worked, what didn't, what was *never tested*, what the apparatus base looks like, and what would have to change to justify trying again. Treat this as the handoff document for re-entry.
+
+### What Penzias actually built (commit `2c4f61a`, 5 files, +2148 / -18)
+
+- **`arborist/lil_vera_v2.py`** (~1507 LOC, fresh module — does NOT import from Tycho's `lil_vera.py`): apparatus base (spiral rig generator + per-rig 3-camera-at-120° tripod + silhouette/medial via skimage + within-rig stereo correspondence + multi-rig consensus deposit + candidate-density field), species-conditioned Phase 2 classifier (deferred-commitment tagging emitting `geometric_class` / `geometric_confidence` / `prior_likelihood` / `combined_confidence` / `local_axis` per candidate), Phase 3a precision-gated tip detector (six-gate conjunction as brief-spec'd), Std Req #10 heartbeat (universal floor format with phase-specific extras), `--workers` flag for parallelism with `--workers=1` determinism-verified.
+- **`arborist/state/acer_saccharum/botanical-priors.json`** (131 lines): hand-encoded Sugar Maple priors per brief schema — ~20 `expectedRadiusByPosition` samples covering trunk/branch/twig regimes; 15 `expectedLocalDirection` samples (the tangent field added during the Bessel-fix pass) covering near-axis through outer-canopy direction priors; `branchingDensityByHeight`; `expectedJunctionFraction`/`expectedTipFraction`/`expectedLinearInteriorFraction`; `hardRejections.radiusAboveAtHeight` + `branchAngleSteeperThanDeg`; `softnessScaling` default. Penzias also added two schema fields not in the brief — `expectedTipRadius` + `expectedTipHeightFrac` — to prevent thick trunk-base spurs from passing tip plausibility (flagged for ratify in their status; never ratified before shelve).
+- **`arborist/serve.js`** (+127 LOC): three new endpoints at `/lidar/specimen/:treeId/lil-vera-v2-extract` (POST), `/lidar/specimen/:treeId/lil-vera-v2-runs` (GET), `/lidar/specimen/:treeId/lil-vera-v2-run/:filename` (GET) — same shape as Tycho's v1 endpoints, tolerant of `?t=` cache-busters. v1 endpoints untouched.
+- **`src/arborist/LidarWorkstage.jsx`** (+394 LOC): 6th alignment-oracle layer "Li'l Vera v2" (orange-gold `#f0a040` candidates / deep-teal `#208070` tip anchors — distinct from QSM red-cyan, Bidirectional magenta-yellow, and the existing 5th layer cyan-magenta "Li'l Vera v1 baseline"). New `VeraV2Candidates` (THREE.Points cloud colored by selected channel) + `VeraV2TipAnchors` (instanced spheres) components. Channel selector (combined / prior / geom / classification), confidence-floor slider, v2 tuner subsection exposing all six tip-gate knobs as sliders with brief-spec defaults at slider upper-end, `VeraV2Diagnostics` panel showing classification distribution vs `priors.expected*Fraction` with green-within-±15% row coloring. Saved-runs picker for v2 runs.
+- **`.gitignore`** (+7): exception for the priors file (load-bearing artifact per brief — committed to git).
+
+What stays unchanged from rev. 1 (Tycho's `604dfed` / `de00a30` / `0d9102d`): apparatus base, tomography primitives, 5th alignment-oracle layer ("Li'l Vera v1 baseline" cyan-magenta), heat layer, Saved Runs picker for v1, serve.js v1 endpoints. v2 lives entirely in parallel.
+
+### What worked at the gate (genuine positives, modest)
+
+- **Criterion (b) — visible leaf-mass discrimination — DEMONSTRABLY WORKS.** The priors machinery dimmed 99.86% of geometric-junction-classified candidates (which are dominantly leaf-mass false-junctions per Tycho's 63%-junction rev. 1 failure). The high-confidence subset (combined_confidence > 0.3) lands at 80/20/0 (linear/junction/tip) — the species prior is correctly pulling ambiguous observations toward biologically-sensible answers. In the workstage's `prior` channel visualization, dense leaf-mass regions colored dim and structural skeleton regions colored bright, exactly as the brief predicted. This is real architectural validation: the third inference channel (species priors as input) is a working leaf-discriminator.
+- **The apparatus base ports forward cleanly.** Spiral rig + per-rig stereo + multi-rig consensus deposit + candidate-density field all functional at N=50 in ~66s (well under the <2min budget). The Posture-B discipline held throughout the implementation; source 3D positions only entered via the documented carve-outs.
+- **Heartbeat (Std Req #10) implementation works** — universal floor format printed every phase boundary plus every 30s wall-clock, tail-f-glanceable. The operator-readable progress signal was the right design.
+- **Determinism verified** with `--workers=1` (RANSAC + classifier all reproduced byte-identical output across runs at the same seed).
+- **Schema additions (`expectedTipRadius`, `expectedTipHeightFrac`) and position-conditioned branch-angle prior** were sensible improvements over the brief-as-written. If/when re-entered, these should be codified into the brief schema spec.
+
+### What failed at the gate (the load-bearing finding)
+
+- **Tip detector emits ZERO anchors on both dev specimens at N=50.** Acceptance criterion (c) — operator visually audits tip-anchor set, every anchor sits at the visual end of a real branch — fails by emptiness.
+- **Diagnosis (per Penzias, confirmed by operator's visual):** the six-gate conjunction's gate 1 (`c.classification == 'tip'`) is starving the pipeline. Tomography's "unimodal one-sided" tip-class definition fires too rarely on real LiDAR — raw class fractions land at 27/68/5 (linear/junction/tip) vs the prior's expected 62/8/30. Most real branch tips at N=50 produce noisy tomography distributions that get misclassified as junctions (multimodal) or noise (flat). Gates 2-6 (geometric_confidence, nbhd-count, PCA elongation, taper sign, priors tip-class likelihood) never get evaluated because gate 1 has already filtered the candidate out.
+- **Raw classification distribution fails criterion (a)** (27/68/5 vs target 62/8/30). The high-confidence subset DOES match the expected skew (80/20/0) but the tip count remains stuck at zero even after priors-based filtering, because no candidate has the tomography label 'tip' to begin with.
+- **The operator's broader visual judgment:** the post-N.3.0 point cloud is still "very very busy" — leaf-soup is not visibly clearing in the candidate cloud even though the `prior` channel correctly dims it numerically. Criterion (b) passing the numerical test does not visually translate to "this is on its way to a clean canopy." That gap between numerical-priors-work and visually-clean-canopy is what tipped the shelve decision.
+
+### What was NEVER tested (the load-bearing absence)
+
+Everything past N.3.0 is unbuilt and untested. The shelve loses no validated work because nothing past N.3.0 was ever validated:
+
+- **N.3.1 — adaptive scan via verdict-rate stopping**: the three-guard termination (`batches_in_pass ≥ min_batches_before_stop=4` AND `eligible_fraction ≥ min_eligible_fraction=0.30` AND `batch_verdict_rate < verdict_rate_threshold=0.005`), the per-point `prev_would_verdict` carry-across-batches map, the lightweight Phase 2 + Phase 4-attribution-only inside the scan loop, the `eligible subset` filter that the Doppler audit added to prevent the K_rigs_min suppression bug. None of this was implemented. The verdict-rate machinery was the most-audited piece of the brief (Doppler's narrow fourth audit fixed two criticals + four importants in it) and got zero runtime exercise.
+- **N.3.2 — bidirectional axonal growth from trunk + tip anchors**: the step-by-step probe advancement (not cone-shot), the species-curvature-priors-blend at each step (`curvature_prior_blend` weight, default 0.5), the handshake recognition (proximity AND directional agreement), the M_obs vs M_interp separation (the hallucination safeguard), the `from_handshake` / `from_taper_only` flags. The entire load-bearing extraction primitive — the one the restructure was built around — was never built.
+- **N.3.3 — pipe-model radius accumulation + taper co-determination** — never built.
+- **N.3.4 — Rubin consensus-stability validation** — never built.
+- **Phase 5 multi-component handling + BFS parent assignment + `orphan` flag emission** — never built.
+- **The full output JSON schema with `from_handshake` / `from_taper_only` / `orphan` per-spline flags + extensive `perPassDiagnostics` (verdict-rate curve, eligible-fraction curve, handshake count, stalled-probe count, etc.)** — exists as spec in the brief, no implementation.
+
+The brief itself stands as a complete (and four-times-audited) specification for everything past N.3.0; if re-entry is justified, the implementer would build forward from Penzias's foundation against that spec.
+
+### Why shelved rather than patched-and-continued
+
+The proposed incremental fix (drop gate 1, restore brief-spec defaults, re-run N.3.0) would be the START of a different architecture, not a small patch. The brief's whole tip-detection sub-architecture was anchored on tomography's class taxonomy doing useful work; if it doesn't, the geometric-and-priors gates (2-6) alone become the tip-precision criterion, which is a different design that would need its own validation pass. And there's no guarantee the geometric-only five-gate detector would work either — Penzias's `combined > 0.3` subset showed 0% tips, suggesting the geometric+priors gates aren't pulling out tips even when allowed to.
+
+Operator's assessment: two days of work, no further than baseline (Tycho's rev. 1 was a wireframe ball; rev. 2's N.3.0 demonstrates the priors work but doesn't visibly clear the leaf-soup either). Not on its way. Better to refocus on procedural for launch.
+
+This is a correct read per existing project doctrine: [[feedback_procedural_trees_are_the_destination]] (procedural is the destination, never adopt vendor or wait on research arcs); [[project_park_is_the_gem]] (procedural runway dominates v1.5 through ship); the G.1 hand-grounded PRESETS path was always the doctrinal default for grounding procedural defaults from LiDAR by eye, with no apparatus required.
+
+### Re-entry conditions
+
+Concrete things that would have to be true to justify spinning Li'l Vera back up:
+
+1. **A different tip-detection mechanism is available.** Concrete examples:
+   - A learned classifier trained on labeled LiDAR tip data (would require labeled data we don't have).
+   - A confidently-classified-linear-chain-endpoint detector that finds tips as the spatial ends of coherent linear-class chains, rather than relying on tomography purity AT the tip candidate itself.
+   - A multi-scale tip detector that aggregates evidence across spatial scales (a tip looks like a tip at small scale but like a chain-end at larger scale).
+   - A pure-priors tip detector that scores candidates by `priors.likelihood(class='tip', height_frac, radial_dist, inferred_radius)` alone without any tomography-class requirement.
+2. **A fundamentally different architecture is on the table** that doesn't depend on tip anchors as the canopy-extraction starting point. (E.g., a junction-anchored architecture; a density-flow architecture; some other framing entirely.)
+3. **The procedural runway has shipped (Phase G.1 complete + further procedural heroes done) and there's actual capacity for an R&D spike.**
+
+Without one of those three, another spike would just rebuild what was tried.
+
+### Concrete artifacts left in tree (do NOT delete)
+
+- `arborist/lil_vera_v2.py` (commit `2c4f61a`) — apparatus base + classifier + tip detector. Foundation for any re-entry.
+- `arborist/state/acer_saccharum/botanical-priors.json` — hand-encoded Sugar Maple priors. Load-bearing regardless of whether the apparatus consumes them: the operator can use these numbers as starting values when authoring procedural PRESETS defaults in Phase G.1.0 (see "What this informs for Phase G.1" below).
+- `arborist/serve.js` v2 endpoints — three routes at `/lidar/specimen/:treeId/lil-vera-v2-*`. Leave wired so re-entry doesn't need to re-wire serve.js.
+- `src/arborist/LidarWorkstage.jsx` 6th alignment-oracle layer + v2 tuner subsection + `VeraV2Diagnostics` panel. Leave wired so re-entry doesn't need to re-wire the workstage.
+- `scratch/phase-n2-lil-vera-observational-skeleton-brief.md` — the full brief (seven commits since rev. 2 baseline; four independent cold audits + restructure). Comprehensive specification for everything past N.3.0. Re-entry would read this cold to remember the full architecture.
+
+### Audit-chain history (so re-entry doesn't re-litigate brief decisions)
+
+Brief was audited four times before dispatch — re-entry should NOT re-decide any architectural question that was already settled in these passes. Refer to the commits for what was caught and how:
+
+- **Curie** (`036cfdf`, 2026-05-20): first cold audit on the rev. 2 PM draft. Caught 5 critical spec gaps + ~6 minor. Largely classifier + priors layer issues.
+- **Fraunhofer** (`9ac8387`, 2026-05-20): second cold audit. Caught 3 criticals + 7 importants in the post-Curie draft. Phase 4 Posture-B carve-out gap + candidate→source-point attribution ambiguity were the load-bearing finds.
+- **Restructure** (`b307541`, 2026-05-20 evening): pre-dispatch reframe. Tips-first + axonal growth + adaptive scan + ridge-tracing removal. This was the operator-driven architectural shift after the Fraunhofer audit; not an audit, but the load-bearing event in the brief's evolution.
+- **Bessel** (`25e08f3` + `2e7cc2b`, 2026-05-20 evening): third cold audit on the restructured brief. Caught 4 criticals + 5 importants. Notable finds: missing `tip_geometric_min`/`min_nbhd_count` hyperparameter defaults, `expectedLocalDirection` 1D→3D reconstruction underdetermination (added `axialFallbackRadius` + radial-outward azimuth), output-schema missing the new `from_handshake`/`from_taper_only`/`orphan` flags, Phase 5 stale-acceptance-criterion back-reference. Also resolved the cluster-detector → verdict-rate scan replacement (operator's call) and the heartbeat spec.
+- **Doppler** (`bdd66c1`, 2026-05-20 evening): narrow fourth audit on the verdict-rate scan machinery (which I authored in one unaudited commit). Caught the early-batch K_rigs_min suppression bug (would have terminated leafy-specimen scans at ~100 rigs) + denominator ambiguity + implicit per-point `prev_would_verdict` state. Fixes added the eligible-subset filter, `min_eligible_fraction` guard, raised `min_batches_before_stop` from 2 to 4.
+
+If you re-enter and find yourself re-deriving any of these decisions, stop and read the relevant commit body — the rationale is captured there.
+
+### Scope-drift items Penzias surfaced (status frozen at shelve)
+
+Per Std Req's "surface scope drift" clause, Penzias flagged six items in their status. Statuses at shelve:
+
+1. **Tip-detector emits 0 anchors** — the load-bearing finding; cycle shelved on this.
+2. **Raw class fractions 27/68/5 vs target 62/8/30** — diagnostic of #1; not separately addressed.
+3. **Default-knob retuning vs brief spec** (e.g., `tipGeometricMin 0.5 → 0.12`) — Penzias retuned defaults to get the tip pipeline to fire at all, then surfaced. Coordinator's intended call was to revert to brief-spec defaults before re-running. Cycle shelved before re-run, so retuning persists in the committed module. If re-entered, revert defaults per brief or supersede with new architecture.
+4. **Priors-schema extensions: `expectedTipRadius` + `expectedTipHeightFrac`** — sensible additions to prevent trunk-base spurs passing tip plausibility. Coordinator's intended call was to ratify and codify into the brief. Not codified before shelve; the priors file in tree includes these fields but the brief schema doesn't. If re-entered, codify or re-evaluate.
+5. **Position-conditioned branch-angle prior** (use `expectedLocalDirection` modal vs literal `branchAngleDistribution.fromVertical.modal=50°`) — sensible (literal 50° was canopy-scaffold value; near-trunk needs vertical priors). Coordinator's intended call was to ratify and codify. Not codified before shelve.
+6. **Run files ~84MB at N=50** — saved-runs picker pagination concern for N.3.1. Forward-looking; N.3.1 never reached.
+
+### What this informs for Phase G.1 (the active arc now)
+
+Penzias's `botanical-priors.json` represents real hand-encoded Sugar Maple morphology values (from Hallé & Oldeman 1970 + USDA growth tables per the brief's source citations). These numbers are usable as starting values for procedural PRESETS authoring in Phase G.1.0 (operator-eye PRESETS from 3-5 LiDAR specimens):
+
+- `expectedRadiusByPosition` samples → procedural radius-by-height-and-radial taper function defaults
+- `branchAngleDistribution.fromVertical` modal/min/max → procedural scaffold-angle distribution defaults
+- `branchingDensityByHeight` → procedural branches-per-meter-by-height defaults
+- `hardRejections.radiusAboveAtHeight` + `branchAngleSteeperThanDeg` → procedural sanity caps
+- `expectedJunctionFraction` / `expectedTipFraction` / `expectedLinearInteriorFraction` → procedural skeleton-node distribution targets
+
+When G.1.0 dispatches, the implementing baby should read the priors file as authoring reference, not just G.1's own brief. The hand-encoding work is real and shouldn't be redone from scratch.
+
+### Penzias dismissal
+
+Operator thanked Penzias and confirmed cycle shelved. No re-dispatch.
+
+---
+
 ## 2026-05-20 evening — Project: Li'l Vera — rev. 2 restructured + dispatched (post-audit chain)
 
 **Brief at `scratch/phase-n2-lil-vera-observational-skeleton-brief.md` is dispatched.** Six commits since rev. 2 baseline; four independent cold audits + a substantial pre-dispatch restructure. Implementing baby picks own name and starts at N.3.0.
