@@ -101,7 +101,7 @@ The viewport in both workstages mounts `src/meteorologist/CanaryScene.jsx`. Comp
 - **Sky / sun / moon / celestials** via the shared `<CelestialBodies />` consumer reading `useSceneJson(activeLookId)`. Same consumer Stage and Preview mount; no fork. The active Look's published `scene.json` provides per-TOD-slot keyframes for sky gradient, sun direction, moon, ambient, hemi, constellations.
 - **Flat ground plane** (GROUND slot only) — 200m × 200m mesh, neutral grey-tan, high roughness. No `BakedGround` import; this is the canary, not the production scene.
 - **One hero tree** (GROUND slot only) — `platanus_acerifolia/skeleton-1-lod0.glb` loaded directly via `useGLTF` from Arborist's per-Look bake (`public/baked/<look>/trees/`). Wrapped in `<Suspense fallback={null}>` so missing-bake gracefully falls back. The hero tree is intentionally a high-LOD asset we wouldn't ship in a populated LS scene — there's exactly one in the canary, so the GPU budget allows it.
-- **`<Atmosphere />` cloud renderer** — Phase 4b.1's volumetric raymarched shader. BoxGeometry slab at cloud altitude (y ∈ [1200, 1700] for cumulus_humilis defaults), 8km × 8km × 500m, BackSide-rendered. Uniforms currently hardcoded to `cumulus_humilis` values; Phase 4b.2 wires preset-driven binding.
+- **`<Atmosphere />` cloud renderer** — Phase 4b.1's volumetric raymarched shader. BoxGeometry slab at cloud altitude (y ∈ [1200, 1700] for cumulus_humilis defaults), 8km × 8km × 500m, BackSide-rendered. Post-Phase 4b.2 + 5a, uniforms read from one of two sources per frame: the active Meteorologist preset (when authoring) or the resolved live directive (in production). Sky/sun coloring routes through `useSceneJson` (per Look) + the sky-light coupling amendment + directive overrides where applicable.
 
 Two camera framings driven by the slot tab:
 
@@ -126,7 +126,7 @@ Five photoreal levers per HANDOFF-clouds-day3-clouddome-v2.md, all five shipped 
 4. **Domain warping** — two-pass 3D FBM with `worldPos + warpAmp × noise(worldPos × warpFreq)` reshaping the sample point before octave summing. Produces the cauliflower / lobe structure that makes cumulus look like cumulus, not blob-noise.
 5. **Vertical density gradient** — `smoothstep(0, 0.1, h) × (1 - smoothstep(0.6, 1.0, h))` profile. Floor near `h ≈ 0` makes the cloud "sit on" a flat layer; ceiling near `h ≈ 1` tapers the top. Distinguishes flat-based cumulus from a vertically-uniform stratus slab.
 
-Uniforms today are hardcoded to `cumulus_humilis` shape + lighting params. Sun direction is hardcoded warm-noon (`vec3(0, 0.7, 0.7).normalize()`); sky/sun colors are hardcoded `#ffe6c8 / #9faab8`. Phase 4b.2 swaps both for per-frame reads.
+As of 2026-05-20 (Phase 5a + 4b.3), uniforms read live: the 12 shape + lighting params come from either Meteorologist's active preset (authoring path) or `bindUniformsFromDirective(material, directive, ...)` doing a weighted blend across the Almanac directive's `clouds[]` (production path). Sun direction comes from `SunCalc.getPosition(currentTime, INSTANCE.lat, INSTANCE.lon)`; sky/sun colors come from the per-Look `scene.sky` channel (sky-light coupling amendment) with directive's `sun.tint` + `lightDome.{horizon,ambientFloor}` overriding cloud-lighting when a directive is active. Hardcoded fallbacks remain in `createAtmosphereMaterial` but are never reached when an `AtmosphereDirectiveDriver` is mounted.
 
 ---
 
@@ -179,35 +179,40 @@ Schemas and file names keep their internal names to avoid churn; UI uses the ope
 
 | Feature | Status | Phase |
 |---|---|---|
-| Cloud shader binds to active preset (sliders affect viewport) | Queued | **4b.2** |
-| CloudDome retirement; production swap to `<Atmosphere />` | Queued | **4b.3** |
-| Color shift across TOD (sun-tint warm at sunset, etc.) | Queued (depends on 4b.2) | 4b.2 |
+| Cloud shader binds to active preset (sliders affect viewport) | ✅ Shipped 2026-05-21 | 4b.2 |
+| CloudDome retirement; production swap to `<Atmosphere />` | ✅ Shipped 2026-05-20 | 4b.3 |
+| Multi-preset weighted blending (per `directive.clouds[]`) | ✅ Shipped 2026-05-20 | 5a |
+| Almanac evaluator hot-mount in production runtime + tween | ✅ Shipped 2026-05-20 | 5a |
+| Wind cross-helper wiring (Atmosphere + InstancedTrees subscribe) | ✅ Shipped 2026-05-20 | 5a |
+| Reference photos + Nimbus seeded library + editable descriptions | ✅ Shipped 2026-05-20 | Phase Seed |
+| Driver mount in Cartograph/Preview | Queued | **5b** |
+| Fake-weather fixture management UI | Queued | 5b |
+| Fallback editor (catch-all directive when no rule matches) | Queued | 5b |
 | Directive numeric fields as TodChannels (sky modulations animate per-TOD) | Queued | **3b** |
 | Per-cloud-in-condition expression flags (rain rate, lightning rate per cloud entry) | Queued | 3b |
 | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema | Queued | 3b |
-| Cloud pulldown filter graduates from `kind`-only to capability-aware | Queued | 3b |
-| Fake-weather fixture management UI | Queued | **5** |
-| Almanac evaluator hot-mount in CanaryScene (live `selectDirective` readout) | Queued | 5 |
-| Fallback editor (catch-all directive when no rule matches) | Queued | 5 |
-| Cloud preset gallery / reference-photo thumbnails | Queued | 5+ |
-| Camera orbit controls in viewport | Queued | 5+ |
-| Mobile quality tier (`uQualityTier`-driven step counts) | Queued | 5+ |
-| Multi-preset blending (per `directive.clouds[]` up to 3) at render | Queued | 5+ |
-| Weather-pack v2 (wind effects, precipitation render, heat haze, autumn foliage, audio) | Roadmap | post-v1 (own track) |
+| Modulators — continuous atmospheric phenomena (cold front, tornado green, wildfire smoke, …) | ✅ Shipped 2026-05-20 (Halo) — 7 starter modulators | 6 |
+| Atmospheric consumers — wind field, rain, snow, lightning | Queued (v1 commitment) | **7a/b/c/d** |
+| Camera orbit controls in viewport | Queued | 5b+ |
+| Mobile quality tier (`uQualityTier`-driven step counts) | Queued | 5b+ |
 | Per-Look primary tree species (cross-helper setup with Arborist) | Parked | TBD |
 
 See `BACKLOG.md` for the phase queue with scope summaries.
 
 ---
 
-## How the runtime will consume Meteorologist's output
+## How the runtime consumes Meteorologist's output
 
-When Phase 4b.3 lands and CloudDome retires, every production mount of `<CloudDome />` (Scene.jsx, CartographApp.jsx, PreviewApp.jsx, CanaryScene.jsx) flips to `<Atmosphere />`. The shader reads:
+As of 2026-05-20 (Phase 6 — Modulators; building on 5a + 4b.3), every production `<Atmosphere />` mount is fed by the live directive composition path with a continuous-phenomena modulator stack on top. Each frame the shader reads:
 
-1. **Active condition's directive** — selected by the Almanac evaluator each frame from the live weather payload. `selectDirective(weather, almanac, presets, override)` returns the cloud blend + sun + lightDome + wind + precip.
-2. **Per-cloud preset params** — for each cloud in the blend, read its 13 params (resolved via `resolveGroupAtMinute(channel, currentMinute)` for TodChannel-shaped values), feed as shader uniforms.
-3. **Sun direction + color** — from the active Look's `scene.dirSun` (already in scene.json per SC.1).
-4. **Wind** — `directive.wind.{scale, dir}` published per Look via `useWindState`; `<Atmosphere />` reads it directly; Arborist trees subscribe to the same source for sway.
+1. **Live directive** — `useAtmosphere.tweenedDirective`, computed by `useAtmosphereDirective` in two stages:
+   1. The Almanac evaluator selects a base directive: `selectBaseDirective(weatherPayload, almanac, presets, override)`.
+   2. The Modulators stack composes on top: each authored modulator independently evaluates a 0..1 strength against `deriveSignals(payload, currentTime, extras)` (pressure_trend_3hr, direct_ratio, hour_of_day, plus payload pass-throughs); any non-zero strength applies its bundle of deltas (color hex lerp, scalar scale, tint-toward, direct range) to the directive. Composition is multiplicative for scales, sum-and-clamp for tints, last-wins for color overrides. Per-modulator strengths are published to `useAtmosphere.activeStrengths` for the editor's live indicator.
+   3. Result tweens over 45s via `AtmosphereDirectiveDriver` — modulator strength changes ride the same tween for free. Override is sourced from the active Look's `scene.clouds.values.preset` per SC.6 wiring.
+2. **Per-cloud preset params** — `bindUniformsFromDirective` reads each cloud in the directive's `clouds[]`, resolves each preset's 12 channel-shaped params via `resolveGroupAtMinute`, computes a weighted blend by `weight`, writes to shader uniforms.
+3. **Sky / sun band coloring** — `useSceneJson(activeLookId).sky` channel resolved per minute → `sky.sunGlow` and `sky.low` feed `uSunColor` and `uSkyColor` (sky-light coupling amendment). When a directive is active, its `sun.tint` + `lightDome.{horizon,ambientFloor}` override cloud-lighting (sky channel still owns the dome itself).
+4. **Sun direction** — `SunCalc.getPosition(currentTime, INSTANCE.lat, INSTANCE.lon)` projected to world space.
+5. **Wind** — `directive.wind.{speed, dir}` feeds Atmosphere's `uWindScale` + `uWindDir` for cloud advection; same source feeds `InstancedTrees`' sway shader uniforms once trees are mounted in production.
 
 All composition happens in the runtime, not in Meteorologist. Meteorologist authors; runtime composes.
 

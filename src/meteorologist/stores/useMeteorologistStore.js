@@ -26,8 +26,11 @@ function flatTuple(channel) {
 
 const useMeteorologistStore = create((set, get) => ({
   // ── Mode ────────────────────────────────────────────────────
-  mode: 'teapot',                       // 'teapot' | 'conditions'
-  setMode: (m) => set({ mode: m === 'conditions' ? 'conditions' : 'teapot' }),
+  mode: 'teapot',                       // 'teapot' | 'conditions' | 'modulators'
+  setMode: (m) => {
+    if (m === 'conditions' || m === 'modulators' || m === 'teapot') set({ mode: m })
+    else set({ mode: 'teapot' })
+  },
 
   // ── Libraries ───────────────────────────────────────────────
   presets: [],
@@ -56,11 +59,28 @@ const useMeteorologistStore = create((set, get) => ({
     }
   },
 
+  // ── Modulators (Phase 6, Halo 2026-05-20) ────────────────────
+  modulators: [],
+  modulatorsError: null,
+  loadModulators: async () => {
+    try {
+      const r = await fetch(`/api/meteorologist/modulators?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set({ modulators: d.modulators || [], modulatorsError: null })
+    } catch (err) {
+      set({ modulatorsError: String(err) })
+    }
+  },
+  modulatorById: (id) => get().modulators.find(m => m.id === id),
+
   // ── Selection ────────────────────────────────────────────────
   // activePresetId set → MeteorologistApp routes to Teacup.
   // activeConditionId routing lands in Phase 3.
+  // activeModulatorId routes to ModulatorEditor (Phase 6).
   activePresetId: null,
   activeConditionId: null,
+  activeModulatorId: null,
   setActivePreset: (id) => {
     // Flush any pending save before switching presets so the slider value
     // the operator just released doesn't get clobbered by an unrelated
@@ -74,9 +94,87 @@ const useMeteorologistStore = create((set, get) => ({
     get()._flushPendingSaves()
     set({ activeConditionId: id })
   },
+  setActiveModulator: (id) => {
+    get()._flushPendingSaves()
+    set({ activeModulatorId: id })
+  },
 
   presetById:    (id) => get().presets.find(p => p.id === id),
   conditionById: (id) => get().conditions.find(c => c.id === id),
+
+  // ── Modulator editing ────────────────────────────────────────
+  // Mirrors rule-editing's setRuleField semantics: patch by dot path,
+  // prune empty parents, autosave-debounced. Replace whole records on
+  // structural changes (driver shape switch) so partial intermediate
+  // states don't fail validation mid-edit.
+  setModulatorField: (modId, path, value) => {
+    set(s => {
+      const idx = s.modulators.findIndex(m => m.id === modId)
+      if (idx < 0) return s
+      const next = JSON.parse(JSON.stringify(s.modulators[idx]))
+      const parts = path.split('.')
+      const last = parts.pop()
+      let cur = next
+      for (const k of parts) {
+        if (cur[k] == null || typeof cur[k] !== 'object') cur[k] = {}
+        cur = cur[k]
+      }
+      if (value === undefined) {
+        delete cur[last]
+        let p = next, drop = []
+        for (const k of parts) { drop.push([p, k]); p = p[k] }
+        for (let i = drop.length - 1; i >= 0; i--) {
+          const [obj, k] = drop[i]
+          if (obj[k] && typeof obj[k] === 'object' && Object.keys(obj[k]).length === 0) {
+            delete obj[k]
+          }
+        }
+      } else {
+        cur[last] = value
+      }
+      const arr = s.modulators.slice()
+      arr[idx] = next
+      return { modulators: arr }
+    })
+    get()._scheduleModulatorSave(modId)
+  },
+
+  replaceModulator: (modId, replacement) => {
+    set(s => {
+      const idx = s.modulators.findIndex(m => m.id === modId)
+      if (idx < 0) return s
+      const arr = s.modulators.slice()
+      arr[idx] = replacement
+      return { modulators: arr }
+    })
+    get()._scheduleModulatorSave(modId)
+  },
+
+  revertModulatorToDefault: async (modId) => {
+    const timers = get()._modSaveTimers
+    if (timers[modId]) { clearTimeout(timers[modId]); delete timers[modId] }
+    get()._pendingModulators.delete(modId)
+    try {
+      const r = await fetch(`/api/meteorologist/modulators/${encodeURIComponent(modId)}/revert`, { method: 'POST' })
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${r.status}`)
+      }
+      const d = await r.json()
+      if (d.modulator) {
+        set(s => {
+          const idx = s.modulators.findIndex(m => m.id === d.modulator.id)
+          if (idx < 0) return s
+          const arr = s.modulators.slice()
+          arr[idx] = d.modulator
+          return { modulators: arr }
+        })
+      }
+    } catch (err) {
+      console.warn('[meteorologist] modulator revert failed:', err)
+      set({ modulatorsError: String(err) })
+    }
+  },
 
   // Active-preset selector. Returns the preset object (with `params` map
   // of per-cloud-param TodChannels) or null. Used by <Atmosphere />'s
@@ -284,6 +382,48 @@ const useMeteorologistStore = create((set, get) => ({
       get()._saveRuleNow(id)
     }
     get()._pendingRules.clear()
+    // Modulators
+    const mTimers = get()._modSaveTimers
+    const mPending = [...get()._pendingModulators]
+    for (const id of mPending) {
+      if (mTimers[id]) { clearTimeout(mTimers[id]); delete mTimers[id] }
+      get()._saveModulatorNow(id)
+    }
+    get()._pendingModulators.clear()
+  },
+
+  // Modulator autosave (mirrors rules)
+  _modSaveTimers: {},
+  _pendingModulators: new Set(),
+  _scheduleModulatorSave: (modId) => {
+    if (!modId) return
+    const timers = get()._modSaveTimers
+    if (timers[modId]) clearTimeout(timers[modId])
+    get()._pendingModulators.add(modId)
+    timers[modId] = setTimeout(() => {
+      delete timers[modId]
+      get()._pendingModulators.delete(modId)
+      get()._saveModulatorNow(modId)
+    }, 500)
+  },
+  _saveModulatorNow: async (modId) => {
+    const mod = get().modulatorById(modId)
+    if (!mod) return
+    try {
+      const r = await fetch(`/api/meteorologist/modulators/${encodeURIComponent(modId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mod),
+      })
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        console.warn('[meteorologist] modulator save failed:', err)
+        set({ modulatorsError: err.error || `HTTP ${r.status}` })
+      }
+    } catch (err) {
+      console.warn('[meteorologist] modulator save failed:', err)
+      set({ modulatorsError: String(err) })
+    }
   },
   _savePresetNow: async (presetId) => {
     const preset = get().presetById(presetId)

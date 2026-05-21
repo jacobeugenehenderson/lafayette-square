@@ -103,20 +103,9 @@ Caveat: production `Scene.jsx` still mounts `<CloudDome />` (Phase 4b.3 pending)
 - Camera orbit controls in viewport.
 - `bakeLastMs` slice replaces Phase 4a's `Date.now()` stub (real cartograph fetch).
 
-### Phase 6 — Modulators (continuous atmospheric phenomena) — v1 commitment
+### Phase 6 — Modulators — SHIPPED 2026-05-20 (Halo)
 
-ADR in `NOTES.md` 2026-05-20. Adds a Modulators layer on top of the Almanac: continuous, weather-signal-driven directive deltas that compose with the base directive. Captures atmospheric phenomena that don't reduce to "which cloud preset" — cold-front passage, about-to-rain feel, tornado green, wildfire smoke, pre-storm gold, fog burn-off — each as its own authored modulator with a driver signal, curve, deltas, and ramp duration. Runtime evaluates them against open-meteo's full payload (pressure trend, radiation ratios, etc.); stacks results onto base directive.
-
-**Scope:**
-
-- `public/clouds/modulators.json` artifact + `modulator.schema.json`
-- `src/lib/weather-signals.js` — `deriveSignals(weatherPayload, time)` producing pressure_trend_3hr, direct_ratio, hour_of_day, etc.
-- Evaluator extension: `selectDirective` returns base + composed modulator stack; commutative composition (intensity scales multiply; tints sum-and-clamp; ramps interpolate)
-- "Modulators" tab in Meteorologist UI alongside Teapot + Conditions; per-modulator editor (driver picker, curve picker, delta rows, ramp slider)
-- Seed library — 5–8 starter modulators (cold_front_passage, about_to_rain, severe_storm_aerosol_filter, wildfire_smoke, pre_storm_gold, fog_burn_off, summer_heat_haze)
-- Cross-helper: wind modulator outputs feed `InstancedTrees` sway uniforms (already on the wind contract)
-
-**Why v1 not v2:** the product promises an LS that reflects its real world. A LS that can't show "the cold front is here" or "the air today is smoke from Canada" misses the promise. Modulators are the architectural piece that makes the promise reachable. Land after Phase 5 (need evaluator hot-mount first).
+Continuous-phenomena layer landed: `modulators.json` + `modulator.schema.json` + `weather-signals.js` (Approach B: pressure_trend_3hr derived from open-meteo hourly `past_hours=4` back-fill, no in-memory ring buffer) + `selectDirective` composition + Modulators tab + editor + backend endpoints. Seven starter modulators authored: `cold_front_passage`, `severe_storm_aerosol_filter` (tornado green), `wildfire_smoke`, `pre_storm_gold`, `about_to_rain`, `fog_burn_off`, `summer_heat_haze`. Per-modulator strengths published to `useAtmosphere.activeStrengths`; editor's live indicator reads them. See `NOTES.md` 2026-05-20 "Phase 6 shipped". Cross-helper wind feed to `InstancedTrees` deferred to Phase 7a (still on the wind contract).
 
 ### Phase 7 — Atmospheric consumers (wind, rain, snow, lightning) — v1 commitment
 

@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url'
 import {
   validatePreset, validatePresetsFile,
   validateRule, validateAlmanac, validateLibrary,
+  validateModulator, validateModulators,
 } from './pipeline/validate.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -20,13 +21,15 @@ const ROOT      = join(__dirname, '..')
 const PRESETS          = join(ROOT, 'public', 'clouds', 'presets.json')
 const ALMANAC          = join(ROOT, 'public', 'clouds', 'almanac.json')
 const ALMANAC_DEFAULTS = join(ROOT, 'public', 'clouds', 'almanac.defaults.json')
+const MODULATORS          = join(ROOT, 'public', 'clouds', 'modulators.json')
+const MODULATORS_DEFAULTS = join(ROOT, 'public', 'clouds', 'modulators.defaults.json')
 const SPECIALIST_SEED  = join(ROOT, 'meteorologist', 'data', 'specialist-seed.json')
 const PORT      = 3335
 
 // ── Boot scaffolding ───────────────────────────────────────────────────────
 // Phase 1 is read-only; both files MUST exist (they're scaffolded). Don't
 // auto-initialize — silent empties would mask a real misconfiguration.
-for (const p of [PRESETS, ALMANAC, ALMANAC_DEFAULTS]) {
+for (const p of [PRESETS, ALMANAC, ALMANAC_DEFAULTS, MODULATORS, MODULATORS_DEFAULTS]) {
   if (!existsSync(p)) {
     console.error(`[meteorologist] required file missing: ${p}`)
     process.exit(1)
@@ -175,6 +178,60 @@ const server = createServer(async (req, res) => {
       return jsonRes(res, 200, { ok: true, id, rule: seed })
     }
 
+    // ── Modulators (Phase 6, Halo 2026-05-20) ────────────────────────
+    if (req.method === 'GET' && path === '/modulators') {
+      const d = readJsonOrNull(MODULATORS)
+      if (!d) return jsonRes(res, 500, { error: 'failed to read modulators.json' })
+      return jsonRes(res, 200, d)
+    }
+
+    if (req.method === 'GET' && (m = path.match(/^\/modulators\/([^/]+)$/))) {
+      const id = m[1]
+      const file = readJsonOrNull(MODULATORS)
+      if (!file) return jsonRes(res, 500, { error: 'failed to read modulators.json' })
+      const mod = (file.modulators || []).find(x => x.id === id)
+      if (!mod) return jsonRes(res, 404, { error: 'modulator not found', id })
+      return jsonRes(res, 200, mod)
+    }
+
+    if (req.method === 'PUT' && (m = path.match(/^\/modulators\/([^/]+)$/))) {
+      const id = m[1]
+      const incoming = await readBody(req)
+      if (!incoming || incoming.id !== id) {
+        return jsonRes(res, 400, { error: 'id mismatch', urlId: id, bodyId: incoming?.id })
+      }
+      const v = validateModulator(incoming)
+      if (!v.ok) return jsonRes(res, 400, { error: 'schema invalid', details: v.errors })
+      const file = readJsonOrNull(MODULATORS)
+      if (!file) return jsonRes(res, 500, { error: 'failed to read modulators.json' })
+      const idx = (file.modulators || []).findIndex(x => x.id === id)
+      if (idx < 0) return jsonRes(res, 404, { error: 'modulator not found', id })
+      const next = { ...file, modulators: file.modulators.slice() }
+      next.modulators[idx] = incoming
+      const v2 = validateModulators(next)
+      if (!v2.ok) return jsonRes(res, 400, { error: 'modulators invalid after splice', details: v2.errors })
+      writeFileSync(MODULATORS, JSON.stringify(next, null, 2) + '\n')
+      return jsonRes(res, 200, { ok: true, id })
+    }
+
+    if (req.method === 'POST' && (m = path.match(/^\/modulators\/([^/]+)\/revert$/))) {
+      const id = m[1]
+      const defaults = readJsonOrNull(MODULATORS_DEFAULTS)
+      if (!defaults) return jsonRes(res, 500, { error: 'failed to read modulators.defaults.json' })
+      const seed = (defaults.modulators || []).find(x => x.id === id)
+      if (!seed) return jsonRes(res, 404, { error: 'modulator not in defaults', id })
+      const file = readJsonOrNull(MODULATORS)
+      if (!file) return jsonRes(res, 500, { error: 'failed to read modulators.json' })
+      const idx = (file.modulators || []).findIndex(x => x.id === id)
+      if (idx < 0) return jsonRes(res, 404, { error: 'modulator not found in live file', id })
+      const next = { ...file, modulators: file.modulators.slice() }
+      next.modulators[idx] = seed
+      const v = validateModulators(next)
+      if (!v.ok) return jsonRes(res, 500, { error: 'defaults invalid', details: v.errors })
+      writeFileSync(MODULATORS, JSON.stringify(next, null, 2) + '\n')
+      return jsonRes(res, 200, { ok: true, id, modulator: seed })
+    }
+
     return jsonRes(res, 404, { error: 'route not found', method: req.method, url: req.url })
   } catch (err) {
     return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
@@ -183,7 +240,8 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Meteorologist backend → http://localhost:${PORT}`)
-  const presets  = readJsonOrNull(PRESETS)?.presets?.length ?? 0
-  const almanac  = readJsonOrNull(ALMANAC)?.rules?.length ?? 0
-  console.log(`  presets: ${presets}    conditions: ${almanac}`)
+  const presets    = readJsonOrNull(PRESETS)?.presets?.length ?? 0
+  const almanac    = readJsonOrNull(ALMANAC)?.rules?.length ?? 0
+  const modulators = readJsonOrNull(MODULATORS)?.modulators?.length ?? 0
+  console.log(`  presets: ${presets}    conditions: ${almanac}    modulators: ${modulators}`)
 })

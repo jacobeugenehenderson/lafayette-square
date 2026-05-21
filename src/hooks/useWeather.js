@@ -1,7 +1,12 @@
 import useSkyState from './useSkyState'
 import { INSTANCE } from '../instance.js'
 
-const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${INSTANCE.geography.lat}&longitude=${INSTANCE.geography.lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,weather_code&forecast_hours=48&temperature_unit=fahrenheit&timezone=${encodeURIComponent(INSTANCE.geography.timezone)}`
+// Halo 2026-05-20 Phase 6: added direct_radiation + diffuse_radiation to
+// current (modulators read the ratio for haze / wildfire-smoke detection)
+// and pressure_msl + past_hours=4 to hourly (so deriveSignals can compute
+// pressure_trend_3hr from the back-fill instead of maintaining an
+// in-memory ring buffer — Approach B from the Phase 6 brief).
+const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${INSTANCE.geography.lat}&longitude=${INSTANCE.geography.lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation&hourly=temperature_2m,weather_code,pressure_msl&past_hours=4&forecast_hours=48&temperature_unit=fahrenheit&timezone=${encodeURIComponent(INSTANCE.geography.timezone)}`
 
 /**
  * Derive storminess (0-1) from WMO weather code + precipitation amount
@@ -65,6 +70,8 @@ export async function fetchWeather() {
       humidity: c.relative_humidity_2m != null ? c.relative_humidity_2m / 100 : null,
       temperatureF: c.temperature_2m ?? null,
       currentWeatherCode: c.weather_code ?? null,
+      directRadiation:  c.direct_radiation  ?? null,
+      diffuseRadiation: c.diffuse_radiation ?? null,
     })
 
     // Parse hourly forecast
@@ -72,6 +79,7 @@ export async function fetchWeather() {
       const times = data.hourly.time || []
       const temps = data.hourly.temperature_2m || []
       const codes = data.hourly.weather_code || []
+      const press = data.hourly.pressure_msl || []
       // Open-Meteo returns times in the requested timezone without offset suffix.
       // Use utc_offset_seconds from response to build proper Date objects.
       const utcOffset = data.utc_offset_seconds ?? -21600 // CST = -6h
@@ -86,6 +94,7 @@ export async function fetchWeather() {
           time: new Date(`${t}${suffix}`),
           temperatureF: temps[i],
           weatherCode: codes[i],
+          pressureMb: press[i] ?? null,
         }
       })
       useSkyState.getState().setHourlyForecast(hourly)

@@ -4,6 +4,40 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-20 — Phase 6 shipped — Modulators (Halo)
+
+The continuous-phenomena layer landed end-to-end: schema, artifact, signal derivation, evaluator composition, UI tab, backend endpoints, autosave wiring. The Almanac picks the base directive; the modulator stack independently evaluates each authored phenomenon against the live signals payload and applies its bundle of deltas on top. Output flows through the same `useAtmosphere.rawDirective → tweenedDirective` tween path Cirrus established in 5a — no driver changes, the tween's per-frame interpolation absorbs strength changes for free.
+
+**Architectural decisions taken during ship:**
+
+- **Approach B for pressure trend** — extended the open-meteo query with `past_hours=4` + `pressure_msl` in hourly. `deriveSignals` walks the resulting `hourlyForecast` ring for the entry closest to `now − 3hr` (rejects if > 90 min off). No persistent in-memory buffer; a fresh page sees correct `pressure_trend_3hr` immediately rather than waiting 3hr for a buffer to fill.
+- **Radiation fields added to current query** — `direct_radiation` + `diffuse_radiation` plumbed through `useWeather → useSkyState → deriveSignals` as `direct_ratio = direct/(direct+diffuse+1)`. Smoke / haze modulators (`wildfire_smoke`, `summer_heat_haze`) read this. Cirrus had added pressure_msl + humidity + wind_direction; I added the radiation pair on the same pattern.
+- **Driver `between` shape added** — the ADR's worked tornado example used `"in": [16, 21]` for an hour range, but the brief defines `in` as discrete-set membership. I introduced `between: [lo, hi]` (inclusive range, boolean output) as the natural shape for continuous-range membership; `in` retains its discrete-set semantics for WMO codes etc. The starter set uses `between` for hour ranges.
+- **Delta paths track the actual `directive.schema.json`** — `sun.tint` (not the ADR sketch's `sun.color`), `lightDome.horizon` / `lightDome.top` (not `sky.tint` / `sky.low`), `wind.scale` (not `wind.gustsScale` — `gustsScale` is a Phase 7a addition per the consumer ADR; it's not in the directive schema yet so the starter set composes via `wind.scale`).
+- **Color-override composition is last-wins** — the v1 starter set is designed so two `{from,to}` modulators don't target the same field at high strength simultaneously (tornado green and wildfire orange shouldn't both be at strength 1 — that'd be unusable weather). Tint-toward amounts and scalar scales compose commutatively (sum-and-clamp / multiplicative). Documented in the evaluator header.
+- **`selectDirective` retains its old signature** — a new `selectDirectiveWithStrengths` sibling exposes the per-modulator strength map for the editor's live indicator. The 5a-compatible `selectDirective` just calls the new path and drops the strengths.
+- **Strengths land on `useAtmosphere.activeStrengths`** — published every evaluator tick. ModulatorsLibrary + ModulatorEditor both read it for live indicators against today's actual weather.
+
+**Starter modulators (7):**
+
+| id | driver | what it does |
+|---|---|---|
+| `cold_front_passage` | `pressure_trend_3hr` smoothstep [-6, 0] | Warms sun, cools horizon, lifts wind scale over a 45-min ramp |
+| `severe_storm_aerosol_filter` | `all`(weathercode∈{95,96,99}, hour 16-21, precipitation≥5) | Tornado green — sun & horizon shift yellow-green, intensity drops to 35% |
+| `wildfire_smoke` | `direct_ratio` smoothstep [0.7, 0.35] (inverted) | Orange sun, brown-amber dome wash when smoke attenuates direct sun |
+| `pre_storm_gold` | `all`(cloudCover bell [0.5, 0.85], sunElevation bell [3, 14]) | Deep gold rake under heavy clouds at low sun |
+| `about_to_rain` | `all`(pressure_trend [-3,0], humidity [0.75,0.95], cloudCover≥0.6) | Muted, slightly-cooler, slightly-flatter light |
+| `fog_burn_off` | `all`(cloudCover bell [0.3, 0.75], hour 7-11) | Warm hazy diffusion, pale-warm horizon |
+| `summer_heat_haze` | `all`(tempC [28,38], direct_ratio [0.85,0.6], hour 11-17) | Neutral-cool dome with blanched sun; slows wind |
+
+**Verified composition** with a synthetic supercell-day signal mix (pressure −3 mb/3hr, weathercode 95, hour 18, precip 8, cloudCover 0.8, humidity 0.85, direct_ratio 0.4): five of seven modulators fire simultaneously; `sun.intensity` multiplies through cleanly (1.2 × cold_front × tornado × wildfire × pre_storm = 0.25); `wind.scale` lifts from 1.0 → 1.3 (cold_front at 0.5 strength). Color overrides land last-wins as designed — tornado green wins on `sun.tint`; wildfire's brown wash wins on `lightDome.top`.
+
+**What's deferred:** cross-helper wind feed to `InstancedTrees` (Phase 7a — modulators output `wind.scale`, but tree sway shader rewrite + `wind-field.js` are separate work). `wind.gustsScale` directive field will need adding to `directive.schema.json` when 7a lands.
+
+— Halo
+
+---
+
 ## 2026-05-20 — Phase 4b.3 shipped — production swap
 
 Meteorologist's volumetric raymarched cloud renderer is now the runtime everywhere. Three mounts flipped (`Scene.jsx:683`, `CartographApp.jsx:956`, `PreviewApp.jsx:574`); orphan import dropped from `StageApp.jsx`; `CloudDome.jsx` + `SpriteClouds.jsx` deleted along with `HANDOFF-clouds-day3-clouddome-v2.md`.

@@ -20,8 +20,13 @@ import { create } from 'zustand'
 const useAtmosphere = create((set) => ({
   rawDirective: null,
   tweenedDirective: null,
+  // Phase 6 (Halo 2026-05-20): per-modulator strength map, recomputed
+  // every time the evaluator runs. Read by ModulatorEditor's live
+  // strength indicator. Map: { [modulatorId]: 0..1 }.
+  activeStrengths: {},
   setRawDirective: (d) => set({ rawDirective: d }),
   setTweenedDirective: (d) => set({ tweenedDirective: d }),
+  setActiveStrengths: (s) => set({ activeStrengths: s }),
 }))
 
 export default useAtmosphere

@@ -9,21 +9,26 @@ import { useEffect } from 'react'
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import TeapotLibrary from './TeapotLibrary.jsx'
 import ConditionsLibrary from './ConditionsLibrary.jsx'
+import ModulatorsLibrary from './ModulatorsLibrary.jsx'
 import Teacup from './Teacup.jsx'
 import ConditionEditor from './ConditionEditor.jsx'
+import ModulatorEditor from './ModulatorEditor.jsx'
 
 export default function MeteorologistApp() {
   const mode             = useMeteorologistStore(s => s.mode)
   const setMode          = useMeteorologistStore(s => s.setMode)
   const loadPresets      = useMeteorologistStore(s => s.loadPresets)
   const loadConditions   = useMeteorologistStore(s => s.loadConditions)
+  const loadModulators   = useMeteorologistStore(s => s.loadModulators)
   const loadLooks        = useMeteorologistStore(s => s.loadLooks)
   const loadSpecialistSeed = useMeteorologistStore(s => s.loadSpecialistSeed)
   const activePresetId   = useMeteorologistStore(s => s.activePresetId)
   const activeConditionId = useMeteorologistStore(s => s.activeConditionId)
+  const activeModulatorId = useMeteorologistStore(s => s.activeModulatorId)
 
   useEffect(() => { loadPresets() }, [loadPresets])
   useEffect(() => { loadConditions() }, [loadConditions])
+  useEffect(() => { loadModulators() }, [loadModulators])
   useEffect(() => { loadLooks() }, [loadLooks])
   useEffect(() => { loadSpecialistSeed() }, [loadSpecialistSeed])
   useEffect(() => {
@@ -40,6 +45,9 @@ export default function MeteorologistApp() {
   }
   if (mode === 'conditions' && activeConditionId) {
     return <ConditionEditor />
+  }
+  if (mode === 'modulators' && activeModulatorId) {
+    return <ModulatorEditor />
   }
 
   return (
@@ -62,6 +70,7 @@ export default function MeteorologistApp() {
         <span style={{ marginLeft: 16, display: 'flex', gap: 4 }}>
           <ModePill label="Teapot"     active={mode === 'teapot'}     onClick={() => setMode('teapot')} />
           <ModePill label="Conditions" active={mode === 'conditions'} onClick={() => setMode('conditions')} />
+          <ModePill label="Modulators" active={mode === 'modulators'} onClick={() => setMode('modulators')} />
         </span>
 
         <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -69,7 +78,9 @@ export default function MeteorologistApp() {
         </span>
       </header>
 
-      {mode === 'teapot' ? <TeapotLibrary /> : <ConditionsLibrary />}
+      {mode === 'teapot' && <TeapotLibrary />}
+      {mode === 'conditions' && <ConditionsLibrary />}
+      {mode === 'modulators' && <ModulatorsLibrary />}
     </div>
   )
 }

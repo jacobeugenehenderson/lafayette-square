@@ -10,7 +10,7 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ## Status (as of 2026-05-20)
 
-**Standalone app shell + authoring UI + v3 raymarched cloud shader ship. TodChannel uniform binding (4b.2) + Phase Seed library + Phase 5a runtime live wiring + Phase 4b.3 production swap all shipped. Production LS now renders today's actual atmospheric directive smoothly tweened against live weather.**
+**Standalone app shell + authoring UI + v3 raymarched cloud shader ship. TodChannel uniform binding (4b.2) + Phase Seed library + Phase 5a runtime live wiring + Phase 4b.3 production swap + Phase 6 Modulators all shipped. Production LS now renders today's actual atmospheric directive smoothly tweened against live weather, with a continuous-phenomena modulator stack layered on top.**
 
 | Done | Not yet |
 |---|---|
@@ -20,13 +20,15 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 | Validator + cross-schema checks (`pipeline/validate.js`) | TodChannel promotion of directive numeric fields (Phase 3b) |
 | Teapot — 52 presets, params migrated to TodChannel shape | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema (Phase 3b) |
 | Almanac — 16 rules + immutable defaults sibling | Per-cloud-in-condition expression flags (Phase 3b) |
-| `meteorologist/serve.js` backend (GET/PUT presets, GET/PUT/Revert almanac) | Almanac evaluator hot-mount in Conductor preview (Phase 5) |
-| `src/lib/almanac-eval.js` (shipped 2026-05-13 via SC.6) | Fake-weather fixtures + fixture management UI (Phase 5) |
-| `/meteorologist.html` standalone app shell | Fallback editor (Phase 5) |
-| Top-bar TEAPOT ⎮ CONDITIONS toggle + Look picker | Cloud preset gallery / thumbnails (Phase 5+) |
-| Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Camera orbit controls in viewport (Phase 5+) |
-| Conditions library + Condition editor (When + Directive + Clouds-in-cond + Revert) | Mobile quality tier (`uQualityTier`) (Phase 5+) |
-| CanaryScene viewport (sky-from-Look + hero tree + flat ground) | Multi-preset blending (per `directive.clouds[]`) (Phase 5+) |
+| `meteorologist/serve.js` backend (GET/PUT presets, GET/PUT/Revert almanac) | Driver mount in Cartograph/Preview (Phase 5b polish) |
+| `src/lib/almanac-eval.js` (shipped 2026-05-13 via SC.6) | Fake-weather fixtures + fixture management UI (Phase 5b) |
+| `/meteorologist.html` standalone app shell | Fallback editor (Phase 5b) |
+| Top-bar TEAPOT ⎮ CONDITIONS ⎮ MODULATORS toggle + Look picker | Cross-helper wind feed to InstancedTrees + wind.gustsScale (Phase 7a) |
+| **Phase 6 — Modulators (continuous atmospheric phenomena)** (Halo, 2026-05-20) — schema + 7 starter modulators + signal derivation + composition + editor | |
+| Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Atmospheric consumers — wind field, rain, snow, lightning (Phase 7, v1) |
+| Conditions library + Condition editor (When + Directive + Clouds-in-cond + Revert) | Camera orbit controls in viewport (Phase 5b+) |
+| CanaryScene viewport (sky-from-Look + hero tree + flat ground) | Mobile quality tier (`uQualityTier`) (Phase 5b+) |
+| **Multi-preset blending via weighted clouds[] union — production renders directive blend (Phase 5a)** | |
 | **Phase Seed — 52 reference photos + Nimbus seed tunings + editable descriptions** (2026-05-20) | |
 | `<Atmosphere />` v3 raymarched cloud shader (5 photoreal levers) | |
 | `atmosphere-materials.js` shader factory + inline GLSL | |
@@ -34,7 +36,7 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 | `FEATURES.md` + `INTERFACE.md` (operator-facing surfaces) | |
 | 5 memory entries from this arc | |
 
-**Validation passes:** `npm run validate -- ../public/clouds/presets.json ../public/clouds/almanac.json` → `ok: 52 presets, 16 rules`.
+**Validation passes:** `npm run validate -- ../public/clouds/presets.json ../public/clouds/almanac.json ../public/clouds/modulators.json` → `ok: 52 presets, 16 rules, 7 modulators`.
 
 **Shipped phases:**
 - Phase 1 — scaffold + library views (commit `47c5de0`, 2026-05-19)
@@ -47,6 +49,7 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 - Phase 5a — Runtime live wiring: evaluator hot-mount + directive tween + wind cross-helper (Cirrus, 2026-05-20, commit `e9936f8`)
 - Phase 4b.3 — CloudDome retirement; production swap to `<Atmosphere />` (Cirrus, 2026-05-20)
 - Phase Seed — Cloud Specialist seed applied (51/52 presets retuned by Nimbus); ref photos surface in TeapotLibrary + Teacup; description field added end-to-end (Stratus, 2026-05-20)
+- Phase 6 — Modulators: schema + 7 starter records + `weather-signals.js` + evaluator composition + Modulators tab/editor + serve.js endpoints (Halo, 2026-05-20)
 - Kit clock+calendar primitive — `useCalendar` + `ClockCalendarPump` (2026-05-20)
 - Step 3 WhenCard live dots — TOD + season chip indicators (commit `36d667c`, 2026-05-20)
 - Unified time card — TOD + ToY + playback in DawnTimeline (Wren, 2026-05-20)
@@ -59,12 +62,12 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ## Start here in the morning
 
-**Phase 5b polish + Phase 6 Modulators.** 4b.3 and 5a both shipped 2026-05-20; production runs Atmosphere with directive-driven uniforms against live weather. Open priorities:
+**Phase 7a — Wind field + multi-scale tree response.** Phase 6 (Modulators) shipped 2026-05-20 (Halo); the continuous-phenomena layer composes on top of the Almanac base, with 7 starter modulators authored against today's actual weather. Production now reflects atmospheric texture (cold-front passage, tornado green, wildfire smoke, pre-storm gold, fog burn-off, etc.) not just discrete weather categories. Open priorities:
 
+- **7a (next dispatch)** — `src/lib/wind-field.js` + `windAt(t, pos, windState)` sampled field; `InstancedTrees` sway shader rewritten to sample at four time-constants (leaves / twigs / branches / trunk); `<Atmosphere />` subscribes too. Requires adding `wind.gustsScale` to `directive.schema.json` so modulators can author gust spikes. Cross-helper with Arborist. See `NOTES.md` 2026-05-20 consumers ADR.
 - **5b polish** — mount the `AtmosphereDirectiveDriver` in CartographApp + PreviewApp (today only Scene.jsx mounts it). Surface a "current directive" debug readout in Sky & Light card. Fake-weather fixture management UI. Fallback editor. Cloud preset gallery.
 - **3b** — Promote directive numerics to TodChannel + add cloud capabilities + per-cloud-in-condition expression flags.
-- **6** — Modulators (continuous atmospheric phenomena). See `NOTES.md` 2026-05-20 ADR.
-- **7** — Atmospheric consumers (wind field, rain particles, snow + accumulation, lightning). See `NOTES.md` 2026-05-20 ADR.
+- **7b–d** — Rain (streaks + wet-surface pass), snow (points + accumulation), lightning (scene-flash + delayed thunder). See `NOTES.md` 2026-05-20 consumers ADR.
 
 ---
 
@@ -121,7 +124,7 @@ src/meteorologist/                    # SHIPPED — UI tree mirroring src/arbori
   stores/useMeteorologistStore.js     # zustand: mode + active id + autosave plumbing
 
 src/components/
-  Atmosphere.jsx                      # SHIPPED 4b.1 — v3 raymarched runtime (cumulus_humilis hardcoded)
+  Atmosphere.jsx                      # SHIPPED 4b.1 + 4b.2 + 5a — directive-driven in production, active-preset-driven in Meteorologist
   atmosphere-materials.js             # SHIPPED 4b.1 — shader factory + inline GLSL
   Atmosphere.jsx                      # production renderer (post-4b.3)
   SpriteClouds.jsx                    # retires in cleanup commit
@@ -130,7 +133,8 @@ src/components/
 
 src/lib/
   almanac-eval.js                     # SHIPPED 2026-05-13 (SC.6); no production consumer yet
-  weather-payload.js                  # NOT YET WRITTEN — Phase 5
+  weather-payload.js                  # SHIPPED 5a — open-meteo + INSTANCE + SunCalc → schema-aligned payload
+  weather-signals.js                  # NOT YET WRITTEN — Phase 6 (Modulators)
 
 src/cartograph/                       # IMPORTED by Meteorologist (no fork):
   TodChannel.jsx                      # the kit primitive

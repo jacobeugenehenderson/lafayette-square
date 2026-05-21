@@ -52,6 +52,8 @@ const validators = {
   // on PUT /almanac/:id so we can validate just the rule the operator
   // edited without round-tripping the full almanac through ajv.
   rule:           ajv.compile({ $ref: 'almanac.schema.json#/$defs/rule' }),
+  modulators:     compile('modulator.schema.json'),
+  modulator:      ajv.compile({ $ref: 'modulator.schema.json#/$defs/modulator' }),
 }
 
 function wrap(name) {
@@ -68,6 +70,8 @@ export const validateAlmanac        = wrap('almanac')
 export const validateWeatherPayload = wrap('weatherPayload')
 export const validateDirective      = wrap('directive')
 export const validateRule           = wrap('rule')
+export const validateModulators     = wrap('modulators')
+export const validateModulator      = wrap('modulator')
 
 /**
  * Cross-schema checks that JSON Schema can't express on its own.
@@ -115,25 +119,32 @@ export function validateLibrary({ presetsFile, almanac }) {
   return { ok: errors.length === 0, errors }
 }
 
-// CLI usage: `node pipeline/validate.js <path-to-presets.json> <path-to-almanac.json>`
-// Prints summary, exits non-zero on any error. Used by bake.js + ad-hoc checks.
+// CLI usage:
+//   node pipeline/validate.js <presets.json> <almanac.json> [modulators.json]
+// Prints summary, exits non-zero on any error.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const [, , presetsPath, almanacPath] = process.argv
+  const [, , presetsPath, almanacPath, modulatorsPath] = process.argv
   if (!presetsPath || !almanacPath) {
-    console.error('usage: node pipeline/validate.js <presets.json> <almanac.json>')
+    console.error('usage: node pipeline/validate.js <presets.json> <almanac.json> [modulators.json]')
     process.exit(2)
   }
   const presetsFile = JSON.parse(readFileSync(presetsPath, 'utf8'))
   const almanac     = JSON.parse(readFileSync(almanacPath, 'utf8'))
+  const modulators  = modulatorsPath ? JSON.parse(readFileSync(modulatorsPath, 'utf8')) : null
 
   const r1 = validatePresetsFile(presetsFile)
   const r2 = validateAlmanac(almanac)
   const r3 = validateLibrary({ presetsFile, almanac })
+  const r4 = modulators ? validateModulators(modulators) : { ok: true, errors: null }
 
   let failed = 0
   if (!r1.ok) { console.error('presets.json:', r1.errors); failed++ }
   if (!r2.ok) { console.error('almanac.json:', r2.errors); failed++ }
   if (!r3.ok) { console.error('cross-schema:', r3.errors); failed++ }
-  if (failed === 0) console.log(`ok: ${presetsFile.presets.length} presets, ${almanac.rules.length} rules`)
+  if (!r4.ok) { console.error('modulators.json:', r4.errors); failed++ }
+  if (failed === 0) {
+    const mCount = modulators?.modulators?.length ?? 0
+    console.log(`ok: ${presetsFile.presets.length} presets, ${almanac.rules.length} rules${modulators ? `, ${mCount} modulators` : ''}`)
+  }
   process.exit(failed === 0 ? 0 : 1)
 }

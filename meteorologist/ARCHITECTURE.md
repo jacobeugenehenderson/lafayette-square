@@ -83,6 +83,7 @@ This dovetails with `feedback_preview_uses_production_pipeline` (which Preview a
 |---|---|---|
 | `public/clouds/presets.json` | **The Teapot.** Cloud preset library — WMO species × visually-distinct variants + practical fog/haze + v1.x precipitation stubs. 52 entries scaffolded. | `pipeline/schema/presets-file.schema.json` + per-entry `preset.schema.json` |
 | `public/clouds/almanac.json` | **The Almanac.** Rule table: weather payload → atmospheric directive. 16 starter rules + a fallback directive. | `pipeline/schema/almanac.schema.json` |
+| `public/clouds/modulators.json` | **The Modulators** (Halo, Phase 6, 2026-05-20). Continuous, signal-driven directive deltas that compose on top of the Almanac's base. 7 starter records (cold-front passage, tornado green, wildfire smoke, pre-storm gold, about-to-rain, fog burn-off, summer heat haze). Sibling `modulators.defaults.json` preserves hand-authoring per `feedback_json_stringify_loses_handauthored_format`. | `pipeline/schema/modulator.schema.json` |
 | `meteorologist/data/specialist-seed.json` | **The Seed.** Calibrated initial params + operator-facing descriptions per preset, authored by Cloud Specialist agent (Nimbus, 2026-05-20). Immutable canon; operator edits in `presets.json` override per preset. Applied via `pipeline/seed-presets.js`. | (no schema; flat 52-entry list) |
 
 Two additional schemas describe wire formats, not stored files:
@@ -189,15 +190,29 @@ This shape mirrors `../arborist/` and `../cartograph/` so a contributor (or agen
 The runtime — Stage shots, Preview, the deployed app — consumes both artifacts read-only at startup:
 
 ```js
-const presets  = await fetch('/clouds/presets.json').then(r => r.json())
-const almanac  = await fetch('/clouds/almanac.json').then(r => r.json())
-const directive = selectDirective(weatherPayload, almanac, presets, override)
+const presets    = await fetch('/clouds/presets.json').then(r => r.json())
+const almanac    = await fetch('/clouds/almanac.json').then(r => r.json())
+const modulators = await fetch('/clouds/modulators.json').then(r => r.json())
+const signals    = deriveSignals(weatherPayload, currentTime, extras)
+const directive  = selectDirective({
+  weather: weatherPayload, almanac, presets, override,
+  modulators: modulators.modulators, signals,
+})
 // directive → <Atmosphere /> uniforms
 ```
 
-`src/lib/almanac-eval.js` exports `selectDirective(weather, almanac, presets, override)` — a pure function: same inputs → same directive. The evaluator is already shipped (SC.6); a debug-only readout in cartograph's Sky & Light panel can surface "current Almanac preset" before v3 renders it.
+`src/lib/almanac-eval.js` exports `selectDirective({ weather, almanac, presets, override, modulators, signals })` — pure function: same inputs → same directive. Phase 5a (Cirrus, 2026-05-20) hot-mounted the base path via `src/hooks/useAtmosphereDirective.js` + `src/hooks/useAtmosphere.js` + `src/components/AtmosphereDirectiveDriver.jsx`. **Phase 6** (Halo, 2026-05-20) extended the evaluator with modulator composition: each authored modulator independently evaluates a 0..1 strength from `signals` and applies its bundle of deltas on top of the Almanac's base directive. Composition is multiplicative for scalar scales, sum-and-clamp for tint-toward amounts, last-wins for `{from,to}` color overrides. A sibling `selectDirectiveWithStrengths` also returns the per-modulator strength map, published to `useAtmosphere.activeStrengths` so the Modulators editor's live indicator can show what's firing right now. Directive flips lerp over 45s via weight-union cloud crossfade — modulator strength changes ride the same tween, no driver-side changes.
+
+`src/lib/weather-signals.js` exports `deriveSignals(payload, currentTime, extras)` — produces the expanded signal payload modulators read against. Derived signals: `pressure_trend_3hr` (mb change over 3hr, walked off the hourly back-fill from open-meteo's `past_hours=4` + `pressure_msl` query), `direct_ratio` (direct/(direct+diffuse+ε); smoke + haze detection), `hour_of_day`, `minute_of_day`. Pass-throughs: all `weather-payload.schema.json` fields plus `weathercode` and `precipitation` aliases used by the ADR-style worked examples.
 
 **Three production mount sites** for `<Atmosphere />` — `Scene.jsx` / `CartographApp.jsx` / `PreviewApp.jsx` — all identical, no fork. CanaryScene is the fourth mount (Meteorologist's authoring canary). Post-4b.3, no procedural fallback path exists.
+
+**Atmosphere has two uniform-source paths** (both wired post-5a):
+
+- **Authoring path** — `useMeteorologistStore.activePreset` (Phase 4b.2 binding). Used in Meteorologist sessions when an operator is tuning a preset.
+- **Production path** — `useAtmosphere.tweenedDirective` → `bindUniformsFromDirective` does a weighted blend across the directive's `clouds[]`. Used everywhere else.
+
+When a directive is active, its `sun.tint` + `lightDome.{horizon,ambientFloor}` override the sky-light coupling for cloud lighting; the sky channel still owns the dome.
 
 ---
 

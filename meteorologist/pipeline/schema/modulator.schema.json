@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lafayette-square/meteorologist/modulator.schema.json",
+  "title": "Modulators",
+  "description": "Continuous atmospheric phenomena layered on top of the Almanac's base directive. Each record binds a weather signal (or a composite of signals) to a curve that produces a 0..1 strength, then applies a bundle of deltas to directive fields. Authored in Meteorologist's Modulators tab, published as public/clouds/modulators.json, composed by src/lib/almanac-eval.js after the Almanac selects the base directive. Doctrine: feedback_absence_means_inherit_in_authored_blocks — absent delta fields leave the base directive untouched.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "modulators"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bakedAt": { "type": "integer" },
+        "notes":   { "type": "string" }
+      }
+    },
+    "modulators": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/modulator" },
+      "description": "Each modulator independently evaluates a strength from the live signals payload and applies its deltas. Composition is multiplicative for scalar scales, sum-and-clamp for tintToward amounts, last-wins for color hex overrides."
+    }
+  },
+  "$defs": {
+    "modulator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "driver", "deltas"],
+      "properties": {
+        "id":          { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "label":       { "type": "string" },
+        "description": { "type": "string" },
+        "enabled":     { "type": "boolean", "default": true },
+        "driver":      { "$ref": "#/$defs/driver" },
+        "deltas":      { "$ref": "#/$defs/deltas" },
+        "rampMinutes": { "type": "number", "minimum": 0, "maximum": 120, "default": 30, "description": "Author's note on intended ramp; the actual smoothing happens via AtmosphereDirectiveDriver's per-frame lerp toward the resolved directive. Surfaced in the editor so the operator can communicate intent and tune ramp visually in a future revision." }
+      }
+    },
+    "driver": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signal", "range", "curve"],
+          "properties": {
+            "signal": { "type": "string" },
+            "range":  { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+            "curve":  { "type": "string", "enum": ["smoothstep", "linear", "bell", "threshold"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signal", "in"],
+          "properties": {
+            "signal": { "type": "string" },
+            "in":     { "type": "array", "minItems": 1, "items": { "anyOf": [{ "type": "number" }, { "type": "string" }] } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signal", "between"],
+          "properties": {
+            "signal":  { "type": "string" },
+            "between": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" }, "description": "Inclusive numeric range. 1 if lo<=value<=hi, else 0. Used for continuous-range membership where 'in' (discrete-set membership) would be inappropriate." }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signal", "min"],
+          "properties": {
+            "signal": { "type": "string" },
+            "min":    { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["all"],
+          "properties": {
+            "all": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/driver" } }
+          }
+        }
+      ]
+    },
+    "deltas": {
+      "type": "object",
+      "description": "Map of directive dot-paths (e.g. 'sun.tint', 'lightDome.ambientFloor', 'wind.scale') to delta records. Absent paths leave the base directive untouched.",
+      "additionalProperties": { "$ref": "#/$defs/delta" }
+    },
+    "delta": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "to":   { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+          },
+          "description": "Color hex lerp. At strength=1 the directive field becomes 'to'. Overrides the base value (last-wins if multiple modulators target the same color field)."
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scale"],
+          "properties": {
+            "scale": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number", "minimum": 0 } }
+          },
+          "description": "Scalar multiplier. At strength=s the directive field is multiplied by mix(scale[0], scale[1], s). Composes multiplicatively with other scale deltas on the same field."
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tintToward", "amount"],
+          "properties": {
+            "tintToward": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "amount":     { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number", "minimum": 0, "maximum": 1 } }
+          },
+          "description": "Color tint that lerps the current field value toward tintToward by mix(amount[0], amount[1], strength). Composes additively (amounts sum-and-clamp)."
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "number" },
+          "description": "Direct scalar range [lo, hi]. Value becomes mix(lo, hi, strength). Composes by sum-and-clamp on the per-modulator output deltas."
+        }
+      ]
+    }
+  }
+}

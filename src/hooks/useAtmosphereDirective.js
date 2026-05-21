@@ -7,18 +7,23 @@
  *   - useTimeOfDay currentTime (scrubbable)
  *   - scene.clouds.values.preset operator override (SC.6 wiring)
  *
- * Loads almanac.json + presets.json once (module-level cache), then
- * recomputes the directive whenever any input changes and writes it to
- * useAtmosphere.rawDirective. The driver's per-frame useFrame lerps
- * rawDirective → tweenedDirective.
+ * Loads almanac.json + presets.json + modulators.json once
+ * (module-level cache), then recomputes the directive whenever any
+ * input changes and writes it to useAtmosphere.rawDirective. The
+ * driver's per-frame useFrame lerps rawDirective → tweenedDirective.
  *
- * Phase 5a-scope: this hook produces the BASE directive from the
- * Almanac. Phase 6 Modulators will stack on top before write — same
- * shape, no consumer churn.
+ * Phase 5a (Cirrus) shipped the Almanac base path. Phase 6 (Halo
+ * 2026-05-20) extends it: after the Almanac picks the base directive,
+ * the modulator stack composes continuous deltas on top — each
+ * modulator independently evaluates a strength from derived signals
+ * and applies its bundle of color/scale/tint/range deltas. Per-modulator
+ * strengths are published to useAtmosphere.activeStrengths so the
+ * editor's live indicator can read what's firing now.
  */
 import { useEffect, useRef } from 'react'
-import { selectDirective } from '../lib/almanac-eval.js'
+import { selectDirectiveWithStrengths } from '../lib/almanac-eval.js'
 import { buildWeatherPayload } from '../lib/weather-payload.js'
+import { deriveSignals } from '../lib/weather-signals.js'
 import useSkyState from './useSkyState.js'
 import useTimeOfDay from './useTimeOfDay.js'
 import useAtmosphere from './useAtmosphere.js'
@@ -26,11 +31,13 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 
 let _almanacPromise = null
 let _presetsPromise = null
+let _modulatorsPromise = null
 let _almanacCache = null
 let _presetsCache = null
+let _modulatorsCache = null
 
 function ensureLoaded() {
-  if (_almanacCache && _presetsCache) return Promise.resolve()
+  if (_almanacCache && _presetsCache && _modulatorsCache) return Promise.resolve()
   if (!_almanacPromise) {
     _almanacPromise = fetch(`${import.meta.env.BASE_URL}clouds/almanac.json`)
       .then(r => r.ok ? r.json() : null)
@@ -43,19 +50,30 @@ function ensureLoaded() {
       .then(j => { _presetsCache = j })
       .catch(e => { console.warn('[useAtmosphereDirective] presets load failed:', e) })
   }
-  return Promise.all([_almanacPromise, _presetsPromise])
+  if (!_modulatorsPromise) {
+    _modulatorsPromise = fetch(`${import.meta.env.BASE_URL}clouds/modulators.json`)
+      .then(r => r.ok ? r.json() : { modulators: [] })
+      // 404 (artifact missing) is non-fatal — modulators are additive;
+      // absence means the base directive is published unmodulated. This
+      // matches the slab-completeness doctrine: kit deploys without a
+      // modulators artifact still render correctly, just without the
+      // continuous-phenomena layer.
+      .then(j => { _modulatorsCache = j || { modulators: [] } })
+      .catch(e => {
+        console.warn('[useAtmosphereDirective] modulators load failed:', e)
+        _modulatorsCache = { modulators: [] }
+      })
+  }
+  return Promise.all([_almanacPromise, _presetsPromise, _modulatorsPromise])
 }
 
 /** Read-only accessors for callers (Atmosphere uniform blender). */
 export function getPresetsCache() { return _presetsCache }
 export function getAlmanacCache() { return _almanacCache }
+export function getModulatorsCache() { return _modulatorsCache }
 
 export default function useAtmosphereDirective(lookId) {
   const scene = useSceneJson(lookId)
-  // Subscribe to a coarse "weather slice changed" signal — we read
-  // individual values inside the effect to avoid retriggering on every
-  // smoothed interpolation tick. The poller calls setWeatherTargets
-  // every ~5 min, which is the cadence we want for re-evaluation.
   const _targetCloudCover = useSkyState((s) => s._targetCloudCover)
   const _targetPrecip = useSkyState((s) => s._targetPrecipitation)
   const _targetWindMs = useSkyState((s) => s.windSpeedMs)
@@ -64,10 +82,11 @@ export default function useAtmosphereDirective(lookId) {
   const _pressure = useSkyState((s) => s.pressureMb)
   const _tempF = useSkyState((s) => s.temperatureF)
   const _wmo = useSkyState((s) => s.currentWeatherCode)
-  // useTimeOfDay ticks every animation frame; subscribing to the raw
-  // Date would re-run the evaluator effect 60×/sec. Quantize to whole
-  // minutes — Almanac rules only resolve at that granularity (TOD slot
-  // boundaries) so per-minute re-eval is plenty.
+  const _direct = useSkyState((s) => s.directRadiation)
+  const _diffuse = useSkyState((s) => s.diffuseRadiation)
+  // useTimeOfDay ticks every animation frame; subscribe at minute
+  // granularity (Almanac rules + most modulator drivers resolve at that
+  // grain). Hour-of-day signals naturally flip at the right tick.
   const currentMinuteOfHour = useTimeOfDay((s) => {
     const t = s.currentTime
     return t.getFullYear() * 525600 + t.getMonth() * 44640 + t.getDate() * 1440 + t.getHours() * 60 + t.getMinutes()
@@ -82,8 +101,6 @@ export default function useAtmosphereDirective(lookId) {
       if (cancelled) return
       const sky = useSkyState.getState()
       const time = useTimeOfDay.getState().currentTime
-      // Read targets directly so the evaluator sees the API-level
-      // values, not the interpolated display values.
       const weatherTargets = {
         cloudCover: sky._targetCloudCover,
         storminess: sky._targetStorminess,
@@ -98,16 +115,29 @@ export default function useAtmosphereDirective(lookId) {
         currentWeatherCode: sky.currentWeatherCode,
       }
       const payload = buildWeatherPayload(weatherTargets, time)
-      const directive = selectDirective({
+      const signals = deriveSignals(payload, time, {
+        currentWeatherCode: sky.currentWeatherCode,
+        directRadiation: sky.directRadiation,
+        diffuseRadiation: sky.diffuseRadiation,
+        hourlyForecast: sky.hourlyForecast,
+      })
+      const { directive, strengths } = selectDirectiveWithStrengths({
         weather: payload,
         almanac: _almanacCache,
         presets: _presetsCache,
         override,
+        modulators: _modulatorsCache?.modulators || [],
+        signals,
       })
-      // De-duplicate identical directives so the tween isn't restarted
-      // by an irrelevant store ping (e.g., scrubbing time within the
-      // same Almanac bucket). Cheap shallow key over preset+weight set.
-      const key = directiveIdentityKey(directive)
+      // Strengths can change frame-to-frame even when the base rule is
+      // stable; publish them every tick (cheap shallow set) so the
+      // editor's live indicator stays current.
+      useAtmosphere.getState().setActiveStrengths(strengths || {})
+
+      // De-dupe identical directives so the tween isn't restarted by an
+      // irrelevant ping. The dedup key now includes modulator strengths
+      // (small string) so a strength change retriggers the tween.
+      const key = directiveIdentityKey(directive, strengths)
       if (key === _lastEvalKey.current) return
       _lastEvalKey.current = key
       useAtmosphere.getState().setRawDirective(directive)
@@ -115,16 +145,18 @@ export default function useAtmosphereDirective(lookId) {
     return () => { cancelled = true }
   }, [
     _targetCloudCover, _targetPrecip, _targetWindMs, _targetWindDir,
-    _humidity, _pressure, _tempF, _wmo,
+    _humidity, _pressure, _tempF, _wmo, _direct, _diffuse,
     currentMinuteOfHour,
     override,
   ])
 }
 
-function directiveIdentityKey(d) {
+function directiveIdentityKey(d, strengths) {
   if (!d) return 'null'
   const clouds = (d.clouds || []).map(c => `${c.preset}:${(c.weight ?? 0).toFixed(3)}`).join(',')
-  const sun = d.sun ? `${d.sun.tint || ''}|${d.sun.intensity ?? ''}` : ''
+  const sun = d.sun ? `${d.sun.tint || ''}|${(d.sun.intensity ?? '').toString().slice(0, 6)}` : ''
   const wind = d.wind ? `${d.wind.scale ?? ''}|${d.wind.dir ?? ''}` : ''
-  return `${clouds}#${sun}#${wind}`
+  const dome = d.lightDome ? `${d.lightDome.top || ''}|${d.lightDome.horizon || ''}|${(d.lightDome.ambientFloor ?? '').toString().slice(0, 6)}` : ''
+  const s = strengths ? Object.entries(strengths).map(([k, v]) => `${k}:${v.toFixed(2)}`).join(',') : ''
+  return `${clouds}#${sun}#${wind}#${dome}#${s}`
 }

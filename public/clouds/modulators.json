@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "meta": {
+    "notes": "Continuous atmospheric phenomena. Each modulator independently evaluates strength from live signals and applies deltas to the directive after the Almanac picks its base. Authored Halo 2026-05-20 (Phase 6)."
+  },
+  "modulators": [
+    {
+      "id": "cold_front_passage",
+      "label": "Cold front passage",
+      "description": "A falling barometer over 3 hours warms the sun cast, cools the sky low-band, and lifts wind scale — the visible texture of frontal passage. Canonical ADR example.",
+      "enabled": true,
+      "driver": { "signal": "pressure_trend_3hr", "range": [-6, 0], "curve": "smoothstep" },
+      "deltas": {
+        "sun.tint":             { "from": "#ffe6c8", "to": "#fff0aa" },
+        "sun.intensity":        { "scale": [1.0, 0.7] },
+        "lightDome.horizon":    { "tintToward": "#7e9eb8", "amount": [0, 0.4] },
+        "wind.scale":           { "scale": [1.0, 1.6] }
+      },
+      "rampMinutes": 45
+    },
+    {
+      "id": "severe_storm_aerosol_filter",
+      "label": "Severe storm — tornado green",
+      "description": "Eerie yellow-green light when thunderstorm WMO codes coincide with late-afternoon hours and heavy precip — the optical signature of hail-dense supercells filtering low-angle sun through a green-tinted scattering layer. Canonical ADR example.",
+      "enabled": true,
+      "driver": {
+        "all": [
+          { "signal": "weathercode",   "in": [95, 96, 99] },
+          { "signal": "hour_of_day",   "between": [16, 21] },
+          { "signal": "precipitation", "min": 5 }
+        ]
+      },
+      "deltas": {
+        "sun.tint":          { "from": "#ffe6c8", "to": "#9aaa55" },
+        "sun.intensity":     { "scale": [1.0, 0.35] },
+        "lightDome.horizon": { "tintToward": "#9caa66", "amount": [0, 0.6] },
+        "lightDome.top":     { "tintToward": "#5e6840", "amount": [0, 0.4] }
+      },
+      "rampMinutes": 5
+    },
+    {
+      "id": "wildfire_smoke",
+      "label": "Wildfire smoke",
+      "description": "When direct sun is disproportionately attenuated vs diffuse (smoke / heavy aerosol), the sun goes orange, the dome takes a brown-amber wash, and overall intensity falls. Driver inverts direct/diffuse ratio — clean air has ratio ~0.7+; thick smoke pulls it under 0.4.",
+      "enabled": true,
+      "driver": { "signal": "direct_ratio", "range": [0.7, 0.35], "curve": "smoothstep" },
+      "deltas": {
+        "sun.tint":          { "from": "#ffe6c8", "to": "#ff9a3a" },
+        "sun.intensity":     { "scale": [1.0, 0.65] },
+        "lightDome.horizon": { "tintToward": "#d97a3a", "amount": [0, 0.7] },
+        "lightDome.top":     { "tintToward": "#b86a30", "amount": [0, 0.5] }
+      },
+      "rampMinutes": 30
+    },
+    {
+      "id": "pre_storm_gold",
+      "label": "Pre-storm gold",
+      "description": "The deep golden cast that lands when low-angle sun rakes underneath a heavy cloud deck. Bell curves on cloudCover (mid-heavy) and sunElevationDeg (low but above horizon) compose to fire only in the narrow window where both hold.",
+      "enabled": true,
+      "driver": {
+        "all": [
+          { "signal": "cloudCover",       "range": [0.5, 0.85], "curve": "bell" },
+          { "signal": "sunElevationDeg",  "range": [3, 14],     "curve": "bell" }
+        ]
+      },
+      "deltas": {
+        "sun.tint":          { "from": "#ffe6c8", "to": "#ffb050" },
+        "sun.intensity":     { "scale": [1.0, 1.18] },
+        "lightDome.horizon": { "tintToward": "#d8a040", "amount": [0, 0.45] }
+      },
+      "rampMinutes": 20
+    },
+    {
+      "id": "about_to_rain",
+      "label": "About to rain",
+      "description": "Falling pressure + high humidity + heavy cloud cover compose to the muted, slightly-cooler, slightly-flatter light of the half hour before a rain begins. Sun dims, ambient floor lifts (cloud-diffused), dome top cools.",
+      "enabled": true,
+      "driver": {
+        "all": [
+          { "signal": "pressure_trend_3hr", "range": [-3, 0],     "curve": "smoothstep" },
+          { "signal": "humidity",           "range": [0.75, 0.95], "curve": "smoothstep" },
+          { "signal": "cloudCover",         "min": 0.6 }
+        ]
+      },
+      "deltas": {
+        "sun.intensity":          { "scale": [1.0, 0.6] },
+        "lightDome.ambientFloor": { "scale": [1.0, 1.25] },
+        "lightDome.top":          { "tintToward": "#6a7080", "amount": [0, 0.35] }
+      },
+      "rampMinutes": 15
+    },
+    {
+      "id": "fog_burn_off",
+      "label": "Fog burn-off",
+      "description": "Mid-morning hours with mid-band cloud cover (the bell catches the clearing arc) light the dome with a warm, hazy diffusion — sun softens, horizon goes pale-warm, the air reads moist.",
+      "enabled": true,
+      "driver": {
+        "all": [
+          { "signal": "cloudCover",  "range": [0.3, 0.75], "curve": "bell" },
+          { "signal": "hour_of_day", "between": [7, 11] }
+        ]
+      },
+      "deltas": {
+        "sun.tint":          { "from": "#ffe6c8", "to": "#fff4d8" },
+        "sun.intensity":     { "scale": [1.0, 0.85] },
+        "lightDome.horizon": { "tintToward": "#d8d4c0", "amount": [0, 0.55] }
+      },
+      "rampMinutes": 60
+    },
+    {
+      "id": "summer_heat_haze",
+      "label": "Summer heat haze",
+      "description": "Hot midday hours with measurable direct/diffuse haze flatten the dome cool, blanch the sun toward white, slow the wind. Distinct from wildfire smoke (which goes orange); heat haze stays neutral-grey-blue.",
+      "enabled": true,
+      "driver": {
+        "all": [
+          { "signal": "tempC",        "range": [28, 38],   "curve": "smoothstep" },
+          { "signal": "direct_ratio", "range": [0.85, 0.6], "curve": "smoothstep" },
+          { "signal": "hour_of_day",  "between": [11, 17] }
+        ]
+      },
+      "deltas": {
+        "sun.tint":          { "from": "#ffe6c8", "to": "#fff0e8" },
+        "lightDome.top":     { "tintToward": "#c0c8d0", "amount": [0, 0.35] },
+        "lightDome.horizon": { "tintToward": "#d8c898", "amount": [0, 0.4] },
+        "wind.scale":        { "scale": [1.0, 0.75] }
+      },
+      "rampMinutes": 90
+    }
+  ]
+}
