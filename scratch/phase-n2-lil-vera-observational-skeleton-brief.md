@@ -65,7 +65,7 @@ In Bayesian form: `P(skeleton_class | observation, species) ∝ P(observation | 
 
 This directly addresses rev. 1's classifier failure mode. Tycho's 63% junction classification at N=500 was geometrically defensible (dense leaf-mass has many high-density orientation peaks) but botanically impossible (real Sugar Maples have <10% skeleton-node junctions). A position-conditioned Sugar Maple prior immediately rejects the leaf-mass candidates as "no Sugar Maple skeleton structure at this radial extent at this height" — they become leaves, not junctions. **The species prior is the leaf-discriminator pure geometry lacks.**
 
-**Disciplines as tools:** computer vision (multi-view geometry, image-space skeletonization, stereo correspondence — OpenCV is allowed), 3D tubular structure extraction (Hessian ridge-following on scalar fields; vessel-tracing literature in MRI/CT is directly applicable), parametric spline fitting (Catmull-Rom or B-spline through ridge-traced nodes; SciPy's `scipy.interpolate.splprep`), pipe-model botany (Shinozaki 1964, Murray's law — for Phase 4 radius accumulation AND for taper-projected tip extrapolation, two co-determined views of the same biological relationship), forestry literature (species-specific morphology + allometric equations for hand-encoding initial priors). Reach for whichever the apparatus needs.
+**Disciplines as tools:** computer vision (multi-view geometry, image-space skeletonization, stereo correspondence — OpenCV is allowed), neural-development biology (filopodia-style growth-cone navigation + synaptic mutual-recognition primitives — directly informs Phase 3b axonal growth), parametric spline fitting (Catmull-Rom or B-spline through handshake-recovered control points; SciPy's `scipy.interpolate.splprep`), pipe-model botany (Shinozaki 1964, Murray's law — for Phase 4 radius accumulation AND for taper-projected tip extrapolation, two co-determined views of the same biological relationship), forestry literature (species-specific morphology + allometric equations for hand-encoding initial priors). Reach for whichever the apparatus needs. **NOT a tool here:** 3D Hessian ridge-following / vessel-tracing-style scalar-field extraction — the restructure removed it; see Non-goals.
 
 ---
 
@@ -147,7 +147,7 @@ What gets newly authored:
 
   **Adaptive scan:** N_batch (rigs added per scan iteration, default 50), N_max (hard safety cap on total rigs, default 2000; hitting it is a "did-not-converge" diagnostic, not a routine outcome), cluster-detector params {`density_threshold` for binarizing M_obs into connected components, `min_voxel_count` to ignore tiny noise blobs, `elongation_threshold` = PCA λ1/λ2 ratio below which a cluster fails the "long-pointy-shape" test and is considered unexplained mass requiring more scanning}. Scan loop terminates when zero clusters fail the elongation test, OR N_max is hit.
 
-  **Tip-precision detector:** `tip_elongation_min` (local-PCA λ1/λ2 in a spherical neighborhood; default ~5.0 — tips are decidedly elongated), `tip_taper_sign` (must be negative — radius monotonically shrinks toward the candidate; flat or growing rules out tip), `tip_neighborhood_radius` (PCA window, default ~0.15m), `τ_tip_prior` (minimum `priors.likelihood(class='tip', ...)` for the tip to anchor; default 0.5 — half-prior or better). Anchor admission is conjunction of all four (geometric AND priors).
+  **Tip-precision detector:** `tip_geometric_min` (minimum `c.geometric_confidence` for the candidate to enter the tip pipeline at all; default 0.5 — tomography must be confident in its 'tip' verdict before geometric tests are even attempted), `min_nbhd_count` (minimum candidate-count in the local-PCA spherical neighborhood; default 8 — fewer points than this gives an unreliable PCA), `tip_elongation_min` (local-PCA λ1/λ2 in a spherical neighborhood; default ~5.0 — tips are decidedly elongated), `tip_taper_sign` (must be negative — radius monotonically shrinks toward the candidate; flat or growing rules out tip), `tip_neighborhood_radius` (PCA window, default ~0.15m), `τ_tip_prior` (minimum `priors.likelihood(class='tip', ...)` for the tip to anchor; default 0.5 — half-prior or better). Anchor admission is conjunction of all six gates (geometric_confidence + nbhd-count + elongation + taper sign + neighborhood radius window + priors). Two-of-six being optional or lax breaks the precision premise of N.3.0's "stop-the-cycle" tip gate; keep all six strict.
 
   **Axonal growth:** `step_length` (probe advance per step, default ~0.05m — fine enough to follow real branch curvature), `probe_max_steps` (per-probe cap before stalling, default 200 — bounds runaway growth), `glimpse_threshold` (minimum M_obs ahead of probe tip to count as a confirmed glimpse), `cone_half_angle` (forward search cone half-angle at each step, default ~20° — tight, since priors are steering), `curvature_prior_blend` (weight ∈ [0,1] for blending last-segment direction vs species-priors expected local direction at this height; default 0.5), `handshake_distance` (probes within this Euclidean distance are candidates for handshake; default 2 × step_length), `directional_agreement_threshold` (cos-angle between A's forward direction and -B's forward direction must exceed this for handshake; default 0.7 ≈ 45°). Handshake requires BOTH proximity AND directional agreement.
 
@@ -461,9 +461,16 @@ Loop until terminated:
     Else inherit: p.classification, p.combined_confidence, p.prior_likelihood,
                   p.rigs_seen ← c's values.
 
-    If p lies within ε_lock of any spline s ∈ new_splines with
-       s.prior_likelihood > lock_in_threshold:
+    If p lies within ε_lock of any spline s ∈ (splines ∪ new_splines) with
+       s.from_handshake AND s.prior_likelihood > lock_in_threshold:
       MARK LOCKED-IN  → remove p from P. Spline s persists in output.
+      # Check accumulated `splines` (prior-pass lock-ins) AND `new_splines`
+      # (this pass's growth output): a deferred point whose attribution
+      # this pass moves it within ε_lock of a previously-committed spline
+      # must lock in now, not wait for that spline to be re-emitted (which
+      # it never will be). Only `from_handshake` splines lock in;
+      # `from_taper_only` degraded-fallback splines do NOT lock in by
+      # default (their evidence is weaker — observation may yet refine).
     Elif p.combined_confidence < rejection_threshold (geometric AND prior
          BOTH agree this isn't Sugar-Maple-structure here) AND
          p.rigs_seen ≥ K_rigs_min (enough observational evidence to commit):
@@ -503,7 +510,7 @@ return splines  # parametric centerlines, ready for Phase 5 radius pass
 After the loop terminates, splines is the sparse parametric skeleton (target: ~hundreds, never tens of thousands; see acceptance for guidance). Phase 5 operates on this graph:
 
 - **Parent-direction assignment** (writes the spline graph's `parentSplineId` + `parentAttachT` fields): mutual recognition in Phase 3b produces symmetric edges (a, b) with no inherent direction. Phase 5 traverses from the trunk-base spline outward via BFS (or any tree-rooting traversal), assigning each non-root spline a parent + parametric attach position on its parent. Edges become directed parent→child. The trunk-base spline has `parentSplineId=null`.
-- **Multi-component handling.** If mutual recognition fails to connect every spline (possible at aggressive rejection thresholds or low N), BFS from trunk reaches only one component. **Disconnected splines are flagged but NOT dropped.** They appear in output with `parentSplineId=null` AND `"orphan": true` so downstream consumers + the operator can see them; the orphan count is surfaced in `stats.orphanCount` per-pass diagnostic. Acceptance criterion 4 ("connected output") requires `orphanCount == 0` at the cycle gate — if orphans remain, that's a flag the apparatus didn't converge cleanly, not a silent commit. (Future cycles may attempt a one-shot reach-extension pass to reconnect orphans before output; Cycle 1 surfaces them honestly.)
+- **Multi-component handling.** If mutual recognition fails to connect every spline (possible at aggressive rejection thresholds or low N), BFS from trunk reaches only one component. **Disconnected splines are flagged but NOT dropped.** They appear in output with `parentSplineId=null` AND `"orphan": true` so downstream consumers + the operator can see them; the orphan count is surfaced in `stats.orphanCount` per-pass diagnostic. **N.3.2 acceptance criterion 9 (`stats.orphanCount == 0`) is the formal connectivity gate** — if orphans remain at the cycle gate, that's a flag the apparatus didn't converge cleanly, not a silent commit. (Future cycles may attempt a one-shot reach-extension pass to reconnect orphans before output; Cycle 1 surfaces them honestly.)
 - **Backward pass:** for each terminal-tip spline, trace its path through the now-directed graph back to the ground (trunk-base spline). Each tip = one "pipe."
 - **Forward pass:** walk ground→tips. At each spline cross-section, count overlapping pipes. **Radius² ∝ pipe count.** Murray's law emerges; no heuristic radius function.
 - **Output radius function per spline:** parametric — `radius(t) = baseRadius × (1 - t)^taperExponent` fit to the per-cross-section pipe counts, OR per-control-point radii if the curve doesn't fit cleanly.
@@ -568,17 +575,41 @@ The Rubin test: dark matter doesn't vanish when one telescope goes offline.
   "expectedLocalDirection": {
     // Position-dependent expected branch tangent — consumed by Phase 3b
     // axonal growth to steer the prior_direction component of each step.
-    // Lookup: given (height_frac, radial_dist_from_axis, current_direction),
-    // returns the species's expected local tangent at that tree-frame
-    // position. Implementation: at each (height_frac, radial_dist) sample,
-    // record a modal angle-from-vertical AND a modal azimuthal flare
-    // (direction-from-axis in the horizontal plane). Sugar Maple's
-    // strong-leader topology: near the trunk axis, branches lean toward
-    // vertical (continue the leader); outer canopy, branches flare outward
-    // and gradually horizontal (but never past 80°). The returned tangent
-    // is a unit 3D vector reconstructed from {angle_from_vertical,
-    // azimuthal_flare relative to (current_direction - vertical component)}.
+    // Lookup: given (height_frac, radial_dist_from_axis, current_direction,
+    // probe_position_world), returns a unit 3D vector — the species's
+    // expected local tangent at that tree-frame position.
+    //
+    // RECONSTRUCTION (deterministic, no hidden geometry):
+    //   1. Polar angle θ from vertical: interp angleFromVertical at the
+    //      (heightFrac, radialDist) query via the same Delaunay+nearest-
+    //      fallback pattern as expectedRadiusByPosition.
+    //   2. Azimuthal direction: choose the **radial-outward azimuth** in
+    //      the horizontal plane — the horizontal unit vector pointing from
+    //      trunk_axis (projected to ground plane at probe_position's
+    //      height) toward probe_position_world (also projected). This is
+    //      well-defined for any probe not exactly on the trunk axis;
+    //      species expectation is that Sugar Maple scaffolds flare radially
+    //      outward, so radial-outward is the right azimuthal prior.
+    //   3. NEAR-AXIS FALLBACK: when the probe is within `radialDist <
+    //      axialFallbackRadius` (default 0.05m — basically on the trunk
+    //      axis), radial azimuth is undefined. In that regime,
+    //      prior_direction collapses to a pure polar steer (vertical, with
+    //      polar angle θ from vertical) and the azimuth is inherited from
+    //      `current_direction`'s horizontal component. Document that this
+    //      regime produces a single-degree-of-freedom prior; the
+    //      observation component of Phase 3b's blend supplies the
+    //      remaining freedom.
+    //   4. Construct: tangent = (sin θ · cos φ_radial,
+    //                            cos θ,
+    //                            sin θ · sin φ_radial)
+    //      where φ_radial is the radial-outward azimuth from step 2 (or
+    //      the inherited azimuth in the near-axis case).
+    //
+    // Sugar Maple's strong-leader topology: near the trunk axis branches
+    // lean toward vertical (small θ); outer canopy, branches flare outward
+    // and gradually horizontal (large θ, but never past 80°).
     "type": "piecewise2d-delaunay",  // same interp scheme as expectedRadiusByPosition
+    "axialFallbackRadius": 0.05,     // meters; near-axis azimuth fallback (see RECONSTRUCTION step 3)
     "samples": [
       {"heightFrac": 0.0, "radialDist": 0.0,  "angleFromVertical": 0.0,  "stdDeg": 5.0},
       {"heightFrac": 0.3, "radialDist": 0.0,  "angleFromVertical": 5.0,  "stdDeg": 8.0},
@@ -691,9 +722,12 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
         "tipRadius": 0.003,
         "taperExponent": 1.5
       },
-      "parentSplineId": null,                     // null for trunk
+      "parentSplineId": null,                     // null for trunk OR orphan
       "parentAttachT": null,                      // 0-1 parametric position on parent
-      "tipExtrapolated": false                    // true if Phase 3c projected the tip
+      "tipExtrapolated": false,                   // true if Phase 3c projected the tip
+      "from_handshake": true,                     // true if Phase 3b mutual-recognition produced this spline
+      "from_taper_only": false,                   // true if spline came solely from Phase 3c degraded-mode fallback (no handshake)
+      "orphan": false                             // true if Phase 5 BFS from trunk-base couldn't reach this spline (disconnected component)
     },
     {
       "id": 1,
@@ -701,19 +735,67 @@ priors.likelihood(geometric_class, height_frac, radial_dist,
       "radiusFn": {...},
       "parentSplineId": 0,                        // child of spline 0
       "parentAttachT": 0.72,                      // attaches 72% along parent
-      "tipExtrapolated": true
+      "tipExtrapolated": true,
+      "from_handshake": true,
+      "from_taper_only": false,
+      "orphan": false
+    },
+    // Example of a degraded-mode orphan that survived to output:
+    {
+      "id": 42,
+      "controlPoints": [...],
+      "radiusFn": {...},
+      "parentSplineId": null,                     // can't reach trunk
+      "parentAttachT": null,
+      "tipExtrapolated": true,                    // single tip anchor + taper projection
+      "from_handshake": false,
+      "from_taper_only": true,
+      "orphan": true                              // BFS from trunk-base didn't reach this component
     },
     ...
   ],
   "hyperparams": {...},
   "perPassDiagnostics": [
-    {"pass": 1, "workingSetSize": 14045, "lockedIn": 1820, "rejected": 4500, "deferred": 7725, "newSplines": 12},
-    {"pass": 2, "workingSetSize": 7725, "lockedIn": 1300, "rejected": 2100, "deferred": 4325, "newSplines": 28},
+    {
+      "pass": 1,
+      "rigsScannedThisPass": 250,
+      "workingSetSize": 14045,
+      "lockedIn": 1820,
+      "rejected": 4500,
+      "deferred": 7725,
+      "newSplines": 12,
+      "tipAnchorCount": 87,
+      "activeProbes": 174,
+      "handshakeCount": 11,
+      "stalledProbeCount": 152,
+      "meanProbeStepsToHandshake": 38,
+      "orphanCount": 1
+    },
+    {
+      "pass": 2,
+      "rigsScannedThisPass": 100,
+      "workingSetSize": 7725,
+      "lockedIn": 1300,
+      "rejected": 2100,
+      "deferred": 4325,
+      "newSplines": 28,
+      "tipAnchorCount": 124,
+      "activeProbes": 248,
+      "handshakeCount": 27,
+      "stalledProbeCount": 194,
+      "meanProbeStepsToHandshake": 42,
+      "orphanCount": 1
+    },
     ...
   ],
   "stats": {
     "totalSplines": 287,
     "totalControlPoints": 1450,
+    "fromHandshakeCount": 281,                    // majority must be true at the cycle gate
+    "fromTaperOnlyCount": 6,                      // small minority expected
+    "orphanCount": 1,                             // ideally 0; surfaced honestly if non-zero
+    "totalRigsScanned": 612,                      // adaptive scan converged here
+    "scanTerminatedBy": "clusterDetectorEmpty",   // or "nMaxHit" (did-not-converge)
     "passes": 4,
     "terminatedBy": "stableResidual",
     "elapsedMs": 42000
@@ -767,6 +849,7 @@ At the N.3.2 gate (THE cycle gate):
 6. **Self-terminating iteration.** Per-pass elimination curve flattens cleanly; algorithm reports "stable residual" or "working set exhausted" rather than "max passes hit."
 7. **Tips inferred via taper extrapolation; pipe-model co-determination passes** (where applicable — i.e., on splines that have taper-projected endpoints; splines built entirely from handshake chains don't need this check). Per-chain observed radii (Phase 5 pipe-counting) ≈ taper-extrapolation predictions (Phase 3c) within tolerance per such spline endpoint.
 8. **Botanical conformance at the spline level.** Output splines pass priors validation: every spline's control points lie in their expected radius-by-position envelope; every joint passes Murray's law (parent_r² ≈ Σ child_r² within 15%); no spline angles violate the species's expected range; spline curvatures match `priors.expected_local_direction` profiles within tolerance (growth was actually steered by priors, not just nominally).
+9. **Single connected component (orphan-free output).** `stats.orphanCount == 0` at the cycle gate. Every spline reachable from the trunk-base via BFS through the directed parent→child graph. Phase 5 surfaces orphans honestly (does not drop them) so the operator can see them; a non-zero orphan count flags that mutual recognition didn't fully bridge the canopy and the apparatus has not converged. Cycle 1 requires orphan-free output; future cycles may add one-shot reach-extension to recover orphans before output, but Cycle 1 surfaces the gap rather than papering over it.
 
 If N.3.2 gate doesn't pop visibly: spike concluded honestly. Phase T fallback (per-species statistical extraction over Tycho's rev. 1 output OR over Hawthorn's Bidirectional / QSM baselines) is the next move.
 
