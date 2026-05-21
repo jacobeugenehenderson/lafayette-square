@@ -4,6 +4,49 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-21 — Preview Studio elevation (ADR — Phase 5b reshape)
+
+**Decision:** Phase 5b promoted from "polish bundle" to substantive arc centered on a Preview Studio surface. Operator picks (Look, Fixture, TOD) → renders the full runtime composition against that scenario. Closes the "authoring blind to atmospheric edge cases until real weather happens" gap that Phase 6 + 7b/c/d's atmospheric machinery quietly surfaced.
+
+**Context.** Jacob asked 2026-05-21 whether the operator could preview the deployed runtime's behavior under specific weather. Survey:
+
+- Production `/` shows today's *actual* weather — uncontrollable
+- Meteorologist's CanaryScene shows the active preset via `activePreset` path — bypasses directive composition (authoring mode, not preview mode)
+- Cartograph Stage + Preview render `<Atmosphere />` against hardcoded fallback uniforms — no directive driver mounted there yet
+- DevTools `useAtmosphere.setState({...})` forcing works but isn't operator UI
+
+After Phase 6, the runtime composes a huge range of atmospheric scenarios from authored modulators + Almanac + presets. Tornado green, blizzards, severe wildfire haze are RARE events; the operator cannot verify their authoring works unless those events occur naturally. Preview Studio closes the iteration loop.
+
+**The shape:**
+
+```
+Operator chooses          Runtime composes against              Studio renders
+  Look + Fixture + TOD →  selectDirective(fixture, …)       →   live full-pipeline view
+                          → modulator stack (signals from fixture)
+                          → tween + Atmosphere uniforms
+                          → opt-in materials respond
+```
+
+**Locked decisions:**
+
+- **Fixtures** live at `public/clouds/fixtures/<id>.json` matching `weather-payload.schema.json`. Sibling `fixtures.defaults.json` per the immutable-defaults pattern. Operator-authored; starter set covers common scenarios (clear summer noon, overcast afternoon, thunderstorm late day, blizzard dawn, foggy dawn, wildfire haze summer, golden winter sunset, …).
+- **Cartograph + Preview gain driver mounts** (5b.1) so they render directive-driven composition in their main viewports. Without this they're frozen at hardcoded fallback values, which makes the Preview Studio's framing inside Stage inconsistent.
+- **Live readouts surface state operators can't see in DevTools.** Which Almanac rule matched, which modulators fire at what strength, the resolved directive's key values — same `useAtmosphere.activeStrengths` + `tweenedDirective` that already exist, just hoisted into operator-visible chrome.
+- **Preview Studio's home** TBD between "Cartograph Stage Sky & Light card" (per-Look context belongs there) and "new third surface in Meteorologist" (atmospheric authoring already lives there). Lean Stage; revisit when 5b.3 dispatches.
+- **Stretch:** save `(Look, Fixture, TOD)` scenarios as named regression checks. v1.x.
+
+**Why this and not "leave it as polish":** a surface that lets the operator preview every scenario the runtime can render is not polish — it's the verification gate for everything Phase 6 + 7b/c/d shipped. Without it, every authored modulator is a hypothesis untested until the weather cooperates. Cost of skipping = months of weather-event-waiting to validate v1 atmospheric authoring. Cost of building = one substantial Phase 5b commit.
+
+**Phasing.** 5b.1 (driver coverage) + 5b.2 (fixtures) ship together — they unblock 5b.3 (Preview Studio render surface) which lands as a separate substantive commit. 5b.4 (fallback editor) + 5b.5 (polish bundle) ride alongside or as small follow-ups.
+
+**Cross-helper consequences:**
+
+- Cartograph: gains the directive driver in its main viewport; Sky & Light card potentially hosts the Preview Studio chrome.
+- Arborist: no direct touch. Trees still need to plumb into production (Phase 7a) before wind preview is meaningful.
+- Future Audiologist: when audio lands, fixture-driven preview can audition rain/thunder/wind-muffle audio against any scenario.
+
+---
+
 ## 2026-05-20 — Phase 7b/c/d shipped — visible precip + lightning (Tempest)
 
 Three sub-phases of Phase 7 — Atmospheric Consumers — landed in one commit. The deployed LS no longer responds to weather only atmospherically; it responds *visibly*. Rain you can see. Snow piling up on roofs and ground. Lightning briefly washing the whole scene.

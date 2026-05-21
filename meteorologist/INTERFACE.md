@@ -347,7 +347,7 @@ public/clouds/                   # (exists) presets.json + almanac.json
 - `BACKLOG.md` — spade work (the v1.5 list still applies; INTERFACE.md just resolves the layout questions)
 - `NOTES.md` — 2026-05-18 reversal of in-Stage decision (load-bearing context for why this doc exists)
 - `CANON.md` — Teapot inclusion principles
-- `STAGE_MIGRATION.md` — CloudDome retirement (executes when `<Atmosphere />` v3 lands)
+- `STAGE_MIGRATION.md` — historical; CloudDome retirement executed 2026-05-20 in Phase 4b.3
 - `../cartograph/ARCHITECTURE.md` — kit-wide publish-loop pattern
 - `src/cartograph/TodChannel.jsx` — the reusable TOD primitive; imported, not copied
 - `src/components/DawnTimeline.jsx` — the scrub bar; imported, not copied

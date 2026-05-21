@@ -72,15 +72,26 @@ Follow-ups:
 
 Production LS, Cartograph Stage, and Preview all flipped from `<CloudDome />` to `<Atmosphere />`. CanaryScene unchanged (already on Atmosphere since 4b.1). Deleted `CloudDome.jsx`, `SpriteClouds.jsx`, `HANDOFF-clouds-day3-clouddome-v2.md`, and the orphan import in `StageApp.jsx`. With Phase 5a's directive path already live (commit `e9936f8`), production immediately renders today's actual atmospheric directive smoothly tweened — no bridge interval. The `AtmosphereDirectiveDriver` mount in `Scene.jsx` (shipped in 5a) makes the directive available to subscribers there; Cartograph + Preview will need their own driver mounts when their directive-driven visuals matter (Phase 5b polish).
 
-### Phase 3b — Directive TodChannel promotion + cloud capabilities + per-cloud expression
+### Phase 3b — Directive TodChannel promotion + cloud capabilities + per-cloud expression + lightning schema
 
-Three coupled additions:
+Four coupled additions:
 
 1. **Schema promotion** of directive numeric fields: `directive.{sun.intensity, lightDome.ambientFloor, wind.scale, wind.dir, precip.intensity}` become `oneOf [number, animatableValue]` (same shape Phase 2 introduced for cloud params). Colors stay flat in v1. Migration script wraps existing scalars; `almanac.defaults.json` regenerated alongside.
 2. **Cloud capabilities** on `preset.schema.json`: `precipKinds: ['rain'|'snow'|...]`, `electrified: bool`. Authored in Teacup (small new card). Pulldown filter in CloudsInConditionCard graduates from kind-only to capability-aware.
 3. **Per-cloud-in-condition expression flags**: extend `directive.clouds[]` schema to allow `rainRate / snowRate / lightningRate` per cloud entry (each TodChannel-shaped, gated by the cloud's capabilities). New right-rail subsection inside CloudsInConditionCard.
+4. **Lightning schema extension** (per Tempest's 7d caveat). `directive.schema.json` currently has no lightning block; Tempest's 7d consumer code reads `directive.lightning.{rate, distance, kind}` but no Almanac rule or modulator can author those fields yet. Extend the schema; add a Lightning card to the Condition editor + Modulator delta-path picker. Without this, lightning only fires via DevTools forcing — there's no production path from authored rules to visible lightning.
 
-Lands AFTER Phase 4b so the temporal modulation is visually validatable.
+Lands AFTER Phase 4b so the temporal modulation is visually validatable. Item 4 is the gate that turns lightning from "shipped but unreachable in production" into "authored + visible."
+
+### Per-Look weather authoring (future, queued post-5b)
+
+Considerations Jacob surfaced 2026-05-21 that would refine the per-Look authoring layer:
+
+- **Per-Look modulator strength multipliers** — Valentine's Day Look might downplay tornado-green to 0; clear-night-show might disable all modulators globally. Lives on `scene.clouds.modulatorOverrides: { <modulatorId>: scalar }` extension to the slab.
+- **Per-Look forced-fixture pin** — Event Looks that always render under a specific atmospheric scenario regardless of real weather. `scene.clouds.fixtureLock: 'thunderstorm_late_day' | null`. Useful for scheduled experience Looks.
+- **Per-Look modulator enable/disable list** — finer-grained than global enable; lets a Look opt out of subsets.
+
+All three extend the same `scene.clouds` block SC.6 wired. Land them as needed once Preview Studio (5b.3) gives operators a way to verify the per-Look weather behavior.
 
 ### ✅ Phase 5a — Runtime live wiring (shipped 2026-05-20)
 
@@ -94,14 +105,34 @@ Almanac evaluator hot-mounted against live open-meteo state via:
 
 Caveat: production `Scene.jsx` still mounts `<CloudDome />` (Phase 4b.3 pending), so the directive's full visual effect — clouds tracking weather, lighting tracking weather, trees swaying with weather — is verifiable in CanaryScene + PreviewApp today, and becomes production-visible the moment 4b.3 lands. The plumbing itself is fully in place; only the consumer mount remains.
 
-### Phase 5b — Polish
+### Phase 5b — Preview Studio + driver coverage + fixtures + polish
 
-- Fake-weather fixture management UI (load/save weather payloads from `public/clouds/fixtures/`).
-- Surface "current directive" debug readout in Sky & Light card (DevTools: `useAtmosphere.getState()` for now).
-- Fallback editor (the catch-all directive for when no rule matches).
+**Elevated 2026-05-21** from "polish bundle" to substantive arc. Jacob's question surfaced the gap: after Phase 6 + 7b/c/d, the runtime composes today's weather automatically into the deployed scene — but the operator has no way to *preview* "this Look under thunderstorm at golden hour" without waiting for that combination to occur naturally. Authoring blind to atmospheric edge cases until real weather happens is the missing seam.
+
+Five pieces, sub-phased for atomic review:
+
+**5b.1 — Driver coverage in Cartograph + Preview.** `AtmosphereDirectiveDriver` mounts only in `Scene.jsx` today (production runtime). Cartograph Stage's main viewport + Preview each render `<Atmosphere />` against the hardcoded fallback uniforms, not the live directive. Mount the driver in those two surfaces so they render the same directive-driven composition production does. Small commit (~30 LOC).
+
+**5b.2 — Fixtures (`public/clouds/fixtures/<id>.json`).** Operator-authored fake weather payloads matching `weather-payload.schema.json`. Starter set: `clear_summer_noon`, `overcast_afternoon`, `thunderstorm_late_day`, `blizzard_dawn`, `foggy_dawn`, `wildfire_haze_summer`, `golden_winter_sunset`, etc. Sibling immutable `fixtures.defaults.json` preserves hand-authoring per `feedback_json_stringify_loses_handauthored_format`. New `meteorologist/serve.js` endpoints mirror almanac pattern (GET/PUT/Revert per fixture id + GET list).
+
+**5b.3 — Preview Studio surface.** New authoring view; the operator's tool for verifying atmospheric output against any scenario before deploy. Likely lives in Cartograph Stage's Sky & Light card OR as a new third surface alongside Cartograph + Meteorologist (TBD; lean Stage because per-Look context belongs there). Shape:
+
+- **Three-control input:** Look picker (mirrors existing LookPicker), Fixture picker (loads from `public/clouds/fixtures/`), TOD scrub (existing `<DawnTimeline>`).
+- **Live render** with the full production composition: Almanac fires against the fixture; modulators evaluate against fixture-derived signals (`weather-signals.js` runs on the fixture); directive tweens; opt-in materials wet/whiten/flash as appropriate.
+- **Live readouts:** which Almanac rule matched, which modulators are firing at what strength, the composed directive's key values. Same `useAtmosphere.activeStrengths` + `tweenedDirective` debug surface, but surfaced as operator UI not DevTools.
+- **(Stretch) Save scenarios.** Named combos of (look, fixture, TOD) for regression review. Optional v1.
+
+**5b.4 — Fallback editor.** Per-condition fallback when no Almanac rule matches — operator authors the catch-all directive. Small UI tab within the existing Condition editor's library (or its own pinned row).
+
+**5b.5 — Polish bundle.**
+- "Current directive" debug readout in Sky & Light card (surfaces `useAtmosphere.getState()`).
 - Cloud preset gallery / reference-photo thumbnails (BACKLOG item 10 from 2026-05-14 spade work).
-- Camera orbit controls in viewport.
+- Camera orbit controls in CanaryScene viewport.
 - `bakeLastMs` slice replaces Phase 4a's `Date.now()` stub (real cartograph fetch).
+
+**Why Preview Studio matters as substantive, not polish:** Phase 6 (Modulators) + 7b/c/d (visible weather) shipped a system that responds to a huge range of atmospheric scenarios. Operator can only verify scenarios that happen in reality. Tornado green, blizzards, severe wildfire haze are RARE events; without a fixture-driven preview, the operator can't tune their Almanac rules + modulators against the very phenomena they exist for. Preview Studio closes the iteration loop.
+
+**Sub-phasing recommendation:** 5b.1 (driver coverage) + 5b.2 (fixtures schema/UI) ship as one commit; 5b.3 (Preview Studio render surface) as a follow-up commit (needs 5b.1+2 done); 5b.4 + 5b.5 ride alongside or as small follow-ups.
 
 ### Phase 6 — Modulators — SHIPPED 2026-05-20 (Halo)
 

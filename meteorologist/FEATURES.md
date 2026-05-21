@@ -185,9 +185,10 @@ Schemas and file names keep their internal names to avoid churn; UI uses the ope
 | Almanac evaluator hot-mount in production runtime + tween | ✅ Shipped 2026-05-20 | 5a |
 | Wind cross-helper wiring (Atmosphere + InstancedTrees subscribe) | ✅ Shipped 2026-05-20 | 5a |
 | Reference photos + Nimbus seeded library + editable descriptions | ✅ Shipped 2026-05-20 | Phase Seed |
-| Driver mount in Cartograph/Preview | Queued | **5b** |
-| Fake-weather fixture management UI | Queued | 5b |
-| Fallback editor (catch-all directive when no rule matches) | Queued | 5b |
+| Driver mount in Cartograph/Preview | Queued | **5b.1** |
+| Fake-weather fixtures (`public/clouds/fixtures/*.json`) + serve.js endpoints | Queued | **5b.2** |
+| **Preview Studio** — Look + Fixture + TOD picker → full-pipeline live render with modulator strength + matched-rule readouts | Queued (elevated 2026-05-21; see `NOTES.md` ADR) | **5b.3** |
+| Fallback editor (catch-all directive when no rule matches) | Queued | 5b.4 |
 | Directive numeric fields as TodChannels (sky modulations animate per-TOD) | Queued | **3b** |
 | Per-cloud-in-condition expression flags (rain rate, lightning rate per cloud entry) | Queued | 3b |
 | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema | Queued | 3b |
