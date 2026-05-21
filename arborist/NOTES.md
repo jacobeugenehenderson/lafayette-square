@@ -4,6 +4,57 @@
 
 ---
 
+## 2026-05-21 — Project: Salon — Brief 0 (Whittle) — vendor stock survey + easy-case de-leaf
+
+**Baby Whittle dispatched against Brief 0 (Salon foundation). Walked the 67-species vendor stock, classified 1216 primitives, de-leafed the 141 cleanly-classified lod0 GLBs into `public/trees/_chassis/`. 91 GLBs skipped-ambiguous + 115 skipped-no-wood are queued for operator de-leaf. Survey report at `scratch/brief-0-vendor-tree-survey-whittle.md`.**
+
+### What ships
+
+- `arborist/survey-deleaf.js` — CLI walker + classifier + de-leaf executor + report writer. Idempotent (verified two-run sha-identical). Reads `public/trees/<species>/skeleton-N-lod0.glb` + `public/trees/index.json` + `arborist/species-map.json` (optional). Writes `public/trees/_chassis/<common-or-binomial>_<letter>.{glb,meta.json}` + `scratch/brief-0-vendor-tree-survey-whittle.md`.
+- 141 chassis under `public/trees/_chassis/` — one per cleanly-classified `(species, lod0 variant)` pair. Every retained primitive carries `geometry.userData.atlasKind = 'bark'` (verified). Sidecar `meta.json` populates `morphology` (from `index.json#category`), `heightRange` (from world-space bbox), `source`; leaves `scaffoldCount` / `canopyStart` / `leafAttachmentTags` null for operator authoring.
+
+### Classification heuristic outcome
+
+First-match-wins per Brief 0 spec. Distribution across 1216 primitives:
+- WOOD: 314
+- LEAF: 776
+- AMBIGUOUS: 126
+
+The brief's heuristic agrees with the existing `arborist/atlas-survey.js#classifyMaterial` on most cases but diverges on `branch`-named opaque-with-normal-map primitives — brief puts `branch` in WOOD, atlas-survey puts it in LEAF (vendor packs use `Branches_*` for leaf-card clusters). Flagged in report as a Surface item requiring operator decision before v1.1 re-run.
+
+### Coverage
+
+- broadleaf: 91 chassis / 24 species
+- conifer: 10 / 4
+- columnar: 15 / 2
+- weeping: 7 / 2
+- unknown: 18 / 1 (acer_saccharum LiDAR-baked, no category in index.json)
+- **ornamental: 0 / 0 — operator-action gap**
+
+### Naming amendment applied
+
+Per coordinator amendment mid-brief: common-name preferred (e.g., `sugar_maple_a.glb`), binomial folder name as fallback (`acer_saccharum_a.glb`), variant letter from skeleton-N (1→a). When two species share the same common-name slug (e.g., `acer_saccharum` and `acer_saccharum_multistem` both label "Sugar Maple"), all colliders fall back to the binomial folder name to preserve uniqueness — 23 of 141 chassis (16%) used binomial fallback.
+
+### Surface items disclosed in report
+
+- `branch`-keyword classifier disagreement (above)
+- Vendor GLBs with raw geometry in cm vs m — `heightRange` reads through world-space scene transforms now; per-vendor scaling still varies (tilia at 30m, red maple at 16m — both plausible but operator should normalize during Salon authoring)
+- 13 species recommended for roster review (no wood primitives detected across any variant): `betula_pendula`, `blue_spruce_winter`, `callitropsis_nootkatensis`, `elderberry`, `generic_tree_3` (Bonsai), `pine_corona`, `populus_canescens`, `salix_alba`, `spruce_corona`, `tree_hz`, `tree_variation`, `ulmus_americana`, `willow_stylized` — note this is "no wood per the classifier", not "no wood in the asset"; some are alpha-mode-only stock that defies the heuristic
+- No other consumers of `public/trees/<species>/*.glb` beyond documented runtime + pipeline (orphan audit per `feedback_orphan_audit_full_repo`)
+- `species-map.json` covers 14 species (a subset); morphology came from `index.json#category` for almost all chassis
+
+### Out of scope (per brief)
+
+Did NOT touch: existing `public/trees/<species>/*.glb`, `public/trees/index.json`, any `manifest.json`, runtime code, bake pipeline, Salon UI scaffolding (Brief 1).
+
+### Scope-drift surface: chassis output not committed
+
+Brief 0 listed `public/trees/_chassis/*` as part of the commit set, but `.gitignore:108` excludes `public/trees/` (per existing arborist publish-loop doctrine — vendor stock + bake artifacts are regenerable, multi-GB, never committed). The 822 MB chassis output (141 GLBs + 141 meta.json sidecars) honors that policy and stays out of git. Re-running `node arborist/survey-deleaf.js` deterministically reproduces it. **Brief 1 (Salon) acceptance-testing must run the script first to populate the local chassis library.** If the operator wants the chassis tracked, the simplest move is a sibling carve-out in `.gitignore` like `!public/trees/_chassis/` — flagged for decision; defaulted to "not committed" to match existing arborist practice.
+
+Committed: `arborist/survey-deleaf.js`, `scratch/brief-0-vendor-tree-survey-whittle.md`, this NOTES entry.
+
+---
+
 ## 2026-05-20 late night — Project: Li'l Vera — SHELVED at N.3.0 gate (operator call)
 
 **Operator-called shelve at the N.3.0 stop point. Implementing baby Penzias delivered the N.3.0 deliverable; tip-detector emitted zero anchors on both dev specimens (10191, 00070); operator concluded the cycle is not on its way to working and the proposed architectural fix (drop tomography-class gate) would be a re-think rather than an incremental patch. Penzias dismissed cleanly with thanks; cycle stops here. Procedural runway (Phase G.1) becomes the active arc for v1.5 ship.**
