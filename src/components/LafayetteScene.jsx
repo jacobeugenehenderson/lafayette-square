@@ -16,6 +16,7 @@ import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { patchTerrain, patchTerrainAtCentroidRaw } from '../utils/terrainShader'
+import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { terrainExag } from '../utils/terrainShader'
 import { getElevation, getElevationRaw } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
@@ -767,6 +768,9 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
       // Mobile: lightweight roof-tinting shader — no texture sampling, just Y-threshold color.
       // Saves ~28 MB VRAM vs desktop textures while keeping roofs visually distinct.
       mat.onBeforeCompile = (shader) => {
+        // Phase 7b/c (Tempest, 2026-05-20) — opt in roofs + walls to
+        // wet/snow. Roof tops are top-facing → heavy snow accumulation.
+        applyWeatherToShader(shader)
         shaderRef.current = shader
         shader.uniforms.uRoofStartY = { value: roofStartY }
         shader.uniforms.uRoofTint = { value: roofTintColor }
@@ -806,10 +810,13 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
            }`
         )
       }
+      mat.customProgramCacheKey = () => 'bldg-mobile-roof-wx1'
       return mat
     }
 
     mat.onBeforeCompile = (shader) => {
+      // Phase 7b/c (Tempest, 2026-05-20): wet + snow on walls/roofs.
+      applyWeatherToShader(shader)
       shaderRef.current = shader
       shader.uniforms.uWallTex = { value: wallTex }
       shader.uniforms.uRoofTex = { value: roofTex || wallTex }
@@ -911,6 +918,7 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
       )
     }
 
+    mat.customProgramCacheKey = () => 'bldg-textured-wx1'
     patchTerrainAtCentroidRaw(mat, meanCornerRaw)
     return mat
   }, [baseColor, wallTex, roofTex, roofTintColor, hasTextures, foundationY, building, meanCornerRaw])

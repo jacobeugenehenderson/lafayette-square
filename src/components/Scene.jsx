@@ -12,6 +12,7 @@ import GatewayArch from './GatewayArch'
 import Atmosphere from './Atmosphere'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
+import WeatherEffects from './WeatherEffects'
 import UserDot from './UserDot'
 import CourierDots from './CourierDots'
 import useCamera from '../hooks/useCamera'
@@ -681,6 +682,7 @@ function Scene() {
       <SkyStateTicker />
       <WeatherPoller />
       <AtmosphereDirectiveDriver lookId={INSTANCE.lookId} />
+      <WeatherEffects />
       <CelestialBodies />
       <Atmosphere />
       {/* Terrain mesh hidden — the ribbons + land-use fills ARE the

@@ -22,6 +22,7 @@ import { makeGrassMaterial } from './grassMaterial'
 import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { terrainExag, patchTerrain, V_EXAG } from '../utils/terrainShader'
+import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 
@@ -149,6 +150,7 @@ function FadeMesh({ group, geometry, lightmap, fade }) {
     if (fade) {
       mat.transparent = true
       mat.onBeforeCompile = (shader) => {
+        applyWeatherToShader(shader)  // Phase 7b/c: wet + snow opt-in
         shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade.center[0], fade.center[1]) }
         shader.uniforms.uFadeInner  = { value: fade.inner }
         shader.uniforms.uFadeOuter  = { value: fade.outer }
@@ -176,7 +178,12 @@ function FadeMesh({ group, geometry, lightmap, fade }) {
            gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, dFade);`
         )
       }
-      mat.customProgramCacheKey = () => `bg-fade-${fade.inner}-${fade.outer}`
+      mat.customProgramCacheKey = () => `bg-fade-${fade.inner}-${fade.outer}-wx1`
+    } else {
+      // Non-fade variants still opt in to weather. Apply via fresh
+      // onBeforeCompile + unique cache key.
+      mat.onBeforeCompile = (shader) => { applyWeatherToShader(shader) }
+      mat.customProgramCacheKey = () => 'bg-plain-wx1'
     }
     // Terrain displacement applied last so its onBeforeCompile wraps any
     // earlier ones (fade, etc.) — patchTerrain runs first, then calls prev.

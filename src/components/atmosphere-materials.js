@@ -17,6 +17,7 @@
  * (feedback_unique_program_cache_key_before_wrappers).
  */
 import * as THREE from 'three'
+import { WEATHER_UNIFORMS } from '../lib/weather-uniforms.js'
 
 // Slab geometry — must mirror the BoxGeometry mounted in <Atmosphere />.
 // Centered at (0, 1450, 0), size (8000, 500, 8000) → y∈[1200, 1700],
@@ -75,7 +76,10 @@ uniform vec3  uWindDir;
 
 uniform int   uSteps;
 uniform int   uShadowSteps;
-uniform int   uDebugMode;  // 0 = normal, 1 = raw density (red), 2 = raw FBM (greyscale), 3 = solid red (mesh visible test)
+uniform int   uDebugMode;
+// Phase 7d: lit-from-above pulse during a lightning flash. Shared
+// scalar driven by LightningDriver via WEATHER_UNIFORMS.
+uniform float uLightningFlash;  // 0 = normal, 1 = raw density (red), 2 = raw FBM (greyscale), 3 = solid red (mesh visible test)
 
 varying vec3 vWorldPos;
 
@@ -294,6 +298,12 @@ void main() {
 
   if (accum.a < 0.005) discard;
 
+  // Phase 7d: lightning lit-from-above pulse. Brief blue-white glow,
+  // proportional to flash uniform; scales by accumulated alpha so empty
+  // sky doesn't brighten with the flash.
+  vec3 lightning = vec3(1.20, 1.20, 1.45) * uLightningFlash * 0.85 * accum.a;
+  accum.rgb += lightning;
+
   gl_FragColor = vec4(accum.rgb, accum.a);
   #include <logdepthbuf_fragment>
 }
@@ -341,6 +351,8 @@ export function createAtmosphereMaterial() {
       //        3=solid red mesh test. Flip via material.uniforms.uDebugMode.value
       //        in DevTools to diagnose without re-shipping.
       uDebugMode:      { value: 0 },
+      // Phase 7d: shared with LightningDriver via singleton.
+      uLightningFlash: WEATHER_UNIFORMS.uLightningFlash,
     },
     vertexShader: ATMOSPHERE_VERT,
     fragmentShader: ATMOSPHERE_FRAG,
@@ -350,7 +362,7 @@ export function createAtmosphereMaterial() {
     depthTest: true,
   })
 
-  material.customProgramCacheKey = () => 'atmosphere-v3'
+  material.customProgramCacheKey = () => 'atmosphere-v4-lightning'
 
   // Expose for in-DevTools debugging. Flip uDebugMode without rebuilding:
   //   window.atmosphereMaterial.uniforms.uDebugMode.value = 3   // solid red mesh test

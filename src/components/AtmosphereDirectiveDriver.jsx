@@ -108,6 +108,18 @@ function lerpDirective(from, to, t) {
       intensity: lerp(fp.intensity ?? 0, tp.intensity ?? 0, t),
     }
   }
+  // Lightning is mostly stochastic per-frame; carry the latest kind +
+  // numeric tween for rate / distance so a fading thunderstorm gracefully
+  // turns lightning off.
+  if (from.lightning || to.lightning) {
+    const fl = from.lightning || {}
+    const tl = to.lightning || {}
+    out.lightning = {
+      rate:     lerp(fl.rate ?? 0, tl.rate ?? 0, t),
+      distance: lerp(fl.distance ?? 0, tl.distance ?? 0, t),
+      kind:     tl.kind ?? fl.kind ?? 'intracloud',
+    }
+  }
   return out
 }
 

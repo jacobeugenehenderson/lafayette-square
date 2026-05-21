@@ -111,7 +111,9 @@ Continuous-phenomena layer landed: `modulators.json` + `modulator.schema.json` +
 
 ADR in `NOTES.md` 2026-05-20. Turns the directive's wind/precip/lightning output into visible scene behavior. Wind as sampled field (not scalar) breaks the "dawdle." Rain via streaks + wet-surface pass. Snow via points + accumulation. Lightning via scene-flash + delayed thunder. Sub-phased for atomic review.
 
-**Phase 7a — Wind field + multi-scale tree response.** Cross-helper with Arborist.
+**Phase 7b/c/d — SHIPPED 2026-05-20 (Tempest).** Rain particles + wet-surface shader, snow particles + accumulation integrator, lightning scene-flash + cloud-lit pulse + cloud-to-ground streak all landed in one commit. `src/lib/weather-uniforms.js` singleton + `src/components/WeatherEffects.jsx` orchestrator + `src/components/weather/{RainParticles,SnowParticles,LightningDriver}.jsx` + `applyWeatherToShader` opt-ins on BakedGround (FadeMesh + GrassMesh) + LafayetteScene buildings (both mobile-no-texture + desktop-textured branches) + atmosphere-materials.js cloud lit-from-above pulse. Audio (rain layer, snow low-pass, thunder delay) deferred to a future Audiologist helper. Snow accumulation persistence (localStorage) deferred to v1.x.
+
+**Phase 7a — Wind field + multi-scale tree response.** Cross-helper with Arborist. **Deferred** until production trees mount.
 
 - `src/lib/wind-field.js` — `windAt(t, pos, windState) → { force, intensity }`. Three temporal scales (drift / gust envelope / gust spikes via `smoothmax`). Spatial gust-front advection so gusts visibly travel through the scene.
 - InstancedTrees sway shader rewritten to sample the field at four time-constants (leaves / twigs / branches / trunk) with appropriate damping. Cross-helper coordinator brief at dispatch time.
@@ -142,6 +144,10 @@ ADR in `NOTES.md` 2026-05-20. Turns the directive's wind/precip/lightning output
 - Future Audiologist (or Meteorologist runtime): 7b/c/d audio layers.
 
 **Why v1 not v2:** each consumer here exists because skipping it produces the uncanny "video game weather" tell. The dawdle (no real wind), the dry rain (no wet surface), the snowless snow (no accumulation), the instant thunder (no delay) — each is the singular property that breaks immersion in its category. Land after Phase 6 (need modulator-driven wind/precip/lightning values to consume).
+
+**Phase 7c follow-up — snow accumulation persistence (v1.x):** v1 ships in-memory `uSnowAccumulation` only; on reload it rebuilds from 0 over the next ~5 minutes of active snow. Persistence (localStorage or store-slice save/restore) is queued as a follow-up commit once 7c lands — adds continuity across pause/resume but isn't a v1 blocker.
+
+**Phase 7b/c/d audio follow-up:** rain layer + snow muffling low-pass + thunder delay all defer to a future Audiologist helper. Ship-time visible behavior is silent.
 
 ---
 

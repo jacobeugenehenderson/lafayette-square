@@ -25,7 +25,8 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 | `/meteorologist.html` standalone app shell | Fallback editor (Phase 5b) |
 | Top-bar TEAPOT ⎮ CONDITIONS ⎮ MODULATORS toggle + Look picker | Cross-helper wind feed to InstancedTrees + wind.gustsScale (Phase 7a) |
 | **Phase 6 — Modulators (continuous atmospheric phenomena)** (Halo, 2026-05-20) — schema + 7 starter modulators + signal derivation + composition + editor | |
-| Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Atmospheric consumers — wind field, rain, snow, lightning (Phase 7, v1) |
+| Teapot library + Teacup workstage (13 cloud-param TodChannels, autosave) | Phase 7a — wind field + multi-scale tree response (deferred until trees mount) |
+| **Phase 7b/c/d — Atmospheric consumers (rain + snow + lightning)** (Tempest, 2026-05-20) | Audio layers (rain / snow muffle / thunder) — future Audiologist helper |
 | Conditions library + Condition editor (When + Directive + Clouds-in-cond + Revert) | Camera orbit controls in viewport (Phase 5b+) |
 | CanaryScene viewport (sky-from-Look + hero tree + flat ground) | Mobile quality tier (`uQualityTier`) (Phase 5b+) |
 | **Multi-preset blending via weighted clouds[] union — production renders directive blend (Phase 5a)** | |
@@ -50,6 +51,7 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 - Phase 4b.3 — CloudDome retirement; production swap to `<Atmosphere />` (Cirrus, 2026-05-20)
 - Phase Seed — Cloud Specialist seed applied (51/52 presets retuned by Nimbus); ref photos surface in TeapotLibrary + Teacup; description field added end-to-end (Stratus, 2026-05-20)
 - Phase 6 — Modulators: schema + 7 starter records + `weather-signals.js` + evaluator composition + Modulators tab/editor + serve.js endpoints (Halo, 2026-05-20)
+- Phase 7b/c/d — Atmospheric consumers: rain particles + wet-surface shader, snow particles + accumulation integrator, lightning scene-flash + cloud lit-from-above pulse + cloud-to-ground streak (Tempest, 2026-05-20)
 - Kit clock+calendar primitive — `useCalendar` + `ClockCalendarPump` (2026-05-20)
 - Step 3 WhenCard live dots — TOD + season chip indicators (commit `36d667c`, 2026-05-20)
 - Unified time card — TOD + ToY + playback in DawnTimeline (Wren, 2026-05-20)
@@ -62,12 +64,12 @@ The project's atmospheric authoring system + runtime. Authors a cloud preset lib
 
 ## Start here in the morning
 
-**Phase 7a — Wind field + multi-scale tree response.** Phase 6 (Modulators) shipped 2026-05-20 (Halo); the continuous-phenomena layer composes on top of the Almanac base, with 7 starter modulators authored against today's actual weather. Production now reflects atmospheric texture (cold-front passage, tornado green, wildfire smoke, pre-storm gold, fog burn-off, etc.) not just discrete weather categories. Open priorities:
+**Phase 7a — Wind field + multi-scale tree response.** Phase 6 (Modulators, Halo, 2026-05-20) shipped the continuous-phenomena layer; Phase 7b/c/d (Tempest, 2026-05-20) shipped visible rain + snow + lightning consumers. Production now responds to weather *visibly* — rain you can see, snow that accumulates on roofs and ground, lightning that briefly washes the scene. Open priorities:
 
-- **7a (next dispatch)** — `src/lib/wind-field.js` + `windAt(t, pos, windState)` sampled field; `InstancedTrees` sway shader rewritten to sample at four time-constants (leaves / twigs / branches / trunk); `<Atmosphere />` subscribes too. Requires adding `wind.gustsScale` to `directive.schema.json` so modulators can author gust spikes. Cross-helper with Arborist. See `NOTES.md` 2026-05-20 consumers ADR.
-- **5b polish** — mount the `AtmosphereDirectiveDriver` in CartographApp + PreviewApp (today only Scene.jsx mounts it). Surface a "current directive" debug readout in Sky & Light card. Fake-weather fixture management UI. Fallback editor. Cloud preset gallery.
-- **3b** — Promote directive numerics to TodChannel + add cloud capabilities + per-cloud-in-condition expression flags.
-- **7b–d** — Rain (streaks + wet-surface pass), snow (points + accumulation), lightning (scene-flash + delayed thunder). See `NOTES.md` 2026-05-20 consumers ADR.
+- **7a (next dispatch)** — `src/lib/wind-field.js` + `windAt(t, pos, windState)` sampled field; `InstancedTrees` sway shader rewritten to sample at four time-constants (leaves / twigs / branches / trunk); `<Atmosphere />` subscribes too. Requires adding `wind.gustsScale` to `directive.schema.json` so modulators can author gust spikes. **Gated on production trees being mounted.** Cross-helper with Arborist. See `NOTES.md` 2026-05-20 consumers ADR.
+- **5b polish** — mount the `AtmosphereDirectiveDriver` + `<WeatherEffects />` in CartographApp + PreviewApp (today only Scene.jsx mounts them). Surface a "current directive" debug readout in Sky & Light card. Fake-weather fixture management UI. Fallback editor. Cloud preset gallery.
+- **3b** — Promote directive numerics to TodChannel + add cloud capabilities + per-cloud-in-condition expression flags. Also extend `directive.schema.json` with the `lightning` block (rate / distance / kind) — Tempest's consumer is ready; the schema + at least one modulator authoring the block lights it up.
+- **Audiologist (new helper)** — rain layer fading with intensity, snow ambient low-pass, thunder delay proportional to `directive.lightning.distance`. Phase 7's silent visible-only ship awaits.
 
 ---
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
+import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 
 /**
  * Reusable factory for the noise-based park grass material.
@@ -29,6 +30,12 @@ export function makeGrassMaterial({
   if (fade) material.transparent = true
 
   material.onBeforeCompile = (shader) => {
+    // Phase 7c (Tempest, 2026-05-20): snow accumulates on top-facing
+    // grass; wet barely shows on grass so the wet uniform contributes
+    // little here. Inject FIRST so our injection of <color_fragment>
+    // appears before the grass shader's own replacement of the same
+    // chunk (later replace() calls operate on the modified string).
+    applyWeatherToShader(shader)
     shader.uniforms.uSunAltitude = { value: 0.5 }
     shader.uniforms.uClipMap   = { value: clipMask }
     shader.uniforms.uClipMin   = { value: clipMin || new THREE.Vector2(0, 0) }
@@ -156,7 +163,7 @@ export function makeGrassMaterial({
   // grass shader can silently get replaced by an earlier-compiled
   // plain-MeshStandardMaterial program from the same scene).
   material.customProgramCacheKey = () =>
-    `grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${lampLightmap ? 'lamp' : 'nolamp'}`
+    `grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${lampLightmap ? 'lamp' : 'nolamp'}-wx1`
 
   return { material, shaderRef }
 }

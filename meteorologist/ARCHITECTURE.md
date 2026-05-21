@@ -253,6 +253,22 @@ Wind belongs to Meteorologist (authored in the Condition editor's Sky-modulation
 
 ---
 
+## 9.1. Atmospheric consumer layer (Phase 7b/c/d, Tempest 2026-05-20)
+
+`<WeatherEffects />` mounts inside the production Canvas alongside `<AtmosphereDirectiveDriver />`. It reads `useAtmosphere.tweenedDirective` and dispatches:
+
+- **Particle systems** — `RainParticles` (instanced billboard streaks) and `SnowParticles` (point sprites with curl-noise meander). Camera-following cylinder volume; one or the other renders based on `directive.precip.kind`.
+- **Integrators** — `WetnessDriver` and `SnowAccumulationDriver` damp module-level scalar uniforms (`WEATHER_UNIFORMS.uWetness`, `uSnowAccumulation`) toward their target value. Always mounted (decay continues after rain/snow stops).
+- **Lightning** — `LightningDriver` stochastically fires at `directive.lightning.rate` Hz, drives `uLightningFlash` through a 50ms attack / 200ms decay curve, multiplies the scene's primary `<ambientLight>` intensity, and (when `directive.lightning.kind === 'cloud_to_ground'`) renders a jagged vertical streak for the flash window.
+
+**Singleton uniform pattern.** `src/lib/weather-uniforms.js` exports `WEATHER_UNIFORMS = { uWetness, uSnowAccumulation, uLightningFlash }` as THREE.IUniform-shaped objects. Drivers mutate `.value`; opt-in materials pass the same uniform by reference into their `shader.uniforms` map via `applyWeatherToShader(shader)`. No store subscription, no per-frame React tax — the materials see the next-frame value of the uniform automatically. The cloud shader (`atmosphere-materials.js`) also binds `uLightningFlash` by reference, so LightningDriver writes flow into the cloud lit-from-above pulse without any prop plumbing.
+
+**Opt-in surfaces.** BakedGround FadeMesh (asphalt/sidewalks/LU fills, both fade + non-fade variants), BakedGround GrassMesh, LafayetteScene buildings (mobile + desktop branches). Skipped: water (already wet), GatewayArch (steel reads dry), vegetation (deferred with 7a). Full table in `FEATURES.md`.
+
+**Doctrine.** Per `project_authoring_is_live_production_is_static` — modulators (and one day per-Look authoring) shape the directive's `precip.{kind, intensity}` and `lightning.{rate, kind, distance}`; the consumer layer composes the visible scene in real time. This commit ships the consumer; authoring of the lightning block (and any per-Look wet/snow tuning) belongs with Phase 3b / future Cartograph extension.
+
+---
+
 ## 10. Conventions worth knowing
 
 - **Schemas are versioned by `$id` filename.** `preset.schema.json` is registered both by `$id` and by filename so `$ref`s resolve regardless of authoring style.

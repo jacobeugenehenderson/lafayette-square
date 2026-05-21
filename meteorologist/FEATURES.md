@@ -192,7 +192,9 @@ Schemas and file names keep their internal names to avoid churn; UI uses the ope
 | Per-cloud-in-condition expression flags (rain rate, lightning rate per cloud entry) | Queued | 3b |
 | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema | Queued | 3b |
 | Modulators — continuous atmospheric phenomena (cold front, tornado green, wildfire smoke, …) | ✅ Shipped 2026-05-20 (Halo) — 7 starter modulators | 6 |
-| Atmospheric consumers — wind field, rain, snow, lightning | Queued (v1 commitment) | **7a/b/c/d** |
+| Atmospheric consumers — rain particles + wet-surface, snow particles + accumulation, lightning scene-flash + cloud pulse | ✅ Shipped 2026-05-20 (Tempest) | 7b/c/d |
+| Atmospheric consumers — wind field + multi-scale tree response | Deferred until production trees mount (cross-helper) | **7a** |
+| Audiologist helper — rain audio, snow muffle, thunder delay | Queued (post-Phase-7 v1.x) | future helper |
 | Camera orbit controls in viewport | Queued | 5b+ |
 | Mobile quality tier (`uQualityTier`-driven step counts) | Queued | 5b+ |
 | Per-Look primary tree species (cross-helper setup with Arborist) | Parked | TBD |
@@ -215,6 +217,38 @@ As of 2026-05-20 (Phase 6 — Modulators; building on 5a + 4b.3), every producti
 5. **Wind** — `directive.wind.{speed, dir}` feeds Atmosphere's `uWindScale` + `uWindDir` for cloud advection; same source feeds `InstancedTrees`' sway shader uniforms once trees are mounted in production.
 
 All composition happens in the runtime, not in Meteorologist. Meteorologist authors; runtime composes.
+
+### Phase 7b/c/d consumers (Tempest, 2026-05-20)
+
+Beyond Atmosphere's cloud shader, the directive now drives a second consumer family — visible weather effects on the scene. `<WeatherEffects />` (mounted in `Scene.jsx`) subscribes to `useAtmosphere.tweenedDirective` and dispatches:
+
+1. **Rain particles** (`src/components/weather/RainParticles.jsx`) — instanced billboarded streak quads in a 180m camera-following cylinder. ~6000-instance pool, intensity-gated active fraction (30%–100%), wind-tilted fall, per-particle ±30% speed variance. Active when `precip.kind === 'rain' | 'hail' | 'sleet'`. Hail kind doubles particle width + blues the tint.
+2. **Snow particles** (`src/components/weather/SnowParticles.jsx`) — point sprites with curl-noise lateral meander; wind dominates trajectory (0.7 windDir vs 0.3 fall). ~4000-instance pool.
+3. **`uWetness` integrator** — `WetnessDriver` damps `WEATHER_UNIFORMS.uWetness` toward `precip.intensity` at ~50s rise / 100s decay. Opt-in materials darken albedo (`*0.55`) on top-facing normals + boost specular (`roughness → 0.18`).
+4. **`uSnowAccumulation` integrator** — `SnowAccumulationDriver` damps toward `min(1, intensity * 1.5)` at ~3 min rise / 10 min decay. Opt-in materials mix toward `vec3(0.95, 0.97, 1.00)` on top-facing normals. Snow wins over wet when both nonzero (multiplied mask).
+5. **`uLightningFlash` curve** — `LightningDriver` stochastically fires (`Math.random() < rate * dt`) at the rate set by `directive.lightning.rate`, then drives the uniform through a 50ms attack / 200ms decay curve. While a flash is active:
+   - The scene's primary `<ambientLight>` intensity multiplies by `1 + 4 * flash` (Path A in the brief — coarse but cheap; flash duration is short enough that coarse reads correctly).
+   - Atmosphere's cloud shader adds a blue-white "lit-from-above" term proportional to `flash * accumulatedAlpha`.
+   - Opt-in materials add a uniform `vec3(0.40, 0.42, 0.55) * flash` brightening term.
+   - When `directive.lightning.kind === 'cloud_to_ground'`, a 12-segment jagged vertical line renders from 1200m cloud-base down to ground at a random visible XZ position.
+
+**Opt-in materials.** Wet + snow modulation is patched onto materials whose surface reads as "wettable / accumulating" in real life:
+
+| Material file | Branch | Wet | Snow | Why |
+|---|---|---|---|---|
+| `BakedGround.jsx` FadeMesh (fade variants — asphalt, sidewalk, concrete LU fills) | applyWeatherToShader inside existing onBeforeCompile | ✓ | ✓ | Streets / sidewalks visibly darken under rain; whiten under snow |
+| `BakedGround.jsx` FadeMesh (non-fade variants) | new onBeforeCompile, fresh cache key | ✓ | ✓ | Same reason |
+| `BakedGround.jsx` GrassMesh via `grassMaterial.js` | applyWeatherToShader before grass injection | (~) | ✓ | Wet contributes little (grass doesn't darken visibly); snow heavily whitens |
+| `LafayetteScene.jsx` building material (mobile / no-texture branch) | applyWeatherToShader inside existing onBeforeCompile | ✓ | ✓ | Roofs accumulate snow heavily (top-facing); walls darken under rain |
+| `LafayetteScene.jsx` building material (desktop / textured branch) | applyWeatherToShader inside existing onBeforeCompile | ✓ | ✓ | Same |
+| `LafayettePark.jsx` water (fountain pond) | not patched | — | — | Already wet; would double-account |
+| `LafayettePark.jsx` gravel path + park grass | not patched (gravel) / via grassMaterial (park grass) | — | (✓) | Gravel skipped to keep scope tight; park grass picks up snow whitening through the shared grass material |
+| `GatewayArch.jsx` | not patched | — | — | Stainless steel — wet barely visible; snow on a curved sloped surface is a v1.x detail |
+| Vegetation (`InstancedTrees`) | not patched | — | — | Tree atlas leaves don't yet have shared world-normal varying; deferred with Phase 7a tree work |
+
+**Hail.** Rendered as rain-shape (RainParticles with `kind='hail'`) with doubled particle width + blue-grey tint. Drives the wet integrator like rain; no accumulation (hail bounces).
+
+**Lightning flash sub-uniforms.** Inside opt-in materials, the flash term is applied uniformly (not gated by top-facing) so vertical walls also brighten — physically correct: lightning illuminates a hemisphere, not just the sky-facing surfaces.
 
 ---
 

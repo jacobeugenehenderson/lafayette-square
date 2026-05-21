@@ -4,6 +4,52 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-20 — Phase 7b/c/d shipped — visible precip + lightning (Tempest)
+
+Three sub-phases of Phase 7 — Atmospheric Consumers — landed in one commit. The deployed LS no longer responds to weather only atmospherically; it responds *visibly*. Rain you can see. Snow piling up on roofs and ground. Lightning briefly washing the whole scene.
+
+**Architectural shape** mirrors the Phase 5a/6 hook pattern: subscribe to `useAtmosphere.tweenedDirective` (one source), dispatch consumer components by `precip.kind` / `lightning.rate`. New files:
+
+- `src/lib/weather-uniforms.js` — module-level `WEATHER_UNIFORMS = { uWetness, uSnowAccumulation, uLightningFlash }` IUniform singleton + `applyWeatherToShader(shader)` GLSL-injection helper for opt-in shaders. Pattern over zustand because materials read uniforms by reference from frame to frame with no React subscription overhead.
+- `src/components/WeatherEffects.jsx` — top-level orchestrator. Mounted in `Scene.jsx` next to `<AtmosphereDirectiveDriver />`. Gates which particle systems run; always mounts the two integrator drivers (so wet/snow decay continues after rain/snow stops).
+- `src/components/weather/RainParticles.jsx` — `InstancedBufferGeometry` of 6000 unit quads, per-instance speed/phase/active-cutoff. Vertex shader places each instance deterministically around the camera, computes fall + wind tilt, billboards the quad to face camera. Fragment is a vertical alpha gradient. Hail mode widens + blues + speeds particles via uniform.
+- `src/components/weather/SnowParticles.jsx` — `THREE.Points` with size attenuation; vertex shader applies a cheap curl-noise approximation (two phase-offset sin lobes) for the meandering snow drift; wind dominates trajectory at 0.7 vs 0.3 fall.
+- `src/components/weather/LightningDriver.jsx` — stochastic trigger (`rate * dt` probability per frame), 50ms attack / 200ms decay curve writes `uLightningFlash`. Path A scene-flash via the scene's primary `<ambientLight>` intensity multiplier (`1 + 4 * flash`). When kind=`cloud_to_ground`, renders a `CloudToGroundStreak` (12-segment jagged line, cloud base → ground) for the flash window.
+
+**Edited files:**
+
+- `src/components/atmosphere-materials.js` — added `uLightningFlash` uniform (bound by reference to the singleton, so LightningDriver writes propagate without prop plumbing) + a `vec3(1.2, 1.2, 1.45) * flash * 0.85 * accum.a` lit-from-above term in the cloud shader. Cache key bumped to `atmosphere-v4-lightning`.
+- `src/components/AtmosphereDirectiveDriver.jsx` — `lerpDirective` extended to carry a `lightning` block (`rate`, `distance` lerped; `kind` last-wins). Forward-compat: today no rule or modulator emits the lightning block, but the driver passes it through whenever one does.
+- `src/components/BakedGround.jsx` — `FadeMesh` calls `applyWeatherToShader(shader)` inside its existing `onBeforeCompile` (fade variant) and in a fresh one for the non-fade variant. Cache keys bumped to `*-wx1`.
+- `src/components/grassMaterial.js` — `applyWeatherToShader(shader)` at the top of `onBeforeCompile`. Because three's `shader.fragmentShader.replace()` operates sequentially, the order ends up correct: grass's color_fragment replacement runs first, then the weather body modulates the final diffuseColor.
+- `src/components/LafayetteScene.jsx` — same applyWeatherToShader call in both the mobile-no-texture branch and the desktop-textured branch of the building material. Cache keys `bldg-mobile-roof-wx1` and `bldg-textured-wx1` added (desktop branch had no cache key set previously — also fixes a latent program-cache-collision risk).
+- `src/components/Scene.jsx` — `<WeatherEffects />` mounts inside the Canvas alongside the directive driver.
+
+**Opt-in materials list** (full table in `FEATURES.md`): BakedGround FadeMesh (asphalt + sidewalks + LU fills, both fade + non-fade variants); BakedGround GrassMesh via grassMaterial.js (snow whitening is load-bearing here; wet contributes little but is preserved); LafayetteScene buildings (mobile + desktop branches — both walls and roofs). Skipped: GatewayArch (steel — wet barely visible), LafayettePark water (already wet), gravel paths (scope), trees (deferred with 7a). The doctrine: opt-in any surface that visibly responds to rain or snow in real life; skip surfaces where the modulation would be invisible or double-account.
+
+**Integrator rates.**
+
+| Uniform | Active rise | Inactive decay | Rationale |
+|---|---|---|---|
+| `uWetness` | ~50s to full | ~100s to fully dry | Asphalt darkens fast; pavement dries slow. Damp formula `1 - exp(-rate * dt * 60)` per frame. |
+| `uSnowAccumulation` | ~3 min to full | ~10 min to clear | Snow accumulation is the photograph (NOTES 2026-05-20 consumers ADR — "snow ON things"). Slow build, slow melt. |
+| `uLightningFlash` | 50 ms attack | 200 ms decay | Real lightning curve. Drives a brief ambient wash; coarse but reads correct at this duration. |
+
+**Snow + wet conflict.** Resolved in shader: `wetMask = uWetness * topFacing * (1.0 - uSnowAccumulation)` — snow displaces wet (the snow is on top of the wet pavement; we see snow, not wet under). Snow whitens; wet doesn't fight for the same pixel.
+
+**Verification.** Build transforms 1038 modules cleanly (the only failure is the pre-existing `public/photos/lafayette-square/other` symlink that breaks Vite's copy-static phase, unrelated to this change). DevTools verification path: open the LS, `useAtmosphere.setState({ tweenedDirective: { ...current, precip: { kind: 'rain', intensity: 0.8 } } })`. Rain falls; ground darkens over ~30s; releasing back to a dry directive dries over ~100s. Same pattern for snow + lightning. Schema doesn't yet contain a `lightning` block — Tempest's consumer is ready and waits for Phase 3b's schema extension + a modulator that emits it; until then the DevTools force is how lightning is exercised.
+
+**What this commit does NOT ship:**
+
+- **Phase 7a (wind field + multi-scale tree response).** Cross-helper with Arborist; trees aren't mounted in production yet. The whole reason 7a was deferred from this commit.
+- **Audio.** Rain layer, snow muffle, thunder delay — all deferred to a future Audiologist helper. Silent ship.
+- **Snow accumulation persistence.** v1 rebuilds from 0 on reload. localStorage persistence is v1.x follow-up.
+- **`directive.schema.json` lightning extension.** The runtime consumer is ready; schema + modulator authoring of the block belongs with 3b. Without that, lightning fires only when forced via DevTools.
+
+— Tempest
+
+---
+
 ## 2026-05-20 — Phase 6 shipped — Modulators (Halo)
 
 The continuous-phenomena layer landed end-to-end: schema, artifact, signal derivation, evaluator composition, UI tab, backend endpoints, autosave wiring. The Almanac picks the base directive; the modulator stack independently evaluates each authored phenomenon against the live signals payload and applies its bundle of deltas on top. Output flows through the same `useAtmosphere.rawDirective → tweenedDirective` tween path Cirrus established in 5a — no driver changes, the tween's per-frame interpolation absorbs strength changes for free.
