@@ -59,7 +59,7 @@ function urlToVariantId(url) {
   return m ? m[1] : null
 }
 
-function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot }) {
+function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot }) {
   const { scene } = useGLTF(url)
 
   // Walk the rewritten GLB, baking each primitive's world matrix into its
@@ -209,6 +209,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
           lampGlows={lampGlows}
           barkSettings={barkSettings}
           gradientSlot={gradientSlot}
+          detailSlot={detailSlot}
         />
       ))}
     </>
@@ -224,7 +225,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 const _barkTintTmp = new THREE.Color()
 const _barkTrunkTmp = new THREE.Color()
 const _barkBranchTmp = new THREE.Color()
-function applyBarkUniforms(material, barkSettings, gradientSlot) {
+function applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot) {
   const shader = material?.userData?.shader
   if (!shader) return
   // Brief 2 (Holm) — gradient slot is independent of bark/region path.
@@ -236,6 +237,21 @@ function applyBarkUniforms(material, barkSettings, gradientSlot) {
     shader.uniforms.uBarkGradientTileScale.value.set(gradientSlot.scaleU, gradientSlot.scaleV)
   } else {
     shader.uniforms.uUseBarkGradient.value = 0
+  }
+  // Brief 2.1a (Cinder) — detail slot carries the detail sub-region
+  // uvTransform PLUS the species's primary bark tile bounds so the shader
+  // can recover local-UV. Scale=0 disables the composite (no detail map
+  // bound) — the shader short-circuits to identity (barkColor unchanged).
+  if (detailSlot) {
+    const d = detailSlot.uvTransform
+    const b = detailSlot.barkTileUV
+    shader.uniforms.uBarkDetailTileOffset.value.set(d.offsetU, d.offsetV)
+    shader.uniforms.uBarkDetailTileScale.value.set(d.scaleU, d.scaleV)
+    shader.uniforms.uBarkTileOffset.value.set(b.offsetU, b.offsetV)
+    shader.uniforms.uBarkTileScale.value.set(b.scaleU, b.scaleV)
+  } else {
+    shader.uniforms.uBarkDetailTileScale.value.set(0, 0)
+    shader.uniforms.uBarkTileScale.value.set(0, 0)
   }
   // No bark spec? Reset to identity so leaf-only draws don't carry stale
   // tints from the prior bark draw. Region split disabled.
@@ -275,7 +291,7 @@ function applyBarkUniforms(material, barkSettings, gradientSlot) {
   shader.uniforms.uBarkRegionSplit.value = 0
 }
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot, detailSlot }) {
   const ref = useRef(null)
   // Attach the per-instance lamp-glow attribute to the geometry. Each
   // unique GLB has a unique geometry instance, so this doesn't bleed
@@ -307,8 +323,8 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   // the uniforms; we overwrite right before three.js submits the draw,
   // and three.js uploads uniform values per draw.
   const onBeforeRender = useMemo(() => {
-    return () => applyBarkUniforms(material, barkSettings, gradientSlot)
-  }, [material, barkSettings, gradientSlot])
+    return () => applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot)
+  }, [material, barkSettings, gradientSlot, detailSlot])
 
   return (
     <instancedMesh
@@ -489,6 +505,13 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     return atlas?.manifest?.barkGradientByVariant || {}
   }, [atlas?.manifest?.barkGradientByVariant])
 
+  // Brief 2.1a (Cinder): per-species detail uvTransform + bark-tile bounds.
+  // Looked up by URL→species at draw time. Variants without an entry render
+  // through identity (composite short-circuits when slot is missing).
+  const barkDetailBySpecies = useMemo(() => {
+    return atlas?.manifest?.barkDetailBySpecies || {}
+  }, [atlas?.manifest?.barkDetailBySpecies])
+
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
@@ -503,6 +526,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
           const gradientSlot = (species && variantId)
             ? (barkGradientByVariant[species]?.[variantId] || barkGradientByVariant[species]?.[Number(variantId)] || null)
             : null
+          const detailSlot = species ? (barkDetailBySpecies[species] || null) : null
           return (
             <Suspense key={`${url}#${tileId}`} fallback={null}>
               <VariantInstances
@@ -511,6 +535,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
                 treeMaterial={atlas.treeMaterial}
                 barkSettings={barkSettings}
                 gradientSlot={gradientSlot}
+                detailSlot={detailSlot}
               />
             </Suspense>
           )

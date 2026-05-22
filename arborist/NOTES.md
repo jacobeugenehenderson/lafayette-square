@@ -4,6 +4,133 @@
 
 ---
 
+## 2026-05-22 — Project: Brief 2.1a — Bark Detail Texturing Layer (baby Cinder)
+
+**Tiny baby, additive over Holm's Brief 2 gradient bark. Bake-time high-pass extraction (`arborist/extract-bark-detail.mjs`) → atlas 4th sub-region inside `unifyAtlases` → fragment Overlay-blend composite on the FINAL bark color, gated by `vBark`. Five new uniforms, one extra `texture2D` per bark fragment, no new programs, no new sampler bindings. Detail keyed per-bark-ref, dedup-shared across species using the same ref.**
+
+### What shipped
+
+- **`arborist/extract-bark-detail.mjs`** (~80 LOC). Reads each `public/textures/bark/<ref>/color.jpg`, runs sharp greyscale + Gaussian blur at σ=15px on the 1024-source, computes `detail[i] = clamp(orig[i] − blur[i] + 128, 0, 255)`, writes single-channel `detail.png` sibling. Idempotent — byte-identical re-runs update mtime only (per `project_writeifchanged_touches_mtime`). All five bark refs (Bark003/004/007/012/015) produce visibly textured high-pass output.
+- **`arborist/bake-look.js`** — new `bakeDetailAtlas(tiles, outDir, lookName)` mirrors `bakeGradientAtlas`'s shape but takes pre-existing PNG buffers + dims. `unifyAtlases` signature extended `(bark, leaves, gradient, detail, outDir, lookName)` — fourth sub-page packed via skyline alongside the others; greyscale detail composites into the SAME `trees-atlas-color.png` (no separate texture file). Orchestrator block walks roster species, resolves `manifest.bark.materialRef ?? bark.trunk.materialRef ?? bark.branch.materialRef`, dedupes by ref. Emits `barkDetailBySpecies[<species>] = { uvTransform, barkTileUV }` — the second field is the species's primary bark tile bounds in unified-atlas space (resolved from the unified tiles' `classification==='bark'` entries).
+- **`src/components/treeAtlasMaterial.js`** — five new uniforms (`uBarkDetailTileOffset/Scale`, `uBarkDetailStrength`, `uBarkTileOffset/Scale`). Fragment chunk runs AFTER the existing gradient/tint mix to capture the FINAL bark color, recovers local-UV from `vMapUv` via `(vMapUv - uBarkTileOffset) / uBarkTileScale` (`fract`'d for safety), samples the detail sub-region, applies per-channel Overlay-blend `mix(2*ab, 1 - 2*(1-a)*(1-b), step(0.5, a))`, mixes back via `uBarkDetailStrength`. Final result mixes into `diffuseColor.rgb` via `vBark` so leaf fragments stay untouched. Identity-safe when `uBarkTileScale=0` (no slot bound — short-circuits to `vec2(0.5)` local-UV).
+- **`src/components/InstancedTrees.jsx#applyBarkUniforms`** extended with `detailSlot` parameter; sets the four atlas-region uniforms when bound, zeros the scale uniforms otherwise. `barkDetailBySpecies` memo + URL→species resolution at draw-call assembly mirrors Holm's `gradientSlot` plumbing.
+
+### Critical departure from the brief — surfaced for the operator
+
+**The brief's shader formula `vec2 detailUV = vMapUv * uBarkDetailTileScale + uBarkDetailTileOffset` would have aliased to a single corner pixel of the detail tile.** Reason: `vMapUv` is atlas-rewritten UV (lives in the bark sub-region of the unified atlas, ~6% × 33% of full-atlas span for a typical bark tile in LS). Multiplying that tiny range by `detailScale` (~25% × 20%) produces a localized walk over the corner of the detail sub-region — visually the composite would be near-uniform grey (Overlay against ~0.5 is identity), invisible. The fix: pass the species's primary bark tile bounds as two additional uniforms (`uBarkTileOffset/Scale`) so the shader recovers `[0,1]` local-UV via `(vMapUv - uBarkTileOffset) / uBarkTileScale` before mapping into the detail tile. Two extra uniforms; the manifest grew `barkDetailBySpecies[<species>].barkTileUV` to carry them. Still one program, still no new sampler binding.
+
+**Per `feedback_baby_must_surface_scope_drift`:**
+
+- **Region-split species use trunk's detail.** `acer_saccharum_procedural` has `bark.trunk.materialRef=Bark007` + `bark.branch.materialRef=Bark003` — different physical bark refs. Brief says single set of uniforms, so I resolved to trunk's ref (visually dominant). Branch fragments composite trunk's detail keyed to trunk's tile bounds, which is a known approximation. Two follow-ups possible: (a) per-region detail uniforms `uBarkTrunkDetail/uBarkBranchDetail` mixed by `vBarkRegion` (matches Phase L Cycle 2 region split), or (b) emit a second detail entry per region. Defer until operator inspects acer_saccharum_procedural at LS.
+- **Atlas footprint grew more than the brief estimated.** Brief said ~200KB per detail PNG = ~1MB added. Actual: greyscale high-pass content compresses poorly — individual detail PNGs are 690KB–1180KB on disk. Unified `trees-atlas-color.png` grew 14MB → 20MB (+6MB) at 4040×5176. Still cheap vs alternative ("preserve full color photo at every render"), but worth knowing for the per-Look budget.
+- **`uBarkDetailStrength = 1.0` default is unverified visually.** I shipped the brief's recommended default since I can't run the dev server in this baby's scope. If LS Stage shows over-contrasty bark, dropping to 0.7 is a one-line change. Exposing as a per-Look slider is the v1.6 path the brief calls out.
+- **sRGB-vs-linear blend operates in linear space.** The atlas texture is `SRGBColorSpace`-tagged so `texture2D(map, ...)` returns linearized values; Overlay-blend runs on linear values, which makes the midtone branch (`step(0.5, ...)`) land at linear 0.5 not sRGB 0.5. For a high-pass detail map this is fine (centered around 0.5 by construction so the branch transitions where the operator's "no detail" baseline lives), but the branch point is technically a tiny visual shift vs Photoshop's Overlay. If the operator wants Photoshop-parity, the fix is two `pow` calls (sRGB→linear before blend, linear→sRGB after) — measurable cost, defer until needed.
+- **`step()` midtone branch — no banding observed.** Per-channel branch can show as color shifts at midtones; for greyscale detail × tinted bark, all three channels see the same `detailSample.rgb` (since detail is greyscale), and `barkColor` rarely sits exactly on 0.5 per channel. If banding shows up later, smooth-overlay variant `mix(ovLo, ovHi, smoothstep(0.45, 0.55, barkColor))` is the swap.
+- **Bake-script wipe list now includes `trees-atlas-bark-detail-color.png`** so an empty-roster bake doesn't leave a stale intermediate behind.
+
+### Acceptance criteria checklist
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | extract script runs cleanly, produces 5 detail PNGs | ✅ |
+| 2 | re-running produces byte-identical output | ✅ (sha1 verified, mtime-touch on no-op) |
+| 3 | `trees-atlas-color.png` grew vs before; no new runtime-bound texture file | ✅ (14M → 20M, 4040×3121 → 4040×5176; intermediate `trees-atlas-bark-detail-color.png` mirrors Holm's gradient sub-page pattern) |
+| 4 | `barkDetailBySpecies` in manifest | ✅ (6 entries: procedural_broadleaf/conifer/ornamental/columnar/weeping + acer_saccharum_procedural) |
+| 5 | LS visible detail | **Not verified — needs operator eyeball** |
+| 6 | `uBarkDetailStrength=0` reverts to no-detail | ✅ (the shader's final `mix(barkColor, composite, uBarkDetailStrength)` is identity at 0) |
+| 7 | `=1.0` shows visible composite | **Needs operator eyeball** |
+| 8 | Single shader program preserved | ✅ (uniform-driven branch only) |
+| 9 | Single atlas binding | ✅ (still loads `colorPath` + `normalPath`; detail rides inside the color atlas) |
+| 10 | Bloom-on stable, no black flicker | **Needs operator eyeball** |
+| 11 | Determinism | ✅ (script idempotent; bake reads stable file inputs) |
+| 12 | Back-compat (gradient on / off / single-tint) | ✅ (composite runs AFTER the existing mix; no path changed) |
+| 13 | Procedural / LiDAR / Grove unchanged | ✅ (no edits to survey-deleaf, generate-procedural, lidar-publish, generate-salon, publish-glb) |
+
+### Files touched
+
+- `arborist/extract-bark-detail.mjs` (new, ~80 LOC)
+- `public/textures/bark/Bark003,004,007,012,015/detail.png` (new, 690KB–1180KB each)
+- `arborist/bake-look.js` (~+90 LOC — bakeDetailAtlas, unifyAtlases extension, orchestrator detail collection, manifest emission)
+- `src/components/treeAtlasMaterial.js` (~+25 LOC — 5 uniforms + fragment chunk)
+- `src/components/InstancedTrees.jsx` (~+25 LOC — applyBarkUniforms detailSlot param + prop drilling + memo)
+- `arborist/FEATURES.md` (+1 paragraph)
+- `arborist/NOTES.md` (this entry)
+
+---
+
+## 2026-05-22 — Project: Salon — leaf-attachment-tags bake (baby Sorrel)
+
+**Dispatched as a Salon picker diagnostic; surfaced the picker was healthy (see "Picker diagnostic" below) and pivoted to the real operator-reported symptom: every chassis ships `leafAttachmentTags: []` (Whittle's spec), so `generate-salon.js#buildCompositionDocument` falls back to its sparse upper-bbox-vertex sampler (~5–10 anchors) — Salon compositions render visibly under-leafed. New bake script `arborist/derive-leaf-attachment-tags.mjs` walks all 159 chassis GLBs and writes real anchor positions to the paired `<name>.meta.json#leafAttachmentTags`. No generate-salon.js changes; the Phase D.1b leaf-cluster helpers do the right thing once attachment tags are populated.**
+
+### Picker diagnostic (the part that fixed nothing)
+
+Brief 1.5f opened with operator-reported "Salon picker isn't showing all of Fern's 10 packs." Static + curl trace ruled this out end-to-end:
+
+- `public/textures/leaves/shapes/` has all 10 dirs each with valid 1024×1024 RGBA sRGB `shape.png` + populated `meta.json`. SHA1s all distinct.
+- `listLeafPacks()` at `generate-salon.js:176` returns all 10 dir-kind packs plus the legacy flat fallbacks (20 entries total). Verified via direct module invocation AND `curl http://localhost:5173/api/arborist/salon/acer_saccharum/leaves` — the live dev server returns the full list.
+- `serve.js#/salon/:species/leaves` (line 1073) is species-agnostic; the `:species` capture is unused. Per-species delta is zero.
+- `SalonWorkstage.jsx:893` iterates `leafPacks.map(...)` with no filter — no morphology, no species, no binding-presence check. The brief's "picker filters by morphology and HIDES non-matches" hypothesis doesn't match the actual code (the chassis picker at line 720 DOES filter by morphology + approved status; the report probably conflated the two surfaces).
+- `readLeafBytes()` (line 203) tries `shapes/<pack>/shape.png` first and succeeds for all 10. No silent fallback.
+
+**Most likely explanation for the original report:** the operator's browser tab held a stale `salonLeafPacks` from before Fern's ship (the store fetches once at mount; a hard refresh would have shown the full 10). Bundling a "picker fix" would have been fabricating a code change against a non-existent code bug.
+
+### What ships (Salon leaf-attachment-tags bake)
+
+- **`arborist/derive-leaf-attachment-tags.mjs`** (~190 LOC). Walks `public/trees/_chassis/<name>.glb`, gathers wood-mesh `POSITION` accessors (defensively: `atlasKind === 'bark'` or unset; ignores any future leaf primitives in chassis files), computes XZ centroid as trunk-axis proxy, subdivides the top `topYFrac` of the Y-bbox into a `gridDensity × gridDensity` XZ grid, and per cell picks the vertex farthest from the trunk axis. Cells with no wood verts produce no anchor — sparse-canopy species naturally end up with fewer anchors (per brief). Writes anchors to `meta.leafAttachmentTags` as `[[x, y, z], ...]`, 4-decimal rounded, iterated in fixed `(ix, iz)` order for determinism. Idempotent via `writeIfChanged` + mtime-touch (`project_writeifchanged_touches_mtime`). Run: `node arborist/derive-leaf-attachment-tags.mjs`.
+- **`arborist/leaf-attachment-defaults.json`** + **`arborist/leaf-attachment-defaults.defaults.json`** (immutable backstop per `feedback_json_stringify_loses_hand-authored_format`). Live config schema: `{gridDensity, topYFrac, minAnchors, maxAnchors, densityMultiplier}`. Defaults: 8 / 0.6 / 30 / 250 / 1.0. `minAnchors` / `maxAnchors` are reporting thresholds (warning-level), not enforced clamps — the heuristic is "sparse-canopy meshes naturally produce fewer anchors" so a cypress legitimately gets <10.
+- **159 × `public/trees/_chassis/<name>.meta.json`** — `leafAttachmentTags` populated. **Note: chassis dir is gitignored (`.gitignore:108`), so these edits don't enter the commit.** See "gitignore drift" below.
+
+### Run report (159 chassis, default config G=8 / topYFrac=0.6)
+
+- **All 159 chassis populated** — zero empties. Sequoia's fallback path stays as a defensive net (an empty array still triggers the bbox-sample fallback in `generate-salon.js:540`, per brief).
+- **Anchor count**: min=1, **median=31**, max=59. Brief target was 50–200; with G=8 (64 cells max), only the densest high-poly chassis reach ~50. **Median 3–6× denser than the 5–10 sparse fallback baseline** — meaningful improvement in absolute terms, below the brief's stretch target.
+- **75 chassis below `minAnchors=30`** (warning-only). All are visually-sparse-by-design: `italian_cypress_*` (1–7 anchors, columnar low-poly), `*_low_poly_forest_*` (6–26, stylized low-poly), `flowering_peach_*`, `acer_saccharum_*` low-vertex variants. None are "broken" — the chassis genuinely has few top-region verts. Operator should treat as authored sparsity, not a heuristic failure.
+- **Zero chassis above `maxAnchors=250`** (cap is far above what G=8 can produce).
+- **Idempotency verified** — second run: 0 written, 159 unchanged (mtime touched).
+
+### Surface — non-obvious things worth flagging (per `feedback_baby_must_surface_scope_drift`)
+
+- **gitignore drift — load-bearing.** `public/trees/_chassis/` is gitignored (the dir is regenerable via `survey-deleaf.js`). My 159 `meta.json` edits **don't get committed** and will be **wiped on next `survey-deleaf` run** because `survey-deleaf.js:243,540` writes fresh `meta.json` with `leafAttachmentTags: []`. This is exactly the pattern Brief 1.5b solved for chassis curation (moved out to `arborist/state/_chassis-curation.json`). Two follow-up paths, operator's call:
+  - **(a)** Hook `derive-leaf-attachment-tags.mjs` into the tail of `survey-deleaf.js#main()` — ~5 LOC. Tags get re-baked every survey. Cleanest for "tags belong to the regenerable chassis." Brief explicitly said "don't change chassis library files / don't run survey-deleaf" so I left this out.
+  - **(b)** Move `leafAttachmentTags` out to a tracked sidecar at `arborist/state/_chassis-leaf-tags.json`, keyed by `<name>.glb` like the curation file. Survives `survey-deleaf`. Requires a tiny read in `generate-salon.js#buildCompositionDocument` to merge sidecar→meta — but the brief explicitly forbid modifying generate-salon.js, so this would be a follow-up brief.
+  
+  Either path is small. Today the working tree has the tags populated; until follow-up lands, **operator must re-run `node arborist/derive-leaf-attachment-tags.mjs` after any `survey-deleaf` run**.
+- **`gridDensity=8` undershoots the brief's 50–200 anchor target.** Brief said "default 8"; operator confirmed 8 in the dispatch. Median came in at 31. Bumping to `gridDensity: 12` would push median into the 50–80 range (144-cell max) without changing behavior on sparse-canopy chassis. Surfaced for operator tuning rather than overriding the explicit default.
+- **Position coordinate space.** The raw POSITION accessor returns local-mesh coordinates which on some chassis read as `~140` (vs the `heightRange: [-0.02, 9.5]` in meta.json — chassis carry a scaling node transform). My script reads positions the **identical way** `generate-salon.js:498` does (raw, untransformed), so the tags will land in the same coordinate space the leaf emitter expects. The magnitude looks off vs. heightRange, but consistency with the emitter is what matters.
+- **`densityMultiplier` < 1 trims tags by head-of-list slice** (deterministic given the fixed grid-iteration order). `> 1` is a no-op — we can't manufacture verts that don't exist. If the operator wants `> 1` to mean "sample multiple verts per cell", that's a heuristic extension; surfaced rather than implemented.
+- **No `atlasKind === 'wood'`-style filter caught a chassis I had to skip.** All 159 chassis have only bark primitives (or untagged primitives, which I assume are bark per `generate-salon.js:497`'s same defensive rule). If a future chassis-decomposition pass ever leaves a non-bark primitive in the chassis GLB, my filter will skip it correctly.
+- **`feedback_smallness_as_precondition`-style "niceness"**: this brief doesn't optimize; it just gives the emitter the data it should have always had. Sparse-canopy species stay sparse-canopy because the heuristic naturally produces fewer anchors where wood verts are scarce.
+- **Memory drift** (carried from prior session): `project_baby_name_holm` says Holm is "claimed but unused"; commit `646180c` shipped Brief 2 under Holm. Memory is stale and should be removed.
+
+### Constraints honored
+
+- Touched only `<chassis>.meta.json` files in the chassis dir; no GLB edits, no survey-deleaf changes, no generate-salon.js changes.
+- Idempotent (verified second-run).
+- Determinism (fixed grid-iteration order, 4-decimal rounding).
+- Picker path untouched — no fabricated fix for a non-existent bug.
+
+---
+
+## 2026-05-21 — Coordinator session-end (Olmsted) — Salon arc through Brief 2 + spec-compression lesson
+
+**Coordinator: Olmsted. Six babies dispatched across one operator-day: Whittle (Brief 0, de-leaf survey), Sequoia (Brief 1 Salon stand-up + Brief 1.5a visible-quality completion), Quill (Brief 1.5b chassis curation), Riven (Brief 1.5c bundle-aware re-de-leaf), Fern (Brief 1.5e leaf pack library expansion), Holm (Brief 2 bark gradient maps). All six shipped working code; arc commits 286d748 (Whittle) → ee7d3bb (Sequoia 1 + 1.5a) → 6be8050 (Quill) → 70cbcf6 (Riven) → [Fern uncommitted at session end] → [Holm uncommitted at session end].**
+
+**Arc summary.** Salon mode is alive end-to-end: 159 chassis (Whittle 141 + Riven 18 decomposed), 10 vendor leaf packs with Phase F-prep metadata sidecars (Fern), per-chassis rename + tri-state approval surface (Quill), bark plumbing through `applyBarkUniforms` with `qualityOverride: 4` + `syncLookRoster` closing the Salon→LS placement loop (Sequoia 1.5a). Brief 2 (Holm) shipped multi-stop gradient bark with per-instance hash sampling axis — **but the runtime architecture mis-matches operator vision** (see "spec compression" below). Brief 2.1 pivot is the next dispatch.
+
+**Spec compression — the load-bearing coordinator failure.** Operator stated three times across the Salon arc that they wanted "B&W texture × multi-stop gradient" — per-pixel luminance-driven sampling for **species disambiguation via gradient swap** (one B&W substrate + N contrasty gradients = N species visual identities, e.g., Sugar Maple warm-brown / Norway Maple cool-grey / Pin Oak dark-furrowed all from the same texture). Olmsted translated this into the simpler "per-instance multiply: existing PBR bark × hash-driven single ramp position" because the simpler architecture seemed sufficient. Brief 2 inherited the mis-translation; Holm executed it faithfully; operator opened the result and flagged the wrong runtime interpretation. The doctrine is now codified in [[feedback_spec_compression]] memory: **operator metaphors carry architectural specification; the coordinator MUST surface the translation explicitly before dispatch when the operator's metaphor is richer than current kit conventions.** Cost: one baby cycle (Holm's ~520-LOC implementation) plus another half-cycle for Brief 2.1 pivot.
+
+**Brief 2.1 — pending B-pivot.** Cheap path: compute `luminance = dot(barkColor.rgb, vec3(0.299, 0.587, 0.114))` from the existing PBR color sample at runtime; use as `t` into the gradient LUT. No bark library re-author needed. Per-instance hash can optionally ride as a secondary luminance-offset for cross-tree variation on top of B's per-pixel base. Holm's Brief 2 infrastructure (LUT bake, atlas tile category, manifest channel, editor UI, per-variant lift) all transfers; only the shader sampling axis changes. ~150 LOC delta, ~0.5 baby day. Cold dispatch.
+
+**Architectural seams Holm caught.** Holm's pre-implementation decision pass surfaced two architectural seams the Brief 2 spec glossed over: (1) per-variant manifest lift on the gradient channel only (Sequoia's 1.5a `patchManifestForSalon` was first-composition-only; Brief 2 schema requires per-variant resolved by `variantId` from GLB URL); (2) atlas-survey-vs-bake-look path question (LUT artifacts aren't GLB-texture-bound, so Holm baked LUTs directly inside `bake-look.js` as a third sub-atlas page rather than threading through `surveyRoster`). Both seams transfer to Brief 2.1 unchanged.
+
+**Catalog state at session end.** 159 chassis, 10 leaf packs, curation surface live, bark plumbing complete (single-tint working; gradient sampling axis pending B-pivot). Coverage gaps surfaced: ornamental morphology (improved by Riven decomposition but still partial), tail-of-roster species with no clean wood (Norway Spruce, Douglas Fir, Magnolia, Silver Birch, White Willow), broken-source GLBs (elderberry, spruce_corona, tree_variation, ulmus_americana).
+
+**Sequence ahead.** Brief 2.1 → Brief 3 (deformer rig) → Brief 4 (camera-aware hemisphere cull). Brief 3 + 4 conflict with Brief 2.1's file surface so the sequence is serial.
+
+**Sibling memory entries written this session:** [[feedback_spec_compression]], [[feedback_classifier_keyword_cross_check]], [[feedback_structural_heuristic_needs_sibling_check]].
+
+---
+
 ## 2026-05-21 — Project: Salon — Brief 2 (Holm) — bark gradient maps + multi-stop tint editor
 
 **Cold dispatch. Replaces per-composition single-tint bark with an authored multi-stop gradient ramp; runtime samples per-instance via hash so 5 instances of the same Salon-published variant land at 5 positions along the ramp. Authored at `composition.bark.gradientStops = [{t∈[0,1], color: "#RRGGBB"}, ...]` (≥2 stops); absent at every layer → existing single-tint runtime preserved end-to-end.**

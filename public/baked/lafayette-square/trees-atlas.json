@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-20T03:42:56.975Z",
+  "generatedAt": "2026-05-22T05:26:47.812Z",
   "lookName": "lafayette-square",
   "rosterSize": 30,
   "materialDefaults": {
@@ -8,7 +8,7 @@
   },
   "atlas": {
     "width": 4040,
-    "height": 3112,
+    "height": 5176,
     "colorPath": "/baked/lafayette-square/trees-atlas-color.png",
     "normalPath": "/baked/lafayette-square/trees-atlas-normal.png",
     "alphaMode": "MASK",
@@ -77,9 +77,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
@@ -124,9 +124,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -171,9 +171,9 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -208,9 +208,9 @@
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -240,9 +240,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.6696658097686374,
+        "offsetV": 0.8013910355486863,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -272,9 +272,9 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.6696658097686374,
+        "offsetV": 0.8013910355486863,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -304,9 +304,9 @@
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.6696658097686374,
+        "offsetV": 0.8013910355486863,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -336,9 +336,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.8341902313624678,
+        "offsetV": 0.9003091190108192,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -363,9 +363,9 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -390,9 +390,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782177,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -417,9 +417,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -444,9 +444,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -471,9 +471,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -538,9 +538,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -585,9 +585,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -632,9 +632,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -674,9 +674,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -716,9 +716,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -758,9 +758,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -795,9 +795,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -827,9 +827,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -859,9 +859,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -886,9 +886,9 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
@@ -913,9 +913,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
@@ -940,9 +940,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -967,9 +967,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -994,9 +994,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.3354755784061696,
+        "offsetV": 0.6004636785162287,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -1021,9 +1021,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -1048,9 +1048,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -1075,9 +1075,9 @@
       },
       "uvTransform": {
         "offsetU": 0.06633663366336634,
-        "offsetV": 0.3354755784061696,
+        "offsetV": 0.6004636785162287,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
@@ -1102,9 +1102,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -1129,9 +1129,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -1198,9 +1198,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "1024×1024"
@@ -1245,9 +1245,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1292,9 +1292,9 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1329,9 +1329,9 @@
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1361,9 +1361,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5831683168316831,
-        "offsetV": 0.6696658097686374,
+        "offsetV": 0.8013910355486863,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1393,9 +1393,9 @@
       },
       "uvTransform": {
         "offsetU": 0.711881188118812,
-        "offsetV": 0.6696658097686374,
+        "offsetV": 0.8013910355486863,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1425,9 +1425,9 @@
       },
       "uvTransform": {
         "offsetU": 0.8405940594059406,
-        "offsetV": 0.6696658097686374,
+        "offsetV": 0.8013910355486863,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1457,9 +1457,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.8341902313624678,
+        "offsetV": 0.9003091190108192,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213293
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1484,9 +1484,9 @@
       },
       "uvTransform": {
         "offsetU": 0.4524752475247525,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -1511,9 +1511,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5178217821782177,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "512×2048",
       "sourceNormalDims": "512×2048"
@@ -1538,9 +1538,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1565,9 +1565,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1592,9 +1592,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.5025706940874035,
+        "offsetV": 0.7009273570324576,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.32904884318766064
+        "scaleV": 0.19783616692426587
       },
       "sourceColorDims": "1024×2048",
       "sourceNormalDims": "1024×1024"
@@ -1659,9 +1659,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -1706,9 +1706,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1753,9 +1753,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1795,9 +1795,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1837,9 +1837,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": "1024×1024"
@@ -1879,9 +1879,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1916,9 +1916,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1948,9 +1948,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -1980,9 +1980,9 @@
       },
       "uvTransform": {
         "offsetU": 0.1297029702970297,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "1024×1024",
       "sourceNormalDims": null
@@ -2007,9 +2007,9 @@
       },
       "uvTransform": {
         "offsetU": 0.9673267326732673,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.031683168316831684,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "256×1024",
       "sourceNormalDims": "1024×1024"
@@ -2034,9 +2034,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.0012853470437017994,
+        "offsetV": 0.3995363214837712,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "1024×1024"
@@ -2061,9 +2061,9 @@
       },
       "uvTransform": {
         "offsetU": 0.2584158415841584,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "1024×1024"
@@ -2088,9 +2088,9 @@
       },
       "uvTransform": {
         "offsetU": 0.901980198019802,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -2115,9 +2115,9 @@
       },
       "uvTransform": {
         "offsetU": 0.0009900990099009901,
-        "offsetV": 0.3354755784061696,
+        "offsetV": 0.6004636785162287,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "256×512",
       "sourceNormalDims": "256×512"
@@ -2142,9 +2142,9 @@
       },
       "uvTransform": {
         "offsetU": 0.38712871287128714,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -2169,9 +2169,9 @@
       },
       "uvTransform": {
         "offsetU": 0.5158415841584159,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×512",
       "sourceNormalDims": "512×512"
@@ -2196,9 +2196,9 @@
       },
       "uvTransform": {
         "offsetU": 0.06633663366336634,
-        "offsetV": 0.3354755784061696,
+        "offsetV": 0.6004636785162287,
         "scaleU": 0.06336633663366337,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "512×1024",
       "sourceNormalDims": "512×1024"
@@ -2223,9 +2223,9 @@
       },
       "uvTransform": {
         "offsetU": 0.6445544554455446,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -2250,9 +2250,9 @@
       },
       "uvTransform": {
         "offsetU": 0.7732673267326733,
-        "offsetV": 0.1683804627249357,
+        "offsetV": 0.5,
         "scaleU": 0.12673267326732673,
-        "scaleV": 0.16452442159383032
+        "scaleV": 0.09891808346213292
       },
       "sourceColorDims": "2048×2048",
       "sourceNormalDims": "1024×1024"
@@ -2331,6 +2331,93 @@
         "roughnessOverride": -1
       },
       "regionThreshold": 0.04127992455715992
+    }
+  },
+  "barkGradientByVariant": {},
+  "barkDetailBySpecies": {
+    "procedural_broadleaf": {
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.0007727975270479134,
+        "scaleU": 0.25346534653465347,
+        "scaleV": 0.19783616692426584
+      },
+      "barkTileUV": {
+        "offsetU": 0.8405940594059406,
+        "offsetV": 0.7009273570324576,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.09891808346213293
+      }
+    },
+    "acer_saccharum_procedural": {
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.0007727975270479134,
+        "scaleU": 0.25346534653465347,
+        "scaleV": 0.19783616692426584
+      },
+      "barkTileUV": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.7009273570324576,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.09891808346213293
+      }
+    },
+    "procedural_conifer": {
+      "uvTransform": {
+        "offsetU": 0.25643564356435644,
+        "offsetV": 0.0007727975270479134,
+        "scaleU": 0.25346534653465347,
+        "scaleV": 0.19783616692426584
+      },
+      "barkTileUV": {
+        "offsetU": 0.5831683168316831,
+        "offsetV": 0.8013910355486863,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.09891808346213293
+      }
+    },
+    "procedural_ornamental": {
+      "uvTransform": {
+        "offsetU": 0.5118811881188119,
+        "offsetV": 0.0007727975270479134,
+        "scaleU": 0.25346534653465347,
+        "scaleV": 0.19783616692426584
+      },
+      "barkTileUV": {
+        "offsetU": 0.711881188118812,
+        "offsetV": 0.8013910355486863,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.09891808346213293
+      }
+    },
+    "procedural_columnar": {
+      "uvTransform": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.20015455950540958,
+        "scaleU": 0.25346534653465347,
+        "scaleV": 0.19783616692426584
+      },
+      "barkTileUV": {
+        "offsetU": 0.8405940594059406,
+        "offsetV": 0.8013910355486863,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.09891808346213293
+      }
+    },
+    "procedural_weeping": {
+      "uvTransform": {
+        "offsetU": 0.25643564356435644,
+        "offsetV": 0.20015455950540958,
+        "scaleU": 0.25346534653465347,
+        "scaleV": 0.19783616692426584
+      },
+      "barkTileUV": {
+        "offsetU": 0.0009900990099009901,
+        "offsetV": 0.9003091190108192,
+        "scaleU": 0.12673267326732673,
+        "scaleV": 0.09891808346213293
+      }
     }
   }
 }

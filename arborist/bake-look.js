@@ -238,6 +238,69 @@ async function bakeGradientAtlas(tiles, outDir, lookName) {
   }
 }
 
+// ── Brief 2.1a (Cinder): bark Detail Texturing layer ────────────────────
+//
+// High-pass detail maps (per bark ref under public/textures/bark/<ref>/
+// detail.png, produced one-shot by arborist/extract-bark-detail.mjs) get
+// packed into a fourth sub-atlas page alongside bark + leaves + gradient.
+// Runtime composites each fragment's bark color with the detail sample via
+// Overlay-blend (Unreal Detail Texture / Unity HDRP Detail Albedo). One
+// extra texture2D per bark fragment; zero new programs, zero new bindings.
+//
+// Detail tiles dedup by bark ref (multiple species sharing Bark003 share
+// the detail tile). Per-species manifest emission resolves through the
+// species's barkBySpecies.materialRef; for region-split species the trunk
+// ref wins (surfaced in NOTES — branch fragments composite trunk's detail).
+async function bakeDetailAtlas(tiles, outDir, lookName) {
+  if (tiles.length === 0) return null
+  const contents = tiles.map(t => ({ w: t.w, h: t.h }))
+  const rects = contents.map(d => ({ w: d.w + GUTTER * 2, h: d.h + GUTTER * 2 }))
+  const pack = packSkyline(rects, { maxWidth: MAX_ATLAS_WIDTH })
+  const atlasW = pack.width
+  const atlasH = pack.height
+
+  const colorBase = sharp({
+    create: { width: atlasW, height: atlasH, channels: 4, background: { r: 128, g: 128, b: 128, alpha: 1 } }
+  })
+  const colorParts = []
+  const tileEntries = []
+  for (let i = 0; i < tiles.length; i++) {
+    const t = tiles[i]
+    const place = pack.placements[i]
+    const content = contents[i]
+    const cx = place.x + GUTTER
+    const cy = place.y + GUTTER
+    const extendOpts = { top: GUTTER, bottom: GUTTER, left: GUTTER, right: GUTTER, extendWith: 'copy' }
+    const colorBuf = await sharp(t.buffer)
+      .resize(content.w, content.h, { fit: 'fill' })
+      .extend(extendOpts)
+      .png()
+      .toBuffer()
+    colorParts.push({ input: colorBuf, left: place.x, top: place.y })
+    tileEntries.push({
+      tileIndex: i,
+      key: t.key,
+      atlas: 'barkDetail',
+      classification: 'barkDetail',
+      refs: t.refs,
+      content: { x: cx, y: cy, w: content.w, h: content.h },
+      uvTransform: {
+        offsetU: cx / atlasW,
+        offsetV: cy / atlasH,
+        scaleU: content.w / atlasW,
+        scaleV: content.h / atlasH,
+      },
+    })
+  }
+  const colorRel = `trees-atlas-bark-detail-color.png`
+  await colorBase.composite(colorParts).png({ compressionLevel: 9 }).toFile(path.join(outDir, colorRel))
+  return {
+    width: atlasW, height: atlasH,
+    colorPath: `/baked/${lookName}/${colorRel}`,
+    tiles: tileEntries,
+  }
+}
+
 // ── atlas baking ─────────────────────────────────────────────────────────
 //
 // Skyline-packed atlas: each tile occupies its actual source content rect
@@ -325,8 +388,8 @@ async function bakeAtlas(tiles, atlasName, outDir, lookName) {
 // (one shader program) regardless of bark vs leaves classification — Bloom
 // is intolerant of more than one tree shader program in this scene, so this
 // is non-negotiable.
-async function unifyAtlases(bark, leaves, gradient, outDir, lookName) {
-  if (!bark && !leaves && !gradient) return null
+async function unifyAtlases(bark, leaves, gradient, detail, outDir, lookName) {
+  if (!bark && !leaves && !gradient && !detail) return null
 
   // Pack the sub-atlas pages as rects; skyline picks side-by-side or stacked
   // based on which wastes less. No fixed gutter here — sub-atlas edges are
@@ -339,6 +402,7 @@ async function unifyAtlases(bark, leaves, gradient, outDir, lookName) {
   if (bark)     pages.push({ kind: 'bark',     src: bark,     w: bark.width,     h: bark.height })
   if (leaves)   pages.push({ kind: 'leaves',   src: leaves,   w: leaves.width,   h: leaves.height })
   if (gradient) pages.push({ kind: 'gradient', src: gradient, w: gradient.width, h: gradient.height })
+  if (detail)   pages.push({ kind: 'detail',   src: detail,   w: detail.width,   h: detail.height })
   const pack = packSkyline(pages.map(p => ({ w: p.w, h: p.h })), { maxWidth: MAX_ATLAS_WIDTH })
   const unifiedW = Math.max(pack.width, 1)
   const unifiedH = Math.max(pack.height, 1)
@@ -346,6 +410,7 @@ async function unifyAtlases(bark, leaves, gradient, outDir, lookName) {
   const placedBark = pages.find(p => p.kind === 'bark')
   const placedLeaves = pages.find(p => p.kind === 'leaves')
   const placedGradient = pages.find(p => p.kind === 'gradient')
+  const placedDetail = pages.find(p => p.kind === 'detail')
 
   const colorOut = path.join(outDir, 'trees-atlas-color.png')
   const normalOut = path.join(outDir, 'trees-atlas-normal.png')
@@ -376,6 +441,13 @@ async function unifyAtlases(bark, leaves, gradient, outDir, lookName) {
     // gets the unified normal map's flat-tangent background by default.
     const gradColor = await fs.readFile(path.join(outDir, `trees-atlas-bark-gradient-color.png`))
     colorParts.push({ input: gradColor, left: placedGradient.x, top: placedGradient.y })
+  }
+  if (placedDetail) {
+    // Brief 2.1a (Cinder): detail sub-atlas color only. Detail is greyscale
+    // high-pass + 0.5-grey baseline; the unified normal map's flat-tangent
+    // background fills the detail footprint (detail isn't normal-shaded).
+    const detailColor = await fs.readFile(path.join(outDir, `trees-atlas-bark-detail-color.png`))
+    colorParts.push({ input: detailColor, left: placedDetail.x, top: placedDetail.y })
   }
   await colorBase.composite(colorParts).png({ compressionLevel: 9 }).toFile(colorOut)
 
@@ -438,6 +510,7 @@ async function unifyAtlases(bark, leaves, gradient, outDir, lookName) {
   // shader-side via uniform-driven UVs — so a parallel array keeps the GLB
   // rewrite path's invariants intact.
   const gradientTiles = remap(placedGradient)
+  const detailTiles = remap(placedDetail)
 
   return {
     width: unifiedW,
@@ -446,6 +519,7 @@ async function unifyAtlases(bark, leaves, gradient, outDir, lookName) {
     normalPath: `/baked/${lookName}/trees-atlas-normal.png`,
     tiles,
     gradientTiles,
+    detailTiles,
   }
 }
 
@@ -664,6 +738,7 @@ export async function bakeLook(lookName, opts = {}) {
       'trees-atlas-bark-color.png', 'trees-atlas-bark-normal.png',
       'trees-atlas-leaves-color.png', 'trees-atlas-leaves-normal.png',
       'trees-atlas-bark-gradient-color.png',
+      'trees-atlas-bark-detail-color.png',
       'trees-atlas-bark-viz.png', 'trees-atlas-leaves-viz.png',
       'trees-atlas.json',
     ]) await rmrf(path.join(outDir, f))
@@ -723,14 +798,67 @@ export async function bakeLook(lookName, opts = {}) {
   }
   const gradientTiles = [...gradientSeenSha.values()]
 
+  // Brief 2.1a (Cinder): collect per-bark-ref detail maps for every species
+  // in roster. Resolves each species's bark.materialRef (or trunk.materialRef
+  // for region-split species) → public/textures/bark/<ref>/detail.png. Dedup
+  // by bark ref so multiple species sharing Bark003 collapse to one tile.
+  // Missing detail.png is skipped silently (script must be run first).
+  const detailSeenRef = new Map() // barkRef -> { key, buffer, w, h, refs:[{species}] }
+  const speciesPrimaryBarkRef = new Map() // species -> barkRef
+  {
+    const manifestCache = new Map()
+    const fileCache = new Map() // barkRef -> {buffer, w, h} | null
+    const speciesSeen = new Set()
+    for (const v of roster) {
+      if (speciesSeen.has(v.species)) continue
+      speciesSeen.add(v.species)
+      const mPath = path.join(TREES_DIR, v.species, 'manifest.json')
+      let m = manifestCache.get(v.species)
+      if (m === undefined) {
+        try { m = JSON.parse(await fs.readFile(mPath, 'utf8')) }
+        catch { m = null }
+        manifestCache.set(v.species, m)
+      }
+      if (!m?.bark) continue
+      // Region-split species: prefer trunk's ref (visually dominant).
+      const primaryRef = m.bark.materialRef
+        ?? m.bark.trunk?.materialRef
+        ?? m.bark.branch?.materialRef
+        ?? null
+      if (!primaryRef) continue
+      speciesPrimaryBarkRef.set(v.species, primaryRef)
+      if (!fileCache.has(primaryRef)) {
+        const detailPath = path.join(REPO_ROOT, 'public/textures/bark', primaryRef, 'detail.png')
+        try {
+          const buf = await fs.readFile(detailPath)
+          const meta = await sharp(buf).metadata()
+          fileCache.set(primaryRef, { buffer: buf, w: meta.width, h: meta.height })
+        } catch {
+          fileCache.set(primaryRef, null)
+        }
+      }
+      const slot = fileCache.get(primaryRef)
+      if (!slot) continue
+      const existing = detailSeenRef.get(primaryRef)
+      const ref = { species: v.species }
+      if (existing) {
+        if (!existing.refs.some(r => r.species === ref.species)) existing.refs.push(ref)
+      } else {
+        detailSeenRef.set(primaryRef, { key: `detail-${primaryRef}`, buffer: slot.buffer, w: slot.w, h: slot.h, refs: [ref] })
+      }
+    }
+  }
+  const detailTilesIn = [...detailSeenRef.values()]
+
   const t1 = Date.now()
   const bark = await bakeAtlas(barkTiles, 'bark', outDir, lookName)
   const leaves = await bakeAtlas(leafTiles, 'leaves', outDir, lookName)
   const gradient = await bakeGradientAtlas(gradientTiles, outDir, lookName)
-  // Composite bark+leaves(+gradient) into a single atlas so the runtime
-  // can use a single shared material. Tile uvTransforms are remapped into
-  // unified coordinates here.
-  const unified = await unifyAtlases(bark, leaves, gradient, outDir, lookName)
+  const detail = await bakeDetailAtlas(detailTilesIn, outDir, lookName)
+  // Composite bark+leaves(+gradient)(+detail) into a single atlas so the
+  // runtime can use a single shared material. Tile uvTransforms are remapped
+  // into unified coordinates here.
+  const unified = await unifyAtlases(bark, leaves, gradient, detail, outDir, lookName)
   const tBake = Date.now() - t1
 
   // Phase B (2026-05-15): gather per-species bark spec from each species's
@@ -797,6 +925,42 @@ export async function bakeLook(lookName, opts = {}) {
     }
   }
 
+  // Brief 2.1a (Cinder): per-species detail uvTransform. Each detail tile
+  // covers one bark ref; expand `refs:[{species}]` into per-species slots.
+  // Also emit `barkTileUV` (the species's primary bark tile uvTransform in
+  // unified-atlas space) so the runtime shader can recover local-UV from
+  // vMapUv before mapping into the detail tile — vMapUv alone ranges only
+  // over the bark sub-region, so the brief's `vMapUv * detailScale +
+  // detailOffset` would alias to a tiny corner of the detail map. See
+  // arborist/NOTES.md (Cinder, 2026-05-21) for the correction rationale.
+  // For region-split species we use the trunk tile (consistent with detail).
+  const barkDetailBySpecies = {}
+  // Build species → primary bark tile uvTransform lookup from the unified
+  // tiles. We match species via tile.refs[].species + the resolved
+  // primary bark ref's matName encoded by atlas-survey.
+  const tileBySpeciesBark = new Map() // species -> uvTransform (first bark match)
+  for (const t of unified?.tiles || []) {
+    if (t.classification !== 'bark') continue
+    for (const ref of t.refs) {
+      if (!tileBySpeciesBark.has(ref.species)) {
+        tileBySpeciesBark.set(ref.species, t.uvTransform)
+      }
+    }
+  }
+  for (const dt of unified?.detailTiles || []) {
+    const slot = {
+      offsetU: dt.uvTransform.offsetU,
+      offsetV: dt.uvTransform.offsetV,
+      scaleU: dt.uvTransform.scaleU,
+      scaleV: dt.uvTransform.scaleV,
+    }
+    for (const ref of dt.refs) {
+      const barkTileUV = tileBySpeciesBark.get(ref.species)
+      if (!barkTileUV) continue
+      barkDetailBySpecies[ref.species] = { uvTransform: slot, barkTileUV }
+    }
+  }
+
   // Manifest
   const tilesByKey = {}
   for (const t of unified?.tiles || []) tilesByKey[t.key] = t
@@ -818,6 +982,7 @@ export async function bakeLook(lookName, opts = {}) {
     tilesByKey,
     barkBySpecies,
     barkGradientByVariant,
+    barkDetailBySpecies,
   }
   await fs.writeFile(path.join(outDir, 'trees-atlas.json'), JSON.stringify(manifest, null, 2))
 

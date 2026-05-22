@@ -91,6 +91,24 @@ function injectFoliageSway(material) {
     shader.uniforms.uUseBarkGradient = { value: 0 }
     shader.uniforms.uBarkGradientTileOffset = { value: new THREE.Vector2(0, 0) }
     shader.uniforms.uBarkGradientTileScale = { value: new THREE.Vector2(1, 1) }
+    // Brief 2.1a (Cinder) — bark Detail Texturing composite. Detail tile
+    // packs into the same unified atlas as bark/leaves/gradient; sampled
+    // via `map` at vMapUv * Scale + Offset, Overlay-blended over whatever
+    // bark color the prior path produced (single-tint, gradient-on,
+    // gradient-off all unaffected). Identity baseline: when no slot is
+    // bound (default 0.5-grey offset + zero scale → samples top-left of
+    // atlas which may be non-grey), uBarkDetailStrength=0 forces identity.
+    shader.uniforms.uBarkDetailTileOffset = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uBarkDetailTileScale = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uBarkDetailStrength = { value: 1.0 }
+    // The species's primary bark tile bounds in unified-atlas space; the
+    // shader uses these to recover [0,1] local-UV from vMapUv before
+    // mapping into the detail sub-region. Without this, vMapUv (which
+    // lives inside a small atlas sub-region) would alias to a single
+    // detail-tile corner. Scale=0 keeps the composite identity-safe when
+    // no slot is bound.
+    shader.uniforms.uBarkTileOffset = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uBarkTileScale = { value: new THREE.Vector2(1, 1) }
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
     // → preTileBark). The atlas tile content already carries N×M tiled
@@ -175,6 +193,11 @@ function injectFoliageSway(material) {
          uniform float uUseBarkGradient;
          uniform vec2  uBarkGradientTileOffset;
          uniform vec2  uBarkGradientTileScale;
+         uniform vec2  uBarkDetailTileOffset;
+         uniform vec2  uBarkDetailTileScale;
+         uniform float uBarkDetailStrength;
+         uniform vec2  uBarkTileOffset;
+         uniform vec2  uBarkTileScale;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
@@ -221,7 +244,30 @@ function injectFoliageSway(material) {
            vec2 lutUV = vec2(jh4, 0.5) * uBarkGradientTileScale + uBarkGradientTileOffset;
            vec3 gradientTint = texture2D(map, lutUV).rgb * 2.0;
            vec3 effTintFinal = mix(barkTint, gradientTint, uUseBarkGradient);
-           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * effTintFinal, vBark);
+           vec3 barkColor = diffuseColor.rgb * effTintFinal;
+           // Brief 2.1a (Cinder) Detail Texturing composite — Unreal Detail
+           // Texture / Unity HDRP Detail Albedo. Recover the [0,1] tile-local
+           // UV from vMapUv (which lives in the bark sub-region of the
+           // unified atlas), then sample the detail sub-region. Overlay
+           // blend on the final bark color, additive over the tint/gradient
+           // path. Identity-safe when uBarkTileScale=0 (no slot bound) since
+           // uBarkDetailStrength is mixed against the unmodified barkColor.
+           vec2 localUV = (uBarkTileScale.x > 0.0 && uBarkTileScale.y > 0.0)
+             ? (vMapUv - uBarkTileOffset) / uBarkTileScale
+             : vec2(0.5);
+           localUV = fract(localUV);
+           vec2 detailUV = localUV * uBarkDetailTileScale + uBarkDetailTileOffset;
+           vec3 detailSample = texture2D(map, detailUV).rgb;
+           // Overlay blend: per-channel, energy-preserving, bidirectionally
+           // clamped. step() midtone branch is sRGB-standard; the
+           // atlas texture is SRGBColorSpace-tagged so sample is linearized
+           // on read — the blend lives in linear space, which is fine for
+           // an additive luminance multiplier.
+           vec3 ovLo = 2.0 * barkColor * detailSample;
+           vec3 ovHi = 1.0 - 2.0 * (1.0 - barkColor) * (1.0 - detailSample);
+           vec3 composite = mix(ovLo, ovHi, step(vec3(0.5), barkColor));
+           barkColor = mix(barkColor, composite, uBarkDetailStrength);
+           diffuseColor.rgb = mix(diffuseColor.rgb, barkColor, vBark);
          }`
       )
       .replace(
