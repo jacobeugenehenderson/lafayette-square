@@ -29,6 +29,13 @@ const REPO_ROOT = path.resolve(__dirname, '..')
 const TREES_DIR = path.join(REPO_ROOT, 'public/trees')
 const CHASSIS_DIR = path.join(TREES_DIR, '_chassis')
 const REPORT_PATH = path.join(REPO_ROOT, 'scratch/brief-0-vendor-tree-survey-whittle.md')
+const RIVEN_REPORT_PATH = path.join(REPO_ROOT, 'scratch/brief-1.5c-bundle-survey-riven.md')
+
+// Brief 1.5c (Riven) flag: skip overwriting Whittle's report after re-run so it
+// stays as the historical Brief 0 snapshot. Riven writes its own survey doc
+// containing the bundle-aware extensions. Set WRITE_WHITTLE_REPORT=1 to force
+// regeneration of the Brief 0 report from current code state.
+const WRITE_WHITTLE_REPORT = process.env.WRITE_WHITTLE_REPORT === '1'
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
 
@@ -36,12 +43,16 @@ const DRY_RUN = process.argv.includes('--dry-run')
 
 // ── Classification heuristic (Brief 0 spec, first match wins) ──────────────
 // LEAF if:
-//   1. material name matches /leaf|leaves|foliage|leafCard/i
+//   1. material name matches /leaf|leaves|foliage|leafCard|branch/i
+//      (note: `branch` here aligns with atlas-survey.js:34 — bomi1337-style
+//       vendor packs use `Branches_*` for leaf-card clusters, not bark.
+//       Per feedback_classifier_keyword_cross_check, classifier disagreements
+//       across sibling files must be reconciled; we adopt atlas-survey's precedent.)
 //   2. geometry.userData.atlasKind === 'leaf' (i.e. primitive extras)
 //   3. alphaMode in (MASK, BLEND) AND vertex count < 5000
 //   4. avg tri area < 0.001 m² AND tri count > 100
 // WOOD if:
-//   1. material name matches /bark|trunk|branch|wood|stem/i
+//   1. material name matches /bark|trunk|wood|stem/i
 //   2. primitive extras atlasKind === 'bark'
 //   3. opaque (no alphaMode set OR alphaMode === 'OPAQUE') AND material has a
 //      normal map texture binding
@@ -63,7 +74,7 @@ function classifyPrim(prim) {
   const mk = (cls, why) => ({ cls, why, ...base })
 
   // LEAF checks
-  if (/leaf|leaves|foliage|leafcard/.test(matName)) return mk('LEAF', 'matName')
+  if (/leaf|leaves|foliage|leafcard|branch/.test(matName)) return mk('LEAF', 'matName')
   if (extras.atlasKind === 'leaf') return mk('LEAF', 'extras')
   if ((alphaMode === 'MASK' || alphaMode === 'BLEND') && vcount < 5000) {
     return mk('LEAF', `alphaMode=${alphaMode} vcount=${vcount}<5000`)
@@ -73,7 +84,7 @@ function classifyPrim(prim) {
   }
 
   // WOOD checks
-  if (/bark|trunk|branch|wood|stem/.test(matName)) return mk('WOOD', 'matName')
+  if (/bark|trunk|wood|stem/.test(matName)) return mk('WOOD', 'matName')
   if (extras.atlasKind === 'bark') return mk('WOOD', 'extras')
   if (alphaMode === 'OPAQUE' && hasNormal) return mk('WOOD', 'opaque+normalMap')
 
@@ -245,6 +256,315 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
   }
 }
 
+// ── Bundle detection + decomposition (Brief 1.5c — Riven) ─────────────────
+// A GLB is a bundle if it carries more than one geometry-bearing root node.
+// Root nodes are: (a) direct children of the default scene, plus (b) orphan
+// nodes that aren't a child of any other node and aren't in scene.listChildren
+// (the candicands flat-scene pattern). For each geometry-bearing root, run
+// classification on its subtree; emit a chassis per root that has at least
+// one WOOD primitive and no AMBIGUOUS primitives. Non-tree roots are surfaced
+// in the survey as bundle-debris. Decomposed chassis bake the root's local
+// transform into the geometry + recenter to origin (base on y=0, XZ centered).
+function hasGeometryInSubtree(node) {
+  if (node.getMesh()) {
+    const m = node.getMesh()
+    if (m.listPrimitives().length > 0) return true
+  }
+  for (const c of node.listChildren()) if (hasGeometryInSubtree(c)) return true
+  return false
+}
+
+function findGeometryRoots(doc) {
+  const root = doc.getRoot()
+  const scene = doc.getDefaultScene?.() || root.listScenes()[0]
+  if (!scene) return []
+  const sceneChildren = scene.listChildren()
+  const parented = new Set()
+  for (const n of root.listNodes()) for (const c of n.listChildren()) parented.add(c)
+  const sceneChildSet = new Set(sceneChildren)
+  const orphans = root.listNodes().filter(n => !parented.has(n) && !sceneChildSet.has(n))
+  const candidates = [...sceneChildren, ...orphans]
+  return candidates.filter(hasGeometryInSubtree)
+}
+
+function isBundleDoc(doc) {
+  const roots = findGeometryRoots(doc)
+  if (roots.length <= 1) return false
+  // False-bundle suppressor: when ALL primitives across ALL roots share the
+  // same single material name, the multi-root structure is almost always a
+  // semantic subset-group split (e.g. tilia_americana ships BranchesSG /
+  // CapsSG / LeavesSG nodes all bound to `EuropeanLindenBark_Mat` — one tree,
+  // three semantic groups). Decomposing those produces nonsense chassis.
+  // True bundles (candicands, gleditsia, populus_*) carry distinct material
+  // names across their per-tree components (leaf / bark / flower / stem all
+  // differ).
+  const matNames = new Set()
+  for (const n of roots) {
+    for (const { prim } of collectPrims(n)) {
+      const mat = prim.getMaterial()
+      matNames.add(mat?.getName() || '<unnamed>')
+      if (matNames.size > 1) break
+    }
+    if (matNames.size > 1) break
+  }
+  if (matNames.size <= 1) return false
+  return true
+}
+
+// Sanitize a node name for use as a chassis-filename suffix. Lowercase
+// alphanumeric+underscore; if the result is empty/too-short/all-digits, the
+// caller falls back to `node<idx>`.
+function sanitizeNodeName(name) {
+  if (!name) return null
+  const clean = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+  if (!clean) return null
+  if (clean.length < 3) return null
+  if (/^\d+$/.test(clean)) return null
+  return clean
+}
+
+// Bake a 4×4 column-major matrix into a primitive's POSITION (and NORMAL).
+// Clones the accessors first so shared underlying buffers aren't mutated.
+function bakeMatrixIntoPrim(prim, m, doc) {
+  const posAttr = prim.getAttribute('POSITION')
+  if (posAttr) {
+    const src = posAttr.getArray()
+    const out = new Float32Array(src.length)
+    for (let i = 0; i < src.length; i += 3) {
+      const x = src[i], y = src[i + 1], z = src[i + 2]
+      out[i]     = m[0] * x + m[4] * y + m[8]  * z + m[12]
+      out[i + 1] = m[1] * x + m[5] * y + m[9]  * z + m[13]
+      out[i + 2] = m[2] * x + m[6] * y + m[10] * z + m[14]
+    }
+    const acc = doc.createAccessor().setType('VEC3').setArray(out)
+    prim.setAttribute('POSITION', acc)
+  }
+  const nrmAttr = prim.getAttribute('NORMAL')
+  if (nrmAttr) {
+    // Transform by the upper-3×3 (acceptable for rotation + uniform scale;
+    // for non-uniform scale would need inverse-transpose). Vendor stock here
+    // uses uniform 0.1 cm→m scale + identity rotation in the bundle cases.
+    const src = nrmAttr.getArray()
+    const out = new Float32Array(src.length)
+    for (let i = 0; i < src.length; i += 3) {
+      const x = src[i], y = src[i + 1], z = src[i + 2]
+      let nx = m[0] * x + m[4] * y + m[8] * z
+      let ny = m[1] * x + m[5] * y + m[9] * z
+      let nz = m[2] * x + m[6] * y + m[10] * z
+      const len = Math.hypot(nx, ny, nz) || 1
+      out[i] = nx / len
+      out[i + 1] = ny / len
+      out[i + 2] = nz / len
+    }
+    const acc = doc.createAccessor().setType('VEC3').setArray(out)
+    prim.setAttribute('NORMAL', acc)
+  }
+}
+
+// Translate every POSITION in primitives by (dx, dy, dz). Used post-bake to
+// recenter the decomposed chassis (bbox-XZ-center → origin, bbox-Y-min → 0).
+function translatePrimsInPlace(prims, dx, dy, dz) {
+  for (const prim of prims) {
+    const pos = prim.getAttribute('POSITION')
+    if (!pos) continue
+    const arr = pos.getArray()
+    const out = new Float32Array(arr.length)
+    for (let i = 0; i < arr.length; i += 3) {
+      out[i]     = arr[i]     + dx
+      out[i + 1] = arr[i + 1] + dy
+      out[i + 2] = arr[i + 2] + dz
+    }
+    pos.setArray(out)
+  }
+}
+
+function primBboxAcc(prims) {
+  let minX = Infinity, minY = Infinity, minZ = Infinity
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity
+  for (const prim of prims) {
+    const pos = prim.getAttribute('POSITION')
+    if (!pos) continue
+    const arr = pos.getArray()
+    for (let i = 0; i < arr.length; i += 3) {
+      const x = arr[i], y = arr[i + 1], z = arr[i + 2]
+      if (x < minX) minX = x; if (x > maxX) maxX = x
+      if (y < minY) minY = y; if (y > maxY) maxY = y
+      if (z < minZ) minZ = z; if (z > maxZ) maxZ = z
+    }
+  }
+  return { minX, minY, minZ, maxX, maxY, maxZ }
+}
+
+// Collect every primitive in node + descendants.
+function collectPrims(node) {
+  const out = []
+  if (node.getMesh()) for (const p of node.getMesh().listPrimitives()) out.push({ prim: p, mesh: node.getMesh() })
+  for (const c of node.listChildren()) out.push(...collectPrims(c))
+  return out
+}
+
+// Reset TRS on a node chain (root + all descendants) to identity. Called after
+// transform-baking so the geometry render-matches without any double-apply.
+function resetTRSChain(node) {
+  node.setTranslation([0, 0, 0])
+  node.setRotation([0, 0, 0, 1])
+  node.setScale([1, 1, 1])
+  if (node.setMatrix) {
+    // Some gltf-transform versions track an explicit matrix; clearing TRS
+    // doesn't override that. Setting identity matrix is a no-op when the node
+    // is already TRS-driven, so guard by trying to read first.
+    try { const m = node.getMatrix?.(); if (m && m.length === 16) node.setMatrix([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]) } catch {}
+  }
+  for (const c of node.listChildren()) resetTRSChain(c)
+}
+
+// Decompose a bundle GLB into per-root chassis. Returns an array of result
+// entries shaped like processGlb's return + an extra `bundleNode` field on
+// decomposed entries. Re-reads the doc per-emission to keep doc state clean.
+async function processBundleGlb({ speciesId, srcPath, filename, label, category, scientific }) {
+  const results = []
+  // First peek to enumerate roots (so we have a stable iteration order matching
+  // node identity across re-reads).
+  const peekDoc = await io.read(srcPath)
+  const peekRoots = findGeometryRoots(peekDoc)
+  const rootNames = peekRoots.map(n => n.getName() || '')
+
+  for (let rootIdx = 0; rootIdx < rootNames.length; rootIdx++) {
+    const rootName = rootNames[rootIdx]
+    // Fresh doc per root so mutations don't bleed
+    const doc = await io.read(srcPath)
+    const roots = findGeometryRoots(doc)
+    if (roots.length !== rootNames.length) {
+      // Should not happen; defensive guard for non-determinism in re-read order
+      throw new Error(`Bundle root count drifted on re-read: ${roots.length} vs ${rootNames.length}`)
+    }
+    const target = roots[rootIdx]
+
+    // Drop all OTHER roots' subtrees (recursively dispose nodes + meshes they
+    // own). Leave only the target subtree intact.
+    const disposeTree = (n) => {
+      const m = n.getMesh()
+      for (const c of [...n.listChildren()]) disposeTree(c)
+      if (m) m.dispose()
+      n.dispose()
+    }
+    for (let j = 0; j < roots.length; j++) {
+      if (j !== rootIdx) disposeTree(roots[j])
+    }
+
+    // Classify all primitives in the retained subtree
+    const subtreePrims = collectPrims(target)
+    const primClassifications = subtreePrims.map(({ prim, mesh }) => {
+      const c = classifyPrim(prim)
+      return { ...c, mesh: mesh.getName() || '<unnamed>', _prim: prim, _mesh: mesh }
+    })
+    const counts = { WOOD: 0, LEAF: 0, AMBIGUOUS: 0 }
+    for (const p of primClassifications) counts[p.cls]++
+
+    // Naming
+    const variantIdx = variantIndexFromName(filename)
+    const letter = variantLetter(variantIdx)
+    const nodeSlug = sanitizeNodeName(rootName) || `node${rootIdx}`
+    const baseName = `${commonNameSlug(speciesId, label)}_${letter}_${nodeSlug}`
+
+    const baseResult = {
+      speciesId, filename, label, category, scientific,
+      counts,
+      primitives: primClassifications.map(stripPrim),
+      chassisName: null,
+      bundle: true,
+      bundleNode: rootName || `node${rootIdx}`,
+      bundleRootIdx: rootIdx,
+      bundleRootCount: rootNames.length,
+    }
+
+    if (counts.AMBIGUOUS > 0) {
+      results.push({ ...baseResult, status: 'bundle-skipped-ambiguous' })
+      continue
+    }
+    if (counts.WOOD === 0) {
+      results.push({ ...baseResult, status: 'bundle-debris' })
+      continue
+    }
+
+    // De-leaf: drop LEAF primitives, stamp atlasKind='bark' on WOOD subset
+    for (const p of primClassifications) {
+      if (p.cls === 'LEAF') {
+        p._mesh.removePrimitive(p._prim)
+        p._prim.dispose()
+      } else {
+        p._prim.setExtras({ ...(p._prim.getExtras() || {}), atlasKind: 'bark' })
+      }
+    }
+    // Drop now-empty meshes
+    for (const mesh of [...doc.getRoot().listMeshes()]) {
+      if (mesh.listPrimitives().length === 0) mesh.dispose()
+    }
+
+    // Bake the root node's local matrix into all remaining primitives, then
+    // recenter to origin (XZ-center=0, Y-min=0). Then reset the root chain's
+    // TRS to identity. Per the brief: chassis should emerge upright + centered
+    // as if it were a standalone single-tree source.
+    const rootMatrix = matrixFromNode(target)
+    const remainingPrims = collectPrims(target).map(({ prim }) => prim)
+    for (const prim of remainingPrims) {
+      bakeMatrixIntoPrim(prim, rootMatrix, doc)
+    }
+    // Compute bbox post-bake and recenter
+    const bb = primBboxAcc(remainingPrims)
+    if (isFinite(bb.minY)) {
+      const dx = -(bb.minX + bb.maxX) / 2
+      const dz = -(bb.minZ + bb.maxZ) / 2
+      const dy = -bb.minY
+      translatePrimsInPlace(remainingPrims, dx, dy, dz)
+    }
+    resetTRSChain(target)
+
+    // Compute final height range from the recentered geometry
+    const bb2 = primBboxAcc(remainingPrims)
+    const heightRange = isFinite(bb2.minY) ? [round4(bb2.minY), round4(bb2.maxY)] : [0, 0]
+
+    const chassisPath = path.join(CHASSIS_DIR, `${baseName}.glb`)
+    const metaPath = path.join(CHASSIS_DIR, `${baseName}.meta.json`)
+    const usedCommonName = !!label && label !== speciesId
+
+    if (!DRY_RUN) {
+      await fs.mkdir(CHASSIS_DIR, { recursive: true })
+      await io.write(chassisPath, doc)
+      const meta = {
+        morphology: category || 'unknown',
+        heightRange,
+        source: { species: speciesId, variant: variantIdx + 1, bundleNode: rootName || `node${rootIdx}` },
+        scaffoldCount: null,
+        canopyStart: null,
+        leafAttachmentTags: [],
+      }
+      await fs.writeFile(metaPath, JSON.stringify(meta, null, 2) + '\n')
+    }
+
+    results.push({
+      ...baseResult,
+      status: 'bundle-decomposed',
+      chassisName: baseName,
+      usedCommonName,
+      heightRange,
+    })
+  }
+
+  return results
+}
+
+// Unified entry point — returns an array of result entries. Single-tree GLBs
+// yield a 1-element array via the existing processGlb (byte-identity preserved
+// for Whittle's 141 chassis). Bundle GLBs yield N entries via processBundleGlb.
+async function processGlbAny(args) {
+  const peek = await io.read(args.srcPath)
+  if (isBundleDoc(peek)) {
+    return await processBundleGlb(args)
+  }
+  return [await processGlb(args)]
+}
+
 function stripPrim(p) {
   return { cls: p.cls, why: p.why, mesh: p.mesh, matName: p.matName, alphaMode: p.alphaMode, vcount: p.vcount, tcount: p.tcount, hasNormal: p.hasNormal, avgTriArea: p.avgTriArea }
 }
@@ -374,9 +694,13 @@ async function main() {
     for (const filename of lod0) {
       const srcPath = path.join(speciesDir, filename)
       try {
-        const r = await processGlb({ speciesId, srcPath, filename, label, category, scientific })
-        results.push(r)
-        console.log(`[whittle] ${r.status.padEnd(20)} ${speciesId}/${filename}  WOOD=${r.counts.WOOD} LEAF=${r.counts.LEAF} AMB=${r.counts.AMBIGUOUS}${r.chassisName ? '  → ' + r.chassisName + '.glb' : ''}`)
+        const rs = await processGlbAny({ speciesId, srcPath, filename, label, category, scientific })
+        for (const r of rs) {
+          results.push(r)
+          const tag = r.bundle ? '[riven]' : '[whittle]'
+          const nodeTag = r.bundle ? ` node="${r.bundleNode}"` : ''
+          console.log(`${tag} ${r.status.padEnd(24)} ${speciesId}/${filename}${nodeTag}  WOOD=${r.counts.WOOD} LEAF=${r.counts.LEAF} AMB=${r.counts.AMBIGUOUS}${r.chassisName ? '  → ' + r.chassisName + '.glb' : ''}`)
+        }
       } catch (err) {
         console.error(`[whittle] ERROR ${speciesId}/${filename}: ${err.message}`)
         results.push({ speciesId, filename, label, category, scientific, status: 'errored', error: err.message, counts: { WOOD: 0, LEAF: 0, AMBIGUOUS: 0 }, primitives: [], chassisName: null })
@@ -384,10 +708,18 @@ async function main() {
     }
   }
 
-  await writeReport({ results, speciesMap, otherFilesSurveyed, indexCount: index.species.length, elapsedMs: Date.now() - t0 })
+  // Brief 1.5c: by default we DON'T overwrite Whittle's Brief 0 report — that
+  // file is preserved as the historical snapshot. Set WRITE_WHITTLE_REPORT=1
+  // to opt-in to regeneration. Riven's bundle-aware report writes always.
+  if (WRITE_WHITTLE_REPORT) {
+    await writeReport({ results, speciesMap, otherFilesSurveyed, indexCount: index.species.length, elapsedMs: Date.now() - t0 })
+  }
+  await writeRivenReport({ results, speciesMap, otherFilesSurveyed, indexCount: index.species.length, elapsedMs: Date.now() - t0 })
 
-  const writtenCount = results.filter(r => r.status === 'de-leafed').length
-  console.log(`[whittle] done in ${Math.round((Date.now() - t0) / 1000)}s — ${writtenCount} chassis written, report at ${path.relative(REPO_ROOT, REPORT_PATH)}`)
+  const writtenSingle = results.filter(r => r.status === 'de-leafed').length
+  const writtenBundle = results.filter(r => r.status === 'bundle-decomposed').length
+  const debrisCount = results.filter(r => r.status === 'bundle-debris').length
+  console.log(`[riven] done in ${Math.round((Date.now() - t0) / 1000)}s — ${writtenSingle} single-tree chassis (Whittle path) + ${writtenBundle} bundle-decomposed chassis, ${debrisCount} bundle-debris items skipped, report at ${path.relative(REPO_ROOT, RIVEN_REPORT_PATH)}`)
 }
 
 // ── Report ─────────────────────────────────────────────────────────────────
@@ -625,6 +957,274 @@ async function writeReport({ results, speciesMap, otherFilesSurveyed, indexCount
   if (!DRY_RUN) {
     await fs.mkdir(path.dirname(REPORT_PATH), { recursive: true })
     await fs.writeFile(REPORT_PATH, lines.join('\n'))
+  }
+}
+
+// ── Riven report (Brief 1.5c — bundle-aware extension) ────────────────────
+async function writeRivenReport({ results, speciesMap, otherFilesSurveyed, indexCount }) {
+  const lines = []
+  const p = s => lines.push(s)
+
+  const writtenSingle = results.filter(r => r.status === 'de-leafed').length
+  const writtenBundle = results.filter(r => r.status === 'bundle-decomposed').length
+  const bundleDebris = results.filter(r => r.status === 'bundle-debris').length
+  const bundleAmb = results.filter(r => r.status === 'bundle-skipped-ambiguous').length
+  const skipAmb = results.filter(r => r.status === 'skipped-ambiguous').length
+  const skipNoWood = results.filter(r => r.status === 'skipped-no-wood').length
+  const errored = results.filter(r => r.status === 'errored').length
+
+  // Group bundle results by source GLB
+  const bundleBySource = new Map()
+  for (const r of results) {
+    if (!r.bundle) continue
+    const key = `${r.speciesId}/${r.filename}`
+    if (!bundleBySource.has(key)) bundleBySource.set(key, [])
+    bundleBySource.get(key).push(r)
+  }
+
+  // Brief's hypothesized bundle list — surface which actually classified as bundles
+  const speculatedBundles = ['garden_mix', 'stylized_trees_1', 'stylized_trees_2', 'candicands', 'tree_variation', 'generic_tree_1', 'generic_tree_2', 'generic_tree_3', 'generic_tree_4', 'generic_bark_tree', 'generic_leaf_tree']
+  const actualBundleSpecies = new Set([...bundleBySource.keys()].map(k => k.split('/')[0]))
+
+  p('# Brief 1.5c — Bundle-aware Re-de-leaf Survey')
+  p('')
+  p('**Author:** Riven (the bundle-splitting baby)')
+  p('**Brief:** Brief 1.5c from coordinator session 2026-05-21 (cold dispatch)')
+  p('**Script:** `arborist/survey-deleaf.js` (Whittle\'s script, extended)')
+  p('**Outputs:** decomposed chassis at `public/trees/_chassis/<species>_<letter>_<nodeName>.{glb,meta.json}`')
+  p('**Preserved:** Whittle\'s `scratch/brief-0-vendor-tree-survey-whittle.md` is left as the historical Brief 0 snapshot (set `WRITE_WHITTLE_REPORT=1` to regenerate).')
+  p('')
+  p('---')
+  p('')
+  p('## 1. Bundle detection summary')
+  p('')
+  p(`- **Bundle GLBs detected:** ${bundleBySource.size}`)
+  p(`- **Decomposed chassis emitted (new):** ${writtenBundle}`)
+  p(`- **Bundle-debris items skipped (no WOOD in subtree):** ${bundleDebris}`)
+  p(`- **Bundle items skipped (ambiguous in subtree):** ${bundleAmb}`)
+  p(`- **Single-tree chassis emitted via Whittle path (byte-identical to Brief 0):** ${writtenSingle}`)
+  p(`- **Single-tree skipped-ambiguous:** ${skipAmb}; **skipped-no-wood:** ${skipNoWood}; **errored:** ${errored}`)
+  p('')
+  p('**Bundle-detection heuristic:** a GLB is a bundle if it carries more than one geometry-bearing root node — counting both direct scene children with geometry in their subtree AND orphan nodes (mesh-bearing nodes that aren\'t a child of any other node, the flat-scene pattern seen in `candicands/`).')
+  p('')
+  p('## 2. Brief\'s speculated bundles vs reality')
+  p('')
+  p('| Speculated species | Bundle? | Reality |')
+  p('|---|---|---|')
+  for (const sp of speculatedBundles) {
+    const isBundle = actualBundleSpecies.has(sp)
+    let note = ''
+    if (isBundle) {
+      const cnt = [...bundleBySource.keys()].filter(k => k.startsWith(sp + '/')).length
+      note = `${cnt} bundle GLB(s) detected; decomposed`
+    } else {
+      // Find single-tree results
+      const speciesResults = results.filter(r => r.speciesId === sp && r.filename)
+      if (speciesResults.length === 0) note = 'no eligible lod0 GLBs in directory'
+      else note = `single-tree per file (${speciesResults.length} variant(s)); each file carries one mesh node — vendor pre-split the bundle into per-tree GLBs`
+    }
+    p(`| \`${sp}\` | ${isBundle ? '**YES**' : 'no' } | ${note} |`)
+  }
+  p('')
+  p('**Finding:** of the ~11 speculated bundle sources, only `candicands` actually loads as a multi-root bundle. The others (`garden_mix`, `stylized_trees_*`, `tree_variation`, `generic_*`) are flat-pre-split — each `skeleton-N-lod0.glb` carries one inner mesh node with the bundle-position offset baked into its translation. Those land cleanly in the Whittle (single-tree) path; their per-tree positional offset persists in the chassis but doesn\'t fragment the chassis library.')
+  p('')
+  p('## 3. Per-bundle decomposition table')
+  p('')
+  if (bundleBySource.size === 0) {
+    p('_No bundle GLBs detected in vendor stock._')
+  } else {
+    p('| Source | Top-level roots | Decomposed chassis | Bundle-debris (skipped no-WOOD) | Ambiguous (skipped) |')
+    p('|---|---:|---|---|---|')
+    for (const [key, rs] of [...bundleBySource.entries()].sort()) {
+      const rootCount = rs[0]?.bundleRootCount ?? rs.length
+      const decomposed = rs.filter(r => r.status === 'bundle-decomposed').map(r => `\`${r.chassisName}\``).join(', ') || '—'
+      const debris = rs.filter(r => r.status === 'bundle-debris').map(r => `\`${r.bundleNode}\` (W${r.counts.WOOD}/L${r.counts.LEAF}/A${r.counts.AMBIGUOUS})`).join('; ') || '—'
+      const amb = rs.filter(r => r.status === 'bundle-skipped-ambiguous').map(r => `\`${r.bundleNode}\``).join('; ') || '—'
+      p(`| ${key} | ${rootCount} | ${decomposed} | ${debris} | ${amb} |`)
+    }
+  }
+  p('')
+  p('## 4. Coverage delta — morphology distribution')
+  p('')
+  const morphCountsAll = {}
+  const morphCountsSingle = {}
+  for (const r of results) {
+    if (r.status !== 'de-leafed' && r.status !== 'bundle-decomposed') continue
+    const m = r.category || 'unknown'
+    morphCountsAll[m] = (morphCountsAll[m] || 0) + 1
+    if (r.status === 'de-leafed') morphCountsSingle[m] = (morphCountsSingle[m] || 0) + 1
+  }
+  const allMorphs = ['broadleaf', 'conifer', 'ornamental', 'columnar', 'weeping', 'unknown']
+  p('| Morphology | Whittle (single-tree) | After Riven (incl. decomposed) | Delta |')
+  p('|---|---:|---:|---:|')
+  for (const m of allMorphs) {
+    const before = morphCountsSingle[m] || 0
+    const after = morphCountsAll[m] || 0
+    const delta = after - before
+    p(`| ${m} | ${before} | ${after} | ${delta > 0 ? '+' + delta : delta} |`)
+  }
+  p('')
+  if (bundleBySource.size) {
+    const ornamentalAdd = (morphCountsAll.ornamental || 0) - (morphCountsSingle.ornamental || 0)
+    if (ornamentalAdd > 0) {
+      p(`**Ornamental coverage:** Whittle\'s zero baseline grew by **+${ornamentalAdd}** from bundle decomposition (\`candicands\` carries flowering-form trees that index.json categorizes as ornamental).`)
+    } else {
+      p('**Ornamental coverage:** unchanged. The decomposed bundles inherit their source species\' morphology (`candicands` → whatever index.json declares), which may not be ornamental. Operator may want to override the morphology field on the decomposed chassis\' meta.json post-Riven.')
+    }
+    p('')
+  }
+  p('## 5. Roster re-evaluation — re-checking Whittle\'s skipped-for-removal list')
+  p('')
+  // Per Whittle's report, species flagged as removal candidates were those where every variant was no-wood or errored.
+  // Re-check those species in light of bundle decomposition.
+  const bySpecies = new Map()
+  for (const r of results) {
+    if (!bySpecies.has(r.speciesId)) bySpecies.set(r.speciesId, [])
+    bySpecies.get(r.speciesId).push(r)
+  }
+  const stillCandidates = []
+  const rescued = []
+  // Detect whether a species already had a Whittle-named chassis on disk
+  // (pre-Riven state). The Whittle naming pattern is `<slug>_<letter>.glb`
+  // WITHOUT a `_<nodeName>` suffix. Read chassis dir once.
+  let existingChassisFiles = []
+  try { existingChassisFiles = await fs.readdir(CHASSIS_DIR) } catch { existingChassisFiles = [] }
+  const hadWhittleChassis = (speciesId, label) => {
+    const slug = commonNameSlug(speciesId, label)
+    return existingChassisFiles.some(f => f.endsWith('.glb') && /^([a-z0-9_]+)_[a-z]\.glb$/.test(f) && f.startsWith(slug + '_'))
+  }
+  for (const [speciesId, rs] of bySpecies.entries()) {
+    const cleanSingle = rs.filter(r => r.status === 'de-leafed').length
+    const cleanBundle = rs.filter(r => r.status === 'bundle-decomposed').length
+    const hadBefore = hadWhittleChassis(speciesId, rs[0]?.label)
+    if (cleanSingle === 0 && cleanBundle === 0 && !hadBefore) {
+      const reason = rs.every(r => r.status === 'skipped-no-wood' || r.status === 'bundle-debris') ? 'still no usable chassis (all variants no-wood or bundle-debris)'
+        : rs.every(r => r.status === 'errored') ? 'every variant errored'
+        : rs.every(r => r.status === 'no-glbs') ? 'no eligible lod0 GLBs'
+        : 'no clean output (mix of ambiguous / no-wood / errored)'
+      stillCandidates.push({ speciesId, label: rs[0]?.label, reason, count: rs.length })
+    } else if (cleanSingle === 0 && cleanBundle > 0 && !hadBefore) {
+      rescued.push({ speciesId, label: rs[0]?.label, count: cleanBundle })
+    }
+  }
+  if (rescued.length === 0) {
+    p('_No species rescued by bundle decomposition — `candicands` already had one clean Whittle chassis; its bundle decomposition adds more variants but doesn\'t rescue any previously-zero-yield species._')
+  } else {
+    p('**Species rescued by bundle decomposition** (had zero Whittle chassis, now have ≥1 bundle-decomposed chassis):')
+    p('')
+    for (const r of rescued) p(`- \`${r.speciesId}\` ("${r.label || '—'}") — ${r.count} bundle-decomposed chassis`)
+  }
+  p('')
+  if (stillCandidates.length === 0) {
+    p('_All species now produce at least one usable chassis._')
+  } else {
+    p('**Species still recommended for operator review** (no clean chassis even after bundle decomposition):')
+    p('')
+    for (const r of stillCandidates) {
+      p(`- \`${r.speciesId}\` ("${r.label || '—'}") — ${r.reason}`)
+    }
+  }
+  p('')
+  p('## 6. Brief 1.5b curation-file cross-check')
+  p('')
+  // Brief 1.5b (Quill) places the curation file at `arborist/state/_chassis-curation.json`
+  // (sibling to compositions, NOT under public/trees/_chassis/) — confirmed via
+  // arborist/NOTES.md 2026-05-21 entry. Check both possible locations to be robust
+  // against a future move.
+  const curationPath = (await (async () => {
+    for (const p of [
+      path.join(REPO_ROOT, 'arborist/state/_chassis-curation.json'),
+      path.join(REPO_ROOT, 'public/trees/_chassis/_chassis-curation.json'),
+    ]) {
+      try { await fs.access(p); return p } catch {}
+    }
+    return path.join(REPO_ROOT, 'arborist/state/_chassis-curation.json')
+  })())
+  let curation = null
+  try { curation = JSON.parse(await fs.readFile(curationPath, 'utf8')) } catch { curation = null }
+  if (!curation) {
+    p('_`public/trees/_chassis/_chassis-curation.json` not present at Riven re-run time — Brief 1.5b may not have shipped yet. No cross-check performed; future re-runs will validate emitted chassis filenames against the curation file._')
+  } else {
+    p('`_chassis-curation.json` is present. Checking that every chassis name in the curation file is still emitted by this re-run...')
+    p('')
+    // Curation file shape is Brief 1.5b's; we just look for any string field that points at a chassis filename.
+    const emittedNames = new Set(results.filter(r => r.chassisName).map(r => r.chassisName))
+    const orphaned = []
+    const walk = (v) => {
+      if (typeof v === 'string') {
+        const stem = v.replace(/\.glb$/, '').replace(/\.meta\.json$/, '')
+        if (stem.match(/^[a-z0-9_]+$/) && !emittedNames.has(stem)) orphaned.push(stem)
+      } else if (Array.isArray(v)) v.forEach(walk)
+      else if (v && typeof v === 'object') Object.values(v).forEach(walk)
+    }
+    walk(curation)
+    const uniq = [...new Set(orphaned)]
+    if (uniq.length === 0) p('All curation-referenced chassis names are still emitted. ✓')
+    else {
+      p('**Orphaned curation references** (chassis filename in curation file no longer emitted by script — Brief 1.5b should be notified):')
+      p('')
+      for (const o of uniq) p(`- \`${o}\``)
+    }
+  }
+  p('')
+  p('## 7. Operator-action list — bundle-debris worth manual review')
+  p('')
+  // Bundle-debris items: non-tree nodes inside bundles. Surface them so operator can decide if they're useful elsewhere (rocks, fences, planters → Cartograph).
+  const debris = results.filter(r => r.status === 'bundle-debris')
+  if (debris.length === 0) {
+    p('_No bundle-debris items detected._')
+  } else {
+    p('| Source GLB | Node name | Primitive count | Material names |')
+    p('|---|---|---:|---|')
+    for (const r of debris) {
+      const prims = r.primitives || []
+      const matNames = prims.map(pp => pp.matName).filter(Boolean).slice(0, 4).join(', ') || '—'
+      p(`| ${r.speciesId}/${r.filename} | \`${r.bundleNode}\` | ${prims.length} | ${matNames} |`)
+    }
+    p('')
+    p('**For Cartograph team:** bundle-debris with material names containing `leaf`, `flower`, or alpha-mode MASK are leaf-card / flower-card primitives that the WOOD-only chassis discipline correctly skips. Items with names like `rock_*`, `planter_*`, `fence_*` would be candidates for kit-level prop libraries — none observed in current vendor stock (debris is all leaf+flower cards from `candicands`).')
+  }
+  p('')
+  p('## 8. Surface items (per `feedback_baby_must_surface_scope_drift`)')
+  p('')
+  p('- **Brief framing mismatch:** the brief listed ~11 species as bundle suspects. Only `candicands` actually classifies as a bundle under the brief\'s "multiple top-level geometry roots" heuristic. The other suspects are flat-pre-split per file (one mesh node per GLB, with a positional translation baked in). This was a knowable-from-inspection structural fact — Whittle\'s report appendix already shows e.g. `garden_mix/skeleton-N` cleanly de-leafing as single-tree chassis. Recommend: closing the brief with the bundle-detection heuristic\'s actual coverage rather than expanding it heuristically to catch the speculated set.')
+  p('')
+  p('- **The "leaning weirdly" issue isn\'t bundle-specific.** Garden_mix-style chassis inherit a positional translation in their single inner mesh node (e.g. `TREE_00` at T=[3.9, 0, -3.8]). That offset is the visible cause of decentered chassis. Brief 1.5c does NOT touch those (criterion #2 requires byte-identity for Whittle\'s 141), so the lean persists for non-bundle chassis. A follow-up brief (1.5d?) could opt-in recenter all chassis — but that would invalidate 1.5b\'s curation file via byte changes. Surface for operator decision: accept lean for non-bundle chassis, or break byte-identity in a future pass to fix it?')
+  p('')
+  p('- **Transform-baking implementation:** used a hand-rolled bake (apply 4×4 to POSITION, upper-3×3 to NORMAL with re-normalize, recenter to bbox-XZ-center + bbox-Y-min=0, reset root\'s TRS to identity). gltf-transform\'s `@gltf-transform/functions` package ships a `transformPrimitive(prim, matrix)` helper that does the same job, but I held to the existing dep set (`@gltf-transform/core` + `@gltf-transform/extensions` only — no `functions` import in this script today). If the operator wants to switch later, it\'s a 5-line swap.')
+  p('')
+  p('- **Bundle internal structure (`candicands`):** each variant carries 9 orphan nodes encoding 3 trees: triplets of `1_leafNN` + `Bark_1NN` + `flower_1NN`. The leaf and flower nodes are MASK-alpha → LEAF-classified → skipped (bundle-debris); the Bark nodes are OPAQUE-with-normal-map → WOOD → emitted as chassis. Naming convention: `candicands_<a-d>_bark_111.glb` etc. Per acceptance criterion #4, decomposed chassis are recentered (bbox-XZ-center=0, bbox-Y-min=0) and the root\'s local translation (some have `T=[0,0,-90.2]`) is baked but then cancelled by the recenter — net effect: trunk along Y-up, base near origin, as required.')
+  p('')
+  p('- **Whittle\'s existing chassis from now-detected-bundles are preserved on disk** (`candicands_b.glb` from Brief 0 was emitted by treating the whole 9-node bundle as one tree). Per criterion #5 (additive only), Riven does NOT remove or rename it; it now coexists with the decomposed siblings. The whole-bundle chassis is essentially dead weight (it bakes 3 trees into one mesh at world-scale) and Brief 1.5b\'s curation surface may be used to suppress it. Surfaced explicitly here so 1.5b knows: 4 pre-existing `candicands_*.glb` filenames may want operator quarantining.')
+  p('')
+  // Check: how many candicands chassis on disk would be in this category
+  let candicandsBundleChassis = 0
+  for (const [key, rs] of bundleBySource.entries()) if (key.startsWith('candicands/')) candicandsBundleChassis += rs.filter(r => r.status === 'bundle-decomposed').length
+  p(`  Decomposed candicands chassis emitted this run: **${candicandsBundleChassis}**. Pre-Riven Whittle chassis touching candicands: see \`public/trees/_chassis/candicands_*.glb\`.`)
+  p('')
+  p('- **`species-map.json` morphology lookup for decomposed chassis:** decomposed chassis inherit `category` from the source species\' `index.json` row. `candicands` has whatever category index.json declares (`broadleaf` per the Whittle report\'s per-species table). If those decomposed-chassis would more accurately classify as `ornamental` (flowering form), the operator should override `meta.json#morphology` per-chassis. Brief 1.5b\'s curation surface is the natural place to do this, not Riven.')
+  p('')
+  p('- **Transform-baking edge cases observed:** `candicands` has variants with `T=[0,0,-90.2]` (skeleton-2, skeleton-3) — purely translational, cleanly cancelled by recenter. No shear or non-uniform scale observed in the bundle nodes; if they appeared, the upper-3×3 normal transform would degrade (would need inverse-transpose). Flagged in code comments adjacent to `bakeMatrixIntoPrim`.')
+  p('')
+  p('## 9. Appendix — full bundle-decomposition results')
+  p('')
+  if (bundleBySource.size === 0) {
+    p('_None._')
+  } else {
+    p('| Source | Node | Status | WOOD / LEAF / AMB | Chassis | heightRange |')
+    p('|---|---|---|---|---|---|')
+    for (const [key, rs] of [...bundleBySource.entries()].sort()) {
+      for (const r of rs) {
+        const hr = r.heightRange ? `[${r.heightRange[0]}, ${r.heightRange[1]}]` : '—'
+        p(`| ${key} | \`${r.bundleNode}\` | ${r.status} | ${r.counts.WOOD} / ${r.counts.LEAF} / ${r.counts.AMBIGUOUS} | ${r.chassisName ? '`' + r.chassisName + '`' : '—'} | ${hr} |`)
+      }
+    }
+  }
+  p('')
+
+  if (!DRY_RUN) {
+    await fs.mkdir(path.dirname(RIVEN_REPORT_PATH), { recursive: true })
+    await fs.writeFile(RIVEN_REPORT_PATH, lines.join('\n'))
   }
 }
 

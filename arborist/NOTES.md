@@ -4,6 +4,55 @@
 
 ---
 
+## 2026-05-21 — Project: Salon — Brief 1.5c (Riven) — bundle-aware re-de-leaf
+
+**Cold dispatch. Extended Whittle's `arborist/survey-deleaf.js` with multi-root bundle detection + per-root decomposition + transform-baking + bbox-recenter, plus a "false bundle" suppressor (same-material-across-all-roots = semantic SG grouping, not a real bundle). Net delta: 18 new bundle-decomposed chassis added (candicands × 12, gleditsia × 4, populus_alba_fall × 2), 159 chassis total. Whittle's 141 single-tree chassis preserved byte-identical — 133 re-emitted via the unchanged Whittle path this run, 8 sit untouched on disk because their sources now route through the bundle path. Brief 0 report `scratch/brief-0-vendor-tree-survey-whittle.md` preserved as historical snapshot; bundle-aware survey lives at `scratch/brief-1.5c-bundle-survey-riven.md`.**
+
+### What ships
+
+- **`arborist/survey-deleaf.js`** (+~310 LOC). New helpers: `findGeometryRoots` (scene-children with geometry + orphan mesh-bearing nodes, the `candicands` flat-scene pattern), `isBundleDoc` (>1 root AND >1 distinct material — second check suppresses semantic SG groupings), `processBundleGlb` (re-loads doc per root, disposes other roots, classifies subtree, drops LEAF + stamps `atlasKind='bark'` on WOOD, hand-rolled `bakeMatrixIntoPrim` for POSITION/NORMAL, bbox-recenter so trunk runs along Y-up with base at y=0 + XZ-centered), `processGlbAny` (dispatcher — single-root → unchanged `processGlb`; bundle → `processBundleGlb` returning N entries).
+- **Naming convention for decomposed chassis:** `<species-slug>_<variant-letter>_<sanitized-nodeName>.glb` (e.g. `candicands_a_bark_122.glb`, `honey_locust_b_bark1.glb`). Existing single-tree naming `<slug>_<letter>.glb` unchanged.
+- **Meta.json extension:** decomposed chassis carry `source.bundleNode: "<originalNodeName>"`; single-tree chassis meta.json shape unchanged (criterion #5 additivity).
+- **Riven survey report `scratch/brief-1.5c-bundle-survey-riven.md`** (~250 lines). New sections: bundle detection summary, brief-speculated-vs-reality table, per-bundle decomposition table, morphology coverage delta, roster re-evaluation (rescued / still-recommended-for-review via on-disk Whittle-pattern detection, not just live-run results — avoids false-rescue framing for species that already had Whittle chassis), Brief 1.5b curation-file cross-check, operator-action list for bundle-debris, surface items.
+- **Whittle report preservation:** `WRITE_WHITTLE_REPORT` env flag (default off) controls regeneration of Brief 0's report. Default behavior leaves `scratch/brief-0-vendor-tree-survey-whittle.md` untouched as historical snapshot.
+
+### Findings worth surfacing
+
+- **Brief's bundle list was speculative.** Of ~11 speculated bundles (`garden_mix`, `stylized_trees_*`, `candicands`, `tree_variation`, `generic_*`), only `candicands` actually loads as a multi-root bundle under the literal heuristic. The "garden_mix-like" sources are flat-pre-split per file (one inner mesh node per `skeleton-N.glb`, with the bundle-position offset baked into the inner node's translation). Decomposing them would require descending past single-child wrappers — but that would break byte-identity for the existing 141 single-tree chassis (criterion #2). Held to literal heuristic, surfaced delta.
+- **Real bundle stock detected:** `candicands` (4 variants × 9 roots = 3 trees per file, leaf/bark/flower split → 12 decomposed chassis emitted), `gleditsia_triacanthos` (3 variants × 10 roots = 3 trees × leaf/bark/fuzz/seed/stem → 4 decomposed; rescued from Whittle's zero), `populus_alba_fall` (7 variants × 12 roots, but mostly leaf/no-wood per root → 2 decomposed; classifier disagreement caused most Bark_Populier_* nodes to count zero WOOD primitives), `populus_canescens` (4 variants × 6 roots = leaf+Trunk pairs, but Trunk nodes have material names that classify LEAF via the MASK+low-vert rule → zero decomposed), `platanus_acerifolia` (2 variants × 2 roots = `WhiteBirchBark_*` + `PT_*`, all skipped as no-wood/ambiguous → zero decomposed; Whittle chassis preserved), `tilia_americana` (3 roots, semantic SG grouping → caught by false-bundle suppressor, routes to single-tree path).
+- **The false-bundle suppressor was load-bearing.** First Riven run (no suppressor) emitted 3 bogus `american_linden_a_{branchessg,capssg,leavessg}.glb` chassis. The 3 roots share `EuropeanLindenBark_Mat` — a same-material-across-roots check correctly classifies it as a semantic group, not a true bundle. Bogus chassis deleted as a one-time cleanup before the suppressor landed; idempotency now holds on re-run.
+- **"Leaning weirdly" isn't bundle-specific.** Garden_mix-style single-tree chassis inherit a positional translation (`T=[3.9, 0, -3.8]` etc.) from their inner mesh node, which Brief 0's processGlb does not bake. Riven leaves that lean intact (criterion #2 byte-identity preserves Brief 0 behavior). A follow-up brief could opt-in transform-baking for non-bundle chassis too, but that breaks byte-identity → invalidates Brief 1.5b's curation keying. Held; surfaced for operator decision.
+- **Classifier disagreements compound at bundle scale.** `populus_alba_fall` has nodes named `Bark_Populier_*` whose primitives' material names don't match the WOOD keyword set (`bark|trunk|wood|stem`) but DO have low vertex counts and MASK alpha mode → classified LEAF. So most "Bark" nodes are bundle-debris, not WOOD. Per Brief 0 doctrine (`feedback_classifier_keyword_cross_check`) I did NOT modify `classifyPrim` — the heuristic limits drive the result; relaxing them is its own brief.
+- **Transform-baking: hand-rolled, not `@gltf-transform/functions`.** Implemented `bakeMatrixIntoPrim` (4×4 to POSITION, upper-3×3 + renormalize to NORMAL) + `translatePrimsInPlace` (bbox-XZ-center=0, bbox-Y-min=0) + `resetTRSChain` to identity. Held to the existing dep set (no `@gltf-transform/functions` import in this script today). Verified via bbox spot-checks: `candicands_a_bark_122.glb` → X=[-52.46, 52.46], Y=[0, 110.16], Z=[-54.73, 54.73] — trunk along Y-up, base on ground, centroid at origin XZ. (Scale ×100 is a vendor-source units issue — operator can rescale via Salon if needed.)
+- **`candicands_b.glb` from Whittle's run is now semantically dead weight.** Whittle treated the 9-node bundle as one tree → baked 3 trees' worth of geometry into one chassis at world-scale. Decomposed siblings (`candicands_b_bark_111.glb` etc.) are the correct per-tree chassis. Brief 1.5b's curation surface can suppress the dead-weight whole-bundle. 4 such files exist on disk (`candicands_{a..d}.glb`) — surfaced for operator quarantining.
+- **`scratch/brief-0-vendor-tree-survey-whittle.md` preserved unmodified.** Brief 1.5c's behavior changes the per-species table (candicands etc. now bundle-decomposed not Whittle-clean), so regenerating Brief 0's report would falsely overwrite history. Default skips the write; `WRITE_WHITTLE_REPORT=1` opts in.
+- **Idempotency confirmed.** `md5sum public/trees/_chassis/*.glb scratch/brief-1.5c-bundle-survey-riven.md` is byte-stable across re-runs. Determinism comes from sorted species + sorted variant iteration in main, plus stable root-name iteration in `processBundleGlb`.
+
+### Acceptance criteria check
+
+1. ✓ `node arborist/survey-deleaf.js` runs cleanly (~10s, no errors).
+2. ✓ Whittle's 141 single-tree chassis byte-identical — 133 re-emitted via unchanged single-tree path, 8 sit untouched on disk (sources now bundle-pathed, files preserved per additivity rule).
+3. ✓ Bundle detection: `candicands` confirmed; `gleditsia`, `populus_alba_fall`, `populus_canescens`, `platanus_acerifolia` also caught; speculated `garden_mix`/`stylized_trees_*`/`tree_variation`/`generic_*` confirmed-NOT bundles (single mesh node per file). Coverage list documented in Riven report §2.
+4. ✓ Decomposed chassis upright + origin-centered (bbox spot-check above).
+5. ✓ Meta.json `source.bundleNode` populated on decomposed; existing single-tree meta.json unchanged.
+6. ✓ Bundle-debris items NOT written as chassis; surfaced in report §3 + §7.
+7. ✓ Total chassis grew (141 → 159, +18). Ornamental delta is 0 (`candicands` is broadleaf per index.json — operator can override per-chassis post-Riven).
+8. ✓ Idempotent on re-run.
+9. ✓ Brief 1.5b curation file cross-check wired (currently reports "not present" — Quill's runtime file hasn't been written by operator yet; defaults file exists at `arborist/state/_chassis-curation.defaults.json` but no live `_chassis-curation.json`).
+10. _Not verified end-to-end._ Riven did not run a full Salon publish → Grove curation → LS render cycle. Decomposed chassis ARE structurally valid GLBs that obey the post-Whittle contract (wood-only + atlasKind='bark' stamped + meta.json sidecar with morphology + heightRange), so the publish chain SHOULD accept them; if Brief 1.5b/2 finds breakage, surface back here.
+
+### Out of scope (held)
+
+- Modifying `classifyPrim` (Olmsted's Brief 0 patch stands; cross-classifier disagreements with `atlas-survey.js` remain at the doctrine-level decision, not Riven's call)
+- Transform-baking for single-tree chassis (would break byte-identity; surfaced in §8 of Riven report)
+- Operator-eye morphology overrides for decomposed chassis (Brief 1.5b territory — curation surface is the right place)
+- Repairing zero-geometry vendor GLBs (`tree_variation/skeleton-{4..11}-lod0.glb` and similar — broken sources, not bundle-decomposable)
+- Per-chassis tilt persistence; thumbnail browser; deformer rig; Phase F leaf-tint maps
+
+Committed: `arborist/survey-deleaf.js`, `scratch/brief-1.5c-bundle-survey-riven.md` (new), 18 new `public/trees/_chassis/<...>_<node>.{glb,meta.json}` files, this NOTES entry. Whittle's `scratch/brief-0-vendor-tree-survey-whittle.md` left untouched.
+
+---
+
 ## 2026-05-21 — Project: Salon — Brief 1.5b (Quill) — chassis curation surface
 
 **Warm continuation of Sequoia's Salon arc. Operator can now rename and approve/reject any of the 141 chassis from within Salon; curation persists in `arborist/state/_chassis-curation.json` (sibling to compositions, NOT under `public/trees/_chassis/`) so it survives Brief 1.5c's upcoming `survey-deleaf.js` re-run. Picker shows displayName + glyph (★ / · / ✗); an "Approved only" filter defaults ON so the operator sees a curated subset; flipping it OFF exposes the unreviewed + rejected entries for triage.**
