@@ -385,7 +385,11 @@ function SlotCard({
     if (next !== slotName) onNameChange(next)
   }
 
-  const viewKey = `${species}:${slot}:${chassis || 'none'}`
+  // Include bark.ref + leaves.pack so Canvas remounts on bark/leaf swap;
+  // without these, three.js scene persists and reuses old materials despite
+  // new GLB load (operator hit this 2026-05-22: pack switches changed the
+  // GLB on the wire but not on screen).
+  const viewKey = `${species}:${slot}:${chassis || 'none'}:${bark?.ref || ''}:${leaves?.pack || ''}`
 
   // Inspection-only transforms. Includes lean/tilt (X/Z) lifted from
   // Workstage.jsx for chassis straightening — vendor GLBs come at random tilts.
@@ -1046,29 +1050,54 @@ function CurationRow({ chassisFilename, entry, approvalState, onCommit }) {
   useEffect(() => { setNameDraft(entry?.displayName || '') }, [chassisFilename, entry?.displayName])
   useEffect(() => { setNotesDraft(entry?.notes || '') }, [chassisFilename, entry?.notes])
 
-  // Flush pending displayName before any chassis switch happens upstream.
-  // We can't intercept the switch directly, but on unmount (which fires
-  // when SlotCard remounts on chassis change) we flush in cleanup.
+  // Bug fix (2026-05-22, Cinder): when the operator types a label and then
+  // clicks a different chassis in the picker, the parent's selected-chassis
+  // state updates BEFORE the input's onBlur fires (React commits the new
+  // prop, then the browser dispatches blur). commitName's closure then
+  // reads the post-switch `chassisFilename` and POSTs the typed label to
+  // the wrong chassis. Same trap for the unmount cleanup — by the time
+  // it fires, props already reflect the new chassis.
+  //
+  // Fix: snapshot the active chassis when the operator first starts
+  // editing (focus or first keystroke), and route all flushes through
+  // that snapshot. Cleared after a successful flush so the next edit
+  // captures fresh. Status toggle is unaffected — it commits inline on
+  // click before any state can race.
+  const nameTypingChassisRef = useRef(null)
+  const notesTypingChassisRef = useRef(null)
+  const captureNameChassis = () => { if (!nameTypingChassisRef.current) nameTypingChassisRef.current = chassisFilename }
+  const captureNotesChassis = () => { if (!notesTypingChassisRef.current) notesTypingChassisRef.current = chassisFilename }
+
+  // Flush pending drafts before chassis switch. Unmount cleanup is the
+  // belt-and-suspenders path; the active flush via onBlur/Enter usually
+  // beats us to it. Use the captured-at-type-time chassis for the POST
+  // URL so we never address the post-switch chassis.
   // `feedback_debounced_save_must_flush_before_dependent_post`.
   useEffect(() => {
     return () => {
-      if ((entry?.displayName || '') !== nameDraft) {
-        onCommit(chassisFilename, { displayName: nameDraft || null })
+      const nameChassis = nameTypingChassisRef.current
+      if (nameChassis && (entry?.displayName || '') !== nameDraft) {
+        onCommit(nameChassis, { displayName: nameDraft || null })
       }
-      if ((entry?.notes || '') !== notesDraft) {
-        onCommit(chassisFilename, { notes: notesDraft || null })
+      const notesChassis = notesTypingChassisRef.current
+      if (notesChassis && (entry?.notes || '') !== notesDraft) {
+        onCommit(notesChassis, { notes: notesDraft || null })
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chassisFilename])
 
   const commitName = () => {
+    const target = nameTypingChassisRef.current || chassisFilename
+    nameTypingChassisRef.current = null
     if ((entry?.displayName || '') === nameDraft) return
-    onCommit(chassisFilename, { displayName: nameDraft || null })
+    onCommit(target, { displayName: nameDraft || null })
   }
   const commitNotes = () => {
+    const target = notesTypingChassisRef.current || chassisFilename
+    notesTypingChassisRef.current = null
     if ((entry?.notes || '') === notesDraft) return
-    onCommit(chassisFilename, { notes: notesDraft || null })
+    onCommit(target, { notes: notesDraft || null })
   }
   // Cycle: unreviewed (null) → approved (true) → rejected (false) → null …
   const cycleApproval = () => {
@@ -1097,7 +1126,8 @@ function CurationRow({ chassisFilename, entry, approvalState, onCommit }) {
         <input type="text"
           placeholder="e.g. Maple base — good crotches"
           value={nameDraft}
-          onChange={(e) => setNameDraft(e.target.value)}
+          onFocus={captureNameChassis}
+          onChange={(e) => { captureNameChassis(); setNameDraft(e.target.value) }}
           onBlur={commitName}
           onKeyDown={(e) => { if (e.key === 'Enter') { commitName(); e.currentTarget.blur() } }}
           style={{ ...selectStyle, padding: '4px 6px' }} />
@@ -1126,7 +1156,8 @@ function CurationRow({ chassisFilename, entry, approvalState, onCommit }) {
           <textarea
             placeholder="Operator note (visible only here)"
             value={notesDraft}
-            onChange={(e) => setNotesDraft(e.target.value)}
+            onFocus={captureNotesChassis}
+            onChange={(e) => { captureNotesChassis(); setNotesDraft(e.target.value) }}
             onBlur={commitNotes}
             rows={2}
             style={{
