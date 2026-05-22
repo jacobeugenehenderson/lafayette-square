@@ -81,6 +81,16 @@ function injectFoliageSway(material) {
     shader.uniforms.uBarkBranchJitterRange = { value: 0 }
     shader.uniforms.uBarkTrunkRoughness = { value: -1 }
     shader.uniforms.uBarkBranchRoughness = { value: -1 }
+    // Brief 2 (Holm) — per-variant gradient ramp. The LUT lives in the same
+    // unified atlas as the bark/leaf tiles (no new sampler), and the
+    // fragment shader reads it via `map` at vec2(t, 0.5) * Scale + Offset
+    // where `t` is a per-instance hash. uUseBarkGradient gates the path so
+    // legacy single-tint compositions render unchanged — a uniform-driven
+    // branch, NOT a sibling material variant, per the single-program
+    // constraint Bloom needs.
+    shader.uniforms.uUseBarkGradient = { value: 0 }
+    shader.uniforms.uBarkGradientTileOffset = { value: new THREE.Vector2(0, 0) }
+    shader.uniforms.uBarkGradientTileScale = { value: new THREE.Vector2(1, 1) }
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
     // → preTileBark). The atlas tile content already carries N×M tiled
@@ -162,6 +172,9 @@ function injectFoliageSway(material) {
          uniform float uBarkBranchJitterRange;
          uniform float uBarkTrunkRoughness;
          uniform float uBarkBranchRoughness;
+         uniform float uUseBarkGradient;
+         uniform vec2  uBarkGradientTileOffset;
+         uniform vec2  uBarkGradientTileScale;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vBark;
@@ -196,7 +209,19 @@ function injectFoliageSway(material) {
            float effJitter   = mix(uBarkTintJitterRange, regionJitter, uBarkRegionSplit);
            vec3 perInstanceTint = mix(vec3(1.0), 0.5 + jitter, effJitter);
            vec3 barkTint = effTintBase * perInstanceTint;
-           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * barkTint, vBark);
+           // Brief 2 (Holm) per-variant gradient: a fresh hash channel
+           // (uncorrelated with jh1/jh2/jh3 used by tintJitter so gradient
+           // and legacy jitter don't covary if both are ever active)
+           // indexes a 256×1 LUT tile packed into the unified atlas. The
+           // LUT was authored sRGB at bake time and the atlas texture is
+           // tagged SRGBColorSpace, so this sample is auto-linearized. The
+           // *2.0 bias keeps midtone ramp stops near identity-multiplication
+           // against the bark texture's luminance.
+           float jh4 = fract(sin(dot(vWorldXZ.xz, vec2(521.7, 233.1))) * 43758.5453);
+           vec2 lutUV = vec2(jh4, 0.5) * uBarkGradientTileScale + uBarkGradientTileOffset;
+           vec3 gradientTint = texture2D(map, lutUV).rgb * 2.0;
+           vec3 effTintFinal = mix(barkTint, gradientTint, uUseBarkGradient);
+           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * effTintFinal, vBark);
          }`
       )
       .replace(

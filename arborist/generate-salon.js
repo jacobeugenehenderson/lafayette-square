@@ -789,6 +789,29 @@ async function patchManifestForSalon(species, compositions) {
   // `build-index.js` filters those out, so without this step Salon species
   // would publish but never land in `index.json` → never reach LS.
   for (const v of m.variants ?? []) v.qualityOverride = 4
+  // Brief 2 (Holm): per-variant gradient stops. publish-glb.js assigns
+  // variantId = i+1 over composition iteration order (compositions are
+  // pre-filtered to `ready` in main(), so the index here matches the GLB
+  // ordering exactly). Each composition that authored gradientStops gets
+  // its block written to the matching variant; absent → variant.bark stays
+  // unset → bake-look falls back to legacy single-tint runtime for that
+  // variant. Existing variant.bark blocks are preserved so a re-publish
+  // doesn't blow away unrelated per-variant data future briefs might add.
+  for (let i = 0; i < compositions.length; i++) {
+    const stops = compositions[i]?.effective?.bark?.gradientStops
+    const variantId = i + 1
+    const variant = m.variants?.find(v => v.id === variantId || String(v.id) === String(variantId))
+    if (!variant) continue
+    if (Array.isArray(stops) && stops.length >= 2) {
+      variant.bark = { ...(variant.bark || {}), gradientStops: stops }
+    } else if (variant.bark?.gradientStops) {
+      // Composition toggled gradient OFF → clear stops on disk; preserve
+      // any sibling per-variant bark fields a future brief may have added.
+      const { gradientStops: _drop, ...rest } = variant.bark
+      variant.bark = Object.keys(rest).length ? rest : undefined
+      if (variant.bark === undefined) delete variant.bark
+    }
+  }
   await fs.writeFile(p, JSON.stringify(m, null, 2))
 }
 

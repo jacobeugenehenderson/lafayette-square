@@ -23,6 +23,7 @@ import sharp from 'sharp'
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { prune } from '@gltf-transform/functions'
+import crypto from 'node:crypto'
 import { surveyRoster } from './atlas-survey.js'
 import { packSkyline } from './atlas-pack.js'
 
@@ -108,6 +109,133 @@ async function flatNormalBuf(w, h) {
   return sharp({
     create: { width: w, height: h, channels: 4, background: { r: 128, g: 128, b: 255, alpha: 1 } }
   }).png().toBuffer()
+}
+
+// ── Brief 2 (Holm): bark gradient LUTs ───────────────────────────────────
+//
+// Salon compositions may carry a multi-stop gradient ramp per variant
+// (manifest.json#/variants[i].bark.gradientStops). bake-look compiles each
+// ramp to a 256×1 RGBA buffer, packs them into a third sub-atlas page
+// alongside bark + leaves, and emits per-variant uvTransforms into the
+// manifest so the runtime fragment shader can sample them as a 1D LUT
+// indexed by a per-instance hash.
+//
+// Interpolation is linear-in-sRGB (matches Three.js's loader which tags
+// the unified atlas PNG as SRGBColorSpace, so the GPU linearizes on
+// sample). Stops outside [0,1] clamp to nearest authored stop.
+const GRADIENT_LUT_W = 256
+const GRADIENT_LUT_H = 1
+
+function parseHexColor(hex) {
+  if (typeof hex !== 'string') return [255, 255, 255]
+  const s = hex.replace(/^#/, '').trim()
+  if (s.length === 3) {
+    return [parseInt(s[0] + s[0], 16), parseInt(s[1] + s[1], 16), parseInt(s[2] + s[2], 16)]
+  }
+  if (s.length === 6) {
+    return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)]
+  }
+  return [255, 255, 255]
+}
+
+// Compile a stops array → 256×1 raw RGBA buffer (1024 bytes). Stops are
+// {t, color} where t∈[0,1] and color is "#RRGGBB". The output is in sRGB
+// byte space — Three.js's SRGBColorSpace decode happens on sample.
+function compileGradientLUT(stops) {
+  // Sort + clamp + dedup-by-t to make sampling robust to operator input
+  const sorted = (stops || [])
+    .filter(s => s && typeof s.t === 'number' && typeof s.color === 'string')
+    .map(s => ({ t: Math.max(0, Math.min(1, s.t)), rgb: parseHexColor(s.color) }))
+    .sort((a, b) => a.t - b.t)
+  if (sorted.length === 0) {
+    // Defensive fallback — never called in practice since caller checks
+    sorted.push({ t: 0, rgb: [255, 255, 255] }, { t: 1, rgb: [255, 255, 255] })
+  }
+  if (sorted.length === 1) sorted.push({ t: 1, rgb: sorted[0].rgb })
+  const buf = Buffer.alloc(GRADIENT_LUT_W * GRADIENT_LUT_H * 4)
+  for (let x = 0; x < GRADIENT_LUT_W; x++) {
+    const t = x / (GRADIENT_LUT_W - 1)
+    // Find the bracket. Outside-range clamps to nearest.
+    let lo = sorted[0], hi = sorted[sorted.length - 1]
+    if (t <= sorted[0].t) { lo = hi = sorted[0] }
+    else if (t >= sorted[sorted.length - 1].t) { lo = hi = sorted[sorted.length - 1] }
+    else {
+      for (let i = 1; i < sorted.length; i++) {
+        if (t <= sorted[i].t) { lo = sorted[i - 1]; hi = sorted[i]; break }
+      }
+    }
+    const span = hi.t - lo.t
+    const u = span > 1e-6 ? (t - lo.t) / span : 0
+    const r = Math.round(lo.rgb[0] + (hi.rgb[0] - lo.rgb[0]) * u)
+    const g = Math.round(lo.rgb[1] + (hi.rgb[1] - lo.rgb[1]) * u)
+    const b = Math.round(lo.rgb[2] + (hi.rgb[2] - lo.rgb[2]) * u)
+    const o = x * 4
+    buf[o] = r; buf[o + 1] = g; buf[o + 2] = b; buf[o + 3] = 255
+  }
+  return buf
+}
+
+// sha1 over the raw LUT bytes — identical gradients across different
+// (species, variantId) collapse to one atlas tile (matches the
+// (colorSha1, normalSha1) dedup that atlas-survey applies to texture tiles).
+function gradientSha1(lutBuf) {
+  return crypto.createHash('sha1').update(lutBuf).digest('hex').slice(0, 12)
+}
+
+// Bake a gradient sub-atlas. Tiles are {key, lutBuffer, refs:[{species,variantId}]};
+// callers dedup by sha1 before passing in. Layout mirrors bakeAtlas — skyline-pack
+// with GUTTER, content+gutter rects, edge-clamp via sharp.extend('copy'). One PNG
+// per Look. Returns the shape unifyAtlases consumes (uvTransform per tile).
+async function bakeGradientAtlas(tiles, outDir, lookName) {
+  if (tiles.length === 0) return null
+  const contents = tiles.map(() => ({ w: GRADIENT_LUT_W, h: GRADIENT_LUT_H }))
+  const rects = contents.map(d => ({ w: d.w + GUTTER * 2, h: d.h + GUTTER * 2 }))
+  const pack = packSkyline(rects, { maxWidth: MAX_ATLAS_WIDTH })
+  const atlasW = pack.width
+  const atlasH = pack.height
+
+  const colorBase = sharp({
+    create: { width: atlasW, height: atlasH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } }
+  })
+  const colorParts = []
+  const tileEntries = []
+
+  for (let i = 0; i < tiles.length; i++) {
+    const t = tiles[i]
+    const place = pack.placements[i]
+    const content = contents[i]
+    const cx = place.x + GUTTER
+    const cy = place.y + GUTTER
+    const extendOpts = { top: GUTTER, bottom: GUTTER, left: GUTTER, right: GUTTER, extendWith: 'copy' }
+    const colorBuf = await sharp(t.lutBuffer, { raw: { width: content.w, height: content.h, channels: 4 } })
+      .extend(extendOpts)
+      .png()
+      .toBuffer()
+    colorParts.push({ input: colorBuf, left: place.x, top: place.y })
+    tileEntries.push({
+      tileIndex: i,
+      key: t.key,
+      atlas: 'barkGradient',
+      classification: 'barkGradient',
+      refs: t.refs,
+      content: { x: cx, y: cy, w: content.w, h: content.h },
+      uvTransform: {
+        offsetU: cx / atlasW,
+        offsetV: cy / atlasH,
+        scaleU: content.w / atlasW,
+        scaleV: content.h / atlasH,
+      },
+    })
+  }
+
+  const colorRel = `trees-atlas-bark-gradient-color.png`
+  await colorBase.composite(colorParts).png({ compressionLevel: 9 }).toFile(path.join(outDir, colorRel))
+
+  return {
+    width: atlasW, height: atlasH,
+    colorPath: `/baked/${lookName}/${colorRel}`,
+    tiles: tileEntries,
+  }
 }
 
 // ── atlas baking ─────────────────────────────────────────────────────────
@@ -197,22 +325,27 @@ async function bakeAtlas(tiles, atlasName, outDir, lookName) {
 // (one shader program) regardless of bark vs leaves classification — Bloom
 // is intolerant of more than one tree shader program in this scene, so this
 // is non-negotiable.
-async function unifyAtlases(bark, leaves, outDir, lookName) {
-  if (!bark && !leaves) return null
+async function unifyAtlases(bark, leaves, gradient, outDir, lookName) {
+  if (!bark && !leaves && !gradient) return null
 
-  // Pack the two sub-atlas pages as rects; skyline picks side-by-side or
-  // stacked based on which wastes less. No fixed gutter here — sub-atlas
-  // edges are already mip-safe (the sub-atlases include alpha=0 / flat
-  // normal background past their packed content).
+  // Pack the sub-atlas pages as rects; skyline picks side-by-side or stacked
+  // based on which wastes less. No fixed gutter here — sub-atlas edges are
+  // already mip-safe (the sub-atlases include alpha=0 / flat normal
+  // background past their packed content). Brief 2 (Holm) adds a third
+  // sub-atlas for bark gradient LUTs; it has no normal map (LUTs are
+  // sampled by the fragment shader, not surface-shaded) so the unified
+  // normal map gets a flat-normal blit for its footprint.
   const pages = []
-  if (bark)   pages.push({ kind: 'bark',   src: bark,   w: bark.width,   h: bark.height })
-  if (leaves) pages.push({ kind: 'leaves', src: leaves, w: leaves.width, h: leaves.height })
+  if (bark)     pages.push({ kind: 'bark',     src: bark,     w: bark.width,     h: bark.height })
+  if (leaves)   pages.push({ kind: 'leaves',   src: leaves,   w: leaves.width,   h: leaves.height })
+  if (gradient) pages.push({ kind: 'gradient', src: gradient, w: gradient.width, h: gradient.height })
   const pack = packSkyline(pages.map(p => ({ w: p.w, h: p.h })), { maxWidth: MAX_ATLAS_WIDTH })
   const unifiedW = Math.max(pack.width, 1)
   const unifiedH = Math.max(pack.height, 1)
   pages.forEach((p, i) => { p.x = pack.placements[i].x; p.y = pack.placements[i].y })
   const placedBark = pages.find(p => p.kind === 'bark')
   const placedLeaves = pages.find(p => p.kind === 'leaves')
+  const placedGradient = pages.find(p => p.kind === 'gradient')
 
   const colorOut = path.join(outDir, 'trees-atlas-color.png')
   const normalOut = path.join(outDir, 'trees-atlas-normal.png')
@@ -237,6 +370,12 @@ async function unifyAtlases(bark, leaves, outDir, lookName) {
     const leavesNormal = await fs.readFile(path.join(outDir, `trees-atlas-leaves-normal.png`))
     colorParts.push({ input: leavesColor, left: placedLeaves.x, top: placedLeaves.y })
     normalParts.push({ input: leavesNormal, left: placedLeaves.x, top: placedLeaves.y })
+  }
+  if (placedGradient) {
+    // Brief 2 (Holm): gradient sub-atlas color only; its normal footprint
+    // gets the unified normal map's flat-tangent background by default.
+    const gradColor = await fs.readFile(path.join(outDir, `trees-atlas-bark-gradient-color.png`))
+    colorParts.push({ input: gradColor, left: placedGradient.x, top: placedGradient.y })
   }
   await colorBase.composite(colorParts).png({ compressionLevel: 9 }).toFile(colorOut)
 
@@ -293,6 +432,12 @@ async function unifyAtlases(bark, leaves, outDir, lookName) {
     }))
   }
   const tiles = [...remap(placedBark), ...remap(placedLeaves)]
+  // Gradient tiles ride in the same unified atlas but stay segregated from
+  // `tiles` (which is the GLB-rewriter lookup keyed by material name).
+  // Gradient tiles aren't bound to any GLB primitive — they're sampled
+  // shader-side via uniform-driven UVs — so a parallel array keeps the GLB
+  // rewrite path's invariants intact.
+  const gradientTiles = remap(placedGradient)
 
   return {
     width: unifiedW,
@@ -300,6 +445,7 @@ async function unifyAtlases(bark, leaves, outDir, lookName) {
     colorPath: `/baked/${lookName}/trees-atlas-color.png`,
     normalPath: `/baked/${lookName}/trees-atlas-normal.png`,
     tiles,
+    gradientTiles,
   }
 }
 
@@ -517,6 +663,7 @@ export async function bakeLook(lookName, opts = {}) {
       'trees-atlas-color.png', 'trees-atlas-normal.png',
       'trees-atlas-bark-color.png', 'trees-atlas-bark-normal.png',
       'trees-atlas-leaves-color.png', 'trees-atlas-leaves-normal.png',
+      'trees-atlas-bark-gradient-color.png',
       'trees-atlas-bark-viz.png', 'trees-atlas-leaves-viz.png',
       'trees-atlas.json',
     ]) await rmrf(path.join(outDir, f))
@@ -534,13 +681,56 @@ export async function bakeLook(lookName, opts = {}) {
   const barkTiles = survey.tiles.filter(t => t.classification === 'bark')
   const leafTiles = survey.tiles.filter(t => t.classification === 'leaf')
 
+  // Brief 2 (Holm): collect per-variant bark gradients from species
+  // manifests. Authored as `manifest.json#/variants[i].bark.gradientStops`
+  // by generate-salon's publish step (Salon UI's gradient editor commits
+  // them through the overlay POST → compositions.json → generate-salon
+  // patchManifestForSalon → variant block). Scoped to roster variants so a
+  // species's unused variants don't waste atlas tiles.
+  //
+  // Sha1 dedup over the compiled LUT bytes — two compositions with
+  // byte-identical ramps collapse to one tile in the atlas. Matches the
+  // texture-tile dedup pattern atlas-survey uses for bark/leaf.
+  const gradientSeenSha = new Map() // sha1 -> { key, lutBuffer, refs:[] }
+  const gradientStopsByRef = new Map() // "species|variantId" -> stops array (for downstream)
+  {
+    const manifestCache = new Map()
+    for (const v of roster) {
+      const refKey = `${v.species}|${v.variantId}`
+      if (gradientStopsByRef.has(refKey)) continue
+      const mPath = path.join(TREES_DIR, v.species, 'manifest.json')
+      let m = manifestCache.get(v.species)
+      if (m === undefined) {
+        try { m = JSON.parse(await fs.readFile(mPath, 'utf8')) }
+        catch { m = null }
+        manifestCache.set(v.species, m)
+      }
+      if (!m) continue
+      const variant = m.variants?.find(x => String(x.id) === String(v.variantId))
+      const stops = variant?.bark?.gradientStops
+      if (!Array.isArray(stops) || stops.length < 2) continue
+      gradientStopsByRef.set(refKey, stops)
+      const lutBuffer = compileGradientLUT(stops)
+      const sha = gradientSha1(lutBuffer)
+      const existing = gradientSeenSha.get(sha)
+      const ref = { species: v.species, variantId: v.variantId }
+      if (existing) {
+        existing.refs.push(ref)
+      } else {
+        gradientSeenSha.set(sha, { key: `gradient-${sha}`, lutBuffer, refs: [ref] })
+      }
+    }
+  }
+  const gradientTiles = [...gradientSeenSha.values()]
+
   const t1 = Date.now()
   const bark = await bakeAtlas(barkTiles, 'bark', outDir, lookName)
   const leaves = await bakeAtlas(leafTiles, 'leaves', outDir, lookName)
-  // Composite bark+leaves into a single atlas so the runtime can use a
-  // single shared material. Tile uvTransforms are remapped into unified
-  // coordinates here.
-  const unified = await unifyAtlases(bark, leaves, outDir, lookName)
+  const gradient = await bakeGradientAtlas(gradientTiles, outDir, lookName)
+  // Composite bark+leaves(+gradient) into a single atlas so the runtime
+  // can use a single shared material. Tile uvTransforms are remapped into
+  // unified coordinates here.
+  const unified = await unifyAtlases(bark, leaves, gradient, outDir, lookName)
   const tBake = Date.now() - t1
 
   // Phase B (2026-05-15): gather per-species bark spec from each species's
@@ -586,6 +776,27 @@ export async function bakeLook(lookName, opts = {}) {
     } catch { /* species without a manifest.json — skip silently */ }
   }
 
+  // Brief 2 (Holm): per-variant gradient slot index. Maps every
+  // (species, variantId) in the roster that authored gradientStops to the
+  // unified-atlas uvTransform of its LUT tile. The runtime
+  // (`InstancedTrees.jsx#applyBarkUniforms`) reads this to set
+  // `uBarkGradientTileOffset/Scale` per draw and flip `uUseBarkGradient=1`.
+  // Variants without an entry render through the legacy single-tint path,
+  // preserving Brief 1.5a back-compat.
+  const barkGradientByVariant = {}
+  for (const gt of unified?.gradientTiles || []) {
+    const slot = {
+      offsetU: gt.uvTransform.offsetU,
+      offsetV: gt.uvTransform.offsetV,
+      scaleU: gt.uvTransform.scaleU,
+      scaleV: gt.uvTransform.scaleV,
+    }
+    for (const ref of gt.refs) {
+      if (!barkGradientByVariant[ref.species]) barkGradientByVariant[ref.species] = {}
+      barkGradientByVariant[ref.species][ref.variantId] = slot
+    }
+  }
+
   // Manifest
   const tilesByKey = {}
   for (const t of unified?.tiles || []) tilesByKey[t.key] = t
@@ -606,6 +817,7 @@ export async function bakeLook(lookName, opts = {}) {
     tiles: unified?.tiles || [],
     tilesByKey,
     barkBySpecies,
+    barkGradientByVariant,
   }
   await fs.writeFile(path.join(outDir, 'trees-atlas.json'), JSON.stringify(manifest, null, 2))
 

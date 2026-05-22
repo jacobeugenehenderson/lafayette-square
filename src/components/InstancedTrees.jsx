@@ -46,7 +46,20 @@ function urlToSpecies(url) {
   return m ? m[1] : null
 }
 
-function VariantInstances({ url, instances, treeMaterial, barkSettings }) {
+// Brief 2 (Holm): URL → variantId. The rewritten GLB filename is
+// `skeleton-<variantId>-<lod>.glb` (possibly suffixed `?v=...`). Parsed so
+// the runtime can look up the per-variant gradient slot in the atlas
+// manifest. Returns the variantId as a STRING so callers can index either
+// numeric or string variant keys in barkGradientByVariant without coercion
+// drift (manifest keys come from JSON.stringify of whatever the species
+// manifest stores — integer in lidar publishes, string in some salon
+// publishes).
+function urlToVariantId(url) {
+  const m = url.match(/skeleton-([^-/]+)-lod\d/)
+  return m ? m[1] : null
+}
+
+function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot }) {
   const { scene } = useGLTF(url)
 
   // Walk the rewritten GLB, baking each primitive's world matrix into its
@@ -195,6 +208,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings }) {
           placementMatrices={matrices}
           lampGlows={lampGlows}
           barkSettings={barkSettings}
+          gradientSlot={gradientSlot}
         />
       ))}
     </>
@@ -210,9 +224,19 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings }) {
 const _barkTintTmp = new THREE.Color()
 const _barkTrunkTmp = new THREE.Color()
 const _barkBranchTmp = new THREE.Color()
-function applyBarkUniforms(material, barkSettings) {
+function applyBarkUniforms(material, barkSettings, gradientSlot) {
   const shader = material?.userData?.shader
   if (!shader) return
+  // Brief 2 (Holm) — gradient slot is independent of bark/region path.
+  // Reset every draw so a draw without a gradient doesn't inherit the
+  // prior draw's offset/scale. uUseBarkGradient=1 only when a slot exists.
+  if (gradientSlot) {
+    shader.uniforms.uUseBarkGradient.value = 1
+    shader.uniforms.uBarkGradientTileOffset.value.set(gradientSlot.offsetU, gradientSlot.offsetV)
+    shader.uniforms.uBarkGradientTileScale.value.set(gradientSlot.scaleU, gradientSlot.scaleV)
+  } else {
+    shader.uniforms.uUseBarkGradient.value = 0
+  }
   // No bark spec? Reset to identity so leaf-only draws don't carry stale
   // tints from the prior bark draw. Region split disabled.
   if (!barkSettings) {
@@ -251,7 +275,7 @@ function applyBarkUniforms(material, barkSettings) {
   shader.uniforms.uBarkRegionSplit.value = 0
 }
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, barkSettings, gradientSlot }) {
   const ref = useRef(null)
   // Attach the per-instance lamp-glow attribute to the geometry. Each
   // unique GLB has a unique geometry instance, so this doesn't bleed
@@ -283,8 +307,8 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   // the uniforms; we overwrite right before three.js submits the draw,
   // and three.js uploads uniform values per draw.
   const onBeforeRender = useMemo(() => {
-    return () => applyBarkUniforms(material, barkSettings)
-  }, [material, barkSettings])
+    return () => applyBarkUniforms(material, barkSettings, gradientSlot)
+  }, [material, barkSettings, gradientSlot])
 
   return (
     <instancedMesh
@@ -456,6 +480,15 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
     return out
   }, [atlas?.manifest?.barkBySpecies, scene?.materialColors])
 
+  // Brief 2 (Holm): per-variant gradient slots from the atlas manifest.
+  // Indexed by [species][variantId] — the GLB URL encodes both, parsed at
+  // draw time. Variants without an entry render through the legacy
+  // single-tint path (uUseBarkGradient stays 0). Pass-through memo on the
+  // manifest field so cache-busting still works.
+  const barkGradientByVariant = useMemo(() => {
+    return atlas?.manifest?.barkGradientByVariant || {}
+  }, [atlas?.manifest?.barkGradientByVariant])
+
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
@@ -465,7 +498,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
       {Array.from(groups.entries()).flatMap(([url, byTile]) =>
         Array.from(byTile.entries()).map(([tileId, instances]) => {
           const species = urlToSpecies(url)
+          const variantId = urlToVariantId(url)
           const barkSettings = species ? barkBySpeciesEffective[species] : null
+          const gradientSlot = (species && variantId)
+            ? (barkGradientByVariant[species]?.[variantId] || barkGradientByVariant[species]?.[Number(variantId)] || null)
+            : null
           return (
             <Suspense key={`${url}#${tileId}`} fallback={null}>
               <VariantInstances
@@ -473,6 +510,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl =
                 instances={instances}
                 treeMaterial={atlas.treeMaterial}
                 barkSettings={barkSettings}
+                gradientSlot={gradientSlot}
               />
             </Suspense>
           )

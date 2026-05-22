@@ -4,6 +4,109 @@
 
 ---
 
+## 2026-05-21 — Project: Salon — Brief 2 (Holm) — bark gradient maps + multi-stop tint editor
+
+**Cold dispatch. Replaces per-composition single-tint bark with an authored multi-stop gradient ramp; runtime samples per-instance via hash so 5 instances of the same Salon-published variant land at 5 positions along the ramp. Authored at `composition.bark.gradientStops = [{t∈[0,1], color: "#RRGGBB"}, ...]` (≥2 stops); absent at every layer → existing single-tint runtime preserved end-to-end.**
+
+**Architecture decisions (signed off pre-implementation):**
+
+1. **Per-variant manifest lift on the gradient channel only.** Sequoia's 1.5a comment in `generate-salon.js#patchManifestForSalon` flagged that per-composition runtime variation needs runtime path changes "out of scope" for 1.5a. Brief 2 IS that lift, scoped narrowly: legacy `bark.{materialRef, uvScale, tintBase, tintJitterRange, roughnessOverride}` stays per-species (first-composition-wins per 1.5a); only `gradientStops` extends to `manifest.json#/variants[i].bark.gradientStops`. `InstancedTrees.jsx` gained a `urlToVariantId(url)` parser so `applyBarkUniforms` can key the gradient slot by `(species, variantId)` from the GLB path while preserving its existing per-species bark lookup.
+
+2. **LUT integration outside `atlas-survey.js`.** Survey's sha1 dedup is keyed by GLB-bound (colorSha1, normalSha1); LUTs aren't bound to any GLB material. Cleanest path: `bake-look.js` reads `manifest.json#/variants[i].bark.gradientStops` directly in its `barkBySpecies` loop neighborhood, compiles 256×1 sRGB RGBA buffers via the new `compileGradientLUT` helper, sha1-dedups its own LUT buffers (`gradientSha1`), and packs them as a third `barkGradient` sub-atlas page via a new `bakeGradientAtlas` (mirrors `bakeAtlas`'s skyline + GUTTER + clamp-extend pattern). `unifyAtlases` extended to accept a third page; gradient tiles ride in a parallel `gradientTiles[]` field on the unified result so the GLB UV-rewriter's `lookupIdx` (keyed by `species|variantId|matName`) stays bark/leaf-only — LUT tiles aren't UV-bound. Manifest gains `barkGradientByVariant[species][variantId] = { offsetU, offsetV, scaleU, scaleV }`. Atlas grew from 4040×3112 → 4040×3121 with one smoke-test ramp (negligible footprint at LS scale).
+
+3. **Per-instance hash for gradient `t` — fresh 4th channel, NOT reused from tintJitter.** `treeAtlasMaterial.js` has no `vInstanceHash` varying; what exists is `vWorldXZ` from the instance matrix translation column and three derived hashes `jh1/jh2/jh3 = fract(sin(dot(vWorldXZ.xz, vec2(K1, K2))) * 43758.5453)` feeding `tintJitter`. Brief asked whether gradient `t` should match — chose **uncorrelated**: `jh4 = fract(sin(dot(vWorldXZ.xz, vec2(521.7, 233.1))) * 43758.5453)`. Reasoning: single-tint mode shifts hue around `tintBase`; gradient mode is the hue spread. Correlating them serves no design purpose and uncorrelated gives operator independent visual axes if a future composition ever combines the two.
+
+4. **Color-space — sRGB stop interpolation, atlas-PNG sRGB-tagged, three.js linearizes at sample.** Author hex stops are sRGB; `compileGradientLUT` linearly interpolates between stops in sRGB byte space; PNG is loaded by `treeAtlasMaterial.js#loadTexture` with `colorSpace: SRGBColorSpace` (existing behavior); fragment shader receives linearized RGB and does `barkColor *= ramp * 2.0`. The `*2.0` bias keeps midtone stops near identity-multiplication against the bark texture's luminance, per the brief's pseudo-shader. Matches everything else in the atlas — no special handling needed.
+
+**Files touched:**
+
+- `arborist/bake-look.js` — `compileGradientLUT` + `gradientSha1` + `bakeGradientAtlas` helpers; per-variant gradient extraction loop; `unifyAtlases` extended to a third page; `barkGradientByVariant` emission; empty-roster wipe extended to `trees-atlas-bark-gradient-color.png`. +180 LOC.
+- `src/components/treeAtlasMaterial.js` — 3 new uniforms (`uUseBarkGradient`, `uBarkGradientTileOffset/Scale`); fragment-chunk extension that samples the LUT from `map` and `mix`es gradient over legacy `barkTint` via `uUseBarkGradient`. +18 LOC. **Verified:** uniform-driven branch, not a sibling material; single shader program preserved. Log-depth chunks unaffected (`MeshStandardMaterial.onBeforeCompile` not raw ShaderMaterial — three.js handles its own log-depth machinery).
+- `src/components/InstancedTrees.jsx` — `urlToVariantId(url)`; `applyBarkUniforms(material, barkSettings, gradientSlot)` extended with gradient reset/apply; `barkGradientByVariant` pass-through memo on the atlas manifest; per-draw `gradientSlot` resolution from `(species, variantId)` with string/number key fallback (manifest variantIds can come through as either). +30 LOC.
+- `arborist/generate-salon.js` — `patchManifestForSalon` extended to walk compositions and write `variants[i].bark.gradientStops` (composition[i] → variantId i+1, matching publish-glb's emission order). Empty/<2-stop arrays clear the per-variant block (toggle-OFF semantics). +22 LOC.
+- `src/arborist/SalonWorkstage.jsx` — new `BarkGradientEditor` (use-gradient toggle, CSS-`linear-gradient` ramp viz, per-stop t-slider via existing DraftSlider + color picker + delete button at 2-stop minimum, + Add stop at largest-gap midpoint with interpolated color, last-authored-stops stash ref); inserted into the Bark section below Roughness. +120 LOC.
+
+**Smoke test before UI:** hand-authored `[{t:0,color:"#ff0000"},{t:0.5,color:"#00ff00"},{t:1,color:"#0000ff"}]` on `platanus_acerifolia` variant 6's manifest.json; ran `bake-look.js --look lafayette-square`; confirmed `trees-atlas-bark-gradient-color.png` (264×9 = 256+gutter) exists; `trees-atlas.json#/barkGradientByVariant.platanus_acerifolia["6"]` populated with `{offsetU: 0.00099, offsetV: 0.998, scaleU: 0.0634, scaleV: 0.00032}` (math checks against atlas dims). Reverted after; chassis-dir + state-dir are gitignored. The runtime path (LS Stage render) was not exercised in-browser this session — operator will verify via Salon → Adopt → Re-publish → Grove → LS reload.
+
+**Surface — non-obvious things worth flagging per `feedback_baby_must_surface_scope_drift`:**
+
+- **Per-instance hash channel for `t` is uncorrelated with tintJitter** (jh4 vs jh1/jh2/jh3) — see decision (3) above. Brief said "probably matches"; I went the other direction. Easy to flip later by switching `vec2(521.7, 233.1)` → `vec2(127.1, 311.7)` if you'd rather have them covary.
+- **Existing `_test_salon` ghost reference in pre-Brief-2 `trees-atlas.json#/barkBySpecies` had no on-disk species dir** — pre-existing dirt, not Holm's. roster dropped from 31 → 30 after the smoke-test rebake silently skipped it. Worth a cleanup pass at some point but unrelated to Brief 2.
+- **The shader's `<map_fragment>` extension now contains both legacy `barkTint` AND `gradientTint`** computation paths every frame, selected via `mix(...)`. The cost is two `texture2D` samples (the existing one inside `<map_fragment>` plus the new LUT sample) instead of one — but the LUT sample lives in the same `map` so no cache line miss vs sampling a separate atlas. Negligible at LS draw counts.
+- **`barkGradientByVariant` keys: variantId can come through as integer or string** depending on which publish path wrote the manifest (lidar publishes use int, salon uses int via `publish-glb.js i+1`). InstancedTrees resolves both via `[species]?.[variantId] || [species]?.[Number(variantId)]`. If you see a gradient go un-applied at runtime, suspect this coercion edge first.
+- **Per-Look palette override of stops via `scene.materialColors`** is the natural Brief 2.5 (a Look that recolors compositions without re-publishing). Deferred per brief.
+- **Gradient preset library** ("white birch", "oak bark", etc.) is a v1.6 candidate per brief. Defer.
+- **Procedural compositions could also benefit from gradient bark.** Today `generate-procedural.js` writes `manifest.bark` per-species without per-variant slots. Extending to per-variant gradient would mirror this brief's pattern; not done — brief explicitly excluded procedural-side.
+- **Bloom interaction at saturated gradient endpoints:** untested in-session. A `#ffffff` endpoint × `*2.0` bias × bright bark texture luminance could push past Bloom's threshold. If operator authors highlight-into-feedback gradients we should clamp the `*2.0` bias.
+- **Sequoia's `patchManifestForSalon` quirk:** writes `materialRef` (with capital R, plus `materialRef` not `ref`) per bake-look's `flatten()` shape. I match this pattern in the per-variant write path (gradientStops is array-only; no field-name translation needed).
+- **No `vInstanceHash` varying exists** — `vWorldXZ` is the per-instance carrier and `jh1/jh2/jh3` are per-instance hashes derived in-fragment. Brief's pseudo-shader assumed a varying that doesn't exist; I matched the existing pattern instead. Worth correcting in future briefs.
+- **Where future per-variant per-instance variation should go:** the (species, variantId) keying I added for gradient is the template for any future per-variant runtime channel. The lookup is cheap and the URL → variantId parser is reusable.
+
+**Constraints honored:**
+- Single shader program — uniform-driven branch, no sibling material.
+- Determinism — sha1 over LUT bytes; same stops → same atlas tile across runs.
+- sha1 dedup — two compositions with byte-identical ramps collapse to one tile (verified in code; not exercised yet with two variants).
+- No modifications to `survey-deleaf.js`, `generate-procedural.js`, `publish-glb.js`, `bake-trees.js`, `LidarWorkstage.jsx`, `Workstage.jsx`, `ProceduralWorkstage.jsx`.
+- Back-compat: compositions without `gradientStops` render unchanged through Brief 1.5a's path.
+- Stash-isolate: commit stages only Brief 2's 4 code files + 3 doc files.
+
+---
+
+## 2026-05-21 — Project: Salon — Brief 1.5e (Fern) — leaf-pack library expansion + Phase F-prep sidecars
+
+**Cold dispatch alongside Holm's Brief 2. Expanded `public/textures/leaves/shapes/` from Sequoia's 3 packs to the full 10 the BACKLOG morphology→vendor-pack table calls for. Each pack now ships an RGBA `shape.png` (Color RGB + Opacity alpha) AND a Phase-F-prep `meta.json` sidecar (`morphology` / `naturalSize` cm / `recommendedSpecies` / `source`). `arborist/leaf-pack-bindings.json` extended with semantic-id pack entries pointing at the new dir-scan packs (LeafSet0xx entries retained, additive only). No runtime / shader / bake-pipeline changes; `naturalSize` is documentation today, will eventually drive runtime card scale at Phase F proper. Zero overlap with Holm's Brief 2 file surface.**
+
+### What ships
+
+- **7 new pack directories at `public/textures/leaves/shapes/`** — `serrate_ovate` (LeafSet001), `heart` (LeafSet004), `elm_autumn` (LeafSet007), `oak_autumn` (LeafSet012), `lanceolate` (LeafSet013), `long_needle` (LeafSet019), `ovate_large` (Leaf001). Each carries `shape.png` (1024×1024 RGBA, sRGB) + `meta.json`. Sequoia's three (palmate / lobed / ovate) untouched on the shape.png surface — they get sidecar `meta.json` files backfilled to match the new convention.
+- **Composition recipe verified pixel-identical to Sequoia's** — `sharp.resize(1024,1024).removeAlpha().raw()` on `<Set>_4K-JPG_Color.jpg` joinChannel'd against `sharp.resize(1024,1024).grayscale().raw()` on `<Set>_4K-JPG_Opacity.jpg`. Raw-pixel comparison: matches Sequoia's `palmate` + `lobed` exactly; `ovate` differs (alpha mean 42.23 vs 80.88) — Sequoia's recipe for the non-square 4096×2048 LeafSet005 source involved a step I couldn't reverse-engineer (compositing? alpha multiply?). Resolution: compositor `skip-existing` guard for Sequoia's 3, so they stay byte-for-byte intact; my 7 new packs use the verified-match recipe.
+- **`arborist/leaf-pack-bindings.json` — additive extension only.** `morphologyToPacks` gains semantic-id entries (`palmate`, `lobed`, `serrate_ovate`, …) ahead of each morphology's legacy `LeafSet0xx` entry, so Lidar/Procedural auto-suggest will resolve a dir-kind pack first while the legacy entries still match for any existing override. Two new morphology buckets: `seasonal_elm` → `elm_autumn`, `seasonal_oak` → `oak_autumn`. `speciesOverrides` and `shapeToMorphology` unchanged (avoiding the "don't refactor" line in the brief). Bonus `ovate` morphology key added (was missing — `ovate_branchlet` existed but no plain `ovate`).
+- **`scratch/compose-leaf-packs.mjs`** — deterministic compositor (~110 LOC). Re-runs idempotently: skips any shape.png that already exists, rewrites meta.json only when content changes (writeIfChanged + utimesSync no-op). Total library footprint after expansion: **8.65 MB** across 10 packs (well under the 50 MB flag).
+- **Endpoint dynamic-scan already worked.** `generate-salon.js#listLeafPacks` reads the shapes dir at request time and returns `{packId, kind:'dir'|'flat'}` — no code change needed; the 7 new packs appeared the instant the directories existed. `arborist/serve.js` untouched. Verified via direct module invocation (server wasn't running in dispatch env): all 10 dir-kind packs returned, sorted alphabetically alongside the legacy flat fallbacks.
+- **`arborist/FEATURES.md`** — Salon Leaves row updated from 3 → 10 packs with the new pack list + sidecar mention.
+
+### What this brief explicitly didn't do
+
+- No runtime gradient-tinting (Phase F proper, separate arc)
+- No annual-cycle phenology metadata (year-long tree doctrine, Phase F arc)
+- No per-Look palette overrides for leaves
+- No leaf-card emission rule changes — `generate-salon.js` leaf path stays Holm's neighbor; not entered
+- No `naturalSize`-driven runtime card scale yet — today the operator's Salon scale slider remains the source of truth
+- No SalonWorkstage Bark surface contact (Holm's Brief 2 territory)
+- No `treeAtlasMaterial.js` / `InstancedTrees.jsx` / `bake-look.js` / `survey-deleaf.js` touches
+
+### Acceptance criteria
+
+1. ✅ 10 pack directories: palmate, lobed, ovate, serrate_ovate, heart, elm_autumn, oak_autumn, lanceolate, long_needle, ovate_large
+2. ✅ Each has both `shape.png` AND `meta.json`
+3. ✅ All 10 shape.png distinct sha1 (no duplicates) — verified by compositor
+4. ✅ Each `meta.json` carries `morphology`, `naturalSize`, `recommendedSpecies`, `source`
+5. ✅ `arborist/leaf-pack-bindings.json` covers all 10 packs in morphology mappings (additive extension)
+6. ✅ `listLeafPacks()` returns all 10 dir-kind packs (verified by direct module call)
+7. ⏸️ Manual Salon UI smoke test — operator-side; deferred to operator turn (`npm run arborist` + open Salon)
+8. ⏸️ Adopt-each-pack visual differentiation — same; operator-verify (no regression on Sequoia's 3, since shape.png bytes untouched)
+9. ✅ Determinism: `node scratch/compose-leaf-packs.mjs` re-runs without filesystem change (skip-existing + writeIfChanged content-equal short-circuit)
+10. ✅ Zero file-surface overlap with Holm's Brief 2 — `git status` confirms only `arborist/leaf-pack-bindings.json`, `arborist/FEATURES.md`, `arborist/NOTES.md`, new shape pack dirs, and `scratch/compose-leaf-packs.mjs` are touched
+
+### Surface items (per `feedback_baby_must_surface_scope_drift`)
+
+1. **`ovate` shape.png recipe drift.** Sequoia's `public/textures/leaves/shapes/ovate/shape.png` does NOT match a plain `resize(1024,1024).cover/contain/fill` of LeafSet005 Color+Opacity at the pixel level (RGB matched with `fit:cover` but alpha mean diverged 42→81 — half-multiplied?). Compositor sidesteps by skip-existing; recipe for re-deriving is unknown. Surface for Sequoia note in next continuation if anyone needs to re-bake the existing 3. Palmate + lobed reproduce pixel-identical, so the LeafSet005 wide-aspect source is the special case.
+2. **Bindings file convention drift.** `speciesOverrides` still uses `LeafSet0xx` packIds even though the actual Salon picker shows semantic ids; Lidar/Procedural auto-suggest resolution still works because the legacy entries remain in `morphologyToPacks`. Out of scope to migrate — would be a refactor; left for operator decision in a future curation pass.
+3. **Aspect-ratio normalization.** LeafSet005 (ovate) and LeafSet013 (lanceolate) are 4096×2048 from the vendor (twice as wide as tall). The compositor squashes them to 1024×1024 to match Sequoia's existing-pack convention — this distorts the leaves' natural aspect. May not matter for alpha-test cards rendering at any operator-tuned scale, but if any pack reads visually wrong-shaped, it's the recipe not the source. Surface for operator review.
+4. **`naturalSize` defaults.** Used brief-suggested values (palmate 10 cm, lobed 12, ovate 8, serrate_ovate 8, heart 10, elm_autumn 8, oak_autumn 12, lanceolate 8, long_needle 15, ovate_large 15). Long-needle pine cones in at 15 cm — that's the needle length, not crown-cluster; if Phase F treats this as "single card visual extent" the value may want tuning down once card-scale drives off naturalSize.
+5. **`recommendedSpecies` values are operator-curated guesses.** Each pack got 1–3 binomials matching the morphology family from BACKLOG. Format is binomial string array (`acer_saccharum`, `quercus_alba`, …) matching the `public/trees/index.json` keys minus the `_procedural` suffix. Surface to operator for validation; treat as starter list not authoritative.
+6. **No vendor packs missing.** All 10 LeafSet directories the BACKLOG predicted exist in `assets/botanical-reference-hires/`. No coverage gaps surfaced.
+7. **sRGB color-space.** sharp's joinChannel preserves sRGB input → sRGB output by default; the resulting PNGs report `space: 'srgb'` in metadata (verified on Sequoia's existing shape.png + my new ones).
+8. **Per-pack `meta.json` for Sequoia's 3 (palmate/lobed/ovate) is new — additive backfill.** Brief listed them in the file-by-file plan; included.
+9. **No opportunity-to-consolidate spotted in Sequoia's 3-pack files.** They follow the same `shape.png`-only directory convention this brief extends; no refactor advised.
+10. **Endpoint did NOT require a code change.** Already dir-scanning. Confirmed at `generate-salon.js:176–192`.
+
+### Hands-on-the-tree feel
+
+Jacob's note ("the leaves will bring the trees to life") sat with me through the dispatch. The library jump from 3 → 10 lands the morphology variety the Salon needs to read distinct across species: oaks lobed, willows lance, redbuds heart-shaped, pines needled, elms+oaks with seasonal variants ready for the Phase F annual-cycle work when it ships. Compositor recipe was the small unlock — `sharp.joinChannel` made the Color+Opacity → RGBA composition a 4-line operation, and the verify-pixel-match step against Sequoia's palmate locked the convention before scaling to 7 packs.
+
+---
+
 ## 2026-05-21 — Project: Salon — Brief 1.5c (Riven) — bundle-aware re-de-leaf
 
 **Cold dispatch. Extended Whittle's `arborist/survey-deleaf.js` with multi-root bundle detection + per-root decomposition + transform-baking + bbox-recenter, plus a "false bundle" suppressor (same-material-across-all-roots = semantic SG grouping, not a real bundle). Net delta: 18 new bundle-decomposed chassis added (candicands × 12, gleditsia × 4, populus_alba_fall × 2), 159 chassis total. Whittle's 141 single-tree chassis preserved byte-identical — 133 re-emitted via the unchanged Whittle path this run, 8 sit untouched on disk because their sources now route through the bundle path. Brief 0 report `scratch/brief-0-vendor-tree-survey-whittle.md` preserved as historical snapshot; bundle-aware survey lives at `scratch/brief-1.5c-bundle-survey-riven.md`.**

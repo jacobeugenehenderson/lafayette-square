@@ -589,6 +589,124 @@ function SlotCard({
   )
 }
 
+// ── Brief 2 (Holm): bark gradient stops editor ───────────────────────────
+//
+// Multi-stop color ramp authored per composition. Runtime samples the LUT
+// per-instance via hash so 5 trees of the same variant land at different
+// positions along the ramp. Every commit pipes through onCommit (= a
+// setSalonSlotParams patch on bark.gradientStops) so the overlay POST +
+// adopt+republish chain remains the single source of truth.
+function hexToRgb(hex) {
+  const s = (hex || '#ffffff').replace(/^#/, '')
+  const v = s.length === 3 ? s.split('').map(c => c + c).join('') : s
+  return [parseInt(v.slice(0, 2), 16) || 0, parseInt(v.slice(2, 4), 16) || 0, parseInt(v.slice(4, 6), 16) || 0]
+}
+function rgbToHex(r, g, b) {
+  const h = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0')
+  return `#${h(r)}${h(g)}${h(b)}`
+}
+function lightenHex(hex, amt) {
+  const [r, g, b] = hexToRgb(hex)
+  return rgbToHex(r + (255 - r) * amt, g + (255 - g) * amt, b + (255 - b) * amt)
+}
+function rampCss(stops) {
+  if (!stops || stops.length === 0) return 'linear-gradient(to right, #888, #888)'
+  const sorted = [...stops].sort((a, b) => a.t - b.t)
+  const parts = sorted.map(s => `${s.color} ${(s.t * 100).toFixed(1)}%`)
+  return `linear-gradient(to right, ${parts.join(', ')})`
+}
+function insertMidpointStop(stops) {
+  const sorted = [...stops].sort((a, b) => a.t - b.t)
+  let gapMax = 0, gapI = 0
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const g = sorted[i + 1].t - sorted[i].t
+    if (g > gapMax) { gapMax = g; gapI = i }
+  }
+  const a = sorted[gapI], b = sorted[gapI + 1]
+  const t = (a.t + b.t) / 2
+  const ac = hexToRgb(a.color), bc = hexToRgb(b.color)
+  const color = rgbToHex((ac[0] + bc[0]) / 2, (ac[1] + bc[1]) / 2, (ac[2] + bc[2]) / 2)
+  const next = [...sorted.slice(0, gapI + 1), { t, color }, ...sorted.slice(gapI + 1)]
+  return next
+}
+function BarkGradientEditor({ stops, tintBase, onCommit }) {
+  // Stash the last-authored stops in a ref so a toggle-off-then-on round
+  // trip preserves the operator's work (brief AC #6). The stash is updated
+  // whenever a valid (>=2-stop) array passes through.
+  const stashRef = useRef(null)
+  if (Array.isArray(stops) && stops.length >= 2) stashRef.current = stops
+  const on = Array.isArray(stops) && stops.length >= 2
+  const toggle = (e) => {
+    if (e.target.checked) {
+      const next = stashRef.current && stashRef.current.length >= 2
+        ? stashRef.current
+        : [
+            { t: 0, color: tintBase || '#3a2820' },
+            { t: 1, color: lightenHex(tintBase || '#3a2820', 0.5) },
+          ]
+      onCommit(next)
+    } else {
+      // Empty array passes through the overlay POST → patchManifestForSalon
+      // sees stops.length < 2 → clears variant.bark.gradientStops on disk.
+      onCommit([])
+    }
+  }
+  if (!on) {
+    return (
+      <Row label="Use gradient">
+        <input type="checkbox" checked={false} onChange={toggle} />
+      </Row>
+    )
+  }
+  const sorted = [...stops].sort((a, b) => a.t - b.t)
+  const commit = (next) => onCommit(next.sort((a, b) => a.t - b.t))
+  const setStop = (idx, patch) => commit(sorted.map((s, i) => i === idx ? { ...s, ...patch } : s))
+  const deleteStop = (idx) => {
+    if (sorted.length <= 2) return
+    commit(sorted.filter((_, i) => i !== idx))
+  }
+  const addStop = () => commit(insertMidpointStop(sorted))
+  return (
+    <>
+      <Row label="Use gradient">
+        <input type="checkbox" checked={true} onChange={toggle} />
+      </Row>
+      <div style={{
+        height: 32, borderRadius: 4, margin: '6px 0',
+        background: rampCss(sorted),
+        border: '1px solid #444',
+      }} />
+      {sorted.map((s, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: 11 }}>
+          <span style={{ width: 18, color: '#888', fontFamily: 'monospace' }}>#{i + 1}</span>
+          <DraftSlider min={0} max={1} step={0.01} value={s.t}
+            onCommit={(v) => setStop(i, { t: v })}
+            format={(v) => v.toFixed(2)} />
+          <input type="color" value={s.color} style={colorStyle}
+            onChange={(e) => setStop(i, { color: e.target.value })} />
+          <button onClick={() => deleteStop(i)} disabled={sorted.length <= 2}
+            title={sorted.length <= 2 ? 'minimum 2 stops required' : 'delete stop'}
+            style={{
+              width: 22, height: 22, padding: 0,
+              cursor: sorted.length <= 2 ? 'not-allowed' : 'pointer',
+              background: 'transparent',
+              color: sorted.length <= 2 ? '#444' : '#a55',
+              border: '1px solid #333', borderRadius: 3,
+            }}>×</button>
+        </div>
+      ))}
+      <Row label="">
+        <button onClick={addStop} style={{ ...btnStyle({ block: true }), fontSize: 11, flex: 1 }}>
+          + Add stop
+        </button>
+      </Row>
+      <div style={{ fontSize: 10, color: '#888', fontStyle: 'italic', marginTop: 2 }}>
+        Gradient overrides tint base + jitter at runtime
+      </div>
+    </>
+  )
+}
+
 // ── Salon controls panel (the Brief 1 replacement for SCAPanel) ─────────
 
 function SalonControlsPanel({
@@ -767,6 +885,10 @@ function SalonControlsPanel({
           onCommit={(v) => onParams({ bark: { roughnessOverride: v } })}
           format={(v) => v.toFixed(2)} />
       </Row>
+      <BarkGradientEditor
+        stops={bark?.gradientStops}
+        tintBase={bark?.tintBase}
+        onCommit={(next) => onParams({ bark: { gradientStops: next } })} />
 
       <SectionLabel>Leaves</SectionLabel>
       <Row label="Pack">
