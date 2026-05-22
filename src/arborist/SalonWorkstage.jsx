@@ -71,6 +71,25 @@ export default function SalonWorkstage() {
   const publishing          = useArboristStore(s => s.salonPublishing)
   const error               = useArboristStore(s => s.salonError)
   const activeLookId        = useArboristStore(s => s.activeLookId)
+  const loadSalonSpecies    = useArboristStore(s => s.loadSalonSpecies)
+  const loadSalonLibraries  = useArboristStore(s => s.loadSalonLibraries)
+  // Brief 1.5b (Quill): chassis curation surface.
+  const chassisCuration     = useArboristStore(s => s.salonChassisCuration)
+  const loadChassisCuration = useArboristStore(s => s.loadSalonChassisCuration)
+  const setChassisCuration  = useArboristStore(s => s.setSalonChassisCuration)
+
+  // Mount-time fetch: when Salon was restored open via localStorage, setSalonOpen
+  // never fires this session, so the store's load actions wouldn't otherwise run.
+  // Re-fetch on every mount; cheap (small JSON) and idempotent.
+  useEffect(() => {
+    loadSalonSpecies()
+    loadSalonLibraries()
+    loadChassisCuration()
+  }, [loadSalonSpecies, loadSalonLibraries, loadChassisCuration])
+
+  // "Approved only" filter — default ON. Persists for the session only;
+  // the filter is a viewing preference, not authored chassis state.
+  const [approvedOnly, setApprovedOnly] = useState(true)
 
   const compositions = compositionsBySpecies[activeSpecies] || []
   const dirty        = dirtyBySpecies[activeSpecies] || {}
@@ -254,6 +273,10 @@ export default function SalonWorkstage() {
             onNameChange={(name) => setSlotName(activeSpecies, activeComposition.slot, name)}
             onReset={() => resetSlot(activeSpecies, activeComposition.slot)}
             onAdopt={() => adoptSlot(activeSpecies, activeComposition.slot)}
+            chassisCuration={chassisCuration}
+            onChassisCuration={setChassisCuration}
+            approvedOnly={approvedOnly}
+            onApprovedOnlyChange={setApprovedOnly}
           />
         )}
       </main>
@@ -307,6 +330,7 @@ function SlotCard({
   windEnabled, windStrength, onWindEnabledChange, onWindStrengthChange,
   previewLod, onPreviewLodChange,
   onParams, onNameChange, onReset, onAdopt,
+  chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
 }) {
   const [glbUrl, setGlbUrl] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -363,13 +387,19 @@ function SlotCard({
 
   const viewKey = `${species}:${slot}:${chassis || 'none'}`
 
-  // Inspection-only transforms, mirrors ProceduralWorkstage SlotCard exactly.
+  // Inspection-only transforms. Includes lean/tilt (X/Z) lifted from
+  // Workstage.jsx for chassis straightening — vendor GLBs come at random tilts.
+  // Reset deps include chassis so scale/tilt don't leak across chassis picks
+  // within the same slot.
   const [rotationY, setRotationY] = useState(0)
   const [posOffset, setPosOffset] = useState([0, 0, 0])
   const [scaleOverride, setScaleOverride] = useState(1)
+  const [tiltX, setTiltX] = useState(0)
+  const [tiltZ, setTiltZ] = useState(0)
   useEffect(() => {
     setRotationY(0); setPosOffset([0, 0, 0]); setScaleOverride(1)
-  }, [species, slot])
+    setTiltX(0); setTiltZ(0)
+  }, [species, slot, chassis])
 
   return (
     <div style={{
@@ -395,7 +425,7 @@ function SlotCard({
             targetCategory={targetCategory}
             effectiveScale={scaleOverride}
             positionOffset={posOffset}
-            rotationOffset={[0, rotationY, 0]}
+            rotationOffset={[tiltX, rotationY, tiltZ]}
             onRotationChange={(_rx, ry, _rz) => setRotationY(ry)}
             onPositionChange={(x, y, z) => setPosOffset([x, y, z])}
             onScaleChange={(s) => setScaleOverride(s)}
@@ -498,6 +528,14 @@ function SlotCard({
           barkRefs={barkRefs}
           leafPacks={leafPacks}
           onParams={onParams}
+          tiltX={tiltX}
+          tiltZ={tiltZ}
+          onTiltXChange={setTiltX}
+          onTiltZChange={setTiltZ}
+          chassisCuration={chassisCuration}
+          onChassisCuration={onChassisCuration}
+          approvedOnly={approvedOnly}
+          onApprovedOnlyChange={onApprovedOnlyChange}
         />
 
         {/* Footer: name + reset + adopt */}
@@ -558,17 +596,51 @@ function SalonControlsPanel({
   chassisCatalog, speciesMorphology,
   barkRefs, leafPacks,
   onParams,
+  tiltX, tiltZ, onTiltXChange, onTiltZChange,
+  chassisCuration, onChassisCuration, approvedOnly, onApprovedOnlyChange,
 }) {
   // Chassis picker filtered by morphology suggestion: matching-morphology
-  // first, then everything else. Empty-state is handled by the parent
-  // (whole workstage shows the regenerate instruction when catalog is empty).
+  // first, then everything else. Brief 1.5b layers curation on top:
+  //   - if `approvedOnly` is ON, drop entries whose `approved !== true`
+  //   - within the surviving set, the morphology ordering still applies
+  //   - displayName (when set) overrides the filename for sort + label
+  // Empty-state is handled by the parent (whole workstage shows the
+  // regenerate instruction when catalog is empty).
+  const curationKey = (c) => `${c.name}.glb`
   const ranked = useMemo(() => {
     if (chassisCatalog.length === 0) return []
-    const matches = chassisCatalog.filter(c => c.morphology === speciesMorphology)
-    const others  = chassisCatalog.filter(c => c.morphology !== speciesMorphology)
+    let pool = chassisCatalog
+    if (approvedOnly) {
+      pool = pool.filter(c => (chassisCuration[curationKey(c)] || {}).approved === true)
+    }
+    const matches = pool.filter(c => c.morphology === speciesMorphology)
+    const others  = pool.filter(c => c.morphology !== speciesMorphology)
     return [...matches, ...others]
-  }, [chassisCatalog, speciesMorphology])
+  }, [chassisCatalog, speciesMorphology, approvedOnly, chassisCuration])
   const activeChassis = ranked.find(c => c.name === chassis)
+  // Curation entry for the currently-picked chassis (may be undefined if
+  // chassis is null OR if the chassis is excluded by the approved filter
+  // but still selected on the slot — we read from chassisCatalog directly
+  // in that case so the curation row keeps working for in-flight slots).
+  const pickedChassisInCatalog = chassis
+    ? chassisCatalog.find(c => c.name === chassis)
+    : null
+  const pickedCurationKey = pickedChassisInCatalog ? curationKey(pickedChassisInCatalog) : null
+  const pickedCuration = pickedCurationKey ? (chassisCuration[pickedCurationKey] || null) : null
+  const approvalState = pickedCuration?.approved ?? null   // true / false / null
+  // Helper: glyph + label for a chassis in the dropdown. Uses the
+  // operator's displayName when present (Brief 1.5b); falls back to the
+  // chassis filename otherwise.
+  const labelFor = (c) => {
+    const cur = chassisCuration[curationKey(c)]
+    const dn = cur?.displayName
+    const main = (dn && dn.length > 0) ? dn : c.name
+    const glyph = cur?.approved === true ? '★'
+                : cur?.approved === false ? '✗'
+                : '·'
+    const height = c.heightRange ? ` · ${c.heightRange[1].toFixed(1)}m` : ''
+    return `${glyph} ${main} · ${c.morphology}${height}`
+  }
 
   return (
     <div style={{
@@ -579,6 +651,18 @@ function SalonControlsPanel({
       fontSize: 11, color: '#aaa',
     }}>
       <SectionLabel>Chassis</SectionLabel>
+      {/* Brief 1.5b: approved-only filter toggle. Default ON; flip OFF to
+          reveal unreviewed + rejected chassis when authoring new curation. */}
+      <Row label="">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#aaa' }}>
+          <input type="checkbox" checked={!!approvedOnly}
+            onChange={(e) => onApprovedOnlyChange(e.target.checked)}
+            style={{ margin: 0 }} />
+          <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Approved only {approvedOnly ? `(${ranked.length})` : `(${chassisCatalog.length})`}
+          </span>
+        </label>
+      </Row>
       <Row label="Pick">
         <select
           value={chassis || ''}
@@ -587,7 +671,7 @@ function SalonControlsPanel({
           <option value="">(none)</option>
           {ranked.map(c => (
             <option key={c.name} value={c.name}>
-              {c.name} · {c.morphology}{c.heightRange ? ` · ${c.heightRange[1].toFixed(1)}m` : ''}
+              {labelFor(c)}
             </option>
           ))}
         </select>
@@ -599,6 +683,47 @@ function SalonControlsPanel({
           </span>
         </Row>
       )}
+      {/* Brief 1.5b: curation row — appears once a chassis is picked.
+          displayName commits on blur (per `feedback_debounced_save_must
+          _flush_before_dependent_post`); tri-state approval commits
+          immediately; notes textarea collapsed by default. */}
+      {pickedCurationKey && (
+        <CurationRow
+          chassisFilename={pickedCurationKey}
+          entry={pickedCuration}
+          approvalState={approvalState}
+          onCommit={onChassisCuration}
+        />
+      )}
+      <Row label="Tilt X">
+        <input type="range" min={-30} max={30} step={1}
+          value={(tiltX * 180 / Math.PI).toFixed(0)}
+          onChange={(e) => onTiltXChange(parseFloat(e.target.value) * Math.PI / 180)}
+          style={{ flex: 1, accentColor: '#e8b860' }} />
+        <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
+          {(tiltX * 180 / Math.PI).toFixed(0)}°
+        </span>
+      </Row>
+      <Row label="Tilt Z">
+        <input type="range" min={-30} max={30} step={1}
+          value={(tiltZ * 180 / Math.PI).toFixed(0)}
+          onChange={(e) => onTiltZChange(parseFloat(e.target.value) * Math.PI / 180)}
+          style={{ flex: 1, accentColor: '#e8b860' }} />
+        <span style={{ width: 32, textAlign: 'right', fontSize: 10, color: '#aaa', fontVariantNumeric: 'tabular-nums' }}>
+          {(tiltZ * 180 / Math.PI).toFixed(0)}°
+        </span>
+      </Row>
+      <Row label="">
+        <button
+          onClick={() => {
+            // Y-up flip: toggle a -90° X tilt (root-cause for Z-up chassis)
+            const cur = tiltX
+            onTiltXChange(Math.abs(cur + Math.PI / 2) < 0.01 ? 0 : -Math.PI / 2)
+          }}
+          style={{ ...btnStyle({ block: true }), fontSize: 11 }}>
+          {Math.abs(tiltX + Math.PI / 2) < 0.01 ? 'Z-up applied — clear' : 'Y-up trunk (90° X)'}
+        </button>
+      </Row>
 
       <SectionLabel>Bark</SectionLabel>
       <Row label="Ref">
@@ -783,6 +908,118 @@ const colorStyle = {
   border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 3,
   cursor: 'pointer',
+}
+
+// Brief 1.5b: per-chassis curation editor — displayName + tri-state
+// approved + notes. Commits each field on its own gesture:
+//   - displayName commits on blur (or Enter); empty string clears
+//   - approval cycle button commits immediately per click
+//   - notes textarea is collapsed by default; expands inline; commits on blur
+// `onCommit(chassisFilename, patch)` is the store action; patch follows the
+// absent-keys-preserved convention so per-field commits don't clobber siblings.
+function CurationRow({ chassisFilename, entry, approvalState, onCommit }) {
+  const [nameDraft, setNameDraft] = useState(entry?.displayName || '')
+  const [notesDraft, setNotesDraft] = useState(entry?.notes || '')
+  const [notesOpen, setNotesOpen] = useState(!!(entry?.notes))
+  useEffect(() => { setNameDraft(entry?.displayName || '') }, [chassisFilename, entry?.displayName])
+  useEffect(() => { setNotesDraft(entry?.notes || '') }, [chassisFilename, entry?.notes])
+
+  // Flush pending displayName before any chassis switch happens upstream.
+  // We can't intercept the switch directly, but on unmount (which fires
+  // when SlotCard remounts on chassis change) we flush in cleanup.
+  // `feedback_debounced_save_must_flush_before_dependent_post`.
+  useEffect(() => {
+    return () => {
+      if ((entry?.displayName || '') !== nameDraft) {
+        onCommit(chassisFilename, { displayName: nameDraft || null })
+      }
+      if ((entry?.notes || '') !== notesDraft) {
+        onCommit(chassisFilename, { notes: notesDraft || null })
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chassisFilename])
+
+  const commitName = () => {
+    if ((entry?.displayName || '') === nameDraft) return
+    onCommit(chassisFilename, { displayName: nameDraft || null })
+  }
+  const commitNotes = () => {
+    if ((entry?.notes || '') === notesDraft) return
+    onCommit(chassisFilename, { notes: notesDraft || null })
+  }
+  // Cycle: unreviewed (null) → approved (true) → rejected (false) → null …
+  const cycleApproval = () => {
+    const next = approvalState == null ? true : approvalState === true ? false : null
+    onCommit(chassisFilename, { approved: next })
+  }
+  const approvalLabel = approvalState === true ? '★ Approved'
+                      : approvalState === false ? '✗ Rejected'
+                      : '· Unreviewed'
+  const approvalColor = approvalState === true ? '#9ed8b0'
+                      : approvalState === false ? '#e87878'
+                      : '#888'
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 6,
+      padding: '8px 10px', marginTop: 4,
+      background: 'rgba(232,184,96,0.05)',
+      border: '1px solid rgba(232,184,96,0.15)',
+      borderRadius: 4,
+    }}>
+      <div style={{ fontSize: 10, color: '#888', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        Curate · <span style={{ fontFamily: 'monospace', textTransform: 'none', color: '#aaa', letterSpacing: 0 }}>{chassisFilename}</span>
+      </div>
+      <Row label="Name">
+        <input type="text"
+          placeholder="e.g. Maple base — good crotches"
+          value={nameDraft}
+          onChange={(e) => setNameDraft(e.target.value)}
+          onBlur={commitName}
+          onKeyDown={(e) => { if (e.key === 'Enter') { commitName(); e.currentTarget.blur() } }}
+          style={{ ...selectStyle, padding: '4px 6px' }} />
+      </Row>
+      <Row label="Status">
+        <button onClick={cycleApproval}
+          title="Click to cycle: unreviewed → approved → rejected"
+          style={{
+            ...btnStyle({ block: true }),
+            border: `1px solid ${approvalColor}`,
+            color: approvalColor,
+            textAlign: 'left',
+            fontSize: 11,
+          }}>
+          {approvalLabel}
+        </button>
+      </Row>
+      <Row label="Notes">
+        {!notesOpen && !notesDraft && (
+          <button onClick={() => setNotesOpen(true)}
+            style={{ ...btnStyle({ block: true }), color: '#888', fontSize: 11 }}>
+            + Add note
+          </button>
+        )}
+        {(notesOpen || notesDraft) && (
+          <textarea
+            placeholder="Operator note (visible only here)"
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            onBlur={commitNotes}
+            rows={2}
+            style={{
+              flex: 1,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: '#ddd',
+              padding: '4px 6px', borderRadius: 3,
+              fontFamily: 'inherit', fontSize: 11,
+              resize: 'vertical',
+            }} />
+        )}
+      </Row>
+    </div>
+  )
 }
 
 function DraftSlider({ value, onCommit, min, max, step, format }) {

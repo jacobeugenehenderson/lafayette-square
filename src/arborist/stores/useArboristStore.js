@@ -446,6 +446,7 @@ const useArboristStore = create((set, get) => ({
     if (open) {
       get().loadSalonSpecies()
       get().loadSalonLibraries()
+      get().loadSalonChassisCuration()
       const active = get().salonActiveSpecies
       if (active) get().loadSalonCompositions(active)
     }
@@ -461,8 +462,13 @@ const useArboristStore = create((set, get) => ({
   salonChassisCatalog: [],         // [{name, morphology, heightRange, source, ...}]
   salonBarkRefs: [],               // ['Bark003', ...]
   salonLeafPacks: [],              // [{packId, kind}]
-  salonError: null,
-  salonPublishing: false,
+  // Brief 1.5b (Quill): operator-authored chassis curation. Keyed by
+  // chassis filename (`<name>.glb`); value is `{displayName, approved, notes}`.
+  // `approved` is tri-state: true/false/null (unreviewed). Absent entry is
+  // equivalent to all-unreviewed. Lives in `arborist/state/_chassis-curation.json`
+  // — sibling to the gitignored chassis library so it survives Brief 1.5c's
+  // upcoming `survey-deleaf.js` re-run.
+  salonChassisCuration: {},        // { '<name>.glb': {displayName, approved, notes} }
 
   loadSalonSpecies: async () => {
     try {
@@ -499,6 +505,46 @@ const useArboristStore = create((set, get) => ({
       })
     } catch (err) {
       set({ salonError: String(err) })
+    }
+  },
+  loadSalonChassisCuration: async () => {
+    try {
+      const r = await fetch(`/api/arborist/salon/curation?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const d = await r.json()
+      set({ salonChassisCuration: d.chassis || {} })
+    } catch (err) {
+      set({ salonError: String(err) })
+    }
+  },
+  // Optimistic update + POST. Server merges with absent-keys-preserved
+  // (`feedback_absence_means_inherit_in_authored_blocks`); we mirror that
+  // locally before the round-trip so the UI doesn't flicker. On HTTP
+  // failure, refetch from the canonical disk state.
+  setSalonChassisCuration: async (chassisName, patch) => {
+    set(s => {
+      const prev = s.salonChassisCuration[chassisName] || { displayName: '', approved: null, notes: '' }
+      const next = { ...prev }
+      if ('displayName' in patch) next.displayName = patch.displayName == null ? '' : String(patch.displayName)
+      if ('approved'    in patch) next.approved    = patch.approved === true ? true : patch.approved === false ? false : null
+      if ('notes'       in patch) next.notes       = patch.notes == null ? '' : String(patch.notes)
+      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes)
+      const map = { ...s.salonChassisCuration }
+      if (isEmpty) delete map[chassisName]
+      else map[chassisName] = next
+      return { salonChassisCuration: map }
+    })
+    try {
+      const r = await fetch(`/api/arborist/salon/curation/${encodeURIComponent(chassisName)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    } catch (err) {
+      set({ salonError: String(err) })
+      // Re-sync from disk so local state matches what's actually persisted.
+      get().loadSalonChassisCuration()
     }
   },
   loadSalonCompositions: async (speciesId) => {

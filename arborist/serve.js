@@ -1076,6 +1076,68 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    // ── Salon chassis curation (Brief 1.5b, Quill 2026-05-21) ─────────
+    //
+    // Operator-authored sidecar at `arborist/state/_chassis-curation.json`
+    // (NOT under public/trees/_chassis/, NOT regenerable by survey-deleaf).
+    // Each entry is keyed by chassis filename (`<name>.glb`) and carries
+    // `{displayName, approved, notes}`. `approved` is a tri-state:
+    // `true` (approved), `false` (rejected), `null` (unreviewed). Absent
+    // entry == fully unreviewed.
+
+    // GET /salon/curation — full curation file or empty stub
+    if (req.method === 'GET' && path === '/salon/curation') {
+      const p = join(STATE_DIR, '_chassis-curation.json')
+      const data = readJsonOrNull(p)
+      return jsonRes(res, 200, data && data.chassis ? data : { chassis: {} })
+    }
+
+    // POST /salon/curation/:chassisName — merge with absent-keys-preserved
+    //
+    // Body fields:
+    //   displayName: string | null     null → clear to ""
+    //   approved:    true | false | null     null → restore unreviewed
+    //   notes:       string | null     null → clear to ""
+    // Fields ABSENT from body are NOT touched on disk
+    // (`feedback_absence_means_inherit_in_authored_blocks`). Empty entries
+    // (no displayName / null approved / empty notes) are pruned to keep
+    // the file from accumulating noise across browse-only sessions.
+    if (req.method === 'POST' && (m = path.match(/^\/salon\/curation\/(.+)$/))) {
+      const chassisName = decodeURIComponent(m[1])
+      // Defensive: chassis filenames are kebab/underscore + ".glb"; reject
+      // anything with path traversal or slashes.
+      if (chassisName.includes('/') || chassisName.includes('..') || chassisName.startsWith('.')) {
+        return jsonRes(res, 400, { error: 'invalid chassis name' })
+      }
+      const body = await readBody(req)
+      const p = join(STATE_DIR, '_chassis-curation.json')
+      const file = readJsonOrNull(p) || { chassis: {} }
+      if (!file.chassis || typeof file.chassis !== 'object') file.chassis = {}
+      const prev = file.chassis[chassisName] || { displayName: '', approved: null, notes: '' }
+      const next = { ...prev }
+      // Per-field merge: only touch fields that are PRESENT in body. The
+      // value `null` is a distinct signal (clear / unreview), not the
+      // same as "absent."
+      if ('displayName' in body) {
+        next.displayName = body.displayName == null ? '' : String(body.displayName)
+      }
+      if ('approved' in body) {
+        next.approved = body.approved === true ? true
+                      : body.approved === false ? false
+                      : null
+      }
+      if ('notes' in body) {
+        next.notes = body.notes == null ? '' : String(body.notes)
+      }
+      // Prune entries that revert to fully-unreviewed defaults so the
+      // file doesn't accumulate empty stubs from operator-cancelled edits.
+      const isEmpty = (!next.displayName) && next.approved == null && (!next.notes)
+      if (isEmpty) delete file.chassis[chassisName]
+      else file.chassis[chassisName] = next
+      writeJson(p, file)
+      return jsonRes(res, 200, { ok: true, chassisName, entry: isEmpty ? null : next })
+    }
+
     // GET /salon/:species/compositions — overlay with `effective` layered
     if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/compositions$/))) {
       const species = m[1]

@@ -4,6 +4,49 @@
 
 ---
 
+## 2026-05-21 — Project: Salon — Brief 1.5b (Quill) — chassis curation surface
+
+**Warm continuation of Sequoia's Salon arc. Operator can now rename and approve/reject any of the 141 chassis from within Salon; curation persists in `arborist/state/_chassis-curation.json` (sibling to compositions, NOT under `public/trees/_chassis/`) so it survives Brief 1.5c's upcoming `survey-deleaf.js` re-run. Picker shows displayName + glyph (★ / · / ✗); an "Approved only" filter defaults ON so the operator sees a curated subset; flipping it OFF exposes the unreviewed + rejected entries for triage.**
+
+### What ships
+
+- `arborist/serve.js` (+62 LOC). Two endpoints mirroring the Salon block's shape:
+  - `GET /salon/curation` — returns `{chassis: {…}}` (or `{chassis: {}}` when the file is absent).
+  - `POST /salon/curation/:chassisName` — merges `{displayName?, approved?, notes?}` into the chassis entry with absent-keys-preserved semantics per `feedback_absence_means_inherit_in_authored_blocks`. Fields ABSENT from the body don't touch the disk value; `null` for displayName/notes clears to `""`; `null` for `approved` restores the unreviewed (tri-state null) state. Entries that revert to fully-unreviewed defaults (`!displayName && approved == null && !notes`) are pruned so the file doesn't accumulate empty stubs from cancelled edits. Defensive against path traversal in `:chassisName`.
+- `src/arborist/stores/useArboristStore.js` (+45 LOC). New `salonChassisCuration` state (keyed by chassis filename, mirrors the disk shape). Actions: `loadSalonChassisCuration` (called from `setSalonOpen(true)` alongside `loadSalonLibraries`, and from `SalonWorkstage` mount-effect) + `setSalonChassisCuration(chassisName, patch)` (optimistic local update mirroring the same prune-on-empty semantics, then POST, refetch on failure).
+- `src/arborist/SalonWorkstage.jsx` (+135 LOC). New `CurationRow` component renders below the chassis picker once a chassis is picked: `displayName` text input (commits on blur or Enter), Status cycle button (`unreviewed → approved → rejected → unreviewed`; commits immediately), Notes textarea (collapsed by default behind a `+ Add note` button; expands when clicked or when the chassis already has notes). The Chassis section's ranked-list memo now applies the approved filter (when ON) before morphology ordering. Dropdown labels swap to glyph + displayName + morphology + max-height. Top-of-section "Approved only" checkbox with live count badge.
+- `arborist/state/_chassis-curation.defaults.json` (new). Hand-authored backstop carrying the schema doc + an empty `chassis: {}`. Pairs with the machine-written `_chassis-curation.json` per `feedback_json_stringify_loses_handauthored_format`.
+- `arborist/FEATURES.md` — Salon curation paragraph + two endpoint rows.
+
+### Acceptance verified
+
+1. Operator can rename a chassis; reload retains the rename (curl POST → GET round-trips byte-identically).
+2. Tri-state Status button cycles correctly; persists each gesture.
+3. "Approved only" filter ON drops non-approved chassis from the picker; OFF reveals all. Live count chip distinguishes filtered vs total.
+4. Glyph rendering in dropdown (★ approved / · unreviewed / ✗ rejected) — verified via labelFor helper.
+5. **Survives `survey-deleaf.js` re-run** — `_chassis-curation.json` lives at `arborist/state/`, never touched by the de-leaf script. Brief 1.5c can regen the chassis library and curation entries stay intact. Entries that reference filenames no longer produced are orphaned but harmless (UI ignores them; only chassis present in the current catalog appear in the picker).
+6. **Absent keys preserved** — verified end-to-end: POST `{displayName: "Maple base"}` then POST `{notes: "verified"}` leaves both fields intact on disk; only the touched field changes. Tested empirically against the live server.
+7. **Empty-prune** — POST `{approved: null, displayName: null, notes: null}` removes the entry from the chassis map entirely.
+8. Empty `_chassis-curation.json` + Approved-only ON → picker shows zero options; toggle OFF reveals all 141 chassis (the normal pre-curation state).
+9. Determinism — same sequence of operator actions produces byte-identical `_chassis-curation.json` (JSON.stringify with 2-space indent, deterministic key insertion order).
+10. No regression on Brief 1 / 1.5a — chassis picker works without any curation data; SalonControlsPanel still threads tilt/bark/leaves props identically.
+
+### Surface items (per `feedback_baby_must_surface_scope_drift`)
+
+- **`approved: null` as the unreviewed tri-state.** Brief asked whether this feels right semantically vs missing-key. Answer: null is the right shape for the UI state machine — the cycle button needs three distinct values to drive its label, and missing-key + null both render as "Unreviewed" but only null is a positive-assertion of "operator chose to un-mark." The server treats them equivalently for filtering (`approved === true` is the only way through the picker filter), and the prune step ensures the file collapses null + empty + no-displayName entries down to absent. No friction observed.
+- **Picker performance at 141 entries.** Native HTML `<select>` renders cleanly; no virtualization needed. Will revisit if the chassis library grows past ~500 (v1.6 thumbnail-browser territory).
+- **Race condition with Brief 1.5c.** I never modify the chassis library or its meta sidecars; Brief 1.5c (per its scope) regenerates `public/trees/_chassis/`. The two surfaces only interact through chassis filenames; if 1.5c renames a chassis (e.g., decomposes `garden_mix_a.glb` into `garden_mix_a_subA.glb` + `garden_mix_a_subB.glb`), the existing `garden_mix_a.glb` curation entry orphans. The UI ignores orphaned entries (they're not in the catalog) but they remain on disk for archaeological purposes. **Recommendation for 1.5c**: if it produces a bundle-to-children mapping, surface it as a metadata file at `state/_chassis-bundle-map.json` so a future cleanup step could optionally migrate orphaned curation. Not in scope here.
+- **Layout overcrowding.** The curation row is conditional (only shown when a chassis is picked) and uses an amber-tinted background to visually separate it from the parameter rows above. Notes textarea collapses by default to keep the section compact for the common case (operator just sets approved + maybe displayName). Acceptable density observed at typical viewport widths.
+- **Affordances I wanted but did NOT add (per brief constraints):** bulk-approve, keyboard shortcut for the Status cycle, "next unreviewed chassis" navigation. All deferred — operator is intentionally one-at-a-time for v1.5.
+
+### Naming
+
+Picked **Quill** — fits a labeling/naming task. Future briefs in this arc can refer to "Quill's curation surface" for the chassis-rename + approval plumbing.
+
+Committed: `arborist/serve.js`, `src/arborist/stores/useArboristStore.js`, `src/arborist/SalonWorkstage.jsx`, `arborist/state/_chassis-curation.defaults.json`, `arborist/FEATURES.md`, this NOTES entry. Stash-isolated per `feedback_stash_isolate_per_file` — Brief 1.5a + prior-arc dirt left untouched.
+
+---
+
 ## 2026-05-21 — Project: Salon — Brief 1.5a (Sequoia continuing) — visible-quality completion pass
 
 **Warm-continuation of Brief 1. Fixed the gap between Brief 1's data-layer success and its visible-output failures: bark knobs now visibly drive runtime appearance via the missing manifest-patch step; leaf-pack picker now exposes three distinct shapes from LeafSet010/016/005 (vendor Color RGB composed with Opacity alpha → RGBA PNG); a Scale slider in the Salon Leaves panel lets the operator tune card extent (0.5×–3×, default 1× = ~10cm); LS-PROGRAMS reading after Salon bake confirmed to be safe via code reading — the runtime uses a single shared `treeMaterial` so Salon publish cannot inflate it.**

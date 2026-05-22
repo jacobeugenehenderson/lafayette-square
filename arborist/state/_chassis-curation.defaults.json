@@ -1,0 +1,9 @@
+{
+  "_comment": "Salon chassis curation — hand-authored defaults backstop. Paired with `_chassis-curation.json` per `feedback_json_stringify_loses_handauthored_format`. Brief 1.5b (Quill, 2026-05-21).",
+  "_schema": {
+    "chassis": "Keyed by chassis filename ('<name>.glb' under public/trees/_chassis/). Value: {displayName: string, approved: true|false|null, notes: string}. `approved: null` is the unreviewed tri-state (distinct from explicitly `false`). Absent entry == unreviewed + no displayName + no notes.",
+    "absent_keys_semantics": "POSTs preserve fields not present in the body. Passing `null` for displayName/notes clears the field to ''. Passing `null` for approved restores the unreviewed state. Empty entries (no displayName, approved=null, no notes) are pruned from the live file.",
+    "regen_safety": "This file (and its `.json` sibling) live under `arborist/state/`, NOT under `public/trees/_chassis/`. They survive Brief 1.5c's `survey-deleaf.js` re-runs because the script never touches `state/`. Curation entries that reference chassis filenames still produced by the regen remain valid; entries for filenames no longer produced are orphaned but harmless (the workstage ignores them)."
+  },
+  "chassis": {}
+}
