@@ -628,22 +628,39 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName }) {
   const seed = hashString(`${chassis}|${bark.ref}|${leaves.pack}`)
   const rng = mulberry32(seed)
   const authoredTags = Array.isArray(meta.leafAttachmentTags) ? meta.leafAttachmentTags : []
+  const occ = Math.max(0, Math.min(1, leaves.occupancy ?? 0.7))
   let attachments
   if (authoredTags.length > 0) {
-    attachments = authoredTags.map(t => t.pos || t)
+    // 2026-05-22: occupancy now subsamples the authored tags (was bypassed
+    // entirely when tags exist). Deterministic Fisher-Yates shuffle then
+    // slice. At occ=1.0 use all; at occ=0.5 use half; at occ=0.0 keep
+    // a minimum of 4 so the tree isn't entirely bare.
+    const all = authoredTags.map(t => t.pos || t)
+    const keep = Math.max(4, Math.round(all.length * occ))
+    if (keep >= all.length) {
+      attachments = all
+    } else {
+      const arr = [...all]
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1))
+        ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      }
+      attachments = arr.slice(0, keep)
+    }
   } else {
     // Density driven by occupancy: 0..1 maps to ~8..80 attachment points.
-    const occ = Math.max(0, Math.min(1, leaves.occupancy ?? 0.7))
     const attachmentCount = Math.round(8 + occ * 72)
     attachments = getUpperBboxSamples(positionsCombined, attachmentCount, rng)
   }
-  // Brief 1.5a: card size = BASE_CARD_SIZE × leaves.scale. spread shrinks
-  // proportionally so dense canopies don't gain visual chaos at small scales.
+  // 2026-05-22 tuning: card size scales with leaves.scale, but spread stays
+  // fixed (was 0.35 × scale — coupled spread to scale meant leaves spilled
+  // past branch tips when operator scaled up). cardsPerAttachment bumped from
+  // 5 → 12 for denser clusters that read as foliage mass.
   const scale = typeof leaves.scale === 'number' ? leaves.scale : 1.0
   const leafGeo = buildLeafGeometryFromAttachments(attachments, {
-    cardsPerAttachment: 5,
+    cardsPerAttachment: 12,
     cardSize: BASE_CARD_SIZE * scale,
-    spread: 0.35 * scale,
+    spread: 0.35,
     yCompression: 0.6,
   }, rng)
 

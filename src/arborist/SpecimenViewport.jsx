@@ -642,7 +642,12 @@ function Skeleton({
         // Sugar Maple single-leaf card. Vendor UV-spans [0,1] per card,
         // so a one-leaf-centered texture renders one leaf per card.
         // Idempotent via userData.__leafSwapped gate.
-        if (isLeaf && !m.userData.__leafSwapped) {
+        // 2026-05-22: scoped to vendor leaves only — Salon-emitted leaves
+        // (material name 'salonLeaves') carry the operator-picked pack
+        // texture and MUST NOT be overridden, or pack picks render as Sugar
+        // Maple regardless of selection.
+        const isSalonLeaf = /^salon/i.test(m.name || '')
+        if (isLeaf && !isSalonLeaf && !m.userData.__leafSwapped) {
           m.map = getSugarMapleLeafTex()
           m.transparent = true
           m.alphaTest = 0.5
