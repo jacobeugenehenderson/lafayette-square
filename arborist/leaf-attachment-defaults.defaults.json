@@ -1,0 +1,9 @@
+{
+  "_comment": "Immutable backstop for arborist/leaf-attachment-defaults.json per feedback_json_stringify_loses_hand-authored_format. Hand-authored reference values; if the live file is missing or unparseable, derive-leaf-attachment-tags.mjs falls back to these. Edit the live file, not this one.",
+  "_authoredBy": "baby Sorrel 2026-05-22 (Salon leaf-attachment-tags bake)",
+  "gridDensity": 8,
+  "topYFrac": 0.6,
+  "minAnchors": 30,
+  "maxAnchors": 250,
+  "densityMultiplier": 1.0
+}

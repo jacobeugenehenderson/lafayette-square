@@ -1,0 +1,7 @@
+{
+  "gridDensity": 8,
+  "topYFrac": 0.6,
+  "minAnchors": 30,
+  "maxAnchors": 250,
+  "densityMultiplier": 1.0
+}
