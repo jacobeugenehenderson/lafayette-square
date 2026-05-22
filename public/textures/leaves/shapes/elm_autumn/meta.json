@@ -1,0 +1,12 @@
+{
+  "morphology": "seasonal_elm",
+  "naturalSize": 8,
+  "tileGrid": [2, 3],
+  "recommendedSpecies": [
+    "ulmus_americana"
+  ],
+  "source": {
+    "vendor": "botanical-reference-hires",
+    "pack": "LeafSet007"
+  }
+}

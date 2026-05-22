@@ -895,6 +895,19 @@ function SalonControlsPanel({
         onCommit={(next) => onParams({ bark: { gradientStops: next } })} />
 
       <SectionLabel>Leaves</SectionLabel>
+      {/* Brief 5: bare-chassis inspection toggle (workstage preview only;
+          published artifact always carries leaves). */}
+      <Row label="Show">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: '#aaa' }}>
+          <input type="checkbox"
+            checked={leaves?.show !== false}
+            onChange={(e) => onParams({ leaves: { show: e.target.checked } })}
+            style={{ margin: 0 }} />
+          <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {leaves?.show !== false ? 'Visible' : 'Hidden (preview only)'}
+          </span>
+        </label>
+      </Row>
       <Row label="Pack">
         <select
           value={leaves?.pack || ''}

@@ -43,6 +43,13 @@ const DRY_RUN = process.argv.includes('--dry-run')
 
 // ── Classification heuristic (Brief 0 spec, first match wins) ──────────────
 // LEAF if:
+//   0. any ancestor node name matches /leaf|leaves|foliage/i — catches the
+//      C4D "SG" selection-group convention (`LeavesSG`, `FoliageSG`) the
+//      vendor preserves through FBX→GLB export even when all primitives
+//      share a single bark-named material. Tilia/EuropeanLinden was the
+//      tell (`BranchesSG / CapsSG / LeavesSG` all bound to
+//      `EuropeanLindenBark_Mat`). Node-name rule is STRICTLY tighter than
+//      the material rule below — no `branch` here (BranchesSG is wood).
 //   1. material name matches /leaf|leaves|foliage|leafCard|branch/i
 //      (note: `branch` here aligns with atlas-survey.js:34 — bomi1337-style
 //       vendor packs use `Branches_*` for leaf-card clusters, not bark.
@@ -52,12 +59,19 @@ const DRY_RUN = process.argv.includes('--dry-run')
 //   3. alphaMode in (MASK, BLEND) AND vertex count < 5000
 //   4. avg tri area < 0.001 m² AND tri count > 100
 // WOOD if:
+//   0. any ancestor node name matches /branch(es)?|caps?|trunk|wood|bark|stem/i
+//      — symmetric to LEAF rule 0, same C4D "SG" convention. `Caps`/`CapsSG`
+//      catches branch end-caps (visible cross-section discs where branches
+//      terminate — common stylistic detail across vendor packs, geometry is
+//      wood despite the obscure per-cap material names like `cap_03_mat`).
+//      LEAF checks above run first so a hypothetical `LeafBranch` ancestor
+//      would still classify LEAF.
 //   1. material name matches /bark|trunk|wood|stem/i
 //   2. primitive extras atlasKind === 'bark'
 //   3. opaque (no alphaMode set OR alphaMode === 'OPAQUE') AND material has a
 //      normal map texture binding
 // otherwise AMBIGUOUS.
-function classifyPrim(prim) {
+function classifyPrim(prim, ancestorNodeNames = []) {
   const mat = prim.getMaterial()
   const matName = (mat?.getName() || '').toLowerCase()
   const alphaMode = mat?.getAlphaMode() || 'OPAQUE'
@@ -73,22 +87,62 @@ function classifyPrim(prim) {
   const base = { matName: mat?.getName() || '<unnamed>', alphaMode, vcount, tcount, hasNormal, avgTriArea }
   const mk = (cls, why) => ({ cls, why, ...base })
 
-  // LEAF checks
+  // Explicit name / extras signals run FIRST — Brief 5 (Tendril, 2026-05-22)
+  // re-ordering. Previously LEAF rule 4 (avgTriArea < 0.001 + tcount > 100)
+  // ran before WOOD matName, which mis-fired on Robinia at vendor cm→m
+  // scale: every prim's absolute tri area is microscopic (bark + leaf alike),
+  // so geometric fallback shouldn't beat an explicit "bark" mat-name. Per
+  // `feedback_classifier_keyword_cross_check`, name signals are the strong
+  // axis; geometric heuristics are only a fallback for unnamed material slots.
+  if (ancestorNodeNames.some(n => /leaf|leaves|foliage/i.test(n))) {
+    return mk('LEAF', 'nodeName')
+  }
+  if (ancestorNodeNames.some(n => /branch(es)?|caps?|trunk|wood|bark|stem/i.test(n))) {
+    return mk('WOOD', 'nodeName')
+  }
   if (/leaf|leaves|foliage|leafcard|branch/.test(matName)) return mk('LEAF', 'matName')
+  if (/bark|trunk|wood|stem/.test(matName)) return mk('WOOD', 'matName')
   if (extras.atlasKind === 'leaf') return mk('LEAF', 'extras')
+  if (extras.atlasKind === 'bark') return mk('WOOD', 'extras')
+
+  // Geometric / material-property fallbacks — for prims whose mat names + node
+  // ancestry give us no signal. Brief-0 heuristics, unchanged in intent.
   if ((alphaMode === 'MASK' || alphaMode === 'BLEND') && vcount < 5000) {
     return mk('LEAF', `alphaMode=${alphaMode} vcount=${vcount}<5000`)
   }
   if (avgTriArea !== null && avgTriArea < 0.001 && tcount > 100) {
     return mk('LEAF', `avgTriArea=${avgTriArea.toExponential(2)} tcount=${tcount}`)
   }
-
-  // WOOD checks
-  if (/bark|trunk|wood|stem/.test(matName)) return mk('WOOD', 'matName')
-  if (extras.atlasKind === 'bark') return mk('WOOD', 'extras')
   if (alphaMode === 'OPAQUE' && hasNormal) return mk('WOOD', 'opaque+normalMap')
 
   return mk('AMBIGUOUS', `mat="${matName}" alpha=${alphaMode} v=${vcount} normalMap=${hasNormal}`)
+}
+
+// Brief 5 (Tendril): dispose vendor textures bound to a leaf material so the
+// chassis GLB doesn't ship a ~50MB vendor leaf atlas. Salon rebinds
+// `baseColorTexture` at composition time. The material slot itself stays
+// (downstream code looks up materials by name); only the texture resources
+// are disposed. `.dispose()` removes the texture from every material that
+// references it AND frees the image bytes from the buffer — `setX(null)`
+// alone left ~200MB of orphan image data in the chassis files. For
+// shared-material chassis (Linden's one-mat-everywhere case) this also
+// clears the bark binding; generate-salon rebinds both bark + leaf at
+// composition time, so the chassis only needs to carry geometry + extras.
+function stripMaterialTextures(mat) {
+  if (!mat) return
+  const getters = [
+    'getBaseColorTexture',
+    'getNormalTexture',
+    'getEmissiveTexture',
+    'getMetallicRoughnessTexture',
+    'getOcclusionTexture',
+  ]
+  for (const getter of getters) {
+    if (typeof mat[getter] === 'function') {
+      const tex = mat[getter]()
+      if (tex) tex.dispose()
+    }
+  }
 }
 
 function avgTriangleArea(posAttr, idx) {
@@ -115,6 +169,38 @@ function avgTriangleArea(posAttr, idx) {
     count++
   }
   return count > 0 ? total / count : 0
+}
+
+// Build a mesh → [ancestor-node-name, ...] map by walking every scene's node
+// tree. A mesh referenced by N nodes contributes N ancestry chains; we flatten
+// them so the leaf classifier sees ANY referencing node's ancestor names. Also
+// catches orphan-rooted nodes (per Sorrel's note on `candicands_b`).
+function buildMeshAncestorNames(doc) {
+  const out = new Map()
+  function record(mesh, names) {
+    if (!mesh) return
+    if (!out.has(mesh)) out.set(mesh, [])
+    for (const n of names) if (n) out.get(mesh).push(n)
+  }
+  function walk(node, ancestry) {
+    const next = [...ancestry, node.getName() || '']
+    record(node.getMesh(), next)
+    for (const child of node.listChildren()) walk(child, next)
+  }
+  const inScene = new Set()
+  for (const scene of doc.getRoot().listScenes()) {
+    for (const root of scene.listChildren()) {
+      const collect = (n) => { inScene.add(n); n.listChildren().forEach(collect) }
+      collect(root)
+    }
+    for (const root of scene.listChildren()) walk(root, [])
+  }
+  for (const node of doc.getRoot().listNodes()) {
+    if (!inScene.has(node) && node.getMesh()) {
+      record(node.getMesh(), [node.getName() || ''])
+    }
+  }
+  return out
 }
 
 // ── Name resolution ────────────────────────────────────────────────────────
@@ -169,10 +255,12 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
   const doc = await io.read(srcPath)
   const root = doc.getRoot()
 
+  const meshAncestors = buildMeshAncestorNames(doc)
   const primClassifications = []
   for (const mesh of root.listMeshes()) {
+    const ancestorNames = meshAncestors.get(mesh) || []
     for (const prim of mesh.listPrimitives()) {
-      const c = classifyPrim(prim)
+      const c = classifyPrim(prim, ancestorNames)
       primClassifications.push({ ...c, mesh: mesh.getName() || '<unnamed>', _prim: prim, _mesh: mesh })
     }
   }
@@ -191,15 +279,17 @@ async function processGlb({ speciesId, srcPath, filename, label, category, scien
     }
   }
 
-  // De-leaf: remove LEAF primitives, stamp atlasKind='bark' on retained.
-  // Then drop any mesh that ends up with zero primitives + any scene-graph
-  // node that loses its mesh + any orphan node. Skip gltf-transform's
-  // prune() because in some vendor docs it strips wood primitives that
-  // share accessors with leaf cards (observed on `candicands`).
+  // Brief 5 (Tendril, 2026-05-22) — vendor-leaf-preservation pivot:
+  // Keep LEAF primitives intact (vendor placement is the gift we want).
+  // Stamp `atlasKind='leaf'` so generate-salon.js can rebind a Salon pack
+  // texture at composition time; strip the vendor's bound textures off the
+  // leaf material so the chassis stays lean. BARK prims still get
+  // `atlasKind='bark'` stamped. The mesh / node disposal logic below is now
+  // a no-op for LEAF-bearing chassis, which is the intent.
   for (const p of primClassifications) {
     if (p.cls === 'LEAF') {
-      p._mesh.removePrimitive(p._prim)
-      p._prim.dispose()
+      stripMaterialTextures(p._prim.getMaterial())
+      p._prim.setExtras({ ...(p._prim.getExtras() || {}), atlasKind: 'leaf' })
     } else {
       p._prim.setExtras({ ...(p._prim.getExtras() || {}), atlasKind: 'bark' })
     }
@@ -452,10 +542,14 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
       if (j !== rootIdx) disposeTree(roots[j])
     }
 
-    // Classify all primitives in the retained subtree
+    // Classify all primitives in the retained subtree. Map is rebuilt AFTER
+    // other-root disposal so ancestry chains only carry names from the kept
+    // subtree (sibling roots' names mustn't leak into classification).
+    const meshAncestors = buildMeshAncestorNames(doc)
     const subtreePrims = collectPrims(target)
     const primClassifications = subtreePrims.map(({ prim, mesh }) => {
-      const c = classifyPrim(prim)
+      const ancestorNames = meshAncestors.get(mesh) || []
+      const c = classifyPrim(prim, ancestorNames)
       return { ...c, mesh: mesh.getName() || '<unnamed>', _prim: prim, _mesh: mesh }
     })
     const counts = { WOOD: 0, LEAF: 0, AMBIGUOUS: 0 }
@@ -487,11 +581,13 @@ async function processBundleGlb({ speciesId, srcPath, filename, label, category,
       continue
     }
 
-    // De-leaf: drop LEAF primitives, stamp atlasKind='bark' on WOOD subset
+    // Brief 5 (Tendril): vendor-leaf-preservation pivot — keep LEAF prims,
+    // stamp atlasKind='leaf', strip their vendor textures. See single-tree
+    // path above for full rationale.
     for (const p of primClassifications) {
       if (p.cls === 'LEAF') {
-        p._mesh.removePrimitive(p._prim)
-        p._prim.dispose()
+        stripMaterialTextures(p._prim.getMaterial())
+        p._prim.setExtras({ ...(p._prim.getExtras() || {}), atlasKind: 'leaf' })
       } else {
         p._prim.setExtras({ ...(p._prim.getExtras() || {}), atlasKind: 'bark' })
       }

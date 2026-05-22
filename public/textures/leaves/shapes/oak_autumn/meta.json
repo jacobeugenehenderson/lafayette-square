@@ -1,0 +1,13 @@
+{
+  "morphology": "seasonal_oak",
+  "naturalSize": 12,
+  "tileGrid": [2, 4],
+  "recommendedSpecies": [
+    "quercus_alba",
+    "quercus_rubra"
+  ],
+  "source": {
+    "vendor": "botanical-reference-hires",
+    "pack": "LeafSet012"
+  }
+}

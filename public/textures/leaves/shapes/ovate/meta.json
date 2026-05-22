@@ -1,0 +1,14 @@
+{
+  "morphology": "ovate",
+  "naturalSize": 8,
+  "tileGrid": [1, 1],
+  "recommendedSpecies": [
+    "morus_alba",
+    "cornus_florida",
+    "hydrangea_macrophylla"
+  ],
+  "source": {
+    "vendor": "botanical-reference-hires",
+    "pack": "LeafSet005"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "morphology": "lanceolate",
+  "naturalSize": 8,
+  "tileGrid": [4, 1],
+  "recommendedSpecies": [
+    "salix_alba",
+    "salix_babylonica"
+  ],
+  "source": {
+    "vendor": "botanical-reference-hires",
+    "pack": "LeafSet013"
+  }
+}

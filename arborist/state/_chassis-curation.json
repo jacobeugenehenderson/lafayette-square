@@ -1,0 +1,1274 @@
+{
+  "chassis": {
+    "acer_saccharum_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_h.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_i.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_j.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_k.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_l.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_m.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_n.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_o.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_p.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_procedural_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_procedural_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_procedural_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_procedural_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_procedural_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_q.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_r.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_s.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_t.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "acer_saccharum_u.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "american_linden_a.glb": {
+      "displayName": "European Linden",
+      "approved": true,
+      "notes": "first tree in european-linden/ pack"
+    },
+    "broadleaf_rt3_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "broadleaf_rt3_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "burnt_tree_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "burnt_tree_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_a_bark_122.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_a_bark_133.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_a_bark_144.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_b_bark_111.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_b_bark_133.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_b_bark_144.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_c_bark_111.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_c_bark_122.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_c_bark_144.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_d_bark_111.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_d_bark_122.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "candicands_d_bark_133.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_beech_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_beech_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_beech_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_beech_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "flowering_peach_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "flowering_peach_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "flowering_peach_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "flowering_peach_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "flowering_peach_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "garden_trees_mix_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "garden_trees_mix_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "garden_trees_mix_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "garden_trees_mix_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "garden_trees_mix_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "generic_leaf_tree_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "generic_leaf_tree_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "generic_tree_1_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "generic_tree_2_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "hollywood_juniper_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "hollywood_juniper_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "hollywood_juniper_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "hollywood_juniper_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_a_bark3.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_b_bark1.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_b_bark3.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_c_bark1.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_h.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_i.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_j.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_k.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_l.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_m.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_n.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "italian_cypress_o.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_h.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_i.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_k.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_l.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "paper_birch_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "paper_birch_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "paper_birch_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "paper_birch_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "peach_tree_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "peach_tree_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_b_bark_populier_fall_02_002.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_f_bark_populier_green_02_001.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_broadleaf_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_broadleaf_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_broadleaf_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_columnar_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_columnar_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_conifer_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_conifer_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_ornamental_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_ornamental_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_weeping_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "procedural_weeping_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "quaking_aspen_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "quaking_aspen_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "quaking_aspen_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "quaking_aspen_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "quaking_aspen_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "red_maple_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "red_maple_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_trees_1_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_trees_1_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_trees_1_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_h.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_i.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_j.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_k.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_l.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_m.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_n.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_o.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_p.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_q.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_r.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_s.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_t.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_low_poly_forest_u.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sycamore_stump_field_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "tall_pine_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "tall_pine_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "tall_pine_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "weeping_willow_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "weeping_willow_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "weeping_willow_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "weeping_willow_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "weeping_willow_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "western_juniper_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_oak_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_oak_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_oak_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_oak_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "yellow_autumn_tree_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "yellow_autumn_tree_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "yellow_autumn_tree_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_h.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_i.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_j.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_k.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_l.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_m.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "alaskan_cedar_n.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "black_gum_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "black_gum_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "black_gum_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "black_gum_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "black_gum_h.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "black_gum_i.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "blue_spruce_winter_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "blue_spruce_winter_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "blue_spruce_winter_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "blue_spruce_winter_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "blue_spruce_winter_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "blue_spruce_winter_h.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "bonsai_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "burnt_tree_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "burnt_tree_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "burnt_tree_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "burnt_tree_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_birch_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_birch_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_birch_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_birch_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "common_birch_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_a_trunk22.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_a_trunk33.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_a_trunk44.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_b_trunk11.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_b_trunk33.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_b_trunk44.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_c_trunk11.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_c_trunk22.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_c_trunk44.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_d_trunk11.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_d_trunk22.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "gray_poplar_d_trunk33.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_a_bark2.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_a_stem2.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_a_stem3.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_b_stem1.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_b_stem3.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_c_bark2.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_c_stem1.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "honey_locust_c_stem2.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "hz_tree_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_j.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_m_whitebirchbark_g2.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "london_plane_n_whitebirchbark_f2.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "oak_winter_fall_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "oak_winter_fall_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "oak_winter_fall_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "oak_winter_fall_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "oak_winter_fall_g.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "pine_corona_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "pine_corona_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "pine_corona_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_a_bark_populier_fall_02_001.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "poplar_fall_e_bark_populier_green_02.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "red_maple_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "robinia_pseudoacacia_a_tree_robinia_pseudoacacia_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "robinia_pseudoacacia_a_tree_robinia_pseudoacacia_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "robinia_pseudoacacia_a_tree_robinia_pseudoacacia_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "robinia_pseudoacacia_a_tree_robinia_pseudoacacia_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_willow_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_willow_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_willow_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_willow_h.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_willow_j.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "stylized_willow_l.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_multistem_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "sugar_maple_multistem_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "tall_pine_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "tall_pine_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_fir_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_fir_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_willow_a.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_willow_b.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_willow_c.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_willow_d.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_willow_e.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    },
+    "white_willow_f.glb": {
+      "displayName": "",
+      "approved": false,
+      "notes": ""
+    }
+  }
+}

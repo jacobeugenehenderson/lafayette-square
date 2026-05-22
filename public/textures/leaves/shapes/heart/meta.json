@@ -1,0 +1,14 @@
+{
+  "morphology": "heart",
+  "naturalSize": 10,
+  "tileGrid": [3, 2],
+  "recommendedSpecies": [
+    "cercis_canadensis",
+    "syringa_vulgaris",
+    "tilia_americana"
+  ],
+  "source": {
+    "vendor": "botanical-reference-hires",
+    "pack": "LeafSet004"
+  }
+}

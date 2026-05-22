@@ -99,6 +99,11 @@ export const DEFAULTS = {
   },
   leaves: {
     pack: 'palmate',
+    // Brief 5: Workstage-only inspection toggle. true = render leaves
+    // (vendor cards or spray fallback); false = bare chassis in the
+    // Workstage preview ONLY. The publish path ignores this — baked
+    // artifact always carries leaves.
+    show: true,
     occupancy: 0.7,
     // Brief 1.5a: operator-tunable card-size multiplier. Default 1.0 with
     // BASE_CARD_SIZE=0.1m yields ~10cm cards at world scale (verified
@@ -110,12 +115,12 @@ export const DEFAULTS = {
   deformer: {},   // reserved-but-empty — Brief 3 fills
 }
 
-// Brief 1.5a: base card extent in metres. Multiplied by composition.leaves.scale
-// at emission time. Was 0.4 (40cm) in Brief 1 — too large for the sparse-anchor
-// regime Salon uses. 0.1m (10cm) lands a single card at roughly the same
-// real-world scale as a single Sugar Maple leaf, which is what the operator's
-// silhouette intuition is calibrated for.
-const BASE_CARD_SIZE = 0.1
+// Base card extent in metres. Multiplied by composition.leaves.scale at
+// emission time. 0.5m (50cm) lands each card as a leaf-CLUSTER (not single
+// leaf) — the right read for 15–30m-tall mature chassis where individual
+// 10cm leaves disappear into pinpoints. Operator session 2026-05-22 (Linden
+// at 30.7m) confirmed: cards as clusters are the right granularity.
+const BASE_CARD_SIZE = 0.5
 
 // ── Chassis library ─────────────────────────────────────────────────────
 //
@@ -198,6 +203,22 @@ async function readBarkBundle(ref) {
     fs.readFile(path.join(dir, 'normal.jpg')),
   ])
   return { ref, colorBytes, normalBytes }
+}
+
+async function readLeafPackMeta(packId) {
+  // Surface per-pack tile-grid metadata so leaf-card UVs can sample a single
+  // tile from multi-leaf atlases (heart=3×2, palmate=2×2, etc.) — kills the
+  // monotonous "every card shows the same 6-leaf clump" reading.
+  try {
+    const raw = await fs.readFile(path.join(LEAF_SHAPES_DIR_NEW, packId, 'meta.json'), 'utf8')
+    const m = JSON.parse(raw)
+    const grid = Array.isArray(m.tileGrid) && m.tileGrid.length === 2
+      ? [Math.max(1, m.tileGrid[0] | 0), Math.max(1, m.tileGrid[1] | 0)]
+      : [1, 1]
+    return { tileGrid: grid }
+  } catch {
+    return { tileGrid: [1, 1] }
+  }
 }
 
 async function readLeafBytes(packId) {
@@ -421,7 +442,12 @@ function buildLeafGeometryFromAttachments(attachments, opts, rng) {
     cardSize = 0.4,
     spread = 0.35,
     yCompression = 0.6,
+    tileGrid = [1, 1],   // [cols, rows] in the leaf-pack atlas
+    inwardBias = 0,      // 0..1 — shift card scatter toward trunk axis
   } = opts || {}
+  const [gridCols, gridRows] = tileGrid
+  const tileW = 1 / gridCols
+  const tileH = 1 / gridRows
   const N = attachments.length * cardsPerAttachment
   if (N === 0) return null
   const positions = new Float32Array(N * 4 * 3)
@@ -431,13 +457,21 @@ function buildLeafGeometryFromAttachments(attachments, opts, rng) {
 
   let q = 0
   for (const att of attachments) {
+    // Anchor's XZ direction from the trunk axis (world origin). Cards
+    // scatter biased opposite this direction — pulls cloud inward toward
+    // the canopy interior so edge anchors don't spray cards past the
+    // outer silhouette.
+    const axDist = Math.hypot(att[0], att[2]) || 1
+    const inwardX = -att[0] / axDist
+    const inwardZ = -att[2] / axDist
     for (let k = 0; k < cardsPerAttachment; k++) {
       const r1 = rng() * 2 - 1
       const r2 = rng() * 2 - 1
       const r3 = rng() * 2 - 1
-      const cx = att[0] + r1 * spread
+      const biasMag = inwardBias * spread
+      const cx = att[0] + r1 * spread + inwardX * biasMag
       const cy = att[1] + r2 * spread * yCompression
-      const cz = att[2] + r3 * spread
+      const cz = att[2] + r3 * spread + inwardZ * biasMag
       const sx = cardSize * (0.7 + rng() * 0.6)
       const sy = cardSize * (0.7 + rng() * 0.6)
       const yaw = rng() * TAU
@@ -452,7 +486,15 @@ function buildLeafGeometryFromAttachments(attachments, opts, rng) {
       const corners = [
         [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5],
       ]
-      const uv = [[0, 0], [1, 0], [1, 1], [0, 1]]
+      // Per-card random tile from the pack's grid — gives N distinct
+      // leaf images visible across the canopy without needing N atlases.
+      const tileCol = Math.floor(rng() * gridCols)
+      const tileRow = Math.floor(rng() * gridRows)
+      const u0 = tileCol * tileW
+      const v0 = tileRow * tileH
+      const u1 = u0 + tileW
+      const v1 = v0 + tileH
+      const uv = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]]
       for (let i = 0; i < 4; i++) {
         const lx = corners[i][0], ly = corners[i][1]
         const x = cx + ax * lx + bx * ly
@@ -479,6 +521,121 @@ function buildLeafGeometryFromAttachments(attachments, opts, rng) {
     }
   }
   return { positions, normals, uvs, indices, count: N }
+}
+
+// Brief 5: rewrite a vendor leaf primitive's TEXCOORD_0 so the chassis
+// renders with the picked pack's content. Two topology classes show up in
+// vendor stock:
+//
+//   1. CARD-BASED — each card is 4 consecutive verts in the vertex buffer
+//      with corner-pattern UVs (vendor's "uniform UV [0,1] per card"). The
+//      indices buffer slices them into triangles, often interleaved across
+//      cards. Detection: max vertex-use in the index buffer == 1 (each vert
+//      appears in exactly one triangle) AND vertCount is divisible by 4.
+//      Example: Robinia (580k verts / 4 = 145k cards, each card = 2 tris,
+//      6 verts referenced once each — wait, that's 4 verts × 2 tris = 8
+//      vert refs per card if quads share corners. Robinia avg-use is 1.0
+//      so each tri has its own 3 verts → triangle-cards, 580k/3 ≈ 193k
+//      tri-cards with the vert buffer holding 4 verts per quad-shape but
+//      only 3 referenced per tri. The 4-vert grouping still holds because
+//      vendor lays them out card-by-card.)
+//   2. CONNECTED MESH — sculpted 3D leaf geometry with continuous UVs
+//      across the canopy. Verts are heavily shared between triangles
+//      (max-use > 1). Vendor UVs span a small sub-region of the vendor
+//      leaf atlas (not [0,1]). Per-card UV rewriting is meaningless;
+//      instead, rescale the whole UV cluster into a single random pack
+//      tile so the existing leaf-shape geometry samples valid pack
+//      content (no alpha cutoffs eating the leaves).
+//      Example: Linden (470k verts, max-use=8, UV range
+//      [0.445,0.989]×[0.619,0.770]).
+//
+// Both paths write pack-texture-local UVs — atlas-survey at bake time
+// remaps onto the master atlas (`feedback_atlas_subregion_uv_recovery`).
+// `rng` is the per-composition mulberry32 stream so re-runs are byte-
+// identical (determinism, AC #8).
+function rewriteLeafPrimUVs(prim, tileGrid, rng, doc) {
+  const idx = prim.getIndices()
+  const uvAttr = prim.getAttribute('TEXCOORD_0')
+  if (!idx || !uvAttr) return // missing UVs → skip per brief edge case
+  const [cols, rows] = tileGrid || [1, 1]
+  if (cols < 1 || rows < 1) return
+  const indices = idx.getArray()
+  const uvs = uvAttr.getArray()
+  const vertCount = uvs.length / 2
+  // Topology classifier — single pass over the index buffer.
+  let maxUse = 0
+  const use = new Uint8Array(vertCount)
+  for (let i = 0; i < indices.length; i++) {
+    const v = indices[i]
+    const next = use[v] + 1
+    use[v] = next > 255 ? 255 : next
+    if (next > maxUse) maxUse = next
+  }
+  const cardBased = (maxUse === 1) && (vertCount % 4 === 0)
+  if (cardBased) {
+    rewriteCardUVs(prim, uvs, vertCount, cols, rows, rng, doc)
+  } else {
+    rescaleConnectedUVsToTile(prim, uvs, cols, rows, rng, doc)
+  }
+}
+
+function rewriteCardUVs(prim, uvs, vertCount, cols, rows, rng, doc) {
+  // Per-card random tile assignment. Vert layout: card K occupies verts
+  // [4K, 4K+1, 4K+2, 4K+3]. Vendor UVs at those verts are corner-pattern
+  // (typically (0,0)/(0,1)/(1,0)/(1,1) in some order — see Robinia).
+  // Remap: new_uv = tile_origin + vendor_uv * tile_size.
+  if (cols === 1 && rows === 1) return // 1×1 grid is identity on [0,1] inputs
+  const tileW = 1 / cols
+  const tileH = 1 / rows
+  const newUvs = new Float32Array(uvs.length)
+  const cardCount = vertCount / 4
+  for (let k = 0; k < cardCount; k++) {
+    const tileCol = Math.floor(rng() * cols)
+    const tileRow = Math.floor(rng() * rows)
+    const u0 = tileCol * tileW
+    const v0 = tileRow * tileH
+    for (let i = 0; i < 4; i++) {
+      const ui = (k * 4 + i) * 2
+      newUvs[ui]     = u0 + uvs[ui]     * tileW
+      newUvs[ui + 1] = v0 + uvs[ui + 1] * tileH
+    }
+  }
+  const acc = doc.createAccessor().setType('VEC2').setArray(newUvs)
+  prim.setAttribute('TEXCOORD_0', acc)
+}
+
+function rescaleConnectedUVsToTile(prim, uvs, cols, rows, rng, doc) {
+  // Connected sculpted-mesh fallback. Find the used UV range, rescale it
+  // to fill one random tile. Without this, vendor UVs (often a tiny
+  // sub-region of the vendor's atlas) sample whatever happens to be at
+  // that spot in the Salon pack — usually empty alpha, giving the
+  // "leaves cut off" symptom Tendril hit on Linden 2026-05-22.
+  let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity
+  for (let i = 0; i < uvs.length; i += 2) {
+    const u = uvs[i], v = uvs[i + 1]
+    if (u < minU) minU = u
+    if (u > maxU) maxU = u
+    if (v < minV) minV = v
+    if (v > maxV) maxV = v
+  }
+  const rangeU = maxU - minU
+  const rangeV = maxV - minV
+  if (!isFinite(rangeU) || !isFinite(rangeV) || rangeU < 1e-6 || rangeV < 1e-6) return
+  const tileW = 1 / cols
+  const tileH = 1 / rows
+  const tileCol = Math.floor(rng() * cols)
+  const tileRow = Math.floor(rng() * rows)
+  const u0 = tileCol * tileW
+  const v0 = tileRow * tileH
+  const newUvs = new Float32Array(uvs.length)
+  for (let i = 0; i < uvs.length; i += 2) {
+    const nU = (uvs[i] - minU) / rangeU
+    const nV = (uvs[i + 1] - minV) / rangeV
+    newUvs[i]     = u0 + nU * tileW
+    newUvs[i + 1] = v0 + nV * tileH
+  }
+  const acc = doc.createAccessor().setType('VEC2').setArray(newUvs)
+  prim.setAttribute('TEXCOORD_0', acc)
 }
 
 // Bake every node's accumulated world transform into its mesh's POSITION
@@ -561,7 +718,7 @@ function bakeAllNodeTransforms(doc) {
   }
 }
 
-async function buildCompositionDocument({ chassis, bark, leaves, slotName }) {
+async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false }) {
   const chassisPath = path.join(CHASSIS_DIR, `${chassis}.glb`)
   const io = makeIO()
   const chassisDoc = await io.read(chassisPath)
@@ -569,41 +726,42 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName }) {
 
   // Brief 2.1c (Sorrel): bake every chassis node's world transform into
   // its primitives' POSITION/NORMAL accessors, then reset all node TRS
-  // chains to identity. After this step, mesh-space == chassis-root-local
-  // space, which is the coordinate space `meta.leafAttachmentTags` uses
-  // (v2 contract). This makes the leaf-attach math trivial — leaf POSITION
-  // accessor values, when added to any mesh, render at world-space.
-  //
-  // The bake also fixes a long-standing latent bug for multi-mesh chassis
-  // where bark meshes carried mismatched node transforms (candicands_b's
-  // bark mesh at T=(0,0,-90.23) while sibling meshes were identity):
-  // previously, `positionsCombined` mixed coords from differently-
-  // transformed meshes, and the leaf primitive landed on meshes[0]'s
-  // transform regardless of which mesh the attachment came from. Post-
-  // bake every mesh is identity, so the mix is consistent and the
-  // leaf-attach lands correctly.
+  // chains to identity. See prior comment for rationale.
   bakeAllNodeTransforms(chassisDoc)
 
-  // Gather all bark positions for fallback leaf-attachment sampling and
-  // ensure every retained primitive carries `extras.atlasKind = 'bark'`
-  // (defensive — Whittle already stamps this). Post-bake these reads
-  // return chassis-root-local-space coords directly.
-  const positionsCombined = []
+  // Brief 5 (Tendril, 2026-05-22) — vendor-card-preservation pivot:
+  // Partition prims by survey-deleaf's atlasKind stamp. Bark prims get the
+  // Salon bark material; leaf prims (when present) keep their vendor-baked
+  // geometry and get the Salon pack texture bound + per-card UV rewrites.
+  // Chassis with NO leaf prims (LiDAR-derived, wood-only) fall back to the
+  // spray-at-attachment path below.
+  const vendorLeafPrims = []
+  const barkPrims = []
   for (const mesh of chassisDoc.getRoot().listMeshes()) {
     for (const prim of mesh.listPrimitives()) {
       const ex = prim.getExtras() || {}
-      if (!ex.atlasKind) prim.setExtras({ ...ex, atlasKind: 'bark' })
-      const acc = prim.getAttribute('POSITION')
-      if (acc) {
-        const arr = acc.getArray()
-        for (let i = 0; i < arr.length; i++) positionsCombined.push(arr[i])
+      if (ex.atlasKind === 'leaf') {
+        vendorLeafPrims.push({ prim, mesh })
+      } else {
+        if (!ex.atlasKind) prim.setExtras({ ...ex, atlasKind: 'bark' })
+        barkPrims.push({ prim, mesh })
       }
     }
   }
 
+  // Gather bark positions for fallback leaf-attachment sampling (only used
+  // when vendor leaf prims are absent and the spray path runs).
+  const positionsCombined = []
+  for (const { prim } of barkPrims) {
+    const acc = prim.getAttribute('POSITION')
+    if (acc) {
+      const arr = acc.getArray()
+      for (let i = 0; i < arr.length; i++) positionsCombined.push(arr[i])
+    }
+  }
+
   // Rebind bark material: create a fresh material with bark textures and
-  // assign it to every bark primitive. The previous materials become
-  // garbage-collectable.
+  // assign it to bark prims only.
   const barkBundle = await readBarkBundle(bark.ref)
   const barkColorTex = chassisDoc.createTexture(`salon_bark_${bark.ref}_color`)
     .setImage(barkBundle.colorBytes).setMimeType('image/jpeg')
@@ -615,18 +773,62 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName }) {
     .setAlphaMode('OPAQUE')
     .setRoughnessFactor(typeof bark.roughnessOverride === 'number' ? bark.roughnessOverride : 0.85)
     .setMetallicFactor(0)
-  for (const mesh of chassisDoc.getRoot().listMeshes()) {
-    for (const prim of mesh.listPrimitives()) {
-      prim.setMaterial(barkMat)
+  for (const { prim } of barkPrims) prim.setMaterial(barkMat)
+
+  // Brief 5: leaves.show=false in the workstage preview drops vendor leaf
+  // prims AND skips the spray-fallback emission. Operator sees the bare
+  // chassis for structure inspection. Per brief Out-of-Scope: this never
+  // reaches the bake — the publish path (writeMultiCompositionGLB) does
+  // not pass hideLeaves, so the baked artifact always carries leaves.
+  if (hideLeaves) {
+    for (const { prim, mesh } of vendorLeafPrims) {
+      mesh.removePrimitive(prim)
+      prim.dispose()
     }
+    vendorLeafPrims.length = 0
+    const scene = chassisDoc.getRoot().getDefaultScene() || chassisDoc.getRoot().listScenes()[0]
+    if (scene) for (const n of scene.listChildren()) n.setName(slotName)
+    return chassisDoc
   }
 
-  // Leaf emission. Use chassis-authored attachment tags if present; else
-  // sample upper-bbox vertices. Determinism: hash(chassis|bark.ref|leaves.pack)
-  // seeds the mulberry32 stream so the same composition produces identical
-  // leaf placement across publishes.
+  // Determinism: hash(chassis|bark.ref|leaves.pack) seeds mulberry32 for
+  // both UV-rewrite (vendor path) and spray (fallback) so byte-identical
+  // GLB across re-runs.
   const seed = hashString(`${chassis}|${bark.ref}|${leaves.pack}`)
   const rng = mulberry32(seed)
+
+  if (vendorLeafPrims.length > 0) {
+    // Vendor-card path. Bind the picked pack texture to a fresh Salon leaf
+    // material; rewrite per-card UVs to sample one tile from the tile grid
+    // per card. Material settings mirror the spray-path material so the
+    // shader-program cache key matches (Bloom stability, AC #7).
+    const leafBlob = await readLeafBytes(leaves.pack)
+    const leafTex = chassisDoc.createTexture(`salon_leaf_${leaves.pack}`)
+      .setImage(leafBlob.bytes).setMimeType(leafBlob.mime)
+    const leafMat = chassisDoc.createMaterial('salonLeaves')
+      .setBaseColorTexture(leafTex)
+      .setAlphaMode('MASK')
+      .setAlphaCutoff(0.5)
+      .setDoubleSided(true)
+      .setRoughnessFactor(0.85)
+      .setMetallicFactor(0)
+    const packMeta = await readLeafPackMeta(leaves.pack)
+    for (const { prim } of vendorLeafPrims) {
+      prim.setMaterial(leafMat)
+      rewriteLeafPrimUVs(prim, packMeta.tileGrid, rng, chassisDoc)
+    }
+    // Slot label + return early — vendor path doesn't run the spray code.
+    const scene = chassisDoc.getRoot().getDefaultScene() || chassisDoc.getRoot().listScenes()[0]
+    if (scene) {
+      const nodes = scene.listChildren()
+      for (let i = 0; i < nodes.length; i++) nodes[i].setName(slotName)
+    }
+    return chassisDoc
+  }
+
+  // ── Fallback spray path (chassis has no vendor LEAF prims) ──────────────
+  // Use chassis-authored attachment tags if present; else sample upper-bbox
+  // vertices.
   const authoredTags = Array.isArray(meta.leafAttachmentTags) ? meta.leafAttachmentTags : []
   const occ = Math.max(0, Math.min(1, leaves.occupancy ?? 0.7))
   let attachments
@@ -657,11 +859,14 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName }) {
   // past branch tips when operator scaled up). cardsPerAttachment bumped from
   // 5 → 12 for denser clusters that read as foliage mass.
   const scale = typeof leaves.scale === 'number' ? leaves.scale : 1.0
+  const packMeta = await readLeafPackMeta(leaves.pack)
   const leafGeo = buildLeafGeometryFromAttachments(attachments, {
-    cardsPerAttachment: 12,
+    cardsPerAttachment: 35,
     cardSize: BASE_CARD_SIZE * scale,
-    spread: 0.35,
-    yCompression: 0.6,
+    spread: 0.7,
+    yCompression: 0.7,
+    tileGrid: packMeta.tileGrid,
+    inwardBias: 0.35,  // bias card-cloud toward trunk axis — kills edge floaters
   }, rng)
 
   if (leafGeo) {
@@ -821,11 +1026,16 @@ export async function generateSingleCompositionGLB({ chassis, bark, leaves, lod 
     leaves:  { ...DEFAULTS.leaves,  ...(leaves  || {}) },
     deformer: { ...DEFAULTS.deformer, ...(/* reserved */ {}) },
   }
+  // Brief 5: workstage-only leaves.show toggle. When false, drop vendor
+  // leaf prims from the preview. Publish path (writeMultiCompositionGLB)
+  // never sets this — baked artifact always carries leaves.
+  const hideLeaves = effective.leaves.show === false
   const doc = await buildCompositionDocument({
     chassis,
     bark: effective.bark,
     leaves: effective.leaves,
     slotName: slotLabel,
+    hideLeaves,
   })
   const io = makeIO()
   let buf = Buffer.from(await io.writeBinary(doc))

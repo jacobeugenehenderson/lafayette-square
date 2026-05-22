@@ -1,0 +1,14 @@
+{
+  "morphology": "palmate",
+  "naturalSize": 10,
+  "tileGrid": [2, 2],
+  "recommendedSpecies": [
+    "acer_saccharum",
+    "acer_rubrum",
+    "platanus_occidentalis"
+  ],
+  "source": {
+    "vendor": "botanical-reference-hires",
+    "pack": "LeafSet010"
+  }
+}

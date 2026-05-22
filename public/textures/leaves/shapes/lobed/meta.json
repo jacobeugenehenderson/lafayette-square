@@ -1,0 +1,13 @@
+{
+  "morphology": "lobed",
+  "naturalSize": 12,
+  "tileGrid": [3, 2],
+  "recommendedSpecies": [
+    "quercus_alba",
+    "quercus_rubra"
+  ],
+  "source": {
+    "vendor": "botanical-reference-hires",
+    "pack": "LeafSet016"
+  }
+}
