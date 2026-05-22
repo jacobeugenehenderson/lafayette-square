@@ -58,7 +58,48 @@
 
 ---
 
-## 2026-05-22 — Project: Salon — leaf-attachment-tags bake (baby Sorrel)
+## 2026-05-22 — Project: Salon — Brief 2.1c — leafAttachmentTags contract flipped to world-space + transform-bake in consumer (baby Sorrel)
+
+**Continuation of the earlier 2026-05-22 leaf-attachment-tags entry (below). Operator spot-checked `garden_trees_mix_a` and suspected a coordinate-space mismatch; investigation confirmed the v1 mesh-space contract works for `garden_trees_mix_a` (single-mesh, rotated chassis — the bug was a misread) BUT identified a real failure on the 4 multi-mesh chassis with mismatched bark-mesh node transforms (`candicands_b` has bark mesh at T=(0,0,−90.23) sibling to identity meshes; `american_linden_a`'s transforms happen to agree so lucked out; `poplar_fall_b_*` + `poplar_fall_f_*` carry orphan-rooted secondary meshes). Operator authorized the cleaner architectural fix anyway: flip the contract.**
+
+### v2 contract — load-bearing
+
+`meta.leafAttachmentTags` are stored in **chassis-root-local space** — what each anchor's world position would be before the chassis is instanced into a scene. Replaces the v1 raw mesh-space contract. Both the script and the consumer changed in lockstep:
+
+- **`derive-leaf-attachment-tags.mjs`** — sampling logic unchanged (still world-aware XZ-grid over upper-`topYFrac` Y-bbox). Storage flipped: writes the picked vertex's world (chassis-root-local) coord instead of its mesh-space coord. All 159 chassis re-baked; 126 of 159 entries changed bytes (the 33 unchanged are Riven's bundle-decomposed chassis where mesh-space already equalled world-space because survey-deleaf bakes their transforms).
+- **`arborist/generate-salon.js#buildCompositionDocument`** — new `bakeAllNodeTransforms(chassisDoc)` step at the top: walks every node's accumulated world transform, bakes it into POSITION + NORMAL accessors (upper-3×3 for normals + renormalize, adequate for the rotation + uniform-scale vendor pattern), then resets every node TRS chain to identity. Post-bake, mesh-space == chassis-root-local space across every mesh. Leaf primitive POSITION accessor values (which are world-space per the v2 contract) get added to `meshes[0]` as before — but now `meshes[0]` has identity transform, so leaves render at the world location the tag specifies. Also incidentally fixes the latent multi-mesh bug for `positionsCombined` fallback sampling.
+- **No new GLB structure** — leaf primitive still rides on `meshes[0]`, no new node, no new mesh. `publish-glb.js`'s `namesSuggestVariants` + `nodesSpatiallySeparated` variant-split logic is unaffected. (An earlier draft of the consumer added a dedicated leaf node at scene root with identity transform — cleaner conceptually, but it broke `publish-glb`'s variant detection because two scene-children with the same slot name trigger a spurious split. Transform-bake into the existing mesh keeps GLB topology identical to pre-2.1c.)
+
+### v2 spot-verification (end-to-end, single-composition GLB)
+
+Ran `generateSingleCompositionGLB` on one chassis per lineage; inspected leaf-primitive POSITION Y range vs. bark-primitive Y bbox:
+
+| Chassis | Lineage | Bark world-Y | Leaf world-Y | In canopy? |
+|---|---|---|---|---|
+| `acer_saccharum_a` | Whittle, rotated single-mesh | [−0.02, 9.54] | [5.54, 7.23] | ✓ upper 40% |
+| `garden_trees_mix_a` | Whittle, rotated single-mesh | [−0.04, 8.25] | [4.71, 7.55] | ✓ upper 40% |
+| `candicands_b` | Riven decompose, 3 meshes mismatched | [0, 110.16] | [66.15, 106.32] | ✓ upper 40% (pre-fix would have been off by −90 m in Z) |
+| `american_linden_a` | Riven decompose, 3 meshes matched | [−0.20, 30.79] | [18.26, 30.33] | ✓ upper 40% |
+
+Idempotency preserved on the derive script. `bakeAllNodeTransforms` doesn't change the rendered chassis (transform-baking + TRS-reset is mathematically a no-op at render time).
+
+### Surface
+
+- **`candicands_b` heightRange = [0, 0] is bogus** (chassis is actually 110 m tall in world Y per post-bake POSITION accessor). Bug is upstream in `survey-deleaf.js#computeHeightRange` (walks scene children only; candicands has orphan-rooted meshes so the walker sees nothing → returns identity bbox). Not in 2.1c scope but worth flagging.
+- **`getUpperBboxSamples` fallback in `generate-salon.js:387` is now CORRECT-BY-INHERITANCE** — `positionsCombined` is gathered post-bake, so its raw mesh-Y is now world-Y. The fallback's "buckets by raw mesh-Y" assumption silently became correct without touching the function. Worth keeping or worth deleting now that every chassis has authored tags — operator call.
+- **No back-compat path** between v1 and v2 tags. Mixing a v1-baked `meta.leafAttachmentTags` against a v2-consumer `buildCompositionDocument` would render leaves at world-divided-by-scale positions (acer_saccharum_a leaves at world Y ≈ 0.6 instead of 6.4). Anyone with a stale chassis dir must re-run `derive-leaf-attachment-tags.mjs` after pulling. The gitignore-drift follow-up (hook into `survey-deleaf.js` tail) becomes more important with this change since the contract is now load-bearing for correctness.
+- **Schema unchanged**: still `[[x, y, z], ...]`, still 4-decimal rounded, still deterministic.
+- **Run report unchanged in shape**: 159/159 populated, min=1, median=29, max=59. 81 chassis below `minAnchors=30` warning threshold — same chassis as before (sparse-canopy by design).
+
+### Constraints honored
+
+- No edits to `survey-deleaf.js`. `bakeAllNodeTransforms` is a duplicated 80-LOC helper (mirrors `survey-deleaf.js#bakeMatrixIntoPrim`+`resetTRSChain`) — duplication accepted in favor of leaving Brief 0 code untouched.
+- No edits to `treeAtlasMaterial.js`, `InstancedTrees.jsx`, `bake-look.js`, `bake-trees.js`, `publish-glb.js`.
+- GLB topology unchanged: same number of meshes, same number of nodes, same scene structure (just everything's at identity transform now).
+
+---
+
+## 2026-05-22 — Project: Salon — leaf-attachment-tags bake (baby Sorrel) [SUPERSEDED by 2.1c above]
 
 **Dispatched as a Salon picker diagnostic; surfaced the picker was healthy (see "Picker diagnostic" below) and pivoted to the real operator-reported symptom: every chassis ships `leafAttachmentTags: []` (Whittle's spec), so `generate-salon.js#buildCompositionDocument` falls back to its sparse upper-bbox-vertex sampler (~5–10 anchors) — Salon compositions render visibly under-leafed. New bake script `arborist/derive-leaf-attachment-tags.mjs` walks all 159 chassis GLBs and writes real anchor positions to the paired `<name>.meta.json#leafAttachmentTags`. No generate-salon.js changes; the Phase D.1b leaf-cluster helpers do the right thing once attachment tags are populated.**
 

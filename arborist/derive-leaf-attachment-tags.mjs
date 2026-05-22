@@ -4,37 +4,41 @@
 // leaf-attachment anchor points from the wood mesh, and writes them to the
 // paired `<name>.meta.json#leafAttachmentTags` as `[[x, y, z], ...]`.
 //
-// ── Coordinate-space contract ──────────────────────────────────────────────
+// ── Coordinate-space contract (v2 — Brief 2.1c, 2026-05-22) ───────────────
 //
-// Tags are stored in **raw mesh-space coordinates** — i.e., values pulled
-// directly from the GLB POSITION accessor without applying any node
-// transform. Reason: the consumer in `generate-salon.js#buildCompositionDocument`
-// adds leaf-card geometry as a new primitive to the chassis's existing mesh,
-// which sits under whatever node transform the chassis carries (commonly a
-// vendor-pack 90° X rotation + 0.01–0.1 scale + translation). The chassis
-// node transform applies to bark AND leaf primitives equally at render time,
-// so leaf positions must be in the same space as the bark POSITION accessors
-// (mesh-space) for leaves to land at the world location of their anchor.
+// Tags are stored in **chassis-root-local space** (≈ world-space — what each
+// wood vertex's world position would be before the chassis is instanced into
+// a scene). NOT mesh-space.
 //
-// HOWEVER: sampling "the top of the canopy" requires world-space awareness.
-// Some vendor chassis are Y-up (mesh Y IS world up); others are Z-up with a
-// 90° X rotation in the node transform (mesh Z is world up). Bucketing by
-// raw mesh-Y silently picks side-of-tree verts on rotated chassis instead of
-// canopy-top verts. So this script applies the world transform internally
-// (gathers vertices as `{meshCoord, worldCoord}` pairs), runs the upper-bbox
-// + XZ-grid sampler in WORLD space, then stores the picked vertex's MESH
-// coord.
+// Why: `generate-salon.js#buildCompositionDocument` (post-2.1c) attaches the
+// leaf primitive to a NEW mesh under a NEW node at chassis root with
+// identity transform. So leaf POSITION accessor values land directly at
+// chassis-root-local coordinates — no intermediate per-mesh transform to
+// worry about. This decouples leaves from any specific bark mesh's node
+// transform, which was the v1 multi-mesh bug:
 //
-// Why not store world-space and have the consumer transform: would require
-// editing `generate-salon.js` to apply an inverse node transform before
-// writing POSITION accessor data on the leaf primitive — out of scope per
-// brief, and a heavier change than fixing it here.
+//   v1 (mesh-space) bug: consumer attached leaf primitive to chassis's
+//   meshes[0]; if the picked anchor came from a different mesh with a
+//   different node transform, the leaf inherited the WRONG transform and
+//   landed off in space. Affected 4 multi-mesh chassis: candicands_b,
+//   american_linden_a (transforms happened to agree, lucky), poplar_fall_b_*,
+//   poplar_fall_f_*. The single-mesh majority (155 chassis) worked
+//   correctly under v1 by coincidence.
 //
-// Why not bake the chassis node transform into the GLB up front: would
-// require touching `survey-deleaf.js`, also out of scope per brief. Riven's
-// bundle-decompose path DOES bake transforms (survey-deleaf.js:504–521) so
-// its chassis are already mesh==world; this script handles both equally
-// because applying an identity transform is a no-op.
+// The world-space contract is also cleaner to reason about: a stored Y of
+// 5.37 means 5.37 m above the chassis base, period. No node-transform
+// math required to interpret the data.
+//
+// Sampling: gathers each wood vertex's `worldCoord` (= accumulated node
+// transform applied to its mesh-space POSITION), runs the upper-bbox +
+// XZ-grid sampler in world space, stores the world coord directly.
+// Bucketing was already world-aware in v1 to handle Y-up vs Z-up
+// inconsistencies across vendor packs.
+//
+// Note: Riven's bundle-decompose path in survey-deleaf.js bakes transforms
+// into primitives + resets node TRS to identity. For those chassis,
+// mesh-space == world-space and v1 vs v2 produce identical tags. v2 is
+// uniformly correct across all chassis lineages.
 //
 // Heuristic: subdivide the chassis bbox into a `gridDensity × gridDensity`
 // XZ grid (WORLD-space XZ) over the top `topYFrac` of the WORLD-space
@@ -191,17 +195,18 @@ function deriveAttachments(verts, cfg) {
   const dxSpan = maxWX - minWX
   const dzSpan = maxWZ - minWZ
   if (dxSpan === 0 || dzSpan === 0) {
-    // Degenerate: pick the highest-world-Y vertex, store its mesh coord.
+    // Degenerate: pick the highest-world-Y vertex, store its world coord.
     let bestI = -1, bestWY = -Infinity
     for (let i = 0; i < verts.length; i += STRIDE) {
       if (verts[i + 4] > bestWY) { bestWY = verts[i + 4]; bestI = i }
     }
-    return bestI < 0 ? [] : [round4(verts[bestI], verts[bestI + 1], verts[bestI + 2])]
+    return bestI < 0 ? [] : [round4(verts[bestI + 3], verts[bestI + 4], verts[bestI + 5])]
   }
   const dx = dxSpan / G
   const dz = dzSpan / G
 
-  // best[cell] keeps the vertex (mesh + world coords) farthest from trunk axis in XZ.
+  // best[cell] keeps the vertex farthest from trunk axis in XZ. Stores the
+  // world coord — that's what we serialize (v2 contract).
   const best = new Array(G * G).fill(null)
   for (let i = 0; i < verts.length; i += STRIDE) {
     const wy = verts[i + 4]
@@ -214,7 +219,7 @@ function deriveAttachments(verts, cfg) {
     const d2 = ddx * ddx + ddz * ddz
     const prev = best[cell]
     if (!prev || d2 > prev.distSq) {
-      best[cell] = { mx: verts[i], my: verts[i + 1], mz: verts[i + 2], distSq: d2 }
+      best[cell] = { wx, wy, wz, distSq: d2 }
     }
   }
 
@@ -222,7 +227,7 @@ function deriveAttachments(verts, cfg) {
   for (let ix = 0; ix < G; ix++) {
     for (let iz = 0; iz < G; iz++) {
       const b = best[ix * G + iz]
-      if (b) tags.push(round4(b.mx, b.my, b.mz))
+      if (b) tags.push(round4(b.wx, b.wy, b.wz))
     }
   }
 

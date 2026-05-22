@@ -481,15 +481,113 @@ function buildLeafGeometryFromAttachments(attachments, opts, rng) {
   return { positions, normals, uvs, indices, count: N }
 }
 
+// Bake every node's accumulated world transform into its mesh's POSITION
+// and NORMAL accessors, then reset all node TRS chains to identity. After
+// this, mesh-space == chassis-root-local space across every mesh in the
+// document. Mirrors the recipe `survey-deleaf.js#processBundleGlb` runs
+// per-bundle-root (lines 504–521); duplicated here so that script stays
+// untouched per Brief 2.1c's constraints.
+function bakeAllNodeTransforms(doc) {
+  const identity = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]
+  function mul(a, b) {
+    const o = new Array(16)
+    for (let c = 0; c < 4; c++) {
+      for (let r = 0; r < 4; r++) {
+        o[c*4+r] = a[r]*b[c*4] + a[4+r]*b[c*4+1] + a[8+r]*b[c*4+2] + a[12+r]*b[c*4+3]
+      }
+    }
+    return o
+  }
+  const baked = new Set()
+  function bakeInto(prim, m) {
+    const pos = prim.getAttribute('POSITION')
+    if (pos) {
+      const src = pos.getArray()
+      const out = new Float32Array(src.length)
+      for (let i = 0; i < src.length; i += 3) {
+        const x = src[i], y = src[i+1], z = src[i+2]
+        out[i]   = m[0]*x + m[4]*y + m[8] *z + m[12]
+        out[i+1] = m[1]*x + m[5]*y + m[9] *z + m[13]
+        out[i+2] = m[2]*x + m[6]*y + m[10]*z + m[14]
+      }
+      const acc = doc.createAccessor().setType('VEC3').setArray(out)
+      prim.setAttribute('POSITION', acc)
+    }
+    const nrm = prim.getAttribute('NORMAL')
+    if (nrm) {
+      // Upper-3×3 transform, then renormalize. Adequate for rotation +
+      // uniform scale; vendor packs use uniform scale (chassis-wide).
+      const src = nrm.getArray()
+      const out = new Float32Array(src.length)
+      for (let i = 0; i < src.length; i += 3) {
+        const x = src[i], y = src[i+1], z = src[i+2]
+        const nx = m[0]*x + m[4]*y + m[8] *z
+        const ny = m[1]*x + m[5]*y + m[9] *z
+        const nz = m[2]*x + m[6]*y + m[10]*z
+        const len = Math.hypot(nx, ny, nz) || 1
+        out[i] = nx/len; out[i+1] = ny/len; out[i+2] = nz/len
+      }
+      const acc = doc.createAccessor().setType('VEC3').setArray(out)
+      prim.setAttribute('NORMAL', acc)
+    }
+  }
+  function walk(node, parentM) {
+    const m = mul(parentM, node.getMatrix() || identity)
+    const mesh = node.getMesh()
+    if (mesh && !baked.has(mesh)) {
+      baked.add(mesh)
+      for (const prim of mesh.listPrimitives()) bakeInto(prim, m)
+    }
+    for (const c of node.listChildren()) walk(c, m)
+  }
+  for (const node of doc.getRoot().listNodes()) {
+    if (!node.getParentNode()) walk(node, identity)
+  }
+  // Safety net: orphan meshes (held by nodes not reachable from any root)
+  // get baked with identity — better than leaving them with a stale
+  // transform-after-reset.
+  for (const mesh of doc.getRoot().listMeshes()) {
+    if (baked.has(mesh)) continue
+    for (const prim of mesh.listPrimitives()) bakeInto(prim, identity)
+  }
+  // Reset every node's TRS to identity (and matrix if the API exposes it).
+  for (const node of doc.getRoot().listNodes()) {
+    node.setTranslation([0, 0, 0])
+    node.setRotation([0, 0, 0, 1])
+    node.setScale([1, 1, 1])
+    if (node.setMatrix) {
+      try { node.setMatrix([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]) } catch {}
+    }
+  }
+}
+
 async function buildCompositionDocument({ chassis, bark, leaves, slotName }) {
   const chassisPath = path.join(CHASSIS_DIR, `${chassis}.glb`)
   const io = makeIO()
   const chassisDoc = await io.read(chassisPath)
   const meta = await loadChassisMeta(chassis)
 
+  // Brief 2.1c (Sorrel): bake every chassis node's world transform into
+  // its primitives' POSITION/NORMAL accessors, then reset all node TRS
+  // chains to identity. After this step, mesh-space == chassis-root-local
+  // space, which is the coordinate space `meta.leafAttachmentTags` uses
+  // (v2 contract). This makes the leaf-attach math trivial — leaf POSITION
+  // accessor values, when added to any mesh, render at world-space.
+  //
+  // The bake also fixes a long-standing latent bug for multi-mesh chassis
+  // where bark meshes carried mismatched node transforms (candicands_b's
+  // bark mesh at T=(0,0,-90.23) while sibling meshes were identity):
+  // previously, `positionsCombined` mixed coords from differently-
+  // transformed meshes, and the leaf primitive landed on meshes[0]'s
+  // transform regardless of which mesh the attachment came from. Post-
+  // bake every mesh is identity, so the mix is consistent and the
+  // leaf-attach lands correctly.
+  bakeAllNodeTransforms(chassisDoc)
+
   // Gather all bark positions for fallback leaf-attachment sampling and
   // ensure every retained primitive carries `extras.atlasKind = 'bark'`
-  // (defensive — Whittle already stamps this).
+  // (defensive — Whittle already stamps this). Post-bake these reads
+  // return chassis-root-local-space coords directly.
   const positionsCombined = []
   for (const mesh of chassisDoc.getRoot().listMeshes()) {
     for (const prim of mesh.listPrimitives()) {
@@ -587,7 +685,12 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName }) {
     leafPrim.setExtras({ atlasKind: 'leaf' })
 
     // Add the leaf primitive to the chassis's single mesh (or create one
-    // if the chassis somehow has zero meshes — defensive).
+    // if the chassis somehow has zero meshes — defensive). After the
+    // upstream transform-bake (see top of this function), every chassis
+    // mesh sits under identity-transform nodes, so adding the leaf prim to
+    // meshes[0] inherits the right (identity) transform. Authored tag
+    // coords are in chassis-root-local space (v2 contract); after bake,
+    // mesh-space == chassis-root-local space.
     const meshes = chassisDoc.getRoot().listMeshes()
     const targetMesh = meshes[0] || chassisDoc.createMesh('salonMesh')
     targetMesh.addPrimitive(leafPrim)
