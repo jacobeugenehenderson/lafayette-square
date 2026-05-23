@@ -4,6 +4,27 @@ Historical decisions + EOD records for the cloud + weather authoring track. Appe
 
 ---
 
+## 2026-05-23 — Brief 9b shipped — Atmosphere onto `wind-field.js` (Wisp)
+
+Sibling closer to Brief 9a (Sough). `<Atmosphere />`'s per-frame loop now reads through the shared seam: `resolveWindState(directive, _windState)` → `windAt(clock.elapsedTime, camera.position, _windState, _windSample)` → `uWindScale = sample.intensity / 3.0`, `uWindDir = normalize(sample.force)`. The directive-direct `directive.wind.scale` / `directive.wind.dir` reads at `Atmosphere.jsx:187–200` (the FROM→TO `(-sin, 0, -cos)` flip block) are gone — that flip lives inside `resolveWindState` once, where InstancedTrees already consumes it. One frozen seam.
+
+**Unit-conversion drift (surfaced).** `directive.wind.scale` was a unitless cloud-advection multiplier (~1.0 default) that the shader scaled by; `windAt().intensity` is m/s (~3 m/s for the same calm-weather setpoint, given `resolveWindState`'s `baseSpeedMps = wind.speed ?? wind.scale * 3` legacy heuristic). Naïve substitution would have made calm-weather clouds advect 3× faster — a clear AC #4 regression. Fix is `intensity / 3.0` at the consumer, with `WIND_MPS_PER_SCALE = 3.0` named at module scope pointing at `resolveWindState`. Decision favored consumer-side scaling over shader retuning per the brief's "Don't change Atmosphere's cloud shader" guidance. Once look files all carry `wind.speed`, the `/3` becomes the only place `scale` semantics survive, and at that point we can either retune the cloud shader (multiplying its internal `* 2.0` by `2/3`) and drop the JS-side division, or leave the `/3` as a permanent calibration constant. Operator's call; not gated on 9b.
+
+**`wind.scale` is now dead legacy.** No live runtime consumer reads it; `resolveWindState`'s fallback path is the only reader, and only for look files that lack `wind.speed`. ARCHITECTURE.md §9 updated to reflect this. Schema field can be dropped after look-file migration sweep — out of scope here, queued implicitly under Phase 5b authoring polish.
+
+**Cloud canopy ↔ tree canopy coherence.** Sampling at `camera.position` means the cloud field catches the gust front at the same moment trees near the camera do. Trees far from camera see the spike slightly later (`pos`-offset phase per Brief 9a's spatial advection), which is the intended outflow-boundary semantics — gust visibly traveling across the canopy. Verified the math by reading: `windAt`'s spike vector aligns with `gustFrontVelocity`, which defaults to `baseDirection × 10 m/s`, so spike direction stays consistent with drift direction in the absence of modulator override.
+
+**Files touched.** `src/components/Atmosphere.jsx` (+22, -14, including module-scope reusable `_windState`/`_windSample` + `WIND_MPS_PER_SCALE` constant + commentary), `meteorologist/BACKLOG.md` (Phase 7a Brief 9b checkbox flipped + result note), `meteorologist/ARCHITECTURE.md` §9 (`wind.scale` reframed legacy, `<Atmosphere />` consumer entry rewritten), this entry.
+
+**Out of scope as surfaced.** Bloom/program-cache wasn't disturbed (no material rebuild, just `uniforms[k].value` writes; single shader program preserved — AC #6). No new sibling pathway added. Rain/snow/lightning weather effects still read directive-direct for their own (non-wind) fields — Brief 9b is wind-only per scope.
+
+**Open follow-ups (not 9b's territory).**
+- Drop `wind.scale` from `directive.schema.json` + look-file migration sweep. Quiet cleanup, deferred.
+- Decide whether the cloud shader's internal `* 2.0` advection scaling should absorb the `/3` so the JS-side conversion goes away. Operator call after a few days of cloud + tree behavior with the new wiring.
+- Verify the AC #4 "calm-weather snapshot match" in actual visual diff. Math says byte-identical (`scale * 3 / 3 = scale`); confirm with eyes on next session start.
+
+---
+
 ## 2026-05-21 — Preview Studio elevation (ADR — Phase 5b reshape)
 
 **Decision:** Phase 5b promoted from "polish bundle" to substantive arc centered on a Preview Studio surface. Operator picks (Look, Fixture, TOD) → renders the full runtime composition against that scenario. Closes the "authoring blind to atmospheric edge cases until real weather happens" gap that Phase 6 + 7b/c/d's atmospheric machinery quietly surfaced.
@@ -904,3 +925,16 @@ Cross-schema invariants enforced in `validateLibrary()`:
 1. Preset id uniqueness within `presets.json`.
 2. Every almanac directive references presets that exist + are enabled (`enabled !== false`).
 3. Cloud-blend weights in any single directive sum to ≤ 1.0001.
+
+## 2026-05-23 — Brief 9a / Phase 7a (cross-ref from Arborist)
+
+Wind field + tree-side consumer shipped by Sough on the Arborist side; full details in `arborist/NOTES.md` 2026-05-23 entry. Meteorologist-side changes (under Brief 9a's S5 scope expansion):
+
+- `pipeline/schema/directive.schema.json` — added `wind.speed` (m/s, 0..40), `wind.gustsScale` (m/s, 0..20), `wind.gustEnvelope` ([0,1]), `wind.gustFrontVelocity` ({x,z}). `wind.scale` preserved for `<Atmosphere />`'s existing cloud multiplier (non-breaking).
+- `src/components/AtmosphereDirectiveDriver.jsx` — `lerpDirective` tweens the new wind fields. `gustFrontVelocity` lerps componentwise.
+- `src/lib/almanac-eval.js` — NUMERIC_BOUNDS extended for the new fields so Phase 6 modulators can author them via the standard delta paths.
+
+The cross-helper seam is `src/lib/wind-field.js`. Atmosphere does NOT yet read it — Brief 9b will retarget Atmosphere from `directive.wind` direct to `windAt(t, cameraPos, ws)` so cloud advection inherits the gust spikes the trees already see. Until then, Atmosphere reads `wind.scale` + `wind.dir` unchanged.
+
+ADR with the five decisions (units, gust-front independence, rustle floor, runtime-merge attribute, cross-helper scope) is at `scratch/wind-contract-phase7a.md`.
+

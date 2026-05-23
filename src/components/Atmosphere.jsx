@@ -29,6 +29,7 @@
  * regardless of which face of the box the rasterizer hit.
  */
 import { useRef, useMemo } from 'react'
+import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import SunCalc from 'suncalc'
 import { createAtmosphereMaterial, SLAB_BASE_ALT, SLAB_THICKNESS, SLAB_HALF_XZ } from './atmosphere-materials.js'
@@ -40,6 +41,21 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { getPresetsCache } from '../hooks/useAtmosphereDirective.js'
+import { defaultWindState, resolveWindState, windAt } from '../lib/wind-field.js'
+
+// Brief 9b — Atmosphere consumes `wind-field.js#windAt(t, cameraPos, ws)`
+// in place of reading `directive.wind.scale` + `wind.dir` directly. One
+// module-scoped windState + sample buffer mirror InstancedTrees.SwayDriver's
+// allocation-free pattern.
+const _windState = defaultWindState()
+const _windSample = { force: new THREE.Vector3(), intensity: 0 }
+
+// uWindScale is a unitless multiplier the cloud shader scales advection by
+// (~1.0 in calm Phase 5a weather). `windAt().intensity` is m/s. The legacy
+// conversion lives in `resolveWindState`: `baseSpeedMps = wind.speed ?? wind.scale * 3`,
+// so a directive scale of 1.0 resolves to 3 m/s — we mirror the inverse
+// here so cloud advection rate in calm weather is byte-identical pre/post 9b.
+const WIND_MPS_PER_SCALE = 3.0
 
 const LATITUDE = INSTANCE.geography.lat
 const LONGITUDE = INSTANCE.geography.lon
@@ -184,19 +200,18 @@ export default function Atmosphere({ lookId } = {}) {
       }
     }
 
-    // Wind from the directive — speed scales the existing advection,
-    // dir orients it. uWindDir is a unit XZ vector; dir is degrees the
-    // wind blows FROM (meteorological convention). Convert to a TO
-    // vector so positive uTime drift moves clouds with the wind.
-    if (directive?.wind) {
-      material.uniforms.uWindScale.value = directive.wind.scale ?? 1.0
-      const fromRad = (directive.wind.dir ?? 0) * Math.PI / 180
-      // FROM → TO: add π. XZ in three: +X east, +Z south.
-      material.uniforms.uWindDir.value.set(
-        -Math.sin(fromRad),
-        0,
-        -Math.cos(fromRad),
-      ).normalize()
+    // Wind via the shared seam (Brief 9b). `windAt(t, cameraPos, ws)`
+    // composes drift + gust envelope + spatially-advected gust spikes;
+    // sampling at camera position aligns the gust window with what the
+    // operator is looking at, and the same field drives tree sway, so
+    // clouds + trees catch the same gust front in lockstep. `.force` is
+    // already a world-space TO vector (resolveWindState bakes the
+    // FROM→TO flip), so no degree conversion is needed here.
+    resolveWindState(directive, _windState)
+    windAt(clock.elapsedTime, camera.position, _windState, _windSample)
+    material.uniforms.uWindScale.value = _windSample.intensity / WIND_MPS_PER_SCALE
+    if (_windSample.intensity > 1e-5) {
+      material.uniforms.uWindDir.value.copy(_windSample.force).normalize()
     }
 
     // Real sun direction — same projection CelestialBodies uses
